@@ -51,8 +51,9 @@ async function runtime(page: Page) {
         typeof import('../src/ai/runtime-input').createAiRuntimeInput
       >
       const input = testRuntimeState.get<Input>('repeat-runtime')
-      if (!input?.transactionRunner)
+      if (!input?.transactionRunner) {
         throw new Error('Missing transaction owner')
+      }
       return input.transactionRunner.run(
         'Repeated detail',
         async (runMutation) => {
@@ -61,7 +62,9 @@ async function runtime(page: Page) {
             const action = input.actionDefinitions.find(
               (a) => a.name === item.name
             )
-            if (!action) throw new Error('Unknown action')
+            if (!action) {
+              throw new Error('Unknown action')
+            }
             actionResults.push({
               actionId: item.id,
               actionName: item.name,
@@ -235,9 +238,11 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
     expect(localToolOutcome(await edit()).status).toBe('success')
     const afterFills = await fills()
     ids.forEach((id, i) => {
-      if (localIds.includes(id))
+      if (localIds.includes(id)) {
         expect(afterFills[i]).not.toEqual(beforeFills[i])
-      else expect(afterFills[i]).toEqual(beforeFills[i])
+      } else {
+        expect(afterFills[i]).toEqual(beforeFills[i])
+      }
     })
     expect(
       (await checks()).find((c: { id: string }) => c.id === checkIds[0]).status
@@ -384,8 +389,9 @@ test('ordered multi-face preparation preserves an acknowledged prefix and retrie
     !example ||
     !('linearFields' in example.draft) ||
     !('reflection' in example.draft.linearFields)
-  )
+  ) {
     throw new Error('Missing multi-face example')
+  }
   const invalid = structuredClone(example.draft)
   invalid.linearFields.reflection.end = {
     ...invalid.linearFields.reflection.start
@@ -498,7 +504,9 @@ test('actual provider receipt ownership preserves a recorded prefix through repa
         const receipt = await execute(batch)
         if (batch.actions.some((a) => a.name === 'apply_prepared_design')) {
           mutations++
-          if (mutations === 2) prefix = await getCoreDocumentDigest(page)
+          if (mutations === 2) {
+            prefix = await getCoreDocumentDigest(page)
+          }
         }
         return receipt
       }
@@ -549,7 +557,9 @@ test('actual provider receipt ownership preserves a recorded prefix through repa
     const { fillApis, transactionApis } = await import('../src/common-apis')
     const core = (await import('../src/contexts')).default
     const children = core.getElementChildren(id, 0, 1).elementIds
-    if (!children[0]) throw new Error('Missing crown child after reload')
+    if (!children[0]) {
+      throw new Error('Missing crown child after reload')
+    }
     transactionApis.runTransaction(() =>
       fillApis.updateFillsAtIndex([children[0]], 0, { opacity: 0.75 })
     )

@@ -68,7 +68,9 @@ const CanvasItemView = ({
         height: bounds.height
       }}
       onPointerDown={(event) => {
-        if (event.button !== 0 || !controller.prepareAction()) return
+        if (event.button !== 0 || !controller.prepareAction()) {
+          return
+        }
         drag.current = {
           pointerId: event.pointerId,
           startX: event.clientX,
@@ -85,10 +87,14 @@ const CanvasItemView = ({
       }}
       onPointerMove={(event) => {
         const session = drag.current
-        if (!session || session.pointerId !== event.pointerId) return
+        if (!session || session.pointerId !== event.pointerId) {
+          return
+        }
         const deltaX = event.clientX - session.startX
         const deltaY = event.clientY - session.startY
-        if (!session.moved && Math.hypot(deltaX, deltaY) < 3) return
+        if (!session.moved && Math.hypot(deltaX, deltaY) < 3) {
+          return
+        }
         session.moved = true
         const fallback = getStarterItemRenderBounds(index, width)
         const x = Math.max(
@@ -109,7 +115,9 @@ const CanvasItemView = ({
       }}
       onPointerUp={(event) => {
         const session = drag.current
-        if (!session || session.pointerId !== event.pointerId) return
+        if (!session || session.pointerId !== event.pointerId) {
+          return
+        }
         drag.current = null
         if (
           !session.moved ||
@@ -121,12 +129,17 @@ const CanvasItemView = ({
           onSelect()
           return
         }
-        if (controller.moveItem(item.id, session.offset)) onSelect()
-        else cancelDrag()
+        if (controller.moveItem(item.id, session.offset)) {
+          onSelect()
+        } else {
+          cancelDrag()
+        }
       }}
       onPointerCancel={cancelDrag}
       onLostPointerCapture={() => {
-        if (drag.current) cancelDrag()
+        if (drag.current) {
+          cancelDrag()
+        }
       }}
       onClick={onSelect}
       aria-label={item.title}

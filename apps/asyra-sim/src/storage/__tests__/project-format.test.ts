@@ -37,13 +37,14 @@ describe('local project envelope', () => {
     )
   })
   it('rejects nonfinite data rather than serializing it as null', () => {
-    for (const value of [NaN, Infinity, -Infinity])
+    for (const value of [NaN, Infinity, -Infinity]) {
       expect(() =>
         encodeProject({
           ...snapshot(),
           document: { ...snapshot().document, props: { value } }
         })
       ).toThrow('Nonfinite')
+    }
   })
   it('rejects malformed and unsupported envelopes before canonical application', () => {
     for (const text of [
@@ -63,8 +64,9 @@ describe('local project envelope', () => {
         ...snapshot(),
         loadIssues: 'lost'
       })
-    ])
+    ]) {
       expect(() => decodeProject(text)).toThrow()
+    }
   })
   it('rejects missing or invalid metadata without fabricating a project', () => {
     expect(() => validateSummary(null)).toThrow()

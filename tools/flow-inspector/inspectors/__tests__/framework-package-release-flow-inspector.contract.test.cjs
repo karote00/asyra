@@ -56,15 +56,7 @@ test('Framework package release Inspector authorities resolve', () => {
   )
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.specPath)))
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.inspectorPath)))
-  assert.ok(
-    fs.existsSync(
-      path.resolve(
-        __dirname,
-        '..',
-        'framework-package-release-flow-inspector.html'
-      )
-    )
-  )
+  require('./assert-react-catalog.cjs')(data)
 })
 
 test('every release owner has exact execution fields and no cache', () => {
@@ -140,7 +132,7 @@ test('every release route and artifact resolves to exactly one owner', () => {
 
   data.routes.forEach((route) => {
     assert.ok(stepIds.has(route.from), `${route.id} from`)
-    if (route.to) assert.ok(stepIds.has(route.to), `${route.id} to`)
+    if (route.to) {assert.ok(stepIds.has(route.to), `${route.id} to`)}
     route.producedArtifacts.forEach((id) => {
       const artifact = data.artifacts.find((item) => item.id === id)
       assert.ok(artifact, `${route.id} artifact ${id}`)

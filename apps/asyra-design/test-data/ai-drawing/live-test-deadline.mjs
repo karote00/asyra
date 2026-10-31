@@ -26,7 +26,9 @@ if (!isMainThread && workerData?.owner === 'local-live-deadline') {
   const { deadlineAt, groups, processes, identities, evidencePath } = workerData
   let settled = false
   const expire = (reason = 'execution-deadline') => {
-    if (settled) return
+    if (settled) {
+      return
+    }
     settled = true
     const receipt = {
       status: 'failed',
@@ -52,8 +54,12 @@ if (!isMainThread && workerData?.owner === 'local-live-deadline') {
     }
     const roots = [...groups, ...processes].filter((pid) => {
       const current = processIdentity(pid)
-      if (current === identities[pid]) return true
-      if (current) receipt.errors.push(`Process identity changed: ${pid}`)
+      if (current === identities[pid]) {
+        return true
+      }
+      if (current) {
+        receipt.errors.push(`Process identity changed: ${pid}`)
+      }
       return (
         !current &&
         groups.includes(pid) &&
@@ -64,12 +70,20 @@ if (!isMainThread && workerData?.owner === 'local-live-deadline') {
     const owned = new Set(roots)
     // Include surviving group members even after their parent was reaped.
     for (const [pid, , group] of rows) {
-      if (groups.includes(group) && roots.includes(group)) owned.add(pid)
+      if (groups.includes(group) && roots.includes(group)) {
+        owned.add(pid)
+      }
     }
     for (;;) {
       const before = owned.size
-      for (const [pid, parent] of rows) if (owned.has(parent)) owned.add(pid)
-      if (owned.size === before) break
+      for (const [pid, parent] of rows) {
+        if (owned.has(parent)) {
+          owned.add(pid)
+        }
+      }
+      if (owned.size === before) {
+        break
+      }
     }
     const tokens = new Map([...owned].map((pid) => [pid, processIdentity(pid)]))
     for (const pid of groups.filter((pid) => roots.includes(pid))) {
@@ -77,16 +91,22 @@ if (!isMainThread && workerData?.owner === 'local-live-deadline') {
         process.kill(-pid, 'SIGKILL')
         receipt.stopped.push({ group: pid, at: Date.now() })
       } catch (error) {
-        if (error.code !== 'ESRCH') receipt.errors.push(String(error))
+        if (error.code !== 'ESRCH') {
+          receipt.errors.push(String(error))
+        }
       }
     }
     for (const pid of [...owned].reverse()) {
-      if (!tokens.get(pid) || tokens.get(pid) !== processIdentity(pid)) continue
+      if (!tokens.get(pid) || tokens.get(pid) !== processIdentity(pid)) {
+        continue
+      }
       try {
         process.kill(pid, 'SIGKILL')
         receipt.stopped.push({ pid, at: Date.now() })
       } catch (error) {
-        if (error.code !== 'ESRCH') receipt.errors.push(String(error))
+        if (error.code !== 'ESRCH') {
+          receipt.errors.push(String(error))
+        }
       }
     }
     receipt.finishedAt = Date.now()
@@ -102,13 +122,17 @@ if (!isMainThread && workerData?.owner === 'local-live-deadline') {
   }
   const timer = setTimeout(() => expire(), Math.max(0, deadlineAt - Date.now()))
   parentPort.on('message', (message) => {
-    if (settled) return
+    if (settled) {
+      return
+    }
     if (message.type === 'stop') {
       clearTimeout(timer)
       expire(message.reason)
       return
     }
-    if (message.type !== 'finish') return
+    if (message.type !== 'finish') {
+      return
+    }
     if (message.at >= deadlineAt) {
       expire()
       return
@@ -134,21 +158,25 @@ export const createLiveTestDeadline = ({
     [...groups, ...processes].some(
       (pid) => !Number.isInteger(pid) || pid < 2 || pid === process.pid
     )
-  )
+  ) {
     throw new Error('Invalid owned deadline configuration')
+  }
   for (const pid of groups) {
     const group = Number(
       execFileSync('ps', ['-o', 'pgid=', '-p', String(pid)], {
         encoding: 'utf8'
       }).trim()
     )
-    if (group !== pid)
+    if (group !== pid) {
       throw new Error('Deadline group must be an owned session leader')
+    }
   }
   const identities = Object.fromEntries(
     [...groups, ...processes].map((pid) => {
       const identity = processIdentity(pid)
-      if (!identity) throw new Error(`Owned process unavailable: ${pid}`)
+      if (!identity) {
+        throw new Error(`Owned process unavailable: ${pid}`)
+      }
       return [pid, identity]
     })
   )
@@ -183,8 +211,9 @@ export const createLiveTestDeadline = ({
     }
   })
   worker.on('message', (message) => {
-    if (message.status === 'armed') resolveReady()
-    else {
+    if (message.status === 'armed') {
+      resolveReady()
+    } else {
       received = true
       resolveResult(message)
     }

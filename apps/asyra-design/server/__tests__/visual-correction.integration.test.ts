@@ -21,7 +21,9 @@ it('executes correction discovery through real owners and recovers only the unfi
     detailRequired: false
   })
   const image = review.inspect('part', true, true)
-  if (!image) throw new Error('Missing image')
+  if (!image) {
+    throw new Error('Missing image')
+  }
   const bound = review.bindReview('visual', [
     { criterionId: 'appearance', inspectionIds: [image.inspectionId] }
   ])
@@ -56,7 +58,9 @@ it('executes correction discovery through real owners and recovers only the unfi
     })
   ).toThrow()
   const fresh = review.inspect('part', true, true)
-  if (!fresh) throw new Error('Missing fresh image')
+  if (!fresh) {
+    throw new Error('Missing fresh image')
+  }
   const next = review.bindReview('visual', [
     { criterionId: 'appearance', inspectionIds: [fresh.inspectionId] }
   ])
@@ -80,7 +84,9 @@ async function exerciseCorrectionConsumer(
   >
 ) {
   const hadWindow = 'window' in globalThis
-  if (!hadWindow) vi.stubGlobal('window', {})
+  if (!hadWindow) {
+    vi.stubGlobal('window', {})
+  }
   const { default: core } = await import('@asyra/core')
   const { applyPreset, PresetProfiles, PresetDefaults } =
     await import('@asyra/preset')
@@ -154,7 +160,9 @@ async function exerciseCorrectionConsumer(
       })
       try {
         await runtime.run({ intent: 'Correct selected surface', signal })
-        if (!receipt) throw new Error('Missing actual runtime receipt')
+        if (!receipt) {
+          throw new Error('Missing actual runtime receipt')
+        }
         receipts.push(receipt)
         return receipt
       } finally {
@@ -163,7 +171,9 @@ async function exerciseCorrectionConsumer(
     }
   )
   try {
-    if (!correction.discovery) throw new Error('Missing correction discovery')
+    if (!correction.discovery) {
+      throw new Error('Missing correction discovery')
+    }
     const selection = {
       ...correction.discovery.arguments,
       query: 'fill.updateFillsAtIndex'
@@ -263,6 +273,8 @@ async function exerciseCorrectionConsumer(
       core.getElementComputedData('unavailable', ['fills'])?.fills
     ).toMatchObject([{ color: '#334455' }])
   } finally {
-    if (!hadWindow) vi.unstubAllGlobals()
+    if (!hadWindow) {
+      vi.unstubAllGlobals()
+    }
   }
 }

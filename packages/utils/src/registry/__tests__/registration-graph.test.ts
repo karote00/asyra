@@ -375,7 +375,9 @@ describe('RegistrationGraph', () => {
             key: 'second',
             dispose: () => {
               events.push('second')
-              if (fail) throw new Error('still active')
+              if (fail) {
+                throw new Error('still active')
+              }
             }
           },
           { key: 'third', dispose: () => events.push('third') }
@@ -422,7 +424,9 @@ describe('RegistrationGraph', () => {
         handlers: {
           detachRelation: () => {
             events.push('detach:b')
-            if (failSecondDetach) throw new Error('detach failed')
+            if (failSecondDetach) {
+              throw new Error('detach failed')
+            }
           }
         }
       })
@@ -464,7 +468,9 @@ describe('RegistrationGraph', () => {
         handlers: {
           detachRelation: () => {
             detachAttempts += 1
-            if (detachAttempts === 1) throw new Error('detach failed')
+            if (detachAttempts === 1) {
+              throw new Error('detach failed')
+            }
           }
         }
       })

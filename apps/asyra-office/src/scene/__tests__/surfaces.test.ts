@@ -59,10 +59,13 @@ it('constructs wall lettering from glyph runs without a rectangular backing or f
   const { vi } = await import('vitest')
   const { labelMeshes } = await import('../surfaces')
   const data = new Uint8ClampedArray(256 * 256 * 4)
-  for (let y = 100; y < 160; y++)
-    for (let x = 100; x < 140; x++)
-      if (x < 105 || x >= 135 || y < 105 || y >= 155)
+  for (let y = 100; y < 160; y++) {
+    for (let x = 100; x < 140; x++) {
+      if (x < 105 || x >= 135 || y < 105 || y >= 155) {
         data[(y * 256 + x) * 4 + 3] = 255
+      }
+    }
+  }
   const context = {
     fillRect: vi.fn(),
     fillText: vi.fn(),
@@ -86,8 +89,9 @@ it('constructs wall lettering from glyph runs without a rectangular backing or f
     ])
     const descriptor = result.descriptor
     expect(descriptor.kind).toBe('mesh')
-    if (descriptor.kind !== 'mesh' || descriptor.shape.kind !== 'triangles')
+    if (descriptor.kind !== 'mesh' || descriptor.shape.kind !== 'triangles') {
       throw new Error('Missing glyph triangles')
+    }
     expect(descriptor.surface).toBeUndefined()
     expect(context.fillRect).not.toHaveBeenCalled()
     const { positions, indices } = descriptor.shape
@@ -142,8 +146,9 @@ it('maps the canvas top row to the top of a scene label', async () => {
     ])
     const shape = label.descriptor.shape
     expect(shape.kind).toBe('triangles')
-    if (shape.kind === 'triangles')
+    if (shape.kind === 'triangles') {
       expect(shape.uvs).toEqual([0, 1, 1, 1, 1, 0, 0, 0])
+    }
   } finally {
     spy.mockRestore()
   }
@@ -152,10 +157,14 @@ it('maps the canvas top row to the top of a scene label', async () => {
 it('paints blue porcelain flowers on a light glaze with a continuous wrap and no baked relief', () => {
   const surface = createSurfaces()['porcelain-floral']
   expect(surface).toBeDefined()
-  if (!surface) throw new Error('Missing porcelain decoration')
+  if (!surface) {
+    throw new Error('Missing porcelain decoration')
+  }
   let blue = 0
   for (let i = 0; i < surface.albedo.length; i += 4) {
-    if (surface.albedo[i + 2] > surface.albedo[i] + 30) blue++
+    if (surface.albedo[i + 2] > surface.albedo[i] + 30) {
+      blue++
+    }
   }
   expect(surface.albedo.every((n, i) => i % 4 !== 3 || n === 255)).toBe(true)
   expect(
@@ -174,7 +183,9 @@ it('paints blue porcelain flowers on a light glaze with a continuous wrap and no
 
 it('antialiases the porcelain ink edges instead of retaining stair-step binary pixels', () => {
   const surface = createSurfaces()['porcelain-floral']
-  if (!surface) throw new Error('Missing porcelain surface')
+  if (!surface) {
+    throw new Error('Missing porcelain surface')
+  }
   const pixels = surface.albedo
   expect(
     pixels.some(
@@ -193,7 +204,9 @@ it('provides distinct replaceable ingredient grains with neutral lighting and co
     'peppercorns'
   ] as const) {
     const surface = surfaces[kind]
-    if (!surface) throw new Error('Missing ingredient surface: ' + kind)
+    if (!surface) {
+      throw new Error('Missing ingredient surface: ' + kind)
+    }
     expect(
       new Set(surface.albedo.filter((_, i) => i % 4 === 0)).size
     ).toBeGreaterThan(8)

@@ -268,7 +268,9 @@ export function getStoryFrame(chapter, value, reducedMotion = false) {
   const progress = reducedMotion ? 1 : clampProgress(value)
   const time = index + progress
   let segment = 0
-  while (segment < stops.length - 2 && stops[segment + 1].at <= time) segment++
+  while (segment < stops.length - 2 && stops[segment + 1].at <= time) {
+    segment++
+  }
   const a = stops[segment]
   const b = stops[segment + 1]
   const t = clampProgress((time - a.at) / (b.at - a.at))
@@ -302,7 +304,9 @@ export function createScrollDriver({ requestFrame, cancelFrame, render }) {
   let disposed = false
   const tick = () => {
     pending = null
-    if (disposed || !queued) return
+    if (disposed || !queued) {
+      return
+    }
     const [chapter, progress] = queued
     queued = null
     render(getStoryFrame(chapter, progress))
@@ -311,15 +315,23 @@ export function createScrollDriver({ requestFrame, cancelFrame, render }) {
   }
   return {
     update(chapter, value) {
-      if (disposed) return
+      if (disposed) {
+        return
+      }
       const p = clampProgress(value)
-      if (lastChapter === chapter && lastProgress === p && !queued) return
+      if (lastChapter === chapter && lastProgress === p && !queued) {
+        return
+      }
       queued = [chapter, p]
-      if (pending === null) pending = requestFrame(tick)
+      if (pending === null) {
+        pending = requestFrame(tick)
+      }
     },
     dispose() {
       disposed = true
-      if (pending !== null) cancelFrame(pending)
+      if (pending !== null) {
+        cancelFrame(pending)
+      }
       queued = null
     }
   }

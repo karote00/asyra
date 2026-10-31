@@ -23,7 +23,9 @@ test('two-finger pinch changes camera distance and touch handoff stays continuou
   const scene = page.getByTestId('scene')
   await scene.scrollIntoViewIfNeeded()
   const bounds = await scene.boundingBox()
-  if (!bounds) throw new Error('Missing viewport')
+  if (!bounds) {
+    throw new Error('Missing viewport')
+  }
   const x = bounds.x + bounds.width / 2
   const y = bounds.y + bounds.height / 2
   const session = await page.context().newCDPSession(page)
@@ -99,7 +101,9 @@ test('two-finger translation matches desktop pan instead of stationary look', as
   const scene = page.getByTestId('scene')
   await scene.scrollIntoViewIfNeeded()
   const bounds = await scene.boundingBox()
-  if (!bounds) throw new Error('Missing viewport')
+  if (!bounds) {
+    throw new Error('Missing viewport')
+  }
   const x = bounds.x + bounds.width / 2
   const y = bounds.y + bounds.height / 2
   await page.mouse.move(x, y)

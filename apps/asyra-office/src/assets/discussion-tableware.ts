@@ -157,18 +157,23 @@ export function americanoGlass(
     surfaceMesh = emptyMesh(),
     interfaceMesh = emptyMesh()
   const vertices = new Map<Mesh, Map<number, number>>()
-  for (const mesh of [bodyMesh, surfaceMesh, interfaceMesh])
+  for (const mesh of [bodyMesh, surfaceMesh, interfaceMesh]) {
     vertices.set(mesh, new Map())
+  }
   for (let i = 0; i < liquid.indices.length; i += 3) {
     const ids = liquid.indices.slice(i, i + 3)
     let target = bodyMesh
-    if (liquid.triangleRegions[i / 3] > 0) target = interfaceMesh
-    else if (
+    if (liquid.triangleRegions[i / 3] > 0) {
+      target = interfaceMesh
+    } else if (
       ids.every((id) => Math.abs(liquid.positions[id * 3 + 2] - 0.096) < 1e-8)
-    )
+    ) {
       target = surfaceMesh
+    }
     const mapping = vertices.get(target)
-    if (!mapping) throw new Error('Missing liquid region vertex map')
+    if (!mapping) {
+      throw new Error('Missing liquid region vertex map')
+    }
     for (const id of ids) {
       let vertex = mapping.get(id)
       if (vertex === undefined) {
@@ -370,41 +375,50 @@ function leanLid(source: Mesh, outer: number[][]): Mesh {
   const result = emptyMesh()
   append(result, source, [0, 0, 0], [65, 0, 0])
   let minimumZ = Infinity
-  for (let i = 2; i < result.positions.length; i += 3)
+  for (let i = 2; i < result.positions.length; i += 3) {
     minimumZ = Math.min(minimumZ, result.positions[i])
-  for (let i = 2; i < result.positions.length; i += 3)
+  }
+  for (let i = 2; i < result.positions.length; i += 3) {
     result.positions[i] -= minimumZ
+  }
   const radiusAt = (z: number) => {
     for (let j = 1; j < outer.length; j++) {
       const [r0, z0] = outer[j - 1],
         [r1, z1] = outer[j]
-      if (z >= z0 && z <= z1) return r0 + ((r1 - r0) * (z - z0)) / (z1 - z0)
+      if (z >= z0 && z <= z1) {
+        return r0 + ((r1 - r0) * (z - z0)) / (z1 - z0)
+      }
     }
     return 0
   }
   let translationY = Infinity
   // Include triangle interiors, not just vertices, in the support envelope.
   for (let i = 0; i < result.indices.length; i += 3) {
-    for (let a = 0; a <= 4; a++)
+    for (let a = 0; a <= 4; a++) {
       for (let b = 0; b <= 4 - a; b++) {
         const weights = [a / 4, b / 4, 1 - (a + b) / 4]
         const point = [0, 0, 0]
         weights.forEach((weight, corner) => {
           const vertex = result.indices[i + corner] * 3
-          for (let axis = 0; axis < 3; axis++)
+          for (let axis = 0; axis < 3; axis++) {
             point[axis] += result.positions[vertex + axis] * weight
+          }
         })
         const radius = radiusAt(point[2])
-        if (radius > Math.abs(point[0]))
+        if (radius > Math.abs(point[0])) {
           translationY = Math.min(
             translationY,
             -Math.sqrt(radius * radius - point[0] * point[0]) - point[1]
           )
+        }
       }
+    }
   }
-  if (!Number.isFinite(translationY))
+  if (!Number.isFinite(translationY)) {
     throw new Error('Lid cannot reach sugar jar support')
-  for (let i = 1; i < result.positions.length; i += 3)
+  }
+  for (let i = 1; i < result.positions.length; i += 3) {
     result.positions[i] += translationY - 0.00005
+  }
   return result
 }

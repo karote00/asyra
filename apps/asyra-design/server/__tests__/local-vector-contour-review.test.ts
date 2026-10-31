@@ -7,7 +7,9 @@ import {
 } from '../local-vector-contour-review'
 
 const required = <T>(value: T | undefined): T => {
-  if (value === undefined) throw new Error('Missing expected proposal')
+  if (value === undefined) {
+    throw new Error('Missing expected proposal')
+  }
   return value
 }
 const signal = () => new AbortController().signal

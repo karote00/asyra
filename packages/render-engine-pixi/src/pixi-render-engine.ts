@@ -264,8 +264,9 @@ export class PixiRenderEngine implements RenderEngine {
         if (
           app.stage.scale.x !== command.scale.x ||
           app.stage.scale.y !== command.scale.y
-        )
+        ) {
           this.textResolutionDirty = true
+        }
         app.stage.position.set(command.position.x, command.position.y)
         app.stage.scale.set(command.scale.x, command.scale.y)
         return { commandType: command.type, status: 'applied' }
@@ -278,10 +279,11 @@ export class PixiRenderEngine implements RenderEngine {
 
   query(query: RenderEngineQuery): RenderEngineQueryResult {
     const app = this.assertReady()
-    if (isSpatialQuery(query))
+    if (isSpatialQuery(query)) {
       throw new UnsupportedRenderEngineCapabilityError(this.name, [
         RenderEngineCapabilities.SPATIAL_QUERIES
       ])
+    }
 
     switch (query.type) {
       case 'measure-text':
@@ -291,8 +293,9 @@ export class PixiRenderEngine implements RenderEngine {
           !Number.isInteger(query.maxDimension) ||
           query.maxDimension < 1 ||
           query.maxDimension > 1024
-        )
+        ) {
           throw new RangeError('Snapshot dimension must be between 1 and 1024')
+        }
         const target = this.getOwnedObject(query.object)
         const local = target.getLocalBounds()
         const bounds = {
@@ -305,8 +308,9 @@ export class PixiRenderEngine implements RenderEngine {
           !Object.values(bounds).every(Number.isFinite) ||
           bounds.width <= 0 ||
           bounds.height <= 0
-        )
+        ) {
           throw new Error('Snapshot target has no finite visible bounds')
+        }
         if (query.region) {
           const region = query.region
           if (
@@ -319,8 +323,9 @@ export class PixiRenderEngine implements RenderEngine {
             region.y < local.y ||
             region.x + region.width > local.x + local.width ||
             region.y + region.height > local.y + local.height
-          )
+          ) {
             throw new RangeError('Snapshot region must be inside target bounds')
+          }
           Object.assign(bounds, region)
         }
         // Pixi truncates extraction frames to whole local units before applying
@@ -333,10 +338,11 @@ export class PixiRenderEngine implements RenderEngine {
         if (
           query.nativeResolution &&
           Math.max(bounds.width, bounds.height) > query.maxDimension
-        )
+        ) {
           throw new RangeError(
             'Native-resolution snapshot exceeds the capture limit; request a region within the limit. No downsampling was performed.'
           )
+        }
         const resolution = query.nativeResolution
           ? 1
           : Math.min(
@@ -370,8 +376,9 @@ export class PixiRenderEngine implements RenderEngine {
               canvas.height !== bounds.height)) ||
           !dataUrl?.startsWith('data:image/png;base64,') ||
           dataUrl.length > 8 * 1024 * 1024
-        )
+        ) {
           throw new Error('Snapshot image unavailable')
+        }
         return {
           type: 'snapshot',
           dataUrl,
@@ -437,7 +444,9 @@ export class PixiRenderEngine implements RenderEngine {
     this.assertReady()
     this.cancelFrame()
     const frameHandler: FrameRequestCallback = (timestamp) => {
-      if (this.frameHandler !== frameHandler) return
+      if (this.frameHandler !== frameHandler) {
+        return
+      }
       this.frameHandler = null
       this.frameRequest = null
       callback(timestamp)
@@ -448,7 +457,9 @@ export class PixiRenderEngine implements RenderEngine {
 
   cancelFrame(): void {
     this.frameHandler = null
-    if (this.frameRequest === null) return
+    if (this.frameRequest === null) {
+      return
+    }
     cancelAnimationFrame(this.frameRequest)
     this.frameRequest = null
   }
@@ -480,7 +491,9 @@ export class PixiRenderEngine implements RenderEngine {
     }
     this.objects.clear()
     this.interactionListeners.clear()
-    if (this.app) this.batchPartitions.dispose(this.app.stage)
+    if (this.app) {
+      this.batchPartitions.dispose(this.app.stage)
+    }
     this.app?.destroy(true)
     this.app = null
     this.rootHandle = null
@@ -637,8 +650,9 @@ export class PixiRenderEngine implements RenderEngine {
       previousSkewX !== object.skew.x ||
       previousSkewY !== object.skew.y ||
       previousRotation !== object.rotation
-    )
+    ) {
       this.textResolutionDirty = true
+    }
 
     if (object instanceof Mesh) {
       if ('material' in properties) {
@@ -652,7 +666,9 @@ export class PixiRenderEngine implements RenderEngine {
           object.texture = Texture.WHITE
           this.meshMaterialKeys.delete(object)
         }
-        if (previousKey) this.meshMaterials.release(previousKey)
+        if (previousKey) {
+          this.meshMaterials.release(previousKey)
+        }
       }
       const geometry = properties.geometry as MeshProperties | undefined
       if (geometry && updateGeometry) {
@@ -697,8 +713,12 @@ export class PixiRenderEngine implements RenderEngine {
         })
         const remainingWidth = Math.max(0, operation.width - text.width)
         text.x = operation.x
-        if (operation.align === 'right') text.x += remainingWidth
-        if (operation.align === 'center') text.x += remainingWidth / 2
+        if (operation.align === 'right') {
+          text.x += remainingWidth
+        }
+        if (operation.align === 'center') {
+          text.x += remainingWidth / 2
+        }
         text.y = operation.y
         let paint: Graphics | undefined
         let mask: AlphaMask | undefined
@@ -718,7 +738,9 @@ export class PixiRenderEngine implements RenderEngine {
           mask = new AlphaMask({ mask: text })
           mask.channel = 'alpha'
           paint.addEffect(mask)
-        } else graphics.addChild(text)
+        } else {
+          graphics.addChild(text)
+        }
         this.liveText.add(text)
         this.textResolutionDirty = true
         const children = this.textChildren.get(graphics) ?? []
@@ -800,7 +822,9 @@ export class PixiRenderEngine implements RenderEngine {
     descriptor: RenderEngineResourceDescriptor
   ): PixiOwnedResource {
     const key = getPixiGradientResourceKey(descriptor)
-    if (key === undefined) return createPixiOwnedResource(descriptor)
+    if (key === undefined) {
+      return createPixiOwnedResource(descriptor)
+    }
     let entry = this.gradientResources.get(key)
     if (!entry) {
       entry = { resource: createPixiOwnedResource(descriptor), users: 0 }
@@ -830,7 +854,9 @@ export class PixiRenderEngine implements RenderEngine {
   }
 
   private updateTextResolution(): void {
-    if (!this.textResolutionDirty) return
+    if (!this.textResolutionDirty) {
+      return
+    }
     this.textResolutionDirty = false
     const pixelRatio = this.assertReady().renderer.resolution
     for (const text of this.liveText) {
@@ -858,8 +884,9 @@ export class PixiRenderEngine implements RenderEngine {
       Number.isFinite(resolution) &&
       resolution > 0 &&
       text.resolution !== resolution
-    )
+    ) {
       text.resolution = resolution
+    }
   }
 
   private withSnapshotTextResolution<T>(
@@ -874,7 +901,9 @@ export class PixiRenderEngine implements RenderEngine {
     try {
       while (pending.length) {
         const next = pending.pop()
-        if (!next) break
+        if (!next) {
+          break
+        }
         const { object, a, b, c, d } = next
         if (object instanceof Text && this.liveText.has(object)) {
           restore.push({ text: object, resolution: object.resolution })
@@ -901,7 +930,9 @@ export class PixiRenderEngine implements RenderEngine {
       return capture()
     } finally {
       for (const { text, resolution } of restore) {
-        if (text.resolution !== resolution) text.resolution = resolution
+        if (text.resolution !== resolution) {
+          text.resolution = resolution
+        }
       }
     }
   }
@@ -924,13 +955,19 @@ export class PixiRenderEngine implements RenderEngine {
   }
 
   private destroyPixiObject(object: PixiObject): void {
-    if (object instanceof Graphics) this.clearTextChildren(object)
+    if (object instanceof Graphics) {
+      this.clearTextChildren(object)
+    }
     const parent = this.batchPartitions.parentOf(object)
-    if (parent) this.batchPartitions.remove(parent, object)
+    if (parent) {
+      this.batchPartitions.remove(parent, object)
+    }
     this.batchPartitions.dispose(object)
     if (object instanceof Mesh) {
       const key = this.meshMaterialKeys.get(object)
-      if (key) this.meshMaterials.release(key)
+      if (key) {
+        this.meshMaterials.release(key)
+      }
       this.meshMaterialKeys.delete(object)
     }
     const ownedGeometry = object instanceof Mesh ? object.geometry : null

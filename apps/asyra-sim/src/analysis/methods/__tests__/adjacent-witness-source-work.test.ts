@@ -12,7 +12,9 @@ it('preserves complete adjacent source evidence with every publication and trans
     (pair) =>
       pair.a.bodyId === 'example:joint-2' && pair.b.bodyId === 'obstacle-11'
   )
-  if (!pair) throw new Error('Missing source pair')
+  if (!pair) {
+    throw new Error('Missing source pair')
+  }
   const frames = snapshot.trajectory.keyframes
   const query = {
     workcell: snapshot.workcell,
@@ -42,14 +44,17 @@ it('preserves complete adjacent source evidence with every publication and trans
       targetConvex = 0
     const interpolate = poses.interpolateSegment
     vi.spyOn(poses, 'interpolateSegment').mockImplementation((...args) => {
-      if (!Array.isArray(args[2]))
+      if (!Array.isArray(args[2])) {
         throw new Error('Expected interval pose input')
+      }
       time = args[2][0] === args[2][1] ? args[2][0] : NaN
       return interpolate(...args)
     })
     const solve = convex.convexDistance
     vi.spyOn(convex, 'convexDistance').mockImplementation((...args) => {
-      if (time === frames[113].time) targetConvex++
+      if (time === frames[113].time) {
+        targetConvex++
+      }
       return solve(...args)
     })
     const categories = {
@@ -68,7 +73,9 @@ it('preserves complete adjacent source evidence with every publication and trans
       } finally {
         const delta = context.work - before
         categories.distance += delta
-        if (time === frames[113].time) targetWork += delta
+        if (time === frames[113].time) {
+          targetWork += delta
+        }
       }
     }
     context.lowerOver = (...args) => {
@@ -92,8 +99,9 @@ it('preserves complete adjacent source evidence with every publication and trans
         } finally {
           const delta = context.work - before
           categories[category] += delta
-          if (category === 'source' && time === frames[113].time)
+          if (category === 'source' && time === frames[113].time) {
             targetSourceWork += delta
+          }
         }
       }
     }

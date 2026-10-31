@@ -29,7 +29,9 @@ const createCoreForTest = (viewportPosition = { x: 1, y: 2 }) => {
     ) => {
       for (const [index, slice] of slices.entries()) {
         slice()
-        if (index < slices.length - 1) await settle(index)
+        if (index < slices.length - 1) {
+          await settle(index)
+        }
       }
     }
   )
@@ -422,7 +424,9 @@ it('reads current canonical metadata without materializing lazy child snapshots'
   )
   let copies = 0
   const stop = subscribeToDiagnosticCounters((name, count) => {
-    if (name === 'scene-tree:membership:snapshot-items') copies += count
+    if (name === 'scene-tree:membership:snapshot-items') {
+      copies += count
+    }
   })
   try {
     const read = (count: number) => {

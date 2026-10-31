@@ -12,8 +12,9 @@ export const createExecutionRecordSink = (
     console.warn(JSON.stringify({ event: 'ai_recording_failed', code })),
   resumeRequestId?: string
 ): ExecutionRecordSink => {
-  if (resumeRequestId && !/^[a-zA-Z0-9_-]{1,160}$/.test(resumeRequestId))
+  if (resumeRequestId && !/^[a-zA-Z0-9_-]{1,160}$/.test(resumeRequestId)) {
     throw new Error('Invalid record identity')
+  }
   let pending = Promise.resolve()
   let file: FileHandle | undefined
   let filename: string | null = resumeRequestId
@@ -24,7 +25,9 @@ export const createExecutionRecordSink = (
   let closed = false
   let settled: ReturnType<ExecutionRecordSink['flush']> | undefined
   const fail = (error: unknown) => {
-    if (failed) return
+    if (failed) {
+      return
+    }
     failed = true
     const code = (error as { code?: unknown })?.code
     try {
@@ -38,7 +41,9 @@ export const createExecutionRecordSink = (
     }
   }
   const ensureFile = async () => {
-    if (file || !filename) return
+    if (file || !filename) {
+      return
+    }
     await mkdir(directory, { recursive: true, mode: 0o700 })
     // Resume never creates a missing prefix. A fresh writer never overwrites evidence.
     file = await open(
@@ -62,8 +67,9 @@ export const createExecutionRecordSink = (
   }[] = []
   return {
     writePayload(requestId, callId, phase, value) {
-      if (closed || failed || resumeRequestId || identity !== requestId)
+      if (closed || failed || resumeRequestId || identity !== requestId) {
         return { status: 'failed', path: null }
+      }
       try {
         const started = performance.now()
         const { serialized, ...metadata } = serializeToolPayload(value)
@@ -82,7 +88,9 @@ export const createExecutionRecordSink = (
         const target = join(directory, relative)
         pending = pending
           .then(async () => {
-            if (failed) return
+            if (failed) {
+              return
+            }
             cost.queueMs = performance.now() - queuedAt
             const writeStarted = performance.now()
             await mkdir(join(directory, `${requestId}.payloads`), {
@@ -111,13 +119,16 @@ export const createExecutionRecordSink = (
         resumeRequestId ||
         identity !== requestId ||
         !['image/png', 'image/jpeg', 'image/webp'].includes(mediaType)
-      )
+      ) {
         return { status: 'failed', path: null }
+      }
       try {
         const bytes = Buffer.from(source)
         const sha256 = createHash('sha256').update(bytes).digest('hex')
         const existing = assets.get(sha256)
-        if (existing) return { status: 'queued', ...existing, reused: true }
+        if (existing) {
+          return { status: 'queued', ...existing, reused: true }
+        }
         const extension =
           mediaType === 'image/jpeg' ? 'jpg' : mediaType.split('/')[1]
         const relative = `${requestId}.assets/${sha256}.${extension}`
@@ -125,7 +136,9 @@ export const createExecutionRecordSink = (
         assets.set(sha256, asset)
         pending = pending
           .then(async () => {
-            if (failed) return
+            if (failed) {
+              return
+            }
             await mkdir(join(directory, `${requestId}.assets`), {
               recursive: true,
               mode: 0o700
@@ -143,18 +156,24 @@ export const createExecutionRecordSink = (
       }
     },
     write(record) {
-      if (closed || failed) return
+      if (closed || failed) {
+        return
+      }
       try {
-        if (!/^[a-zA-Z0-9_-]{1,160}$/.test(record.requestId))
+        if (!/^[a-zA-Z0-9_-]{1,160}$/.test(record.requestId)) {
           throw new Error('Invalid record identity')
-        if (identity && identity !== record.requestId)
+        }
+        if (identity && identity !== record.requestId) {
           throw new Error('Mixed record identity')
+        }
         identity = record.requestId
         filename = join(directory, `${identity}.jsonl`)
         const line = JSON.stringify(record) + '\n'
         pending = pending
           .then(async () => {
-            if (failed) return
+            if (failed) {
+              return
+            }
             await ensureFile()
             await file?.writeFile(line)
           })
@@ -164,8 +183,9 @@ export const createExecutionRecordSink = (
       }
     },
     checkpoint() {
-      if (closed)
+      if (closed) {
         return settled ?? Promise.resolve({ status: 'failed', path: filename })
+      }
       const result = pending.then(async () => {
         try {
           if (!failed) {
@@ -176,14 +196,18 @@ export const createExecutionRecordSink = (
           fail(error)
         }
         let status: 'failed' | 'saved' | 'empty' = filename ? 'saved' : 'empty'
-        if (failed) status = 'failed'
+        if (failed) {
+          status = 'failed'
+        }
         return { status, path: filename }
       })
       pending = result.then(() => undefined)
       return result
     },
     flush() {
-      if (settled) return settled
+      if (settled) {
+        return settled
+      }
       closed = true
       settled = pending.then(async () => {
         try {
@@ -192,18 +216,23 @@ export const createExecutionRecordSink = (
             await file?.sync()
           }
           await file?.close()
-          if (identity && !failed && !resumeRequestId)
+          if (identity && !failed && !resumeRequestId) {
             await writeFile(
               join(directory, `${identity}.recording.json`),
               JSON.stringify({ payloads, assets: [...assets.values()] }),
               { flag: 'wx', mode: 0o600 }
             )
+          }
         } catch (error) {
           fail(error)
         }
         let status: 'saved' | 'failed' | 'empty' = 'empty'
-        if (filename) status = 'saved'
-        if (failed) status = 'failed'
+        if (filename) {
+          status = 'saved'
+        }
+        if (failed) {
+          status = 'failed'
+        }
         return { status, path: filename }
       })
       return settled

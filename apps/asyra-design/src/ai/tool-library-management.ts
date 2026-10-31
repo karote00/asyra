@@ -57,12 +57,13 @@ const post = async (
     signal
   })
   const value: unknown = await response.json()
-  if (!response.ok)
+  if (!response.ok) {
     throw new Error(
       record(value) && text(value.issue)
         ? value.issue
         : 'Saved tools are unavailable. Refresh to retry.'
     )
+  }
   return value
 }
 export const readToolLibrary = async (
@@ -79,8 +80,9 @@ export const readToolLibrary = async (
         record(item) && typeof item.key === 'string' && text(item.reason)
     ) ||
     typeof value.truncated !== 'boolean'
-  )
+  ) {
     throw new Error('Saved tool inventory was invalid. Refresh to retry.')
+  }
   return value as unknown as ToolLibraryInventory
 }
 export const updateToolLibrary = async (
@@ -94,8 +96,9 @@ export const updateToolLibrary = async (
     !text(value.version) ||
     value.availability !==
       (input.operation === 'remove' ? 'retired' : 'suspended')
-  )
+  ) {
     throw new Error(
       'The saved tool change was not acknowledged. Refresh before retrying.'
     )
+  }
 }

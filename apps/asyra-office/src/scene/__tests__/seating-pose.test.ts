@@ -6,7 +6,9 @@ import evidence from '../reference/seating-measurements.json'
 
 function item(id: string) {
   const value = seating.instances.find((instance) => instance.id === id)
-  if (!value) throw new Error(`Missing seating ${id}`)
+  if (!value) {
+    throw new Error(`Missing seating ${id}`)
+  }
   return value
 }
 const front = structure.shell.frontY + structure.shell.facadeThickness / 2
@@ -39,11 +41,12 @@ for (const [room, source] of Object.entries(evidence.roomPlacement.rooms)) {
     for (const [id, member] of Object.entries(source.members)) {
       const actual = item(id)
       expect(actual.scale).toEqual(member.scale)
-      for (const axis of [0, 1])
+      for (const axis of [0, 1]) {
         expect(actual.position[axis] - table.position[axis]).toBeCloseTo(
           member.offset[axis],
           8
         )
+      }
     }
   })
 }
@@ -61,6 +64,7 @@ it('preserves the accepted non-depth structural contract during authorized expan
     'greenTop',
     'loungeTop',
     'loungeRightTop'
-  ] as const)
+  ] as const) {
     expect(structure.parameters[key]).toBe(baseline.structure.parameters[key])
+  }
 })

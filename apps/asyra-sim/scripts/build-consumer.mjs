@@ -36,7 +36,7 @@ const git = (args) =>
   execFileSync('git', args, { cwd: repository, encoding: 'utf8' }).trim()
 
 export function commandExecutionContract(label) {
-  if (label === 'consumer-tests')
+  if (label === 'consumer-tests') {
     return {
       timeoutMs: 21 * 60 * 1000,
       environment: {
@@ -45,16 +45,19 @@ export function commandExecutionContract(label) {
         TEST_CLEANUP_MS: '60000'
       }
     }
+  }
   return { timeoutMs: 5 * 60 * 1000, environment: {} }
 }
 
 export async function buildConsumer() {
-  if (process.versions.node.split('.')[0] !== '24')
+  if (process.versions.node.split('.')[0] !== '24') {
     throw new Error('Node.js 24.x is required.')
-  if (git(['status', '--porcelain']))
+  }
+  if (git(['status', '--porcelain'])) {
     throw new Error(
       'Commit or preserve pending work before building an exact-source candidate.'
     )
+  }
   const sourceCommit = git(['rev-parse', 'HEAD'])
   const artifactParent = path.join(appDirectory, '.artifacts/consumers')
   mkdirSync(artifactParent, { recursive: true })
@@ -71,8 +74,9 @@ export async function buildConsumer() {
     logs,
     temporary,
     path.join(output, 'framework')
-  ])
+  ]) {
     mkdirSync(directory, { recursive: true })
+  }
   const environment = Object.fromEntries(
     Object.entries(process.env).filter(
       ([key]) =>
@@ -112,9 +116,12 @@ export async function buildConsumer() {
   process.once('SIGTERM', stop)
   let number = 0
   async function run(label, command, args, cwd, isolate = false) {
-    if (aborted) throw new Error('Build cancelled.')
-    if (isolate)
-      ({ command, args } = isolatedConsumerCommand(cwd, command, args))
+    if (aborted) {
+      throw new Error('Build cancelled.')
+    }
+    if (isolate) {
+      ;({ command, args } = isolatedConsumerCommand(cwd, command, args))
+    }
     const execution = commandExecutionContract(label)
     const filename = path.join(
       logs,
@@ -148,9 +155,11 @@ export async function buildConsumer() {
       }, execution.timeoutMs)
       const receive = (chunk) => {
         bytes += chunk.length
-        if (bytes > 8 * 1024 * 1024)
+        if (bytes > 8 * 1024 * 1024) {
           expire(`${label} exceeded its 8 MiB log limit.`)
-        else stream.write(chunk)
+        } else {
+          stream.write(chunk)
+        }
       }
       child.stdout.on('data', receive)
       child.stderr.on('data', receive)
@@ -175,8 +184,9 @@ export async function buildConsumer() {
   try {
     const versionLog = await run('toolchain', 'yarn', ['--version'], repository)
     const yarnVersion = readFileSync(versionLog, 'utf8').trim()
-    if (yarnVersion !== '4.3.1')
+    if (yarnVersion !== '4.3.1') {
       throw new Error(`Yarn 4.3.1 is required; found ${yarnVersion}.`)
+    }
     await run(
       'archive',
       'git',
@@ -238,10 +248,11 @@ export async function buildConsumer() {
       'playwright.config.ts',
       'app-environment.mjs',
       'app-environment.d.mts'
-    ])
+    ]) {
       cpSync(path.join(sourceApp, entry), path.join(consumer, entry), {
         recursive: true
       })
+    }
     for (const file of consumerPortableFiles) {
       const destination = path.join(consumer, file)
       mkdirSync(path.dirname(destination), { recursive: true })
@@ -310,17 +321,19 @@ export async function buildConsumer() {
     const moduleEvidence = readdirSync(
       path.join(consumer, '.build-evidence')
     ).sort()
-    if (moduleEvidence.length < 3)
+    if (moduleEvidence.length < 3) {
       throw new Error(
         'Main and both module Worker build evidence are required.'
       )
+    }
     if (
       git(['rev-parse', 'HEAD']) !== sourceCommit ||
       git(['status', '--porcelain'])
-    )
+    ) {
       throw new Error(
         'Source changed during consumer verification; no passing record was written.'
       )
+    }
     const report = {
       format: 'sim-clean-consumer',
       version: 1,
@@ -361,10 +374,11 @@ export async function buildConsumer() {
     if (
       git(['rev-parse', 'HEAD']) !== sourceCommit ||
       git(['status', '--porcelain'])
-    )
+    ) {
       throw new Error(
         'Source changed during distribution assembly; no candidate was finalized.'
       )
+    }
     const archive = `${candidateName}.tar.gz`
     renameSync(staged, path.join(output, candidateName))
     renameSync(stagedArchive, path.join(output, archive))
@@ -409,9 +423,10 @@ if (
   process.argv[1] &&
   path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 ) {
-  if (process.argv.length > 2)
+  if (process.argv.length > 2) {
     throw new Error(
       'This command accepts no options; it always verifies the exact clean source.'
     )
+  }
   await buildConsumer()
 }

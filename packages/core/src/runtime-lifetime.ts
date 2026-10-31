@@ -55,7 +55,9 @@ export class CoreRuntimeLifetime {
   }
 
   assertActive(): void {
-    if (this.state !== 'active') throw new CoreRuntimeClosedError(this.state)
+    if (this.state !== 'active') {
+      throw new CoreRuntimeClosedError(this.state)
+    }
   }
 
   assertResetReady(): void {
@@ -66,13 +68,19 @@ export class CoreRuntimeLifetime {
   }
 
   private assertMethod(method: PropertyKey): void {
-    if (method === 'resetRuntime' || method === 'getRuntimeState') return
+    if (method === 'resetRuntime' || method === 'getRuntimeState') {
+      return
+    }
     if (method === 'start' || method === 'registerRuntimeCleanup') {
       this.assertActive()
       return
     }
-    if (this.isUsable()) return
-    if (this.cleanupActive && cleanupReadAndReleaseMethods.has(method)) return
+    if (this.isUsable()) {
+      return
+    }
+    if (this.cleanupActive && cleanupReadAndReleaseMethods.has(method)) {
+      return
+    }
     throw new CoreRuntimeClosedError(this.state)
   }
 
@@ -86,7 +94,9 @@ export class CoreRuntimeLifetime {
   }
 
   async drain(): Promise<void> {
-    while (this.pending.size > 0) await Promise.all([...this.pending])
+    while (this.pending.size > 0) {
+      await Promise.all([...this.pending])
+    }
   }
 
   facade<T extends object>(owner: T): T {
@@ -94,23 +104,33 @@ export class CoreRuntimeLifetime {
     return new Proxy(owner, {
       get: (target, key, receiver) => {
         const value = Reflect.get(target, key, receiver)
-        if (typeof value !== 'function' || key === 'constructor') return value
+        if (typeof value !== 'function' || key === 'constructor') {
+          return value
+        }
         const previous = methods.get(key)
-        if (previous?.source === value) return previous.facade
+        if (previous?.source === value) {
+          return previous.facade
+        }
         const facade = new Proxy(value, {
           apply: (method, _receiver, args) => {
             this.assertMethod(key)
-            if (key === 'start') this.starting++
+            if (key === 'start') {
+              this.starting++
+            }
             try {
               const result = Reflect.apply(method, target, args)
               if (ownedAsyncMethods.has(key)) {
                 this.track(result, () => {
-                  if (key === 'start') this.starting--
+                  if (key === 'start') {
+                    this.starting--
+                  }
                 })
               }
               return result
             } catch (error) {
-              if (key === 'start') this.starting--
+              if (key === 'start') {
+                this.starting--
+              }
               throw error
             }
           }
@@ -123,16 +143,22 @@ export class CoreRuntimeLifetime {
 
   featureAPI<T extends object>(api: T): T {
     const previous = this.featureFacades.get(api)
-    if (previous) return previous as T
+    if (previous) {
+      return previous as T
+    }
     // A separate facade supports frozen caller-owned API objects without
     // violating Proxy invariants or changing the original definition.
     const methods = new Map<PropertyKey, { source: object; facade: object }>()
     const result = new Proxy({} as T, {
       get: (_target, key) => {
         const method = Reflect.get(api, key)
-        if (typeof method !== 'function') return method
+        if (typeof method !== 'function') {
+          return method
+        }
         const previousMethod = methods.get(key)
-        if (previousMethod?.source === method) return previousMethod.facade
+        if (previousMethod?.source === method) {
+          return previousMethod.facade
+        }
         const facade = new Proxy(method, {
           apply: (source, receiver, args) => {
             this.assertActive()
@@ -141,7 +167,9 @@ export class CoreRuntimeLifetime {
               receiver === result ? api : receiver,
               args
             )
-            if (value && typeof value.then === 'function') this.track(value)
+            if (value && typeof value.then === 'function') {
+              this.track(value)
+            }
             return value
           },
           construct: (source, args, newTarget) => {
@@ -172,7 +200,9 @@ export class CoreRuntimeLifetime {
     let disposed = false
     let disposing = false
     return () => {
-      if (disposed || disposing || !this.isUsable()) return
+      if (disposed || disposing || !this.isUsable()) {
+        return
+      }
       disposing = true
       try {
         dispose()

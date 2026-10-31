@@ -271,8 +271,9 @@ export const createLocalToolLibraryTools = (
         typeof input.name !== 'string' ||
         !record(value) ||
         !record(value.execution)
-      )
+      ) {
         return value
+      }
       const originalOutcome = record(value.toolOutcome)
         ? value.toolOutcome
         : {
@@ -326,10 +327,13 @@ export const createLocalToolLibraryTools = (
         !record(input) ||
         typeof input.name !== 'string' ||
         typeof input.revision !== 'number'
-      )
+      ) {
         return
+      }
       const selected = resolve().describe(input.name, input.revision)
-      if (!selected) return
+      if (!selected) {
+        return
+      }
       return registeredToolInvocationSchemas(
         selected,
         { name: input.name, revision: input.revision },
@@ -342,14 +346,17 @@ export const createLocalToolLibraryTools = (
     ): AiToolOutcome & {
       issues: { code: string; message: string }[]
     } {
-      if (!record(value)) throw new Error('Library control returned no receipt')
-      if (record(value.execution))
+      if (!record(value)) {
+        throw new Error('Library control returned no receipt')
+      }
+      if (record(value.execution)) {
         return {
           status: value.execution.status as AiToolOutcome['status'],
           settlement: value.execution.settlement as AiToolOutcome['settlement'],
           issues: []
         }
-      if (value.ok === false || value.status === 'unsaved')
+      }
+      if (value.ok === false || value.status === 'unsaved') {
         return {
           status: 'failed',
           settlement: 'not-started',
@@ -360,6 +367,7 @@ export const createLocalToolLibraryTools = (
             }
           ]
         }
+      }
       return { status: 'success', settlement: 'completed', issues: [] }
     },
     async call(
@@ -369,12 +377,15 @@ export const createLocalToolLibraryTools = (
     ): Promise<string> {
       signal.throwIfAborted()
       const selected = definitions.find((item) => item.name === name)
-      if (!selected) throw new LocalToolInputError('Unknown library control')
+      if (!selected) {
+        throw new LocalToolInputError('Unknown library control')
+      }
       const issue = operationInputIssue(input, selected.inputSchema)
-      if (issue || !record(input))
+      if (issue || !record(input)) {
         throw new LocalToolInputError(
           issue ?? 'A control input object is required'
         )
+      }
       const library = resolve()
       switch (name) {
         case AiDesignToolIds.SUBMIT_TOOL:

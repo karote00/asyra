@@ -35,11 +35,12 @@ export const acknowledgeTransactionReplayApplied = (
 ): void => {
   if (activeReplayContext) {
     activeReplayContext.applied = true
-    if (restorationEvents)
+    if (restorationEvents) {
       activeReplayContext.restorationEvents = Object.freeze([
         ...restorationEvents,
         ...(activeReplayContext.restorationEvents ?? [])
       ])
+    }
   }
 }
 
@@ -49,13 +50,15 @@ export const getTransactionReplayRestorationEvents = ():
 export const getFailedTransactionReplayRestorationEvents = (
   failure: unknown
 ): readonly AllEvent[] | undefined => {
-  if (isObjectFailure(failure))
+  if (isObjectFailure(failure)) {
     return appliedReplayFailures.get(failure)?.restorationEvents
+  }
   if (
     lastPrimitiveReplayFailure &&
     Object.is(lastPrimitiveReplayFailure.failure, failure)
-  )
+  ) {
     return lastPrimitiveReplayFailure.restorationEvents
+  }
   return undefined
 }
 
@@ -79,7 +82,9 @@ const combineRestorationEvents = (
 ): readonly AllEvent[] | undefined => {
   const nestedEvents =
     nested?.token === context.token ? nested.restorationEvents : undefined
-  if (!nestedEvents) return context.restorationEvents
+  if (!nestedEvents) {
+    return context.restorationEvents
+  }
   return Object.freeze([...nestedEvents, ...(context.restorationEvents ?? [])])
 }
 

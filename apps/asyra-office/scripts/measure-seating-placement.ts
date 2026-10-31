@@ -40,7 +40,9 @@ composeOfficeSeating({
     const evidence = Object.entries(source.furniture).find(
       ([key]) => key === id
     )?.[1]
-    if (!evidence) throw new Error(`Missing seating trace ${id}`)
+    if (!evidence) {
+      throw new Error(`Missing seating trace ${id}`)
+    }
     measurements.push({
       id,
       asset,

@@ -19,8 +19,9 @@ export const DEFAULT_TEMPLATE_EVIDENCE_DIRECTORY =
   'tmp/framework-release-evidence'
 
 const freeze = (value) => {
-  if (!value || typeof value !== 'object' || Object.isFrozen(value))
+  if (!value || typeof value !== 'object' || Object.isFrozen(value)) {
     return value
+  }
   Object.freeze(value)
   Object.values(value).forEach(freeze)
   return value
@@ -100,9 +101,11 @@ const collectSourceFiles = (directory) => {
       continue
     }
     const entryPath = path.join(directory, entry.name)
-    if (entry.isDirectory()) files.push(...collectSourceFiles(entryPath))
-    else if (sourceExtensions.has(path.extname(entry.name)))
+    if (entry.isDirectory()) {
+      files.push(...collectSourceFiles(entryPath))
+    } else if (sourceExtensions.has(path.extname(entry.name))) {
       files.push(entryPath)
+    }
   }
   return files
 }
@@ -489,8 +492,11 @@ const allocatePort = () =>
         return
       }
       server.close((error) => {
-        if (error) reject(error)
-        else resolve(address.port)
+        if (error) {
+          reject(error)
+        } else {
+          resolve(address.port)
+        }
       })
     })
   })
@@ -545,10 +551,15 @@ const runStartupSmokeDefault = async ({ consumerDirectory }) => {
     }
     throw new Error('Generated-template preview did not become ready')
   } finally {
-    if (child.exitCode === null) child.kill('SIGTERM')
+    if (child.exitCode === null) {
+      child.kill('SIGTERM')
+    }
     await new Promise((resolve) => {
-      if (child.exitCode !== null) resolve()
-      else child.once('exit', resolve)
+      if (child.exitCode !== null) {
+        resolve()
+      } else {
+        child.once('exit', resolve)
+      }
     })
   }
 }
@@ -639,11 +650,17 @@ if (isDirectInvocation) {
   let appName
   let allowUnsupportedNode = false
   for (const arg of process.argv.slice(2)) {
-    if (arg.startsWith('--prod=')) appName = arg.slice('--prod='.length)
-    else if (arg === '--allow-unsupported-node') allowUnsupportedNode = true
-    else throw new Error(`Unknown argument: ${arg}`)
+    if (arg.startsWith('--prod=')) {
+      appName = arg.slice('--prod='.length)
+    } else if (arg === '--allow-unsupported-node') {
+      allowUnsupportedNode = true
+    } else {
+      throw new Error(`Unknown argument: ${arg}`)
+    }
   }
-  if (!appName) throw new Error('Must specify --prod=<app-name>')
+  if (!appName) {
+    throw new Error('Must specify --prod=<app-name>')
+  }
 
   const evidence = await verifyGeneratedTemplate({
     repositoryRoot,

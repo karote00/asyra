@@ -336,7 +336,9 @@ describe('property child relations', () => {
     const Parent = getPropertyComponent(TEST_TYPE)
     expect(Child).toBeDefined()
     expect(Parent).toBeDefined()
-    if (!Child || !Parent) throw new Error('Expected property runtimes')
+    if (!Child || !Parent) {
+      throw new Error('Expected property runtimes')
+    }
 
     const child = new Child({ id: 'relation-child', type: TEST_CHILD_TYPE })
     propsManager.addToMap(child)
@@ -373,7 +375,9 @@ describe('property child relations', () => {
 
     propsManager.addToMap(child)
     const RebuiltParent = getPropertyComponent(TEST_TYPE)
-    if (!RebuiltParent) throw new Error('Expected rebuilt parent runtime')
+    if (!RebuiltParent) {
+      throw new Error('Expected rebuilt parent runtime')
+    }
     const nextParent = new RebuiltParent({
       id: 'relation-parent-next',
       type: TEST_TYPE,
@@ -413,7 +417,9 @@ describe('property child relations', () => {
 
     const Child = getPropertyComponent(TEST_CHILD_TYPE)
     const Parent = getPropertyComponent(TEST_TYPE)
-    if (!Child || !Parent) throw new Error('Expected property runtimes')
+    if (!Child || !Parent) {
+      throw new Error('Expected property runtimes')
+    }
     const child = new Child({ id: 'relation-child', type: TEST_CHILD_TYPE })
     propsManager.addToMap(child)
     const parent = new Parent({
@@ -464,7 +470,9 @@ describe('property child relations', () => {
     })
 
     const Parent = getPropertyComponent(TEST_TYPE)
-    if (!Parent) throw new Error('Expected parent runtime')
+    if (!Parent) {
+      throw new Error('Expected parent runtime')
+    }
     const parent = new Parent({ id: 'active-parent', type: TEST_TYPE })
     propsManager.addToMap(parent)
     expectRelationError(

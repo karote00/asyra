@@ -106,8 +106,9 @@ export const createElementPropertyIntentAPIs = (
     toIntent: (target: PropertyTarget, index: number) => PropertyIntent,
     options?: EVENT_OPTIONS
   ): PropertyMutationReceipt => {
-    if (targets.length === 0)
+    if (targets.length === 0) {
       return Object.freeze({ acceptedIds: Object.freeze([]), changed: false })
+    }
     const prepared = requests.preparePropertyIntentBatch(
       resolve(targets).map(toIntent),
       options

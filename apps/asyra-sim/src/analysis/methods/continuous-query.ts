@@ -107,8 +107,9 @@ function shapesAt(
         (collider) => collider.id === reference.colliderId
       ),
       pose = poses.get(reference.bodyId)
-    if (!collider || !pose)
+    if (!collider || !pose) {
       throw new Error('Missing canonical collider in pair snapshot')
+    }
     return {
       geometry: collider.geometry,
       pose: ops.compose(pose, ops.fromPose(collider.pose))
@@ -139,8 +140,9 @@ function checkSettings(settings: QuerySettings): void {
     !Number.isInteger(settings.maxIterations) ||
     settings.maxIterations < 1 ||
     settings.maxIterations > 256
-  )
+  ) {
     throw new Error('Unsupported method settings')
+  }
 }
 
 export function queryContinuousPair(
@@ -164,10 +166,12 @@ export function queryContinuousPair(
     start > end ||
     start < first.time ||
     end > last.time
-  )
+  ) {
     throw new Error('Analysis interval is not covered by the trajectory')
-  if (query.a.bodyId === query.b.bodyId)
+  }
+  if (query.a.bodyId === query.b.bodyId) {
     throw new Error('Same-body shapes are not analysis pairs')
+  }
   interface Node {
     start: number
     end: number
@@ -185,11 +189,11 @@ export function queryContinuousPair(
       end,
       segment: found < 0 ? frames.length - 1 : Math.max(0, found - 1)
     })
-  } else
+  } else {
     for (let segment = 0; segment < frames.length - 1; segment++) {
       const a = Math.max(start, frames[segment].time),
         b = Math.min(end, frames[segment + 1].time)
-      if (a < b)
+      if (a < b) {
         pending.push({
           start: a,
           end: b,
@@ -197,8 +201,10 @@ export function queryContinuousPair(
           originalRoot:
             a === frames[segment].time && b === frames[segment + 1].time
         })
+      }
     }
-  if (pending.length > maxLeaves)
+  }
+  if (pending.length > maxLeaves) {
     return {
       leaves: [
         {
@@ -218,13 +224,16 @@ export function queryContinuousPair(
       coverage: 'partial',
       evaluations: 0
     }
+  }
   let evaluations = 0
   let kernelExhausted = false
   let boundarySource: unknown
   traversal: while (pending.length && evaluations < settings.maxIntervals) {
     checkpoint()
     const node = pending.pop()
-    if (!node) break
+    if (!node) {
+      break
+    }
     // Take once before admission; neither mismatches nor descendants retain it.
     const previousBoundary = boundarySource
     boundarySource = undefined
@@ -248,7 +257,9 @@ export function queryContinuousPair(
         time <= node.end
       ) {
         const derived = kernel?.deriveZeroLower?.(a, b)
-        if (derived !== undefined) return derived
+        if (derived !== undefined) {
+          return derived
+        }
       }
       return kernel
         ? kernel.lower(a, b, completedWitness)
@@ -262,8 +273,11 @@ export function queryContinuousPair(
     for (const [sampleIndex, time] of sampleTimes.entries()) {
       checkpoint()
       let inherited: DistanceEvidence | undefined
-      if (time === node.start) inherited = node.startEvidence
-      else if (time === node.end) inherited = node.endEvidence
+      if (time === node.start) {
+        inherited = node.startEvidence
+      } else if (time === node.end) {
+        inherited = node.endEvidence
+      }
       let result: DistanceEvidence | null
       let sampleExhausted = false
       if (inherited && kernel?.handoffEvidence) {
@@ -297,9 +311,11 @@ export function queryContinuousPair(
           )
           result = sampled?.evidence ?? null
           source = sampled?.source
-          if (sampleIndex === 0) firstSource = source
+          if (sampleIndex === 0) {
+            firstSource = source
+          }
           sampleExhausted = sampled?.exhausted === true
-        } else
+        } else {
           result = kernel
             ? kernel.distance(a, b)
             : convexDistance(
@@ -308,16 +324,25 @@ export function queryContinuousPair(
                 settings.distanceTolerance,
                 settings.maxIterations
               )
+        }
       }
       if (!result) {
         kernelExhausted = true
-        if (witness) break
+        if (witness) {
+          break
+        }
         pending.push(node)
         break traversal
       }
-      if (time === node.start) startEvidence = result
-      if (time === middle) middleEvidence = result
-      if (time === node.end) endEvidence = result
+      if (time === node.start) {
+        startEvidence = result
+      }
+      if (time === middle) {
+        middleEvidence = result
+      }
+      if (time === node.end) {
+        endEvidence = result
+      }
       if (!witness || result.upper < witness.upper || result.penetration) {
         witness = result
         witnessTime = time
@@ -326,7 +351,9 @@ export function queryContinuousPair(
         kernelExhausted = true
         break
       }
-      if (result.penetration) break
+      if (result.penetration) {
+        break
+      }
       if (
         kernel?.certifyClearBeforeResampling &&
         time === node.start &&
@@ -353,29 +380,34 @@ export function queryContinuousPair(
           kernel.handoffEvidence &&
           witness.lower > 0 &&
           kernel.lowerUsesPositiveWitnessOnly?.(intervalA, intervalB)
-        )
+        ) {
           completedLower = candidate
-        if (candidate > witness.upper)
+        }
+        if (candidate > witness.upper) {
           throw new Error('Inconsistent continuous distance certificates')
+        }
         if (candidate > settings.threshold) {
           certifiedLower = candidate
           break
         }
       }
     }
-    if (!witness) throw new Error('No witness evaluation')
+    if (!witness) {
+      throw new Error('No witness evaluation')
+    }
     evaluations++
     let lower: number | null = certifiedLower ?? witness.lower
-    if (kernelExhausted) lower = null
-    else if (
+    if (kernelExhausted) {
+      lower = null
+    } else if (
       certifiedLower === null &&
       node.start !== node.end &&
       completedLower !== undefined &&
       witness.lower > 0 &&
       kernel?.handoffEvidence
-    )
+    ) {
       lower = kernel.handoffEvidence() ? completedLower : null
-    else if (certifiedLower === null && node.start !== node.end) {
+    } else if (certifiedLower === null && node.start !== node.end) {
       const [a, b] = shapesAt(
         query,
         node.segment,
@@ -390,8 +422,9 @@ export function queryContinuousPair(
       // certificate can be computed. Zero cannot establish clearance.
       lower = 0
     }
-    if (lower > witness.upper)
+    if (lower > witness.upper) {
       throw new Error('Inconsistent continuous distance certificates')
+    }
     const base = {
       start: node.start,
       end: node.end,
@@ -400,43 +433,43 @@ export function queryContinuousPair(
       witnessTime,
       penetration: witness.penetration
     }
-    if (witness.penetration || witness.upper < settings.threshold)
+    if (witness.penetration || witness.upper < settings.threshold) {
       leaves.push({
         ...base,
         state: 'finding',
         reason:
           'An observed witness establishes an issue; this is not an enumeration of every contact.'
       })
-    else if (lower > settings.threshold)
+    } else if (lower > settings.threshold) {
       leaves.push({
         ...base,
         state: 'clear',
         reason: 'A conservative support gap covers this complete interval.'
       })
-    else if (kernelExhausted && kernel)
+    } else if (kernelExhausted && kernel) {
       leaves.push({
         ...base,
         state: 'unresolved',
         reason: kernel.exhaustionReason
       })
-    else if (
+    } else if (
       node.end - node.start <= settings.timeTolerance ||
       middle === node.start ||
       middle === node.end
-    )
+    ) {
       leaves.push({
         ...base,
         state: 'unresolved',
         reason: 'Threshold uncertainty remains at the declared time resolution.'
       })
-    else if (leaves.length + pending.length + 2 > maxLeaves)
+    } else if (leaves.length + pending.length + 2 > maxLeaves) {
       leaves.push({
         ...base,
         state: 'unresolved',
         reason:
           'The retained evidence budget prevents further interval subdivision.'
       })
-    else
+    } else {
       pending.push(
         {
           start: node.start,
@@ -455,7 +488,10 @@ export function queryContinuousPair(
             : {})
         }
       )
-    if (kernelExhausted) break
+    }
+    if (kernelExhausted) {
+      break
+    }
     const next = pending[pending.length - 1]
     if (
       evaluations < settings.maxIntervals &&
@@ -477,7 +513,7 @@ export function queryContinuousPair(
     }
   }
   boundarySource = undefined
-  for (const node of pending)
+  for (const node of pending) {
     leaves.push({
       start: node.start,
       end: node.end,
@@ -491,8 +527,11 @@ export function queryContinuousPair(
           ? kernel.exhaustionReason
           : 'Interval budget exhausted before this leaf was resolved.'
     })
+  }
   leaves.sort((a, b) => a.start - b.start)
-  if (!leaves.length) throw new Error('No valid analysis interval')
+  if (!leaves.length) {
+    throw new Error('No valid analysis interval')
+  }
   const upper = leaves.reduce<number | null>(
     (best, leaf) =>
       leaf.upper === null ? best : Math.min(best ?? Infinity, leaf.upper),

@@ -20,7 +20,9 @@ export function PlaybackNotice() {
 
   const pendingTime = useWorkbenchValue((state) => state.playback?.pendingTime)
 
-  if (!feedback) return null
+  if (!feedback) {
+    return null
+  }
 
   const warning =
     feedback.kind === 'collision' ||

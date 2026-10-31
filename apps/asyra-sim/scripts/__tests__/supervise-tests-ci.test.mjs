@@ -11,17 +11,18 @@ test('CI builds checkout-local dependencies before invoking the repo and portabl
   const markers = [
     'Record original test job deadline',
     'Initialize test execution envelope',
-    'run: node scripts/run-workspace-checks.mjs'
+    'run: node scripts/validation-checks.mjs --check "$VALIDATION_WORKSPACE"'
   ]
   function checkOrdering(source) {
     for (const marker of markers) {
       assert.equal(source.split(marker).length - 1, 1, marker)
       assert.ok(source.indexOf(marker) >= 0, marker)
     }
-    for (let index = 1; index < markers.length; index++)
+    for (let index = 1; index < markers.length; index++) {
       assert.ok(
         source.indexOf(markers[index - 1]) < source.indexOf(markers[index])
       )
+    }
   }
   const workspaceJob = workflow.match(
     /\n {2}workspace-validation:\n([\s\S]*?)(?=\n {2}[a-zA-Z][\w-]*:\n|$)/
@@ -44,8 +45,9 @@ test('CI builds checkout-local dependencies before invoking the repo and portabl
       'scripts/__tests__/supervise-tests.test.mjs',
       'scripts/__tests__/supervise-tests-ci.test.mjs',
       'python3 scripts/supervise-tests.py'
-    ])
+    ]) {
       assert.equal(script.split(entry).length - 1, 1, entry)
+    }
     assert.doesNotMatch(script, /install|ln -s/)
   }
   checkEntry(manifest.scripts['test:ci'])

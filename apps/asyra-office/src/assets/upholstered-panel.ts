@@ -71,7 +71,7 @@ export function upholsteredPanel(d: UpholsteredPanel) {
     })
   }
   const mesh = emptyMesh()
-  for (const ring of rings)
+  for (const ring of rings) {
     outline.forEach((p, i) => {
       const localRadius = radii[i],
         inset = (ring.inset * localRadius) / d.rounding
@@ -87,9 +87,10 @@ export function upholsteredPanel(d: UpholsteredPanel) {
       mesh.positions.push(center + x, y, z)
       mesh.uvs.push(i / n, (ring.x + d.thickness / 2) / d.thickness)
     })
+  }
   const tri = (a: number, b: number, c: number, flip = false) =>
     mesh.indices.push(...(flip ? [a, c, b] : [a, b, c]))
-  for (let row = 0; row < rings.length - 1; row++)
+  for (let row = 0; row < rings.length - 1; row++) {
     for (let i = 0; i < n; i++) {
       const a = row * n + i,
         b = row * n + ((i + 1) % n),
@@ -98,6 +99,7 @@ export function upholsteredPanel(d: UpholsteredPanel) {
       tri(a, b, e, sign < 0)
       tri(a, e, c, sign < 0)
     }
+  }
   const cross = (a: number, b: number, c: number) => {
     const p = mesh.positions
     return (
@@ -113,7 +115,9 @@ export function upholsteredPanel(d: UpholsteredPanel) {
         const a = remaining[(i + remaining.length - 1) % remaining.length],
           b = remaining[i],
           c = remaining[(i + 1) % remaining.length]
-        if (sign * cross(a, b, c) <= 1e-12) continue
+        if (sign * cross(a, b, c) <= 1e-12) {
+          continue
+        }
         if (
           remaining.some(
             (p) =>
@@ -124,17 +128,19 @@ export function upholsteredPanel(d: UpholsteredPanel) {
               sign * cross(b, c, p) >= -1e-12 &&
               sign * cross(c, a, p) >= -1e-12
           )
-        )
+        ) {
           continue
+        }
         tri(a, b, c, (row === 0) === sign > 0)
         remaining.splice(i, 1)
         removed = true
         break
       }
-      if (!removed)
+      if (!removed) {
         throw new Error(
           'Upholstered profile cannot be triangulated without crossing'
         )
+      }
     }
     tri(remaining[0], remaining[1], remaining[2], (row === 0) === sign > 0)
   }
@@ -144,14 +150,18 @@ export function upholsteredPanel(d: UpholsteredPanel) {
   const midpoint = (a: number, b: number) => {
     const key = a < b ? `${a}:${b}` : `${b}:${a}`,
       found = midpoints.get(key)
-    if (found !== undefined) return found
+    if (found !== undefined) {
+      return found
+    }
     const index = mesh.positions.length / 3
-    for (let k = 0; k < 3; k++)
+    for (let k = 0; k < 3; k++) {
       mesh.positions.push(
         (mesh.positions[a * 3 + k] + mesh.positions[b * 3 + k]) / 2
       )
-    for (let k = 0; k < 2; k++)
+    }
+    for (let k = 0; k < 2; k++) {
       mesh.uvs.push((mesh.uvs[a * 2 + k] + mesh.uvs[b * 2 + k]) / 2)
+    }
     midpoints.set(key, index)
     return index
   }
@@ -177,8 +187,9 @@ export function upholsteredPanel(d: UpholsteredPanel) {
     refine(u, m, w)
     refine(m, v, w)
   }
-  for (let i = 0; i < triangles.length; i += 3)
+  for (let i = 0; i < triangles.length; i += 3) {
     refine(triangles[i], triangles[i + 1], triangles[i + 2])
+  }
   for (let i = 0; i < mesh.positions.length; i += 3) {
     const t = Math.max(
       0,

@@ -31,8 +31,9 @@ export async function serveArtifact(directory, headers = {}) {
       if (
         !file.startsWith(`${root}${path.sep}`) ||
         !(await stat(file)).isFile()
-      )
+      ) {
         throw new Error('Not found')
+      }
       response.writeHead(200, {
         ...headers,
         'Content-Type': TYPES[path.extname(file)] ?? 'application/octet-stream',

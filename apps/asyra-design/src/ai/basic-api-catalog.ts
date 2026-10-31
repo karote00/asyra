@@ -10,8 +10,9 @@ export const basicApiContracts = Object.freeze([
 const contractsByName = new Map(
   basicApiContracts.map((contract) => [contract.name, contract])
 )
-if (contractsByName.size !== basicApiContracts.length)
+if (contractsByName.size !== basicApiContracts.length) {
   throw new Error('Duplicate public API action contract')
+}
 export const getBasicApiContract = (name: string) => contractsByName.get(name)
 export const basicApiPermissionRules = Object.freeze(
   Object.fromEntries(

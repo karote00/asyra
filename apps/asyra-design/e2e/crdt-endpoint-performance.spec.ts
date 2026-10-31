@@ -659,7 +659,9 @@ const waitForBootstrapCpuSettled = async (
       typeof result.sampledAtMs === 'number' &&
       result.sampledAtMs !== previousSettledSampleAtMs
     ) {
-      if (previousSettledSampleAtMs !== null) return
+      if (previousSettledSampleAtMs !== null) {
+        return
+      }
       previousSettledSampleAtMs = result.sampledAtMs
     } else if (result.settled !== true) {
       previousSettledSampleAtMs = null
@@ -707,7 +709,9 @@ const waitForGuardReady = async (
   while (Date.now() < deadline) {
     try {
       const response = await postHeartbeat('ready', heartbeat)
-      if (response.accepted === true) return
+      if (response.accepted === true) {
+        return
+      }
       lastError = new Error(
         'Endpoint performance resource guard has not sampled the process yet'
       )
@@ -756,7 +760,9 @@ const requestRuntimeDiagnostic = <T>(
           detail
         })
       )
-      if (detail.error) throw new Error(detail.error)
+      if (detail.error) {
+        throw new Error(detail.error)
+      }
       return detail.response as T
     },
     {
@@ -1116,7 +1122,9 @@ const createHeartbeatController = (
   const run = async (): Promise<void> => {
     while (active) {
       await delay(ENDPOINT_HEARTBEAT_INTERVAL_MS)
-      if (!active) return
+      if (!active) {
+        return
+      }
       try {
         await postHeartbeat('progress', await sample())
       } catch (error) {
@@ -1270,7 +1278,9 @@ const createLocalAttributionHeartbeatController = (
   const run = async (): Promise<void> => {
     while (active) {
       await delay(ENDPOINT_HEARTBEAT_INTERVAL_MS)
-      if (!active) return
+      if (!active) {
+        return
+      }
       try {
         await postHeartbeat('progress', await sample())
       } catch (error) {
@@ -1333,10 +1343,16 @@ const readCanonicalSummary = (page: Page): Promise<CanonicalSummary> =>
         operation: 'profile:readCanonicalElements'
       }
       document.dispatchEvent(new CustomEvent(eventName, { detail }))
-      if (detail.error) throw new Error(detail.error)
+      if (detail.error) {
+        throw new Error(detail.error)
+      }
       const normalize = (value: unknown): unknown => {
-        if (Array.isArray(value)) return value.map(normalize)
-        if (!value || typeof value !== 'object') return value
+        if (Array.isArray(value)) {
+          return value.map(normalize)
+        }
+        if (!value || typeof value !== 'object') {
+          return value
+        }
         return Object.fromEntries(
           Object.entries(value)
             .sort(([left], [right]) => left.localeCompare(right))
@@ -1385,14 +1401,18 @@ const readCanonicalSummary = (page: Page): Promise<CanonicalSummary> =>
           type: element.type
         })
         ids.push(element.id)
-        if (element.rendered) renderedCount += 1
+        if (element.rendered) {
+          renderedCount += 1
+        }
         if (element.type === 'group') {
           groupCount += 1
           groupChildren = children
           groupId = element.id
           continue
         }
-        if (element.type !== 'vector') continue
+        if (element.type !== 'vector') {
+          continue
+        }
         vectorCount += 1
         const computed = element.computed as {
           fills?: readonly { color?: string }[]
@@ -1488,7 +1508,9 @@ const readFinalDiagnostics = async (
           response?: unknown
         } = { args, operation }
         document.dispatchEvent(new CustomEvent(eventName, { detail }))
-        if (detail.error) throw new Error(detail.error)
+        if (detail.error) {
+          throw new Error(detail.error)
+        }
         return detail.response as T
       }
       const endpointDiagnostics = request<EndpointDiagnostics>(
@@ -1549,7 +1571,9 @@ const readFinalDiagnostics = async (
         const relativeIndex = visibleElementSamples
           .slice(minimumSampleIndex)
           .findIndex(({ value }) => value >= target)
-        if (relativeIndex < 0) return []
+        if (relativeIndex < 0) {
+          return []
+        }
         const sampleIndex = minimumSampleIndex + relativeIndex
         const sample = visibleElementSamples[sampleIndex]
         minimumSampleIndex = sampleIndex + 1
@@ -1690,7 +1714,9 @@ const installLocalInteractionProbe = async (
           operation: `profile:${method}`
         }
         document.dispatchEvent(new CustomEvent(diagnosticEvent, { detail }))
-        if (detail.error) throw new Error(detail.error)
+        if (detail.error) {
+          throw new Error(detail.error)
+        }
         return detail.response as T
       }
 
@@ -1986,7 +2012,9 @@ const installLocalInteractionProbe = async (
             result:
               { snapshot: LocalInteractionProbeSnapshot } | { error: Error }
           ): void => {
-            if (settled) return
+            if (settled) {
+              return
+            }
             settled = true
             globalThis.clearTimeout(timeoutId)
             observer?.disconnect()
@@ -1998,7 +2026,9 @@ const installLocalInteractionProbe = async (
           }
           const inspectLoadingMutation = (): void => {
             frameScheduled = false
-            if (settled) return
+            if (settled) {
+              return
+            }
             observedFrames += 1
             const snapshot = read()
             try {
@@ -2041,7 +2071,9 @@ const installLocalInteractionProbe = async (
             }
           }
           const scheduleLoadingInspection = (): void => {
-            if (settled || frameScheduled) return
+            if (settled || frameScheduled) {
+              return
+            }
             frameScheduled = true
             requestAnimationFrame(inspectLoadingMutation)
           }
@@ -2088,7 +2120,9 @@ const installLocalInteractionProbe = async (
             result:
               { snapshot: LocalInteractionProbeSnapshot } | { error: Error }
           ): void => {
-            if (settled) return
+            if (settled) {
+              return
+            }
             settled = true
             globalThis.clearTimeout(timeoutId)
             observer?.disconnect()
@@ -2100,7 +2134,9 @@ const installLocalInteractionProbe = async (
           }
           const inspectProgressMutation = (): void => {
             frameScheduled = false
-            if (settled) return
+            if (settled) {
+              return
+            }
             const snapshot = read()
             if (
               snapshot.turnOutcome !== null ||
@@ -2135,7 +2171,9 @@ const installLocalInteractionProbe = async (
             }
           }
           const scheduleProgressInspection = (): void => {
-            if (settled || frameScheduled) return
+            if (settled || frameScheduled) {
+              return
+            }
             frameScheduled = true
             requestAnimationFrame(inspectProgressMutation)
           }
@@ -2201,7 +2239,9 @@ const installLocalInteractionProbe = async (
             promise?: Promise<unknown>
           }>
         ).detail
-        if (!detail) return
+        if (!detail) {
+          return
+        }
         detail.promise = Promise.resolve().then(() => {
           switch (detail.operation) {
             case 'focus':

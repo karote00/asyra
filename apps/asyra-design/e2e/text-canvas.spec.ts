@@ -12,7 +12,9 @@ const editor = (page: Page) =>
   page.getByRole('textbox', { name: 'Canvas text editor', exact: true })
 const editorBounds = async (page: Page) => {
   const bounds = await editor(page).boundingBox()
-  if (!bounds) throw new Error('Missing visible text editor')
+  if (!bounds) {
+    throw new Error('Missing visible text editor')
+  }
   return bounds
 }
 const readTexts = (page: Page) =>
@@ -33,7 +35,9 @@ const startText = async (page: Page, drag = false) => {
     await page.mouse.down()
     await page.mouse.move(760, 420, { steps: 4 })
     await page.mouse.up()
-  } else await page.mouse.click(500, 300)
+  } else {
+    await page.mouse.click(500, 300)
+  }
   await expect(editor(page)).toBeFocused()
 }
 
@@ -227,11 +231,15 @@ test('Rotated text editor follows Canvas projection and preserves geometry', asy
     const node = document.querySelector<HTMLTextAreaElement>(
       'textarea[aria-label="Canvas text editor"]'
     )
-    if (!node) throw new Error('Missing Canvas text editor')
+    if (!node) {
+      throw new Error('Missing Canvas text editor')
+    }
     const matrix = new DOMMatrix(getComputedStyle(node).transform)
     const project = (x: number, y: number) => {
       const point = core.elementLocalToWorkspace(id, { x, y })
-      if (!point) throw new Error('Missing text projection')
+      if (!point) {
+        throw new Error('Missing text projection')
+      }
       return core.workspaceToCanvas(point)
     }
     return {
@@ -449,8 +457,11 @@ test('Editing replaces the old glyph projection and cancellation restores it wit
       .raw()
       .toBuffer({ resolveWithObject: true })
     let count = 0
-    for (let i = 0; i < data.length; i += info.channels)
-      if (data[i] > 180 && data[i + 1] < 80 && data[i + 2] < 80) count++
+    for (let i = 0; i < data.length; i += info.channels) {
+      if (data[i] > 180 && data[i + 1] < 80 && data[i + 2] < 80) {
+        count++
+      }
+    }
     return count
   }
   await expect.poll(countRed).toBeGreaterThan(0)

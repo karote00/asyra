@@ -16,7 +16,7 @@ it('retains all 3264 individually sized leaves while sharing one near and one di
   )
   expect(leaf().indices.length / 3).toBe(256)
   expect(leaf('far').indices.length / 3).toBe(32)
-  for (const p of parts)
+  for (const p of parts) {
     for (const instance of requiredSpecValue(p.instances, 'p.instances')) {
       expect(Math.hypot(...spatialInstance(instance).rotation)).toBeCloseTo(
         1,
@@ -25,6 +25,7 @@ it('retains all 3264 individually sized leaves while sharing one near and one di
       expect(instance.scale).toBeGreaterThanOrEqual(0.65)
       expect(instance.scale).toBeLessThanOrEqual(2.2)
     }
+  }
 })
 it('bounds distant leaf silhouette deviation plus bulge below the declared geometric error', () => {
   const near = leaf(),

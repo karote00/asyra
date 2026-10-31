@@ -15,8 +15,9 @@ export const memoryStore = () => {
     read: async (key) => entries.get(key),
     list: async (limit) => [...entries.values()].slice(0, limit),
     write: vi.fn(async ({ key, expectedVersion, record }) => {
-      if (entries.get(key)?.version !== expectedVersion)
+      if (entries.get(key)?.version !== expectedVersion) {
         throw new Error('Storage conflict')
+      }
       const entry = { key, version: String(++serial), record }
       entries.set(key, entry)
       return entry

@@ -13,7 +13,9 @@ export interface RunComparison {
 const record = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value)
 const lexical = (a: string, b: string) => {
-  if (a === b) return 0
+  if (a === b) {
+    return 0
+  }
   return a < b ? -1 : 1
 }
 
@@ -80,12 +82,14 @@ function comparableInputs(run: RunRecord) {
 }
 
 export function compareRuns(input: readonly RunRecord[]): RunComparison {
-  if (input.length < 2 || input.length > 3)
+  if (input.length < 2 || input.length > 3) {
     throw new Error('Select two or three runs for comparison')
+  }
   const runs = input.map(validateRunRecord)
   const inputs = runs.map(comparableInputs)
-  if (new Set(runs.map((run) => run.result.runId)).size !== runs.length)
+  if (new Set(runs.map((run) => run.result.runId)).size !== runs.length) {
     throw new Error('Select distinct runs')
+  }
   const differs = (values: readonly unknown[]) =>
     new Set(values.map(stableJson)).size > 1
   const incompatibilities: string[] = []
@@ -111,21 +115,29 @@ export function compareRuns(input: readonly RunRecord[]): RunComparison {
     ],
     ['Analysis intervals differ', inputs.map((input) => input.interval)],
     ['Source units differ', inputs.map((input) => input.sourceUnits)]
-  ] as const)
-    if (differs(values)) incompatibilities.push(label)
+  ] as const) {
+    if (differs(values)) {
+      incompatibilities.push(label)
+    }
+  }
   const differences: RunDifference[] = []
   const walk = (path: string, values: readonly unknown[]) => {
-    if (!differs(values)) return
+    if (!differs(values)) {
+      return
+    }
     if (values.every(record)) {
       const keys = [
         ...new Set(values.flatMap((value) => Object.keys(value)))
       ].sort()
-      for (const key of keys)
+      for (const key of keys) {
         walk(
           path ? `${path}.${key}` : key,
           values.map((value) => value[key])
         )
-    } else differences.push({ path, values })
+      }
+    } else {
+      differences.push({ path, values })
+    }
   }
   walk('', inputs)
   return {

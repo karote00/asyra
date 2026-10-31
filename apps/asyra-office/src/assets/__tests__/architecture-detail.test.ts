@@ -10,13 +10,18 @@ function frontDepth(mesh: Mesh, x: number, z: number) {
       .slice(i, i + 3)
       .map((id) => mesh.positions.slice(id * 3, id * 3 + 3))
     const det = (b[2] - c[2]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[2] - c[2])
-    if (Math.abs(det) < 1e-12) continue
+    if (Math.abs(det) < 1e-12) {
+      continue
+    }
     const u = ((b[2] - c[2]) * (x - c[0]) + (c[0] - b[0]) * (z - c[2])) / det
     const v = ((c[2] - a[2]) * (x - c[0]) + (a[0] - c[0]) * (z - c[2])) / det
-    if (u >= -1e-9 && v >= -1e-9 && u + v <= 1 + 1e-9)
+    if (u >= -1e-9 && v >= -1e-9 && u + v <= 1 + 1e-9) {
       hits.push(u * a[1] + v * b[1] + (1 - u - v) * c[1])
+    }
   }
-  if (!hits.length) throw new Error('Door ray misses mesh')
+  if (!hits.length) {
+    throw new Error('Door ray misses mesh')
+  }
   return Math.min(...hits)
 }
 
@@ -71,14 +76,17 @@ it('keeps flat frame faces from sharing a shading vertex across right-angle edge
         u[0] * v[1] - u[1] * v[0]
       ],
       l = Math.hypot(...normal)
-    for (const id of ids)
+    for (const id of ids) {
       normals.set(id, [...(normals.get(id) ?? []), normal.map((n) => n / l)])
+    }
   }
-  for (const list of normals.values())
-    for (const normal of list)
+  for (const list of normals.values()) {
+    for (const normal of list) {
       expect(
         normal.reduce((sum, v, k) => sum + v * list[0][k], 0)
       ).toBeGreaterThan(0.999)
+    }
+  }
 })
 it('retains rounded appliance housing corners when subtracting the serving bay', () => {
   const mesh = requiredSpecValue(
@@ -99,15 +107,18 @@ it('keeps the appliance side skin intact away from the front cavity', () => {
     'housing'
   ).mesh
   const side = { ...housing, positions: [] as number[] }
-  for (let i = 0; i < housing.positions.length; i += 3)
+  for (let i = 0; i < housing.positions.length; i += 3) {
     side.positions.push(
       housing.positions[i + 1],
       -housing.positions[i],
       housing.positions[i + 2]
     )
-  for (const y of [-0.08, -0.04, 0, 0.04, 0.08])
-    for (const z of [0.05, 0.1, 0.15, 0.2, 0.26])
+  }
+  for (const y of [-0.08, -0.04, 0, 0.04, 0.08]) {
+    for (const z of [0.05, 0.1, 0.15, 0.2, 0.26]) {
       expect(frontDepth(side, y, z), `${y},${z}`).toBeCloseTo(-0.1, 6)
+    }
+  }
 })
 it('does not leave overlapping or reversed faces on the flat appliance side', () => {
   const mesh = requiredSpecValue(
@@ -119,7 +130,9 @@ it('does not leave overlapping or reversed faces on the flat appliance side', ()
     const [a, b, c] = mesh.indices
       .slice(i, i + 3)
       .map((id) => mesh.positions.slice(id * 3, id * 3 + 3))
-    if (![a, b, c].every((p) => Math.abs(p[0] - 0.1) < 1e-9)) continue
+    if (![a, b, c].every((p) => Math.abs(p[0] - 0.1) < 1e-9)) {
+      continue
+    }
     const cross = (b[1] - a[1]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[1] - a[1])
     expect(cross).toBeGreaterThan(-1e-12)
     area += cross / 2
@@ -149,7 +162,9 @@ it('preserves exterior winding and area after GPU float32 conversion', () => {
     const exact = normal(points),
       gpu = normal(points.map((p) => p.map(Math.fround)))
     const dot = exact.reduce((s, v, k) => s + v * gpu[k], 0)
-    if (dot <= 0 || Math.hypot(...gpu) < Math.hypot(...exact) * 0.5) unstable++
+    if (dot <= 0 || Math.hypot(...gpu) < Math.hypot(...exact) * 0.5) {
+      unstable++
+    }
   }
   expect(unstable).toBe(0)
 })
@@ -165,20 +180,27 @@ it('preserves every untouched rounded housing surface through subtraction', () =
   const dot = (a: number[], b: number[]) =>
     a.reduce((s, v, k) => s + v * b[k], 0)
   const faces = []
-  for (let i = 0; i < mesh.indices.length; i += 3)
+  for (let i = 0; i < mesh.indices.length; i += 3) {
     faces.push(
       mesh.indices
         .slice(i, i + 3)
         .map((id) => mesh.positions.slice(id * 3, id * 3 + 3))
     )
+  }
   const missing: number[][] = []
   for (let i = 0; i < source.indices.length; i += 3) {
     const points = source.indices
       .slice(i, i + 3)
       .map((id) => source.positions.slice(id * 3, id * 3 + 3))
     const p = points[0].map((_, k) => points.reduce((s, v) => s + v[k], 0) / 3)
-    if (Math.abs(p[0]) < 0.072 && p[1] < -0.032 && p[2] > 0.023 && p[2] < 0.207)
+    if (
+      Math.abs(p[0]) < 0.072 &&
+      p[1] < -0.032 &&
+      p[2] > 0.023 &&
+      p[2] < 0.207
+    ) {
       continue
+    }
     const found = faces.some(([a, b, c]) => {
       const u = sub(b, a),
         v = sub(c, a),
@@ -189,13 +211,17 @@ it('preserves every untouched rounded housing surface through subtraction', () =
         uw = dot(u, w),
         vw = dot(v, w),
         det = uu * vv - uv * uv
-      if (Math.abs(det) < 1e-24) return false
+      if (Math.abs(det) < 1e-24) {
+        return false
+      }
       const s = (uw * vv - vw * uv) / det,
         t = (vw * uu - uw * uv) / det
       const d = Math.hypot(...w.map((q, k) => q - s * u[k] - t * v[k]))
       return d < 1e-7 && s >= -1e-7 && t >= -1e-7 && s + t <= 1 + 1e-7
     })
-    if (!found) missing.push(p)
+    if (!found) {
+      missing.push(p)
+    }
   }
   expect(missing).toEqual([])
 })
@@ -217,7 +243,9 @@ it('keeps every preserved exterior triangle facing out of the rounded source', (
     const d = local.map(
       (v, k) => v - Math.max(-h[k] + r, Math.min(h[k] - r, v))
     )
-    if (Math.hypot(...d) < r - 0.004) continue
+    if (Math.hypot(...d) < r - 0.004) {
+      continue
+    }
     const u = b.map((v, k) => v - a[k]),
       v = c.map((v, k) => v - a[k])
     const n = [
@@ -225,7 +253,9 @@ it('keeps every preserved exterior triangle facing out of the rounded source', (
       u[2] * v[0] - u[0] * v[2],
       u[0] * v[1] - u[1] * v[0]
     ]
-    if (n.reduce((s, v, k) => s + v * d[k], 0) <= 0) bad.push(p)
+    if (n.reduce((s, v, k) => s + v * d[k], 0) <= 0) {
+      bad.push(p)
+    }
   }
   expect(bad).toEqual([])
 })
@@ -238,13 +268,14 @@ it('closes every rounded box edge before Boolean operations', () => {
       .slice(id * 3, id * 3 + 3)
       .map((v) => v.toFixed(9))
       .join(',')
-  for (let i = 0; i < mesh.indices.length; i += 3)
+  for (let i = 0; i < mesh.indices.length; i += 3) {
     for (let j = 0; j < 3; j++) {
       const k = [key(mesh.indices[i + j]), key(mesh.indices[i + ((j + 1) % 3)])]
         .sort()
         .join('|')
       edges.set(k, (edges.get(k) ?? 0) + 1)
     }
+  }
   expect([...edges].filter(([, count]) => count !== 2)).toEqual([])
 })
 
@@ -265,19 +296,22 @@ it('cuts sink door fields and six blind tray slots instead of overlaying dark ma
       'tray'
     ).mesh
     const top = { ...tray, positions: [] as number[] }
-    for (let i = 0; i < tray.positions.length; i += 3)
+    for (let i = 0; i < tray.positions.length; i += 3) {
       top.positions.push(
         tray.positions[i],
         -tray.positions[i + 2],
         tray.positions[i + 1]
       )
+    }
     for (const x of asset === 'coffee-machine'
       ? [-0.046, 0, 0.046]
-      : [-0.067, 0, 0.067])
+      : [-0.067, 0, 0.067]) {
       for (const y of asset === 'coffee-machine'
         ? [-0.11, -0.075]
-        : [-0.155, -0.123])
+        : [-0.155, -0.123]) {
         expect(frontDepth(top, x, y)).toBeCloseTo(-(z - 0.002), 7)
+      }
+    }
   }
 })
 it('constructs all four bottle ribs from the owner photo profile', () => {
@@ -287,9 +321,11 @@ it('constructs all four bottle ribs from the owner photo profile', () => {
   ).mesh
   for (const z of [0.812, 0.866, 1.024, 1.08]) {
     const radius = []
-    for (let i = 0; i < mesh.positions.length; i += 3)
-      if (Math.abs(mesh.positions[i + 2] - z) < 1e-8)
+    for (let i = 0; i < mesh.positions.length; i += 3) {
+      if (Math.abs(mesh.positions[i + 2] - z) < 1e-8) {
         radius.push(Math.hypot(mesh.positions[i], mesh.positions[i + 1]))
+      }
+    }
     expect(radius.length).toBeGreaterThanOrEqual(64)
     expect(Math.max(...radius)).toBeCloseTo(0.131, 8)
   }
@@ -306,13 +342,16 @@ it('emits a conforming closed housing after cutting instead of T-junction cracks
       .slice(id * 3, id * 3 + 3)
       .map((v) => Math.round(v * 1e8))
       .join(',')
-  for (let i = 0; i < mesh.indices.length; i += 3)
+  for (let i = 0; i < mesh.indices.length; i += 3) {
     for (let j = 0; j < 3; j++) {
       const a = key(mesh.indices[i + j]),
         b = key(mesh.indices[i + ((j + 1) % 3)])
-      if (a === b) continue
+      if (a === b) {
+        continue
+      }
       const k = [a, b].sort().join('|')
       edges.set(k, (edges.get(k) ?? 0) + 1)
     }
+  }
   expect([...edges.values()].filter((n) => n !== 2).length).toBe(0)
 })

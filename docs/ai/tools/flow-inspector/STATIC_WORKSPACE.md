@@ -5,7 +5,7 @@
 The Static Workspace is one directly openable browser surface for discovering
 and navigating the Flow Inspectors that still describe the current Asyra
 project. A persistent sidebar lists the current catalog; selecting an entry
-loads that Inspector in an isolated main frame and updates its stable public route.
+mounts that Inspector in a keyed React subtree and updates its stable public route.
 
 The workspace is a static documentation tool. It does not report runtime
 health, execute commands, ingest test results, or decide CI acceptance.
@@ -20,16 +20,14 @@ The current independently versioned workspace artifact is `0.2.0`.
   discovery, source loading, catalog validation, and generated browser bundle
   output.
 - `tools/flow-inspector/src/` owns the React sidebar, search, group collapse,
-  Overview, public path/hash-route parsing, selection, and keyed target-frame navigation.
+  Overview, public path/hash-route parsing, selection, and keyed React composition.
 - `tools/flow-inspector/vite.config.ts` owns the classic-script static build
   emitted under `tools/flow-inspector/workspace/generated/`.
-- `tools/flow-inspector/workspace/target.js` owns selected-target lookup and
-  isolated target rendering.
-- `tools/flow-inspector/viewer.js` and `tools/flow-inspector/viewer.css` remain
-  the only shared schema version 2 renderer and presentation owners.
-- `tools/flow-inspector/workspace/legacy-viewer.js` may present pre-v2 or
-  plan-specific Inspector data read-only. It must not normalize that data into
-  schema version 2 or invent missing semantics.
+- `tools/flow-inspector/src/architecture/` owns schema version 2 presentation,
+  admission, selection, details and viewport interaction in React.
+- `tools/flow-inspector/src/ContractDocument.tsx` renders the original fields
+  of explicitly registered contract documents. It performs no schema conversion
+  and invents no missing architecture semantics.
 - Target data remains the semantic authority. Generated workspace data is a
   verified snapshot, never a second authored contract.
 
@@ -39,8 +37,8 @@ Framework and App runtimes must not import or depend on any workspace file.
 
 The generator searches exactly `tools/flow-inspector/inspectors/` for files
 named `*flow-inspector.data.cjs` or `*flow-inspector.data.js`. The same
-tool-owned directory contains standalone HTML entries and its `__tests__/`
-directory contains target contract tests. Framework and App `plans/`
+tool-owned directory's `__tests__/` directory contains target contract tests.
+There are no generated standalone renderer HTML files. Framework and App `plans/`
 directories are forbidden artifact roots.
 
 Every discovered file must appear exactly once as included or excluded.
@@ -67,12 +65,12 @@ inclusion makes a plan active.
 Each generated catalog entry contains only discovery and presentation data:
 
 - stable catalog `id` and a unique public `slug`;
-- schema kind: `flow-v2`, `legacy-v1`, or `plan-contract`;
-- source data path and optional existing standalone HTML path;
+- declared presentation kind: `flow-v2` or `contract-document`;
+- source data path;
 - title, group, subgroup, lifecycle label, order, and search labels; and
-- the exact source snapshot consumed by the isolated target frame.
+- the exact source snapshot consumed by React.
 
-For schema version 2, catalog `id` must equal `target.id`. Legacy ids are
+For schema version 2, catalog `id` must equal `target.id`. Document ids are
 deterministically derived from the source filename unless the catalog declares
 an explicit stable override. Catalog entries must never duplicate authored
 steps, routes, artifacts, invariants, or acceptance semantics.
@@ -95,11 +93,11 @@ JSON-safe serialization. Generator drift is a formal failure.
 - Direct-open static and Vite entries retain `workspace.html#inspector=<catalog-id>`
   hash navigation and their relative assets; path routing is never inferred merely
   from HTTP hosting.
-- On the path-enabled host, legacy `workspace.html#inspector=<catalog-id>` and
+- On the path-enabled host, workspace `workspace.html#inspector=<catalog-id>` and
   `/#inspector=<catalog-id>` links resolve the original id and replace the address
   with its canonical short route without adding history. The server cannot read
   fragments; the workspace performs this conversion. Unknown ids stay errors.
-- Path routes consume the exact generated slug, while the target frame and
+- Path routes consume the exact generated slug, while React props and
   evidence retain the original catalog id. An unknown path cannot select a flow
   through a hash. Selecting a flow pushes one history entry; reselecting it does
   not. Back, forward, direct opening, and reload restore the matching selection.
@@ -107,16 +105,14 @@ JSON-safe serialization. Generator drift is a formal failure.
   route or target data.
 - Unknown, excluded, or malformed ids render an explicit error and never fall
   back to another Inspector.
-- The main target uses a React-keyed iframe. Every selection navigates a fresh
-  iframe to
-  `target.html?inspector=<catalog-id>#inspector=<catalog-id>`. The query makes
-  each id a cross-document navigation identity; the matching hash remains the
-  target route identity. A query/hash mismatch is an explicit error.
-- The target frame reads only the generated bundle entry selected by the hash.
-  It clears no parent state and cannot mutate catalog membership.
+- The main target uses a React subtree keyed by catalog identity. Switching
+  targets disposes the previous subscriptions and local selection state.
+  There is no iframe, target document, message bridge, or global selected entry.
+- React receives only the admitted generated bundle entry. It does not mutate
+  catalog membership or source data.
 - Rapid switching must leave only the final selected target visible.
 - Document, source, specification, and related Inspector links open in a new
-  tab without replacing the selected target frame or losing canvas state.
+  tab without replacing the selected React view or losing canvas state.
 
 ## Supported Behavior
 
@@ -129,34 +125,29 @@ JSON-safe serialization. Generator drift is a formal failure.
 - catalog groups collapse only through a visible, labeled arrow button; group
   text and counts do not toggle the list;
 - independently toggleable catalog, v2 header, and v2 step-detail panels with
-  close controls in each panel's upper-right corner and three persistent 24 px
-  toggle controls positioned 12 px inside the scrollable and scalable flow
-  viewport's upper-left corner; the flow reserves safe space so those controls
-  never cover its content, and the controls do not move with scroll or scale;
+  persistent workspace controls outside the scalable canvas;
 - mouse and keyboard-accessible Inspector selection;
 - narrow v2 viewers (at most 900 CSS pixels) keep one primary surface visible:
   the canvas or a full-width, independently scrolling step detail. Selecting a
   card opens its detail; a fixed Back to flow control restores the canvas and
   selected-card focus without resetting pan or zoom. Catalog navigation becomes
   an overlay at narrow workspace widths and closes after selection. Overview
-  and route errors retain a catalog reopen control. Parent-originated panel
-  synchronization is applied without echoing it back; user actions report their
-  new state. Desktop side-by-side panels remain available;
+  and route errors retain a catalog reopen control. React state owns panel
+  visibility. Desktop side-by-side panels remain available;
 - trackpad pinch zoom from 20% through 250% inside the v2 flow viewport, with
   scale-matched scroll bounds, a visible reset control, and `Command+0`
   restoration to 100%;
-- explicit `flowfitrequest` DOM requests with step IDs fit rendered cards with
-  padding through the same zoom owner and reveal the canvas (20% minimum, at most
-  100% for fit); absent
-  cards are ignored, and reset/manual zoom remain authoritative afterward;
+- explicit React focus requests fit rendered step IDs with padding through the
+  viewport owner; absent cards are ignored, and reset/manual zoom remain
+  authoritative afterward;
 - `Command+1` in the canvas document restores All lanes and fits the union of
   every card, centered with at least 24 CSS pixels from the viewport's outer
   border; the limiting axis has exactly 24 pixels per side (subpixel rounding
   allowed). Padding is measured after zoom, not in graph coordinates. Fit-all
   may exceed manual zoom limits to keep all cards visible. Editable controls
   retain ordinary typing. Page-delivered Command+1/0 work consistently across
-  catalog, search, canvas and details; the workspace forwards commands only to
-  its active v2 target. Shift+1/0 outside editable controls and visible viewer
+  catalog, search, canvas and details through the mounted React viewport.
+  Shift+1/0 outside editable controls and visible viewer
   buttons are browser-independent alternatives. Browser chrome/address-bar focus
   is outside the page's keyboard scope. `Command+0` resets scale and fit translation;
 - stable deep links and reload restoration;
@@ -164,9 +155,8 @@ JSON-safe serialization. Generator drift is a formal failure.
 - concise step-detail summaries with clearly separated categories and a
   collapsed full-contract view for execution rules, ownership boundaries, and
   related contract data;
-- read-only compatibility presentation for included legacy data; and
-- preservation and renderer synchronization of every existing standalone
-  entry without adding redundant standalone-navigation chrome to the workspace.
+- read-only React presentation of explicitly registered contract documents; and
+- one shared React build, with no obsolete standalone entry or compatibility renderer.
 
 ## Unsupported Behavior
 
@@ -184,20 +174,19 @@ JSON-safe serialization. Generator drift is a formal failure.
    catalog without claiming runtime status.
 2. Selecting Framework, App, Release, and Tool entries updates the route and
    renders the selected target in the same main region.
-3. A short hosted deep link, legacy hash link, reload, and browser back/forward
-   restore the selected Inspector. Legacy conversion adds no history entry.
+3. A short hosted deep link, static workspace hash link, reload, and browser
+   back/forward restore the selected Inspector without duplicate history entries.
 4. Search filters sidebar entries without changing selection or catalog truth.
 5. Rapidly switching targets cannot retain the previous target's title, flow,
    details, links, or globals.
 6. A duplicate id, missing path, mismatched v2 target id, unclassified
    discovery candidate, or stale generated snapshot fails formal validation.
 7. An unknown or excluded route reports a clear error without fallback.
-8. Existing standalone HTML remains directly openable and renderer
-   synchronized.
-9. Included legacy data is visibly labeled compatibility content and is never
-   presented as schema version 2.
+8. The workspace HTML directly opens the checked-in React build without a server.
+9. Registered contract documents retain all authored fields and are never
+   presented as schema version 2 architectures.
 10. The complete static artifact works without a local server.
-11. Panel controls remain fixed inside the flow viewport while its content
+11. Panel controls remain outside the scalable flow while its content
     scrolls or scales, and every control toggles its owner panel in both
     directions.
 12. Step ownership is visibly neutral metadata, while detail content defaults
@@ -212,9 +201,9 @@ JSON-safe serialization. Generator drift is a formal failure.
 - sidebar, search, collapse, Overview, deep-link, reload, unknown-route,
   rapid-switch, and isolation cases pass formal DOM tests;
 - every catalog target renders through its declared renderer kind;
-- all retained standalone entries pass direct-open and renderer-sync gates;
+- direct-open React, served React, removed-asset and installed-package gates pass;
 - synchronized browser inspection confirms desktop and narrow viewport
   usability, including v2 flow scrolling, pinch zoom, and exact zoom reset; and
 - package `test`, `test:local`, and `test:ci` run the React suite plus complete
-  catalog, workspace, renderer, and standalone Node contract gates; and
+  catalog, workspace, architecture, and React delivery Node contract gates; and
 - preview documentation contains no dynamic Control Plane claim.

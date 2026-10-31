@@ -117,8 +117,9 @@ export const calculateEllipseBounds = ({
   height,
   rotation = 0
 }: GeometryBounds & { rotation?: number }): GeometryBounds => {
-  if (![x, y, width, height, rotation].every(Number.isFinite))
+  if (![x, y, width, height, rotation].every(Number.isFinite)) {
     throw new Error('Ellipse bounds require finite geometry')
+  }
   const c = Math.cos(rotation),
     s = Math.sin(rotation)
   const cx = x + (c * width) / 2 - (s * height) / 2

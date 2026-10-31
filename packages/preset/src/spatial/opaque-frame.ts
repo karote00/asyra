@@ -52,20 +52,25 @@ void main() {
         object instanceof THREE.Line ||
         object instanceof THREE.Points ||
         object instanceof THREE.Sprite
-      ))
+      )) {
         return
+      }
       const materials = Array.isArray(object.material)
         ? object.material
         : [object.material]
       for (const material of materials) {
-        if (!material.visible) continue
+        if (!material.visible) {
+          continue
+        }
         const optical =
           material instanceof THREE.MeshPhysicalMaterial &&
           material.transmission > 0
         if (material.transparent || optical) {
           excluded.add(material)
           changingCasters ||= object.castShadow
-        } else opaque.add(material)
+        } else {
+          opaque.add(material)
+        }
       }
     })
     // Native rendering owns cases whose shadow caster set would change.
@@ -98,29 +103,42 @@ void main() {
       shadow: renderer.shadowMap?.autoUpdate
     }
     try {
-      for (const material of excluded) material.visible = false
+      for (const material of excluded) {
+        material.visible = false
+      }
       renderer.toneMapping = THREE.NoToneMapping
       renderer.autoClear = true
       renderer.setRenderTarget(this.target)
       draw(scene, camera)
-      for (const material of excluded) material.visible = true
+      for (const material of excluded) {
+        material.visible = true
+      }
       renderer.toneMapping = previous.tone
       renderer.autoClear = previous.clear
       renderer.setRenderTarget(previous.target, previous.face, previous.mip)
       // Prepass used the complete unchanged caster set; downstream visibility
       // changes select color work only, never new semantic shadow inputs.
-      if (renderer.shadowMap) renderer.shadowMap.autoUpdate = false
-      for (const material of opaque) material.visible = false
+      if (renderer.shadowMap) {
+        renderer.shadowMap.autoUpdate = false
+      }
+      for (const material of opaque) {
+        material.visible = false
+      }
       scene.add(this.quad)
       consume()
     } finally {
       this.quad.removeFromParent()
-      for (const material of excluded) material.visible = true
-      for (const material of opaque) material.visible = true
+      for (const material of excluded) {
+        material.visible = true
+      }
+      for (const material of opaque) {
+        material.visible = true
+      }
       renderer.toneMapping = previous.tone
       renderer.autoClear = previous.clear
-      if (renderer.shadowMap && previous.shadow !== undefined)
+      if (renderer.shadowMap && previous.shadow !== undefined) {
         renderer.shadowMap.autoUpdate = previous.shadow
+      }
       renderer.setRenderTarget(previous.target, previous.face, previous.mip)
     }
   }

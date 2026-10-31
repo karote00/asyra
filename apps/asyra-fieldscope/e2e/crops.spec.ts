@@ -46,7 +46,9 @@ for (const [species, rootX, height, stage] of [
       .toBeGreaterThan(1300)
     await page.getByRole('button', { name: '走道內部', exact: true }).click()
     const bounds = await page.getByTestId('scene').boundingBox()
-    if (!bounds) throw new Error('Missing viewport')
+    if (!bounds) {
+      throw new Error('Missing viewport')
+    }
     const camera = cameraPreset('inside')
     const back = new Vector3(...camera.position)
       .sub(new Vector3(...camera.target))

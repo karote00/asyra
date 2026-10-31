@@ -9,8 +9,11 @@ async function frames(page: import('@playwright/test').Page, count: number) {
     (remaining) =>
       new Promise<void>((resolve) => {
         function next() {
-          if (--remaining <= 0) resolve()
-          else requestAnimationFrame(next)
+          if (--remaining <= 0) {
+            resolve()
+          } else {
+            requestAnimationFrame(next)
+          }
         }
         requestAnimationFrame(next)
       }),
@@ -27,7 +30,9 @@ test('held camera input progresses without repeat', async ({ page }, info) => {
     .waitFor()
   const canvas = page.locator('canvas')
   const bounds = await canvas.boundingBox()
-  if (!bounds) throw new Error('Scene viewport missing')
+  if (!bounds) {
+    throw new Error('Scene viewport missing')
+  }
   await page.mouse.move(
     bounds.x + bounds.width / 2,
     bounds.y + bounds.height / 2
@@ -74,8 +79,11 @@ test('release settles without continued movement', async ({ page }, info) => {
       new Promise<void>((resolve) => {
         const start = performance.now()
         function next(now: number) {
-          if (now - start >= 800) resolve()
-          else requestAnimationFrame(next)
+          if (now - start >= 800) {
+            resolve()
+          } else {
+            requestAnimationFrame(next)
+          }
         }
         requestAnimationFrame(next)
       })

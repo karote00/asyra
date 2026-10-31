@@ -15,7 +15,9 @@ it.each(
     const pair = snapshot.pairs.find(
       (pair) => pair.a.bodyId === 'example:joint-2' && pair.b.bodyId === target
     )
-    if (!pair) throw new Error('Missing representative pair')
+    if (!pair) {
+      throw new Error('Missing representative pair')
+    }
     const context = new OriginalMeshQuery()
     const query = {
       workcell: snapshot.workcell,

@@ -2,7 +2,9 @@ import type { Mesh, Vec } from './geometry'
 
 /** Area-weighted normals for ordinary meshes joining an authored-normal batch. */
 export function meshNormals(mesh: Mesh): number[] {
-  if (mesh.normals) return mesh.normals
+  if (mesh.normals) {
+    return mesh.normals
+  }
   const result = Array<number>(mesh.positions.length).fill(0)
   for (let i = 0; i < mesh.indices.length; i += 3) {
     const ids = mesh.indices.slice(i, i + 3).map((id) => id * 3)
@@ -14,13 +16,22 @@ export function meshNormals(mesh: Mesh): number[] {
       u[2] * v[0] - u[0] * v[2],
       u[0] * v[1] - u[1] * v[0]
     ]
-    for (const id of ids) for (let k = 0; k < 3; k++) result[id + k] += n[k]
+    for (const id of ids) {
+      for (let k = 0; k < 3; k++) {
+        result[id + k] += n[k]
+      }
+    }
   }
   for (let i = 0; i < result.length; i += 3) {
     const length = Math.hypot(...result.slice(i, i + 3))
     // Unreferenced pole duplicates have no incident face; their normal is unused.
-    if (!length) result[i + 2] = 1
-    else for (let k = 0; k < 3; k++) result[i + k] /= length
+    if (!length) {
+      result[i + 2] = 1
+    } else {
+      for (let k = 0; k < 3; k++) {
+        result[i + k] /= length
+      }
+    }
   }
   return result
 }
@@ -68,7 +79,9 @@ export function latheNormals(
     )
     let radial = before[0] + after[0],
       axial = before[1] + after[1]
-    if (profile[j][0] === 0) radial = 0
+    if (profile[j][0] === 0) {
+      radial = 0
+    }
     const length = Math.hypot(radial, axial)
     radial /= length
     axial /= length

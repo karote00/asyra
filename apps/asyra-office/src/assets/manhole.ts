@@ -30,15 +30,17 @@ export function manhole(): AssetPart[] {
     128
   )
   const angles = [...Array.from({ length: 129 }, (_, i) => (i * Math.PI) / 64)]
-  for (let j = 0; j < slots.count; j++)
+  for (let j = 0; j < slots.count; j++) {
     for (const delta of [
       -3, -2.2, -1.8, -1.4, -1, -0.6, -0.3, 0, 0.3, 0.6, 1, 1.4, 1.8, 2.2, 3
-    ])
+    ]) {
       angles.push(
         ((slots.firstAngleDegrees + j * slots.angleStepDegrees + delta) *
           Math.PI) /
           180
       )
+    }
+  }
   angles.sort((a, b) => a - b)
   const boundaries = relief.radialBoundariesMetres
   const radii = [
@@ -58,8 +60,9 @@ export function manhole(): AssetPart[] {
       r <= boundaries[1] ||
       (r >= boundaries[2] && r <= boundaries[3]) ||
       (r >= boundaries[4] && r <= boundaries[5])
-    )
+    ) {
       z += relief.raisedHeightMetres
+    }
     for (let j = 0; j < slots.count; j++) {
       const angle =
         ((slots.firstAngleDegrees + j * slots.angleStepDegrees) * Math.PI) / 180
@@ -72,7 +75,7 @@ export function manhole(): AssetPart[] {
     }
     return z
   }
-  for (const r of unique)
+  for (const r of unique) {
     for (const t of theta) {
       mesh.positions.push(r * Math.cos(t), r * Math.sin(t), surface(r, t))
       mesh.uvs.push(
@@ -80,15 +83,19 @@ export function manhole(): AssetPart[] {
         0.5 + (r * Math.sin(t)) / 0.66
       )
     }
-  for (let j = 0; j < unique.length - 1; j++)
+  }
+  for (let j = 0; j < unique.length - 1; j++) {
     for (let i = 0; i < n - 1; i++) {
       const a = j * n + i,
         b = a + n,
         c = a + 1,
         d = b + 1
       mesh.indices.push(a, b, d)
-      if (j > 0) mesh.indices.push(a, d, c)
+      if (j > 0) {
+        mesh.indices.push(a, d, c)
+      }
     }
+  }
   const edge = (unique.length - 1) * n,
     base = mesh.positions.length / 3
   for (const t of theta) {

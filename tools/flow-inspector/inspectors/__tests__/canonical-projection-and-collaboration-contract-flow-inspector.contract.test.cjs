@@ -106,15 +106,7 @@ test('canonical Inspector uses the current plan and retains historical reference
   )
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.specPath)))
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.inspectorPath)))
-  assert.ok(
-    fs.existsSync(
-      path.resolve(
-        __dirname,
-        '..',
-        'canonical-projection-and-collaboration-contract-flow-inspector.html'
-      )
-    )
-  )
+  require('./assert-react-catalog.cjs')(data)
   assert.ok(Object.isFrozen(data))
   assert.ok(data.steps.every(Object.isFrozen))
 
@@ -384,7 +376,7 @@ test('Inspector paths, anchors, routes, and artifacts resolve', () => {
 
   data.routes.forEach((route) => {
     assert.ok(stepIds.has(route.from), `${route.id} from`)
-    if (route.to) assert.ok(stepIds.has(route.to), `${route.id} to`)
+    if (route.to) {assert.ok(stepIds.has(route.to), `${route.id} to`)}
     route.producedArtifacts.forEach((artifactId) => {
       const artifact = artifacts.get(artifactId)
       assert.ok(artifact, `${route.id} artifact ${artifactId}`)

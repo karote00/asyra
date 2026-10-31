@@ -64,7 +64,9 @@ async function settled(service, selection) {
   for (let i = 0; i < 200; i++) {
     const value = service.nodeContext(selection.runId, selection.caseId)
       .actions[0]
-    if (value.status !== 'running') return value
+    if (value.status !== 'running') {
+      return value
+    }
     await new Promise((resolve) => setTimeout(resolve, 50))
   }
   throw new Error('Action did not settle')
@@ -77,11 +79,16 @@ test('node actions deny before effects and retain append-only attribution, dupli
     requestId: randomUUID(),
     text: '<img src=x onerror=alert(1)> investigation note'
   }
-  for (const method of ['addNodeComment', 'previewNodeRerun', 'startNodeRerun'])
+  for (const method of [
+    'addNodeComment',
+    'previewNodeRerun',
+    'startNodeRerun'
+  ]) {
     assert.throws(
       () => f.service[method](request, { id: 'viewer', capabilities: [] }),
       /not authorized/
     )
+  }
   assert.equal(
     fs.existsSync(path.join(f.directory, 'node-interactions.json')),
     false
@@ -242,8 +249,9 @@ test('cancel and shutdown settle owned execution and never restart a duplicate r
       execute: ({ signal }) =>
         new Promise((resolve) => {
           calls++
-          if (signal.aborted)
+          if (signal.aborted) {
             return resolve({ code: null, reason: 'cancelled', output: '' })
+          }
           signal.addEventListener(
             'abort',
             () => resolve({ code: null, reason: 'cancelled', output: '' }),
@@ -356,11 +364,12 @@ test('Playwright selection pins the complete producer scope and binds participan
   t.after(async () => {
     await owner.close()
     fs.rmSync(directory, { recursive: true, force: true })
-    for (const id of [record.id, newObservation].filter(Boolean))
+    for (const id of [record.id, newObservation].filter(Boolean)) {
       fs.rmSync(
         path.join(localization.observationDirectory(root), id + '.json'),
         { force: true }
       )
+    }
   })
   const selection = { runId: record.id, caseId: record.cases[0].id }
   const preview = owner.preview(selection)
@@ -377,8 +386,9 @@ test('Playwright selection pins the complete producer scope and binds participan
     },
     LOCAL_ACTOR.id
   )
-  while (owner.isActive())
+  while (owner.isActive()) {
     await new Promise((resolve) => setTimeout(resolve, 10))
+  }
   assert.ok(received)
   assert.equal(received.env.FLOW_OBSERVATION_ID, newObservation)
   const config = received.args[received.args.indexOf('--config') + 1]
@@ -404,8 +414,9 @@ test('context reads never capture source and corrupt retained interactions remai
     text: 'retained context'
   }
   f.service.addNodeComment(request, LOCAL_ACTOR)
-  for (let index = 0; index < 5; index++)
+  for (let index = 0; index < 5; index++) {
     f.service.nodeContext(request.runId, request.caseId)
+  }
   assert.equal(captures, 0)
   f.service.previewNodeRerun(f.selection, LOCAL_ACTOR)
   assert.equal(captures, 1)
@@ -507,11 +518,12 @@ test(
     let action
     t.after(async () => {
       await owner.close()
-      for (const id of [record.id, action?.resultRunId].filter(Boolean))
+      for (const id of [record.id, action?.resultRunId].filter(Boolean)) {
         fs.rmSync(
           path.join(localization.observationDirectory(root), id + '.json'),
           { force: true }
         )
+      }
     })
     const selection = { runId: record.id, caseId: record.cases[0].id }
     const preview = owner.preview(selection)
@@ -524,8 +536,9 @@ test(
       LOCAL_ACTOR.id
     )
     const deadline = Date.now() + 190000
-    while (owner.isActive() && Date.now() < deadline)
+    while (owner.isActive() && Date.now() < deadline) {
       await new Promise((resolve) => setTimeout(resolve, 100))
+    }
     action = owner.context(selection.runId, selection.caseId).actions[0]
     fs.writeFileSync(
       path.join(directory, 'action-result.json'),
@@ -715,11 +728,12 @@ test(
     let action
     t.after(async () => {
       await owner.close()
-      for (const id of [record.id, action?.resultRunId].filter(Boolean))
+      for (const id of [record.id, action?.resultRunId].filter(Boolean)) {
         fs.rmSync(
           path.join(localization.observationDirectory(root), id + '.json'),
           { force: true }
         )
+      }
     })
     const selection = { runId: record.id, caseId: record.cases[0].id }
     const preview = owner.preview(selection)
@@ -732,8 +746,9 @@ test(
       LOCAL_ACTOR.id
     )
     const deadline = Date.now() + 20000
-    while (owner.isActive() && Date.now() < deadline)
+    while (owner.isActive() && Date.now() < deadline) {
       await new Promise((resolve) => setTimeout(resolve, 50))
+    }
     action = owner.context(selection.runId, selection.caseId).actions[0]
     assert.equal(action.observedStatus, 'passed', JSON.stringify(action))
     const result = reader.get(action.resultRunId)
@@ -911,8 +926,9 @@ test('investigation summary contains one bounded read-only repair entry and pres
   assert.equal(value.rerun.originalInvocationExecutable, false)
   assert.equal(value.rerun.previewAvailable, true)
   assert.equal(value.rerun.selectedCommand.runner, 'vitest')
-  for (const key of ['source', 'comments', 'actions', 'originalReport'])
+  for (const key of ['source', 'comments', 'actions', 'originalReport']) {
     assert.equal(Object.hasOwn(value, key), false)
+  }
   assert.equal(executions, 0)
   fs.unlinkSync(
     path.join(localization.observationDirectory(f.root), f.record.id + '.json')

@@ -31,8 +31,8 @@ it.each([
       camera.position.fromArray(projected.position)
       camera.lookAt(...projected.target)
       camera.updateMatrixWorld(true)
-      for (const x of [bounds.min[0], bounds.max[0]])
-        for (const y of [bounds.min[1], bounds.max[1]])
+      for (const x of [bounds.min[0], bounds.max[0]]) {
+        for (const y of [bounds.min[1], bounds.max[1]]) {
           for (const z of [bounds.min[2], bounds.max[2]]) {
             const point = new Vector3(x, y, z).project(camera)
             const px = ((point.x + 1) * width) / 2,
@@ -44,6 +44,8 @@ it.each([
             expect(point.z).toBeGreaterThan(-1)
             expect(point.z).toBeLessThan(1)
           }
+        }
+      }
     }
   }
 )
@@ -81,7 +83,9 @@ it('fits translated and rotated instances while reading model vertices only once
   let reads = 0
   const positions = new Proxy([0, 0, 0, 2, 0, 0, 0, 1, 3], {
     get(target, key, receiver) {
-      if (typeof key === 'string' && /^\d+$/.test(key)) reads++
+      if (typeof key === 'string' && /^\d+$/.test(key)) {
+        reads++
+      }
       return Reflect.get(target, key, receiver)
     }
   })
@@ -119,16 +123,20 @@ it('matches explicit box corners for arbitrary instance yaw and translations', (
   }))
   const offset = [6, -4, 8] as const
   const corners: Vector3[] = []
-  for (const instance of instances)
-    for (const x of [-2, 4])
-      for (const y of [-1, 5])
-        for (const z of [-3, 7])
+  for (const instance of instances) {
+    for (const x of [-2, 4]) {
+      for (const y of [-1, 5]) {
+        for (const z of [-3, 7]) {
           corners.push(
             new Vector3(x, y, z)
               .applyAxisAngle(new Vector3(0, 1, 0), instance.yaw)
               .add(new Vector3(...instance.position))
               .add(new Vector3(...offset))
           )
+        }
+      }
+    }
+  }
   const bounds = measureScene([
     {
       id: 'rotated',
@@ -162,7 +170,9 @@ it('reuses immutable model extrema across placement edits while invalidating cha
   let reads = 0
   const positions = new Proxy(Object.freeze([0, 0, 0, 2, 0, 0, 0, 1, 3]), {
     get(target, key, receiver) {
-      if (typeof key === 'string' && /^\d+$/.test(key)) reads++
+      if (typeof key === 'string' && /^\d+$/.test(key)) {
+        reads++
+      }
       return Reflect.get(target, key, receiver)
     }
   })
@@ -186,7 +196,9 @@ it('reuses immutable model extrema across placement edits while invalidating cha
   }
   const cache = new SpatialBoundsOwner()
   const admitted = readSpatialDescriptor(mesh.descriptor)
-  if (admitted.kind !== 'mesh') throw new Error('Expected mesh')
+  if (admitted.kind !== 'mesh') {
+    throw new Error('Expected mesh')
+  }
   mesh.descriptor = admitted as typeof mesh.descriptor
   measureScene([mesh], cache)
   expect(reads).toBe(9)

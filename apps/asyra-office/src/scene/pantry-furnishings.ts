@@ -30,7 +30,7 @@ export function addPantryFurnishings(c: OfficeComposer) {
     end = 1.9,
     count = 18,
     stripe = (end - left) / count
-  for (let i = 0; i < count; i++)
+  for (let i = 0; i < count; i++) {
     block(
       'pantry-wallpaper-' + i,
       [stripe, 0.004, p.pantryTop - floor - 0.025],
@@ -43,6 +43,7 @@ export function addPantryFurnishings(c: OfficeComposer) {
       'plain',
       0
     )
+  }
   addPrint(
     c,
     'pantry-print',
@@ -94,7 +95,7 @@ export function addPantryFurnishings(c: OfficeComposer) {
     [0, 1.78, 1.58, 0x77999c],
     [1, 1.77, 1.48, 0xe9d9b5],
     [2, 1.64, 1.41, 0x927257]
-  ] as const)
+  ] as const) {
     block(
       'pantry-fridge-note-' + i,
       [0.065, 0.003, 0.082],
@@ -103,6 +104,7 @@ export function addPantryFurnishings(c: OfficeComposer) {
       'plain',
       0
     )
+  }
   add(
     'pantry-fridge-magnet',
     'round-magnet',
@@ -172,14 +174,17 @@ export function addPantryFurnishings(c: OfficeComposer) {
     'sink',
     'sink-cabinet',
     catalogAsset('sink-cabinet').map((part) => {
-      if (part.id === 'countertop')
+      if (part.id === 'countertop') {
         return {
           ...part,
           color: 0xc7a575,
           material: 'wood' as const,
           roughness: 0.85
         }
-      if (part.id === 'door--1') return { ...part, color: 0x65594d }
+      }
+      if (part.id === 'door--1') {
+        return { ...part, color: 0x65594d }
+      }
       return part
     }),
     [sinkX, rear - 0.3125, floor],

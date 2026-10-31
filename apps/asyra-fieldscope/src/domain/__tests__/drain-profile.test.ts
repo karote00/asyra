@@ -28,12 +28,15 @@ it.each([0.05, 0.3, 0.6, 2])(
       expect(x).toBeGreaterThanOrEqual(-1e-10)
       expect(x).toBeLessThanOrEqual(width + 1e-10)
       expect(y).toBeLessThanOrEqual(1e-10)
-      if (i) expect(x).toBeGreaterThanOrEqual(points[i - 1][0] - 1e-10)
+      if (i) {
+        expect(x).toBeGreaterThanOrEqual(points[i - 1][0] - 1e-10)
+      }
       const mirror = points[points.length - 1 - i]
       expect(x + mirror[0]).toBeCloseTo(width)
       expect(y).toBeCloseTo(mirror[1])
-      if (y < waterLevel - 1e-10)
+      if (y < waterLevel - 1e-10) {
         expect(Math.hypot(x - width / 2, y - waterLevel)).toBeCloseTo(radius)
+      }
     }
   }
 )
@@ -55,12 +58,15 @@ it.each([0.3, 0.6, 1.2])(
       configurationSite(config),
       config.strips
     ).strips.find((s) => s.kind === 'drain')
-    if (!drain) throw new Error('Missing drain')
+    if (!drain) {
+      throw new Error('Missing drain')
+    }
     const ray = new Raycaster()
     for (const id of ['soil', 'drains']) {
       const shape = meshes.find((m) => m.id === id)?.descriptor.shape
-      if (shape?.kind !== 'triangles')
+      if (shape?.kind !== 'triangles') {
         throw new Error('Expected triangle surface')
+      }
       const geometry = new BufferGeometry()
       geometry.setAttribute(
         'position',

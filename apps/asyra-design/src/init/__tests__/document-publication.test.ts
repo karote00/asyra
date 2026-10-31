@@ -12,7 +12,9 @@ import {
 import { createPublicationProcessor } from '../../collaboration/publication-processor'
 
 const required = <T>(value: T | undefined): T => {
-  if (value === undefined) throw new Error('Missing fixture entry')
+  if (value === undefined) {
+    throw new Error('Missing fixture entry')
+  }
   return value
 }
 
@@ -487,8 +489,9 @@ for (const context of ['standalone', 'creation', 'removal'] as const) {
                 batchId: 'moves',
                 channel: 'sceneTree',
                 deliveries: changes.map((change, index) => {
-                  if (change.kind !== 'hierarchy-moves')
+                  if (change.kind !== 'hierarchy-moves') {
                     throw new Error('Missing move fixture')
+                  }
                   return {
                     deliveryId: index === 0 ? 'first' : 'second',
                     eventName: 'moveElements',

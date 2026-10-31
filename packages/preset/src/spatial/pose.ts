@@ -15,8 +15,9 @@ export function readSpatialPose(value: SpatialPose): SpatialPose {
     ![...position, ...rotation, ...scale].every(Number.isFinite) ||
     scale.some((n) => n <= 0) ||
     Math.abs(Math.hypot(...rotation) - 1) > 1e-8
-  )
+  ) {
     throw new Error('Invalid spatial pose')
+  }
   return Object.freeze({
     position: Object.freeze(position) as unknown as SpatialVector,
     rotation: Object.freeze(rotation) as unknown as SpatialQuaternion,
@@ -56,10 +57,13 @@ export class SpatialPosePresentation {
       !Number.isFinite(policy.tolerance) ||
       policy.tolerance < 0 ||
       typeof policy.reducedMotion !== 'boolean'
-    )
+    ) {
       throw new Error('Invalid pose interpolation')
+    }
     const target = this.target
-    if (!target) return current
+    if (!target) {
+      return current
+    }
     const t = policy.reducedMotion ? 1 : fraction
     let dot = from.rotation.reduce(
       (sum, n, i) => sum + n * target.rotation[i],
@@ -97,10 +101,14 @@ export class SpatialPosePresentation {
           next.rotation.reduce((sum, n, i) => sum + n * target.rotation[i], 0)
         ) >
         policy.tolerance
-    if (!remaining) this.target = null
+    if (!remaining) {
+      this.target = null
+    }
     return next
   }
   private assertLive() {
-    if (this.disposed) throw new Error('Pose presentation is disposed')
+    if (this.disposed) {
+      throw new Error('Pose presentation is disposed')
+    }
   }
 }

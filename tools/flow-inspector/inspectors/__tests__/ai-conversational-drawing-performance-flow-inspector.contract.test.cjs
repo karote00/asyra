@@ -59,7 +59,7 @@ test('endpoint routes and artifacts resolve through exact owners', () => {
 
   data.routes.forEach((route) => {
     assert.ok(stepIds.has(route.from), `${route.id} source`)
-    if (route.to) assert.ok(stepIds.has(route.to), `${route.id} target`)
+    if (route.to) {assert.ok(stepIds.has(route.to), `${route.id} target`)}
     route.producedArtifacts.forEach((artifactId) => {
       const artifact = artifacts.get(artifactId)
       assert.ok(artifact, `${route.id} artifact ${artifactId}`)

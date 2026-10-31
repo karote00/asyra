@@ -204,20 +204,29 @@ export const resolveContainerChildTarget = ({
     hitElementId === containerId ||
     !projection?.flattenedIdSet.has(hitElementId) ||
     !projection.flattenedIdSet.has(containerId)
-  )
+  ) {
     return null
+  }
 
   const container = elementDataMap[containerId]
-  if (container.lock || container.visible === false) return null
+  if (container.lock || container.visible === false) {
+    return null
+  }
 
   let currentId = hitElementId
   while (projection.flattenedIdSet.has(currentId)) {
     const element = elementDataMap[currentId]
-    if (element.lock || element.visible === false) return null
-    if (element.parentId === containerId) return currentId
+    if (element.lock || element.visible === false) {
+      return null
+    }
+    if (element.parentId === containerId) {
+      return currentId
+    }
     // Projection validation already proved parent existence and acyclicity.
     const parentId = element.parentId
-    if (typeof parentId !== 'string') return null
+    if (typeof parentId !== 'string') {
+      return null
+    }
     currentId = parentId
   }
   return null

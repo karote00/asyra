@@ -28,8 +28,9 @@ export function lowStool(): AssetPart[] {
       const face = mesh.indices.slice(i, i + 3)
       if (
         !face.every((j) => Math.abs(mesh.positions[j * 3 + 2] - bottom) < 1e-9)
-      )
+      ) {
         index.push(...face)
+      }
     }
     mesh.indices = index
     const triangle = (a: number[], b: number[], c: number[]) => {
@@ -55,7 +56,9 @@ export function lowStool(): AssetPart[] {
     // Four trapezoids; the inner chain includes every leg/arm boundary vertex.
     for (let side = 0; side < 4; side++) {
       const rotate = ([x, y]: number[]) => {
-        for (let i = 0; i < side; i++) [x, y] = [-y, x]
+        for (let i = 0; i < side; i++) {
+          ;[x, y] = [-y, x]
+        }
         return [x, y]
       }
       const points = [
@@ -66,8 +69,9 @@ export function lowStool(): AssetPart[] {
         [b, -d],
         [b, -b]
       ].map(rotate)
-      for (let j = 1; j < points.length - 1; j++)
+      for (let j = 1; j < points.length - 1; j++) {
         triangle(points[0], points[j], points[j + 1])
+      }
     }
     const result: Mesh[] = [mesh]
     for (const leg of legs) {

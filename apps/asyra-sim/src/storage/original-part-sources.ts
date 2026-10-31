@@ -7,7 +7,9 @@ export function validateOriginalPartSources(
   snapshot: ExperimentSnapshot,
   archive: VisualAssetArchive
 ): void {
-  if (snapshot.version !== 2) return
+  if (snapshot.version !== 2) {
+    return
+  }
   const resolved = resolvePartWorkcell(
     snapshot.workcell,
     archive.resolveWorkcell(snapshot.workcell)
@@ -15,7 +17,9 @@ export function validateOriginalPartSources(
   for (let i = 0; i < resolved.bodies.length; i++) {
     const expected = resolved.bodies[i],
       retained = snapshot.workcell.bodies[i]
-    if (!expected.visuals?.length) continue
+    if (!expected.visuals?.length) {
+      continue
+    }
     const equal = (a: readonly number[], b: readonly number[]) =>
       a.length === b.length && a.every((value, index) => value === b[index])
     if (
@@ -36,9 +40,10 @@ export function validateOriginalPartSources(
           !equal(collider.pose.rotation, other.pose.rotation)
         )
       })
-    )
+    ) {
       throw new Error(
         `Frozen geometry differs from its original part source: ${retained.id}`
       )
+    }
   }
 }

@@ -29,7 +29,9 @@ describe('engine-owned one-shot frame scheduling', () => {
   const deliver = (timestamp: number) => {
     const callbacks = [...pending.values()]
     pending.clear()
-    for (const callback of callbacks) callback(timestamp)
+    for (const callback of callbacks) {
+      callback(timestamp)
+    }
   }
 
   beforeEach(async () => {

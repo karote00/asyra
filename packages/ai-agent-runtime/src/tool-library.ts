@@ -53,11 +53,17 @@ export interface AiToolLibraryOptions extends Omit<
 }
 
 export const recipeContentKey = (value: AiJsonValue): string => {
-  if (value === null || typeof value !== 'object') return JSON.stringify(value)
-  if (Array.isArray(value)) return `[${value.map(recipeContentKey).join(',')}]`
+  if (value === null || typeof value !== 'object') {
+    return JSON.stringify(value)
+  }
+  if (Array.isArray(value)) {
+    return `[${value.map(recipeContentKey).join(',')}]`
+  }
   return `{${Object.entries(value)
     .sort(([a], [b]) => {
-      if (a === b) return 0
+      if (a === b) {
+        return 0
+      }
       return a < b ? -1 : 1
     })
     .map(([key, item]) => `${JSON.stringify(key)}:${recipeContentKey(item)}`)
@@ -70,8 +76,9 @@ const failure = (
 
 /** Owns candidate submissions; definitions and discovery stay in the registry. */
 export const createAiToolLibrary = (options: AiToolLibraryOptions) => {
-  if (!Number.isSafeInteger(options.capacity) || options.capacity < 1)
+  if (!Number.isSafeInteger(options.capacity) || options.capacity < 1) {
     throw new TypeError('Library capacity must be a positive safe integer')
+  }
   const submissions = new Map<
     string,
     { content: string; result: AiRecipeSubmissionResult; requestId: string }
@@ -90,11 +97,12 @@ export const createAiToolLibrary = (options: AiToolLibraryOptions) => {
         dependencies: readonly { name: string; revision: number }[]
       }
     ): AiRecipeSubmissionResult {
-      if (!input.requestId?.trim() || !input.submissionId?.trim())
+      if (!input.requestId?.trim() || !input.submissionId?.trim()) {
         return failure(
           'admission',
           'Request and submission identities are required.'
         )
+      }
       let content: string
       try {
         content = recipeContentKey(
@@ -110,44 +118,49 @@ export const createAiToolLibrary = (options: AiToolLibraryOptions) => {
           'The proposal must contain only JSON values.'
         )
       }
-      if (new TextEncoder().encode(content).byteLength > options.limits.bytes)
+      if (new TextEncoder().encode(content).byteLength > options.limits.bytes) {
         return failure(
           'admission',
           'Proposal exceeds the configured byte budget.'
         )
+      }
       const id = JSON.stringify([input.requestId, input.submissionId])
       const previous = submissions.get(id)
       if (previous) {
-        if (content !== previous.content)
+        if (content !== previous.content) {
           return failure(
             'submission-conflict',
             'Use a new submission identity for changed content.'
           )
-        if (!previous.result.ok)
+        }
+        if (!previous.result.ok) {
           return failure(
             'no-progress',
             'The unchanged rejected proposal needs correction; no work was repeated.'
           )
+        }
         if (
           !options.registry.get(previous.result.name, {
             requestId: input.requestId,
             revision: previous.result.revision
           })
-        )
+        ) {
           return failure(
             'registration',
             'The previously admitted revision is no longer available.'
           )
+        }
         return previous.result
       }
       if (
         submissions.size >= options.capacity ||
         recipes.size >= options.capacity
-      )
+      ) {
         return failure(
           'capacity',
           'Library capacity is reached; release completed requests or remove an unused revision.'
         )
+      }
       const admitted = admitAiRecipe(input.proposal, {
         ...options,
         resolve: (name) =>
@@ -202,8 +215,9 @@ export const createAiToolLibrary = (options: AiToolLibraryOptions) => {
               current.contract.name,
               current.contract.revision
             )
-            if (ancestors.has(identity))
+            if (ancestors.has(identity)) {
               throw new Error('Composition dependency cycle is not allowed.')
+            }
             const next = new Set([...ancestors, identity])
             for (const { step, weight } of recipeExecutionSteps(
               current.recipe
@@ -213,20 +227,23 @@ export const createAiToolLibrary = (options: AiToolLibraryOptions) => {
               if (
                 !Number.isSafeInteger(expandedSteps) ||
                 expandedSteps > options.limits.steps
-              )
+              ) {
                 throw new Error('Expanded composition exceeds the step budget.')
+              }
               const dependency = options.registry.registration(step.tool, {
                 requestId: input.requestId,
                 revision: step.revision
               })
-              if (!dependency)
+              if (!dependency) {
                 throw new Error('An exact dependency is no longer available.')
+              }
               if (dependency.kind === 'composition') {
                 const nested = recipes.get(key(step.tool, step.revision))
-                if (!nested)
+                if (!nested) {
                   throw new Error(
                     'Composition implementation is not admitted by this library.'
                   )
+                }
                 inspectGraph(nested.admitted, next, count)
               }
             }
@@ -280,15 +297,22 @@ export const createAiToolLibrary = (options: AiToolLibraryOptions) => {
       return recipes.get(key(name, revision))?.admitted
     },
     remove(name: string, revision: number): boolean {
-      if (!recipes.delete(key(name, revision))) return false
+      if (!recipes.delete(key(name, revision))) {
+        return false
+      }
       options.registry.remove(name, revision)
       return true
     },
     releaseRequest(requestId: string): void {
-      for (const [id, submission] of submissions)
-        if (submission.requestId === requestId) submissions.delete(id)
+      for (const [id, submission] of submissions) {
+        if (submission.requestId === requestId) {
+          submissions.delete(id)
+        }
+      }
       for (const [id, entry] of recipes) {
-        if (entry.requestId !== requestId) continue
+        if (entry.requestId !== requestId) {
+          continue
+        }
         const { name, revision } = entry.admitted.contract
         const registered = options.registry.registration(name, {
           requestId,

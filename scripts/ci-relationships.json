@@ -28,6 +28,7 @@
   "lintFullInputPaths": [
     "eslint.config.js",
     "eslint.config.mjs",
+    ".prettierignore",
     ".gitignore",
     "tsconfig.json"
   ],
@@ -274,6 +275,7 @@
         "scripts/run-collaboration-e2e.sh",
         "scripts/balanced-ai-correctness-scope.mjs",
         "scripts/local-validation*.mjs",
+        "scripts/validation-checks.mjs",
         "docs/ai/workflows/local-affected-validation.md",
         "scripts/test-impact.mjs",
         "scripts/test-impact-workspaces.mjs"
@@ -302,6 +304,7 @@
         "scripts/check-test-exists.js",
         ".github/**",
         "eslint.config.*",
+        ".prettierignore",
         "apps/asyra-design/vite.config.ts",
         "apps/asyra-design/src/index.css",
         "apps/**/tsconfig*.json",
@@ -332,6 +335,7 @@
     },
     "release": {
       "patterns": [
+        "scripts/__tests__/release-template-artifacts.test.mjs",
         "scripts/release-*",
         "scripts/framework-release-*",
         ".changeset/config.json",

@@ -55,7 +55,9 @@ class Computed<T extends ComputedAttrs>
       }
 
       const propId = props.getPropId(propName)
-      if (!propId) return
+      if (!propId) {
+        return
+      }
 
       const propComponent = this.propsManagerOwner.getPropertyById(propId)
       if (!propComponent) {
@@ -77,7 +79,9 @@ class Computed<T extends ComputedAttrs>
   }
 
   save(fields?: readonly string[]) {
-    if (fields === undefined) return { ...this.data }
+    if (fields === undefined) {
+      return { ...this.data }
+    }
     return Object.fromEntries(
       [...new Set(fields)]
         .filter((field) =>

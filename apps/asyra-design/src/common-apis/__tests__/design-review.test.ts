@@ -6,8 +6,9 @@ import type { InspectionDependencyChange } from '../inspection-dependencies'
 import recordedGroup from '../../../server/__tests__/fixtures/recorded-101/group-containment-20261019.json'
 import { prepareDesign } from '../../../server/design-preparation'
 const requiredEvidence = (result: { evidence?: InspectionEvidenceStamp }) => {
-  if (!result.evidence)
+  if (!result.evidence) {
     throw new Error('Expected a coherent mechanical receipt')
+  }
   return result.evidence
 }
 const fixture = () => {
@@ -51,7 +52,9 @@ it('checks recorded incremental groups without treating snapshot dimensions as c
     entries.map(({ descriptor }) => [descriptor.id, descriptor])
   )
   for (const [id, node] of data) {
-    if (node.parentId) data.get(node.parentId)?.children.push(id)
+    if (node.parentId) {
+      data.get(node.parentId)?.children.push(id)
+    }
   }
   expect(Number(geometry.get(upperId)?.y)).toBeLessThan(0)
   const before = JSON.stringify([...geometry])
@@ -206,8 +209,9 @@ it('does not mistake unavailable or rotated checks for full verification', async
 it('completes traversal beyond 200 elements without measuring hidden text', async () => {
   const { review, apis, data } = fixture()
   data.f.children = Array.from({ length: 250 }, (_, i) => `t${i}`)
-  for (const id of data.f.children)
+  for (const id of data.f.children) {
     data[id] = { type: 'text', parentId: 'f', visible: false }
+  }
   const result = await review('f')
   expect(result.complete).toBe(true)
   expect(result.truncated).toBe(false)
@@ -330,7 +334,9 @@ it('retains deterministic verdicts for unchanged regions with exact canonical wo
   apis.read.mockClear()
   apis.computed.mockClear()
   geometry['tier-2-window-0'].x = 150
-  for (const notify of listeners) notify({ elementIds: ['tier-2-window-0'] })
+  for (const notify of listeners) {
+    notify({ elementIds: ['tier-2-window-0'] })
+  }
   const changed = await review('f')
   expect(changed).toMatchObject({
     complete: true,
@@ -511,7 +517,9 @@ it('does not publish work interrupted by cancellation or document replacement', 
   const controller = new AbortController()
   let interrupt = true
   const state = retainedFixture(async () => {
-    if (interrupt) controller.abort()
+    if (interrupt) {
+      controller.abort()
+    }
   })
   state.data.f.children = Array.from({ length: 201 }, (_, i) => `v${i}`)
   for (const id of state.data.f.children) {

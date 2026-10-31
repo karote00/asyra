@@ -57,8 +57,9 @@ export function meshMembership(
       (axis, i) =>
         axis[1] < index.root.bounds[i][0] || axis[0] > index.root.bounds[i][1]
     )
-  )
+  ) {
     return 'outside'
+  }
   for (const direction of directions) {
     const crossings = new Int32Array(index.componentCount),
       d = ops.vector(direction)
@@ -67,15 +68,21 @@ export function meshMembership(
     while (pending.length && !uncertain) {
       checkpoint()
       const node = pending.pop()
-      if (!node) throw new Error('Missing pending mesh node')
-      if (!rayMayHit(point, direction, node.bounds)) continue
+      if (!node) {
+        throw new Error('Missing pending mesh node')
+      }
+      if (!rayMayHit(point, direction, node.bounds)) {
+        continue
+      }
       if (node.children) {
         pending.push(...node.children)
         continue
       }
       for (const triangle of node.triangles) {
         checkpoint()
-        if (!rayMayHit(point, direction, triangle.bounds)) continue
+        if (!rayMayHit(point, direction, triangle.bounds)) {
+          continue
+        }
         const [a, b, c] = triangle.vertices.map(ops.vector),
           e1 = ops.sub(b, a),
           e2 = ops.sub(c, a)
@@ -87,13 +94,19 @@ export function meshMembership(
         }
         const tvec = ops.sub(point, a),
           u = idiv(ops.dot(tvec, p), determinant)
-        if (u[1] < 0 || u[0] > 1) continue
+        if (u[1] < 0 || u[0] > 1) {
+          continue
+        }
         const q = ops.cross(tvec, e1),
           v = idiv(ops.dot(d, q), determinant),
           sum = iadd(u, v)
-        if (v[1] < 0 || sum[0] > 1) continue
+        if (v[1] < 0 || sum[0] > 1) {
+          continue
+        }
         const time = idiv(ops.dot(e2, q), determinant)
-        if (time[1] < 0) continue
+        if (time[1] < 0) {
+          continue
+        }
         if (u[0] <= 0 || v[0] <= 0 || sum[1] >= 1 || time[0] <= 0) {
           uncertain = true
           break
@@ -101,8 +114,9 @@ export function meshMembership(
         crossings[triangle.component] += determinant[0] > 0 ? 1 : -1
       }
     }
-    if (!uncertain)
+    if (!uncertain) {
       return crossings.some((count) => count !== 0) ? 'inside' : 'outside'
+    }
   }
   return 'unknown'
 }
@@ -116,25 +130,31 @@ export function shapeMembership(
   const local = localPoint(shape.pose, point),
     g = shape.geometry
   if (g.kind === 'mesh') {
-    if (!index) throw new Error('Missing mesh membership index')
+    if (!index) {
+      throw new Error('Missing mesh membership index')
+    }
     return meshMembership(local, index, checkpoint)
   }
-  if (g.kind === 'triangle') return 'unknown'
+  if (g.kind === 'triangle') {
+    return 'unknown'
+  }
   if (g.kind === 'box') {
     if (
       local.every(
         (value, axis) =>
           value[0] > -g.size[axis] / 2 && value[1] < g.size[axis] / 2
       )
-    )
+    ) {
       return 'inside'
+    }
     if (
       local.some(
         (value, axis) =>
           value[1] < -g.size[axis] / 2 || value[0] > g.size[axis] / 2
       )
-    )
+    ) {
       return 'outside'
+    }
     return 'unknown'
   }
   let vector = local
@@ -153,6 +173,8 @@ export function shapeMembership(
     ]
   }
   const distance = ops.norm(vector)
-  if (distance[1] < g.radius) return 'inside'
+  if (distance[1] < g.radius) {
+    return 'inside'
+  }
   return distance[0] > g.radius ? 'outside' : 'unknown'
 }

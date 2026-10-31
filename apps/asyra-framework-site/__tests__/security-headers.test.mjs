@@ -26,11 +26,16 @@ const readPolicy = async (environment, gaEnvironment) => {
     } else {
       process.env.NODE_ENV = originalEnvironment
     }
-    if (originalSiteEnvironment === undefined) delete process.env.SITE_ENV
-    else process.env.SITE_ENV = originalSiteEnvironment
-    if (originalGa === undefined)
+    if (originalSiteEnvironment === undefined) {
+      delete process.env.SITE_ENV
+    } else {
+      process.env.SITE_ENV = originalSiteEnvironment
+    }
+    if (originalGa === undefined) {
       delete process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
-    else process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID = originalGa
+    } else {
+      process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID = originalGa
+    }
   }
 }
 

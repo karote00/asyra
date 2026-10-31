@@ -33,7 +33,9 @@ test('Asyra FieldScope CI groups cover every browser spec exactly once', () => {
 test('a browser spec with a custom time limit contains one Playwright case', () => {
   for (const file of collectBrowserSpecFiles(appRoot)) {
     const source = fs.readFileSync(path.join(appRoot, file), 'utf8')
-    if (!/test\.setTimeout\s*\(/u.test(source)) continue
+    if (!/test\.setTimeout\s*\(/u.test(source)) {
+      continue
+    }
     const cases = source.match(/^\s*test\s*\(/gmu) ?? []
 
     assert.equal(
@@ -141,11 +143,12 @@ test('CI browser temporary sockets fit the Linux path limit after the workspace 
   t.after(() => fs.rmSync(fixture, { recursive: true, force: true }))
   const app = path.join(fixture, 'apps/asyra-fieldscope')
   fs.mkdirSync(path.join(app, 'scripts'), { recursive: true })
-  for (const file of ['run-e2e-ci.mjs', 'e2e-ci-groups.mjs'])
+  for (const file of ['run-e2e-ci.mjs', 'e2e-ci-groups.mjs']) {
     fs.copyFileSync(
       path.join(appRoot, 'scripts', file),
       path.join(app, 'scripts', file)
     )
+  }
   for (const file of CI_E2E_GROUPS.flatMap((group) => group.files)) {
     fs.mkdirSync(path.dirname(path.join(app, file)), { recursive: true })
     fs.writeFileSync(path.join(app, file), '')

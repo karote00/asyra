@@ -75,8 +75,9 @@ export class RobotProjection {
       const parts = Object.freeze(
         raw.map((part, index) => {
           const shape = this.parts[index].descriptor.shape
-          if (shape.kind !== 'triangles')
+          if (shape.kind !== 'triangles') {
             throw new Error('Expected robot triangle product')
+          }
           return Object.freeze({ ...part, shape })
         })
       )
@@ -84,7 +85,9 @@ export class RobotProjection {
       try {
         rig = prepareRobotRig(s, parts)
       } catch (error) {
-        if (!(error instanceof UnsupportedRobotRigError)) throw error
+        if (!(error instanceof UnsupportedRobotRigError)) {
+          throw error
+        }
       }
       this.source = Object.freeze({
         revision: ++nextRevision,
@@ -96,8 +99,9 @@ export class RobotProjection {
       const max: [number, number, number] = [-Infinity, -Infinity, -Infinity]
       for (const item of [...this.parts, ...this.dock]) {
         const shape = item.descriptor.shape
-        if (shape.kind !== 'triangles')
+        if (shape.kind !== 'triangles') {
           throw new Error('Expected robot triangle product')
+        }
         shape.positions.forEach((value, i) => {
           const axis = i % 3
           min[axis] = Math.min(min[axis], value)
@@ -133,7 +137,7 @@ export class RobotProjection {
     }))
     meshes.push(...this.getDockSource().meshes)
     const lane = report.lane
-    if (lane)
+    if (lane) {
       meshes.push({
         id: 'robot.route',
         visible: true,
@@ -153,6 +157,7 @@ export class RobotProjection {
           selectable: false
         }) as SpatialMesh
       })
+    }
     return meshes
   }
   bounds(x: number, z: number): SceneBounds {
@@ -163,23 +168,30 @@ export class RobotProjection {
     }
   }
   getDockSource(): DockSource {
-    if (!this.dockSource) throw new Error('Dock source is unavailable')
+    if (!this.dockSource) {
+      throw new Error('Dock source is unavailable')
+    }
     return this.dockSource
   }
   isCurrentDockSource(source: DockSource): boolean {
     return this.dockSource !== undefined && source === this.dockSource
   }
   getSource(): RobotSource {
-    if (!this.source) throw new Error('Robot source is unavailable')
+    if (!this.source) {
+      throw new Error('Robot source is unavailable')
+    }
     return this.source
   }
   isCurrentSource(source: RobotSource): boolean {
     return this.source !== undefined && source === this.source
   }
   evaluatePose(source: RobotSource, joints: RobotJoints) {
-    if (!this.isCurrentSource(source)) throw new Error('Retired robot source')
-    if (!source.rig)
+    if (!this.isCurrentSource(source)) {
+      throw new Error('Retired robot source')
+    }
+    if (!source.rig) {
       throw new UnsupportedRobotRigError('Unsupported lift stroke')
+    }
     return evaluateRobotPose(source.rig, joints)
   }
   clear() {

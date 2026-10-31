@@ -106,7 +106,9 @@ function input() {
     '[aria-label="Choose original part GLB"]'
   )
 
-  if (!field) throw new Error('Missing GLB input')
+  if (!field) {
+    throw new Error('Missing GLB input')
+  }
 
   return field
 }
@@ -247,7 +249,9 @@ it('invalidates placement after target or workcell changes and revokes it when t
     '[aria-label="Visual target body"]'
   )
 
-  if (!target) throw new Error('Missing target selector')
+  if (!target) {
+    throw new Error('Missing target selector')
+  }
 
   await act(() => {
     target.value = workcell.bodies[1].id
@@ -333,7 +337,9 @@ it('releases the file picker immediately on cancellation and ignores late file b
     (button) => button.textContent === 'Cancel preview'
   )
 
-  if (!cancel) throw new Error('Missing cancellation control')
+  if (!cancel) {
+    throw new Error('Missing cancellation control')
+  }
 
   await act(() => cancel.click())
 

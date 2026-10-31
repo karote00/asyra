@@ -10,7 +10,9 @@ export const createPrivatePrerequisiteManager = (
 
   return {
     acquire(key, install): void {
-      if (acquired.has(key)) return
+      if (acquired.has(key)) {
+        return
+      }
       const cleanup = install()
       acquired.add(key)
       if (typeof cleanup === 'function') {

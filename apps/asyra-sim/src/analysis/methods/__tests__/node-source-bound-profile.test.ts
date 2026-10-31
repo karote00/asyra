@@ -30,7 +30,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             pair.a.bodyId === 'example:joint-2' &&
             pair.b.bodyId === 'obstacle-11'
         )
-        if (!pair) throw new Error('Missing measured pair')
+        if (!pair) {
+          throw new Error('Missing measured pair')
+        }
         const query = {
           workcell: snapshot.workcell,
           trajectory: snapshot.trajectory,
@@ -66,12 +68,14 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           refinements = 0
         const extra = () => pointWork + unionWork + lookupWork
         const context = new OriginalMeshQuery(() => {
-          if (context.work + extra() >= 500000)
+          if (context.work + extra() >= 500000) {
             throw new MeshWorkLimit('Combined source-extrema query budget')
+          }
         })
         const check = () => {
-          if (context.work + extra() > 500000)
+          if (context.work + extra() > 500000) {
             throw new MeshWorkLimit('Source-extrema preparation budget')
+          }
         }
         interface QueryBounds {
           seen: WeakSet<Bounds>
@@ -84,12 +88,16 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           pose: ConvexShape['pose'],
           state: QueryBounds
         ) {
-          if (!active) throw new Error('Missing direct query owner')
+          if (!active) {
+            throw new Error('Missing direct query owner')
+          }
           const retained = state.bounds
           const points = new Map<number, Bounds>()
           const point = (index: number) => {
             const previous = points.get(index)
-            if (previous) return previous
+            if (previous) {
+              return previous
+            }
             pointWork++
             check()
             const value = meshIndex.worldPoint(
@@ -109,8 +117,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           }
           const visit = (node: MeshNode): Bounds => {
             let result: Bounds
-            if (node.children) result = union(node.children.map(visit))
-            else {
+            if (node.children) {
+              result = union(node.children.map(visit))
+            } else {
               const triangles = node.triangles.map((triangle) => {
                 const bounds = union(
                   [0, 1, 2].map((index) =>
@@ -131,7 +140,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         const world = meshIndex.worldBounds
         vi.spyOn(meshIndex, 'worldBounds').mockImplementation(
           (bounds, pose) => {
-            if (!active) throw new Error('Bounds escaped direct query')
+            if (!active) {
+              throw new Error('Bounds escaped direct query')
+            }
             const state = active.get(pose) ?? {
               seen: new WeakSet<Bounds>(),
               bounds: new WeakMap<Bounds, Bounds>()
@@ -144,8 +155,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               state.seen.add(bounds)
               return world(bounds, pose)
             }
-            if (root && !state.bounds.has(bounds))
+            if (root && !state.bounds.has(bounds)) {
               refine(root.root, root.geometry, pose, state)
+            }
             lookupWork++
             check()
             return state.bounds.get(bounds) ?? world(bounds, pose)
@@ -192,7 +204,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           })
         )
         expect(context.work + extra()).toBeLessThanOrEqual(500001)
-        if (candidate.coverage === 'complete')
+        if (candidate.coverage === 'complete') {
           expect(
             candidate.leaves.map((leaf) => [
               leaf.start,
@@ -208,6 +220,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               leaf.penetration
             ])
           )
+        }
       },
       20000
     )

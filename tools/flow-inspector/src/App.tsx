@@ -1,5 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { parseWorkspaceRoute, targetHref, workspaceHash } from './routing'
+import { useEffect, useMemo, useState } from 'react'
+import { parseWorkspaceRoute, workspaceHash } from './routing'
+import { ArchitectureView } from './architecture/ArchitectureView'
+import type { ArchitectureData } from './architecture/types'
+import { ContractDocument } from './ContractDocument'
+import { ControlPlane } from './control-plane/ControlPlane'
 import type { InspectorGroup, WorkspaceBundle, WorkspaceEntry } from './types'
 
 const groups: InspectorGroup[] = ['Apps', 'Framework', 'Release', 'Tools']
@@ -30,9 +34,10 @@ export function WorkspaceApp({
   const [catalogVisible, setCatalogVisible] = useState(
     () => window.innerWidth > 900
   )
+  const [detailsVisible, setDetailsVisible] = useState(
+    () => window.innerWidth > 900
+  )
   const [headerVisible, setHeaderVisible] = useState(true)
-  const [detailsVisible, setDetailsVisible] = useState<boolean | null>(null)
-  const targetFrameRef = useRef<HTMLIFrameElement>(null)
   const [collapsedGroups, setCollapsedGroups] = useState<Set<InspectorGroup>>(
     new Set()
   )
@@ -48,7 +53,9 @@ export function WorkspaceApp({
   )
 
   useEffect(() => {
-    if (initialHash !== undefined) return
+    if (initialHash !== undefined) {
+      return
+    }
     const updateLocation = () => setBrowserLocation(readBrowserLocation())
     window.addEventListener('hashchange', updateLocation)
     window.addEventListener('popstate', updateLocation)
@@ -59,7 +66,9 @@ export function WorkspaceApp({
   }, [initialHash])
 
   useEffect(() => {
-    if (routingMode !== 'path' || route.kind === 'error') return
+    if (routingMode !== 'path' || route.kind === 'error') {
+      return
+    }
     const href = route.kind === 'selected' ? `/${route.entry.slug}` : '/'
     if (window.location.pathname + window.location.hash !== href) {
       window.history.replaceState(null, '', href)
@@ -67,60 +76,18 @@ export function WorkspaceApp({
     }
   }, [route, routingMode])
 
-  useEffect(() => {
-    const receivePanelVisibility = (event: MessageEvent) => {
-      const message = event.data
-      if (event.source !== targetFrameRef.current?.contentWindow) return
-      if (message?.type !== 'flow-inspector:panel-visibility') return
-      if (typeof message.visible !== 'boolean') return
-      if (message.panel === 'catalog') setCatalogVisible(message.visible)
-      if (message.panel === 'header') setHeaderVisible(message.visible)
-      if (message.panel === 'details') setDetailsVisible(message.visible)
-    }
-    window.addEventListener('message', receivePanelVisibility)
-    return () => window.removeEventListener('message', receivePanelVisibility)
-  }, [])
-
-  useEffect(() => {
-    if (route.kind !== 'selected' || route.entry.kind !== 'flow-v2') return
-    const forwardZoom = (event: KeyboardEvent) => {
-      if (event.isComposing || event.altKey || event.ctrlKey) return
-      const commandKey = event.metaKey && !event.shiftKey
-      const alternative = event.shiftKey && !event.metaKey
-      let key = ''
-      if (commandKey) key = event.key
-      else if (alternative && event.code === 'Digit1') key = '1'
-      else if (alternative && event.code === 'Digit0') key = '0'
-      if (key !== '1' && key !== '0') return
-      if (
-        alternative &&
-        (event.target as Element)?.closest?.(
-          'input, textarea, select, [contenteditable="true"]'
-        )
-      )
-        return
-      const frame = targetFrameRef.current?.contentWindow
-      if (!frame) return
-      event.preventDefault()
-      frame.postMessage(
-        {
-          type: 'flow-inspector:zoom-command',
-          command: key === '1' ? 'fit-all' : 'reset'
-        },
-        '*'
-      )
-    }
-    window.addEventListener('keydown', forwardZoom, true)
-    return () => window.removeEventListener('keydown', forwardZoom, true)
-  }, [route])
-
   const navigate = (entry: WorkspaceEntry | null) => {
-    if (window.innerWidth <= 900) setCatalogVisible(false)
+    if (window.innerWidth <= 900) {
+      setCatalogVisible(false)
+    }
     if (routingMode === 'path') {
       const href = entry ? `/${entry.slug}` : '/'
-      if (window.location.pathname + window.location.hash !== href)
+      if (window.location.pathname + window.location.hash !== href) {
         window.history.pushState(null, '', href)
-    } else window.location.hash = entry ? workspaceHash(entry.id) : ''
+      }
+    } else {
+      window.location.hash = entry ? workspaceHash(entry.id) : ''
+    }
     setBrowserLocation(readBrowserLocation())
   }
 
@@ -133,35 +100,14 @@ export function WorkspaceApp({
   const toggleGroup = (group: InspectorGroup) => {
     setCollapsedGroups((current) => {
       const next = new Set(current)
-      if (next.has(group)) next.delete(group)
-      else next.add(group)
+      if (next.has(group)) {
+        next.delete(group)
+      } else {
+        next.add(group)
+      }
       return next
     })
   }
-
-  const sendPanelVisibility = (
-    panel: 'catalog' | 'header' | 'details',
-    visible: boolean
-  ) => {
-    targetFrameRef.current?.contentWindow?.postMessage(
-      {
-        type: 'flow-inspector:set-panel-visibility',
-        panel,
-        visible
-      },
-      '*'
-    )
-  }
-
-  const syncTargetPanels = () => {
-    sendPanelVisibility('catalog', catalogVisible)
-    sendPanelVisibility('header', headerVisible)
-    if (detailsVisible !== null) sendPanelVisibility('details', detailsVisible)
-  }
-
-  useEffect(() => {
-    sendPanelVisibility('catalog', catalogVisible)
-  }, [catalogVisible])
 
   return (
     <div
@@ -258,7 +204,7 @@ export function WorkspaceApp({
         </nav>
       </aside>
       <main className="workspace-main">
-        {!catalogVisible && route.kind !== 'selected' && (
+        {!catalogVisible && (
           <button
             className="panel-close-button"
             type="button"
@@ -270,14 +216,35 @@ export function WorkspaceApp({
         )}
         {route.kind === 'overview' && <Overview bundle={bundle} />}
         {route.kind === 'selected' && (
-          <iframe
-            className="target-frame"
-            ref={targetFrameRef}
-            key={route.entry.id}
-            src={targetHref(route.entry.id)}
-            title="Selected Flow Inspector"
-            onLoad={syncTargetPanels}
-          />
+          <>
+            <div
+              className="inspector-panels"
+              role="toolbar"
+              aria-label="Inspector panels"
+            >
+              <button
+                type="button"
+                onClick={() => setHeaderVisible(!headerVisible)}
+              >
+                {headerVisible ? 'Hide header' : 'Show header'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setDetailsVisible(!detailsVisible)}
+              >
+                {detailsVisible ? 'Hide details' : 'Show details'}
+              </button>
+            </div>
+            <SelectedArchitecture
+              key={route.entry.id}
+              entry={route.entry}
+              serviceEnabled={routingMode === 'path'}
+              onCloseDetails={() => setDetailsVisible(false)}
+              onShowDetails={() => setDetailsVisible(true)}
+              detailsVisible={detailsVisible}
+              headerVisible={headerVisible}
+            />
+          </>
         )}
         {route.kind === 'error' && (
           <section className="route-error">
@@ -295,6 +262,87 @@ export function WorkspaceApp({
   )
 }
 
+function SelectedArchitecture({
+  entry,
+  serviceEnabled,
+  onCloseDetails,
+  onShowDetails,
+  detailsVisible,
+  headerVisible
+}: {
+  entry: WorkspaceEntry
+  serviceEnabled: boolean
+  onCloseDetails: () => void
+  onShowDetails: () => void
+  detailsVisible: boolean
+  headerVisible: boolean
+}) {
+  if (
+    entry.kind === 'contract-document' &&
+    entry.data &&
+    typeof entry.data === 'object' &&
+    !Array.isArray(entry.data)
+  ) {
+    return (
+      <ContractDocument
+        title={entry.title}
+        data={entry.data as Record<string, unknown>}
+      />
+    )
+  }
+
+  const data = entry.data as ArchitectureData
+
+  if (
+    data?.schema?.id !== 'flow-inspector' ||
+    data.schema.version !== 2 ||
+    !Array.isArray(data.steps) ||
+    !Array.isArray(data.lanes)
+  ) {
+    return (
+      <section role="alert">
+        This Inspector has no admitted v2 architecture: {entry.id}.
+      </section>
+    )
+  }
+
+  const sourceBase = serviceEnabled ? '/' : '../../../'
+  const sourceUrl = new URL(
+    `${sourceBase}${entry.sourcePath}`,
+    window.location.href
+  )
+  const resolved = {
+    ...data,
+    links: data.links.map((link) => ({
+      ...link,
+      href: new URL(link.href, sourceUrl).href
+    }))
+  }
+
+  if (serviceEnabled) {
+    return (
+      <ControlPlane
+        entry={entry}
+        data={resolved}
+        onCloseDetails={onCloseDetails}
+        onShowDetails={onShowDetails}
+        detailsVisible={detailsVisible}
+        headerVisible={headerVisible}
+      />
+    )
+  }
+
+  return (
+    <ArchitectureView
+      data={resolved}
+      onCloseDetails={onCloseDetails}
+      onShowDetails={onShowDetails}
+      detailsVisible={detailsVisible}
+      headerVisible={headerVisible}
+    />
+  )
+}
+
 function Overview({ bundle }: { bundle: WorkspaceBundle }) {
   const metrics = [
     ['Inspectors', bundle.entries.length],
@@ -303,7 +351,7 @@ function Overview({ bundle }: { bundle: WorkspaceBundle }) {
       bundle.entries.filter((entry) => entry.kind === 'flow-v2').length
     ],
     [
-      'Compatibility',
+      'Contract documents',
       bundle.entries.filter((entry) => entry.kind !== 'flow-v2').length
     ],
     ['Explicit exclusions', bundle.exclusions.length]

@@ -105,7 +105,9 @@ export function composeOfficeInterior(composer: OfficeComposer) {
           b = polygon[(i + 1) % polygon.length]
         const insideA = (a[axis] - limit) * sign >= 0,
           insideB = (b[axis] - limit) * sign >= 0
-        if (insideA) next.push(a)
+        if (insideA) {
+          next.push(a)
+        }
         if (insideA !== insideB) {
           const t = (limit - a[axis]) / (b[axis] - a[axis])
           next.push(a.map((v, j) => v + t * (b[j] - v)))
@@ -126,7 +128,7 @@ export function composeOfficeInterior(composer: OfficeComposer) {
   ) => {
     const rows = Math.ceil((y1 - y0) / 0.18),
       cols = Math.ceil((x1 - x0) / 1.2)
-    for (let r = 0; r < rows; r++)
+    for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         const x = x0 + c * 1.2,
           y = y0 + r * 0.18,
@@ -156,7 +158,9 @@ export function composeOfficeInterior(composer: OfficeComposer) {
           ]
           for (let region = 0; region < regions.length; region++) {
             const [left, right, bottom, upper] = regions[region]
-            if (right <= left || upper <= bottom) continue
+            if (right <= left || upper <= bottom) {
+              continue
+            }
             const polygon = clip(
               outline ?? foundation.outline,
               left,
@@ -164,7 +168,7 @@ export function composeOfficeInterior(composer: OfficeComposer) {
               bottom,
               upper
             )
-            if (polygon.length >= 3)
+            if (polygon.length >= 3) {
               add(
                 `${id}-${r}-${c}${region ? `-${region}` : ''}`,
                 'floor-plank',
@@ -178,6 +182,7 @@ export function composeOfficeInterior(composer: OfficeComposer) {
                 ],
                 [0, 0, top]
               )
+            }
           }
           continue
         }
@@ -190,6 +195,7 @@ export function composeOfficeInterior(composer: OfficeComposer) {
           0.001
         )
       }
+    }
   }
   const xs = foundation.outline.map(([x]) => x),
     ys = foundation.outline.map(([, y]) => y)
@@ -223,7 +229,9 @@ export function composeOfficeInterior(composer: OfficeComposer) {
       length,
       ends
     )
-    if (id === 'work-divider') pieces[0] = { ...pieces[0], color: 0x8d9c83 }
+    if (id === 'work-divider') {
+      pieces[0] = { ...pieces[0], color: 0x8d9c83 }
+    }
     pieces.forEach((piece, i) =>
       add(
         i ? id + '-cap' : id,
@@ -234,7 +242,7 @@ export function composeOfficeInterior(composer: OfficeComposer) {
       )
     )
   }
-  for (const w of OFFICE_WALLS)
+  for (const w of OFFICE_WALLS) {
     wall(
       w.id,
       w.length,
@@ -247,6 +255,7 @@ export function composeOfficeInterior(composer: OfficeComposer) {
       w.endTop,
       w.capHeight
     )
+  }
   const shell = OFFICE_SHELL
   const doorScale = OFFICE_STRUCTURE.doorScale
   asset(

@@ -81,13 +81,16 @@ function run(
 
 function parseLinuxProcessState(status) {
   const commandEnd = status.lastIndexOf(')')
-  if (commandEnd < 0) throw new Error('Malformed Linux process status')
+  if (commandEnd < 0) {
+    throw new Error('Malformed Linux process status')
+  }
   const [state, ...remaining] = status
     .slice(commandEnd + 1)
     .trim()
     .split(/\s+/)
-  if (!state || state.length !== 1 || remaining.length === 0)
+  if (!state || state.length !== 1 || remaining.length === 0) {
     throw new Error('Malformed Linux process status')
+  }
   return state
 }
 
@@ -97,7 +100,9 @@ async function waitForProcessExitOrLinuxZombie(pid, timeoutMs = 1000) {
     try {
       process.kill(pid, 0)
     } catch (error) {
-      if (error.code === 'ESRCH') return
+      if (error.code === 'ESRCH') {
+        return
+      }
       assert.fail(`PID liveness check did not prove exit: ${error.code}`)
     }
     if (process.platform === 'linux') {
@@ -105,10 +110,13 @@ async function waitForProcessExitOrLinuxZombie(pid, timeoutMs = 1000) {
         if (
           parseLinuxProcessState(readFileSync(`/proc/${pid}/stat`, 'utf8')) ===
           'Z'
-        )
+        ) {
           return
+        }
       } catch (error) {
-        if (error.code === 'ENOENT') return
+        if (error.code === 'ENOENT') {
+          return
+        }
         assert.fail(`Linux PID state could not be verified: ${error.message}`)
       }
     }

@@ -108,7 +108,9 @@ export const createDesignReviewAction = (
     }
   },
   execute: async ({ elementId, measurementTargets }, { signal }) => {
-    if (signal.aborted) throw new Error('Design review cancelled.')
+    if (signal.aborted) {
+      throw new Error('Design review cancelled.')
+    }
     const measure = async () => {
       const measurement = await (measurementTargets
         ? review(elementId, signal, measurementTargets)
@@ -116,13 +118,15 @@ export const createDesignReviewAction = (
       let status: 'pass' | 'repairable' | 'decision-required' =
         'decision-required'
       if (measurement.complete && !measurement.truncated) {
-        if (!measurement.findings.length) status = 'pass'
-        else if (
+        if (!measurement.findings.length) {
+          status = 'pass'
+        } else if (
           measurement.findings.every((finding) =>
             ['text-overflow', 'container-overflow'].includes(finding.kind)
           )
-        )
+        ) {
           status = 'repairable'
+        }
       }
       const pending = measurement.findings
         .map((finding) =>
@@ -144,7 +148,7 @@ export const createDesignReviewAction = (
         )
       )
       signal.throwIfAborted()
-      if (measurement.evidence && !isCurrent?.(measurement.evidence))
+      if (measurement.evidence && !isCurrent?.(measurement.evidence)) {
         return {
           ...measurement,
           available: false,
@@ -158,6 +162,7 @@ export const createDesignReviewAction = (
             ).join('')
           }
         }
+      }
       return {
         ...measurement,
         verification: {

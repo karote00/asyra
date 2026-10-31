@@ -106,7 +106,9 @@ const Input: React.FC<InputProps> = ({
   const step =
     rest.step === 'any' || rest.step === undefined ? 1 : Number(rest.step)
   const nextStep = (direction: number) => {
-    if (!data.trim()) return null
+    if (!data.trim()) {
+      return null
+    }
     const next = Number((Number(data) + direction * step).toPrecision(12))
     if (
       !Number.isFinite(next) ||
@@ -114,15 +116,20 @@ const Input: React.FC<InputProps> = ({
       (rest.min !== undefined && next < Number(rest.min)) ||
       (rest.max !== undefined && next > Number(rest.max)) ||
       (isStepAllowed && !isStepAllowed(next))
-    )
+    ) {
       return null
+    }
     return next
   }
   const applyStep = (direction: number) => {
     const next = nextStep(direction)
-    if (next === null) return
+    if (next === null) {
+      return
+    }
     const nextData = String(next)
-    if (onChange(nextData) !== false) setData(nextData)
+    if (onChange(nextData) !== false) {
+      setData(nextData)
+    }
   }
 
   return (

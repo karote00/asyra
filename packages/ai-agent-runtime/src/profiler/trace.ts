@@ -19,7 +19,9 @@ interface TraceEvent {
 export const exportExecutionTrace = (run: ParsedExecution) => {
   const traceEvents: TraceEvent[] = []
   for (const step of run.steps) {
-    if (step.startedMs === null) continue
+    if (step.startedMs === null) {
+      continue
+    }
     const attribution = step.diagnostics?.attribution
     const details =
       attribution && typeof attribution === 'object' ? attribution : {}
@@ -45,8 +47,9 @@ export const exportExecutionTrace = (run: ParsedExecution) => {
     if (
       typeof record.elapsedMs !== 'number' ||
       !Number.isFinite(record.elapsedMs)
-    )
+    ) {
       continue
+    }
     traceEvents.push({
       name: String(record.stage ?? record.event),
       cat: 'observed-event',

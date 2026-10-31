@@ -44,20 +44,28 @@ const readBytes = async (
   response: Response,
   limit: number
 ): Promise<Buffer> => {
-  if (!response.ok)
+  if (!response.ok) {
     throw referenceRejection('response', 'http', response.status)
-  if (Number(response.headers.get('content-length')) > limit)
+  }
+  if (Number(response.headers.get('content-length')) > limit) {
     throw referenceRejection('response', 'size-limit')
-  if (!response.body) throw referenceRejection('response', 'empty-body')
+  }
+  if (!response.body) {
+    throw referenceRejection('response', 'empty-body')
+  }
   const reader = response.body.getReader()
   const chunks: Uint8Array[] = []
   let size = 0
   try {
     while (true) {
       const { done, value } = await reader.read()
-      if (done) break
+      if (done) {
+        break
+      }
       size += value.length
-      if (size > limit) throw referenceRejection('response', 'size-limit')
+      if (size > limit) {
+        throw referenceRejection('response', 'size-limit')
+      }
       chunks.push(value)
     }
   } finally {
@@ -88,10 +96,14 @@ export const createLocalReferenceTools = (
     receipt: Record<string, unknown>,
     refresh: boolean
   ) => {
-    if (typeof receipt.attachmentIndex !== 'number') return receipt
+    if (typeof receipt.attachmentIndex !== 'number') {
+      return receipt
+    }
     const repeated = deliveredImages.has(receipt.attachmentIndex) && !refresh
     deliveredImages.add(receipt.attachmentIndex)
-    if (!repeated) return { ...receipt, delivery: 'image' }
+    if (!repeated) {
+      return { ...receipt, delivery: 'image' }
+    }
     const { actionResults: _images, ...reference } = receipt
     return {
       ...reference,
@@ -130,34 +142,40 @@ export const createLocalReferenceTools = (
         Object.keys(args).some(
           (key) => !['imageUrl', 'sourceUrl'].includes(key)
         )
-      )
+      ) {
         throw new Error('Invalid import')
+      }
       const imageUrl = validateReferenceImageUrl(args.imageUrl).href
       const sourceUrl = validateReferenceImageUrl(args.sourceUrl).href
       const cached = imported.get(imageUrl)
-      if (cached) return reuseReceipt(cached.receipt, imageUrl, sourceUrl)
-      if (/\.svg$/i.test(new URL(imageUrl).pathname))
+      if (cached) {
+        return reuseReceipt(cached.receipt, imageUrl, sourceUrl)
+      }
+      if (/\.svg$/i.test(new URL(imageUrl).pathname)) {
         return unavailableReference(
           'REFERENCE_MEDIA_UNSUPPORTED',
           'Original SVG import is not supported by this raster importer. No raster thumbnail was substituted.',
           referenceRejection('response', 'unsupported-media').failure
         )
+      }
       code = 'REFERENCE_DOWNLOAD_FAILED'
       const response = await download(imageUrl, signal)
       acquisitionAttempts =
         response.headers.get('x-reference-attempt-count') === '2' ? 2 : 1
-      if (!response.ok)
+      if (!response.ok) {
         throw referenceRejection('response', 'http', response.status)
+      }
       if (
         !/^image\/(png|jpeg|webp)(;|$)/i.test(
           response.headers.get('content-type') ?? ''
         )
-      )
+      ) {
         return unavailableReference(
           'REFERENCE_MEDIA_UNSUPPORTED',
           'This response is not a supported PNG, JPEG or WebP image.',
           referenceRejection('response', 'unsupported-media').failure
         )
+      }
       code = 'REFERENCE_BYTES_REJECTED'
       const bytes = await readBytes(response, maximumBytes)
       code = 'REFERENCE_IMAGE_INVALID'
@@ -168,8 +186,9 @@ export const createLocalReferenceTools = (
       const webp =
         bytes.toString('ascii', 0, 4) === 'RIFF' &&
         bytes.toString('ascii', 8, 12) === 'WEBP'
-      if (!png && !jpeg && !webp)
+      if (!png && !jpeg && !webp) {
         throw referenceRejection('decode', 'invalid-image-bytes')
+      }
       code = 'REFERENCE_DECODE_FAILED'
       const digest = createHash('sha256').update(bytes).digest('hex')
       const previous = admittedBytes.get(digest)
@@ -186,7 +205,9 @@ export const createLocalReferenceTools = (
             seconds: 10
           })
           const metadata = await decoder.metadata()
-          if ((metadata.pages ?? 1) === 1) await decoder.stats()
+          if ((metadata.pages ?? 1) === 1) {
+            await decoder.stats()
+          }
           return metadata
         })()
         decoding.set(digest, pendingDecode)
@@ -195,9 +216,11 @@ export const createLocalReferenceTools = (
       try {
         metadata = await pendingDecode
       } finally {
-        if (decoding.get(digest) === pendingDecode) decoding.delete(digest)
+        if (decoding.get(digest) === pendingDecode) {
+          decoding.delete(digest)
+        }
       }
-      if ((metadata.pages ?? 1) !== 1)
+      if ((metadata.pages ?? 1) !== 1) {
         return unavailableReference(
           'REFERENCE_MEDIA_UNSUPPORTED',
           'Animated references are unsupported; no frame was substituted.',
@@ -206,6 +229,7 @@ export const createLocalReferenceTools = (
             attempts: acquisitionAttempts
           }
         )
+      }
       signal.throwIfAborted()
       const concurrentlyAdmitted = admittedBytes.get(digest)
       if (concurrentlyAdmitted) {
@@ -214,8 +238,11 @@ export const createLocalReferenceTools = (
         return receipt
       }
       let mediaType = 'image/webp'
-      if (png) mediaType = 'image/png'
-      else if (jpeg) mediaType = 'image/jpeg'
+      if (png) {
+        mediaType = 'image/png'
+      } else if (jpeg) {
+        mediaType = 'image/jpeg'
+      }
       const dataUrl = `data:${mediaType};base64,${bytes.toString('base64')}`
       const attachmentIndex = addReference({
         dataUrl,
@@ -269,25 +296,28 @@ export const createLocalReferenceTools = (
     } catch (error) {
       signal.throwIfAborted()
       let reason = 'This source could not be imported.'
-      if (error instanceof ReferenceAcquisitionError) reason = error.message
-      else if (code === 'REFERENCE_DECODE_FAILED' && error instanceof Error)
+      if (error instanceof ReferenceAcquisitionError) {
+        reason = error.message
+      } else if (code === 'REFERENCE_DECODE_FAILED' && error instanceof Error) {
         reason = error.message
           .replace(/https?:\/\/\S+|Bearer\s+\S+/gi, '[redacted]')
           .replace(/[\r\n]+/g, ' ')
           .slice(0, 500)
+      }
       let failure = referenceFailure(error, 'request')
-      if (error instanceof ReferenceAcquisitionError)
+      if (error instanceof ReferenceAcquisitionError) {
         failure = {
           ...error.failure,
           attempts: Math.max(acquisitionAttempts, error.failure.attempts)
         }
-      else if (code === 'REFERENCE_DECODE_FAILED')
+      } else if (code === 'REFERENCE_DECODE_FAILED') {
         failure = {
           ...referenceRejection('decode', 'decode-failed').failure,
           attempts: acquisitionAttempts
         }
-      else if (code === 'REFERENCE_ARGUMENTS_INVALID')
+      } else if (code === 'REFERENCE_ARGUMENTS_INVALID') {
         failure = referenceRejection('url', 'invalid-arguments').failure
+      }
       return unavailableReference(
         code,
         `${reason} Failure stage: ${code}. Download, 6 MiB byte and decoder resource guards remain active. No image was resized or imported by this failed call. Choose another source or method; do not substitute an invented or inspired drawing for an explicitly requested reproduction without consent.`,
@@ -345,14 +375,16 @@ export const createLocalReferenceTools = (
         async () => {
           const { response, url } = await downloadPage(pageUrl, signal)
           signal.throwIfAborted()
-          if (!response.ok)
+          if (!response.ok) {
             throw referenceRejection('response', 'http', response.status)
+          }
           if (
             !/^text\/html(;|$)/i.test(
               response.headers.get('content-type') ?? ''
             )
-          )
+          ) {
             throw referenceRejection('response', 'unsupported-media')
+          }
           const html = (await readBytes(response, 1024 * 1024)).toString('utf8')
           return JSON.stringify({
             pageUrl: url,
@@ -448,7 +480,9 @@ export const createLocalReferenceTools = (
     try {
       return await pending
     } finally {
-      if (requests.get(sourceUrl) === pending) requests.delete(sourceUrl)
+      if (requests.get(sourceUrl) === pending) {
+        requests.delete(sourceUrl)
+      }
     }
   }
 
@@ -466,16 +500,18 @@ export const createLocalReferenceTools = (
       isRecord(args) &&
       typeof args.sourceUrl === 'string' &&
       Object.keys(args).every((key) => key === 'sourceUrl')
-    )
+    ) {
       return acquirePage(name, args.sourceUrl, signal)
+    }
     if (
       name !== AiReferenceToolIds.IMPORT_REFERENCE_IMAGE ||
       !isRecord(args) ||
       typeof args.imageUrl !== 'string' ||
       typeof args.sourceUrl !== 'string' ||
       Object.keys(args).some((key) => !['imageUrl', 'sourceUrl'].includes(key))
-    )
+    ) {
       return importOne(name, args, signal)
+    }
     let imageUrl: string
     let sourceUrl: string
     try {
@@ -497,7 +533,9 @@ export const createLocalReferenceTools = (
     try {
       const receipt = JSON.parse(await pending)
       signal.throwIfAborted()
-      if (receipt.source) receipt.source.url = sourceUrl
+      if (receipt.source) {
+        receipt.source.url = sourceUrl
+      }
       const page =
         resolvedPages.get(sourceUrl) ??
         failedPageInventories.get(sourceUrl)?.pageAcquisition
@@ -510,7 +548,9 @@ export const createLocalReferenceTools = (
       }
       return JSON.stringify(receipt)
     } finally {
-      if (requests.get(imageUrl) === pending) requests.delete(imageUrl)
+      if (requests.get(imageUrl) === pending) {
+        requests.delete(imageUrl)
+      }
     }
   }
   const acquire = (name: string, args: unknown, signal: AbortSignal) =>
@@ -558,15 +598,22 @@ export const createLocalReferenceTools = (
   }
   return {
     resultIssue: (_name: string, value: unknown): string | undefined => {
-      if (!isRecord(value)) return 'Reference import returned no result object'
+      if (!isRecord(value)) {
+        return 'Reference import returned no result object'
+      }
       const entries = Array.isArray(value.references)
         ? value.references
         : [value]
-      if (!entries.length) return 'Reference import omitted per-source outcomes'
+      if (!entries.length) {
+        return 'Reference import omitted per-source outcomes'
+      }
       for (const entry of entries) {
-        if (!isRecord(entry) || typeof entry.available !== 'boolean')
+        if (!isRecord(entry) || typeof entry.available !== 'boolean') {
           return 'Reference import omitted availability'
-        if (!entry.available) continue
+        }
+        if (!entry.available) {
+          continue
+        }
         if (
           !Number.isSafeInteger(entry.attachmentIndex) ||
           Number(entry.attachmentIndex) < 0 ||
@@ -578,13 +625,17 @@ export const createLocalReferenceTools = (
           !(Number(entry.image.height) > 0) ||
           !isRecord(entry.source) ||
           typeof entry.source.url !== 'string'
-        )
+        ) {
           return 'Reference import omitted its retained asset, dimensions or provenance'
+        }
         const retainedBytes = admittedBytes.get(entry.sha256)
-        if (!retainedBytes) return 'Reference asset is no longer retained'
+        if (!retainedBytes) {
+          return 'Reference asset is no longer retained'
+        }
         const retained = JSON.parse(retainedBytes)
-        if (retained.attachmentIndex !== entry.attachmentIndex)
+        if (retained.attachmentIndex !== entry.attachmentIndex) {
           return 'Reference attachment identity does not match its retained asset'
+        }
       }
     },
     definitions: [
@@ -661,12 +712,15 @@ export const createLocalReferenceTools = (
       args: unknown,
       signal: AbortSignal
     ): Promise<string> => {
-      if (!isRecord(args)) return acquire(name, args, signal)
-      if (args.refresh !== undefined && typeof args.refresh !== 'boolean')
+      if (!isRecord(args)) {
+        return acquire(name, args, signal)
+      }
+      if (args.refresh !== undefined && typeof args.refresh !== 'boolean') {
         return unavailableReference(
           'REFERENCE_ARGUMENTS_INVALID',
           'refresh must be a boolean.'
         )
+      }
       const { refresh, candidateOffset, ...input } = args
       if (
         candidateOffset !== undefined &&
@@ -675,11 +729,12 @@ export const createLocalReferenceTools = (
           typeof input.sourceUrl !== 'string' ||
           input.imageUrl !== undefined ||
           input.references !== undefined)
-      )
+      ) {
         return unavailableReference(
           'REFERENCE_ARGUMENTS_INVALID',
           'candidateOffset requires a sourceUrl-only page lookup.'
         )
+      }
       const pageCandidates = (
         receipt: Record<string, unknown>,
         sourceUrl: unknown,
@@ -688,17 +743,19 @@ export const createLocalReferenceTools = (
         if (
           !isRecord(receipt.pageAcquisition) ||
           !Array.isArray(receipt.pageAcquisition.candidates)
-        )
+        ) {
           return receipt
+        }
         const acquisition = receipt.pageAcquisition
         const all = acquisition.candidates as unknown[]
-        if (offset > all.length)
+        if (offset > all.length) {
           return JSON.parse(
             unavailableReference(
               'REFERENCE_ARGUMENTS_INVALID',
               'Candidate offset is beyond the current page inventory. Restart at offset 0.'
             )
           )
+        }
         const candidates = all.slice(offset, offset + 16)
         const end = offset + candidates.length
         return {
@@ -747,11 +804,12 @@ export const createLocalReferenceTools = (
         Object.keys(input).some((key) => key !== 'references') ||
         !Array.isArray(args.references) ||
         !args.references.length
-      )
+      ) {
         return unavailableReference(
           'REFERENCE_ARGUMENTS_INVALID',
           'Provide a nonempty references array of imageUrl/sourceUrl pairs, without singular fields.'
         )
+      }
       const candidates = args.references
       const receipts: Record<string, unknown>[] = new Array(candidates.length)
       let next = 0
@@ -784,19 +842,24 @@ export const createLocalReferenceTools = (
           !images.has(receipt.attachmentIndex)
         ) {
           images.add(receipt.attachmentIndex)
-          if (Array.isArray(results)) actionResults.push(...results)
+          if (Array.isArray(results)) {
+            actionResults.push(...results)
+          }
         }
-        if (receipt.available === false)
+        if (receipt.available === false) {
           actionResults.push({
             actionName: AiReferenceToolIds.IMPORT_REFERENCE_IMAGE,
             result: receipt
           })
+        }
         return receipt
       })
       const available = references.some((receipt) => receipt.available === true)
       const failed = references.some((receipt) => receipt.available === false)
       let status = 'unavailable'
-      if (available) status = failed ? 'partial' : 'complete'
+      if (available) {
+        status = failed ? 'partial' : 'complete'
+      }
       return JSON.stringify({
         available,
         status,

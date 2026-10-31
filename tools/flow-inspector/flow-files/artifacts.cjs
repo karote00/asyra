@@ -25,19 +25,22 @@ function retain(directory, root, artifacts) {
       !stat.isFile() ||
       stat.size > 64 * 1024 * 1024 ||
       (total += stat.size) > 256 * 1024 * 1024
-    )
+    ) {
       throw new Error('Current artifact exceeds budget')
+    }
     const bytes = fs.readFileSync(source),
       digest = hash(bytes)
-    if (digest !== artifact.digest || bytes.length !== artifact.size)
+    if (digest !== artifact.digest || bytes.length !== artifact.size) {
       throw new Error('Current artifact integrity mismatch')
+    }
     const relative = '.attachments/' + digest,
       destination = safePath(directory, relative)
     if (
       fs.existsSync(destination) &&
       hash(fs.readFileSync(destination)) !== digest
-    )
+    ) {
       throw new Error('Stored current artifact integrity mismatch')
+    }
     pending.push({ destination, bytes })
     retained.push({
       name: artifact.name || 'Execution artifact',
@@ -49,18 +52,21 @@ function retain(directory, root, artifacts) {
   }
   for (const { destination, bytes } of pending) {
     fs.mkdirSync(path.dirname(destination), { recursive: true })
-    if (!fs.existsSync(destination))
+    if (!fs.existsSync(destination)) {
       fs.writeFileSync(destination, bytes, { flag: 'wx', mode: 0o600 })
+    }
   }
   return retained
 }
 function prune(directory, candidates, documents) {
   const used = references(documents)
-  for (const relative of candidates)
+  for (const relative of candidates) {
     if (!used.has(relative) && /^\.attachments\/[a-f0-9]{64}$/.test(relative)) {
       const file = safePath(directory, relative)
-      if (fs.existsSync(file) && fs.lstatSync(file).isFile())
+      if (fs.existsSync(file) && fs.lstatSync(file).isFile()) {
         fs.unlinkSync(file)
+      }
     }
+  }
 }
 module.exports = { retain, prune, references }

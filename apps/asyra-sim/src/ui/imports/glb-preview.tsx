@@ -81,7 +81,9 @@ export function GlbPreview({
             onChange={(event) => {
               const file = event.target.files?.[0]
 
-              if (file) void preview(file)
+              if (file) {
+                void preview(file)
+              }
 
               event.currentTarget.value = ''
             }}

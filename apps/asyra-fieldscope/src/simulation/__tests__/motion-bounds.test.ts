@@ -120,10 +120,11 @@ function contains(
   p: readonly number[]
 ) {
   p.forEach((value, axis) => {
-    if (!(bounds.min[axis] <= value && value <= bounds.max[axis]))
+    if (!(bounds.min[axis] <= value && value <= bounds.max[axis])) {
       throw new Error(
         `Original vertex outside envelope at axis ${axis}: ${value} not in [${bounds.min[axis]}, ${bounds.max[axis]}]`
       )
+    }
   })
 }
 
@@ -138,7 +139,9 @@ it('encloses original robot vertices and every region using actual body source c
     }
     const result = f.owner.enclose(f.source, raw, window, state)
     const rig = f.source.receipt.robot.rig
-    if (!rig) throw new Error('Missing rig')
+    if (!rig) {
+      throw new Error('Missing rig')
+    }
     expect(result.meshes.map((item) => item.mesh)).toEqual(
       f.source.meshes.filter((mesh) => mesh.kind === 'robot')
     )
@@ -157,22 +160,25 @@ it('encloses original robot vertices and every region using actual body source c
           !part ||
           item.mesh.shape.kind !== 'triangles' ||
           item.envelope.status !== 'bounded'
-        )
+        ) {
           throw new Error('Missing finite original source')
+        }
         expect(item.part.source).toBe(item.mesh.origin)
         expect(item.regions.map((region) => region.source)).toEqual(
           item.mesh.origin.regions
         )
         const shape = item.mesh.shape
         // Every original vertex, not a rendered proxy or an aggregate fixture box.
-        for (let offset = 0; offset < shape.positions.length; offset += 3)
+        for (let offset = 0; offset < shape.positions.length; offset += 3) {
           contains(
             item.envelope.bounds,
             point(part, shape.positions.slice(offset, offset + 3), state)
           )
+        }
         for (const region of item.regions) {
-          if (region.envelope.status !== 'bounded')
+          if (region.envelope.status !== 'bounded') {
             throw new Error('Unresolved fixture region')
+          }
           for (
             let index = region.source.indexStart;
             index < region.source.indexStart + region.source.indexCount;
@@ -195,7 +201,9 @@ it('encloses original robot vertices and every region using actual body source c
 it('keeps fixed singleton and narrow-window usefulness limits and full-domain finite controls', () => {
   const f = setup(),
     rig = f.source.receipt.robot.rig
-  if (!rig) throw new Error('Missing rig')
+  if (!rig) {
+    throw new Error('Missing rig')
+  }
   for (const [joints, radius, threshold] of [
     [REST_JOINTS, 0, 1e-8],
     [centre, 0, 1e-8],
@@ -208,14 +216,17 @@ it('keeps fixed singleton and narrow-window usefulness limits and full-domain fi
       kinematics.evaluateRobotAffinePose(rig, q)
     )
     for (const item of result.meshes) {
-      if (item.envelope.status !== 'bounded')
+      if (item.envelope.status !== 'bounded') {
         throw new Error('Unresolved usefulness case')
+      }
       const points: number[][] = []
       for (const pose of poses) {
         const part = pose.parts.find(
           (value) => value.source === item.mesh.origin
         )
-        if (!part) throw new Error('Missing part')
+        if (!part) {
+          throw new Error('Missing part')
+        }
         for (let corner = 0; corner < 8; corner++) {
           const local = [0, 1, 2].map((axis) =>
             corner & (1 << axis)
@@ -279,7 +290,7 @@ it('reuses original affine and bounds products without source reconstruction and
       result.meshes.reduce((sum, item) => sum + item.regions.length, 0)
     )
     expect(result.work.baseFrames).toBe(1)
-    for (const item of result.meshes)
+    for (const item of result.meshes) {
       for (const region of item.regions) {
         const prepared = item.mesh.prepared.regions.find(
           (value) => value.source === region.source
@@ -287,9 +298,12 @@ it('reuses original affine and bounds products without source reconstruction and
         expect(region.provenance).toBe(
           prepared ? 'region-bounds' : 'mesh-envelope'
         )
-        if (!prepared) expect(region.envelope).toBe(item.envelope)
+        if (!prepared) {
+          expect(region.envelope).toBe(item.envelope)
+        }
         expect(Object.isFrozen(region)).toBe(true)
       }
+    }
     expect(Object.isFrozen(result)).toBe(true)
     const again = f.owner.enclose(f.source, segment(), window, assumptions())
     expect(again.meshes[0].envelope).not.toBe(result.meshes[0].envelope)
@@ -409,8 +423,12 @@ it('profiles four fixed complete-entry batches without source scans or widened g
       corners = 0,
       maxBits = 0
     for (let index = 0; index < 10; index++) {
-      if (performance.now() - began > 1000 || performance.now() - start > 10000)
+      if (
+        performance.now() - began > 1000 ||
+        performance.now() - start > 10000
+      ) {
         throw new Error('Fixed motion bounds profile exceeded')
+      }
       const result = f.owner.enclose(f.source, raw, window, assumptions())
       trig += result.work.pose.trigCalls
       evaluations += result.work.pose.polynomialEvaluations
@@ -435,13 +453,16 @@ it('profiles four fixed complete-entry batches without source scans or widened g
 it('keeps same-shape different-region identity and proves zero source buffer reads after preparation', () => {
   const f = setup(),
     original = f.source.receipt.robot.parts[0]
-  if (original.shape.kind !== 'triangles')
+  if (original.shape.kind !== 'triangles') {
     throw new Error('Missing triangle fixture')
+  }
   let reads = 0
   const track = (values: readonly number[]) =>
     new Proxy(values, {
       get(target, key, receiver) {
-        if (typeof key === 'string' && Number.isInteger(Number(key))) reads++
+        if (typeof key === 'string' && Number.isInteger(Number(key))) {
+          reads++
+        }
         return Reflect.get(target, key, receiver)
       }
     })
@@ -499,7 +520,9 @@ it('keeps same-shape different-region identity and proves zero source buffer rea
   const a = result.meshes.find((item) => item.mesh.origin === solid),
     b = result.meshes.find((item) => item.mesh.origin === sheet),
     c = result.meshes.find((item) => item.mesh.origin === repeated)
-  if (!a || !b || !c) throw new Error('Missing source fixtures')
+  if (!a || !b || !c) {
+    throw new Error('Missing source fixtures')
+  }
   expect(a.mesh.shape).toBe(b.mesh.shape)
   expect(a.envelope).toBe(b.envelope)
   expect(a.envelope).toBe(c.envelope)

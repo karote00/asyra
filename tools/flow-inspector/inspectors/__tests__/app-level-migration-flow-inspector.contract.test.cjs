@@ -36,11 +36,7 @@ test('dedicated migration Inspector and product authority resolve', () => {
   )
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.specPath)))
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.inspectorPath)))
-  assert.ok(
-    fs.existsSync(
-      path.resolve(__dirname, '../app-level-migration-flow-inspector.html')
-    )
-  )
+  require('./assert-react-catalog.cjs')(data)
   assert.ok(
     step('receive-raw-document').implementationBoundary.includes(
       'packages/persistence/src/providers/index.ts'
@@ -86,16 +82,16 @@ test('every step has exact execution fields and all routes and artifacts resolve
 
   data.routes.forEach((route) => {
     assert.ok(stepIds.has(route.from), `${route.id} from`)
-    if (route.to) assert.ok(stepIds.has(route.to), `${route.id} to`)
+    if (route.to) {assert.ok(stepIds.has(route.to), `${route.id} to`)}
     route.producedArtifacts.forEach((id) => {
       const artifact = data.artifacts.find((item) => item.id === id)
       assert.ok(artifact, `${route.id} artifact ${id}`)
       assert.equal(artifact.ownerStepId, route.from, `${route.id} owner ${id}`)
       if (route.to)
-        assert.ok(
+        {assert.ok(
           artifact.consumerStepIds.includes(route.to),
           `${route.id} consumer ${id}`
-        )
+        )}
     })
   })
 
@@ -112,10 +108,10 @@ test('every step has exact execution fields and all routes and artifacts resolve
       )
     )
     if (!artifact.terminal)
-      assert.ok(
+      {assert.ok(
         artifact.consumerStepIds.length > 0,
         `${artifact.id} consumer required`
-      )
+      )}
   })
 })
 
@@ -161,18 +157,15 @@ test('package validators share only the domain-neutral diagnostic contract', () 
   })
 })
 
-test('viewer preserves frozen data and exposes steps, routes, and artifacts', () => {
-  const viewer = fs.readFileSync(
-    path.resolve(__dirname, '../app-level-migration-flow-inspector.html'),
-    'utf8'
-  )
+test('React catalog preserves frozen steps, routes, and artifacts', () => {
+  const entry = require('./assert-react-catalog.cjs')(data)
 
-  assert.match(viewer, /\[\.\.\.data\.lanes\]\s*\.sort/)
-  assert.match(viewer, /data\.steps/)
-  assert.match(viewer, /data\.routes/)
-  assert.match(viewer, /data\.artifacts/)
-  assert.match(viewer, />Routes</)
-  assert.match(viewer, />Artifacts</)
+  assert.ok(Object.isFrozen(data))
+  assert.ok(data.steps.every(Object.isFrozen))
+  assert.equal(entry.kind, 'flow-v2')
+  assert.equal(entry.data.steps.length, data.steps.length)
+  assert.equal(entry.data.routes.length, data.routes.length)
+  assert.equal(entry.data.artifacts.length, data.artifacts.length)
 })
 
 test('raw direct and provider loads share one pre-validation migration route', () => {

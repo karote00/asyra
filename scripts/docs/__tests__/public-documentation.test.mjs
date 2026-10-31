@@ -310,7 +310,9 @@ test('update guides are discoverable and Text instructions resolve public packag
     )
   ]
   assert.ok(references.length >= 10)
-  for (const [, revision] of references) assert.equal(revision, target)
+  for (const [, revision] of references) {
+    assert.equal(revision, target)
+  }
   for (const owner of ['core', 'preset']) {
     assert.ok(
       references.some(([, , file]) => file === `packages/${owner}/package.json`)
@@ -515,8 +517,9 @@ function releaseHistoryFixture() {
           JSON.stringify(item) +
           '\n```\n\n## Canonical sources\n'
       )
-      if (!pages.some((page) => page.path === file))
+      if (!pages.some((page) => page.path === file)) {
         pages.push({ id: file.slice(0, -3), path: file, title: item.id })
+      }
     }
     return { pages, read: (file) => sources.get(file) }
   }
@@ -614,13 +617,17 @@ test('release validation rejects missing middle records, missing or changed guid
   for (const mutation of ['middle', 'guide', 'hash', 'cycle', 'dependency']) {
     const f = releaseHistoryFixture()
     const inputs = await f.bundle()
-    if (mutation === 'middle')
+    if (mutation === 'middle') {
       inputs.pages = inputs.pages.filter(
         (page) => !page.path.endsWith('/second.md')
       )
-    if (mutation === 'guide') f.sources.delete(f.guide)
-    if (mutation === 'hash')
+    }
+    if (mutation === 'guide') {
+      f.sources.delete(f.guide)
+    }
+    if (mutation === 'hash') {
       f.sources.set(f.guide, '# Changed guide after release')
+    }
     if (mutation === 'cycle') {
       f.entries[0].previous = 'third'
       await f.bundle()
@@ -807,7 +814,9 @@ test('release guide validation shares one read per invocation and rereads change
   const inputs = await f.bundle()
   let reads = 0
   const read = (file) => {
-    if (file === f.guide) reads++
+    if (file === f.guide) {
+      reads++
+    }
     return inputs.read(file)
   }
   readReleaseHistory({ ...inputs, read })
@@ -981,7 +990,9 @@ test('registered release pages retain existing verified history through real gen
       (record) => record.id === existing.id && record.status === 'verified'
     )
   )
-  for (const page of f.pages) registerPage(page, f.sources.get(page.path))
+  for (const page of f.pages) {
+    registerPage(page, f.sources.get(page.path))
+  }
   fs.writeFileSync(manifestPath, JSON.stringify(manifest))
   const bundle = await createPublicDocumentationBundle({ repositoryRoot: root })
   assert.deepEqual(

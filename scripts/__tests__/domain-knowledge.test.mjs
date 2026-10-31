@@ -36,8 +36,9 @@ test('shared knowledge is a flat data-only root workspace', () => {
     'dependencies',
     'devDependencies',
     'peerDependencies'
-  ])
+  ]) {
     assert.equal(manifest[field], undefined, field)
+  }
   assert.deepEqual(
     fs.readdirSync(directory).sort(),
     [...ids.map((id) => `${id}.md`), 'package.json'].sort()
@@ -56,16 +57,18 @@ test('shared advice has provenance, practical guidance and resolvable compositio
     for (const reference of [
       ...(metadata.references ?? []),
       ...(metadata.children ?? [])
-    ])
+    ]) {
       assert.ok(ids.includes(reference))
+    }
     for (const heading of [
       'What',
       'Why',
       'How',
       'Provenance',
       'Evaluation Guidance'
-    ])
+    ]) {
       assert.ok(text.includes(`## ${heading}\n`), `${id}: ${heading}`)
+    }
     assert.ok(text.length > 700, `${id} contains usable advice`)
   }
 })

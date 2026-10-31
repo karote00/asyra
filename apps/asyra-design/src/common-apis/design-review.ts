@@ -60,7 +60,9 @@ const defaultApis: ReviewApis = {
   observeChanges: observeInspectionChanges,
   read: (id) => {
     const metadata = core.getElementMetadata(id)
-    if (!metadata) return undefined
+    if (!metadata) {
+      return undefined
+    }
     return {
       ...metadata,
       children: metadata.childCount
@@ -191,7 +193,9 @@ export const createDesignReviewer = (
         ...ruleInputs(rootId, elementId, node)
       }))
       .sort((a, b) => {
-        if (a.elementId === b.elementId) return 0
+        if (a.elementId === b.elementId) {
+          return 0
+        }
         return a.elementId < b.elementId ? -1 : 1
       })
     const bytes = await crypto.subtle.digest(
@@ -221,7 +225,9 @@ export const createDesignReviewer = (
     const pending = [...value.elementIds, ...(value.parentIds ?? [])]
     const seen = new Set<string>()
     for (const id of pending) {
-      if (seen.has(id)) continue
+      if (seen.has(id)) {
+        continue
+      }
       seen.add(id)
       dirty.add(id)
       pending.push(...(parents.get(id) ?? []))
@@ -230,12 +236,17 @@ export const createDesignReviewer = (
   const runReview = async (rootId: string, signal?: AbortSignal) => {
     const assertActive = () => {
       signal?.throwIfAborted()
-      if (disposed) throw new Error('Design reviewer is disposed.')
+      if (disposed) {
+        throw new Error('Design reviewer is disposed.')
+      }
     }
     assertActive()
-    if (typeof rootId !== 'string' || !rootId.length || rootId.length > 256)
+    if (typeof rootId !== 'string' || !rootId.length || rootId.length > 256) {
       throw new Error('Invalid review target.')
-    if (enabled) stop ??= apis.observeChanges?.(change)
+    }
+    if (enabled) {
+      stop ??= apis.observeChanges?.(change)
+    }
     const start = generation
     let documentChanged = false
     const stopObserving = enabled
@@ -259,7 +270,9 @@ export const createDesignReviewer = (
       const measureIds: string[] = []
       let complete = true
       for (let index = 0; index < queue.length; index++) {
-        if (index > 0 && index % reviewChunkSize === 0) await yieldToHost()
+        if (index > 0 && index % reviewChunkSize === 0) {
+          await yieldToHost()
+        }
         assertActive()
         const { id, visible: inherited, parent } = queue[index]
         if (visited.has(id)) {
@@ -276,10 +289,12 @@ export const createDesignReviewer = (
             node.parentId !== parent?.id ||
             node.parentWidth !== parent?.bounds?.width ||
             node.parentHeight !== parent?.bounds?.height)
-        )
+        ) {
           node = undefined
-        if (node) work.reusedNodes++
-        else {
+        }
+        if (node) {
+          work.reusedNodes++
+        } else {
           work.evaluatedNodes++
           work.metadataReads++
           const data = apis.read(id)
@@ -292,7 +307,9 @@ export const createDesignReviewer = (
           // Workspace owns membership, not a geometric rectangle. Real descendant
           // geometry and Frame containment remain checked by their normal owners.
           const workspace = data.type === EntityTypes.WORKSPACE
-          if (!workspace) work.computedReads++
+          if (!workspace) {
+            work.computedReads++
+          }
           const computed = workspace ? undefined : apis.computed(id, fields)
           const valid =
             computed &&
@@ -313,12 +330,13 @@ export const createDesignReviewer = (
             : undefined
           if (bounds && data.type === 'oval') {
             const rotation = computed?.rotation ?? 0
-            if (typeof rotation !== 'number' || !Number.isFinite(rotation))
+            if (typeof rotation !== 'number' || !Number.isFinite(rotation)) {
               bounds = undefined
-            else
+            } else {
               bounds = deriveGroupBounds([
                 { ...bounds, type: data.type, rotation }
               ])
+            }
           }
           node = {
             type: data.type,
@@ -346,8 +364,10 @@ export const createDesignReviewer = (
           pending.set(id, node)
         }
         coverage.push({ elementId: id, node })
-        if (node.text) texts.set(id, node.text)
-        for (const child of node.children)
+        if (node.text) {
+          texts.set(id, node.text)
+        }
+        for (const child of node.children) {
           queue.push({
             id: child,
             visible: node.visible,
@@ -356,6 +376,7 @@ export const createDesignReviewer = (
               bounds: node.constrainsChildren ? node.bounds : undefined
             }
           })
+        }
       }
       // Derive Group content through the existing geometry owner without changing
       // canonical snapshots or introducing a second retained geometry cache.
@@ -363,10 +384,14 @@ export const createDesignReviewer = (
         coverage.map(({ elementId, node }) => [elementId, node])
       )
       for (let index = coverage.length - 1; index >= 0; index--) {
-        if (index > 0 && index % reviewChunkSize === 0) await yieldToHost()
+        if (index > 0 && index % reviewChunkSize === 0) {
+          await yieldToHost()
+        }
         assertActive()
         const { elementId, node } = coverage[index]
-        if (!node.group || !pending.has(elementId) || !node.bounds) continue
+        if (!node.group || !pending.has(elementId) || !node.bounds) {
+          continue
+        }
         const children = node.children
           .map((id) => nodes.get(id))
           .filter((child) => !child || child.visible)
@@ -415,13 +440,14 @@ export const createDesignReviewer = (
               node.parentWidth,
               node.parentHeight
             )
-            if (Object.values(excess).some((value) => value > 0.5))
+            if (Object.values(excess).some((value) => value > 0.5)) {
               node.findings.push({
                 kind: 'container-overflow',
                 elementId,
                 ...(node.parentId ? { parentId: node.parentId } : {}),
                 ...excess
               })
+            }
           }
         }
         complete &&= node.complete
@@ -435,7 +461,9 @@ export const createDesignReviewer = (
             offset < measureIds.length;
             offset += reviewChunkSize
           ) {
-            if (offset > 0) await yieldToHost()
+            if (offset > 0) {
+              await yieldToHost()
+            }
             assertActive()
             const batch = measureIds.slice(offset, offset + reviewChunkSize)
             work.textMeasurements += batch.length
@@ -450,7 +478,9 @@ export const createDesignReviewer = (
         )
         for (const id of measureIds) {
           const text = texts.get(id)
-          if (!text) continue
+          if (!text) {
+            continue
+          }
           const content = byId.get(id)
           if (!content || !Object.values(content).every(Number.isFinite)) {
             complete = false
@@ -466,17 +496,20 @@ export const createDesignReviewer = (
               text.layout.width,
               text.layout.height
             )
-            if (Object.values(excess).some((value) => value > 0.5))
+            if (Object.values(excess).some((value) => value > 0.5)) {
               text.findings.push({
                 kind: 'text-overflow',
                 elementId: id,
                 ...excess
               })
+            }
           }
         }
       }
       for (const [id, text] of texts) {
-        if (text.measured) measuredTextIds.push(id)
+        if (text.measured) {
+          measuredTextIds.push(id)
+        }
         findings.push(...text.findings.map((finding) => ({ ...finding })))
       }
       assertActive()
@@ -490,7 +523,9 @@ export const createDesignReviewer = (
       ) {
         const removed = new Set<string>()
         for (const [id, node] of pending) {
-          if (!node.complete || (node.text && !node.text.measured)) continue
+          if (!node.complete || (node.text && !node.text.measured)) {
+            continue
+          }
           for (const child of cache.get(id)?.children ?? []) {
             const owners = parents.get(child)
             owners?.delete(id)
@@ -508,7 +543,9 @@ export const createDesignReviewer = (
           }
         }
         for (const id of removed) {
-          if (parents.has(id) || visited.has(id)) continue
+          if (parents.has(id) || visited.has(id)) {
+            continue
+          }
           for (const child of cache.get(id)?.children ?? []) {
             const owners = parents.get(child)
             owners?.delete(id)
@@ -556,10 +593,14 @@ export const createDesignReviewer = (
       available: false,
       evidence: undefined
     })
-    if (!enabled || !measurement.complete) return unavailable()
+    if (!enabled || !measurement.complete) {
+      return unavailable()
+    }
     const digest = await digestCoverage(rootId, coverage)
     signal?.throwIfAborted()
-    if (disposed || generation !== start) return unavailable()
+    if (disposed || generation !== start) {
+      return unavailable()
+    }
     const oldId = latest.get(rootId)
     const old = oldId ? receipts.get(oldId) : undefined
     const unchanged =
@@ -576,7 +617,9 @@ export const createDesignReviewer = (
           })
         : old.digest === digest)
     const receiptId = oldId && unchanged ? oldId : crypto.randomUUID()
-    if (oldId && oldId !== receiptId) receipts.delete(oldId)
+    if (oldId && oldId !== receiptId) {
+      receipts.delete(oldId)
+    }
     const receipt = unchanged
       ? Object.assign(old, {
           generation,
@@ -638,37 +681,50 @@ export const createDesignReviewer = (
       ...(reason ? { reason } : {}),
       ...(changedElementId ? { changedElementId, changedInputs } : {})
     })
-    if (disposed) return answer(false, 'owner-disposed')
-    if (!owns(stamp)) return answer(false, 'foreign-owner')
-    if (stamp.revision < resetGeneration)
+    if (disposed) {
+      return answer(false, 'owner-disposed')
+    }
+    if (!owns(stamp)) {
+      return answer(false, 'foreign-owner')
+    }
+    if (stamp.revision < resetGeneration) {
       return answer(false, 'source-replaced-or-unknown')
+    }
     const receipt = stamp.receiptId ? receipts.get(stamp.receiptId) : undefined
-    if (!receipt || receipt.revision !== stamp.revision)
+    if (!receipt || receipt.revision !== stamp.revision) {
       return answer(false, 'receipt-unavailable')
-    if (receipt.generation === generation) return answer(true)
+    }
+    if (receipt.generation === generation) {
+      return answer(true)
+    }
     const start = generation
     const { measurement, coverage } = await runReview(receipt.rootId, signal)
     observation = measurement.observation
-    if (!measurement.complete) return answer(false, 'checks-incomplete')
+    if (!measurement.complete) {
+      return answer(false, 'checks-incomplete')
+    }
     const digest = await digestCoverage(receipt.rootId, coverage)
     signal?.throwIfAborted()
     if (
       disposed ||
       generation !== start ||
       receipts.get(stamp.receiptId ?? '') !== receipt
-    )
+    ) {
       return answer(false, 'source-changed-during-validation')
+    }
     if (receipt.projected || digest !== receipt.digest) {
-      if (receipt.projected && !receipt.index)
+      if (receipt.projected && !receipt.index) {
         return answer(false, 'coverage-unavailable')
+      }
       const prior =
         receipt.projected && receipt.index
           ? receipt.index.nodes
           : new Map(receipt.coverage.map((row) => [row.elementId, row.node]))
       for (const { elementId, node } of coverage) {
         const old = prior.get(elementId)
-        if (!old)
+        if (!old) {
           return answer(false, 'rule-inputs-changed', elementId, ['membership'])
+        }
         const before = ruleInputs(
           receipt.rootId,
           elementId,
@@ -679,15 +735,18 @@ export const createDesignReviewer = (
         const fields = (Object.keys(after) as (keyof typeof after)[]).filter(
           (key) => JSON.stringify(before[key]) !== JSON.stringify(after[key])
         )
-        if (fields.length)
+        if (fields.length) {
           return answer(false, 'rule-inputs-changed', elementId, fields)
-        if (!receipt.projected)
-          (prior as Map<string, NodeVerdict>).delete(elementId)
+        }
+        if (!receipt.projected) {
+          ;(prior as Map<string, NodeVerdict>).delete(elementId)
+        }
       }
-      if (!receipt.projected && prior.size > 0)
+      if (!receipt.projected && prior.size > 0) {
         return answer(false, 'rule-inputs-changed', prior.keys().next().value, [
           'membership'
         ])
+      }
     }
     receipt.generation = generation
     receipt.coverage = coverage
@@ -705,8 +764,9 @@ export const createDesignReviewer = (
       !targets.length ||
       targets.length > 64 ||
       new Set(targets).size !== targets.length
-    )
+    ) {
       throw new Error('Mechanical coverage requires 1-64 unique targets.')
+    }
     const validation = await validate(stamp, signal)
     signal?.throwIfAborted()
     const receipt = receipts.get(stamp.receiptId ?? '')
@@ -715,13 +775,14 @@ export const createDesignReviewer = (
       available: false as const,
       reason
     })
-    if (!validation.current || !receipt || !isCurrent(stamp))
+    if (!validation.current || !receipt || !isCurrent(stamp)) {
       return {
         ...validation,
         measurements: targets.map((id) =>
           unavailable(id, 'coverage-unavailable')
         )
       }
+    }
     const index = receipt.index ?? {
       nodes: new Map(
         receipt.coverage.map(({ elementId, node }) => [elementId, node])
@@ -739,17 +800,21 @@ export const createDesignReviewer = (
         current && !seen.has(current);
         current = index.nodes.get(current)?.parentId
       ) {
-        if (current === rootId) return true
+        if (current === rootId) {
+          return true
+        }
         seen.add(current)
       }
       return false
     }
     const measurements = targets.map((elementId) => {
       const node = index.nodes.get(elementId)
-      if (!node || !within(elementId, receipt.rootId))
+      if (!node || !within(elementId, receipt.rootId)) {
         return unavailable(elementId, 'target-not-covered')
-      if (!node.inherited)
+      }
+      if (!node.inherited) {
         return unavailable(elementId, 'incompatible-inherited-visibility')
+      }
       const findings = index.findings.filter(
         (finding) =>
           within(finding.elementId, elementId) &&
@@ -785,7 +850,9 @@ export const createDesignReviewer = (
         }
         // Equal rule inputs preserve the identity used by downstream judgments.
         // Updating an unrelated subtree must not invalidate a check dependency.
-        if (unchanged) old.generation = generation
+        if (unchanged) {
+          old.generation = generation
+        }
       }
       if (!old || old.generation !== generation) {
         receiptId = crypto.randomUUID()
@@ -801,10 +868,13 @@ export const createDesignReviewer = (
           projected: true
         })
         latest.set(elementId, receiptId)
-        if (oldId) receipts.delete(oldId)
+        if (oldId) {
+          receipts.delete(oldId)
+        }
       }
-      if (!receiptId || revision === undefined)
+      if (!receiptId || revision === undefined) {
         return unavailable(elementId, 'coverage-unavailable')
+      }
       return {
         elementId,
         available: true as const,
@@ -823,17 +893,22 @@ export const createDesignReviewer = (
     validate,
     // Internal coverage access: no model-facing all-object identity payload.
     coverage: async (stamp: InspectionEvidenceStamp, signal?: AbortSignal) => {
-      if (!(await validate(stamp, signal)).current) return undefined
-      const receipt = receipts.get(stamp.receiptId ?? '')
-      if (!receipt || receipt.generation !== generation || disposed)
+      if (!(await validate(stamp, signal)).current) {
         return undefined
+      }
+      const receipt = receipts.get(stamp.receiptId ?? '')
+      if (!receipt || receipt.generation !== generation || disposed) {
+        return undefined
+      }
       let coverage = receipt.coverage
       if (receipt.projected && receipt.index) {
         const rows: { elementId: string; node: NodeVerdict }[] = []
         const ids = [receipt.rootId]
         for (const elementId of ids) {
           const node = receipt.index.nodes.get(elementId)
-          if (!node) return
+          if (!node) {
+            return
+          }
           rows.push({
             elementId,
             node:

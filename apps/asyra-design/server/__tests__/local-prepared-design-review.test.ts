@@ -26,13 +26,17 @@ const setup = () => {
   })
   const recipe = (id: string) => {
     const value = recipes.get(id)
-    if (!value) throw new Error('Missing fixture recipe')
+    if (!value) {
+      throw new Error('Missing fixture recipe')
+    }
     return value
   }
   const options = {
     resolveRecipe: (id: string) => {
       const result = recipes.get(id)
-      if (!result) throw new Error('Unavailable artifact')
+      if (!result) {
+        throw new Error('Unavailable artifact')
+      }
       return result
     },
     context: () => ({
@@ -179,8 +183,9 @@ describe('tool-only prepared recipe checks', () => {
       { artifactId: 'a', keys: ['missing'] },
       { artifactId: 'a', criterionIds: ['missing'] },
       { artifactId: 'a', previousArtifactId: 'a' }
-    ])
+    ]) {
       await expect(f.owner.review(args, signal())).rejects.toThrow()
+    }
     f.recipe('a').recipe = {
       children: [{ key: 'body' }, { key: 'body' }]
     }
@@ -247,8 +252,9 @@ it('refreshes each retained parent receipt without replacing it with workspace e
   ).toEqual(['tier-b'])
   attachmentCurrent.mockClear()
   attachmentCurrent.mockImplementation(async (attachment) => {
-    if (attachment.parentId === 'tier-a')
+    if (attachment.parentId === 'tier-a') {
       throw new Error('One receipt unavailable')
+    }
     return true
   })
   await owner.refresh(signal())
@@ -271,7 +277,9 @@ it('does not retain a current attachment claim when its validity check fails', a
   const owner = createPreparedDesignReview({
     ...fixture.options,
     attachmentCurrent: async () => {
-      if (fail) throw new Error('Evidence transport failed')
+      if (fail) {
+        throw new Error('Evidence transport failed')
+      }
       return true
     }
   })

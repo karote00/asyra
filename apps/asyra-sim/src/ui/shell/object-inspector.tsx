@@ -40,7 +40,9 @@ export function ObjectInspector() {
     isCurrentEditor() ? view.getSnapshot().updateBody(body) : Promise.resolve()
 
   const remove = () => {
-    if (isCurrentEditor()) view.getSnapshot().removeBody()
+    if (isCurrentEditor()) {
+      view.getSnapshot().removeBody()
+    }
   }
 
   return (

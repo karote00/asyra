@@ -6,9 +6,13 @@ async function download(page: Page, name: string) {
   const pending = page.waitForEvent('download')
   await page.getByRole('button', { name, exact: true }).click()
   const stream = await (await pending).createReadStream()
-  if (!stream) throw new Error('Missing report download')
+  if (!stream) {
+    throw new Error('Missing report download')
+  }
   const chunks: Buffer[] = []
-  for await (const chunk of stream) chunks.push(Buffer.from(chunk))
+  for await (const chunk of stream) {
+    chunks.push(Buffer.from(chunk))
+  }
   return Buffer.concat(chunks).toString('utf8')
 }
 
@@ -24,8 +28,9 @@ test('ordinary nested acceptance editing preserves findings, versions, compariso
       /^https?:/.test(request.url()) &&
       new URL(request.url()).origin !==
         new URL(info.project.use.baseURL ?? '').origin
-    )
+    ) {
       external.push(request.url())
+    }
   })
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')

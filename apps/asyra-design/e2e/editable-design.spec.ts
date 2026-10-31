@@ -263,17 +263,21 @@ test('the Agent applies editable text, hierarchy and curves in one durable Undo'
     )
     const differences: unknown[] = []
     const compare = (a: unknown, b: unknown, path: string) => {
-      if (differences.length >= 20 || JSON.stringify(a) === JSON.stringify(b))
+      if (differences.length >= 20 || JSON.stringify(a) === JSON.stringify(b)) {
         return
+      }
       if (a && b && typeof a === 'object' && typeof b === 'object') {
         const left = a as Record<string, unknown>,
           right = b as Record<string, unknown>
         for (const key of new Set([
           ...Object.keys(left),
           ...Object.keys(right)
-        ]))
+        ])) {
           compare(left[key], right[key], `${path}.${key}`)
-      } else differences.push({ path, current: a, persisted: b })
+        }
+      } else {
+        differences.push({ path, current: a, persisted: b })
+      }
     }
     compare(current.sceneTree, persisted.checkpoint?.sceneTree, 'sceneTree')
     compare(current.props, persisted.checkpoint?.props, 'props')

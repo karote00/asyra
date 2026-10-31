@@ -70,13 +70,18 @@ function inspectExperiment(
   try {
     validateWorkcell(workcell)
     validateExperimentDefinition(definition)
-    if (definition.trajectoryInput || definition.exclusionsInput !== undefined)
+    if (
+      definition.trajectoryInput ||
+      definition.exclusionsInput !== undefined
+    ) {
       throw new Error('Resolve authored experiment inputs before execution')
+    }
     validateTrajectory(workcell, definition.trajectory)
-    if (definition.interval[0] > definition.interval[1])
+    if (definition.interval[0] > definition.interval[1]) {
       throw new Error(
         trajectoryIntervalError(definition.interval, definition.trajectory)
       )
+    }
   } catch (error) {
     return invalidReport(
       error instanceof Error ? error.message : 'Invalid experiment input'
@@ -91,13 +96,15 @@ function inspectExperiment(
     influencing = new Set(definition.scope.influencingBodyIds),
     selected = new Set([...primary, ...influencing])
 
-  for (const id of selected)
-    if (!bodies.has(id))
+  for (const id of selected) {
+    if (!bodies.has(id)) {
       blockers.push(
         issue('missing-body', `Selected body ${id} does not exist.`, [id])
       )
-  for (const id of primary)
-    if (influencing.has(id))
+    }
+  }
+  for (const id of primary) {
+    if (influencing.has(id)) {
       blockers.push(
         issue(
           'overlapping-scope',
@@ -105,9 +112,11 @@ function inspectExperiment(
           [id]
         )
       )
+    }
+  }
   for (const id of selected) {
     const body = bodies.get(id)
-    if (methods !== null && body && !hasResolvedParts(body))
+    if (methods !== null && body && !hasResolvedParts(body)) {
       blockers.push(
         issue(
           'original-part-geometry-unsupported',
@@ -115,10 +124,13 @@ function inspectExperiment(
           [id]
         )
       )
+    }
     for (const collider of body?.colliders ?? []) {
-      if (collider.geometry.kind !== 'mesh') continue
+      if (collider.geometry.kind !== 'mesh') {
+        continue
+      }
       const topology = inspectMeshTopology(collider.geometry)
-      if (topology.issue)
+      if (topology.issue) {
         blockers.push(
           issue(
             'original-part-topology',
@@ -126,8 +138,9 @@ function inspectExperiment(
             [id]
           )
         )
+      }
     }
-    if (body && body.colliders.length === 0)
+    if (body && body.colliders.length === 0) {
       blockers.push(
         issue(
           'missing-collider',
@@ -135,6 +148,7 @@ function inspectExperiment(
           [id]
         )
       )
+    }
   }
 
   const method = methods?.find(
@@ -142,49 +156,52 @@ function inspectExperiment(
       candidate.id === definition.method.id &&
       candidate.version === definition.method.version
   )
-  if (!method && methods !== null)
+  if (!method && methods !== null) {
     blockers.push(
       issue(
         'method-unavailable',
         `Method ${definition.method.id}@${definition.method.version} is unavailable.`
       )
     )
-  else if (method) {
+  } else if (method) {
     if (
       !validParameterValues(
         method.parameterSchema ?? {},
         definition.method.settings.parameters ?? {}
       )
-    )
+    ) {
       blockers.push(
         issue(
           'method-parameters',
           'Method parameters do not match the installed schema. Review the required fields and limits.'
         )
       )
+    }
     const moving = definition.trajectory.keyframes.length > 1
     if (
       (moving && !method.supportsMotion) ||
       (!moving && !method.supportsStatic)
-    )
+    ) {
       blockers.push(
         issue(
           'method-capability',
           `The selected method does not support this trajectory route.`
         )
       )
+    }
     const unsupported = [...selected]
       .flatMap((id) => bodies.get(id)?.colliders ?? [])
       .filter(
         (collider) => !method.geometryKinds.includes(collider.geometry.kind)
       )
-    if (unsupported.length)
+    if (unsupported.length) {
       blockers.push(
         issue(
           'unsupported-geometry',
           'The selected method does not support every selected collider.'
         )
       )
+    }
   }
 
   const actuated = workcell.bodies.filter((body) => body.joint.kind !== 'fixed')
@@ -193,20 +210,20 @@ function inspectExperiment(
       definition.sourceUnits.joints,
       actuated.map((body) => body.id)
     )
-  )
+  ) {
     blockers.push(
       issue(
         'source-unit-mismatch',
         'Source units must cover every actuated joint exactly.'
       )
     )
-  else
+  } else {
     for (const body of actuated) {
       const unit = definition.sourceUnits.joints[body.id] as TrajectoryJointUnit
       if (
         (body.joint.kind === 'revolute' && unit !== 'deg' && unit !== 'rad') ||
         (body.joint.kind === 'prismatic' && unit !== 'mm' && unit !== 'm')
-      )
+      ) {
         blockers.push(
           issue(
             'source-unit-mismatch',
@@ -214,29 +231,40 @@ function inspectExperiment(
             [body.id]
           )
         )
+      }
     }
+  }
 
   const intervalError = trajectoryIntervalError(
     definition.interval,
     definition.trajectory
   )
-  if (intervalError) blockers.push(issue('interval-uncovered', intervalError))
+  if (intervalError) {
+    blockers.push(issue('interval-uncovered', intervalError))
+  }
 
   const candidateBodyPairs = new Map<string, readonly [string, string]>()
   const primaryIds = [...primary]
-  if (definition.scope.selfCollision)
-    for (let a = 0; a < primaryIds.length; a++)
+  if (definition.scope.selfCollision) {
+    for (let a = 0; a < primaryIds.length; a++) {
       for (let b = a + 1; b < primaryIds.length; b++) {
         const left = primaryIds[a],
           right = primaryIds[b]
-        if (left && right)
+        if (left && right) {
           candidateBodyPairs.set(pairKey(left, right), [left, right])
+        }
       }
-  if (definition.scope.externalCollision)
-    for (const left of primary)
-      for (const right of influencing)
-        if (left !== right)
+    }
+  }
+  if (definition.scope.externalCollision) {
+    for (const left of primary) {
+      for (const right of influencing) {
+        if (left !== right) {
           candidateBodyPairs.set(pairKey(left, right), [left, right])
+        }
+      }
+    }
+  }
 
   const exclusions = new Set<string>()
   for (const exclusion of definition.scope.excludedPairs) {
@@ -246,7 +274,7 @@ function inspectExperiment(
       !bodies.has(exclusion.b) ||
       !candidateBodyPairs.has(key) ||
       exclusions.has(key)
-    )
+    ) {
       blockers.push(
         issue(
           'invalid-exclusion',
@@ -254,50 +282,61 @@ function inspectExperiment(
           [exclusion.a, exclusion.b]
         )
       )
-    else exclusions.add(key)
+    } else {
+      exclusions.add(key)
+    }
   }
 
   const pairs: AnalysisPair[] = []
   let pairCount = 0
   for (const [key, [leftId, rightId]] of candidateBodyPairs) {
-    if (exclusions.has(key)) continue
+    if (exclusions.has(key)) {
+      continue
+    }
     const left = bodies.get(leftId),
       right = bodies.get(rightId)
-    if (!left || !right) continue
+    if (!left || !right) {
+      continue
+    }
     pairCount += left.colliders.length * right.colliders.length
     if (pairCount > EXPERIMENT_RESOURCE_PROFILE.maxPairs) {
       pairs.length = 0
       continue
     }
-    for (const a of left.colliders)
-      for (const b of right.colliders)
+    for (const a of left.colliders) {
+      for (const b of right.colliders) {
         pairs.push({
           id: `${left.id}/${a.id}::${right.id}/${b.id}`,
           a: { bodyId: left.id, colliderId: a.id },
           b: { bodyId: right.id, colliderId: b.id }
         })
+      }
+    }
   }
-  if (!pairCount)
+  if (!pairCount) {
     blockers.push(
       issue(
         'no-pairs',
         'The selected scope contains no checkable collider pairs.'
       )
     )
-  if (pairCount > EXPERIMENT_RESOURCE_PROFILE.maxPairs)
+  }
+  if (pairCount > EXPERIMENT_RESOURCE_PROFILE.maxPairs) {
     blockers.push(
       issue(
         'pair-limit',
         `The selected scope expands to ${pairCount} collider pairs; the application limit is ${EXPERIMENT_RESOURCE_PROFILE.maxPairs}.`
       )
     )
-  if (method && pairCount > method.maxPairs)
+  }
+  if (method && pairCount > method.maxPairs) {
     blockers.push(
       issue(
         'method-pair-limit',
         `The selected scope exceeds the method hard limit of ${method.maxPairs} pairs.`
       )
     )
+  }
 
   const acknowledged = new Set(
     definition.scope.acknowledgedExcludedVisibleBodyIds
@@ -311,7 +350,7 @@ function inspectExperiment(
   const staleAcknowledgements = [...acknowledged].filter(
     (id) => !visibleExcluded.includes(id)
   )
-  if (staleAcknowledgements.length)
+  if (staleAcknowledgements.length) {
     blockers.push(
       issue(
         'invalid-acknowledgement',
@@ -319,8 +358,9 @@ function inspectExperiment(
         staleAcknowledgements
       )
     )
+  }
   const unacknowledged = visibleExcluded.filter((id) => !acknowledged.has(id))
-  if (unacknowledged.length)
+  if (unacknowledged.length) {
     assumptions.push(
       issue(
         'visible-background-unacknowledged',
@@ -328,6 +368,7 @@ function inspectExperiment(
         unacknowledged
       )
     )
+  }
 
   const frames = definition.trajectory.keyframes,
     [start, end] = definition.interval,
@@ -342,24 +383,26 @@ function inspectExperiment(
                 Math.min(end, frames[index + 1].time)
             ).length,
     workUnits = pairCount * segmentCount
-  if (pairCount > EXPERIMENT_RESOURCE_PROFILE.warningPairs)
+  if (pairCount > EXPERIMENT_RESOURCE_PROFILE.warningPairs) {
     resourceWarnings.push(
       issue(
         'large-pair-count',
         `The scope expands to ${pairCount} collider pairs. No reliable time estimate is available yet.`
       )
     )
+  }
   const warningWorkUnits = Math.min(
     method?.warningWorkUnits ?? EXPERIMENT_RESOURCE_PROFILE.warningWorkUnits,
     EXPERIMENT_RESOURCE_PROFILE.warningWorkUnits
   )
-  if (workUnits > warningWorkUnits)
+  if (workUnits > warningWorkUnits) {
     resourceWarnings.push(
       issue(
         'large-workload',
         `The requested interval contains ${workUnits} pair/segment combinations and may consume substantial local resources; no reliable time estimate is available yet.`
       )
     )
+  }
 
   return {
     blockers,

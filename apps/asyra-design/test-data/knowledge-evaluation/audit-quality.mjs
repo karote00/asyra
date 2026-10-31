@@ -18,9 +18,12 @@ for (const directory of fs
   const scenario = [...cases.development, ...cases.transfer].find(
     (item) => item.id === run.caseId
   )
-  if (!scenario) continue
-  if (run.failure || !fs.existsSync(path.join(folder, 'analysis.json')))
+  if (!scenario) {
+    continue
+  }
+  if (run.failure || !fs.existsSync(path.join(folder, 'analysis.json'))) {
     throw new Error(`Incomplete quality capture: ${directory}`)
+  }
   const analysis = JSON.parse(
     fs.readFileSync(path.join(folder, 'analysis.json'))
   )
@@ -30,8 +33,9 @@ for (const directory of fs
     (match) => match[1]
   )
   const size = /(\d+) by (\d+) px/.exec(scenario.prompt)
-  if (!size || !text.length)
+  if (!size || !text.length) {
     throw new Error('Frozen brief lacks an exact content oracle')
+  }
   const content = verifyQualitySnapshot(snapshot, {
     width: Number(size[1]),
     height: Number(size[2]),
@@ -78,5 +82,6 @@ if (
       !result.noBrowserErrors ||
       result.outcome !== 'success'
   )
-)
+) {
   process.exitCode = 1
+}

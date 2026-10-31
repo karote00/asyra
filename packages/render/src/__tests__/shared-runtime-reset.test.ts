@@ -60,13 +60,17 @@ describe('Shared Render runtime lifecycle', () => {
     const register = vi.spyOn(render, 'registerLayer')
     runtime.beginSharedRenderRuntime()
     const old = register.mock.calls[0]?.[0]
-    if (!old) throw new Error('Missing pending projection layer')
+    if (!old) {
+      throw new Error('Missing pending projection layer')
+    }
     render.resetRuntime()
     runtime.resetSharedRenderRuntime()
     runtime.beginSharedRenderRuntime()
     expect(register).toHaveBeenCalledTimes(2)
     const current = register.mock.calls[1]?.[0]
-    if (!current) throw new Error('Missing successor projection layer')
+    if (!current) {
+      throw new Error('Missing successor projection layer')
+    }
     const flush = vi
       .spyOn(runtime.renderSceneTreeStore, 'flushPendingChangesForFrame')
       .mockReturnValue(true)

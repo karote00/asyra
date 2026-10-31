@@ -39,8 +39,9 @@ function transport(
   if (
     packet.shapes[0].geometry !== a.geometry ||
     packet.shapes[1].geometry !== b.geometry
-  )
+  ) {
     throw new Error('Changed ordered geometry')
+  }
   tick()
   const la = localPoint(packet.shapes[0].pose, packet.a)
   tick()
@@ -106,7 +107,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
       const pair = snapshot.pairs.find(
         (p) => p.a.bodyId === 'example:joint-2' && p.b.bodyId === 'obstacle-11'
       )
-      if (!pair) throw new Error('Missing original pair')
+      if (!pair) {
+        throw new Error('Missing original pair')
+      }
       const threshold = snapshot.rule.minimumClearance
       const context = new OriginalMeshQuery()
       const overhead = { capture: 0, publication: 0, transport: 0 }
@@ -150,8 +153,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
       const interpolate = kinematics.interpolateSegment
       vi.spyOn(kinematics, 'interpolateSegment').mockImplementation(
         (...args) => {
-          if (!Array.isArray(args[2]))
+          if (!Array.isArray(args[2])) {
             throw new Error('Expected interval input')
+          }
           span = [args[2][0], args[2][1]]
           return interpolate(...args)
         }
@@ -165,8 +169,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           actual?.[0] === root.start &&
           actual[1] === root.end &&
           value > threshold
-        )
+        ) {
           root.clear = true
+        }
         return value
       }
       const solve = convex.convexDistance
@@ -174,8 +179,12 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         const value = solve(...args)
         if (active) {
           active.convex++
-          if (active.firstWarningWork === undefined && value.upper < threshold)
+          if (
+            active.firstWarningWork === undefined &&
+            value.upper < threshold
+          ) {
             active.firstWarningWork = context.work - targetBefore
+          }
         }
         return value
       })
@@ -195,8 +204,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           if (
             points.length === 2 &&
             ops.norm(ops.sub(points[0], points[1]))[1] < threshold
-          )
+          ) {
             active.firstWarningWork = context.work - targetBefore
+          }
         }
         return value
       }
@@ -234,7 +244,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                 active = row
                 points = []
                 targetBefore = context.work
-              } else discarded++
+              } else {
+                discarded++
+              }
             }
             root = {
               node: origin.node,
@@ -246,7 +258,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               penetration: false,
               child: false
             }
-          } else if (root && origin.node !== root.node) root.child = true
+          } else if (root && origin.node !== root.node) {
+            root.child = true
+          }
           const before = context.work
           const result = sample(a, b, origin, source)
           if (row) {
@@ -272,8 +286,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               attempted++
               for (const shape of [a, b]) {
                 expect(shape.geometry.kind).toBe('mesh')
-                if (shape.geometry.kind !== 'mesh')
+                if (shape.geometry.kind !== 'mesh') {
                   throw new Error('Expected full mesh')
+                }
                 expect(
                   Object.isFrozen(shape.geometry) &&
                     Object.isFrozen(shape.geometry.positions) &&
@@ -332,11 +347,15 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           context
         )
       } finally {
-        if (originalDescriptor)
+        if (originalDescriptor) {
           Object.defineProperty(initial, 'witness', originalDescriptor)
-        else Reflect.deleteProperty(initial, 'witness')
+        } else {
+          Reflect.deleteProperty(initial, 'witness')
+        }
       }
-      if (root?.packet) discarded++
+      if (root?.packet) {
+        discarded++
+      }
       const additional = Object.values(overhead).reduce((a, b) => a + b, 0)
       expect(result.coverage).toBe('complete')
       expect(result.evaluations).toBe(95)

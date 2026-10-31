@@ -185,11 +185,12 @@ export class RenderObjectRuntime {
       RenderEngineCapabilities.LOCAL_CONTENT_BOUNDS
     ])
     let query = this.regionQueries.get(root)
-    if (!query || query.includes !== includes)
+    if (!query || query.includes !== includes) {
       this.regionQueries.set(
         root,
         (query = new SceneRegionQuery(root, includes))
       )
+    }
     return query.query(bounds)
   }
 
@@ -546,7 +547,9 @@ export class RenderObjectRuntime {
         failures.push(error)
       }
     })
-    if (failures.length > 0) throw failures[0]
+    if (failures.length > 0) {
+      throw failures[0]
+    }
   }
 
   private destroyResourceRecord(
@@ -577,8 +580,9 @@ export class RenderObjectRuntime {
 
   private invalidateContentBounds(node: RenderNode | null): void {
     const changedNode = node
-    if (changedNode)
+    if (changedNode) {
       this.regionQueries.forEach((query) => query.change(changedNode))
+    }
     while (node) {
       this.localContentBounds.delete(node)
       node = node.parent
@@ -590,17 +594,22 @@ export class RenderObjectRuntime {
     type: 'get-bounds' | 'get-local-content-bounds'
   ): RenderBounds | null {
     const handle = node.getEngineHandle()
-    if (!handle) return null
+    if (!handle) {
+      return null
+    }
     const local = type === 'get-local-content-bounds'
     if (
       local &&
       !this.engine.capabilities.has(
         RenderEngineCapabilities.LOCAL_CONTENT_BOUNDS
       )
-    )
+    ) {
       return null
+    }
     const cached = local ? this.localContentBounds.get(node) : undefined
-    if (cached) return { ...cached }
+    if (cached) {
+      return { ...cached }
+    }
     this.flushDraws()
     const result = this.engine.query({ type, object: handle })
     if (
@@ -616,7 +625,9 @@ export class RenderObjectRuntime {
     ) {
       throw new Error('Invalid render content bounds')
     }
-    if (local) this.localContentBounds.set(node, { ...result.bounds })
+    if (local) {
+      this.localContentBounds.set(node, { ...result.bounds })
+    }
     return { ...result.bounds }
   }
 
@@ -776,7 +787,9 @@ export class RenderNode {
     })
     let resumed = false
     return () => {
-      if (resumed) return
+      if (resumed) {
+        return
+      }
       resumed = true
       this.presentationSuspensions--
       this.updateEngineProperties({
@@ -818,8 +831,9 @@ export class RenderNode {
       typeof visualId !== 'string' ||
       !visualId ||
       (elementId !== undefined && (typeof elementId !== 'string' || !elementId))
-    )
+    ) {
       throw new Error('Invalid projection identity')
+    }
     this._projectionIdentity = Object.freeze({ visualId, elementId })
   }
 
@@ -1116,8 +1130,9 @@ export class RenderNode {
     bounds: RenderBounds,
     includes = includeAllRegionNodes
   ): RenderNode[] {
-    if (!this.runtime || !this.handle)
+    if (!this.runtime || !this.handle) {
       throw new Error('Workspace projection is unavailable')
+    }
     return this.runtime.queryRegion(this, bounds, includes)
   }
 
@@ -1132,7 +1147,9 @@ export class RenderNode {
       transform = multiplyMatrices(parent.localTransform, transform)
       parent = parent.parent
     }
-    if (!parent) throw new Error('Region target is outside the workspace')
+    if (!parent) {
+      throw new Error('Region target is outside the workspace')
+    }
     const local = this.getPresentationLocalBounds()
     const points = [
       { x: local.x, y: local.y },
@@ -1158,7 +1175,9 @@ export class RenderNode {
       )
     ) {
       const measured = this.runtime.queryBounds(this, 'get-bounds')
-      if (measured) return measured
+      if (measured) {
+        return measured
+      }
     }
     return this.projectLocalBounds(this.getPresentationLocalBounds())
   }
@@ -1238,9 +1257,15 @@ export class RenderContainer extends RenderNode {
     objectType: RenderEngineObjectType = 'container'
   ) {
     super(objectType)
-    if (typeof properties.label === 'string') this.label = properties.label
-    if (typeof properties.x === 'number') this.x = properties.x
-    if (typeof properties.y === 'number') this.y = properties.y
+    if (typeof properties.label === 'string') {
+      this.label = properties.label
+    }
+    if (typeof properties.x === 'number') {
+      this.x = properties.x
+    }
+    if (typeof properties.y === 'number') {
+      this.y = properties.y
+    }
     if (typeof properties.transformGroup === 'boolean') {
       this.transformGroup = properties.transformGroup
     }

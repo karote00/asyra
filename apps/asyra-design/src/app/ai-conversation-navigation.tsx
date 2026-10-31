@@ -73,7 +73,9 @@ export const AiConversationNavigation = ({
           id={historyId}
           aria-label="Conversation history"
           onKeyDown={(event) => {
-            if (event.key !== 'Escape') return
+            if (event.key !== 'Escape') {
+              return
+            }
             event.stopPropagation()
             setHistoryOpen(false)
             toggleRef.current?.focus()

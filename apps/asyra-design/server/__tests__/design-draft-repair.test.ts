@@ -13,7 +13,9 @@ it('retains immutable rejected source with exact request-local references', () =
   const store = createDesignDraftRepairStore()
   const source = { children: [{ key: 'duplicate' }], 'a/b~c': 1 }
   const draftId = store.retain(source)
-  if (!draftId) throw new Error('Expected the valid draft to be retained')
+  if (!draftId) {
+    throw new Error('Expected the valid draft to be retained')
+  }
   source.children[0].key = 'later caller change'
   const repair = {
     draftId,
@@ -39,8 +41,9 @@ it('retains immutable rejected source with exact request-local references', () =
 it('refuses new retention at capacity without evicting an existing repair source', () => {
   const store = createDesignDraftRepairStore()
   const first = store.retain({ key: 'first' })
-  for (let index = 1; index < limits.retainedDrafts; index++)
+  for (let index = 1; index < limits.retainedDrafts; index++) {
     store.retain({ key: index })
+  }
   expect(store.retain({ key: 'overflow' })).toBeUndefined()
   expect(
     store.repair({
@@ -88,9 +91,13 @@ it('rejects nonexisting or malformed paths without changing a retained draft', (
 it('offers source-referenced budget partitions without copying geometry into recovery', () => {
   const store = createDesignDraftRepairStore()
   const draftId = store.retain(recoveryFixture.input.draft)
-  if (!draftId) throw new Error('Missing retained source')
+  if (!draftId) {
+    throw new Error('Missing retained source')
+  }
   const source = store.describe(draftId)
-  if (!source?.partitions) throw new Error('Missing partitions')
+  if (!source?.partitions) {
+    throw new Error('Missing partitions')
+  }
   expect(source.partitions).toHaveLength(2)
   expect(source.partitions.reduce((n, p) => n + p.expandedNodes - 1, 0)).toBe(
     13094
@@ -120,7 +127,9 @@ it('offers source-referenced budget partitions without copying geometry into rec
 it('compiles retained partitions once and binds continuation to the original root', async () => {
   const session = createDesignPreparationSession()
   const draftId = session.retainRejectedDraft(recoveryFixture.input.draft)
-  if (!draftId) throw new Error('Missing retained source')
+  if (!draftId) {
+    throw new Error('Missing retained source')
+  }
   const signal = new AbortController().signal
   const firstRepair = { draftId, partition: 0 }
   const first = await session.prepareAsync(
@@ -163,7 +172,9 @@ it('compiles retained partitions once and binds continuation to the original roo
 it('preserves sparse original instance ranges and rejects indivisible or relational recovery', () => {
   const original = recoveryFixture.input.draft
   const pattern = original.children.find((child) => child.type === 'pattern')
-  if (!pattern) throw new Error('Missing pattern')
+  if (!pattern) {
+    throw new Error('Missing pattern')
+  }
   const source = {
     ...original,
     children: [
@@ -179,9 +190,13 @@ it('preserves sparse original instance ranges and rejects indivisible or relatio
   }
   const store = createDesignDraftRepairStore()
   const draftId = store.retain(source)
-  if (!draftId) throw new Error('Missing retained source')
+  if (!draftId) {
+    throw new Error('Missing retained source')
+  }
   const parts = store.describe(draftId)?.partitions
-  if (!parts) throw new Error('Missing partitions')
+  if (!parts) {
+    throw new Error('Missing partitions')
+  }
   expect(parts).toHaveLength(2)
   const a = store.repair({ draftId, partition: 0 }) as {
     children: Record<string, unknown>[]
@@ -199,13 +214,17 @@ it('preserves sparse original instance ranges and rejects indivisible or relatio
   }
   expect(b.children[0].instanceRanges).toEqual([{ start: 10, end: 12 }])
   const relations = store.retain({ ...original, relations: [] })
-  if (!relations) throw new Error('Missing retained source')
+  if (!relations) {
+    throw new Error('Missing retained source')
+  }
   expect(store.describe(relations)?.partitions).toBeUndefined()
   const indivisible = store.retain({
     ...original,
     children: [{ ...original.children[3], rows: 10000, columns: 2 }]
   })
-  if (!indivisible) throw new Error('Missing retained source')
+  if (!indivisible) {
+    throw new Error('Missing retained source')
+  }
   expect(store.describe(indivisible)?.partitions).toBeUndefined()
 })
 
@@ -223,7 +242,9 @@ it.each([
       limit
     )
     const draftId = session.retainRejectedDraft(source)
-    if (!draftId) throw new Error('Missing source')
+    if (!draftId) {
+      throw new Error('Missing source')
+    }
     const signal = new AbortController().signal
     const firstRepair = { draftId, partition: 0 }
     const first = await session.prepareAsync(
@@ -233,7 +254,9 @@ it.each([
     )
     const receipts = [first]
     const partitions = session.describeRejectedDraft(draftId)?.partitions
-    if (!partitions) throw new Error('Missing partitions')
+    if (!partitions) {
+      throw new Error('Missing partitions')
+    }
     for (let partition = 1; partition < partitions.length; partition++) {
       const repair = {
         draftId,
@@ -269,15 +292,20 @@ it.each([
       b: unknown,
       path = 'output'
     ): string | undefined => {
-      if (typeof b === 'number')
+      if (typeof b === 'number') {
         return typeof a === 'number' && Math.abs(a - b) < 0.00000005
           ? undefined
           : path
+      }
       if (Array.isArray(b)) {
-        if (!Array.isArray(a) || a.length !== b.length) return path
+        if (!Array.isArray(a) || a.length !== b.length) {
+          return path
+        }
         for (let i = 0; i < b.length; i++) {
           const result = difference(a[i], b[i], `${path}[${i}]`)
-          if (result) return result
+          if (result) {
+            return result
+          }
         }
         return
       }
@@ -287,15 +315,18 @@ it.each([
           typeof a !== 'object' ||
           JSON.stringify(Object.keys(a).sort()) !==
             JSON.stringify(Object.keys(b).sort())
-        )
+        ) {
           return path
+        }
         for (const [key, value] of Object.entries(b)) {
           const result = difference(
             (a as Record<string, unknown>)[key],
             value,
             `${path}.${key}`
           )
-          if (result) return result
+          if (result) {
+            return result
+          }
         }
         return
       }
@@ -402,7 +433,9 @@ it('keeps world material revisions targeted at each partition actual members', a
   draft.linearFields = { glass: field }
   const session = createDesignPreparationSession()
   const draftId = session.retainRejectedDraft(draft)
-  if (!draftId) throw new Error('Missing retained source')
+  if (!draftId) {
+    throw new Error('Missing retained source')
+  }
   const signal = new AbortController().signal
   const first = await session.prepareAsync(draft, signal, {
     draftId,
@@ -463,10 +496,14 @@ it.each([
   (_, source) => {
     const store = createDesignDraftRepairStore()
     const draftId = store.retain(source)
-    if (!draftId) throw new Error('Missing source')
+    if (!draftId) {
+      throw new Error('Missing source')
+    }
     const partitions = store.describe(draftId)?.partitions
     expect(partitions).toHaveLength(2)
-    if (!partitions) throw new Error('Missing retained partitions')
+    if (!partitions) {
+      throw new Error('Missing retained partitions')
+    }
     const before = structuredClone(source)
     for (let partition = 0; partition < partitions.length; partition++) {
       const selected = store.repair({ draftId, partition }) as typeof source
@@ -495,7 +532,9 @@ it.each([
     const source = { ...recoveryFixture.input.draft, key: 'root', brief }
     const store = createDesignDraftRepairStore()
     const draftId = store.retain(source)
-    if (!draftId) throw new Error('Missing source')
+    if (!draftId) {
+      throw new Error('Missing source')
+    }
     expect(store.describe(draftId)).toMatchObject({
       partitionLimitation: { code, message: expect.any(String) }
     })
@@ -514,7 +553,9 @@ it('reuses unchanged retained source only after complete owner admission', () =>
   const store = createDesignDraftRepairStore()
   const source = { type: 'frame', name: 'Kept', width: 100, height: 100 }
   const draftId = store.retain(source)
-  if (!draftId) throw new Error('Expected retained source')
+  if (!draftId) {
+    throw new Error('Expected retained source')
+  }
   const repair = { draftId, replacements: [] }
   let validations = 0
   const accepted = store.repair(repair, (candidate) => {

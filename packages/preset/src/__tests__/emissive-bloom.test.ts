@@ -104,7 +104,9 @@ it('masks only emission, preserves occlusion alpha and restores all renderer and
     ).toBe(0)
   })
   f.bloom.render(f.scene, f.camera)
-  if (!firstMask) throw new Error('Missing emission mask')
+  if (!firstMask) {
+    throw new Error('Missing emission mask')
+  }
   const release = vi.spyOn(firstMask, 'dispose')
   f.source.dispose()
   expect(release).toHaveBeenCalledOnce()
@@ -119,7 +121,9 @@ it('masks only emission, preserves occlusion alpha and restores all renderer and
   f.bloom.dispose()
   f.bloom.dispose()
   expect(release).toHaveBeenCalledOnce()
-  for (const dispose of targetReleases) expect(dispose).toHaveBeenCalledOnce()
+  for (const dispose of targetReleases) {
+    expect(dispose).toHaveBeenCalledOnce()
+  }
   f.geometry.dispose()
   f.normal.dispose()
   f.glass.dispose()

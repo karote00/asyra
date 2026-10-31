@@ -21,7 +21,9 @@ test('focused canvas moves with W/S and right-drag looks around without changing
   expect((await canvas.screenshot()).equals(before)).toBe(false)
   await page.keyboard.press('s')
   const bounds = await scene.boundingBox()
-  if (!bounds) throw new Error('Missing scene')
+  if (!bounds) {
+    throw new Error('Missing scene')
+  }
   await page.mouse.move(
     bounds.x + bounds.width / 2,
     bounds.y + bounds.height / 2
@@ -98,7 +100,9 @@ test('left drag uses the same stationary look as right drag', async ({
   await page.getByLabel('塑膠覆膜', { exact: true }).uncheck()
   const scene = page.getByTestId('scene')
   const bounds = await scene.boundingBox()
-  if (!bounds) throw new Error('Missing scene')
+  if (!bounds) {
+    throw new Error('Missing scene')
+  }
   const images: Buffer[] = []
   for (const button of ['left', 'right'] as const) {
     await page.getByRole('button', { name: '端面', exact: true }).click()

@@ -18,7 +18,9 @@ it('publishes an admitted collision before the remaining method work finishes', 
   const collision = evidence.pairs.find((pair) =>
     pair.evidence.leaves.some((leaf) => leaf.state === 'finding')
   )
-  if (!collision) throw new Error('Missing collision fixture')
+  if (!collision) {
+    throw new Error('Missing collision fixture')
+  }
   let release: () => void = () => undefined
   const execute: MethodRegistration['execute'] = async (_snapshot, context) => {
     context.emitPair(collision)
@@ -87,7 +89,9 @@ it('reuses complete same-pose pairs and checks only pairs still missing evidence
   )
   const fullEvidence = runOfficialClearanceMethod(sampleSnapshot(input, 4))
   const acceptedPair = fullEvidence.pairs[0]
-  if (!acceptedPair) throw new Error('Missing retained pair fixture')
+  if (!acceptedPair) {
+    throw new Error('Missing retained pair fixture')
+  }
   const execute = vi.fn<MethodRegistration['execute']>((snapshot, context) =>
     runOfficialClearanceMethod(snapshot, context.checkpoint, context.emitPair)
   )
@@ -110,8 +114,9 @@ it('reuses complete same-pose pairs and checks only pairs still missing evidence
   )
   const result = messages.at(-1)
   expect(result?.type).toBe(LiveMessages.RESULT)
-  if (result?.type !== LiveMessages.RESULT)
+  if (result?.type !== LiveMessages.RESULT) {
     throw new Error('Missing merged sample result')
+  }
   expect(result.evidence.pairs).toHaveLength(input.pairs.length)
   expect(result.evidence.pairs[0]).toEqual(acceptedPair)
 })
@@ -183,8 +188,9 @@ it('runs one bounded continuous interval query through the installed method and 
     id: 1,
     interval: [0, 4]
   })
-  if (response?.type !== LiveMessages.INTERVAL_RESULT)
+  if (response?.type !== LiveMessages.INTERVAL_RESULT) {
     throw new Error('Missing interval evidence')
+  }
   expect(response.evidence.pairs).toHaveLength(input.pairs.length)
   expect(response.evidence.evaluations).toBeLessThanOrEqual(
     LIVE_LIMITS.maxBackgroundIntervalEvaluations
@@ -233,7 +239,9 @@ it('returns a compact trace when a sample stops before all pair proofs arrive', 
   )
   const evidence = runOfficialClearanceMethod(sampleSnapshot(input, 4))
   const completedPair = evidence.pairs[0]
-  if (!completedPair) throw new Error('Missing completed pair fixture')
+  if (!completedPair) {
+    throw new Error('Missing completed pair fixture')
+  }
   const execute: MethodRegistration['execute'] = async (_snapshot, context) => {
     context.emitPair(completedPair)
     throw new Error('sample executor failed')

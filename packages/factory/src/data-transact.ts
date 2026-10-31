@@ -243,7 +243,9 @@ type TransactionPayloadOptions = NonNullable<TransactionPayload['options']>
 const toDefinedMutationOptions = (
   options: TransactionPayload['options']
 ): TransactionPayloadOptions | undefined => {
-  if (!options) return
+  if (!options) {
+    return
+  }
 
   const definedOptions: TransactionPayloadOptions = {}
   if (options.undoable !== undefined) {
@@ -259,7 +261,9 @@ const toDefinedMutationOptions = (
     definedOptions.sharedDelivery = options.sharedDelivery
   }
 
-  if (Object.keys(definedOptions).length === 0) return
+  if (Object.keys(definedOptions).length === 0) {
+    return
+  }
   return definedOptions
 }
 
@@ -335,9 +339,13 @@ const freezeReplayEvents = (
     const payload = (event as AllEvent & { payload?: unknown }).payload
     if (payload && typeof payload === 'object') {
       ;(['changes', 'moves'] as const).forEach((key) => {
-        if (!(key in payload)) return
+        if (!(key in payload)) {
+          return
+        }
         const values = (payload as Record<string, unknown>)[key]
-        if (!Array.isArray(values)) return
+        if (!Array.isArray(values)) {
+          return
+        }
         values.forEach((value) => {
           if (value && typeof value === 'object') {
             freezeTrustedValue(value)
@@ -372,7 +380,9 @@ const isPlainRecord = (value: unknown): value is object => {
 }
 
 const areHistoryValuesEqual = (left: unknown, right: unknown): boolean => {
-  if (Object.is(left, right)) return true
+  if (Object.is(left, right)) {
+    return true
+  }
   if (Array.isArray(left) || Array.isArray(right)) {
     return (
       Array.isArray(left) &&
@@ -381,7 +391,9 @@ const areHistoryValuesEqual = (left: unknown, right: unknown): boolean => {
       left.every((value, index) => areHistoryValuesEqual(value, right[index]))
     )
   }
-  if (!isPlainRecord(left) || !isPlainRecord(right)) return false
+  if (!isPlainRecord(left) || !isPlainRecord(right)) {
+    return false
+  }
 
   const leftRecord = left as Record<string, unknown>
   const rightRecord = right as Record<string, unknown>
@@ -615,7 +627,9 @@ class DataTransact {
       return runMember()
     } finally {
       this.enrollingHistoryGroup = undefined
-      if (group.status !== before) this.notifyHistoryGroup(group)
+      if (group.status !== before) {
+        this.notifyHistoryGroup(group)
+      }
     }
   }
 
@@ -637,8 +651,11 @@ class DataTransact {
         const isAtomicMemberBatch =
           !member.progressiveDeliverySequence &&
           batch.sharedDelivery === 'transaction-end'
-        if (isAtomicMemberBatch) atomicSliceId ??= sourceSliceId
-        else atomicSliceId = undefined
+        if (isAtomicMemberBatch) {
+          atomicSliceId ??= sourceSliceId
+        } else {
+          atomicSliceId = undefined
+        }
         const sliceId = atomicSliceId ?? sourceSliceId
         sourceSliceIds.set(batch.batchId, sliceId)
         const ids = memberSlices.get(sliceId) ?? []
@@ -956,7 +973,9 @@ class DataTransact {
           index += 1
         ) {
           const entry = this.journal[index]
-          if (!entry?.shared) continue
+          if (!entry?.shared) {
+            continue
+          }
           if (entry.shared.records.some((record) => !record.delivered)) {
             entry.options.sharedDelivery = 'immediate'
             immediateEntries.push(entry)
@@ -986,12 +1005,18 @@ class DataTransact {
     journalIndexes: readonly number[]
   ): void {
     const firstEvent = events[0]
-    if (!firstEvent) return
+    if (!firstEvent) {
+      return
+    }
 
     const history = firstEvent.options?.history
     const candidate = firstEvent.historyCandidate
-    if (!history && !candidate) return
-    if (history?.mode !== 'replace-latest' || !candidate) return
+    if (!history && !candidate) {
+      return
+    }
+    if (history?.mode !== 'replace-latest' || !candidate) {
+      return
+    }
 
     let stage = this.replaceLatestHistoryStages.get(history.key)
     if (!stage) {
@@ -1056,7 +1081,9 @@ class DataTransact {
         `Factory mutation delivery evidence ${eventIndex} requires at least one shared record`
       )
     }
-    if (!evidence.sharedRecords) return
+    if (!evidence.sharedRecords) {
+      return
+    }
 
     const firstOccurrences: string[] = []
     const seenOccurrences = new Set<string>()
@@ -1266,7 +1293,9 @@ class DataTransact {
         firstEvent.payload,
         latestEvent.payload
       )
-      if (!payload) return
+      if (!payload) {
+        return
+      }
 
       const { history: _history, ...options } = latestEvent.options ?? {}
       entries.push(
@@ -1291,7 +1320,9 @@ class DataTransact {
     entries: readonly TransactionJournalEntry[]
   ): void {
     const sharedEntries = entries.filter((entry) => entry.shared)
-    if (sharedEntries.length === 0) return
+    if (sharedEntries.length === 0) {
+      return
+    }
     const unsupportedEntry = sharedEntries.find(
       (entry) => entry.options.sharedDelivery !== 'immediate'
     )
@@ -1332,7 +1363,9 @@ class DataTransact {
         entries.push(entry)
         return
       }
-      if (emittedKeys.has(history.key)) return
+      if (emittedKeys.has(history.key)) {
+        return
+      }
       emittedKeys.add(history.key)
       const materialized = this.materializeReplaceLatestHistoryStage(
         stage,
@@ -1474,9 +1507,13 @@ class DataTransact {
       return
     }
     const sharedInverseEvents = entry.shared?.inverseEvents
-    if (sharedInverseEvents?.length !== 1) return
+    if (sharedInverseEvents?.length !== 1) {
+      return
+    }
     const inverseEvent = sharedInverseEvents[0]
-    if (!inverseEvent) return
+    if (!inverseEvent) {
+      return
+    }
     const inversePayload = (
       inverseEvent as AllEvent & { payload: Record<string, unknown> }
     ).payload
@@ -1541,7 +1578,9 @@ class DataTransact {
         })
       }
     }
-    if (!projectedCollection) return
+    if (!projectedCollection) {
+      return
+    }
 
     return freezeReplayEvents(
       [
@@ -1595,9 +1634,13 @@ class DataTransact {
     batchId: string
   ): SharedDelivery | undefined {
     const shared = entry.shared
-    if (!shared) return
+    if (!shared) {
+      return
+    }
     const evidence = record.evidence
-    if (!evidence) return
+    if (!evidence) {
+      return
+    }
     return deepFreezeValue({
       deliveryId: evidence.deliveryId,
       artifactId: this.currentArtifactId,
@@ -1798,7 +1841,9 @@ class DataTransact {
     if (this.activeDeliverySequence?.mode === 'atomic') {
       return this.activeDeliverySequence.slices[0]?.sliceId
     }
-    if (this.activeDeliverySequence?.mode !== 'progressive') return
+    if (this.activeDeliverySequence?.mode !== 'progressive') {
+      return
+    }
     if (record.orderedIds.length === 0) {
       throw new Error(
         `Factory mutation shared record ${this.sharedRecordId(entry, record)} is not assigned to a progressive delivery slice`
@@ -1834,7 +1879,9 @@ class DataTransact {
       const sliceId =
         recordRef.record.batch?.sliceId ??
         this.deliverySliceIdForRecord(recordRef)
-      if (!sliceId) return
+      if (!sliceId) {
+        return
+      }
       if (
         this.activeDeliverySequence &&
         recordRef.entry.options.sharedDelivery !== 'immediate' &&
@@ -1925,7 +1972,9 @@ class DataTransact {
     const historyReplayState =
       this.historyReplaySharedState?.batchStateById.get(batch.batchId)
     if (historyReplayState) {
-      if (historyReplayState.delivered) return true
+      if (historyReplayState.delivered) {
+        return true
+      }
       if (
         historyReplayState.readyReadinessKeys.size !==
         historyReplayState.requiredReadinessKeys.size
@@ -1939,7 +1988,9 @@ class DataTransact {
           batch.channel,
           batch.changes
         )
-        if (!delivered) return false
+        if (!delivered) {
+          return false
+        }
 
         historyReplayState.delivered = true
         if (this.transactionOrigin() !== 'remote') {
@@ -1954,7 +2005,9 @@ class DataTransact {
     const records = (
       this.preparedSharedBatchRecords.get(batch.batchId) ?? []
     ).filter(({ record }) => !record.delivered)
-    if (records.length === 0) return true
+    if (records.length === 0) {
+      return true
+    }
     this.sharedEvidenceNotificationDepth += 1
     try {
       const delivered = pushFactoryOwnedBatchToSharedChannel(
@@ -1962,7 +2015,9 @@ class DataTransact {
         batch.channel,
         batch.changes
       )
-      if (!delivered) return false
+      if (!delivered) {
+        return false
+      }
 
       records.forEach(({ record }) => {
         record.delivered = true
@@ -2127,10 +2182,14 @@ class DataTransact {
     currentWorkItemKeys: readonly string[],
     maxItemsPerPublication = DEFAULT_SHARED_PUBLICATION_MAX_WORK_ITEMS
   ): boolean {
-    if (pendingWorkItemKeys.size === 0) return false
+    if (pendingWorkItemKeys.size === 0) {
+      return false
+    }
     let distinctCount = pendingWorkItemKeys.size
     for (const workItemKey of currentWorkItemKeys) {
-      if (!pendingWorkItemKeys.has(workItemKey)) distinctCount += 1
+      if (!pendingWorkItemKeys.has(workItemKey)) {
+        distinctCount += 1
+      }
     }
     return distinctCount > maxItemsPerPublication
   }
@@ -2150,7 +2209,9 @@ class DataTransact {
   private flushPendingProgressivePublication(): void {
     const records = this.pendingProgressivePublicationRecords.splice(0)
     this.pendingProgressivePublicationWorkItemKeys.clear()
-    if (records.length === 0) return
+    if (records.length === 0) {
+      return
+    }
     this.queueSharedPublication(
       this.createSharedPublicationFromRecords(records)
     )
@@ -2252,7 +2313,9 @@ class DataTransact {
     origin: SharedDeliveryOrigin = this.transactionOrigin()
   ): SharedPublication | undefined {
     return measureBrowserDragPhase('factory:create-shared-publication', () => {
-      if (this.transactionOrigin() === 'remote' || origin === 'remote') return
+      if (this.transactionOrigin() === 'remote' || origin === 'remote') {
+        return
+      }
       const publishableRecords = records.filter(({ record }) => {
         if (!record.delivered || record.publicationId !== undefined) {
           return false
@@ -2263,16 +2326,22 @@ class DataTransact {
       const seenBatchIds = new Set<string>()
       publishableRecords.forEach(({ record }) => {
         const batch = record.batch
-        if (!batch || seenBatchIds.has(batch.batchId)) return
+        if (!batch || seenBatchIds.has(batch.batchId)) {
+          return
+        }
         seenBatchIds.add(batch.batchId)
         batches.push(batch)
       })
-      if (batches.length === 0) return
+      if (batches.length === 0) {
+        return
+      }
       const publication = this.createSharedPublicationFromBatches(
         batches,
         origin
       )
-      if (!publication) return
+      if (!publication) {
+        return
+      }
       publishableRecords.forEach(({ record }) => {
         record.publicationId = publication.publicationId
         record.compensationPublicationId = `${publication.publicationId}:compensation`
@@ -2368,7 +2437,9 @@ class DataTransact {
     batches: readonly SharedDeliveryBatch[]
   ): SharedPublication | undefined {
     const state = this.historyReplaySharedState
-    if (!state) return
+    if (!state) {
+      return
+    }
     const publishableBatches = batches.filter((batch) => {
       const batchState = state.batchStateById.get(batch.batchId)
       return (
@@ -2379,10 +2450,14 @@ class DataTransact {
       publishableBatches,
       this.transactionOrigin()
     )
-    if (!publication) return
+    if (!publication) {
+      return
+    }
     publishableBatches.forEach((batch) => {
       const batchState = state.batchStateById.get(batch.batchId)
-      if (!batchState) return
+      if (!batchState) {
+        return
+      }
       batchState.publicationId = publication.publicationId
       batchState.compensationPublicationId = `${publication.publicationId}:compensation`
     })
@@ -2453,14 +2528,18 @@ class DataTransact {
       options.includeActiveSequence !== false &&
       (batches.length === 0 || activeSequenceBatches.length > 0)
     ) {
-      if (batches.length === 0) return this.activeDeliverySequence
+      if (batches.length === 0) {
+        return this.activeDeliverySequence
+      }
       return measureBrowserDragPhase(
         'factory:select-delivery-sequence-boundaries',
         () => {
           const seenSliceIds = new Set<string>()
           const slices: FactoryMutationDeliverySequence['slices'][number][] = []
           activeSequenceBatches.forEach((batch) => {
-            if (seenSliceIds.has(batch.sliceId)) return
+            if (seenSliceIds.has(batch.sliceId)) {
+              return
+            }
             const boundary = this.activeDeliveryBoundaryBySliceId.get(
               batch.sliceId
             )
@@ -2488,7 +2567,9 @@ class DataTransact {
           seenSliceOrderedIds.get(batch.sliceId) ?? new Set<string>()
         batch.records.forEach((record) =>
           [...record.orderedIds].reverse().forEach((orderedId) => {
-            if (seenOrderedIds.has(orderedId)) return
+            if (seenOrderedIds.has(orderedId)) {
+              return
+            }
             seenOrderedIds.add(orderedId)
             orderedIds.push(orderedId)
           })
@@ -2519,7 +2600,9 @@ class DataTransact {
     if (this.activeDeliverySequence?.mode === 'progressive') {
       return this.activeDeliverySequence
     }
-    if (this.activeDeliverySequence?.batchPublications !== false) return
+    if (this.activeDeliverySequence?.batchPublications !== false) {
+      return
+    }
 
     const deliveryIdsBySlice = new Map<string, string[]>()
     this.currentSharedDeliveryBatches.forEach((batch) => {
@@ -2529,7 +2612,9 @@ class DataTransact {
       )
       deliveryIdsBySlice.set(batch.sliceId, deliveryIds)
     })
-    if (deliveryIdsBySlice.size === 0) return
+    if (deliveryIdsBySlice.size === 0) {
+      return
+    }
 
     return deepFreezeValue({
       mode: 'progressive',
@@ -2544,16 +2629,22 @@ class DataTransact {
   private queueImmediatePublicationEntries(
     entries: readonly TransactionJournalEntry[]
   ): void {
-    if (entries.length === 0) return
+    if (entries.length === 0) {
+      return
+    }
     this.pendingImmediatePublicationEntries.push(...entries)
     const token = this.immediatePublicationToken
-    if (this.scheduledImmediatePublicationToken === token) return
+    if (this.scheduledImmediatePublicationToken === token) {
+      return
+    }
     this.scheduledImmediatePublicationToken = token
     queueMicrotask(() => {
       if (this.scheduledImmediatePublicationToken === token) {
         this.scheduledImmediatePublicationToken = null
       }
-      if (token !== this.immediatePublicationToken) return
+      if (token !== this.immediatePublicationToken) {
+        return
+      }
       this.queuePendingImmediatePublication()
       this.flushSharedPublications()
     })
@@ -2563,7 +2654,9 @@ class DataTransact {
     this.scheduledImmediatePublicationToken = null
     this.immediatePublicationToken += 1
     const entries = this.pendingImmediatePublicationEntries.splice(0)
-    if (entries.length === 0) return
+    if (entries.length === 0) {
+      return
+    }
     const records = this.sharedRecordRefs(entries).filter(
       ({ record }) => record.delivered && record.publicationId === undefined
     )
@@ -2595,7 +2688,9 @@ class DataTransact {
   private flushPendingImmediatePublication(): void {
     const records = this.pendingImmediatePublicationRecords.splice(0)
     this.pendingImmediatePublicationWorkItemKeys.clear()
-    if (records.length === 0) return
+    if (records.length === 0) {
+      return
+    }
     this.queueSharedPublication(
       this.createSharedPublicationFromRecords(records)
     )
@@ -2613,7 +2708,9 @@ class DataTransact {
   private queueSharedPublication(
     publication: SharedPublication | undefined
   ): void {
-    if (!publication) return
+    if (!publication) {
+      return
+    }
     this.pendingSharedPublications.push(publication)
   }
 
@@ -2635,7 +2732,9 @@ class DataTransact {
   }
 
   private flushSharedPublications(): void {
-    if (this.emittingSharedPublications) return
+    if (this.emittingSharedPublications) {
+      return
+    }
     this.emittingSharedPublications = true
     try {
       let publication: SharedPublication | undefined
@@ -2672,10 +2771,14 @@ class DataTransact {
     compensationIndex: number,
     batchId: string
   ): SharedDelivery | undefined {
-    if (this.transactionOrigin() === 'remote') return
+    if (this.transactionOrigin() === 'remote') {
+      return
+    }
     const shared = entry.shared
     const evidence = record.evidence
-    if (!shared || !evidence) return
+    if (!shared || !evidence) {
+      return
+    }
     const forwardDelivery = record.delivery
     const deliveryId =
       forwardDelivery?.compensationDeliveryIds?.[compensationIndex] ??
@@ -2964,7 +3067,9 @@ class DataTransact {
   private replayStepSourceSliceId(
     step: PreparedReplayStep
   ): string | undefined {
-    if (!step.shared || 'suppress' in step.shared) return
+    if (!step.shared || 'suppress' in step.shared) {
+      return
+    }
     const sliceIds = new Set<string>()
     step.shared.records.forEach(({ readinessKey }) => {
       const states =
@@ -3017,7 +3122,9 @@ class DataTransact {
         replayOutputIndex += 1
       ) {
         const replayEvent = replayEvents[replayOutputIndex]
-        if (!replayEvent) continue
+        if (!replayEvent) {
+          continue
+        }
         const shared = sharedOutputs?.[replayOutputIndex]
         let restorationEvents: AllEvent[] | undefined
         const mustValidateReplayOutput =
@@ -3066,7 +3173,9 @@ class DataTransact {
 
     for (let stepIndex = 0; stepIndex < preparedSteps.length; stepIndex += 1) {
       const firstStep = preparedSteps[stepIndex]
-      if (!firstStep) continue
+      if (!firstStep) {
+        continue
+      }
       const firstEventType = firstStep.replayEvent.type
       const firstSourceSliceId = this.replayStepSourceSliceId(firstStep)
       const mayUseOwnerBatch =
@@ -3097,13 +3206,19 @@ class DataTransact {
       this.retainingHistoryReplaySharedEvidence = isRetainedHistoryReplay
       let restorationRecorded = false
       const retainRestoration = (events?: readonly AllEvent[]) => {
-        if (restorationRecorded) return
+        if (restorationRecorded) {
+          return
+        }
         restorationRecorded = true
-        if (events) restorationBatches?.push([...events])
-        else
+        if (events) {
+          restorationBatches?.push([...events])
+        } else {
           appliedSteps.forEach(({ restorationEvents }) => {
-            if (restorationEvents) restorationBatches?.push(restorationEvents)
+            if (restorationEvents) {
+              restorationBatches?.push(restorationEvents)
+            }
           })
+        }
       }
       try {
         const result =
@@ -3273,7 +3388,9 @@ class DataTransact {
 
   private compensateDeliveredHistoryReplayBatches(): unknown[] {
     const sharedState = this.historyReplaySharedState
-    if (!sharedState) return []
+    if (!sharedState) {
+      return []
+    }
     const failures: unknown[] = []
     const acknowledgedCompensationBatches: {
       batch: SharedDeliveryBatch
@@ -3560,7 +3677,9 @@ class DataTransact {
   }
 
   private flushStatuses(): void {
-    if (this.emittingTransactionStatuses) return
+    if (this.emittingTransactionStatuses) {
+      return
+    }
     this.emittingTransactionStatuses = true
     try {
       let payload: TransactionStatusPayload | undefined
@@ -3937,7 +4056,9 @@ class DataTransact {
                       transactionEndBatches
                     )
                   : this.createSharedPublication(transactionEndEntries)
-                if (publication) sharedPublications.push(publication)
+                if (publication) {
+                  sharedPublications.push(publication)
+                }
               })
             } catch (error) {
               this.rollbackFailure = toReplayFailure(error)
@@ -4049,7 +4170,9 @@ class DataTransact {
     const seenBatchIds = new Set<string>()
     records.forEach(({ record }) => {
       const batch = record.batch
-      if (!batch || seenBatchIds.has(batch.batchId)) return
+      if (!batch || seenBatchIds.has(batch.batchId)) {
+        return
+      }
       seenBatchIds.add(batch.batchId)
       batches.push(batch)
     })
@@ -4060,9 +4183,13 @@ class DataTransact {
     history: FactoryHistoryEntry,
     batches: readonly SharedDeliveryBatch[]
   ): readonly SharedDeliveryBatch[] {
-    if (history.sourceBatches) return history.sourceBatches
+    if (history.sourceBatches) {
+      return history.sourceBatches
+    }
     const sequence = history.progressiveDeliverySequence
-    if (!sequence) return batches
+    if (!sequence) {
+      return batches
+    }
 
     const batchesBySlice = new Map<string, SharedDeliveryBatch[]>()
     batches.forEach((batch) => {
@@ -4183,7 +4310,9 @@ class DataTransact {
           ? sourceBatch.deliveries
           : [...sourceBatch.deliveries].reverse()
       ).filter((delivery) => deliveredSourceIds.has(delivery.deliveryId))
-      if (sourceDeliveries.length === 0) return
+      if (sourceDeliveries.length === 0) {
+        return
+      }
 
       const batchId = this.nextDeliveryBatchId()
       let replayRecordOccurrence = 0
@@ -4358,13 +4487,19 @@ class DataTransact {
   private flushNextReadyHistoryReplaySlice():
     'none' | HistoryReplaySliceSettlement {
     const sharedState = this.historyReplaySharedState
-    if (!sharedState) return 'none'
+    if (!sharedState) {
+      return 'none'
+    }
     const firstUndeliveredIndex = sharedState.batchStates.findIndex(
       (state) => !state.delivered
     )
-    if (firstUndeliveredIndex < 0) return 'none'
+    if (firstUndeliveredIndex < 0) {
+      return 'none'
+    }
     const firstUndeliveredState = sharedState.batchStates[firstUndeliveredIndex]
-    if (!firstUndeliveredState) return 'none'
+    if (!firstUndeliveredState) {
+      return 'none'
+    }
     const isProgressive = this.activeDeliverySequence?.mode === 'progressive'
     if (
       !isProgressive &&
@@ -4463,7 +4598,9 @@ class DataTransact {
   private flushPendingHistoryReplayPublication(): void {
     const batches = this.pendingHistoryReplayPublicationBatches.splice(0)
     this.pendingHistoryReplayPublicationWorkItemKeys.clear()
-    if (batches.length === 0) return
+    if (batches.length === 0) {
+      return
+    }
     const publication = this.createHistoryReplaySharedPublication(batches)
     this.queueSharedPublication(publication)
     this.flushSharedPublications()
@@ -4473,7 +4610,9 @@ class DataTransact {
     sharedReplay: HistorySharedReplay
   ): void {
     const sharedState = this.historyReplaySharedState
-    if (!sharedState) return
+    if (!sharedState) {
+      return
+    }
     sharedReplay.records.forEach(({ readinessKey }) => {
       const states =
         sharedState.batchStatesByReadinessKey.get(readinessKey) ?? []
@@ -4496,13 +4635,17 @@ class DataTransact {
   ): readonly (HistorySharedReplayOutputs | undefined)[] {
     const historyChanges = this.historyChanges(history)
     const deliveredRecordsByChange = historyChanges.map((change) => {
-      if (!change.shared) return []
+      if (!change.shared) {
+        return []
+      }
       return change.shared.records.filter(
         (record) => record.delivered && record.delivery && record.evidence
       )
     })
     return historyChanges.map((change, changeIndex) => {
-      if (!change.shared) return
+      if (!change.shared) {
+        return
+      }
       const deliveredRecords = deliveredRecordsByChange[changeIndex] ?? []
       const outputCount =
         direction === 'forward' ? 1 : (change.inverseEvents?.length ?? 0)
@@ -4542,7 +4685,9 @@ class DataTransact {
           const seenOrderedIds = new Set<string>()
           records.forEach((record) =>
             record.orderedIds.forEach((orderedId) => {
-              if (seenOrderedIds.has(orderedId)) return
+              if (seenOrderedIds.has(orderedId)) {
+                return
+              }
               seenOrderedIds.add(orderedId)
               orderedIds.push(orderedId)
             })
@@ -4591,7 +4736,9 @@ class DataTransact {
     }
 
     const sourceHistory = sourceStack[sourceStack.length - 1]
-    if (!sourceHistory) return
+    if (!sourceHistory) {
+      return
+    }
     const maxItemsPerSlice = resolveCooperativeRenderMaxItemsPerSlice(options)
     const sourceChanges = this.historyChanges(sourceHistory)
     const lastChanges = sourceChanges.map(({ event }) => event)
@@ -4648,8 +4795,9 @@ class DataTransact {
   }
 
   undo() {
-    if (this.enrollingHistoryGroup)
+    if (this.enrollingHistoryGroup) {
       throw new Error('Cannot replay history inside a group member')
+    }
     if (this.isTransacting > 0 && this.activeOrigin === 'remote') {
       throw new Error('Remote transaction cannot consume local undo history')
     }
@@ -4666,7 +4814,9 @@ class DataTransact {
     }
 
     const sourceHistory = this.undoStack[this.undoStack.length - 1]
-    if (!sourceHistory) return
+    if (!sourceHistory) {
+      return
+    }
     const sourceChanges = this.historyChanges(sourceHistory)
     const lastChanges = sourceChanges.map(({ event }) => event)
     let openedBoundary = false
@@ -4721,8 +4871,9 @@ class DataTransact {
   }
 
   redo() {
-    if (this.enrollingHistoryGroup)
+    if (this.enrollingHistoryGroup) {
       throw new Error('Cannot replay history inside a group member')
+    }
     if (this.isTransacting > 0 && this.activeOrigin === 'remote') {
       throw new Error('Remote transaction cannot consume local redo history')
     }
@@ -4739,7 +4890,9 @@ class DataTransact {
     }
 
     const sourceHistory = this.redoStack[this.redoStack.length - 1]
-    if (!sourceHistory) return
+    if (!sourceHistory) {
+      return
+    }
     const sourceChanges = this.historyChanges(sourceHistory)
     const lastChanges = sourceChanges.map(({ event }) => event)
     let openedBoundary = false

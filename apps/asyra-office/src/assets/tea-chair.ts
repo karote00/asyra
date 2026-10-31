@@ -36,16 +36,25 @@ function shellClearance([x, y, z]: Vec) {
     hi = 0.052
   const ellipse = (v: number) =>
     (x / (0.17 + v)) ** 2 + (y / (0.18 + v)) ** 2 - 1
-  if (ellipse(lo) < 0) return 0.001
-  if (ellipse(hi) > 0) return 0.001
+  if (ellipse(lo) < 0) {
+    return 0.001
+  }
+  if (ellipse(hi) > 0) {
+    return 0.001
+  }
   for (let i = 0; i < 24; i++) {
     const m = (lo + hi) / 2
-    if (ellipse(m) > 0) lo = m
-    else hi = m
+    if (ellipse(m) > 0) {
+      lo = m
+    } else {
+      hi = m
+    }
   }
   const v = (lo + hi) / 2,
     theta = Math.atan2(x / (0.17 + v), y / (0.18 + v))
-  if (Math.abs(theta) > a + 0.002 / R) return 0.001
+  if (Math.abs(theta) > a + 0.002 / R) {
+    return 0.001
+  }
   const zs = bottom + ((z - bottom) * 0.415) / (height(theta) - bottom)
   return roundedBoxField(
     [R * theta, v - 0.025, zs - 0.4425],
@@ -78,7 +87,9 @@ function seatField(
     Math.hypot(Math.max(dxy, 0), Math.max(dz, 0)) +
     Math.min(Math.max(dxy, dz), 0) -
     edge
-  if (!trim) return blank
+  if (!trim) {
+    return blank
+  }
   const rear = y >= 0 ? (Math.hypot(x / 0.19, y / 0.2) - 1) * 0.19 : -1
   return Math.max(blank, rear, -shellClearance(p))
 }

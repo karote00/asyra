@@ -70,7 +70,9 @@ export function usePartImport({
   }
 
   const discard = (value: PreparedVisualImport) => {
-    if (current.current(runtime)) runtime.features.visuals.discard(value)
+    if (current.current(runtime)) {
+      runtime.features.visuals.discard(value)
+    }
   }
 
   const releaseSource = () => {
@@ -78,7 +80,9 @@ export function usePartImport({
 
     controller.current = null
 
-    if (receipt.current) discard(receipt.current)
+    if (receipt.current) {
+      discard(receipt.current)
+    }
 
     receipt.current = null
 
@@ -97,8 +101,9 @@ export function usePartImport({
 
       controller.current?.abort()
 
-      if (receipt.current && current.current(runtime))
+      if (receipt.current && current.current(runtime)) {
         runtime.features.visuals.discard(receipt.current)
+      }
 
       receipt.current = null
 
@@ -134,13 +139,15 @@ export function usePartImport({
     setNotice('')
 
     try {
-      if (file.size < 1 || file.size > VISUAL_SOURCE_PROFILE.maxBytes)
+      if (file.size < 1 || file.size > VISUAL_SOURCE_PROFILE.maxBytes) {
         throw new Error('Choose a nonempty GLB file no larger than 16 MiB.')
+      }
 
       const bytes = new Uint8Array(await file.arrayBuffer())
 
-      if (next.signal.aborted || !live.current || !current.current(runtime))
+      if (next.signal.aborted || !live.current || !current.current(runtime)) {
         return
+      }
 
       setPhase('preparing')
 
@@ -165,21 +172,29 @@ export function usePartImport({
         scale: [1, 1, 1]
       })
     } catch (reason) {
-      if (!next.signal.aborted && live.current && current.current(runtime))
+      if (!next.signal.aborted && live.current && current.current(runtime)) {
         setError(reason instanceof Error ? reason.message : String(reason))
+      }
     } finally {
-      if (controller.current === next && live.current) setPhase(null)
+      if (controller.current === next && live.current) {
+        setPhase(null)
+      }
     }
   }
 
   const showPlacement = () => {
-    if (!prepared || !current.current(runtime)) return
+    if (!prepared || !current.current(runtime)) {
+      return
+    }
 
-    if (needsMemoryAcknowledgement && !memoryAcknowledged) return
+    if (needsMemoryAcknowledgement && !memoryAcknowledged) {
+      return
+    }
 
     try {
-      if (!workcell.bodies.some((body) => body.id === targetId))
+      if (!workcell.bodies.some((body) => body.id === targetId)) {
         throw new Error('Choose an available target body')
+      }
 
       const pose = transformSpatialPose(
         IDENTITY_POSE,
@@ -221,9 +236,13 @@ export function usePartImport({
   }
 
   const accept = async () => {
-    if (!prepared || !previewed || !current.current(runtime)) return
+    if (!prepared || !previewed || !current.current(runtime)) {
+      return
+    }
 
-    if (needsMemoryAcknowledgement && !memoryAcknowledged) return
+    if (needsMemoryAcknowledgement && !memoryAcknowledged) {
+      return
+    }
 
     setPhase('accepting')
 
@@ -237,7 +256,9 @@ export function usePartImport({
         placement
       )
 
-      if (!live.current || !current.current(runtime)) return
+      if (!live.current || !current.current(runtime)) {
+        return
+      }
 
       releaseSource()
 
@@ -245,10 +266,13 @@ export function usePartImport({
 
       setNotice('Original part accepted - one Undo action.')
     } catch (reason) {
-      if (live.current && current.current(runtime))
+      if (live.current && current.current(runtime)) {
         setError(reason instanceof Error ? reason.message : String(reason))
+      }
     } finally {
-      if (live.current) setPhase(null)
+      if (live.current) {
+        setPhase(null)
+      }
     }
   }
 

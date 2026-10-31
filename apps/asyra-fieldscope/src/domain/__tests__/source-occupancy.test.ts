@@ -82,15 +82,17 @@ it('rejects invalid source patch declarations before exposing any subset', () =>
     Infinity,
     NaN,
     Number.MAX_SAFE_INTEGER + 1
-  ])
+  ]) {
     expect(() => readSourcePatches([patch], regions, count)).toThrow()
+  }
   for (const invalidRegions of [
     [],
     [regions[1]],
     [regions[0], regions[0]],
     [{ ...regions[0], indexCount: 9 }, regions[1]]
-  ])
+  ]) {
     expect(() => readSourcePatches([], invalidRegions, 12)).toThrow()
+  }
   const invalidPatches = [
     new Array<SourcePatch>(1),
     [{ ...patch, id: '' }],
@@ -120,8 +122,9 @@ it('rejects invalid source patch declarations before exposing any subset', () =>
       ]
     ].map((ranges) => [{ ...patch, ranges }])
   ]
-  for (const invalid of invalidPatches)
+  for (const invalid of invalidPatches) {
     expect(() => readSourcePatches(invalid, regions, 12)).toThrow()
+  }
   expect(() =>
     readSourcePatches(
       [
@@ -160,8 +163,9 @@ it('admits immutable complete regions and rejects gaps, overlap and forged decla
     [{ ...raw[0], indexCount: 1 }],
     [{ ...raw[0], id: '' }],
     [{ ...raw[0], kind: 'unknown' }]
-  ])
+  ]) {
     expect(() => readSourceRegions(invalid as SourceRegion[], 3)).toThrow()
+  }
 })
 
 it('proves exact closed box edge pairing without treating cylinder seams as welded', () => {
@@ -198,7 +202,9 @@ it('proves exact closed box edge pairing without treating cylinder seams as weld
     }
   }
   const tire = parts.find((part) => part.id === 'tire--1--1')
-  if (!tire) throw new Error('Missing source tire')
+  if (!tire) {
+    throw new Error('Missing source tire')
+  }
   // Each original sector writes a side quad followed by two cap triangles
   // (ten vertices). Compare the 0 and 2π side endpoints without welding.
   const firstSeam = tire.shape.positions.slice(0, 3)
@@ -251,7 +257,9 @@ it('covers every original robot, dock and cultivar triangle without declaring bo
       ] as const) {
         expect(shape).toBeDefined()
         expect(regions).toBeDefined()
-        if (!shape || !regions) throw new Error('Missing source regions')
+        if (!shape || !regions) {
+          throw new Error('Missing source regions')
+        }
         let end = 0
         for (const region of regions) {
           expect(region.indexStart).toBe(end)

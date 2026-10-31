@@ -215,8 +215,9 @@ describe('SceneTree local computed projection', () => {
     sceneTree.cleanChanges()
     propsManager.cleanChanges()
     const positionId = element.save().props?.[PropertyTypes.POSITION]
-    if (typeof positionId !== 'string')
+    if (typeof positionId !== 'string') {
       throw new Error('Missing position property')
+    }
     const project = vi.spyOn(
       sceneTree,
       'projectLocalComputedDataFromPropertyIds'

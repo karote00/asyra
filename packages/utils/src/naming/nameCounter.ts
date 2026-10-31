@@ -81,7 +81,9 @@ class NameCounter {
       : capitalizeFirstLetter(type)
 
     const splits = name.split(CODE_SPLIT)
-    if (splits.length !== 2) return false
+    if (splits.length !== 2) {
+      return false
+    }
     if (splits[0] === expectedPrefix) {
       return isNumber(splits[1])
     }

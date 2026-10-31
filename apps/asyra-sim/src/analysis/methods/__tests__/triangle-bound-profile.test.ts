@@ -30,7 +30,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             pair.a.bodyId === 'example:joint-2' &&
             pair.b.bodyId === 'obstacle-11'
         )
-        if (!pair) throw new Error('Missing measured source pair')
+        if (!pair) {
+          throw new Error('Missing measured source pair')
+        }
         const query = {
           workcell: snapshot.workcell,
           trajectory: snapshot.trajectory,
@@ -45,9 +47,12 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         }
         const triangles = new WeakMap<Bounds, MeshTriangle>()
         const remember = (node: MeshNode) => {
-          for (const triangle of node.triangles)
+          for (const triangle of node.triangles) {
             triangles.set(triangle.bounds, triangle)
-          for (const child of node.children ?? []) remember(child)
+          }
+          for (const child of node.children ?? []) {
+            remember(child)
+          }
         }
         const build = meshIndex.buildMeshIndex
         vi.spyOn(meshIndex, 'buildMeshIndex').mockImplementation((...args) => {
@@ -75,7 +80,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         )
         vi.spyOn(meshIndex, 'worldBounds').mockImplementation(
           (bounds, pose) => {
-            if (!triangles.has(bounds)) return world(bounds, pose)
+            if (!triangles.has(bounds)) {
+              return world(bounds, pose)
+            }
             boundsCalls++
             const time = performance.now()
             const result = world(bounds, pose)
@@ -104,7 +111,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         vi.spyOn(meshIndex, 'worldBounds').mockImplementation(
           (bounds, pose) => {
             const triangle = triangles.get(bounds)
-            if (!triangle) return world(bounds, pose)
+            if (!triangle) {
+              return world(bounds, pose)
+            }
             boundsCalls++
             const time = performance.now()
             const vertices = triangle.vertices.map((vertex) =>

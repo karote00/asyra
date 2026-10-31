@@ -78,11 +78,13 @@ function ExperimentLayout() {
                   (target instanceof HTMLInputElement &&
                     target.type === 'number' &&
                     target.value.trim() === ''))
-              )
+              ) {
                 return
+              }
               queueMicrotask(() => {
-                if (view.getSnapshot().canonical && view.getSnapshot().dirty)
+                if (view.getSnapshot().canonical && view.getSnapshot().dirty) {
                   void view.getSnapshot().save()
+                }
               })
             }}
             onKeyDown={(event) => {
@@ -99,21 +101,31 @@ function ExperimentLayout() {
                 event.target instanceof HTMLSelectElement ||
                 (event.target instanceof HTMLInputElement &&
                   event.target.type === 'checkbox')
-              )
+              ) {
                 queueMicrotask(() => {
-                  if (view.getSnapshot().canonical && view.getSnapshot().dirty)
+                  if (
+                    view.getSnapshot().canonical &&
+                    view.getSnapshot().dirty
+                  ) {
                     void view.getSnapshot().save()
+                  }
                 })
+              }
             }}
             onClick={(event) => {
               if (
                 event.target instanceof Element &&
                 event.target.closest('button')
-              )
+              ) {
                 queueMicrotask(() => {
-                  if (view.getSnapshot().canonical && view.getSnapshot().dirty)
+                  if (
+                    view.getSnapshot().canonical &&
+                    view.getSnapshot().dirty
+                  ) {
                     void view.getSnapshot().save()
+                  }
                 })
+              }
             }}
           >
             <ExperimentFields source={view.fields} />

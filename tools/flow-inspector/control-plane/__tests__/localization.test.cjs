@@ -74,11 +74,12 @@ test('file, project and duplicate identity cannot be guessed; stale input never 
     [report([failure()]), { projects: ['other'] }, 'unmapped'],
     [report([failure(), failure()]), {}, 'ambiguous'],
     [report([failure()]), { stale: true }, 'stale']
-  ])
+  ]) {
     assert.equal(
       localizeReport(root, context(), input, options).cases[0].resolution,
       expected
     )
+  }
 })
 test('setup errors and missing reports retain execution failure without an invented node', () => {
   const input = report([])
@@ -469,7 +470,9 @@ test('a capture reads repeated per-case source inputs only once', () => {
   const lstat = fs.lstatSync
   let inspections = 0
   fs.lstatSync = (...args) => {
-    if (args[0] === path.join(root, extra)) inspections++
+    if (args[0] === path.join(root, extra)) {
+      inspections++
+    }
     return lstat(...args)
   }
   try {

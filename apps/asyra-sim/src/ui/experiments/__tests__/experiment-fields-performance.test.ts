@@ -17,8 +17,9 @@ vi.mock('react/jsx-dev-runtime', async (original) => {
     jsxDEV: (...args: Parameters<typeof actual.jsxDEV>) => {
       const label = (args[1] as { 'aria-label'?: string })?.['aria-label']
 
-      if (label?.endsWith(' analysis role'))
+      if (label?.endsWith(' analysis role')) {
         roles.set(label, (roles.get(label) ?? 0) + 1)
+      }
 
       return actual.jsxDEV(...args)
     }
@@ -63,7 +64,9 @@ it('threshold edits do not rerender scope rows, and a role edit retains the late
     act(() => {
       source.publish(inputs())
 
-      if (!mounted) root.render(createElement(ExperimentFields, { source }))
+      if (!mounted) {
+        root.render(createElement(ExperimentFields, { source }))
+      }
 
       mounted = true
     })
@@ -87,7 +90,9 @@ it('threshold edits do not rerender scope rows, and a role edit retains the late
       '[aria-label="fixture post analysis role"]'
     )
 
-    if (!select) throw new Error('Missing scope role')
+    if (!select) {
+      throw new Error('Missing scope role')
+    }
 
     await act(() => {
       select.value = 'primary'

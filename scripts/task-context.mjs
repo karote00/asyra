@@ -7,7 +7,9 @@ const modes = ['standalone', 'plan-task', 'plan-closeout']
 const shaPattern = /^[a-f0-9]{40}$/
 
 function requireValue(condition, message) {
-  if (!condition) throw new Error(message)
+  if (!condition) {
+    throw new Error(message)
+  }
 }
 
 function text(value, field) {
@@ -110,11 +112,12 @@ export function inheritContext(parentInput, selection) {
       ...new Set([...parent.prerequisites, ...(selection.prerequisites ?? [])])
     ]
   }
-  if (parent.plan)
+  if (parent.plan) {
     child.plan = {
       ...parent.plan,
       section: text(selection.section, 'child section')
     }
+  }
   return validateContext(child)
 }
 
@@ -200,10 +203,11 @@ if (
         JSON.parse(readFileSync(selectionFile, 'utf8'))
       )
       process.stdout.write(handoff(preflight(child)))
-    } else
+    } else {
       throw new Error(
         'Usage: node scripts/task-context.mjs check|handoff <context.json> OR child <parent.json> <selection.json>'
       )
+    }
   } catch (error) {
     process.stderr.write(`${error.message}\n`)
     process.exitCode = 1

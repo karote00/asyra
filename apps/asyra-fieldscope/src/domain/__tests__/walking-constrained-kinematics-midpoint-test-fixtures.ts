@@ -70,7 +70,7 @@ export function registerMidpointProfile(
       sameBody = 0,
       separated = 0,
       boundary = 0
-    for (let a = 0; a < entries.length; a++)
+    for (let a = 0; a < entries.length; a++) {
       for (let b = a + 1; b < entries.length; b++) {
         candidate++
         const first = entries[a],
@@ -80,9 +80,11 @@ export function registerMidpointProfile(
           continue
         }
         const relation = evaluator.relate(first.placement, second.placement, 0)
-        if (relation.kind === 'separated') separated++
-        else if (relation.kind === 'boundary') boundary++
-        else
+        if (relation.kind === 'separated') {
+          separated++
+        } else if (relation.kind === 'boundary') {
+          boundary++
+        } else {
           failures.push(
             first.part.id +
               ' - ' +
@@ -94,7 +96,9 @@ export function registerMidpointProfile(
               ' : ' +
               relation.kind
           )
+        }
       }
+    }
     expect(candidate).toBe((entries.length * (entries.length - 1)) / 2)
     expect(evaluator.work.regionPairs).toBe(candidate - sameBody)
     expect(evaluator.work.regionPreparations).toBe(entries.length)

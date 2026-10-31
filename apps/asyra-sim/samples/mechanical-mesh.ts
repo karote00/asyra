@@ -29,7 +29,7 @@ export class MechanicalMesh {
   ) {
     const positions: number[] = [],
       indices: number[] = []
-    for (const [radius, height] of profile)
+    for (const [radius, height] of profile) {
       for (let i = 0; i < segments; i++) {
         const angle = (i * Math.PI * 2) / segments
         const x = radius * Math.cos(angle),
@@ -40,15 +40,20 @@ export class MechanicalMesh {
           center[2] + (axis === 'y' ? z : height)
         )
       }
-    for (let row = 0; row < profile.length - 1; row++)
+    }
+    for (let row = 0; row < profile.length - 1; row++) {
       for (let i = 0; i < segments; i++) {
         const a = row * segments + i,
           b = row * segments + ((i + 1) % segments)
         // A pole is a triangle fan, not a ring of zero-area quads.
-        if (profile[row][0] !== 0) indices.push(a, a + segments, b)
-        if (profile[row + 1][0] !== 0)
+        if (profile[row][0] !== 0) {
+          indices.push(a, a + segments, b)
+        }
+        if (profile[row + 1][0] !== 0) {
           indices.push(b, a + segments, b + segments)
+        }
       }
+    }
     this.append(color, positions, indices)
   }
 
@@ -89,7 +94,7 @@ export class MechanicalMesh {
       count = 16
     for (const [y, width, depth] of stations) {
       const r = Math.min(bevel, width / 3, depth / 3)
-      for (let corner = 0; corner < 4; corner++)
+      for (let corner = 0; corner < 4; corner++) {
         for (let i = 0; i < 4; i++) {
           const angle = ((corner + i / 3) * Math.PI) / 2
           const cx = (corner === 0 || corner === 3 ? 1 : -1) * (width / 2 - r)
@@ -100,13 +105,15 @@ export class MechanicalMesh {
             center[2] + cz + r * Math.sin(angle)
           )
         }
+      }
     }
-    for (let row = 0; row < stations.length - 1; row++)
+    for (let row = 0; row < stations.length - 1; row++) {
       for (let i = 0; i < count; i++) {
         const a = row * count + i,
           b = row * count + ((i + 1) % count)
         indices.push(a, a + count, b, b, a + count, b + count)
       }
+    }
     for (let i = 1; i < count - 1; i++) {
       indices.push(0, i, i + 1)
       const top = (stations.length - 1) * count

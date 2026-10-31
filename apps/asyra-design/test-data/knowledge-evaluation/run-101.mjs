@@ -44,7 +44,9 @@ const here = path.dirname(fileURLToPath(import.meta.url))
 const app = path.resolve(here, '../..')
 const root = path.resolve(app, '../..')
 const [arm, ...deadlineArguments] = process.argv.slice(2)
-if (arm !== 'quality-knowledge') throw new Error('Unknown 101 arm')
+if (arm !== 'quality-knowledge') {
+  throw new Error('Unknown 101 arm')
+}
 const caseId = 'taipei-101'
 const specification = JSON.parse(
   fs.readFileSync(path.join(here, 'architecture-101.json'))
@@ -159,7 +161,9 @@ try {
   })
   page = await context.newPage()
   page.on('request', (request) => {
-    if (!meta.sentAt) return
+    if (!meta.sentAt) {
+      return
+    }
     try {
       const id = captureRequestIdentity(request, environment.appURL)
       if (id) {
@@ -175,8 +179,9 @@ try {
   page.setDefaultNavigationTimeout(30000)
   let unexpectedNavigation
   page.on('framenavigated', (frame) => {
-    if (frame === page.mainFrame() && meta.sentAt)
+    if (frame === page.mainFrame() && meta.sentAt) {
       unexpectedNavigation = frame.url()
+    }
   })
   page.on('pageerror', (error) => {
     meta.errors.push(error.message)
@@ -189,7 +194,7 @@ try {
     (signal) => waitForCaptureReady(page, signal),
     60000
   )
-  if (scenario.seed)
+  if (scenario.seed) {
     meta.seed = await page.evaluate(async () => {
       const { core } = await import('/src/testing/runtime-access.ts')
       const { transactionApis } = await import('/src/common-apis')
@@ -207,6 +212,7 @@ try {
         )
       )
     })
+  }
   fs.writeFileSync(
     path.join(directory, 'before.json'),
     JSON.stringify(
@@ -224,8 +230,9 @@ try {
       if (
         createHash('sha256').update(fs.readFileSync(filename)).digest('hex') !==
         a.sha256
-      )
+      ) {
         throw new Error('Reference hash mismatch')
+      }
       return filename
     })
   )
@@ -245,8 +252,9 @@ try {
     meta.fits.push({ at: Date.now(), ...event })
   })
   await page.getByLabel('Message Agent').fill(scenario.prompt)
-  if (captureSources(root).digest !== meta.sourceManifest.digest)
+  if (captureSources(root).digest !== meta.sourceManifest.digest) {
     throw new Error('Source changed before Send')
+  }
   verifyEvaluationService(vite, app)
   const sentAt = new Date().toISOString()
   meta.evaluationWindow = {
@@ -290,12 +298,14 @@ try {
     Date.now() <
     meta.evaluationWindow.workDeadlineAt + meta.reportTimeoutMs + 2000
   ) {
-    if (meta.requestIdentityFailure)
+    if (meta.requestIdentityFailure) {
       throw new Error(meta.requestIdentityFailure)
-    if (unexpectedNavigation)
+    }
+    if (unexpectedNavigation) {
       throw new Error(
         'Unexpected navigation during evaluation: ' + unexpectedNavigation
       )
+    }
     const state = await duringGeneration(() =>
       page.evaluate(async () => {
         const { core } = await import('/src/testing/runtime-access.ts')
@@ -314,8 +324,9 @@ try {
         }
       })
     )
-    if (state.observation.errors.length)
+    if (state.observation.errors.length) {
       throw new Error(JSON.stringify(state.observation.errors))
+    }
     await duringGeneration(() => fit(state.observation.bounds))
     if (!first && state.observation.bounds) {
       first = true
@@ -361,15 +372,19 @@ try {
       captureReportImage(page, report, path.join(directory, 'self-report.png')),
     save
   })
-  if (!meta.outcome)
+  if (!meta.outcome) {
     throw new Error('Evaluation report did not settle before its deadline')
+  }
   meta.deadline = await deadline.finish()
   generationSettled = meta.deadline.status === 'finished'
-  if (!generationSettled) throw new Error('Evaluation outer watchdog expired')
-  if (!meta.sourceRequestIds.length || meta.requestIdentityFailure)
+  if (!generationSettled) {
+    throw new Error('Evaluation outer watchdog expired')
+  }
+  if (!meta.sourceRequestIds.length || meta.requestIdentityFailure) {
     throw new Error(
       meta.requestIdentityFailure ?? 'Missing observed provider request'
     )
+  }
   meta.elapsedMs = Date.now() - Date.parse(meta.sentAt)
   meta.generation = {
     status: meta.outcome,
@@ -393,7 +408,9 @@ try {
       return page.getByTestId('ai-agent-message').allTextContents()
     })
   )
-  if (conversation) meta.conversation = conversation
+  if (conversation) {
+    meta.conversation = conversation
+  }
   const captured = await stage('persistence', () => captureSessionOnPage(page))
   if (captured) {
     meta.persistence = captured.receipt
@@ -419,10 +436,13 @@ try {
       5000
     )
   )
-  if (workContextClosed) context = undefined
+  if (workContextClosed) {
+    context = undefined
+  }
   await stage(captured ? 'reload' : 'read-only-recovery', () => {
-    if (!workContextClosed)
+    if (!workContextClosed) {
       throw new Error('Work context closure was not confirmed before reload')
+    }
     return captureReload({
       browser: ownedBrowser,
       viewport: meta.viewport,
@@ -438,12 +458,14 @@ try {
   })
   await stage('source-verification', async () => {
     const actual = captureSources(root)
-    if (actual.digest !== meta.sourceManifest.digest)
+    if (actual.digest !== meta.sourceManifest.digest) {
       throw new Error('Source changed during evaluation')
+    }
     return { digest: actual.digest }
   })
-  if (Object.values(meta.evidence).some((value) => value.status === 'failed'))
+  if (Object.values(meta.evidence).some((value) => value.status === 'failed')) {
     process.exitCode = 1
+  }
   save()
   console.log(
     JSON.stringify({
@@ -488,7 +510,9 @@ try {
     ['context', context],
     ['browser', ownedBrowser]
   ]) {
-    if (!resource) continue
+    if (!resource) {
+      continue
+    }
     await stage(`cleanup-${name}`, () =>
       name === 'browser'
         ? resource.close()
@@ -504,7 +528,8 @@ try {
       (value) => value.status === 'failed'
     ) ||
     meta.stopFailure
-  )
+  ) {
     process.exitCode = 1
+  }
   save()
 }

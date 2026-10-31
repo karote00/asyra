@@ -60,7 +60,9 @@ const snapshot = {
 const definition = () => {
   const feature = mocks.definitions.get(FeatureNames.SELECT_CONTAINER_CHILD)
   expect(feature, 'registered container double-click Feature').toBeDefined()
-  if (!feature) throw new Error('Missing container double-click Feature')
+  if (!feature) {
+    throw new Error('Missing container double-click Feature')
+  }
   return feature
 }
 

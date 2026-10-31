@@ -94,10 +94,11 @@ test('admission refuses missing, stale, unmeasurable and out-of-owner requests b
     { budgets: { elapsedMs: Infinity, toolCalls: 20, attempts: 3 } },
     { command: 'git merge main' },
     { scenario: 'unknown' }
-  ])
+  ]) {
     assert.throws(() =>
       admitTask({ ...request(), ...change }, contract, 1, 'local-developer')
     )
+  }
 })
 
 test('task file authority follows the selected step primary package and exact boundary', () => {
@@ -192,13 +193,14 @@ test('real provider admission binds trusted authorization without accepting call
     { maxRequests: Infinity },
     { credential: 'must-never-enter-task' },
     { endpoint: 'https://untrusted.invalid' }
-  ])
+  ]) {
     assert.throws(() =>
       admitTask(input, contract, 1, 'local-developer', {
         ...task.provider,
         ...change
       })
     )
+  }
   assert.throws(() =>
     admitTask(
       { ...input, model: 'changed' },
@@ -225,7 +227,7 @@ test('work binding is a detached exact identity, never caller authority or an op
     {},
     { ...workBinding, admissionId: 'unknown' },
     { ...workBinding, passed: true }
-  ])
+  ]) {
     assert.throws(
       () =>
         admitTask(
@@ -236,4 +238,5 @@ test('work binding is a detached exact identity, never caller authority or an op
         ),
       /binding/i
     )
+  }
 })

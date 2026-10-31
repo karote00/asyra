@@ -52,7 +52,7 @@ jobs:
           CI_SCOPE_BASE: ${{ github.event.pull_request.base.sha || github.sha }}
           CI_SCOPE_DIFF_BASE: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}
           CI_SCOPE_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
-          CI_SCOPE_FULL_VALIDATION: ${{ github.event_name != 'pull_request' }}
+          CI_SCOPE_FULL_VALIDATION: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ci:full') }}
         run: echo "required=$(node scripts/ci-scope.mjs --needs-parser)" >> "$GITHUB_OUTPUT"
       - name: Install declared parser dependencies
         if: steps.parser.outputs.required == 'true'
@@ -63,7 +63,7 @@ jobs:
           CI_SCOPE_BASE: ${{ github.event.pull_request.base.sha || github.sha }}
           CI_SCOPE_DIFF_BASE: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}
           CI_SCOPE_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
-          CI_SCOPE_FULL_VALIDATION: ${{ github.event_name != 'pull_request' }}
+          CI_SCOPE_FULL_VALIDATION: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ci:full') }}
         run: node scripts/ci-scope.mjs
       - name: Upload CI scope evidence
         if: steps.scope.outcome == 'success'
@@ -77,6 +77,15 @@ jobs:
     if: ${{ !cancelled() && needs.scope.result == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     needs: scope
     runs-on: ubuntu-latest
+    env:
+      CI_SCOPE_EVIDENCE_FILE: tmp/ci-scope/ci-scope-evidence.json
+      CI_RELATIONSHIP_MAP_DIGEST: ${{ needs.scope.outputs.relationship_map_digest }}
+      CI_SCOPE_REPOSITORY: ${{ github.repository }}
+      CI_SCOPE_BASE: ${{ github.event.pull_request.base.sha || github.sha }}
+      CI_SCOPE_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      CI_SCOPE_INTEGRATION: ${{ github.sha }}
+      CI_SCOPE_RUN: ${{ github.run_id }}
+      CI_SCOPE_ATTEMPT: ${{ github.run_attempt }}
     outputs:
       security_audit_result: ${{ steps.security_audit.outcome }}
       dependency_validation_result: ${{ steps.dependency_validation.outcome }}
@@ -131,37 +140,33 @@ jobs:
           UPDATE_GUIDANCE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: yarn docs:updates:check
 
-      - name: Audit high-severity dependencies
-        id: security_audit
-        if: ${{ fromJSON(needs.scope.outputs.execution_plan).checks.securityAudit.mode == 'full' }}
-        run: yarn security:audit
-
-      - name: Validate workspace dependencies
-        id: dependency_validation
-        if: ${{ fromJSON(needs.scope.outputs.execution_plan).checks.dependencyValidation.mode == 'full' }}
-        run: yarn deps:validate
-
-      - name: Validate turbo.json
-        id: turbo_validation
-        if: ${{ fromJSON(needs.scope.outputs.execution_plan).checks.turboValidation.mode == 'full' }}
-        run: yarn gen:turbo:check
-
-      - name: Build Framework declarations
-        id: framework_declarations
-        if: ${{ fromJSON(needs.scope.outputs.execution_plan).checks.frameworkDeclarations.mode == 'full' }}
-        env:
-          FRAMEWORK_DECLARATION_TASKS: ${{ needs.scope.outputs.framework_declaration_tasks }}
-        run: |
-          read -r -a tasks <<< "$FRAMEWORK_DECLARATION_TASKS"
-          if [ ${#tasks[@]} -gt 0 ]; then yarn turbo run "${tasks[@]}" --concurrency=2; fi
-
       - name: Download CI scope evidence for shared checks
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: ci-scope-evidence
           path: tmp/ci-scope
 
-      - name: Execute selected lint and repository checks
+      - name: Audit high-severity dependencies
+        id: security_audit
+        if: ${{ fromJSON(needs.scope.outputs.execution_plan).checks.securityAudit.mode == 'full' }}
+        run: node scripts/validation-checks.mjs --check security-audit
+
+      - name: Validate workspace dependencies
+        id: dependency_validation
+        if: ${{ fromJSON(needs.scope.outputs.execution_plan).checks.dependencyValidation.mode == 'full' }}
+        run: node scripts/validation-checks.mjs --check dependencies
+
+      - name: Validate turbo.json
+        id: turbo_validation
+        if: ${{ fromJSON(needs.scope.outputs.execution_plan).checks.turboValidation.mode == 'full' }}
+        run: node scripts/validation-checks.mjs --check build-graph
+
+      - name: Build Framework declarations
+        id: framework_declarations
+        if: ${{ fromJSON(needs.scope.outputs.execution_plan).checks.frameworkDeclarations.mode == 'full' }}
+        run: node scripts/validation-checks.mjs --check declarations
+
+      - name: Execute full yarn lint and selected repository checks
         id: selected_checks
         env:
           CI_SCOPE_EVIDENCE_FILE: tmp/ci-scope/ci-scope-evidence.json
@@ -173,7 +178,7 @@ jobs:
           CI_SCOPE_RUN: ${{ github.run_id }}
           CI_SCOPE_ATTEMPT: ${{ github.run_attempt }}
           CI_CHECK_RESULTS_FILE: ci-selected-check-results.json
-        run: node scripts/run-ci-checks.mjs
+        run: node scripts/validation-checks.mjs --check shared
 
       - name: Upload selected CI check results
         if: always() && hashFiles('ci-selected-check-results.json') != ''
@@ -225,10 +230,18 @@ jobs:
           node-version: 24
           cache: yarn
       - run: yarn install --immutable
+      - name: Download CI scope evidence for workspace checks
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ci-scope-evidence
+          path: tmp/ci-scope
       - name: Build then test the selected workspace
         id: workspace-checks
         env:
+          VALIDATION_WORKSPACE: ${{ matrix.workspace.name }}
+          WORKSPACE_CHECK_RESULTS_DIRECTORY: .ci-workspace-results
           CI_WORKSPACE_MATRIX_ITEM: ${{ toJSON(matrix.workspace) }}
+          CI_SCOPE_EVIDENCE_FILE: tmp/ci-scope/ci-scope-evidence.json
           CI_RELATIONSHIP_MAP_DIGEST: ${{ needs.scope.outputs.relationship_map_digest }}
           CI_SCOPE_REPOSITORY: ${{ github.repository }}
           CI_SCOPE_BASE: ${{ github.event.pull_request.base.sha || github.sha }}
@@ -236,7 +249,7 @@ jobs:
           CI_SCOPE_INTEGRATION: ${{ github.sha }}
           CI_SCOPE_RUN: ${{ github.run_id }}
           CI_SCOPE_ATTEMPT: ${{ github.run_attempt }}
-        run: node scripts/run-workspace-checks.mjs
+        run: node scripts/validation-checks.mjs --check "$VALIDATION_WORKSPACE"
       - name: Report test supervision
         if: always()
         run: |
@@ -270,6 +283,15 @@ jobs:
     needs: [scope, workspace-validation]
     if: ${{ !cancelled() && needs.scope.result == 'success' && needs.scope.outputs.flow_inspector_validation_required == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
+    env:
+      CI_SCOPE_EVIDENCE_FILE: tmp/ci-scope/ci-scope-evidence.json
+      CI_RELATIONSHIP_MAP_DIGEST: ${{ needs.scope.outputs.relationship_map_digest }}
+      CI_SCOPE_REPOSITORY: ${{ github.repository }}
+      CI_SCOPE_BASE: ${{ github.event.pull_request.base.sha || github.sha }}
+      CI_SCOPE_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      CI_SCOPE_INTEGRATION: ${{ github.sha }}
+      CI_SCOPE_RUN: ${{ github.run_id }}
+      CI_SCOPE_ATTEMPT: ${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -282,6 +304,11 @@ jobs:
           node-version: 24
           cache: yarn
       - run: yarn install --immutable
+      - name: Download CI scope evidence for Inspector contracts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ci-scope-evidence
+          path: tmp/ci-scope
       - name: Build Asyra Design for Flow Inspector app proofs
         run: yarn turbo run react:build --filter=@asyra/asyra-design... --concurrency=2
       - name: Build Design services for original Playwright observation tests
@@ -291,7 +318,7 @@ jobs:
       - name: Test Flow Inspector control-plane contracts
         run: |
           yarn workspace @asyra/flow-inspector test:flow-rerun
-          node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/{contracts,observation-files,observation-lifecycle,node-interactions,collaboration-results,localization,localization-runtime,playwright-results,snapshot,runner,evidence,store,service,server,mapping,cli,evolution,ci-context,ci-evidence,operations,agent-contract,agent-provider,agent-transport,agent-task,agent-verifier,pr-review,github-delivery,workflow-results,flow-target,target-evidence}.test.cjs
+          node scripts/validation-checks.mjs --check control-plane-tests
           node tools/flow-inspector/control-plane/cli.cjs prove
           node tools/flow-inspector/control-plane/cli.cjs candidate
 

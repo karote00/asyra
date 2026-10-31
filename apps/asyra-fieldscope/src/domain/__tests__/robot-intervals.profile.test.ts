@@ -52,7 +52,7 @@ it('profiles four fixed complete interval-entry batches without caches or expand
   const rig = makeRig(),
     started = performance.now(),
     report = []
-  for (const kind of ['normal', 'subnormal'] as const)
+  for (const kind of ['normal', 'subnormal'] as const) {
     for (const pass of ['first', 'repeated'] as const) {
       const start = performance.now()
       let trigCalls = 0,
@@ -65,8 +65,9 @@ it('profiles four fixed complete interval-entry batches without caches or expand
         if (
           performance.now() - start > 1000 ||
           performance.now() - started > 10000
-        )
+        ) {
           throw new Error('Interval profile budget exceeded')
+        }
         const domains =
           kind === 'normal'
             ? box({ ...centre, yaw: centre.yaw + index / 1000 }, 1e-6)
@@ -105,5 +106,6 @@ it('profiles four fixed complete interval-entry batches without caches or expand
         milliseconds
       })
     }
+  }
   console.info('complete interval profile', JSON.stringify(report))
 })

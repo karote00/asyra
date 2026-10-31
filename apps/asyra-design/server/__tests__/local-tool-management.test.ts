@@ -35,20 +35,28 @@ it.each(['GET', 'foreign', 'remote', 'invalid', 'oversized'])(
     const open = vi.fn(async () => store())
     let body: unknown = { operation: 'list' }
     const extra: Record<string, unknown> = {}
-    if (kind === 'invalid') body = { operation: 'execute' }
-    if (kind === 'oversized')
+    if (kind === 'invalid') {
+      body = { operation: 'execute' }
+    }
+    if (kind === 'oversized') {
       body = {
         operation: 'list',
         padding: 'a'.repeat(ToolLibraryManagement.requestBytes)
       }
-    if (kind === 'GET') extra.method = 'GET'
-    if (kind === 'foreign')
+    }
+    if (kind === 'GET') {
+      extra.method = 'GET'
+    }
+    if (kind === 'foreign') {
       extra.headers = {
         origin: 'https://example.test',
         host: 'localhost:3000',
         'content-type': 'application/json'
       }
-    if (kind === 'remote') extra.socket = { remoteAddress: '192.168.1.2' }
+    }
+    if (kind === 'remote') {
+      extra.socket = { remoteAddress: '192.168.1.2' }
+    }
     const req = request(body, extra)
     const res = response()
     await createToolLibraryManagementMiddleware({ open })(

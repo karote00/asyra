@@ -85,8 +85,9 @@ export function installEditingFeatures(
     attachRun: (runId: string) =>
       execute(() => {
         const run = artifacts?.readRun?.(runId)
-        if (!run || run.runId !== runId)
+        if (!run || run.runId !== runId) {
           throw new Error('Validated run evidence is unavailable')
+        }
         return attachRunReference(core, run)
       }),
     captureDocument: () => execute(() => captureCanonicalDocument(core)),

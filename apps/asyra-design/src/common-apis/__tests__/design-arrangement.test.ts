@@ -57,8 +57,9 @@ describe('native design arrangement', () => {
       const patches = apis.apply.mock.calls[0]?.[0] ?? []
       expect(result.positions.find((p) => p.elementId === 'a')?.[key]).toBe(a)
       expect(result.positions.find((p) => p.elementId === 'b')?.[key]).toBe(b)
-      for (const patch of patches)
+      for (const patch of patches) {
         expect(Object.keys(patch.values)).toEqual([key])
+      }
     }
   )
   it('distributes unequal widths in spatial order with fixed outer edges', () => {
@@ -163,13 +164,24 @@ describe('native design arrangement', () => {
     'negative-gap'
   ] as const)('rejects %s before any write', (reason) => {
     const { arrange, apis, records, geometry } = fixture()
-    if (reason === 'locked') records.f.lock = true
-    if (reason === 'missing') delete records.b
-    if (reason === 'different-parent') records.b.parentId = 'w'
-    if (reason === 'bad-geometry') geometry.b.width = NaN
-    if (reason === 'bad-projection')
+    if (reason === 'locked') {
+      records.f.lock = true
+    }
+    if (reason === 'missing') {
+      delete records.b
+    }
+    if (reason === 'different-parent') {
+      records.b.parentId = 'w'
+    }
+    if (reason === 'bad-geometry') {
+      geometry.b.width = NaN
+    }
+    if (reason === 'bad-projection') {
       apis.corner.mockReturnValue({ x: Infinity, y: 0 })
-    if (reason === 'negative-gap') geometry.b.x = 11
+    }
+    if (reason === 'negative-gap') {
+      geometry.b.x = 11
+    }
     expect(() =>
       arrange({
         operation: 'distribute',

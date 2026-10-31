@@ -18,7 +18,9 @@ class InputHost implements InputSystemLike {
     this.listeners.set(event, callback)
   }
   off(event: string, callback: InputCallback) {
-    if (this.listeners.get(event) !== callback) return false
+    if (this.listeners.get(event) !== callback) {
+      return false
+    }
     return this.listeners.delete(event)
   }
 }
@@ -204,7 +206,9 @@ describe.sequential('complete Feature runtime disposal', () => {
       execution: oldOperation
     })
     const callback = input.listeners.get('input.action')
-    if (!callback) throw new Error('Old input binding was not installed')
+    if (!callback) {
+      throw new Error('Old input binding was not installed')
+    }
     const manager = runtime.getSessionManager()
     await runtime.disposeFeatureSystem(snapshot)
     expect(input.listeners.size).toBe(0)
@@ -226,8 +230,9 @@ describe.sequential('complete Feature runtime disposal', () => {
       manager.runAfterCancellingActiveSessions(snapshot, oldOperation, 'old')
     ).rejects.toThrow()
     const currentCallback = input.listeners.get('input.action')
-    if (!currentCallback)
+    if (!currentCallback) {
       throw new Error('Successor input binding was not installed')
+    }
     await currentCallback({} as RawInputEvent)
     expect(oldOperation).not.toHaveBeenCalled()
     expect(newOperation).toHaveBeenCalledOnce()

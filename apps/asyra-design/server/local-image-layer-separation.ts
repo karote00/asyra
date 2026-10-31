@@ -84,8 +84,9 @@ export const separateImageBackground = async (
     Number(value.colorTolerance) < 0 ||
     Number(value.colorTolerance) > 32 ||
     !record(value.background)
-  )
+  ) {
     return invalid()
+  }
   if (
     value.foregroundColors !== undefined &&
     (!Array.isArray(value.foregroundColors) ||
@@ -94,8 +95,9 @@ export const separateImageBackground = async (
       value.foregroundColors.some(
         (color) => typeof color !== 'string' || !/^#[0-9a-f]{6}$/i.test(color)
       ))
-  )
+  ) {
     return invalid()
+  }
   const background = value.background
   if (
     Object.keys(background).length !== 3 ||
@@ -103,8 +105,9 @@ export const separateImageBackground = async (
     typeof background.fill !== 'string' ||
     !/^#[0-9a-f]{6}$/i.test(background.fill) ||
     !record(background.bounds)
-  )
+  ) {
     return invalid()
+  }
   const bounds = background.bounds
   if (
     Object.keys(bounds).length !== 4 ||
@@ -115,8 +118,9 @@ export const separateImageBackground = async (
     Number(bounds.y) < 0 ||
     Number(bounds.width) <= 0 ||
     Number(bounds.height) <= 0
-  )
+  ) {
     return invalid()
+  }
   // Admit actual PNG/JPEG/WebP signatures before handing untrusted bytes to a decoder.
   const source = Buffer.from(bytes)
   const png = source
@@ -130,8 +134,9 @@ export const separateImageBackground = async (
     source.length > 16 * 1024 * 1024 ||
     !['image/png', 'image/jpeg', 'image/webp'].includes(contentType) ||
     !(png || jpeg || webp)
-  )
+  ) {
     return invalid()
+  }
   const decoder = sharp(source, {
     failOn: 'warning'
   }).timeout({ seconds: 10 })
@@ -139,8 +144,9 @@ export const separateImageBackground = async (
   if (
     !['png', 'jpeg', 'webp'].includes(metadata.format ?? '') ||
     (metadata.pages ?? 1) !== 1
-  )
+  ) {
     return invalid()
+  }
   signal.throwIfAborted()
   // Match the orientation the model sees, rather than raw JPEG sensor coordinates.
   const { data, info } = await decoder
@@ -156,8 +162,9 @@ export const separateImageBackground = async (
     b.x + b.width > info.width ||
     b.y + b.height > info.height ||
     info.channels !== 4
-  )
+  ) {
     return invalid()
+  }
   const color = [1, 3, 5].map((offset) =>
     parseInt(native.fill.slice(offset, offset + 2), 16)
   )
@@ -165,7 +172,9 @@ export const separateImageBackground = async (
   const paletteNames = [native.fill, ...paletteColors].map((entry) =>
     entry.toUpperCase()
   )
-  if (new Set(paletteNames).size !== paletteNames.length) return invalid()
+  if (new Set(paletteNames).size !== paletteNames.length) {
+    return invalid()
+  }
   const palette = paletteColors.length
     ? [
         color,
@@ -195,12 +204,15 @@ export const separateImageBackground = async (
     }
     for (let x = 0; x < info.width; x++) {
       const offset = (y * info.width + x) * 4
-      if (data[offset + 3] === 0) continue
+      if (data[offset + 3] === 0) {
+        continue
+      }
       const nx = (x + 0.5 - b.x) / b.width
       const ny = (y + 0.5 - b.y) / b.height
       let inside = nx >= 0 && nx < 1 && ny >= 0 && ny < 1
-      if (native.componentType === 'oval')
+      if (native.componentType === 'oval') {
         inside = inside && (nx * 2 - 1) ** 2 + (ny * 2 - 1) ** 2 <= 1
+      }
       if (!inside && value.clipToBackground) {
         data[offset + 3] = 0
         clippedPixelCount++
@@ -232,13 +244,16 @@ export const separateImageBackground = async (
       if (matches) {
         data[offset + 3] = 0
         removedPixelCount++
-      } else foregroundPixelCount++
+      } else {
+        foregroundPixelCount++
+      }
     }
   }
-  if (!removedPixelCount)
+  if (!removedPixelCount) {
     throw new Error(
       'No pixels match the selected background region. Revise the separation parameters or keep the original vectors.'
     )
+  }
   const foreground = await sharp(data, {
     raw: { width: info.width, height: info.height, channels: 4 }
   })

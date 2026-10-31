@@ -53,7 +53,7 @@ for (const kind of ['clearance', 'collision']) {
       ]
       const events: unknown[] = []
       const listener = (event: Event) => {
-        if (events.length < 512)
+        if (events.length < 512) {
           events.push({
             type: event.type,
             value: input.value,
@@ -62,8 +62,11 @@ for (const kind of ['clearance', 'collision']) {
               event instanceof PointerEvent ? event.pointerType : null,
             clientX: 'clientX' in event ? event.clientX : null
           })
+        }
       }
-      for (const type of types) input.addEventListener(type, listener)
+      for (const type of types) {
+        input.addEventListener(type, listener)
+      }
       Object.assign(window, { manualSeekInputEvents: events })
     })
 
@@ -74,7 +77,9 @@ for (const kind of ['clearance', 'collision']) {
     const sampled: number[] = []
     const drag = async (target: number) => {
       const bounds = await slider.boundingBox()
-      if (!bounds) throw new Error('Missing manual time slider')
+      if (!bounds) {
+        throw new Error('Missing manual time slider')
+      }
       const rangeMin = Number(await slider.getAttribute('min'))
       const rangeMax = Number(await slider.getAttribute('max'))
       const rangeStep = Number(await slider.getAttribute('step'))
@@ -150,8 +155,9 @@ for (const kind of ['clearance', 'collision']) {
         pending: string | null
         text: string
       }[] = []
-      if (!document.querySelector('[data-testid="playback-feedback"]'))
+      if (!document.querySelector('[data-testid="playback-feedback"]')) {
         throw new Error('Missing playback notice')
+      }
 
       const observer = new MutationObserver((mutations) => {
         const current = document.querySelector<HTMLElement>(
@@ -165,16 +171,20 @@ for (const kind of ['clearance', 'collision']) {
               current.contains(target) ||
               target.contains(current)
           )
-        )
+        ) {
           return
-        if (frames.length >= 512)
+        }
+        if (frames.length >= 512) {
           throw new Error('Manual feedback trace exceeded its bound')
+        }
 
         const notice = document.querySelector(
           '[data-testid="playback-feedback"]'
         )
 
-        if (!notice) return
+        if (!notice) {
+          return
+        }
 
         frames.push({
           kind: current.getAttribute('data-kind'),
@@ -200,7 +210,9 @@ for (const kind of ['clearance', 'collision']) {
       const notice = document.querySelector<HTMLElement>(
         '[data-testid="playback-feedback"]'
       )
-      if (!notice) throw new Error('Missing playback notice')
+      if (!notice) {
+        throw new Error('Missing playback notice')
+      }
       const originalKind = notice.getAttribute('data-kind')
       const originalMatches = notice.getAttribute('data-pose-matches')
       notice.setAttribute('data-kind', 'checking')
@@ -224,16 +236,24 @@ for (const kind of ['clearance', 'collision']) {
         (frame) => frame.kind !== expectedKind || frame.matches !== 'true'
       )
       trace.frames.length = 0
-      if (originalKind === null) notice.removeAttribute('data-kind')
-      else notice.setAttribute('data-kind', originalKind)
-      if (originalMatches === null) notice.removeAttribute('data-pose-matches')
-      else notice.setAttribute('data-pose-matches', originalMatches)
+      if (originalKind === null) {
+        notice.removeAttribute('data-kind')
+      } else {
+        notice.setAttribute('data-kind', originalKind)
+      }
+      if (originalMatches === null) {
+        notice.removeAttribute('data-pose-matches')
+      } else {
+        notice.setAttribute('data-pose-matches', originalMatches)
+      }
       return { observed, invalid }
     }, kind)
     expect(negativeControl.observed).toBe(true)
     expect(negativeControl.invalid).toBe(true)
 
-    for (const target of targets.slice(1)) await drag(target)
+    for (const target of targets.slice(1)) {
+      await drag(target)
+    }
 
     await page.screenshot({ path: info.outputPath(`${kind}-cold-seek.png`) })
     const records =
@@ -282,11 +302,13 @@ for (const kind of ['clearance', 'collision']) {
           expect(frame.complete).toBe('false')
           expect(frame.text).toContain('Incomplete coverage')
         }
-        if (frame.matches !== 'true')
+        if (frame.matches !== 'true') {
           expect(frame.text).toContain('Current pose is not yet checked')
+        }
       }
-      if (frame.pending !== null)
+      if (frame.pending !== null) {
         expect(Number.isFinite(Number(frame.pending))).toBe(true)
+      }
     }
     const inputEvents = await page.evaluate(
       () => Reflect.get(window, 'manualSeekInputEvents') as unknown[]

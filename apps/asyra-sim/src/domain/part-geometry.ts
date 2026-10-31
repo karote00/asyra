@@ -64,8 +64,9 @@ export function validMeshGeometry(value: unknown): value is MeshGeometry {
     value.indices.length < 3 ||
     value.indices.length % 3 !== 0 ||
     value.indices.length > PART_GEOMETRY_LIMITS.indices
-  )
+  ) {
     return false
+  }
   const count = value.positions.length / 3
   return value.indices.every((n) => Number.isInteger(n) && n >= 0 && n < count)
 }
@@ -82,15 +83,19 @@ export function resolvePart(
   binding: VisualBinding,
   source: PartSource
 ): Collider {
-  if (source.source.sha256 !== binding.assetId)
+  if (source.source.sha256 !== binding.assetId) {
     throw new Error('Original part source identity mismatch')
+  }
   const positions: number[] = [],
     indices: number[] = []
   for (const mesh of source.meshes) {
     const offset = positions.length / 3
-    for (const value of placedPartPositions(mesh.positions, binding.scale))
+    for (const value of placedPartPositions(mesh.positions, binding.scale)) {
       positions.push(value)
-    for (const index of mesh.indices) indices.push(index + offset)
+    }
+    for (const index of mesh.indices) {
+      indices.push(index + offset)
+    }
   }
   const geometry: MeshGeometry = {
     kind: 'mesh',
@@ -99,10 +104,11 @@ export function resolvePart(
     positions,
     indices
   }
-  if (!validMeshGeometry(geometry))
+  if (!validMeshGeometry(geometry)) {
     throw new Error(
       'Original part geometry exceeds the supported source profile'
     )
+  }
   return { id: binding.id, pose: structuredClone(binding.pose), geometry }
 }
 
@@ -113,11 +119,12 @@ export function resolvePartWorkcell(
 ): Workcell {
   let vertices = 0,
     indices = 0
-  for (const body of workcell.bodies)
+  for (const body of workcell.bodies) {
     for (const binding of body.visuals ?? []) {
       const source = sources.get(binding.assetId)
-      if (!source)
+      if (!source) {
         throw new Error(`Missing original part source ${binding.assetId}`)
+      }
       for (const mesh of source.meshes) {
         vertices += mesh.positions.length / 3
         indices += mesh.indices.length
@@ -125,11 +132,13 @@ export function resolvePartWorkcell(
       if (
         vertices > PART_GEOMETRY_LIMITS.workcellVertices ||
         indices > PART_GEOMETRY_LIMITS.workcellIndices
-      )
+      ) {
         throw new Error(
           'Workcell exceeds the aggregate original part geometry limit'
         )
+      }
     }
+  }
   return {
     ...workcell,
     bodies: workcell.bodies.map((body) => ({
@@ -137,8 +146,9 @@ export function resolvePartWorkcell(
       colliders: body.visuals?.length
         ? body.visuals.map((binding) => {
             const source = sources.get(binding.assetId)
-            if (!source)
+            if (!source) {
               throw new Error(`Missing original part source ${binding.assetId}`)
+            }
             return resolvePart(binding, source)
           })
         : body.colliders
@@ -150,7 +160,9 @@ export function resolvePartWorkcell(
 export function hasResolvedParts(
   body: Pick<Body, 'colliders' | 'visuals'>
 ): boolean {
-  if (!body.visuals?.length) return true
+  if (!body.visuals?.length) {
+    return true
+  }
   return (
     body.colliders.length === body.visuals.length &&
     body.visuals.every((binding, index) => {

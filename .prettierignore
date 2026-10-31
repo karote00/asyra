@@ -1,3 +1,5 @@
 node_modules
 dist
-.next 
+.next
+# Immutable historical source; verified by its manifest and source profile.
+apps/asyra-fieldscope/src/domain/__tests__/fixtures/pre-p5b-source/**

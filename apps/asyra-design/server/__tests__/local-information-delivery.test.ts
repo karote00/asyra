@@ -54,7 +54,7 @@ it('rejects changed source, cross-query, cross-request and invalid continuations
   expect(() =>
     deliverInformation(raw, 'read_knowledge', next, 'other')
   ).toThrow(/stale/)
-  for (const offset of [-1, Buffer.byteLength(raw), 0.5])
+  for (const offset of [-1, Buffer.byteLength(raw), 0.5]) {
     expect(() =>
       deliverInformation(
         raw,
@@ -63,6 +63,7 @@ it('rejects changed source, cross-query, cross-request and invalid continuations
         'request'
       )
     ).toThrow()
+  }
   expect(deliverInformation(raw, 'read_knowledge', next, 'request')).toBe(
     deliverInformation(raw, 'read_knowledge', next, 'request')
   )

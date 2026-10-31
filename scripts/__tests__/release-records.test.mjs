@@ -20,7 +20,9 @@ const compareVersions = (left, right) => {
   const rightParts = right.split('.').map(Number)
   for (let index = 0; index < leftParts.length; index += 1) {
     const difference = leftParts[index] - rightParts[index]
-    if (difference !== 0) return difference
+    if (difference !== 0) {
+      return difference
+    }
   }
   return 0
 }

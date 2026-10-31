@@ -18,7 +18,9 @@ export const isPantryVessel = (id: string): id is PantryVesselId =>
 
 export function pantryCounterBottle(): AssetPart[] {
   const recipe = specification.sourceVariants.counterBottle
-  if (!isPantryVessel(recipe.vessel)) throw new Error('Unknown counter bottle')
+  if (!isPantryVessel(recipe.vessel)) {
+    throw new Error('Unknown counter bottle')
+  }
   const colors = Object.fromEntries(
     Object.entries(recipe.colors).map(([region, color]) => [
       region,
@@ -58,7 +60,9 @@ export function pantryVessel(
   colors: Readonly<Record<string, number>> = {}
 ): AssetPart[] {
   const recipe = specification.sourceVariants.vessels[id]
-  if (!recipe) throw new Error(`Unknown pantry vessel: ${id}`)
+  if (!recipe) {
+    throw new Error(`Unknown pantry vessel: ${id}`)
+  }
   return (recipe.regions as VesselRegion[]).map((region) => {
     const construct = (segments: number): Mesh => {
       if (region.kind === 'lathe' && region.profile) {
@@ -88,8 +92,9 @@ export function pantryVessel(
         const mesh = lathe(region.profile, segments)
         if (region.surface) {
           const height = Math.max(...region.profile.map(([, z]) => z))
-          for (let i = 0; i < mesh.positions.length / 3; i++)
+          for (let i = 0; i < mesh.positions.length / 3; i++) {
             mesh.uvs[i * 2 + 1] = mesh.positions[i * 3 + 2] / height
+          }
         }
         return mesh
       }
@@ -98,8 +103,9 @@ export function pantryVessel(
         region.radius &&
         region.zRange &&
         region.angles
-      )
+      ) {
         return vesselLabel(region.radius, region.zRange, region.angles)
+      }
       if (
         (region.kind === 'box' || region.kind === 'ellipsoid') &&
         region.size &&
@@ -116,9 +122,11 @@ export function pantryVessel(
                 ]),
                 24
               )
-        if (region.kind === 'ellipsoid')
-          for (let i = 0; i < shape.positions.length; i++)
+        if (region.kind === 'ellipsoid') {
+          for (let i = 0; i < shape.positions.length; i++) {
             shape.positions[i] *= region.size[i % 3] / 2
+          }
+        }
         append(
           mesh,
           shape,
@@ -127,8 +135,9 @@ export function pantryVessel(
         )
         return mesh
       }
-      if (region.kind === 'tube' && region.path && region.radius)
+      if (region.kind === 'tube' && region.path && region.radius) {
         return tube(region.path.map(vec), region.radius, 12)
+      }
       throw new Error(`Incomplete vessel region: ${id}/${region.id}`)
     }
     const mesh = construct(specification.sourceVariants.angularIntervals)
@@ -139,17 +148,21 @@ export function pantryVessel(
       region.surface ?? 'plain',
       region.roughness
     )
-    if (region.opacity < 1) result.opacity = region.opacity
-    if (region.environmentIntensity !== undefined)
+    if (region.opacity < 1) {
+      result.opacity = region.opacity
+    }
+    if (region.environmentIntensity !== undefined) {
       result.environmentIntensity = region.environmentIntensity
+    }
     if (
       region.kind === 'lathe' &&
       !('preserveFullDetail' in recipe && recipe.preserveFullDetail)
-    )
+    ) {
       result.distant = {
         mesh: construct(specification.sourceVariants.distantAngularIntervals),
         maxError: 0.00065
       }
+    }
     return result
   })
 }

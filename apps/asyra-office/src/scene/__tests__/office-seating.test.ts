@@ -28,8 +28,9 @@ it('admits only the three admitted tables after structural approval', () => {
   for (const assembly of scene.assemblies) {
     const parts = scene.parts.slice(offset, offset + assembly.parts.length)
     offset += assembly.parts.length
-    if (existing.has(assembly.id))
+    if (existing.has(assembly.id)) {
       expect({ assembly, parts }).toEqual(existing.get(assembly.id))
+    }
   }
   expect(scene.labels).toEqual(baseline.labels)
 })
@@ -42,18 +43,21 @@ it('grounds every table and chair and clears every wall body and cap', () => {
       [Infinity, -Infinity],
       [Infinity, -Infinity]
     ]
-    for (const p of scene.parts.slice(offset, offset + a.parts.length))
+    for (const p of scene.parts.slice(offset, offset + a.parts.length)) {
       p.mesh.positions.forEach((v, i) => {
         box[i % 3][0] = Math.min(box[i % 3][0], v)
         box[i % 3][1] = Math.max(box[i % 3][1], v)
       })
+    }
     offset += a.parts.length
     bounds.set(a.id, box)
   }
   for (const id of seatingIds) {
     const furniture = bounds.get(id)
     expect(furniture, id).toBeDefined()
-    if (!furniture) throw new Error(`Missing seating ${id}`)
+    if (!furniture) {
+      throw new Error(`Missing seating ${id}`)
+    }
     expect(furniture[2][0], id).toBeCloseTo(0.38, 6)
     for (const wall of scene.assemblies.filter((a) =>
       ['wall-segment', 'wall-header'].includes(a.asset)

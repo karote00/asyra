@@ -15,11 +15,15 @@ import { evaluateExactPolynomialTrig } from '../kinematic-trigonometry'
 
 export type Fraction = Readonly<{ numerator: bigint; denominator: bigint }>
 export function required<T>(value: T | undefined): T {
-  if (value === undefined) throw new Error('Missing formal fixture dependency')
+  if (value === undefined) {
+    throw new Error('Missing formal fixture dependency')
+  }
   return value
 }
 export function gcd(a: bigint, b: bigint): bigint {
-  if (b !== 0n) return gcd(b, a % b)
+  if (b !== 0n) {
+    return gcd(b, a % b)
+  }
   return a < 0n ? -a : a
 }
 export function fraction(n: bigint, d = 1n): Fraction {

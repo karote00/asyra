@@ -1436,8 +1436,9 @@ describe('DataTransact user action completion', () => {
       const transact = new DataTransact()
       const observed: unknown[] = []
       const subscription = subscribeToEvents((event) => {
-        if (event.type === EventTypes.UPDATE_ELEMENT_PROPERTY_BINDINGS)
+        if (event.type === EventTypes.UPDATE_ELEMENT_PROPERTY_BINDINGS) {
           observed.push((event as AllEvent & { payload: unknown }).payload)
+        }
       })
       const payload = {
         action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_PROPERTY_BINDINGS,
@@ -1452,8 +1453,9 @@ describe('DataTransact user action completion', () => {
           eventName: EventTypes.UPDATE_ELEMENT_PROPERTY_BINDINGS,
           payload
         })
-        if (mode === 'rollback') transact.end({ outcome: 'rollback' })
-        else {
+        if (mode === 'rollback') {
+          transact.end({ outcome: 'rollback' })
+        } else {
           transact.end()
           observed.length = 0
           runWithOwnedTransact(transact, () => transact.undo())

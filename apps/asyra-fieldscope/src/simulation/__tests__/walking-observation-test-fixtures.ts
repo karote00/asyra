@@ -52,7 +52,9 @@ export function walkingObservationScene(kind: WalkingObservationSceneKind) {
       wireframe: false,
       selectable: false
     })
-    if (descriptor.kind !== 'mesh') throw new Error('Missing canonical sheet')
+    if (descriptor.kind !== 'mesh') {
+      throw new Error('Missing canonical sheet')
+    }
     const mesh: SiteMesh = Object.freeze({
       id: 'bounded-observation-sheet',
       layer: 'supports',
@@ -94,13 +96,17 @@ export function walkingObservationScene(kind: WalkingObservationSceneKind) {
     },
     sourceOwner
   )
-  if (!demand.route) throw new Error('Missing source route')
+  if (!demand.route) {
+    throw new Error('Missing source route')
+  }
   return { farm, scene, isCurrentScene, sourceOwner, demand }
 }
 
 export function walkingActionFixture(kind: WalkingObservationSceneKind) {
   const f = walkingObservationScene(kind)
-  if (!f.demand.route) throw new Error('Missing source route')
+  if (!f.demand.route) {
+    throw new Error('Missing source route')
+  }
   const operating = new WalkingOperatingOwner(
     () => f.demand,
     (value) => value === f.demand
@@ -112,7 +118,9 @@ export function walkingActionFixture(kind: WalkingObservationSceneKind) {
       })
     )
   )
-  if (report.status === 'legacy-view') throw new Error('Missing walking source')
+  if (report.status === 'legacy-view') {
+    throw new Error('Missing walking source')
+  }
   const receipt = Object.freeze({
     format: 'walking-observation-geometry/1' as const,
     scene: f.scene,

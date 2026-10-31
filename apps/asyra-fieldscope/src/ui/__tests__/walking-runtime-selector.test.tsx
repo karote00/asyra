@@ -46,7 +46,9 @@ it('routes explicit model choices to the canonical walking runtime selection', a
         sourceModel: { kind: 'solid-articulation/2' }
       }
     })
-    if (selected.mode !== 'walking-active') throw new Error('Expected walking')
+    if (selected.mode !== 'walking-active') {
+      throw new Error('Expected walking')
+    }
     expect(selected.definition.legs).toHaveLength(6)
     expect(
       selected.definition.arms.map(({ side, role }) => `${side}-${role}`)

@@ -52,8 +52,9 @@ test('upstream, unknown and deleted inputs retain the full inventory', () => {
   for (const input of [
     'apps/asyra-fieldscope/src/deleted.ts',
     'apps/asyra-fieldscope/vitest.config.ts'
-  ])
+  ]) {
     assert.deepEqual(select(input).profiles, full.profiles)
+  }
 })
 test('new tests and cyclic imports are discovered without a name list', (t) => {
   fs.mkdirSync(path.join(root, 'tmp/fieldscope-routing'), { recursive: true })
@@ -118,8 +119,9 @@ test('pre-install classification needs the parser only for registered source cha
     'docs/ai/plan.md',
     'apps/other/src/index.ts',
     'apps/asyra-fieldscope/e2e/panels.spec.ts'
-  ])
+  ]) {
     assert.equal(requiresTestParser([file], ['apps/asyra-fieldscope']), false)
+  }
 })
 
 test('proven upstream sources enter at package imports and preserve transitive owner consumers', (t) => {

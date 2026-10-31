@@ -90,8 +90,9 @@ describe('explicit reference uses', () => {
       reason: 'Clarified primary-agent explanation only'
     })
     expect(changed.changedDependencies).toEqual([])
-    for (const receipt of receipts)
+    for (const receipt of receipts) {
       expect(owner.resolve(receipt, 'visual').receipt).toEqual(receipt)
+    }
   })
   it('validates every declaration atomically and allows explicit whole image', () => {
     const owner = setup()
@@ -184,7 +185,9 @@ describe('reference use downstream integration', () => {
   it('preserves exact reference uses in scope recovery and rejects later source changes', () => {
     const { review, select, receipts } = setupReview()
     const first = review.inspect('entrance', true, true)?.inspectionId
-    if (!first) throw new Error('Expected retained first inspection')
+    if (!first) {
+      throw new Error('Expected retained first inspection')
+    }
     const selection = {
       criterionId: 'detail',
       unitId: 'entrance',
@@ -207,7 +210,9 @@ describe('reference use downstream integration', () => {
       width: 10,
       height: 10
     })?.inspectionId
-    if (!second) throw new Error('Expected retained second inspection')
+    if (!second) {
+      throw new Error('Expected retained second inspection')
+    }
     const requested = [{ ...selection, inspectionIds: [second] }]
     const saved = structuredClone(requested)
     const before = review.readChecks({ includePassed: true })
@@ -252,8 +257,9 @@ describe('reference use downstream integration', () => {
       width: 20,
       height: 20
     })?.inspectionId
-    if (!whole || !entrance || !crown)
+    if (!whole || !entrance || !crown) {
       throw new Error('Fixture capture unavailable')
+    }
     const bound = review.bindReview('visual', [
       { criterionId: 'view', inspectionIds: [whole] },
       {
@@ -386,7 +392,9 @@ describe('reference use downstream integration', () => {
     })
     const capture = (id: string, overview = false) => {
       const image = review.inspect(id, true, overview)
-      if (!image) throw new Error('Missing fixture capture')
+      if (!image) {
+        throw new Error('Missing fixture capture')
+      }
       return image.inspectionId
     }
     const whole = capture('tower', true),
@@ -531,8 +539,9 @@ it('revalidates an explicit reference use after native pixel work without publis
       region: { x: 0, y: 0, width: 2, height: 2 }
     }),
     validate: async () => {
-      if (++validations === 2)
+      if (++validations === 2) {
         update(references, { ...decision([]), status: 'rejected' })
+      }
       return true
     },
     reference: (_index, use) => {

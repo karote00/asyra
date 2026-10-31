@@ -700,7 +700,9 @@ describe('Property intentions through real Factory owner replay', () => {
       const spy = vi
         .spyOn(scene, 'applyPreparedElementMutation')
         .mockImplementationOnce((prepared, options) => {
-          if (when === 'after-binding') apply(prepared, options)
+          if (when === 'after-binding') {
+            apply(prepared, options)
+          }
           throw new Error('binding handoff failure')
         })
       try {

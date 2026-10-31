@@ -56,7 +56,9 @@ async function click(text: string) {
     (item) => item.textContent === text
   )
 
-  if (!button) throw new Error('Missing button')
+  if (!button) {
+    throw new Error('Missing button')
+  }
 
   await act(() => button.click())
 }
@@ -64,7 +66,9 @@ async function click(text: string) {
 async function select(label: string, value: string) {
   const field = host.querySelector<HTMLSelectElement>(`[aria-label="${label}"]`)
 
-  if (!field) throw new Error('Missing select')
+  if (!field) {
+    throw new Error('Missing select')
+  }
 
   await act(() => {
     field.value = value
@@ -126,7 +130,9 @@ it('retains an empty numeric input as invalid instead of inventing a zero thresh
     '[aria-label="Condition 1 threshold (mm)"]'
   )
 
-  if (!field) throw new Error('Missing threshold')
+  if (!field) {
+    throw new Error('Missing threshold')
+  }
 
   await act(() => {
     Object.getOwnPropertyDescriptor(
@@ -166,8 +172,9 @@ it('does not offer over-depth groups or expansion beyond the node allowance', as
 
   const first = tree.conditions[0]
 
-  if (first.kind !== 'any' || first.conditions[0].kind !== 'all')
+  if (first.kind !== 'any' || first.conditions[0].kind !== 'all') {
     throw new Error('Invalid test tree')
+  }
 
   first.conditions[0].conditions = first.conditions[0].conditions.slice(0, 2)
 

@@ -74,8 +74,9 @@ export function publishCreateApp({
     if (
       error.code !== 'E404' &&
       !/\bE404\b/.test(`${error.stderr} ${error.message}`)
-    )
+    ) {
       throw error
+    }
   }
   if (existing) {
     assert.equal(

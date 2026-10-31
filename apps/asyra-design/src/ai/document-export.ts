@@ -85,15 +85,17 @@ export const createDocumentExport = (
   let unsubscribe: (() => void) | undefined
   const assertOpen = (signal: AbortSignal) => {
     signal.throwIfAborted()
-    if (disposed)
+    if (disposed) {
       throw new AiActionExecutionError('The export owner is disposed.')
+    }
   }
   const find = (id: string) => {
     const artifact = artifacts.get(id)
-    if (!artifact)
+    if (!artifact) {
       throw new AiActionExecutionError(
         'The document export is unavailable. Create a new export explicitly if needed.'
       )
+    }
     return artifact
   }
   const actions: AiActionDefinition[] = [
@@ -116,10 +118,11 @@ export const createDocumentExport = (
       },
       execute: async (_input, context) => {
         assertOpen(context.signal)
-        if (busy)
+        if (busy) {
           throw new AiActionExecutionError(
             'A document export is already being prepared. No second snapshot was started.'
           )
+        }
         unsubscribe ??= apis.observe(() => {
           revision++
         })
@@ -134,10 +137,11 @@ export const createDocumentExport = (
           const snapshot = await apis.save()
           assertOpen(context.signal)
           const bytes = new TextEncoder().encode(JSON.stringify(snapshot))
-          if (bytes.byteLength > maximumBytes - retainedBytes)
+          if (bytes.byteLength > maximumBytes - retainedBytes) {
             throw new AiActionExecutionError(
               'Document export capacity is unavailable. Release retained exports before explicitly retrying. Existing exports remain available.'
             )
+          }
           const sha256 = await output.digest(bytes)
           assertOpen(context.signal)
           if (
@@ -145,10 +149,11 @@ export const createDocumentExport = (
             captured.revision !== revision ||
             captured.documentId !== apis.documentId() ||
             captured.workspaceId !== apis.workspaceId()
-          )
+          ) {
             throw new AiActionExecutionError(
               'The document changed during export. No artifact was published; explicitly request a new snapshot.'
             )
+          }
           const artifactId = crypto.randomUUID()
           const metadata: Metadata = Object.freeze({
             artifactId,
@@ -214,7 +219,9 @@ export const createDocumentExport = (
         assertOpen(context.signal)
         const id = (input as { artifactId: string }).artifactId
         const artifact = artifacts.get(id)
-        if (!artifact) return { status: 'no-change', released: false }
+        if (!artifact) {
+          return { status: 'no-change', released: false }
+        }
         output.release(artifact.url)
         artifacts.delete(id)
         retainedBytes -= artifact.metadata.bytes
@@ -242,8 +249,9 @@ export const createDocumentExport = (
           failures.push(error)
         }
       }
-      if (failures.length)
+      if (failures.length) {
         throw new AggregateError(failures, 'Document export release failed')
+      }
     }
   }
 }

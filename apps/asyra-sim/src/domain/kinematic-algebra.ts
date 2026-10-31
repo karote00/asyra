@@ -91,8 +91,9 @@ export function poseOperations<S>(a: Algebra<S>) {
   // while preventing overflow of the unnormalized squared norm.
   const direction = (axis: Vec3): Vector<S> => {
     const largest = Math.max(...axis.map(Math.abs))
-    if (!axis.every(Number.isFinite) || largest === 0)
+    if (!axis.every(Number.isFinite) || largest === 0) {
       throw new Error('Invalid axis')
+    }
     return normalize([
       a.div(scalar(axis[0]), scalar(largest)),
       a.div(scalar(axis[1]), scalar(largest)),
@@ -186,26 +187,34 @@ function createPoseEvaluator<S>(
     poses = new Map<string, AlgebraPose<S>>()
   const visiting = new Set<string>()
   const evaluate = (id: string): AlgebraPose<S> => {
-    if (id === frameRootId) return ops.identity()
+    if (id === frameRootId) {
+      return ops.identity()
+    }
     const completed = poses.get(id)
-    if (completed) return completed
+    if (completed) {
+      return completed
+    }
     const body = bodies.get(id)
-    if (!body || visiting.has(id)) throw new Error('Invalid pose hierarchy')
+    if (!body || visiting.has(id)) {
+      throw new Error('Invalid pose hierarchy')
+    }
     visiting.add(id)
     const parent =
       body.parentId === null ? ops.identity() : evaluate(body.parentId)
     const value = values[id] ?? a.scalar(body.joint.value)
     let motion = ops.identity()
-    if (body.joint.kind === 'revolute')
+    if (body.joint.kind === 'revolute') {
       motion = {
         position: motion.position,
         rotation: ops.axisAngle(body.joint.axis, value)
       }
-    if (body.joint.kind === 'prismatic')
+    }
+    if (body.joint.kind === 'prismatic') {
       motion = {
         position: ops.scale(ops.direction(body.joint.axis), value),
         rotation: motion.rotation
       }
+    }
     const pose = ops.compose(
       ops.compose(parent, ops.fromPose(body.pose)),
       motion
@@ -240,8 +249,9 @@ export function evaluatePairKinematics<S>(
     let current: string | null = id
     while (current !== null) {
       const body = bodies.get(current)
-      if (!body || ids.includes(current))
+      if (!body || ids.includes(current)) {
         throw new Error('Invalid pair pose hierarchy')
+      }
       ids.push(current)
       current = body.parentId
     }
@@ -262,11 +272,14 @@ export function interpolateSegment<S>(
 ): Readonly<Record<string, S>> {
   const left = trajectory.keyframes[index],
     right = trajectory.keyframes[index + 1]
-  if (!left) throw new Error('Missing trajectory segment')
-  if (!right)
+  if (!left) {
+    throw new Error('Missing trajectory segment')
+  }
+  if (!right) {
     return Object.fromEntries(
       Object.entries(left.joints).map(([id, value]) => [id, a.scalar(value)])
     )
+  }
   const fraction = a.div(
     a.sub(time, a.scalar(left.time)),
     a.sub(a.scalar(right.time), a.scalar(left.time))

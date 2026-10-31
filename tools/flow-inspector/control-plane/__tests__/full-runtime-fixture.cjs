@@ -57,6 +57,7 @@ const architecture = {
       bypasses: ['No contribution may be inferred from another owner.'],
       allowedContributors: ['@asyra/factory public runtime'],
       forbiddenContributors: ['PR status', 'caller supplied evidence'],
+      cacheDimensions: [],
       implementationBoundary: ['packages/factory/src/index.ts'],
       specRefs: ['#full-runtime-product-evidence'],
       failureOwnerStepId: 'produce-factory-runtime'
@@ -74,6 +75,7 @@ const architecture = {
       bypasses: ['No missing prerequisite may pass.'],
       allowedContributors: ['@asyra/collaboration public runtime'],
       forbiddenContributors: ['evidence from another HEAD'],
+      cacheDimensions: [],
       implementationBoundary: ['packages/collaboration/src/process.ts'],
       specRefs: ['#full-runtime-product-evidence'],
       failureOwnerStepId: 'produce-collaboration-runtime'
@@ -91,6 +93,7 @@ const architecture = {
       bypasses: ['No partial source may become an integrated result.'],
       allowedContributors: ['@asyra/ui-context public runtime'],
       forbiddenContributors: ['combined green results from different sources'],
+      cacheDimensions: [],
       implementationBoundary: ['packages/ui-context/src/property-registry.ts'],
       specRefs: ['#full-runtime-product-evidence'],
       failureOwnerStepId: 'complete-ui-context-runtime'
@@ -499,7 +502,7 @@ function createFullRuntimeFixture(root, parent) {
   const directory = fs.mkdtempSync(path.join(parent, 'full-runtime-'))
   const repository = path.join(directory, 'repository')
   fs.mkdirSync(path.join(repository, 'packages'), { recursive: true })
-  for (const name of packageNames)
+  for (const name of packageNames) {
     fs.cpSync(
       path.join(root, 'packages', name),
       path.join(repository, 'packages', name),
@@ -507,8 +510,10 @@ function createFullRuntimeFixture(root, parent) {
         recursive: true
       }
     )
-  for (const name of ['package.json', 'yarn.lock'])
+  }
+  for (const name of ['package.json', 'yarn.lock']) {
     fs.copyFileSync(path.join(root, name), path.join(repository, name))
+  }
   write(
     repository,
     architecturePath,
@@ -679,12 +684,13 @@ function createFullRuntimeFixture(root, parent) {
       'baseline',
       sourceAdmission
     )
-    if (expectedStatus)
+    if (expectedStatus) {
       assert.equal(
         evidence.status,
         expectedStatus,
         JSON.stringify(evidence.issues)
       )
+    }
     const record = {
       id,
       phase: 'completed',

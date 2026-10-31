@@ -33,8 +33,9 @@ it('builds 20 distinct botanical models for each cultivar with finite reusable g
       } else {
         expect(model.leafletCount).toBe(model.leafCount * 7)
         expect(model.fruits.length).toBeGreaterThanOrEqual(15)
-        for (const fruit of model.fruits)
+        for (const fruit of model.fruits) {
           expect(fruit.length / (fruit.radius * 2)).toBeGreaterThan(1.5)
+        }
       }
     }
   }
@@ -99,7 +100,9 @@ it('authors exact source anatomy only for emitted leaf blades, vein ribbons and 
     )
     for (const part of model.parts) {
       const distant = part.distantSourceAnatomy
-      if (!distant) continue
+      if (!distant) {
+        continue
+      }
       expect(distant.patches.every(({ role }) => role !== 'leaf-hair')).toBe(
         true
       )
@@ -134,9 +137,13 @@ it('creates actual leaf occlusion and places net-side fruit behind a horizontal 
   const models = createCropModels({ netTop: 3, netBottom: 0.45 })
   for (const species of ['cucumber-1914', 'tomato-yu-nu']) {
     const covered = models.find((m) => m.species === species && m.variant === 0)
-    if (!covered) throw new Error('Missing covered model')
+    if (!covered) {
+      throw new Error('Missing covered model')
+    }
     const fruit = covered.fruits.find((f) => f.occlusion === 'leaf')
-    if (!fruit) throw new Error('Missing leaf-covered fruit')
+    if (!fruit) {
+      throw new Error('Missing leaf-covered fruit')
+    }
     const shape = covered.parts[1].shape
     const geometry = new BufferGeometry()
     geometry.setAttribute(
@@ -177,7 +184,9 @@ it('retains a bounded distant representation without per-plant geometry expansio
     let full = 0,
       distant = 0
     for (const part of model.parts) {
-      if (!part.distantShape) throw new Error('Missing distant shape')
+      if (!part.distantShape) {
+        throw new Error('Missing distant shape')
+      }
       expect(part.distantShape.positions.every(Number.isFinite)).toBe(true)
       full += part.shape.indices.length / 3
       distant += part.distantShape.indices.length / 3
@@ -190,7 +199,9 @@ it('gives Yu-Nu fruit rounded elliptical ends and spatially uneven ripening on o
   const model = createCropModels({ netTop: 3, netBottom: 0.45 }).find(
     (m) => m.species === 'tomato-yu-nu' && m.variant === 2
   )
-  if (!model) throw new Error('Missing tomato')
+  if (!model) {
+    throw new Error('Missing tomato')
+  }
   const fruit = model.fruits[0],
     shape = model.parts[5].shape
   const colors = new Set<string>()
@@ -199,7 +210,9 @@ it('gives Yu-Nu fruit rounded elliptical ends and spatially uneven ripening on o
     const x = (shape.positions[i] - fruit.center[0]) / fruit.radius
     const y = (shape.positions[i + 1] - fruit.center[1]) / (fruit.length / 2)
     const z = (shape.positions[i + 2] - fruit.center[2]) / fruit.radius
-    if (Math.abs(x) > 1.01 || Math.abs(y) > 1.01 || Math.abs(z) > 1.01) continue
+    if (Math.abs(x) > 1.01 || Math.abs(y) > 1.01 || Math.abs(z) > 1.01) {
+      continue
+    }
     expect(x * x + y * y + z * z).toBeCloseTo(1, 5)
     colors.add(
       shape.colors
@@ -231,7 +244,9 @@ it('grows fine pale spines from every cucumber skin', () => {
 it('gives every leaf a spatially varying green surface at both detail levels', () => {
   for (const model of createCropModels({ netTop: 3, netBottom: 0.45 })) {
     for (const shape of [model.parts[1].shape, model.parts[1].distantShape]) {
-      if (!shape) throw new Error('Missing leaf shape')
+      if (!shape) {
+        throw new Error('Missing leaf shape')
+      }
       expect(shape.colors?.length).toBe(shape.positions.length)
       const colors = new Set<string>()
       for (let i = 0; i < (shape.colors?.length ?? 0); i += 3) {
@@ -261,7 +276,9 @@ it('includes five cucumber growth stages with expanding fruit and attached flowe
     for (const stage of stages) {
       const fruit = model.fruits.find((f) => f.growthStage === stage)
       expect(fruit, stage).toBeDefined()
-      if (!fruit) throw new Error('Missing growth stage')
+      if (!fruit) {
+        throw new Error('Missing growth stage')
+      }
       expect(fruit.length).toBeGreaterThan(previousLength)
       expect(fruit.radius).toBeGreaterThan(previousRadius)
       previousLength = fruit.length
@@ -326,7 +343,9 @@ it('maps a shared detailed leaf surface onto every cucumber blade at both detail
     const part = model.parts[1]
     expect(part.surface).toBe(surface)
     for (const shape of [part.shape, part.distantShape]) {
-      if (!shape) throw new Error('Missing leaf shape')
+      if (!shape) {
+        throw new Error('Missing leaf shape')
+      }
       expect(shape.uvs?.length).toBe((shape.positions.length / 3) * 2)
       expect(shape?.uvs?.every(Number.isFinite)).toBe(true)
     }

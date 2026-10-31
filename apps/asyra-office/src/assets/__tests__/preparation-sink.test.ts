@@ -12,11 +12,14 @@ function heights(mesh: Mesh, x: number, y: number) {
       .slice(i, i + 3)
       .map((n) => mesh.positions.slice(n * 3, n * 3 + 3))
     const d = (b[1] - c[1]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[1] - c[1])
-    if (Math.abs(d) < 1e-10) continue
+    if (Math.abs(d) < 1e-10) {
+      continue
+    }
     const u = ((b[1] - c[1]) * (x - c[0]) + (c[0] - b[0]) * (y - c[1])) / d
     const v = ((c[1] - a[1]) * (x - c[0]) + (a[0] - c[0]) * (y - c[1])) / d
-    if (u >= -1e-6 && v >= -1e-6 && u + v <= 1 + 1e-6)
+    if (u >= -1e-6 && v >= -1e-6 && u + v <= 1 + 1e-6) {
       result.push(u * a[2] + v * b[2] + (1 - u - v) * c[2])
+    }
   }
   return result
 }

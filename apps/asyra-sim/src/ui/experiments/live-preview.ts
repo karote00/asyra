@@ -53,7 +53,9 @@ export class LivePreview {
   }
 
   sample(time: number, options: LiveSampleOptions) {
-    if (!this.alive) return
+    if (!this.alive) {
+      return
+    }
 
     this.time = time
     this.seeking = options.discontinuity
@@ -65,7 +67,9 @@ export class LivePreview {
       this.checkedTime = null
       this.anchorTime = time
       this.generation++
-    } else this.presentedTime = time
+    } else {
+      this.presentedTime = time
+    }
 
     this.anchorTime ??= time
     this.request(this.nextTime(), options.discontinuity)
@@ -87,7 +91,9 @@ export class LivePreview {
   }
 
   private request(time: number, discontinuity = false) {
-    if (time === this.checkedTime && !discontinuity) return
+    if (time === this.checkedTime && !discontinuity) {
+      return
+    }
 
     this.queryTime = time
 
@@ -101,17 +107,22 @@ export class LivePreview {
       return
     }
 
-    if (!this.abort) this.start()
-    else if (this.opened) this.api.sample(time, discontinuity)
+    if (!this.abort) {
+      this.start()
+    } else if (this.opened) {
+      this.api.sample(time, discontinuity)
+    }
   }
 
   private accept(feedback: PlaybackFeedback) {
     this.feedback = feedback
-    if (this.seeking) this.presentedTime = this.time
+    if (this.seeking) {
+      this.presentedTime = this.time
+    }
     this.awaitingSeek = false
     this.checkedTime = feedback.checkedTime
     this.project()
-    if (this.diagnosticId !== null && feedback.checkedTime !== null)
+    if (this.diagnosticId !== null && feedback.checkedTime !== null) {
       this.api.recordPreviewPublication(
         this.diagnosticId,
         this.presentedTime,
@@ -119,13 +130,16 @@ export class LivePreview {
         feedback.kind,
         feedback.issues.map((issue) => issue.pairId)
       )
+    }
 
     if (this.checkedTime !== null && this.nextTime() > this.checkedTime) {
       const generation = this.generation
 
       // Catch up after dropped frames without a queue or recursive cache delivery.
       queueMicrotask(() => {
-        if (!this.alive || generation !== this.generation) return
+        if (!this.alive || generation !== this.generation) {
+          return
+        }
 
         this.request(this.nextTime())
       })
@@ -133,7 +147,9 @@ export class LivePreview {
   }
 
   private project() {
-    if (!this.alive) return
+    if (!this.alive) {
+      return
+    }
 
     this.publish({
       workcell: this.workcell,
@@ -153,11 +169,15 @@ export class LivePreview {
 
     this.completion = this.completion
       .then(async () => {
-        if (!this.alive || abort.signal.aborted) return
+        if (!this.alive || abort.signal.aborted) {
+          return
+        }
 
         this.snapshot ??= this.createSnapshot()
         this.unsubscribe = this.api.subscribe(() => {
-          if (!this.alive || abort.signal.aborted || !this.snapshot) return
+          if (!this.alive || abort.signal.aborted || !this.snapshot) {
+            return
+          }
 
           const state = this.api.getState()
 
@@ -179,8 +199,9 @@ export class LivePreview {
               (state.sample.time !== this.time ||
                 (state.status !== 'ready' &&
                   state.sample.evidenceOrigin !== 'interval'))
-            )
+            ) {
               return
+            }
 
             this.lastSample = state.sample
             this.diagnosticId = state.sample.diagnosticId ?? null
@@ -205,7 +226,9 @@ export class LivePreview {
         })
       })
       .catch((error: unknown) => {
-        if (!this.alive || abort.signal.aborted) return
+        if (!this.alive || abort.signal.aborted) {
+          return
+        }
 
         this.presentedTime = this.time
         this.awaitingSeek = false

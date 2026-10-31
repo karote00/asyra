@@ -37,7 +37,9 @@ export const createPublicationProcessor =
     )
     canonicalSlices.forEach((canonicalChanges) => {
       canonicalChanges.forEach((change) => {
-        if (change.kind !== 'element-creation') return
+        if (change.kind !== 'element-creation') {
+          return
+        }
         emitDiagnosticCounter('collaboration:remote-add-element-batch-count')
         emitDiagnosticCounter(
           'collaboration:remote-add-element-batch-size',

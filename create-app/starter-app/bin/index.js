@@ -113,7 +113,9 @@ async function promptForTargetName() {
 }
 
 function assertPackageManager(packageManager) {
-  if (supportedPackageManagers.includes(packageManager)) return
+  if (supportedPackageManagers.includes(packageManager)) {
+    return
+  }
   throw new Error(
     `Unsupported package manager "${packageManager}". Choose yarn or npm.`
   )
@@ -208,7 +210,9 @@ async function main() {
   }
 
   let { packageManager = 'yarn', targetName } = parsed
-  if (!targetName) targetName = await promptForTargetName()
+  if (!targetName) {
+    targetName = await promptForTargetName()
+  }
 
   if (!isSafeTargetName(targetName)) {
     console.error('Error: project name must be one new directory name.')

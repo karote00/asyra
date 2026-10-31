@@ -15,11 +15,17 @@ const violations = []
 for (const entry of fs.readdirSync(packagesDirectory, {
   withFileTypes: true
 })) {
-  if (!entry.isDirectory()) continue
+  if (!entry.isDirectory()) {
+    continue
+  }
   const manifestPath = path.join(packagesDirectory, entry.name, 'package.json')
-  if (!fs.existsSync(manifestPath)) continue
+  if (!fs.existsSync(manifestPath)) {
+    continue
+  }
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
-  if (manifest.private) continue
+  if (manifest.private) {
+    continue
+  }
 
   for (const field of dependencyFields) {
     for (const [dependencyName, range] of Object.entries(

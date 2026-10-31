@@ -946,14 +946,17 @@ const planProjectedTailAdditions = (
         change.action !== SCENE_TREE_ACTIONS.ADD_ELEMENT &&
         change.action !== SCENE_TREE_ACTIONS.ADD_ELEMENTS
     )
-  )
+  ) {
     return
+  }
   const tail: string[] = []
   const terminalIds = new Set<string>()
   let current: string | undefined =
     prepared.flattenedIds[prepared.flattenedIds.length - 1]
   while (current) {
-    if (terminalIds.has(current)) return
+    if (terminalIds.has(current)) {
+      return
+    }
     emitDiagnosticCounter('ui-context-hierarchy-tail-visit')
     terminalIds.add(current)
     tail.push(current)
@@ -973,7 +976,9 @@ const planProjectedTailAdditions = (
       entries = (change as AddRemoveElementsChange).entries
     } else if (change.action === SCENE_TREE_ACTIONS.ADD_ELEMENT) {
       entries = [change as AddRemoveElementChange]
-    } else return
+    } else {
+      return
+    }
     for (const { data, parentId, index } of entries) {
       const id = data.id
       const parent = typeof parentId === 'string' ? parentId : data.parentId
@@ -986,19 +991,25 @@ const planProjectedTailAdditions = (
         !terminalIds.has(parent) ||
         (data.children !== undefined &&
           (!Array.isArray(data.children) || data.children.length !== 0))
-      )
+      ) {
         return
+      }
       const childCount =
         childCounts.get(parent) ?? prepared.children.get(parent)?.length ?? 0
-      if (index !== undefined && index !== childCount) return
+      if (index !== undefined && index !== childCount) {
+        return
+      }
       if (
         change.action === SCENE_TREE_ACTIONS.ADD_ELEMENTS &&
         index === undefined
-      )
+      ) {
         return
+      }
       while (tail[tail.length - 1] !== parent) {
         const previous = tail.pop()
-        if (previous === undefined) return
+        if (previous === undefined) {
+          return
+        }
         terminalIds.delete(previous)
       }
       tail.push(id)
@@ -1065,7 +1076,9 @@ const projectUIContextSceneTreeBatch = (
         }
         const parentId = getProjectedParentId(row)
         parentIds.set(elementId, parentId)
-        if (!parentId) return
+        if (!parentId) {
+          return
+        }
         const children = childrenByParent.get(parentId) ?? []
         children.push(elementId)
         childrenByParent.set(parentId, children)
@@ -1076,9 +1089,13 @@ const projectUIContextSceneTreeBatch = (
       parentId: string | undefined,
       elementId: string
     ): void => {
-      if (!parentId) return
+      if (!parentId) {
+        return
+      }
       const children = childrenByParent.get(parentId)
-      if (!children) return
+      if (!children) {
+        return
+      }
       const index = children.indexOf(elementId)
       if (index >= 0) {
         children.splice(index, 1)
@@ -1091,7 +1108,9 @@ const projectUIContextSceneTreeBatch = (
       elementId: string,
       requestedIndex?: number
     ): void => {
-      if (!parentId) return
+      if (!parentId) {
+        return
+      }
       emitDiagnosticCounter('ui-context-membership-add-scalar')
       const children = childrenByParent.get(parentId) ?? []
       if (tailAdditions) {
@@ -1194,7 +1213,9 @@ const projectUIContextSceneTreeBatch = (
       })
       removedIdsByParent.forEach((removedIds, parentId) => {
         const children = childrenByParent.get(parentId)
-        if (!children) return
+        if (!children) {
+          return
+        }
         const retainedChildren = children.filter(
           (childId) => !removedIds.has(childId)
         )
@@ -1211,7 +1232,9 @@ const projectUIContextSceneTreeBatch = (
       value: unknown
     ): void => {
       const currentData = next[elementId]
-      if (!currentData) return
+      if (!currentData) {
+        return
+      }
       if (
         !isProjectedHierarchyKey(key) &&
         !shouldUpdateElementDataMapForComputedKey(key)
@@ -1264,7 +1287,9 @@ const projectUIContextSceneTreeBatch = (
           const elementData = cloneProjectedElementData(data)
           const elementId =
             typeof elementData?.id === 'string' ? elementData.id : undefined
-          if (!elementData || !elementId) return
+          if (!elementData || !elementId) {
+            return
+          }
           const projectedParentId =
             typeof parentId === 'string'
               ? parentId
@@ -1295,7 +1320,9 @@ const projectUIContextSceneTreeBatch = (
               index: index as number
             })
           } else {
-            if (tailAdditions) flushScalarAdditionMemberships()
+            if (tailAdditions) {
+              flushScalarAdditionMemberships()
+            }
             insertMembership(projectedParentId, elementId, index)
           }
           break
@@ -1311,7 +1338,9 @@ const projectUIContextSceneTreeBatch = (
             const elementData = cloneProjectedElementData(data)
             const elementId =
               typeof elementData?.id === 'string' ? elementData.id : undefined
-            if (!elementData || !elementId) return
+            if (!elementData || !elementId) {
+              return
+            }
             elementData.parentId = parentId
             ensureMutableMap()[elementId] = elementData
             changedElementIds.add(elementId)
@@ -1369,7 +1398,9 @@ const projectUIContextSceneTreeBatch = (
           })
           affectedParentIds.forEach((parentId) => {
             const children = childrenByParent.get(parentId)
-            if (!children) return
+            if (!children) {
+              return
+            }
             const retainedChildren = children.filter(
               (childId) => !movedIds.has(childId)
             )
@@ -1424,7 +1455,9 @@ const projectUIContextSceneTreeBatch = (
 
           subtree.removed.forEach(({ data, elementId }) => {
             const elementData = cloneProjectedElementData(data)
-            if (!elementData) return
+            if (!elementData) {
+              return
+            }
             ensureMutableMap()[elementId] = elementData
             changedElementIds.add(elementId)
             if (Array.isArray(elementData.children)) {
@@ -1449,7 +1482,9 @@ const projectUIContextSceneTreeBatch = (
           const { id, changes: bindings } =
             change as UpdateElementPropertyBindingsChange
           const current = next[id]
-          if (!current) break
+          if (!current) {
+            break
+          }
           const props: Record<string, unknown> = { ...(current.props ?? {}) }
           bindings.forEach(({ key, after }) => {
             props[key] = after
@@ -1490,7 +1525,9 @@ const projectUIContextSceneTreeBatch = (
 
     dirtyParentIds.forEach((parentId) => {
       const parent = next[parentId]
-      if (!parent) return
+      if (!parent) {
+        return
+      }
       ensureMutableMap()[parentId] = {
         ...parent,
         children: [...(childrenByParent.get(parentId) ?? [])]
@@ -1513,8 +1550,12 @@ const projectUIContextSceneTreeBatch = (
         }
       })
       const hasProjectedRow = (elementId: string): boolean => {
-        if (parentIds.has(elementId)) return true
-        if (missingIds.has(elementId)) return false
+        if (parentIds.has(elementId)) {
+          return true
+        }
+        if (missingIds.has(elementId)) {
+          return false
+        }
         membershipRowReads++
         const row = next[elementId]
         if (!row) {
@@ -1542,7 +1583,9 @@ const projectUIContextSceneTreeBatch = (
         const rootParentIdSet = new Set<string>()
         orderedCandidates.forEach((elementId) => {
           emitDiagnosticCounter('ui-context-hierarchy-root-candidate')
-          if (!hasProjectedRow(elementId)) return
+          if (!hasProjectedRow(elementId)) {
+            return
+          }
           const parentId = parentIds.get(elementId)
           if (
             parentId &&
@@ -1564,7 +1607,9 @@ const projectUIContextSceneTreeBatch = (
             completeHierarchy = false
             return
           }
-          if (parentIds.get(elementId) !== parentId) completeHierarchy = false
+          if (parentIds.get(elementId) !== parentId) {
+            completeHierarchy = false
+          }
           visited.add(elementId)
           flattenedElementIds.push(elementId)
           ;(childrenByParent.get(elementId) ?? []).forEach((childId) =>
@@ -1576,7 +1621,9 @@ const projectUIContextSceneTreeBatch = (
             collectProjectedChildren(childId, parentId)
           )
         })
-        if (visited.size !== parentIds.size) completeHierarchy = false
+        if (visited.size !== parentIds.size) {
+          completeHierarchy = false
+        }
         nextFlattenedIds = flattenedElementIds
       }
 
@@ -1854,7 +1901,9 @@ export const registerDefaultDataChannelObservers = (
   let disposed = false
 
   const dispose = (): void => {
-    if (disposed) return
+    if (disposed) {
+      return
+    }
 
     disposed = true
     const failures: unknown[] = []
@@ -1968,15 +2017,18 @@ export const registerDefaultDataChannelObservers = (
             : []
         }
         const computedEvent = toLocalComputedProjectionEvent(event)
-        if (!computedEvent) return []
+        if (!computedEvent) {
+          return []
+        }
         const change = toLocalComputedSceneTreeChange(computedEvent)
         return change ? [change] : []
       })
     if (renderSceneEnabled) {
       eventSubscriptions.push(
         subscribeToAppliedEventBatches((events) => {
-          if (!disposed)
+          if (!disposed) {
             updateRenderSceneTreeBatch(localSceneChangesFromEvents(events))
+          }
         })
       )
       cleanupReporter.report()
@@ -1984,9 +2036,13 @@ export const registerDefaultDataChannelObservers = (
     if (uiContextEnabled) {
       eventSubscriptions.push(
         subscribeToEventBatches((events) => {
-          if (disposed) return
+          if (disposed) {
+            return
+          }
           const changes = localSceneChangesFromEvents(events)
-          if (changes.length === 0) return
+          if (changes.length === 0) {
+            return
+          }
           changes.forEach((change) =>
             handleUIContextSceneTreeChange(
               change,
@@ -2135,7 +2191,9 @@ export const registerDefaultDataChannelObservers = (
       registerObserver(vectorEditingSelectionDataChannelObserver)
     }
   } catch (error) {
-    if (!cleanupReporter.hasReported()) dispose()
+    if (!cleanupReporter.hasReported()) {
+      dispose()
+    }
     throw error
   }
 

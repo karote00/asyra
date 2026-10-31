@@ -44,9 +44,13 @@ export const createAiInspectionAction = (
     'Use the actual current workspace ID for overview of all roots in their shared positions/order, without grouping or modifying the document. Workspace does not support detail/region: choose a concrete element for native detail. Unavailable images return a reason and completed read settlement, not visual approval. Inspect an existing drawing or composition using its actual rendered image and current evidence. Fetch needed object data separately through read_design_context. Default overview renders the entire subtree into a bounded composition preview without changing source images, vectors or dimensions. Use view=detail for native-resolution close-ups, or region in target-local coordinates at most 1024 per side. A region is always native detail, never an overview. Read-only; does not change the document. Use the returned image to compare the complete result with the original request/reference, then make supported corrections and inspect again.',
   inputSchema: inspectionInputSchema,
   execute: async (args, { signal }) => {
-    if (signal.aborted) throw new Error('Drawing inspection cancelled')
+    if (signal.aborted) {
+      throw new Error('Drawing inspection cancelled')
+    }
     const capture = () => {
-      if (args.view) return inspect(args.elementId, args.region, args.view)
+      if (args.view) {
+        return inspect(args.elementId, args.region, args.view)
+      }
       return args.region
         ? inspect(args.elementId, args.region)
         : inspect(args.elementId)
@@ -137,26 +141,29 @@ export const createInspectionValidationAction = (
   execute: async (args, { signal }) => {
     signal.throwIfAborted()
     if (reviewer?.owns(args.evidence)) {
-      if (args.scope)
+      if (args.scope) {
         return {
           current: false,
           validatedAt: args.evidence,
           reason: 'mechanical-receipt-is-not-visual-coverage'
         }
-      if (args.measurementTargets)
+      }
+      if (args.measurementTargets) {
         return reviewer.reconcile(
           args.evidence,
           args.measurementTargets,
           signal
         )
+      }
       return reviewer.validate(args.evidence, signal)
     }
-    if (args.measurementTargets)
+    if (args.measurementTargets) {
       return {
         current: false,
         validatedAt: args.evidence,
         reason: 'mechanical-coverage-requires-mechanical-receipt'
       }
+    }
     return evidence.validate(args.evidence, args.scope)
   }
 })

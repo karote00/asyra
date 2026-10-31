@@ -13,7 +13,7 @@ for (const id of [
   'plant-shrub',
   'plant-lanceolate',
   'sink-cabinet'
-])
+]) {
   test(`${id} - production vessel microscope`, async ({ page }, info) => {
     await page.goto(`/?review=${id}`)
     await page
@@ -44,3 +44,4 @@ for (const id of [
       contentType: 'application/json'
     })
   })
+}

@@ -120,8 +120,9 @@ const failure = (code: AiModelBackendError['code']) =>
 
 // Project public startup metadata only; free provider text can contain credentials.
 const startupDiagnostic = (method: string, params: Record<string, unknown>) => {
-  if (method !== 'warning' && method !== 'mcpServer/startupStatus/updated')
+  if (method !== 'warning' && method !== 'mcpServer/startupStatus/updated') {
     return
+  }
   const text = [params.message, params.error]
     .filter((value): value is string => typeof value === 'string')
     .map((value) => value.slice(0, 4096))
@@ -129,11 +130,15 @@ const startupDiagnostic = (method: string, params: Record<string, unknown>) => {
   let reason: string | undefined
   if (text) {
     reason = 'unclassified'
-    if (/timed?\s*out|timeout/i.test(text)) reason = 'timeout'
-    else if (/authenticat|unauthorized|credential/i.test(text))
+    if (/timed?\s*out|timeout/i.test(text)) {
+      reason = 'timeout'
+    } else if (/authenticat|unauthorized|credential/i.test(text)) {
       reason = 'authentication'
-    else if (/configuration|config\b/i.test(text)) reason = 'configuration'
-    else if (/connect|transport|handshake/i.test(text)) reason = 'transport'
+    } else if (/configuration|config\b/i.test(text)) {
+      reason = 'configuration'
+    } else if (/connect|transport|handshake/i.test(text)) {
+      reason = 'transport'
+    }
   }
   const server =
     typeof params.name === 'string' &&
@@ -184,9 +189,11 @@ const providerErrorDiagnostic = (error: unknown, willRetry?: unknown) => {
   const record = isRecord(error) ? error : {}
   const info = record.codexErrorInfo
   let candidate: string | undefined
-  if (typeof info === 'string') candidate = info
-  else if (isRecord(info) && Object.keys(info).length === 1)
+  if (typeof info === 'string') {
+    candidate = info
+  } else if (isRecord(info) && Object.keys(info).length === 1) {
     candidate = Object.keys(info)[0]
+  }
   const kind =
     candidate && nativeErrorKinds.has(candidate) ? candidate : undefined
   const details =
@@ -316,7 +323,9 @@ const runLocalAiProvider = async (
     purposeSource = 'public-authored'
   ) => {
     let kind = event.activity?.kind ?? ('system' as const)
-    if (purposeSource === 'registered-operation') kind = 'system'
+    if (purposeSource === 'registered-operation') {
+      kind = 'system'
+    }
     const activity = {
       ...event.activity,
       phase: event.activity?.phase ?? ('executing' as const),
@@ -349,7 +358,9 @@ const runLocalAiProvider = async (
       })
     }
   }
-  if (options.signal?.aborted) throw failure('AI_MODEL_BACKEND_ABORTED')
+  if (options.signal?.aborted) {
+    throw failure('AI_MODEL_BACKEND_ABORTED')
+  }
   interface CallContext {
     id: string
     receipts: unknown[]
@@ -464,10 +475,11 @@ const runLocalAiProvider = async (
               phase !== 'cleanup' &&
               evaluation &&
               (workStopped || Date.now() >= evaluation.workDeadlineAt)
-            )
+            ) {
               throw new Error(
                 'The evaluation work deadline has expired; do not replay completed work.'
               )
+            }
             const started = performance.now()
             const receipt = await observeActionBatch(
               batch,
@@ -477,8 +489,9 @@ const runLocalAiProvider = async (
                   batch.actions.map((action) => actionEffects.get(action.name))
                 )
                 let effect: ExecutionActivity['effect']
-                if (effects.size && !effects.has(undefined))
+                if (effects.size && !effects.has(undefined)) {
                   effect = effects.size === 1 ? [...effects][0] : 'mixed'
+                }
                 const activity = {
                   effect,
                   kind: 'system' as const,
@@ -548,9 +561,15 @@ const runLocalAiProvider = async (
                   : undefined,
               onInspection: (status, tool = AiActionNames.INSPECT_DRAWING) => {
                 const context = callContext.getStore()
-                if (!context) return
-                if (status === 'running') context.inspectionId = randomUUID()
-                if (!context.inspectionId) return
+                if (!context) {
+                  return
+                }
+                if (status === 'running') {
+                  context.inspectionId = randomUUID()
+                }
+                if (!context.inspectionId) {
+                  return
+                }
                 reportProgress({
                   tool,
                   status,
@@ -562,7 +581,9 @@ const runLocalAiProvider = async (
                     phase: 'inspecting'
                   }
                 })
-                if (status === 'completed') delete context.inspectionId
+                if (status === 'completed') {
+                  delete context.inspectionId
+                }
               }
             }
           )
@@ -651,7 +672,9 @@ const runLocalAiProvider = async (
       },
       execute: (call, work) => {
         const started = performance.now()
-        if (!call.parentCallId) executionStarted.set(call.callId, started)
+        if (!call.parentCallId) {
+          executionStarted.set(call.callId, started)
+        }
         usage?.trace('tool_execution_started', {
           tool: toolBindings.get(call.name)?.definition.name ?? call.name,
           callId: call.callId,
@@ -666,13 +689,15 @@ const runLocalAiProvider = async (
       }),
       onPhase: (call, phase) => {
         let observedPhase: 'admission' | 'preparing' | 'executing' = 'executing'
-        if (phase === 'admission') observedPhase = 'admission'
-        else if (
+        if (phase === 'admission') {
+          observedPhase = 'admission'
+        } else if (
           toolBindings.get(call.name)?.definition.name ===
             AiDesignToolIds.PREPARE_DESIGN &&
           phase === 'execution'
-        )
+        ) {
           observedPhase = 'preparing'
+        }
         reportProgress({
           tool: toolBindings.get(call.name)?.definition.name ?? call.name,
           status: 'running',
@@ -688,11 +713,15 @@ const runLocalAiProvider = async (
       observe: (event) => {
         // Top-level transport already records provider input and delivered output.
         // Recipe children have their own causal IDs and complete owner outcomes.
-        if (!event.call.parentCallId) return
+        if (!event.call.parentCallId) {
+          return
+        }
         const { call } = event
-        if (event.phase === 'started')
+        if (event.phase === 'started') {
           queuedAt.set(call.callId, performance.now())
-        else queuedAt.delete(call.callId)
+        } else {
+          queuedAt.delete(call.callId)
+        }
         const evidence = {
           tool: call.name,
           callId: call.callId,
@@ -710,8 +739,11 @@ const runLocalAiProvider = async (
         }
         let stage: 'tool_started' | 'tool_completed' | 'tool_failed' =
           'tool_started'
-        if (event.phase === 'completed') stage = 'tool_completed'
-        else if (event.phase !== 'started') stage = 'tool_failed'
+        if (event.phase === 'completed') {
+          stage = 'tool_completed'
+        } else if (event.phase !== 'started') {
+          stage = 'tool_failed'
+        }
         usage?.trace(stage, evidence)
         reportProgress({
           tool: toolBindings.get(call.name)?.definition.name ?? call.name,
@@ -751,13 +783,17 @@ const runLocalAiProvider = async (
         durationMs: performance.now() - started
       })
     }
-  } else localTools = buildGroups()
+  } else {
+    localTools = buildGroups()
+  }
   if (options.signal?.aborted) {
     await host?.dispose()
     await storage.close()
     throw failure('AI_MODEL_BACKEND_ABORTED')
   }
-  if (!localTools) throw new Error('Native tool owners were not initialized')
+  if (!localTools) {
+    throw new Error('Native tool owners were not initialized')
+  }
   const { preparation, operations, imageTools } = localTools
   const activeToolGroups = host?.groups ?? []
   const mainDefinition = activeToolGroups
@@ -862,7 +898,9 @@ const runLocalAiProvider = async (
   } catch (error) {
     await host?.dispose()
     await storage.close()
-    if (options.signal?.aborted) throw failure('AI_MODEL_BACKEND_ABORTED')
+    if (options.signal?.aborted) {
+      throw failure('AI_MODEL_BACKEND_ABORTED')
+    }
     throw error
   }
 
@@ -917,7 +955,7 @@ const runLocalAiProvider = async (
       cleanups.map(([, cleanup]) => Promise.resolve().then(cleanup))
     )
     settled.forEach((result, index) => {
-      if (result.status === 'rejected')
+      if (result.status === 'rejected') {
         usage?.trace('host_observation', {
           callId: 'provider-cleanup',
           phase: 'cleanup',
@@ -926,8 +964,11 @@ const runLocalAiProvider = async (
           code: 'TOOL_CLEANUP_FAILED',
           error: localToolErrorMessage(result.reason)
         })
+      }
     })
-    if (options.signal?.aborted) throw failure('AI_MODEL_BACKEND_ABORTED')
+    if (options.signal?.aborted) {
+      throw failure('AI_MODEL_BACKEND_ABORTED')
+    }
     throw failure('AI_MODEL_BACKEND_INVALID_CONFIGURATION')
   }
   const writeProtocol = (
@@ -988,7 +1029,9 @@ const runLocalAiProvider = async (
   const fail = (error: Error) => {
     terminalError ??= error
     rejectEvaluation(terminalError)
-    for (const entry of pending.values()) entry.reject(terminalError)
+    for (const entry of pending.values()) {
+      entry.reject(terminalError)
+    }
     pending.clear()
     rejectCompletion(terminalError)
     stop()
@@ -1002,7 +1045,9 @@ const runLocalAiProvider = async (
   let workTimer: ReturnType<typeof setTimeout> | undefined
   let reportTimer: ReturnType<typeof setTimeout> | undefined
   const beginReportBudget = () => {
-    if (!evaluation || reportTimer !== undefined) return
+    if (!evaluation || reportTimer !== undefined) {
+      return
+    }
     usage?.trace('host_observation', {
       callId: 'evaluation-report-started',
       workDeadlineAt: evaluation.workDeadlineAt,
@@ -1017,7 +1062,9 @@ const runLocalAiProvider = async (
     }, evaluation.reportTimeoutMs)
   }
   const stopEvaluationWork = () => {
-    if (!evaluation || workStopped) return
+    if (!evaluation || workStopped) {
+      return
+    }
     workStopped = true
     toolController.abort()
     beginReportBudget()
@@ -1026,10 +1073,11 @@ const runLocalAiProvider = async (
       workDeadlineAt: evaluation.workDeadlineAt,
       nativeTurnId: turnId
     })
-    if (threadId && turnId && completedTurnId === undefined)
+    if (threadId && turnId && completedTurnId === undefined) {
       void request('turn/interrupt', { threadId, turnId }).catch((error) =>
         fail(error)
       )
+    }
   }
   const decoder = new StringDecoder('utf8')
   const protocolFailure = (
@@ -1040,7 +1088,9 @@ const runLocalAiProvider = async (
     fail(failure('AI_MODEL_BACKEND_INVALID_RESPONSE'))
   }
   const receive = (value: unknown) => {
-    if (!isRecord(value)) return protocolFailure()
+    if (!isRecord(value)) {
+      return protocolFailure()
+    }
     if (value.id !== undefined && value.method === 'item/tool/call') {
       const params = value.params
       if (
@@ -1094,54 +1144,56 @@ const runLocalAiProvider = async (
         typeof params.callId !== 'string' ||
         toolCalls.has(params.callId) ||
         toolTasks.size >= LocalComponentAnalysisLimits.callsInFlight
-      )
+      ) {
         return protocolFailure()
+      }
       const toolName = String(params.tool)
       let message: string | undefined
-      if (toolName === AiDesignToolIds.REVIEW_PREPARED_DESIGN)
+      if (toolName === AiDesignToolIds.REVIEW_PREPARED_DESIGN) {
         message = 'Checking the prepared composition and detail recipe'
-      else if (toolName === AiDesignToolIds.RETAIN_DESIGN_TARGETS)
+      } else if (toolName === AiDesignToolIds.RETAIN_DESIGN_TARGETS) {
         message = 'Retaining the selected object sets for subsequent changes'
-      else if (toolName === AiDesignToolIds.REVIEW_DRAWING)
+      } else if (toolName === AiDesignToolIds.REVIEW_DRAWING) {
         message = 'Checking the requested details'
-      else if (toolName === AiDesignToolIds.DEFINE_DESIGN_CRITERIA)
+      } else if (toolName === AiDesignToolIds.DEFINE_DESIGN_CRITERIA) {
         message = 'Defining the requested checks'
-      else if (toolName === AiDesignToolIds.RECORD_DESIGN_FACTS)
+      } else if (toolName === AiDesignToolIds.RECORD_DESIGN_FACTS) {
         message = 'Recording verified sources'
-      else if (toolName === AiDesignToolIds.RECORD_DESIGN_CALCULATIONS)
+      } else if (toolName === AiDesignToolIds.RECORD_DESIGN_CALCULATIONS) {
         message = 'Recording derived measurements'
-      else if (toolName === AiDesignToolIds.SELECT_DESIGN_REFERENCES)
+      } else if (toolName === AiDesignToolIds.SELECT_DESIGN_REFERENCES) {
         message = 'Selecting comparison references'
-      else if (toolName === AiDesignToolIds.PREPARE_DESIGN)
+      } else if (toolName === AiDesignToolIds.PREPARE_DESIGN) {
         message = 'Preparing the design'
-      else if (toolName === AiDesignToolIds.PREPARE_AND_APPLY_DESIGN)
+      } else if (toolName === AiDesignToolIds.PREPARE_AND_APPLY_DESIGN) {
         message =
           isRecord(params.arguments) &&
           typeof params.arguments.message === 'string'
             ? params.arguments.message
             : 'Drawing and refining'
-      else if (toolName === AiReferenceToolIds.IMPORT_REFERENCE_IMAGE)
+      } else if (toolName === AiReferenceToolIds.IMPORT_REFERENCE_IMAGE) {
         message = 'Preparing the reference'
-      else if (toolName === AiImageToolIds.REVIEW_VECTOR_CONTOURS)
+      } else if (toolName === AiImageToolIds.REVIEW_VECTOR_CONTOURS) {
         message = 'Checking contour quality'
-      else if (toolName === AiImageToolIds.APPLY_CONTOUR_REFINEMENTS)
+      } else if (toolName === AiImageToolIds.APPLY_CONTOUR_REFINEMENTS) {
         message = 'Refining drawing contours'
-      else if (toolName === AiImageToolIds.ANALYZE_VECTOR_COMPONENTS)
+      } else if (toolName === AiImageToolIds.ANALYZE_VECTOR_COMPONENTS) {
         message = 'Analyzing shape options'
-      else if (
+      } else if (
         toolName === AiImageToolIds.VECTORIZE_IMAGE_LAYERS ||
         (toolName === AiImageToolIds.VTRACER &&
           isRecord(params.arguments) &&
           isRecord(params.arguments.plan) &&
           params.arguments.plan.strategy === 'separate-background')
-      )
+      ) {
         message = 'Separating drawing layers'
-      else if (
+      } else if (
         isRecord(params.arguments) &&
         typeof params.arguments.message === 'string' &&
         params.arguments.message.length <= 1000
-      )
+      ) {
         message = params.arguments.message
+      }
       const authoredMessage =
         isRecord(params.arguments) &&
         typeof params.arguments.message === 'string' &&
@@ -1149,7 +1201,9 @@ const runLocalAiProvider = async (
         params.arguments.message.length <= 1000
           ? params.arguments.message
           : undefined
-      if (authoredMessage) message = authoredMessage
+      if (authoredMessage) {
+        message = authoredMessage
+      }
       reportProgress(
         {
           tool: toolName,
@@ -1172,7 +1226,9 @@ const runLocalAiProvider = async (
       const task = createAiInvoker({
         execute: async () => {
           try {
-            if (!host) throw new Error('Tool host is unavailable')
+            if (!host) {
+              throw new Error('Tool host is unavailable')
+            }
             const reply = await host
               .invoke({
                 name: `${params.namespace}.${binding.definition.name}`,
@@ -1239,8 +1295,9 @@ const runLocalAiProvider = async (
               (error instanceof AiActionExecutionError ||
                 error instanceof AiExecutionError) &&
               error.receipt
-            )
+            ) {
               throw error
+            }
             toolController.signal.throwIfAborted()
             const reply = localToolFailureReply(
               localToolErrorMessage(error),
@@ -1336,7 +1393,9 @@ const runLocalAiProvider = async (
           actor: 'provider'
         })
         .then(({ success, contentItems, text }) => {
-          if (terminalError || stopped || workStopped) return
+          if (terminalError || stopped || workStopped) {
+            return
+          }
           toolTasks.delete(task)
           const { status, settlement } = JSON.parse(text).toolOutcome
           reportProgress({
@@ -1359,16 +1418,19 @@ const runLocalAiProvider = async (
             }) + '\n'
           )
           contentItems.forEach((item, contentIndex) => {
-            if (item.type === 'inputImage')
+            if (item.type === 'inputImage') {
               options.retainToolImage?.(
                 item.imageUrl,
                 params.callId as string,
                 contentIndex
               )
+            }
           })
         })
         .catch((error: unknown) => {
-          if (workStopped && !terminalError) return
+          if (workStopped && !terminalError) {
+            return
+          }
           const code = 'TOOL_DELIVERY_TRANSPORT_FAILED'
 
           usage?.trace('tool_delivery_failed', {
@@ -1392,9 +1454,13 @@ const runLocalAiProvider = async (
       return
     }
     if (value.id !== undefined) {
-      if (value.method || typeof value.id !== 'number') return protocolFailure()
+      if (value.method || typeof value.id !== 'number') {
+        return protocolFailure()
+      }
       const entry = pending.get(value.id)
-      if (!entry) return protocolFailure()
+      if (!entry) {
+        return protocolFailure()
+      }
       pending.delete(value.id)
       if (value.error) {
         const error = failure('AI_MODEL_BACKEND_TRANSPORT_FAILED')
@@ -1416,13 +1482,19 @@ const runLocalAiProvider = async (
       }
       return
     }
-    if (typeof value.method !== 'string') return protocolFailure()
+    if (typeof value.method !== 'string') {
+      return protocolFailure()
+    }
     const params = value.params
-    if (!isRecord(params)) return
+    if (!isRecord(params)) {
+      return
+    }
     const diagnostic = startupDiagnostic(value.method, params)
     if (diagnostic) {
       // A child belongs to one invocation; startup can precede thread/start's reply.
-      if (threadId && params.threadId && params.threadId !== threadId) return
+      if (threadId && params.threadId && params.threadId !== threadId) {
+        return
+      }
       usage?.trace('provider_notification', {
         method: value.method,
         nativeThreadId: params.threadId,
@@ -1439,22 +1511,25 @@ const runLocalAiProvider = async (
       params.threadId == null &&
       turnId &&
       params.turnId === turnId
-    if (!threadId || (params.threadId !== threadId && !matchingTurnPlan)) return
+    if (!threadId || (params.threadId !== threadId && !matchingTurnPlan)) {
+      return
+    }
     if (/^[A-Za-z0-9_/.:-]{1,120}$/.test(value.method)) {
       const itemId = isRecord(params.item) ? params.item.id : undefined
       let errorDiagnostic:
         ReturnType<typeof providerErrorDiagnostic> | undefined
-      if (value.method === 'error')
+      if (value.method === 'error') {
         errorDiagnostic = providerErrorDiagnostic(
           params.error,
           params.willRetry
         )
-      else if (
+      } else if (
         value.method === 'turn/completed' &&
         isRecord(params.turn) &&
         params.turn.error
-      )
+      ) {
         errorDiagnostic = providerErrorDiagnostic(params.turn.error)
+      }
       const publicActivity =
         !turnId || !params.turnId || params.turnId === turnId
           ? selectPublicActivity(value.method, { ...params, threadId })
@@ -1484,22 +1559,27 @@ const runLocalAiProvider = async (
       !['agentMessage', 'userMessage', 'reasoning', 'plan'].includes(
         String(params.item.type)
       )
-    )
+    ) {
       return protocolFailure('Unexpected tool item in diagnostic assessment')
+    }
     if (value.method === 'thread/tokenUsage/updated') {
-      if (!turnId || !params.turnId || params.turnId === turnId)
+      if (!turnId || !params.turnId || params.turnId === turnId) {
         usage?.update(params.tokenUsage)
+      }
       return
     }
-    if (turnId && params.turnId && params.turnId !== turnId)
+    if (turnId && params.turnId && params.turnId !== turnId) {
       return protocolFailure()
+    }
     if (
       (value.method === 'item/started' || value.method === 'item/completed') &&
       isRecord(params.item) &&
       params.item.type === 'contextCompaction' &&
       typeof params.item.id === 'string'
     ) {
-      if (value.method === 'item/completed') knowledge.invalidateContext()
+      if (value.method === 'item/completed') {
+        knowledge.invalidateContext()
+      }
       return
     }
 
@@ -1560,8 +1640,9 @@ const runLocalAiProvider = async (
       isRecord(params.item) &&
       params.item.type === 'webSearch'
     ) {
-      if (typeof params.item.id !== 'string' || !params.item.id)
+      if (typeof params.item.id !== 'string' || !params.item.id) {
         return protocolFailure()
+      }
       usage?.trace(
         value.method === 'item/started'
           ? 'research_started'
@@ -1587,8 +1668,9 @@ const runLocalAiProvider = async (
         typeof item.durationMs !== 'number' ||
         !Number.isFinite(item.durationMs) ||
         item.durationMs < 0
-      )
+      ) {
         return protocolFailure('Malformed native sleep item')
+      }
       // Native clock.sleep emits a display item, never an App receipt or final batch.
       usage?.trace(
         value.method === 'item/started'
@@ -1600,7 +1682,9 @@ const runLocalAiProvider = async (
     }
     if (value.method === 'item/completed') {
       const item = params.item
-      if (!isRecord(item)) return protocolFailure()
+      if (!isRecord(item)) {
+        return protocolFailure()
+      }
       if (item.type === 'agentMessage' && item.phase === 'commentary') {
         if (
           typeof item.text === 'string' &&
@@ -1621,8 +1705,9 @@ const runLocalAiProvider = async (
           })
         }
       } else if (item.type === 'agentMessage') {
-        if (typeof item.text !== 'string' || finalText !== undefined)
+        if (typeof item.text !== 'string' || finalText !== undefined) {
           return protocolFailure()
+        }
         finalText = item.text
       } else if (
         item.type === 'dynamicToolCall' &&
@@ -1692,8 +1777,9 @@ const runLocalAiProvider = async (
     pending.size === 0 &&
     toolTasks.size === 0
   child.once('close', () => {
-    if (!stopped && !protocolComplete())
+    if (!stopped && !protocolComplete()) {
       fail(failure('AI_MODEL_BACKEND_TRANSPORT_FAILED'))
+    }
     resolveClose()
   })
   const observeStream = (
@@ -1713,10 +1799,14 @@ const runLocalAiProvider = async (
     channel: 'stdin' | 'stdout',
     status: 'error' | 'end' | 'close' | 'finish'
   ) => {
-    if (stopped) return
+    if (stopped) {
+      return
+    }
     const terminal = !protocolComplete()
     observeStream(channel, status, terminal)
-    if (terminal) fail(failure('AI_MODEL_BACKEND_TRANSPORT_FAILED'))
+    if (terminal) {
+      fail(failure('AI_MODEL_BACKEND_TRANSPORT_FAILED'))
+    }
   }
   child.stdin.on('error', () => settleRequiredStream('stdin', 'error'))
   child.stdin.once('finish', () => settleRequiredStream('stdin', 'finish'))
@@ -1730,17 +1820,22 @@ const runLocalAiProvider = async (
   })
   child.stderr.on('error', () => {
     // Optional diagnostics must never crash or cancel a valid drawing request.
-    if (!stopped) observeStream('stderr', 'error', false)
+    if (!stopped) {
+      observeStream('stderr', 'error', false)
+    }
   })
   child.stdout.on('data', (chunk: Buffer) => {
     usage?.recordTransport('received', chunk.byteLength)
-    if (terminalError) return
+    if (terminalError) {
+      return
+    }
     buffer += decoder.write(chunk)
     let index: number
     while ((index = buffer.indexOf('\n')) >= 0 && !terminalError) {
       const line = buffer.slice(0, index)
-      if (Buffer.byteLength(line, 'utf8') > maximumProtocolBytes)
+      if (Buffer.byteLength(line, 'utf8') > maximumProtocolBytes) {
         return protocolFailure()
+      }
       buffer = buffer.slice(index + 1)
       try {
         receive(JSON.parse(line))
@@ -1748,8 +1843,9 @@ const runLocalAiProvider = async (
         protocolFailure()
       }
     }
-    if (Buffer.byteLength(buffer, 'utf8') > maximumProtocolBytes)
+    if (Buffer.byteLength(buffer, 'utf8') > maximumProtocolBytes) {
       protocolFailure()
+    }
   })
   // Drain diagnostics without retaining them or charging a lifetime byte quota.
   child.stderr.resume()
@@ -1759,7 +1855,9 @@ const runLocalAiProvider = async (
     params: unknown,
     admit?: (value: unknown) => void
   ): Promise<unknown> => {
-    if (terminalError) throw terminalError
+    if (terminalError) {
+      throw terminalError
+    }
     const id = ++sequence
     const wire = JSON.stringify({ id, method, params }) + '\n'
     const startedAt = performance.now()
@@ -1793,12 +1891,15 @@ const runLocalAiProvider = async (
   }
   let finishTurnWait: (() => void) | undefined
   try {
-    if (options.signal?.aborted) abort()
-    if (evaluation)
+    if (options.signal?.aborted) {
+      abort()
+    }
+    if (evaluation) {
       workTimer = setTimeout(
         stopEvaluationWork,
         Math.max(0, evaluation.workDeadlineAt - Date.now())
       )
+    }
     await request('initialize', {
       clientInfo: { name: 'design-local-ai', version: '1' },
       capabilities: { experimentalApi: true }
@@ -1817,15 +1918,18 @@ const runLocalAiProvider = async (
     const effectiveConfig = await request('config/read', {
       includeLayers: false
     })
-    if (!isRecord(effectiveConfig) || !isRecord(effectiveConfig.config))
+    if (!isRecord(effectiveConfig) || !isRecord(effectiveConfig.config)) {
       throw failure('AI_MODEL_BACKEND_INVALID_CONFIGURATION')
+    }
     const inheritedServers = effectiveConfig.config.mcp_servers
-    if (inheritedServers !== undefined && !isRecord(inheritedServers))
+    if (inheritedServers !== undefined && !isRecord(inheritedServers)) {
       throw failure('AI_MODEL_BACKEND_INVALID_CONFIGURATION')
+    }
     const disabledServers = Object.fromEntries(
       Object.entries(inheritedServers ?? {}).map(([name, entry]) => {
-        if (!isRecord(entry))
+        if (!isRecord(entry)) {
           throw failure('AI_MODEL_BACKEND_INVALID_CONFIGURATION')
+        }
         // config/read emits null for unset optional fields. RPC overrides turn
         // null into an empty TOML string; omit those unset fields on the way back.
         const configuredFields = Object.fromEntries(
@@ -1916,28 +2020,36 @@ const runLocalAiProvider = async (
         threadId = thread.thread.id
       }
     )
-    if (options.checkOnly) return
+    if (options.checkOnly) {
+      return
+    }
     finishTurnWait = usage?.span({
       callId: 'provider-turn',
       owner: 'provider',
       purpose:
         'Await provider turn until completion or failure; internal compute is unavailable'
     })
-    if (workStopped || (evaluation && Date.now() >= evaluation.workDeadlineAt))
+    if (
+      workStopped ||
+      (evaluation && Date.now() >= evaluation.workDeadlineAt)
+    ) {
       throw failure('AI_MODEL_BACKEND_TIMEOUT')
-    if (evaluation)
+    }
+    if (evaluation) {
       inputItems.push({
         type: 'text',
         text: `This evaluation has ${Math.max(0, Math.floor((evaluation.workDeadlineAt - Date.now()) / 1000))} seconds of work remaining, ending at ${new Date(evaluation.workDeadlineAt).toISOString()}. Prioritize useful visible progress. The host will stop operations at that time and ask for a public report. Do not continue drawing during reporting; preserve completed work.`,
         text_elements: []
       })
-    if (evaluation)
+    }
+    if (evaluation) {
       options.retainEvaluationExchange?.('evaluation-work', 'input', {
         threadId,
         input: inputItems,
         ...(!options.assessmentOnly ? { summary: 'concise' } : {}),
         effort: 'medium'
       })
+    }
     await request(
       'turn/start',
       {
@@ -1957,11 +2069,13 @@ const runLocalAiProvider = async (
         turnId = started.turn.id
       }
     )
-    if (evaluation && workStopped && completedTurnId === undefined)
+    if (evaluation && workStopped && completedTurnId === undefined) {
       await request('turn/interrupt', { threadId, turnId })
+    }
     await completion
-    if (completedTurnId !== turnId)
+    if (completedTurnId !== turnId) {
       throw failure('AI_MODEL_BACKEND_INVALID_RESPONSE')
+    }
     if (evaluation) {
       finishTurnWait?.()
       finishTurnWait = undefined
@@ -2082,15 +2196,19 @@ const runLocalAiProvider = async (
             !isRecord(started) ||
             !isRecord(started.turn) ||
             typeof started.turn.id !== 'string'
-          )
+          ) {
             throw failure('AI_MODEL_BACKEND_INVALID_RESPONSE')
+          }
           turnId = started.turn.id
         }
       )
       await completion
-      if (terminalError) throw terminalError
-      if (completedTurnId !== turnId)
+      if (terminalError) {
+        throw terminalError
+      }
+      if (completedTurnId !== turnId) {
         throw failure('AI_MODEL_BACKEND_INVALID_RESPONSE')
+      }
       options.retainEvaluationExchange?.('evaluation-report', 'output', {
         nativeThreadId: threadId,
         nativeTurnId: turnId,
@@ -2112,8 +2230,9 @@ const runLocalAiProvider = async (
         typeof report.actions[0].arguments.message !== 'string' ||
         !report.actions[0].arguments.message.trim() ||
         report.actions[0].arguments.message.length > 1000
-      )
+      ) {
         throw failure('AI_MODEL_BACKEND_INVALID_RESPONSE')
+      }
       usage?.trace('host_observation', {
         callId: 'evaluation-report',
         attribution: 'model-self-report',
@@ -2128,25 +2247,35 @@ const runLocalAiProvider = async (
     }
     finishTurnWait?.()
     await Promise.all(toolTasks.keys())
-    if (terminalError) throw terminalError
-    if (completedTurnId !== turnId || finalText === undefined)
+    if (terminalError) {
+      throw terminalError
+    }
+    if (completedTurnId !== turnId || finalText === undefined) {
       throw failure('AI_MODEL_BACKEND_INVALID_RESPONSE')
+    }
     let parsed: unknown
     try {
       parsed = JSON.parse(finalText)
     } catch {
       throw failure('AI_MODEL_BACKEND_INVALID_RESPONSE')
     }
-    if (options.assessmentOnly) return parsed
-    if (!isActionBatchEnvelope(parsed))
+    if (options.assessmentOnly) {
+      return parsed
+    }
+    if (!isActionBatchEnvelope(parsed)) {
       throw failure('AI_MODEL_BACKEND_INVALID_RESPONSE')
+    }
     let stage = 'final-action-admission'
     try {
-      if (options.signal?.aborted) throw failure('AI_MODEL_BACKEND_ABORTED')
+      if (options.signal?.aborted) {
+        throw failure('AI_MODEL_BACKEND_ABORTED')
+      }
       const batch = preparation.resolveBatch(parsed)
       stage = 'completion-validation'
       await operations?.validateCompletion(options.signal)
-      if (options.signal?.aborted) throw failure('AI_MODEL_BACKEND_ABORTED')
+      if (options.signal?.aborted) {
+        throw failure('AI_MODEL_BACKEND_ABORTED')
+      }
       stage = 'outcome-settlement'
       return operations
         ? operations.settleOutcome(batch as unknown as AiActionBatch)
@@ -2161,7 +2290,9 @@ const runLocalAiProvider = async (
             ? error.message
             : 'Unknown finalization failure'
       })
-      if (options.signal?.aborted) throw failure('AI_MODEL_BACKEND_ABORTED')
+      if (options.signal?.aborted) {
+        throw failure('AI_MODEL_BACKEND_ABORTED')
+      }
       throw error
     }
   } finally {
@@ -2174,7 +2305,9 @@ const runLocalAiProvider = async (
     })
     clearTimeout(workTimer)
     clearTimeout(reportTimer)
-    if (timeout !== undefined) clearTimeout(timeout)
+    if (timeout !== undefined) {
+      clearTimeout(timeout)
+    }
     options.signal?.removeEventListener('abort', abort)
     stop()
     const finishClose = usage?.span({
@@ -2299,11 +2432,12 @@ const requestRecordedLocalAi = async (
           isRecord(image) &&
           typeof image.dataUrl === 'string' &&
           typeof image.mediaType === 'string'
-        )
+        ) {
           retainReference(
             { dataUrl: image.dataUrl, mediaType: image.mediaType },
             index
           )
+        }
       })
     }
     const retainToolImage = (
@@ -2360,11 +2494,16 @@ const requestRecordedLocalAi = async (
     return { value: result, requestId: usage.requestId }
   } catch (error) {
     if (error instanceof AiModelBackendError) {
-      if (error.code === 'AI_MODEL_BACKEND_ABORTED') outcome = 'cancelled'
-      if (error.code === 'AI_MODEL_BACKEND_TIMEOUT') outcome = 'timed_out'
+      if (error.code === 'AI_MODEL_BACKEND_ABORTED') {
+        outcome = 'cancelled'
+      }
+      if (error.code === 'AI_MODEL_BACKEND_TIMEOUT') {
+        outcome = 'timed_out'
+      }
     }
-    if (options.assessmentOnly && error instanceof Error)
+    if (options.assessmentOnly && error instanceof Error) {
       Object.assign(error, { requestId: usage.requestId })
+    }
     throw error
   } finally {
     usage.trace('settlement', { outcome, result: resultEvidence })
@@ -2407,11 +2546,15 @@ export const checkLocalAiProvider = async (
 
 /** Select public text results only; opaque text is not safe structured evidence. */
 function retainNativeText(contentItems: unknown) {
-  if (contentItems == null)
+  if (contentItems == null) {
     return { status: 'unavailable', reason: 'content-not-exposed' }
-  if (!Array.isArray(contentItems))
+  }
+  if (!Array.isArray(contentItems)) {
     return { status: 'malformed', reason: 'content-not-array' }
-  if (!contentItems.length) return { status: 'empty', content: [] }
+  }
+  if (!contentItems.length) {
+    return { status: 'empty', content: [] }
+  }
   return {
     status: 'available',
     content: contentItems.map((item, contentIndex) => {
@@ -2419,12 +2562,13 @@ function retainNativeText(contentItems: unknown) {
         !isRecord(item) ||
         item.type !== 'inputText' ||
         typeof item.text !== 'string'
-      )
+      ) {
         return {
           contentIndex,
           status: 'unavailable',
           reason: 'not-public-text'
         }
+      }
       const identity = {
         contentIndex,
         bytes: Buffer.byteLength(item.text),
@@ -2432,12 +2576,13 @@ function retainNativeText(contentItems: unknown) {
       }
       try {
         const value: unknown = JSON.parse(item.text)
-        if (!isRecord(value) && !Array.isArray(value))
+        if (!isRecord(value) && !Array.isArray(value)) {
           return {
             ...identity,
             status: 'unavailable',
             reason: 'not-structured-text'
           }
+        }
         return { ...identity, status: 'available', value }
       } catch {
         return {

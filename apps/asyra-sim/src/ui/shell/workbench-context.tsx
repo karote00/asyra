@@ -28,7 +28,9 @@ export function WorkbenchProvider({ children }: { children: ReactNode }) {
 export function useWorkbenchView(): WorkbenchView {
   const source = useContext(WorkbenchContext)
 
-  if (!source) throw new Error('Missing workbench projection')
+  if (!source) {
+    throw new Error('Missing workbench projection')
+  }
 
   return source
 }

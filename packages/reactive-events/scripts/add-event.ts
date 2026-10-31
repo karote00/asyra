@@ -131,7 +131,9 @@ program
 
     // Helper to merge requestId if async
     const mergeRequestId = (typeStr?: string) => {
-      if (!typeStr) return '{\n  requestId: string\n}'
+      if (!typeStr) {
+        return '{\n  requestId: string\n}'
+      }
       const trimmed = typeStr.trim()
       if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
         // Insert requestId at start
@@ -247,7 +249,9 @@ program
       }
     } else {
       const imports = [eventInterfaceName]
-      if (config.pattern === 'async') imports.push(finishEventInterfaceName)
+      if (config.pattern === 'async') {
+        imports.push(finishEventInterfaceName)
+      }
       subscribesSourceFile.addImportDeclaration({
         moduleSpecifier: './events',
         namedImports: imports
@@ -307,7 +311,9 @@ program
       }
     } else {
       const imports = [eventInterfaceName]
-      if (config.pattern === 'async') imports.push(finishEventInterfaceName)
+      if (config.pattern === 'async') {
+        imports.push(finishEventInterfaceName)
+      }
       publishSourceFile.addImportDeclaration({
         moduleSpecifier: './events',
         namedImports: imports

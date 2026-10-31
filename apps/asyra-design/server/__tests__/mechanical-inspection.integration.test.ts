@@ -36,7 +36,9 @@ import saved from './fixtures/recorded-101/vector-delivery-20261025.json'
 import type { InspectionEvidenceStamp } from '../../src/ai/inspection-evidence'
 
 const evidenceOf = (result: { evidence?: InspectionEvidenceStamp }) => {
-  if (!result.evidence) throw new Error('Missing coherent mechanical evidence')
+  if (!result.evidence) {
+    throw new Error('Missing coherent mechanical evidence')
+  }
   return result.evidence
 }
 
@@ -107,7 +109,9 @@ const create = async (draft: unknown) => {
         intent: 'Create editable objects',
         signal: new AbortController().signal
       })
-      if (!receipt) throw new Error('Missing creation receipt')
+      if (!receipt) {
+        throw new Error('Missing creation receipt')
+      }
       return receipt
     }
   )
@@ -151,8 +155,9 @@ const observeReads = () => {
           return Reflect.ownKeys(target)
         },
         get(target, key, receiver) {
-          if (typeof key === 'string' && !needed.has(key))
+          if (typeof key === 'string' && !needed.has(key)) {
             omittedComputedReads++
+          }
           return Reflect.get(target, key, receiver)
         }
       })
@@ -276,7 +281,9 @@ it.each(saved.cases)(
       expect(publish).not.toHaveBeenCalled()
       // Full-data reads and detached child observations remain independently valid.
       const full = core.getElementData(canonical.rootId)
-      if (!full) throw new Error('Missing canonical root')
+      if (!full) {
+        throw new Error('Missing canonical root')
+      }
       expect(full.children).toEqual(
         document.sceneTree.elements[canonical.rootId].children
       )
@@ -504,7 +511,9 @@ it('keeps successful mechanical results while retrying an interrupted read witho
       for (const item of batch.actions) {
         dispatched.push(item.name)
         const action = actions.find((a) => a.name === item.name)
-        if (!action) throw new Error('Unexpected dispatched action')
+        if (!action) {
+          throw new Error('Unexpected dispatched action')
+        }
         actionResults.push({
           actionId: item.id,
           actionName: item.name,
@@ -634,7 +643,9 @@ it('bounds material follow-up exchange and saved payloads by actual coverage ins
           intent: 'Refine existing materials',
           signal: new AbortController().signal
         })
-        if (!receipt) throw new Error('Missing actual Runtime receipt')
+        if (!receipt) {
+          throw new Error('Missing actual Runtime receipt')
+        }
         exchanges.push({ request: batch, reply: receipt })
         return receipt
       }
@@ -650,8 +661,9 @@ it('bounds material follow-up exchange and saved payloads by actual coverage ins
         typeof stamp === 'object' &&
         'sessionId' in stamp &&
         'receiptId' in stamp
-      )
+      ) {
         retainedKeyVisits += this.size
+      }
       return keys.call(this)
     })
     try {
@@ -711,7 +723,7 @@ it('bounds material follow-up exchange and saved payloads by actual coverage ins
         .flatMap((e) => e.reply.actionResults)
         .map((a) => a.result)
       expect(outputs).toHaveLength(count)
-      for (const result of outputs)
+      for (const result of outputs) {
         expect(result).toMatchObject({
           complete: true,
           checkedElements: 1,
@@ -723,6 +735,7 @@ it('bounds material follow-up exchange and saved payloads by actual coverage ins
             textMeasurements: 0
           }
         })
+      }
       expect(
         checks.read({ includePassed: true, limit: count }).counts.pass
       ).toBe(count)
@@ -752,16 +765,18 @@ it('bounds material follow-up exchange and saved payloads by actual coverage ins
       const legacy = structuredClone(exchanges)
       const prior: string[] = []
       for (const exchange of legacy) {
-        if (exchange.request.actions[0].name !== AiActionNames.REVIEW_DESIGN)
+        if (exchange.request.actions[0].name !== AiActionNames.REVIEW_DESIGN) {
           continue
+        }
         const batchIds = exchange.request.actions.map((a) =>
           String(a.arguments.elementId)
         )
         const candidates = [...prior, ...batchIds]
-        for (const action of exchange.request.actions)
+        for (const action of exchange.request.actions) {
           action.arguments.measurementTargets = candidates.filter(
             (id) => id !== action.arguments.elementId
           )
+        }
         prior.push(...batchIds)
       }
       const legacyBytes = Buffer.byteLength(JSON.stringify(legacy))

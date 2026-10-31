@@ -89,8 +89,12 @@ export function useTrajectoryImport({
       : null
 
   const inspect = () => {
-    if (reading) return null
-    if (preview) return preview
+    if (reading) {
+      return null
+    }
+    if (preview) {
+      return preview
+    }
     const result = current
     setReceipt({
       result,
@@ -108,8 +112,9 @@ export function useTrajectoryImport({
       input: TrajectoryInput
     ) => void
   ) => {
-    if (preview?.value && receipt?.generation === generation.current)
+    if (preview?.value && receipt?.generation === generation.current) {
       onAccept(preview.value, authored)
+    }
   }
 
   const complete = async (
@@ -118,16 +123,23 @@ export function useTrajectoryImport({
       result: TrajectoryImportPreview
     ) => Promise<boolean>
   ) => {
-    if (importPending || reading || !pendingEdit.current) return
+    if (importPending || reading || !pendingEdit.current) {
+      return
+    }
     const result = inspect()
-    if (!result) return
+    if (!result) {
+      return
+    }
     const token = generation.current
     pendingEdit.current = false
     try {
       const saved = await onEdit(authored, result)
       if (token === generation.current) {
-        if (saved === false) pendingEdit.current = true
-        else setSettled(true)
+        if (saved === false) {
+          pendingEdit.current = true
+        } else {
+          setSettled(true)
+        }
       }
     } catch (reason) {
       if (token === generation.current) {
@@ -148,13 +160,17 @@ export function useTrajectoryImport({
     if (source.kind === 'csv' && csv.columns.length) {
       const suggested = guessCsvMapping(csv.columns, workcell)
       const next = { ...suggested, joints: { ...suggested.joints } }
-      if (csv.columns.includes(mapping.time.column))
+      if (csv.columns.includes(mapping.time.column)) {
         next.time = { ...mapping.time }
+      }
       for (const body of workcell.bodies) {
-        if (body.joint.kind === 'fixed') continue
+        if (body.joint.kind === 'fixed') {
+          continue
+        }
         const entry = mapping.joints[body.id]
-        if (entry && csv.columns.includes(entry.column))
+        if (entry && csv.columns.includes(entry.column)) {
           next.joints[body.id] = { ...entry }
+        }
       }
       updateMapping(next)
     }
@@ -204,16 +220,23 @@ export function useTrajectoryImport({
     try {
       text = await file.text()
     } catch (reason) {
-      if (token === generation.current) setError(String(reason))
+      if (token === generation.current) {
+        setError(String(reason))
+      }
       return
     } finally {
-      if (token === generation.current) setReading(false)
+      if (token === generation.current) {
+        setReading(false)
+      }
     }
-    if (token !== generation.current) return
+    if (token !== generation.current) {
+      return
+    }
     const csv = nextKind === 'csv' ? reader.readCsv(text) : current
     setSource({ kind: nextKind, text })
-    if (nextKind === 'csv')
+    if (nextKind === 'csv') {
       updateMapping(guessCsvMapping(csv.columns, workcell))
+    }
   }
 
   const setJointMapping = (

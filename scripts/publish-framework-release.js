@@ -34,7 +34,9 @@ export const createFrameworkPublishOrder = ({ packages }) => {
   const visiting = new Set()
   const visited = new Set()
   const visit = (record) => {
-    if (visited.has(record.name)) return
+    if (visited.has(record.name)) {
+      return
+    }
     if (visiting.has(record.name)) {
       throw new Error(`Framework release dependency cycle at ${record.name}`)
     }
@@ -45,7 +47,9 @@ export const createFrameworkPublishOrder = ({ packages }) => {
     ])
     for (const dependencyName of dependencyNames) {
       const dependency = byName.get(dependencyName)
-      if (dependency) visit(dependency)
+      if (dependency) {
+        visit(dependency)
+      }
     }
     visiting.delete(record.name)
     visited.add(record.name)
@@ -94,7 +98,9 @@ export const publishFrameworkReleasePackages = ({
     throw new Error('Framework release source commit is invalid')
   }
   assertPackageSet(packages, allowedPackageNames)
-  if (validateArtifacts) validateArtifacts()
+  if (validateArtifacts) {
+    validateArtifacts()
+  }
 
   const artifactByName = new Map(
     artifacts.map((artifact) => [artifact.name, artifact])
@@ -167,8 +173,9 @@ export const publishFrameworkReleasePackages = ({
       if (
         (record['dist.integrity'] ?? record.dist?.integrity) !==
         pkg.artifact.integrity
-      )
+      ) {
         throw new Error(`Registry artifact differs for ${spec}`)
+      }
       if (version !== pkg.version) {
         throw new Error(
           `Registry returned unexpected version ${version} for ${spec}`
@@ -176,7 +183,9 @@ export const publishFrameworkReleasePackages = ({
       }
       registryVersions.set(spec, version)
     } catch (error) {
-      if (!isNotFound(error)) throw error
+      if (!isNotFound(error)) {
+        throw error
+      }
       registryVersions.set(spec, '')
     }
   }
@@ -212,10 +221,11 @@ export const publishFrameworkReleasePackages = ({
   const skipped = ordered.filter((pkg) =>
     registryVersions.get(`${pkg.name}@${pkg.version}`)
   )
-  for (const pkg of skipped)
+  for (const pkg of skipped) {
     recordGuidanceResult(resultFile, guidance, pkg.name, 'skipped-existing', {
       version: pkg.version
     })
+  }
   for (const pkg of publishCandidates) {
     const spec = `${pkg.name}@${pkg.version}`
     try {

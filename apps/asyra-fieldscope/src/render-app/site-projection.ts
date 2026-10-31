@@ -157,23 +157,27 @@ function buildEnvelopeMeshes(config: FarmConfiguration): SiteMesh[] {
     Object.keys(INITIAL_LAYERS).map((key) => [key, new TriangleBuilder()])
   ) as Record<LayerId, TriangleBuilder>
   const { steel, barriers, film, dimensions } = builders
-  for (const member of createStructure(site)) steel.tube(member)
+  for (const member of createStructure(site)) {
+    steel.tube(member)
+  }
   for (const x of [
     site.barrierThickness / 2,
     totalWidth - site.barrierThickness / 2
-  ])
+  ]) {
     barriers.box(
       [x, site.barrierHeight / 2, midDepth],
       [site.barrierThickness, site.barrierHeight, depth]
     )
+  }
   // Shared overhead U-gutters; they are separate from ground drainage channels.
   for (const x of Array.from(
     { length: site.bays - 1 },
     (_, i) => (i + 1) * site.width
   )) {
     steel.box([x, site.eave + 0.02, midDepth], [0.22, 0.025, depth])
-    for (const dx of [-0.1, 0.1])
+    for (const dx of [-0.1, 0.1]) {
       steel.box([x + dx, site.eave + 0.07, midDepth], [0.02, 0.1, depth])
+    }
   }
   for (let bay = 0; bay < site.bays; bay++) {
     for (let i = 0; i < 64; i++) {
@@ -212,19 +216,22 @@ function buildEnvelopeMeshes(config: FarmConfiguration): SiteMesh[] {
       )
     }
   }
-  for (const x of [0, totalWidth])
+  for (const x of [0, totalWidth]) {
     film.quad(
       [x, 0.35, 0],
       [x, 0.35, depth],
       [x, site.eave, depth],
       [x, site.eave, 0]
     )
+  }
   dimensions.box([middle, -0.332, -1.2], [totalWidth, 0.012, 0.035])
   dimensions.box([totalWidth + 1.2, -0.332, midDepth], [0.035, 0.012, depth])
-  for (let x = 0; x <= totalWidth; x += site.width)
+  for (let x = 0; x <= totalWidth; x += site.width) {
     dimensions.box([x, -0.326, -1.2], [0.04, 0.012, 0.55])
-  for (let z = 0; z <= depth; z += 5)
+  }
+  for (let z = 0; z <= depth; z += 5) {
     dimensions.box([totalWidth + 1.2, -0.326, z], [0.55, 0.012, 0.04])
+  }
   return [
     mesh('barriers', barriers, 0x182623),
     mesh('steel', steel, 0x8a9c9b),
@@ -266,12 +273,12 @@ function buildTerrainMeshes(
   )
   for (const strip of strips) {
     const middle = strip.x + strip.width / 2
-    if (strip.kind === 'soil')
+    if (strip.kind === 'soil') {
       soil.box(
         [middle, -terrainDepth / 2, midDepth],
         [strip.width, terrainDepth, depth]
       )
-    else {
+    } else {
       const { points, lipRadius, waterLevel, waterPoints } = createDrainProfile(
         strip.width
       )
@@ -301,21 +308,23 @@ function buildTerrainMeshes(
           b = strip.x + bx
         soil.quad([a, ay, 0], [a, ay, depth], [b, by, depth], [b, by, 0])
         // Close the exposed ends below the curve without filling the channel opening.
-        for (const z of [0, depth])
+        for (const z of [0, depth]) {
           soil.quad(
             [a, ay, z],
             [b, by, z],
             [b, -terrainDepth, z],
             [a, -terrainDepth, z]
           )
+        }
       }
     }
   }
-  for (const p of passages)
+  for (const p of passages) {
     builders.passages.box(
       [p.x + p.width / 2, -terrainDepth / 2, midDepth],
       [p.width, terrainDepth, depth]
     )
+  }
   for (const x of [site.margin / 2, totalWidth - site.margin / 2]) {
     builders.passages.box(
       [x, -terrainDepth / 2, midDepth],
@@ -336,10 +345,12 @@ function buildCropMeshes(
 ): SiteMesh[] {
   const groups = geometry.cropInstances(config)
   const crops: SiteMesh[] = []
-  if (groups.size)
+  if (groups.size) {
     for (const model of geometry.cropModels(config)) {
       const instances = groups.get(`${model.species}-${model.variant}`)
-      if (!instances) continue
+      if (!instances) {
+        continue
+      }
       model.parts.forEach((part, index) =>
         crops.push({
           id: `${model.species}-${model.variant}-${index}`,
@@ -376,6 +387,7 @@ function buildCropMeshes(
         })
       )
     }
+  }
   return crops
 }
 

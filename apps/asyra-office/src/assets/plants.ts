@@ -53,8 +53,9 @@ export function planter(
   seed = requiredSpecValue(source.growth, 'plant growth recipe').defaultSeed,
   form: 'stemmed' | keyof NonNullable<typeof source.growthVariants> = 'stemmed'
 ): AssetPart[] {
-  if (!Number.isFinite(scale) || scale <= 0)
+  if (!Number.isFinite(scale) || scale <= 0) {
     throw new Error('Invalid plant scale')
+  }
   const variant: PlantVariant | undefined =
     form !== 'stemmed'
       ? requiredSpecValue(source.growthVariants, 'plant growth variants')[form]
@@ -170,7 +171,7 @@ export function planter(
       spec.materials.stem.roughness
     )
   ]
-  if (sprigs && crown)
+  if (sprigs && crown) {
     for (const [index, path] of sprigs.branches.entries()) {
       parts.push(
         part(
@@ -186,6 +187,7 @@ export function planter(
         )
       )
     }
+  }
   leaves.forEach((entry, index) => {
     const origin = sprigs?.origins[index] ?? [0, 0, entry.attachZ]
     const a = (entry.azimuthDegrees * Math.PI) / 180
@@ -263,14 +265,17 @@ export function planter(
         skin.push(row)
       }
       const tri = (a: number, b: number, c: number) => {
-        if (a === b || b === c || c === a) return
+        if (a === b || b === c || c === a) {
+          return
+        }
         mesh.indices.push(...(sign > 0 ? [a, b, c] : [a, c, b]))
       }
-      for (let i = 0; i < longitudinal; i++)
+      for (let i = 0; i < longitudinal; i++) {
         for (let j = 0; j < lateral; j++) {
           tri(skin[i][j], skin[i + 1][j], skin[i + 1][j + 1])
           tri(skin[i][j], skin[i + 1][j + 1], skin[i][j + 1])
         }
+      }
       rows.push(skin)
     }
     const boundary = [
@@ -307,10 +312,12 @@ export function planter(
       mesh.indices.push(a, a + 1, b + 1, a, b + 1, b)
     }
     let leafColor = variant ? variant.leafColorSRGB : '#718752'
-    if (variant?.leafColorsSRGB)
+    if (variant?.leafColorsSRGB) {
       leafColor = variant.leafColorsSRGB[index % variant.leafColorsSRGB.length]
-    if (crown)
+    }
+    if (crown) {
       leafColor = crown.leafColorsSRGB[index % crown.leafColorsSRGB.length]
+    }
     parts.push(
       part(
         `leaf-${index}`,

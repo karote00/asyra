@@ -4,7 +4,9 @@ export function qualityScenario(cases, id) {
   const scenario = [...cases.development, ...cases.transfer].find(
     (item) => item.id === id
   )
-  if (!scenario) throw new Error('Unknown quality case')
+  if (!scenario) {
+    throw new Error('Unknown quality case')
+  }
   return {
     ...scenario,
     deadlineMs: cases.deadlineMs,
@@ -21,10 +23,13 @@ export function qualityScenario(cases, id) {
 
 export function withoutAdvice(markdown) {
   const match = /^(---\r?\n[\s\S]*?\r?\n---\r?\n)/.exec(markdown)
-  if (!match) throw new Error('Missing admitted frontmatter')
+  if (!match) {
+    throw new Error('Missing admitted frontmatter')
+  }
   const metadata = JSON.parse(match[1].split(/\r?\n/).slice(1, -2).join('\n'))
-  if (metadata.overrides?.length)
+  if (metadata.overrides?.length) {
     throw new Error('Targeted override requires an explicit content experiment')
+  }
   return (
     match[1] +
     '\nNo additional domain advice is supplied in this evaluation condition.\n'
@@ -39,12 +44,18 @@ export async function withAdviceFixture(files, control, operation) {
     withoutAdvice(bytes.toString())
   ])
   try {
-    if (control)
-      for (const [file, text] of replacements) fs.writeFileSync(file, text)
+    if (control) {
+      for (const [file, text] of replacements) {
+        fs.writeFileSync(file, text)
+      }
+    }
     return await operation()
   } finally {
-    if (control)
-      for (const [file, bytes] of originals) fs.writeFileSync(file, bytes)
+    if (control) {
+      for (const [file, bytes] of originals) {
+        fs.writeFileSync(file, bytes)
+      }
+    }
   }
 }
 

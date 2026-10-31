@@ -21,7 +21,9 @@ for (const width of [1440, 960, 600]) {
           'canvas'
         ].map((selector) => {
           const node = document.querySelector(selector)
-          if (!node) throw new Error(`Missing layout surface: ${selector}`)
+          if (!node) {
+            throw new Error(`Missing layout surface: ${selector}`)
+          }
           const { x, y, width, height } = node.getBoundingClientRect()
           return { selector, x, y, width, height }
         })
@@ -100,7 +102,9 @@ test('workbench controls fit desktop and narrow review panes without clipped tex
       .toBe(true)
     const controls = page.locator('.commands button')
     for (const control of await controls.all()) {
-      if (!(await control.isVisible())) continue
+      if (!(await control.isVisible())) {
+        continue
+      }
       const text = await control.innerText()
       expect(text).not.toMatch(/[↶↷+]/)
       expect(
@@ -193,10 +197,11 @@ for (const viewport of [
       run: await run.boundingBox(),
       heading: await heading.boundingBox()
     }
-    if (!before.run || !before.heading || !after.run || !after.heading)
+    if (!before.run || !before.heading || !after.run || !after.heading) {
       throw new Error(
         'Experiment context and Run must remain mounted while scrolling'
       )
+    }
     expect(after.run.y).toBeCloseTo(before.run.y - 160, 0)
     expect(after.heading.y).toBeCloseTo(before.heading.y - 160, 0)
     await page.locator('.trajectory-import textarea').scrollIntoViewIfNeeded()
@@ -230,7 +235,9 @@ for (const width of [576, 1440]) {
     const label = await row.evaluate((node) => {
       const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT)
       while (walker.nextNode()) {
-        if (walker.currentNode.textContent?.trim() !== 'J1 - Base yaw') continue
+        if (walker.currentNode.textContent?.trim() !== 'J1 - Base yaw') {
+          continue
+        }
         const range = document.createRange()
         range.selectNodeContents(walker.currentNode)
         return range.getBoundingClientRect().toJSON()
@@ -240,8 +247,9 @@ for (const width of [576, 1440]) {
     const [column, sourceUnit] = await Promise.all(
       [target, unit].map((control) => control.boundingBox())
     )
-    if (!label || !column || !sourceUnit)
+    if (!label || !column || !sourceUnit) {
       throw new Error('Mapping controls must be rendered')
+    }
     expect(label.y + label.height / 2).toBeGreaterThanOrEqual(column.y)
     expect(label.y + label.height / 2).toBeLessThanOrEqual(
       column.y + column.height
@@ -267,8 +275,9 @@ for (const width of [576, 1440]) {
       .getByText('Minimum clearance (mm)', { exact: true })
       .boundingBox()
     const clearanceInput = await clearance.boundingBox()
-    if (!clearanceLabel || !clearanceInput)
+    if (!clearanceLabel || !clearanceInput) {
       throw new Error('Clearance field must be rendered')
+    }
     expect(clearanceLabel.y + clearanceLabel.height / 2).toBeGreaterThanOrEqual(
       clearanceInput.y
     )

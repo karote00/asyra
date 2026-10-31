@@ -1,4 +1,4 @@
-export type InspectorKind = 'flow-v2' | 'legacy-v1' | 'plan-contract'
+export type InspectorKind = 'flow-v2' | 'contract-document'
 export type InspectorGroup = 'Apps' | 'Framework' | 'Release' | 'Tools'
 
 export interface WorkspaceEntry {
@@ -10,7 +10,6 @@ export interface WorkspaceEntry {
   subgroup: string
   lifecycle: string
   sourcePath: string
-  standalonePath: string | null
   labels: string[]
   data: unknown
 }
@@ -23,6 +22,5 @@ export interface WorkspaceBundle {
 }
 
 declare global {
-  // eslint-disable-next-line no-var
   var FLOW_INSPECTOR_WORKSPACE_BUNDLE: WorkspaceBundle | undefined
 }

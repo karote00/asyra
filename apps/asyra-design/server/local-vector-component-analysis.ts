@@ -43,11 +43,14 @@ const hasIntersection = (points: Point[], signal: AbortSignal) => {
     .sort((a, b) => a.minX - b.minX)
   let checks = 0
   for (let i = 0; i < edges.length; i++) {
-    if (signal.aborted) throw new Error('Analysis cancelled')
+    if (signal.aborted) {
+      throw new Error('Analysis cancelled')
+    }
     const a = edges[i]
     for (let j = i + 1; j < edges.length && edges[j].minX <= a.maxX; j++) {
-      if (++checks > limits.intersectionChecksPerPath)
+      if (++checks > limits.intersectionChecksPerPath) {
         throw new AnalysisLimitError('Analysis complexity limit')
+      }
       const b = edges[j]
       const difference = Math.abs(a.index - b.index)
       if (
@@ -55,13 +58,15 @@ const hasIntersection = (points: Point[], signal: AbortSignal) => {
         difference === edges.length - 1 ||
         a.maxY < b.minY ||
         b.maxY < a.minY
-      )
+      ) {
         continue
+      }
       if (
         cross(a.a, a.b, b.a) * cross(a.a, a.b, b.b) <= 0 &&
         cross(b.a, b.b, a.a) * cross(b.a, b.b, a.b) <= 0
-      )
+      ) {
         return true
+      }
     }
   }
   return false
@@ -73,17 +78,22 @@ export const analyzeVectorComponents = (
   pathIds: readonly string[],
   signal: AbortSignal
 ) => {
-  if (signal.aborted) throw new Error('Analysis cancelled')
+  if (signal.aborted) {
+    throw new Error('Analysis cancelled')
+  }
   if (
     !pathIds.length ||
     pathIds.length > limits.pathsPerJob ||
     new Set(pathIds).size !== pathIds.length ||
     pathIds.some((id) => !artifact.paths.some((path) => path.id === id))
-  )
+  ) {
     throw new Error('Invalid analysis selection')
+  }
   const paths = pathIds.map((id) => {
     const path = artifact.paths.find((entry) => entry.id === id)
-    if (!path) throw new Error('Unknown analysis path')
+    if (!path) {
+      throw new Error('Unknown analysis path')
+    }
     const { x, y, width, height } = path.bounds
     const scale = Math.min(width, height)
     const tolerance = scale * 0.0001
@@ -92,9 +102,12 @@ export const analyzeVectorComponents = (
       const rings = path.rings.map((ring) => {
         const points: Point[] = []
         const push = (point: Point) => {
-          if (++count > limits.samplesPerPath)
+          if (++count > limits.samplesPerPath) {
             throw new AnalysisLimitError('Analysis sample limit')
-          if (signal.aborted) throw new Error('Analysis cancelled')
+          }
+          if (signal.aborted) {
+            throw new Error('Analysis cancelled')
+          }
           points.push({ x: point.x, y: point.y })
         }
         const flatten = (
@@ -108,8 +121,9 @@ export const analyzeVectorComponents = (
             push(d)
             return
           }
-          if (depth >= 16)
+          if (depth >= 16) {
             throw new AnalysisLimitError('Analysis precision limit')
+          }
           const ab = midpoint(a, b),
             bc = midpoint(b, c),
             cd = midpoint(c, d)
@@ -122,9 +136,11 @@ export const analyzeVectorComponents = (
         push(ring[0])
         ring.forEach((a, index) => {
           const b = ring[(index + 1) % ring.length]
-          if (a.outControl && b.inControl)
+          if (a.outControl && b.inControl) {
             flatten(a, a.outControl, b.inControl, b, 0)
-          else push(b)
+          } else {
+            push(b)
+          }
         })
         points.pop() // The closing endpoint is the first point, not another edge.
         return points
@@ -152,14 +168,15 @@ export const analyzeVectorComponents = (
         }
       })
       let limitation: string | null = null
-      if (rings.length !== 1)
+      if (rings.length !== 1) {
         limitation =
           'Compound artwork requires decomposition before whole-path conversion; contour splitting is not registered.'
-      else if (hasIntersection(rings[0], signal))
+      } else if (hasIntersection(rings[0], signal)) {
         limitation =
           'Self-intersecting contours cannot be replaced as a whole primitive.'
-      else if (Math.abs(contours[0].signedArea) <= width * height * 1e-8)
+      } else if (Math.abs(contours[0].signedArea) <= width * height * 1e-8) {
         limitation = 'Degenerate contour cannot be converted.'
+      }
       const candidates = (['oval', 'rect'] as const).map((componentType) => {
         let maxDeviation = 0
         // Include line interiors as well as vertices; corners alone cannot prove a fit.
@@ -170,14 +187,14 @@ export const analyzeVectorComponents = (
               const px = a.x + ((b.x - a.x) * sample) / 8
               const py = a.y + ((b.y - a.y) * sample) / 8
               let deviation: number
-              if (componentType === 'rect')
+              if (componentType === 'rect') {
                 deviation = Math.min(
                   Math.abs(px - x),
                   Math.abs(px - x - width),
                   Math.abs(py - y),
                   Math.abs(py - y - height)
                 )
-              else {
+              } else {
                 const dx = px - x - width / 2,
                   dy = py - y - height / 2
                 const radius = Math.hypot((2 * dx) / width, (2 * dy) / height)
@@ -229,7 +246,9 @@ export const analyzeVectorComponents = (
         candidates
       }
     } catch (error) {
-      if (!(error instanceof AnalysisLimitError)) throw error
+      if (!(error instanceof AnalysisLimitError)) {
+        throw error
+      }
       const limitation = `${error.message}; no conversion was approved. Preserve this vector or analyze a simpler supported selection.`
       return {
         pathId: id,

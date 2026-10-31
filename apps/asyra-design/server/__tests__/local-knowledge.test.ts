@@ -41,7 +41,9 @@ it('executes the advertised scoped catalog call and reads a chosen child with ex
     const definition = owner.definitions.find(
       ({ name }) => name === AiDesignToolIds.DISCOVER_KNOWLEDGE
     )
-    if (!definition) throw new Error('Missing discovery definition')
+    if (!definition) {
+      throw new Error('Missing discovery definition')
+    }
     // Revision 2 did not admit topic selection; pinned consumers must see a new contract.
     expect(definition.revision).toBeGreaterThan(2)
     // Execute the expression shipped to the provider, substituting only caller data.
@@ -131,11 +133,13 @@ it('preserves full discovery and direct reading while delivering only the chosen
           entry.id === 'design.architectural-illustration'
       )
     ).toBe(true)
-    for (const entry of entries)
-      for (const child of entry.children)
+    for (const entry of entries) {
+      for (const child of entry.children) {
         expect(
           entries.some((candidate: { id: string }) => candidate.id === child)
         ).toBe(true)
+      }
+    }
     expect(
       entries.every((entry: { id: string }) =>
         JSON.parse(full).entries.some(
@@ -147,8 +151,9 @@ it('preserves full discovery and direct reading while delivering only the chosen
     expect(
       JSON.parse(await call({ contexts, ids: ['absent'] })).entries
     ).toEqual([])
-    for (const ids of [[], ['absent', 'absent'], ['bad id']])
+    for (const ids of [[], ['absent', 'absent'], ['bad id']]) {
       await expect(call({ contexts, ids })).rejects.toThrow()
+    }
     const aborted = new AbortController()
     aborted.abort()
     await expect(
@@ -278,8 +283,9 @@ it('delivers parent and detail selection conditions before reading and preserves
     expect(detail.description).toMatch(
       /known supported representation.*does not require/i
     )
-    for (const definition of owner.definitions)
+    for (const definition of owner.definitions) {
       expect(definition.description).toContain('parent or child')
+    }
     const normal = JSON.parse(
       await call(AiDesignToolIds.READ_KNOWLEDGE, { ids: [method.id], contexts })
     )
@@ -301,8 +307,9 @@ it('delivers parent and detail selection conditions before reading and preserves
       'Never retry a settled drawing',
       'nonzero',
       'cannot encode different per-owner coordinates'
-    ])
+    ]) {
       expect(JSON.stringify(normal)).toContain(restriction)
+    }
     const detailed = JSON.parse(
       await readCompleteInformation(
         (input) => {
@@ -322,12 +329,13 @@ it('delivers parent and detail selection conditions before reading and preserves
     expect(detailedTargets).toEqual([...targets, detail.id])
     expect(new Set(detailedTargets).size).toBe(detailedTargets.length)
     expect(JSON.stringify(detailed)).toContain('Continuous material join')
-    for (const doc of normal.documents)
+    for (const doc of normal.documents) {
       expect(
         detailed.documents.find(
           (item: { target: string }) => item.target === doc.target
         )
       ).toEqual(doc)
+    }
     const repeated = JSON.parse(
       await call(AiDesignToolIds.READ_KNOWLEDGE, { ids: [method.id], contexts })
     )
@@ -647,9 +655,13 @@ it('delivers general architectural advice through the real catalog without impos
       const value = JSON.parse(
         await tools.call(AiDesignToolIds.READ_KNOWLEDGE, query, signal())
       )
-      if (!value.contentDelivery) return value
+      if (!value.contentDelivery) {
+        return value
+      }
       text += value.contentDelivery.text
-      if (value.contentDelivery.lastPage) return JSON.parse(text)
+      if (value.contentDelivery.lastPage) {
+        return JSON.parse(text)
+      }
       query = value.contentDelivery.next.arguments
     }
     throw new Error('Incomplete advice delivery')
@@ -690,19 +702,24 @@ it('advertises every declared specialized context through the current discovery 
   const definition = owner.definitions.find(
     (tool) => tool.name === AiDesignToolIds.DISCOVER_KNOWLEDGE
   )
-  if (!definition) throw new Error('Missing knowledge discovery contract')
+  if (!definition) {
+    throw new Error('Missing knowledge discovery contract')
+  }
   const schema = definition.inputSchema as {
     properties: { contexts: { items: { enum: string[] } } }
   }
-  for (const context of schema.properties.contexts.items.enum)
+  for (const context of schema.properties.contexts.items.enum) {
     expect(definition.description).toContain(context)
+  }
   owner.dispose()
 })
 
 it('retries failed catalog loading and corrects missing IDs without losing delivery or repeating file reads', async () => {
   let loads = 0
   const owner = createLocalKnowledgeTools('retry-advice', async () => {
-    if (++loads === 1) throw new Error('Knowledge file unavailable')
+    if (++loads === 1) {
+      throw new Error('Knowledge file unavailable')
+    }
     return [fixtureFile()]
   })
   try {
@@ -940,7 +957,9 @@ it('delivers recorded material decision topics in one complete reply without opt
     const definition = owner.definitions.find(
       (tool) => tool.name === AiDesignToolIds.READ_KNOWLEDGE
     )
-    if (!definition) throw new Error('Missing Knowledge read definition')
+    if (!definition) {
+      throw new Error('Missing Knowledge read definition')
+    }
     for (const entry of recorded.cases) {
       expect(
         catalog.entries.some(
@@ -974,8 +993,9 @@ it('delivers recorded material decision topics in one complete reply without opt
         'materials.method.parameters',
         'materials.correction',
         'repetition'
-      ])
+      ]) {
         expect(ids).not.toContain(`design.architectural-illustration.${absent}`)
+      }
       if (entry.topic === 'method') {
         expect(text).toContain('Do not quantize them merely to reduce bytes')
         expect(text).toContain('not per-cell gradient endpoints')
@@ -1082,7 +1102,9 @@ it('reduces recorded cross-query dependency bytes through the actual read contra
       (d) => d.name === AiDesignToolIds.READ_KNOWLEDGE
     )
 
-    if (!definition) throw new Error('Missing Knowledge read definition')
+    if (!definition) {
+      throw new Error('Missing Knowledge read definition')
+    }
     const exchanges: { input: Record<string, unknown>; reply: string }[] = []
     return {
       owner,
@@ -1195,12 +1217,16 @@ it('delivers saved Knowledge source identities without duplicated provenance thr
     return { ...identity, markdown: body.toString('utf8') }
   })
   const canonical = createDesignKnowledge('source-baseline', true)
-  for (const file of files) canonical.install(file)
+  for (const file of files) {
+    canonical.install(file)
+  }
   const owner = createLocalKnowledgeTools('source-delivery', async () => files)
   const definition = owner.definitions.find(
     (entry) => entry.name === 'read_knowledge'
   )
-  if (!definition) throw new Error('Missing Knowledge read definition')
+  if (!definition) {
+    throw new Error('Missing Knowledge read definition')
+  }
   expect(definition.revision).toBeGreaterThan(3)
   const guide = definition.description.slice(
     definition.description.indexOf('After assembling all pages'),
@@ -1239,10 +1265,13 @@ it('delivers saved Knowledge source identities without duplicated provenance thr
       bytes += size(query) + Buffer.byteLength(reply.text)
       calls++
       const parsed = JSON.parse(reply.text)
-      if (!parsed.contentDelivery) return { value: parsed, bytes, calls }
+      if (!parsed.contentDelivery) {
+        return { value: parsed, bytes, calls }
+      }
       text += parsed.contentDelivery.text
-      if (parsed.contentDelivery.lastPage)
+      if (parsed.contentDelivery.lastPage) {
         return { value: JSON.parse(text), bytes, calls }
+      }
       query = parsed.contentDelivery.next.arguments
     }
   }
@@ -1277,8 +1306,9 @@ it('delivers saved Knowledge source identities without duplicated provenance thr
               : {})
           }))
         ).toEqual(old.value.documents)
-        for (const field of ['trust', 'generation', 'alreadyDelivered'])
+        for (const field of ['trust', 'generation', 'alreadyDelivered']) {
           expect(current.value[field]).toEqual(old.value[field])
+        }
       }
       expect(after).toBeLessThan(before)
       expect(afterCalls).toBeLessThanOrEqual(beforeCalls)
@@ -1303,8 +1333,9 @@ it('delivers saved Knowledge source identities without duplicated provenance thr
 // Execute the resolver actually published to the provider, not a second recipe.
 function sourceResolver(description: string) {
   const expression = description.match(/`(const sources = new Map[^`]+)`/)?.[1]
-  if (!expression)
+  if (!expression) {
     throw new Error('Missing delivered source resolution example')
+  }
   return new Function('result', `${expression} return source;`) as (
     result: unknown
   ) => (identity: unknown) => unknown
@@ -1330,7 +1361,9 @@ it('preserves exact override sources through delivery, reuse, rehydrate and inva
   const definition = owner.definitions.find(
     (entry) => entry.name === AiDesignToolIds.READ_KNOWLEDGE
   )
-  if (!definition) throw new Error('Missing read definition')
+  if (!definition) {
+    throw new Error('Missing read definition')
+  }
   const resolve = sourceResolver(definition.description)
   const read = async (input: Record<string, unknown>) => {
     const reply = await invokeLocalTool(owner, definition, input, signal())
@@ -1436,7 +1469,9 @@ it('keeps unresolvable source metadata explicit and projects metadata without to
   const definition = owner.definitions.find(
     (entry) => entry.name === AiDesignToolIds.READ_KNOWLEDGE
   )
-  if (!definition) throw new Error('Missing read definition')
+  if (!definition) {
+    throw new Error('Missing read definition')
+  }
   const resolve = sourceResolver(definition.description)
   owner.dispose()
   const observations = [16, 256].map((count) => {
@@ -1467,14 +1502,17 @@ it('keeps unresolvable source metadata explicit and projects metadata without to
       ...value,
       sources: new Proxy(value.sources, {
         get(target, property, receiver) {
-          if (typeof property === 'string' && /^\d+$/.test(property)) indexed++
+          if (typeof property === 'string' && /^\d+$/.test(property)) {
+            indexed++
+          }
           return Reflect.get(target, property, receiver)
         }
       })
     }
     const resolved = resolve(delivered)
-    for (let index = 0; index < count; index++)
+    for (let index = 0; index < count; index++) {
       expect(resolved(value.documents[index].source)).toBe(sources[index])
+    }
     expect(indexed).toBe(count)
     return { count, provenanceReads }
   })

@@ -193,12 +193,16 @@ export class IndexedDbPersistence implements IPersistenceProvider {
         resolve(request.result)
       }
       request.onerror = () => {
-        if (settled) return
+        if (settled) {
+          return
+        }
         settled = true
         reject(getIndexedDbError(request.error, 'open'))
       }
       request.onblocked = () => {
-        if (settled) return
+        if (settled) {
+          return
+        }
         settled = true
         reject(new Error('IndexedDB open blocked by another connection'))
       }

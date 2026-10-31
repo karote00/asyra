@@ -2,7 +2,9 @@ import path from 'node:path'
 import { assertPlanSection, validateContext } from './task-context.mjs'
 
 function requireValue(condition, message) {
-  if (!condition) throw new Error(message)
+  if (!condition) {
+    throw new Error(message)
+  }
 }
 
 export function closeoutPaths(planPath) {
@@ -22,7 +24,9 @@ export function closeoutPaths(planPath) {
 // references to the archived plan. External URLs and lookalike paths stay put.
 export function rewritePlanReferences(content, fromFile, toFile, paths) {
   const relocate = (target) => {
-    if (!target || /^(?:[a-z][a-z\d+.-]*:|\/\/|#)/iu.test(target)) return target
+    if (!target || /^(?:[a-z][a-z\d+.-]*:|\/\/|#)/iu.test(target)) {
+      return target
+    }
     const boundary = target.search(/[?#]/u)
     const file = boundary < 0 ? target : target.slice(0, boundary)
     const suffix = boundary < 0 ? '' : target.slice(boundary)
@@ -32,10 +36,13 @@ export function rewritePlanReferences(content, fromFile, toFile, paths) {
       : path.posix.normalize(
           path.posix.join(path.posix.dirname(fromFile), file)
         )
-    if (fromFile === toFile && resolved !== paths.active) return target
+    if (fromFile === toFile && resolved !== paths.active) {
+      return target
+    }
     const destination = resolved === paths.active ? paths.completed : resolved
-    if (rooted)
+    if (rooted) {
       return `${file.startsWith('/') ? '/' : ''}${destination}${suffix}`
+    }
     const relative = path.posix.relative(
       path.posix.dirname(toFile),
       destination
@@ -82,8 +89,9 @@ export async function evaluateCloseout({
   const files = new Map()
   const read = (sha, file) => {
     const key = JSON.stringify([sha, file])
-    if (!files.has(key))
+    if (!files.has(key)) {
       files.set(key, Promise.resolve(snapshot.read(sha, file)))
+    }
     return files.get(key)
   }
   requireValue(
@@ -107,8 +115,12 @@ export async function evaluateCloseout({
     const before = await read(baseSha, file)
     const after = await read(headSha, file)
     if (file.includes('/plans/completed/')) {
-      if (before === null && after !== null) completedAdditions.push(file)
-    } else if (before !== null && after === null) removedPlans.push(file)
+      if (before === null && after !== null) {
+        completedAdditions.push(file)
+      }
+    } else if (before !== null && after === null) {
+      removedPlans.push(file)
+    }
   }
   if (context.mode === 'standalone') {
     requireValue(
@@ -172,9 +184,13 @@ export async function evaluateCloseout({
   for (const file of afterReview.filter((file) => !allowed.has(file))) {
     const before = await read(reviewedSha, file)
     const after = await read(headSha, file)
-    if (typeof before !== 'string' || typeof after !== 'string') continue
+    if (typeof before !== 'string' || typeof after !== 'string') {
+      continue
+    }
     const expected = rewritePlanReferences(before, file, file, paths)
-    if (expected !== before && after === expected) allowed.add(file)
+    if (expected !== before && after === expected) {
+      allowed.add(file)
+    }
   }
   requireValue(
     afterReview.length > 0 && afterReview.every((file) => allowed.has(file)),

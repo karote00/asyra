@@ -17,7 +17,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         (item) =>
           item.a.bodyId === 'example:joint-2' && item.b.bodyId === 'obstacle-11'
       )
-      if (!pair) throw new Error('Missing measured source pair')
+      if (!pair) {
+        throw new Error('Missing measured source pair')
+      }
       const context = new OriginalMeshQuery(
         () => undefined,
         diagnosticWorkLimit
@@ -102,8 +104,11 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         const before = context.work
         const output = call()
         const repeated = completed.has(key)
-        if (repeated) expect(output).toEqual(completed.get(key))
-        else completed.set(key, structuredClone(output))
+        if (repeated) {
+          expect(output).toEqual(completed.get(key))
+        } else {
+          completed.set(key, structuredClone(output))
+        }
         rows.push({ kind, work: context.work - before, repeated, time })
         return output
       }
@@ -132,7 +137,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             expect(output).toBe(admittedIntervals.get(key))
             equivalentIntervalCalls++
             equivalentIntervalWork += context.work - before
-          } else admittedIntervals.set(key, output)
+          } else {
+            admittedIntervals.set(key, output)
+          }
         }
         return output
       }

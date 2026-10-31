@@ -29,7 +29,9 @@ export function geometryIdentity(workcell: Workcell, originalParts: boolean) {
 
 export function stableJson(value: unknown): string {
   return JSON.stringify(value, (_key, item) => {
-    if (!item || typeof item !== 'object' || Array.isArray(item)) return item
+    if (!item || typeof item !== 'object' || Array.isArray(item)) {
+      return item
+    }
 
     return Object.fromEntries(
       Object.keys(item)
@@ -47,7 +49,9 @@ export function isPresentedRunStale(
 ): boolean {
   const { snapshot } = run
   if (draft.trajectoryInput || draft.exclusionsInput !== undefined) {
-    if (!reader) return true
+    if (!reader) {
+      return true
+    }
     try {
       draft = definitionToDraft(
         reader.resolve(

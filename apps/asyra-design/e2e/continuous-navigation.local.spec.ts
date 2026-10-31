@@ -13,8 +13,9 @@ test('measures sustained native wheel pan and zoom on the full document', async 
   test.skip(Boolean(process.env.CI), 'Local machine measurement only')
   test.setTimeout(180_000)
   const inputHz = Number(process.env.NAVIGATION_INPUT_HZ ?? 60)
-  if (![60, 120].includes(inputHz))
+  if (![60, 120].includes(inputHz)) {
     throw new Error('Navigation input cadence must be 60 or 120 Hz')
+  }
   const inputCount = inputHz * 5
   const deltaScale = 60 / inputHz
   const { identity, manifest } = await prepareLargeNavigationDocument(baseURL)
@@ -35,7 +36,9 @@ test('measures sustained native wheel pan and zoom on the full document', async 
     .toBe(manifest.elements)
   const cdp = await page.context().newCDPSession(page)
   const withProfiler = process.env.NAVIGATION_CPU_PROFILE === 'true'
-  if (withProfiler) await cdp.send('Profiler.enable')
+  if (withProfiler) {
+    await cdp.send('Profiler.enable')
+  }
   const results = []
 
   for (const phase of ['idle', 'pan', 'zoom'] as const) {
@@ -46,8 +49,12 @@ test('measures sustained native wheel pan and zoom on the full document', async 
     await page.mouse.move(1000, 450)
     // Keep initialization and warmup out of the interaction measurement.
     await delay(500)
-    if (phase === 'zoom') await page.keyboard.down('Meta')
-    if (withProfiler && phase !== 'idle') await cdp.send('Profiler.start')
+    if (phase === 'zoom') {
+      await page.keyboard.down('Meta')
+    }
+    if (withProfiler && phase !== 'idle') {
+      await cdp.send('Profiler.start')
+    }
     const measurement = page.evaluate(async () => {
       const { core } = await import('../src/testing/runtime-access')
       const { viewportApis } = await import('../src/common-apis/viewport')
@@ -72,8 +79,9 @@ test('measures sustained native wheel pan and zoom on the full document', async 
       })
       const longTasks: { start: number; duration: number }[] = []
       const observer = new PerformanceObserver((list) => {
-        for (const entry of list.getEntries())
+        for (const entry of list.getEntries()) {
           longTasks.push({ start: entry.startTime, duration: entry.duration })
+        }
       })
       observer.observe({ type: 'longtask' })
       window.navigationGpuWork = {
@@ -100,8 +108,11 @@ test('measures sustained native wheel pan and zoom on the full document', async 
             y: position.y,
             scale: viewportApis.getScale()
           })
-          if (performance.now() - start < 6500) requestAnimationFrame(frame)
-          else resolve()
+          if (performance.now() - start < 6500) {
+            requestAnimationFrame(frame)
+          } else {
+            resolve()
+          }
         }
         requestAnimationFrame(frame)
       })
@@ -146,7 +157,9 @@ test('measures sustained native wheel pan and zoom on the full document', async 
       await Promise.all(pending)
     }
     const report = await measurement
-    if (phase === 'zoom') await page.keyboard.up('Meta')
+    if (phase === 'zoom') {
+      await page.keyboard.up('Meta')
+    }
     if (withProfiler && phase !== 'idle') {
       const { profile } = await cdp.send('Profiler.stop')
       await writeFile(
@@ -174,7 +187,9 @@ test('measures sustained native wheel pan and zoom on the full document', async 
           sample.y !== active[index - 1].y ||
           sample.scale !== active[index - 1].scale)
     )
-    if (active.length < 2) throw new Error('Insufficient active frame samples')
+    if (active.length < 2) {
+      throw new Error('Insufficient active frame samples')
+    }
     const duration = active[active.length - 1].time - active[0].time
     const summary = {
       phase,
@@ -204,7 +219,7 @@ test('measures sustained native wheel pan and zoom on the full document', async 
     if (phase !== 'idle') {
       expect(report.inputs.length).toBeGreaterThan(1)
       expect(cameraChanges.length).toBeGreaterThan(1)
-      if (phase === 'pan')
+      if (phase === 'pan') {
         expect(
           Math.max(
             ...active.map((sample) =>
@@ -212,10 +227,11 @@ test('measures sustained native wheel pan and zoom on the full document', async 
             )
           )
         ).toBeGreaterThan(100)
-      else
+      } else {
         expect(
           Math.max(...active.map((sample) => sample.scale))
         ).toBeGreaterThan(report.before.scale * 2)
+      }
     }
   }
   expect(errors).toEqual([])

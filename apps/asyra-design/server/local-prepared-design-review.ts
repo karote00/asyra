@@ -196,27 +196,34 @@ export const createPreparedDesignReview = (options: {
   return {
     read: results.read,
     async refresh(signal: AbortSignal, dependencyKeys?: ReadonlySet<string>) {
-      if (!latestArtifacts.size) return
+      if (!latestArtifacts.size) {
+        return
+      }
       const validations = new Map<string, boolean>()
       for (const [lineage, artifactId] of latestArtifacts) {
-        if (dependencyKeys && !dependencyKeys.has(`attachment:${lineage}`))
+        if (dependencyKeys && !dependencyKeys.has(`attachment:${lineage}`)) {
           continue
+        }
         signal.throwIfAborted()
         const reviewed = artifactReviews.get(artifactId)
-        if (!reviewed) continue
+        if (!reviewed) {
+          continue
+        }
         const key = identity(reviewed.attachment.evidence)
         try {
-          if (!validations.has(key))
+          if (!validations.has(key)) {
             validations.set(
               key,
               await options.attachmentCurrent(reviewed.attachment, signal)
             )
+          }
           signal.throwIfAborted()
-          if (!validations.get(key))
+          if (!validations.get(key)) {
             results.invalidate(
               [`attachment:${lineage}`],
               'Canonical attachment dependencies changed.'
             )
+          }
         } catch {
           results.invalidate(
             [`attachment:${lineage}`],
@@ -235,43 +242,52 @@ export const createPreparedDesignReview = (options: {
             (finding) =>
               !record(finding) || finding.kind !== 'text-metrics-required'
           )
-        if (findings.length)
+        if (findings.length) {
           throw new Error(
             'Prepared recipe needs correction before application.'
           )
+        }
         return
       }
-      if (!reviewed.evidenceCurrent)
+      if (!reviewed.evidenceCurrent) {
         throw new Error(
           'Prepared attachment or source evidence changed during review; review current dependencies.'
         )
+      }
       if (
         reviewed.recipeIdentity !==
         identity(options.resolveRecipe(artifactId).recipe)
-      )
+      ) {
         throw new Error(
           'Prepared recipe changed after review; review its current source.'
         )
+      }
       if (
         reviewed.contextIdentity !== identity(evidence(reviewed.referenceUses))
-      )
+      ) {
         throw new Error(
           'Prepared review evidence changed; review current dependencies.'
         )
+      }
       if (
         (parentId ?? reviewed.attachment.workspaceId) !==
         reviewed.attachment.parentId
-      )
+      ) {
         throw new Error(
           'Prepared review parent changed; review the actual attachment parent.'
         )
+      }
       const currentSourceReview = sourceReviews.get(
         identity([reviewed.recipeIdentity, reviewed.evidenceIdentity])
       )
-      if (reviewed.status === 'fail' || currentSourceReview?.status === 'fail')
+      if (
+        reviewed.status === 'fail' ||
+        currentSourceReview?.status === 'fail'
+      ) {
         throw new Error(
           'Prepared recipe needs correction or verification before application.'
         )
+      }
       return reviewed.attachment
     },
     async review(input: unknown, signal: AbortSignal) {
@@ -279,7 +295,9 @@ export const createPreparedDesignReview = (options: {
         input,
         preparedReviewDefinition.inputSchema
       )
-      if (issue) throw new Error(issue)
+      if (issue) {
+        throw new Error(issue)
+      }
       signal.throwIfAborted()
       const {
         artifactId,
@@ -305,34 +323,42 @@ export const createPreparedDesignReview = (options: {
             value.forEach(visit)
             return
           }
-          if (!record(value)) return
+          if (!record(value)) {
+            return
+          }
           if (typeof value.key === 'string' && keys.includes(value.key)) {
-            if (selected.has(value.key))
+            if (selected.has(value.key)) {
               throw new Error(
                 'Source key is ambiguous; select a unique recipe part.'
               )
+            }
             selected.set(value.key, value)
           }
           Object.values(value).forEach(visit)
         }
         visit(recipe)
-        if (keys.some((key) => !selected.has(key)))
+        if (keys.some((key) => !selected.has(key))) {
           throw new Error(
             'Requested source key is unavailable; use original recipe keys.'
           )
+        }
         // Selection narrows coverage; the retained source supplies coordinate and reference context.
       }
       const attachment = await options.resolveAttachment(parentId, signal)
       signal.throwIfAborted()
       const context = evidence(referenceUses)
-      if (!Object.keys(context.criteria).length)
+      if (!Object.keys(context.criteria).length) {
         throw new Error(
           'Define request-linked criteria before prepared review.'
         )
-      if (requestedCriteria?.some((id) => !Object.hasOwn(context.criteria, id)))
+      }
+      if (
+        requestedCriteria?.some((id) => !Object.hasOwn(context.criteria, id))
+      ) {
         throw new Error(
           'Requested criterion is unavailable; use saved criterion IDs.'
         )
+      }
       const criterionIds = Object.keys(context.criteria).filter(
         (id) => !requestedCriteria || requestedCriteria.includes(id)
       )
@@ -340,10 +366,11 @@ export const createPreparedDesignReview = (options: {
         context.referenceUses?.some(
           (use) => !criterionIds.includes(use.criterionId)
         )
-      )
+      ) {
         throw new Error(
           'Preparation reference uses must match the requested criterion coverage.'
         )
+      }
       const coverage = {
         keys: [...keys].sort(),
         wholeRecipe: keys.length === 0,
@@ -369,14 +396,16 @@ export const createPreparedDesignReview = (options: {
       if (previousArtifactId) {
         const previousSource = options.resolveRecipe(previousArtifactId)
         const stored = artifactReviews.get(previousArtifactId)
-        if (!stored)
+        if (!stored) {
           throw new Error('Previous artifact has no retained review.')
+        }
         const previous =
           sourceReviews.get(
             identity([stored.recipeIdentity, stored.evidenceIdentity])
           ) ?? stored
-        if (identity(previousSource.recipe) !== previous.recipeIdentity)
+        if (identity(previousSource.recipe) !== previous.recipeIdentity) {
           throw new Error('Previous source changed after its retained review.')
+        }
         previousReview = {
           artifactId: previousArtifactId,
           recipeRevision: previous.recipeIdentity,
@@ -429,8 +458,9 @@ export const createPreparedDesignReview = (options: {
         coversPriorConflict &&
         assessment?.overall.status === 'pass' &&
         assessment.checks.every((check) => check.status === 'pass')
-      )
+      ) {
         assessment = undefined
+      }
       const reused = !!assessment
       if (!assessment) {
         assessment = {
@@ -453,21 +483,28 @@ export const createPreparedDesignReview = (options: {
         contextIdentity === identity(evidence(referenceUses)) &&
         (await options.attachmentCurrent(attachment, signal)) &&
         recipeIdentity === identity(options.resolveRecipe(artifactId).recipe)
-      if (evidenceCurrent && !reused)
+      if (evidenceCurrent && !reused) {
         cache.set(cacheKey, structuredClone(assessment))
+      }
       let status = deterministicFindings.length ? 'fail' : 'pass'
       const unresolvedPriorConflict =
         (!coversPriorConflict || status !== 'pass') &&
         prior?.status === 'fail' &&
         prior.recipeIdentity === recipeIdentity &&
         prior.evidenceIdentity === evidenceIdentity
-      if (unresolvedPriorConflict) status = 'fail'
-      if (!evidenceCurrent) status = 'unverified'
+      if (unresolvedPriorConflict) {
+        status = 'fail'
+      }
+      if (!evidenceCurrent) {
+        status = 'unverified'
+      }
       let conflict =
         status === 'fail'
           ? structuredClone({ coverage, assessment, deterministicFindings })
           : undefined
-      if (unresolvedPriorConflict) conflict = prior.conflict
+      if (unresolvedPriorConflict) {
+        conflict = prior.conflict
+      }
       const reviewed = {
         referenceUses: structuredClone(referenceUses),
         recipeIdentity,
@@ -508,7 +545,9 @@ export const createPreparedDesignReview = (options: {
       })
       artifactReviews.set(artifactId, reviewed)
       // Unknown stale observations cannot replace current same-source conflict evidence.
-      if (evidenceCurrent) sourceReviews.set(sourceKey, reviewed)
+      if (evidenceCurrent) {
+        sourceReviews.set(sourceKey, reviewed)
+      }
       return {
         available: true,
         artifactId,

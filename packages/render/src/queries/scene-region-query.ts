@@ -21,44 +21,66 @@ export class SceneRegionQuery {
       let current: RenderNode | null = node;
       current;
       current = current.parent
-    )
-      if (current === this.root) return true
+    ) {
+      if (current === this.root) {
+        return true
+      }
+    }
     return false
   }
 
   change(node: RenderNode, descendants = false): void {
     if (node === this.root) {
-      if (descendants) this.subtrees.add(node)
+      if (descendants) {
+        this.subtrees.add(node)
+      }
       return
     }
-    if (!this.contains(node)) return
-    if (descendants) this.subtrees.add(node)
+    if (!this.contains(node)) {
+      return
+    }
+    if (descendants) {
+      this.subtrees.add(node)
+    }
     for (
       let current: RenderNode | null = node;
       current && current !== this.root;
       current = current.parent
-    )
+    ) {
       this.dirty.add(current)
+    }
   }
 
   membership(parent: RenderNode, child: RenderNode): void {
-    if (!this.contains(parent) && !this.contains(child)) return
+    if (!this.contains(parent) && !this.contains(child)) {
+      return
+    }
     this.subtrees.add(child)
     this.change(parent)
-    if (this.includesSubtree(child)) this.order = null
+    if (this.includesSubtree(child)) {
+      this.order = null
+    }
   }
 
   reorder(parent: RenderNode, child: RenderNode): void {
-    if (this.contains(parent) && this.includesSubtree(child)) this.order = null
+    if (this.contains(parent) && this.includesSubtree(child)) {
+      this.order = null
+    }
   }
 
   private includesSubtree(node: RenderNode): boolean {
     const pending = [node]
     while (pending.length) {
       const current = pending.pop()
-      if (!current) break
-      if (this.includes(current)) return true
-      for (const child of current.children) pending.push(child)
+      if (!current) {
+        break
+      }
+      if (this.includes(current)) {
+        return true
+      }
+      for (const child of current.children) {
+        pending.push(child)
+      }
     }
     return false
   }
@@ -68,7 +90,9 @@ export class SceneRegionQuery {
     this.index.delete(node)
     this.dirty.delete(node)
     this.subtrees.delete(node)
-    if (indexed) this.order = null
+    if (indexed) {
+      this.order = null
+    }
   }
 
   query(bounds: RenderBounds): RenderNode[] {
@@ -77,19 +101,27 @@ export class SceneRegionQuery {
       const pending = [node]
       while (pending.length) {
         const current = pending.pop()
-        if (!current) break
+        if (!current) {
+          break
+        }
         fn(current)
-        for (let i = current.children.length - 1; i >= 0; i--)
+        for (let i = current.children.length - 1; i >= 0; i--) {
           pending.push(current.children[i])
+        }
       }
     }
     for (const root of this.subtrees) {
       let ancestor = root.parent
-      while (ancestor && !this.subtrees.has(ancestor))
+      while (ancestor && !this.subtrees.has(ancestor)) {
         ancestor = ancestor.parent
-      if (ancestor) continue
+      }
+      if (ancestor) {
+        continue
+      }
       visit(root, (node) => {
-        if (node !== this.root) this.dirty.add(node)
+        if (node !== this.root) {
+          this.dirty.add(node)
+        }
       })
     }
     this.subtrees.clear()
@@ -99,9 +131,9 @@ export class SceneRegionQuery {
         !this.contains(node) ||
         !node.getEngineHandle() ||
         !this.includes(node)
-      )
+      ) {
         this.index.delete(node)
-      else {
+      } else {
         this.index.set(
           node,
           node.getBoundsRelativeTo(this.root.parent ?? this.root)
@@ -117,15 +149,18 @@ export class SceneRegionQuery {
       const pending: [RenderNode, boolean][] = [[this.root, false]]
       while (pending.length) {
         const entry = pending.pop()
-        if (!entry) break
+        if (!entry) {
+          break
+        }
         const [node, expanded] = entry
         if (expanded) {
           order.set(node, order.size)
           continue
         }
         pending.push([node, true])
-        for (let i = node.children.length - 1; i >= 0; i--)
+        for (let i = node.children.length - 1; i >= 0; i--) {
           pending.push([node.children[i], false])
+        }
       }
       this.order = order
       emitDiagnosticCounter('region-query:order-visit', order.size)
@@ -139,8 +174,9 @@ export class SceneRegionQuery {
     const order = this.order
     const position = (node: RenderNode) => {
       const value = order.get(node)
-      if (value === undefined)
+      if (value === undefined) {
         throw new Error('Region candidate is outside current document order')
+      }
       return value
     }
     return candidates.values
@@ -149,8 +185,11 @@ export class SceneRegionQuery {
           let current: RenderNode | null = node;
           current && current !== this.root;
           current = current.parent
-        )
-          if (!current.visible || !current.renderable) return false
+        ) {
+          if (!current.visible || !current.renderable) {
+            return false
+          }
+        }
         return true
       })
       .sort((a, b) => position(a) - position(b))

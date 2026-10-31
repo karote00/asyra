@@ -26,7 +26,9 @@ export const TextField = ({
   const numeric = typeof value === 'number'
   const commit = (input: string) => {
     let next: string | number = input
-    if (numeric) next = input.trim() ? Number(input) : NaN
+    if (numeric) {
+      next = input.trim() ? Number(input) : NaN
+    }
     const schema = TEXT_PROPERTY_SCHEMA.fields.find(
       (entry) => entry.key === field
     )
@@ -35,20 +37,26 @@ export const TextField = ({
       return false
     }
     setInvalid(false)
-    if (next !== value) onCommit(next)
+    if (next !== value) {
+      onCommit(next)
+    }
     return true
   }
 
   const props = {
     onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => {
       event.stopPropagation()
-      if (event.nativeEvent.isComposing || event.keyCode === 229) return
+      if (event.nativeEvent.isComposing || event.keyCode === 229) {
+        return
+      }
       if (event.key === 'Escape') {
         cancelled.current = true
         setInvalid(false)
         event.currentTarget.blur()
       }
-      if (event.key === 'Enter') event.currentTarget.blur()
+      if (event.key === 'Enter') {
+        event.currentTarget.blur()
+      }
     },
     onKeyUp: (event: React.KeyboardEvent) => event.stopPropagation()
   }

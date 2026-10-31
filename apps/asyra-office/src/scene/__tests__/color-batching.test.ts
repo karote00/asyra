@@ -20,8 +20,9 @@ it('batches static opaque colors without changing topology, UVs or linear-light 
     shape.kind !== 'triangles' ||
     a.kind !== 'triangles' ||
     b.kind !== 'triangles'
-  )
+  ) {
     throw new Error('Expected triangles')
+  }
   expect(shape.positions).toEqual([...a.positions, ...b.positions])
   expect(shape.uvs).toEqual([...(a.uvs ?? []), ...(b.uvs ?? [])])
   expect(shape.indices).toEqual([
@@ -32,8 +33,9 @@ it('batches static opaque colors without changing topology, UVs or linear-light 
     a.positions.map(() => 0)
   )
   expect(shape.colors?.length).toBe(shape.positions.length)
-  for (const channel of shape.colors?.slice(a.positions.length) ?? [])
+  for (const channel of shape.colors?.slice(a.positions.length) ?? []) {
     expect(channel).toBeCloseTo(0.21586050011389926, 7)
+  }
 })
 
 it('leaves single-color batches unchanged without an unnecessary color buffer', () => {
@@ -109,8 +111,9 @@ it('preserves texture identity and every UV while batching colors on one surface
     shape.kind !== 'triangles' ||
     a.descriptor.shape.kind !== 'triangles' ||
     b.descriptor.shape.kind !== 'triangles'
-  )
+  ) {
     throw new Error('Expected triangles')
+  }
   expect(shape.uvs).toEqual([
     ...(a.descriptor.shape.uvs ?? []),
     ...(b.descriptor.shape.uvs ?? [])

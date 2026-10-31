@@ -23,13 +23,15 @@ function source(): MeshGeometry {
       [1, -1, 1],
       [1, 1, 1],
       [-1, 1, 1]
-    ])
+    ]) {
       positions.push(x + a * r, b * r, c * r)
+    }
     for (const index of [
       0, 2, 1, 0, 3, 2, 4, 5, 6, 4, 6, 7, 0, 1, 5, 0, 5, 4, 1, 2, 6, 1, 6, 5, 2,
       3, 7, 2, 7, 6, 3, 0, 4, 3, 4, 7
-    ])
+    ]) {
       indices.push(offset + index)
+    }
   }
   return {
     kind: 'mesh',
@@ -43,7 +45,9 @@ function inspect(root: MeshNode) {
   const seen = new Set<MeshNode>(),
     triangles: MeshTriangle[] = []
   const visit = (node: MeshNode): Set<number> => {
-    if (seen.has(node)) throw new Error('Repeated source node')
+    if (seen.has(node)) {
+      throw new Error('Repeated source node')
+    }
     seen.add(node)
     if (!node.children) {
       expect(node.triangles.length).toBeLessThanOrEqual(4)
@@ -82,7 +86,9 @@ it('retains each admitted nested or overlapping component as a complete source s
       roots.push(node)
       return
     }
-    if (!node.children) throw new Error('Mixed component leaf')
+    if (!node.children) {
+      throw new Error('Mixed component leaf')
+    }
     node.children.forEach(locate)
   }
   locate(grouped.root)
@@ -115,7 +121,9 @@ it('returns no partial index on cancellation and leaves original source intact',
   let calls = 0
   expect(() =>
     componentIndex(original, () => {
-      if (++calls === 5) throw new Error('cancel')
+      if (++calls === 5) {
+        throw new Error('cancel')
+      }
     })
   ).toThrow('cancel')
   expect(JSON.stringify(original)).toBe(before)

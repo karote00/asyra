@@ -21,8 +21,9 @@ const input = (): SpatialDescriptor => ({
 it('admits isolated immutable geometry once and reuses it through pose and appearance updates', () => {
   const source = input()
   const accepted = readSpatialDescriptor(source)
-  if (accepted.kind !== 'mesh' || accepted.shape.kind !== 'triangles')
+  if (accepted.kind !== 'mesh' || accepted.shape.kind !== 'triangles') {
     throw new Error('Expected triangles')
+  }
   const before = structuredClone(accepted)
   expect(Object.isFrozen(accepted)).toBe(true)
   expect(Object.isFrozen(accepted.shape.positions)).toBe(true)
@@ -37,8 +38,9 @@ it('admits isolated immutable geometry once and reuses it through pose and appea
   }
   expect(readSpatialDescriptor(accepted)).toBe(accepted)
   expect(accepted).toEqual(before)
-  if (source.kind === 'mesh' && source.shape.kind === 'triangles')
-    (source.shape.positions as number[])[0] = 999
+  if (source.kind === 'mesh' && source.shape.kind === 'triangles') {
+    ;(source.shape.positions as number[])[0] = 999
+  }
   expect(accepted.shape.positions[0]).toBe(0)
 })
 it('does not trust caller freezing and still rejects invalid geometry and changed poses', () => {
@@ -85,7 +87,9 @@ it('validates the detached values it will retain rather than earlier accessor re
 it('keeps the rigid-part whitelist while sharing neutral admission receipts', async () => {
   const neutral = await import('@asyra/preset/spatial-contract')
   const source = input()
-  if (source.kind !== 'mesh') throw new Error('Expected mesh')
+  if (source.kind !== 'mesh') {
+    throw new Error('Expected mesh')
+  }
   const accepted = readSpatialDescriptor({
     ...source,
     shape: { ...source.shape, colors: [NaN], uvs: [NaN] },
@@ -95,7 +99,9 @@ it('keeps the rigid-part whitelist while sharing neutral admission receipts', as
     roughness: NaN,
     metalness: NaN
   })
-  if (accepted.kind !== 'mesh') throw new Error('Expected mesh')
+  if (accepted.kind !== 'mesh') {
+    throw new Error('Expected mesh')
+  }
   expect(accepted).not.toHaveProperty('instances')
   expect(accepted).not.toHaveProperty('surface')
   expect(accepted.shape).not.toHaveProperty('colors')

@@ -6,16 +6,17 @@ import { meshBounds } from '../../scene/room-furnishing-helpers'
 
 for (const id of Object.keys(
   specification.sourceVariants.vessels
-) as PantryVesselId[])
+) as PantryVesselId[]) {
   it(`${id} retains closed material regions, source dimensions and bounded distant geometry`, () => {
     const parts = pantryVessel(id)
     const size = specification.sourceVariants.vessels[id].size
     const bounds = meshBounds(parts)
     expect(bounds[2][0]).toBeCloseTo(0, 6)
-    for (let axis = 0; axis < 3; axis++)
+    for (let axis = 0; axis < 3; axis++) {
       expect(bounds[axis][1] - bounds[axis][0]).toBeLessThanOrEqual(
         size[axis] + 1e-6
       )
+    }
     let triangles = 0
     for (const part of parts) {
       for (const mesh of [
@@ -44,13 +45,15 @@ for (const id of Object.keys(
         ).toBe(true)
       }
       triangles += part.mesh.indices.length / 3
-      if (part.distant)
+      if (part.distant) {
         expect(part.distant.mesh.indices.length).toBeLessThan(
           part.mesh.indices.length
         )
+      }
     }
     expect(triangles).toBeLessThan(6500)
   })
+}
 
 it('recolors a region without replacing its geometry or other appearance regions', () => {
   const original = pantryVessel('porcelain-floor-jar')
@@ -67,7 +70,9 @@ it('keeps the porcelain foot decoration clear of the rounded body surface', () =
   const band = pantryVessel('porcelain-floor-jar').find(
     (p) => p.id === 'foot-band'
   )
-  if (!band) throw new Error('Missing porcelain foot band')
+  if (!band) {
+    throw new Error('Missing porcelain foot band')
+  }
   for (let i = 0; i < band.mesh.positions.length; i += 3) {
     const [x, y, z] = band.mesh.positions.slice(i, i + 3)
     expect(z).toBeGreaterThanOrEqual(0.004)
@@ -95,23 +100,26 @@ it('assigns removable painted porcelain to the jar body without extra overlay ge
   expect(body.material).toBe('porcelain-floral')
   const zs = body.mesh.positions.filter((_, i) => i % 3 === 2)
   const top = Math.max(...zs)
-  for (let i = 0; i < zs.length; i++)
+  for (let i = 0; i < zs.length; i++) {
     expect(body.mesh.uvs[i * 2 + 1]).toBeCloseTo(zs[i] / top, 6)
+  }
 })
 
 it('retains distinct neck finishes on the two pale source canisters', () => {
-  for (const id of ['shelf-cream-jar', 'shelf-sage-jar'] as const)
+  for (const id of ['shelf-cream-jar', 'shelf-sage-jar'] as const) {
     expect(pantryVessel(id).some((p) => p.id === 'collar')).toBe(true)
+  }
 })
 
 it('retains full reference detail across all shelf vessel regions without independent decimation', () => {
   for (const id of Object.keys(specification.sourceVariants.vessels).filter(
     (id) => id.startsWith('shelf-')
-  ) as PantryVesselId[])
+  ) as PantryVesselId[]) {
     expect(
       pantryVessel(id).every((p) => p.distant === undefined),
       id
     ).toBe(true)
+  }
 })
 
 it('keeps yellow and green paper labels separate from pale and ochre contents', () => {
@@ -197,7 +205,7 @@ it('constructs the small condiment bottle as a capped container, not utensils or
     'amber body'
   )
   const middleRadii: number[] = []
-  for (let t = 0; t < amber.mesh.indices.length; t += 3)
+  for (let t = 0; t < amber.mesh.indices.length; t += 3) {
     for (let e = 0; e < 3; e++) {
       const a = amber.mesh.indices[t + e] * 3
       const b = amber.mesh.indices[t + ((e + 1) % 3)] * 3
@@ -205,8 +213,9 @@ it('constructs the small condiment bottle as a capped container, not utensils or
       if (
         p[a + 2] < 0.1 * (0.1505 / 0.255) ===
         p[b + 2] < 0.1 * (0.1505 / 0.255)
-      )
+      ) {
         continue
+      }
       const f = (0.1 * (0.1505 / 0.255) - p[a + 2]) / (p[b + 2] - p[a + 2])
       middleRadii.push(
         Math.hypot(
@@ -215,6 +224,7 @@ it('constructs the small condiment bottle as a capped container, not utensils or
         )
       )
     }
+  }
   expect(middleRadii.length).toBeGreaterThan(0)
   expect(Math.min(...middleRadii)).toBeGreaterThan(0.04 * (0.1505 / 0.255))
 })
@@ -259,7 +269,9 @@ it('separates all four clear jar shells from colored contents with visible empty
       for (let j = 1; j < profile.length; j++) {
         const [r0, z0] = profile[j - 1],
           [r1, z1] = profile[j]
-        if (z0 === z1 || z < Math.min(z0, z1) || z > Math.max(z0, z1)) continue
+        if (z0 === z1 || z < Math.min(z0, z1) || z > Math.max(z0, z1)) {
+          continue
+        }
         intersections.push(r0 + ((r1 - r0) * (z - z0)) / (z1 - z0))
       }
       expect(intersections.length).toBeGreaterThan(0)
@@ -304,7 +316,9 @@ it('gives the brown jar a recessed neck and broad flat inserted cork', () => {
   for (let i = 1; i < corkProfile.length; i++) {
     const [r0] = corkProfile[i - 1],
       [r1] = corkProfile[i]
-    if (r0 > 0 && r1 > 0) expect(Math.abs(r1 - r0)).toBeLessThan(0.006)
+    if (r0 > 0 && r1 > 0) {
+      expect(Math.abs(r1 - r0)).toBeLessThan(0.006)
+    }
   }
   const top = c[2][1]
   const flatTopRadius = Math.max(
@@ -357,7 +371,9 @@ it('maps the flat cork top in XY space without a UV seam through its center', ()
   expect(lid.mesh.uvs.every((v) => v >= 0 && v <= 1)).toBe(true)
   for (let i = 0; i < lid.mesh.positions.length / 3; i++) {
     const [x, y, z] = lid.mesh.positions.slice(i * 3, i * 3 + 3)
-    if (z !== top) continue
+    if (z !== top) {
+      continue
+    }
     expect(lid.mesh.uvs[i * 2]).toBeCloseTo(x / extent + 0.5, 6)
     expect(lid.mesh.uvs[i * 2 + 1]).toBeCloseTo(y / extent + 0.5, 6)
   }
@@ -369,19 +385,21 @@ it('sizes the fourth bottle to seventy percent of the third jar without changing
   const height = fourth[2][1] - fourth[2][0]
   expect(height).toBeCloseTo((third[2][1] - third[2][0]) * 0.7, 9)
   expect(height).toBeCloseTo(0.1505, 9)
-  for (const axis of [0, 1])
+  for (const axis of [0, 1]) {
     expect((fourth[axis][1] - fourth[axis][0]) / height).toBeCloseTo(
       0.105 / 0.255,
       9
     )
+  }
   expect(fourth[2][0]).toBeCloseTo(0, 9)
   const parts = pantryVessel('shelf-amber-jar')
   for (const [id, top] of [
     ['body', 0.236],
     ['contents', 0.153],
     ['lid', 0.255]
-  ] as const)
+  ] as const) {
     expect(
       meshBounds(parts.filter((p) => p.id === id))[2][1] / height
     ).toBeCloseTo(top / 0.255, 9)
+  }
 })

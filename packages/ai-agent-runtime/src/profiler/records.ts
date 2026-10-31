@@ -80,7 +80,9 @@ export const parseExecutionRecord = (text: string) => {
     sourceIdentityStatus: 'unavailable'
   }
   text.split('\n').forEach((line, index) => {
-    if (!line.trim()) return
+    if (!line.trim()) {
+      return
+    }
     let entry: unknown
     try {
       entry = JSON.parse(line)
@@ -103,18 +105,22 @@ export const parseExecutionRecord = (text: string) => {
     }
     requestId = entry.requestId
     if (Number.isSafeInteger(entry.sequence)) {
-      if ((entry.sequence as number) <= previousSequence)
+      if ((entry.sequence as number) <= previousSequence) {
         issues.push(`Unordered record at line ${index + 1}`)
+      }
       if (
         entry.schemaVersion === 2 &&
         (entry.sequence as number) > previousSequence + 1
-      )
+      ) {
         issues.push(`Missing sequence before line ${index + 1}`)
+      }
       previousSequence = entry.sequence as number
     } else if (entry.schemaVersion === 2) {
       issues.push(`Missing sequence at line ${index + 1}`)
     }
-    if (terminal) issues.push(`Record after settlement at line ${index + 1}`)
+    if (terminal) {
+      issues.push(`Record after settlement at line ${index + 1}`)
+    }
     records.push(entry as ExecutionRecord)
     if (entry.event === 'ai_request_started') {
       metadata = { ...metadata, ...entry }
@@ -125,19 +131,24 @@ export const parseExecutionRecord = (text: string) => {
       if (
         typeof entry.recordingFailures === 'number' &&
         entry.recordingFailures > 0
-      )
+      ) {
         issues.push(`Recording failed for ${entry.recordingFailures} events`)
+      }
       if (
         typeof entry.outcome === 'string' &&
         ['completed', 'failed', 'cancelled', 'timed_out'].includes(
           entry.outcome
         )
-      )
+      ) {
         outcome = entry.outcome
-      else issues.push('Invalid settlement outcome')
-      if (finiteTime(entry.durationMs))
+      } else {
+        issues.push('Invalid settlement outcome')
+      }
+      if (finiteTime(entry.durationMs)) {
         durationMs = Math.max(durationMs, entry.durationMs)
-      else issues.push('Missing duration')
+      } else {
+        issues.push('Missing duration')
+      }
       return
     }
     if (!finiteTime(entry.elapsedMs)) {
@@ -145,13 +156,16 @@ export const parseExecutionRecord = (text: string) => {
       return
     }
     durationMs = Math.max(durationMs, entry.elapsedMs)
-    if (typeof entry.stage !== 'string' || typeof entry.callId !== 'string')
+    if (typeof entry.stage !== 'string' || typeof entry.callId !== 'string') {
       return
+    }
     const match =
       /^(tool|action|research|provider_request|provider_item|lifecycle)_(started|execution_started|completed|failed)$/.exec(
         entry.stage
       )
-    if (!match) return
+    if (!match) {
+      return
+    }
     const kind = match[1].startsWith('provider_')
       ? 'provider'
       : (match[1] as 'tool' | 'action' | 'research' | 'lifecycle')
@@ -170,20 +184,30 @@ export const parseExecutionRecord = (text: string) => {
       steps.set(key, step)
     }
     step.evidence.push(entry.evidence)
-    if (isRecord(entry.diagnostic))
+    if (isRecord(entry.diagnostic)) {
       step.diagnostics = { ...step.diagnostics, ...entry.diagnostic }
-    if (match[2] === 'execution_started')
+    }
+    if (match[2] === 'execution_started') {
       step.executionStartedMs = entry.elapsedMs
+    }
     if (match[2] === 'started') {
-      if (step.startedMs !== null) issues.push(`Duplicate start for ${key}`)
-      else step.startedMs = entry.elapsedMs
+      if (step.startedMs !== null) {
+        issues.push(`Duplicate start for ${key}`)
+      } else {
+        step.startedMs = entry.elapsedMs
+      }
     } else if (match[2] === 'completed' || match[2] === 'failed') {
-      if (step.startedMs === null) issues.push(`Missing start for ${key}`)
-      if (step.endedMs !== null) issues.push(`Duplicate end for ${key}`)
+      if (step.startedMs === null) {
+        issues.push(`Missing start for ${key}`)
+      }
+      if (step.endedMs !== null) {
+        issues.push(`Duplicate end for ${key}`)
+      }
       step.endedMs = entry.elapsedMs
       step.status = match[2]
-      if (step.startedMs !== null && step.endedMs < step.startedMs)
+      if (step.startedMs !== null && step.endedMs < step.startedMs) {
         issues.push(`Reversed interval for ${key}`)
+      }
     }
   })
   let observedToolAndResearchMs = 0
@@ -195,8 +219,9 @@ export const parseExecutionRecord = (text: string) => {
         step.kind === 'provider' ||
         step.kind === 'action' ||
         step.startedMs === null
-      )
+      ) {
         return []
+      }
       return [[step.startedMs, step.endedMs ?? durationMs]]
     })
     .sort((a, b) => a[0] - b[0])
@@ -210,17 +235,23 @@ export const parseExecutionRecord = (text: string) => {
   const breakdown = partitionExecutionTime([...steps.values()], durationMs)
   if (metadata.lifecycleVersion === 1) {
     const root = steps.get('lifecycle:request-lifecycle')
-    if (!root || root.startedMs !== 0 || root.endedMs !== durationMs)
+    if (!root || root.startedMs !== 0 || root.endedMs !== durationMs) {
       issues.push('Missing or incomplete request lifecycle boundary')
-    for (const step of steps.values())
-      if (step.kind === 'lifecycle' && step.status === 'incomplete')
+    }
+    for (const step of steps.values()) {
+      if (step.kind === 'lifecycle' && step.status === 'incomplete') {
         issues.push(`Incomplete lifecycle span ${step.callId}`)
-    if (breakdown.unattributedMs > 0)
+      }
+    }
+    if (breakdown.unattributedMs > 0) {
       issues.push('Uncovered lifecycle interval')
+    }
   }
-  for (const step of steps.values())
-    if (step.kind !== 'lifecycle' && step.status === 'incomplete')
+  for (const step of steps.values()) {
+    if (step.kind !== 'lifecycle' && step.status === 'incomplete') {
       issues.push(`Incomplete ${step.kind} span ${step.callId}`)
+    }
+  }
   return {
     requestId: requestId as string | null,
     outcome,

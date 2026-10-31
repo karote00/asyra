@@ -18,11 +18,14 @@ async function runSelected(
   caseId,
   projectName = undefined
 ) {
-  if (!process.env.FLOW_FILE_DIRECTORY)
+  if (!process.env.FLOW_FILE_DIRECTORY) {
     throw new Error('Select a current flow directory first')
+  }
   const contract = loadContract(root, undefined, manifestPath),
     candidate = contract.cases.find((c) => c.id === caseId)
-  if (!candidate) throw new Error('Unknown mapped case')
+  if (!candidate) {
+    throw new Error('Unknown mapped case')
+  }
   projectName = projectName ?? candidate.projectName ?? ''
   const testFile = candidate.testFile ?? contract.testFile
   const command = selectedCommand(root, {
@@ -72,7 +75,9 @@ async function runSelected(
       ...command.args
     ]
     args[args.indexOf('--config') + 1] = config
-    if (!isPlaywright) args.push('--outputFile', report)
+    if (!isPlaywright) {
+      args.push('--outputFile', report)
+    }
     const env = {
       ...process.env,
       PLAYWRIGHT_JSON_OUTPUT_FILE: report,
@@ -102,14 +107,17 @@ async function runSelected(
         executionConfig,
         request
       )
-    } else
+    } else {
       context = localization.beginObservation(root, {
         manifestPaths: [manifestPath],
         command: commandRecord,
         request
       })
+    }
 
-    if (isPlaywright) env.FLOW_OBSERVATION_ID = context.id
+    if (isPlaywright) {
+      env.FLOW_OBSERVATION_ID = context.id
+    }
     let completed
     const result = await runProcess({
       executable: process.execPath,
@@ -121,19 +129,22 @@ async function runSelected(
       timeoutMs: 110000,
       maxOutputBytes: 262144
     })
-    if (isPlaywright)
+    if (isPlaywright) {
       completed = playwright.complete(root, path.relative(root, report))
-    else {
+    } else {
       let parsed = null
       const errors = []
       try {
-        if (fs.statSync(report).size > 16 * 1024 * 1024)
+        if (fs.statSync(report).size > 16 * 1024 * 1024) {
           throw new Error('Report exceeds 16 MiB')
+        }
         parsed = JSON.parse(fs.readFileSync(report, 'utf8'))
       } catch (error) {
         errors.push(error.message)
       }
-      if (result.reason) errors.push(result.reason)
+      if (result.reason) {
+        errors.push(result.reason)
+      }
       let normalized = {
         report: parsed,
         options: {
@@ -168,7 +179,7 @@ async function runSelected(
     fs.rmSync(temporary, { recursive: true, force: true })
   }
 }
-if (require.main === module)
+if (require.main === module) {
   runSelected(process.cwd(), ...process.argv.slice(2))
     .then((code) => {
       process.exitCode = code
@@ -177,4 +188,5 @@ if (require.main === module)
       console.error(error.message)
       process.exitCode = 1
     })
+}
 module.exports = { runSelected }

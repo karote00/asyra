@@ -70,8 +70,9 @@ function supportValueAt(
 ): Interval {
   const g = shape.geometry
   let extent: Interval
-  if (g.kind === 'mesh')
+  if (g.kind === 'mesh') {
     throw new Error('A complete mesh cannot be queried as a convex surrogate')
+  }
   if (g.kind === 'triangle') {
     const values =
       triangleValues ??
@@ -80,16 +81,17 @@ function supportValueAt(
       Math.max(...values.map((value) => value[0])),
       Math.max(...values.map((value) => value[1]))
     )
-  } else if (g.kind === 'box')
+  } else if (g.kind === 'box') {
     extent = local.reduce(
       (sum, value, index) =>
         iadd(sum, imul(iabs(value), interval(g.size[index] / 2))),
       interval(0)
     )
-  else {
+  } else {
     extent = imul(interval(g.radius), radialNorm ?? ops.norm(local))
-    if (g.kind === 'capsule')
+    if (g.kind === 'capsule') {
       extent = iadd(extent, imul(interval(g.length / 2), iabs(local[1])))
+    }
   }
   return iadd(ops.dot(world, shape.pose.position), extent)
 }
@@ -132,28 +134,30 @@ function supportPoint(
       evaluation?.local ?? inverseDirection(shape, ops.vector(direction)),
     g = shape.geometry
   let point: Vector<Interval>
-  if (g.kind === 'mesh')
+  if (g.kind === 'mesh') {
     throw new Error('A complete mesh cannot be queried as a convex surrogate')
+  }
   if (g.kind === 'triangle') {
     const scores = evaluation?.triangleValues
       ? evaluation.triangleValues.map(imid)
       : g.vertices.map((point) => imid(ops.dot(local, ops.vector(point))))
     point = ops.vector(g.vertices[scores.indexOf(Math.max(...scores))])
-  } else if (g.kind === 'box')
+  } else if (g.kind === 'box') {
     point = [0, 1, 2].map((index) =>
       interval(((imid(local[index]) < 0 ? -1 : 1) * g.size[index]) / 2)
     ) as unknown as Vector<Interval>
-  else {
+  } else {
     const norm = evaluation?.radialNorm ?? ops.norm(local)
     point =
       norm[0] > 0
         ? ops.scale(local, idiv(interval(g.radius), norm))
         : ops.vector([0, 0, 0])
-    if (g.kind === 'capsule')
+    if (g.kind === 'capsule') {
       point = ops.add(
         point,
         ops.vector([0, ((imid(local[1]) < 0 ? -1 : 1) * g.length) / 2, 0])
       )
+    }
   }
   return ops.add(shape.pose.position, ops.rotate(shape.pose.rotation, point))
 }
@@ -183,17 +187,27 @@ function solve(matrix: number[][], rhs: number[]): number[] | null {
     rows = matrix.map((row, index) => [...row, rhs[index]])
   for (let col = 0; col < n; col++) {
     let pivot = col
-    for (let row = col + 1; row < n; row++)
-      if (Math.abs(rows[row][col]) > Math.abs(rows[pivot][col])) pivot = row
-    if (Math.abs(rows[pivot][col]) < 1e-30) return null
+    for (let row = col + 1; row < n; row++) {
+      if (Math.abs(rows[row][col]) > Math.abs(rows[pivot][col])) {
+        pivot = row
+      }
+    }
+    if (Math.abs(rows[pivot][col]) < 1e-30) {
+      return null
+    }
     ;[rows[col], rows[pivot]] = [rows[pivot], rows[col]]
     const denominator = rows[col][col]
-    for (let k = col; k <= n; k++) rows[col][k] /= denominator
-    for (let row = 0; row < n; row++)
+    for (let k = col; k <= n; k++) {
+      rows[col][k] /= denominator
+    }
+    for (let row = 0; row < n; row++) {
       if (row !== col) {
         const multiplier = rows[row][col]
-        for (let k = col; k <= n; k++) rows[row][k] -= multiplier * rows[col][k]
+        for (let k = col; k <= n; k++) {
+          rows[row][k] -= multiplier * rows[col][k]
+        }
       }
+    }
   }
   const values = rows.map((row) => row[n])
   return values.every(Number.isFinite) ? values : null
@@ -213,7 +227,9 @@ function closest(vertices: Vertex[]): Simplex {
     bestSquared = dot(best.point, best.point)
   for (let mask = 1; mask < 1 << vertices.length; mask++) {
     const subset = vertices.filter((_, index) => mask & (1 << index))
-    if (subset.length > 4) continue
+    if (subset.length > 4) {
+      continue
+    }
     const anchor = subset[0].point,
       edges = subset.slice(1).map((v) => subtract(v.point, anchor))
     const weights = edges.length
@@ -222,12 +238,16 @@ function closest(vertices: Vertex[]): Simplex {
           edges.map((edge) => -dot(edge, anchor))
         )
       : []
-    if (!weights) continue
+    if (!weights) {
+      continue
+    }
     const barycentric = [
       1 - weights.reduce((sum, value) => sum + value, 0),
       ...weights
     ]
-    if (barycentric.some((value) => value < 0 || value > 1)) continue
+    if (barycentric.some((value) => value < 0 || value > 1)) {
+      continue
+    }
     const point = subset.reduce<Vec3>(
       (sum, v, index) => add(sum, scale(v.point, barycentric[index])),
       [0, 0, 0]
@@ -242,7 +262,9 @@ function closest(vertices: Vertex[]): Simplex {
 }
 
 function interior(vertices: readonly Vertex[]): boolean {
-  if (vertices.length !== 4) return false
+  if (vertices.length !== 4) {
+    return false
+  }
   for (let opposite = 0; opposite < 4; opposite++) {
     const face = vertices
       .filter((_, index) => index !== opposite)
@@ -259,8 +281,9 @@ function interior(vertices: readonly Vertex[]): boolean {
     if (!(
       (originSide[0] > 0 && insideSide[0] > 0) ||
       (originSide[1] < 0 && insideSide[1] < 0)
-    ))
+    )) {
       return false
+    }
   }
   return true
 }
@@ -290,7 +313,9 @@ export function separationLowerBound(
   axis: Vec3
 ): number {
   const norm = ops.norm(ops.vector(axis))
-  if (norm[0] <= 0) return 0
+  if (norm[0] <= 0) {
+    return 0
+  }
   const support = iadd(supportValue(a, axis), supportValue(b, scale(axis, -1)))
   return Math.max(0, idiv(ineg(support), norm)[0])
 }
@@ -307,10 +332,13 @@ export function convexDistance(
     !Number.isInteger(maxIterations) ||
     maxIterations < 1 ||
     maxIterations > 256
-  )
+  ) {
     throw new Error('Invalid convex query budget')
+  }
   let axis = subtract(midpoint(b.pose.position), midpoint(a.pose.position))
-  if (magnitude(axis) < 1e-12) axis = [1, 0, 0]
+  if (magnitude(axis) < 1e-12) {
+    axis = [1, 0, 0]
+  }
   let simplex: Simplex = {
     vertices: [vertex(a, b, axis)],
     weights: [1],
@@ -330,7 +358,7 @@ export function convexDistance(
       witnessA = wa
       witnessB = wb
     }
-    if (interior(simplex.vertices))
+    if (interior(simplex.vertices)) {
       return {
         lower: 0,
         upper: 0,
@@ -341,6 +369,7 @@ export function convexDistance(
         witnessA: wa,
         witnessB: wb
       }
+    }
     axis = scale(simplex.point, -1)
     if (magnitude(axis) < 1e-12) {
       // A zero search point is not a contact proof. Try independent spanning
@@ -361,12 +390,16 @@ export function convexDistance(
       let enclosed = false
       // A lower-dimensional simplex can cross the origin without furnishing a
       // strict interior proof. Expand symmetrically, then certify a full simplex.
-      for (let i = 0; i < points.length - 3 && !enclosed; i++)
-        for (let j = i + 1; j < points.length - 2 && !enclosed; j++)
-          for (let k = j + 1; k < points.length - 1 && !enclosed; k++)
-            for (let l = k + 1; l < points.length && !enclosed; l++)
+      for (let i = 0; i < points.length - 3 && !enclosed; i++) {
+        for (let j = i + 1; j < points.length - 2 && !enclosed; j++) {
+          for (let k = j + 1; k < points.length - 1 && !enclosed; k++) {
+            for (let l = k + 1; l < points.length && !enclosed; l++) {
               enclosed = interior([points[i], points[j], points[k], points[l]])
-      if (enclosed)
+            }
+          }
+        }
+      }
+      if (enclosed) {
         return {
           lower: 0,
           upper: 0,
@@ -377,6 +410,7 @@ export function convexDistance(
           witnessA,
           witnessB
         }
+      }
       return {
         lower,
         upper,
@@ -401,9 +435,10 @@ export function convexDistance(
             )
           : 0
     lower = Math.max(lower, bound)
-    if (lower > upper)
+    if (lower > upper) {
       throw new Error('Inconsistent convex distance certificates')
-    if (upper - lower <= tolerance)
+    }
+    if (upper - lower <= tolerance) {
       return {
         lower,
         upper,
@@ -414,6 +449,7 @@ export function convexDistance(
         witnessA,
         witnessB
       }
+    }
     const next = vertex(a, b, axis, supportA, supportB)
     simplex = closest([...simplex.vertices, next])
   }

@@ -141,7 +141,9 @@ describe('reference scene session lifetime', () => {
       mocks.owner.registerInputKeyCombinations.mock.calls[0][0]
     )
     const onInput = registration[0].callback
-    if (!onInput) throw new Error('Missing input callback')
+    if (!onInput) {
+      throw new Error('Missing input callback')
+    }
     const start = performance.now()
     onInput({
       type: InputType.KEYBOARD,

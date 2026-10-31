@@ -175,7 +175,9 @@ function setup(
     isCurrentMission: (value) => value === receipt
   })
   const target = receipt.scene.fruits[0]
-  if (!target) throw new Error('Missing actual crop target')
+  if (!target) {
+    throw new Error('Missing actual crop target')
+  }
   const reading = (): TargetReading => ({
     kind: 'target',
     source: 'synthetic-injected',
@@ -301,10 +303,11 @@ it('validates the detached snapshot once and checks explicit validity and target
     { stem: { targetId: 'neighbor', recognized: true, cutSite: null } }
   ]
   const snapshot = f.session.getSnapshot()
-  for (const patch of cases)
+  for (const patch of cases) {
     expect(() =>
       f.observations.admit(f.context(), { ...f.reading(), ...patch })
     ).toThrow()
+  }
   expect(f.session.getSnapshot() === snapshot).toBe(true)
 })
 
@@ -442,7 +445,9 @@ function actionObservation(extra?: SiteMesh) {
     },
     sourceOwner
   )
-  if (!demand.route) throw new Error('Missing source route')
+  if (!demand.route) {
+    throw new Error('Missing source route')
+  }
   const screen = new WalkingTransitScreen((value) => value === demand)
   const dynamics = new SyntheticDynamicSceneOwner()
   const world = {
@@ -569,7 +574,9 @@ it('declared synthetic sight volume below route height is obstacle-inventory evi
   expect(result.detections).toEqual([])
   expect(result.work.sightQueries).toBe(1)
   const space = walking.getSpace()
-  if (!space) throw new Error('Missing lazy obstacle inventory')
+  if (!space) {
+    throw new Error('Missing lazy obstacle inventory')
+  }
   expect(space.provenance).toBe('w1-canonical-obstacles/1')
   expect(
     space.sources.some(
@@ -617,13 +624,14 @@ it('keeps lighting, frustum, source domain and budget failures non-complete', ()
     { ...f.request.optics, shadowFraction: 1 },
     { ...f.request.optics, glare: 0.5 },
     { ...f.request.optics, weatherTransmission: null }
-  ])
+  ]) {
     expect(
       f.observations.observeActionVolume(f.context(), f.demand, {
         ...f.request,
         optics
       }).coverage
     ).not.toBe('complete-empty')
+  }
   expect(
     f.observations.observeActionVolume(f.context(), f.demand, {
       ...f.request,
@@ -694,15 +702,21 @@ it('observes a foreground person outside the action box without turning a stoppe
 
 it('retains actual authored leaf ray identity for a foreground source outside the action box', () => {
   const f = actionObservation()
-  if (!f.demand.route) throw new Error('Missing source route')
+  if (!f.demand.route) {
+    throw new Error('Missing source route')
+  }
   const route = f.demand.route.volume
   const selected = f.demand.freePassage.exclusions.flatMap((item) => {
-    if (item.kind !== 'source') return []
+    if (item.kind !== 'source') {
+      return []
+    }
     const patch = item.mesh.sourceAnatomy?.patches.find(
       (p) => p.role === 'leaf-blade' && p.source.region === item.region
     )
     const mesh = f.source.meshes.find((m) => m.origin === item.mesh)
-    if (!patch || !mesh || mesh.shape.kind !== 'triangles') return []
+    if (!patch || !mesh || mesh.shape.kind !== 'triangles') {
+      return []
+    }
     const shape = mesh.shape,
       start = patch.source.ranges[0].indexStart
     const points = [0, 1, 2].map((i) =>
@@ -723,15 +737,18 @@ it('retains actual authored leaf ray identity for a foreground source outside th
       !centre.every(
         (v, axis) => v > route.min[axis] + 0.05 && v < route.max[axis] - 0.05
       )
-    )
+    ) {
       return []
+    }
     const normal = new Vector3(...points[1])
       .sub(new Vector3(...points[0]))
       .cross(new Vector3(...points[2]).sub(new Vector3(...points[0])))
       .normalize()
     return normal.length() ? [{ item, patch, mesh, centre, normal }] : []
   })[0]
-  if (!selected) throw new Error('Missing actual interior leaf source')
+  if (!selected) {
+    throw new Error('Missing actual interior leaf source')
+  }
   const { centre, normal } = selected
   const origin = new Vector3(...centre).addScaledVector(normal, 0.02)
   const target = new Vector3(...centre).addScaledVector(normal, -0.01)
@@ -764,8 +781,9 @@ it('retains actual authored leaf ray identity for a foreground source outside th
     (d) => d.kind === 'static' && d.anatomy.some((p) => p.role === 'leaf-blade')
   )
   expect(visible).toBeDefined()
-  if (!visible || visible.kind !== 'static')
+  if (!visible || visible.kind !== 'static') {
     throw new Error('Missing canonical leaf witness')
+  }
   expect(visible.mesh.origin).toBe(selected.item.mesh)
   expect(visible.region).toBe(selected.item.region)
   expect(visible.instance).toBe(selected.item.instance)
@@ -786,7 +804,9 @@ it('retains actual authored leaf ray identity for a foreground source outside th
   let scans = 0
   const scan = vi.spyOn(Array.prototype, 'includes')
   scan.mockImplementation(function (this: readonly unknown[], value, from) {
-    if (this === source.meshes) scans++
+    if (this === source.meshes) {
+      scans++
+    }
     return includes.call(this, value, from)
   })
   try {
@@ -1105,7 +1125,9 @@ it('observes actual near target surfaces from inside the greenhouse with separat
     (item) => item.status === 'visible'
   )) {
     expect(sample.ray?.status).toBe('hit')
-    if (sample.ray?.status !== 'hit') throw new Error('Missing actual hit')
+    if (sample.ray?.status !== 'hit') {
+      throw new Error('Missing actual hit')
+    }
     expect(
       sample.ray.mesh.plants?.[sample.ray.instance] === f.target.plant
     ).toBe(true)
@@ -1162,21 +1184,23 @@ it('rejects malformed budgets, sparse cameras and historical pose requests befor
   const f = setup(),
     query = vi.spyOn(RayQueries.prototype, 'query')
   try {
-    for (const count of [0, 65, NaN, 1.5])
+    for (const count of [0, 65, NaN, 1.5]) {
       expect(() =>
         f.observations.view(f.context(), {
           ...viewpoint(f),
           samplesPerTarget: count
         })
       ).toThrow()
+    }
     for (const targetIds of [
       [f.target.id, f.target.id],
       ['missing'],
       new Array(1) as string[]
-    ])
+    ]) {
       expect(() =>
         f.observations.view(f.context(), { ...viewpoint(f), targetIds })
       ).toThrow()
+    }
     const sparse = viewpoint(f)
     sparse.camera.pose = {
       position: new Array(3) as [number, number, number],
@@ -1297,7 +1321,9 @@ it('keeps behind-sample and overlapping non-target provider witnesses unknown', 
   const f = setup(),
     input = viewpoint(f)
   const baseline = f.observations.view(f.context(), input)
-  if (!baseline.rays) throw new Error('Missing real provider batch')
+  if (!baseline.rays) {
+    throw new Error('Missing real provider batch')
+  }
   const query = vi.spyOn(RayQueries.prototype, 'query')
   try {
     // Direct consumer oracle: explicitly supply possible certified provider
@@ -1307,8 +1333,9 @@ it('keeps behind-sample and overlapping non-target provider witnesses unknown', 
       query.mockReturnValue({
         ...baseline.rays,
         results: baseline.samples.map((sample) => {
-          if (sample.ray?.status !== 'hit')
+          if (sample.ray?.status !== 'hit') {
             throw new Error('Missing actual film witness')
+          }
           const low =
             kind === 'behind'
               ? sample.sampleDistance.high + 1
@@ -1373,8 +1400,9 @@ it('freezes owned viewpoint output without freezing the composition context', ()
     result.samples[0].sampleDistance,
     result.coverage,
     result.work
-  ])
+  ]) {
     expect(Object.isFrozen(owned)).toBe(true)
+  }
 })
 
 it('requires explicit distal pedicel evidence instead of accepting an old transient shape', () => {
@@ -1405,7 +1433,9 @@ function qualityReading(
   const target = f.source.fruits.find(
     (fruit) => fruit.plant.species === cultivar
   )
-  if (!target) throw new Error('Missing declared crop fixture')
+  if (!target) {
+    throw new Error('Missing declared crop fixture')
+  }
   return {
     ...f.reading(),
     targetId: target.id,
@@ -1576,8 +1606,9 @@ it('bounded walking sources require actual rays and retain canonical mesh region
   expect(result.work.candidateVisits).toBeGreaterThan(0)
   expect(result.work.rayTriangles).toBeGreaterThan(0)
   const hit = result.detections.find((value) => value.kind === 'static')
-  if (!hit || hit.kind !== 'static')
+  if (!hit || hit.kind !== 'static') {
     throw new Error('Missing canonical sheet ray witness')
+  }
   expect(hit.mesh.origin).toBe(f.scene.meshes[0])
   expect(hit.region).toBe(f.scene.meshes[0].regions[0])
   expect(hit.instance).toBe(0)

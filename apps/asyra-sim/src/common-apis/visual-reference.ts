@@ -16,27 +16,34 @@ export function readCapturedVisualBindingGroups(
     !isPlainRecord(document.sceneTree) ||
     !isPlainRecord(document.sceneTree.elements) ||
     !isPlainRecord(document.props)
-  )
+  ) {
     throw new Error('Invalid canonical capture for visual sources')
+  }
   const elements = document.sceneTree.elements
   const groups = new Map<string, VisualBinding[]>()
   const owner = (body: Readonly<Record<string, unknown>>): string => {
     const visited = new Set([body.id])
     let parentId = body.parentId
     while (typeof parentId === 'string') {
-      if (visited.has(parentId))
+      if (visited.has(parentId)) {
         throw new Error('Canonical visual ownership cycle')
+      }
       visited.add(parentId)
       const parent = elements[parentId]
-      if (!isPlainRecord(parent)) break
-      if (parent.type === ComponentTypes.CANDIDATE) return parentId
+      if (!isPlainRecord(parent)) {
+        break
+      }
+      if (parent.type === ComponentTypes.CANDIDATE) {
+        return parentId
+      }
       parentId = parent.parentId
     }
     throw new Error('Visual body has no canonical candidate owner')
   }
   for (const element of Object.values(elements)) {
-    if (!isPlainRecord(element) || element.type !== ComponentTypes.BODY)
+    if (!isPlainRecord(element) || element.type !== ComponentTypes.BODY) {
       continue
+    }
     const propertyId = isPlainRecord(element.props)
       ? element.props[PropertyNames.BODY]
       : undefined
@@ -45,10 +52,15 @@ export function readCapturedVisualBindingGroups(
     const parameters = isPlainRecord(property)
       ? property[PropertyFields.BODY]
       : undefined
-    if (!isPlainRecord(parameters) || parameters.visuals === undefined) continue
-    if (!validVisualBindings(parameters.visuals))
+    if (!isPlainRecord(parameters) || parameters.visuals === undefined) {
+      continue
+    }
+    if (!validVisualBindings(parameters.visuals)) {
       throw new Error('Invalid canonical visual bindings')
-    if (!parameters.visuals.length) continue
+    }
+    if (!parameters.visuals.length) {
+      continue
+    }
     const candidateId = owner(element),
       bindings = groups.get(candidateId) ?? []
     bindings.push(...structuredClone(parameters.visuals))
@@ -63,8 +75,9 @@ export function readCapturedVisualAssetIds(
   document: unknown
 ): readonly string[] {
   const ids = new Set<string>()
-  for (const bindings of readCapturedVisualBindingGroups(document).values())
+  for (const bindings of readCapturedVisualBindingGroups(document).values()) {
     bindings.forEach((binding) => ids.add(binding.assetId))
+  }
   return Object.freeze([...ids])
 }
 
@@ -78,7 +91,9 @@ export function setBodyVisuals(
   const body = readWorkcell(core, candidateId).bodies.find(
     (body) => body.id === bodyId
   )
-  if (!body) throw new Error('Missing body for visual binding')
+  if (!body) {
+    throw new Error('Missing body for visual binding')
+  }
   upsertBody(
     core,
     candidateId,
@@ -98,7 +113,9 @@ export function upsertVisualBinding(
   const body = readWorkcell(core, candidateId).bodies.find(
     (body) => body.id === bodyId
   )
-  if (!body) throw new Error('Missing body for visual binding')
+  if (!body) {
+    throw new Error('Missing body for visual binding')
+  }
   const current = body.visuals ?? []
   const visuals = current.some((value) => value.id === binding.id)
     ? current.map((value) => (value.id === binding.id ? binding : value))

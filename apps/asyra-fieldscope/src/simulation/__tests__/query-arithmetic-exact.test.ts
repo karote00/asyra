@@ -17,7 +17,9 @@ interface Fraction {
 // Decode the original binary value; never use floating arithmetic to compute
 // the expected sum/product/quotient or an epsilon to accept an incorrect bound.
 function fraction(value: number): Fraction {
-  if (!Number.isFinite(value)) throw new Error('Expected finite oracle input')
+  if (!Number.isFinite(value)) {
+    throw new Error('Expected finite oracle input')
+  }
   const buffer = new DataView(new ArrayBuffer(8))
   buffer.setFloat64(0, value)
   const bits = buffer.getBigUint64(0)
@@ -86,7 +88,7 @@ function checkCorners(left: Interval, right: Interval) {
         },
         `multiply ${label}`
       )
-      if (b !== 0)
+      if (b !== 0) {
         enclosed(
           divide(left, right),
           {
@@ -95,6 +97,7 @@ function checkCorners(left: Interval, right: Interval) {
           },
           `divide ${label}`
         )
+      }
     }
   }
 }
@@ -130,8 +133,9 @@ it('encloses exact corner extrema of reproducible full-exponent nonpoint interva
 
 it('encloses reproducible binary operands before interval width can mask rounding errors', () => {
   const values = samples()
-  for (let i = 0; i < values.length; i += 2)
+  for (let i = 0; i < values.length; i += 2) {
     checkCorners(interval(values[i]), interval(values[i + 1]))
+  }
 })
 
 it('encloses cancellation, signed underflow and finite-input overflow without invalid infinite bounds', () => {
@@ -165,8 +169,9 @@ it('encloses cancellation, signed underflow and finite-input overflow without in
       { low: -1 - Number.EPSILON, high: -1 },
       { low: -tiny, high: tiny }
     ]
-  ])
+  ]) {
     checkCorners(left, right)
+  }
 })
 
 it('keeps generically exact cancellation and representable subnormal results as point intervals', () => {

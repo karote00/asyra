@@ -22,8 +22,9 @@ export function validateAcceptanceExpression(
       depth > ACCEPTANCE_LIMITS.depth ||
       ++nodes > ACCEPTANCE_LIMITS.nodes ||
       ancestors.has(value)
-    )
+    ) {
       throw new Error('Invalid or over-budget acceptance expression')
+    }
     if (value.kind === 'clearance') {
       if (
         !hasExactOwnKeys(value, ['kind', 'operator', 'value']) ||
@@ -32,26 +33,33 @@ export function validateAcceptanceExpression(
         !Number.isFinite(value.value) ||
         value.value < 0 ||
         value.value > 20
-      )
+      ) {
         throw new Error('Invalid acceptance clearance predicate')
+      }
     } else if (value.kind === 'penetration') {
       if (
         !hasExactOwnKeys(value, ['kind', 'expected']) ||
         (value.expected !== 'present' && value.expected !== 'absent')
-      )
+      ) {
         throw new Error('Invalid acceptance penetration predicate')
+      }
     } else if (value.kind === 'all' || value.kind === 'any') {
       if (
         !hasExactOwnKeys(value, ['kind', 'conditions']) ||
         !Array.isArray(value.conditions) ||
         value.conditions.length < 2 ||
         value.conditions.length > ACCEPTANCE_LIMITS.children
-      )
+      ) {
         throw new Error('Invalid acceptance group')
+      }
       ancestors.add(value)
-      for (const child of value.conditions) visit(child, depth + 1)
+      for (const child of value.conditions) {
+        visit(child, depth + 1)
+      }
       ancestors.delete(value)
-    } else throw new Error('Unsupported acceptance predicate')
+    } else {
+      throw new Error('Unsupported acceptance predicate')
+    }
   }
   visit(input, 1)
 }

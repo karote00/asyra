@@ -1,7 +1,7 @@
 
 const freeze = (value) => {
   if (!value || typeof value !== 'object' || Object.isFrozen(value))
-    return value
+    {return value}
   Object.values(value).forEach(freeze)
   return Object.freeze(value)
 }
@@ -157,15 +157,15 @@ const data = {
       title: 'Isolate selected target',
       ownerPackage: 'tools/flow-inspector/workspace',
       purpose:
-        'Navigate a dedicated target iframe so every selection receives a fresh document and global scope.',
+        'Mount the selected contract in a keyed React subtree with independent selection and subscription lifetime.',
       inputs: ['artifact:selected-workspace-route'],
       outputs: ['artifact:isolated-target-document'],
       conditions: [
         'Selected id resolves to one included bundle entry.',
-        'Target query and hash ids match before rendering.'
+        'The current route resolves before React receives the selected data.'
       ],
-      bypasses: ['Overview creates no target document.'],
-      allowedContributors: ['selected catalog entry', 'target iframe'],
+      bypasses: ['Overview mounts no target presentation.'],
+      allowedContributors: ['selected catalog entry', 'React composition'],
       forbiddenContributors: [
         'parent DOM as target authority',
         'previous target globals'
@@ -174,10 +174,8 @@ const data = {
       implementationBoundary: [
         'tools/flow-inspector/src/App.tsx',
         'tools/flow-inspector/src/routing.ts',
-        'tools/flow-inspector/workspace/target.html',
-        'tools/flow-inspector/workspace/target.js',
         'tools/flow-inspector/src/__tests__/workspace.test.tsx',
-        'tools/flow-inspector/workspace/__tests__/workspace.test.cjs'
+        'tools/flow-inspector/workspace/__tests__/react-workspace.contract.test.cjs'
       ],
       specRefs: ['#routing-and-isolation'],
       failureOwnerStepId: 'isolate-selected-target'
@@ -189,58 +187,55 @@ const data = {
       title: 'Render selected contract',
       ownerPackage: 'tools/flow-inspector',
       purpose:
-        'Render v2 targets with the shared viewer and label legacy compatibility data without inventing semantics.',
+        'Render v2 architectures and explicitly registered contract documents in React without inventing semantics.',
       inputs: [
         'artifact:isolated-target-document',
         'artifact:workspace-browser-snapshot',
-        'optional flowfitrequest with rendered step IDs'
+        'optional controlled focus request with rendered step IDs'
       ],
       outputs: ['artifact:rendered-static-inspector'],
       conditions: [
         'Renderer kind follows catalog classification.',
-        'Command+1 restores All lanes and fits every card with at least 24 screen CSS pixels to the viewport outer border, exact on the limiting axis; fit-all may exceed manual scale limits. Page-delivered Command keys include editable focus; Shift+1/0 exclude editable controls and provide alternatives to browser-reserved shortcuts. Visible fit/reset buttons and authenticated parent command messages share the same operation owner. Native disclosure summaries retain visible markers, hover and focus affordances. Command+0 clears fit translation and resets scale. Card geometry stays unchanged.',
+        'Command+1 restores All lanes and fits every card with at least 24 screen CSS pixels to the viewport outer border, exact on the limiting axis; fit-all may exceed manual scale limits. Page-delivered Command keys include editable focus; Shift+1/0 exclude editable controls and provide alternatives to browser-reserved shortcuts. Visible fit/reset buttons use the same React viewport owner. Native disclosure summaries retain visible markers, hover and focus affordances. Command+0 clears fit translation and resets scale. Card geometry stays unchanged.',
         'Fit requests frame rendered cards through the existing zoom owner with padding and reveal the canvas, bounded from 20% to 100%; absent cards do not change the viewport. Manual zoom and reset remain available. No execution state enters this owner.',
         'Document, source, and related Inspector links preserve authored destinations and open in an isolated new tab without replacing the canvas.'
       ],
       bypasses: [
         'Invalid targets render an explicit error instead of fallback.'
       ],
-      allowedContributors: ['shared v2 renderer', 'legacy read-only renderer'],
+      allowedContributors: ['React architecture view', 'React contract document'],
       forbiddenContributors: ['schema coercion', 'execution state'],
       cacheDimensions: [],
       implementationBoundary: [
-        'tools/flow-inspector/viewer.js',
-        'tools/flow-inspector/viewer.css',
-        'tools/flow-inspector/workspace/legacy-viewer.js',
-        'tools/flow-inspector/workspace/target.js',
-        'tools/flow-inspector/workspace/__tests__/workspace.test.cjs'
+        'tools/flow-inspector/src/architecture/',
+        'tools/flow-inspector/src/architecture/styles.css',
+        'tools/flow-inspector/src/ContractDocument.tsx',
+        'tools/flow-inspector/workspace/__tests__/react-workspace.contract.test.cjs'
       ],
       specRefs: ['#ownership', '#supported-behavior', '#unsupported-behavior'],
       failureOwnerStepId: 'render-selected-contract'
     },
     {
-      id: 'preserve-standalone-entries',
+      id: 'verify-react-delivery',
       order: 7,
       laneId: 'verification',
-      title: 'Preserve standalone entries',
+      title: 'Verify React delivery',
       ownerPackage: 'tools/flow-inspector',
       purpose:
-        'Keep existing target HTML entries directly openable and synchronized with the shared renderer.',
+        'Deliver the shared React build through supported workspace and service entrypoints with no parallel renderer.',
       inputs: ['artifact:rendered-static-inspector'],
-      outputs: ['artifact:standalone-compatibility-proof'],
-      conditions: ['Every retained standalone entry passes its existing gate.'],
-      bypasses: [
-        'A source without an existing standalone entry creates no compatibility claim.'
-      ],
-      allowedContributors: ['existing target HTML', 'shared snapshot embedder'],
-      forbiddenContributors: ['workspace dependency in standalone entries'],
+      outputs: ['artifact:react-delivery-proof'],
+      conditions: ['React build, package and served-entry tests pass.'],
+      bypasses: ['Removed standalone URLs have no compatibility redirect.'],
+      allowedContributors: ['Vite build', 'React mount documents'],
+      forbiddenContributors: ['embedded renderer snapshots', 'iframe adapters'],
       cacheDimensions: [],
       implementationBoundary: [
-        'tools/flow-inspector/embed-viewer.cjs',
-        'tools/flow-inspector/__tests__/viewer-entry.test.cjs'
+        'tools/flow-inspector/vite.config.ts',
+        'tools/flow-inspector/__tests__/react-delivery.test.cjs'
       ],
       specRefs: ['#definition-of-done'],
-      failureOwnerStepId: 'preserve-standalone-entries'
+      failureOwnerStepId: 'verify-react-delivery'
     },
     {
       id: 'verify-static-preview',
@@ -253,7 +248,7 @@ const data = {
       inputs: [
         'artifact:workspace-browser-snapshot',
         'artifact:rendered-static-inspector',
-        'artifact:standalone-compatibility-proof'
+        'artifact:react-delivery-proof'
       ],
       outputs: ['artifact:verified-static-workspace-preview'],
       conditions: [
@@ -270,7 +265,7 @@ const data = {
       cacheDimensions: [],
       implementationBoundary: [
         'tools/flow-inspector/workspace/__tests__/catalog.contract.test.cjs',
-        'tools/flow-inspector/workspace/__tests__/workspace.test.cjs',
+        'tools/flow-inspector/workspace/__tests__/react-workspace.contract.test.cjs',
         'tools/flow-inspector/src/__tests__/workspace.test.tsx',
         'tools/flow-inspector/tsconfig.json',
         'tools/flow-inspector/package.json',
@@ -346,11 +341,11 @@ const data = {
       producedArtifacts: ['artifact:isolated-target-document']
     },
     {
-      id: 'render-to-standalone-proof',
+      id: 'render-to-delivery-proof',
       from: 'render-selected-contract',
-      to: 'preserve-standalone-entries',
-      kind: 'compatibility',
-      predicate: 'selected source owns an existing standalone entry',
+      to: 'verify-react-delivery',
+      kind: 'required',
+      predicate: 'selected source renders through React',
       producedArtifacts: ['artifact:rendered-static-inspector']
     },
     {
@@ -362,12 +357,12 @@ const data = {
       producedArtifacts: ['artifact:rendered-static-inspector']
     },
     {
-      id: 'standalone-proof-to-preview-verification',
-      from: 'preserve-standalone-entries',
+      id: 'delivery-proof-to-preview-verification',
+      from: 'verify-react-delivery',
       to: 'verify-static-preview',
       kind: 'required',
-      predicate: 'retained standalone entries remain independent',
-      producedArtifacts: ['artifact:standalone-compatibility-proof']
+      predicate: 'React delivery gates pass',
+      producedArtifacts: ['artifact:react-delivery-proof']
     },
     {
       id: 'preview-verified',
@@ -413,7 +408,7 @@ const data = {
     {
       id: 'artifact:isolated-target-document',
       ownerStepId: 'isolate-selected-target',
-      channel: 'iframe navigation',
+      channel: 'keyed React props',
       consumerStepIds: ['render-selected-contract'],
       terminal: false
     },
@@ -421,12 +416,12 @@ const data = {
       id: 'artifact:rendered-static-inspector',
       ownerStepId: 'render-selected-contract',
       channel: 'isolated DOM',
-      consumerStepIds: ['preserve-standalone-entries', 'verify-static-preview'],
+      consumerStepIds: ['verify-react-delivery', 'verify-static-preview'],
       terminal: false
     },
     {
-      id: 'artifact:standalone-compatibility-proof',
-      ownerStepId: 'preserve-standalone-entries',
+      id: 'artifact:react-delivery-proof',
+      ownerStepId: 'verify-react-delivery',
       channel: 'formal test result',
       consumerStepIds: ['verify-static-preview'],
       terminal: false
@@ -452,9 +447,9 @@ const data = {
       specRefs: ['#catalog-contract']
     },
     {
-      id: 'selection-is-document-isolated',
+      id: 'selection-is-react-isolated',
       statement:
-        'Every selected target renders in a fresh iframe document and cannot retain the previous target global or DOM.',
+        'Every selected target has a keyed React lifetime and cannot retain subscriptions or selected state from the previous target.',
       stepIds: [
         'route-workspace-selection',
         'isolate-selected-target',
@@ -508,9 +503,9 @@ const data = {
     {
       id: 'preview-release-ready',
       assertions: [
-        'All static integration, standalone compatibility, and synchronized browser gates pass without dynamic Control Plane claims.'
+        'All static integration, React delivery, and synchronized browser gates pass without dynamic Control Plane claims.'
       ],
-      stepIds: ['preserve-standalone-entries', 'verify-static-preview'],
+      stepIds: ['verify-react-delivery', 'verify-static-preview'],
       specRefs: ['#definition-of-done']
     }
   ]

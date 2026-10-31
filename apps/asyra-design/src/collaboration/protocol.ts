@@ -286,9 +286,13 @@ const areJsonTransportValuesEqual = (
   const pairs: (readonly [unknown, unknown])[] = [[left, right]]
   while (pairs.length > 0) {
     const pair = pairs.pop()
-    if (!pair) return false
+    if (!pair) {
+      return false
+    }
     const [leftValue, rightValue] = pair
-    if (Object.is(leftValue, rightValue)) continue
+    if (Object.is(leftValue, rightValue)) {
+      continue
+    }
     if (
       !leftValue ||
       !rightValue ||
@@ -299,7 +303,9 @@ const areJsonTransportValuesEqual = (
       return false
     }
     if (Array.isArray(leftValue) && Array.isArray(rightValue)) {
-      if (leftValue.length !== rightValue.length) return false
+      if (leftValue.length !== rightValue.length) {
+        return false
+      }
       for (let index = leftValue.length - 1; index >= 0; index -= 1) {
         pairs.push([leftValue[index], rightValue[index]])
       }
@@ -307,7 +313,9 @@ const areJsonTransportValuesEqual = (
     }
     const leftEntries = Object.entries(leftValue)
     const rightEntries = Object.entries(rightValue)
-    if (leftEntries.length !== rightEntries.length) return false
+    if (leftEntries.length !== rightEntries.length) {
+      return false
+    }
     for (let index = leftEntries.length - 1; index >= 0; index -= 1) {
       const leftEntry = leftEntries[index]
       const rightEntry = rightEntries[index]
@@ -468,7 +476,9 @@ export const isSharedPublication = (
         deliveryIds.add(delivery.deliveryId)
         sliceDeliveryIds.push(delivery.deliveryId)
         delivery.orderedIds.forEach((orderedId) => {
-          if (seenSliceOrderedIds.has(orderedId)) return
+          if (seenSliceOrderedIds.has(orderedId)) {
+            return
+          }
           seenSliceOrderedIds.add(orderedId)
           sliceOrderedIds.push(orderedId)
         })
@@ -512,7 +522,9 @@ const analyzeFiniteTransportValue = (
   let maximumDepth = 0
   while (frames.length > 0) {
     const frame = frames.pop()
-    if (!frame) return null
+    if (!frame) {
+      return null
+    }
     if (frame.kind === 'leave') {
       ancestors.delete(frame.value)
       continue
@@ -530,21 +542,30 @@ const analyzeFiniteTransportValue = (
       if (
         !Number.isFinite(child) ||
         (rejectNegativeZero && Object.is(child, -0))
-      )
+      ) {
         return null
+      }
       continue
     }
-    if (typeof child !== 'object' || ancestors.has(child)) return null
+    if (typeof child !== 'object' || ancestors.has(child)) {
+      return null
+    }
     ancestors.add(child)
     frames.push({ kind: 'leave', value: child })
 
     if (Array.isArray(child)) {
       const keys = Reflect.ownKeys(child)
-      if (keys.length !== child.length + 1) return null
+      if (keys.length !== child.length + 1) {
+        return null
+      }
       const values = new Array<unknown>(child.length)
       for (const key of keys) {
-        if (key === 'length') continue
-        if (typeof key !== 'string') return null
+        if (key === 'length') {
+          continue
+        }
+        if (typeof key !== 'string') {
+          return null
+        }
         const index = Number(key)
         if (
           !Number.isInteger(index) ||
@@ -555,7 +576,9 @@ const analyzeFiniteTransportValue = (
           return null
         }
         const descriptor = Object.getOwnPropertyDescriptor(child, key)
-        if (!descriptor?.enumerable || !('value' in descriptor)) return null
+        if (!descriptor?.enumerable || !('value' in descriptor)) {
+          return null
+        }
         values[index] = descriptor.value
       }
       for (let index = values.length - 1; index >= 0; index -= 1) {
@@ -569,13 +592,19 @@ const analyzeFiniteTransportValue = (
     }
 
     const prototype = Object.getPrototypeOf(child)
-    if (prototype !== Object.prototype && prototype !== null) return null
+    if (prototype !== Object.prototype && prototype !== null) {
+      return null
+    }
     const keys = Reflect.ownKeys(child)
     for (let index = keys.length - 1; index >= 0; index -= 1) {
       const key = keys[index]
-      if (typeof key !== 'string') return null
+      if (typeof key !== 'string') {
+        return null
+      }
       const descriptor = Object.getOwnPropertyDescriptor(child, key)
-      if (!descriptor?.enumerable || !('value' in descriptor)) return null
+      if (!descriptor?.enumerable || !('value' in descriptor)) {
+        return null
+      }
       frames.push({
         depth: frame.depth + 1,
         kind: 'value',
@@ -695,17 +724,23 @@ const isWellFormedPublicationFrameString = (value: string): boolean => {
     const code = value.charCodeAt(index)
     if (code >= 0xd800 && code <= 0xdbff) {
       const next = value.charCodeAt(index + 1)
-      if (next < 0xdc00 || next > 0xdfff) return false
+      if (next < 0xdc00 || next > 0xdfff) {
+        return false
+      }
       index += 1
       continue
     }
-    if (code >= 0xdc00 && code <= 0xdfff) return false
+    if (code >= 0xdc00 && code <= 0xdfff) {
+      return false
+    }
   }
   return true
 }
 
 const publicationFrameStringBytes = (value: string | undefined): Uint8Array => {
-  if (!value) return new Uint8Array()
+  if (!value) {
+    return new Uint8Array()
+  }
   if (isWellFormedPublicationFrameString(value)) {
     const utf8 = publicationFrameTextEncoder.encode(value)
     const encoded = new Uint8Array(1 + utf8.byteLength)
@@ -724,7 +759,9 @@ const publicationFrameStringBytes = (value: string | undefined): Uint8Array => {
 }
 
 const decodePublicationFrameString = (bytes: Uint8Array): string => {
-  if (bytes.byteLength === 0) return ''
+  if (bytes.byteLength === 0) {
+    return ''
+  }
   const encoding = bytes[0]
   const valueBytes = bytes.subarray(1)
   if (encoding === PUBLICATION_FRAME_STRING_UTF8) {
@@ -1114,7 +1151,9 @@ const encodePublicationPayloadChunks = (
   let currentByteLength = 0
   let currentSegments: Uint8Array[] = []
   const flush = (): void => {
-    if (currentByteLength === 0) return
+    if (currentByteLength === 0) {
+      return
+    }
     chunks.push({
       byteLength: currentByteLength,
       segments: currentSegments
@@ -1469,8 +1508,9 @@ const decodePublicationWirePayload = (
           sliceId: slice.sliceId,
           orderedIds: slice.orderedIds
         }
-        for (let index = 0; index < batch.deliveryCount; index += 1)
+        for (let index = 0; index < batch.deliveryCount; index += 1) {
           indexedBatches.push(batchMetadata)
+        }
       }
     }
     if (indexedBatches.length !== unitCount) {
@@ -2014,8 +2054,9 @@ export const parseCollaborationServerMessage = (
             !isNonNegativeSafeInteger(persistence.sequence) ||
             !isNonNegativeSafeInteger(persistence.durableSequence) ||
             persistence.durableSequence < persistence.sequence)
-        )
+        ) {
           return undefined
+        }
         if (
           Object.prototype.hasOwnProperty.call(value, 'acceptedSequences') &&
           !isContiguousPositiveIntegerArray(acceptedSequences)

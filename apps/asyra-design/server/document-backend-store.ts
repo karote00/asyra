@@ -111,7 +111,9 @@ export const createFileDocumentMaterializationStore = (
     documentId: string
   ): Promise<MaterializedDocumentRecord<AppDocumentData>> => {
     const cached = cache.get(documentId)
-    if (cached) return cached
+    if (cached) {
+      return cached
+    }
     const filePath = resolve(directory, documentFileName(documentId))
     let record: MaterializedDocumentRecord<AppDocumentData>
     try {

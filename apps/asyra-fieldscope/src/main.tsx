@@ -4,7 +4,9 @@ import './ui/styles.css'
 import { LocaleProvider } from './ui/i18n/locale'
 
 const host = document.getElementById('root')
-if (!host) throw new Error('Missing app root')
+if (!host) {
+  throw new Error('Missing app root')
+}
 createRoot(host).render(
   <LocaleProvider>
     <Workbench />

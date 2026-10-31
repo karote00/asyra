@@ -64,15 +64,23 @@ const identity = (item) =>
 function fingerprintPaths(root, declaredInputs) {
   const inputs = new Set()
   const add = (input) => {
-    if (inputs.has(input)) return
+    if (inputs.has(input)) {
+      return
+    }
     const file = safePath(root, input)
-    if (!fs.existsSync(file))
+    if (!fs.existsSync(file)) {
       throw new Error('Missing mapped observation input: ' + input)
-    if (fs.lstatSync(file).isSymbolicLink())
+    }
+    if (fs.lstatSync(file).isSymbolicLink()) {
       throw new Error('Symlinked observation input: ' + input)
+    }
     if (fs.statSync(file).isDirectory()) {
-      for (const name of fs.readdirSync(file).sort()) add(input + '/' + name)
-    } else inputs.add(input)
+      for (const name of fs.readdirSync(file).sort()) {
+        add(input + '/' + name)
+      }
+    } else {
+      inputs.add(input)
+    }
   }
   declaredInputs.forEach(add)
   const files = [...inputs].sort().map((file) => {
@@ -93,14 +101,20 @@ function sourceFingerprint(root, contracts) {
       'specPath',
       'testFile',
       'configFile'
-    ])
+    ]) {
       inputs.push(contract[key])
+    }
     inputs.push(...(contract.observationInputs ?? []))
-    for (const item of contract.cases)
-      if (item.testFile) inputs.push(item.testFile)
-    for (const step of contract.runtimeScope.steps)
-      for (const boundary of step.implementationBoundary)
+    for (const item of contract.cases) {
+      if (item.testFile) {
+        inputs.push(item.testFile)
+      }
+    }
+    for (const step of contract.runtimeScope.steps) {
+      for (const boundary of step.implementationBoundary) {
         inputs.push(boundary.replace(/\/\*\*$/, ''))
+      }
+    }
   }
   return fingerprintPaths(root, inputs)
 }
@@ -147,16 +161,18 @@ function beginObservation(root, options = {}) {
     const previous = createObservationReader(observationDirectory(root)).get(
       request.predecessorId
     )
-    if (previous.phase !== 'completed')
+    if (previous.phase !== 'completed') {
       throw new Error('Correction predecessor is incomplete')
+    }
     correction = {
       version: 1,
       predecessorId: previous.id,
       predecessorDigest: lifecycle.recordDigest(previous),
       reason: request.reason
     }
-    if (!lifecycle.validCorrection(correction))
+    if (!lifecycle.validCorrection(correction)) {
       throw new Error('Invalid correction reason')
+    }
   }
   const context = {
     ...(intent ? { intent } : {}),
@@ -190,14 +206,16 @@ function beginObservation(root, options = {}) {
 }
 function localizeReport(root, context, report, options = {}) {
   const issues = [...context.issues, ...(options.errors ?? []).map(String)]
-  if (!report || !Array.isArray(report.testResults))
+  if (!report || !Array.isArray(report.testResults)) {
     issues.push('Missing or malformed test report')
+  }
   const executionFailureDetails = options.executionFailureDetails
   if (
     executionFailureDetails !== undefined &&
     !validFailureDetails(executionFailureDetails, true)
-  )
+  ) {
     issues.push('Malformed execution failure details')
+  }
   const observations = []
   const suites = Array.isArray(report?.testResults) ? report.testResults : []
   for (const [index, suite] of suites.entries()) {
@@ -209,7 +227,9 @@ function localizeReport(root, context, report, options = {}) {
       issues.push('Malformed test suite')
       continue
     }
-    if (suite.message) issues.push(suite.name + ': ' + suite.message)
+    if (suite.message) {
+      issues.push(suite.name + ': ' + suite.message)
+    }
     const projectName = options.projects?.[index] ?? ''
     for (const [
       assertionIndex,
@@ -229,8 +249,12 @@ function localizeReport(root, context, report, options = {}) {
         ? assertion.status
         : 'unknown'
       const failureDetails = options.failureDetails?.[index]?.[assertionIndex]
-      if (failureDetails !== undefined && !validFailureDetails(failureDetails))
+      if (
+        failureDetails !== undefined &&
+        !validFailureDetails(failureDetails)
+      ) {
         issues.push('Malformed assertion details: ' + assertion.fullName)
+      }
       observations.push({
         ...(validFailureDetails(failureDetails)
           ? { failureDetails: structuredClone(failureDetails) }
@@ -252,12 +276,14 @@ function localizeReport(root, context, report, options = {}) {
       suite.status === 'failed' &&
       !suite.assertionResults.some((item) => item?.status === 'failed') &&
       !suite.message
-    )
+    ) {
       issues.push(suite.name + ': Suite failed without an assertion result')
+    }
   }
   const counts = new Map()
-  for (const item of observations)
+  for (const item of observations) {
     counts.set(identity(item), (counts.get(identity(item)) ?? 0) + 1)
+  }
   const cases = observations.map((item, index) => {
     const matches = context.contracts.flatMap((contract) =>
       contract.cases
@@ -270,10 +296,15 @@ function localizeReport(root, context, report, options = {}) {
         .map((candidate) => ({ contract, candidate }))
     )
     let resolution = 'unmapped'
-    if (matches.length === 1) resolution = 'mapped'
-    if (matches.length > 1 || counts.get(identity(item)) > 1)
+    if (matches.length === 1) {
+      resolution = 'mapped'
+    }
+    if (matches.length > 1 || counts.get(identity(item)) > 1) {
       resolution = 'ambiguous'
-    if (options.stale) resolution = 'stale'
+    }
+    if (options.stale) {
+      resolution = 'stale'
+    }
     const locations =
       resolution !== 'mapped'
         ? []
@@ -309,14 +340,16 @@ function localizeReport(root, context, report, options = {}) {
           : 'Location unavailable: ' + resolution
     }
   })
-  if (options.stale)
+  if (options.stale) {
     issues.push('Mapped inputs changed during execution; locations are stale')
+  }
   if (
     report?.success === false &&
     !cases.some((item) => item?.status === 'failed') &&
     !issues.length
-  )
+  ) {
     issues.push('Runner did not complete successfully')
+  }
   return {
     ...context,
     authority: 'observation-only',
@@ -351,7 +384,7 @@ function completeObservation(root, context, report, options = {}) {
   const envelopeBytes = Buffer.byteLength(
     JSON.stringify({ digest: '0'.repeat(64), record: result }, null, 2) + '\n'
   )
-  if (envelopeBytes > 32 * 1024 * 1024)
+  if (envelopeBytes > 32 * 1024 * 1024) {
     result = localizeReport(
       root,
       context,
@@ -363,23 +396,29 @@ function completeObservation(root, context, report, options = {}) {
         ]
       }
     )
-  if (context.flowWrite)
+  }
+  if (context.flowWrite) {
     require('../flow-files/producers.cjs').publish(
       result,
       context.flowWrite,
       root
     )
-  else saveObservation(observationDirectory(root), result)
+  } else {
+    saveObservation(observationDirectory(root), result)
+  }
   return result
 }
 function saveObservation(directory, record) {
-  if (!validId(record.id)) throw new Error('Invalid observation id')
+  if (!validId(record.id)) {
+    throw new Error('Invalid observation id')
+  }
   fs.mkdirSync(directory, { recursive: true })
   const file = path.join(directory, record.id + '.json')
   if (fs.existsSync(file)) {
     const previous = JSON.parse(fs.readFileSync(file, 'utf8'))
-    if (previous.record.phase === 'completed')
+    if (previous.record.phase === 'completed') {
       throw new Error('Completed observations are immutable')
+    }
   }
   const bytes = JSON.stringify(record)
   writeAtomic(file, { digest: digest(bytes), record })
@@ -439,8 +478,9 @@ function invocationScope(record) {
       (c) =>
         typeof c?.manifestPath === 'string' && typeof c?.digest === 'string'
     )
-  )
+  ) {
     return null
+  }
   return JSON.stringify({
     cwd: record.command.cwd,
     argv: record.command.argv,
@@ -499,10 +539,11 @@ function classifyWarnings(records, associations = []) {
             successor.identities.has(identity(item))
           ))
       let replacementReason = null
-      if (explicit)
+      if (explicit) {
         replacementReason = 'Corrected invocation executed the intended cases'
-      else if (retired)
+      } else if (retired) {
         replacementReason = 'Later complete invocation covered the same scope'
+      }
       const group = {
         runId: record.id,
         startedAt: record.startedAt,
@@ -532,8 +573,9 @@ function classifyWarnings(records, associations = []) {
         !successors.some((value) =>
           [...identities].every((key) => value.identities.has(key))
         )
-      )
+      ) {
         cleanScopes.set(scope, [...successors, { record, identities }])
+      }
     }
   }
   return groups
@@ -559,7 +601,9 @@ function createObservationReader(directory, options = {}) {
     const live = new Set()
     for (const entry of entries.values()) {
       entry.artifactErrors = []
-      if (!entry.record) continue
+      if (!entry.record) {
+        continue
+      }
       for (const artifact of entry.record.retainedArtifacts ?? []) {
         const key = artifact.retainedPath
         live.add(key)
@@ -571,8 +615,9 @@ function createObservationReader(directory, options = {}) {
           if (
             !key.startsWith(prefix) ||
             !/^[0-9]+$/.test(key.slice(prefix.length))
-          )
+          ) {
             throw new Error('Invalid retained artifact path')
+          }
           const file = safePath(
             directory,
             entry.record.id + '/attachments/' + key.slice(prefix.length)
@@ -595,14 +640,17 @@ function createObservationReader(directory, options = {}) {
               !stat.isFile() ||
               stat.size !== artifact.size ||
               stat.size > 64 * 1024 * 1024
-            )
+            ) {
               error = 'Invalid retained artifact size or type'
-            else if (digest(readArtifact(file)) !== artifact.digest)
+            } else if (digest(readArtifact(file)) !== artifact.digest) {
               error = 'Retained artifact digest mismatch'
+            }
             checked = { signature, error }
             artifacts.set(key, checked)
           }
-          if (checked.error) throw new Error(checked.error)
+          if (checked.error) {
+            throw new Error(checked.error)
+          }
         } catch (error) {
           entry.artifactErrors.push(
             'Retained artifact unavailable: ' + key + ': ' + error.message
@@ -610,8 +658,11 @@ function createObservationReader(directory, options = {}) {
         }
       }
     }
-    for (const key of artifacts.keys())
-      if (!live.has(key)) artifacts.delete(key)
+    for (const key of artifacts.keys()) {
+      if (!live.has(key)) {
+        artifacts.delete(key)
+      }
+    }
   }
   const readFile = options.readFile ?? ((file) => fs.readFileSync(file, 'utf8'))
   const refresh = () => {
@@ -621,22 +672,29 @@ function createObservationReader(directory, options = {}) {
           .readdirSync(relationDirectory)
           .filter((name) => !name.includes('.publish-'))
       : []
-    for (const name of relations.keys())
-      if (!relationNames.includes(name)) relations.delete(name)
+    for (const name of relations.keys()) {
+      if (!relationNames.includes(name)) {
+        relations.delete(name)
+      }
+    }
     for (const name of relationNames) {
       const file = path.join(relationDirectory, name)
       const stat = fs.lstatSync(file)
       const signature = stat.mtimeMs + ':' + stat.ctimeMs + ':' + stat.size
-      if (relations.get(name)?.signature === signature) continue
+      if (relations.get(name)?.signature === signature) {
+        continue
+      }
       try {
-        if (!stat.isFile() || stat.size > 1024 * 1024)
+        if (!stat.isFile() || stat.size > 1024 * 1024) {
           throw new Error('Invalid correction file')
+        }
         const relation = JSON.parse(readFile(file))
         if (
           !lifecycle.validAssociation(relation) ||
           name !== relation.correction.predecessorId + '.json'
-        )
+        ) {
           throw new Error('Invalid correction relation')
+        }
         relations.set(name, { signature, relation })
       } catch (error) {
         relations.set(name, { signature, error: name + ': ' + error.message })
@@ -650,15 +708,22 @@ function createObservationReader(directory, options = {}) {
           )
       : []
     const live = new Set(names)
-    for (const name of entries.keys()) if (!live.has(name)) entries.delete(name)
+    for (const name of entries.keys()) {
+      if (!live.has(name)) {
+        entries.delete(name)
+      }
+    }
     for (const name of names) {
       const file = path.join(directory, name),
         stat = fs.lstatSync(file)
       const signature = stat.mtimeMs + ':' + stat.ctimeMs + ':' + stat.size
-      if (entries.get(name)?.signature === signature) continue
+      if (entries.get(name)?.signature === signature) {
+        continue
+      }
       try {
-        if (!stat.isFile() || stat.size > 32 * 1024 * 1024)
+        if (!stat.isFile() || stat.size > 32 * 1024 * 1024) {
           throw new Error('Invalid observation file')
+        }
         const envelope = JSON.parse(readFile(file)),
           record = envelope.record
         if (
@@ -691,8 +756,9 @@ function createObservationReader(directory, options = {}) {
                   ))))) ||
           !Number.isFinite(Date.parse(record.startedAt)) ||
           digest(JSON.stringify(record)) !== envelope.digest
-        )
+        ) {
           throw new Error('Invalid observation record')
+        }
         entries.set(name, { signature, record })
       } catch (error) {
         entries.set(name, { signature, error: name + ': ' + error.message })
@@ -754,14 +820,19 @@ function createObservationReader(directory, options = {}) {
       return { total: related.length, items: related.slice(0, 3) }
     },
     caseContext(id, caseId) {
-      if (!validId(id)) throw new Error('Invalid observation id')
+      if (!validId(id)) {
+        throw new Error('Invalid observation id')
+      }
       refresh()
       const entry = entries.get(id + '.json')
-      if (!entry?.record)
+      if (!entry?.record) {
         throw new Error(entry?.error ?? 'Observation not found')
+      }
       const record = projectRecord(entry)
       const item = record.cases.find((value) => value.id === caseId)
-      if (!item) throw new Error('Observed case unavailable')
+      if (!item) {
+        throw new Error('Observed case unavailable')
+      }
       // Project before cloning: source inventories and raw reports are not summary inputs.
       return structuredClone({
         record: {
@@ -795,11 +866,14 @@ function createObservationReader(directory, options = {}) {
       })
     },
     get(id) {
-      if (!validId(id)) throw new Error('Invalid observation id')
+      if (!validId(id)) {
+        throw new Error('Invalid observation id')
+      }
       refresh()
       const entry = entries.get(id + '.json')
-      if (!entry?.record)
+      if (!entry?.record) {
         throw new Error(entry?.error ?? 'Observation not found')
+      }
       return structuredClone(entry.record)
     },
     list({ caseIdentityOnly = false } = {}) {
@@ -845,7 +919,9 @@ function createObservationReader(directory, options = {}) {
         const perRun = new Map()
         for (const item of record.cases) {
           const key = identity(item)
-          if (!perRun.has(key)) perRun.set(key, [])
+          if (!perRun.has(key)) {
+            perRun.set(key, [])
+          }
           perRun.get(key).push(item)
         }
         for (const [key, items] of perRun) {
@@ -878,7 +954,7 @@ function createObservationReader(directory, options = {}) {
           current.set(key, items)
         }
       }
-      if (caseIdentityOnly)
+      if (caseIdentityOnly) {
         return structuredClone({
           currentCases: [...current.values()].flat().map((item) => ({
             id: item.id,
@@ -896,6 +972,7 @@ function createObservationReader(directory, options = {}) {
               '/summary'
           }))
         })
+      }
       return structuredClone({
         runs: records
           .map(

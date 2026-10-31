@@ -39,8 +39,9 @@ function setup(fail = false) {
     delivery.flush()
     delivery.record(pairs[index])
   }
-  if (fail) delivery.fail('Method stopped')
-  else
+  if (fail) {
+    delivery.fail('Method stopped')
+  } else {
     delivery.complete({
       version: 1,
       snapshotId: 'snapshot',
@@ -49,6 +50,7 @@ function setup(fail = false) {
       evaluations: 4,
       pairs
     })
+  }
   return { messages }
 }
 

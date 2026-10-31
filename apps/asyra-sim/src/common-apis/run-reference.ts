@@ -25,34 +25,39 @@ export function readCapturedRunReferences(
     !isPlainRecord(document.sceneTree) ||
     !isPlainRecord(document.sceneTree.elements) ||
     !isPlainRecord(document.props)
-  )
+  ) {
     throw new Error('Invalid canonical capture for retained runs')
+  }
   const { elements } = document.sceneTree
   const references: CanonicalRunReference[] = []
   for (const element of Object.values(elements)) {
     if (
       !isPlainRecord(element) ||
       element.type !== ComponentTypes.RUN_REFERENCE
-    )
+    ) {
       continue
+    }
     if (
       typeof element.id !== 'string' ||
       typeof element.name !== 'string' ||
       typeof element.parentId !== 'string' ||
       !isPlainRecord(element.props)
-    )
+    ) {
       throw new Error('Invalid canonical run reference')
+    }
     const parent = elements[element.parentId]
-    if (!isPlainRecord(parent) || parent.type !== ComponentTypes.CANDIDATE)
+    if (!isPlainRecord(parent) || parent.type !== ComponentTypes.CANDIDATE) {
       throw new Error('Run reference must belong to a candidate')
+    }
     const propertyId = element.props[PropertyNames.RUN_REFERENCE]
     const property =
       typeof propertyId === 'string' ? document.props[propertyId] : null
     const reference = isPlainRecord(property)
       ? property[PropertyFields.RUN_REFERENCE]
       : null
-    if (!validRunReference(reference) || !reference)
+    if (!validRunReference(reference) || !reference) {
       throw new Error('Run reference requires load review')
+    }
     references.push({
       ...reference,
       elementId: element.id,
@@ -63,15 +68,20 @@ export function readCapturedRunReferences(
   if (
     new Set(references.map((reference) => reference.runId)).size !==
     references.length
-  )
+  ) {
     throw new Error('Duplicate canonical run reference')
+  }
   const observations = references.flatMap(
     (reference) => reference.observations ?? []
   )
-  if (observations.length > OBSERVATION_LIMITS.perProject)
+  if (observations.length > OBSERVATION_LIMITS.perProject) {
     throw new Error('Project field observation count limit exceeded')
-  if (new Set(observations.map((note) => note.id)).size !== observations.length)
+  }
+  if (
+    new Set(observations.map((note) => note.id)).size !== observations.length
+  ) {
     throw new Error('Duplicate project field observation identity')
+  }
   return references
 }
 
@@ -95,10 +105,14 @@ export function attachRunReference(
     !validRunReference(reference) ||
     !input.name.trim() ||
     input.name.length > 200
-  )
+  ) {
     throw new Error('Invalid archived run identity')
-  if (core.getElementData(input.candidateId)?.type !== ComponentTypes.CANDIDATE)
+  }
+  if (
+    core.getElementData(input.candidateId)?.type !== ComponentTypes.CANDIDATE
+  ) {
     throw new Error('Missing candidate for retained run')
+  }
   const existing = readRunReferences(core).find(
     (item) => item.runId === input.runId
   )
@@ -107,8 +121,9 @@ export function attachRunReference(
       existing.snapshotId !== input.snapshotId ||
       existing.candidateId !== input.candidateId ||
       existing.experimentId !== input.experimentId
-    )
+    ) {
       throw new Error('Run reference identity conflict')
+    }
     return existing.elementId
   }
   return runTransaction(() =>

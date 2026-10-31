@@ -46,7 +46,9 @@ it('shares parsing and conversion across typing, review, acknowledgements and ex
     expect(convert).toHaveBeenCalledTimes(2)
     const changed = structuredClone(example.workcell)
     const joint = changed.bodies.find((body) => body.joint.kind !== 'fixed')
-    if (!joint) throw new Error('Missing actuated joint')
+    if (!joint) {
+      throw new Error('Missing actuated joint')
+    }
     joint.joint.max = 0.1
     expect(reader.previewTrajectory(next, changed).value).toBeNull()
     expect(convert).toHaveBeenCalledTimes(3)

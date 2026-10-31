@@ -236,15 +236,20 @@ describe('walking terrain and support contact', () => {
       const { source, raw } = fixture()
       const invalid = structuredClone(raw) as Mutable<typeof raw>
       const assessment = invalid.terrain.contactAssessments[0]
-      if (field === 'from') assessment.from = 0.5
-      else assessment[field] = `wrong-${field}`
+      if (field === 'from') {
+        assessment.from = 0.5
+      } else {
+        assessment[field] = `wrong-${field}`
+      }
       expect(() => readWalkingMotionRequest(invalid, source)).toThrow()
     }
   })
 
   it('does not treat an all-swing schedule as admitted walking support', () => {
     const { source, raw, demand } = fixture()
-    for (const leg of raw.stance.phases[0].legs) leg.state = { kind: 'swing' }
+    for (const leg of raw.stance.phases[0].legs) {
+      leg.state = { kind: 'swing' }
+    }
     const result = evaluateWalkingTerrainContact(
       demand,
       source,

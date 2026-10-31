@@ -67,13 +67,16 @@ test('independent A/B/C candidates retain and compare real runs with traceable b
   const errors: string[] = []
   const externalRequests: string[] = []
   const baseURL = info.project.use.baseURL
-  if (!baseURL) throw new Error('An explicit App URL is required')
+  if (!baseURL) {
+    throw new Error('An explicit App URL is required')
+  }
   const origin = new URL(baseURL).origin
   // Permit the local launcher only, including a cold page load and Worker assets.
   // A blocked external request still fails the test even if the App hides it.
   await context.route('**/*', (route) => {
-    if (new URL(route.request().url()).origin === origin)
+    if (new URL(route.request().url()).origin === origin) {
       return route.continue()
+    }
     externalRequests.push(route.request().url())
     return route.abort('internetdisconnected')
   })
@@ -103,8 +106,9 @@ test('independent A/B/C candidates retain and compare real runs with traceable b
     .click()
   const library = page.getByRole('dialog', { name: 'Runs and comparison' })
   await expect(library.getByRole('checkbox')).toHaveCount(3)
-  for (let index = 0; index < 3; index++)
+  for (let index = 0; index < 3; index++) {
     await library.getByRole('checkbox').nth(index).check()
+  }
   const compareAction = library.getByRole('button', {
     name: 'Compare selected runs (3/3)'
   })
@@ -124,7 +128,9 @@ test('independent A/B/C candidates retain and compare real runs with traceable b
           ) {
             clearTimeout(timeout)
             resolve(true)
-          } else frame = requestAnimationFrame(observe)
+          } else {
+            frame = requestAnimationFrame(observe)
+          }
         }
         frame = requestAnimationFrame(observe)
       })
@@ -158,12 +164,16 @@ test('independent A/B/C candidates retain and compare real runs with traceable b
     .boundingBox()
   expect(historyBox).not.toBeNull()
   expect(detailBox).not.toBeNull()
-  if (!historyBox || !detailBox) throw new Error('Missing run library layout')
+  if (!historyBox || !detailBox) {
+    throw new Error('Missing run library layout')
+  }
   expect(detailBox.y).toBeGreaterThanOrEqual(historyBox.y + historyBox.height)
   const cards = comparison.locator('.comparison-columns > article')
   const first = await cards.nth(0).boundingBox(),
     second = await cards.nth(1).boundingBox()
-  if (!first || !second) throw new Error('Missing comparison layout')
+  if (!first || !second) {
+    throw new Error('Missing comparison layout')
+  }
   expect(second.y).toBeGreaterThanOrEqual(first.y + first.height)
   expect(
     await library.evaluate((node) => node.scrollWidth <= node.clientWidth)
@@ -183,9 +193,13 @@ test('independent A/B/C candidates retain and compare real runs with traceable b
     .getByRole('button', { name: 'Export JSON', exact: true })
     .click()
   const stream = await (await pending).createReadStream()
-  if (!stream) throw new Error('Missing report download')
+  if (!stream) {
+    throw new Error('Missing report download')
+  }
   const chunks: Buffer[] = []
-  for await (const chunk of stream) chunks.push(Buffer.from(chunk))
+  for await (const chunk of stream) {
+    chunks.push(Buffer.from(chunk))
+  }
   const report = JSON.parse(Buffer.concat(chunks).toString('utf8')).run
   expect(report.lineage.copiedFromCandidateId).toBe(b)
   expect(
@@ -210,10 +224,13 @@ test('independent A/B/C candidates retain and compare real runs with traceable b
     .getByRole('button', { name: 'Export project', exact: true })
     .click()
   const projectStream = await (await pendingProject).createReadStream()
-  if (!projectStream) throw new Error('Missing project download')
+  if (!projectStream) {
+    throw new Error('Missing project download')
+  }
   const projectChunks: Buffer[] = []
-  for await (const chunk of projectStream)
+  for await (const chunk of projectStream) {
     projectChunks.push(Buffer.from(chunk))
+  }
   const payload = Buffer.concat(projectChunks)
   await info.attach('three-candidates.json', {
     contentType: 'application/json',
@@ -243,8 +260,9 @@ test('independent A/B/C candidates retain and compare real runs with traceable b
     .getByRole('button', { name: 'Runs & compare', exact: true })
     .click()
   await expect(library.getByRole('checkbox')).toHaveCount(3)
-  for (let index = 0; index < 3; index++)
+  for (let index = 0; index < 3; index++) {
     await library.getByRole('checkbox').nth(index).check()
+  }
   await library
     .getByRole('button', { name: 'Compare selected runs (3/3)' })
     .click()

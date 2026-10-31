@@ -5,9 +5,13 @@ async function download(page: Page, name: string) {
   const pending = page.waitForEvent('download')
   await page.getByRole('button', { name, exact: true }).click()
   const stream = await (await pending).createReadStream()
-  if (!stream) throw new Error('Missing download stream')
+  if (!stream) {
+    throw new Error('Missing download stream')
+  }
   const chunks: Buffer[] = []
-  for await (const chunk of stream) chunks.push(Buffer.from(chunk))
+  for await (const chunk of stream) {
+    chunks.push(Buffer.from(chunk))
+  }
   return Buffer.concat(chunks)
 }
 
@@ -42,8 +46,9 @@ test('the shipped missing-method project preserves history and blocks rerun with
   const origin = new URL(info.project.use.baseURL ?? '').origin
   await context.route('**/*', async (route) => {
     const url = route.request().url()
-    if (new URL(url).origin === origin) await route.continue()
-    else {
+    if (new URL(url).origin === origin) {
+      await route.continue()
+    } else {
       external.push(url)
       await route.abort()
     }
@@ -57,8 +62,9 @@ test('the shipped missing-method project preserves history and blocks rerun with
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
   let analysisWorkers = 0
   page.on('worker', (worker) => {
-    if (/\/analysis\.worker(?:\.ts|-[\w-]+\.js)(?:\?.*)?$/.test(worker.url()))
+    if (/\/analysis\.worker(?:\.ts|-[\w-]+\.js)(?:\?.*)?$/.test(worker.url())) {
       analysisWorkers++
+    }
   })
   await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
   await expect(page.getByTestId('preflight-report')).toContainText(

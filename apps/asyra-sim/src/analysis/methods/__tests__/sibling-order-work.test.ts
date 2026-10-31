@@ -19,7 +19,9 @@ it.each([
       (pair) =>
         pair.a.bodyId === 'example:joint-2' && pair.b.bodyId === 'obstacle-11'
     )
-    if (!pair) throw new Error('Missing representative source pair')
+    if (!pair) {
+      throw new Error('Missing representative source pair')
+    }
     const context = new OriginalMeshQuery()
     const result = queryOriginalPartPair(
       {
@@ -53,7 +55,9 @@ function solids(permuted: boolean): MeshGeometry {
   const positions: number[] = [],
     indices: number[] = []
   const centers = Array.from({ length: 16 }, (_, index) => index / 4)
-  if (permuted) centers.reverse()
+  if (permuted) {
+    centers.reverse()
+  }
   for (const x of centers) {
     const offset = positions.length / 3
     positions.push(x, 0, 0, x + 1 / 32, 0, 0, x, 1 / 32, 0, x, 0, 1 / 32)

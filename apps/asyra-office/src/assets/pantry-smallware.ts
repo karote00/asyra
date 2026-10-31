@@ -16,10 +16,12 @@ export function pantryCanister(color?: number, lidColor?: number): AssetPart[] {
         component.material as keyof typeof specification.materials
       ]
     let appearanceColor = Number.parseInt(material.baseColorSRGB.slice(1), 16)
-    if (component.partId === 'body' && color !== undefined)
+    if (component.partId === 'body' && color !== undefined) {
       appearanceColor = color
-    if (component.partId === 'lid' && lidColor !== undefined)
+    }
+    if (component.partId === 'lid' && lidColor !== undefined) {
       appearanceColor = lidColor
+    }
     const result = part(
       component.partId,
       lathe(profile, specification.revolution.angularIntervals),

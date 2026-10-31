@@ -24,7 +24,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             pair.a.bodyId === 'example:joint-2' &&
             pair.b.bodyId === 'obstacle-11'
         )
-        if (!pair) throw new Error('Missing fixed source pair')
+        if (!pair) {
+          throw new Error('Missing fixed source pair')
+        }
         const original = projection.projectedBoundsGap
         let calls = 0,
           normAttempts = 0,
@@ -36,8 +38,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           (a, ap, b, bp, threshold, checkpoint) => {
             calls++
             let proves = false
-            if (threshold === 0) zeroThresholdCalls++
-            else {
+            if (threshold === 0) {
+              zeroThresholdCalls++
+            } else {
               const aw = worldBounds(a, ap),
                 bw = worldBounds(b, bp)
               const gaps = aw.map((axis, i) =>
@@ -58,7 +61,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                   interval(gaps[2])
                 ])[0]
                 proves = norm > threshold
-                if (proves) newProofs++
+                if (proves) {
+                  newProofs++
+                }
               }
             }
             let axes = 0
@@ -68,7 +73,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             })
             if (proves) {
               bypassedAxes += axes
-              if (result > threshold) alreadyRejected++
+              if (result > threshold) {
+                alreadyRejected++
+              }
             }
             return result
           }

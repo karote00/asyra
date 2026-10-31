@@ -91,8 +91,12 @@ describe('read-only component analysis', () => {
     const source = artifact(circle)
     for (const point of source.paths[0].rings[0]) {
       point.x *= 2
-      if (point.inControl) point.inControl.x *= 2
-      if (point.outControl) point.outControl.x *= 2
+      if (point.inControl) {
+        point.inControl.x *= 2
+      }
+      if (point.outControl) {
+        point.outControl.x *= 2
+      }
     }
     source.paths[0].bounds.x *= 2
     source.paths[0].bounds.width *= 2
@@ -112,10 +116,11 @@ describe('read-only component analysis', () => {
   })
   it('rejects invalid selections and cancelled work', () => {
     const source = artifact(circle)
-    for (const ids of [[], ['missing'], ['path-1', 'path-1']])
+    for (const ids of [[], ['missing'], ['path-1', 'path-1']]) {
       expect(() =>
         analyzeVectorComponents(source, ids, new AbortController().signal)
       ).toThrow()
+    }
     const controller = new AbortController()
     controller.abort()
     expect(() =>

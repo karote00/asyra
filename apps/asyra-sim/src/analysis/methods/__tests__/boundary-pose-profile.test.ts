@@ -16,7 +16,9 @@ it('distinguishes canonical shared joints from the two actual endpoint pose encl
     (value) =>
       value.a.bodyId === 'example:joint-2' && value.b.bodyId === 'obstacle-11'
   )
-  if (!pair) throw new Error('Missing admitted ordered pair')
+  if (!pair) {
+    throw new Error('Missing admitted ordered pair')
+  }
   const boundary = 114
   const frame = snapshot.trajectory.keyframes[boundary]
   const keys = Object.keys(frame.joints).sort()
@@ -71,7 +73,9 @@ it('distinguishes canonical shared joints from the two actual endpoint pose encl
       const collider = body?.colliders.find(
         (value) => value.id === reference.colliderId
       )
-      if (!collider) throw new Error('Missing original collider')
+      if (!collider) {
+        throw new Error('Missing original collider')
+      }
       return {
         geometry: collider.geometry,
         pose: ops.compose(bodyPoses[side], ops.fromPose(collider.pose))

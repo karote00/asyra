@@ -15,7 +15,9 @@ let root: Root
 const accepted = vi.fn()
 
 function present<T>(value: T | null | undefined): T {
-  if (value == null) throw new Error('Missing test input')
+  if (value == null) {
+    throw new Error('Missing test input')
+  }
   return value
 }
 
@@ -59,7 +61,9 @@ async function choose(file: File, kind = 'CSV') {
     `[aria-label="Load trajectory ${kind}"]`
   )
 
-  if (!input) throw new Error('Missing trajectory input')
+  if (!input) {
+    throw new Error('Missing trajectory input')
+  }
 
   Object.defineProperty(input, 'files', { configurable: true, value: [file] })
 
@@ -190,7 +194,9 @@ async function select(label: string, value: string) {
       node.getAttribute('aria-label') === label ||
       node.closest('label')?.textContent?.trim().startsWith(label)
   )
-  if (!input) throw new Error(`Missing select ${label}`)
+  if (!input) {
+    throw new Error(`Missing select ${label}`)
+  }
   await act(() => {
     input.value = value
     input.dispatchEvent(new Event('change', { bubbles: true }))
@@ -222,8 +228,9 @@ it('blocks external CSV with canonical headers until every source unit is declar
     host.querySelector('[aria-label="Trajectory conversion preview"]')
   ).toBeNull()
   for (const body of example.workcell.bodies) {
-    if (body.joint.kind !== 'fixed')
+    if (body.joint.kind !== 'fixed') {
       await select(`${body.name} CSV unit`, 'rad')
+    }
   }
   await preview()
   expect(
@@ -245,8 +252,9 @@ it('reuses source parsing and the exact validated preview on repeated review and
     expect(normalize).not.toHaveBeenCalled()
     await select('Time unit', 's')
     for (const body of example.workcell.bodies) {
-      if (body.joint.kind !== 'fixed')
+      if (body.joint.kind !== 'fixed') {
         await select(`${body.name} CSV unit`, 'rad')
+      }
     }
     await preview()
     const result = inspect.mock.results.at(-1)?.value
@@ -453,9 +461,11 @@ async function editSource(text: string) {
 it('retains declared units across numeric edits but recomputes and accepts only the current preview', async () => {
   const example = await externalCsv()
   await select('Time unit', 'ms')
-  for (const body of example.workcell.bodies)
-    if (body.joint.kind !== 'fixed')
+  for (const body of example.workcell.bodies) {
+    if (body.joint.kind !== 'fixed') {
       await select(`${body.name} CSV unit`, 'deg')
+    }
+  }
   await preview()
   const parse = vi.spyOn(importer, 'prepareTrajectoryCsv')
   const inspect = vi.spyOn(importer, 'previewTrajectoryCsv')
@@ -504,9 +514,11 @@ it('preserves known joint units when only the time unit is selected', async () =
     host.querySelector('[aria-label="Trajectory conversion preview"]')
   ).not.toBeNull()
   const example = createSyntheticExample()
-  for (const body of example.workcell.bodies)
-    if (body.joint.kind !== 'fixed')
+  for (const body of example.workcell.bodies) {
+    if (body.joint.kind !== 'fixed') {
       await select(`${body.name} CSV unit`, 'rad')
+    }
+  }
   await editSource(text.replace('\n5,', '\n6,'))
   await preview()
 })
@@ -514,9 +526,11 @@ it('preserves known joint units when only the time unit is selected', async () =
 it('preserves unaffected declarations when one source column is removed', async () => {
   const example = await externalCsv()
   await select('Time unit', 's')
-  for (const body of example.workcell.bodies)
-    if (body.joint.kind !== 'fixed')
+  for (const body of example.workcell.bodies) {
+    if (body.joint.kind !== 'fixed') {
       await select(`${body.name} CSV unit`, 'rad')
+    }
+  }
   const text = present(host.querySelector('textarea')).value
   await editSource(
     text
@@ -547,9 +561,11 @@ it('preserves unaffected declarations when one source column is removed', async 
 it('retains unaffected units when the workcell changes joint type', async () => {
   const example = await externalCsv()
   await select('Time unit', 's')
-  for (const body of example.workcell.bodies)
-    if (body.joint.kind !== 'fixed')
+  for (const body of example.workcell.bodies) {
+    if (body.joint.kind !== 'fixed') {
       await select(`${body.name} CSV unit`, 'rad')
+    }
+  }
   const workcell = structuredClone(example.workcell)
   const joint = present(
     workcell.bodies.find((body) => body.joint.kind === 'revolute')

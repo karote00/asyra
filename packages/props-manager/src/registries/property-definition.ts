@@ -122,7 +122,9 @@ class ElementPropertyRegistry {
 
   private removeReverseOwner(name: string, componentType: string): void {
     const registered = this.registry.get(name)
-    if (!registered) return
+    if (!registered) {
+      return
+    }
 
     registered.componentTypes.delete(componentType)
     if (registered.componentTypes.size === 0) {

@@ -1057,8 +1057,8 @@
       ],
       "mutation": {
         "file": "apps/asyra-design/server/local-operation-tools.ts",
-        "from": "if (isRecord(result) && result.current === false)\n            invalidIds.push(...group.ids)",
-        "to": "if (false)\n            invalidIds.push(...group.ids)"
+        "from": "if (isRecord(result) && result.current === false) {\n            invalidIds.push(...group.ids)\n          }",
+        "to": "if (false) {\n            invalidIds.push(...group.ids)\n          }"
       }
     },
     {

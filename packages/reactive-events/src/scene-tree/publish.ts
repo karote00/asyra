@@ -28,7 +28,9 @@ export const publishLocalSceneTreeChanges = (
   projectionOwner: symbol,
   immediate = false
 ): void => {
-  if (changes.length === 0) return
+  if (changes.length === 0) {
+    return
+  }
   publishLocalProjectionEvents(
     [
       Object.freeze({

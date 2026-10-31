@@ -79,7 +79,9 @@ describe('canonical nonlinear offline geometry profiles', () => {
             ...gaps,
             ...[0, 1, 2].map((k) => parent.max[k] - parent.min[k])
           ) / 8
-        if (!(radius > 0)) return []
+        if (!(radius > 0)) {
+          return []
+        }
         const centre = p.map(
           (v, k) => v + (corner & (1 << k) ? -radius : radius)
         )
@@ -106,8 +108,9 @@ describe('canonical nonlinear offline geometry profiles', () => {
       wireframe: false,
       selectable: false
     })
-    if (descriptor.kind !== 'mesh')
+    if (descriptor.kind !== 'mesh') {
       throw new Error('Expected admitted sheet mesh')
+    }
     const geometry = new SiteGeometry()
     const scene = geometry.prepareScene(fixture.demand.farm, [
       ...fixture.demand.scene.meshes,

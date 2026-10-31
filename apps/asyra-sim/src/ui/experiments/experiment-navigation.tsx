@@ -25,12 +25,17 @@ export function ExperimentTabs() {
           onClick={() => view.getSnapshot().setTab(tab)}
           onKeyDown={(event) => {
             let next = index
-            if (event.key === 'ArrowRight') next = (index + 1) % tabs.length
-            else if (event.key === 'ArrowLeft')
+            if (event.key === 'ArrowRight') {
+              next = (index + 1) % tabs.length
+            } else if (event.key === 'ArrowLeft') {
               next = (index + tabs.length - 1) % tabs.length
-            else if (event.key === 'Home') next = 0
-            else if (event.key === 'End') next = tabs.length - 1
-            else return
+            } else if (event.key === 'Home') {
+              next = 0
+            } else if (event.key === 'End') {
+              next = tabs.length - 1
+            } else {
+              return
+            }
             event.preventDefault()
             view.getSnapshot().setTab(tabs[next])
             const buttons =
@@ -74,7 +79,9 @@ export function ExperimentCompletion() {
   const [request, setRequest] = useState(0)
   const activeTab = useExperimentField('tab')
   useEffect(() => {
-    if (!request || activeTab !== 'results') return
+    if (!request || activeTab !== 'results') {
+      return
+    }
     const panel = action.current
       ?.closest('.experiment-panel')
       ?.querySelector<HTMLElement>('#experiment-panel-results')
@@ -85,7 +92,9 @@ export function ExperimentCompletion() {
   const view = useExperimentView()
   const run = useExperimentField('selectedRun')
   const running = useExperimentField('running')
-  if (!run || running) return null
+  if (!run || running) {
+    return null
+  }
   return (
     <div
       className="flex items-center justify-between gap-2 text-[11px]"

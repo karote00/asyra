@@ -39,7 +39,9 @@ export async function installOpticsProbe(page: Page) {
               }
             }
             draw.cull = this.getParameter(this.CULL_FACE_MODE)
-            if (probe.draws.length < 100) probe.draws.push(draw)
+            if (probe.draws.length < 100) {
+              probe.draws.push(draw)
+            }
           }
         }
       }

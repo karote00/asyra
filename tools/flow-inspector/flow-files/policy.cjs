@@ -1,13 +1,16 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const { createHash } = require('node:crypto')
 const stable = (value) => {
-  if (Array.isArray(value)) return value.map(stable)
-  if (value && typeof value === 'object')
+  if (Array.isArray(value)) {
+    return value.map(stable)
+  }
+  if (value && typeof value === 'object') {
     return Object.fromEntries(
       Object.keys(value)
         .sort()
         .map((k) => [k, stable(value[k])])
     )
+  }
   return value
 }
 const digest = (value) =>
@@ -18,9 +21,13 @@ function bindings(project) {
   const signatures = new Map()
   function get(flowId, nodeId) {
     const key = flowId + '/' + nodeId
-    if (signatures.has(key)) return signatures.get(key)
+    if (signatures.has(key)) {
+      return signatures.get(key)
+    }
     const doc = project.flows.get(flowId)
-    if (!doc) throw new Error('Unknown flow')
+    if (!doc) {
+      throw new Error('Unknown flow')
+    }
     let definition, dependencies
     if (nodeId === 'integration') {
       definition = doc.definition.criteria
@@ -29,7 +36,9 @@ function bindings(project) {
         .map((n) => ({ flowId, nodeId: n.id }))
     } else {
       const entry = project.nodes.get(key)
-      if (!entry) throw new Error('Unknown node')
+      if (!entry) {
+        throw new Error('Unknown node')
+      }
       const architecture = doc.definition.architecture
       definition = {
         ...entry.node,
@@ -88,12 +97,15 @@ function criterionBinding(project, flowId, nodeId, criterionId, base) {
     project.nodes.get(flowId + '/' + nodeId)?.node.criteria ??
     doc.definition.criteria
   const criterion = criteria.find((c) => c.id === criterionId)
-  if (!criterion) throw new Error('Unknown criterion')
+  if (!criterion) {
+    throw new Error('Unknown criterion')
+  }
   if (
     criterion.kind !== 'manual' ||
     !criteria.some((c) => c.kind === 'automated')
-  )
+  ) {
     return signature
+  }
   return digest({
     signature,
     automated: doc.current.observations.filter(
@@ -106,7 +118,9 @@ function evaluateProject(project) {
     evaluated = new Map()
   function evaluate(flowId, nodeId) {
     const key = flowId + '/' + nodeId
-    if (evaluated.has(key)) return evaluated.get(key)
+    if (evaluated.has(key)) {
+      return evaluated.get(key)
+    }
     const doc = project.flows.get(flowId),
       node = project.nodes.get(key)?.node
     const criteria = node?.criteria ?? doc.definition.criteria
@@ -133,7 +147,9 @@ function evaluateProject(project) {
       let status = 'missing'
       if (observed) {
         status = observed.status
-        if (observed.binding !== expectedBinding) status = 'stale'
+        if (observed.binding !== expectedBinding) {
+          status = 'stale'
+        }
       }
       return {
         ...c,
@@ -168,25 +184,39 @@ function evaluateProject(project) {
           !(nodeId === 'integration' && n.status === 'excluded')
       )
     let evidence = 'passing'
-    if (results.some((c) => c.status === 'missing')) evidence = 'missing'
-    if (results.some((c) => ['incomplete', 'reopened'].includes(c.status)))
+    if (results.some((c) => c.status === 'missing')) {
+      evidence = 'missing'
+    }
+    if (results.some((c) => ['incomplete', 'reopened'].includes(c.status))) {
       evidence = 'incomplete'
-    if (results.some((c) => c.status === 'stale')) evidence = 'stale'
-    if (results.some((c) => ['failed', 'rejected'].includes(c.status)))
+    }
+    if (results.some((c) => c.status === 'stale')) {
+      evidence = 'stale'
+    }
+    if (results.some((c) => ['failed', 'rejected'].includes(c.status))) {
       evidence = 'failing'
-    if (warnings.length && evidence !== 'failing') evidence = 'incomplete'
+    }
+    if (warnings.length && evidence !== 'failing') {
+      evidence = 'incomplete'
+    }
     let status =
       doc.current.progress.find((p) => p.nodeId === nodeId)?.status ??
       'not-started'
-    if (results.every((c) => c.satisfied) && !warnings.length && !blocked)
+    if (results.every((c) => c.satisfied) && !warnings.length && !blocked) {
       status = 'done'
-    else if (evidence === 'failing') status = 'failed'
-    else if (evidence === 'stale') status = 'stale'
-    else if (results.some((c) => c.kind === 'manual' && !c.satisfied))
+    } else if (evidence === 'failing') {
+      status = 'failed'
+    } else if (evidence === 'stale') {
+      status = 'stale'
+    } else if (results.some((c) => c.kind === 'manual' && !c.satisfied)) {
       status = 'awaiting-manual'
-    if ((blocked || warnings.length) && evidence !== 'failing')
+    }
+    if ((blocked || warnings.length) && evidence !== 'failing') {
       status = 'blocked'
-    if (node?.applicable === false) status = 'excluded'
+    }
+    if (node?.applicable === false) {
+      status = 'excluded'
+    }
     const result = {
       id: nodeId,
       title: node?.title ?? 'Feature integration',
@@ -249,11 +279,15 @@ function evaluateProject(project) {
       const required = nodes.filter(
         (n) => doc.definition.nodes.find((d) => d.id === n.id).required
       )
-      if (required.some((n) => n.status === 'failed')) status = 'failed'
-      else if (required.some((n) => n.status === 'stale')) status = 'stale'
-      else if (required.some((n) => n.status === 'blocked')) status = 'blocked'
-      else if (required.some((n) => n.status === 'awaiting-manual'))
+      if (required.some((n) => n.status === 'failed')) {
+        status = 'failed'
+      } else if (required.some((n) => n.status === 'stale')) {
+        status = 'stale'
+      } else if (required.some((n) => n.status === 'blocked')) {
+        status = 'blocked'
+      } else if (required.some((n) => n.status === 'awaiting-manual')) {
         status = 'awaiting-manual'
+      }
     }
     return {
       id: doc.flowId,
@@ -269,17 +303,21 @@ function evaluateProject(project) {
 // Classify only the required dependency closure. A manual exemption never masks
 // missing automated evidence, explicit blockers, warnings or rejected decisions.
 function gateSummary(snapshot, manualPolicy = 'required') {
-  if (!['required', 'nonblocking'].includes(manualPolicy))
+  if (!['required', 'nonblocking'].includes(manualPolicy)) {
     throw new Error('Unknown manual policy')
+  }
   const evaluated = new Map(),
     definitions = new Map()
   for (const flow of snapshot.evaluation.flows) {
-    for (const node of [...flow.nodes, flow.integration])
+    for (const node of [...flow.nodes, flow.integration]) {
       evaluated.set(flow.id + '/' + node.id, node)
+    }
   }
-  for (const doc of snapshot.documents)
-    for (const node of doc.definition.nodes)
+  for (const doc of snapshot.documents) {
+    for (const node of doc.definition.nodes) {
       definitions.set(doc.flowId + '/' + node.id, { doc, node })
+    }
+  }
   let pending = false,
     unsatisfied = false
   const visited = new Set()
@@ -287,12 +325,18 @@ function gateSummary(snapshot, manualPolicy = 'required') {
     const key = flowId + '/' + nodeId
     const result = evaluated.get(key)
     const entry = definitions.get(key)
-    if (!result) throw new Error('Missing evaluated node')
+    if (!result) {
+      throw new Error('Missing evaluated node')
+    }
     if (result.status === 'excluded') {
-      if (!integration) unsatisfied = true
+      if (!integration) {
+        unsatisfied = true
+      }
       return
     }
-    if (visited.has(key)) return
+    if (visited.has(key)) {
+      return
+    }
     visited.add(key)
     const doc = snapshot.documents.find((d) => d.flowId === flowId)
     if (
@@ -301,24 +345,31 @@ function gateSummary(snapshot, manualPolicy = 'required') {
       doc.current.progress.some(
         (p) => p.nodeId === nodeId && p.status === 'blocked'
       )
-    )
+    ) {
       unsatisfied = true
+    }
     for (const criterion of result.criteria) {
-      if (criterion.satisfied) continue
+      if (criterion.satisfied) {
+        continue
+      }
       if (
         criterion.kind === 'manual' &&
         ['missing', 'reopened'].includes(criterion.status)
-      )
+      ) {
         pending = true
-      else unsatisfied = true
+      } else {
+        unsatisfied = true
+      }
     }
-    for (const dependency of entry?.node.dependsOn ?? [])
+    for (const dependency of entry?.node.dependsOn ?? []) {
       visit(dependency.flowId, dependency.nodeId)
+    }
   }
   for (const doc of snapshot.documents) {
     visit(doc.flowId, 'integration')
-    for (const node of doc.definition.nodes.filter((n) => n.required))
+    for (const node of doc.definition.nodes.filter((n) => n.required)) {
       visit(doc.flowId, node.id, true)
+    }
   }
   let status = pending ? 'awaiting-manual' : 'satisfied'
   let exitCode = pending && manualPolicy === 'required' ? 3 : 0

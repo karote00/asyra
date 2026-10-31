@@ -53,8 +53,9 @@ describe('scene demand configuration', () => {
     expect(Object.isFrozen(accepted)).toBe(true)
     expect(Object.isFrozen(accepted.route)).toBe(true)
     expect(Object.isFrozen(accepted.growth)).toBe(true)
-    if (accepted.growth.kind !== 'bounded' || !volume)
+    if (accepted.growth.kind !== 'bounded' || !volume) {
       throw new Error('Missing fixture volume')
+    }
     expect(Object.isFrozen(accepted.growth.volumes)).toBe(true)
     expect(Object.isFrozen(accepted.growth.volumes[0].anchor)).toBe(true)
     expect(Object.isFrozen(accepted.growth.volumes[0].min)).toBe(true)

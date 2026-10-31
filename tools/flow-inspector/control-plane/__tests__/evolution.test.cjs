@@ -800,6 +800,7 @@ test('version retention consumes admitted references without rereading or revali
     accepted.versions.at(-1).verificationSource.configurationDigest,
     recorded
   )
-  for (const method of [reads, source, runtime, descriptor])
+  for (const method of [reads, source, runtime, descriptor]) {
     assert.equal(method.mock.callCount(), 0)
+  }
 })

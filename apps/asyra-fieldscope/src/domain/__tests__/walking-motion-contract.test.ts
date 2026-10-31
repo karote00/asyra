@@ -200,10 +200,11 @@ describe('walking motion request admission', () => {
     const badRoute = baseline()
     badRoute.request.terrain.route.bay = -1
     invalid.push(badRoute)
-    for (const value of invalid)
+    for (const value of invalid) {
       expect(() =>
         readWalkingMotionRequest(value.request, value.source)
       ).toThrow()
+    }
   })
 
   it('requires crate coverage independently of the canonical empty tray', () => {
@@ -259,13 +260,14 @@ describe('walking motion request admission', () => {
         sourceParts: [...crate.sourceParts, ...crate.sourceParts],
         localFrames: [...crate.localFrames, ...crate.localFrames]
       }
-    ])
+    ]) {
       expect(() =>
         readWalkingMotionRequest(
           { ...attached, load: { ...attached.load, crate: replacement } },
           source
         )
       ).toThrow()
+    }
   })
 
   it('does not reuse admission against a different definition joint range', () => {

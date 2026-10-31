@@ -8,8 +8,9 @@ import { withAdviceFixture } from './quality.mjs'
 const here = path.dirname(fileURLToPath(import.meta.url))
 const root = path.resolve(here, '../../../..')
 const [arm, id] = process.argv.slice(2)
-if (!['quality-control', 'quality-knowledge'].includes(arm))
+if (!['quality-control', 'quality-knowledge'].includes(arm)) {
   throw new Error('Invalid quality arm')
+}
 const lock = path.join(root, 'tmp/knowledge-quality-writer.lock')
 const fd = fs.openSync(lock, 'wx')
 try {

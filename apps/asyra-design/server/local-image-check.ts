@@ -151,16 +151,18 @@ export const createLocalImageCheck = (options: {
     if (
       !/^data:image\/(png|jpeg|webp);base64,/.test(dataUrl) ||
       dataUrl.length > 12 * 1024 * 1024
-    )
+    ) {
       throw new Error('Image encoding or byte bound is unsupported.')
+    }
     const bytes = Buffer.from(dataUrl.slice(dataUrl.indexOf(',') + 1), 'base64')
     const source = sharp(bytes, {
       failOn: 'warning',
       limitInputPixels: 64 * 1024 * 1024
     }).timeout({ seconds: 10 })
     const metadata = await source.metadata()
-    if ((metadata.pages ?? 1) !== 1)
+    if ((metadata.pages ?? 1) !== 1) {
       throw new Error('Multi-frame images are unsupported.')
+    }
     const oriented = (metadata.orientation ?? 1) >= 5
     const width = oriented ? metadata.height : metadata.width
     const height = oriented ? metadata.width : metadata.height
@@ -170,8 +172,9 @@ export const createLocalImageCheck = (options: {
       region.x + region.width > width ||
       region.y + region.height > height ||
       (exact && (width !== region.width || height !== region.height))
-    )
+    ) {
       throw new Error('Native dimensions do not match the declared alignment.')
+    }
     const pixels = await source
       .autoOrient()
       .extract({
@@ -186,21 +189,25 @@ export const createLocalImageCheck = (options: {
       .raw()
       .toBuffer()
     signal.throwIfAborted()
-    if (pixels.length !== region.width * region.height * 3)
+    if (pixels.length !== region.width * region.height * 3) {
       throw new Error('Unsupported decoded color channels.')
+    }
     return pixels
   }
   return {
     async call(input: unknown, signal: AbortSignal) {
       const issue = operationInputIssue(input, imageCheckDefinition.inputSchema)
-      if (issue) throw new Error(issue)
+      if (issue) {
+        throw new Error(issue)
+      }
       const args = input as ImageCheckInput
       signal.throwIfAborted()
       const image = options.inspection(args.inspectionId)
-      if (!image || !(await options.validate(args.inspectionId, signal)))
+      if (!image || !(await options.validate(args.inspectionId, signal))) {
         throw new Error(
           'Inspection evidence is unavailable or stale; capture the affected region again.'
         )
+      }
       signal.throwIfAborted()
       const reference = options.reference(
         args.referenceImageIndex,
@@ -235,18 +242,20 @@ export const createLocalImageCheck = (options: {
         (previous.dependencies[configKey] !== config ||
           (previous.dependencies[regionKey] !== undefined &&
             previous.dependencies[regionKey] !== regionConfig))
-      )
+      ) {
         throw new Error(
           'Image check baseline, target region and tolerance configuration must remain fixed.'
         )
+      }
       if (
         previous &&
         previous.dependencies[useKey] === String(args.referenceUse.revision) &&
         previous.status !== 'stale' &&
         previous.status !== 'unverified' &&
         Object.hasOwn(previous.dependencies, `inspection:${args.inspectionId}`)
-      )
+      ) {
         return { ...JSON.parse(previous.evidence), reused: true, pixelReads: 0 }
+      }
 
       const result: Record<string, unknown> = {
         checkId: args.checkId,
@@ -264,18 +273,20 @@ export const createLocalImageCheck = (options: {
           image.imageScope !== 'region' ||
           image.background !== '#ffffff' ||
           operationInputIssue(image.region, regionSchema)
-        )
+        ) {
           throw new Error(
             'Use an explicit integer native inspection region on the supported white background.'
           )
+        }
         const region = image.region as Region
         if (
           region.width !== args.referenceRegion.width ||
           region.height !== args.referenceRegion.height
-        )
+        ) {
           throw new Error(
             'Aligned native regions must have equal dimensions; resampling is unsupported.'
           )
+        }
         const actual = await decode(
           image.dataUrl,
           { ...region, x: 0, y: 0 },
@@ -307,7 +318,9 @@ export const createLocalImageCheck = (options: {
               Math.abs(actual[offset + 2] - baseline[offset + 2])
             )
             maxChannelError = Math.max(maxChannelError, error)
-            if (error <= args.channelTolerance) continue
+            if (error <= args.channelTolerance) {
+              continue
+            }
             differentPixels++
             minX = Math.min(minX, x)
             maxX = Math.max(maxX, x)
@@ -341,10 +354,11 @@ export const createLocalImageCheck = (options: {
             ? error.message
             : 'Image comparison is unavailable.'
       }
-      if (!(await options.validate(args.inspectionId, signal)))
+      if (!(await options.validate(args.inspectionId, signal))) {
         throw new Error(
           'Inspection dependencies changed during comparison; capture only the affected region again.'
         )
+      }
       signal.throwIfAborted()
       options.reference(
         args.referenceImageIndex,

@@ -406,7 +406,9 @@ test('the Documentation Overview alone presents a compact docs-native technical 
         const blocks = Array.from(
           element.querySelectorAll<HTMLElement>(selector)
         ).map((block) => block.getBoundingClientRect())
-        if (blocks.length < 2) return false
+        if (blocks.length < 2) {
+          return false
+        }
         return (
           Math.max(...blocks.map((block) => block.height)) -
             Math.min(...blocks.map((block) => block.height)) <=
@@ -421,7 +423,9 @@ test('the Documentation Overview alone presents a compact docs-native technical 
         )
       ).every((tag) => {
         const textNode = tag.firstChild
-        if (!textNode) return false
+        if (!textNode) {
+          return false
+        }
         const textRange = document.createRange()
         textRange.selectNodeContents(textNode)
         const textWidth = textRange.getBoundingClientRect().width
@@ -768,7 +772,9 @@ test('landing and supporting routes share footer content with their own responsi
       const footerRect = footer.getBoundingClientRect()
       const relativeBounds = (selector: string) => {
         const target = footer.querySelector(selector)
-        if (!(target instanceof HTMLElement)) return null
+        if (!(target instanceof HTMLElement)) {
+          return null
+        }
         const rect = target.getBoundingClientRect()
         return {
           height: rect.height,
@@ -1206,8 +1212,12 @@ test('every public mobile hero keeps a compact reading hierarchy', async ({
       ).toBeGreaterThanOrEqual(0.98)
       expect(metrics.titleFontSize / bodyFontSize).toBeLessThanOrEqual(2.15)
       let maximumHeroHeight = 430
-      if (name === 'asyra-design') maximumHeroHeight = 1100
-      if (name === 'atlas') maximumHeroHeight = 480
+      if (name === 'asyra-design') {
+        maximumHeroHeight = 1100
+      }
+      if (name === 'atlas') {
+        maximumHeroHeight = 480
+      }
       expect(metrics.height).toBeLessThanOrEqual(maximumHeroHeight)
 
       const sectionTitleSizes = await page

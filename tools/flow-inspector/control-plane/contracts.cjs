@@ -13,7 +13,9 @@ const canonicalRelativePath = (value) =>
   value === path.posix.normalize(value) &&
   !value.split('/').some((part) => !part || part === '.' || part === '..')
 const requireCondition = (condition, message) => {
-  if (!condition) throw new Error('Invalid proof contract: ' + message)
+  if (!condition) {
+    throw new Error('Invalid proof contract: ' + message)
+  }
 }
 const workspaceName = (value) =>
   typeof value === 'string' &&
@@ -104,7 +106,7 @@ function admitContract(manifest, architecture) {
     'unsupported runner'
   )
   const observationOnly = runner === 'playwright'
-  if (observationOnly)
+  if (observationOnly) {
     requireCondition(
       Array.isArray(manifest.negativeCaseIds) &&
         manifest.negativeCaseIds.length === 0 &&
@@ -113,6 +115,7 @@ function admitContract(manifest, architecture) {
         manifest.defaultNegativeScenario === null,
       'Playwright is observation-only'
     )
+  }
   if (Object.hasOwn(manifest, 'observationInputs')) {
     requireCondition(
       observationOnly,
@@ -213,8 +216,9 @@ function admitContract(manifest, architecture) {
         step && nonempty(step.ownerPackage),
         'unknown step or owner'
       )
-      for (const key of ['purpose', 'failureOwnerStepId'])
+      for (const key of ['purpose', 'failureOwnerStepId']) {
         requireCondition(nonempty(step[key]), 'missing ' + key)
+      }
       requireCondition(
         steps.has(step.failureOwnerStepId),
         'unknown failure owner'
@@ -275,7 +279,7 @@ function admitContract(manifest, architecture) {
         selected.has(item.stepId) && nonempty(item.testName),
         'missing case mapping'
       )
-      if (Object.hasOwn(item, 'minimumParticipants'))
+      if (Object.hasOwn(item, 'minimumParticipants')) {
         requireCondition(
           observationOnly &&
             Number.isInteger(item.minimumParticipants) &&
@@ -283,7 +287,8 @@ function admitContract(manifest, architecture) {
             item.minimumParticipants <= 32,
           'invalid participant count'
         )
-      if (Object.hasOwn(item, 'testFile'))
+      }
+      if (Object.hasOwn(item, 'testFile')) {
         requireCondition(
           observationOnly &&
             canonicalRelativePath(item.testFile) &&
@@ -291,6 +296,7 @@ function admitContract(manifest, architecture) {
             /\.spec\.[cm]?[jt]sx?$/.test(item.testFile),
           'invalid case test file'
         )
+      }
       if (Object.hasOwn(item, 'implementationPaths')) {
         unique(item.implementationPaths, 'implementation locations')
         requireCondition(
@@ -310,19 +316,21 @@ function admitContract(manifest, architecture) {
           'invalid implementation location'
         )
       }
-      if (Object.hasOwn(item, 'projectName'))
+      if (Object.hasOwn(item, 'projectName')) {
         requireCondition(
           typeof item.projectName === 'string',
           'invalid project identity'
         )
+      }
       cases.push({ ...item, flowId: flow.id })
     }
     requireCondition(Array.isArray(flow.handoffs), 'missing handoffs')
-    if (flow.handoffs.length)
+    if (flow.handoffs.length) {
       unique(
         flow.handoffs.map((item) => item.routeId),
         'handoff ids'
       )
+    }
     const incoming = architecture.routes.filter(
       (route) => selected.has(route.to) && route.producedArtifacts.length
     )
@@ -374,18 +382,21 @@ function admitContract(manifest, architecture) {
     cases.map((item) => item.testName),
     'test names'
   )
-  if (!observationOnly) unique(manifest.negativeCaseIds, 'negative proof cases')
+  if (!observationOnly) {
+    unique(manifest.negativeCaseIds, 'negative proof cases')
+  }
   requireCondition(
     manifest.negativeCaseIds.every((id) =>
       cases.some((item) => item.id === id)
     ),
     'unknown negative proof case'
   )
-  if (!observationOnly)
+  if (!observationOnly) {
     unique(
       manifest.scenarios?.map((scenario) => scenario.id),
       'scenario ids'
     )
+  }
   const selectedStepIds = new Set(
     manifest.flows.flatMap((flow) => flow.stepIds)
   )
@@ -470,10 +481,11 @@ function admitContract(manifest, architecture) {
         implementationBoundary: [...step.implementationBoundary]
       }))
   }
-  if (runtimeScope.format === 2)
+  if (runtimeScope.format === 2) {
     runtimeScope.workspaceSources = validateWorkspaceSources(
       manifest.workspaceSources
     )
+  }
   return freeze({
     version: manifest.version,
     runner,
@@ -505,8 +517,11 @@ function mappingDiff(accepted, candidate) {
   )
   const withoutTestNames = (contract) => {
     const definition = structuredClone(contract.definition)
-    for (const flow of definition.flows)
-      for (const item of flow.cases) delete item.testName
+    for (const flow of definition.flows) {
+      for (const item of flow.cases) {
+        delete item.testName
+      }
+    }
     return definition
   }
   requireCondition(

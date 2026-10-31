@@ -90,8 +90,9 @@ describe('M3 result validation and rule evaluation', () => {
         ...evidence,
         method: { ...evidence.method, additionalData: 'not declared' }
       }
-    ])
+    ]) {
       expect(() => completeAnalysisResult(input, invalid, timing)).toThrow()
+    }
   })
   it('rejects a forged historical verdict, source identity, or extra fields', () => {
     const input = snapshot(1)
@@ -108,10 +109,11 @@ describe('M3 result validation and rule evaluation', () => {
       { snapshotId: 'other' },
       { source: { ...valid.source, experimentRevision: 99 } },
       { privateExtra: true }
-    ])
+    ]) {
       expect(() =>
         validateHistoricalResult(input, { ...valid, ...patch })
       ).toThrow()
+    }
   })
 
   it('rejects a run whose individually valid pairs exceed the global evaluation budget', () => {
@@ -158,7 +160,9 @@ describe('M3 result validation and rule evaluation', () => {
   it('preserves an established issue even when execution later cancels', () => {
     const input = snapshot(0)
     const pair = runOfficialClearanceMethod(input).pairs[0]
-    if (!pair) throw new Error('Expected pair evidence')
+    if (!pair) {
+      throw new Error('Expected pair evidence')
+    }
     const result = terminalAnalysisResult(input, [pair], {
       ...timing,
       execution: 'cancelled',
@@ -176,7 +180,9 @@ describe('M3 result validation and rule evaluation', () => {
   it('never turns timeout, failure, or partial clear evidence into success', () => {
     const input = snapshot(1)
     const pair = runOfficialClearanceMethod(input).pairs[0]
-    if (!pair) throw new Error('Expected pair evidence')
+    if (!pair) {
+      throw new Error('Expected pair evidence')
+    }
     for (const execution of ['cancelled', 'timed-out', 'failed'] as const) {
       const result = terminalAnalysisResult(input, [pair], {
         ...timing,
@@ -199,9 +205,13 @@ describe('M3 result validation and rule evaluation', () => {
     )
 
     const pair = structuredClone(valid.pairs[0])
-    if (!pair) throw new Error('Expected pair evidence')
+    if (!pair) {
+      throw new Error('Expected pair evidence')
+    }
     const leaf = pair.evidence.leaves[0]
-    if (!leaf) throw new Error('Expected interval evidence')
+    if (!leaf) {
+      throw new Error('Expected interval evidence')
+    }
     leaf.lower = 5
     expect(() => validatePairProgress(input, pair)).toThrow('bound')
 

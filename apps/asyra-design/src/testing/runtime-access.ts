@@ -37,7 +37,9 @@ const startCapture = (
   const values: unknown[] = []
   testState.set(key, values)
   const dispose = subscribe((value) => values.push(value))
-  if (dispose) testCaptureDisposers.set(key, dispose)
+  if (dispose) {
+    testCaptureDisposers.set(key, dispose)
+  }
 }
 
 export const startSharedPublicationCapture = (key: string): void =>

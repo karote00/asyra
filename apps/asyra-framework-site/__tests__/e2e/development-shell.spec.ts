@@ -10,7 +10,9 @@ test('development shell does not surface a Next error overlay', async ({
 }, testInfo) => {
   const browserErrors: string[] = []
   page.on('console', (message) => {
-    if (message.type() === 'error') browserErrors.push(message.text())
+    if (message.type() === 'error') {
+      browserErrors.push(message.text())
+    }
   })
 
   await page.setViewportSize({ width: 1440, height: 900 })

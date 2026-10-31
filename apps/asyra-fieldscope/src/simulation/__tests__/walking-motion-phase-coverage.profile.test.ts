@@ -19,8 +19,9 @@ it('phase-root canonical coverage retains original required pairs without crossi
     budget: { ...f.raw.budget, maxPhaseNodes: 2, maxSubdivisions: 1 },
     load: { ...f.raw.load, crate: { kind: 'mounted', artifact: f.crate } }
   })
-  if (!('format' in result) || result.format !== 'walking-motion-admission/3')
+  if (!('format' in result) || result.format !== 'walking-motion-admission/3') {
     throw new Error('Missing canonical nonlinear result')
+  }
   const relations = result.sourceRelations
   const selected = relations.phases[0].pairs.filter(
     (p) =>

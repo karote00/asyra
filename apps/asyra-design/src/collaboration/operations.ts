@@ -97,20 +97,24 @@ const sceneDeliveryFamily = (delivery: SharedPublicationDelivery): string => {
   if (
     delivery.eventName === EventTypes.ADD_ELEMENT ||
     delivery.eventName === EventTypes.ADD_ELEMENTS
-  )
+  ) {
     return EventTypes.ADD_ELEMENTS
+  }
   if (
     delivery.eventName === EventTypes.REMOVE_ELEMENT ||
     delivery.eventName === EventTypes.REMOVE_ELEMENTS
-  )
+  ) {
     return EventTypes.REMOVE_ELEMENTS
+  }
   return delivery.eventName
 }
 
 const splitSceneOperationRuns = (
   batch: SharedPublicationBatch
 ): SharedPublicationBatch[] => {
-  if (batch.channel !== SharedDataChannelNames.SCENE_TREE) return [batch]
+  if (batch.channel !== SharedDataChannelNames.SCENE_TREE) {
+    return [batch]
+  }
   const runs: SharedPublicationDelivery[][] = []
   let previousFamily: string | undefined
   for (const delivery of batch.deliveries) {
@@ -118,8 +122,9 @@ const splitSceneOperationRuns = (
     if (
       family !== previousFamily ||
       delivery.eventName === EventTypes.CHANGE_SUBTREE
-    )
+    ) {
       runs.push([])
+    }
     runs[runs.length - 1].push(delivery)
     previousFamily = family
   }
@@ -195,7 +200,9 @@ const orderTrustedElementEntries = (
   batch: SharedPublicationBatch
 ): readonly AddRemoveElementEntry[] => {
   const orderedIds = batch.deliveries.flatMap(({ orderedIds: ids }) => ids)
-  if (orderedIds.length === 0) return entries
+  if (orderedIds.length === 0) {
+    return entries
+  }
   const entriesById = new Map(entries.map((entry) => [entry.data.id, entry]))
   const orderedEntries = orderedIds.flatMap((orderedId) => {
     const entry = entriesById.get(orderedId)
@@ -207,11 +214,15 @@ const orderTrustedElementEntries = (
 const classifyPropertyComponentBatch = (
   batch: SharedPublicationBatch
 ): readonly CanonicalChange[] | null => {
-  if (batch.channel !== SharedDataChannelNames.PROPS) return null
+  if (batch.channel !== SharedDataChannelNames.PROPS) {
+    return null
+  }
   const changes: CanonicalChange[] = []
   let updates = new Map<string, Record<string, unknown>>()
   const flush = (): void => {
-    if (updates.size === 0) return
+    if (updates.size === 0) {
+      return
+    }
     changes.push({
       kind: 'property-components',
       updates: [...updates].map(([propertyId, values]) => ({
@@ -241,10 +252,11 @@ const classifyPropertyComponentBatch = (
       )
       continue
     }
-    if (delivery.eventName !== EventTypes.UPDATE_PROPERTY)
+    if (delivery.eventName !== EventTypes.UPDATE_PROPERTY) {
       throw new Error(
         '[collaboration] invalid property-component batch evidence'
       )
+    }
     const payload = delivery.payload as {
       id: string
       key: string
@@ -401,7 +413,9 @@ const classifyCanonicalCreationBatch = (
   for (const delivery of sceneBatch.deliveries) {
     const entries = canonicalElementEntriesFromDelivery(delivery, 'add')
     if (entries) {
-      if (hierarchyMoveObserved) return null
+      if (hierarchyMoveObserved) {
+        return null
+      }
       sourceEntries.push(...entries)
       continue
     }
@@ -483,7 +497,9 @@ const classifyCanonicalRemovalBatch = (
     )
   }
 
-  if (removals.length === 0) return null
+  if (removals.length === 0) {
+    return null
+  }
 
   const changes: CanonicalChange[] = []
   if (hierarchyMoves.length > 0) {
@@ -540,10 +556,13 @@ const classifySubtreeRestoreBatch = (
       !batch ||
       sliceByBatch.get(batch) !== sourceSlice ||
       !batch.deliveries.every(isAddPropertyDelivery)
-    )
+    ) {
       return null
+    }
     for (const delivery of batch.deliveries) {
-      if (!isAddPropertyDelivery(delivery)) return null
+      if (!isAddPropertyDelivery(delivery)) {
+        return null
+      }
       components.push(...delivery.payload.data)
     }
     index += 1
@@ -558,8 +577,9 @@ const classifySubtreeRestoreBatch = (
     delivery?.eventName !== EventTypes.CHANGE_SUBTREE ||
     (delivery.payload as SubtreeChange).action !==
       SCENE_TREE_ACTIONS.RESTORE_SUBTREE
-  )
+  ) {
     return null
+  }
   const payload = delivery.payload as SubtreeChange
   return Object.freeze({
     change: Object.freeze({

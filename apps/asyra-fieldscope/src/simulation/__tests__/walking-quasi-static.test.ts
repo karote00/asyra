@@ -259,7 +259,9 @@ describe('walking quasi-static owner', () => {
       walkingMotionPoseAt(motion.path, raw.time)
     )
     expect(result.pose.bodyTransforms).toEqual(pose.bodyTransforms)
-    if (result.centreOfMass.kind !== 'known') throw Error('Expected mass')
+    if (result.centreOfMass.kind !== 'known') {
+      throw Error('Expected mass')
+    }
     const total =
       motion.source.massProperties.bodies.reduce(
         (sum, b) => sum + b.massKg,
@@ -309,24 +311,33 @@ describe('walking quasi-static owner', () => {
   it('preserves known arm moments when crate mass, support or reserve is unknown', () => {
     for (const key of ['crate', 'plane', 'reserve', 'contact'] as const) {
       const { raw, owner } = fixture()
-      if (key === 'crate') raw.loadMasses.crate = { kind: 'unknown' }
-      if (key === 'plane') raw.support.plane = { kind: 'unknown' }
-      if (key === 'reserve')
+      if (key === 'crate') {
+        raw.loadMasses.crate = { kind: 'unknown' }
+      }
+      if (key === 'plane') {
+        raw.support.plane = { kind: 'unknown' }
+      }
+      if (key === 'reserve') {
         raw.support.lineOfActionReserve = { kind: 'unknown' }
-      if (key === 'contact')
+      }
+      if (key === 'contact') {
         raw.support.contacts[0].position = { kind: 'unknown' }
+      }
       const result = owner.prepare(raw)
       expect(result.status).toBe('unknown')
       expect(result.armMoments.every((arm) => arm.root.kind === 'known')).toBe(
         true
       )
-      if (key === 'reserve') expect(result.projection.kind).toBe('known')
+      if (key === 'reserve') {
+        expect(result.projection.kind).toBe('known')
+      }
     }
   })
   it('reports arithmetic overflow as unknown quantities, never known infinities', () => {
     const { raw, owner } = fixture()
-    if (raw.loadMasses.crate.kind === 'known')
+    if (raw.loadMasses.crate.kind === 'known') {
       raw.loadMasses.crate.massKg = Number.MAX_VALUE
+    }
     const result = owner.prepare(raw)
     expect(result.status).toBe('unknown')
     expect(result.centreOfMass.kind).toBe('unknown')
@@ -335,7 +346,9 @@ describe('walking quasi-static owner', () => {
     )
     const held = fixture()
     const properties = held.raw.loadMasses.carried[0].properties
-    if (properties.kind === 'known') properties.massKg = Number.MAX_VALUE
+    if (properties.kind === 'known') {
+      properties.massKg = Number.MAX_VALUE
+    }
     const heldResult = held.owner.prepare(held.raw)
     expect(heldResult.armMoments[0].root.kind).toBe('unknown')
     expect(heldResult.reasons).toContain('arm-moment-unknown')
@@ -389,20 +402,24 @@ describe('walking quasi-static owner', () => {
     owner.prepare(raw)
     for (const field of ['plane', 'contact', 'load', 'reserve']) {
       const changed = structuredClone(raw)
-      if (field === 'plane' && changed.support.plane.kind === 'declared')
+      if (field === 'plane' && changed.support.plane.kind === 'declared') {
         changed.support.plane.frame.position[1] = 0.1
+      }
       if (
         field === 'contact' &&
         changed.support.contacts[0].position.kind === 'plane-point'
-      )
+      ) {
         changed.support.contacts[0].position.coordinates[0] = -11
-      if (field === 'load' && changed.loadMasses.crate.kind === 'known')
+      }
+      if (field === 'load' && changed.loadMasses.crate.kind === 'known') {
         changed.loadMasses.crate.massKg = 3
+      }
       if (
         field === 'reserve' &&
         changed.support.lineOfActionReserve.kind === 'bounded'
-      )
+      ) {
         changed.support.lineOfActionReserve.metres = 0.01
+      }
       owner.prepare(changed)
     }
     expect(owner.work.preparations).toBe(5)
@@ -420,7 +437,9 @@ describe('walking quasi-static owner', () => {
     )
     const shoulder = bodyFrames.find((item) => item.id === chain.bodyIds[1])
     const fruit = bodyFrames.find((item) => item.id === chain.toolBodyId)
-    if (!root || !shoulder || !fruit) throw Error('Expected authored frames')
+    if (!root || !shoulder || !fruit) {
+      throw Error('Expected authored frames')
+    }
     for (const [part, pivot, ids] of [
       [result.armMoments[0].root, root.position, chain.bodyIds],
       [
@@ -441,8 +460,9 @@ describe('walking quasi-static owner', () => {
         (sum, m) => sum - (m.position[0] - pivot[0]) * m.massKg * 9.80665,
         0
       )
-      if (part.kind !== 'known' || !part.vector || !part.magnitude)
+      if (part.kind !== 'known' || !part.vector || !part.magnitude) {
         throw Error('Expected moment')
+      }
       expect(part.vector[0].low).toBeLessThanOrEqual(tx)
       expect(part.vector[0].high).toBeGreaterThanOrEqual(tx)
       expect(part.vector[2].low).toBeLessThanOrEqual(tz)

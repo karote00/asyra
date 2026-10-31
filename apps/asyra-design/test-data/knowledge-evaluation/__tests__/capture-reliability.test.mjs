@@ -321,7 +321,9 @@ test('timed-out reload stops late navigation and closes a late-created context w
       closed = 0
     const page = {
       goto: async () => {
-        if (lateStep === 'navigation') await pending
+        if (lateStep === 'navigation') {
+          await pending
+        }
       },
       evaluate: async () =>
         assert.fail('Timed-out reload must not begin readiness'),
@@ -344,7 +346,9 @@ test('timed-out reload stops late navigation and closes a late-created context w
       captureReload({
         browser: {
           newContext: async () => {
-            if (lateStep === 'context') await pending
+            if (lateStep === 'context') {
+              await pending
+            }
             return context
           }
         },

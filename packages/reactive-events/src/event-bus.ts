@@ -26,7 +26,9 @@ const appliedEventBatchRegistrations = new Set<ObserverEventBatchRegistration>()
 /** Local derived-state delivery after canonical apply, before the next API read. */
 export const publishAppliedEventBatch = (events: readonly AllEvent[]): void => {
   for (const registration of [...appliedEventBatchRegistrations]) {
-    if (!registration.active) continue
+    if (!registration.active) {
+      continue
+    }
     try {
       registration.handler(events)
     } catch {
@@ -49,7 +51,9 @@ const disposeObserverEventBatchRegistrations = (): void => {
 const notifyObserverEventBatch = (events: readonly AllEvent[]): void => {
   const registrations = [...observerEventBatchRegistrations]
   registrations.forEach((registration) => {
-    if (!registration.active) return
+    if (!registration.active) {
+      return
+    }
     try {
       registration.handler(events)
     } catch {
@@ -68,17 +72,23 @@ class OrderedBatchReplaySubject extends ReplaySubject<AllEvent> {
   }
 
   nextBatch(sourceEvents: readonly AllEvent[], projectApplied = true): void {
-    if (sourceEvents.length === 0) return
+    if (sourceEvents.length === 0) {
+      return
+    }
     if (this.closed) {
       super.next(sourceEvents[0] as AllEvent)
       return
     }
-    if (this.isStopped) return
+    if (this.isStopped) {
+      return
+    }
 
     const events = Object.isFrozen(sourceEvents)
       ? sourceEvents
       : Object.freeze([...sourceEvents])
-    if (projectApplied) publishAppliedEventBatch(events)
+    if (projectApplied) {
+      publishAppliedEventBatch(events)
+    }
     const observerSnapshot = [...this.observers]
     // RxJS 7 caches this snapshot internally for one next(). Resetting the
     // same snapshot before each source event keeps one batch registry boundary
@@ -279,7 +289,9 @@ export const subscribeToEventBatches = (
 export const subscribeToAppliedEventBatches = (
   subscriber: ObserverEventBatchHandler
 ): Subscription => {
-  if (eventBus.closed || eventBus.isStopped) return new Subscription()
+  if (eventBus.closed || eventBus.isStopped) {
+    return new Subscription()
+  }
   const registration: ObserverEventBatchRegistration = {
     handler: subscriber,
     active: true

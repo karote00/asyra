@@ -48,14 +48,7 @@ test('completed plan and direct-open Inspector are the resolvable authorities', 
     false
   )
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.inspectorPath)))
-  assert.ok(
-    fs.existsSync(
-      path.resolve(
-        repoRoot,
-        'tools/flow-inspector/inspectors/preset-composition-flow-inspector.html'
-      )
-    )
-  )
+  require('./assert-react-catalog.cjs')(data)
   data.links.forEach((link) => {
     assert.ok(fs.existsSync(path.resolve(__dirname, '..', link.href)))
   })

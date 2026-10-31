@@ -240,8 +240,12 @@ const sortDocumentValue = (value: unknown): unknown => {
   return Object.fromEntries(
     Object.entries(value as Record<string, unknown>)
       .sort(([left], [right]) => {
-        if (left < right) return -1
-        if (left > right) return 1
+        if (left < right) {
+          return -1
+        }
+        if (left > right) {
+          return 1
+        }
         return 0
       })
       .map(([key, item]) => [key, sortDocumentValue(item)])
@@ -272,19 +276,28 @@ export async function getCoreDocumentDigest(
     if (
       expectedElementCount !== undefined &&
       core.getCanonicalElementCount() !== expectedElementCount
-    )
+    ) {
       return null
+    }
     const data = await core.save()
     // Keep the browser oracle independent of the Node persistence digest.
     // Only the digest crosses the automation bridge, never the full document.
     const sortValue = (value: unknown): unknown => {
-      if (Array.isArray(value)) return value.map(sortValue)
-      if (typeof value !== 'object' || value === null) return value
+      if (Array.isArray(value)) {
+        return value.map(sortValue)
+      }
+      if (typeof value !== 'object' || value === null) {
+        return value
+      }
       return Object.fromEntries(
         Object.entries(value as Record<string, unknown>)
           .sort(([left], [right]) => {
-            if (left < right) return -1
-            if (left > right) return 1
+            if (left < right) {
+              return -1
+            }
+            if (left > right) {
+              return 1
+            }
             return 0
           })
           .map(([key, item]) => [key, sortValue(item)])

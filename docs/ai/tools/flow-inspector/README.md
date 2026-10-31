@@ -89,10 +89,12 @@ plans, automatic dispatch, or verification of unregistered flows.
 
 ## Scope
 
-Flow Inspector includes a static, read-only architecture viewer and a React
-workspace at `tools/flow-inspector/workspace/`. The workspace provides one
-sidebar-driven surface for all current-project Inspectors while retaining
-direct-open standalone HTML compatibility. The bounded local
+Flow Inspector uses React for the architecture workspace, live dashboard and
+control-plane Board. The workspace at `tools/flow-inspector/workspace/` provides
+one sidebar-driven surface for all current-project Inspectors. Its shared HTML
+entrypoint mounts the React build and supports direct-open hash navigation;
+per-Inspector HTML, iframe composition and old renderer routes are removed.
+The bounded local
 [Core Proof](CORE_PROOF.md) at `tools/flow-inspector/control-plane/` adds real
 Factory flow verification, snapshot-bound evidence, explicit mapping review, and
 controlled actions on the existing canvas cards. The completed local Phase 4 extension adds
@@ -118,7 +120,7 @@ its own identity, outside the Framework bulk-release allowlist. Its archive
 contains static assets and source; dynamic execution still requires the Asyra
 checkout. See the package README for the supported distribution boundary.
 
-All Inspector data, standalone HTML, and Inspector contract tests are owned by
+All Inspector data and Inspector contract tests are owned by
 `tools/flow-inspector/inspectors/`. Framework and App documentation remains the
 semantic authority referenced by those artifacts; their `plans/` directories
 do not store Inspector implementation artifacts.

@@ -192,7 +192,7 @@ it('shares one membership-aware W1 tree for route and complete observation inven
 it('builds one immutable index for one W1 route and reuses it across base actions', () => {
   const screen = new WalkingTransitScreen()
   const source = demand([exclusion([5, -1, -1], [6, 1, 1], 'near')])
-  for (let i = 0; i < 100; i++)
+  for (let i = 0; i < 100; i++) {
     expect(
       screen.evaluate(
         source,
@@ -201,6 +201,7 @@ it('builds one immutable index for one W1 route and reuses it across base action
         0
       ).status
     ).toBe('ready-fast')
+  }
   expect(screen.work.builds).toBe(1)
   expect(screen.work.queries).toBe(100)
   expect(screen.work.validationVisits).toBe(1)
@@ -384,10 +385,11 @@ it('caches invalid immutable W1 bounds without rescanning on action or margin ch
   }
   invalid.bounds.max[2] = Number.NaN
   const source = demand([invalid as unknown as SceneDemandExclusion])
-  for (const margin of [0, 0.1])
+  for (const margin of [0, 0.1]) {
     expect(
       screen.evaluate(source, envelope, action([0, 0, 0], [1, 0, 0]), margin)
     ).toMatchObject({ status: 'unknown', reasons: ['invalid-transit-bounds'] })
+  }
   expect(screen.work.validationVisits).toBe(1)
   expect(screen.work.builds).toBe(0)
   expect(screen.work.queries).toBe(0)

@@ -288,20 +288,27 @@ export const selectContainerChildFeature = defineFeature(
         snapshot.keyCtrl ||
         snapshot.keyAlt ||
         systemContextApis.getPathEditingMode()
-      )
+      ) {
         return null
+      }
 
       const selectedIds = selectionApis.getSelectedIds()
-      if (selectedIds.length !== 1) return null
+      if (selectedIds.length !== 1) {
+        return null
+      }
       const containerId = selectedIds[0]
       const type = elementApis.getElementType(containerId)
-      if (!type || !elementApis.isContainerType(type)) return null
+      if (!type || !elementApis.isContainerType(type)) {
+        return null
+      }
 
       const childId = resolveContainerChildAtClientPos(
         containerId,
         snapshot.mousePosition
       )
-      if (!childId) return null
+      if (!childId) {
+        return null
+      }
       selectionApis.selectElements([childId])
       // The pointer can stay still after entering a new parent scope.
       systemContextApis.updateHoveredElementId(childId)

@@ -45,8 +45,9 @@ const vector = (input: SpatialVector): SpatialVector => {
     !Array.isArray(input) ||
     input.length !== 3 ||
     !input.every(Number.isFinite)
-  )
+  ) {
     throw new Error('Invalid spatial edit vector')
+  }
   return [...input] as unknown as SpatialVector
 }
 const dot = (a: SpatialVector, b: SpatialVector) =>
@@ -54,8 +55,9 @@ const dot = (a: SpatialVector, b: SpatialVector) =>
 const unit = (input: SpatialVector): SpatialVector => {
   const value = vector(input),
     length = Math.hypot(...value)
-  if (!Number.isFinite(length) || length < 1e-12)
+  if (!Number.isFinite(length) || length < 1e-12) {
     throw new Error('Invalid spatial edit axis')
+  }
   return value.map((n) => n / length) as unknown as SpatialVector
 }
 const product = (
@@ -78,8 +80,9 @@ function project(
   const origin = vector(plane.origin),
     u = unit(plane.u),
     v = unit(plane.v)
-  if (Math.abs(dot(u, v)) > 1e-8)
+  if (Math.abs(dot(u, v)) > 1e-8) {
     throw new Error('Spatial edit plane axes must be orthogonal')
+  }
   const relative = position.map(
     (n, i) => n - origin[i]
   ) as unknown as SpatialVector
@@ -90,8 +93,9 @@ function project(
     if (
       spacing.length !== 2 ||
       spacing.some((n) => !Number.isFinite(n) || n <= 0)
-    )
+    ) {
       throw new Error('Invalid spatial edit grid spacing')
+    }
     a = Math.round(a / spacing[0]) * spacing[0]
     b = Math.round(b / spacing[1]) * spacing[1]
   }
@@ -106,8 +110,9 @@ function readTarget(target: SpatialEditTarget): SpatialPose {
     !Number.isSafeInteger(target.revision) ||
     target.revision < 0 ||
     typeof target.allowScale !== 'boolean'
-  )
+  ) {
     throw new Error('Invalid spatial edit target')
+  }
   return readSpatialPose(target.pose)
 }
 const equalScale = (a: SpatialPose, b: SpatialPose) =>
@@ -119,8 +124,9 @@ export function transformSpatialPose(
   command: SpatialEditCommand,
   allowScale: boolean
 ): SpatialPose {
-  if (typeof allowScale !== 'boolean')
+  if (typeof allowScale !== 'boolean') {
     throw new Error('Invalid spatial scale capability')
+  }
   const from = readSpatialPose(source)
   let pose: SpatialPose = from
   switch (command.kind) {
@@ -139,8 +145,9 @@ export function transformSpatialPose(
       if (
         !Number.isFinite(command.radians) ||
         !['local', 'world'].includes(command.space)
-      )
+      ) {
         throw new Error('Invalid spatial edit rotation')
+      }
       const axis = unit(command.axis),
         sine = Math.sin(command.radians / 2)
       const rotation: SpatialQuaternion = [
@@ -159,10 +166,13 @@ export function transformSpatialPose(
       break
     }
     case 'scale': {
-      if (!allowScale) throw new Error('Spatial target does not support scale')
+      if (!allowScale) {
+        throw new Error('Spatial target does not support scale')
+      }
       const factors = vector(command.factors)
-      if (factors.some((n) => n <= 0))
+      if (factors.some((n) => n <= 0)) {
         throw new Error('Spatial scale must be positive')
+      }
       pose = {
         ...from,
         scale: factors.map(
@@ -178,8 +188,9 @@ export function transformSpatialPose(
       throw new Error('Unknown spatial edit command')
   }
   pose = readSpatialPose(pose)
-  if (!allowScale && !equalScale(from, pose))
+  if (!allowScale && !equalScale(from, pose)) {
     throw new Error('Spatial target does not support scale')
+  }
   return pose
 }
 
@@ -206,14 +217,17 @@ export function resolveSpatialEdit(
     !current ||
     preview.id !== current.id ||
     preview.revision !== current.revision
-  )
+  ) {
     return Object.freeze({ status: 'rejected', reason: 'stale' })
+  }
   const from = readTarget(current),
     pose = readSpatialPose(preview.pose)
-  if (!current.allowScale && !equalScale(from, pose))
+  if (!current.allowScale && !equalScale(from, pose)) {
     return Object.freeze({ status: 'rejected', reason: 'scale' })
-  if (!validate(pose))
+  }
+  if (!validate(pose)) {
     return Object.freeze({ status: 'rejected', reason: 'constraint' })
+  }
   const sameRotation =
     from.rotation.every((n, i) => n === pose.rotation[i]) ||
     from.rotation.every((n, i) => n === -pose.rotation[i])
@@ -221,7 +235,8 @@ export function resolveSpatialEdit(
     equalScale(from, pose) &&
     sameRotation &&
     from.position.every((n, i) => n === pose.position[i])
-  )
+  ) {
     return Object.freeze({ status: 'unchanged' })
+  }
   return Object.freeze({ status: 'ready', pose })
 }

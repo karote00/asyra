@@ -23,7 +23,10 @@ const inspectorPath = path.join(
 const discoverCandidates = (root) =>
   fs.readdirSync(root, { withFileTypes: true }).flatMap((entry) => {
     const entryPath = path.join(root, entry.name)
-    if (entry.isDirectory()) return discoverCandidates(entryPath)
+    if (entry.isDirectory()) {
+      return discoverCandidates(entryPath)
+    }
+
     return /-flow-inspector\.data\.(?:cjs|js)$/.test(entry.name)
       ? [entryPath]
       : []
@@ -37,7 +40,10 @@ const legacyPlanRoots = [
 const discoverLegacyInspectorArtifacts = (root) =>
   fs.readdirSync(root, { withFileTypes: true }).flatMap((entry) => {
     const entryPath = path.join(root, entry.name)
-    if (entry.isDirectory()) return discoverLegacyInspectorArtifacts(entryPath)
+    if (entry.isDirectory()) {
+      return discoverLegacyInspectorArtifacts(entryPath)
+    }
+
     return /(?:flow-inspector\.data\.(?:cjs|js)|flow-inspector\.html|flow-inspector\.contract\.test\.cjs)$/.test(
       entry.name
     )
@@ -74,7 +80,7 @@ test('preview artifact is independently versioned and static-only', () => {
   assert.equal(toolPackage.publishConfig.access, 'public')
   assert.equal(
     toolPackage.scripts['test:contracts'],
-    'node --test __tests__/viewer-entry.test.cjs workspace/__tests__/catalog.contract.test.cjs workspace/__tests__/workspace.test.cjs __tests__/package.test.cjs'
+    'node --test __tests__/architecture-contract.test.cjs __tests__/react-delivery.test.cjs workspace/__tests__/catalog.contract.test.cjs workspace/__tests__/react-workspace.contract.test.cjs __tests__/package.test.cjs'
   )
   for (const scriptName of ['test', 'test:local', 'test:ci']) {
     assert.equal(
@@ -114,7 +120,7 @@ test('workspace Inspector resolves the exact static architecture contract', () =
       'route-workspace-selection',
       'isolate-selected-target',
       'render-selected-contract',
-      'preserve-standalone-entries',
+      'verify-react-delivery',
       'verify-static-preview'
     ]
   )
@@ -156,15 +162,12 @@ test('generated catalog classifies every fixed-root candidate exactly once', () 
   assert.deepEqual(bundle.generatedFrom.candidatePaths, currentCandidates)
   for (const entry of bundle.entries) {
     assert.equal(fs.existsSync(path.join(projectRoot, entry.sourcePath)), true)
-    if (entry.standalonePath) {
-      assert.equal(
-        fs.existsSync(path.join(projectRoot, entry.standalonePath)),
-        true
-      )
-    }
+    assert.equal(Object.hasOwn(entry, 'standalonePath'), false)
     const source = require(path.join(projectRoot, entry.sourcePath))
     assert.deepEqual(entry.data, JSON.parse(JSON.stringify(source)))
-    if (entry.kind === 'flow-v2') assert.equal(entry.id, entry.data.target.id)
+    if (entry.kind === 'flow-v2') {
+      assert.equal(entry.id, entry.data.target.id)
+    }
   }
 })
 
@@ -197,10 +200,12 @@ test('catalog owns unique stable short slugs without changing Inspector identiti
   )
   assert.equal(new Set(entries.map((entry) => entry.slug)).size, entries.length)
   const policy = require(catalogPath)
-  for (const entry of entries)
+  for (const entry of entries) {
     assert.equal(entry.slug, policy.routeSlugs[entry.id] ?? entry.id)
-  for (const entry of entries)
+  }
+  for (const entry of entries) {
     assert.match(entry.slug, /^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+  }
 })
 
 test('generator rejects colliding, reserved, malformed, and orphaned slug declarations before output', () => {
@@ -229,14 +234,19 @@ test('generator rejects colliding, reserved, malformed, and orphaned slug declar
           __dirname: workspaceRoot,
           require: Object.assign(
             (name) => {
-              if (name === './catalog.cjs') return policy
-              if (name === 'node:fs')
+              if (name === './catalog.cjs') {
+                return policy
+              }
+
+              if (name === 'node:fs') {
                 return {
                   ...fs,
                   writeFileSync() {
                     writes++
                   }
                 }
+              }
+
               return localRequire(name)
             },
             { resolve: localRequire.resolve, cache: require.cache }

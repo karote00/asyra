@@ -20,8 +20,12 @@ function rational(value: number): readonly [bigint, bigint] {
   const bits = view.getBigUint64(0),
     exponent = Number((bits >> 52n) & 2047n)
   let numerator = bits & ((1n << 52n) - 1n)
-  if (exponent) numerator += 1n << 52n
-  if (bits >> 63n) numerator = -numerator
+  if (exponent) {
+    numerator += 1n << 52n
+  }
+  if (bits >> 63n) {
+    numerator = -numerator
+  }
   const shift = exponent ? exponent - 1075 : -1074
   return shift >= 0
     ? [numerator << BigInt(shift), 1n]
@@ -117,7 +121,9 @@ it.each([
     let work = 0
     const result = transport(source, target, () => work++)
     expect(result).toBeDefined()
-    if (!result) throw new Error('Missing eligible transport')
+    if (!result) {
+      throw new Error('Missing eligible transport')
+    }
     expect(work).toBe(6)
     point.forEach(([n, d], axis) => {
       expect(compare(result.a[axis][0], n, d)).toBeLessThanOrEqual(0n)
@@ -144,7 +150,9 @@ it('rejects invalid provenance after one charge and propagates cancellation befo
   let work = 0
   expect(() =>
     transport(source, target, () => {
-      if (++work === 4) throw new Error('cancelled before forward transform')
+      if (++work === 4) {
+        throw new Error('cancelled before forward transform')
+      }
     })
   ).toThrow('cancelled before forward transform')
   expect(work).toBe(4)
@@ -162,7 +170,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             item.a.bodyId === 'example:joint-2' &&
             item.b.bodyId === 'obstacle-11'
         )
-        if (!pair) throw new Error('Missing original source pair')
+        if (!pair) {
+          throw new Error('Missing original source pair')
+        }
         const node = [
           snapshot.trajectory.keyframes[segment].time,
           snapshot.trajectory.keyframes[segment + 1].time
@@ -189,14 +199,16 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             current &&
             current.firstWarningWork === undefined &&
             result.upper < snapshot.rule.minimumClearance
-          )
+          ) {
             current.firstWarningWork = context.work - current.before
+          }
           return result
         })
         const distance = context.distance.bind(context)
         context.distance = (a, b, ...args) => {
-          if (!time || time[0] !== time[1])
+          if (!time || time[0] !== time[1]) {
             throw new Error('Missing actual static time')
+          }
           const inputTime = time[0]
           current = { before: context.work }
           try {
@@ -246,29 +258,33 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           targetTime = segment === 114 ? middle : node[1]
         const source = rows.find((row) => row.time === sourceTime),
           target = rows.find((row) => row.time === targetTime)
-        if (!source || !target)
+        if (!source || !target) {
           throw new Error('Missing frozen actual neighboring samples')
+        }
         expect(source.evidence.penetration).toBe(false)
         expect(source.evidence.upper).toBeLessThan(
           snapshot.rule.minimumClearance
         )
         // Controlled admitted snapshot precondition, not a generic provenance validator.
         for (const shape of [...source.shapes, ...target.shapes]) {
-          if (shape.geometry.kind !== 'mesh')
+          if (shape.geometry.kind !== 'mesh') {
             throw new Error('Expected original mesh source')
+          }
           expect(Object.isFrozen(shape.geometry.positions)).toBe(true)
           expect(Object.isFrozen(shape.geometry.indices)).toBe(true)
         }
         let work = 0
         const transported = transport(source, target, () => {
-          if (context.work + ++work > diagnosticWorkLimit)
+          if (context.work + ++work > diagnosticWorkLimit) {
             throw new MeshWorkLimit(
               'Passive witness transport exceeded the unchanged guard'
             )
+          }
         })
         expect(transported).toBeDefined()
-        if (!transported)
+        if (!transported) {
           throw new Error('Expected admissible original witness')
+        }
         expect(work).toBe(6)
         expect(transported.upper).toBeGreaterThanOrEqual(target.evidence.lower)
         // eslint-disable-next-line no-console -- passive seed eligibility and complete baseline evidence, not measured savings

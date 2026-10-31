@@ -10,7 +10,9 @@ const decodeAttribute = (value: string) =>
       '&gt;': '>'
     }
     const known = named[entity.toLowerCase()]
-    if (known) return known
+    if (known) {
+      return known
+    }
     const numeric = entity.slice(2, -1)
     const code =
       numeric[0]?.toLowerCase() === 'x'
@@ -23,10 +25,11 @@ const attributes = (tag: string) => {
   const result: Record<string, string> = {}
   for (const attr of tag.matchAll(
     /([\w:-]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/g
-  ))
+  )) {
     result[attr[1].toLowerCase()] = decodeAttribute(
       attr[2] ?? attr[3] ?? attr[4] ?? ''
     )
+  }
   return result
 }
 
@@ -56,7 +59,9 @@ export const referencePageImages = (
   pageUrl: string
 ): ReferencePageImage[] => {
   const url = (value: unknown) => {
-    if (typeof value !== 'string' || !value) return
+    if (typeof value !== 'string' || !value) {
+      return
+    }
     try {
       return validateReferenceImageUrl(new URL(value, pageUrl).href).href
     } catch {
@@ -70,8 +75,9 @@ export const referencePageImages = (
   for (const script of declarations.matchAll(
     /<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi
   )) {
-    if (attributes(script[1]).type?.toLowerCase() !== 'application/ld+json')
+    if (attributes(script[1]).type?.toLowerCase() !== 'application/ld+json') {
       continue
+    }
     try {
       const pending: unknown[] = [JSON.parse(script[2])]
       while (pending.length) {
@@ -80,7 +86,9 @@ export const referencePageImages = (
           pending.push(...item)
           continue
         }
-        if (!item || typeof item !== 'object') continue
+        if (!item || typeof item !== 'object') {
+          continue
+        }
         const data = item as Record<string, unknown>
         const types = Array.isArray(data['@type'])
           ? data['@type']
@@ -96,8 +104,11 @@ export const referencePageImages = (
             previewUrls: values.map(url).filter((v): v is string => !!v)
           })
         }
-        for (const value of Object.values(data))
-          if (value && typeof value === 'object') pending.push(value)
+        for (const value of Object.values(data)) {
+          if (value && typeof value === 'object') {
+            pending.push(value)
+          }
+        }
       }
     } catch {
       /* Malformed structured data does not authorize executing it. */
@@ -122,15 +133,19 @@ export const referencePageImages = (
         'twitter:image',
         'twitter:image:src'
       ].includes(declared)
-    )
+    ) {
       value = attrs.content
+    }
     if (
       match[1].toLowerCase() === 'link' &&
       attrs.rel?.toLowerCase().split(/\s+/).includes('image_src')
-    )
+    ) {
       value = attrs.href
+    }
     const candidate = url(value)
-    if (candidate) metadata.add(candidate)
+    if (candidate) {
+      metadata.add(candidate)
+    }
   }
   for (const anchor of markup.matchAll(
     /<a\b((?:[^"'<>]|"[^"]*"|'[^']*')*)>([\s\S]*?)<\/a\s*>/gi
@@ -141,28 +156,34 @@ export const referencePageImages = (
       !imageUrl ||
       (!/\.(png|jpe?g|webp)$/i.test(new URL(imageUrl).pathname) &&
         !/^image\/(png|jpeg|webp)$/i.test(attrs.type ?? ''))
-    )
+    ) {
       continue
+    }
     const previewUrls = new Set<string>()
     for (const image of anchor[2].matchAll(
       /<img\b(?:[^"'<>]|"[^"]*"|'[^']*')*>/gi
     )) {
       const imageAttrs = attributes(image[0])
       const src = url(imageAttrs.src)
-      if (src) previewUrls.add(src)
+      if (src) {
+        previewUrls.add(src)
+      }
       for (const candidate of (imageAttrs.srcset ?? '')
         .trim()
         .matchAll(/(?:^|,\s*)(\S+?)\s+\d+(?:\.\d+)?[wx](?=\s*,|$)/g)) {
         const srcset = url(candidate[1])
-        if (srcset) previewUrls.add(srcset)
+        if (srcset) {
+          previewUrls.add(srcset)
+        }
       }
     }
-    if (previewUrls.size)
+    if (previewUrls.size) {
       resources.push({
         imageUrl,
         kind: 'linked-image',
         previewUrls: [...previewUrls]
       })
+    }
   }
   const selected = new Map<string, ReferencePageImage>()
   for (const imageUrl of metadata) {
@@ -174,30 +195,39 @@ export const referencePageImages = (
         )
     )
     if (linked.length) {
-      for (const resource of linked)
+      for (const resource of linked) {
         selected.set(resource.imageUrl, {
           ...resource,
           previewUrls: [...new Set([...resource.previewUrls, imageUrl])].filter(
             (preview) => preview !== resource.imageUrl
           )
         })
-    } else
+      }
+    } else {
       selected.set(imageUrl, {
         imageUrl,
         kind: 'page-metadata',
         previewUrls: []
       })
+    }
   }
   // Without a representative declaration only explicit structured image data is
   // admitted. Arbitrary linked body images might be navigation or advertisements.
-  if (!metadata.size)
-    for (const resource of resources)
-      if (resource.kind === 'structured-image')
+  if (!metadata.size) {
+    for (const resource of resources) {
+      if (resource.kind === 'structured-image') {
         selected.set(resource.imageUrl, resource)
+      }
+    }
+  }
   // Representative declarations rank automatic acquisition, not subject relevance.
-  for (const candidate of selected.values()) candidate.representative = true
-  for (const resource of resources)
-    if (!selected.has(resource.imageUrl))
+  for (const candidate of selected.values()) {
+    candidate.representative = true
+  }
+  for (const resource of resources) {
+    if (!selected.has(resource.imageUrl)) {
       selected.set(resource.imageUrl, { ...resource, representative: false })
+    }
+  }
   return [...selected.values()]
 }

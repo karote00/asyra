@@ -10,8 +10,11 @@ for (const colorScheme of ['light', 'dark'] as const) {
     for (const width of [1440, 960, 600]) {
       await page.setViewportSize({ width, height: 960 })
       const modelToggle = page.locator('button[aria-label="Model"]')
-      if (width > 1100) await expect(modelToggle).toBeHidden()
-      else await expect(modelToggle).toBeVisible()
+      if (width > 1100) {
+        await expect(modelToggle).toBeHidden()
+      } else {
+        await expect(modelToggle).toBeVisible()
+      }
       const buttons = page.locator('.topbar button, .commandbar button')
       await expect(buttons).toHaveCount(8)
       for (const button of await buttons.all()) {
@@ -23,10 +26,14 @@ for (const colorScheme of ['light', 'dark'] as const) {
           'aria-hidden',
           'true'
         )
-        if (!(await button.isVisible())) continue
+        if (!(await button.isVisible())) {
+          continue
+        }
         const bounds = await button.evaluate((node) => {
           const svg = node.querySelector('svg')
-          if (!svg) throw new Error('Toolbar action is missing its icon')
+          if (!svg) {
+            throw new Error('Toolbar action is missing its icon')
+          }
           const icon = svg.getBoundingClientRect()
           const target = node.getBoundingClientRect()
           return {

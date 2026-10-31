@@ -299,8 +299,11 @@ describe('Core declarative property type redefinition', () => {
         fields: [{ key: 'tone', kind: 'string', defaultValue: 'warm' }]
       })
       const property = new Constructor({ id: 'style-in-use', type: STYLE })
-      if (replay) props.addToDeletedMap(property)
-      else props.addToMap(property)
+      if (replay) {
+        props.addToDeletedMap(property)
+      } else {
+        props.addToMap(property)
+      }
 
       expect(() =>
         core.redefinePropertyType(STYLE, (current) => current)

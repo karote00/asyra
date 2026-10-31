@@ -32,7 +32,9 @@ export function useProjectRuntime(
   const [revision, setRevision] = useState(0)
 
   useEffect(() => {
-    if (!host) return
+    if (!host) {
+      return
+    }
 
     const controller = new RuntimeController((snapshot, prepared) =>
       bootstrap(host, undefined, snapshot, prepared)
@@ -54,14 +56,18 @@ export function useProjectRuntime(
     const unsubscribe = controller.subscribe(() => {
       const runtime = controller.getState().runtime
 
-      if (runtime === observed) return
+      if (runtime === observed) {
+        return
+      }
 
       unsubscribeModel?.()
 
       observed = runtime
 
       unsubscribeModel = runtime?.subscribe((publication) => {
-        if (controller.getState().runtime !== runtime) return
+        if (controller.getState().runtime !== runtime) {
+          return
+        }
 
         session.markEdited(
           runtime.publicationEntry(publication, session.getKnownResources())
@@ -92,9 +98,13 @@ export function useProjectRuntime(
     )
     const unsubscribePersistence = session.subscribe(() => {
       const project = session.getState().project
-      if (!project) return
+      if (!project) {
+        return
+      }
       const url = new URL(window.location.href)
-      if (url.searchParams.get('projectId') === project.id) return
+      if (url.searchParams.get('projectId') === project.id) {
+        return
+      }
       url.searchParams.set('projectId', project.id)
       window.history.replaceState(window.history.state, '', url)
     })

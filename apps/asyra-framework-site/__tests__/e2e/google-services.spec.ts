@@ -32,9 +32,11 @@ test('Google services respect the deployment configuration and survive navigatio
   expect(response?.status()).toBe(200)
   const meta = page.locator('head meta[name="google-site-verification"]')
   if (configured) {
-    if (verification)
+    if (verification) {
       await expect(meta).toHaveAttribute('content', verification)
-    else await expect(meta).toHaveCount(0)
+    } else {
+      await expect(meta).toHaveCount(0)
+    }
     await expect.poll(() => libraryRequests).toBe(1)
     const readConfig = () =>
       page.evaluate(() => {

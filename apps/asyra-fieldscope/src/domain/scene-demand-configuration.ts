@@ -68,9 +68,13 @@ const finitePoint = (value: unknown): value is [number, number, number] =>
   Array.isArray(value) && value.length === 3 && value.every(Number.isFinite)
 
 function readRoute(value: unknown): SceneDemandRoute {
-  if (!isRecord(value) || typeof value.kind !== 'string') return invalid()
+  if (!isRecord(value) || typeof value.kind !== 'string') {
+    return invalid()
+  }
   if (value.kind === 'unknown') {
-    if (!exactKeys(value, ['kind'])) return invalid()
+    if (!exactKeys(value, ['kind'])) {
+      return invalid()
+    }
     return Object.freeze({ kind: 'unknown' })
   }
   if (
@@ -84,8 +88,9 @@ function readRoute(value: unknown): SceneDemandRoute {
     (value.from as number) < 0 ||
     !Number.isFinite(value.until) ||
     (value.until as number) <= (value.from as number)
-  )
+  ) {
     return invalid()
+  }
   return Object.freeze({
     kind: 'soil-strip',
     bay: value.bay as number,
@@ -96,14 +101,19 @@ function readRoute(value: unknown): SceneDemandRoute {
 }
 
 function readEvidence(value: unknown): SceneDemandEvidence {
-  if (!isRecord(value) || typeof value.kind !== 'string') return invalid()
+  if (!isRecord(value) || typeof value.kind !== 'string') {
+    return invalid()
+  }
   if (value.kind === 'unknown') {
-    if (!exactKeys(value, ['kind'])) return invalid()
+    if (!exactKeys(value, ['kind'])) {
+      return invalid()
+    }
     return Object.freeze({ kind: 'unknown' })
   }
   if (value.kind === 'measured') {
-    if (!exactKeys(value, ['kind', 'id']) || !identity(value.id))
+    if (!exactKeys(value, ['kind', 'id']) || !identity(value.id)) {
       return invalid()
+    }
     return Object.freeze({ kind: 'measured', id: value.id as string })
   }
   if (
@@ -111,8 +121,9 @@ function readEvidence(value: unknown): SceneDemandEvidence {
     !exactKeys(value, ['kind', 'id', 'label']) ||
     !identity(value.id) ||
     !identity(value.label)
-  )
+  ) {
     return invalid()
+  }
   return Object.freeze({
     kind: 'synthetic',
     id: value.id as string,
@@ -121,9 +132,13 @@ function readEvidence(value: unknown): SceneDemandEvidence {
 }
 
 function readGrowth(value: unknown): SceneDemandGrowth {
-  if (!isRecord(value) || typeof value.kind !== 'string') return invalid()
+  if (!isRecord(value) || typeof value.kind !== 'string') {
+    return invalid()
+  }
   if (value.kind === 'unknown') {
-    if (!exactKeys(value, ['kind'])) return invalid()
+    if (!exactKeys(value, ['kind'])) {
+      return invalid()
+    }
     return Object.freeze({ kind: 'unknown' })
   }
   if (
@@ -131,8 +146,9 @@ function readGrowth(value: unknown): SceneDemandGrowth {
     !exactKeys(value, ['kind', 'coverage', 'volumes']) ||
     !['complete', 'discrete'].includes(value.coverage as string) ||
     !Array.isArray(value.volumes)
-  )
+  ) {
     return invalid()
+  }
   const ids = new Set<string>()
   const volumes = value.volumes.map((raw): GrowthVolume => {
     if (
@@ -143,25 +159,30 @@ function readGrowth(value: unknown): SceneDemandGrowth {
       !isRecord(raw.anchor) ||
       !finitePoint(raw.min) ||
       !finitePoint(raw.max)
-    )
+    ) {
       return invalid()
+    }
     const min = raw.min
     const max = raw.max
-    if (min.some((minimum, axis) => minimum >= max[axis])) return invalid()
+    if (min.some((minimum, axis) => minimum >= max[axis])) {
+      return invalid()
+    }
     ids.add(raw.id as string)
     let anchor: GrowthVolume['anchor']
-    if (raw.anchor.kind === 'world' && exactKeys(raw.anchor, ['kind']))
+    if (raw.anchor.kind === 'world' && exactKeys(raw.anchor, ['kind'])) {
       anchor = Object.freeze({ kind: 'world' })
-    else if (
+    } else if (
       raw.anchor.kind === 'plant' &&
       exactKeys(raw.anchor, ['kind', 'plantId']) &&
       identity(raw.anchor.plantId)
-    )
+    ) {
       anchor = Object.freeze({
         kind: 'plant',
         plantId: raw.anchor.plantId as string
       })
-    else return invalid()
+    } else {
+      return invalid()
+    }
     return Object.freeze({
       id: raw.id as string,
       anchor,
@@ -177,9 +198,13 @@ function readGrowth(value: unknown): SceneDemandGrowth {
 }
 
 function readMargin(value: unknown): SceneDemandClearanceMargin {
-  if (!isRecord(value) || typeof value.kind !== 'string') return invalid()
+  if (!isRecord(value) || typeof value.kind !== 'string') {
+    return invalid()
+  }
   if (value.kind === 'unknown') {
-    if (!exactKeys(value, ['kind'])) return invalid()
+    if (!exactKeys(value, ['kind'])) {
+      return invalid()
+    }
     return Object.freeze({ kind: 'unknown' })
   }
   if (
@@ -187,8 +212,9 @@ function readMargin(value: unknown): SceneDemandClearanceMargin {
     !exactKeys(value, ['kind', 'metres']) ||
     !Number.isFinite(value.metres) ||
     (value.metres as number) < 0
-  )
+  ) {
     return invalid()
+  }
   return Object.freeze({ kind: 'bounded', metres: value.metres as number })
 }
 
@@ -206,8 +232,9 @@ export function validateSceneDemandConfiguration(
       'clearanceMargin'
     ]) ||
     snapshot.version !== 1
-  )
+  ) {
     return invalid()
+  }
   return Object.freeze({
     version: 1,
     route: readRoute(snapshot.route),
@@ -223,12 +250,15 @@ export function assertCurrentSceneDemandRoute(
   farm: FarmConfiguration
 ) {
   const route = configuration.route
-  if (route.kind === 'unknown') return
+  if (route.kind === 'unknown') {
+    return
+  }
   if (
     !farm.strips.some(({ id }) => id === route.stripId) ||
     route.until > farm.length
-  )
+  ) {
     return invalid()
+  }
 }
 
 export const DEFAULT_SCENE_DEMAND_CONFIGURATION =

@@ -21,7 +21,9 @@ beforeAll(async () => {
   const source = createMechanicalVisuals().find(
     (part) => part.body === 'fixture-table'
   )
-  if (!source) throw new Error('Missing ordinary table source')
+  if (!source) {
+    throw new Error('Missing ordinary table source')
+  }
   const asset = await decodeRestrictedGlb(source.bytes)
   tableSourceId = asset.source.sha256
   // The imported table really has legs below the primitive tabletop's local extent.

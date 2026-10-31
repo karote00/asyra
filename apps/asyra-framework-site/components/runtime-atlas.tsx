@@ -42,7 +42,9 @@ const getAtlasGuideTitle = (guideId: string) => {
 }
 
 const progressStage = (snapshot: AtlasRunSnapshot | undefined) => {
-  if (!snapshot || snapshot.actionCount === 0) return 0
+  if (!snapshot || snapshot.actionCount === 0) {
+    return 0
+  }
   return Math.min(
     routeStages.length - 1,
     Math.floor(
@@ -67,7 +69,9 @@ export function RuntimeAtlas() {
     ATLAS_CASES.find(({ id }) => id === selectedId) ?? ATLAS_CASES[0]
 
   const stopTimer = () => {
-    if (timerRef.current !== undefined) window.clearTimeout(timerRef.current)
+    if (timerRef.current !== undefined) {
+      window.clearTimeout(timerRef.current)
+    }
     timerRef.current = undefined
   }
 
@@ -113,13 +117,17 @@ export function RuntimeAtlas() {
       }
 
       worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
-        if (workerRef.current !== worker) return
+        if (workerRef.current !== worker) {
+          return
+        }
         if (event.data.type === 'failure') {
           autoRunRef.current = false
           setRuntimeError(event.data.error)
           return
         }
-        if (event.data.type !== 'snapshot') return
+        if (event.data.type !== 'snapshot') {
+          return
+        }
 
         const nextSnapshot = event.data.snapshot
         setSnapshot(nextSnapshot)
@@ -155,7 +163,9 @@ export function RuntimeAtlas() {
   useEffect(() => {
     const frame = studioFrameRef.current
     const studio = studioRef.current
-    if (!frame || !studio || typeof ResizeObserver === 'undefined') return
+    if (!frame || !studio || typeof ResizeObserver === 'undefined') {
+      return
+    }
 
     const motionPreference = window.matchMedia(
       '(prefers-reduced-motion: reduce)'
@@ -179,7 +189,9 @@ export function RuntimeAtlas() {
       }
 
       const currentHeight = frame.getBoundingClientRect().height
-      if (Math.abs(currentHeight - nextHeight) < 0.5) return
+      if (Math.abs(currentHeight - nextHeight) < 0.5) {
+        return
+      }
 
       frame.style.height = `${currentHeight}px`
       animationFrame = window.requestAnimationFrame(() => {

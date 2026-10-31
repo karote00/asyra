@@ -120,7 +120,9 @@ describe('complete-time pair evidence', () => {
       // complete sorted partition are. The motion here is stationary.
       const retained = result.leaves.find((leaf) => leaf.witnessTime !== null)
       expect(retained).toBeDefined()
-      if (!retained) throw new Error('The established witness was discarded')
+      if (!retained) {
+        throw new Error('The established witness was discarded')
+      }
       expect(retained).toMatchObject({
         state,
         penetration,
@@ -372,8 +374,9 @@ it.each([0, 3599])(
           x0 <= 0 && x1 >= 0 ? 0 : Math.min(Math.abs(x0), Math.abs(x1))
         const minimum = Math.max(0, Math.hypot(nearest, offset) - 2 * radius)
         expect(leaf.lower).toBeLessThanOrEqual(minimum)
-        if (leaf.upper !== null)
+        if (leaf.upper !== null) {
           expect(leaf.upper).toBeGreaterThanOrEqual(minimum)
+        }
         if (leaf.penetration) {
           expect(leaf.witnessTime).not.toBeNull()
           const time = leaf.witnessTime as number
@@ -384,9 +387,9 @@ it.each([0, 3599])(
         }
       }
       expect(cursor).toBe(origin + duration)
-      if (offset === 0)
+      if (offset === 0) {
         expect(result.leaves.some((leaf) => leaf.penetration)).toBe(true)
-      else {
+      } else {
         expect(result.coverage).toBe('complete')
         expect(result.lower).toBeLessThanOrEqual(1 / 4)
         expect(result.upper).toBeGreaterThanOrEqual(1 / 4)

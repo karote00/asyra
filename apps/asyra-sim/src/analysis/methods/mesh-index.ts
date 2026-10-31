@@ -63,13 +63,17 @@ export function buildMeshIndex(
   checkExecution: () => void = checkpoint
 ): MeshIndex {
   const topology = inspectMeshTopology(mesh, checkpoint, checkExecution)
-  if (topology.issue) throw new Error(topology.issue)
+  if (topology.issue) {
+    throw new Error(topology.issue)
+  }
   const triangles: MeshTriangle[] = [],
     representatives: Vec3[] = []
   topology.components.forEach((component, c) => {
     representatives.push(meshPoint(mesh, mesh.indices[component[0]]))
     for (const offset of component) {
-      if (triangles.length % 256 === 0) checkpoint()
+      if (triangles.length % 256 === 0) {
+        checkpoint()
+      }
       const vertices = [0, 1, 2].map((i) =>
         meshPoint(mesh, mesh.indices[offset + i])
       ) as unknown as MeshTriangle['vertices']
@@ -87,18 +91,24 @@ export function buildMeshIndex(
       let lo = Infinity,
         hi = -Infinity
       for (const [index, triangle] of items.entries()) {
-        if (index % 256 === 0) checkExecution()
+        if (index % 256 === 0) {
+          checkExecution()
+        }
         lo = Math.min(lo, triangle.bounds[axis][0])
         hi = Math.max(hi, triangle.bounds[axis][1])
       }
       return interval(lo, hi)
     }) as unknown as Bounds
-    if (!hierarchy || items.length <= 4) return { bounds, triangles: items }
+    if (!hierarchy || items.length <= 4) {
+      return { bounds, triangles: items }
+    }
     const widths = bounds.map((axis) => axis[1] - axis[0]),
       axis = widths.indexOf(Math.max(...widths))
     let comparisons = 0
     items.sort((a, b) => {
-      if (comparisons++ % 256 === 0) checkExecution()
+      if (comparisons++ % 256 === 0) {
+        checkExecution()
+      }
       return (
         a.bounds[axis][0] +
           a.bounds[axis][1] -
@@ -150,7 +160,9 @@ export function createWorldBoundsResolver(
   const transformed = new WeakMap<object, Bounds>()
   return (bounds) => {
     const retained = transformed.get(bounds)
-    if (retained) return retained
+    if (retained) {
+      return retained
+    }
     const result = worldBounds(bounds, pose)
     transformed.set(bounds, result)
     return result
@@ -163,7 +175,9 @@ export function shapeBounds(
     worldBounds(bounds, shape.pose)
 ): Bounds {
   if (shape.geometry.kind === 'mesh') {
-    if (!index) throw new Error('Missing complete mesh index')
+    if (!index) {
+      throw new Error('Missing complete mesh index')
+    }
     return resolveBounds(index.root.bounds)
   }
   return [0, 1, 2].map((axis) => {
@@ -177,12 +191,13 @@ export function shapeBounds(
 /** L-infinity separation is a conservative Euclidean lower bound. */
 export function boundsGap(a: Bounds, b: Bounds): number {
   let gap = 0
-  for (let i = 0; i < 3; i++)
+  for (let i = 0; i < 3; i++) {
     gap = Math.max(
       gap,
       intervalAlgebra.sub(interval(a[i][0]), interval(b[i][1]))[0],
       intervalAlgebra.sub(interval(b[i][0]), interval(a[i][1]))[0]
     )
+  }
   return gap
 }
 
@@ -193,7 +208,9 @@ export function refineMeshIndex(
 ): MeshIndex {
   const scan = <T>(items: readonly T[], visit: (item: T) => void) => {
     items.forEach((item, i) => {
-      if (i % 256 === 0) checkpoint()
+      if (i % 256 === 0) {
+        checkpoint()
+      }
       visit(item)
     })
   }
@@ -201,19 +218,27 @@ export function refineMeshIndex(
     pending = [index.root]
   while (pending.length) {
     const node = pending.pop()
-    if (!node) throw new Error('Missing original node')
+    if (!node) {
+      throw new Error('Missing original node')
+    }
     checkpoint()
     triangles.push(...node.triangles)
-    if (node.children) pending.push(node.children[1], node.children[0])
+    if (node.children) {
+      pending.push(node.children[1], node.children[0])
+    }
   }
   const groups = new Map<number, MeshTriangle[]>()
   scan(triangles, (triangle) => {
     const group = groups.get(triangle.component)
-    if (group) group.push(triangle)
-    else groups.set(triangle.component, [triangle])
+    if (group) {
+      group.push(triangle)
+    } else {
+      groups.set(triangle.component, [triangle])
+    }
   })
-  if (groups.size !== index.componentCount)
+  if (groups.size !== index.componentCount) {
     throw new Error('Incomplete admitted components')
+  }
   function build<T>(
     items: T[],
     getBounds: (item: T) => Bounds,
@@ -222,7 +247,9 @@ export function refineMeshIndex(
     leaf: (items: T[], bounds?: Bounds) => MeshNode
   ): MeshNode {
     checkpoint()
-    if (limit === 1 && items.length === 1) return leaf(items)
+    if (limit === 1 && items.length === 1) {
+      return leaf(items)
+    }
     const bounds: [[number, number], [number, number], [number, number]] = [
       [Infinity, -Infinity],
       [Infinity, -Infinity],
@@ -235,12 +262,16 @@ export function refineMeshIndex(
         bounds[axis][1] = Math.max(bounds[axis][1], box[axis][1])
       }
     })
-    if (items.length <= limit) return leaf(items, bounds)
+    if (items.length <= limit) {
+      return leaf(items, bounds)
+    }
     const widths = bounds.map((axis) => axis[1] - axis[0]),
       axis = widths.indexOf(Math.max(...widths))
     let comparisons = 0
     items.sort((a, b) => {
-      if (comparisons++ % 256 === 0) checkpoint()
+      if (comparisons++ % 256 === 0) {
+        checkpoint()
+      }
       const ab = getBounds(a),
         bb = getBounds(b)
       return (
@@ -266,7 +297,9 @@ export function refineMeshIndex(
       (item) => item.offset,
       4,
       (items, bounds) => {
-        if (!bounds) throw new Error('Missing triangle bounds')
+        if (!bounds) {
+          throw new Error('Missing triangle bounds')
+        }
         return { bounds, triangles: items }
       }
     )

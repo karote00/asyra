@@ -26,8 +26,9 @@ export interface SyntheticExample {
 export function createSyntheticExample(
   namespace = 'example'
 ): SyntheticExample {
-  if (!validIdentifier(namespace) || namespace.length > 60)
+  if (!validIdentifier(namespace) || namespace.length > 60) {
     throw new Error('Invalid example namespace')
+  }
   const id = (name: string) => `${namespace}:${name}`
   const box = (size: Vec3): Collider => ({
     id: 'shape',

@@ -199,7 +199,9 @@ const detailedTabbyRole = (
   fillColor: string,
   counters: DetailedTabbyRoleCounters
 ): string => {
-  if (sourceIndex === 0) return 'portrait-background'
+  if (sourceIndex === 0) {
+    return 'portrait-background'
+  }
 
   const centerX = sourceBounds.x + sourceBounds.width / 2
   const centerY = sourceBounds.y + sourceBounds.height / 2
@@ -324,7 +326,9 @@ export const createDetailedTabbyItemsAtSource = (
           : {})
       }
     })
-    if (items.length === itemLimit) break
+    if (items.length === itemLimit) {
+      break
+    }
     sourceIndex += 1
   }
   return items

@@ -121,10 +121,11 @@ describe('Generic transform preview and canonical handoff', () => {
       null,
       { ...source, id: 'other' },
       { ...source, revision: 4 }
-    ])
+    ]) {
       expect(resolveSpatialEdit(next, current, validator).status).toBe(
         'rejected'
       )
+    }
     expect(validator).not.toHaveBeenCalled()
   })
   it('returns neutral rejected feedback for App constraints and no-op for equivalent quaternion signs', () => {
@@ -148,8 +149,9 @@ describe('Generic transform preview and canonical handoff', () => {
   it('owns no state or commit callback: repeated previews and discard perform no canonical work', () => {
     const source = target(),
       validate = vi.fn(() => true)
-    for (let i = 0; i < 30; i++)
+    for (let i = 0; i < 30; i++) {
       previewSpatialEdit(source, { kind: 'translate', delta: [i, 0, 0] })
+    }
     expect(validate).not.toHaveBeenCalled()
     expect(source.pose.position).toEqual([0, 0, 0])
     const next = previewSpatialEdit(source, {

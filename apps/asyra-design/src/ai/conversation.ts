@@ -288,7 +288,9 @@ const readActionResults = (
 const projectConversationHistory = (
   settledTurns: readonly AiSettledTurn[]
 ): AiJsonValue | undefined => {
-  if (!settledTurns.length) return
+  if (!settledTurns.length) {
+    return
+  }
   const encoder = new TextEncoder()
   const turns: AiJsonValue[] = []
   let pairBytes = 0
@@ -313,8 +315,9 @@ const projectConversationHistory = (
     if (
       envelopeBytes + pairBytes + bytes + turns.length >
       AI_CONVERSATION_HISTORY_MAXIMUM_BYTES
-    )
+    ) {
       break
+    }
     turns.push(pair)
     pairBytes += bytes
     omittedTurns = index
@@ -433,8 +436,9 @@ export const createAiConversationController = (
       navigationSnapshot?.conversationId === conversationId &&
       navigationSnapshot.busy === busy &&
       navigationSnapshot.title === title
-    )
+    ) {
       return navigationSnapshot
+    }
     const conversations = [...storedConversations.entries()]
       .filter(([id]) => id !== conversationId)
       .map(([id, state]) =>
@@ -453,8 +457,12 @@ export const createAiConversationController = (
     return navigationSnapshot
   }
   const checkNavigation = () => {
-    if (disposed) throw new AiConversationError('AI_CONVERSATION_DISPOSED')
-    if (activeTurn) throw new AiConversationError('AI_CONVERSATION_TURN_ACTIVE')
+    if (disposed) {
+      throw new AiConversationError('AI_CONVERSATION_DISPOSED')
+    }
+    if (activeTurn) {
+      throw new AiConversationError('AI_CONVERSATION_TURN_ACTIVE')
+    }
   }
   const storeCurrent = () =>
     storedConversations.set(conversationId, {
@@ -467,7 +475,9 @@ export const createAiConversationController = (
   const revalidateTargetHints = (): AiTargetHints => {
     const observations = new Map<string, boolean>()
     const exists = (id: string): boolean => {
-      if (observations.has(id)) return observations.get(id) as boolean
+      if (observations.has(id)) {
+        return observations.get(id) as boolean
+      }
       const type = options.getElementType(id)
       const valid =
         typeof type === 'string' && type.length > 0 && type !== 'workspace'
@@ -593,13 +603,16 @@ export const createAiConversationController = (
   const controller = {
     getActivity: (turnId: string, snapshot: AiActivityProjectionState = {}) => {
       const projection = activities.get(turnId)
-      if (!projection)
+      if (!projection) {
         throw new AiConversationError('AI_CONVERSATION_INVALID_REPLY')
+      }
       return projection.result(snapshot)
     },
     getNavigationSnapshot,
     subscribeNavigation: (observer: () => void): (() => void) => {
-      if (disposed) return () => undefined
+      if (disposed) {
+        return () => undefined
+      }
       navigationObservers.add(observer)
       return () => {
         navigationObservers.delete(observer)
@@ -607,10 +620,13 @@ export const createAiConversationController = (
     },
     newConversation: () => {
       checkNavigation()
-      if (!settledTurns.length) return
+      if (!settledTurns.length) {
+        return
+      }
       const id = (options.createConversationId ?? createDefaultConversationId)()
-      if (!id.trim() || id === conversationId || storedConversations.has(id))
+      if (!id.trim() || id === conversationId || storedConversations.has(id)) {
         throw new AiConversationError('AI_CONVERSATION_INVALID_INTENT')
+      }
       storeCurrent()
       conversationId = id
       settledTurns = []
@@ -621,10 +637,13 @@ export const createAiConversationController = (
     },
     selectConversation: (id: string) => {
       checkNavigation()
-      if (id === conversationId) return
+      if (id === conversationId) {
+        return
+      }
       const stored = storedConversations.get(id)
-      if (!stored)
+      if (!stored) {
         throw new AiConversationError('AI_CONVERSATION_INVALID_REPLY')
+      }
       storeCurrent()
       conversationId = id
       settledTurns = stored.turns
@@ -686,7 +705,9 @@ export const createAiConversationController = (
           ? AiDrawingDetailSelectionIntents.MAXIMUM_EN
           : AiDrawingDetailSelectionIntents.BALANCED_EN
       }
-      if (retryOf) requestIntent = retryOf.requestIntent ?? retryOf.intent
+      if (retryOf) {
+        requestIntent = retryOf.requestIntent ?? retryOf.intent
+      }
       const originalIntent =
         replyTo?.originalIntent ??
         replyTo?.intent ??
@@ -841,8 +862,9 @@ export const createAiConversationController = (
     },
     retry: async (turnId: string): Promise<AiSettledTurn> => {
       const turn = settledTurns.find((entry) => entry.turnId === turnId)
-      if (!turn || !canRetryAiTurn(turn))
+      if (!turn || !canRetryAiTurn(turn)) {
         throw new AiConversationError('AI_CONVERSATION_UNSAFE_RETRY')
+      }
       return controller.submit({
         intent: turn.intent,
         attachments: turn.attachments,

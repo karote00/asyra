@@ -31,7 +31,9 @@ export function bindCameraKeyboard(
       'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="tab"]'
     )
   const stop = () => {
-    if (frame !== undefined) target.cancelAnimationFrame(frame)
+    if (frame !== undefined) {
+      target.cancelAnimationFrame(frame)
+    }
     frame = undefined
     held.clear()
     rightVelocity = forwardVelocity = 0
@@ -65,13 +67,19 @@ export function bindCameraKeyboard(
     forwardVelocity =
       desiredForward + (forwardVelocity - desiredForward) * decay
     // Controller units are zoom-relative ground displacement; 12 units per second.
-    if (dx || dz) move(dx * 12 * travelLimit, dz * 12 * travelLimit, false)
-    if (length || Math.hypot(rightVelocity, forwardVelocity) > 0.001)
+    if (dx || dz) {
+      move(dx * 12 * travelLimit, dz * 12 * travelLimit, false)
+    }
+    if (length || Math.hypot(rightVelocity, forwardVelocity) > 0.001) {
       frame = target.requestAnimationFrame(tick)
-    else rightVelocity = forwardVelocity = 0
+    } else {
+      rightVelocity = forwardVelocity = 0
+    }
   }
   const start = () => {
-    if (frame !== undefined) return
+    if (frame !== undefined) {
+      return
+    }
     previous = target.performance.now()
     frame = target.requestAnimationFrame(tick)
   }
@@ -96,10 +104,15 @@ export function bindCameraKeyboard(
             return false
           }
           held.clear()
-          for (const key of raw.keys)
-            if (movementKeys.includes(key)) held.add(key)
+          for (const key of raw.keys) {
+            if (movementKeys.includes(key)) {
+              held.add(key)
+            }
+          }
           fast = raw.modifiers.shift
-          if (held.size || rightVelocity || forwardVelocity) start()
+          if (held.size || rightVelocity || forwardVelocity) {
+            start()
+          }
         }
       }
     ]

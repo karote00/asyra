@@ -156,7 +156,9 @@ it('checks the index budget independently of the vertex count', async () => {
     const { json, binary } = triangleFixture(),
       bytes = new Uint8Array(36 + 303)
     bytes.set(binary)
-    for (let i = 0; i < 303; i++) bytes[36 + i] = i % 3
+    for (let i = 0; i < 303; i++) {
+      bytes[36 + i] = i % 3
+    }
     const prepared = await archive.prepare(
       encodeGlb(
         {

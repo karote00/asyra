@@ -37,10 +37,16 @@ export function cameraForView(view: ReviewView): SpatialCamera {
     'Cap detail': [1.2, 2.65, 0.5],
     Distant: [15, 12, 25]
   }
-  if (!Object.hasOwn(positions, view)) throw new Error('Unknown review view')
+  if (!Object.hasOwn(positions, view)) {
+    throw new Error('Unknown review view')
+  }
   let fov = 1
-  if (view === 'Cap detail') fov = 20
-  if (view === 'Distant') fov = 35
+  if (view === 'Cap detail') {
+    fov = 20
+  }
+  if (view === 'Distant') {
+    fov = 35
+  }
   const focus: SpatialVector = view === 'Cap detail' ? [0.42, 2.46, 0] : target
   const distance = Math.hypot(...positions[view].map((n, i) => n - focus[i]))
   return readSpatialCamera({
@@ -58,10 +64,15 @@ export function detailForError(
   previous: 'near' | 'distant',
   projectedError: number
 ) {
-  if (!Number.isFinite(projectedError) || projectedError < 0)
+  if (!Number.isFinite(projectedError) || projectedError < 0) {
     throw new Error('Invalid projected error')
-  if (previous === 'near' && projectedError < 0.4) return 'distant'
-  if (previous === 'distant' && projectedError > 0.6) return 'near'
+  }
+  if (previous === 'near' && projectedError < 0.4) {
+    return 'distant'
+  }
+  if (previous === 'distant' && projectedError > 0.6) {
+    return 'near'
+  }
   return previous
 }
 
@@ -84,7 +95,9 @@ export function createPreviewController(
   let height = dimensions.height,
     pixelRatio = dimensions.pixelRatio
   const assertLive = () => {
-    if (disposed) throw new Error('Asset preview is disposed')
+    if (disposed) {
+      throw new Error('Asset preview is disposed')
+    }
   }
   const meshes = (
     detail: ReviewSnapshot['detail'],
@@ -93,7 +106,9 @@ export function createPreviewController(
     parts.map((part) => {
       const source = part.descriptor
       const shape = detail === 'distant' ? source.distant?.shape : source.shape
-      if (!shape) throw new Error('Missing distant shape')
+      if (!shape) {
+        throw new Error('Missing distant shape')
+      }
       const descriptor = readSpatialDescriptor({
         ...source,
         shape,
@@ -101,7 +116,9 @@ export function createPreviewController(
         distant: undefined,
         color: neutral ? 0xb9b9b9 : source.color
       })
-      if (descriptor.kind !== 'mesh') throw new Error('Expected mesh')
+      if (descriptor.kind !== 'mesh') {
+        throw new Error('Expected mesh')
+      }
       return { id: part.id, descriptor, visible: true }
     })
   const update = (view: ReviewView, neutral: boolean, initial = false) => {
@@ -121,8 +138,11 @@ export function createPreviewController(
     const modelChanged =
       initial || detail !== snapshot.detail || neutral !== snapshot.neutral
     camera = nextCamera
-    if (modelChanged) layer.submit({ camera, meshes: meshes(detail, neutral) })
-    else layer.submitCamera(camera)
+    if (modelChanged) {
+      layer.submit({ camera, meshes: meshes(detail, neutral) })
+    } else {
+      layer.submitCamera(camera)
+    }
     if (
       initial ||
       view !== snapshot.view ||
@@ -157,9 +177,12 @@ export function createPreviewController(
         nextHeight <= 0 ||
         !Number.isFinite(ratio) ||
         ratio <= 0
-      )
+      ) {
         throw new Error('Invalid viewport')
-      if (height === nextHeight && pixelRatio === ratio) return
+      }
+      if (height === nextHeight && pixelRatio === ratio) {
+        return
+      }
       height = nextHeight
       pixelRatio = ratio
       update(snapshot.view, snapshot.neutral)

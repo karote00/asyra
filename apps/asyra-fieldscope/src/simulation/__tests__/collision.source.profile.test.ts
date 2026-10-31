@@ -21,7 +21,9 @@ it('profiles cold source hierarchy and two warm poses without Cartesian triangle
   )
   for (const yaw of [0, 0.4]) {
     const input = coverage()
-    if (!input.robot) throw new Error('Expected robot')
+    if (!input.robot) {
+      throw new Error('Expected robot')
+    }
     input.robot = {
       ...input.robot,
       base: {

@@ -751,7 +751,7 @@ it('reuses admitted identical bytes across URL aliases without decoding or attac
   )
   const tools = createLocalReferenceTools(add, download)
   try {
-    for (const suffix of ['?a=1', '?a=2'])
+    for (const suffix of ['?a=1', '?a=2']) {
       await tools.call(
         'import_reference_image',
         {
@@ -760,6 +760,7 @@ it('reuses admitted identical bytes across URL aliases without decoding or attac
         },
         new AbortController().signal
       )
+    }
     expect(download).toHaveBeenCalledTimes(2)
     expect(decode).toHaveBeenCalledOnce()
     expect(add).toHaveBeenCalledOnce()

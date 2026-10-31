@@ -46,7 +46,9 @@ export function useViewportNavigation({
   const cancelDrag = useRef<(() => void) | null>(null)
 
   const fit = useCallback(() => {
-    if (!host || !runtime || !isCurrent(runtime)) return
+    if (!host || !runtime || !isCurrent(runtime)) {
+      return
+    }
 
     cancelDrag.current?.()
 
@@ -58,7 +60,9 @@ export function useViewportNavigation({
   }, [host, runtime, isCurrent, updateCamera])
 
   useEffect(() => {
-    if (!host || !runtime) return
+    if (!host || !runtime) {
+      return
+    }
 
     let active = true
 
@@ -82,11 +86,14 @@ export function useViewportNavigation({
         event.altKey ||
         event.ctrlKey ||
         event.metaKey
-      )
+      ) {
         return
+      }
       // Keep left-button native focus/blur so unfinished Object fields commit.
       // Middle-button navigation must suppress browser autoscroll.
-      if (event.button === 1) event.preventDefault()
+      if (event.button === 1) {
+        event.preventDefault()
+      }
 
       drag = {
         x: event.clientX,
@@ -108,14 +115,17 @@ export function useViewportNavigation({
         !isCurrent(runtime) ||
         !drag ||
         drag.pointerId !== event.pointerId
-      )
+      ) {
         return
+      }
 
       const dx = event.clientX - drag.x
 
       const dy = event.clientY - drag.y
 
-      if (Math.hypot(dx, dy) < 4 && !drag.moved) return
+      if (Math.hypot(dx, dy) < 4 && !drag.moved) {
+        return
+      }
 
       drag.moved = true
 
@@ -134,10 +144,13 @@ export function useViewportNavigation({
     }
 
     const up = (event: PointerEvent) => {
-      if (!drag || drag.pointerId !== event.pointerId) return
+      if (!drag || drag.pointerId !== event.pointerId) {
+        return
+      }
 
-      if (active && isCurrent(runtime) && !drag.moved && drag.select)
+      if (active && isCurrent(runtime) && !drag.moved && drag.select) {
         onSelect(runtime.pick(event.clientX, event.clientY) ?? null)
+      }
 
       cancel()
     }
@@ -147,18 +160,23 @@ export function useViewportNavigation({
 
       drag = null
 
-      if (id !== undefined && host.hasPointerCapture(id))
+      if (id !== undefined && host.hasPointerCapture(id)) {
         host.releasePointerCapture(id)
+      }
     }
 
     cancelDrag.current = cancel
 
     const cancelPointer = (event: PointerEvent) => {
-      if (event.pointerId === drag?.pointerId) cancel()
+      if (event.pointerId === drag?.pointerId) {
+        cancel()
+      }
     }
 
     const visibility = () => {
-      if (document.hidden) cancel()
+      if (document.hidden) {
+        cancel()
+      }
     }
 
     const key = (event: KeyboardEvent) => {
@@ -172,12 +190,15 @@ export function useViewportNavigation({
         event.shiftKey ||
         event.metaKey === event.ctrlKey ||
         isEditableKeyboardEvent(event)
-      )
+      ) {
         return
+      }
 
       event.preventDefault()
 
-      if (!event.repeat) fit()
+      if (!event.repeat) {
+        fit()
+      }
     }
 
     const wheel = (event: WheelEvent) => {
@@ -187,18 +208,23 @@ export function useViewportNavigation({
         event.defaultPrevented ||
         event.altKey ||
         event.metaKey
-      )
+      ) {
         return
+      }
 
       event.preventDefault()
 
-      if (drag) return
+      if (drag) {
+        return
+      }
 
       const { height } = host.getBoundingClientRect()
 
       const next = wheelCamera(current.current, event, height)
 
-      if (next !== current.current) updateCamera(next)
+      if (next !== current.current) {
+        updateCamera(next)
+      }
     }
 
     host.addEventListener('pointerdown', down)

@@ -693,8 +693,12 @@ it('sets visibility for a whole target set in one transaction with ordered truth
       ? undefined
       : {
           get: (key: string) => {
-            if (key === 'type') return id === 'workspace' ? 'workspace' : 'rect'
-            if (key === 'visible') return id !== 'already-hidden'
+            if (key === 'type') {
+              return id === 'workspace' ? 'workspace' : 'rect'
+            }
+            if (key === 'visible') {
+              return id !== 'already-hidden'
+            }
             return undefined
           }
         }

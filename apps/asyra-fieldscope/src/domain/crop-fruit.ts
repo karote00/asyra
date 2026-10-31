@@ -42,8 +42,12 @@ export function fruitSkinColor(
     orange: Point3 = [0.96, 0.34, 0.07],
     red: Point3 = [0.79, 0.055, 0.025]
   let color = mix(green, yellow, development / 0.4)
-  if (development > 0.4) color = mix(yellow, orange, (development - 0.4) / 0.25)
-  if (development > 0.65) color = mix(orange, red, (development - 0.65) / 0.35)
+  if (development > 0.4) {
+    color = mix(yellow, orange, (development - 0.4) / 0.25)
+  }
+  if (development > 0.65) {
+    color = mix(orange, red, (development - 0.65) / 0.35)
+  }
   return color.map(linear) as unknown as Point3
 }
 
@@ -88,7 +92,7 @@ export function appendFruitSurface(
     ]
   }
   const offset = builder.positions.length / 3
-  for (let ring = 0; ring <= rings; ring++)
+  for (let ring = 0; ring <= rings; ring++) {
     for (let side = 0; side < sides; side++) {
       const t = ring / rings,
         angle = (side / sides) * Math.PI * 2
@@ -97,19 +101,21 @@ export function appendFruitSurface(
         ...fruitSkinColor(t, angle, ripeness, cucumber, phase)
       )
     }
-  for (let ring = 0; ring < rings; ring++)
+  }
+  for (let ring = 0; ring < rings; ring++) {
     for (let side = 0; side < sides; side++) {
       const a = offset + ring * sides + side,
         b = offset + ring * sides + ((side + 1) % sides)
       builder.indices.push(a, b, b + sides, a, b + sides, a + sides)
     }
+  }
   // Original pole rings are not a verified closed material boundary.
   builder.region('open-shell', regionStart)
   observe?.('fruit-skin', regionStart, builder.indices.length - regionStart)
   let spineCount = 0
   if (cucumber && !distant) {
     const scale = Math.min(1, length / 0.12)
-    for (let row = 1; row <= 14; row++)
+    for (let row = 1; row <= 14; row++) {
       for (let side = 0; side < 6; side++) {
         const spineStart = builder.indices.length
         const t =
@@ -151,12 +157,13 @@ export function appendFruitSurface(
         }
         builder.positions.push(...tip)
         builder.colors.push(...[0.78, 0.81, 0.67].map(linear))
-        for (let face = 0; face < 4; face++)
+        for (let face = 0; face < 4; face++) {
           builder.indices.push(
             start + face,
             start + ((face + 1) % 4),
             start + 4
           )
+        }
         builder.region('open-shell', spineStart)
         observe?.(
           'fine-spines',
@@ -165,6 +172,7 @@ export function appendFruitSurface(
         )
         spineCount++
       }
+    }
   }
   return spineCount
 }
@@ -185,7 +193,7 @@ export function appendFruitCalyx(
       const t = step / sections
       const reach = radius * (0.12 + 0.88 * t)
       const width = radius * 0.15 * Math.sin(Math.PI * (0.12 + t * 0.88))
-      for (const side of [-1, 1])
+      for (const side of [-1, 1]) {
         builder.positions.push(
           center[0] + Math.cos(angle) * reach - Math.sin(angle) * width * side,
           center[1] -
@@ -193,6 +201,7 @@ export function appendFruitCalyx(
             radius * 0.55 * t ** 3,
           center[2] + Math.sin(angle) * reach + Math.cos(angle) * width * side
         )
+      }
       if (step) {
         const a = start + (step - 1) * 2
         builder.indices.push(a, a + 2, a + 3, a, a + 3, a + 1)
@@ -210,8 +219,9 @@ export function appendCucumberFlower(
   scale: number,
   distant: boolean
 ) {
-  while (builder.colors.length < builder.positions.length)
+  while (builder.colors.length < builder.positions.length) {
     builder.colors.push(0.89, 0.58, 0.035)
+  }
   const radius = [0.014, 0.009, 0.004, 0.002][Math.min(3, growth)] * scale
   const regionStart = builder.indices.length
   const sections = distant ? 2 : 5

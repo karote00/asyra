@@ -22,18 +22,22 @@ export const checkAiConnection = async (
       body: '{}',
       signal
     })
-    if (!response.ok) return 'unavailable'
-    const result: unknown = await response.json()
-    if (typeof result !== 'object' || result === null || !('state' in result))
+    if (!response.ok) {
       return 'unavailable'
+    }
+    const result: unknown = await response.json()
+    if (typeof result !== 'object' || result === null || !('state' in result)) {
+      return 'unavailable'
+    }
     const state = result.state
     if (
       state === 'ready' ||
       state === 'configured' ||
       state === 'unconfigured' ||
       state === 'local-unavailable'
-    )
+    ) {
       return state
+    }
     return 'unavailable'
   } catch {
     return 'unavailable'

@@ -220,7 +220,9 @@ describe('fresh source provenance and exact charged operations', () => {
       settings.threshold,
       () => {
         work++
-        if (work === stop) throw failure
+        if (work === stop) {
+          throw failure
+        }
       },
       (_a, _b, seed) => {
         calls++
@@ -297,15 +299,24 @@ describe('fresh source provenance and exact charged operations', () => {
       let source = required(o.sample(a, b, origin(node, 0, true))).source
       let target = origin(node, 1),
         targetA = a
-      if (mismatch === 'scope')
+      if (mismatch === 'scope') {
         source = required(owner().sample(a, b, origin(node, 0, true))).source
-      if (mismatch === 'segment') target = { ...target, segment: 1 }
-      if (mismatch === 'node') target = origin({}, 1)
-      if (mismatch === 'time') target = { ...target, time: -1 }
-      if (mismatch === 'geometry')
+      }
+      if (mismatch === 'segment') {
+        target = { ...target, segment: 1 }
+      }
+      if (mismatch === 'node') {
+        target = origin({}, 1)
+      }
+      if (mismatch === 'time') {
+        target = { ...target, time: -1 }
+      }
+      if (mismatch === 'geometry') {
         targetA = shape(0, Object.freeze({ ...cube }))
-      if (mismatch === 'forgery')
+      }
+      if (mismatch === 'forgery') {
         source = Object.create(Object.getPrototypeOf(source))
+      }
       o.sample(targetA, b, target, source)
       expect(o.work).toBe(2)
       expect(o.seeds[1]).toBeUndefined()
@@ -322,13 +333,23 @@ describe('fresh source provenance and exact charged operations', () => {
     const o = owner(),
       node = {},
       e = evidence()
-    if (reason === 'penetration') e.penetration = true
-    if (reason === 'nonpositive') e.lower = 0
-    if (reason === 'threshold') e.upper = settings.threshold
-    if (reason === 'nonfinite') e.upper = Infinity
+    if (reason === 'penetration') {
+      e.penetration = true
+    }
+    if (reason === 'nonpositive') {
+      e.lower = 0
+    }
+    if (reason === 'threshold') {
+      e.upper = settings.threshold
+    }
+    if (reason === 'nonfinite') {
+      e.upper = Infinity
+    }
     o.result(e)
     let at = origin(node, 0, reason !== 'final')
-    if (reason === 'point') at = { ...at, end: 0 }
+    if (reason === 'point') {
+      at = { ...at, end: 0 }
+    }
     expect(
       required(o.sample(shape(0), shape(9 / 32), at)).source
     ).toBeUndefined()
@@ -337,7 +358,8 @@ describe('fresh source provenance and exact charged operations', () => {
 })
 
 function required<T>(value: T | null | undefined): T {
-  if (value === null || value === undefined)
+  if (value === null || value === undefined) {
     throw new Error('Expected completed owned sample')
+  }
   return value
 }

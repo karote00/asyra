@@ -21,10 +21,11 @@ const verifyImageDelivery = async (count: number, native: boolean) => {
     (entry: { actionName: string }) => entry.actionName === 'inspect_drawing'
   )
   firstCapture.result.image.dataUrl = uri
-  if (!count)
+  if (!count) {
     receipt.actionResults = receipt.actionResults.filter(
       (entry: { actionName: string }) => entry.actionName !== 'inspect_drawing'
     )
+  }
   const expectedImages = count
     ? [
         {
@@ -64,7 +65,9 @@ const verifyImageDelivery = async (count: number, native: boolean) => {
     content
       .filter((item) => item.type === 'inputImage')
       .map((item) => {
-        if (item.type !== 'inputImage') throw new Error('Expected image')
+        if (item.type !== 'inputImage') {
+          throw new Error('Expected image')
+        }
         const [header, base64] = item.imageUrl.split(',')
         expect(header).toBe('data:image/png;base64')
         const bytes = Buffer.from(base64, 'base64')
@@ -76,7 +79,9 @@ const verifyImageDelivery = async (count: number, native: boolean) => {
       })
   ).toEqual(expectedImages)
   expect(raw).not.toContain('base64,')
-  if (!native) return
+  if (!native) {
+    return
+  }
   const nativeModule = new URL(
     '../../test-data/knowledge-evaluation/native-delivery.mjs',
     import.meta.url

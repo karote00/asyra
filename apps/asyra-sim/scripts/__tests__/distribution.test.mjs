@@ -33,7 +33,9 @@ test('all current App documentation links and supplemental notice identities sur
   targets.set('apps/asyra-sim/README.md', 'USER_GUIDE.md')
   targets.set(`${prefix}/release/LOCAL_CANDIDATE.md`, 'README.md')
   for (const [source] of targets) {
-    if (!source.endsWith('.md')) continue
+    if (!source.endsWith('.md')) {
+      continue
+    }
     const result = rewriteDistributionMarkdown(
       readFileSync(path.join(repository, source), 'utf8'),
       source,
@@ -214,11 +216,13 @@ test('the producer stages a complete versioned candidate without serving SDK dat
     'run-e2e.mjs',
     'supervise-tests.py',
     '__tests__/supervise-tests.test.mjs'
-  ])
+  ]) {
     write(`source/apps/asyra-sim/scripts/${file}`, `// source ${file}`)
+  }
   write('source/apps/asyra-sim/scripts/notices/sources.json', '{}')
-  for (const folder of ['src', 'samples', 'e2e'])
+  for (const folder of ['src', 'samples', 'e2e']) {
     write(`app/${folder}/input.ts`, '// app input')
+  }
   for (const file of [
     'yarn.lock',
     '.yarnrc.yml',
@@ -232,8 +236,9 @@ test('the producer stages a complete versioned candidate without serving SDK dat
     'app-environment.mjs',
     'app-environment.d.mts',
     'consumer.vite.config.mjs'
-  ])
+  ]) {
     write(`app/${file}`, 'input')
+  }
   write(
     'app/package.json',
     JSON.stringify({
@@ -331,8 +336,9 @@ test('the producer stages a complete versioned candidate without serving SDK dat
   for (const commandPath of [
     'scripts/supervise-tests.py',
     'scripts/__tests__/supervise-tests.test.mjs'
-  ])
+  ]) {
     assert.ok(distributionFiles(candidate).includes(`sdk/app/${commandPath}`))
+  }
   assert.match(
     readFileSync(path.join(candidate, 'THIRD_PARTY_NOTICES.txt'), 'utf8'),
     /Original permission/

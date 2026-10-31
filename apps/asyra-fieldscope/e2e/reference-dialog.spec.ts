@@ -13,11 +13,12 @@ test('mobile reference dialog preserves external links and restores keyboard foc
   await expect(
     page.getByRole('link', { name: '南改場溫網室技術專刊 ↗' })
   ).toHaveAttribute('target', '_blank')
-  if (!usesCpuSoftwareRenderer)
+  if (!usesCpuSoftwareRenderer) {
     await page.screenshot({
       path: testInfo.outputPath('reference-library.png'),
       fullPage: true
     })
+  }
   await page.keyboard.press('Escape')
   await expect(page.getByRole('dialog')).not.toBeVisible()
   await expect(

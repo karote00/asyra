@@ -15,7 +15,9 @@ const repositoryPath = (value) =>
   !value.split('/').some((part) => ['', '.', '..'].includes(part))
 
 function requireValue(condition, message) {
-  if (!condition) throw new Error(message)
+  if (!condition) {
+    throw new Error(message)
+  }
 }
 
 export function readNotes(source = '') {
@@ -108,7 +110,9 @@ export function validateUpdateGuidance({
           !changed || exists(source) || existsBase(source),
           `${identity}: missing source ${source}`
         )
-        if (changed) covered.add(source)
+        if (changed) {
+          covered.add(source)
+        }
       }
       requireValue(
         Array.isArray(note.guides),
@@ -131,7 +135,9 @@ export function validateUpdateGuidance({
         )
         guides.add(guide)
       }
-      if (changed) count++
+      if (changed) {
+        count++
+      }
     }
   }
   if (guides.size) {
@@ -190,12 +196,13 @@ export function checkUpdateGuidance({
   ])
     .split('\0')
     .filter(Boolean)
-  if (!target)
+  if (!target) {
     changes.push(
       ...git(['ls-files', '--others', '--exclude-standard', '-z'])
         .split('\0')
         .filter(Boolean)
     )
+  }
   const snapshotReader = (sha) => (file) => {
     try {
       return git(['show', `${sha}:${file}`])
@@ -206,8 +213,9 @@ export function checkUpdateGuidance({
         /does not exist|exists on disk, but not in/.test(
           error.stderr?.toString() ?? ''
         )
-      )
+      ) {
         return undefined
+      }
       throw error
     }
   }
@@ -227,7 +235,9 @@ export function checkUpdateGuidance({
       )
       return resolved
     } catch (error) {
-      if (error.code === 'ENOENT') return undefined
+      if (error.code === 'ENOENT') {
+        return undefined
+      }
       throw error
     }
   }

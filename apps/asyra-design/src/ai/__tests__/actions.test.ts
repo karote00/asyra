@@ -381,7 +381,9 @@ describe('reported capability boundaries', () => {
       outcome: 'unsupported',
       message: 'This app cannot generate raster images.'
     })
-    for (const api of Object.values(apis)) expect(api).not.toHaveBeenCalled()
+    for (const api of Object.values(apis)) {
+      expect(api).not.toHaveBeenCalled()
+    }
   })
 })
 
@@ -434,8 +436,12 @@ it.each(['unavailable', 'local-only', 'durable'] as const)(
   'carries actual completion storage status through conversation and presentation - %s',
   async (storage) => {
     const confirmPersistence = vi.fn(async () => {
-      if (storage === 'unavailable') throw new Error('offline')
-      if (storage === 'local-only') return { status: storage } as const
+      if (storage === 'unavailable') {
+        throw new Error('offline')
+      }
+      if (storage === 'local-only') {
+        return { status: storage } as const
+      }
       return {
         status: storage,
         documentId: 'drawing',
@@ -481,7 +487,9 @@ it.each(['unavailable', 'local-only', 'durable'] as const)(
       } else if (storage === 'local-only') {
         expect(summary.message).toContain('locally')
         expect(summary.message).not.toContain('saved successfully')
-      } else expect(summary.message).toBe('Drawing saved successfully.')
+      } else {
+        expect(summary.message).toBe('Drawing saved successfully.')
+      }
       expect(canRetryAiTurn(turn)).toBe(false)
       expect(confirmPersistence).toHaveBeenCalledOnce()
     } finally {
@@ -491,7 +499,9 @@ it.each(['unavailable', 'local-only', 'durable'] as const)(
 )
 
 const requireTestValue = <T>(value: T | undefined | null): T => {
-  if (value == null) throw new Error('Required test fixture is unavailable')
+  if (value == null) {
+    throw new Error('Required test fixture is unavailable')
+  }
   return value
 }
 
@@ -550,10 +560,14 @@ it.each([
     const result = await action.execute(input as never, executionContext())
     expect(result).toMatchObject(expected as object)
     expect(operationInputIssue(result, action.outputSchema)).toBeUndefined()
-    for (const api of Object.values(apis)) expect(api).not.toHaveBeenCalled()
+    for (const api of Object.values(apis)) {
+      expect(api).not.toHaveBeenCalled()
+    }
     await expect(
       action.execute(input as never, { signal: AbortSignal.abort() })
     ).rejects.toThrow()
-    for (const api of Object.values(apis)) expect(api).not.toHaveBeenCalled()
+    for (const api of Object.values(apis)) {
+      expect(api).not.toHaveBeenCalled()
+    }
   }
 )

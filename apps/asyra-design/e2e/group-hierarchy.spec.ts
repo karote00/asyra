@@ -342,7 +342,9 @@ test('nested Frames expose disclosure controls and retain their children when fo
       },
       { undoable: false }
     )
-    if (!root) throw new Error('Missing frame')
+    if (!root) {
+      throw new Error('Missing frame')
+    }
     const nested = 'disclosure-nested-frame'
     const leaf = 'disclosure-frame-child'
     for (const [id, type, parentId, size] of [
@@ -372,7 +374,9 @@ test('nested Frames expose disclosure controls and retain their children when fo
           { undoable: false }
         )
       )
-      if (!created?.includes(id)) throw new Error(`Missing ${id}`)
+      if (!created?.includes(id)) {
+        throw new Error(`Missing ${id}`)
+      }
     }
     return { root, nested, leaf }
   })
@@ -461,7 +465,9 @@ for (const containerType of ['group', 'frame'] as const) {
             },
             { undoable: false }
           )
-          if (!id) throw new Error('Missing vector')
+          if (!id) {
+            throw new Error('Missing vector')
+          }
           return id
         }
         const back = makeVector()
@@ -469,7 +475,9 @@ for (const containerType of ['group', 'frame'] as const) {
         const inner = hierarchyApis.groupElements([back, front], {
           undoable: false
         }).groupId
-        if (!inner) throw new Error('Missing inner Group')
+        if (!inner) {
+          throw new Error('Missing inner Group')
+        }
         let outer: string | null
         if (containerType === 'group') {
           outer = hierarchyApis.groupElements([inner], {
@@ -485,13 +493,16 @@ for (const containerType of ['group', 'frame'] as const) {
             },
             { undoable: false }
           )
-          if (outer)
+          if (outer) {
             core.moveElements(
               { elementIds: [inner], targetParentId: outer, targetIndex: 0 },
               { undoable: false }
             )
+          }
         }
-        if (!outer) throw new Error('Missing outer container')
+        if (!outer) {
+          throw new Error('Missing outer container')
+        }
         // Exercise persisted hierarchy too, through the ordinary canonical load.
         await core.load(await core.save())
         core.selectElements([], { undoable: false })
@@ -507,7 +518,9 @@ for (const containerType of ['group', 'frame'] as const) {
         page.evaluate(async (id) => {
           const { elementApis } = await import('../src/testing/runtime-access')
           const bounds = elementApis.getElementClientBounds(id)
-          if (!bounds) return null
+          if (!bounds) {
+            return null
+          }
           return elementApis.getRenderElementIdAtClientPos({
             x: bounds.x + bounds.width / 2,
             y: bounds.y + bounds.height / 2
@@ -518,11 +531,15 @@ for (const containerType of ['group', 'frame'] as const) {
     const point = await page.evaluate(async (id) => {
       const { elementApis } = await import('../src/testing/runtime-access')
       const bounds = elementApis.getElementClientBounds(id)
-      if (!bounds) throw new Error('Missing vector client bounds')
+      if (!bounds) {
+        throw new Error('Missing vector client bounds')
+      }
       return { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 }
     }, ids.front)
     const bounds = await canvas.boundingBox()
-    if (!bounds) throw new Error('Missing canvas')
+    if (!bounds) {
+      throw new Error('Missing canvas')
+    }
     const x = point.x
     const y = point.y
     const selection = () =>
@@ -552,7 +569,9 @@ for (const containerType of ['group', 'frame'] as const) {
       const blank = await page.evaluate(async (id) => {
         const { elementApis } = await import('../src/testing/runtime-access')
         const bounds = elementApis.getElementClientBounds(id)
-        if (!bounds) throw new Error('Missing Frame bounds')
+        if (!bounds) {
+          throw new Error('Missing Frame bounds')
+        }
         return { x: bounds.x + 10, y: bounds.y + 10 }
       }, ids.outer)
       await page.mouse.dblclick(blank.x, blank.y)
@@ -576,7 +595,9 @@ for (const containerType of ['group', 'frame'] as const) {
       const { elementApis } = await import('../src/testing/runtime-access')
       return elementApis.getElementClientBounds(id)
     }, ids.inner)
-    if (!innerBounds) throw new Error('Missing selected Group bounds')
+    if (!innerBounds) {
+      throw new Error('Missing selected Group bounds')
+    }
     await expect
       .poll(
         async () => {
@@ -596,8 +617,9 @@ for (const containerType of ['group', 'frame'] as const) {
               pixels[offset + 1] > 90 &&
               pixels[offset + 1] < 160 &&
               pixels[offset + 2] > 215
-            )
+            ) {
               return true
+            }
           }
           return false
         },

@@ -37,17 +37,20 @@ function vessel(form: ShelfBotanicalForm): Mesh {
   let exterior = true,
     offset = 0
   dense.forEach(([radius, z], j) => {
-    if (j && z < dense[j - 1][1]) exterior = false
+    if (j && z < dense[j - 1][1]) {
+      exterior = false
+    }
     const count = radius === 0 ? 1 : radialSegments
     for (let i = 0; i < count; i++) {
       if (exterior && radius > 0 && recipe.relief.depth) {
         const angle = (i / radialSegments) * Math.PI * 2
         let wave = Math.cos(angle * recipe.relief.count)
-        if (recipe.relief.pitch)
+        if (recipe.relief.pitch) {
           wave = Math.cos(
             angle * recipe.relief.count +
               Math.sin((z / recipe.relief.pitch) * Math.PI * 2) * 1.7
           )
+        }
         const fade = Math.sin(Math.PI * Math.min(1, z / top)) ** 0.45
         const r = radius + wave * recipe.relief.depth * fade
         mesh.positions[(offset + i) * 3] = r * Math.cos(angle)
@@ -108,15 +111,20 @@ function blade(
     }
     rings.push(ring)
   }
-  for (let i = 0; i < steps; i++)
+  for (let i = 0; i < steps; i++) {
     for (let j = 0; j < sides; j++) {
       const a = rings[i][j % rings[i].length],
         b = rings[i][(j + 1) % rings[i].length]
       const c = rings[i + 1][j % rings[i + 1].length],
         d = rings[i + 1][(j + 1) % rings[i + 1].length]
-      if (a !== b) mesh.indices.push(a, b, d)
-      if (c !== d) mesh.indices.push(a, d, c)
+      if (a !== b) {
+        mesh.indices.push(a, b, d)
+      }
+      if (c !== d) {
+        mesh.indices.push(a, d, c)
+      }
     }
+  }
   return mesh
 }
 
@@ -130,8 +138,9 @@ function closedOval(radii: Vec, segments: number, rings: number): Mesh {
     }
   )
   const mesh = revolveProfile(profile, segments)
-  for (let i = 0; i < mesh.positions.length; i++)
+  for (let i = 0; i < mesh.positions.length; i++) {
     mesh.positions[i] *= radii[i % 3]
+  }
   return mesh
 }
 
@@ -171,7 +180,9 @@ function catDetails(color: number): AssetPart[] {
     for (let i = 0; i < profile.length - 1; i++) {
       const a = profile[i],
         b = profile[i + 1]
-      if (b[1] <= a[1] || z < a[1] || z > b[1]) continue
+      if (b[1] <= a[1] || z < a[1] || z > b[1]) {
+        continue
+      }
       radius = Math.max(
         radius,
         a[0] + ((b[0] - a[0]) * (z - a[1])) / (b[1] - a[1])
@@ -185,7 +196,7 @@ function catDetails(color: number): AssetPart[] {
       closedOval([0.001, c.eyeRadius, c.eyeRadius], 12, 6),
       facePoint(sign * c.eyeSideOffset, c.eyeZ)
     )
-    for (let i = -1; i <= 1; i++)
+    for (let i = -1; i <= 1; i++) {
       append(
         face,
         tube(
@@ -197,6 +208,7 @@ function catDetails(color: number): AssetPart[] {
           6
         )
       )
+    }
     append(
       face,
       tube(
@@ -236,10 +248,12 @@ export function shelfBotanical(
   scale = 1,
   seed = 701
 ): AssetPart[] {
-  if (!Number.isFinite(scale) || scale <= 0)
+  if (!Number.isFinite(scale) || scale <= 0) {
     throw new Error('Invalid plant scale')
-  if (!Number.isInteger(seed) || seed < 0 || seed >= 2 ** 32)
+  }
+  if (!Number.isInteger(seed) || seed < 0 || seed >= 2 ** 32) {
     throw new Error('Invalid unsigned 32-bit seed')
+  }
   const r = spec.variants[form]
   let state = seed
   const random = () => {
@@ -284,7 +298,7 @@ export function shelfBotanical(
       parts.push(
         part(`leaf-${index++}`, mesh, leafColor, r.surface as SurfaceKind, 0.65)
       )
-      if (form === 'fittonia')
+      if (form === 'fittonia') {
         parts.push(
           part(
             `petiole-${index}`,
@@ -300,9 +314,12 @@ export function shelfBotanical(
             'leaf'
           )
         )
+      }
     }
   })
-  if (form === 'succulent') parts.push(...catDetails(color))
+  if (form === 'succulent') {
+    parts.push(...catDetails(color))
+  }
   if (form === 'snake') {
     const stones = emptyMesh(),
       p = spec.variants.snake.pebbles

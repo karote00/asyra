@@ -14,7 +14,9 @@ export function bundledNotices(consumer, supplements) {
     for (const input of inputs) {
       const absolute = path.resolve(consumer, input)
       assertOwnedPaths(consumer, [absolute])
-      if (!input.split('/').includes('node_modules')) continue
+      if (!input.split('/').includes('node_modules')) {
+        continue
+      }
       let directory = path.dirname(absolute)
       while (directory !== consumer) {
         const filename = path.join(directory, 'package.json')
@@ -27,23 +29,28 @@ export function bundledNotices(consumer, supplements) {
           }
         }
         const parent = path.dirname(directory)
-        if (parent === directory)
+        if (parent === directory) {
           throw new Error(`Missing package identity for ${input}`)
+        }
         directory = parent
       }
-      if (directory === consumer)
+      if (directory === consumer) {
         throw new Error(`Missing package identity for ${input}`)
+      }
     }
   }
-  if (!packages.size) throw new Error('No bundled dependency evidence.')
+  if (!packages.size) {
+    throw new Error('No bundled dependency evidence.')
+  }
   const supplementsManifest = JSON.parse(
     readFileSync(path.join(supplements, 'sources.json'), 'utf8')
   )
   const records = []
   for (const [directory, manifest] of packages) {
     const identity = `${manifest.name}@${manifest.version}`
-    if (typeof manifest.license !== 'string' || !manifest.license)
+    if (typeof manifest.license !== 'string' || !manifest.license) {
       throw new Error(`Missing license declaration: ${identity}`)
+    }
     const notices = readdirSync(directory)
       .filter((name) => /^(license|licence|notice|copying)([.-]|$)/i.test(name))
       .sort()
@@ -59,12 +66,14 @@ export function bundledNotices(consumer, supplements) {
       })
     if (!notices.length) {
       const supplement = supplementsManifest[identity]
-      if (!supplement || supplement.license !== manifest.license)
+      if (!supplement || supplement.license !== manifest.license) {
         throw new Error(`Missing original license notice: ${identity}`)
+      }
       const filename = path.resolve(supplements, supplement.file)
       assertOwnedPaths(supplements, [filename])
-      if (sha256(filename) !== supplement.sha256)
+      if (sha256(filename) !== supplement.sha256) {
         throw new Error(`Changed supplemental notice: ${identity}`)
+      }
       notices.push({
         name: supplement.file,
         source: supplement.source,
@@ -72,8 +81,9 @@ export function bundledNotices(consumer, supplements) {
         text: readFileSync(filename, 'utf8')
       })
     }
-    if (notices.some((notice) => !notice.text.trim()))
+    if (notices.some((notice) => !notice.text.trim())) {
       throw new Error(`Empty notice: ${identity}`)
+    }
     records.push({
       name: manifest.name,
       version: manifest.version,

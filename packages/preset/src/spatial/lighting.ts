@@ -29,8 +29,9 @@ export const DEFAULT_SPATIAL_LIGHTING: SpatialLighting = {
 }
 
 const record = (input: unknown): Record<string, unknown> => {
-  if (typeof input !== 'object' || input === null || Array.isArray(input))
+  if (typeof input !== 'object' || input === null || Array.isArray(input)) {
     throw new Error('Invalid spatial presentation settings')
+  }
   return { ...input }
 }
 const color = (value: unknown): value is number =>
@@ -41,10 +42,13 @@ const color = (value: unknown): value is number =>
 const finite = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value)
 const vector = (input: unknown): readonly [number, number, number] => {
-  if (!Array.isArray(input) || input.length !== 3)
+  if (!Array.isArray(input) || input.length !== 3) {
     throw new Error('Invalid spatial lighting vector')
+  }
   const values = [...input]
-  if (!values.every(finite)) throw new Error('Invalid spatial lighting vector')
+  if (!values.every(finite)) {
+    throw new Error('Invalid spatial lighting vector')
+  }
   return Object.freeze(values) as readonly [number, number, number]
 }
 const lightingKeys = new Set([
@@ -62,8 +66,9 @@ const lightingKeys = new Set([
 /** Capture neutral presentation settings without evaluating a concrete SDK. */
 export function readSpatialLighting(input: unknown): Readonly<SpatialLighting> {
   const value = record(input)
-  if (Object.keys(value).some((key) => !lightingKeys.has(key)))
+  if (Object.keys(value).some((key) => !lightingKeys.has(key))) {
     throw new Error('Invalid spatial lighting field')
+  }
   const hemisphere = vector(value.hemisphere)
   const keyPosition = vector(value.keyPosition)
   const fillPosition = vector(value.fillPosition)
@@ -82,8 +87,9 @@ export function readSpatialLighting(input: unknown): Readonly<SpatialLighting> {
       (n) => n !== undefined && (!finite(n) || n < 0)
     ) ||
     (value.castShadows !== undefined && typeof value.castShadows !== 'boolean')
-  )
+  ) {
     throw new Error('Invalid spatial lighting')
+  }
   return Object.freeze({
     ...value,
     hemisphere,
@@ -104,8 +110,9 @@ export function readSpatialPresentationOptions(
     ) ||
     (value.softwareShadowFallback !== undefined &&
       typeof value.softwareShadowFallback !== 'boolean')
-  )
+  ) {
     throw new Error('Invalid spatial presentation field')
+  }
   return Object.freeze({
     ...(value.bloom === undefined
       ? {}
@@ -129,7 +136,8 @@ export function readSpatialBloom(input: unknown): Readonly<SpatialBloom> {
     !finite(value.radius) ||
     value.radius <= 0 ||
     value.radius > 64
-  )
+  ) {
     throw new Error('Invalid spatial bloom settings')
+  }
   return Object.freeze({ strength: value.strength, radius: value.radius })
 }

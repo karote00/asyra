@@ -133,7 +133,9 @@ const expectRampSamples = async (
   expect(snapshot?.gradient?.gradientStops).toEqual(
     DEFAULT_TEST_GRADIENT.gradientStops
   )
-  if (!snapshot?.gradient) throw new Error('Missing canonical gradient')
+  if (!snapshot?.gradient) {
+    throw new Error('Missing canonical gradient')
+  }
   const handles = snapshot.gradient.gradientHandles
   expect(handles[0].x).toBeCloseTo(0.5, 2)
   expect(handles[1].x).toBeCloseTo(0.5, 2)

@@ -14,7 +14,9 @@ function installRecordingObserver(core, host = window) {
   }
   const measure = () => {
     scheduled = null
-    if (disposed || !dirty) return
+    if (disposed || !dirty) {
+      return
+    }
     dirty = false
     const started = host.performance.now()
     try {
@@ -26,7 +28,9 @@ function installRecordingObserver(core, host = window) {
           roots.slice(offset, offset + 200)
         )) {
           const b = item.bounds
-          if (!b || (b.width === 0 && b.height === 0)) continue
+          if (!b || (b.width === 0 && b.height === 0)) {
+            continue
+          }
           for (const point of [
             { x: b.x, y: b.y },
             { x: b.x + b.width, y: b.y },
@@ -34,8 +38,9 @@ function installRecordingObserver(core, host = window) {
             { x: b.x + b.width, y: b.y + b.height }
           ]) {
             const p = core.elementLocalToWorkspace(item.elementId, point)
-            if (!p || !Number.isFinite(p.x) || !Number.isFinite(p.y))
+            if (!p || !Number.isFinite(p.x) || !Number.isFinite(p.y)) {
               throw new Error('Invalid canonical bounds')
+            }
             bounds ??= { minX: p.x, minY: p.y, maxX: p.x, maxY: p.y }
             bounds.minX = Math.min(bounds.minX, p.x)
             bounds.minY = Math.min(bounds.minY, p.y)
@@ -60,8 +65,9 @@ function installRecordingObserver(core, host = window) {
     value.invalidations++
   })
   const stopFrame = core.subscribeToFrameComplete(() => {
-    if (dirty && scheduled === null && !disposed)
+    if (dirty && scheduled === null && !disposed) {
       scheduled = host.requestAnimationFrame(measure)
+    }
   })
   measure()
   return {
@@ -78,7 +84,9 @@ function installRecordingObserver(core, host = window) {
       disposed = true
       stopPublication()
       stopFrame()
-      if (scheduled !== null) host.cancelAnimationFrame(scheduled)
+      if (scheduled !== null) {
+        host.cancelAnimationFrame(scheduled)
+      }
     }
   }
 }

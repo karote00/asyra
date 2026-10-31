@@ -223,7 +223,9 @@ const captureRuleOverlay = async ({
       })
       const menus = [...document.querySelectorAll<HTMLElement>('[role="menu"]')]
       const menu = menus[0]
-      if (!menu) throw new Error('Visual review menu is unavailable')
+      if (!menu) {
+        throw new Error('Visual review menu is unavailable')
+      }
       const rows = [
         ...menu.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')
       ]
@@ -316,7 +318,9 @@ const captureRuleOverlay = async ({
       canvas.width = image.naturalWidth
       canvas.height = image.naturalHeight
       const context = canvas.getContext('2d', { willReadFrequently: true })
-      if (!context) throw new Error('Visual review canvas context unavailable')
+      if (!context) {
+        throw new Error('Visual review canvas context unavailable')
+      }
       context.drawImage(image, 0, 0)
 
       const scaleX = canvas.width / snapshot.viewport.width
@@ -351,7 +355,9 @@ const captureRuleOverlay = async ({
         for (let y = rect.top + 4; y < rect.bottom - 4; y += 4) {
           for (let x = rect.left + 4; x < rect.right - 4; x += 4) {
             total += 1
-            if (isMenuPixel(x, y)) matching += 1
+            if (isMenuPixel(x, y)) {
+              matching += 1
+            }
           }
         }
         return total === 0 ? 0 : matching / total

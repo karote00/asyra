@@ -562,7 +562,9 @@ export function defineComponent(definition: ComponentDefinition): void {
  * are independent registration nodes and are intentionally preserved.
  */
 export const unregisterComponentGraphRegistration = (type: string): boolean => {
-  if (!componentRegistry.unregister(type)) return false
+  if (!componentRegistry.unregister(type)) {
+    return false
+  }
   elementPropertyRegistry.unregisterComponent(type)
   idCounter.unregisterType(type)
   nameCounter.unregisterType(type)

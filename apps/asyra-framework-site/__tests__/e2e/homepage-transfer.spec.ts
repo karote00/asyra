@@ -8,8 +8,9 @@ for (const width of [390, 1440]) {
     await page.setViewportSize({ width, height: 900 })
     const failures: string[] = []
     page.on('requestfailed', (request) => {
-      if (request.failure()?.errorText !== 'net::ERR_ABORTED')
+      if (request.failure()?.errorText !== 'net::ERR_ABORTED') {
         failures.push(request.url())
+      }
     })
     await page.goto('/')
     for (const chapter of await page.locator('[data-story-chapter]').all()) {

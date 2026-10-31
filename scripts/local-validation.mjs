@@ -2,9 +2,13 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
-import { fileURLToPath, URL } from 'node:url'
+import { fileURLToPath } from 'node:url'
 import { randomUUID } from 'node:crypto'
 import { runLocalChecks } from './local-validation-runner.mjs'
+import {
+  readValidationPlan,
+  validationCheckCommands
+} from './validation-checks.mjs'
 import {
   classifyChanges,
   readWorkspaceManifests,
@@ -39,7 +43,9 @@ function fileFingerprint(repositoryRoot, relativePath) {
   try {
     stat = fs.lstatSync(absolutePath)
   } catch (error) {
-    if (error.code !== 'ENOENT') throw error
+    if (error.code !== 'ENOENT') {
+      throw error
+    }
     return { path: relativePath, kind: 'missing' }
   }
   const mode = stat.mode & 0o777
@@ -51,8 +57,9 @@ function fileFingerprint(repositoryRoot, relativePath) {
       digest: fingerprint(fs.readlinkSync(absolutePath))
     }
   }
-  if (!stat.isFile())
+  if (!stat.isFile()) {
     throw new Error(`Unsupported local input kind: ${relativePath}`)
+  }
   return {
     path: relativePath,
     kind: 'file',
@@ -123,36 +130,54 @@ export function selectLocalValidation({
     readDocumentationDirectoriesAtCommit(inputs.baseRevision, repositoryRoot),
     { fullValidation: full, baseRevision: inputs.baseRevision, repositoryRoot }
   )
-  const { executionPlan, workspaceMatrix } = scope.relationshipMap
-  const policy = JSON.parse(
-    fs.readFileSync(new URL('./ci-relationships.json', import.meta.url), 'utf8')
-  )
-  const e2eSuites = executionPlan.checks.e2e.selected.map((id) => ({
-    id,
-    command:
-      policy.e2eSuites.find((suite) => suite.id === id)?.localCommand ?? null
-  }))
+  const selected = readValidationPlan(scope)
   return {
+    ...selected,
     version: 1,
     authority: 'local',
     inputs,
-    relationshipMapDigest: scope.relationshipMapDigest,
-    executionPlan,
-    workspaceMatrix,
-    profileFiles: scope.relationshipMap.fieldscopeProfileFiles,
-    profileCommand: scope.relationshipMap.fieldscopeProfileCommand,
-    e2eSuites,
-    e2eOwners: workspaceMatrix.map(({ name, e2eTask, e2eSelection }) => ({
-      workspace: name,
-      status: e2eTask ? e2eSelection.mode : 'not-defined'
-    })),
-    unresolved: [
-      ...executionPlan.unknownRelations,
-      ...e2eSuites
-        .filter(({ command }) => !command)
-        .map(({ id }) => `No local E2E command contract: ${id}`)
-    ]
+    e2eOwners: selected.workspaceMatrix.map(
+      ({ name, e2eTask, e2eSelection }) => ({
+        workspace: name,
+        status: e2eTask ? e2eSelection.mode : 'not-defined'
+      })
+    )
   }
+}
+
+function localExecutionIdentity(plan, outputDirectory) {
+  return {
+    repository: 'local',
+    base: plan.inputs.baseRevision,
+    head: plan.inputs.headRevision,
+    integration: plan.inputs.headRevision,
+    run: path.basename(outputDirectory),
+    attempt: '1'
+  }
+}
+
+export function writeLocalValidationEvidence(plan, commands, outputDirectory) {
+  fs.mkdirSync(outputDirectory, { recursive: true, mode: 0o700 })
+  fs.writeFileSync(
+    path.join(outputDirectory, 'plan.json'),
+    JSON.stringify({ ...plan, commands }, null, 2) + '\n',
+    { mode: 0o600 }
+  )
+  fs.writeFileSync(
+    path.join(outputDirectory, 'scope-evidence.json'),
+    JSON.stringify(
+      {
+        version: 2,
+        identity: localExecutionIdentity(plan, outputDirectory),
+        relationshipMapDigest: plan.relationshipMapDigest,
+        relationshipMap: plan.relationshipMap,
+        executionPlan: plan.executionPlan
+      },
+      null,
+      2
+    ) + '\n',
+    { mode: 0o600 }
+  )
 }
 
 export function localCheckCommands(
@@ -160,113 +185,12 @@ export function localCheckCommands(
   outputDirectory,
   repositoryRoot = process.cwd()
 ) {
-  if (plan.unresolved.length)
-    throw new Error(
-      `Unresolved local obligations: ${plan.unresolved.join(', ')}`
-    )
-  const checks = plan.executionPlan.checks
-  const commands = []
-  const add = (id, executable, args, env = {}, evidence = { type: 'exit' }) =>
-    commands.push({ id, executable, args, env, evidence })
-  const identity = {
-    CI_SCOPE_REPOSITORY: 'local',
-    CI_SCOPE_BASE: plan.inputs.baseRevision,
-    CI_SCOPE_HEAD: plan.inputs.headRevision,
-    CI_SCOPE_INTEGRATION: plan.inputs.headRevision,
-    CI_SCOPE_RUN: path.basename(outputDirectory),
-    CI_SCOPE_ATTEMPT: '1',
-    CI_RELATIONSHIP_MAP_DIGEST: plan.relationshipMapDigest
-  }
-  if (checks.securityAudit.mode === 'full')
-    add('security-audit', 'yarn', ['security:audit'])
-  if (checks.dependencyValidation.mode !== 'not-selected')
-    add('dependencies', 'yarn', ['deps:validate'])
-  if (checks.turboValidation.mode !== 'not-selected')
-    add('build-graph', 'yarn', ['gen:turbo:check'])
-  if (
-    checks.frameworkDeclarations.mode !== 'not-selected' &&
-    checks.frameworkDeclarations.tasks.length
+  return validationCheckCommands(
+    plan,
+    outputDirectory,
+    repositoryRoot,
+    localExecutionIdentity(plan, outputDirectory)
   )
-    add('declarations', 'yarn', [
-      'turbo',
-      'run',
-      ...new Set(checks.frameworkDeclarations.tasks.map(({ task }) => task)),
-      '--concurrency=2'
-    ])
-  if (
-    ['lint', 'repositoryScripts', 'naming'].some(
-      (name) => checks[name].mode !== 'not-selected'
-    )
-  ) {
-    const resultPath = path.join(outputDirectory, 'shared.json')
-    add(
-      'shared',
-      process.execPath,
-      ['scripts/run-ci-checks.mjs'],
-      {
-        ...identity,
-        CI_EXECUTION_PLAN: JSON.stringify(plan.executionPlan),
-        CI_CHECK_RESULTS_FILE: resultPath
-      },
-      { type: 'shared', path: resultPath }
-    )
-  }
-  for (const workspace of plan.workspaceMatrix) {
-    const directory = path.join(outputDirectory, 'workspaces')
-    add(
-      workspace.name,
-      process.execPath,
-      ['scripts/run-workspace-checks.mjs'],
-      {
-        ...identity,
-        CI_WORKSPACE_MATRIX_ITEM: JSON.stringify(workspace),
-        WORKSPACE_CHECK_RESULTS_DIRECTORY: directory
-      },
-      {
-        type: 'workspace',
-        path: path.join(directory, `${workspace.artifactId}.json`),
-        workspace: workspace.name
-      }
-    )
-  }
-  if (plan.profileFiles?.length)
-    add('fieldscope-profiles', plan.profileCommand[0], [
-      ...plan.profileCommand.slice(1),
-      ...plan.profileFiles.flatMap((file) => ['--file', file])
-    ])
-  if (checks.controlPlane.mode !== 'not-selected') {
-    const directory = 'tools/flow-inspector/control-plane/__tests__'
-    const files = fs
-      .readdirSync(path.join(repositoryRoot, directory))
-      .filter((name) => name.endsWith('.test.cjs') && !name.startsWith('board'))
-      .sort()
-      .map((name) => `${directory}/${name}`)
-    if (!files.length)
-      throw new Error('Selected control-plane tests are missing')
-    add(
-      'control-plane-tests',
-      process.execPath,
-      ['--test', '--test-concurrency=1', '--test-reporter=tap', ...files],
-      {},
-      { type: 'tap' }
-    )
-  }
-  for (const { id, command } of plan.e2eSuites) {
-    const reportPath = path.join(outputDirectory, `${id}.json`)
-    add(
-      `e2e-${id}`,
-      command.executable,
-      command.args,
-      {
-        ...command.env,
-        ...(command.evidence === 'playwright'
-          ? { PLAYWRIGHT_JSON_OUTPUT_FILE: reportPath }
-          : {})
-      },
-      { type: command.evidence, path: reportPath }
-    )
-  }
-  return commands
 }
 
 async function main() {
@@ -280,15 +204,17 @@ async function main() {
       )
       return
     }
-    if (['--run', '--full', '--json'].includes(argument))
+    if (['--run', '--full', '--json'].includes(argument)) {
       options[argument.slice(2)] = true
-    else if (
+    } else if (
       argument === '--base' &&
       args[index + 1] &&
       !args[index + 1].startsWith('--')
-    )
+    ) {
       options.base = args[++index]
-    else throw new Error(`Unknown or incomplete argument: ${argument}`)
+    } else {
+      throw new Error(`Unknown or incomplete argument: ${argument}`)
+    }
   }
   const repositoryRoot = process.cwd()
   const inputs = collectLocalInputs({ repositoryRoot, base: options.base })
@@ -303,28 +229,28 @@ async function main() {
     randomUUID()
   )
   const commands = localCheckCommands(plan, outputDirectory, repositoryRoot)
-  if (options.json) console.log(JSON.stringify({ ...plan, commands }, null, 2))
-  else {
+  if (options.json) {
+    console.log(JSON.stringify({ ...plan, commands }, null, 2))
+  } else {
     console.log(
       `Local validation - ${inputs.changedPaths.length} changed paths, ${plan.workspaceMatrix.length} workspaces, ${commands.length} checks`
     )
-    for (const command of commands)
+    for (const command of commands) {
       console.log(
         `  ${command.id}: ${command.executable} ${command.args.join(' ')}`
       )
-    for (const owner of plan.e2eOwners)
+    }
+    for (const owner of plan.e2eOwners) {
       console.log(`  ${owner.workspace} E2E: ${owner.status}`)
+    }
     console.log(
       'Local lint/tests/E2E only; remote CI, release and publication evidence remain separate.'
     )
   }
-  if (!options.run) return
-  fs.mkdirSync(outputDirectory, { recursive: true, mode: 0o700 })
-  fs.writeFileSync(
-    path.join(outputDirectory, 'plan.json'),
-    JSON.stringify({ ...plan, commands }, null, 2) + '\n',
-    { mode: 0o600 }
-  )
+  if (!options.run) {
+    return
+  }
+  writeLocalValidationEvidence(plan, commands, outputDirectory)
   const controller = new globalThis.AbortController()
   const cancel = () => controller.abort()
   process.on('SIGINT', cancel)
@@ -346,8 +272,9 @@ async function main() {
     process.off('SIGTERM', cancel)
   }
   console.log(`Local validation ${result.status}. Evidence: ${outputDirectory}`)
-  if (result.status !== 'passed')
+  if (result.status !== 'passed') {
     process.exitCode = result.status === 'cancelled' ? 130 : 1
+  }
 }
 
 if (

@@ -87,10 +87,12 @@ test('one mounted scene carries the idea through six chapters and reversible int
       .boundingBox()
     expect(before).not.toBeNull()
     expect(after).not.toBeNull()
-    if (!before || !after)
+    if (!before || !after) {
       throw new Error('The shared notebook must have visible bounds')
-    for (const key of ['x', 'y', 'width', 'height'] as const)
+    }
+    for (const key of ['x', 'y', 'width', 'height'] as const) {
       expect(Math.abs(after[key] - before[key])).toBeLessThan(2)
+    }
   }
   await seek(page, 3, 0.5)
   const styles = await page
@@ -194,8 +196,9 @@ test('no JavaScript retains six explanatory compositions and documentation actio
   await page.goto('/')
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1)
   await expect(page.locator('[data-story-chapter]')).toHaveCount(6)
-  for (const scene of await page.locator('[data-static-scene]').all())
+  for (const scene of await page.locator('[data-static-scene]').all()) {
     await expect(scene).toBeVisible()
+  }
   await page
     .getByRole('link', { name: 'Explore the framework' })
     .scrollIntoViewIfNeeded()

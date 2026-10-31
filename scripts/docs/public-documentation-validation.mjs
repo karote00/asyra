@@ -89,7 +89,9 @@ export const validateMarkdownLinks = ({ filePath, repositoryRoot, source }) => {
   let localLinkCount = 0
   for (const match of source.matchAll(/\[[^\]]+\]\(([^)]+)\)/g)) {
     const destination = match[1].trim()
-    if (/^(?:https?:|mailto:)/i.test(destination)) continue
+    if (/^(?:https?:|mailto:)/i.test(destination)) {
+      continue
+    }
     const [relativeTarget, fragment] = destination.split('#', 2)
     const targetPath = relativeTarget
       ? path.resolve(path.dirname(filePath), decodeURIComponent(relativeTarget))
@@ -157,7 +159,9 @@ export const validatePublicImportMentions = ({ apiIndex, pageId, source }) => {
     /@asyra\/(?:[a-z0-9-]+|\*)(?:\/[a-z0-9._/-]+)?/gi
   )) {
     const mention = match[0]
-    if (mention === '@asyra/*') continue
+    if (mention === '@asyra/*') {
+      continue
+    }
     const [, packageDirectory, ...subpathParts] = mention.split('/')
     const packageName = `@asyra/${packageDirectory}`
     const packageRecord = packagesByName.get(packageName)
@@ -183,7 +187,9 @@ export const validatePublicImportMentions = ({ apiIndex, pageId, source }) => {
 
 const sectionSource = (source, heading) => {
   const start = source.indexOf(`${heading}\n`)
-  if (start === -1) return ''
+  if (start === -1) {
+    return ''
+  }
   const contentStart = start + heading.length + 1
   const nextHeading = source.indexOf('\n## ', contentStart)
   return source.slice(
@@ -196,14 +202,18 @@ const apiReferences = (source) => {
   const references = []
   for (const match of source.matchAll(/`([^`\n]+)`/g)) {
     const raw = match[1].trim()
-    if (raw.startsWith('@asyra/') || raw.includes('/')) continue
+    if (raw.startsWith('@asyra/') || raw.includes('/')) {
+      continue
+    }
     const callable = raw.match(
       /^([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\([^)]*\)$/
     )
     const generic = raw.match(/^([A-Za-z_$][\w$]*)<.+>$/)
     const plain = raw.match(/^[A-Za-z_$][\w$]*$/)
     const identifier = callable?.[1] ?? generic?.[1] ?? plain?.[0]
-    if (!identifier) continue
+    if (!identifier) {
+      continue
+    }
     references.push(identifier.split('.').at(-1))
   }
   return [...new Set(references)]
@@ -220,7 +230,9 @@ const apiHeadingForPage = (pageId) => {
 }
 
 const requiredHeadingsForPage = (pageId) => {
-  if (pageId.startsWith('build/')) return BUILD_HEADINGS
+  if (pageId.startsWith('build/')) {
+    return BUILD_HEADINGS
+  }
   if (pageId.startsWith('reference/packages/')) {
     return PACKAGE_GUIDE_HEADINGS
   }
@@ -229,7 +241,9 @@ const requiredHeadingsForPage = (pageId) => {
 
 const validateApiReferences = ({ apiIndex, page, repositoryRoot, source }) => {
   const heading = apiHeadingForPage(page.id)
-  if (!heading) return 0
+  if (!heading) {
+    return 0
+  }
   const references = apiReferences(sectionSource(source, heading))
   const packagesByName = new Map(
     apiIndex.packages.map((packageRecord) => [
@@ -305,7 +319,9 @@ export const validatePageStructure = ({ page, source }) => {
 }
 
 const validateConceptPage = ({ page, source }) => {
-  if (page.section !== 'Concepts') return false
+  if (page.section !== 'Concepts') {
+    return false
+  }
   if (source.includes('## Implementation')) {
     throw new Error(`${page.id} mixes implementation into a Concepts page`)
   }
@@ -316,7 +332,9 @@ const validateConceptPage = ({ page, source }) => {
 }
 
 const validateImplementationGuide = ({ page, source }) => {
-  if (!IMPLEMENTATION_GUIDE_IDS.includes(page.id)) return false
+  if (!IMPLEMENTATION_GUIDE_IDS.includes(page.id)) {
+    return false
+  }
   for (const heading of [
     '## Where this runs',
     '## Implementation',
@@ -393,7 +411,9 @@ export const validatePublicDocumentation = async ({ repositoryRoot }) => {
   for (const page of content.pages) {
     const filePath = path.join(root, 'docs/public', page.path)
     const source = fs.readFileSync(filePath, 'utf8')
-    if (page.id === 'overview') validateStarterEntry({ source })
+    if (page.id === 'overview') {
+      validateStarterEntry({ source })
+    }
     if (page.id === 'reference/support-release') {
       validateCommunityPolicy({
         discussionsEnabled: false,
@@ -410,7 +430,9 @@ export const validatePublicDocumentation = async ({ repositoryRoot }) => {
       )
     }
     validatePageStructure({ page, source })
-    if (validateConceptPage({ page, source })) conceptPageCount += 1
+    if (validateConceptPage({ page, source })) {
+      conceptPageCount += 1
+    }
     if (validateImplementationGuide({ page, source })) {
       implementationGuideCount += 1
     }

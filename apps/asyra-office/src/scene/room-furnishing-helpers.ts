@@ -8,13 +8,14 @@ export function meshBounds(parts: readonly AssetPart[]) {
     [Infinity, -Infinity],
     [Infinity, -Infinity]
   ]
-  for (const p of parts)
+  for (const p of parts) {
     for (let i = 0; i < p.mesh.positions.length; i++) {
       const axis = i % 3,
         value = p.mesh.positions[i]
       bounds[axis][0] = Math.min(bounds[axis][0], value)
       bounds[axis][1] = Math.max(bounds[axis][1], value)
     }
+  }
   return bounds
 }
 

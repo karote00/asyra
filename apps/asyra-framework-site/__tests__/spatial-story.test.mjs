@@ -16,11 +16,12 @@ test('the cumulative scene is finite, continuous and reversible at every sampled
     for (const [id, pose] of Object.entries(frame.layers)) {
       assert.ok(pose.every(Number.isFinite))
       assert.ok(pose[7] >= 0 && pose[7] <= 1)
-      for (let axis = 0; axis < 3; axis++)
+      for (let axis = 0; axis < 3; axis++) {
         assert.ok(
           Math.abs(pose[axis] - previous.layers[id][axis]) < 5,
           `${id} jumps at ${time}`
         )
+      }
       assert.match(layerTransform(pose), /rotateX/)
     }
     previous = frame
@@ -31,8 +32,9 @@ test('the cumulative scene is finite, continuous and reversible at every sampled
 })
 
 test('static snapshots show the complete local result', () => {
-  for (let chapter = 0; chapter < 6; chapter++)
+  for (let chapter = 0; chapter < 6; chapter++) {
     assert.deepEqual(getStoryFrame(chapter, 0, true), getStoryFrame(chapter, 1))
+  }
 })
 
 function harness() {
@@ -62,7 +64,9 @@ test('one scene renders only the latest input once per frame, stays idle and ret
   const h = harness()
   h.driver.update(0, 0.2)
   h.flush()
-  for (let i = 0; i < 100; i++) h.driver.update(2, i / 100)
+  for (let i = 0; i < 100; i++) {
+    h.driver.update(2, i / 100)
+  }
   assert.equal(h.queue.size, 1)
   h.flush()
   assert.equal(h.frames.length, 2)

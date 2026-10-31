@@ -79,12 +79,16 @@ export class WalkingRobotProjection {
           wireframe: false,
           selectable: false
         })
-        if (descriptor.kind !== 'mesh') throw new Error('Expected walking mesh')
+        if (descriptor.kind !== 'mesh') {
+          throw new Error('Expected walking mesh')
+        }
         this.shapes.set(part.id, descriptor.shape)
         this.work.shapeAdmissions++
       }
     }
-    if (this.poseResult === report.stowedPoseResult) return this.meshes
+    if (this.poseResult === report.stowedPoseResult) {
+      return this.meshes
+    }
     const transforms = new Map(
       report.stowedPoseResult.bodyTransforms.map((item) => [
         item.id,
@@ -95,8 +99,9 @@ export class WalkingRobotProjection {
       report.source.parts.map((part) => {
         const body = transforms.get(part.bodyId)
         const shape = this.shapes.get(part.id)
-        if (!body || !shape)
+        if (!body || !shape) {
           throw new Error('Incomplete walking projection source')
+        }
         const transform = compose(body, part.localFrame)
         const descriptor = readSpatialDescriptor({
           kind: 'mesh',
@@ -110,7 +115,9 @@ export class WalkingRobotProjection {
           wireframe: false,
           selectable: false
         })
-        if (descriptor.kind !== 'mesh') throw new Error('Expected walking mesh')
+        if (descriptor.kind !== 'mesh') {
+          throw new Error('Expected walking mesh')
+        }
         return Object.freeze({
           id: `walking-robot.${part.id}`,
           visible: true,

@@ -4,7 +4,9 @@ import { PropertyRegistry } from '../property-registry.js'
 
 const subject = (registry: PropertyRegistry, key: string) => {
   const value = registry.getSubject(key)
-  if (!value) throw new Error(`Missing test property: ${key}`)
+  if (!value) {
+    throw new Error(`Missing test property: ${key}`)
+  }
   return value
 }
 

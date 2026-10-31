@@ -81,7 +81,9 @@ const unsupportedSample = (): never => {
 const matchesSampleImageAttachment = (
   metadata: AiJsonValue | undefined
 ): boolean => {
-  if (!sampleImage || !sampleImageDigest) return false
+  if (!sampleImage || !sampleImageDigest) {
+    return false
+  }
   if (
     !isRecord(metadata) ||
     !Array.isArray(metadata.imageAttachments) ||
@@ -201,21 +203,24 @@ export const resolveActionBatchRequest = async (
     })
   } catch (error) {
     const code = readErrorCode(error)
-    if (code === 'AI_MODEL_BACKEND_TIMEOUT')
+    if (code === 'AI_MODEL_BACKEND_TIMEOUT') {
       throw new ActionBatchServerError(
         'ACTION_BATCH_MODEL_TIMEOUT',
         'The AI request timed out.'
       )
-    if (code === 'AI_MODEL_BACKEND_IMAGE_CONVERSION_FAILED')
+    }
+    if (code === 'AI_MODEL_BACKEND_IMAGE_CONVERSION_FAILED') {
       throw new ActionBatchServerError(
         'ACTION_BATCH_IMAGE_CONVERSION_FAILED',
         'The image conversion failed.'
       )
-    if (code === 'AI_MODEL_BACKEND_INVALID_RESPONSE')
+    }
+    if (code === 'AI_MODEL_BACKEND_INVALID_RESPONSE') {
       throw new ActionBatchServerError(
         'ACTION_BATCH_MODEL_INVALID_RESPONSE',
         'The AI response was invalid.'
       )
+    }
     if (code === 'AI_MODEL_BACKEND_ABORTED') {
       throw new ActionBatchServerError(
         'ACTION_BATCH_ABORTED',
@@ -253,7 +258,9 @@ const sendJson = (
   statusCode: number,
   value: unknown
 ): void => {
-  if (response.writableEnded || response.destroyed) return
+  if (response.writableEnded || response.destroyed) {
+    return
+  }
   if (response.headersSent) {
     response.end(
       JSON.stringify(
@@ -267,8 +274,9 @@ const sendJson = (
     )
     return
   }
-  if (isRecord(value) && typeof value.code === 'string')
+  if (isRecord(value) && typeof value.code === 'string') {
     response.setHeader('x-ai-error-code', value.code)
+  }
   response.statusCode = statusCode
   response.setHeader('content-type', 'application/json; charset=utf-8')
   response.end(JSON.stringify(value))
@@ -372,7 +380,9 @@ export const createActionBatchMiddleware = (
     const abort = () => controller.abort('request closed')
     request.once('aborted', abort)
     response.once('close', () => {
-      if (!response.writableEnded) abort()
+      if (!response.writableEnded) {
+        abort()
+      }
     })
     try {
       const input = await readJsonBody(request, controller.signal)
@@ -406,10 +416,12 @@ export const createActionBatchMiddleware = (
             ? {
                 executeBatch: (prepared) =>
                   exchange.execute(prepared, controller.signal, (frame) => {
-                    if (response.destroyed || response.writableEnded)
+                    if (response.destroyed || response.writableEnded) {
                       throw new Error('Request closed')
-                    if (!response.headersSent)
+                    }
+                    if (!response.headersSent) {
                       response.setHeader('content-type', 'application/x-ndjson')
+                    }
                     response.write(JSON.stringify(frame) + '\n')
                   })
               }
@@ -420,10 +432,12 @@ export const createActionBatchMiddleware = (
               controller.signal.aborted ||
               response.writableEnded ||
               response.destroyed
-            )
+            ) {
               return
-            if (!response.headersSent)
+            }
+            if (!response.headersSent) {
               response.setHeader('content-type', 'application/x-ndjson')
+            }
             response.write(
               JSON.stringify({
                 type: 'activity',

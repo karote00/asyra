@@ -113,7 +113,9 @@ export const deliverRecordOutbox = async (
       return { complete: false, nextSequence, interrupted: true }
     }
     const last = batch[batch.length - 1]
-    if (!last) return { complete: false, nextSequence, interrupted: false }
+    if (!last) {
+      return { complete: false, nextSequence, interrupted: false }
+    }
     if (
       batch.some(
         (item, index) =>
@@ -134,7 +136,7 @@ export const deliverRecordOutbox = async (
         receipt = await options.send(batch)
         break
       } catch (error) {
-        if (attempt === 1)
+        if (attempt === 1) {
           reportRecordDeliveryIssue(options, {
             requestId,
             stage: 'transport',
@@ -142,9 +144,12 @@ export const deliverRecordOutbox = async (
             fromSequence: nextSequence,
             throughSequence: last.sequence
           })
+        }
       }
     }
-    if (!receipt) return { complete: false, nextSequence, interrupted: true }
+    if (!receipt) {
+      return { complete: false, nextSequence, interrupted: true }
+    }
     if (
       receipt.requestId !== requestId ||
       receipt.acknowledgedSequence !== last.sequence ||

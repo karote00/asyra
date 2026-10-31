@@ -74,7 +74,7 @@ it('uses one cabinet door and a complete wood top without the stored preparation
   const upper = mesh.positions.filter((_, i) => i % 3 === 2)
   expect(Math.max(...upper)).toBeCloseTo(1.18, 6)
   expect(Math.min(...upper)).toBeCloseTo(1.145, 6)
-  for (const fx of [0.2, 0.5, 0.8])
+  for (const fx of [0.2, 0.5, 0.8]) {
     for (const fy of [0.2, 0.5, 0.8]) {
       const x = top[0][0] + fx * (top[0][1] - top[0][0])
       const y = top[1][0] + fy * (top[1][1] - top[1][0])
@@ -83,15 +83,22 @@ it('uses one cabinet door and a complete wood top without the stored preparation
         const [a, b, c] = mesh.indices
           .slice(i, i + 3)
           .map((n) => mesh.positions.slice(n * 3, n * 3 + 3))
-        if (![a, b, c].every((p) => Math.abs(p[2] - 1.18) < 1e-6)) continue
+        if (![a, b, c].every((p) => Math.abs(p[2] - 1.18) < 1e-6)) {
+          continue
+        }
         const d = (b[1] - c[1]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[1] - c[1])
-        if (Math.abs(d) < 1e-10) continue
+        if (Math.abs(d) < 1e-10) {
+          continue
+        }
         const u = ((b[1] - c[1]) * (x - c[0]) + (c[0] - b[0]) * (y - c[1])) / d
         const v = ((c[1] - a[1]) * (x - c[0]) + (a[0] - c[0]) * (y - c[1])) / d
-        if (u >= -1e-6 && v >= -1e-6 && u + v <= 1 + 1e-6) covered = true
+        if (u >= -1e-6 && v >= -1e-6 && u + v <= 1 + 1e-6) {
+          covered = true
+        }
       }
       expect(covered, 'solid top at ' + fx + ',' + fy).toBe(true)
     }
+  }
 })
 it('retains five shelf objects without shrinking them or deleting stored asset factories', () => {
   expect(parts.has('pantry-canister-1')).toBe(false)
@@ -123,13 +130,14 @@ it('staggered full smallware envelopes stay on the worktop with no pairwise over
     'pantry-counter-tumbler',
     'pantry-counter-bottle'
   ].map((id) => bounds(id))
-  for (const b of objects)
+  for (const b of objects) {
     for (const a of [0, 1]) {
       expect(b[a][0]).toBeGreaterThan(top[a][0])
       expect(b[a][1]).toBeLessThan(top[a][1])
     }
+  }
   expect(objects[2][1][1]).toBeLessThan(objects[1][1][0])
-  for (let i = 0; i < objects.length; i++)
+  for (let i = 0; i < objects.length; i++) {
     for (let j = i + 1; j < objects.length; j++) {
       expect(
         [0, 1].some(
@@ -139,4 +147,5 @@ it('staggered full smallware envelopes stay on the worktop with no pairwise over
         )
       ).toBe(true)
     }
+  }
 })

@@ -36,11 +36,15 @@ const captureNavigationEvidence = async (page: Page) => {
     }
   })
   page.on('framenavigated', (frame) => {
-    if (frame === page.mainFrame()) record('committed', { url: frame.url() })
+    if (frame === page.mainFrame()) {
+      record('committed', { url: frame.url() })
+    }
   })
   page.on('websocket', (socket) => {
     socket.on('framereceived', ({ payload }) => {
-      if (typeof payload !== 'string') return
+      if (typeof payload !== 'string') {
+        return
+      }
       try {
         const message = JSON.parse(payload)
         if (['full-reload', 'update', 'error'].includes(message.type)) {
@@ -346,7 +350,9 @@ test('does not replay a prior-generation removal after document Reset', async ({
   const fileId = `reset-generation-${Date.now()}-${testInfo.workerIndex}`
   const startupErrors: string[] = []
   page.on('console', (message) => {
-    if (message.type() === 'error') startupErrors.push(message.text())
+    if (message.type() === 'error') {
+      startupErrors.push(message.text())
+    }
   })
 
   await page.goto(collaborationUrl(fileId))
@@ -393,7 +399,9 @@ test('isolates a blocked local draft while an independent peer continues saving'
   const fileId = `rejected-source-recovery-${Date.now()}-${testInfo.workerIndex}`
   const startupErrors: string[] = []
   page.on('console', (message) => {
-    if (message.type() === 'error') startupErrors.push(message.text())
+    if (message.type() === 'error') {
+      startupErrors.push(message.text())
+    }
   })
 
   await page.goto(collaborationUrl(fileId))
@@ -459,7 +467,9 @@ test('isolates a blocked local draft while an independent peer continues saving'
     const blocked = await page.evaluate(async () => {
       const runtime = await import('../src/testing/runtime-access')
       const handle = runtime.getActiveCollaborationHandle()
-      if (!handle) throw new Error('Missing document session')
+      if (!handle) {
+        throw new Error('Missing document session')
+      }
       await handle.whenIdle()
       let failure = ''
       try {
@@ -512,7 +522,9 @@ const getCanonicalSnapshot = (page: Page) =>
         .sort((left, right) => left.id.localeCompare(right.id))
     }
     const elements = runtimeAccess.core?.deps?.sceneTree?.getAllElements?.()
-    if (!(elements instanceof Map)) return []
+    if (!(elements instanceof Map)) {
+      return []
+    }
     return Array.from(elements.entries())
       .filter(([, element]) => element.get?.('type') !== 'workspace')
       .map(([id, element]) => ({
@@ -537,7 +549,9 @@ const findFirstSerializableDifference = (
   actorB: unknown,
   path = '$'
 ): SerializableDifference | null => {
-  if (Object.is(actorA, actorB)) return null
+  if (Object.is(actorA, actorB)) {
+    return null
+  }
   if (Array.isArray(actorA) && Array.isArray(actorB)) {
     if (actorA.length !== actorB.length) {
       return {
@@ -552,7 +566,9 @@ const findFirstSerializableDifference = (
         actorB[index],
         `${path}[${index}]`
       )
-      if (difference) return difference
+      if (difference) {
+        return difference
+      }
     }
     return null
   }
@@ -582,7 +598,9 @@ const findFirstSerializableDifference = (
         actorBRecord[key],
         `${path}.${key}`
       )
-      if (difference) return difference
+      if (difference) {
+        return difference
+      }
     }
     return null
   }
@@ -625,7 +643,9 @@ const getCanonicalStrokeIdentityViolations = (
 ) =>
   snapshot.flatMap(({ computed, id: elementId }) => {
     const strokes = (computed as { strokes?: unknown }).strokes
-    if (!Array.isArray(strokes)) return []
+    if (!Array.isArray(strokes)) {
+      return []
+    }
     return strokes.flatMap((stroke, index) => {
       if (!stroke || typeof stroke !== 'object' || Array.isArray(stroke)) {
         return [{ elementId, fillId: null, index, strokeId: null }]
@@ -783,7 +803,9 @@ const getCanonicalDocumentSave = (page: Page) =>
     const profiledSnapshot = (await import('../src/testing/runtime-access'))
       .getActiveAiDrawingPerformanceProfile()
       ?.readCanonicalOwnerSnapshot()
-    if (profiledSnapshot) return profiledSnapshot
+    if (profiledSnapshot) {
+      return profiledSnapshot
+    }
     const sceneTree = (await import('../src/testing/runtime-access')).core.deps
       .sceneTree
     const sceneSave = sceneTree.save()
@@ -812,12 +834,16 @@ const getCanonicalDocumentSave = (page: Page) =>
     }
 
     Array.from(sceneTree.getAllElements().values()).forEach((element) => {
-      if (element.get?.('type') === 'workspace') return
+      if (element.get?.('type') === 'workspace') {
+        return
+      }
       enqueuePropertyReferences(element.save().props)
     })
     while (pendingPropertyIds.length > 0) {
       const propertyId = pendingPropertyIds.shift()
-      if (!propertyId || referencedPropertyIds.has(propertyId)) continue
+      if (!propertyId || referencedPropertyIds.has(propertyId)) {
+        continue
+      }
       referencedPropertyIds.add(propertyId)
       enqueuePropertyReferences(allProps[propertyId])
     }
@@ -837,7 +863,9 @@ const getUndoDepth = (page: Page) =>
     const performanceProfile = (
       await import('../src/testing/runtime-access')
     ).getActiveAiDrawingPerformanceProfile()
-    if (performanceProfile) return performanceProfile.readHistoryDepth()
+    if (performanceProfile) {
+      return performanceProfile.readHistoryDepth()
+    }
     return (
       (
         (await import('../src/testing/runtime-access')).core.deps.factory
@@ -901,8 +929,9 @@ const captureFactoryPublicationShapes = (page: Page) =>
       (
         await import('../src/testing/runtime-access')
       ).getActiveAiDrawingPerformanceProfile()
-    )
+    ) {
       return
+    }
     const { core, testRuntimeState } =
       await import('../src/testing/runtime-access')
     const shapes = testRuntimeState.set<unknown[]>(
@@ -1189,12 +1218,16 @@ const getVectorTopologySummary = (page: Page) =>
     const elements = (
       await import('../src/testing/runtime-access')
     ).core?.deps?.sceneTree?.getAllElements?.()
-    if (!(elements instanceof Map)) return null
+    if (!(elements instanceof Map)) {
+      return null
+    }
     const vector = Array.from(elements.values()).find(
       (element) => element.get?.('type') === 'vector'
     )
     const computed = vector?.getAllComputedData?.()
-    if (!computed) return null
+    if (!computed) {
+      return null
+    }
     const points = Object.values(computed.points ?? {}) as {
       kind?: unknown
     }[]
@@ -1306,10 +1339,11 @@ test('16-item server response publishes each finite member with one Undo and Red
         updates: [],
         removals: expect.any(Array)
       })
-      if (change.kind !== 'property-components')
+      if (change.kind !== 'property-components') {
         throw new Error(
           'Expected exact property retirement after element removal'
         )
+      }
       expect(change.removals?.length).toBeGreaterThan(0)
       return change.removals ?? []
     })
@@ -1359,7 +1393,9 @@ test('16-item AI response converges through the ordinary two-actor publication p
           undoDepth: core.getUndoHistoryDepth()
         })
       const keydown = (event: KeyboardEvent) => {
-        if (event.code === 'KeyZ') capture('keydown', { shift: event.shiftKey })
+        if (event.code === 'KeyZ') {
+          capture('keydown', { shift: event.shiftKey })
+        }
       }
       const admitted = (raw: RawInputEvent) => {
         capture('admitted', { modifiers: raw.modifiers, detail: raw.detail })
@@ -2168,7 +2204,9 @@ test('1,280-item cat prefix measures ordinary cooperative two-actor creation', a
       snapshot: Awaited<ReturnType<typeof getCanonicalSnapshot>>
     ) =>
       snapshot.reduce((total, { computed, type }) => {
-        if (type !== 'vector') return total
+        if (type !== 'vector') {
+          return total
+        }
         const points = (computed as { points?: Record<string, unknown> }).points
         return total + (points ? Object.keys(points).length : 0)
       }, 0)
@@ -2850,7 +2888,9 @@ test('vector creation and anchor movement converge through the canonical collabo
               ?.getAllComputedData?.()?.points?.[pointId]
             return point ? { x: point.x, y: point.y } : null
           }, before)
-          if (!point) return Number.POSITIVE_INFINITY
+          if (!point) {
+            return Number.POSITIVE_INFINITY
+          }
           return Math.max(
             Math.abs(point.x - nextX),
             Math.abs(point.y - before.point.y)
@@ -3435,7 +3475,9 @@ test('rolls back a visible publication through peer compensation and durable rel
     const result = await page.evaluate(async () => {
       const runtime = await import('../src/testing/runtime-access')
       const handle = runtime.getActiveCollaborationHandle()
-      if (!handle) throw new Error('Missing document session')
+      if (!handle) {
+        throw new Error('Missing document session')
+      }
       const receipt = await handle.confirmPersistence(
         AbortSignal.timeout(10000)
       )
@@ -3619,11 +3661,14 @@ test('recovers real edits and Undo Redo after preparation failure, reload and re
       const handle = (
         await import('../src/testing/runtime-access')
       ).getActiveCollaborationHandle()
-      if (!handle) throw new Error('Missing session')
+      if (!handle) {
+        throw new Error('Missing session')
+      }
       await handle.whenIdle()
       await handle.confirmPersistence(AbortSignal.timeout(10000))
-      if (handle.getSessionState().sync !== 'synced')
+      if (handle.getSessionState().sync !== 'synced') {
         throw new Error('Recovery did not settle')
+      }
     })
     await page.screenshot({ path: testInfo.outputPath('recovered.png') })
     await page.reload()
@@ -3650,11 +3695,12 @@ test('recovers a failed IndexedDB prefix with subsequent real edits and durable 
       if (
         this.transaction.db.name === 'collaboration-publications' &&
         Reflect.get(globalThis, '__rejectPublicationPut')
-      )
+      ) {
         throw new DOMException(
           'Injected outbox quota failure',
           'QuotaExceededError'
         )
+      }
       return put.apply(this, args)
     }
   })
@@ -3676,12 +3722,14 @@ test('recovers a failed IndexedDB prefix with subsequent real edits and durable 
     const handle = (
       await import('../src/testing/runtime-access')
     ).getActiveCollaborationHandle()
-    if (!handle?.hasUnpersistedChanges())
+    if (!handle?.hasUnpersistedChanges()) {
       throw new Error('Missing unsaved recovery warning')
+    }
     Object.assign(globalThis, { __rejectPublicationPut: false })
     await handle.prepareRecovery()
-    if (handle.hasUnpersistedChanges())
+    if (handle.hasUnpersistedChanges()) {
       throw new Error('Prefix was not durably retained')
+    }
   })
   // Reopen only after disk recovery, never pretend failed writes survived closing the tab.
   await page.reload()
@@ -3692,7 +3740,9 @@ test('recovers a failed IndexedDB prefix with subsequent real edits and durable 
     const handle = (
       await import('../src/testing/runtime-access')
     ).getActiveCollaborationHandle()
-    if (!handle) throw new Error('Missing recovered session')
+    if (!handle) {
+      throw new Error('Missing recovered session')
+    }
     await handle.confirmPersistence(AbortSignal.timeout(10000))
   })
   await page.reload()
@@ -3788,11 +3838,12 @@ test('recovers accepted-source cleanup failure and preserves live rejection hist
         if (
           this.transaction.db.name === 'collaboration-publications' &&
           Reflect.get(globalThis, '__rejectPublicationDelete')
-        )
+        ) {
           throw new DOMException(
             'Injected accepted-source cleanup failure',
             'UnknownError'
           )
+        }
         return remove.apply(this, args)
       }
     })
@@ -3854,11 +3905,14 @@ test('recovers accepted-source cleanup failure and preserves live rejection hist
       const handle = (
         await import('../src/testing/runtime-access')
       ).getActiveCollaborationHandle()
-      if (!handle) throw new Error('Missing recovered session')
+      if (!handle) {
+        throw new Error('Missing recovered session')
+      }
       await handle.whenIdle()
       await handle.confirmPersistence(AbortSignal.timeout(10000))
-      if (handle.getSessionState().sync !== 'synced')
+      if (handle.getSessionState().sync !== 'synced') {
         throw new Error('Recovery did not settle')
+      }
     })
     const checkpoint = (await getPersistedDocumentCheckpoint(fileId)).checkpoint
     expect(Object.keys(checkpoint.sceneTree.elements)).toEqual(

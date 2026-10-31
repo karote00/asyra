@@ -21,7 +21,9 @@ it.each(['segment71', 'window2', 'window4', 'commonPrefix'] as const)(
       (pair) =>
         pair.a.bodyId === 'example:joint-2' && pair.b.bodyId === 'obstacle-11'
     )
-    if (!pair) throw new Error('Missing original source pair')
+    if (!pair) {
+      throw new Error('Missing original source pair')
+    }
     const windows: Record<typeof mode, readonly [number, number]> = {
       segment71: [
         snapshot.trajectory.keyframes[71].time,

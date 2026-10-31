@@ -32,7 +32,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             pair.a.bodyId === 'example:joint-2' &&
             pair.b.bodyId === 'obstacle-11'
         )
-        if (!pair) throw new Error('Missing measured pair')
+        if (!pair) {
+          throw new Error('Missing measured pair')
+        }
         const query = {
           workcell: snapshot.workcell,
           trajectory: snapshot.trajectory,
@@ -71,7 +73,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               hierarchy,
               checkExecution
             )
-            if (!hierarchy) return index
+            if (!hierarchy) {
+              return index
+            }
             const fingerprint = JSON.stringify(index.root)
             const originalLeaves = new Set<MeshNode>()
             const inspect = (root: MeshNode, leaves: Set<MeshNode>) => {
@@ -80,8 +84,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               let cost = 0
               while (pending.length) {
                 const node = pending.pop()
-                if (!node || seen.has(node))
+                if (!node || seen.has(node)) {
                   throw new Error('Repeated node or cycle')
+                }
                 seen.add(node)
                 if (!node.children) {
                   leaves.add(node)
@@ -94,8 +99,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                       axis[0] === Math.min(a.bounds[i][0], b.bounds[i][0]) &&
                       axis[1] === Math.max(a.bounds[i][1], b.bounds[i][1])
                   )
-                )
+                ) {
                   throw new Error('Incorrect complete child union')
+                }
                 const [x, y, z] = node.bounds.map((axis) => axis[1] - axis[0])
                 cost += 2 * (x * y + x * z + y * z)
                 pending.push(a, b)
@@ -147,7 +153,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           })
         )
         expect(context.work).toBeLessThanOrEqual(500001)
-        if (candidate.coverage === 'complete')
+        if (candidate.coverage === 'complete') {
           expect(
             candidate.leaves.map((leaf) => [
               leaf.start,
@@ -163,6 +169,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               leaf.penetration
             ])
           )
+        }
       },
       20000
     )

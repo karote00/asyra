@@ -57,16 +57,23 @@ export function AssetPreview({ asset }: { asset?: ReviewAsset }) {
   const [runtime, setRuntime] = useState<PreviewRuntime | null>(null)
   const [error, setError] = useState('')
   useEffect(() => {
-    if (!host.current) return
+    if (!host.current) {
+      return
+    }
     let retired = false
     const pending = startAssetPreview(host.current, asset)
     pending
       .then((value) => {
-        if (retired) void value.dispose()
-        else setRuntime(value)
+        if (retired) {
+          void value.dispose()
+        } else {
+          setRuntime(value)
+        }
       })
       .catch((e) => {
-        if (!retired) setError(e instanceof Error ? e.message : String(e))
+        if (!retired) {
+          setError(e instanceof Error ? e.message : String(e))
+        }
       })
     return () => {
       retired = true

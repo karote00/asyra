@@ -38,8 +38,9 @@ export async function loadFixtures() {
       if (
         Buffer.byteLength(raw) !== fixture.bytes ||
         digest(raw) !== fixture.sha256
-      )
+      ) {
         throw new Error('Fixture integrity mismatch')
+      }
       return { ...fixture, raw, nativeVersion: manifest.nativeVersion }
     })
   )
@@ -49,7 +50,9 @@ export function inspectSuccessor(request, callId, raw) {
   const output = request?.input?.find(
     (item) => item.type === 'function_call_output' && item.call_id === callId
   )?.output
-  if (output === undefined) throw new Error('Missing successor tool output')
+  if (output === undefined) {
+    throw new Error('Missing successor tool output')
+  }
   if (
     typeof output !== 'string' &&
     (!Array.isArray(output) ||
@@ -60,8 +63,9 @@ export function inspectSuccessor(request, callId, raw) {
             (item.type === 'input_image' && typeof item.image_url === 'string')
           )
       ))
-  )
+  ) {
     throw new Error('Unsupported successor output')
+  }
   const text = typeof output === 'string' ? output : JSON.stringify(output)
   const blocks =
     typeof output === 'string'
@@ -79,7 +83,9 @@ export function inspectSuccessor(request, callId, raw) {
               /^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/]+={0,2})$/.exec(
                 item.image_url
               )
-            if (!match) throw new Error('Unsupported successor image')
+            if (!match) {
+              throw new Error('Unsupported successor image')
+            }
             const bytes = Buffer.from(match[2], 'base64')
             return {
               mediaType: match[1],
@@ -167,7 +173,9 @@ async function nativeIdentity(executable) {
       /* Search the next declared PATH entry. */
     }
   }
-  if (!launcher) throw new Error('Native executable unavailable')
+  if (!launcher) {
+    throw new Error('Native executable unavailable')
+  }
   let binary = launcher
   if (launcher.endsWith('.js')) {
     const require = createRequire(launcher)
@@ -176,7 +184,9 @@ async function nativeIdentity(executable) {
     )
     const vendor = join(dirname(packageFile), 'vendor')
     const targets = await readdir(vendor)
-    if (targets.length !== 1) throw new Error('Ambiguous native vendor target')
+    if (targets.length !== 1) {
+      throw new Error('Ambiguous native vendor target')
+    }
     binary = join(vendor, targets[0], 'bin', 'codex')
   }
   return { launcher, binary, binarySHA256: digest(await readFile(binary)) }
@@ -193,8 +203,9 @@ export async function runNativeDelivery({
     outputProbe &&
     (executions ||
       !['progressive', 'silent', 'interrupted'].includes(outputProbe))
-  )
+  ) {
     throw new Error('Invalid unfinished output probe')
+  }
   if (
     executions &&
     (!Array.isArray(executions) ||
@@ -204,16 +215,18 @@ export async function runNativeDelivery({
         (execution) =>
           typeof execution.expected !== 'string' || !execution.expected
       ))
-  )
+  ) {
     throw new Error('Invalid scripted execution sequence')
+  }
   const executable = process.env.NATIVE_DELIVERY_CODEX || 'codex'
   const identity = await nativeIdentity(executable)
   const version = execFileSync(identity.binary, ['--version'], {
     encoding: 'utf8',
     timeout: 5000
   }).trim()
-  if (version !== fixture.nativeVersion)
+  if (version !== fixture.nativeVersion) {
     throw new Error(`Native version mismatch: ${version}`)
+  }
   await mkdir(join(root, 'tmp'), { recursive: true })
   const directory = await mkdtemp(join(root, 'tmp/native-handoff-'))
   const nativeHome = join(directory, 'home')
@@ -284,10 +297,13 @@ export async function runNativeDelivery({
   let probe
   const server = createServer(async (req, res) => {
     try {
-      if (req.method !== 'POST' || req.url !== '/v1/responses')
+      if (req.method !== 'POST' || req.url !== '/v1/responses') {
         throw new Error(`Unexpected local request: ${req.method} ${req.url}`)
+      }
       const chunks = []
-      for await (const chunk of req) chunks.push(chunk)
+      for await (const chunk of req) {
+        chunks.push(chunk)
+      }
       const raw = Buffer.concat(chunks).toString('utf8')
       const body = JSON.parse(raw)
       requests.push(body)
@@ -408,7 +424,9 @@ export async function runNativeDelivery({
             }
           })
           res.end()
-        } else sendResponse(res, item, requests.length)
+        } else {
+          sendResponse(res, item, requests.length)
+        }
       } else if (requests.length === expectedRequests) {
         sendResponse(
           res,
@@ -427,7 +445,9 @@ export async function runNativeDelivery({
           },
           expectedRequests
         )
-      } else throw new Error('Unexpected additional native request')
+      } else {
+        throw new Error('Unexpected additional native request')
+      }
     } catch (error) {
       res.writeHead(500)
       res.end('Fixture rejected')
@@ -511,11 +531,15 @@ export async function runNativeDelivery({
     })
     child.on('error', fail)
     child.on('exit', (code, signal) => {
-      if (shuttingDown) return
+      if (shuttingDown) {
+        return
+      }
       const error = new Error(
         `Native exited: ${code}/${signal}; ${buffer.slice(-1500)}`
       )
-      for (const promise of pending.values()) promise.reject(error)
+      for (const promise of pending.values()) {
+        promise.reject(error)
+      }
       pending.clear()
       fail(error)
     })
@@ -531,9 +555,11 @@ export async function runNativeDelivery({
         if (event.id !== undefined && !event.method) {
           const promise = pending.get(event.id)
           pending.delete(event.id)
-          if (event.error)
+          if (event.error) {
             promise?.reject(new Error(JSON.stringify(event.error)))
-          else promise?.resolve(event.result)
+          } else {
+            promise?.resolve(event.result)
+          }
         } else if (event.method === 'item/tool/call') {
           save('native-call', event.params)
           assert.equal(event.params.tool, fixture.tool)
@@ -547,8 +573,9 @@ export async function runNativeDelivery({
             executions &&
             typeof selected?.reply !== 'string' &&
             !Array.isArray(selected?.reply)
-          )
+          ) {
             throw new Error('Unexpected scripted tool invocation')
+          }
           const reply = selected?.reply ?? fixture.raw
           const contentItems =
             typeof reply === 'string'
@@ -571,10 +598,13 @@ export async function runNativeDelivery({
               event.params.item?.contentItems?.some(
                 (item) => item.text === fixture.raw
               )
-            )
+            ) {
               nativeReplyExact = true
+            }
           }
-          if (event.method === 'turn/completed') complete(event.params)
+          if (event.method === 'turn/completed') {
+            complete(event.params)
+          }
         }
       } catch (error) {
         fail(error)
@@ -611,12 +641,14 @@ export async function runNativeDelivery({
       ]
     })
     const turn = await completed
-    if (turn.turn?.status !== 'completed')
+    if (turn.turn?.status !== 'completed') {
       throw new Error(`Native turn failed: ${JSON.stringify(turn)}`)
+    }
     assert.equal(requests.length, expectedRequests)
-    if (!executions)
+    if (!executions) {
       assert.equal(nativeReplyExact, true, 'Missing exact native completion')
-    for (const reply of nativeReplies)
+    }
+    for (const reply of nativeReplies) {
       assert.ok(
         notifications.some(
           (event) =>
@@ -626,6 +658,7 @@ export async function runNativeDelivery({
         ),
         'Missing exact native completion'
       )
+    }
     let history
     if (inspectHistory) {
       const project = (items) => ({
@@ -724,7 +757,9 @@ export async function runNativeDelivery({
     })
   } finally {
     shuttingDown = true
-    if (deadline) cleanup = await deadline.stop('offline-test-cleanup')
+    if (deadline) {
+      cleanup = await deadline.stop('offline-test-cleanup')
+    }
     await configuration?.dispose()
     server.closeAllConnections()
     await new Promise((resolve) => server.close(resolve))

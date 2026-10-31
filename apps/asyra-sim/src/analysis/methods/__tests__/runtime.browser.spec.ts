@@ -76,7 +76,7 @@ test('Chromium encloses the analytical 3 m gap for every supported shape pair', 
         { kind: 'capsule', radius: 1, length: 2 }
       ] as const
     const output = []
-    for (let a = 0; a < geometries.length; a++)
+    for (let a = 0; a < geometries.length; a++) {
       for (let b = a; b < geometries.length; b++) {
         const start = performance.now(),
           evidence = convexDistance(
@@ -101,6 +101,7 @@ test('Chromium encloses the analytical 3 m gap for every supported shape pair', 
           elapsedMs: performance.now() - start
         })
       }
+    }
     return output
   })
   expect(results).toHaveLength(6)

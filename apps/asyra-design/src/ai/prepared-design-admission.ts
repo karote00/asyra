@@ -14,7 +14,9 @@ import {
 const record = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v)
 function check(value: unknown): asserts value {
-  if (!value) throw new AiActionExecutionError('Prepared design is invalid.')
+  if (!value) {
+    throw new AiActionExecutionError('Prepared design is invalid.')
+  }
 }
 const finite = (v: unknown, maximum = limits.dimension * (limits.depth + 2)) =>
   typeof v === 'number' && Number.isFinite(v) && Math.abs(v) <= maximum
@@ -124,7 +126,9 @@ function validateVector(d: Record<string, unknown>): number {
         [s.outControlId, startId, 'out'],
         [s.inControlId, endId, 'in']
       ]) {
-        if (controlId === null) continue
+        if (controlId === null) {
+          continue
+        }
         check(typeof controlId === 'string')
         const c = points[controlId]
         check(
@@ -319,13 +323,13 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
         (d.type === 'group' ? Number(d.height) >= 0 : Number(d.height) > 0)
     )
     let depth = 1
-    if (index === 0)
+    if (index === 0) {
       check(
         entry.parentId === null &&
           isDesignContainerType(d.type) &&
           d.id === input.rootId
       )
-    else {
+    } else {
       check(typeof entry.parentId === 'string')
       const parent = parents.get(entry.parentId)
       check(
@@ -355,14 +359,18 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
     if (d.type === 'text') {
       props.push('typography')
       fields.push(...textFields)
-      for (const f of TEXT_PROPERTY_SCHEMA.fields) check(f.validate?.(d[f.key]))
+      for (const f of TEXT_PROPERTY_SCHEMA.fields) {
+        check(f.validate?.(d[f.key]))
+      }
       textCount += String(d.text).length
       check(textCount <= limits.textCharacters)
     }
     props.push('fills')
     fields.push('fills')
     check(Array.isArray(d.fills) && d.fills.length <= 1)
-    if (d.type === 'group') check(d.fills.length === 0)
+    if (d.type === 'group') {
+      check(d.fills.length === 0)
+    }
     for (const f of d.fills) {
       if (typeof f === 'string') {
         // Only prior definitions in this artifact may be shared. This admits
@@ -436,14 +444,16 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
   }
   for (const f of input.findings) {
     check(record(f) && typeof f.key === 'string' && semanticKeys.has(f.key))
-    if (f.kind === 'text-metrics-required') check(keysOnly(f, ['kind', 'key']))
-    else {
+    if (f.kind === 'text-metrics-required') {
+      check(keysOnly(f, ['kind', 'key']))
+    } else {
       check(
         f.kind === 'overflow' &&
           keysOnly(f, ['kind', 'key', 'left', 'top', 'right', 'bottom'])
       )
-      for (const k of ['left', 'top', 'right', 'bottom'])
+      for (const k of ['left', 'top', 'right', 'bottom']) {
         check(finite(f[k]) && Number(f[k]) >= 0)
+      }
     }
   }
   return structuredClone(input) as unknown as PreparedDesign

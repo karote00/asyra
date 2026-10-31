@@ -73,25 +73,33 @@ export class SpatialLayer {
   }
 
   submit(frame: SpatialFrame): void {
-    if (this.destroyed) throw new Error('Spatial layer is disposed')
+    if (this.destroyed) {
+      throw new Error('Spatial layer is disposed')
+    }
     const camera = this.readDescriptor(frame.camera)
-    if (camera.kind !== 'camera') throw new Error('Expected a camera')
+    if (camera.kind !== 'camera') {
+      throw new Error('Expected a camera')
+    }
     const ids = new Set<string>()
-    if (!Array.isArray(frame.meshes))
+    if (!Array.isArray(frame.meshes)) {
       throw new Error('Expected ordered spatial records')
+    }
     const meshes = Array.from(frame.meshes, (item) => {
       const source = { ...item }
-      if (typeof source.id !== 'string' || !source.id || ids.has(source.id))
+      if (typeof source.id !== 'string' || !source.id || ids.has(source.id)) {
         throw new Error('Spatial identities must be nonempty and unique')
+      }
       if (
         source.elementId !== undefined &&
         (typeof source.elementId !== 'string' || !source.elementId)
-      )
+      ) {
         throw new Error('Invalid projected element identity')
+      }
       ids.add(source.id)
       const descriptor = this.readDescriptor(source.descriptor)
-      if (descriptor.kind !== 'mesh' || typeof source.visible !== 'boolean')
+      if (descriptor.kind !== 'mesh' || typeof source.visible !== 'boolean') {
         throw new Error('Expected a mesh projection')
+      }
       return {
         id: source.id,
         elementId: source.elementId,
@@ -113,31 +121,49 @@ export class SpatialLayer {
         )
       })
     const cameraChanged = !this.sameCamera(camera)
-    if (!modelChanged && !cameraChanged) return
+    if (!modelChanged && !cameraChanged) {
+      return
+    }
     const requested = this.pending !== null || this.pendingCamera !== null
     this.accepted = Object.freeze({
       camera,
       meshes: Object.freeze(meshes.map((mesh) => Object.freeze(mesh)))
     })
-    if (modelChanged) this.pending = this.accepted
+    if (modelChanged) {
+      this.pending = this.accepted
+    }
     this.acceptedCamera = camera
-    if (cameraChanged) this.pendingCamera = camera
-    if (!requested) this.invalidate()
+    if (cameraChanged) {
+      this.pendingCamera = camera
+    }
+    if (!requested) {
+      this.invalidate()
+    }
   }
 
   submitCamera(value: SpatialCamera): void {
-    if (this.destroyed) throw new Error('Spatial layer is disposed')
+    if (this.destroyed) {
+      throw new Error('Spatial layer is disposed')
+    }
     const camera = this.readDescriptor(value)
-    if (camera.kind !== 'camera') throw new Error('Expected a camera')
-    if (this.sameCamera(camera)) return
+    if (camera.kind !== 'camera') {
+      throw new Error('Expected a camera')
+    }
+    if (this.sameCamera(camera)) {
+      return
+    }
     const requested = this.pending !== null || this.pendingCamera !== null
     this.acceptedCamera = camera
     this.pendingCamera = camera
-    if (!requested) this.invalidate()
+    if (!requested) {
+      this.invalidate()
+    }
   }
 
   getBounds(): SpatialBounds | null {
-    if (this.destroyed) throw new Error('Spatial layer is disposed')
+    if (this.destroyed) {
+      throw new Error('Spatial layer is disposed')
+    }
     return this.bounds.measure(
       (this.accepted?.meshes ?? [])
         .filter((mesh) => mesh.visible)
@@ -164,7 +190,9 @@ export class SpatialLayer {
   }
 
   dispose(): void {
-    if (this.destroyed) return
+    if (this.destroyed) {
+      return
+    }
     this.destroyed = true
     this.pending = null
     this.pendingCamera = null
@@ -182,13 +210,19 @@ export class SpatialLayer {
   private flush(): boolean {
     const frame = this.pending
     const camera = this.pendingCamera
-    if ((!camera && !frame) || this.destroyed) return false
+    if ((!camera && !frame) || this.destroyed) {
+      return false
+    }
     if (camera && !this.camera) {
       this.camera = new CameraProjection(camera)
       this.layer.addChild(this.camera)
-    } else if (camera && this.camera) this.camera.update(camera)
+    } else if (camera && this.camera) {
+      this.camera.update(camera)
+    }
     this.pendingCamera = null
-    if (!frame) return true
+    if (!frame) {
+      return true
+    }
     const ids = new Set(frame.meshes.map((mesh) => mesh.id))
     for (const [id, mesh] of this.meshes) {
       if (!ids.has(id)) {
@@ -204,23 +238,30 @@ export class SpatialLayer {
         mesh.label = item.elementId ?? item.id
         this.layer.addChild(mesh)
         this.meshes.set(item.id, mesh)
-      } else if (this.applied.get(item.id) !== item.descriptor)
+      } else if (this.applied.get(item.id) !== item.descriptor) {
         mesh.update({ [SPATIAL_PROPERTY]: item.descriptor })
+      }
       this.applied.set(item.id, item.descriptor)
       const identity = mesh.projectionIdentity
       if (
         identity?.visualId !== item.id ||
         identity.elementId !== item.elementId
-      )
+      ) {
         mesh.projectionIdentity = {
           visualId: item.id,
           elementId: item.elementId
         }
-      if (this.layer.children[index + 1] !== mesh)
+      }
+      if (this.layer.children[index + 1] !== mesh) {
         this.layer.setChildIndex(mesh, index + 1)
+      }
       const label = item.elementId ?? item.id
-      if (mesh.label !== label) mesh.label = label
-      if (mesh.visible !== item.visible) mesh.visible = item.visible
+      if (mesh.label !== label) {
+        mesh.label = label
+      }
+      if (mesh.visible !== item.visible) {
+        mesh.visible = item.visible
+      }
     }
     this.pending = null
     return true

@@ -134,11 +134,12 @@ it('preserves non-axis transform uncertainty while supporting ordinary interior 
   const first = triangle('a', plane),
     second = triangle('b', [1, 1, -1, 1, 1, 1, 2, 1, 1])
   const rotation = [0, Math.sin(Math.PI / 8), 0, Math.cos(Math.PI / 8)]
-  for (const mesh of [first, second])
+  for (const mesh of [first, second]) {
     mesh.descriptor = readSpatialDescriptor({
       ...mesh.descriptor,
       rotation
     }) as SiteMesh['descriptor']
+  }
   const f = setup([first, second])
   expect(f.query.query(f.source, batch()).results[0].status).toBe(
     'surface-intersection'
@@ -275,9 +276,14 @@ it.each(['sparse', 'limit'])(
   (kind) => {
     const f = setup([triangle('a', plane), triangle('b', plane)])
     const input = batch()
-    if (!input.robot) throw new Error('Missing fixture pose')
-    if (kind === 'sparse') input.pairs = new Array(1)
-    else input.robot.joints.lift = 0.11
+    if (!input.robot) {
+      throw new Error('Missing fixture pose')
+    }
+    if (kind === 'sparse') {
+      input.pairs = new Array(1)
+    } else {
+      input.robot.joints.lift = 0.11
+    }
     expect(() => f.query.query(f.source, input)).toThrow()
   }
 )
@@ -295,10 +301,14 @@ it('keeps real cultivar instances and botanical source metadata in a bounded sur
         mesh.plants[0].species === species &&
         mesh.partitions?.length
     )
-    if (index < 0) throw new Error('Missing actual cultivar source')
+    if (index < 0) {
+      throw new Error('Missing actual cultivar source')
+    }
     const mesh = f.source.meshes[index],
       part = mesh.partitions?.find((partition) => partition.fruitId !== null)
-    if (!part) throw new Error('Missing source fruit ownership')
+    if (!part) {
+      throw new Error('Missing source fruit ownership')
+    }
     return { index, mesh, triangle: part.indexStart / 3 }
   })
   input.pairs = selected.map(({ index, mesh, triangle }) => ({
@@ -393,8 +403,9 @@ it.each([
     const result = f.query.sweep(f.source, input),
       contact = result.results[0]
     expect(contact.status).toBe('swept-intersection')
-    if (!contact.contactFraction || !contact.contactTime)
+    if (!contact.contactFraction || !contact.contactTime) {
       throw new Error('Missing certified contact occurrence')
+    }
     expect(contact.contactFraction.low).toBeLessThanOrEqual(fraction as number)
     expect(contact.contactFraction.high).toBeGreaterThanOrEqual(
       fraction as number
@@ -479,11 +490,12 @@ it('retains transformed interval ambiguity instead of declaring endpoint separat
   const a = triangle('a', plane),
     b = triangle('b', shiftedPlane(1))
   const rotation = [0, Math.sin(Math.PI / 8), 0, Math.cos(Math.PI / 8)]
-  for (const mesh of [a, b])
+  for (const mesh of [a, b]) {
     mesh.descriptor = readSpatialDescriptor({
       ...mesh.descriptor,
       rotation
     }) as SiteMesh['descriptor']
+  }
   const f = setup([a, b]),
     input = sweep()
   input.pairs[0].firstTranslation = [Math.SQRT2, 0, Math.SQRT2]
@@ -568,11 +580,12 @@ it('proves a common guaranteed nonpoint time and conclusive nonpoint separation'
   const a = triangle('a', plane),
     b = triangle('b', [1, 1, -1, 2, 1.25, 1, 1.125, 2, 1.5])
   const rotation = [0, Math.sin(Math.PI / 8), 0, Math.cos(Math.PI / 8)]
-  for (const mesh of [a, b])
+  for (const mesh of [a, b]) {
     mesh.descriptor = readSpatialDescriptor({
       ...mesh.descriptor,
       rotation
     }) as SiteMesh['descriptor']
+  }
   const f = setup([a, b]),
     input = sweep()
   input.pairs[0].firstTranslation = [0.5, 0, 0]
@@ -603,7 +616,9 @@ it('keeps relative displacement and large finite simulation-time conversion cons
   const contact = f.query.sweep(f.source, input).results[0]
   expect(contact.status).toBe('swept-intersection')
   expect(contact.contactFraction).toEqual({ low: 0.5, high: 0.5 })
-  if (!contact.contactTime) throw new Error('Missing time enclosure')
+  if (!contact.contactTime) {
+    throw new Error('Missing time enclosure')
+  }
   expect(contact.contactTime.low).toBeLessThanOrEqual(1.2e308)
   expect(contact.contactTime.high).toBeGreaterThanOrEqual(1.2e308)
   expect(contact.contactTime.low).toBeGreaterThanOrEqual(input.from)
@@ -637,8 +652,11 @@ function smallCoverage(
       x = overlapping && i === 7 ? 60 : i * 10
     for (let region = 0; region < (i === 0 ? firstRegions : 1); region++) {
       let third: Point3 = [x, 4, 0]
-      if (degenerate && i === 0) third = [x + 2, 0, 0]
-      else if (firstHorizontal && i === 0) third = [x, 0, 4]
+      if (degenerate && i === 0) {
+        third = [x + 2, 0, 0]
+      } else if (firstHorizontal && i === 0) {
+        third = [x, 0, 4]
+      }
       builder.triangle([x, 0, 0], [x + 4, 0, 0], third)
     }
     return {
@@ -822,14 +840,16 @@ it('inventories every real robot and hidden physical instance before bounded Car
     expect(result.complete).toBe(false)
     expect(result.status).not.toBe('surface-separated')
     expect(result.witnesses.length).toBeLessThanOrEqual(2)
-    for (const id of ['tool-guard', 'crate-bottom', 'tire--1--1'])
+    for (const id of ['tool-guard', 'crate-bottom', 'tire--1--1']) {
       expect(
         f.source.meshes.some(
           (mesh) => mesh.kind === 'robot' && mesh.origin.id === id
         )
       ).toBe(true)
-    for (const layer of ['film', 'net', 'soil', 'cucumbers', 'tomatoes'])
+    }
+    for (const layer of ['film', 'net', 'soil', 'cucumbers', 'tomatoes']) {
       expect(f.source.meshes.some((mesh) => mesh.layer === layer)).toBe(true)
+    }
     expect(f.source.meshes.some((mesh) => mesh.kind === 'dock')).toBe(true)
     expect(fk).toHaveBeenCalledTimes(1)
     expect(prepare).not.toHaveBeenCalled()
@@ -862,7 +882,9 @@ it('profiles existing primitive bounds without dropping unprepared sheets or tra
     input = coverage()
   const robotState = input.robot,
     rig = f.source.receipt.robot.rig
-  if (!robotState || !rig) throw new Error('Expected admitted robot fixture')
+  if (!robotState || !rig) {
+    throw new Error('Expected admitted robot fixture')
+  }
   const started = performance.now(),
     pose = kinematics.evaluateRobotAffinePose(rig, robotState.joints)
   const bodies = new Map(pose.parts.map((part) => [part.source, part.affine]))
@@ -874,24 +896,32 @@ it('profiles existing primitive bounds without dropping unprepared sheets or tra
     remaining = 0
   const placements = f.source.meshes.flatMap((mesh) => {
     const shape = mesh.shape
-    if (shape.kind !== 'triangles') throw new Error('Expected triangles')
+    if (shape.kind !== 'triangles') {
+      throw new Error('Expected triangles')
+    }
     return Array.from(
       { length: mesh.descriptor?.instances?.length ?? 1 },
       (_, instance) => {
         const frames: Frame[] = [],
           placement = mesh.descriptor?.instances?.[instance]
-        if (placement) frames.push(prepareQueryInstanceFrame(placement))
+        if (placement) {
+          frames.push(prepareQueryInstanceFrame(placement))
+        }
         if (mesh.kind === 'robot') {
           const body = bodies.get(
             mesh.origin as (typeof pose.parts)[number]['source']
           )
-          if (!body) throw new Error('Missing body')
+          if (!body) {
+            throw new Error('Missing body')
+          }
           frames.push(
             prepareQueryAffineFrame(body),
             prepareQueryForwardFrame(robotState.base)
           )
         } else {
-          if (!mesh.descriptor) throw new Error('Missing descriptor')
+          if (!mesh.descriptor) {
+            throw new Error('Missing descriptor')
+          }
           frames.push(prepareQueryForwardFrame(mesh.descriptor))
         }
         const displacement =
@@ -905,8 +935,9 @@ it('profiles existing primitive bounds without dropping unprepared sheets or tra
               interval(corner & 2 ? local.max[1] : local.min[1]),
               interval(corner & 4 ? local.max[2] : local.min[2])
             ] as readonly [Interval, Interval, Interval]
-            for (const frame of frames)
+            for (const frame of frames) {
               point = transformQueryPoint(frame, point)
+            }
             corners++
             for (let axis = 0; axis < 3; axis++) {
               min[axis] = Math.min(min[axis], point[axis].low)
@@ -944,7 +975,9 @@ it('profiles existing primitive bounds without dropping unprepared sheets or tra
               )
               regions = mesh.origin.regions.map((region) => {
                 const local = prepared.get(region)
-                if (!local) missingBounds++
+                if (!local) {
+                  missingBounds++
+                }
                 return {
                   count: region.indexCount / 3,
                   bounds: local ? transform(local) : bounds
@@ -972,19 +1005,26 @@ it('profiles existing primitive bounds without dropping unprepared sheets or tra
       excluded += a.count * b.count
       return
     }
-    for (const first of a.regions())
+    for (const first of a.regions()) {
       for (const second of b.regions()) {
         regionPairs++
-        if (separate(first.bounds, second.bounds))
+        if (separate(first.bounds, second.bounds)) {
           excluded += first.count * second.count
-        else remaining += first.count * second.count
+        } else {
+          remaining += first.count * second.count
+        }
       }
+    }
   }
   const robots = placements.filter((value) => value.mesh.kind === 'robot'),
     environment = placements.filter((value) => value.mesh.kind !== 'robot')
   for (let i = 0; i < robots.length; i++) {
-    for (const item of environment) compare(robots[i], item)
-    for (let j = i + 1; j < robots.length; j++) compare(robots[i], robots[j])
+    for (const item of environment) {
+      compare(robots[i], item)
+    }
+    for (let j = i + 1; j < robots.length; j++) {
+      compare(robots[i], robots[j])
+    }
   }
   expect(excluded + remaining).toBe(expectedInventory(f.source).trianglePairs)
   expect(missingBounds).toBeGreaterThan(0)
@@ -1036,9 +1076,10 @@ it('preserves exhaustive surface relations through prepared and unprepared origi
     if (
       first.item.shape.kind !== 'triangles' ||
       second.item.shape.kind !== 'triangles'
-    )
+    ) {
       throw new Error('Expected triangles')
-    for (let a = 0; a < first.item.shape.indices.length / 3; a++)
+    }
+    for (let a = 0; a < first.item.shape.indices.length / 3; a++) {
       for (let b = 0; b < second.item.shape.indices.length / 3; b++) {
         pairs.push({
           first: { mesh: first.index, instance: 0, triangle: a },
@@ -1048,10 +1089,15 @@ it('preserves exhaustive surface relations through prepared and unprepared origi
             second.item.kind === 'robot' ? input.displacement : [0, 0, 0]
         })
       }
+    }
   }
   for (let i = 0; i < robots.length; i++) {
-    for (const item of environment) collect(robots[i], item)
-    for (let j = i + 1; j < robots.length; j++) collect(robots[i], robots[j])
+    for (const item of environment) {
+      collect(robots[i], item)
+    }
+    for (let j = i + 1; j < robots.length; j++) {
+      collect(robots[i], robots[j])
+    }
   }
   const exhaustive = f.query.sweep(f.source, { ...input, pairs })
   const result = f.query.cover(f.source, {
@@ -1129,7 +1175,9 @@ it('keeps every original region triangle and exhaustive nonseparated pair across
     }
     const f = smallCoverage(height === 0 ? [mesh] : [mesh, alternate]),
       tree = prepareHierarchy(f.source)
-    if (height !== 0) expect(tree.work.mappings).toBe(tree.work.shapes + 1)
+    if (height !== 0) {
+      expect(tree.work.mappings).toBe(tree.work.shapes + 1)
+    }
     for (const sourceMesh of f.source.meshes) {
       const ordinals: number[] = []
       const visit = (node: ReturnType<typeof tree.roots>[number]) => {
@@ -1139,7 +1187,7 @@ it('keeps every original region triangle and exhaustive nonseparated pair across
             node.count
           )
           node.children.forEach(visit)
-        } else
+        } else {
           for (const ordinal of node.triangles ?? []) {
             expect(ordinal * 3).toBeGreaterThanOrEqual(node.region.indexStart)
             expect(ordinal * 3).toBeLessThan(
@@ -1147,10 +1195,12 @@ it('keeps every original region triangle and exhaustive nonseparated pair across
             )
             ordinals.push(ordinal)
           }
+        }
       }
       tree.roots(sourceMesh).forEach(visit)
-      if (sourceMesh.shape.kind !== 'triangles')
+      if (sourceMesh.shape.kind !== 'triangles') {
         throw new Error('Expected source')
+      }
       expect(ordinals.sort((a, b) => a - b)).toEqual(
         Array.from({ length: sourceMesh.shape.indices.length / 3 }, (_, i) => i)
       )
@@ -1158,7 +1208,9 @@ it('keeps every original region triangle and exhaustive nonseparated pair across
     expect(() => tree.roots(smallCoverage([mesh]).source.meshes[0])).toThrow()
     for (const yaw of [0, 0.4]) {
       const input = coverage()
-      if (!input.robot) throw new Error('Expected robot')
+      if (!input.robot) {
+        throw new Error('Expected robot')
+      }
       input.robot = {
         ...input.robot,
         base: {
@@ -1170,15 +1222,20 @@ it('keeps every original region triangle and exhaustive nonseparated pair across
       const pairs: SurfaceSweepBatch['pairs'] = []
       const meshes = f.source.meshes
       for (let a = 0; a < meshes.length; a++) {
-        if (meshes[a].kind !== 'robot') continue
+        if (meshes[a].kind !== 'robot') {
+          continue
+        }
         for (let b = 0; b < meshes.length; b++) {
-          if (meshes[b].kind === 'robot' && b <= a) continue
+          if (meshes[b].kind === 'robot' && b <= a) {
+            continue
+          }
           const first = meshes[a].shape,
             second = meshes[b].shape
-          if (first.kind !== 'triangles' || second.kind !== 'triangles')
+          if (first.kind !== 'triangles' || second.kind !== 'triangles') {
             throw new Error('Expected triangles')
-          for (let x = 0; x < first.indices.length / 3; x++)
-            for (let y = 0; y < second.indices.length / 3; y++)
+          }
+          for (let x = 0; x < first.indices.length / 3; x++) {
+            for (let y = 0; y < second.indices.length / 3; y++) {
               pairs.push({
                 first: { mesh: a, instance: 0, triangle: x },
                 second: { mesh: b, instance: 0, triangle: y },
@@ -1186,6 +1243,8 @@ it('keeps every original region triangle and exhaustive nonseparated pair across
                 secondTranslation:
                   meshes[b].kind === 'robot' ? input.displacement : [0, 0, 0]
               })
+            }
+          }
         }
       }
       const key = (pair: (typeof report.candidates)[number]) =>
@@ -1197,17 +1256,19 @@ it('keeps every original region triangle and exhaustive nonseparated pair across
       expect(report.work.excluded + report.work.candidates).toBe(pairs.length)
       const full = f.query.sweep(f.source, { ...input, pairs })
       full.results.forEach((result, index) => {
-        if (result.status !== 'swept-separated')
+        if (result.status !== 'swept-separated') {
           expect(candidates.has(key(pairs[index]))).toBe(true)
+        }
       })
       const selected = f.query.sweep(f.source, {
         ...input,
         pairs: pairs.filter((pair) => candidates.has(key(pair)))
       })
-      for (const status of ['swept-intersection', 'unknown'])
+      for (const status of ['swept-intersection', 'unknown']) {
         expect(
           selected.results.filter((value) => value.status === status).length
         ).toBe(full.results.filter((value) => value.status === status).length)
+      }
     }
   }
 })
@@ -1235,8 +1296,9 @@ it.each(['build', 'query'] as const)(
 
 it('checks elapsed time while accounting for root pairs after node budget exhaustion', () => {
   const builder = new TriangleBuilder()
-  for (let i = 0; i < 710; i++)
+  for (let i = 0; i < 710; i++) {
     builder.triangle([0, 0, 0], [4, 0, 0], [0, 4, 0])
+  }
   const mesh = triangle('many-original-regions', [0, 0, 0, 4, 0, 0, 0, 4, 0])
   mesh.regions = builder.regions()
   mesh.descriptor = readSpatialDescriptor({
@@ -1264,7 +1326,9 @@ it('checks elapsed time while accounting for root pairs after node budget exhaus
 it('intersects an articulated original body face with an independently composed Three source plane', () => {
   const input = batch(),
     rig = robot.getSource().rig
-  if (!rig || !input.robot) throw new Error('Missing actual rig')
+  if (!rig || !input.robot) {
+    throw new Error('Missing actual rig')
+  }
   input.robot.joints = {
     lift: 0.05,
     yaw: 0.4,
@@ -1274,7 +1338,9 @@ it('intersects an articulated original body face with an independently composed 
   }
   const pose = kinematics.evaluateRobotAffinePose(rig, input.robot.joints)
   const part = pose.parts.find((part) => part.source.id === 'tool-guard')
-  if (!part) throw new Error('Missing original tool guard')
+  if (!part) {
+    throw new Error('Missing original tool guard')
+  }
   const matrix = new Matrix4().compose(
     new Vector3().fromArray(part.transform.position),
     new Quaternion().fromArray(part.transform.rotation),
@@ -1382,7 +1448,7 @@ function accounted(result: ReturnType<SurfaceQueries['coverMotion']>) {
   )
 }
 it('accounts complete motion window pair domains and same-body candidates without narrow queries', () => {
-  for (const overlapping of [false, true])
+  for (const overlapping of [false, true]) {
     for (const moving of [false, true]) {
       const f = smallCoverage([], overlapping),
         base = robotAssumptions(),
@@ -1392,7 +1458,9 @@ it('accounts complete motion window pair domains and same-body candidates withou
         position: [1, 0, 2],
         rotation: [0, Math.sin(yaw / 2), 0, Math.cos(yaw / 2)]
       }
-      if (moving) raw.end.lift = 0.04
+      if (moving) {
+        raw.end.lift = 0.04
+      }
       const result = motionCover(f, environmentAssumptions(), raw, base)
       expect(result.inventory).toEqual(expectedInventory(f.source))
       expect(result.inventory).toEqual({
@@ -1412,10 +1480,14 @@ it('accounts complete motion window pair domains and same-body candidates withou
       expect(result.work.vertexVisits).toBe(0)
       expect(result.work.fk).toBe(0)
       expect(result.motion?.work.pose.fk).toBe(1)
-      if (overlapping) expect(result.coverage.candidate).toBeGreaterThan(0)
-      else expect(result.status).toBe('surface-separated')
+      if (overlapping) {
+        expect(result.coverage.candidate).toBeGreaterThan(0)
+      } else {
+        expect(result.status).toBe('surface-separated')
+      }
       expect(result).not.toHaveProperty('movementClear')
     }
+  }
 })
 it('keeps interior-window lift overlap although both endpoint surfaces are separate', () => {
   const obstacle = triangle(
@@ -1427,7 +1499,9 @@ it('keeps interior-window lift overlap although both endpoint surfaces are separ
   raw.end.lift = 0.04
   for (const lift of [0, 0.04]) {
     const input = batch()
-    if (!input.robot) throw new Error('Missing fixture robot')
+    if (!input.robot) {
+      throw new Error('Missing fixture robot')
+    }
     input.robot.joints.lift = lift
     input.pairs = [
       {
@@ -1507,7 +1581,7 @@ it('delegates raw motion admission once and keeps expired motion separate from u
 })
 it('bounds actual mesh and region comparisons and accounts skipped Cartesian domains directly', () => {
   const f = smallCoverage([triangle('overlap', plane)], false, false, 710)
-  for (const maxMeshPairs of [0, 1, 66])
+  for (const maxMeshPairs of [0, 1, 66]) {
     for (const maxRegionPairs of [0, 1, 710]) {
       const result = motionCover(f, {
         ...environmentAssumptions(),
@@ -1517,12 +1591,17 @@ it('bounds actual mesh and region comparisons and accounts skipped Cartesian dom
       accounted(result)
       expect(result.work.meshPairs).toBeLessThanOrEqual(maxMeshPairs)
       expect(result.work.regionPairs).toBeLessThanOrEqual(maxRegionPairs)
-      if (!maxMeshPairs)
+      if (!maxMeshPairs) {
         expect(result.coverage.unvisited).toBe(result.inventory.trianglePairs)
-      if (!maxRegionPairs) expect(result.coverage.candidate).toBe(0)
-      if (maxMeshPairs === 66 && maxRegionPairs === 710)
+      }
+      if (!maxRegionPairs) {
+        expect(result.coverage.candidate).toBe(0)
+      }
+      if (maxMeshPairs === 66 && maxRegionPairs === 710) {
         expect(result.coverage.unvisited).toBe(0)
+      }
     }
+  }
   const separated = smallCoverage(),
     exact = motionCover(separated, {
       ...environmentAssumptions(),
@@ -1571,10 +1650,11 @@ it('keeps motion coverage admission cloned once and current after all downstream
   expect(reads).toBe(1)
   environment.maxMeshPairs = 0
   expect(result.input.maxMeshPairs).toBe(300000)
-  for (const value of [-1, 0.5, NaN, Infinity])
+  for (const value of [-1, 0.5, NaN, Infinity]) {
     expect(() =>
       motionCover(f, { ...environmentAssumptions(), maxRegionPairs: value })
     ).toThrow()
+  }
   expect(() =>
     f.query.coverMotion(
       { ...f.source },
@@ -1612,8 +1692,9 @@ it('profiles the fixed actual point-time source domain without a triangle Cartes
   const robotTriangles = f.source.meshes
     .filter((mesh) => mesh.kind === 'robot')
     .reduce((count, mesh) => {
-      if (mesh.shape.kind !== 'triangles')
+      if (mesh.shape.kind !== 'triangles') {
         throw new Error('Missing robot triangle source')
+      }
       return count + mesh.shape.indices.length / 3
     }, 0)
   const cucumberFruits = f.source.fruits.filter(
@@ -1626,7 +1707,9 @@ it('profiles the fixed actual point-time source domain without a triangle Cartes
         patch.targetFruitId === fruit.source.id &&
         patch.role === 'retained-pedicel'
     )
-    if (!patch) throw new Error('Missing added cucumber source segment')
+    if (!patch) {
+      throw new Error('Missing added cucumber source segment')
+    }
     expect(patch.owner).toBe('target-fruit')
     expect(patch.source.ranges).toHaveLength(1)
     expect(patch.source.ranges[0].indexCount).toBe(8 * 6)

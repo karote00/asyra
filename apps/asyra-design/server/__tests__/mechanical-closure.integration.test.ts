@@ -74,10 +74,13 @@ it('reconciles real subtree receipts through retained reads, verification and fi
           dropCoverage &&
           request.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE &&
           request.arguments.measurementTargets
-        )
+        ) {
           throw new Error('Coverage delivery interrupted')
+        }
         const action = actions.find((a) => a.name === request.name)
-        if (!action) throw new Error('Missing action')
+        if (!action) {
+          throw new Error('Missing action')
+        }
         const result = await action.execute(
           request.arguments as never,
           { signal: abort.signal } as never
@@ -102,7 +105,9 @@ it('reconciles real subtree receipts through retained reads, verification and fi
       observation: {
         parentCallId: () => 'root-tool-call',
         trace: (stage, evidence) => {
-          if (failObserver) throw new Error('Diagnostic observer unavailable')
+          if (failObserver) {
+            throw new Error('Diagnostic observer unavailable')
+          }
           observations.push({ stage, evidence: evidence as Observation })
         }
       }
@@ -110,8 +115,9 @@ it('reconciles real subtree receipts through retained reads, verification and fi
   )
   const call = async (name: string, input: unknown = {}) =>
     JSON.parse(await owner.call(name, input, abort.signal))
-  for (const id of ['left', 'right'])
+  for (const id of ['left', 'right']) {
     await call(AiActionNames.REVIEW_DESIGN, { arguments: { elementId: id } })
+  }
   geometry.left.width = 50
   geometry.right.height = 50
   change({ elementIds: ['left', 'right'] })
@@ -137,7 +143,7 @@ it('reconciles real subtree receipts through retained reads, verification and fi
     (await call(recordedClosure.calls[1].tool, root.mechanicalSelection))
       .verification.status
   ).toBe('pass')
-  for (let i = 0; i < 2; i++)
+  for (let i = 0; i < 2; i++) {
     expect(
       (
         await call(
@@ -151,6 +157,7 @@ it('reconciles real subtree receipts through retained reads, verification and fi
       stale: 0,
       unverified: 0
     })
+  }
   expect(owner.settleOutcome({ batchId: 'done', actions: [] }).actions).toEqual(
     []
   )
@@ -317,7 +324,9 @@ it('selects recorded mechanical coverage before reconciliation without probing u
       const actionResults = []
       for (const request of batch.actions) {
         const action = actions.find((item) => item.name === request.name)
-        if (!action) throw new Error('Missing registered review action')
+        if (!action) {
+          throw new Error('Missing registered review action')
+        }
         const result = await action.execute(request.arguments as never, {
           signal: controller.signal
         })
@@ -332,12 +341,13 @@ it('selects recorded mechanical coverage before reconciliation without probing u
       return reply as never
     }
   )
-  for (const elementId of roots)
+  for (const elementId of roots) {
     await owner.call(
       AiActionNames.REVIEW_DESIGN,
       { arguments: { elementId } },
       controller.signal
     )
+  }
   expect(exchanges).toHaveLength(roots.length)
   expect
     .soft(
@@ -362,10 +372,12 @@ it('selects recorded mechanical coverage before reconciliation without probing u
   const currentBytes = Buffer.byteLength(JSON.stringify(exchanges))
   const legacy = JSON.parse(JSON.stringify(exchanges))
   for (const exchange of legacy) {
-    for (const action of exchange.request.actions)
+    for (const action of exchange.request.actions) {
       delete action.arguments.measurementTargets
-    for (const action of exchange.reply.actionResults)
+    }
+    for (const action of exchange.reply.actionResults) {
       delete action.result.coveredMeasurementTargets
+    }
   }
   for (let index = 1; index < roots.length; index++) {
     const original = legacy[index]
@@ -444,7 +456,9 @@ it('selects recorded mechanical coverage before reconciliation without probing u
     (_, index) => `independent-${index}`
   )
   data.parent = { type: 'frame', children: descendants }
-  for (const id of descendants) data[id].parentId = 'parent'
+  for (const id of descendants) {
+    data[id].parentId = 'parent'
+  }
   change()
   const parentReply = JSON.parse(
     await owner.call(

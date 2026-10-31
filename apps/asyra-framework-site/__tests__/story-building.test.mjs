@@ -77,8 +77,12 @@ test('each storey unfolds its slab before raising walls and finishing its facade
   for (let i = 0; i <= 100; i++) {
     const frame = getBuildingGeometry(i / 100, 0)
     for (const floor of frame.floors) {
-      if (floor.wall > 0) assert.equal(floor.slab, 1)
-      if (floor.facade > 0) assert.equal(floor.wall, 1)
+      if (floor.wall > 0) {
+        assert.equal(floor.slab, 1)
+      }
+      if (floor.facade > 0) {
+        assert.equal(floor.wall, 1)
+      }
     }
   }
 })

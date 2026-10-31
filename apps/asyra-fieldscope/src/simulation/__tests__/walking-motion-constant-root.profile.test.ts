@@ -20,7 +20,9 @@ it('constant-root relation retains actual fixed-joint SAT and excludes dynamic l
   )
   const rail = f.source.parts.find((p) => p.id === 'lift-rail-negative')
   const carriage = f.source.parts.find((p) => p.id === 'carriage')
-  if (!rail || !carriage) throw new Error('Missing source constant pair')
+  if (!rail || !carriage) {
+    throw new Error('Missing source constant pair')
+  }
   expect(relations.contains(rail)).toBe(true)
   expect(relations.contains(carriage)).toBe(true)
   const result = relations.relate(
@@ -43,8 +45,9 @@ it('constant-root relation retains actual fixed-joint SAT and excludes dynamic l
   expect(
     relations.relate(rail, rail.regions[0], carriage, carriage.regions[9], 0.01)
   ).toBeUndefined()
-  for (const contact of f.source.rig.contacts.feet)
+  for (const contact of f.source.rig.contacts.feet) {
     expect(relations.contains(contact.part)).toBe(false)
+  }
   const cratePart = f.crate.geometry.parts[0]
   expect(['exactSeparated', 'declaredBoundary']).toContain(
     relations.relate(

@@ -13,7 +13,9 @@ test('starting a left-button view gesture preserves normal Object field completi
     .click()
   await page.getByLabel('Mount position (m) X', { exact: true }).fill('-1.25')
   const box = await page.getByTestId('workcell-canvas').boundingBox()
-  if (!box) throw new Error('Missing canvas')
+  if (!box) {
+    throw new Error('Missing canvas')
+  }
   await page.mouse.move(box.x + 60, box.y + 80)
   await page.mouse.down()
   await page.mouse.move(box.x + 90, box.y + 100, { steps: 4 })
@@ -39,7 +41,9 @@ for (const button of ['middle', 'left'] as const) {
       .click()
     const canvas = page.getByTestId('workcell-canvas').locator('canvas')
     const box = await canvas.boundingBox()
-    if (!box) throw new Error('Missing canvas')
+    if (!box) {
+      throw new Error('Missing canvas')
+    }
     const history = await page.getByTestId('history-depth').innerText()
     await canvas.screenshot({ path: info.outputPath('before-pan.png') })
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)

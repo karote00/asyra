@@ -34,8 +34,11 @@ async function openBoard(t, fixture) {
     await browser?.close()
     await server?.close()
     fixture.restore()
-    if (previous === undefined) delete process.env.TMPDIR
-    else process.env.TMPDIR = previous
+    if (previous === undefined) {
+      delete process.env.TMPDIR
+    } else {
+      process.env.TMPDIR = previous
+    }
   })
   server = await startServer(fixture.repository, {
     url: process.env.FLOW_PROOF_URL,
@@ -43,7 +46,7 @@ async function openBoard(t, fixture) {
       directory: path.join(fixture.repository, 'tmp/proof-runs')
     }
   })
-  if (process.platform === 'linux')
+  if (process.platform === 'linux') {
     assert.ok(
       Buffer.byteLength(
         path.join(
@@ -53,6 +56,7 @@ async function openBoard(t, fixture) {
       ) < 108,
       'Chrome socket path exceeds the Linux limit'
     )
+  }
   // The proof store stays within its owning repository.
   browser = await chromium.launch({
     channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || 'chrome',
@@ -76,7 +80,7 @@ test(
     const errors = []
     page.on('pageerror', (error) => errors.push(error.message))
     await page.goto(server.origin + '/history-shortcut')
-    const frame = page.frameLocator('iframe')
+    const frame = page
     await expect(frame.locator('#test-result-failures button')).toHaveCount(2)
     await frame.locator('#test-result-failures button').first().click()
     await expect(
@@ -152,16 +156,16 @@ test(
     )
     t.after(() => release())
     await page.goto(server.origin + '/history-shortcut')
-    const frame = page.frameLocator('iframe')
+    const frame = page
     await expect(frame.locator('#test-result-history option')).toHaveCount(3)
     await frame.locator('#test-result-history').selectOption(fault.record.id)
     await received
-    await frame.locator('#test-result-history').selectOption('')
-    const response = page.waitForResponse((r) =>
+    const aborted = page.waitForEvent('requestfailed', (r) =>
       r.url().endsWith('/api/test-results/' + fault.record.id)
     )
+    await frame.locator('#test-result-history').selectOption('')
     release()
-    await response
+    await aborted
     await expect(frame.locator('#test-result-history')).toHaveValue('')
     // Wait for the body and UI completion, not merely the response headers.
     await page.waitForTimeout(200)
@@ -172,8 +176,9 @@ test(
     await expect(frame.locator('#test-result-history option')).toHaveCount(3)
     let requests = 0
     await page.route('**/api/test-results/' + fault.record.id, (route) => {
-      if (++requests === 1)
+      if (++requests === 1) {
         return route.fulfill({ status: 503, body: 'temporary outage' })
+      }
       return route.continue()
     })
     await frame.locator('#test-result-history').selectOption(fault.record.id)
@@ -197,7 +202,7 @@ test(
     const recovered = await fixture.run('app')
     assert.equal(recovered.result.code, 0, recovered.result.output)
     await page.goto(server.origin + '/transaction-atomicity')
-    const frame = page.frameLocator('iframe')
+    const frame = page
     await expect(frame.locator('#test-result-history option')).toHaveCount(3)
     await frame.locator('#test-result-history').selectOption(fault.record.id)
     const crossTarget = frame
@@ -211,8 +216,9 @@ test(
       '**/api/test-results/' + fault.record.id,
       async (route) => {
         reads++
-        if (reads === 1)
+        if (reads === 1) {
           return route.fulfill({ status: 503, body: 'temporary outage' })
+        }
         return route.continue()
       }
     )
@@ -248,7 +254,7 @@ test(
     const failures = machine.cases.filter((item) => item.status === 'failed')
     assert.equal(failures.length, 2)
     await page.goto(server.origin + '/history-shortcut')
-    const frame = page.frameLocator('iframe')
+    const frame = page
     const buttons = frame.locator('#test-result-failures button')
     await expect(buttons).toHaveCount(2)
     for (const [index, item] of failures.entries()) {
@@ -257,7 +263,9 @@ test(
       await expect(errors).toHaveCount(4)
       for (const [errorIndex, error] of item.failureDetails.entries()) {
         for (const key of ['message', 'stack', 'expected', 'actual', 'diff']) {
-          if (!Object.hasOwn(error, key) || key === 'diff') continue
+          if (!Object.hasOwn(error, key) || key === 'diff') {
+            continue
+          }
           // Compare textContent exactly; assertion whitespace is evidence.
           assert.equal(
             await errors
@@ -310,7 +318,7 @@ test(
     assert.equal(fault.result.code, 1, fault.result.output)
     assert.equal(fault.record.executionFailureDetails.length, 1)
     await page.goto(server.origin + '/history-shortcut')
-    const frame = page.frameLocator('iframe')
+    const frame = page
     const execution = frame.locator('#test-result-execution-details')
     await expect(execution).toContainText(fault.record.id)
     await expect(
@@ -347,7 +355,7 @@ test(
       8
     )
     await page.goto(server.origin + '/history-replay')
-    const frame = page.frameLocator('iframe')
+    const frame = page
     const buttons = frame.locator('#test-result-failures button')
     await expect(buttons).toHaveCount(8)
     await buttons.first().click()
@@ -405,8 +413,9 @@ test(
       'omit-registered-tools',
       'misclassify-combined-tool',
       'ignore-canonical-evidence'
-    ])
+    ]) {
       fixture.mutateExecution(scenario)
+    }
     const fault = await fixture.run('execution')
     assert.equal(fault.result.code, 1, fault.result.output)
     const failures = fault.record.cases.filter(
@@ -432,7 +441,7 @@ test(
       expected
     )
     await page.goto(server.origin + '/ai-execution-flow')
-    const frame = page.frameLocator('iframe')
+    const frame = page
     const buttons = frame.locator('#test-result-failures button')
     await expect(buttons).toHaveCount(expected.length)
     await expect(frame.locator('.observation-failed')).toHaveCount(3)
@@ -444,8 +453,9 @@ test(
           '[data-step-id="' + item.locations[0].stepId + '"].is-selected'
         )
       ).toHaveCount(1)
-      for (const file of item.locations[0].implementationPaths)
+      for (const file of item.locations[0].implementationPaths) {
         await expect(details).toContainText(file)
+      }
       await expect(details).toContainText(item.failures[0])
     }
     const machine = await (
@@ -490,7 +500,7 @@ test(
     )
     assert.equal(failures.length, 1)
     await page.goto(server.origin + '/render-engine-boundary')
-    const frame = page.frameLocator('iframe')
+    const frame = page
     const buttons = frame.locator('#test-result-failures button')
     await expect(buttons).toHaveCount(1)
     await buttons.first().click()
@@ -499,8 +509,9 @@ test(
     ).toHaveCount(1)
     await expect(frame.locator('.observation-failed')).toHaveCount(1)
     const details = frame.locator('#test-result-detail')
-    for (const file of failures[0].locations[0].implementationPaths)
+    for (const file of failures[0].locations[0].implementationPaths) {
       await expect(details).toContainText(file)
+    }
     await expect(details).toContainText(failures[0].failures[0])
     await expect(details).toContainText(
       'Contract: docs/ai/framework/plans/completed/render-engine-boundary-plan.md'
@@ -553,8 +564,9 @@ test(
       'copy-registration-receipt',
       'omit-invocation-calls',
       'omit-reload-name'
-    ])
+    ]) {
       fixture.mutateRecipe(scenario)
+    }
     const fault = await fixture.run('recipe')
     assert.equal(fault.result.code, 1, fault.result.output)
     const failures = fault.record.cases.filter(
@@ -581,7 +593,7 @@ test(
       expected
     )
     await page.goto(server.origin + '/reusable-tool-composition')
-    const frame = page.frameLocator('iframe')
+    const frame = page
     const buttons = frame.locator('#test-result-failures button')
     await expect(buttons).toHaveCount(expected.length)
     await expect(frame.locator('.observation-failed')).toHaveCount(4)
@@ -593,12 +605,14 @@ test(
           '[data-step-id="' + item.locations[0].stepId + '"].is-selected'
         )
       ).toHaveCount(1)
-      for (const file of item.locations[0].implementationPaths)
+      for (const file of item.locations[0].implementationPaths) {
         await expect(details).toContainText(file)
+      }
       await expect(details).toContainText(item.failures[0])
       await expect(details).toContainText(item.locations[0].specPath)
-      for (const ref of item.locations[0].specRefs)
+      for (const ref of item.locations[0].specRefs) {
         await expect(details).toContainText(ref)
+      }
     }
     const machine = await (
       await fetch(server.origin + '/api/test-results/' + fault.record.id)
@@ -638,10 +652,11 @@ test(
     fixture.mutateViewport()
     const engine = await fixture.run('pixi')
     const adapter = await fixture.run('viewport')
-    for (const fault of [engine, adapter])
+    for (const fault of [engine, adapter]) {
       assert.equal(fault.result.code, 1, fault.result.output)
+    }
     await page.goto(server.origin + '/render-engine-boundary')
-    const frame = page.frameLocator('iframe')
+    const frame = page
     const buttons = frame.locator('#test-result-failures button')
     const details = frame.locator('#test-result-detail')
     await expect(buttons).toHaveCount(2)
@@ -658,11 +673,13 @@ test(
           '[data-step-id="' + item.locations[0].stepId + '"].is-selected'
         )
       ).toHaveCount(1)
-      for (const file of item.locations[0].implementationPaths)
+      for (const file of item.locations[0].implementationPaths) {
         await expect(details).toContainText(file)
+      }
       await expect(details).toContainText(item.locations[0].specPath)
-      for (const ref of item.locations[0].specRefs)
+      for (const ref of item.locations[0].specRefs) {
         await expect(details).toContainText(ref)
+      }
       await expect(details).toContainText(item.failures[0])
       const machine = await (
         await fetch(server.origin + '/api/test-results/' + fault.record.id)
@@ -730,7 +747,7 @@ test(
     )
     assert.equal(failures.length, 1)
     await page.goto(server.origin + '/render-delta-update')
-    const frame = page.frameLocator('iframe')
+    const frame = page
     const buttons = frame.locator('#test-result-failures button')
     await expect(buttons).toHaveCount(1)
     await buttons.first().click()
@@ -739,8 +756,9 @@ test(
     ).toHaveCount(1)
     await expect(frame.locator('.observation-failed')).toHaveCount(1)
     const details = frame.locator('#test-result-detail')
-    for (const file of failures[0].locations[0].implementationPaths)
+    for (const file of failures[0].locations[0].implementationPaths) {
       await expect(details).toContainText(file)
+    }
     await expect(details).toContainText(failures[0].failures[0])
     await expect(details).toContainText(
       'Contract: docs/ai/framework/packages/preset.md'
@@ -782,9 +800,9 @@ test(
     assert.equal(recovery.result.code, 0, recovery.result.output)
     await expect(buttons).toHaveCount(0)
     await expect(frame.locator('.observation-failed')).toHaveCount(0)
-    await frame
-      .getByRole('button', { name: 'Details panel', exact: true })
-      .click()
+    await expect(
+      frame.getByRole('button', { name: 'Hide details', exact: true })
+    ).toBeVisible()
     await frame.locator('#test-result-history').selectOption(fault.record.id)
     await expect(buttons).toHaveCount(1)
     await buttons.first().click()
@@ -811,7 +829,7 @@ test(
     )
     assert.equal(failures.length, 3)
     await page.goto(server.origin + '/render-delta-update')
-    const frame = page.frameLocator('iframe')
+    const frame = page
     const buttons = frame.locator('#test-result-failures button')
     await expect(buttons).toHaveCount(4)
     await expect(frame.locator('.observation-failed')).toHaveCount(1)
@@ -830,13 +848,14 @@ test(
         'packages/preset/src/components/vector-compound-fill.ts'
       )
       await expect(details).toContainText(item.failures[0])
-      for (const field of ['expected', 'actual'])
+      for (const field of ['expected', 'actual']) {
         assert.equal(
           await details
             .locator('[data-failure-field="' + field + '"]')
             .textContent(),
           item.failureDetails[0][field]
         )
+      }
     }
     assert.deepEqual(
       await (
@@ -899,7 +918,7 @@ for (const { caseId, targetId, stepId, secondCaseId } of [
     stepId: 'move-elements',
     secondCaseId: 'functional.properties.ee7ea52ee1d0'
   }
-])
+]) {
   test(
     'original Design Playwright failure exposes identical source, attempts and retained artifacts on the Board - ' +
       caseId,
@@ -919,7 +938,9 @@ for (const { caseId, targetId, stepId, secondCaseId } of [
           'apps/asyra-design/src/common-apis/fills.ts',
           'fillApis.addFills'
         )
-      } else fixture.fault()
+      } else {
+        fixture.fault()
+      }
       const fault = await fixture.run([caseId])
       assert.equal(fault.result.code, 1, fault.result.output)
       assert.equal(fault.record.cases[0].resolution, 'mapped')
@@ -939,8 +960,11 @@ for (const { caseId, targetId, stepId, secondCaseId } of [
       t.after(async () => {
         await browser?.close()
         await server?.close()
-        if (previous === undefined) delete process.env.TMPDIR
-        else process.env.TMPDIR = previous
+        if (previous === undefined) {
+          delete process.env.TMPDIR
+        } else {
+          process.env.TMPDIR = previous
+        }
       })
       server = await startServer(path.resolve(__dirname, '../../../..'), {
         url: process.env.FLOW_PROOF_URL,
@@ -959,7 +983,7 @@ for (const { caseId, targetId, stepId, secondCaseId } of [
       const errors = []
       page.on('pageerror', (error) => errors.push(error.message))
       await page.goto(server.origin + '/' + targetId)
-      const frame = page.frameLocator('iframe')
+      const frame = page
       await expect(frame.locator('#test-result-failures button')).toHaveCount(
         secondCaseId ? 2 : 1
       )
@@ -1048,6 +1072,7 @@ for (const { caseId, targetId, stepId, secondCaseId } of [
       t.diagnostic('Playwright Board evidence: ' + fixture.repository)
     }
   )
+}
 
 test(
   'node interactions preserve drafts, literal notes and original evidence across API, CLI and Board rerun',
@@ -1067,7 +1092,7 @@ test(
         '/transaction-atomicity?observation=' +
         encodeURIComponent(failed.id)
     )
-    const frame = page.frameLocator('iframe')
+    const frame = page
     const panel = frame.locator('#node-interactions')
     await expect(panel).toBeVisible()
     const input = panel.getByLabel('Add investigation note')
@@ -1148,7 +1173,7 @@ test(
     await page.goto(
       server.origin + '/transaction-atomicity?observation=' + failed.id
     )
-    const panel = page.frameLocator('iframe').locator('#node-interactions')
+    const panel = page.locator('#node-interactions')
     await expect(panel).toContainText('Reference: available')
     let releaseOld,
       readCount = 0
@@ -1187,7 +1212,7 @@ test('node status uses one border through selection, hover and keyboard focus', 
   const fixture = localizationFixture()
   const { page, server } = await openBoard(t, fixture)
   await page.goto(server.origin + '/history-shortcut')
-  const card = page.frameLocator('iframe').locator('.step-card').first()
+  const card = page.locator('.step-card').first()
   await expect(card).toBeVisible()
   for (const [status, color] of [
     ['observation-failed', 'rgb(248, 113, 113)'],
@@ -1271,7 +1296,7 @@ test('Board separates current evidence problems from historical warnings and lin
   }
   const failed = observe('failed', ['old warning <script>'])
   await page.goto(server.origin + '/history-shortcut')
-  const frame = page.frameLocator('iframe')
+  const frame = page
   await expect(frame.locator('#test-result-current-problems')).toContainText(
     'old warning <script>'
   )

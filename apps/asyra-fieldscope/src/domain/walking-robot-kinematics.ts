@@ -99,12 +99,16 @@ const p = (x: number, y: number, z: number): Point3 => Object.freeze([x, y, z])
 const q = (x: number, y: number, z: number, w: number): Quaternion4 =>
   Object.freeze([x, y, z, w])
 function required<T>(value: T | undefined): T {
-  if (value === undefined) return invalid()
+  if (value === undefined) {
+    return invalid()
+  }
   return value
 }
 function freeze<T>(value: T): T {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
-    for (const child of Object.values(value)) freeze(child)
+    for (const child of Object.values(value)) {
+      freeze(child)
+    }
     Object.freeze(value)
   }
   return value
@@ -149,9 +153,13 @@ function axisRotation(
   const sine = Math.sin(angle / 2),
     cosine = Math.cos(angle / 2)
   let rotation: Quaternion4
-  if (axis === 'x') rotation = q(sine, 0, 0, cosine)
-  else if (axis === 'y') rotation = q(0, sine, 0, cosine)
-  else rotation = q(0, 0, sine, cosine)
+  if (axis === 'x') {
+    rotation = q(sine, 0, 0, cosine)
+  } else if (axis === 'y') {
+    rotation = q(0, sine, 0, cosine)
+  } else {
+    rotation = q(0, 0, sine, cosine)
+  }
   return freeze({ position: p(0, 0, 0), rotation })
 }
 function translated(
@@ -159,9 +167,13 @@ function translated(
   value: number
 ): WalkingRigidTransform {
   let position: Point3
-  if (axis === 'x') position = p(value, 0, 0)
-  else if (axis === 'y') position = p(0, value, 0)
-  else position = p(0, 0, value)
+  if (axis === 'x') {
+    position = p(value, 0, 0)
+  } else if (axis === 'y') {
+    position = p(0, value, 0)
+  } else {
+    position = p(0, 0, value)
+  }
   return freeze({ position, rotation: q(0, 0, 0, 1) })
 }
 const armId = (value: Pick<WalkingArmJointState, 'side' | 'role'>) =>
@@ -188,16 +200,18 @@ function readPose(source: WalkingRobotSource, raw: unknown): WalkingRobotPose {
     !Number.isFinite(value.joints.carriage) ||
     !Array.isArray(value.joints.arms) ||
     !Array.isArray(value.joints.legs)
-  )
+  ) {
     return invalid()
+  }
   const definition = source.definition
   if (
     Number(value.joints.carriage) < definition.carriage.liftRange[0] ||
     Number(value.joints.carriage) > definition.carriage.liftRange[1] ||
     value.joints.arms.length !== 4 ||
     value.joints.legs.length !== 6
-  )
+  ) {
     return invalid()
+  }
   const armIdentities = new Set<string>()
   for (const item of value.joints.arms) {
     if (
@@ -210,8 +224,9 @@ function readPose(source: WalkingRobotSource, raw: unknown): WalkingRobotPose {
         'elbowPitch',
         'wristPitch'
       ])
-    )
+    ) {
       return invalid()
+    }
     const spec = definition.arms.find(
         ({ side, role }) => side === item.side && role === item.role
       ),
@@ -228,8 +243,9 @@ function readPose(source: WalkingRobotSource, raw: unknown): WalkingRobotPose {
           Number.isFinite(n) && Number(n) >= limits[0] && Number(n) <= limits[1]
         )
       })
-    )
+    ) {
       return invalid()
+    }
     armIdentities.add(id)
   }
   const legIdentities = new Set<string>()
@@ -237,8 +253,9 @@ function readPose(source: WalkingRobotSource, raw: unknown): WalkingRobotPose {
     if (
       !record(item) ||
       !exact(item, ['side', 'station', 'abduction', 'hip', 'knee'])
-    )
+    ) {
       return invalid()
+    }
     const spec = definition.legs.find(
         ({ side, station }) => side === item.side && station === item.station
       ),
@@ -253,8 +270,9 @@ function readPose(source: WalkingRobotSource, raw: unknown): WalkingRobotPose {
           Number.isFinite(n) && Number(n) >= limits[0] && Number(n) <= limits[1]
         )
       })
-    )
+    ) {
       return invalid()
+    }
     legIdentities.add(id)
   }
   return freeze(value) as unknown as WalkingRobotPose
@@ -294,15 +312,19 @@ export function evaluateWalkingRobotPose(
         parent = body.parentBodyId
           ? transforms.get(body.parentBodyId)
           : undefined
-      if (!parent) continue
-      if (body.attachment === 'fixed')
+      if (!parent) {
+        continue
+      }
+      if (body.attachment === 'fixed') {
         transforms.set(body.id, compose(parent, required(body.fixedFrame)))
-      else {
+      } else {
         const joint = required(
             source.rig.joints.find(({ childBodyId }) => childBodyId === body.id)
           ),
           value = values.get(joint.id)
-        if (value === undefined) return invalid()
+        if (value === undefined) {
+          return invalid()
+        }
         transforms.set(
           body.id,
           compose(
@@ -316,7 +338,9 @@ export function evaluateWalkingRobotPose(
       pending.delete(bodyId)
       advanced = true
     }
-    if (!advanced) return invalid()
+    if (!advanced) {
+      return invalid()
+    }
   }
   const worldPoint = (bodyId: string, local: Point3) =>
     compose(required(transforms.get(bodyId)), {
@@ -417,13 +441,14 @@ export function evaluateWalkingRobotPose(
       [chain.bodyIds[1], spec.forearm.length],
       [chain.bodyIds[2], spec.wrist.length],
       [chain.bodyIds[3], spec.tool.reach]
-    ] as const)
+    ] as const) {
       linkSegments.push({
         bodyId,
         from: worldPoint(bodyId, p(0, 0, 0)),
         to: worldPoint(bodyId, p(0, length, 0)),
         length
       })
+    }
   }
   for (const chain of source.rig.legChains) {
     const spec = required(
@@ -441,13 +466,14 @@ export function evaluateWalkingRobotPose(
     for (const [bodyId, length] of [
       [chain.bodyIds[1], spec.upper.length],
       [chain.bodyIds[2], spec.lower.length]
-    ] as const)
+    ] as const) {
       linkSegments.push({
         bodyId,
         from: worldPoint(bodyId, p(0, 0, 0)),
         to: worldPoint(bodyId, p(0, -length, 0)),
         length
       })
+    }
   }
   const inspectionHeads = {
     left: compose(pose.base, source.rig.inspectionHeadFrames.left),

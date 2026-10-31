@@ -11,7 +11,9 @@ vi.mock('../../common-apis/design-review', () => ({ reviewDesign: vi.fn() }))
 import type { InspectionEvidenceStamp } from '../inspection-evidence'
 import { createDesignReviewAction } from '../review-action'
 const requiredEvidence = (result: { evidence?: InspectionEvidenceStamp }) => {
-  if (!result.evidence) throw new Error('Expected mechanical evidence')
+  if (!result.evidence) {
+    throw new Error('Expected mechanical evidence')
+  }
   return result.evidence
 }
 it('forwards review without mutation and respects cancellation', async () => {

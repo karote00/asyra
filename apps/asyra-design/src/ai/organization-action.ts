@@ -41,8 +41,9 @@ export const createOrganizationAction = (
     }
   },
   execute: async (request, context) => {
-    if (context.signal.aborted)
+    if (context.signal.aborted) {
       throw new Error('Design organization cancelled.')
+    }
     return runAiMutation(context, () => organize(request))
   }
 })

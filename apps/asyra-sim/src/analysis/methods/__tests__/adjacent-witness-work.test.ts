@@ -74,7 +74,9 @@ function owner() {
     1 / 16,
     () => {
       work++
-      if (work === stop) throw failure
+      if (work === stop) {
+        throw failure
+      }
     },
     (_a, _b, seed) => {
       calls++

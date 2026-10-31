@@ -12,7 +12,9 @@ export class PixiBatchPartitions {
 
   append(parent: Container, child: Container): void {
     const previous = this.parentOf(child)
-    if (previous) this.remove(previous, child)
+    if (previous) {
+      this.remove(previous, child)
+    }
     let blocks = this.partitions.get(parent)
     if (!blocks) {
       if (
@@ -44,7 +46,9 @@ export class PixiBatchPartitions {
       return
     }
     block.removeChild(child)
-    if (block.children.length === 0) this.removeBlock(parent, blocks, block)
+    if (block.children.length === 0) {
+      this.removeBlock(parent, blocks, block)
+    }
   }
 
   setIndex(parent: Container, child: Container, index: number): void {
@@ -70,7 +74,9 @@ export class PixiBatchPartitions {
       }
       current += block.children.length
     }
-    if (current === index) return
+    if (current === index) {
+      return
+    }
     this.remove(parent, child)
     let offset = index
     let blockIndex = 0
@@ -107,7 +113,9 @@ export class PixiBatchPartitions {
 
   dispose(parent: Container): void {
     const blocks = this.partitions.get(parent)
-    if (!blocks) return
+    if (!blocks) {
+      return
+    }
     for (const block of [...blocks]) {
       block.removeChildren()
       this.removeBlock(parent, blocks, block)

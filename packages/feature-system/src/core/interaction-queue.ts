@@ -29,7 +29,9 @@ export class InteractionQueue {
       try {
         this.assertOpen(generation)
         const previous = this.active
-        if (previous?.immediate) return Promise.resolve(undefined)
+        if (previous?.immediate) {
+          return Promise.resolve(undefined)
+        }
         const invoke = () => {
           this.assertOpen(generation)
           return operation(() => this.assertOpen(generation))
@@ -57,7 +59,9 @@ export class InteractionQueue {
     const entry = { immediate, result }
     this.active = entry
     const release = () => {
-      if (this.active === entry) this.active = undefined
+      if (this.active === entry) {
+        this.active = undefined
+      }
     }
     try {
       Promise.resolve(operation()).then(
@@ -122,7 +126,9 @@ export class InteractionQueue {
   }
 
   beginRuntime(): void {
-    if (this.accepting || !this.drained) throw new FeatureRuntimeClosedError()
+    if (this.accepting || !this.drained) {
+      throw new FeatureRuntimeClosedError()
+    }
     this.generation += 1
     this.drained = false
     this.accepting = true

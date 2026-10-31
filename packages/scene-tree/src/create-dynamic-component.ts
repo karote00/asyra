@@ -39,7 +39,9 @@ export function createDynamicComponent(
     }
 
     load(data: Partial<ElementRawData>): void {
-      if (!data) return
+      if (!data) {
+        return
+      }
       super.load(data) // Load base properties (including children for Group)
 
       // Load added custom properties

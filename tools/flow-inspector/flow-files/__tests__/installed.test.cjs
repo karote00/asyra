@@ -45,11 +45,12 @@ test(
     const entries = execFileSync('tar', ['-tzf', archive], { encoding: 'utf8' })
       .trim()
       .split('\n')
-    for (const entry of entries)
+    for (const entry of entries) {
       assert.doesNotMatch(
         entry,
         /(?:^|\/)(?:node_modules|tmp|\.env|\.attachments)(?:\/|$)/
       )
+    }
     const root = fs.mkdtempSync(path.join(output, 'consumer space-'))
     // Retain this isolated installation and evidence for inspection; it is ignored output.
     fs.writeFileSync(
@@ -401,16 +402,19 @@ test(
         watcher.on('exit', () => {
           exited = true
         })
-        for (const stream of [watcher.stdout, watcher.stderr])
+        for (const stream of [watcher.stdout, watcher.stderr]) {
           stream.on('data', (data) => {
             log = (log + data).slice(-4000)
           })
+        }
         const stop = () => {
           if (!exited) {
             try {
               process.kill(-watcher.pid, 'SIGTERM')
             } catch (e) {
-              if (e.code !== 'ESRCH') throw e
+              if (e.code !== 'ESRCH') {
+                throw e
+              }
             }
           }
         }
@@ -427,16 +431,20 @@ test(
                   'Another writer owns this project',
                   'Flow files changed during snapshot'
                 ].includes(error.message)
-              )
+              ) {
                 throw error
+              }
             }
             if (
               current &&
               current.documents[0].revision > revision &&
               current.evaluation.flows[0].nodes[0].status === state
-            )
+            ) {
               return current.documents[0].revision
-            if (exited) throw new Error('Watch exited: ' + log)
+            }
+            if (exited) {
+              throw new Error('Watch exited: ' + log)
+            }
             await new Promise((resolve) => setTimeout(resolve, 100))
           }
           throw new Error('Watch publication timed out: ' + log)
@@ -456,8 +464,11 @@ test(
         } finally {
           stop()
           await new Promise((resolve) => {
-            if (exited) resolve()
-            else watcher.once('exit', resolve)
+            if (exited) {
+              resolve()
+            } else {
+              watcher.once('exit', resolve)
+            }
           })
         }
       }

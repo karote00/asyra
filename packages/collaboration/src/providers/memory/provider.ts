@@ -50,8 +50,12 @@ export class MemoryProvider implements Provider, MemoryPeer {
     } catch (error) {
       return Promise.reject(error)
     }
-    if (this.status === 'connected') return Promise.resolve()
-    if (this.connectPromise) return this.connectPromise
+    if (this.status === 'connected') {
+      return Promise.resolve()
+    }
+    if (this.connectPromise) {
+      return this.connectPromise
+    }
     const generation = ++this.connectionGeneration
     const connectionToken = Symbol('memory-collaboration-connection')
     this.setStatus('connecting')
@@ -135,7 +139,9 @@ export class MemoryProvider implements Provider, MemoryPeer {
     this.connectPromise = attempt
     this.cancelConnect = cancelConnection
     const clearAttempt = () => {
-      if (this.connectPromise !== attempt) return
+      if (this.connectPromise !== attempt) {
+        return
+      }
       this.connectPromise = null
       this.cancelConnect = undefined
     }
@@ -149,7 +155,9 @@ export class MemoryProvider implements Provider, MemoryPeer {
     this.connectionGeneration += 1
     this.hub.disconnect(this, this.activeConnectionToken)
     this.activeConnectionToken = undefined
-    if (this.status !== 'disconnected') this.setStatus('disconnected')
+    if (this.status !== 'disconnected') {
+      this.setStatus('disconnected')
+    }
     this.connectPromise = null
     this.cancelConnect = undefined
     cancelConnect?.(
@@ -169,7 +177,9 @@ export class MemoryProvider implements Provider, MemoryPeer {
   }
 
   async destroy(): Promise<void> {
-    if (this.status === 'disposed') return
+    if (this.status === 'disposed') {
+      return
+    }
     const cancelConnect = this.cancelConnect
     this.connectionGeneration += 1
     this.hub.disconnect(this, this.activeConnectionToken)
@@ -216,7 +226,9 @@ export class MemoryProvider implements Provider, MemoryPeer {
     this.publicationConsumer = subscriber
     let subscribed = true
     return () => {
-      if (!subscribed) return
+      if (!subscribed) {
+        return
+      }
       subscribed = false
       if (this.publicationConsumer === subscriber) {
         this.publicationConsumer = undefined
@@ -258,7 +270,9 @@ export class MemoryProvider implements Provider, MemoryPeer {
   }
 
   receivePublication(publication: SharedPublication): Promise<void> {
-    if (this.status !== 'connected') return Promise.resolve()
+    if (this.status !== 'connected') {
+      return Promise.resolve()
+    }
     const generation = this.connectionGeneration
     const snapshot = deepFreeze(publication)
     const delivery = this.inboundPublicationTail.then(async () => {
@@ -275,7 +289,9 @@ export class MemoryProvider implements Provider, MemoryPeer {
   }
 
   receiveAwareness(message: ProviderAwarenessMessage): void {
-    if (this.status !== 'connected') return
+    if (this.status !== 'connected') {
+      return
+    }
     ;[...this.awarenessSubscribers].forEach((subscriber) => {
       try {
         subscriber(cloneAwareness(message))
@@ -286,12 +302,16 @@ export class MemoryProvider implements Provider, MemoryPeer {
   }
 
   receiveAwarenessDisconnect(event: ProviderAwarenessDisconnect): void {
-    if (this.status !== 'connected') return
+    if (this.status !== 'connected') {
+      return
+    }
     this.emit(this.awarenessDisconnectSubscribers, Object.freeze({ ...event }))
   }
 
   private requireUsable(): void {
-    if (this.status !== 'disposed') return
+    if (this.status !== 'disposed') {
+      return
+    }
     throw new ProviderFailure(
       'disposed',
       '[collaboration] provider is disposed'
@@ -300,7 +320,9 @@ export class MemoryProvider implements Provider, MemoryPeer {
 
   private requireConnected(): void {
     this.requireUsable()
-    if (this.status === 'connected') return
+    if (this.status === 'connected') {
+      return
+    }
     const failure = new ProviderFailure(
       'not-connected',
       '[collaboration] provider is not connected'

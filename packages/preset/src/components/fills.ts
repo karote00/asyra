@@ -218,10 +218,12 @@ export const getRenderableFills = (fills: unknown): RenderableFill[] => {
 export const toMeshProjectionPaint = (fills: unknown): MeshProjectionPaint => {
   type Material = Extract<MeshProjectionPaint, { kind: 'material' }>['material']
   const layers: Material['fills'][number][] = []
-  if (Array.isArray(fills))
+  if (Array.isArray(fills)) {
     for (const raw of fills) {
       const entry = normalizeFillEntry(raw)
-      if (!entry?.visible) continue
+      if (!entry?.visible) {
+        continue
+      }
       if (entry.kind === FillKinds.GRADIENT && entry.gradient) {
         const gradient = entry.gradient
         const stops = gradient.gradientStops.flatMap((stop) => {
@@ -240,7 +242,9 @@ export const toMeshProjectionPaint = (fills: unknown): MeshProjectionPaint => {
               ]
             : []
         })
-        if (!stops.length) continue
+        if (!stops.length) {
+          continue
+        }
         const [start = { x: 0, y: 0 }, end = { x: 1, y: 0 }, side] =
           gradient.gradientHandles
         const type = gradient.gradientType
@@ -249,8 +253,9 @@ export const toMeshProjectionPaint = (fills: unknown): MeshProjectionPaint => {
           type !== 'radial' &&
           type !== 'angular' &&
           type !== 'diamond'
-        )
+        ) {
           throw new Error('Unsupported gradient type')
+        }
         layers.push({
           kind: 'gradient',
           type,
@@ -261,7 +266,7 @@ export const toMeshProjectionPaint = (fills: unknown): MeshProjectionPaint => {
         })
       } else {
         const parsed = parseColor(entry.color)
-        if (parsed)
+        if (parsed) {
           layers.push({
             kind: 'solid',
             color: [
@@ -271,8 +276,10 @@ export const toMeshProjectionPaint = (fills: unknown): MeshProjectionPaint => {
               clampOpacity(parsed.a * entry.opacity)
             ]
           })
+        }
       }
     }
+  }
   const onlyLayer = layers.length === 1 ? layers[0] : undefined
   if (onlyLayer?.kind === 'solid') {
     const [r, g, b, a] = onlyLayer.color

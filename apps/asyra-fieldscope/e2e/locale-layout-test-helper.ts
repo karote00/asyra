@@ -25,23 +25,26 @@ export async function runResponsiveLayout(
   await page.setViewportSize({ width, height: width < 800 ? 844 : 1100 })
   await page.goto('/')
   await expect(page.getByText('空間模型已就緒')).toBeVisible()
-  if (locale === 'en')
+  if (locale === 'en') {
     await page
       .getByRole('combobox', { name: '語言', exact: true })
       .selectOption('en')
+  }
   const english = locale === 'en'
   await checkLayout(page)
-  if (!usesCpuSoftwareRenderer)
+  if (!usesCpuSoftwareRenderer) {
     await page.screenshot({
       path: testInfo.outputPath('overview.png'),
       fullPage: true
     })
+  }
   if (width < 1100) {
     const editorToggle = page.locator(
       'button[aria-controls="configuration-panel"]'
     )
-    if ((await editorToggle.getAttribute('aria-expanded')) !== 'true')
+    if ((await editorToggle.getAttribute('aria-expanded')) !== 'true') {
       await editorToggle.click()
+    }
     await expect(editorToggle).toHaveAttribute('aria-expanded', 'true')
   }
   const right = page.locator('#configuration-panel .workspace-panel-content')
@@ -76,11 +79,12 @@ export async function runResponsiveLayout(
   })
   await expect(right).toBeVisible()
   await checkLayout(page)
-  if (!usesCpuSoftwareRenderer)
+  if (!usesCpuSoftwareRenderer) {
     await page.screenshot({
       path: testInfo.outputPath('editor-top.png'),
       fullPage: true
     })
+  }
   await right.evaluate((node) => {
     node.scrollTop = node.scrollHeight
   })
@@ -93,29 +97,32 @@ export async function runResponsiveLayout(
       exact: true
     })
   ).toBeInViewport()
-  if (!usesCpuSoftwareRenderer)
+  if (!usesCpuSoftwareRenderer) {
     await page.screenshot({
       path: testInfo.outputPath('editor-strips.png'),
       fullPage: true
     })
-  if (width < 1100)
+  }
+  if (width < 1100) {
     await page
       .getByRole('button', {
         name: english ? 'Open layers panel' : '展開圖層面板',
         exact: true
       })
       .click()
+  }
   await expect(
     page.getByLabel(english ? 'Yu-Nu cherry tomato' : '玉女小蕃茄', {
       exact: true
     })
   ).toBeVisible()
   await checkLayout(page)
-  if (!usesCpuSoftwareRenderer)
+  if (!usesCpuSoftwareRenderer) {
     await page.screenshot({
       path: testInfo.outputPath('layers.png'),
       fullPage: true
     })
+  }
   await page
     .getByLabel(english ? 'Film opacity' : '覆膜不透明度', { exact: true })
     .scrollIntoViewIfNeeded()
@@ -125,11 +132,12 @@ export async function runResponsiveLayout(
     })
   ).toBeInViewport()
   await checkLayout(page)
-  if (!usesCpuSoftwareRenderer)
+  if (!usesCpuSoftwareRenderer) {
     await page.screenshot({
       path: testInfo.outputPath('layers-bottom.png'),
       fullPage: true
     })
+  }
   await page
     .getByRole('button', {
       name: english ? 'References' : '參考資料',
@@ -152,18 +160,20 @@ export async function runResponsiveLayout(
     'rel',
     'noopener noreferrer'
   )
-  if (!usesCpuSoftwareRenderer)
+  if (!usesCpuSoftwareRenderer) {
     await page.screenshot({
       path: testInfo.outputPath('references.png'),
       fullPage: true
     })
+  }
   await dialog.locator('p').last().scrollIntoViewIfNeeded()
   await expect(dialog.locator('p').last()).toBeInViewport()
-  if (!usesCpuSoftwareRenderer)
+  if (!usesCpuSoftwareRenderer) {
     await page.screenshot({
       path: testInfo.outputPath('references-bottom.png'),
       fullPage: true
     })
+  }
   if (english) {
     const attributes = await page
       .locator('[aria-label], [aria-description], [title]')

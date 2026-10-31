@@ -204,10 +204,13 @@ it('refuses new retained handoffs under pressure instead of evicting accepted co
       controller.signal
     )
   ).toThrow(/capacity/)
-  for (const receipt of receipts)
+  for (const receipt of receipts) {
     expect(store.get(receipt.snapshotId).orderedIds).toHaveLength(1)
+  }
   const firstLease = receipts[0].leaseId
-  if (!firstLease) throw new Error('Expected leased receipt')
+  if (!firstLease) {
+    throw new Error('Expected leased receipt')
+  }
   store.releaseLease(firstLease)
   expect(() =>
     store.read(
@@ -292,7 +295,9 @@ it('checks request identity before releasing an individual lease', () => {
   const first = new AbortController().signal,
     second = new AbortController().signal
   const receipt = store.read({ ...query, delivery: 'reference' }, first)
-  if (!receipt.leaseId) throw new Error('Expected a retained lease')
+  if (!receipt.leaseId) {
+    throw new Error('Expected a retained lease')
+  }
   expect(() => store.releaseLease(receipt.leaseId, second)).toThrow('request')
   expect(
     store.get(receipt.snapshotId, receipt.leaseId, first).orderedIds
@@ -340,8 +345,9 @@ it.each(['page', 'columns'] as const)(
       store.read({ scope: 'ids', elementIds: ['new'], delivery }, signal)
     ).not.toThrow()
     store.releaseFor(signal)
-    for (const receipt of receipts)
+    for (const receipt of receipts) {
       expect(() => store.get(receipt.snapshotId)).toThrow(/missing/)
+    }
     store.dispose()
   }
 )
@@ -449,10 +455,11 @@ it('serves transient region IDs without reserving capacity or changing borrowed 
     expect(result).not.toHaveProperty('snapshotId')
   }
   expect(source.getElementIdsInBounds).toHaveBeenCalledTimes(reads + 16)
-  for (const snapshot of retained)
+  for (const snapshot of retained) {
     expect(
       store.get(snapshot.snapshotId, snapshot.leaseId, signal).orderedIds
     ).toEqual(['a', 'b', 'c'])
+  }
   expect(() =>
     store.read({ ...query, bounds: { ...query.bounds, x: 99 } }, signal)
   ).toThrow(/capacity/)
@@ -648,8 +655,9 @@ it('recovers mixed-request byte pressure without releasing sibling pins or refre
     expect(
       store.get(sibling.snapshotId, sibling.leaseId, second.signal).orderedIds
     ).toEqual(['sibling'])
-    for (const item of crowded)
+    for (const item of crowded) {
       expect(() => store.get(item.snapshotId, item.leaseId)).toThrow(/lease/)
+    }
     store.releaseFor(first.signal)
     change()
     expect(() =>
@@ -761,7 +769,9 @@ it.each(['reference', 'page', 'columns'] as const)(
         new Set([first.snapshotId, request.snapshotId, sibling.snapshotId]).size
       ).toBe(1)
       expect(source.getElementComputedData).toHaveBeenCalledTimes(3)
-      if (!first.leaseId) throw new Error('Expected consuming lease')
+      if (!first.leaseId) {
+        throw new Error('Expected consuming lease')
+      }
       store.releaseLease(first.leaseId, controller.signal)
       expect(
         store.get(request.snapshotId, request.leaseId, controller.signal)
@@ -810,7 +820,9 @@ it('isolates consuming refinement and receipt leases without rebuilding their so
       refinementExecutions: 0,
       computedReadCount: 0
     })
-    if (!consumed.leaseId) throw new Error('Expected consuming lease')
+    if (!consumed.leaseId) {
+      throw new Error('Expected consuming lease')
+    }
     store.releaseLease(consumed.leaseId, signal)
     expect(store.get(held.snapshotId, held.leaseId, signal).orderedIds).toEqual(
       ['a']
@@ -822,7 +834,9 @@ it('isolates consuming refinement and receipt leases without rebuilding their so
       delivery: 'receipt' as const
     }
     const internal = store.read(receiptInput, signal, 'consumer')
-    if (!internal.leaseId) throw new Error('Expected consuming receipt lease')
+    if (!internal.leaseId) {
+      throw new Error('Expected consuming receipt lease')
+    }
     store.releaseLease(internal.leaseId, signal)
     const delivered = store.read(receiptInput, signal)
     expect(delivered.leaseId).toBe(saved.leaseId)
@@ -849,7 +863,9 @@ it('protects internal-only pins under pressure and frees capacity after consumpt
   try {
     const caller = store.read(query, owner.signal)
     const consumer = store.read(query, owner.signal, 'consumer')
-    if (!caller.leaseId || !consumer.leaseId) throw new Error('Expected leases')
+    if (!caller.leaseId || !consumer.leaseId) {
+      throw new Error('Expected leases')
+    }
     store.releaseLease(caller.leaseId, owner.signal)
     const others = fillByteBudget((index) =>
       store.read({ ...query, elementIds: [`other-${index}`] }, other.signal)
@@ -865,7 +881,9 @@ it('protects internal-only pins under pressure and frees capacity after consumpt
     expect(again.snapshotId).toBe(consumer.snapshotId)
     expect(source.getElementComputedData).toHaveBeenCalledTimes(reads)
     expect(again.leaseId).not.toBe(consumer.leaseId)
-    if (!again.leaseId) throw new Error('Expected second consuming lease')
+    if (!again.leaseId) {
+      throw new Error('Expected second consuming lease')
+    }
     store.releaseLease(again.leaseId, owner.signal)
     expect(() =>
       store.read({ ...query, elementIds: ['replacement'] }, other.signal)
@@ -881,10 +899,11 @@ it('protects internal-only pins under pressure and frees capacity after consumpt
     ).toEqual(['replacement'])
     expect(() => store.get(consumer.snapshotId)).toThrow(/missing|evicted/)
     owner.abort()
-    for (const receipt of others)
+    for (const receipt of others) {
       expect(
         store.get(receipt.snapshotId, receipt.leaseId, other.signal).orderedIds
       ).toHaveLength(1)
+    }
     store.dispose()
     expect(() => store.read(query, other.signal, 'consumer')).toThrow(
       /disposed/
@@ -983,8 +1002,9 @@ it.each(['elements', 'ids'] as const)(
         delivery: 'page',
         limit: 2
       })
-      if (!parent.snapshotId)
+      if (!parent.snapshotId) {
         throw new Error('Expected retained parent identity')
+      }
       const computedReads = h.source.getElementComputedData.mock.calls.length
       for (const delivery of ['page', 'columns'] as const) {
         const selected = await read({
@@ -996,8 +1016,11 @@ it.each(['elements', 'ids'] as const)(
         })
         expect(selected.total).toBe(3)
         expect(selected.nextOffset).toBe(2)
-        if (mode === 'ids') expect(selected.elementIds).toEqual(['a', 'b'])
-        else expect(Object.hasOwn(selected, 'elementIds')).toBe(false)
+        if (mode === 'ids') {
+          expect(selected.elementIds).toEqual(['a', 'b'])
+        } else {
+          expect(Object.hasOwn(selected, 'elementIds')).toBe(false)
+        }
         const tail = await read({
           scope: 'snapshot',
           snapshotId: selected.snapshotId,
@@ -1006,10 +1029,13 @@ it.each(['elements', 'ids'] as const)(
           limit: 2
         })
         expect(tail.nextOffset).toBeNull()
-        if (mode === 'ids') expect(tail.elementIds).toEqual(['c'])
-        else if (delivery === 'page')
+        if (mode === 'ids') {
+          expect(tail.elementIds).toEqual(['c'])
+        } else if (delivery === 'page') {
           expect(tail.elements.map((row) => row.id)).toEqual(['c'])
-        else expect(tail).toMatchObject({ columns: [{ id: 'c', x: 99, y: 0 }] })
+        } else {
+          expect(tail).toMatchObject({ columns: [{ id: 'c', x: 99, y: 0 }] })
+        }
         const empty = await read({
           scope: 'snapshot',
           snapshotId: parent.snapshotId,
@@ -1021,8 +1047,11 @@ it.each(['elements', 'ids'] as const)(
           elements: [],
           nextOffset: null
         })
-        if (mode === 'ids') expect(empty.elementIds).toEqual([])
-        else expect(Object.hasOwn(empty, 'elementIds')).toBe(false)
+        if (mode === 'ids') {
+          expect(empty.elementIds).toEqual([])
+        } else {
+          expect(Object.hasOwn(empty, 'elementIds')).toBe(false)
+        }
       }
       expect(h.source.getElementComputedData).toHaveBeenCalledTimes(
         computedReads

@@ -47,11 +47,16 @@ const recoverReceipt = async (
     const result = (await read(offset)) as ReceiptRead & {
       receiptPage?: { text: string; nextOffset: number | null }
     }
-    if (result.receipt) return result
-    if (!result.receiptPage) throw new Error('Missing bounded receipt page')
+    if (result.receipt) {
+      return result
+    }
+    if (!result.receiptPage) {
+      throw new Error('Missing bounded receipt page')
+    }
     chunks.push(result.receiptPage.text)
-    if (result.receiptPage.nextOffset === null)
+    if (result.receiptPage.nextOffset === null) {
       return { current: result.current, receipt: JSON.parse(chunks.join('')) }
+    }
     offset = result.receiptPage.nextOffset
   }
 }
@@ -136,7 +141,9 @@ const fixture = (count = 1000, maxBytes?: number) => {
   )
   const action = (name: string) => {
     const found = actions.find((a) => a.name === name)
-    if (!found) throw new Error(`Unknown test action: ${name}`)
+    if (!found) {
+      throw new Error(`Unknown test action: ${name}`)
+    }
     return found
   }
   const runMutation: AiMutationExecutor = async (write, settled) => {
@@ -287,7 +294,9 @@ it('keeps model structural replies bounded while full receipts remain readable w
         batch.actions.map(async (call) => {
           calls.push(call.name)
           const action = definitions.find((a) => a.name === call.name)
-          if (!action) throw new Error('Missing test action')
+          if (!action) {
+            throw new Error('Missing test action')
+          }
           return {
             actionId: call.id,
             actionName: call.name,
@@ -380,12 +389,18 @@ it.each(['foreign', 'released', 'count', 'cancelled'] as const)(
       const produced = await app.produce()
       const reference = { ...produced.retained }
       let context = app.context
-      if (failure === 'foreign')
+      if (failure === 'foreign') {
         context = { ...context, signal: new AbortController().signal }
-      if (failure === 'released')
+      }
+      if (failure === 'released') {
         app.queries.releaseLease(reference.leaseId, context.signal)
-      if (failure === 'count') reference.total++
-      if (failure === 'cancelled') app.controller.abort()
+      }
+      if (failure === 'count') {
+        reference.total++
+      }
+      if (failure === 'cancelled') {
+        app.controller.abort()
+      }
       await expect(
         app
           .action('api_element_setElementsVisible')
@@ -483,7 +498,9 @@ it('publishes structural output through the real runtime wrapper before a depend
   const runtime = createAiAgentRuntime({
     provider: {
       requestActionBatch: async (_input, options) => {
-        if (!options.executeBatch) throw new Error('Missing execution boundary')
+        if (!options.executeBatch) {
+          throw new Error('Missing execution boundary')
+        }
         const receipt = await options.executeBatch({
           batchId: 'group',
           actions: [
@@ -587,19 +604,25 @@ it('projects real observed fill receipts after preserving complete original muta
       resolve: () => 'live'
     }
   ).find((action) => action.name === 'api_fill_updateFillsAtIndex')
-  if (!base) throw new Error('Missing fill action')
+  if (!base) {
+    throw new Error('Missing fill action')
+  }
   const action = observeAiAction(base)
   const report = createAiActions().find(
     (item) => item.name === 'report_outcome'
   )
-  if (!report) throw new Error('Missing final outcome action')
+  if (!report) {
+    throw new Error('Missing final outcome action')
+  }
   const originals: unknown[] = []
   let compact = ''
   const runtime = createAiAgentRuntime({
     provider: {
       requestActionBatch: async (_input, options) => {
         const execute = options.executeBatch
-        if (!execute) throw new Error('Missing runtime batch boundary')
+        if (!execute) {
+          throw new Error('Missing runtime batch boundary')
+        }
         const tools = createLocalOperationTools(
           [action],
           { modelActions: (a) => a, resolveBatch: (b) => b },
@@ -610,7 +633,9 @@ it('projects real observed fill receipts after preserving complete original muta
               [action],
               'native-fill',
               (event, value) => {
-                if (event === 'action_completed') originals.push(value)
+                if (event === 'action_completed') {
+                  originals.push(value)
+                }
               }
             )
         )
@@ -665,13 +690,14 @@ it('projects real observed fill receipts after preserving complete original muta
     ).toBe('executed')
     expect(writes).toHaveBeenCalledTimes(16)
     expect(originals).toHaveLength(16)
-    for (const original of originals)
+    for (const original of originals) {
       expect(original).toMatchObject({
         result: {
           toolOutcome: { status: 'success', settlement: 'completed' },
           mutationScope: { complete: true, elementIds: expect.any(Array) }
         }
       })
+    }
     expect(
       originals.reduce(
         (total: number, item) =>
@@ -684,16 +710,18 @@ it('projects real observed fill receipts after preserving complete original muta
     const reply = JSON.parse(compact)
     expect(reply.actionResults).toHaveLength(16)
     expect(reply.batchSummary.acknowledgedActions).toBeUndefined()
-    for (const receipt of reply.actionResults)
+    for (const receipt of reply.actionResults) {
       expect(receipt.result).toMatchObject({
         changed: true,
         toolOutcome: { status: 'success', settlement: 'completed' }
       })
+    }
     // Explicit owner identities remain actionable; compact scope is not inferred success.
-    for (const [part, receipt] of reply.actionResults.entries())
+    for (const [part, receipt] of reply.actionResults.entries()) {
       expect(receipt.result.acceptedIds).toEqual(
         Array.from({ length: 192 }, (_, index) => `window-${part}-${index}`)
       )
+    }
     expect(reply.checks.counts.unverified).toBe(3072)
     expect(localToolOutcome(reply)).toMatchObject({
       status: 'partial',

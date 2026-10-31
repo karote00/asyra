@@ -24,7 +24,9 @@ it('registers T through the shared tool routing and preserves its input state', 
   const combo = keyCombinations[
     InputSystemEvents.INPUT_SHORTCUT_SWITCH_PRIMARY_TOOL
   ].find((entry) => entry.detail.primaryTool === PrimaryToolType.TEXT)
-  if (!combo) throw new Error('Missing text shortcut')
+  if (!combo) {
+    throw new Error('Missing text shortcut')
+  }
   expect(combo.keys).toEqual(['T'])
   combo.callback({
     modifiers: { shift: false, meta: false, ctrl: false, alt: false }

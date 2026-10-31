@@ -25,7 +25,9 @@ export function SearchDialog({
     useModalDialog()
   const normalizedQuery = query.trim().toLocaleLowerCase()
   const results = useMemo(() => {
-    if (!normalizedQuery) return records.slice(0, 8)
+    if (!normalizedQuery) {
+      return records.slice(0, 8)
+    }
     return records
       .filter(({ description, section, title }) =>
         `${title} ${description} ${section}`

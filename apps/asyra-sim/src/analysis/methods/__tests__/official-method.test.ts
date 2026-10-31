@@ -125,7 +125,9 @@ describe('M3 official clearance method aggregation', () => {
     expect(() =>
       runOfficialClearanceMethod(snapshot([1]), () => {
         checks++
-        if (checks > 1) throw new Error('cancelled')
+        if (checks > 1) {
+          throw new Error('cancelled')
+        }
       })
     ).toThrow('cancelled')
   })

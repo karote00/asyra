@@ -63,8 +63,9 @@ it('owns robot patches, history and derived work without rebuilding the farm', a
     )
     const walking = runtime.getWalkingOperatingReport()
     expect(walking.status).not.toBe('legacy-view')
-    if (walking.status === 'legacy-view' || !walking.envelope)
+    if (walking.status === 'legacy-view' || !walking.envelope) {
       throw new Error('Expected complete walking bounds')
+    }
     const bounds = walking.envelope.bounds
     runtime.focusRobot()
     runtime.pan(0, 0)

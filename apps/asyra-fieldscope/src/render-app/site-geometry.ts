@@ -72,13 +72,16 @@ function admitCropSourceAnatomy(
   regions: readonly SourceRegion[],
   indexCount: number
 ): CropSourceAnatomy | undefined {
-  if (input === undefined) return
+  if (input === undefined) {
+    return
+  }
   try {
     if (
       input.format !== 'crop-source-anatomy/1' ||
       !Array.isArray(input.patches)
-    )
+    ) {
       throw new Error('Invalid format')
+    }
     const sources = readSourcePatches(
       input.patches.map((patch) => patch.source),
       regions,
@@ -89,27 +92,34 @@ function admitCropSourceAnatomy(
       if (
         patch.id !== patch.source.id ||
         !['leaf-blade', 'leaf-vein-ribbon', 'leaf-hair'].includes(patch.role)
-      )
+      ) {
         throw new Error('Invalid patch')
+      }
       const source = sources[index]
-      for (const range of source.ranges)
+      for (const range of source.ranges) {
         for (
           let triangle = range.indexStart;
           triangle < range.indexStart + range.indexCount;
           triangle += 3
         ) {
-          if (occupied.has(triangle)) throw new Error('Duplicate triangle')
+          if (occupied.has(triangle)) {
+            throw new Error('Duplicate triangle')
+          }
           occupied.add(triangle)
         }
-      if (Object.isFrozen(patch) && patch.source === source) return patch
+      }
+      if (Object.isFrozen(patch) && patch.source === source) {
+        return patch
+      }
       return Object.freeze({ id: patch.id, role: patch.role, source })
     })
     if (
       Object.isFrozen(input) &&
       Object.isFrozen(input.patches) &&
       patches.every((patch, index) => patch === input.patches[index])
-    )
+    ) {
       return input
+    }
     return Object.freeze({
       format: 'crop-source-anatomy/1',
       patches: Object.freeze(patches)
@@ -147,8 +157,9 @@ function admitCropPatches(
         ].includes(patch.role) ||
         patch.owner !==
           (patch.role === 'plant-pedicel' ? 'plant' : 'target-fruit')
-      )
+      ) {
         throw new Error('Invalid botanical patch identity')
+      }
       const source = sources[index]
       for (const range of source.ranges) {
         const partition = partitions.find(
@@ -161,15 +172,17 @@ function admitCropPatches(
           !partition ||
           partition.fruitId !==
             (patch.owner === 'plant' ? null : patch.targetFruitId)
-        )
+        ) {
           throw new Error('Invalid botanical patch ownership')
+        }
         for (
           let triangle = range.indexStart;
           triangle < range.indexStart + range.indexCount;
           triangle += 3
         ) {
-          if (occupied.has(triangle))
+          if (occupied.has(triangle)) {
             throw new Error('Overlapping botanical source patches')
+          }
           occupied.add(triangle)
         }
       }
@@ -188,7 +201,9 @@ function admitCutBoundaries(model: CropGeometry): CropGeometry['fruits'] {
   return Object.freeze(
     model.fruits.map((fruit) => {
       const cut = fruit.cutSite
-      if (!cut || cut.kind === 'unknown') return fruit
+      if (!cut || cut.kind === 'unknown') {
+        return fruit
+      }
       const part = model.parts.find(
         (candidate) => candidate.id === cut.boundary.partId
       )
@@ -210,8 +225,9 @@ function admitCutBoundaries(model: CropGeometry): CropGeometry['fruits'] {
         plant.source.region !== retained.source.region ||
         ![...cut.position, ...cut.towardPlant].every(Number.isFinite) ||
         Math.hypot(...cut.towardPlant) === 0
-      )
+      ) {
         throw new Error('Invalid botanical source cut boundary')
+      }
       const shape = part.shape
       const vertices = (patch: CropSourcePatch) =>
         new Set(
@@ -234,13 +250,15 @@ function admitCutBoundaries(model: CropGeometry): CropGeometry['fruits'] {
         declared.some(
           (vertex) => !Number.isSafeInteger(vertex) || !shared.includes(vertex)
         )
-      )
+      ) {
         throw new Error('Invalid botanical shared source ring')
+      }
       const proximal = [...plantVertices].filter(
         (vertex) => !shared.includes(vertex)
       )
-      if (proximal.length !== shared.length)
+      if (proximal.length !== shared.length) {
         throw new Error('Invalid botanical adjacent source ring')
+      }
       const centroid = (ring: readonly number[]) =>
         [0, 1, 2].map((axis) =>
           divide(
@@ -309,8 +327,9 @@ export class SiteGeometry {
       previous &&
       previous.key.length === key.length &&
       key.every((value, i) => value === previous.key[i])
-    )
+    ) {
       return previous.groups
+    }
     const groups = new Map<string, SpatialInstance[]>()
     const plants = Object.freeze(
       createCropPositions(config).map((plant) => {
@@ -349,8 +368,9 @@ export class SiteGeometry {
       previous &&
       previous.key.length === key.length &&
       key.every((value, i) => value === previous.key[i])
-    )
+    ) {
       return previous.meshes
+    }
     const meshes = produce()
     this.projections.set(group, { key: [...key], meshes })
     return meshes
@@ -366,11 +386,14 @@ export class SiteGeometry {
     produce: () => { shape: SpatialShape; regions: readonly SourceRegion[] }
   ) {
     const existing = this.primitives.get(key)
-    if (existing) return existing
+    if (existing) {
+      return existing
+    }
     const raw = produce()
     const shape = readSpatialShape(raw.shape)
-    if (shape.kind !== 'triangles')
+    if (shape.kind !== 'triangles') {
       throw new Error('Expected primitive triangles')
+    }
     const product = Object.freeze({
       shape,
       regions: readSourceRegions(raw.regions, shape.indices.length)
@@ -378,7 +401,9 @@ export class SiteGeometry {
     this.primitives.set(key, product)
     if (this.primitives.size > 32) {
       const oldest = this.primitives.keys().next().value
-      if (oldest !== undefined) this.primitives.delete(oldest)
+      if (oldest !== undefined) {
+        this.primitives.delete(oldest)
+      }
     }
     return product
   }
@@ -390,7 +415,9 @@ export class SiteGeometry {
       (entry) =>
         entry.top === config.netTop && entry.bottom === config.netBottom
     )
-    if (found) return found.models
+    if (found) {
+      return found.models
+    }
     const models = createCropModels(config).map((model) => ({
       species: model.species,
       variant: model.variant,
@@ -415,12 +442,14 @@ export class SiteGeometry {
           !part.distantPartitions ||
           !part.distantRegions ||
           !part.distantPatches
-        )
+        ) {
           throw new Error('Missing distant crop ownership')
+        }
         const shape = readSpatialShape(part.shape)
         const distantShape = readSpatialShape(part.distantShape)
-        if (shape.kind !== 'triangles' || distantShape.kind !== 'triangles')
+        if (shape.kind !== 'triangles' || distantShape.kind !== 'triangles') {
           throw new Error('Expected botanical source triangles')
+        }
         const regions = readSourceRegions(part.regions, shape.indices.length)
         const distantRegions = readSourceRegions(
           part.distantRegions,
@@ -484,7 +513,9 @@ export class SiteGeometry {
     })
     Object.freeze(models)
     this.crops.push({ top: config.netTop, bottom: config.netBottom, models })
-    if (this.crops.length > 2) this.crops.shift()
+    if (this.crops.length > 2) {
+      this.crops.shift()
+    }
     return models
   }
 
@@ -492,9 +523,13 @@ export class SiteGeometry {
   private sceneMeshes?: SiteMesh[]
 
   prepareScene(config: FarmConfiguration, meshes: SiteMesh[]): PreparedScene {
-    if (this.scene && this.sceneMeshes === meshes) return this.scene
+    if (this.scene && this.sceneMeshes === meshes) {
+      return this.scene
+    }
     this.cropInstances(config)
-    if (!this.planting) throw new Error('Missing admitted planting source')
+    if (!this.planting) {
+      throw new Error('Missing admitted planting source')
+    }
     const plants = this.planting.plants
     const models = new Map(
       (plants.length ? this.cropModels(config) : []).map((model) => [
@@ -505,7 +540,9 @@ export class SiteGeometry {
     const fruits: SceneFruit[] = []
     for (const plant of plants) {
       const model = models.get(`${plant.species}-${plant.variant}`)
-      if (!model) throw new Error('Missing admitted cultivar source')
+      if (!model) {
+        throw new Error('Missing admitted cultivar source')
+      }
       const cosine = Math.cos(plant.yaw),
         sine = Math.sin(plant.yaw)
       for (const source of model.fruits) {
@@ -528,8 +565,9 @@ export class SiteGeometry {
     const admittedMeshes = Object.freeze(
       meshes.map((mesh) => {
         const shape = mesh.descriptor.shape
-        if (shape.kind !== 'triangles')
+        if (shape.kind !== 'triangles') {
           throw new Error('Expected source triangles')
+        }
         const regions = readSourceRegions(mesh.regions, shape.indices.length)
         const distant = mesh.descriptor.distant?.shape
         const distantRegions =
@@ -539,8 +577,9 @@ export class SiteGeometry {
                 distant.kind === 'triangles' ? distant.indices.length : -1
               )
             : undefined
-        if (distant && !distantRegions)
+        if (distant && !distantRegions) {
           throw new Error('Missing distant source regions')
+        }
         const sourceAnatomy = admitCropSourceAnatomy(
           mesh.sourceAnatomy,
           regions,
@@ -553,8 +592,9 @@ export class SiteGeometry {
               distant.kind === 'triangles' ? distant.indices.length : -1
             )
           : undefined
-        if (!distant && mesh.distantSourceAnatomy)
+        if (!distant && mesh.distantSourceAnatomy) {
           throw new Error('Invalid crop source anatomy')
+        }
         return Object.freeze({
           ...mesh,
           regions,
@@ -575,7 +615,9 @@ export class SiteGeometry {
   }
 
   getScene(): PreparedScene {
-    if (!this.scene) throw new Error('No admitted scene source')
+    if (!this.scene) {
+      throw new Error('No admitted scene source')
+    }
     return this.scene
   }
 

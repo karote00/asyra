@@ -44,7 +44,9 @@ async function ring(segments = 16): Promise<MeshGeometry> {
     },
     asset
   )
-  if (part.geometry.kind !== 'mesh') throw new Error('Missing mesh')
+  if (part.geometry.kind !== 'mesh') {
+    throw new Error('Missing mesh')
+  }
   return part.geometry
 }
 const solid: MeshGeometry = {
@@ -93,8 +95,9 @@ describe('original mesh solid certificates', () => {
     const query = vi
       .spyOn(convexQuery, 'convexDistance')
       .mockImplementation((a, b, ...settings) => {
-        if (warningObserved && boundsGap(shapeBounds(a), shapeBounds(b)) > 0)
+        if (warningObserved && boundsGap(shapeBounds(a), shapeBounds(b)) > 0) {
           redundantQueries++
+        }
 
         const result = distance(a, b, ...settings)
         warningObserved ||= result.upper < 0.5
@@ -218,7 +221,9 @@ describe('original mesh solid certificates', () => {
             },
             asset
           )
-          if (part.geometry.kind !== 'mesh') throw new Error('Missing bar')
+          if (part.geometry.kind !== 'mesh') {
+            throw new Error('Missing bar')
+          }
           return part.geometry
         })
       )

@@ -36,10 +36,11 @@ test(
             (item) => item.locations[0].stepId === 'select-history-replay'
           )
         )
-      } else
+      } else {
         assert.ok(
           new Set(failed.map((item) => item.locations[0].stepId)).size >= 2
         )
+      }
       const output = []
       assert.equal(
         await main(['test-results', fault.record.id], {
@@ -350,88 +351,85 @@ test(
   }
 )
 
-test(
-  'ordinary Design execution failures locate distinct nodes and preserve recovery history',
-  { timeout: 120000 },
-  async (t) => {
-    const fixture = localizationFixture()
-    t.after(() => fixture.restore())
-    const baseline = await fixture.run('execution')
-    assert.equal(baseline.result.code, 0, baseline.result.output)
-    assert.deepEqual(
-      baseline.record.cases
-        .flatMap((item) => item.locations.map((location) => location.caseId))
-        .sort(),
-      executionCaseIds
-    )
-    assert.ok(
-      baseline.record.cases.every((item) => item.resolution === 'mapped'),
-      JSON.stringify(baseline.record.issues)
-    )
-    assert.deepEqual(
-      [
-        ...new Set(
-          baseline.record.cases.map((item) => item.locations[0].stepId)
-        )
-      ].sort(),
-      ['apply', 'compose', 'inspect', 'observe', 'prepare', 'request', 'settle']
-    )
-    const scenarios = [
-      'omit-registered-tools',
-      'misclassify-combined-tool',
-      'ignore-canonical-evidence'
-    ]
-    for (const [index, scenario] of scenarios.entries()) {
-      fixture.mutateExecution(scenario)
-      const fault = await fixture.run('execution')
-      assert.equal(fault.result.code, 1, fault.result.output)
-      const failed = fault.record.cases.filter(
-        (item) => item.status === 'failed'
-      )
-      assert.deepEqual(
-        failed.map((item) => item.locations[0].caseId).sort(),
-        scenarios
-          .slice(0, index + 1)
-          .flatMap(
-            (id) =>
-              require('../../../../apps/asyra-design/flow-contracts.json').scenarios.find(
-                (entry) => entry.id === id
-              ).expectedFailedCaseIds
-          )
-          .sort()
-      )
-      for (const item of failed) {
-        assert.equal(item.resolution, 'mapped')
-        assert.equal(item.locations[0].targetId, 'ai-execution-flow')
-        assert.ok(item.locations[0].implementationPaths.length)
-        assert.ok(
-          item.failureDetails.some((error) => error.message && error.stack)
-        )
-      }
-      const output = []
-      assert.equal(
-        await main(['test-results', fault.record.id], {
-          repositoryRoot: fixture.repository,
-          write: (line) => output.push(line)
-        }),
-        0
-      )
-      assert.deepEqual(JSON.parse(output.join('')), fault.record)
-    }
-    const failedRecord = fixture.reader.get(fixture.reader.list().runs[0].id)
-    fixture.restore()
-    const recovery = await fixture.run('execution')
-    assert.equal(recovery.result.code, 0, recovery.result.output)
-    assert.equal(recovery.record.source.digest, baseline.record.source.digest)
-    assert.ok(
-      fixture.reader
-        .list()
-        .currentCases.every((item) => item.status === 'passed')
-    )
-    assert.deepEqual(fixture.reader.get(failedRecord.id), failedRecord)
-    t.diagnostic('Execution evidence: ' + fixture.directory)
+const executionFaultScenarios = [
+  'omit-registered-tools',
+  'misclassify-combined-tool',
+  'ignore-canonical-evidence'
+]
+
+async function proveExecutionRecovery(t, scenarioIndex) {
+  const fixture = localizationFixture()
+  t.after(() => fixture.restore())
+  t.diagnostic('Execution evidence: ' + fixture.directory)
+  const baseline = await fixture.run('execution')
+  assert.equal(baseline.result.code, 0, baseline.result.output)
+  assert.deepEqual(
+    baseline.record.cases
+      .flatMap((item) => item.locations.map((location) => location.caseId))
+      .sort(),
+    executionCaseIds
+  )
+  assert.ok(
+    baseline.record.cases.every((item) => item.resolution === 'mapped'),
+    JSON.stringify(baseline.record.issues)
+  )
+  assert.deepEqual(
+    [
+      ...new Set(baseline.record.cases.map((item) => item.locations[0].stepId))
+    ].sort(),
+    ['apply', 'compose', 'inspect', 'observe', 'prepare', 'request', 'settle']
+  )
+  const scenarios = executionFaultScenarios.slice(0, scenarioIndex + 1)
+  for (const scenario of scenarios) {
+    fixture.mutateExecution(scenario)
   }
-)
+  const fault = await fixture.run('execution')
+  assert.equal(fault.result.code, 1, fault.result.output)
+  const failed = fault.record.cases.filter((item) => item.status === 'failed')
+  assert.deepEqual(
+    failed.map((item) => item.locations[0].caseId).sort(),
+    scenarios
+      .flatMap(
+        (id) =>
+          require('../../../../apps/asyra-design/flow-contracts.json').scenarios.find(
+            (entry) => entry.id === id
+          ).expectedFailedCaseIds
+      )
+      .sort()
+  )
+  for (const item of failed) {
+    assert.equal(item.resolution, 'mapped')
+    assert.equal(item.locations[0].targetId, 'ai-execution-flow')
+    assert.ok(item.locations[0].implementationPaths.length)
+    assert.ok(item.failureDetails.some((error) => error.message && error.stack))
+  }
+  const output = []
+  assert.equal(
+    await main(['test-results', fault.record.id], {
+      repositoryRoot: fixture.repository,
+      write: (line) => output.push(line)
+    }),
+    0
+  )
+  assert.deepEqual(JSON.parse(output.join('')), fault.record)
+  const failedRecord = fixture.reader.get(fault.record.id)
+  fixture.restore()
+  const recovery = await fixture.run('execution')
+  assert.equal(recovery.result.code, 0, recovery.result.output)
+  assert.equal(recovery.record.source.digest, baseline.record.source.digest)
+  assert.ok(
+    fixture.reader.list().currentCases.every((item) => item.status === 'passed')
+  )
+  assert.deepEqual(fixture.reader.get(failedRecord.id), failedRecord)
+}
+
+for (const [index, scenario] of executionFaultScenarios.entries()) {
+  test(
+    `ordinary Design execution failures preserve cumulative ${scenario} mapping and recovery history`,
+    { timeout: 120000 },
+    (t) => proveExecutionRecovery(t, index)
+  )
+}
 
 test(
   'Design execution uses the captured runtime entry and retains setup failure without a guessed node',
@@ -597,7 +595,9 @@ test(
       )
     }
     fixture.restore()
-    for (const scenario of scenarios) fixture.mutateRecipe(scenario)
+    for (const scenario of scenarios) {
+      fixture.mutateRecipe(scenario)
+    }
     const combined = await fixture.run('recipe')
     assert.equal(combined.result.code, 1, combined.result.output)
     assert.deepEqual(

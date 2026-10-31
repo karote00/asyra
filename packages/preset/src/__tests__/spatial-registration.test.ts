@@ -55,7 +55,9 @@ it('validates descriptor/visibility schema and retains one derived mesh with exp
       wireframe: false,
       selectable: true
     })
-  if (descriptor.kind !== 'mesh') throw new Error('Expected mesh')
+  if (descriptor.kind !== 'mesh') {
+    throw new Error('Expected mesh')
+  }
   const data = { id: 'entity', descriptor, visible: true } as Parameters<
     typeof SPATIAL_MESH_RENDER_STRATEGY
   >[1]
@@ -74,8 +76,9 @@ it('validates descriptor/visibility schema and retains one derived mesh with exp
     elementId: 'entity'
   })
   const update = vi.spyOn(mesh as RenderMesh, 'update')
-  for (let i = 0; i < 5; i++)
+  for (let i = 0; i < 5; i++) {
     SPATIAL_MESH_RENDER_STRATEGY(graphic, { ...data, visible: false })
+  }
   expect(graphic.children).toHaveLength(1)
   expect(graphic.visible).toBe(false)
   expect(update).not.toHaveBeenCalled()
@@ -91,7 +94,9 @@ it('rejects invalid runtime property writes and restores defaults on invalid loa
   const cleanup = registerSpatialMesh(core)
   try {
     const Constructor = core.getPropertyComponent(SPATIAL_MESH_PROPERTY)
-    if (!Constructor) throw new Error('Missing property component')
+    if (!Constructor) {
+      throw new Error('Missing property component')
+    }
     const instance = new Constructor({
       id: 'spatial-prop',
       type: SPATIAL_MESH_PROPERTY

@@ -37,7 +37,9 @@ export function createSceneDemandWorkspace(
   )
   const listeners = new Set<() => void>()
   const assertLive = () => {
-    if (closed) throw new Error('Scene demand workspace is closed')
+    if (closed) {
+      throw new Error('Scene demand workspace is closed')
+    }
   }
   core.definePropertyComponent({
     type: SceneDemandIds.COMPONENT,
@@ -61,8 +63,9 @@ export function createSceneDemandWorkspace(
     const property = propertyId
       ? getPropertyComponentAccessor().getPropertyById(propertyId)
       : undefined
-    if (!property)
+    if (!property) {
       throw new Error('Missing canonical scene demand configuration')
+    }
     return validateSceneDemandConfiguration(
       (property.save() as unknown as { settings: SceneDemandConfiguration })
         .settings
@@ -90,8 +93,9 @@ export function createSceneDemandWorkspace(
       farm === snapshot.farm &&
       scene === snapshot.scene &&
       JSON.stringify(next) === JSON.stringify(configuration)
-    )
+    ) {
       return
+    }
     publish(next, farm, scene)
   }
   const feature = core.defineFeature(SceneDemandIds.CHANGE, undefined, {
@@ -107,7 +111,9 @@ export function createSceneDemandWorkspace(
             assertLive()
             const farm = getFarm()
             assertCurrentSceneDemandRoute(next, farm)
-            if (JSON.stringify(next) === JSON.stringify(configuration)) return
+            if (JSON.stringify(next) === JSON.stringify(configuration)) {
+              return
+            }
             const prepared = sceneDemand.prepareSceneDemand(
               farm,
               getScene(),
@@ -162,8 +168,9 @@ export function createSceneDemandWorkspace(
       getScene() === snapshot.scene,
     prepareObservationSpace: () => {
       assertLive()
-      if (getFarm() !== snapshot.farm || getScene() !== snapshot.scene)
+      if (getFarm() !== snapshot.farm || getScene() !== snapshot.scene) {
         throw new Error('Stale scene demand observation request')
+      }
       observation ??= sceneDemand.prepareSceneObservationSpace(
         snapshot,
         sourceOwner

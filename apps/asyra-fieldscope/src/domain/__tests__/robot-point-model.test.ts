@@ -46,7 +46,9 @@ function bits(values: readonly number[]) {
 const historicalAlgebra: KinematicAlgebra<number> = {
   literal: (value) => value,
   range: (low, high) => {
-    if (!Object.is(low, high)) throw new Error('Expected singleton')
+    if (!Object.is(low, high)) {
+      throw new Error('Expected singleton')
+    }
     return low
   },
   add: (a, b) => a + b,
@@ -162,13 +164,17 @@ it('proves the approved-domain quaternion norm bound with exact rational recurre
   const u: Fraction = [1n, 1n << 53n],
     delta = times([2n, 1n], u)
   let factorial = 1n
-  for (let n = 2n; n <= 21n; n++) factorial *= n
+  for (let n = 2n; n <= 21n; n++) {
+    factorial *= n
+  }
   // |x|<1: S19/C20 analytic remainders are <=1/21! and <=1/22!.
   // Each monotone polynomial has magnitude <=1; RN absolute error <=u,
   // including subnormals. Thus each axis component error is below 2u.
   expect(less([1n, factorial], u)).toBe(true)
   for (const [key, limits] of Object.entries(ROBOT_JOINT_LIMITS)) {
-    if (key === 'lift') continue
+    if (key === 'lift') {
+      continue
+    }
     limits.forEach((angle) => expect(Math.abs(angle / 2)).toBeLessThan(1))
   }
   // Operands <=2: four rounded products contribute <=20u; intermediate
@@ -211,7 +217,9 @@ it('records old and new point drift on original source vertices without rewritin
         const before = old.parts[index]
         expect(part.source).toBe(before.source)
         part.transform.rotation.forEach((value, i) => {
-          if (!Object.is(value, before.transform.rotation[i])) changed++
+          if (!Object.is(value, before.transform.rotation[i])) {
+            changed++
+          }
           maxQuaternion = Math.max(
             maxQuaternion,
             Math.abs(value - before.transform.rotation[i])
@@ -235,7 +243,9 @@ it('records old and new point drift on original source vertices without rewritin
             maxVertex,
             Math.hypot(...a.map((value, i) => value - b[i]))
           )
-          if (joints === REST_JOINTS) expect(bits(a)).toBe(bits(b))
+          if (joints === REST_JOINTS) {
+            expect(bits(a)).toBe(bits(b))
+          }
         }
       })
     }

@@ -261,13 +261,16 @@ const point = (value: unknown) =>
 const choice = (value: unknown, values: readonly unknown[]) =>
   value === null || values.includes(value)
 function keys(value: unknown, allowed: string[]) {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) reject()
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    reject()
+  }
   const names = Object.keys(value)
   if (
     names.length !== allowed.length ||
     names.some((key) => !allowed.includes(key))
-  )
+  ) {
     reject()
+  }
 }
 function freeze<T>(value: T): Immutable<T> {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
@@ -324,8 +327,9 @@ function readTarget(raw: TargetReading): Immutable<TargetReading> {
     !choice(input.maturity, ['green', 'turning', 'ripe', 'overgrown']) ||
     !choice(input.approach, ['clear', 'blocked']) ||
     !choice(input.extraction, ['clear', 'blocked'])
-  )
+  ) {
     reject()
+  }
   if (input.pose !== null) {
     keys(input.pose, ['position', 'rotation'])
     const { position, rotation } = input.pose
@@ -340,8 +344,9 @@ function readTarget(raw: TargetReading): Immutable<TargetReading> {
       ![0, 1, 2, 3].every((index) => Number.isFinite(rotation[index])) ||
       !Number.isFinite(norm) ||
       Math.abs(norm - 1) > 64 * Number.EPSILON
-    )
+    ) {
       reject()
+    }
   }
   if (input.coverage !== null) {
     keys(input.coverage, ['visible', 'total'])
@@ -351,8 +356,9 @@ function readTarget(raw: TargetReading): Immutable<TargetReading> {
       !Number.isSafeInteger(total) ||
       visible < 0 ||
       total < visible
-    )
+    ) {
       reject()
+    }
   }
   if (input.stem !== null) {
     keys(input.stem, ['targetId', 'recognized', 'cutSite'])
@@ -360,8 +366,9 @@ function readTarget(raw: TargetReading): Immutable<TargetReading> {
       input.stem.targetId !== input.targetId ||
       !choice(input.stem.recognized, [true, false]) ||
       (input.stem.cutSite !== null && !point(input.stem.cutSite))
-    )
+    ) {
       reject()
+    }
   }
   keys(input.quality, ['spines', 'calyx', 'pedicel', 'contactDamage'])
   if (
@@ -369,8 +376,9 @@ function readTarget(raw: TargetReading): Immutable<TargetReading> {
     !choice(input.quality.calyx, ['intact', 'lost']) ||
     !choice(input.quality.pedicel, ['intact', 'lost']) ||
     !choice(input.quality.contactDamage, ['observed', 'none-observed'])
-  )
+  ) {
     reject()
+  }
   return freeze(input)
 }
 
@@ -420,8 +428,9 @@ function readView(raw: ViewRequest): Immutable<ViewRequest> {
     input.targetIds.length * input.samplesPerTarget > MAX_VIEW_SAMPLES ||
     !['source-pose', 'unknown'].includes(input.leaves) ||
     !['all-attached', 'unknown'].includes(input.fruits)
-  )
+  ) {
     reject()
+  }
   validateActionCamera(input.camera)
   return freeze(input)
 }
@@ -431,8 +440,9 @@ function validateActionCamera(camera: Immutable<ViewRequest['camera']>) {
     ![camera.halfWidthSlope, camera.halfHeightSlope, camera.maxDistance].every(
       (value) => Number.isFinite(value) && value > 0
     )
-  )
+  ) {
     reject()
+  }
   keys(camera.pose, ['position', 'rotation'])
   const { position, rotation } = camera.pose
   const norm =
@@ -445,8 +455,9 @@ function validateActionCamera(camera: Immutable<ViewRequest['camera']>) {
     ![0, 1, 2, 3].every((index) => Number.isFinite(rotation[index])) ||
     !Number.isFinite(norm) ||
     Math.abs(norm - 1) > 64 * Number.EPSILON
-  )
+  ) {
     reject()
+  }
 }
 function inView(
   direction: readonly Interval[],
@@ -456,11 +467,16 @@ function inView(
     !direction.every(
       (value) => Number.isFinite(value.low) && Number.isFinite(value.high)
     )
-  )
+  ) {
     return 'unknown'
+  }
   const [x, y, z] = direction
-  if (z.high <= 0) return 'outside'
-  if (z.low <= 0) return 'unknown'
+  if (z.high <= 0) {
+    return 'outside'
+  }
+  if (z.low <= 0) {
+    return 'unknown'
+  }
   const extent = (value: Interval) => ({
     low:
       value.low <= 0 && value.high >= 0
@@ -472,13 +488,16 @@ function inView(
     [extent(x), multiply(interval(camera.halfWidthSlope), z)],
     [extent(y), multiply(interval(camera.halfHeightSlope), z)]
   ]
-  if (axes.some((pair) => pair[0].low > pair[1].high)) return 'outside'
+  if (axes.some((pair) => pair[0].low > pair[1].high)) {
+    return 'outside'
+  }
   if (
     axes.every(
       (pair) => Number.isFinite(pair[1].high) && pair[0].high <= pair[1].low
     )
-  )
+  ) {
     return 'inside'
+  }
   return 'unknown'
 }
 
@@ -506,7 +525,9 @@ function readAction(raw: ActionVolumeRequest): Immutable<ActionVolumeRequest> {
     'optics',
     'model'
   ])
-  if (value.source !== 'synthetic-action-volume/1' || !text(actionId)) reject()
+  if (value.source !== 'synthetic-action-volume/1' || !text(actionId)) {
+    reject()
+  }
   readView({
     ...view,
     source: 'synthetic-viewpoint',
@@ -525,8 +546,9 @@ function validateActionFields(
     !point(actionBounds.min) ||
     !point(actionBounds.max) ||
     actionBounds.min.some((v, axis) => v > actionBounds.max[axis])
-  )
+  ) {
     reject()
+  }
   keys(optics, [
     'illumination',
     'filmTransmission',
@@ -535,7 +557,9 @@ function validateActionFields(
     'glare'
   ])
   const unit = (v: number) => Number.isFinite(v) && v >= 0 && v <= 1
-  if (Object.values(optics).some((v) => v !== null && !unit(v))) reject()
+  if (Object.values(optics).some((v) => v !== null && !unit(v))) {
+    reject()
+  }
   keys(model, [
     'format',
     'minSignal',
@@ -552,8 +576,9 @@ function validateActionFields(
       (v) => Number.isSafeInteger(v) && v >= 0 && v <= 4096
     ) ||
     model.maxRays > MAX_VIEW_SAMPLES
-  )
+  ) {
     reject()
+  }
 }
 function directionDistance(direction: Point3): Interval {
   const squared = direction.map((v) => multiply(interval(v), interval(v)))
@@ -569,8 +594,9 @@ function actorDistance(
     actor.bounds.min.every(
       (v, i) => origin[i] >= v && origin[i] <= actor.bounds.max[i]
     )
-  )
+  ) {
     return 'unknown'
+  }
   let entry = interval(0),
     exit: Interval = { low: Infinity, high: Infinity }
   for (let axis = 0; axis < 3; axis++) {
@@ -578,8 +604,9 @@ function actorDistance(
       if (
         origin[axis] < actor.bounds.min[axis] ||
         origin[axis] > actor.bounds.max[axis]
-      )
+      ) {
         return null
+      }
       continue
     }
     const a = divide(
@@ -601,8 +628,12 @@ function actorDistance(
       high: Math.min(exit.high, far.high)
     }
   }
-  if (entry.low > exit.high || exit.high < 0) return null
-  if (entry.high > exit.low || !Number.isFinite(entry.high)) return 'unknown'
+  if (entry.low > exit.high || exit.high < 0) {
+    return null
+  }
+  if (entry.high > exit.low || !Number.isFinite(entry.high)) {
+    return 'unknown'
+  }
   return multiply(entry, directionDistance(direction))
 }
 
@@ -626,30 +657,34 @@ export class TargetObservations {
     if (
       typeof owners?.isCurrentContext !== 'function' ||
       typeof owners?.isCurrentMission !== 'function'
-    )
+    ) {
       reject()
+    }
   }
   private current(context: ObservationContext) {
     if (
       !context ||
       !this.owners.isCurrentContext(context) ||
       !this.owners.isCurrentMission(context.mission)
-    )
+    ) {
       reject()
+    }
     const snapshot = this.session.getSnapshot()
     if (
       snapshot !== context.snapshot ||
       !snapshot.run ||
       !['running', 'paused', 'faulted'].includes(snapshot.lifecycle)
-    )
+    ) {
       reject()
+    }
     const source = this.geometry.read(context.geometry)
     if (
       context.mission.scene !== source.receipt.scene ||
       context.mission.robot !== source.receipt.robot ||
       context.mission.revision !== source.receipt.revision
-    )
+    ) {
       reject()
+    }
     return snapshot
   }
   private match(
@@ -668,12 +703,15 @@ export class TargetObservations {
       input.observedAt > snapshot.now ||
       input.validFrom > snapshot.now ||
       snapshot.now >= input.validUntil
-    )
+    ) {
       reject()
+    }
   }
   isCurrentAction(result: ActionVolumeObservation): boolean {
     const issued = this.actions.get(result)
-    if (!issued || !this.actionOwners) return false
+    if (!issued || !this.actionOwners) {
+      return false
+    }
     try {
       this.current(result.context)
       return (
@@ -697,8 +735,9 @@ export class TargetObservations {
       input.observedAt !== snapshot.now ||
       !this.actionOwners ||
       demand.scene !== context.geometry.receipt.scene
-    )
+    ) {
       reject()
+    }
     const { screen, dynamics } = this.actionOwners
     const completed = observeActionKernel(
       this.geometry,
@@ -714,7 +753,9 @@ export class TargetObservations {
         this.current(context)
       },
       (batch, candidates) => {
-        if (!snapshot.run) return reject()
+        if (!snapshot.run) {
+          return reject()
+        }
         return this.localRays.queryScoped(
           context.geometry,
           {
@@ -745,7 +786,9 @@ export class TargetObservations {
     const snapshot = this.current(context)
     const input = readView(raw)
     this.match(context, input, snapshot)
-    if (input.observedAt !== snapshot.now) reject()
+    if (input.observedAt !== snapshot.now) {
+      reject()
+    }
     const work = {
       cameraFrames: 0,
       partitionVisits: 0,
@@ -755,7 +798,9 @@ export class TargetObservations {
     const source = context.geometry
     const targets = input.targetIds.map((id) => {
       const target = source.fruits.find((fruit) => fruit.id === id)
-      if (!target) reject()
+      if (!target) {
+        reject()
+      }
       return target
     })
     const selected: ViewSample[] = []
@@ -769,25 +814,35 @@ export class TargetObservations {
       let total = 0
       for (const mesh of source.meshes) {
         const instance = mesh.plants?.indexOf(target.plant) ?? -1
-        if (instance < 0) continue
+        if (instance < 0) {
+          continue
+        }
         for (const part of mesh.partitions ?? []) {
           work.partitionVisits++
-          if (part.fruitId !== target.source.id) continue
+          if (part.fruitId !== target.source.id) {
+            continue
+          }
           const count = part.indexCount / 3
           ranges.push({ mesh, instance, start: part.indexStart / 3, count })
           total += count
         }
       }
-      if (!Number.isSafeInteger(total) || total <= 0) reject()
+      if (!Number.isSafeInteger(total) || total <= 0) {
+        reject()
+      }
       const count = Math.min(input.samplesPerTarget, total)
       for (let i = 0; i < count; i++) {
         let ordinal = Math.floor((i * total) / count)
         const range = ranges.find((item) => {
-          if (ordinal < item.count) return true
+          if (ordinal < item.count) {
+            return true
+          }
           ordinal -= item.count
           return false
         })
-        if (!range || range.mesh.shape.kind !== 'triangles') reject()
+        if (!range || range.mesh.shape.kind !== 'triangles') {
+          reject()
+        }
         const shape = range.mesh.shape,
           triangle = range.start + ordinal
         const local = [0, 1, 2].map((axis) => {
@@ -818,14 +873,18 @@ export class TargetObservations {
     const eligible: { index: number; direction: [number, number, number] }[] =
       []
     const run = snapshot.run
-    if (!run) reject()
+    if (!run) {
+      reject()
+    }
     const known =
       input.leaves === 'source-pose' &&
       input.fruits === 'all-attached' &&
       run.held.length === 0
     const frame =
       selected.length && known ? prepareQueryFrame(input.camera.pose) : null
-    if (frame) work.cameraFrames++
+    if (frame) {
+      work.cameraFrames++
+    }
     for (const requested of selected) {
       const direction = requested.point.map(
         (value, axis) => value - input.camera.pose.position[axis]
@@ -862,7 +921,9 @@ export class TargetObservations {
             status = projection === 'outside' ? 'outside-view' : 'unknown'
             reason = 'camera-frustum'
           }
-        } else reason = 'uncertain-sample-direction'
+        } else {
+          reason = 'uncertain-sample-direction'
+        }
       }
       samples.push({ requested, status, reason, sampleDistance })
     }
@@ -889,7 +950,9 @@ export class TargetObservations {
       eligible.forEach((item, index) => {
         const sample = samples[item.index],
           ray = rays?.results[index]
-        if (!ray) reject()
+        if (!ray) {
+          reject()
+        }
         let status: SampleResult['status'] = 'unknown',
           reason = 'unresolved-sample'
         if (ray.status === 'hit') {
@@ -911,8 +974,12 @@ export class TargetObservations {
           } else if (ray.distanceBounds.high < sample.sampleDistance.low) {
             status = 'occluded'
             reason = 'nearer-geometric-surface'
-          } else reason = 'non-target-distance-unresolved'
-        } else if (ray.status === 'unknown') reason = ray.reason
+          } else {
+            reason = 'non-target-distance-unresolved'
+          }
+        } else if (ray.status === 'unknown') {
+          reason = ray.reason
+        }
         samples[item.index] = { ...sample, status, reason, ray }
       })
     }
@@ -923,10 +990,11 @@ export class TargetObservations {
       outsideView: 0,
       unknown: 0
     }
-    for (const sample of samples)
+    for (const sample of samples) {
       coverage[
         sample.status === 'outside-view' ? 'outsideView' : sample.status
       ]++
+    }
     this.current(context)
     const result: ViewResult = {
       context,
@@ -955,19 +1023,27 @@ export class TargetObservations {
     const preservation = (
       value: 'intact' | 'lost' | null
     ): QualityRequirement => {
-      if (value === null) return 'unknown'
+      if (value === null) {
+        return 'unknown'
+      }
       return value === 'intact' ? 'satisfied' : 'not-satisfied'
     }
     const applicable = (
       crop: CropSpecies,
       value: 'intact' | 'lost' | null
     ): QualityRequirement => {
-      if (cultivar === null) return 'unknown'
+      if (cultivar === null) {
+        return 'unknown'
+      }
       return cultivar === crop ? preservation(value) : 'not-applicable'
     }
     let contactDamage: QualityRequirement = 'unknown'
-    if (quality.contactDamage === 'observed') contactDamage = 'not-satisfied'
-    if (quality.contactDamage === 'none-observed') contactDamage = 'satisfied'
+    if (quality.contactDamage === 'observed') {
+      contactDamage = 'not-satisfied'
+    }
+    if (quality.contactDamage === 'none-observed') {
+      contactDamage = 'satisfied'
+    }
     const requirements = Object.freeze({
       spines: applicable('cucumber-1914', quality.spines),
       calyx: applicable('tomato-yu-nu', quality.calyx),
@@ -977,8 +1053,11 @@ export class TargetObservations {
     let status: SyntheticQualityAssessment['status'] = 'unknown'
     if (cultivar !== null) {
       const values = Object.values(requirements)
-      if (values.includes('not-satisfied')) status = 'not-satisfied'
-      else if (!values.includes('unknown')) status = 'satisfied'
+      if (values.includes('not-satisfied')) {
+        status = 'not-satisfied'
+      } else if (!values.includes('unknown')) {
+        status = 'satisfied'
+      }
     }
     return Object.freeze({
       observation,
@@ -1001,8 +1080,9 @@ export class TargetObservations {
     if (
       !target ||
       (input.cultivar !== null && input.cultivar !== target.plant.species)
-    )
+    ) {
       reject()
+    }
     this.current(context)
     return Object.freeze({ context, reading: input })
   }
@@ -1065,8 +1145,9 @@ function readWalkingAction(
     input.observedAt >= input.validUntil ||
     !['source-pose', 'unknown'].includes(input.leaves) ||
     !['all-attached', 'unknown'].includes(input.fruits)
-  )
+  ) {
     reject()
+  }
   validateActionCamera(input.camera)
   validateActionFields(input)
   return freeze(input)
@@ -1097,7 +1178,9 @@ export class WalkingActionObservations {
     this.localRays = new RayQueries(geometry)
   }
   private current(context: WalkingActionObservationContext) {
-    if (this.closed || !this.owners.isCurrentContext(context)) reject()
+    if (this.closed || !this.owners.isCurrentContext(context)) {
+      reject()
+    }
     const source = this.geometry.read(context.geometry)
     if (
       source.receipt.source !== context.source ||
@@ -1108,8 +1191,9 @@ export class WalkingActionObservations {
       context.generation < 0 ||
       !text(context.runId) ||
       !time(context.now)
-    )
+    ) {
       reject()
+    }
   }
   observeActionVolume(
     context: WalkingActionObservationContext,
@@ -1123,14 +1207,16 @@ export class WalkingActionObservations {
       input.observedAt !== context.now ||
       context.now < input.validFrom ||
       context.now >= input.validUntil
-    )
+    ) {
       reject()
+    }
     const space = this.owners.prepareObservationSpace(context.demand)
     if (
       !isSceneObservationSpace(context.demand, space) ||
       !this.owners.isCurrentObservationSpace(space)
-    )
+    ) {
       reject()
+    }
     const completed = observeActionKernel(
       this.geometry,
       this.localRays,
@@ -1163,7 +1249,9 @@ export class WalkingActionObservations {
   }
   isCurrent(result: WalkingActionVolumeObservation): boolean {
     const issued = this.issued.get(result)
-    if (!issued) return false
+    if (!issued) {
+      return false
+    }
     try {
       this.current(result.context)
       return (
@@ -1251,10 +1339,13 @@ function observeActionKernel(
         'inside' ||
       !Number.isFinite(distance.high) ||
       distance.high > camera.maxDistance
-    )
+    ) {
       contained = false
+    }
   }
-  if (!contained) reasons.push('incomplete-frustum-or-range')
+  if (!contained) {
+    reasons.push('incomplete-frustum-or-range')
+  }
   const o = input.optics
   let signal: Interval = { low: 0, high: 1 }
   let reliabilityStatus: ActionVolumeObservation['reliability']['status'] =
@@ -1284,23 +1375,30 @@ function observeActionKernel(
     glare,
     status: reliabilityStatus
   })
-  if (reliability.status !== 'reliable')
+  if (reliability.status !== 'reliable') {
     reasons.push('insufficient-synthetic-optics')
+  }
   const query = queryVolume({
     ...sightBounds,
     size: max.map(
       (v, i) => subtract(interval(v), interval(min[i])).high
     ) as unknown as Point3
   })
-  if (query.reasons.includes('stale-scene-demand')) reject()
-  if (query.coverage !== 'covered') reasons.push(...query.reasons)
+  if (query.reasons.includes('stale-scene-demand')) {
+    reject()
+  }
+  if (query.coverage !== 'covered') {
+    reasons.push(...query.reasons)
+  }
   const dynamic = dynamics.readAt(
     input.observedAt,
     sightBounds,
     input.model.maxActors
   )
   work.sourceActorVisits = dynamic.work.sourceActorVisits
-  if (dynamic.coverage !== 'covered') reasons.push(...dynamic.reasons)
+  if (dynamic.coverage !== 'covered') {
+    reasons.push(...dynamic.reasons)
+  }
   const count = query.affected.length + dynamic.candidates.length
   let unvisited = dynamic.unvisited
   const candidates: CanonicalRayCandidate[] = []
@@ -1314,7 +1412,9 @@ function observeActionKernel(
     input.leaves === 'source-pose' &&
     input.fruits === 'all-attached' &&
     emptyLoad
-  if (!eligible && !reasons.length) reasons.push('missing-current-scene-state')
+  if (!eligible && !reasons.length) {
+    reasons.push('missing-current-scene-state')
+  }
   if (eligible) {
     for (const item of query.affected) {
       if (item.kind !== 'source') {
@@ -1343,15 +1443,16 @@ function observeActionKernel(
       ) as unknown as Point3
       positions.push(geometry.placePoint(source, mesh, local, item.instance))
     }
-    for (const actor of dynamic.candidates)
+    for (const actor of dynamic.candidates) {
       positions.push(
         actor.bounds.min.map(
           (v, i) => v / 2 + actor.bounds.max[i] / 2
         ) as unknown as Point3
       )
+    }
   }
   const directions: Point3[] = []
-  if (!reasons.length)
+  if (!reasons.length) {
     for (const position of positions) {
       if (directions.length >= input.model.maxRays) {
         unvisited++
@@ -1370,6 +1471,7 @@ function observeActionKernel(
       }
       directions.push(direction)
     }
+  }
   work.samples = directions.length
   let rays: Pick<RayBatchResult, 'results' | 'work'> | undefined
   if (directions.length && candidates.length) {
@@ -1429,10 +1531,14 @@ function observeActionKernel(
     for (const actor of dynamic.candidates) {
       work.dynamicRayTests++
       const distance = actorDistance(origin, direction, actor)
-      if (distance === 'unknown') uncertain = true
-      else if (distance && distance.low <= camera.maxDistance) {
-        if (distance.high > camera.maxDistance) uncertain = true
-        else actorHits.push({ actor, distance })
+      if (distance === 'unknown') {
+        uncertain = true
+      } else if (distance && distance.low <= camera.maxDistance) {
+        if (distance.high > camera.maxDistance) {
+          uncertain = true
+        } else {
+          actorHits.push({ actor, distance })
+        }
       }
     }
     if (uncertain) {
@@ -1448,7 +1554,9 @@ function observeActionKernel(
         hit.status === 'miss' ||
         (hit.status === 'hit' && first.distance.high < hit.distanceBounds.low))
     ) {
-      if (!visibleDistance(direction, first.distance)) return
+      if (!visibleDistance(direction, first.distance)) {
+        return
+      }
       if (!actorSeen.has(first.actor.trackId)) {
         actorSeen.add(first.actor.trackId)
         detections.push(
@@ -1467,7 +1575,9 @@ function observeActionKernel(
       hit?.status === 'hit' &&
       actorHits.every((a) => hit.distanceBounds.high < a.distance.low)
     ) {
-      if (!visibleDistance(direction, hit.distanceBounds)) return
+      if (!visibleDistance(direction, hit.distanceBounds)) {
+        return
+      }
       const candidate = candidates.find(
         (c) =>
           c.mesh === hit.mesh &&
@@ -1480,7 +1590,9 @@ function observeActionKernel(
         return
       }
       const key = candidates.indexOf(candidate) + ':' + hit.triangle
-      if (staticSeen.has(key)) return
+      if (staticSeen.has(key)) {
+        return
+      }
       staticSeen.add(key)
       const anatomy =
         'sourceAnatomy' in hit.mesh.origin
@@ -1508,14 +1620,19 @@ function observeActionKernel(
       )
     }
   })
-  if (unvisited) reasons.push('unvisited-observation-work')
-  if (count) reasons.push('candidate-volume-is-not-complete-visibility')
+  if (unvisited) {
+    reasons.push('unvisited-observation-work')
+  }
+  if (count) {
+    reasons.push('candidate-volume-is-not-complete-visibility')
+  }
   current()
   if (
     !dynamics.isCurrent(dynamic) ||
     (query.coverage === 'covered' && !screen.isCurrentVolume(query))
-  )
+  ) {
     reject()
+  }
   work.indexBuilds = screen.work.builds - indexBefore
   work.candidateVisits =
     localRays.scopeWork.candidateVisits - before.candidateVisits
@@ -1528,15 +1645,17 @@ function observeActionKernel(
   work.placements =
     geometry.placementWork.placements - placementBefore.placements
   let coverage: ActionVolumeObservation['coverage'] = 'unknown'
-  if (!reasons.length && !count && !unvisited) coverage = 'complete-empty'
-  else if (
+  if (!reasons.length && !count && !unvisited) {
+    coverage = 'complete-empty'
+  } else if (
     detections.length ||
     (query.coverage === 'covered' &&
       dynamic.coverage === 'covered' &&
       reliability.status === 'reliable' &&
       contained)
-  )
+  ) {
     coverage = 'partial'
+  }
   const result = Object.freeze({
     identity: Object.freeze({}),
     provenance: 'w1-canonical-obstacles/1',

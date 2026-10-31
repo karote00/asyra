@@ -211,7 +211,9 @@ describe('node-owned witnessed zero certificate', () => {
     'matches a raw full-source interval oracle and charges its derived work, reversed=%s',
     (reverse) => {
       const query = input()
-      if (reverse) [query.a, query.b] = [query.b, query.a]
+      if (reverse) {
+        ;[query.a, query.b] = [query.b, query.a]
+      }
       const run = continuous.queryContinuousPair
       const controlRoute = vi
         .spyOn(continuous, 'queryContinuousPair')
@@ -292,9 +294,11 @@ describe('node-owned witnessed zero certificate', () => {
   })
   it('preserves the positive native axis lower bound below the threshold', () => {
     const query = input()
-    for (const body of query.workcell.bodies)
-      for (const collider of body.colliders)
+    for (const body of query.workcell.bodies) {
+      for (const collider of body.colliders) {
         collider.geometry = { kind: 'sphere', radius: 1 / 8 }
+      }
+    }
     const lower = vi.spyOn(convex, 'separationLowerBound')
     const result = queryOriginalPartPair(query, settings)
     expect(lower).toHaveBeenCalledTimes(1)
@@ -357,7 +361,9 @@ describe('node-owned witnessed zero certificate', () => {
     })
     let calls = 0
     const cancelled = new OriginalMeshQuery(() => {
-      if (calls === 3) throw new Error('cancelled derivation')
+      if (calls === 3) {
+        throw new Error('cancelled derivation')
+      }
     })
     const raw = cancelled.distance.bind(cancelled)
     vi.spyOn(cancelled, 'distance').mockImplementation((...args) => {

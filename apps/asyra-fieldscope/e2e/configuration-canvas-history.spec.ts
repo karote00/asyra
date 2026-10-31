@@ -25,7 +25,9 @@ test('soil edit history restores the rendered canvas as well as field values', a
           canvas.width = image.width
           canvas.height = image.height
           const context = canvas.getContext('2d')
-          if (!context) throw new Error('Missing screenshot comparison context')
+          if (!context) {
+            throw new Error('Missing screenshot comparison context')
+          }
           context.drawImage(image, 0, 0)
           const result = context.getImageData(
             0,
@@ -37,15 +39,19 @@ test('soil edit history restores the rendered canvas as well as field values', a
           return result
         }
         const [first, second] = await Promise.all([pixels(a), pixels(b)])
-        if (first.length !== second.length) return 1
+        if (first.length !== second.length) {
+          return 1
+        }
         let changed = 0
-        for (let i = 0; i < first.length; i += 4)
+        for (let i = 0; i < first.length; i += 4) {
           if (
             [0, 1, 2].some(
               (offset) => Math.abs(first[i + offset] - second[i + offset]) > 8
             )
-          )
+          ) {
             changed++
+          }
+        }
         return changed / (first.length / 4)
       },
       [a, b].map(

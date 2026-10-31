@@ -24,15 +24,20 @@ const cloneJson = <Value>(value: Value): Value =>
 // Compare the durable JSON value: binary -0 and checkpoint 0 are the same
 // number, while every field, reference and array position remains significant.
 const sameJson = (left: unknown, right: unknown): boolean => {
-  if (left === right) return true
-  if (Array.isArray(left) || Array.isArray(right))
+  if (left === right) {
+    return true
+  }
+  if (Array.isArray(left) || Array.isArray(right)) {
     return (
       Array.isArray(left) &&
       Array.isArray(right) &&
       left.length === right.length &&
       left.every((value, index) => sameJson(value, right[index]))
     )
-  if (!isRecord(left) || !isRecord(right)) return false
+  }
+  if (!isRecord(left) || !isRecord(right)) {
+    return false
+  }
   const keys = Object.keys(left)
   return (
     keys.length === Object.keys(right).length &&
@@ -60,7 +65,9 @@ const getElement = (
   elementId: string
 ): ElementRawData | GroupRawData => {
   const element = document.sceneTree.elements[elementId]
-  if (!element) fail(`element "${elementId}" is missing`)
+  if (!element) {
+    fail(`element "${elementId}" is missing`)
+  }
   return element
 }
 
@@ -92,22 +99,26 @@ const applyPropertyComponents = (
   change: Extract<CanonicalChange, { kind: 'property-components' }>
 ): void => {
   for (const component of change.creations ?? []) {
-    if (document.props[component.id])
+    if (document.props[component.id]) {
       fail(`duplicate property "${component.id}"`)
+    }
     document.props[component.id] = cloneJson(component)
   }
   for (const update of change.updates) {
     const component = document.props[update.propertyId]
-    if (!component) fail(`property "${update.propertyId}" is missing`)
+    if (!component) {
+      fail(`property "${update.propertyId}" is missing`)
+    }
     if (
       component.inheritance ||
       ['id', 'type', 'inheritance', 'sharedSource'].some((key) =>
         Object.hasOwn(update.values, key)
       )
-    )
+    ) {
       fail(
         `property "${update.propertyId}" requires a canonical layer operation`
       )
+    }
     document.props[update.propertyId] = {
       ...component,
       ...cloneJson(update.values)
@@ -115,7 +126,9 @@ const applyPropertyComponents = (
   }
   for (const item of change.layers ?? []) {
     const component = document.props[item.propertyId]
-    if (!component) fail(`property "${item.propertyId}" is missing`)
+    if (!component) {
+      fail(`property "${item.propertyId}" is missing`)
+    }
     let next = cloneJson(component)
     for (const edit of item.changes) {
       if (edit.layer === 'sharedSource') {
@@ -123,28 +136,35 @@ const applyPropertyComponents = (
           edit.key !== 'sharedSource' ||
           next.inheritance ||
           (edit.state.present && edit.state.value !== true)
-        )
+        ) {
           fail(`invalid shared source layer "${item.propertyId}"`)
-        if (edit.state.present) next.sharedSource = true
-        else Reflect.deleteProperty(next, 'sharedSource')
+        }
+        if (edit.state.present) {
+          next.sharedSource = true
+        } else {
+          Reflect.deleteProperty(next, 'sharedSource')
+        }
       } else {
         if (
           !isRecord(next.inheritance) ||
           !isRecord(next.inheritance[edit.layer])
-        )
+        ) {
           fail(`property "${item.propertyId}" has no ${edit.layer} layer`)
+        }
         const inheritance = next.inheritance as Record<string, unknown>
         const layer = {
           ...(inheritance[edit.layer] as Record<string, unknown>)
         }
-        if (edit.state.present)
+        if (edit.state.present) {
           Object.defineProperty(layer, edit.key, {
             value: cloneJson(edit.state.value),
             enumerable: true,
             writable: true,
             configurable: true
           })
-        else Reflect.deleteProperty(layer, edit.key)
+        } else {
+          Reflect.deleteProperty(layer, edit.key)
+        }
         next = { ...next, inheritance: { ...inheritance, [edit.layer]: layer } }
       }
     }
@@ -155,11 +175,14 @@ const applyPropertyComponents = (
     if (
       removed.has(component.id) ||
       !sameJson(document.props[component.id], component)
-    )
+    ) {
       fail(`stale or duplicate property retirement "${component.id}"`)
+    }
     removed.add(component.id)
   }
-  for (const id of removed) Reflect.deleteProperty(document.props, id)
+  for (const id of removed) {
+    Reflect.deleteProperty(document.props, id)
+  }
 }
 
 const validatePropertyLinks = (
@@ -170,9 +193,12 @@ const validatePropertyLinks = (
   const elementIds = new Set<string>()
   const invalidatedIds = new Set<string>()
   for (const change of changes) {
-    if (change.kind === 'element-property-bindings')
+    if (change.kind === 'element-property-bindings') {
       change.changes.forEach(({ id }) => elementIds.add(id))
-    if (change.kind !== 'property-components') continue
+    }
+    if (change.kind !== 'property-components') {
+      continue
+    }
     change.creations?.forEach(({ id }) => propertyIds.add(id))
     change.removals?.forEach(({ id }) => invalidatedIds.add(id))
     change.layers?.forEach(({ propertyId, changes: edits }) => {
@@ -181,16 +207,19 @@ const validatePropertyLinks = (
         edits.some(
           (edit) => edit.layer === 'sharedSource' && !edit.state.present
         )
-      )
+      ) {
         invalidatedIds.add(propertyId)
+      }
     })
   }
   if (invalidatedIds.size > 0) {
-    for (const element of Object.values(document.sceneTree.elements))
+    for (const element of Object.values(document.sceneTree.elements)) {
       if (
         Object.values(element.props ?? {}).some((id) => invalidatedIds.has(id))
-      )
+      ) {
         elementIds.add(element.id)
+      }
+    }
     for (const component of Object.values(document.props)) {
       const inheritance = component.inheritance
       if (
@@ -201,25 +230,38 @@ const validatePropertyLinks = (
               ([slot, id]) =>
                 invalidatedIds.has(slot) || invalidatedIds.has(id as string)
             )))
-      )
+      ) {
         propertyIds.add(component.id)
+      }
     }
   }
   for (const elementId of elementIds) {
     // Ordered binding/removal application already checks existence. Only live
     // owners have outgoing links at the end of a persistence window.
     const element = document.sceneTree.elements[elementId]
-    if (!element) continue
-    for (const id of Object.values(element.props ?? {}))
-      if (!document.props[id])
+    if (!element) {
+      continue
+    }
+    for (const id of Object.values(element.props ?? {})) {
+      if (!document.props[id]) {
         fail(`element "${element.id}" references missing property "${id}"`)
+      }
+    }
   }
   for (const propertyId of propertyIds) {
     const component = document.props[propertyId]
-    if (!component) continue
-    if (component.sharedSource !== undefined && component.sharedSource !== true)
+    if (!component) {
+      continue
+    }
+    if (
+      component.sharedSource !== undefined &&
+      component.sharedSource !== true
+    ) {
       fail(`invalid shared source marker "${component.id}"`)
-    if (component.inheritance === undefined) continue
+    }
+    if (component.inheritance === undefined) {
+      continue
+    }
     const inheritance = component.inheritance
     if (
       !isRecord(inheritance) ||
@@ -232,8 +274,9 @@ const validatePropertyLinks = (
       Object.keys(component).some(
         (key) => !['id', 'type', 'inheritance'].includes(key)
       )
-    )
+    ) {
       fail(`invalid property inheritance "${component.id}"`)
+    }
     const { sourceId, childBindings } = inheritance as {
       sourceId: string
       childBindings: Record<string, unknown>
@@ -245,8 +288,9 @@ const validatePropertyLinks = (
       source.type !== component.type ||
       source.inheritance !== undefined ||
       source.sharedSource !== true
-    )
+    ) {
       fail(`invalid property source "${component.id}"`)
+    }
     const localIds = new Set<string>()
     for (const [slot, id] of Object.entries(childBindings)) {
       if (
@@ -255,8 +299,9 @@ const validatePropertyLinks = (
         !document.props[slot] ||
         document.props[slot].type !== document.props[id].type ||
         localIds.has(id)
-      )
+      ) {
         fail(`invalid property binding "${component.id}:${slot}"`)
+      }
       localIds.add(id as string)
     }
   }
@@ -270,12 +315,14 @@ const applyElementPropertyBindings = (
     const element = getElement(document, entry.id)
     const properties = { ...element.props }
     for (const binding of entry.changes) {
-      if (properties[binding.key] !== binding.before)
+      if (properties[binding.key] !== binding.before) {
         fail(`stale element property binding "${entry.id}:${binding.key}"`)
+      }
       const before = document.props[binding.before],
         after = document.props[binding.after]
-      if (!before || !after || before.type !== after.type)
+      if (!before || !after || before.type !== after.type) {
         fail(`invalid element property binding "${entry.id}:${binding.key}"`)
+      }
       Object.defineProperty(properties, binding.key, {
         value: binding.after,
         enumerable: true,
@@ -546,7 +593,8 @@ export const applyCanonicalChangesToDocument = (
             change.removals !== undefined ||
             change.layers !== undefined))
     )
-  )
+  ) {
     validatePropertyLinks(working, changes)
+  }
   return working
 }

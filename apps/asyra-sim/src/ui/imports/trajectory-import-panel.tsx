@@ -83,14 +83,17 @@ export function TrajectoryImportPanel({
         if (
           event.target instanceof HTMLTextAreaElement ||
           event.target instanceof HTMLSelectElement
-        )
+        ) {
           void complete(
             onEdit ??
               (async (_input, result) => {
-                if (result.value) onAccept(result.value, _input)
+                if (result.value) {
+                  onAccept(result.value, _input)
+                }
                 return true
               })
           )
+        }
       }}
     >
       <summary>Trajectory input</summary>
@@ -113,7 +116,9 @@ export function TrajectoryImportPanel({
             onChange={(event) => {
               const file = event.target.files?.[0]
 
-              if (file) void load(file, 'csv')
+              if (file) {
+                void load(file, 'csv')
+              }
 
               event.currentTarget.value = ''
             }}
@@ -133,7 +138,9 @@ export function TrajectoryImportPanel({
             onChange={(event) => {
               const file = event.target.files?.[0]
 
-              if (file) void load(file, 'json')
+              if (file) {
+                void load(file, 'json')
+              }
 
               event.currentTarget.value = ''
             }}

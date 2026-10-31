@@ -50,15 +50,18 @@ export function useViewport(
   )
 
   useEffect(() => {
-    if (runtime && isCurrent(runtime))
+    if (runtime && isCurrent(runtime)) {
       runtime.setFrame({
         camera: currentCamera.current,
         meshes: frame?.meshes ?? []
       })
+    }
   }, [runtime, frame, isCurrent])
 
   useEffect(() => {
-    if (runtime && isCurrent(runtime)) runtime.setCamera(camera)
+    if (runtime && isCurrent(runtime)) {
+      runtime.setCamera(camera)
+    }
   }, [runtime, camera, isCurrent])
 
   return frame?.meshes ?? []

@@ -119,8 +119,9 @@ it('rejects malformed source envelopes, noncanonical base64, duplicate identitie
     { ...source, base64: 'YQ==\n', byteLength: 1 },
     { ...source, base64: 'YR==', byteLength: 1 },
     { ...source, byteLength: 16 * 1024 * 1024 + 1 }
-  ])
+  ]) {
     expect(() => validateVisualSources([invalid])).toThrow()
+  }
   expect(() => validateVisualSources([source, source])).toThrow('Duplicate')
   expect(() => validateVisualSources(Array(257).fill(source))).toThrow('count')
   service.decode.mockClear()

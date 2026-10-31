@@ -14,15 +14,18 @@ test('URL contract rejects remote hosts and missing configuration', () => {
     'http://0.0.0.0:4318',
     'https://127.0.0.1:4318',
     'http://127.0.0.1:4318/other'
-  ])
+  ]) {
     assert.throws(() => parseLocalUrl(url))
+  }
 })
 test('HTTP preserves canvas assets and rejects unauthorized, cross-origin, and arbitrary commands before execution', async (context) => {
   const originalEvaluate = vm.runInNewContext
   let catalogLoads = 0
   vm.runInNewContext = (...args) => {
     const result = originalEvaluate(...args)
-    if (args[1]?.FLOW_INSPECTOR_WORKSPACE_BUNDLE) catalogLoads++
+    if (args[1]?.FLOW_INSPECTOR_WORKSPACE_BUNDLE) {
+      catalogLoads++
+    }
     return result
   }
   context.after(() => {
@@ -69,9 +72,6 @@ test('HTTP preserves canvas assets and rejects unauthorized, cross-origin, and a
       assert.match(await missing.text(), /data-workspace-routing="path"/)
     }
     for (const asset of [
-      'viewer.js',
-      'viewer.css',
-      'workspace/target.js',
       'workspace/generated/flow-inspector-workspace.js',
       'workspace/generated/flow-inspector-workspace.css'
     ]) {
@@ -84,20 +84,16 @@ test('HTTP preserves canvas assets and rejects unauthorized, cross-origin, and a
         fs.readFileSync(path.join(root, 'tools/flow-inspector', asset), 'utf8')
       )
     }
-    const target = await fetch(
-      server.origin +
-        '/tools/flow-inspector/workspace/target.html?inspector=transaction-atomicity'
-    )
-    assert.equal(target.status, 200)
-    assert.match(await target.text(), /src="\/board.js"/)
-    assert.match(
-      target.headers.get('content-security-policy'),
-      /frame-ancestors 'self'/
-    )
-    assert.match(
-      target.headers.get('content-security-policy'),
-      /script-src 'self'/
-    )
+    for (const retired of [
+      '/board.js',
+      '/localization.js',
+      '/tools/flow-inspector/viewer.js',
+      '/tools/flow-inspector/workspace/target.html',
+      '/tools/flow-inspector/workspace/target.js',
+      '/tools/flow-inspector/workspace/legacy-viewer.js'
+    ]) {
+      assert.equal((await fetch(server.origin + retired)).status, 404, retired)
+    }
     assert.equal(
       (await fetch(server.origin + '/api/state?inspector=x')).status,
       400
@@ -142,8 +138,9 @@ test('HTTP preserves canvas assets and rejects unauthorized, cross-origin, and a
         server.origin + '/tools/flow-inspector/inspectors/' + name + '.html',
         { redirect: 'manual' }
       )
-      assert.equal(linked.status, 302, name)
-      assert.equal(linked.headers.get('location'), '/' + id)
+      assert.equal(linked.status, 404, name)
+      assert.equal(linked.headers.get('location'), null)
+      assert.equal((await fetch(server.origin + '/' + id)).status, 200)
       assert.match(
         linked.headers.get('content-security-policy'),
         /frame-ancestors 'none'/
@@ -299,10 +296,11 @@ test('HTTP target assessment actions retain service authority and cached results
     serviceOptions: {
       directory: path.join(captured.sourceRoot, 'runs'),
       runner: async (options) => {
-        if (holdCancellation && !options.signal.aborted)
+        if (holdCancellation && !options.signal.aborted) {
           await new Promise((resolve) =>
             options.signal.addEventListener('abort', resolve, { once: true })
           )
+        }
         return require('../runner.cjs').runVerification(options)
       }
     }
@@ -534,7 +532,7 @@ test('HTTP target assessment actions retain service authority and cached results
         [null, 400],
         ['bad-task', 400],
         [randomUUID(), 409]
-      ])
+      ]) {
         assert.equal(
           (
             await post('/api/target-assessments', {
@@ -544,6 +542,7 @@ test('HTTP target assessment actions retain service authority and cached results
           ).status,
           status
         )
+      }
       assert.equal(
         (
           await post('/api/target-assessments', taskRequest, {
@@ -742,8 +741,9 @@ test('ordinary test observations are readable without becoming accepted proof ev
       '&observation=' +
       selector,
     '/unknown-page?observation=' + selector
-  ])
+  ]) {
     assert.equal((await fetch(server.origin + route)).status, 400, route)
+  }
   assert.equal(
     (
       await fetch(

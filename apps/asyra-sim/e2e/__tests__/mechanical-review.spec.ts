@@ -32,10 +32,15 @@ test('mechanical main bodies remain articulated during playback and report frame
         }
         const deadline = window.setTimeout(finish, samplingWindowMs)
         const frame = (now: number) => {
-          if (previous && warmup-- <= 0) samples.push(now - previous)
+          if (previous && warmup-- <= 0) {
+            samples.push(now - previous)
+          }
           previous = now
-          if (samples.length >= 90) finish()
-          else frameRequestId = requestAnimationFrame(frame)
+          if (samples.length >= 90) {
+            finish()
+          } else {
+            frameRequestId = requestAnimationFrame(frame)
+          }
         }
         frameRequestId = requestAnimationFrame(frame)
       }),
@@ -72,8 +77,11 @@ test('mechanical main bodies remain articulated during playback and report frame
     [8, 'End']
   ] as const) {
     await slider.focus()
-    if (key) await slider.press(key)
-    else await slider.fill('4')
+    if (key) {
+      await slider.press(key)
+    } else {
+      await slider.fill('4')
+    }
     await page.screenshot({
       path: info.outputPath(`mechanical-pose-${time}.png`)
     })

@@ -20,16 +20,19 @@ export const DocumentRecoveryControls = ({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const retry = async () => {
-    if (busy) return
+    if (busy) {
+      return
+    }
     setBusy(true)
     setError('')
     try {
       await session.prepareRecovery()
       await session.whenIdle()
-      if (session.hasUnpersistedChanges())
+      if (session.hasUnpersistedChanges()) {
         throw new Error(
           'Keep this tab open. Some changes have not been stored yet.'
         )
+      }
       reopen()
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause))
@@ -38,16 +41,19 @@ export const DocumentRecoveryControls = ({
     }
   }
   const download = async () => {
-    if (busy) return
+    if (busy) {
+      return
+    }
     setBusy(true)
     setError('')
     try {
       await session.whenIdle()
       const document = session.getRecoveryDocument()
-      if (document === undefined)
+      if (document === undefined) {
         throw new Error(
           'A recovery document is not available yet. Keep this tab open.'
         )
+      }
       const url = URL.createObjectURL(
         new Blob([JSON.stringify(document)], { type: 'application/json' })
       )

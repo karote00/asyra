@@ -163,13 +163,14 @@ export function addWorkFurnishings(c: OfficeComposer, deskTop: number) {
               form: 'succulent'
             }
           ] as const)
-      for (const pot of pots)
+      for (const pot of pots) {
         add(
           'work-shelf-plant-' + level + pot.suffix,
           'planter',
           shelfBotanical(pot.form, pot.color, pot.scale, pot.seed),
           [wallX + 0.15, pot.y, z + 0.0427]
         )
+      }
     }
   }
   const tableZ = floor + 0.57
@@ -181,8 +182,8 @@ export function addWorkFurnishings(c: OfficeComposer, deskTop: number) {
     'wood',
     0.007
   )
-  for (const x of [-1, 1])
-    for (const y of [-1, 1])
+  for (const x of [-1, 1]) {
+    for (const y of [-1, 1]) {
       block(
         `work-side-table-leg-${x}-${y}`,
         [0.028, 0.028, 0.554],
@@ -191,6 +192,8 @@ export function addWorkFurnishings(c: OfficeComposer, deskTop: number) {
         'wood',
         0.003
       )
+    }
+  }
   plant('work-side-plant', [-0.82, 0.46, tableZ + 0.016], 1.25, {
     color: 0xeee5d7,
     form: 'stemmed'
@@ -212,8 +215,8 @@ export function addWorkFurnishings(c: OfficeComposer, deskTop: number) {
     'wood',
     0.007
   )
-  for (const x of [-1, 1])
-    for (const y of [-1, 1])
+  for (const x of [-1, 1]) {
+    for (const y of [-1, 1]) {
       block(
         `work-return-leg-${x}-${y}`,
         [0.032, 0.032, legHeight],
@@ -226,6 +229,8 @@ export function addWorkFurnishings(c: OfficeComposer, deskTop: number) {
         'plain',
         0.003
       )
+    }
+  }
   plant('work-return-plant', [returnLeft + 0.14, returnY, deskTop], 0.8, {
     color: 0x8d6849,
     form: 'rosette'

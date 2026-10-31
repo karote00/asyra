@@ -109,7 +109,9 @@ test('renders vector gradient holes and preserves pixels through fill undo and r
         },
         { undoable: false }
       )
-      if (!id) throw new Error('Vector creation failed')
+      if (!id) {
+        throw new Error('Vector creation failed')
+      }
       return id
     })
     core.selectElements([], { undoable: false })
@@ -130,7 +132,9 @@ test('renders vector gradient holes and preserves pixels through fill undo and r
       },
       { undoable: false }
     )
-    if (!frameId) throw new Error('Frame creation failed')
+    if (!frameId) {
+      throw new Error('Frame creation failed')
+    }
     core.moveElements(
       { elementIds: ids, targetParentId: frameId, targetIndex: 0 },
       { undoable: false }
@@ -151,7 +155,9 @@ test('renders vector gradient holes and preserves pixels through fill undo and r
         viewport: core.getSystemProperty('viewportPosition'),
         elements: ids.map((id) => {
           const element = core.deps.sceneTree.getElementById(id)
-          if (!element) throw new Error('Missing gradient vector')
+          if (!element) {
+            throw new Error('Missing gradient vector')
+          }
           return { id, ...element.getAllComputedData() }
         })
       }
@@ -167,14 +173,18 @@ test('renders vector gradient holes and preserves pixels through fill undo and r
     const target = await page.evaluate(async (id) => {
       const { core } = await import('../src/testing/runtime-access')
       const element = core.deps.sceneTree.getElementById(id)
-      if (!element) throw new Error('Missing loaded vector')
+      if (!element) {
+        throw new Error('Missing loaded vector')
+      }
       const data = element.getAllComputedData()
       const point = core.workspaceToCanvas({ x: data.x + 20, y: data.y + 100 })
       return { point, hit: core.getElementIdAtClientPos(point) }
     }, id)
     expect(target.hit).toBe(id)
     const canvas = await page.locator('canvas').first().boundingBox()
-    if (!canvas) throw new Error('Missing canvas')
+    if (!canvas) {
+      throw new Error('Missing canvas')
+    }
     if (id === ids[0]) {
       await page.mouse.click(
         canvas.x + target.point.x,

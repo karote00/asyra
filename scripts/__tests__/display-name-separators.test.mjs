@@ -62,8 +62,9 @@ test('display-name guard detects literal, JSX, template and encoded middle-dot s
     '<title>Name &middot; Version</title>',
     '<title>Name &#183; Version</title>',
     '<title>Name &#xB7; Version</title>'
-  ])
+  ]) {
     assert.deepEqual(separatorLines(source), [1], source)
+  }
   assert.deepEqual(separatorLines('first\nName · Version\nlast'), [2])
 })
 
@@ -74,8 +75,9 @@ test('display-name guard rejects alternative separators in authored name/title/l
     'name: "Candidate / Study"',
     "label: 'Candidate — Study'",
     "title: 'Study – Version'"
-  ])
+  ]) {
     assert.deepEqual(separatorLines(source), [1], source)
+  }
 })
 
 test('display-name guard allows hyphens, actual paths, runtime user text and standalone logo decoration', () => {
@@ -85,8 +87,9 @@ test('display-name guard allows hyphens, actual paths, runtime user text and sta
     '<a href="/docs/overview">Docs</a>',
     '<span>⌘Z / Ctrl+Z</span>',
     'a<span>·</span>'
-  ])
+  ]) {
     assert.deepEqual(separatorLines(source), [], source)
+  }
 })
 
 test('project-authored display surfaces do not introduce middle-dot separators', () => {
@@ -108,12 +111,16 @@ test('project-authored display surfaces do not introduce middle-dot separators',
       segments.some((part) => excluded.has(part)) ||
       !extensions.has(path.extname(file)) ||
       /\.(?:test|spec)\.[^.]+$/.test(file)
-    )
+    ) {
       continue
+    }
     const fullPath = path.join(repositoryRoot, file)
-    if (!fs.existsSync(fullPath)) continue
-    for (const line of separatorLines(fs.readFileSync(fullPath, 'utf8')))
+    if (!fs.existsSync(fullPath)) {
+      continue
+    }
+    for (const line of separatorLines(fs.readFileSync(fullPath, 'utf8'))) {
       violations.push(`${file}:${line}`)
+    }
   }
   assert.deepEqual(
     violations,

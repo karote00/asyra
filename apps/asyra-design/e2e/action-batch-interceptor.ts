@@ -469,7 +469,9 @@ const createPreparedDrawingSlices = (
   let currentPointCount = 0
   let currentRoles: string[] = []
   const flush = () => {
-    if (currentDescriptors.length === 0) return
+    if (currentDescriptors.length === 0) {
+      return
+    }
     slices.push({
       descriptors: currentDescriptors,
       pointCount: currentPointCount,
@@ -666,9 +668,13 @@ const readMaximumTabbyPathPrefix = async (
 
   try {
     for await (const line of lines) {
-      if (!line.trimStart().startsWith('<path ')) continue
+      if (!line.trimStart().startsWith('<path ')) {
+        continue
+      }
       pathLines.push(line)
-      if (pathLines.length === itemCount) break
+      if (pathLines.length === itemCount) {
+        break
+      }
     }
   } finally {
     lines.close()
@@ -695,7 +701,9 @@ const reslicePreparedDrawingArtifact = (
   artifact: PreparedDrawingArtifact,
   elementBudget: 32 | 64
 ): PreparedDrawingArtifact => {
-  if (elementBudget === PREPARED_DRAWING_SLICE_ELEMENT_BUDGET) return artifact
+  if (elementBudget === PREPARED_DRAWING_SLICE_ELEMENT_BUDGET) {
+    return artifact
+  }
 
   const source = artifact.slices.flatMap(({ descriptors, roles }) =>
     descriptors.map((descriptor, index) => ({
@@ -712,7 +720,9 @@ const reslicePreparedDrawingArtifact = (
   let pointCount = 0
   let roles: string[] = []
   const flush = () => {
-    if (descriptors.length === 0) return
+    if (descriptors.length === 0) {
+      return
+    }
     slices.push({ descriptors, pointCount, roles })
     descriptors = []
     pointCount = 0
@@ -738,7 +748,9 @@ const withProfiledSliceBudget = (
   batch: AiActionBatch,
   elementBudget: 32 | 64
 ): AiActionBatch => {
-  if (elementBudget === PREPARED_DRAWING_SLICE_ELEMENT_BUDGET) return batch
+  if (elementBudget === PREPARED_DRAWING_SLICE_ELEMENT_BUDGET) {
+    return batch
+  }
   const action = batch.actions[0]
   const artifact = action?.arguments as PreparedDrawingArtifact | undefined
   if (!action || !artifact || batch.actions.length !== 1) {
@@ -783,7 +795,9 @@ const createDetailedTabbyPrefixBatch = async (
   const selectedSlices: PreparedDrawingSlice[] = []
   const roleToElementIds: Record<string, readonly string[]> = {}
   for (const slice of storedArtifact.slices) {
-    if (remaining === 0) break
+    if (remaining === 0) {
+      break
+    }
     const descriptors = slice.descriptors.slice(0, remaining)
     const roles = slice.roles.slice(0, descriptors.length)
     const slicePointCount = descriptors.reduce(
@@ -797,7 +811,9 @@ const createDetailedTabbyPrefixBatch = async (
     )
     descriptors.forEach((descriptor, index) => {
       const role = roles[index]
-      if (role) roleToElementIds[role] = [descriptor.id]
+      if (role) {
+        roleToElementIds[role] = [descriptor.id]
+      }
     })
     selectedSlices.push({
       descriptors,

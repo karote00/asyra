@@ -45,14 +45,16 @@ describe('scene-tree publishers', () => {
     const a = subscribeToAppliedEventBatches((events) => {
       if (
         events.some((event) => event.type === EventTypes.UPDATE_COMPUTED_DATA)
-      )
+      ) {
         applied(events)
+      }
     })
     const b = subscribeToEventBatches((events) => {
       if (
         events.some((event) => event.type === EventTypes.UPDATE_COMPUTED_DATA)
-      )
+      ) {
         committed(events)
+      }
     })
     try {
       runTransaction(() => {
@@ -89,7 +91,9 @@ describe('scene-tree publishers', () => {
       const changes = events.filter(
         (e) => e.type === EventTypes.SCENE_TREE_CHANGED
       ) as SceneTreeChangedEvent[]
-      if (changes.length) observed.push(changes)
+      if (changes.length) {
+        observed.push(changes)
+      }
     })
     const publish = (id: string, owner: symbol, immediate = false) =>
       sceneTreeEvents.publishLocalSceneTreeChanges(

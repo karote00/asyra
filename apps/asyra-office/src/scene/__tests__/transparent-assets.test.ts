@@ -5,7 +5,9 @@ import { buildSpatialMeshes } from '../reference-scene'
 
 it('retains catalog alpha and keeps two translucent objects independently sortable', () => {
   const bottle = catalogAsset('water-dispenser').find((p) => p.id === 'bottle')
-  if (!bottle) throw new Error('Missing bottle')
+  if (!bottle) {
+    throw new Error('Missing bottle')
+  }
   const meshes = buildSpatialMeshes(
     {
       parts: [bottle, { ...bottle, id: 'second-bottle' }],
@@ -15,8 +17,9 @@ it('retains catalog alpha and keeps two translucent objects independently sortab
     {}
   )
   expect(meshes).toHaveLength(2)
-  for (const mesh of meshes)
+  for (const mesh of meshes) {
     expect(mesh.descriptor).toMatchObject({ opacity: 0.42, castShadow: false })
+  }
 })
 it('preserves opaque batching while keeping different alpha values separate', () => {
   const opaque = part('opaque', box([0.1, 0.1, 0.1]), 0xabcdef)

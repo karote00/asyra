@@ -59,7 +59,9 @@ test(
       const identities = []
       page.on('request', (request) => {
         const id = captureRequestIdentity(request, 'http://capture.test')
-        if (id) identities.push(id)
+        if (id) {
+          identities.push(id)
+        }
       })
       await page.goto('http://capture.test/')
       await page.evaluate(
@@ -104,13 +106,17 @@ test(
                   documentGeneration: 1
                 })
               }
-              if (mode === 'missing') handle = undefined
-              if (mode === 'replaced')
+              if (mode === 'missing') {
+                handle = undefined
+              }
+              if (mode === 'replaced') {
                 handle.whenIdle = async () => {
                   handle = undefined
                 }
-              if (mode === 'hung')
+              }
+              if (mode === 'hung') {
                 handle.whenIdle = () => new Promise(() => undefined)
+              }
               return captureSession({
                 getHandle: () => handle,
                 readRoots: () => ['root'],
@@ -256,7 +262,9 @@ test(
         'execution-deadline'
       )
     } finally {
-      if (timer) await timer.stop()
+      if (timer) {
+        await timer.stop()
+      }
       const settled = await Promise.allSettled([
         boundedCapture('browser cleanup', () => browser?.close(), 5000),
         boundedCapture('server cleanup', () => server?.close(), 5000)
@@ -285,7 +293,9 @@ test(
           newContext: async (options) => {
             const context = await browser.newContext(options)
             await context.route('**/*', async (route) => {
-              if (mode === 'timeout') return new Promise(() => undefined)
+              if (mode === 'timeout') {
+                return new Promise(() => undefined)
+              }
               const module = route
                 .request()
                 .url()
@@ -321,8 +331,9 @@ test(
         () => undefined
       )
       // Closing the context settles asynchronously after the deadline rejects.
-      for (let i = 0; i < 50 && browser.contexts().length; i++)
+      for (let i = 0; i < 50 && browser.contexts().length; i++) {
         await new Promise((resolve) => setTimeout(resolve, 10))
+      }
       assert.equal(browser.contexts().length, 0)
       assert.equal(captures, 0)
       await collectEvidenceStage(
@@ -387,14 +398,16 @@ test(
                 modelRequests++
                 return route.abort()
               }
-              if (url.pathname.endsWith('/capture-lifecycle.mjs'))
+              if (url.pathname.endsWith('/capture-lifecycle.mjs')) {
                 return route.fulfill({
                   contentType: 'text/javascript',
                   body: source
                 })
+              }
               if (url.pathname.endsWith('/runtime-access.ts')) {
-                if (mode === 'module-timeout')
+                if (mode === 'module-timeout') {
                   return new Promise(() => undefined)
+                }
                 await new Promise((resolve) => setTimeout(resolve, 150))
                 return route.fulfill({
                   contentType: 'text/javascript',
@@ -477,18 +490,22 @@ test(
           () => undefined
         )
         assert.equal(meta.evidence[mode].status, 'failed', mode)
-        if (mode.endsWith('timeout'))
+        if (mode.endsWith('timeout')) {
           assert.match(meta.evidence[mode].error, /deadline/)
-        if (mode === 'disconnect')
+        }
+        if (mode === 'disconnect') {
           assert.match(meta.evidence[mode].error, /disconnected or replaced/)
-        if (mode === 'navigation')
+        }
+        if (mode === 'navigation') {
           assert.match(
             meta.evidence[mode].error,
             /Execution context was destroyed/
           )
+        }
         await assert.rejects(fs.access(path.join(folder, mode + '.png')))
-        for (let i = 0; i < 100 && browser.contexts().length; i++)
+        for (let i = 0; i < 100 && browser.contexts().length; i++) {
           await new Promise((resolve) => setTimeout(resolve, 10))
+        }
         assert.equal(browser.contexts().length, 0, mode + ' leaked a context')
       }
       const recovery = await collectEvidenceStage(
@@ -590,7 +607,9 @@ test(
       assert.ok((await fs.stat(path.join(folder, 'reload.png'))).size > 0)
     } finally {
       await owned?.close()
-      for (const socket of sockets.clients) socket.terminate()
+      for (const socket of sockets.clients) {
+        socket.terminate()
+      }
       await new Promise((resolve) => sockets.close(resolve))
       await new Promise((resolve) => server.close(resolve))
       await fs.rm(folder, { recursive: true, force: true })
@@ -651,7 +670,9 @@ test(
       assert.ok(events.some((event) => event.event === 'browser-disconnected'))
       assert.equal(events[0].event, 'browser-started')
     } finally {
-      if (deadline) await deadline.stop()
+      if (deadline) {
+        await deadline.stop()
+      }
       await owned.close()
       assert.equal(events.at(-1).event, 'browser-process-settled')
       assert.equal(events.at(-1).processPresent, false)

@@ -4,8 +4,12 @@ const object = (value) =>
   value !== null && typeof value === 'object' && !Array.isArray(value)
 const list = (value) => (Array.isArray(value) ? value : [])
 const stable = (value) => {
-  if (Array.isArray(value)) return '[' + value.map(stable).join(',') + ']'
-  if (!object(value)) return JSON.stringify(value)
+  if (Array.isArray(value)) {
+    return '[' + value.map(stable).join(',') + ']'
+  }
+  if (!object(value)) {
+    return JSON.stringify(value)
+  }
   return (
     '{' +
     Object.keys(value)
@@ -24,7 +28,9 @@ export function observeRepresentation(call) {
     inputAvailable: false,
     visualQuality: 'unverified'
   }
-  if (!object(input) || !object(input.draft)) return unavailable
+  if (!object(input) || !object(input.draft)) {
+    return unavailable
+  }
   const counts = {
     surfaceGrids: 0,
     projectedFaces: 0,
@@ -39,13 +45,17 @@ export function observeRepresentation(call) {
   }
   const unique = new Set()
   const fill = (value, cell = false) => {
-    if (value === undefined) return
+    if (value === undefined) {
+      return
+    }
     counts.materialOccurrences++
-    if (object(value) && typeof value.template === 'string')
+    if (object(value) && typeof value.template === 'string') {
       counts.templateUses++
-    else if (object(value) && typeof value.shared === 'string')
+    } else if (object(value) && typeof value.shared === 'string') {
       counts.sharedUses++
-    else counts.inlineMaterials++
+    } else {
+      counts.inlineMaterials++
+    }
     if (cell) {
       counts.cellMaterialEntries++
       counts.cellMaterialBytes += Buffer.byteLength(JSON.stringify(value))
@@ -53,24 +63,39 @@ export function observeRepresentation(call) {
     }
   }
   const visit = (node) => {
-    if (!object(node)) return
+    if (!object(node)) {
+      return
+    }
     if (node.type === 'surface-grid') {
       counts.surfaceGrids++
       for (const motif of list(node.motifs)) {
-        if (!object(motif)) continue
-        if (Array.isArray(motif.fills))
+        if (!object(motif)) {
+          continue
+        }
+        if (Array.isArray(motif.fills)) {
           motif.fills.forEach((value) => fill(value, true))
-        else fill(motif.fill)
+        } else {
+          fill(motif.fill)
+        }
       }
     } else {
-      if (node.type === 'projected-face') counts.projectedFaces++
-      if (node.type === 'pattern' || node.type === 'vector-pattern')
+      if (node.type === 'projected-face') {
+        counts.projectedFaces++
+      }
+      if (node.type === 'pattern' || node.type === 'vector-pattern') {
         counts.patterns++
+      }
       fill(node.fill)
-      for (const face of list(node.faces)) visit(face)
-      if (object(node.template)) visit(node.template)
+      for (const face of list(node.faces)) {
+        visit(face)
+      }
+      if (object(node.template)) {
+        visit(node.template)
+      }
     }
-    for (const child of list(node.children)) visit(child)
+    for (const child of list(node.children)) {
+      visit(child)
+    }
   }
   visit(input.draft)
   counts.distinctCellMaterials = unique.size

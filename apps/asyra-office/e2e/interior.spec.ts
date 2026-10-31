@@ -58,14 +58,20 @@ for (const [name, button, view] of [
         .getByLabel('Office 3D scene')
         .locator('canvas')
         .boundingBox()
-      if (!canvas) throw new Error('Missing live scene bounds')
+      if (!canvas) {
+        throw new Error('Missing live scene bounds')
+      }
       const x = canvas.x + canvas.width / 2,
         y = canvas.y + canvas.height / 2
       await page.mouse.move(x, y)
       await page.mouse.down()
       let rise = -35
-      if (name === 'work') rise = 150
-      if (name === 'discussion') rise = 90
+      if (name === 'work') {
+        rise = 150
+      }
+      if (name === 'discussion') {
+        rise = 90
+      }
       await page.mouse.move(x + 110, y + rise, {
         steps: 8
       })
@@ -88,10 +94,11 @@ for (const [name, button, view] of [
           await page.mouse.move(x, y - 65, { steps: 8 })
           await page.mouse.up()
         }
-        for (let i = 0; i < 3; i++)
+        for (let i = 0; i < 3; i++) {
           await page
             .getByRole('button', { name: 'Zoom in', exact: true })
             .click()
+        }
         await page.evaluate(
           () =>
             new Promise<void>((done) =>
@@ -171,7 +178,9 @@ test('interior measured reference alignment', async ({ page }, info) => {
     .click()
   const canvas = page.getByLabel('Office 3D scene').locator('canvas')
   const box = await canvas.boundingBox()
-  if (!box) throw new Error('Missing production scene canvas')
+  if (!box) {
+    throw new Error('Missing production scene canvas')
+  }
   await page.setViewportSize({
     width: 1321 + 845 - Math.round(box.width),
     height: 814 + 756 - Math.round(box.height)
@@ -179,14 +188,18 @@ test('interior measured reference alignment', async ({ page }, info) => {
   await expect
     .poll(async () => {
       const bounds = await canvas.boundingBox()
-      if (!bounds) throw new Error('Missing canvas')
+      if (!bounds) {
+        throw new Error('Missing canvas')
+      }
       return Math.round(bounds.width)
     })
     .toBe(845)
   await expect
     .poll(async () => {
       const bounds = await canvas.boundingBox()
-      if (!bounds) throw new Error('Missing canvas')
+      if (!bounds) {
+        throw new Error('Missing canvas')
+      }
       return Math.round(bounds.height)
     })
     .toBe(756)
@@ -231,7 +244,9 @@ test('interior whole structure from above and rear', async ({ page }, info) => {
     .click()
   const canvas = page.getByLabel('Office 3D scene').locator('canvas')
   const bounds = await canvas.boundingBox()
-  if (!bounds) throw new Error('Missing production canvas')
+  if (!bounds) {
+    throw new Error('Missing production canvas')
+  }
   const x = bounds.x + bounds.width / 2
   const y = bounds.y + bounds.height / 2
   // Use the normal orbit UI; do not inject a replacement review camera.

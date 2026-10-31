@@ -75,8 +75,9 @@ test('denied and invalid actions have zero capture and execution effects', async
       { command: 'rm' },
       { flowIds: [] },
       { flowIds: ['missing'] }
-    ])
+    ]) {
       assert.throws(() => service.start(input, LOCAL_ACTOR))
+    }
     assert.equal(captures, 0)
     assert.equal(executions, 0)
     assert.deepEqual(service.state().runs, [])
@@ -132,10 +133,11 @@ test('cancellation settles before a subsequent attempt is admitted', async () =>
     directory: dir,
     runner: async ({ signal }) => {
       starts++
-      if (!signal.aborted)
+      if (!signal.aborted) {
         await new Promise((resolve) =>
           signal.addEventListener('abort', resolve, { once: true })
         )
+      }
       return { code: null, reason: 'cancelled', report: null, output: '' }
     }
   })
@@ -335,7 +337,9 @@ test('invalid live runtime source is rejected before runner dispatch and cannot 
     directory: dir,
     capture: (...args) => {
       const snapshot = sourceOwner.captureSource(...args)
-      if (invalid === 'null') return { ...snapshot, runtimeSource: null }
+      if (invalid === 'null') {
+        return { ...snapshot, runtimeSource: null }
+      }
       if (invalid === 'missing-runtime') {
         const incomplete = { ...snapshot }
         delete incomplete.runtimeSource
@@ -1300,10 +1304,11 @@ test('target proof lifecycle preserves cancellation interruption errors and reta
       directory: f.runs,
       runner: async ({ signal }) => {
         executions++
-        if (!signal.aborted)
+        if (!signal.aborted) {
           await new Promise((resolve) =>
             signal.addEventListener('abort', resolve, { once: true })
           )
+        }
         return { code: null, reason: 'cancelled', report: null, output: '' }
       }
     })
@@ -1443,13 +1448,14 @@ async function assessmentFixture(
     allowedFiles: ['packages/factory/src/data-transact.ts'],
     prerequisites: []
   }))
-  if (dependent)
+  if (dependent) {
     request.works[1].prerequisites = [
       {
         workId: request.works[0].id,
         handoff: 'Use the assessed upstream offline behavior'
       }
     ]
+  }
   request.pending = []
   const target = service.decideTarget(request, LOCAL_ACTOR)
   return {
@@ -1759,8 +1765,11 @@ async function fullRuntimeServiceEvidence() {
     assert.equal(historicalRevert.projection.current, false)
     assert.equal(historicalRevert.projection.eligible, false)
   } finally {
-    if (server) await server.close()
-    else await service?.close()
+    if (server) {
+      await server.close()
+    } else {
+      await service?.close()
+    }
     fixture.cleanup()
   }
 }
@@ -1999,7 +2008,9 @@ test(
         )
       }
     } finally {
-      if (service) await service.close().catch(() => undefined)
+      if (service) {
+        await service.close().catch(() => undefined)
+      }
       fs.rmSync(f.dir, { recursive: true, force: true })
     }
   }
@@ -2113,8 +2124,11 @@ test(
       assert.equal(restored.status, 'pending')
       assert.deepEqual(service.state().mapping, baseline)
     } finally {
-      if (server) await server.close()
-      else await service.close()
+      if (server) {
+        await server.close()
+      } else {
+        await service.close()
+      }
       fs.rmSync(f.dir, { recursive: true, force: true })
     }
   }
@@ -2243,8 +2257,9 @@ test('assessment registers complete private inventory before dispatch and retain
     assert.equal(completed.result.integration.status, 'passed')
     assert.equal(completed.projection.eligible, true)
     assert.equal(assess.mock.callCount(), 2)
-    for (const slot of completed.slots)
+    for (const slot of completed.slots) {
       assert.equal(service.get(slot.id).targetAssessmentId, id)
+    }
     const counts = [assess.mock.callCount(), project.mock.callCount()]
     const reads = t.mock.method(fs, 'readFileSync')
     for (let i = 0; i < 5; i++) {
@@ -2285,8 +2300,9 @@ test('assessment registration write failure leaves no ghost request and equivale
   try {
     const rename = fs.renameSync
     const write = t.mock.method(fs, 'renameSync', (from, to) => {
-      if (to === path.join(f.runs, 'target-assessments.json'))
+      if (to === path.join(f.runs, 'target-assessments.json')) {
         throw new Error('Simulated inventory write failure')
+      }
       return rename(from, to)
     })
     assert.throws(
@@ -2353,10 +2369,11 @@ test('assessment cancellation preserves completed observations and restart never
     runner: async (options) => {
       calls++
       entered()
-      if (!options.signal.aborted)
+      if (!options.signal.aborted) {
         await new Promise((resolve) =>
           options.signal.addEventListener('abort', resolve, { once: true })
         )
+      }
       return { code: null, reason: 'cancelled', report: null, output: '' }
     }
   })
@@ -3208,8 +3225,9 @@ test(
         }
       }
       fs.writeFileSync(taskFile, JSON.stringify(originalTask))
-      for (const [file, original] of referringRecords)
+      for (const [file, original] of referringRecords) {
         fs.writeFileSync(file, JSON.stringify(original))
+      }
     } finally {
       await service.close()
       fs.rmSync(f.dir, { recursive: true, force: true })
@@ -3515,9 +3533,12 @@ async function scopedWorkFixture(
         let turn = 0
         return {
           async next(observation) {
-            if (++turn === 1)
+            if (++turn === 1) {
               return { tool: 'read', path: task.allowedFiles[0] }
-            if (turn > 2) return { tool: 'finish' }
+            }
+            if (turn > 2) {
+              return { tool: 'finish' }
+            }
             return {
               tool: 'replace',
               path: task.allowedFiles[0],
@@ -3854,11 +3875,12 @@ test(
           f.assessment.id,
           { id: LOCAL_ACTOR.id, capabilities: [] }
         ]
-      ])
+      ]) {
         assert.throws(
           () => service.scopedWorkFor(...args),
           /unavailable|stale|found|authorized/i
         )
+      }
       // A completed observation without its private producer authority cannot be
       // promoted, even while the cached assessed work result remains passing.
       const originalGet = Map.prototype.get
@@ -4030,8 +4052,11 @@ test(
           )
         assert.equal(f.assessment.result.targetContract.status, 'failed')
         assert.equal(f.assessment.projection.eligible, false)
-        if (failure === 'own') assert.throws(read, /commitment/)
-        else assert.equal(read().work.status, 'passed')
+        if (failure === 'own') {
+          assert.throws(read, /commitment/)
+        } else {
+          assert.equal(read().work.status, 'passed')
+        }
       } finally {
         await f.service.close()
         fs.rmSync(f.dir, { recursive: true, force: true })
@@ -4447,15 +4472,18 @@ test(
         name: 'identity mutation ' + index,
         mutate
       }))
-      for (const keys of required)
+      for (const keys of required) {
         changes.push({
           name: keys.join('.'),
           mutate(value) {
             let parent = value.preview.scopedWork
-            for (const key of keys.slice(0, -1)) parent = parent[key]
+            for (const key of keys.slice(0, -1)) {
+              parent = parent[key]
+            }
             Reflect.deleteProperty(parent, keys.at(-1))
           }
         })
+      }
       changes.push({
         name: 'aliased role paths',
         mutate(value) {
@@ -4530,11 +4558,12 @@ test(
         {},
         { ...selection, extra: true },
         { ...selection, attemptId: null }
-      ])
+      ]) {
         await assert.rejects(
           f.service.prepareScopedReview(f.task.id, invalid, LOCAL_ACTOR),
           /selection/
         )
+      }
       const reads = t.mock.method(fs, 'readFileSync')
       const hashPrototype = Object.getPrototypeOf(
         require('node:crypto').createHash('sha256')
@@ -4620,7 +4649,9 @@ test(
       )
       const historyLookups = t.mock.method(Map.prototype, 'get')
       const historyReads = t.mock.method(fs, 'readFileSync')
-      for (let i = 0; i < 3; i++) f.service.getReview(f.task.id)
+      for (let i = 0; i < 3; i++) {
+        f.service.getReview(f.task.id)
+      }
       assert.equal(
         historyLookups.mock.calls.filter(
           (call) => call.this === sourceCalls[0].this

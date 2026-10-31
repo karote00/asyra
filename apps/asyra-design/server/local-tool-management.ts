@@ -47,8 +47,9 @@ export const createToolLibraryManagementMiddleware =
       for await (const chunk of request) {
         const bytes = Buffer.from(chunk)
         size += bytes.byteLength
-        if (size > ToolLibraryManagement.requestBytes)
+        if (size > ToolLibraryManagement.requestBytes) {
           throw new Error('Oversized request')
+        }
         chunks.push(bytes)
       }
       value = JSON.parse(Buffer.concat(chunks).toString('utf8'))
@@ -78,8 +79,9 @@ export const createToolLibraryManagementMiddleware =
         store,
         capacity: LocalToolLibraryLimits.entries
       })
-      if (value.operation === 'list') send(200, await management.list())
-      else {
+      if (value.operation === 'list') {
+        send(200, await management.list())
+      } else {
         const result = await management.setState({
           name: value.name,
           revision: value.revision,

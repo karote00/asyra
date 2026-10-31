@@ -131,9 +131,13 @@ export function MeasurementInput({
             setText(String(value))
             return
           }
-          if (Number(next) === value) return
+          if (Number(next) === value) {
+            return
+          }
           void onCommit(Number(next)).then((accepted) => {
-            if (!accepted) setText(String(value))
+            if (!accepted) {
+              setText(String(value))
+            }
           })
         }}
         className="h-full min-w-0 w-full bg-transparent pl-2 text-right text-xs tabular-nums"

@@ -6,7 +6,9 @@ async function clickExposedSlide(page: Page, side: Locator) {
   const point = await side.evaluate((element) => {
     const stage = element.parentElement
     const center = stage?.querySelector('[data-active="true"]')
-    if (!stage || !center) return null
+    if (!stage || !center) {
+      return null
+    }
     const stageBounds = stage.getBoundingClientRect()
     const sideBounds = element.getBoundingClientRect()
     const centerBounds = center.getBoundingClientRect()
@@ -29,14 +31,17 @@ async function clickExposedSlide(page: Page, side: Locator) {
         if (
           document.elementFromPoint(x, y)?.closest('[data-side-preview]') ===
           element
-        )
+        ) {
           return { x, y }
+        }
       }
     }
     return null
   })
   expect(point, 'side image has a visible, clickable area').not.toBeNull()
-  if (point) await page.mouse.click(point.x, point.y)
+  if (point) {
+    await page.mouse.click(point.x, point.y)
+  }
 }
 
 for (const width of [320, 390, 1024, 1440]) {
@@ -182,7 +187,9 @@ for (const width of [320, 390, 1024, 1440]) {
     )
     const simFrameGeometry = await simFrame.evaluate((frame) => {
       const image = frame.querySelector('img')
-      if (!image) return null
+      if (!image) {
+        return null
+      }
       const frameBounds = frame.getBoundingClientRect()
       const imageBounds = image.getBoundingClientRect()
       return {
@@ -249,8 +256,9 @@ for (const width of [320, 390, 1024, 1440]) {
         !simSummaryBox ||
         !fieldScopeCardBox ||
         !simCardBox
-      )
+      ) {
         throw new Error('Missing product card summary or geometry')
+      }
       expect(
         Math.abs(fieldScopeSummaryBox.width - fieldScopeCardBox.width)
       ).toBeLessThanOrEqual(1)
@@ -269,13 +277,16 @@ for (const width of [320, 390, 1024, 1440]) {
           ).size
         }
       )
-      if (width >= 1280) expect(fieldScopeSummaryLines).toBe(1)
+      if (width >= 1280) {
+        expect(fieldScopeSummaryLines).toBe(1)
+      }
       const [fieldScopeSliderBox, simSliderBox] = await Promise.all([
         carousel.boundingBox(),
         simShowcase.boundingBox()
       ])
-      if (!fieldScopeSliderBox || !simSliderBox)
+      if (!fieldScopeSliderBox || !simSliderBox) {
         throw new Error('Missing product slider geometry')
+      }
       expect(
         Math.abs(fieldScopeSliderBox.y - simSliderBox.y)
       ).toBeLessThanOrEqual(1)
@@ -490,7 +501,9 @@ for (const width of [320, 390, 1024, 1440]) {
           .getByRole('heading', { name, level: 3 })
           .locator('xpath=..')
         const box = await card.boundingBox()
-        if (!box) throw new Error(`Missing ${name} case card`)
+        if (!box) {
+          throw new Error(`Missing ${name} case card`)
+        }
         expect(box.x).toBeGreaterThanOrEqual(-1)
         expect(box.x + box.width).toBeLessThanOrEqual(width + 1)
         expect(
@@ -501,14 +514,15 @@ for (const width of [320, 390, 1024, 1440]) {
         return box
       })
     )
-    if (width >= 768)
+    if (width >= 768) {
       expect(fieldScopeBox.x + fieldScopeBox.width).toBeLessThanOrEqual(
         simBox.x + 1
       )
-    else
+    } else {
       expect(fieldScopeBox.y + fieldScopeBox.height).toBeLessThanOrEqual(
         simBox.y + 1
       )
+    }
 
     expect(
       await page.evaluate(
@@ -527,7 +541,9 @@ for (const width of [320, 390, 1024, 1440]) {
       await expect(heading).toBeVisible()
       const card = heading.locator('xpath=..')
       const cardBox = await card.boundingBox()
-      if (!cardBox) throw new Error(`Missing ${name} case card`)
+      if (!cardBox) {
+        throw new Error(`Missing ${name} case card`)
+      }
       expect(cardBox.y).toBeGreaterThanOrEqual(80)
       const images = card.getByRole('img')
       const image = images.first()
@@ -549,8 +565,9 @@ for (const width of [320, 390, 1024, 1440]) {
       const lastImageBox = imageBoxes.at(-1)
       const textBox = await description.boundingBox()
       const linkBox = await link.boundingBox()
-      if (!imageBox || !lastImageBox || !textBox || !linkBox)
+      if (!imageBox || !lastImageBox || !textBox || !linkBox) {
         throw new Error(`Incomplete ${name} evidence card`)
+      }
       expect(lastImageBox.y + lastImageBox.height).toBeLessThanOrEqual(
         textBox.y
       )
@@ -640,7 +657,9 @@ test('desktop center image opens a layered, selectable preview and locks page sc
       const center = slides
         .find((slide) => slide.getAttribute('data-active') === 'true')
         ?.getBoundingClientRect()
-      if (!center) return []
+      if (!center) {
+        return []
+      }
       return slides
         .filter((slide) => slide.getAttribute('data-depth') === '1')
         .map((slide) => {
@@ -746,7 +765,9 @@ test('preview animates the selected image for every adjacent and non-adjacent ju
       const slide = element.querySelector<HTMLElement>(
         `[data-testid="preview-slide"][data-slide-index="${index}"]`
       )
-      if (!slide) throw new Error(`Missing preview image ${index}`)
+      if (!slide) {
+        throw new Error(`Missing preview image ${index}`)
+      }
       const thumbnail = element.querySelectorAll<HTMLButtonElement>(
         '[data-testid="preview-thumbnail"]'
       )[index]
@@ -811,12 +832,15 @@ test('preview animates the selected image for every adjacent and non-adjacent ju
     const returningSlide = element.querySelector<HTMLElement>(
       '[data-testid="preview-slide"][data-slide-index="2"]'
     )
-    if (!returningSlide) throw new Error('Missing returning preview image')
+    if (!returningSlide) {
+      throw new Error('Missing returning preview image')
+    }
     thumbnails[0].click()
-    for (let frame = 0; frame < 4; frame += 1)
+    for (let frame = 0; frame < 4; frame += 1) {
       await new Promise<void>((resolve) =>
         requestAnimationFrame(() => resolve())
       )
+    }
     const before = returningSlide.getBoundingClientRect().width
     thumbnails[2].click()
     const widths = []

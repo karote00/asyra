@@ -54,14 +54,15 @@ it('mounted crate consumer proves every base pair and only original tray contact
   let visited = 0,
     separated = 0,
     boundary = 0
-  for (const part of base.parts)
-    for (const region of part.regions)
-      for (const cp of f.crate.geometry.parts)
+  for (const part of base.parts) {
+    for (const region of part.regions) {
+      for (const cp of f.crate.geometry.parts) {
         for (const cr of cp.regions) {
           const result = relations.relate(part, region, cp, cr, 0)
           visited++
-          if (result?.kind === 'exactSeparated') separated++
-          else {
+          if (result?.kind === 'exactSeparated') {
+            separated++
+          } else {
             expect(result?.kind, part.id + ':' + cp.id).toBe('declaredBoundary')
             expect(part).toBe(f.crate.tray)
             expect(cp).toBe(f.crate.geometry.bottomPart)
@@ -72,6 +73,9 @@ it('mounted crate consumer proves every base pair and only original tray contact
             boundary++
           }
         }
+      }
+    }
+  }
   expect(visited).toBe(
     base.parts.reduce((n, p) => n + p.regions.length, 0) *
       f.crate.geometry.parts.reduce((n, p) => n + p.regions.length, 0)

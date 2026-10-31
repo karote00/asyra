@@ -26,7 +26,9 @@ describe('App lifecycle review regressions', () => {
     } finally {
       // Recover the real Core after the failed disposal so this regression
       // cannot contaminate the other formal App tests.
-      if (failure) await resetCore()
+      if (failure) {
+        await resetCore()
+      }
     }
   })
 
@@ -63,8 +65,11 @@ describe('App lifecycle review regressions', () => {
         expect(result.app.core.getRuntimeState()).toBe('active')
       }
     } finally {
-      if ('app' in result) await result.app.dispose()
-      else if (failure) await resetCore()
+      if ('app' in result) {
+        await result.app.dispose()
+      } else if (failure) {
+        await resetCore()
+      }
     }
   })
 
@@ -92,7 +97,9 @@ describe('App lifecycle review regressions', () => {
       expect(closeFailure).toBeNull()
       expect(app.core.getRuntimeState()).toBe('retired')
     } finally {
-      if (closeFailure) await resetCore()
+      if (closeFailure) {
+        await resetCore()
+      }
     }
   })
 })

@@ -18,7 +18,9 @@ it('bounds admitted primitive retention and rebuilds evicted entries', () => {
   const first = owner.primitive('tube:0', produce)
   expect(owner.primitive('tube:0', produce)).toBe(first)
   expect(produce).toHaveBeenCalledTimes(1)
-  for (let i = 1; i <= 32; i++) owner.primitive(`tube:${i}`, produce)
+  for (let i = 1; i <= 32; i++) {
+    owner.primitive(`tube:${i}`, produce)
+  }
   expect(owner.primitive('tube:0', produce) === first).toBe(false)
   expect(produce).toHaveBeenCalledTimes(34)
   owner.clear()

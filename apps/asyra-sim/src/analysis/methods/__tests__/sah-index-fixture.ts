@@ -10,7 +10,9 @@ export function partitionIndex(
     visit: (item: T, index: number) => void
   ) => {
     for (let i = 0; i < items.length; i++) {
-      if (i % 256 === 0) checkpoint()
+      if (i % 256 === 0) {
+        checkpoint()
+      }
       visit(items[i], i)
     }
   }
@@ -20,7 +22,9 @@ export function partitionIndex(
   ) => {
     let comparisons = 0
     return [...items].sort((a, b) => {
-      if (comparisons++ % 256 === 0) checkpoint()
+      if (comparisons++ % 256 === 0) {
+        checkpoint()
+      }
       return compare(a, b)
     })
   }
@@ -28,8 +32,12 @@ export function partitionIndex(
     a: Bounds | undefined,
     b: Bounds | undefined
   ): Bounds | undefined => {
-    if (!a) return b
-    if (!b) return a
+    if (!a) {
+      return b
+    }
+    if (!b) {
+      return a
+    }
     return a.map((axis, i) => [
       Math.min(axis[0], b[i][0]),
       Math.max(axis[1], b[i][1])
@@ -47,8 +55,12 @@ export function partitionIndex(
     scan(items, (item) => {
       bounds = combine(bounds, item.bounds)
     })
-    if (!bounds) throw new Error('Empty source partition')
-    if (items.length <= 4) return { bounds, triangles: items }
+    if (!bounds) {
+      throw new Error('Empty source partition')
+    }
+    if (items.length <= 4) {
+      return { bounds, triangles: items }
+    }
     let best:
       | { cost: number; axis: number; split: number; min: number; max: number }
       | undefined
@@ -60,7 +72,9 @@ export function partitionIndex(
         min = Math.min(min, value)
         max = Math.max(max, value)
       })
-      if (min === max) continue
+      if (min === max) {
+        continue
+      }
       const bins = Array.from({ length: 8 }, () => ({
         count: 0,
         bounds: undefined as Bounds | undefined
@@ -95,12 +109,15 @@ export function partitionIndex(
       for (let split = 0; split < 7; split++) {
         const left = prefix[split],
           right = suffix[split + 1]
-        if (!left.count || !right.count || !left.bounds || !right.bounds)
+        if (!left.count || !right.count || !left.bounds || !right.bounds) {
           continue
+        }
         checkpoint()
         const cost =
           area(left.bounds) * left.count + area(right.bounds) * right.count
-        if (!best || cost < best.cost) best = { cost, axis, split, min, max }
+        if (!best || cost < best.cost) {
+          best = { cost, axis, split, min, max }
+        }
       }
     }
     let left: MeshTriangle[] = [],
@@ -136,7 +153,9 @@ export function partitionIndex(
   const collect = (node: MeshNode) => {
     checkpoint()
     triangles.push(...node.triangles)
-    for (const child of node.children ?? []) collect(child)
+    for (const child of node.children ?? []) {
+      collect(child)
+    }
   }
   collect(index.root)
   return {

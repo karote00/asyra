@@ -18,8 +18,9 @@ import { vectorApis } from '../../common-apis/element/vector-apis'
 import { invokeLocalTool } from '../../../server/local-tool-invocation'
 
 const required = <T>(value: T | null | undefined): T => {
-  if (value == null)
+  if (value == null) {
     throw new Error('Required integration fixture value is missing')
+  }
   return value
 }
 
@@ -492,7 +493,7 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
       })
     ).receipt
   ).toMatchObject({ status: 'failed', changed: false })
-  for (const id of ['anchor-c', 'anchor-d'])
+  for (const id of ['anchor-c', 'anchor-d']) {
     expect(
       (
         await vectorCall('appendVectorAnchorPoint', {
@@ -508,6 +509,7 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
         })
       ).receipt
     ).toMatchObject({ status: 'complete', changed: true })
+  }
   expect(
     (
       await vectorCall('connectVectorAnchorEndpoints', {
@@ -532,7 +534,9 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
       endId: string
     }[]
   ).find((entry) => entry.endId === 'anchor-d')
-  if (!segment) throw new Error('Missing straight segment')
+  if (!segment) {
+    throw new Error('Missing straight segment')
+  }
   const anchors = (await vectorCall('getVectorAnchorPoints')).receipt.value as {
     id: string
     x: number
@@ -547,10 +551,14 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
       endId: string
     }[]
   ).find((entry) => entry.endId === 'anchor-b')
-  if (!start || !end || !curved) throw new Error('Missing split fixture')
+  if (!start || !end || !curved) {
+    throw new Error('Missing split fixture')
+  }
   const curvedStart = anchors.find((point) => point.id === curved.startId)
   const curvedEnd = anchors.find((point) => point.id === curved.endId)
-  if (!curvedStart || !curvedEnd) throw new Error('Missing curved endpoints')
+  if (!curvedStart || !curvedEnd) {
+    throw new Error('Missing curved endpoints')
+  }
   const beforeRejectedSplit = structuredClone(
     core.getElementComputedData(vectorId)
   )
@@ -563,7 +571,9 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
   expect(core.getElementComputedData(vectorId)).toEqual(beforeRejectedSplit)
   const retained: AiBatchReceipt[] = []
   const add = actions.find((entry) => entry.name === 'api_fill_addFills')
-  if (!add) throw new Error('Missing Fill action')
+  if (!add) {
+    throw new Error('Missing Fill action')
+  }
   const original = add.execute
   add.execute = vi.fn(original)
   const beforePrefix = core.getElementComputedData('a')?.fills?.length

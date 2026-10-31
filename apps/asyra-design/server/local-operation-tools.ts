@@ -123,8 +123,9 @@ const actionResultResources = (actions: AiProviderInput['actions']) => ({
         if (
           !('delivery' in action) ||
           action.delivery?.receipt?.owner !== 'design-context'
-        )
+        ) {
           return []
+        }
         const path = action.delivery.receipt.path
           .slice(1)
           .split('/')
@@ -265,7 +266,7 @@ const singleActionSemantics = (
           : [])
       ]
     )
-  if (!('outputSchema' in action))
+  if (!('outputSchema' in action)) {
     return {
       ...actionToolSemantics(
         action.name,
@@ -281,6 +282,7 @@ const singleActionSemantics = (
       ),
       composition: 'control-plane' as const
     }
+  }
   const outputSchema = envelope(action.outputSchema)
   const partialReceipt = toolResultObject(
     {
@@ -383,7 +385,9 @@ const discoveryReceipt = (value: Record<string, unknown>) => {
       isRecord(entry.definition) &&
       entry.definition.availableInResponse === false
   ).length
-  if (!unresolved && !unavailable) return {}
+  if (!unresolved && !unavailable) {
+    return {}
+  }
   const delivered = entries.length - unavailable
   return {
     status: delivered ? 'partial' : 'failed',
@@ -462,8 +466,9 @@ const discoveryInputIssue = (args: unknown): string | undefined => {
       (!Array.isArray(args.operations) ||
         !args.operations.length ||
         args.operations.some((v) => typeof v !== 'string' || !v.trim())))
-  )
+  ) {
     return 'Provide one selector: operations, operation, category, names or query; omit selectors for categories. includeSchemas requires category. view (usage/full) requires a selector; nonempty schemaPaths requires exact names/operations. inputScope requires one exact native tool via names or query and cannot combine with schemaPaths; use owner-published scope choices. Partial views cannot combine with each other. refreshReason requires refresh=true and must be context-loss, delivery-failure or missing-fields.'
+  }
   return undefined
 }
 
@@ -502,7 +507,9 @@ export interface LocalActionPreparation {
 
 const requiresVisualReview = (name: string) => {
   const basic = getBasicApiContract(name)
-  if (basic) return basic.effect === 'write' || basic.effect === 'delete'
+  if (basic) {
+    return basic.effect === 'write' || basic.effect === 'delete'
+  }
   return ![
     AiActionNames.SELECT_ELEMENTS,
     AiActionNames.READ_DESIGN_CONTEXT,
@@ -521,18 +528,20 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 // Paths address the registered schema, not an inferred argument shape. A partial
 // answer never becomes an alternate admission schema.
 const schemaValueAt = (schema: unknown, path: string): unknown => {
-  if (!path.startsWith('/') || /~(?![01])/u.test(path))
+  if (!path.startsWith('/') || /~(?![01])/u.test(path)) {
     throw new LocalOperationPreparationError(`Invalid schema path: ${path}`)
+  }
   let value = schema
   for (const part of path.slice(1).split('/')) {
     const key = part.replace(/~1/g, '/').replace(/~0/g, '~')
     if (
       (!isRecord(value) && !Array.isArray(value)) ||
       !Object.hasOwn(value, key)
-    )
+    ) {
       throw new LocalOperationPreparationError(
         `Unknown schema path: ${path}. Request view=usage for canonical field/definition paths or the containing schema path; the full definition remains available.`
       )
+    }
     value = (value as Record<string, unknown>)[key]
   }
   return value
@@ -553,7 +562,9 @@ const schemaFragments = (schema: unknown, paths: string[]) => {
       const ancestor = ancestorPath
         ? schemaValueAt(schema, ancestorPath)
         : schema
-      if (!isRecord(ancestor)) continue
+      if (!isRecord(ancestor)) {
+        continue
+      }
       const constraints = Object.fromEntries(
         Object.entries(ancestor).filter(([key]) =>
           [
@@ -580,10 +591,12 @@ const schemaFragments = (schema: unknown, paths: string[]) => {
           ].includes(key)
         )
       )
-      if (isRecord(ancestor.properties))
+      if (isRecord(ancestor.properties)) {
         constraints.allowedProperties = Object.keys(ancestor.properties)
-      if (Object.keys(constraints).length)
+      }
+      if (Object.keys(constraints).length) {
         contexts.set(ancestorPath, constraints)
+      }
     }
   }
   const references = new Map<string, unknown>()
@@ -593,7 +606,9 @@ const schemaFragments = (schema: unknown, paths: string[]) => {
       value.forEach(visit)
       return
     }
-    if (!isRecord(value)) return
+    if (!isRecord(value)) {
+      return
+    }
     if (
       typeof value.$ref === 'string' &&
       !references.has(value.$ref) &&
@@ -606,15 +621,25 @@ const schemaFragments = (schema: unknown, paths: string[]) => {
           references.set(ref, dependency)
           visit(dependency)
         } catch (error) {
-          if (!(error instanceof LocalOperationPreparationError)) throw error
+          if (!(error instanceof LocalOperationPreparationError)) {
+            throw error
+          }
           unresolved.add(ref)
         }
-      } else unresolved.add(ref)
+      } else {
+        unresolved.add(ref)
+      }
     }
-    for (const child of Object.values(value)) visit(child)
+    for (const child of Object.values(value)) {
+      visit(child)
+    }
   }
-  for (const fragment of fragments) visit(fragment.schema)
-  for (const context of contexts.values()) visit(context)
+  for (const fragment of fragments) {
+    visit(fragment.schema)
+  }
+  for (const context of contexts.values()) {
+    visit(context)
+  }
   return {
     schemaFragments: fragments,
     schemaContext: [...contexts].map(([path, schema]) => ({ path, schema })),
@@ -627,33 +652,42 @@ const schemaSlots = (
   schema: unknown,
   prefix = ''
 ): { path: string; schema: Record<string, unknown> }[] => {
-  if (!isRecord(schema)) return []
+  if (!isRecord(schema)) {
+    return []
+  }
   const slots: { path: string; schema: Record<string, unknown> }[] = []
-  if (isRecord(schema.properties))
+  if (isRecord(schema.properties)) {
     for (const [name, child] of Object.entries(schema.properties)) {
       const path = `${prefix}/properties/${name.replace(/~/g, '~0').replace(/\//g, '~1')}`
-      if (isRecord(child))
+      if (isRecord(child)) {
         slots.push({ path, schema: child }, ...schemaSlots(child, path))
+      }
     }
+  }
   // Traverse stored definitions once; never expand recursive $ref links.
   for (const container of ['$defs', 'definitions']) {
     const definitions = schema[container]
-    if (isRecord(definitions))
+    if (isRecord(definitions)) {
       for (const [name, child] of Object.entries(definitions)) {
         const path = `${prefix}/${container}/${name.replace(/~/g, '~0').replace(/\//g, '~1')}`
-        if (isRecord(child))
+        if (isRecord(child)) {
           slots.push({ path, schema: child }, ...schemaSlots(child, path))
+        }
       }
+    }
   }
-  for (const key of ['items', 'additionalProperties'])
-    if (isRecord(schema[key]))
+  for (const key of ['items', 'additionalProperties']) {
+    if (isRecord(schema[key])) {
       slots.push(...schemaSlots(schema[key], `${prefix}/${key}`))
+    }
+  }
   for (const mode of ['anyOf', 'oneOf', 'allOf']) {
     const branches = schema[mode]
-    if (Array.isArray(branches))
+    if (Array.isArray(branches)) {
       branches.forEach((branch, index) =>
         slots.push(...schemaSlots(branch, `${prefix}/${mode}/${index}`))
       )
+    }
   }
   return slots
 }
@@ -662,10 +696,14 @@ const inputFieldPaths = (schema: unknown): string[] =>
 
 /** Navigation stops at branch roots; it is not a flattened validation schema. */
 const usageInputPaths = (schema: unknown): string[] => {
-  if (!isRecord(schema)) return []
+  if (!isRecord(schema)) {
+    return []
+  }
   const escape = (key: string) => key.replace(/~/g, '~0').replace(/\//g, '~1')
   const branches = (value: unknown, prefix: string): string[] => {
-    if (!isRecord(value)) return []
+    if (!isRecord(value)) {
+      return []
+    }
     return ['oneOf', 'anyOf', 'allOf'].flatMap((mode) => {
       const alternatives = value[mode]
       return Array.isArray(alternatives)
@@ -694,15 +732,18 @@ const usageInputPaths = (schema: unknown): string[] => {
 const usageInvocation = (descriptor: Record<string, unknown>) => {
   const schema = descriptor.inputSchema
   const execution = descriptor.execution
-  if (!isRecord(schema) || !isRecord(execution))
+  if (!isRecord(schema) || !isRecord(execution)) {
     return { available: false, reason: 'no-executable-owner-example' }
+  }
   const example = Array.isArray(schema.examples)
     ? schema.examples.find(
         (value) => isRecord(value) && !operationInputIssue(value, schema)
       )
     : undefined
-  if (!example) return { available: false, reason: 'no-valid-owner-example' }
-  if (execution.kind === 'batch-action')
+  if (!example) {
+    return { available: false, reason: 'no-valid-owner-example' }
+  }
+  if (execution.kind === 'batch-action') {
     return {
       illustrative: true,
       invocation: {
@@ -712,7 +753,8 @@ const usageInvocation = (descriptor: Record<string, unknown>) => {
         }
       }
     }
-  if (execution.kind === 'registered-tool')
+  }
+  if (execution.kind === 'registered-tool') {
     return {
       illustrative: true,
       invocation: {
@@ -724,7 +766,8 @@ const usageInvocation = (descriptor: Record<string, unknown>) => {
         }
       }
     }
-  if (execution.kind === 'native-tool')
+  }
+  if (execution.kind === 'native-tool') {
     return {
       illustrative: true,
       invocation: {
@@ -736,13 +779,15 @@ const usageInvocation = (descriptor: Record<string, unknown>) => {
             : example
       }
     }
-  if (execution.kind === 'final-response')
+  }
+  if (execution.kind === 'final-response') {
     return {
       illustrative: true,
       finalResponse: {
         actions: [{ name: descriptor.name, arguments: example }]
       }
     }
+  }
   return { available: false, reason: 'execution-route-unavailable' }
 }
 
@@ -899,7 +944,9 @@ export const createLocalOperationTools = (
         release: async (snapshotId) => {
           // The browser transaction finally owns cancellation cleanup, including
           // transport loss. Do not send a cleanup action through an aborted request.
-          if (options.requestSignal?.aborted) return
+          if (options.requestSignal?.aborted) {
+            return
+          }
           const id = randomUUID()
           const receipt = await dispatchBatch(
             {
@@ -923,8 +970,9 @@ export const createLocalOperationTools = (
           if (
             !isRecord(acknowledged?.result) ||
             typeof acknowledged.result.released !== 'boolean'
-          )
+          ) {
             throw new Error('Browser query release was not acknowledged')
+          }
         }
       })
     : undefined
@@ -934,8 +982,9 @@ export const createLocalOperationTools = (
     try {
       receipt = await dispatchBatch(batch)
     } catch (error) {
-      if (!(error instanceof BrowserBatchExecutionError) || !error.receipt)
+      if (!(error instanceof BrowserBatchExecutionError) || !error.receipt) {
         throw error
+      }
       const partial = queryArtifacts
         ? await queryArtifacts.accept(batch, error.receipt)
         : error.receipt
@@ -970,8 +1019,9 @@ export const createLocalOperationTools = (
         action.name !== AiActionNames.INSPECT_DRAWING ||
         !('outputSchema' in action) ||
         !isRecord(action.outputSchema)
-      )
+      ) {
         return action
+      }
       // The operation owner enriches a browser capture before publishing it.
       // Acquisition and projection must describe that enriched result together.
       return {
@@ -1047,20 +1097,24 @@ export const createLocalOperationTools = (
     schema: unknown,
     depth = 0
   ): Record<string, unknown>[] => {
-    if (!isRecord(schema) || depth > 32) return []
+    if (!isRecord(schema) || depth > 32) {
+      return []
+    }
     for (const mode of ['oneOf', 'anyOf']) {
       const branches = schema[mode]
-      if (Array.isArray(branches))
+      if (Array.isArray(branches)) {
         return branches.flatMap((branch) =>
           contextAlternatives(branch, depth + 1)
         )
+      }
     }
     if (
       !isRecord(schema.properties) ||
       !schema.properties.scope ||
       operationInputIssue('region', schema.properties.scope) !== undefined
-    )
+    ) {
       return []
+    }
     return [schema.properties]
   }
   const contextCandidates = contextAlternatives(
@@ -1148,20 +1202,24 @@ export const createLocalOperationTools = (
       mode: ElementBindingMode
     ): string[] => {
       if (isRecord(reference) && reference.query !== undefined) {
-        if (mode === 'each')
+        if (mode === 'each') {
           throw new Error(
             'Region queries require a plural or exact-one slot; scalar fan-out is not supported.'
           )
+        }
         if (
           Object.keys(reference).length !== 1 ||
           !regionTargetSchema ||
           !isRecord(reference.query)
-        )
+        ) {
           throw new Error(
             'Region query targets require the registered context reader and no artifact selector.'
           )
+        }
         const issue = operationInputIssue(reference.query, regionTargetSchema)
-        if (issue) throw new Error(issue)
+        if (issue) {
+          throw new Error(issue)
+        }
         const key = JSON.stringify(reference.query, (_key, value) =>
           isRecord(value)
             ? Object.fromEntries(
@@ -1174,11 +1232,14 @@ export const createLocalOperationTools = (
         queryKeys.set(key, reference.query)
         return resolved.get(key) ?? ['query-admission-target']
       }
-      if (!preparation.resolveTargets)
+      if (!preparation.resolveTargets) {
         throw new Error('Artifact references are unavailable.')
+      }
       const key = JSON.stringify(reference)
       const cached = artifactTargets.get(key)
-      if (cached) return cached
+      if (cached) {
+        return cached
+      }
       const ids = preparation.resolveTargets(reference)
       artifactTargets.set(key, ids)
       return ids
@@ -1187,8 +1248,12 @@ export const createLocalOperationTools = (
     // exact-one anchors reject ambiguous results instead of scalar fan-out.
     const executable = batchActions
     const admitted = prepareOperationBatch(operations, executable, resolve)
-    if (!queryKeys.size) return admitted
-    if (!contextReader) throw new Error('Region context reader is unavailable.')
+    if (!queryKeys.size) {
+      return admitted
+    }
+    if (!contextReader) {
+      throw new Error('Region context reader is unavailable.')
+    }
     for (const [key, query] of queryKeys) {
       signal.throwIfAborted()
       const argumentsValue = { ...query }
@@ -1196,7 +1261,9 @@ export const createLocalOperationTools = (
         argumentsValue,
         contextReader.inputSchema
       )
-      if (issue) throw new Error(issue)
+      if (issue) {
+        throw new Error(issue)
+      }
       const id = randomUUID()
       const batch = resolvePreparedBatch({
         batchId: randomUUID(),
@@ -1232,21 +1299,24 @@ export const createLocalOperationTools = (
         value.total !== value.elementIds.length ||
         !Array.isArray(value.missingIds) ||
         value.missingIds.length
-      )
+      ) {
         throw new Error(
           'Region target query did not return a complete usable identity set; no mutation was submitted.'
         )
+      }
       if (
         query.expectedCount !== undefined &&
         value.total !== query.expectedCount
-      )
+      ) {
         throw new Error(
           'Region target match count differs from expectedCount; no mutation was submitted.'
         )
-      if (!value.elementIds.length)
+      }
+      if (!value.elementIds.length) {
         throw new Error(
           'Region query matched no targets; no mutation was submitted.'
         )
+      }
       resolved.set(key, value.elementIds as string[])
     }
     return prepareOperationBatch(operations, executable, resolve)
@@ -1410,7 +1480,9 @@ export const createLocalOperationTools = (
             registeredSelection
           )
         : undefined
-    if (registeredUsage) modelResults = registeredUsage
+    if (registeredUsage) {
+      modelResults = registeredUsage
+    }
     // Selection determines whether usage is navigation or an executable contract.
     const usage = Object.fromEntries(
       [
@@ -1532,8 +1604,11 @@ export const createLocalOperationTools = (
       }
     }
     let coverage = 'full'
-    if (args.view === 'usage') coverage = 'usage'
-    else if (Array.isArray(args.schemaPaths)) coverage = 'partial'
+    if (args.view === 'usage') {
+      coverage = 'usage'
+    } else if (Array.isArray(args.schemaPaths)) {
+      coverage = 'partial'
+    }
     const requestedPaths = Array.isArray(args.schemaPaths)
       ? [...new Set(args.schemaPaths as string[])].sort()
       : []
@@ -1543,14 +1618,16 @@ export const createLocalOperationTools = (
           schemaValueAt(inputSchema, path)
           return []
         } catch (error) {
-          if (!(error instanceof LocalOperationPreparationError)) throw error
+          if (!(error instanceof LocalOperationPreparationError)) {
+            throw error
+          }
           return [{ path, message: error.message }]
         }
       })
       const validPaths = requestedPaths.filter(
         (path) => !issues.some((issue) => issue.path === path)
       )
-      if (issues.length)
+      if (issues.length) {
         return {
           ...reference,
           definition: {
@@ -1597,6 +1674,7 @@ export const createLocalOperationTools = (
             }
           }
         }
+      }
     }
     const usageNavigation =
       args.view === 'usage' && args.inputScope === undefined
@@ -1641,10 +1719,11 @@ export const createLocalOperationTools = (
         coverage = 'scoped'
       } catch (error) {
         const guidance = workflowQueryGuidance(identity, inputSchema)
-        if (!guidance)
+        if (!guidance) {
           throw new LocalOperationPreparationError(
             'This owner does not publish inputScope choices. Omit inputScope and request its full contract.'
           )
+        }
         throw new LocalOperationPreparationError(
           `${error instanceof Error ? error.message : 'Invalid inputScope'} Correct the query from these choices; the example is illustrative, not a replacement for valid selections. Scope guidance: ${JSON.stringify({ inputScopes: { operations: guidance.inputScopes.operations, nodeTypes: guidance.inputScopes.nodeTypes, optionalInputs: guidance.inputScopes.optionalInputs }, example: guidance.example })}`
         )
@@ -1769,8 +1848,12 @@ export const createLocalOperationTools = (
     let nextAction = 'use-response-or-recover-requested-scope'
     if (args.view === 'usage') {
       nextAction = 'select-exact-tool'
-      if (inputScopes) nextAction = 'select-operation-scope'
-      if (projection.usageGuide) nextAction = 'execute-with-delivered-contract'
+      if (inputScopes) {
+        nextAction = 'select-operation-scope'
+      }
+      if (projection.usageGuide) {
+        nextAction = 'execute-with-delivered-contract'
+      }
     }
     return {
       ...projection,
@@ -1827,7 +1910,9 @@ export const createLocalOperationTools = (
       const fingerprint = createHash('sha256')
         .update(JSON.stringify(nativeTools))
         .digest('hex')
-      if (fingerprint !== nativeCatalogFingerprint) nativeCatalogRevision++
+      if (fingerprint !== nativeCatalogFingerprint) {
+        nativeCatalogRevision++
+      }
       nativeCatalogFingerprint = fingerprint
       for (const tool of nativeTools) {
         for (const key of [tool.name, `${tool.namespace}.${tool.name}`]) {
@@ -1863,20 +1948,23 @@ export const createLocalOperationTools = (
     tool.namespace === localOperationNamespace &&
     tool.registeredName === `${localOperationNamespace}.${action.name}`
   const actionExecution = (action: (typeof registered)[number]) => {
-    if (finalActions.has(action.name))
+    if (finalActions.has(action.name)) {
       return { kind: 'final-response', action: action.name }
-    if (batchActionNames.has(action.name))
+    }
+    if (batchActionNames.has(action.name)) {
       return {
         kind: 'batch-action',
         tool: AiDesignToolIds.EXECUTE_DESIGN_BATCH
       }
+    }
     const wrappers = nativeMatches(action.name).filter(
       (tool) =>
         tool.namespace === localOperationNamespace &&
         tool.providerExposure !== 'registry'
     )
-    if (wrappers.length === 1)
+    if (wrappers.length === 1) {
       return { ...nativeExecution(wrappers[0]), argumentField: 'arguments' }
+    }
     return {
       kind: 'unavailable',
       reason:
@@ -1939,8 +2027,9 @@ export const createLocalOperationTools = (
     signal: AbortSignal
   ): Promise<Record<string, unknown>> => {
     signal.throwIfAborted()
-    if (!registered.some((action) => action.name === name))
+    if (!registered.some((action) => action.name === name)) {
       throw new Error('Canonical attachment evidence action is unavailable.')
+    }
     const id = randomUUID()
     const receipt = await executeBatch({
       batchId: randomUUID(),
@@ -1958,8 +2047,9 @@ export const createLocalOperationTools = (
       (entry) => entry.actionId === id && entry.actionName === name
     )
     const result = matches.length === 1 ? matches[0].result : undefined
-    if (!isRecord(result))
+    if (!isRecord(result)) {
       throw new Error('Canonical attachment evidence is unavailable.')
+    }
     return result
   }
   const preparedReview = preparation.resolveRecipe
@@ -1987,8 +2077,9 @@ export const createLocalOperationTools = (
                 !Number.isFinite(point.x) ||
                 !Number.isFinite(point.y)
             )
-          )
+          ) {
             throw new Error('Canonical attachment evidence is incomplete.')
+          }
           return {
             workspaceId: result.workspaceId,
             parentId: result.parentId,
@@ -2023,8 +2114,9 @@ export const createLocalOperationTools = (
               ? action.arguments.parentId
               : undefined
           )
-          if (attachment && typeof action.id === 'string')
+          if (attachment && typeof action.id === 'string') {
             attachments.set(action.id, attachment)
+          }
         }
       }
     }
@@ -2033,8 +2125,9 @@ export const createLocalOperationTools = (
       !attachments.size ||
       !isRecord(resolved) ||
       !Array.isArray(resolved.actions)
-    )
+    ) {
       return resolved
+    }
     return {
       ...resolved,
       actions: resolved.actions.map((action) => {
@@ -2042,8 +2135,9 @@ export const createLocalOperationTools = (
           !isRecord(action) ||
           typeof action.id !== 'string' ||
           !isRecord(action.arguments)
-        )
+        ) {
           return action
+        }
         const attachment = attachments.get(action.id)
         return attachment
           ? {
@@ -2085,7 +2179,9 @@ export const createLocalOperationTools = (
   const hasUnresolvedMutationScope = () =>
     !!checkResults.summary([mutationScopeId]).firstPendingId
   const unknownScope = (actionId: string) => {
-    if (hasUnresolvedMutationScope()) return
+    if (hasUnresolvedMutationScope()) {
+      return
+    }
     checkResults.record({
       id: mutationScopeId,
       origin: 'tool',
@@ -2202,7 +2298,9 @@ export const createLocalOperationTools = (
     coveredMeasurementTargets: unknown,
     signal?: AbortSignal
   ) => {
-    if (!Array.isArray(coveredMeasurementTargets)) return
+    if (!Array.isArray(coveredMeasurementTargets)) {
+      return
+    }
     const targets = [...new Set(coveredMeasurementTargets)].filter(
       (id): id is string =>
         typeof id === 'string' && id !== elementId && measuredTargets.has(id)
@@ -2263,16 +2361,18 @@ export const createLocalOperationTools = (
             !isRecord(result) ||
             result.current !== true ||
             !Array.isArray(result.measurements)
-          )
+          ) {
             return unavailable('coverage-not-current-or-incomplete')
+          }
           const entries = result.measurements
           if (
             entries.length !== ids.length ||
             entries.some(
               (entry, i) => !isRecord(entry) || entry.elementId !== ids[i]
             )
-          )
+          ) {
             return unavailable('coverage-target-identity-mismatch')
+          }
           const reconciliation: Record<string, unknown>[] = []
           for (let i = 0; i < ids.length; i++) {
             const id = ids[i]
@@ -2353,7 +2453,9 @@ export const createLocalOperationTools = (
         },
         'Covered obligations retain or advance exact revisions; unavailable and superseded targets remain explicit.'
       )
-      if (JSON.parse(resultText).batchComplete !== true) return
+      if (JSON.parse(resultText).batchComplete !== true) {
+        return
+      }
     }
   }
   const canInspect = registered.some(
@@ -2371,7 +2473,9 @@ export const createLocalOperationTools = (
     }
     signal?.throwIfAborted()
     const entries = designReview.evidenceEntries(ids)
-    if (!entries.length) return false
+    if (!entries.length) {
+      return false
+    }
     if (
       !registered.some(
         (action) => action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE
@@ -2471,21 +2575,23 @@ export const createLocalOperationTools = (
           !stamp.sessionId ||
           !Number.isSafeInteger(stamp.revision) ||
           Number(stamp.revision) < 0
-        )
+        ) {
           coherent = false
-        else {
-          if (isRecord(result) && result.current === false)
+        } else {
+          if (isRecord(result) && result.current === false) {
             invalidIds.push(...group.ids)
-          if (!validatedAt)
+          }
+          if (!validatedAt) {
             validatedAt = {
               sessionId: stamp.sessionId,
               revision: Number(stamp.revision)
             }
-          else if (
+          } else if (
             validatedAt.sessionId !== stamp.sessionId ||
             validatedAt.revision !== stamp.revision
-          )
+          ) {
             coherent = false
+          }
         }
         validations.push(result)
       }
@@ -2506,7 +2612,9 @@ export const createLocalOperationTools = (
       unavailableInspectionIds: unavailableIds
     }
     if (invalidIds.length) {
-      for (const id of invalidIds) inspectionImages.delete(id)
+      for (const id of invalidIds) {
+        inspectionImages.delete(id)
+      }
       designReview.invalidateInspections(
         invalidIds,
         'These inspection dependencies changed or could not be established.'
@@ -2525,10 +2633,11 @@ export const createLocalOperationTools = (
       (!isRecord(validation) ||
         !isRecord(validation.coverage) ||
         validation.coverage.complete !== true)
-    )
+    ) {
       throw new LocalOperationPreparationError(
         'Current overview images do not cover the requested drawing. Inspect the containing group or all remaining drawing roots; unrelated targets and detail crops cannot establish overall coverage.'
       )
+    }
     return true
   }
   const imageCheck =
@@ -2540,8 +2649,9 @@ export const createLocalOperationTools = (
           reference: (index, use, region) => {
             const identity = options.validateReferences?.([index])[0]
             const image = options.referenceImages?.([index])[0]
-            if (!identity || !image)
+            if (!identity || !image) {
               throw new Error('Reference image is unavailable.')
+            }
             const resolved = designReview.resolveReferenceUse(
               use,
               'pixel-comparison'
@@ -2555,10 +2665,11 @@ export const createLocalOperationTools = (
                     resolved.region.x + resolved.region.width ||
                   region.y + region.height >
                     resolved.region.y + resolved.region.height))
-            )
+            ) {
               throw new Error(
                 'Pixel comparison is outside the explicitly selected reference use.'
               )
+            }
             return { referenceId: identity.referenceId, dataUrl: image.dataUrl }
           }
         })
@@ -2599,7 +2710,9 @@ export const createLocalOperationTools = (
             !(error instanceof BrowserBatchExecutionError) ||
             !error.receipt
           ) {
-            for (const id of ids) markMeasurementUnavailable(id)
+            for (const id of ids) {
+              markMeasurementUnavailable(id)
+            }
             throw error
           }
           receipt = error.receipt
@@ -2631,17 +2744,19 @@ export const createLocalOperationTools = (
           }
           const stamp = updateMeasurementState(ids[index], result, action.id)
           const reviewed = result.actionResults[0]?.result
-          if (stamp && isRecord(reviewed))
+          if (stamp && isRecord(reviewed)) {
             await reconcileMeasurements(
               ids[index],
               stamp,
               reviewed.coveredMeasurementTargets,
               signal
             )
-          if (measuredTargets.get(ids[index]))
+          }
+          if (measuredTargets.get(ids[index])) {
             actionResults.push(...result.actionResults)
-          else if (receipt.failure)
+          } else if (receipt.failure) {
             errors.set(ids[index], receipt.failure.message)
+          }
         }
         // Only resume a suffix the canonical fail-fast executor did not run.
         // An unknown transport outcome leaves the chunk unverified instead.
@@ -2683,10 +2798,11 @@ export const createLocalOperationTools = (
       const ids = pending.slice(offset, offset + measurementBatchSize)
       const actions = ids.map((id) => {
         const evidence = measuredTargets.get(id)
-        if (!evidence)
+        if (!evidence) {
           throw new Error(
             'Measurement dependencies disappeared before validation.'
           )
+        }
         return {
           id: randomUUID(),
           name: AiActionNames.VALIDATE_INSPECTION_EVIDENCE,
@@ -2698,7 +2814,9 @@ export const createLocalOperationTools = (
       try {
         receipt = await executeBatch({ batchId: randomUUID(), actions })
       } catch (error) {
-        if (error instanceof BrowserBatchExecutionError) receipt = error.receipt
+        if (error instanceof BrowserBatchExecutionError) {
+          receipt = error.receipt
+        }
       }
       signal?.throwIfAborted()
       const failedIndex = receipt?.failure
@@ -2717,9 +2835,11 @@ export const createLocalOperationTools = (
           (!receipt?.failure || (failedIndex >= 0 && index < failedIndex)) &&
           isRecord(result) &&
           result.current === true
-        )
+        ) {
           current.add(ids[index])
-        else markStale(ids[index])
+        } else {
+          markStale(ids[index])
+        }
       }
     }
     return current
@@ -2729,14 +2849,17 @@ export const createLocalOperationTools = (
     signal?: AbortSignal,
     compute = false
   ) => {
-    if (!canReview) return
+    if (!canReview) {
+      return
+    }
     const ids = [...new Set(targets)]
     const current = await measurementsCurrent(ids, signal)
     const missing = ids.filter((id) => !current.has(id))
     if (compute && missing.length) {
       await measure(missing, signal)
-      for (const id of await measurementsCurrent(missing, signal))
+      for (const id of await measurementsCurrent(missing, signal)) {
         current.add(id)
+      }
     }
     measurementPending = !ids.length || current.size !== ids.length
   }
@@ -2747,8 +2870,9 @@ export const createLocalOperationTools = (
     validate: measurementsCurrent,
     measure,
     refreshPrepared: async (signal, dependencies) => {
-      if (!preparedReview)
+      if (!preparedReview) {
         throw new Error('Prepared check owner is unavailable.')
+      }
       await preparedReview.refresh(signal, dependencies)
     }
   })
@@ -2806,7 +2930,7 @@ export const createLocalOperationTools = (
           if (evidence) {
             Object.assign(entry.result, evidence)
             const image = entry.result.image
-            if (isRecord(image) && typeof image.dataUrl === 'string')
+            if (isRecord(image) && typeof image.dataUrl === 'string') {
               inspectionImages.set(evidence.inspectionId, {
                 role:
                   overview && !region && view !== 'detail'
@@ -2818,6 +2942,7 @@ export const createLocalOperationTools = (
                 imageScope: entry.result.imageScope,
                 background: entry.result.background
               })
+            }
           }
         }
       }
@@ -2843,11 +2968,12 @@ export const createLocalOperationTools = (
       recovery: string
     }[] = []
     let unavailableReason: string | undefined
-    if (settlementUnknown)
+    if (settlementUnknown) {
       unavailableReason =
         'Write settlement is unknown; reconcile acknowledged state before checking.'
-    else if (!canReview)
+    } else if (!canReview) {
       unavailableReason = 'Mechanical checking is not registered in this app.'
+    }
     if (unavailableReason && targets.size) {
       measurementIssues.push({
         ...(targets.size === 1 ? { elementId: [...targets][0] } : {}),
@@ -2880,23 +3006,28 @@ export const createLocalOperationTools = (
       try {
         const measurement = await measure(chunk, signal)
         errors = measurement.errors
-        if (fullResponse) actionResults.push(...measurement.actionResults)
+        if (fullResponse) {
+          actionResults.push(...measurement.actionResults)
+        }
       } catch (error) {
         signal.throwIfAborted()
         message =
           error instanceof Error ? error.message : 'Mechanical checking failed.'
       }
       for (const elementId of chunk) {
-        if (!measuredTargets.get(elementId))
+        if (!measuredTargets.get(elementId)) {
           measurementIssues.push({
             elementId,
             message: errors?.get(elementId) ?? message,
             recovery:
               'Run review_design for this target; do not replay acknowledged writes.'
           })
+        }
       }
     }
-    if (targets.size) measurementPending = measurementIssues.length > 0
+    if (targets.size) {
+      measurementPending = measurementIssues.length > 0
+    }
     const inspectionIssues: { elementId: string; message: string }[] = []
     if (
       !settlementUnknown &&
@@ -2921,10 +3052,11 @@ export const createLocalOperationTools = (
               isRecord(entry.result) &&
               entry.result.available === true
           )
-        )
+        ) {
           throw new Error(
             'Capture is unavailable; capture this target again without replaying its writes.'
           )
+        }
         actionResults.push(...image.actionResults)
       } catch (error) {
         signal.throwIfAborted()
@@ -2947,7 +3079,9 @@ export const createLocalOperationTools = (
 
   const owner = {
     projectModelResult(name: string, args: unknown, value: unknown): unknown {
-      if (!isRecord(value)) return value
+      if (!isRecord(value)) {
+        return value
+      }
       const nested: Record<string, unknown> = {
         ...value,
         ...(isRecord(value.batchFailure)
@@ -2985,11 +3119,13 @@ export const createLocalOperationTools = (
             }
           : {})
       }
-      if (!Array.isArray(value.actionResults))
+      if (!Array.isArray(value.actionResults)) {
         return localToolDeliveryResult(value, nested)
+      }
       const entries = value.actionResults.map((entry) => {
-        if (!isRecord(entry) || typeof entry.actionName !== 'string')
+        if (!isRecord(entry) || typeof entry.actionName !== 'string') {
           return entry
+        }
         const definition = admittedApisByName.get(entry.actionName)
         return {
           ...entry,
@@ -3022,7 +3158,9 @@ export const createLocalOperationTools = (
     },
     validateReviewChecks(value: unknown) {
       const issue = operationInputIssue(value, reviewCaptureChecksSchema)
-      if (issue) throw new LocalOperationPreparationError(issue)
+      if (issue) {
+        throw new LocalOperationPreparationError(issue)
+      }
       designReview.validateCaptureChecks('visual', [
         {
           checks: value as Parameters<
@@ -3032,7 +3170,9 @@ export const createLocalOperationTools = (
       ])
     },
     validateCompletion: async (signal?: AbortSignal): Promise<void> => {
-      if (!designReview.isAccepted()) return
+      if (!designReview.isAccepted()) {
+        return
+      }
       try {
         const completionIds = [
           ...new Set([
@@ -3047,12 +3187,15 @@ export const createLocalOperationTools = (
           designReview.overviewTargets(completionIds),
           signal
         )
-        if (!(await validateEvidence(completionIds, signal)))
+        if (!(await validateEvidence(completionIds, signal))) {
           designReview.requireReview(
             'Current inspection evidence is required before completion.'
           )
+        }
       } catch (error) {
-        if (!(error instanceof LocalOperationPreparationError)) throw error
+        if (!(error instanceof LocalOperationPreparationError)) {
+          throw error
+        }
         designReview.invalidateWholeView(error.message)
       }
     },
@@ -3064,10 +3207,11 @@ export const createLocalOperationTools = (
             registered.some((definition) => definition.name === action.name) &&
             requiresVisualReview(action.name)
         )
-      )
+      ) {
         throw new Error(
           'Final response cannot contain unreviewed drawing operations'
         )
+      }
       const qualityIssue = canInspect ? designReview.getIssue() : undefined
       const pendingMeasurements = pendingMeasurementCount()
       if (
@@ -3076,17 +3220,22 @@ export const createLocalOperationTools = (
         pendingMeasurements === 0 &&
         !hasUnresolvedMutationScope() &&
         !qualityIssue
-      )
+      ) {
         return batch
+      }
       let message = measurementPending
         ? 'The latest drawing still needs layout measurement.'
         : qualityIssue
-      if (inspectionUnavailable)
+      if (inspectionUnavailable) {
         message = 'This app could not complete visual review of the drawing.'
-      if (!measurementPending && pendingMeasurements > 0)
+      }
+      if (!measurementPending && pendingMeasurements > 0) {
         message =
           'Some layout checks remain unresolved or stale. Review the pending target checks before completion.'
-      if (hasUnresolvedMutationScope()) message = scopeRecovery
+      }
+      if (hasUnresolvedMutationScope()) {
+        message = scopeRecovery
+      }
       const actions = [...batch.actions]
       if (
         !actions.some((action) =>
@@ -3114,8 +3263,9 @@ export const createLocalOperationTools = (
             action.name !== AiActionNames.REPORT_OUTCOME ||
             !isRecord(action.arguments) ||
             action.arguments.outcome !== 'completed'
-          )
+          ) {
             return action
+          }
           return {
             ...action,
             arguments: {
@@ -3328,13 +3478,18 @@ export const createLocalOperationTools = (
         }))
     ],
     resultIssue: (name: string, value: unknown): string | undefined => {
-      if (!isRecord(value)) return 'Operation returned no result object'
+      if (!isRecord(value)) {
+        return 'Operation returned no result object'
+      }
       if (
         name === AiDesignToolIds.DESCRIBE_DESIGN_APIS &&
         'contentDelivery' in value
-      )
+      ) {
         return operationInputIssue(value, informationDeliverySchema)
-      if (value.available === false) return
+      }
+      if (value.available === false) {
+        return
+      }
       if (name === AiDesignToolIds.REVIEW_PREPARED_DESIGN) {
         if (
           value.available !== true ||
@@ -3346,52 +3501,63 @@ export const createLocalOperationTools = (
           typeof value.evidenceCurrent !== 'boolean' ||
           !isRecord(value.assessment) ||
           !Array.isArray(value.assessment.checks)
-        )
+        ) {
           return 'Prepared review omitted its bound evidence.'
+        }
         return
       }
-      if (name === AiDesignToolIds.CHECK_DRAWING_IMAGE)
+      if (name === AiDesignToolIds.CHECK_DRAWING_IMAGE) {
         return operationInputIssue(value, imageCheckResultSchema)
-      if (name === AiDesignToolIds.READ_DESIGN_CHECKS)
+      }
+      if (name === AiDesignToolIds.READ_DESIGN_CHECKS) {
         return operationInputIssue(value, designCheckDeliverySchema)
-      if (name === AiDesignToolIds.VERIFY_DESIGN_CHECKS)
+      }
+      if (name === AiDesignToolIds.VERIFY_DESIGN_CHECKS) {
         return operationInputIssue(value, mechanicalVerificationSchema)
+      }
       if (name !== AiDesignToolIds.DESCRIBE_DESIGN_APIS) {
-        if (name === AiDesignToolIds.DEFINE_DESIGN_CRITERIA)
+        if (name === AiDesignToolIds.DEFINE_DESIGN_CRITERIA) {
           return value.phase === 'plan' &&
             value.recorded === true &&
             Array.isArray(value.criterionIds)
             ? undefined
             : 'Criteria omitted their recorded identities'
-        if (name === AiDesignToolIds.RECORD_DESIGN_FACTS)
+        }
+        if (name === AiDesignToolIds.RECORD_DESIGN_FACTS) {
           return value.phase === 'facts' && Array.isArray(value.facts)
             ? undefined
             : 'Facts omitted their receipt'
-        if (name === AiDesignToolIds.RECORD_DESIGN_CALCULATIONS)
+        }
+        if (name === AiDesignToolIds.RECORD_DESIGN_CALCULATIONS) {
           return Array.isArray(value.calculations)
             ? undefined
             : 'Calculations omitted their receipt'
-        if (name === AiDesignToolIds.SELECT_DESIGN_REFERENCES)
+        }
+        if (name === AiDesignToolIds.SELECT_DESIGN_REFERENCES) {
           return Array.isArray(value.referenceImageIndexes) &&
             Array.isArray(value.referenceDecisions)
             ? undefined
             : 'Reference selection omitted its decisions'
-        if (name === AiDesignToolIds.REVIEW_DRAWING)
+        }
+        if (name === AiDesignToolIds.REVIEW_DRAWING) {
           return ['structure', 'visual'].includes(String(value.phase)) &&
             typeof value.accepted === 'boolean' &&
             Array.isArray(value.inspectionIds)
             ? undefined
             : 'Review omitted its phase or evidence identities'
-        if (!Array.isArray(value.actionResults))
+        }
+        if (!Array.isArray(value.actionResults)) {
           return 'Operation omitted acknowledged action receipts'
+        }
         for (const entry of value.actionResults) {
           if (
             !isRecord(entry) ||
             typeof entry.actionId !== 'string' ||
             typeof entry.actionName !== 'string' ||
             !Object.hasOwn(entry, 'result')
-          )
+          ) {
             return 'Operation returned a malformed action receipt'
+          }
           if (
             entry.actionName === AiActionNames.APPLY_PREPARED_DESIGN &&
             isRecord(entry.result) &&
@@ -3399,34 +3565,39 @@ export const createLocalOperationTools = (
             entry.result.available !== false &&
             (typeof entry.result.compositionId !== 'string' ||
               !entry.result.compositionId)
-          )
+          ) {
             return 'Applied design omitted its composition identity'
+          }
         }
         if (name === AiDesignToolIds.EXECUTE_DESIGN_BATCH) {
           if (
             !isRecord(value.batchSummary) ||
             !Number.isSafeInteger(value.batchSummary.actionCount)
-          )
+          ) {
             return 'Batch omitted its action summary'
+          }
           const followupActionCount =
             value.batchSummary.followupActionCount ?? 0
           if (
             !Number.isSafeInteger(followupActionCount) ||
             Number(followupActionCount) < 0
-          )
+          ) {
             return 'Batch returned an invalid follow-up count'
+          }
           if (
             !value.failure &&
             value.actionResults.length !==
               Number(value.batchSummary.actionCount) +
                 Number(followupActionCount)
-          )
+          ) {
             return 'Batch acknowledgement count does not match executed actions'
+          }
         }
         return
       }
-      if (!Array.isArray(value.apis) && !Array.isArray(value.categories))
+      if (!Array.isArray(value.apis) && !Array.isArray(value.categories)) {
         return 'API discovery omitted its menu or exact matches'
+      }
       if (
         value.complete !== undefined ||
         value.count !== undefined ||
@@ -3445,8 +3616,9 @@ export const createLocalOperationTools = (
             value.apis.length +
             (Array.isArray(value.tools) ? value.tools.length : 0) >
             Number(value.count)
-        )
+        ) {
           return 'API discovery returned an invalid page boundary'
+        }
         const returned =
           value.apis.length +
           (Array.isArray(value.tools) ? value.tools.length : 0)
@@ -3454,8 +3626,9 @@ export const createLocalOperationTools = (
         if (
           value.complete !== (end === value.count) ||
           (value.complete && value.next !== undefined)
-        )
+        ) {
           return 'API discovery completion disagrees with its page boundary'
+        }
         if (
           !value.complete &&
           (!returned ||
@@ -3470,8 +3643,9 @@ export const createLocalOperationTools = (
               )) ||
             !Number.isSafeInteger(value.next.arguments.registryRevision) ||
             Number(value.next.arguments.registryRevision) < 0)
-        )
+        ) {
           return 'API discovery omitted a usable continuation'
+        }
       }
     },
     resultOutcome: (name: string, value: unknown) => {
@@ -3491,8 +3665,9 @@ export const createLocalOperationTools = (
         value.status === 'failed' &&
         value.settlement === 'completed' &&
         outcome.settlement === 'completed'
-      )
+      ) {
         return { ...outcome, status: 'failed' as const }
+      }
       return outcome
     },
     call: async (
@@ -3502,11 +3677,14 @@ export const createLocalOperationTools = (
       inspectionTargets?: Set<string>,
       internal = false
     ): Promise<string> => {
-      if (signal.aborted) throw new Error('Backend operation cancelled')
+      if (signal.aborted) {
+        throw new Error('Backend operation cancelled')
+      }
       if (name === AiDesignToolIds.REPAIR_DESIGN_CHECKS) {
         const issue = operationInputIssue(args, repairChecksSchema)
-        if (issue || !isRecord(args))
+        if (issue || !isRecord(args)) {
           throw new LocalOperationPreparationError(issue)
+        }
         const { input, findings, targets } =
           await mechanicalChecks.repairSelection(
             { requestId: args.requestId, checks: args.checks },
@@ -3517,10 +3695,11 @@ export const createLocalOperationTools = (
         const children = new Map<string, string>()
         for (const finding of findings) {
           const previous = children.get(finding.elementId)
-          if (previous && previous !== finding.parentId)
+          if (previous && previous !== finding.parentId) {
             throw new LocalOperationPreparationError(
               'Conflicting parent identities in the selected findings.'
             )
+          }
           children.set(finding.elementId, finding.parentId)
         }
         if (
@@ -3531,16 +3710,18 @@ export const createLocalOperationTools = (
             (item) =>
               children.get(item.elementId) !== item.attachmentEvidence.parentId
           )
-        )
+        ) {
           throw new LocalOperationPreparationError(
             'Prescribed positions must cover exactly the pending children and their original parents.'
           )
+        }
         const evidence = targets.map((id) => {
           const stamp = measuredTargets.get(id)
-          if (!stamp)
+          if (!stamp) {
             throw new LocalOperationPreparationError(
               'Mechanical evidence is unavailable before repair.'
             )
+          }
           return stamp
         })
         const result = JSON.parse(
@@ -3562,25 +3743,30 @@ export const createLocalOperationTools = (
           )
         })
       }
-      if (name === AiDesignToolIds.VERIFY_DESIGN_CHECKS)
+      if (name === AiDesignToolIds.VERIFY_DESIGN_CHECKS) {
         return JSON.stringify(await mechanicalChecks.verify(args, signal))
+      }
       if (name === AiDesignToolIds.CHECK_DRAWING_IMAGE) {
-        if (!imageCheck)
+        if (!imageCheck) {
           throw new LocalOperationPreparationError(
             'Image checking is unavailable.'
           )
+        }
         return JSON.stringify(await imageCheck.call(args, signal))
       }
       if (name === AiDesignToolIds.READ_DESIGN_CHECKS) {
-        if (!registered.length)
+        if (!registered.length) {
           throw new LocalOperationPreparationError(
             'Check results are unavailable.'
           )
+        }
         const issue = operationInputIssue(
           args,
           checkResultsDefinition.inputSchema
         )
-        if (issue) throw new LocalOperationPreparationError(issue)
+        if (issue) {
+          throw new LocalOperationPreparationError(issue)
+        }
         signal.throwIfAborted()
         const request = args as DesignCheckDeliveryOptions
         const selected = request.ids
@@ -3621,34 +3807,38 @@ export const createLocalOperationTools = (
           !(await validateEvidence(ids, signal, false)) &&
           isRecord(latestEvidenceValidation) &&
           latestEvidenceValidation.coherent === false
-        )
+        ) {
           return JSON.stringify({
             ...checkResults.deliver(request),
             status: 'partial',
             evidenceValidation: latestEvidenceValidation
           })
+        }
         return JSON.stringify(checkResults.deliver(request))
       }
       if (name === AiDesignToolIds.REVIEW_PREPARED_DESIGN) {
-        if (!preparedReview)
+        if (!preparedReview) {
           throw new LocalOperationPreparationError(
             'Prepared review is unavailable.'
           )
+        }
         return JSON.stringify(await preparedReview.review(args, signal))
       }
       if (name === AiDesignToolIds.DESCRIBE_DESIGN_APIS) {
         const inputIssue = discoveryInputIssue(args)
-        if (inputIssue || !isRecord(args))
+        if (inputIssue || !isRecord(args)) {
           throw new LocalOperationPreparationError(
             inputIssue ?? 'Expected discovery arguments'
           )
+        }
         if (
           args.registryRevision !== undefined &&
           args.registryRevision !== discoveryRevision()
-        )
+        ) {
           throw new LocalOperationPreparationError(
             'Discovery registry changed; restart this selector at offset 0 without registryRevision.'
           )
+        }
         const apis = [...admittedApisByName.values()]
         const details = (api: (typeof apis)[number], includeSchema = true) => {
           const contract = getBasicApiContract(api.name)
@@ -3683,7 +3873,7 @@ export const createLocalOperationTools = (
               ? { effect: contract.effect, result: contract.result }
               : {})
           }
-          if (!includeSchema)
+          if (!includeSchema) {
             return {
               name: descriptor.name,
               description: descriptor.description,
@@ -3706,6 +3896,7 @@ export const createLocalOperationTools = (
                 : {}),
               ...(recipeDependency ? { recipeDependency } : {})
             }
+          }
           return deliverDefinition(
             api.name,
             descriptor,
@@ -3749,18 +3940,20 @@ export const createLocalOperationTools = (
         }
         const pageBoundary = (count: number) => {
           const offset = Number(args.offset ?? 0)
-          if (offset > count)
+          if (offset > count) {
             throw new LocalOperationPreparationError(
               'Discovery offset is beyond the current result; restart this selector at offset 0.'
             )
+          }
           const end = Math.min(offset + definitionPageSize, count)
           const continuation: Record<string, unknown> = {
             ...args,
             offset: end,
             registryRevision: discoveryRevision()
           }
-          if (continuation.includeSchemas === false)
+          if (continuation.includeSchemas === false) {
             delete continuation.includeSchemas
+          }
           return {
             complete: end === count,
             count,
@@ -3795,14 +3988,16 @@ export const createLocalOperationTools = (
           args.inputScope !== undefined &&
           queryName !== undefined &&
           !exactQuery
-        )
+        ) {
           throw new LocalOperationPreparationError(
             'inputScope requires one exact native tool via names:[name] or query:name. Omit inputScope to search capabilities, then select an exact returned native name; do not apply a scope to fuzzy matches.'
           )
-        if (exactQuery && Number(args.offset ?? 0) !== 0)
+        }
+        if (exactQuery && Number(args.offset ?? 0) !== 0) {
           throw new LocalOperationPreparationError(
             'Exact query has no inventory continuation; restart at offset 0.'
           )
+        }
         if (Array.isArray(args.names) || exactQuery) {
           const names = Array.isArray(args.names)
             ? [...new Set(args.names as string[])]
@@ -3848,10 +4043,11 @@ export const createLocalOperationTools = (
             !ambiguousNames.length &&
             !missingNames.length &&
             tools.length !== 1
-          )
+          ) {
             throw new LocalOperationPreparationError(
               'inputScope requires one exact native tool, not an action-only identity. Omit inputScope for this action contract; use its returned execution route.'
             )
+          }
           return JSON.stringify({
             apis: selected.map((api) => details(api, includeDefinition)),
             tools: tools.map((tool) =>
@@ -3891,23 +4087,25 @@ export const createLocalOperationTools = (
         }
         if (typeof args.operation === 'string') {
           const api = admittedApisByOperation.get(args.operation)
-          if (!api)
+          if (!api) {
             return JSON.stringify({
               apis: [],
               missingOperations: [args.operation],
               candidates: candidatesFor([args.operation]),
               message: lookupRecovery
             })
+          }
           return JSON.stringify({ apis: [details(api)] })
         }
         const categories = [...admittedApiCategories].map(
           ([category, entries]) => ({ category, count: entries.length })
         )
-        if (options.getNativeTools)
+        if (options.getNativeTools) {
           categories.push({
             category: nativeCategory,
             count: nativeInventory().length
           })
+        }
         if (args.category !== undefined) {
           if (args.category === nativeCategory && options.getNativeTools) {
             const inventory = nativeInventory()
@@ -3929,10 +4127,11 @@ export const createLocalOperationTools = (
             })
           }
           const entries = admittedApiCategories.get(String(args.category))
-          if (!entries)
+          if (!entries) {
             throw new LocalOperationPreparationError(
               `Unknown category. ${lookupRecovery}`
             )
+          }
           return JSON.stringify({
             category: args.category,
             ...pageOf(
@@ -3943,12 +4142,13 @@ export const createLocalOperationTools = (
             )
           })
         }
-        if (args.query === undefined)
+        if (args.query === undefined) {
           return JSON.stringify({
             categories,
             catalogSize: apis.length,
             guidance: discoveryGuidance
           })
+        }
         const normalize = (value: string) =>
           value
             .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
@@ -3965,7 +4165,9 @@ export const createLocalOperationTools = (
           matchesTerms(api.name, api.description)
         )
         const native = nativeInventory().filter((tool) => {
-          if (!matchesTerms(tool.name, tool.description)) return false
+          if (!matchesTerms(tool.name, tool.description)) {
+            return false
+          }
           // Compact views expose this wrapper via recipeDependency. Full
           // views retain both independently executable contracts.
           const represented =
@@ -4024,7 +4226,9 @@ export const createLocalOperationTools = (
         designEvidenceDefinitions.find((tool) => tool.name === name)
       if (evidenceDefinition) {
         const issue = operationInputIssue(args, evidenceDefinition.inputSchema)
-        if (issue) throw new LocalOperationPreparationError(issue)
+        if (issue) {
+          throw new LocalOperationPreparationError(issue)
+        }
         if (name === AiDesignToolIds.RECORD_DESIGN_CALCULATIONS) {
           try {
             return JSON.stringify(designReview.recordCalculations(args))
@@ -4069,10 +4273,11 @@ export const createLocalOperationTools = (
                 (reference: { validation: { validity: string } }) =>
                   reference.validation.validity !== 'decoded'
               )
-              if (failed.length)
+              if (failed.length) {
                 throw new Error(
                   `Reference preparation failed: ${JSON.stringify(failed)}. Selection and prior evidence are unchanged. Retry failed attachmentIndexes with validate_reference_images or replace invalid sources, then resubmit the selection; successful preparations are retained. Do not redraw.`
                 )
+              }
             }
             signal.throwIfAborted()
           } catch (error) {
@@ -4089,7 +4294,7 @@ export const createLocalOperationTools = (
           (reviewArgs.phase === 'structure' || reviewArgs.phase === 'visual')
         const recordReview = () => {
           try {
-            if (name === AiDesignToolIds.SELECT_DESIGN_REFERENCES)
+            if (name === AiDesignToolIds.SELECT_DESIGN_REFERENCES) {
               return designReview.selectReferences(
                 reviewArgs.referenceImageIndexes,
                 {
@@ -4101,13 +4306,15 @@ export const createLocalOperationTools = (
                     : {})
                 }
               )
+            }
             const result = candidate
               ? designReview.recordBoundReview(reviewArgs)
               : designReview.record(reviewArgs)
-            if (Array.isArray(result.checks))
+            if (Array.isArray(result.checks)) {
               result.checks = result.checks.filter(
                 (check) => !isRecord(check) || check.status !== 'pass'
               )
+            }
             return result
           } catch (error) {
             throw new LocalOperationPreparationError(
@@ -4115,17 +4322,20 @@ export const createLocalOperationTools = (
             )
           }
         }
-        if (!candidate) return JSON.stringify(recordReview())
+        if (!candidate) {
+          return JSON.stringify(recordReview())
+        }
         if (
           [
             reviewArgs.inspections,
             reviewArgs.bindChecks,
             reviewArgs.checks
           ].filter((value) => value !== undefined).length !== 1
-        )
+        ) {
           throw new LocalOperationPreparationError(
             'Choose exactly one review operation: inspections, bindChecks or bound checks.'
           )
+        }
         const targets = reviewArgs.inspections as
           | {
               elementId: string
@@ -4139,10 +4349,15 @@ export const createLocalOperationTools = (
             }[]
           | undefined
         let reviewOperation: 'capture' | 'bind' | 'record' = 'record'
-        if (reviewArgs.inspections) reviewOperation = 'capture'
-        else if (reviewArgs.bindChecks) reviewOperation = 'bind'
+        if (reviewArgs.inspections) {
+          reviewOperation = 'capture'
+        } else if (reviewArgs.bindChecks) {
+          reviewOperation = 'bind'
+        }
         const phase = reviewArgs.phase as 'structure' | 'visual'
-        if (targets?.length) designReview.validateCaptureChecks(phase, targets)
+        if (targets?.length) {
+          designReview.validateCaptureChecks(phase, targets)
+        }
         const selections = new Map<
           string,
           {
@@ -4153,10 +4368,11 @@ export const createLocalOperationTools = (
           }
         >()
         const inspectionIds = reviewInspectionIds(reviewArgs)
-        if (inspectionIds.length + (targets?.length ?? 0) > 24)
+        if (inspectionIds.length + (targets?.length ?? 0) > 24) {
           throw new LocalOperationPreparationError(
             'Review accepts at most 24 reusable IDs and capture targets combined.'
           )
+        }
         if (inspectionIds.length && !designReview.evidenceFor(inspectionIds)) {
           const message =
             'Reusable inspection IDs do not identify available evidence in this runtime. Capture current evidence before review; no new captures or assessment ran.'
@@ -4224,7 +4440,9 @@ export const createLocalOperationTools = (
             designReview.evidenceFor([id]) &&
             inspectionImages.has(id)
           ) {
-            if (!inspectionIds.includes(id)) inspectionIds.push(id)
+            if (!inspectionIds.includes(id)) {
+              inspectionIds.push(id)
+            }
             for (const check of target.checks) {
               const key = JSON.stringify([check.criterionId, check.unitId])
               const selected = selections.get(key)
@@ -4232,13 +4450,17 @@ export const createLocalOperationTools = (
                 if (
                   JSON.stringify(selected.supersedes) !==
                   JSON.stringify(check.supersedes)
-                )
+                ) {
                   throw new LocalOperationPreparationError(
                     'Conflicting supersession declarations for one capture check.'
                   )
-                if (!selected.inspectionIds.includes(id))
+                }
+                if (!selected.inspectionIds.includes(id)) {
                   selected.inspectionIds.push(id)
-              } else selections.set(key, { ...check, inspectionIds: [id] })
+                }
+              } else {
+                selections.set(key, { ...check, inspectionIds: [id] })
+              }
             }
           } else {
             failedInspections.push({
@@ -4253,7 +4475,9 @@ export const createLocalOperationTools = (
             })
           }
         }
-        if (targets?.length) reviewArgs.inspectionIds = inspectionIds
+        if (targets?.length) {
+          reviewArgs.inspectionIds = inspectionIds
+        }
         if (failedInspections.length) {
           const message =
             'Required captures are unavailable. Retry corrected failedInspections targets as inspections; include inspectionIds only when the returned list is nonempty. Assessment has not run.'
@@ -4300,11 +4524,12 @@ export const createLocalOperationTools = (
           }
         }
         if (targets?.length) {
-          if (!(await validateEvidence(inspectionIds, signal, false)))
+          if (!(await validateEvidence(inspectionIds, signal, false))) {
             return JSON.stringify({
               ...unavailableEvidence(),
               actionResults: capturedResults
             })
+          }
           signal.throwIfAborted()
           const handoff = designReview.judgmentHandoff(
             inspectionIds,
@@ -4328,8 +4553,9 @@ export const createLocalOperationTools = (
           })
         }
         if (Array.isArray(reviewArgs.bindChecks)) {
-          if (!(await validateEvidence(inspectionIds, signal, false)))
+          if (!(await validateEvidence(inspectionIds, signal, false))) {
             return JSON.stringify(unavailableEvidence())
+          }
           signal.throwIfAborted()
           return JSON.stringify({
             phase,
@@ -4374,7 +4600,9 @@ export const createLocalOperationTools = (
             requireCoverage
           )
         } catch (error) {
-          if (!(error instanceof LocalOperationPreparationError)) throw error
+          if (!(error instanceof LocalOperationPreparationError)) {
+            throw error
+          }
           coverageIssue = error.message
         }
         const submittedChanged = () =>
@@ -4387,8 +4615,9 @@ export const createLocalOperationTools = (
           submittedChanged() ||
           (isRecord(latestEvidenceValidation) &&
             latestEvidenceValidation.coherent === false)
-        )
+        ) {
           return JSON.stringify(unavailableEvidence())
+        }
         let pendingMeasurement = false
         if (
           current &&
@@ -4407,8 +4636,9 @@ export const createLocalOperationTools = (
             submittedChanged() ||
             (isRecord(latestEvidenceValidation) &&
               latestEvidenceValidation.coherent === false)
-          )
+          ) {
             return JSON.stringify(unavailableEvidence())
+          }
         }
         signal.throwIfAborted()
         const result = recordReview()
@@ -4477,8 +4707,9 @@ export const createLocalOperationTools = (
                 : ['arguments', 'message', 'inspection']
             ).includes(key)
         )
-      )
+      ) {
         throw new Error('Invalid backend operation')
+      }
       let batchActions: AiActionBatch['actions']
       try {
         batchActions = batchMode
@@ -4497,7 +4728,10 @@ export const createLocalOperationTools = (
         const submitted = new Map(
           batchActions.map((action) => [action.id, action])
         )
-        if (args.response !== 'full' && operationArguments.response !== 'full')
+        if (
+          args.response !== 'full' &&
+          operationArguments.response !== 'full'
+        ) {
           value = {
             ...value,
             actionResults: value.actionResults.map((entry) => {
@@ -4508,8 +4742,9 @@ export const createLocalOperationTools = (
                   original.measurementTargets !== undefined) ||
                 !isRecord(entry.result) ||
                 !('coveredMeasurementTargets' in entry.result)
-              )
+              ) {
                 return entry
+              }
               // Automatic reconciliation has already consumed this internal scope.
               // The observed browser receipt retains it for diagnostics/recovery.
               const { coveredMeasurementTargets: _coverage, ...result } =
@@ -4517,6 +4752,7 @@ export const createLocalOperationTools = (
               return { ...entry, result }
             })
           }
+        }
         const followupActionCount = value.actionResults.filter(
           (entry) => !submitted.has(entry.actionId)
         ).length
@@ -4532,20 +4768,24 @@ export const createLocalOperationTools = (
             }
           : value
         const projected = owner.projectModelResult(name, args, output)
-        if (!internal) return JSON.stringify(projected)
+        if (!internal) {
+          return JSON.stringify(projected)
+        }
         if (
           !batchMode &&
           definition &&
           'delivery' in definition &&
           definition.delivery
-        )
+        ) {
           return JSON.stringify({ ...output, modelResult: projected })
+        }
         return JSON.stringify(output)
       }
       const operationArguments = isRecord(args.arguments) ? args.arguments : {}
       if (name === AiActionNames.INSPECT_DRAWING) {
-        if (typeof operationArguments.elementId !== 'string')
+        if (typeof operationArguments.elementId !== 'string') {
           throw new Error('Missing inspection target')
+        }
         const view = operationArguments.region
           ? 'detail'
           : (operationArguments.view ?? 'overview')
@@ -4567,7 +4807,7 @@ export const createLocalOperationTools = (
           requiresVisualReview(action.name) ||
           action.name === AiActionNames.ORGANIZE_DESIGN
       )
-      if (affectsDrawingReview && hasUnresolvedMutationScope())
+      if (affectsDrawingReview && hasUnresolvedMutationScope()) {
         return localToolFailureReply(
           scopeRecovery,
           'MUTATION_SCOPE_UNAVAILABLE',
@@ -4577,6 +4817,7 @@ export const createLocalOperationTools = (
             recoverable: false
           }
         ).text
+      }
       let prepared: AiActionBatch
       try {
         prepared = resolvePreparedBatch({
@@ -4611,8 +4852,9 @@ export const createLocalOperationTools = (
         if (
           name === AiActionNames.REVIEW_DESIGN &&
           typeof operationArguments.elementId === 'string'
-        )
+        ) {
           markMeasurementUnavailable(operationArguments.elementId)
+        }
         if (
           affectsDrawingReview &&
           (!(error instanceof BrowserBatchExecutionError) || !error.receipt)
@@ -4636,8 +4878,9 @@ export const createLocalOperationTools = (
           !affectsDrawingReview ||
           !(error instanceof BrowserBatchExecutionError) ||
           !error.receipt
-        )
+        ) {
           throw error
+        }
         executionFailure = error
         receipt = error.receipt
       }
@@ -4645,7 +4888,7 @@ export const createLocalOperationTools = (
         if (
           name === AiActionNames.REVIEW_DESIGN &&
           typeof operationArguments.elementId === 'string'
-        )
+        ) {
           value = {
             ...value,
             mechanicalSelection: {
@@ -4655,7 +4898,8 @@ export const createLocalOperationTools = (
               ])
             }
           }
-        if (hasUnresolvedMutationScope())
+        }
+        if (hasUnresolvedMutationScope()) {
           value = {
             ...value,
             checks: checkResults.summary([
@@ -4674,7 +4918,8 @@ export const createLocalOperationTools = (
               }
             ]
           }
-        if (executionFailure)
+        }
+        if (executionFailure) {
           return localToolFailureReply(
             localToolErrorMessage(executionFailure),
             value.failure?.code ?? executionFailure.failure.code,
@@ -4688,6 +4933,7 @@ export const createLocalOperationTools = (
               )
             }
           ).text
+        }
         return serializeReceipt(value)
       }
       const changedTargets = new Set<string>()
@@ -4702,7 +4948,9 @@ export const createLocalOperationTools = (
           measurementId(id),
           'The measured target was removed.'
         )
-        if (!measuredTargets.size) measurementPending = false
+        if (!measuredTargets.size) {
+          measurementPending = false
+        }
       }
       signal.throwIfAborted()
       if (
@@ -4717,15 +4965,18 @@ export const createLocalOperationTools = (
         const reviewed = receipt.actionResults.find(
           (item) => item.actionId === prepared.actions[0].id
         )?.result
-        if (stamp && isRecord(reviewed))
+        if (stamp && isRecord(reviewed)) {
           await reconcileMeasurements(
             operationArguments.elementId,
             stamp,
             reviewed.coveredMeasurementTargets,
             signal
           )
+        }
       }
-      if (signal.aborted) throw new Error('Backend operation cancelled')
+      if (signal.aborted) {
+        throw new Error('Backend operation cancelled')
+      }
       if (affectsDrawingReview) {
         const acknowledgements = new Map<
           string,
@@ -4738,22 +4989,25 @@ export const createLocalOperationTools = (
         }
         for (const submitted of prepared.actions) {
           const contract = getBasicApiContract(submitted.name)
-          if (contract && !['write', 'delete'].includes(contract.effect))
+          if (contract && !['write', 'delete'].includes(contract.effect)) {
             continue
+          }
           if (
             !contract &&
             !requiresVisualReview(submitted.name) &&
             submitted.name !== AiActionNames.ORGANIZE_DESIGN
-          )
+          ) {
             continue
+          }
           const matches = acknowledgements.get(submitted.id) ?? []
           if (
             matches.length === 0 &&
             receipt.failure?.settlement === 'not-started' &&
             receipt.failure.actionId === submitted.id &&
             receipt.failure.actionName === submitted.name
-          )
+          ) {
             continue
+          }
           if (
             matches.length !== 1 ||
             matches[0].actionName !== submitted.name ||
@@ -4783,8 +5037,12 @@ export const createLocalOperationTools = (
               unknownScope(submitted.id)
               continue
             }
-            if (!scope.complete) unknownScope(submitted.id)
-            for (const id of scope.removedElementIds) retireTarget(id)
+            if (!scope.complete) {
+              unknownScope(submitted.id)
+            }
+            for (const id of scope.removedElementIds) {
+              retireTarget(id)
+            }
             for (const id of scope.elementIds) {
               reviewScope.add(id)
               changedTargets.add(id)
@@ -4800,8 +5058,9 @@ export const createLocalOperationTools = (
                 scope.elementIds.includes(group.groupId) &&
                 Array.isArray(group.elementIds) &&
                 (!reviewTargetId || group.elementIds.includes(reviewTargetId))
-              )
+              ) {
                 reviewTargetId = group.groupId
+              }
             }
             continue
           }
@@ -4809,23 +5068,28 @@ export const createLocalOperationTools = (
             ? submitted.arguments
             : {}
           const result = receiptResult
-          if (result.status === 'no-change' || result.changed === false)
+          if (result.status === 'no-change' || result.changed === false) {
             continue
+          }
           let removed: unknown
-          if (entry.actionName === AiActionNames.REMOVE_AI_COMPOSITION)
+          if (entry.actionName === AiActionNames.REMOVE_AI_COMPOSITION) {
             removed = result.appliedElementIds
+          }
           if (Array.isArray(removed)) {
             for (const item of removed) {
               const id = isRecord(item) ? item.elementId : item
-              if (typeof id === 'string') retireTarget(id)
+              if (typeof id === 'string') {
+                retireTarget(id)
+              }
             }
           }
           if (
             entry.actionName === AiActionNames.REPLACE_VECTOR_COMPOSITION &&
             result.status === 'complete' &&
             typeof submittedArguments.compositionId === 'string'
-          )
+          ) {
             retireTarget(submittedArguments.compositionId)
+          }
           const group = result.operation === 'group'
           const ungroup = result.operation === 'ungroup'
           if (
@@ -4839,16 +5103,18 @@ export const createLocalOperationTools = (
               members.forEach((id) => reviewScope.delete(id))
               reviewScope.add(result.groupId)
               changedTargets.add(result.groupId)
-              if (!reviewTargetId || members.includes(reviewTargetId))
+              if (!reviewTargetId || members.includes(reviewTargetId)) {
                 reviewTargetId = result.groupId
+              }
             } else if (ungroup && result.removed === true) {
               retireTarget(result.groupId)
               members.forEach((id) => {
                 reviewScope.add(id)
                 changedTargets.add(id)
               })
-              if (!reviewTargetId || reviewTargetId === result.groupId)
+              if (!reviewTargetId || reviewTargetId === result.groupId) {
                 reviewTargetId = [...reviewScope][0]
+              }
             }
           }
           if (typeof result.compositionId === 'string') {
@@ -4857,8 +5123,9 @@ export const createLocalOperationTools = (
             if (
               !reviewTargetId ||
               entry.actionName !== AiActionNames.UPDATE_DESIGN_ELEMENT
-            )
+            ) {
               reviewTargetId = result.compositionId
+            }
           } else if (typeof result.elementId === 'string') {
             reviewScope.add(result.elementId)
             changedTargets.add(result.elementId)
@@ -4867,36 +5134,43 @@ export const createLocalOperationTools = (
             entry.actionName !== AiActionNames.REMOVE_AI_COMPOSITION &&
             Array.isArray(result.appliedElementIds)
           ) {
-            for (const id of result.appliedElementIds)
+            for (const id of result.appliedElementIds) {
               if (typeof id === 'string' && id) {
                 reviewScope.add(id)
                 changedTargets.add(id)
                 reviewTargetId ??= id
               }
+            }
           } else if (
             result.operation === 'reorder' &&
             Array.isArray(result.moves)
           ) {
-            for (const move of result.moves)
+            for (const move of result.moves) {
               if (isRecord(move) && typeof move.elementId === 'string') {
                 reviewScope.add(move.elementId)
                 changedTargets.add(move.elementId)
                 reviewTargetId ??= move.elementId
               }
+            }
           }
         }
-        if (reviewTargetId && !reviewScope.has(reviewTargetId))
+        if (reviewTargetId && !reviewScope.has(reviewTargetId)) {
           reviewTargetId = [...reviewScope][0]
+        }
         if (
           changedTargets.size ||
           removedTargets ||
           hasUnresolvedMutationScope()
         ) {
           designReview.mutate()
-          if (changedTargets.size) measurementPending = canReview
+          if (changedTargets.size) {
+            measurementPending = canReview
+          }
         }
         if (inspectionTargets) {
-          for (const target of changedTargets) inspectionTargets.add(target)
+          for (const target of changedTargets) {
+            inspectionTargets.add(target)
+          }
           return deliverReceipt({
             ...receipt,
             inspectionDeferred: true,
@@ -4967,21 +5241,30 @@ export const createLocalOperationTools = (
       ...parameters: Parameters<typeof execute>
     ): Promise<string> => {
       const [name, args, signal] = parameters
-      if (name !== AiDesignToolIds.DESCRIBE_DESIGN_APIS)
+      if (name !== AiDesignToolIds.DESCRIBE_DESIGN_APIS) {
         return execute(...parameters)
+      }
       signal.throwIfAborted()
-      if (!isRecord(args)) return execute(...parameters)
+      if (!isRecord(args)) {
+        return execute(...parameters)
+      }
       const { contentPage, ...query } = args
       if (contentPage !== undefined) {
         const issue = operationInputIssue(contentPage, contentPageSchema)
-        if (issue) throw new LocalOperationPreparationError(issue)
+        if (issue) {
+          throw new LocalOperationPreparationError(issue)
+        }
       }
       if (args.fromResult === undefined) {
         const issue = discoveryInputIssue(query)
-        if (issue) throw new LocalOperationPreparationError(issue)
+        if (issue) {
+          throw new LocalOperationPreparationError(issue)
+        }
       }
       const keyQuery = { ...query }
-      if (keyQuery.includeSchemas === false) delete keyQuery.includeSchemas
+      if (keyQuery.includeSchemas === false) {
+        delete keyQuery.includeSchemas
+      }
       const key = JSON.stringify(
         Object.keys(keyQuery)
           .sort()
@@ -5001,17 +5284,19 @@ export const createLocalOperationTools = (
           Object.keys(args).some(
             (name) => !['fromResult', 'names', 'contentPage'].includes(name)
           )
-        )
+        ) {
           throw new LocalOperationPreparationError(
             'fromResult requires exact names and optional contentPage only; use an ordinary selected query for a new view/scope.'
           )
+        }
         const original = [...returnedDefinitions.values()].find(
           (value) => value.resultKey === args.fromResult
         )
-        if (!original || original.registryRevision !== revision)
+        if (!original || original.registryRevision !== revision) {
           throw new LocalOperationPreparationError(
             'Retained discovery result is missing or stale. Repeat only the selected query without fromResult; never replay writes.'
           )
+        }
         if (!retained) {
           const apis: Record<string, unknown>[] = []
           const tools: Record<string, unknown>[] = []
@@ -5059,9 +5344,9 @@ export const createLocalOperationTools = (
                         )
                       ]
               })
-            } else if (!matchedApis.length && !matchedTools.length)
+            } else if (!matchedApis.length && !matchedTools.length) {
               missingNames.push(name)
-            else {
+            } else {
               apis.push(...matchedApis)
               tools.push(...matchedTools)
             }
@@ -5083,10 +5368,11 @@ export const createLocalOperationTools = (
       if (
         contentPage !== undefined &&
         (!retained || retained.registryRevision !== revision)
-      )
+      ) {
         throw new LocalOperationPreparationError(
           'Content continuation expired or registry changed; restart the original read.'
         )
+      }
       if (
         !retained ||
         retained.registryRevision !== revision ||
@@ -5107,13 +5393,17 @@ export const createLocalOperationTools = (
           receipt
         }
         if (returnedDefinitions.size >= 64) {
-          if (args.fromResult === undefined) returnedDefinitions.clear()
-          else
+          if (args.fromResult === undefined) {
+            returnedDefinitions.clear()
+          } else {
             for (const [entryKey, entry] of returnedDefinitions) {
-              if (entry.resultKey === args.fromResult) continue
+              if (entry.resultKey === args.fromResult) {
+                continue
+              }
               returnedDefinitions.delete(entryKey)
               break
             }
+          }
         }
         returnedDefinitions.set(key, retained)
       }
@@ -5156,8 +5446,9 @@ export const localToolContent = async (
           entry.actionName !== AiReferenceToolIds.IMPORT_REFERENCE_IMAGE) ||
         !isRecord(entry.result) ||
         entry.result.available !== true
-      )
+      ) {
         continue
+      }
       const snapshot = entry.result.image
       if (
         !isRecord(snapshot) ||
@@ -5166,8 +5457,9 @@ export const localToolContent = async (
         !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(
           snapshot.dataUrl
         )
-      )
+      ) {
         throw new Error('Invalid drawing snapshot')
+      }
       const bytes = Buffer.from(snapshot.dataUrl.split(',')[1], 'base64')
       if (entry.actionName === AiReferenceToolIds.IMPORT_REFERENCE_IMAGE) {
         // Import already decodes once. Read metadata only here to validate the
@@ -5183,8 +5475,9 @@ export const localToolContent = async (
           (metadata.pages ?? 1) !== 1 ||
           metadata.autoOrient.width !== snapshot.width ||
           metadata.autoOrient.height !== snapshot.height
-        )
+        ) {
           throw new Error('Invalid reference image metadata')
+        }
       } else if (
         !snapshot.dataUrl.startsWith('data:image/png;base64,') ||
         bytes.length < 24 ||
@@ -5197,8 +5490,9 @@ export const localToolContent = async (
         Number(snapshot.height) < 1 ||
         Number(snapshot.width) > 1024 ||
         Number(snapshot.height) > 1024
-      )
+      ) {
         throw new Error('Invalid drawing snapshot dimensions')
+      }
       images.push({ type: 'inputImage', imageUrl: snapshot.dataUrl })
       const { dataUrl: _dataUrl, ...metadata } = snapshot
       entry.result = { ...entry.result, image: metadata }

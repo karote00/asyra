@@ -27,7 +27,9 @@ export function createRobotWorkspace(
   let snapshot = assessRobotDesign(validateRobot(DEFAULT_ROBOT), getFarm())
   const listeners = new Set<() => void>()
   const assertLive = () => {
-    if (closed) throw new Error('Robot workspace is closed')
+    if (closed) {
+      throw new Error('Robot workspace is closed')
+    }
   }
   core.definePropertyComponent({
     type: RobotIds.COMPONENT,
@@ -51,7 +53,9 @@ export function createRobotWorkspace(
     const property = id
       ? getPropertyComponentAccessor().getPropertyById(id)
       : undefined
-    if (!property) throw new Error('Missing canonical robot configuration')
+    if (!property) {
+      throw new Error('Missing canonical robot configuration')
+    }
     return validateRobot(
       (property.save() as unknown as { settings: RobotConfiguration }).settings
     )
@@ -62,8 +66,9 @@ export function createRobotWorkspace(
     if (
       !farmChanged &&
       JSON.stringify(next) === JSON.stringify(snapshot.settings)
-    )
+    ) {
       return
+    }
     snapshot = assessRobotDesign(next, getFarm())
     changed()
     listeners.forEach((listener) => listener())
@@ -81,7 +86,9 @@ export function createRobotWorkspace(
             assertLive()
             const current = read()
             const next = validateRobot({ ...current, ...detached })
-            if (JSON.stringify(current) === JSON.stringify(next)) return
+            if (JSON.stringify(current) === JSON.stringify(next)) {
+              return
+            }
             const prepared = assessRobotDesign(next, getFarm())
             runTransaction(() =>
               core.updateElementProperties([

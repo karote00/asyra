@@ -1329,7 +1329,7 @@
       {
         id: 'gate-3-inspector',
         label: 'Gate 3 Hierarchy Inspector',
-        href: '../inspectors/group-component-and-hierarchy-flow-inspector.html',
+        href: '../workspace/workspace.html#inspector=group-component-and-hierarchy',
         kind: 'authority'
       },
       {
@@ -1357,6 +1357,6 @@
   }
 
   freeze(data)
-  if (typeof globalThis !== 'undefined') globalThis.FLOW_INSPECTOR_DATA = data
-  if (typeof module !== 'undefined' && module.exports) module.exports = data
+  if (typeof globalThis !== 'undefined') {globalThis.FLOW_INSPECTOR_DATA = data}
+  if (typeof module !== 'undefined' && module.exports) {module.exports = data}
 })()

@@ -15,7 +15,9 @@ test('two-finger scrolling matches pinch zoom without panning or changing page s
     .click()
   const canvas = page.getByTestId('workcell-canvas').locator('canvas')
   const box = await canvas.boundingBox()
-  if (!box) throw new Error('Missing viewport')
+  if (!box) {
+    throw new Error('Missing viewport')
+  }
   const rest = async () => {
     await page.getByRole('button', { name: 'Undo', exact: true }).focus()
     await page.mouse.move(10, 10)
@@ -89,7 +91,9 @@ test('two-finger scrolling matches pinch zoom without panning or changing page s
     .poll(() => panel.evaluate((node) => node.scrollHeight - node.clientHeight))
     .toBeGreaterThan(0)
   const panelBox = await panel.boundingBox()
-  if (!panelBox) throw new Error('Missing inspector')
+  if (!panelBox) {
+    throw new Error('Missing inspector')
+  }
   await page.mouse.move(panelBox.x + panelBox.width - 20, panelBox.y + 180)
   await page.mouse.wheel(0, 320)
   await expect
@@ -138,7 +142,9 @@ test('a previous trackpad preference cannot restore scroll pan after reload', as
   ).toHaveCount(0)
   const canvas = page.getByTestId('workcell-canvas').locator('canvas')
   const box = await canvas.boundingBox()
-  if (!box) throw new Error('Missing viewport')
+  if (!box) {
+    throw new Error('Missing viewport')
+  }
   await page.getByRole('button', { name: 'Undo', exact: true }).focus()
   await page.mouse.move(10, 10)
   const initial = await canvas.screenshot()
@@ -183,7 +189,9 @@ test('navigation controls fit narrow widths without changing panel dimensions', 
     })
     await expect(button).toBeVisible()
     const bounds = await button.boundingBox()
-    if (!bounds || !before) throw new Error('Missing navigation controls')
+    if (!bounds || !before) {
+      throw new Error('Missing navigation controls')
+    }
     expect(bounds.x).toBeGreaterThanOrEqual(before.x)
     expect(bounds.x + bounds.width).toBeLessThanOrEqual(before.x + before.width)
     await button.click()

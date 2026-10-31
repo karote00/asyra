@@ -4,7 +4,9 @@ import { useEffect, useRef } from 'react'
 export function useContentReveal<T extends HTMLElement>(request: unknown) {
   const target = useRef<T>(null)
   useEffect(() => {
-    if (request == null) return
+    if (request == null) {
+      return
+    }
     target.current?.focus({ preventScroll: true })
     target.current?.scrollIntoView?.({
       block: 'start',

@@ -567,7 +567,9 @@ export class RegistrationGraph {
       )
     }
     if (this.runtimeRetired) {
-      if (this.runtimeCleanupFailure) throw this.runtimeCleanupFailure
+      if (this.runtimeCleanupFailure) {
+        throw this.runtimeCleanupFailure
+      }
       return
     }
     this.runtimeRetired = true
@@ -581,7 +583,9 @@ export class RegistrationGraph {
     const failures: RegistrationCleanupFailure[] = []
     nodes.forEach((node) => {
       for (const resource of [...node.resources].reverse()) {
-        if (resource.disposed) continue
+        if (resource.disposed) {
+          continue
+        }
         try {
           resource.dispose()
           resource.disposed = true
@@ -610,7 +614,9 @@ export class RegistrationGraph {
     operation: RegistrationGraphOperation
   ): void {
     const pendingRoot = this.pendingRootByNode.get(refKey(ref))
-    if (!pendingRoot) return
+    if (!pendingRoot) {
+      return
+    }
     return relationFailure(
       'UNREGISTER_FAILED',
       operation,
@@ -629,7 +635,9 @@ export class RegistrationGraph {
     key: string
   ): Map<string, RegistrationRelationMetadata> {
     const existing = index.get(key)
-    if (existing) return existing
+    if (existing) {
+      return existing
+    }
     const created = new Map<string, RegistrationRelationMetadata>()
     index.set(key, created)
     return created
@@ -640,11 +648,15 @@ export class RegistrationGraph {
     const targetKey = refKey(relation.target)
     const outgoing = this.outgoingRelationsBySource.get(sourceKey)
     outgoing?.delete(relation.name)
-    if (outgoing?.size === 0) this.outgoingRelationsBySource.delete(sourceKey)
+    if (outgoing?.size === 0) {
+      this.outgoingRelationsBySource.delete(sourceKey)
+    }
 
     const incoming = this.incomingRelationsByTarget.get(targetKey)
     incoming?.delete(relationKey(relation))
-    if (incoming?.size === 0) this.incomingRelationsByTarget.delete(targetKey)
+    if (incoming?.size === 0) {
+      this.incomingRelationsByTarget.delete(targetKey)
+    }
   }
 
   private getCurrentRelation(
@@ -676,13 +688,19 @@ export class RegistrationGraph {
       const current = queue[index]
       index += 1
       const currentKey = refKey(current)
-      if (visited.has(currentKey)) continue
+      if (visited.has(currentKey)) {
+        continue
+      }
       visited.add(currentKey)
 
       for (const relation of this.getIncomingRelations(current)) {
-        if (relation.onTargetUnregister !== 'unregister-source') continue
+        if (relation.onTargetUnregister !== 'unregister-source') {
+          continue
+        }
         const sourceKey = refKey(relation.source)
-        if (!visited.has(sourceKey)) queue.push(cloneRef(relation.source))
+        if (!visited.has(sourceKey)) {
+          queue.push(cloneRef(relation.source))
+        }
       }
     }
 
@@ -709,7 +727,9 @@ export class RegistrationGraph {
       try {
         record?.handlers.preflightUnregister?.(cloneRef(item))
       } catch (cause) {
-        if (cause instanceof RegistrationRelationError) throw cause
+        if (cause instanceof RegistrationRelationError) {
+          throw cause
+        }
         return relationFailure(
           'REGISTRATION_IN_USE',
           'unregister-registration',
@@ -723,7 +743,9 @@ export class RegistrationGraph {
       try {
         source?.handlers.preflightDetachRelation?.(cloneRelation(relation))
       } catch (cause) {
-        if (cause instanceof RegistrationRelationError) throw cause
+        if (cause instanceof RegistrationRelationError) {
+          throw cause
+        }
         return relationFailure(
           'REGISTRATION_IN_USE',
           'unregister-registration',
@@ -762,7 +784,9 @@ export class RegistrationGraph {
         relation.onTargetUnregister === 'detach'
       ) {
         const key = relationKey(relation)
-        if (pending.processedDetachRelationKeys.has(key)) continue
+        if (pending.processedDetachRelationKeys.has(key)) {
+          continue
+        }
         const currentRelation = this.getCurrentRelation(relation)
         if (
           !currentRelation ||
@@ -803,10 +827,14 @@ export class RegistrationGraph {
     const failures: RegistrationCleanupFailure[] = []
     for (const item of [...pending.queue].reverse()) {
       const node = this.nodesByRef.get(refKey(item))
-      if (!node) continue
+      if (!node) {
+        continue
+      }
       for (let index = node.resources.length - 1; index >= 0; index -= 1) {
         const resource = node.resources[index]
-        if (resource.disposed) continue
+        if (resource.disposed) {
+          continue
+        }
         try {
           resource.dispose()
           resource.disposed = true
@@ -822,14 +850,19 @@ export class RegistrationGraph {
   private getPendingCleanup(
     pending: PendingUnregister | undefined
   ): string[] | undefined {
-    if (!pending) return
+    if (!pending) {
+      return
+    }
     const keys: string[] = []
     for (const item of [...pending.queue].reverse()) {
       const node = this.nodesByRef.get(refKey(item))
-      if (!node) continue
+      if (!node) {
+        continue
+      }
       for (let index = node.resources.length - 1; index >= 0; index -= 1) {
-        if (!node.resources[index].disposed)
+        if (!node.resources[index].disposed) {
           keys.push(node.resources[index].key)
+        }
       }
     }
     return keys

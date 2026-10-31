@@ -15,7 +15,9 @@ import type { PreparedDrawingArtifact } from '../../src/ai/prepared-drawing-arti
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Result = any
 const assert = (ok: unknown, message: string) => {
-  if (!ok) throw new Error(message)
+  if (!ok) {
+    throw new Error(message)
+  }
 }
 const equal = (actual: unknown, expected: unknown) =>
   assert(
@@ -47,10 +49,11 @@ export const runActionUsageCase = async (
 ) => {
   const deadline = performance.now() + 10000
   while (!isActionFixtureReady()) {
-    if (performance.now() > deadline)
+    if (performance.now() > deadline) {
       throw new Error(
         'The document session did not become ready for fixture creation'
       )
+    }
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
   }
   const runtime = createAiRuntimeInput({
@@ -72,7 +75,9 @@ export const runActionUsageCase = async (
     invocationSignal = signal
   ): Promise<Result> => {
     const action = definitions.get(tool)
-    if (!action) throw new Error(`Missing registered tool: ${tool}`)
+    if (!action) {
+      throw new Error(`Missing registered tool: ${tool}`)
+    }
     return runner.run(tool, (runMutation) =>
       action.execute(input, { signal: invocationSignal, runMutation })
     )
@@ -444,9 +449,13 @@ export const runActionUsageCase = async (
       Object.keys(cases).sort()
     )
     const selected = cases[name]
-    if (!selected) throw new Error(`No semantic usage case: ${name}`)
+    if (!selected) {
+      throw new Error(`No semantic usage case: ${name}`)
+    }
     const definition = definitions.get(name)
-    if (!definition) throw new Error('Unregistered case')
+    if (!definition) {
+      throw new Error('Unregistered case')
+    }
     const before = JSON.stringify(await core.save())
     const selection = [...core.getSelectedElementIds()]
     for (const [input, abort] of [
@@ -718,7 +727,8 @@ export const runActionUsageCase = async (
     await selected.check(result)
     return { name, status: result.toolOutcome.status }
   } finally {
-    for (const resource of runtime.ownedResources ?? [])
+    for (const resource of runtime.ownedResources ?? []) {
       await resource.dispose()
+    }
   }
 }

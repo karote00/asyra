@@ -93,8 +93,9 @@ function keys(v: object, expected: readonly string[]) {
     Array.isArray(v) ||
     Object.keys(v).length !== expected.length ||
     Object.keys(v).some((k) => !expected.includes(k))
-  )
+  ) {
     throw new Error('invalid-monitor-fields')
+  }
 }
 function freeze<T>(v: T): T {
   if (v && typeof v === 'object' && !Object.isFrozen(v)) {
@@ -138,8 +139,9 @@ function readProfile(
     p.limits.maxContactForce <= p.limits.minContactForce ||
     p.limits.maxSampleGap <= 0 ||
     !Object.values(p.uncertainty).every((v) => finite(v) && v >= 0)
-  )
+  ) {
     throw new Error('invalid-synthetic-monitor-profile')
+  }
   return freeze(p)
 }
 
@@ -169,7 +171,9 @@ export class WalkingRuntimeMonitorOwner {
     )
   }
   configure(raw: WalkingRuntimeMonitorProfile) {
-    if (this.closed) throw new Error('Walking runtime monitor is closed')
+    if (this.closed) {
+      throw new Error('Walking runtime monitor is closed')
+    }
     this.profile = readProfile(raw)
     this.latest = undefined
   }
@@ -190,7 +194,9 @@ export class WalkingRuntimeMonitorOwner {
     context: WalkingRuntimeMonitorContext,
     raw: WalkingRuntimeMonitorSample
   ): WalkingRuntimeMonitor {
-    if (this.closed) throw new Error('Walking runtime monitor is closed')
+    if (this.closed) {
+      throw new Error('Walking runtime monitor is closed')
+    }
     const work = {
       orientationSamples: 0,
       stanceContacts: 0,
@@ -232,19 +238,24 @@ export class WalkingRuntimeMonitorOwner {
       return { low: Math.max(0, result.low), high: result.high }
     }
     try {
-      if (!this.current(context))
+      if (!this.current(context)) {
         throw new Error('stale-monitor-source-load-or-cycle')
-      if (!p) throw new Error('missing-synthetic-monitor-profile')
-      if (context.now < p.validFrom || context.now >= p.validUntil)
+      }
+      if (!p) {
+        throw new Error('missing-synthetic-monitor-profile')
+      }
+      if (context.now < p.validFrom || context.now >= p.validUntil) {
         throw new Error('expired-synthetic-monitor-profile')
+      }
       keys(raw, ['format', 'assumption', 'orientations', 'contacts'])
       if (
         raw.format !== 'synthetic-walking-runtime-sample/1' ||
         !text(raw.assumption) ||
         !Array.isArray(raw.orientations) ||
         raw.orientations.length !== 2
-      )
+      ) {
         throw new Error('missing-orientation-samples')
+      }
       const samples = raw.orientations.map((sample) => {
         work.orientationSamples++
         keys(sample, ['at', 'rotation'])
@@ -260,14 +271,17 @@ export class WalkingRuntimeMonitorOwner {
               typeof value === 'number' && finite(value)
           ) ||
           Math.abs(Math.hypot(...q) - 1) > 64 * Number.EPSILON
-        )
+        ) {
           throw new Error('invalid-orientation-sample')
+        }
         const coordinates = q.map(interval)
         const norm = coordinates.reduce(
           (sum, v) => plus(sum, squared(v)),
           interval(0)
         )
-        if (norm.low <= 0) throw new Error('unknown-orientation-norm')
+        if (norm.low <= 0) {
+          throw new Error('unknown-orientation-norm')
+        }
         return { at, coordinates, norm }
       })
       const [first, last] = samples
@@ -276,8 +290,9 @@ export class WalkingRuntimeMonitorOwner {
         last.at !== context.now ||
         elapsed.low <= 0 ||
         elapsed.high > p.limits.maxSampleGap
-      )
+      ) {
         throw new Error('orientation-time-gap')
+      }
       // For theta in [0, pi], theta <= pi*sin(theta/2) < 4*sin(theta/2).
       // Quaternion norms are retained in the arithmetic, including sensor rounding.
       const tiltSine = root(
@@ -310,8 +325,9 @@ export class WalkingRuntimeMonitorOwner {
         !Array.isArray(raw.contacts) ||
         raw.contacts.length !== 3 ||
         support.length !== 3
-      )
+      ) {
         throw new Error('missing-stance-contacts')
+      }
       const matched = new Set<string>()
       for (const sample of raw.contacts) {
         work.stanceContacts++
@@ -323,12 +339,18 @@ export class WalkingRuntimeMonitorOwner {
             a.patch === sample.patch &&
             support.includes(a.chainId)
         )
-        if (!anchor || matched.has(anchor.chainId))
+        if (!anchor || matched.has(anchor.chainId)) {
           throw new Error('foreign-or-duplicate-stance-contact')
+        }
         matched.add(anchor.chainId)
         const force = { low: sample.force.low, high: sample.force.high }
-        if (!finite(force.low) || !finite(force.high) || force.low > force.high)
+        if (
+          !finite(force.low) ||
+          !finite(force.high) ||
+          force.low > force.high
+        ) {
           throw new Error('invalid-contact-force')
+        }
         values.contacts.push({
           part: anchor.part,
           patch: anchor.patch,
@@ -338,12 +360,15 @@ export class WalkingRuntimeMonitorOwner {
           })
         })
       }
-      if (!finite(values.tilt.high) || !finite(values.angularRate.high))
+      if (!finite(values.tilt.high) || !finite(values.angularRate.high)) {
         throw new Error('unresolved-monitor-arithmetic')
-      if (values.tilt.high > p.limits.maxTiltRadians)
+      }
+      if (values.tilt.high > p.limits.maxTiltRadians) {
         reasons.push('synthetic-tilt-bound-not-within-profile')
-      if (values.angularRate.high > p.limits.maxAngularRateRadiansPerSecond)
+      }
+      if (values.angularRate.high > p.limits.maxAngularRateRadiansPerSecond) {
         reasons.push('synthetic-rate-bound-not-within-profile')
+      }
       if (
         values.contacts.some(
           (c) =>
@@ -351,8 +376,9 @@ export class WalkingRuntimeMonitorOwner {
             c.force.low < p.limits.minContactForce ||
             c.force.high > p.limits.maxContactForce
         )
-      )
+      ) {
         reasons.push('synthetic-contact-force-not-within-profile')
+      }
       status = reasons.length ? 'hold' : 'within-synthetic-profile'
     } catch (error) {
       reasons.push(

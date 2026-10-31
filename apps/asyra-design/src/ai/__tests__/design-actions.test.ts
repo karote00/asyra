@@ -614,8 +614,12 @@ it.each(['missing', 'leaf', 'outside', 'locked', 'cycle'])(
   async (kind) => {
     const api = apis()
     let parentId = 'workspace'
-    if (kind === 'outside') parentId = 'other'
-    if (kind === 'cycle') parentId = 'existing'
+    if (kind === 'outside') {
+      parentId = 'other'
+    }
+    if (kind === 'cycle') {
+      parentId = 'existing'
+    }
     api.getElementMetadata = (id) =>
       id === 'existing' && kind !== 'missing'
         ? {
@@ -692,13 +696,19 @@ it.each(['missing', 'element', 'forward', 'duplicate'])(
     const design = JSON.parse(JSON.stringify(sharedDesign()))
     const first = design.entries[1].descriptor,
       second = design.entries[2].descriptor
-    if (kind === 'missing') second.fills = ['unknown-fill']
-    if (kind === 'element') second.fills = [design.rootId]
+    if (kind === 'missing') {
+      second.fills = ['unknown-fill']
+    }
+    if (kind === 'element') {
+      second.fills = [design.rootId]
+    }
     if (kind === 'forward') {
       second.fills = [{ ...first.fills[0], id: second.id + '-fill' }]
       first.fills = [second.id + '-fill']
     }
-    if (kind === 'duplicate') second.fills = structuredClone(first.fills)
+    if (kind === 'duplicate') {
+      second.fills = structuredClone(first.fills)
+    }
     const api = apis()
     await expect(
       createPreparedDesignAction(api).execute(
@@ -734,10 +744,13 @@ it.each([false, true])(
       vi
         .spyOn(elementApis, 'createElementsInParent')
         .mockImplementation((entries, parentId) => {
-          for (const entry of entries)
+          for (const entry of entries) {
             records.set(entry.id, { type: entry.type, parentId, childCount: 0 })
+          }
           const parent = records.get(parentId)
-          if (!parent) throw new Error('Missing canonical parent')
+          if (!parent) {
+            throw new Error('Missing canonical parent')
+          }
           parent.childCount += entries.length
           return entries.map((entry) => entry.id)
         })
@@ -750,17 +763,23 @@ it.each([false, true])(
       const promise = createPreparedDesignAction(undefined, async () => {
         yields++
         const parent = records.get('existing')
-        if (!parent) throw new Error('Missing canonical parent')
-        if (lockDuringYield) parent.lock = true
+        if (!parent) {
+          throw new Error('Missing canonical parent')
+        }
+        if (lockDuringYield) {
+          parent.lock = true
+        }
       }).execute(
         { design: deliverPreparedDesign(fixture()), parentId: 'existing' },
         context()
       )
-      if (lockDuringYield)
+      if (lockDuringYield) {
         await expect(promise).rejects.toMatchObject({
           receipt: { settlement: 'partial' }
         })
-      else expect(await promise).toMatchObject({ status: 'complete' })
+      } else {
+        expect(await promise).toMatchObject({ status: 'complete' })
+      }
       expect(yields).toBeGreaterThan(0)
       expect(snapshot).not.toHaveBeenCalled()
     } finally {
@@ -858,7 +877,9 @@ it('checks reviewed evidence inside the mutation callback after queue admission'
 it('continues budget partitions in one canonical root and refuses duplicate application', async () => {
   const session = createDesignPreparationSession()
   const draftId = session.retainRejectedDraft(recoveryFixture.input.draft)
-  if (!draftId) throw new Error('Missing retained source')
+  if (!draftId) {
+    throw new Error('Missing retained source')
+  }
   const signal = new AbortController().signal
   const firstRepair = { draftId, partition: 0 }
   const first = await session.prepareAsync(
@@ -917,20 +938,27 @@ it('continues budget partitions in one canonical root and refuses duplicate appl
   const rootId = session.resolve(first.artifactId).rootId
   // Model canonical Group bounds normalization, not a user translation.
   const root = entries.get(rootId)
-  if (!root) throw new Error('Missing root')
+  if (!root) {
+    throw new Error('Missing root')
+  }
   root.x -= 200
   root.y -= 100
-  for (const [id, parent] of parents)
+  for (const [id, parent] of parents) {
     if (parent === rootId) {
       const member = entries.get(id)
-      if (!member) throw new Error('Missing member')
+      if (!member) {
+        throw new Error('Missing member')
+      }
       member.x += 200
       member.y += 100
     }
+  }
   const expectedSize = entries.size
   const anchorId = session.resolve(later.artifactId).continuation?.anchor.id
   const anchor = anchorId ? entries.get(anchorId) : undefined
-  if (!anchor) throw new Error('Missing continuation anchor')
+  if (!anchor) {
+    throw new Error('Missing continuation anchor')
+  }
   const originalRotation = anchor.rotation
   anchor.rotation = (originalRotation ?? 0) + 0.1
   await expect(
@@ -1032,12 +1060,13 @@ it.each(['compact', 'full'] as const)(
     })
     expect(api.create).toHaveBeenCalledTimes(1)
     expect(api.select).not.toHaveBeenCalled()
-    if (response === 'full')
+    if (response === 'full') {
       expect(failure).toMatchObject({
         receipt: {
           result: { appliedElementIds: [design.rootId] }
         }
       })
+    }
   }
 )
 

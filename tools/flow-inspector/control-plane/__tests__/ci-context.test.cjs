@@ -14,7 +14,7 @@ const root = path.resolve(__dirname, '../../../..')
 for (const selectedManifestPath of [
   MANIFEST_PATH,
   'apps/example/flow-contracts.json'
-])
+]) {
   test(
     'CI context binds the selected accepted contract and integration source: ' +
       selectedManifestPath,
@@ -86,3 +86,4 @@ for (const selectedManifestPath of [
       assert.throws(() => prepareCIContext(root, '--help', snapshot), /base/)
     }
   )
+}

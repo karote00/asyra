@@ -29,7 +29,9 @@ it('rejects frozen triangles changed under an unchanged original source identity
   const table = createMechanicalVisuals().find(
     (part) => part.body === 'fixture-table'
   )
-  if (!table) throw new Error('Missing sample table source')
+  if (!table) {
+    throw new Error('Missing sample table source')
+  }
   const prepared = await archive.prepare(table.bytes, 'table.glb')
   const source = archive.accept(prepared),
     example = createSyntheticExample(),
@@ -82,7 +84,9 @@ it('rejects frozen triangles changed under an unchanged original source identity
   accepted.dispose()
   const changed = structuredClone(input),
     geometry = changed.runs[0].snapshot.workcell.bodies[0].colliders[0].geometry
-  if (geometry.kind !== 'mesh') throw new Error('Missing original source')
+  if (geometry.kind !== 'mesh') {
+    throw new Error('Missing original source')
+  }
   geometry.positions = geometry.positions.map((n) => n * 0.5)
   const decoder = { decode: decodeRestrictedGlb, dispose: vi.fn() }
   await expect(prepareProjectVisuals(changed, decoder)).rejects.toThrow(

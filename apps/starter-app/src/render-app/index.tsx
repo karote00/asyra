@@ -6,7 +6,9 @@ export const RenderApp = () => {
   const host = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const element = host.current
-    if (!element) return
+    if (!element) {
+      return
+    }
     let active = true
     const dimensions = () => ({
       width: Math.max(1, element.clientWidth || 800),
@@ -23,7 +25,9 @@ export const RenderApp = () => {
     void app
       .start(element, dimensions())
       .then(() => {
-        if (!active) return
+        if (!active) {
+          return
+        }
         observer?.observe(element)
         resize()
       })

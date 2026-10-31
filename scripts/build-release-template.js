@@ -14,9 +14,11 @@ let appName
 let frameworkPrebuilt = false
 
 for (const arg of args) {
-  if (arg.startsWith('--prod=')) appName = arg.split('=')[1]
-  else if (arg === '--prebuilt') frameworkPrebuilt = true
-  else {
+  if (arg.startsWith('--prod=')) {
+    appName = arg.split('=')[1]
+  } else if (arg === '--prebuilt') {
+    frameworkPrebuilt = true
+  } else {
     console.error(`Unknown argument: ${arg}`)
     process.exit(1)
   }

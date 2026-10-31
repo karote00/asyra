@@ -25,25 +25,26 @@ Inspector from the sidebar or open a stable deep link:
 workspace.html#inspector=<catalog-id>
 ```
 
-The selected Inspector is rendered in a keyed iframe so switching targets
-cannot retain the previous target's DOM or global state. Existing standalone
-Inspector HTML files remain independently openable.
+The selected Inspector is rendered directly by a keyed React component.
+Switching targets resets the selected view's component state. There is no frame,
+message bridge, standalone per-Inspector HTML or parallel renderer.
 
 ## Develop and verify
 
 ```bash
 yarn workspace @asyra/flow-inspector typecheck
-yarn workspace @asyra/flow-inspector test:local
 yarn workspace @asyra/flow-inspector build
-node tools/flow-inspector/workspace/generate-workspace.cjs
+yarn workspace @asyra/flow-inspector test:local
 ```
 
 The React source lives in `tools/flow-inspector/src/`. Vite emits the committed
 classic JavaScript and CSS under `workspace/generated/`; the catalog generator
-emits `workspace-bundle.data.js` from the current Inspector sources.
+emits `workspace-bundle.data.js` from the current Inspector sources. The build
+command runs that generator before compiling both React applications.
 
 Direct-open and Vite workspace entries remain read-only. The sibling
-`tools/flow-inspector/control-plane/` serves this same committed workspace and
-composes its verification adapter into the target document. That server owns
-actions and evidence; the static renderer continues to own the original canvas,
-cards, connections, selection, and zoom.
+`tools/flow-inspector/control-plane/` serves this same committed workspace.
+React composes the control-plane panels with the shared architecture components.
+The server owns actions and evidence; React owns the canvas, cards, connections,
+selection and zoom. The live flow-file dashboard also uses these React
+architecture components and its own React task panel.

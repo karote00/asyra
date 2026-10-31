@@ -6,7 +6,44 @@ import path from 'node:path'
 import test from 'node:test'
 import { runInNewContext } from 'node:vm'
 import yaml from 'js-yaml'
-import { fileURLToPath } from 'node:url'
+import ts from 'typescript'
+import { ESLint } from 'eslint'
+import { getFileInfo } from 'prettier'
+import { fileURLToPath, URL } from 'node:url'
+
+test('frozen source formatting exemption preserves current-source lint and semantic checks', async () => {
+  const cwd = fileURLToPath(new URL('../../', import.meta.url))
+  const eslint = new ESLint({ cwd })
+  const frozen =
+    'apps/asyra-fieldscope/src/domain/__tests__/fixtures/pre-p5b-source/crop-models.ts'
+  const current = 'apps/asyra-fieldscope/src/domain/crop-models.ts'
+  const otherFixture =
+    'apps/asyra-fieldscope/src/domain/__tests__/fixtures/current-example.ts'
+
+  for (const filePath of [frozen, current, otherFixture]) {
+    assert.equal(await eslint.isPathIgnored(filePath), false)
+    const [result] = await eslint.lintText(
+      'export function example(value: boolean) { if (value) return 1; return 0 }',
+      { filePath }
+    )
+    assert.equal(
+      result.messages.some((message) => message.ruleId === 'curly'),
+      filePath !== frozen
+    )
+    const [semantic] = await eslint.lintText('export const value: any = 1\n', {
+      filePath
+    })
+    assert.ok(
+      semantic.messages.some(
+        (message) => message.ruleId === '@typescript-eslint/no-explicit-any'
+      )
+    )
+    const info = await getFileInfo(path.join(cwd, filePath), {
+      ignorePath: path.join(cwd, '.prettierignore')
+    })
+    assert.equal(info.ignored, filePath === frozen)
+  }
+})
 
 import {
   createWorkspaceVersionPlan,
@@ -130,17 +167,23 @@ test('workspace test:ci contracts cannot turn test failures into successful skip
     for (const entry of fs.readdirSync(path.join(repositoryRoot, root), {
       withFileTypes: true
     })) {
-      if (!entry.isDirectory()) continue
+      if (!entry.isDirectory()) {
+        continue
+      }
       const manifestPath = path.join(
         repositoryRoot,
         root,
         entry.name,
         'package.json'
       )
-      if (!fs.existsSync(manifestPath)) continue
+      if (!fs.existsSync(manifestPath)) {
+        continue
+      }
       const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
       const task = manifest.scripts?.['test:ci']
-      if (!task) continue
+      if (!task) {
+        continue
+      }
       assert.doesNotMatch(
         task,
         /\|\|\s*echo\s+['"]No test files found/u,
@@ -175,12 +218,13 @@ test('root E2E commands name the app and separate local from CI runners', () => 
       `yarn workspace @asyra/${app} test:e2e`,
       `${app} local E2E command`
     )
-    if (manifest.scripts['test:e2e:ci'])
+    if (manifest.scripts['test:e2e:ci']) {
       assert.equal(
         root.scripts[`test:e2e:${app}:ci`],
         `yarn workspace @asyra/${app} test:e2e:ci`,
         `${app} CI E2E command`
       )
+    }
   }
 })
 
@@ -345,12 +389,15 @@ test('CI schedules discovered workspaces through one bounded build-then-test mat
   const workflow = readText('.github/workflows/main.yml')
   const scripts = readJSON('package.json').scripts
 
-  assert.match(workflow, /node scripts\/run-ci-checks\.mjs/)
+  assert.match(workflow, /node scripts\/validation-checks\.mjs --check shared/)
   assert.match(
     workflow,
     /workspace: \$\{\{ fromJson\(needs\.scope\.outputs\.workspace_matrix\) \}\}/
   )
-  assert.match(workflow, /run: node scripts\/run-workspace-checks\.mjs/)
+  assert.match(
+    workflow,
+    /run: node scripts\/validation-checks\.mjs --check "\$VALIDATION_WORKSPACE"/
+  )
   assert.doesNotMatch(workflow, /yarn turbo run test:ci react:build/)
   const jobs = workflow.split('\njobs:\n')[1].split(/(?=^ {2}[\w-]+:\n)/m)
   const workspaceJob = jobs.find((block) =>
@@ -387,7 +434,7 @@ test('CI schedules discovered workspaces through one bounded build-then-test mat
   assert.match(workspaceJob, /name: Build then test the selected workspace/)
   assert.match(
     workspaceJob,
-    /id: workspace-checks[\s\S]*?run: node scripts\/run-workspace-checks\.mjs/
+    /id: workspace-checks[\s\S]*?run: node scripts\/validation-checks\.mjs --check "\$VALIDATION_WORKSPACE"/
   )
   const diagnosticsStep = workspaceJob
     .split(/(?=^ {6}- name: )/m)
@@ -423,10 +470,46 @@ test('standard manifest E2E owners use the runner Chrome in CI and locally', () 
   const workspaceRunner = readText('scripts/run-workspace-checks.mjs')
   assert.match(workspaceRunner, /PLAYWRIGHT_JSON_OUTPUT_FILE: reportPath/)
   assert.match(workspaceRunner, /reportReadSuccessfully = false/)
-  assert.match(
+  const source = ts.createSourceFile(
+    'run-workspace-checks.mjs',
     workspaceRunner,
-    /if \(reportReadSuccessfully\) fs\.rmSync\(reportPath, \{ force: true \}\)/
+    ts.ScriptTarget.Latest,
+    true
   )
+  const cleanupBlocks = []
+  const visit = (node) => {
+    if (
+      ts.isTryStatement(node) &&
+      node.finallyBlock?.getText(source).includes('reportReadSuccessfully')
+    ) {
+      cleanupBlocks.push(node.finallyBlock.getText(source))
+    }
+
+    ts.forEachChild(node, visit)
+  }
+  visit(source)
+  assert.equal(cleanupBlocks.length, 1)
+  for (const reportReadSuccessfully of [true, false]) {
+    const removed = []
+    const diagnostics = []
+    runInNewContext(cleanupBlocks[0], {
+      reportReadSuccessfully,
+      reportPath: 'report.json',
+      fs: { rmSync: (file, options) => removed.push([file, options.force]) },
+      console: { error: (message) => diagnostics.push(message) }
+    })
+
+    assert.deepEqual(
+      removed,
+      reportReadSuccessfully ? [['report.json', true]] : []
+    )
+    assert.deepEqual(
+      diagnostics,
+      reportReadSuccessfully
+        ? []
+        : ['Preserving failed Playwright report: report.json']
+    )
+  }
   assert.match(workspaceRunner, /Preserving failed Playwright report/)
   assert.doesNotMatch(workspaceRunner, /PLAYWRIGHT_JSON_OUTPUT_NAME/)
   const workspaces = [
@@ -537,7 +620,9 @@ const getWorkspaceManifests = () => {
   const manifests = new Map()
 
   for (const pattern of rootManifest.workspaces) {
-    if (pattern === 'create-app/*') continue
+    if (pattern === 'create-app/*') {
+      continue
+    }
     if (!pattern.endsWith('/*')) {
       const manifest = readJSON(`${pattern}/package.json`)
       manifests.set(manifest.name, manifest)
@@ -547,9 +632,13 @@ const getWorkspaceManifests = () => {
     for (const entry of fs.readdirSync(baseDirectory, {
       withFileTypes: true
     })) {
-      if (!entry.isDirectory()) continue
+      if (!entry.isDirectory()) {
+        continue
+      }
       const manifestPath = path.join(baseDirectory, entry.name, 'package.json')
-      if (!fs.existsSync(manifestPath)) continue
+      if (!fs.existsSync(manifestPath)) {
+        continue
+      }
       const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
       manifests.set(manifest.name, manifest)
     }
@@ -673,8 +762,8 @@ test('CI, E2E, and release validation own their bounded integration gates', () =
   assert.equal(collaboration.scripts.clean, 'rm -rf dist')
   assert.match(designViteConfig, /outDir:\s*['"]dist\/frontend['"]/)
   assert.doesNotMatch(designViteConfig, /outDir:\s*['"]\.\.\/\.\.\/dist['"]/)
-  assert.match(ci, /yarn gen:turbo:check/)
-  assert.match(ci, /yarn deps:validate/)
+  assert.match(ci, /node scripts\/validation-checks\.mjs --check build-graph/)
+  assert.match(ci, /node scripts\/validation-checks\.mjs --check dependencies/)
   assert.match(ci, /if: github\.event_name == 'pull_request'/)
   assert.match(ci, /CHANGESET_BASE_SHA:.*pull_request\.base\.sha/)
   assert.match(ci, /CHANGESET_HEAD_SHA:.*pull_request\.head\.sha/)
@@ -1194,15 +1283,17 @@ test('root app commands are scoped by app and purpose', () => {
     'test:local',
     'test:ci',
     'test:e2e',
-    'lint',
     'lint:ci',
     'dev:all'
-  ])
+  ]) {
     assert.equal(
       rootScripts[script],
       undefined,
       `ambiguous root script remains: ${script}`
     )
+  }
+  assert.equal(rootScripts.lint, 'eslint .')
+  assert.equal(rootScripts['lint:workspaces:ci'], undefined)
 })
 
 test('workspace version planning materializes release ranges without changing files', () => {
@@ -1325,14 +1416,19 @@ test('shared CI builds Framework declarations before public documentation checks
     .split('\n  shared-validation:\n')[1]
     .split('\n  workspace-validation:\n')[0]
   const buildStep = sharedJob.indexOf('Build Framework declarations')
-  const scriptsTest = sharedJob.indexOf('node scripts/run-ci-checks.mjs')
+  const scriptsTest = sharedJob.indexOf(
+    'node scripts/validation-checks.mjs --check shared'
+  )
 
   assert.ok(buildStep >= 0 && buildStep < scriptsTest)
   assert.match(
     sharedJob,
-    /FRAMEWORK_DECLARATION_TASKS: \$\{\{ needs\.scope\.outputs\.framework_declaration_tasks \}\}/
+    /node scripts\/validation-checks\.mjs --check declarations/
   )
-  assert.match(sharedJob, /yarn turbo run "\$\{tasks\[@\]\}"/)
+  assert.ok(
+    sharedJob.indexOf('Download CI scope evidence for shared checks') <
+      buildStep
+  )
   assert.doesNotMatch(
     sharedJob,
     /build:(?:ai-agent-runtime|collaboration|core|factory)/
@@ -1369,7 +1465,9 @@ test('a timed-out build command terminates its descendant process', async () => 
     status = spawnSync('ps', ['-o', 'stat=', '-p', String(descendantPid)], {
       encoding: 'utf8'
     }).stdout.trim()
-    if (status === '' || status.startsWith('Z')) break
+    if (status === '' || status.startsWith('Z')) {
+      break
+    }
     await new Promise((resolve) => setTimeout(resolve, 50))
   }
   assert.ok(status === '' || status.startsWith('Z'), status)
@@ -1390,7 +1488,7 @@ test('Asyra FieldScope selected profile groups are independent and each blocks v
       (step) =>
         step.name === `Require complete Asyra FieldScope ${group} profiles`
     )
-    for (const files of ['[]', '["src/example.profile.test.ts"]'])
+    for (const files of ['[]', '["src/example.profile.test.ts"]']) {
       for (const result of ['success', 'failure', 'cancelled', 'skipped', '']) {
         const run = spawnSync('bash', ['-c', gate.run], {
           env: { ...process.env, PROFILE_FILES: files, PROFILE_RESULT: result }
@@ -1400,6 +1498,7 @@ test('Asyra FieldScope selected profile groups are independent and each blocks v
           files === '[]' ? result === 'skipped' : result === 'success'
         )
       }
+    }
   }
   const profile = yaml.load(
     readText('.github/workflows/fieldscope-profile.yml')

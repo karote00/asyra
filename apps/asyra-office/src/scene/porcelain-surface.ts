@@ -22,18 +22,21 @@ export function porcelainSurface() {
     normals: number[] = []
   const glaze = [248, 246, 239],
     ink = [69, 103, 148]
-  for (let y = 0; y < height; y++)
+  for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       let coverage = 0
-      for (const sy of [0.25, 0.75])
-        for (const sx of [0.25, 0.75])
+      for (const sy of [0.25, 0.75]) {
+        for (const sx of [0.25, 0.75]) {
           if (
             painted(
               ((x === width - 1 ? 0 : x) + sx) / (width - 1),
               (y + sy) / height
             )
-          )
+          ) {
             coverage += 0.25
+          }
+        }
+      }
       albedo.push(
         ...glaze.map((c, i) =>
           Math.round(c * (1 - coverage) + ink[i] * coverage)
@@ -42,5 +45,6 @@ export function porcelainSurface() {
       )
       normals.push(128, 128, 255, 255)
     }
+  }
   return readSpatialSurface({ width, height, albedo, normals })
 }

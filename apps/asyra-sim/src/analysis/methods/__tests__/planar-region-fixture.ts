@@ -17,27 +17,38 @@ export function coplanar(
         break
       }
     }
-    if (same) return true
+    if (same) {
+      return true
+    }
   }
   tick('exact-buffer')
   const view = new DataView(new ArrayBuffer(8))
   const values: { n: bigint; e: number }[] = []
   let exponent = 0
-  for (const point of points)
+  for (const point of points) {
     for (const value of point) {
       tick('exact-decode')
-      if (!Number.isFinite(value)) throw new Error('Nonfinite coordinate')
+      if (!Number.isFinite(value)) {
+        throw new Error('Nonfinite coordinate')
+      }
       view.setFloat64(0, value)
       const bits = view.getBigUint64(0),
         encoded = Number((bits >> 52n) & 2047n)
       let n = bits & ((1n << 52n) - 1n)
-      if (encoded) n += 1n << 52n
-      if (bits >> 63n) n = -n
+      if (encoded) {
+        n += 1n << 52n
+      }
+      if (bits >> 63n) {
+        n = -n
+      }
       const e = encoded ? encoded - 1075 : -1074
       tick('exact-exponent')
-      if (n !== 0n) exponent = Math.min(exponent, e)
+      if (n !== 0n) {
+        exponent = Math.min(exponent, e)
+      }
       values.push({ n, e })
     }
+  }
   const integers = values.map(({ n, e }) => {
     tick('exact-align')
     return n === 0n ? 0n : n << BigInt(e - exponent)
@@ -78,14 +89,17 @@ export function planarRegions(mesh: MeshGeometry, tick: PreparationCharge) {
     canonical: number[] = [],
     vertexIds = new Map<string, number>(),
     adjacency: number[][] = []
-  if (mesh.positions.length % 3 || mesh.indices.length % 3)
+  if (mesh.positions.length % 3 || mesh.indices.length % 3) {
     throw new Error('Incomplete original coordinates or triangles')
+  }
   for (let i = 0; i < mesh.positions.length; i += 3) {
     tick('point-read')
     const point = mesh.positions.slice(i, i + 3) as unknown as Vec3
     for (const v of point) {
       tick('coordinate-validation')
-      if (!Number.isFinite(v)) throw new Error('Nonfinite coordinate')
+      if (!Number.isFinite(v)) {
+        throw new Error('Nonfinite coordinate')
+      }
     }
     tick('vertex-key')
     const key = point.join(',')
@@ -119,8 +133,9 @@ export function planarRegions(mesh: MeshGeometry, tick: PreparationCharge) {
     for (let corner = 0; corner < 3; corner++) {
       tick('index-read')
       const index = mesh.indices[offset + corner]
-      if (!Number.isSafeInteger(index) || index < 0 || index >= points.length)
+      if (!Number.isSafeInteger(index) || index < 0 || index >= points.length) {
         throw new Error('Invalid original index')
+      }
       ids.push(canonical[index])
       vertices.push(points[index])
     }
@@ -128,7 +143,9 @@ export function planarRegions(mesh: MeshGeometry, tick: PreparationCharge) {
       tick('edge-key')
       const from = ids[e],
         to = ids[(e + 1) % 3]
-      if (from === to) throw new Error('Degenerate edge')
+      if (from === to) {
+        throw new Error('Degenerate edge')
+      }
       const key = from < to ? `${from}:${to}` : `${to}:${from}`
       tick('edge-lookup')
       const previous = edges.get(key)
@@ -143,9 +160,12 @@ export function planarRegions(mesh: MeshGeometry, tick: PreparationCharge) {
         })
         continue
       }
-      if (previous.closed) throw new Error('Non-manifold edge')
-      if (previous.from !== to || previous.to !== from)
+      if (previous.closed) {
+        throw new Error('Non-manifold edge')
+      }
+      if (previous.from !== to || previous.to !== from) {
         throw new Error('Inconsistent orientation')
+      }
       tick('edge-close')
       previous.closed = true
       sharedEdges++
@@ -168,7 +188,9 @@ export function planarRegions(mesh: MeshGeometry, tick: PreparationCharge) {
     seen = new Set<number>()
   for (let face = 0; face < adjacency.length; face++) {
     tick('face-lookup')
-    if (seen.has(face)) continue
+    if (seen.has(face)) {
+      continue
+    }
     tick('region-allocation')
     const region: number[] = [],
       pending = [face]
@@ -177,11 +199,15 @@ export function planarRegions(mesh: MeshGeometry, tick: PreparationCharge) {
     while (pending.length) {
       tick('face-visit')
       const current = pending.pop()
-      if (current === undefined) throw new Error('Missing pending face')
+      if (current === undefined) {
+        throw new Error('Missing pending face')
+      }
       region.push(current * 3)
       for (const neighbor of adjacency[current]) {
         tick('neighbor-lookup')
-        if (seen.has(neighbor)) continue
+        if (seen.has(neighbor)) {
+          continue
+        }
         tick('face-mark')
         seen.add(neighbor)
         tick('pending-insert')

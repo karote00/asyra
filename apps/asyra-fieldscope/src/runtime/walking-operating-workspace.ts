@@ -129,8 +129,9 @@ export class WalkingOperatingOwner {
     }
     const prepared = this.envelopeOwner.prepare(source, this.request)
     const stowedPose = this.request.pose
-    if (selectionChanged || !this.poseResult)
+    if (selectionChanged || !this.poseResult) {
       this.poseResult = this.sourceOwner.evaluate(source, stowedPose)
+    }
     if (prepared.status === 'unavailable') {
       this.current = freeze({
         format: 'walking-operating-report/1',
@@ -181,7 +182,9 @@ export class WalkingOperatingOwner {
   }
 
   read() {
-    if (!this.current) return this.apply(this.selection)
+    if (!this.current) {
+      return this.apply(this.selection)
+    }
     return this.current
   }
 
@@ -190,10 +193,15 @@ export class WalkingOperatingOwner {
       this.current !== report ||
       this.getDemand() !== report.demand ||
       !this.isCurrentDemand(report.demand)
-    )
+    ) {
       return false
-    if (report.status === 'legacy-view') return true
-    if (!this.sourceOwner.isCurrent(report.source)) return false
+    }
+    if (report.status === 'legacy-view') {
+      return true
+    }
+    if (!this.sourceOwner.isCurrent(report.source)) {
+      return false
+    }
     return (
       !report.envelope ||
       this.envelopeOwner.read(report.source, report.envelope.request) ===
@@ -223,7 +231,9 @@ export function createWalkingOperatingWorkspace(
   let report = owner.apply(selection)
   const listeners = new Set<() => void>()
   const live = () => {
-    if (closed) throw new Error('Walking operating workspace is closed')
+    if (closed) {
+      throw new Error('Walking operating workspace is closed')
+    }
   }
   core.definePropertyComponent({
     type: WalkingRuntimeIds.COMPONENT,
@@ -247,8 +257,9 @@ export function createWalkingOperatingWorkspace(
     const property = propertyId
       ? getPropertyComponentAccessor().getPropertyById(propertyId)
       : undefined
-    if (!property)
+    if (!property) {
       throw new Error('Missing canonical walking runtime selection')
+    }
     return readWalkingRuntimeSelection(
       (property.save() as unknown as { settings: unknown }).settings
     )
@@ -270,7 +281,9 @@ export function createWalkingOperatingWorkspace(
           () => core.getSystemContextSnapshot(),
           () => {
             live()
-            if (JSON.stringify(next) === JSON.stringify(selection)) return
+            if (JSON.stringify(next) === JSON.stringify(selection)) {
+              return
+            }
             runTransaction(() =>
               core.updateElementProperties([
                 { elementId, values: { settings: next } }
@@ -314,7 +327,9 @@ export function createWalkingOperatingWorkspace(
     refreshSelection: () => {
       live()
       const next = readSelection()
-      if (JSON.stringify(next) === JSON.stringify(selection)) return false
+      if (JSON.stringify(next) === JSON.stringify(selection)) {
+        return false
+      }
       publish(next)
       return true
     },

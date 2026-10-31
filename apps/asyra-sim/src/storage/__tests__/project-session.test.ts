@@ -31,7 +31,9 @@ function fixture() {
   const repository: ProjectRepository = {
     read: vi.fn(async (id) => {
       const record = records.get(id)
-      if (!record) throw new Error('missing')
+      if (!record) {
+        throw new Error('missing')
+      }
       return structuredClone(record)
     }),
     write: vi.fn(async (record) => {
@@ -39,7 +41,9 @@ function fixture() {
     }),
     append: vi.fn(async (metadata, _expected, entry) => {
       const current = records.get(metadata.id)
-      if (!current) throw new Error('missing')
+      if (!current) {
+        throw new Error('missing')
+      }
       records.set(metadata.id, {
         ...current,
         ...metadata,
@@ -305,7 +309,9 @@ describe('automatic project persistence', () => {
     const append = vi.mocked(repository.append)
     const pending = deferred<undefined>()
     append.mockImplementationOnce(() => pending.promise)
-    for (let i = 0; i < 20; i++) session.markEdited(journalFixture())
+    for (let i = 0; i < 20; i++) {
+      session.markEdited(journalFixture())
+    }
     expect(document.capture).toHaveBeenCalledOnce()
     expect(append).toHaveBeenCalledOnce()
     pending.resolve(undefined)
@@ -336,7 +342,9 @@ describe('automatic project persistence', () => {
     const { session, repository, document } = fixture()
     await session.save('Existing')
     const id = session.getState().project?.id
-    if (!id) throw new Error('Missing project')
+    if (!id) {
+      throw new Error('Missing project')
+    }
     session.close()
     const restored = new ProjectSession(repository, document)
     await restored.start(id)
@@ -376,7 +384,9 @@ describe('automatic project persistence', () => {
     try {
       await session.start()
       const id = session.getState().project?.id
-      if (!id) throw new Error('Missing project')
+      if (!id) {
+        throw new Error('Missing project')
+      }
       vi.mocked(document.apply).mockResolvedValueOnce([
         { path: 'source', message: 'Needs review' }
       ])
@@ -425,7 +435,9 @@ describe('automatic project persistence', () => {
     const { session, repository } = fixture()
     await session.start()
     const first = session.getState().project
-    if (!first) throw new Error('Missing project')
+    if (!first) {
+      throw new Error('Missing project')
+    }
     await session.save('Copy', true)
     session.markEdited(journalFixture())
     await session.open(first.id, true)

@@ -10,8 +10,9 @@ export function roundedTaper(
   segments = 48
 ): Mesh {
   const height = top[2] - bottom[2]
-  if (height <= 2 * bevel || Math.min(r0, r1) <= bevel)
+  if (height <= 2 * bevel || Math.min(r0, r1) <= bevel) {
     throw new Error('Invalid rounded taper')
+  }
   const k = (r1 - r0) / height,
     q = Math.hypot(1, k),
     alpha = -Math.atan(k)

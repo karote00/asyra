@@ -33,10 +33,13 @@ function parse(args) {
         name in options ||
         !args[i + 1] ||
         args[i + 1].startsWith('--')
-      )
+      ) {
         throw new Error('Invalid option ' + args[i])
+      }
       options[name] = args[++i]
-    } else positional.push(args[i])
+    } else {
+      positional.push(args[i])
+    }
   }
   return { positional, options }
 }
@@ -58,18 +61,21 @@ async function main(
     store = openProject(project.directory)
   const snapshot = () => {
     const value = store.snapshot()
-    if (value.evaluation.projectId !== project.projectId)
+    if (value.evaluation.projectId !== project.projectId) {
       throw new Error('Wrong project identity')
+    }
     return value
   }
   const output = (value) => {
-    if (options.output)
+    if (options.output) {
       fs.writeFileSync(
         dataPath(project.root, options.output),
         JSON.stringify(value, null, 2) + '\n',
         { flag: 'wx' }
       )
-    else write(value)
+    } else {
+      write(value)
+    }
   }
   if (command === 'validate') {
     write({ status: 'valid', projectId: snapshot().evaluation.projectId })
@@ -88,7 +94,9 @@ async function main(
       nodeId === 'integration'
         ? flow?.integration
         : flow?.nodes.find((n) => n.id === nodeId)
-    if (!node) throw new Error('Unknown flow or node')
+    if (!node) {
+      throw new Error('Unknown flow or node')
+    }
     write({ ...compactContext(node.context), flowFile: value.files[flowId] })
     return 0
   }
@@ -149,8 +157,9 @@ async function main(
     return diagnostic ? 2 : 0
   }
   if (command === 'run') {
-    if (!flowId || !nodeId || !criterionId)
+    if (!flowId || !nodeId || !criterionId) {
       throw new Error('run requires flow, node and criterion identities')
+    }
     const controller = new AbortController()
     const cancel = () => controller.abort()
     process.once('SIGINT', cancel)

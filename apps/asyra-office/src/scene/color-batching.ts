@@ -32,7 +32,9 @@ export function batchStaticColors(
       ordered.push([entry])
       continue
     }
-    if (surface && !surfaces.has(surface)) surfaces.set(surface, surfaces.size)
+    if (surface && !surfaces.has(surface)) {
+      surfaces.set(surface, surfaces.size)
+    }
     // All non-color state, texture identity and UV presence must agree.
     const key = JSON.stringify([
       state,
@@ -49,7 +51,9 @@ export function batchStaticColors(
     group.push(entry)
   }
   return ordered.flatMap((entries) => {
-    if (entries.length < 2) return entries
+    if (entries.length < 2) {
+      return entries
+    }
     const positions: number[] = [],
       indices: number[] = [],
       colors: number[] = [],
@@ -57,15 +61,26 @@ export function batchStaticColors(
       normals: number[] = []
     for (const entry of entries) {
       const { shape, color } = entry.descriptor
-      if (shape.kind !== 'triangles')
+      if (shape.kind !== 'triangles') {
         throw new Error('Expected static triangles')
+      }
       const offset = positions.length / 3
       const rgb = linearColor(color)
-      for (const value of shape.positions) positions.push(value)
-      for (const index of shape.indices) indices.push(index + offset)
-      for (const value of shape.uvs ?? []) uvs.push(value)
-      for (const value of shape.normals ?? []) normals.push(value)
-      for (let i = 0; i < shape.positions.length; i += 3) colors.push(...rgb)
+      for (const value of shape.positions) {
+        positions.push(value)
+      }
+      for (const index of shape.indices) {
+        indices.push(index + offset)
+      }
+      for (const value of shape.uvs ?? []) {
+        uvs.push(value)
+      }
+      for (const value of shape.normals ?? []) {
+        normals.push(value)
+      }
+      for (let i = 0; i < shape.positions.length; i += 3) {
+        colors.push(...rgb)
+      }
     }
     const first = entries[0]
     return [

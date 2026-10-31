@@ -15,8 +15,9 @@ test('wall review shares one live viewport across views, appearance and LoD', as
   await expect(viewport.locator('canvas')).toHaveCount(1)
   const graphics = await viewport.locator('canvas').evaluate((canvas) => {
     const gl = (canvas as HTMLCanvasElement).getContext('webgl2')
-    if (!gl || gl.isContextLost())
+    if (!gl || gl.isContextLost()) {
       throw new Error('Missing live WebGL2 context')
+    }
     return {
       version: gl.getParameter(gl.VERSION),
       width: gl.drawingBufferWidth,

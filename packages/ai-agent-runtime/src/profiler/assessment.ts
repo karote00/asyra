@@ -46,8 +46,9 @@ export const assessExecution = async (
     !report.requestId ||
     !options.criteria.length ||
     !options.criteria.every(boundedText)
-  )
+  ) {
     return { ...result, reason: 'MISSING_ASSESSMENT_INPUT' }
+  }
   const review = report.modelReview
   if (
     options.purpose === 'visual' &&
@@ -63,10 +64,12 @@ export const assessExecution = async (
           ['pass', 'fail', 'unverified'].includes(String(check.status))
       )
     )
-  )
+  ) {
     return { ...result, status: 'reused', opinion: review }
-  if (!options.provider)
+  }
+  if (!options.provider) {
     return { ...result, reason: 'ASSESSMENT_PROVIDER_UNAVAILABLE' }
+  }
 
   // The report retains every call. The optional model receives an explicit
   // investigation subset, prioritizing unsuccessful work then long observed calls.
@@ -121,13 +124,14 @@ export const assessExecution = async (
           boundedText(finding.observation) &&
           boundedText(finding.proposal)
       )
-    )
+    ) {
       return {
         ...result,
         status: 'failed',
         durationMs: Math.max(0, now() - started),
         reason: 'INVALID_ASSESSMENT'
       }
+    }
     // Keep only the declared opinion fields, not arbitrary model-supplied payloads.
     return {
       ...result,
@@ -150,8 +154,9 @@ export const assessExecution = async (
       record(error) &&
       typeof error.requestId === 'string' &&
       /^[a-zA-Z0-9_-]{1,160}$/.test(error.requestId)
-    )
+    ) {
       result.assessmentRequestId = error.requestId
+    }
     return {
       ...result,
       status: 'failed',

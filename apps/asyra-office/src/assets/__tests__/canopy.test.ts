@@ -12,7 +12,7 @@ const views = [
 function coverage(parts: AssetPart[], view: (typeof views)[number]) {
   const resolution = 96,
     mask = new Uint8Array(resolution * resolution)
-  for (const part of parts)
+  for (const part of parts) {
     for (const leaf of part.instances ?? []) {
       const polygon = Array.from({ length: 32 }, (_, i) =>
         view.axes.map((axis, k) => {
@@ -43,23 +43,27 @@ function coverage(parts: AssetPart[], view: (typeof views)[number]) {
         polygon.forEach((a, i) => {
           const b = polygon[(i + 1) % polygon.length],
             scan = y + 0.5
-          if ((a[1] <= scan && b[1] > scan) || (b[1] <= scan && a[1] > scan))
+          if ((a[1] <= scan && b[1] > scan) || (b[1] <= scan && a[1] > scan)) {
             hits.push(a[0] + ((b[0] - a[0]) * (scan - a[1])) / (b[1] - a[1]))
+          }
         })
         hits.sort((a, b) => a - b)
-        for (let i = 0; i + 1 < hits.length; i += 2)
+        for (let i = 0; i + 1 < hits.length; i += 2) {
           for (
             let x = Math.max(0, Math.ceil(hits[i] - 0.5));
             x < Math.min(resolution, hits[i + 1] - 0.5);
             x++
-          )
+          ) {
             mask[y * resolution + x] = 1
+          }
+        }
       }
     }
+  }
   let covered = 0,
     total = 0
-  for (let y = 0; y < resolution; y++)
-    for (let x = 0; x < resolution; x++)
+  for (let y = 0; y < resolution; y++) {
+    for (let x = 0; x < resolution; x++) {
       if (
         (((x + 0.5) / resolution) * 2 - 1) ** 2 +
           (((y + 0.5) / resolution) * 2 - 1) ** 2 <
@@ -68,6 +72,8 @@ function coverage(parts: AssetPart[], view: (typeof views)[number]) {
         total++
         covered += mask[y * resolution + x]
       }
+    }
+  }
   return covered / total
 }
 for (const view of views) {

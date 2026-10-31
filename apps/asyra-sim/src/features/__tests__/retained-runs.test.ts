@@ -107,7 +107,9 @@ it('rejects invalid runtime references and retains a review diagnostic after loa
   const saved = await features.edit.captureDocument()
   const propertyId =
     core.getElementData(id)?.props?.[PropertyNames.RUN_REFERENCE]
-  if (!propertyId) throw new Error('Missing reference property')
+  if (!propertyId) {
+    throw new Error('Missing reference property')
+  }
   ;(saved.props[propertyId] as Record<string, unknown>)[
     PropertyFields.RUN_REFERENCE
   ] = { version: 99 }

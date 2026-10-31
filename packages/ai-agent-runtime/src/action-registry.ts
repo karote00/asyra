@@ -144,7 +144,9 @@ class DefaultAiActionRegistry implements AiVersionedActionRegistry {
   ): AiActionRegistration | undefined {
     this.assertActive()
     const versions = this.actions.get(name)
-    if (!versions) return undefined
+    if (!versions) {
+      return undefined
+    }
     const entries =
       lookup.revision === undefined
         ? [...versions.values()].reverse()
@@ -159,8 +161,9 @@ class DefaultAiActionRegistry implements AiVersionedActionRegistry {
       !entry ||
       entry.availability === 'suspended' ||
       entry.availability === 'retired'
-    )
+    ) {
       return undefined
+    }
     return Object.freeze({
       definition: entry.definition,
       kind: entry.kind,
@@ -183,13 +186,16 @@ class DefaultAiActionRegistry implements AiVersionedActionRegistry {
       const action = this.get(name, lookup)
       const description =
         action && this.actions.get(name)?.get(action.revision)?.description
-      if (description) result.push(description)
+      if (description) {
+        result.push(description)
+      }
     }
-    if (!result.length)
+    if (!result.length) {
       return registryError(
         'AI_ACTION_REGISTRY_EMPTY',
         'At least one action must be registered before a provider request.'
       )
+    }
     return Object.freeze(result)
   }
 
@@ -215,11 +221,12 @@ class DefaultAiActionRegistry implements AiVersionedActionRegistry {
       ) ||
       entry.availability === 'retired' ||
       (availability === 'candidate' && !entry.requestId)
-    )
+    ) {
       return registryError(
         'AI_ACTION_INVALID_VISIBILITY',
         'Invalid availability transition.'
       )
+    }
     entry.availability = availability
   }
 
@@ -227,7 +234,9 @@ class DefaultAiActionRegistry implements AiVersionedActionRegistry {
     this.assertActive()
     const versions = this.actions.get(name)
     versions?.delete(revision)
-    if (versions?.size === 0) this.actions.delete(name)
+    if (versions?.size === 0) {
+      this.actions.delete(name)
+    }
   }
 
   dispose(): void {

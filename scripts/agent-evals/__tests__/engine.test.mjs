@@ -105,8 +105,9 @@ for (const entry of cases) {
   test(`${entry.id}: real baseline, correction, pending semantic review, and retained report`, (t) => {
     const { runner } = setup(t)
     const prepared = runner.prepare(entry.id, 'trial', 'replay-actor', 'replay')
-    if (prepared.state.baselineTests)
+    if (prepared.state.baselineTests) {
       assert.equal(prepared.state.baselineTests.exitCode, 0)
+    }
     plan(runner, prepared, 'trial')
     correctCandidate(runner, prepared, 'trial')
     const evaluation = runner.evaluate('trial')
@@ -374,7 +375,9 @@ test('summary keeps pending agent runs out of replay success counts', (t) => {
     plan(runner, prepared, mode)
     correctCandidate(runner, prepared, mode)
     const evaluation = runner.evaluate(mode)
-    if (mode === 'replay') runner.review(mode, reviewInput(evaluation))
+    if (mode === 'replay') {
+      runner.review(mode, reviewInput(evaluation))
+    }
   }
   const groups = runner.summarize(['agent', 'replay']).groups
   assert.equal(groups.length, 2)
@@ -394,7 +397,9 @@ test('summary reads shared contract sources once per invocation and refreshes on
   const original = fs.readFileSync
   let contractReads = 0
   const spy = t.mock.method(fs, 'readFileSync', (file, ...args) => {
-    if (file === path.join(repositoryRoot, 'AGENTS.md')) contractReads += 1
+    if (file === path.join(repositoryRoot, 'AGENTS.md')) {
+      contractReads += 1
+    }
     return original(file, ...args)
   })
   syncBuiltinESMExports()
@@ -545,9 +550,13 @@ function experimentTrial(
     'replay-actor'
   )
   plan(runner, prepared, id)
-  if (outcome !== 'failed') correctCandidate(runner, prepared, id)
+  if (outcome !== 'failed') {
+    correctCandidate(runner, prepared, id)
+  }
   const evaluation = runner.evaluate(id)
-  if (outcome === 'passed') runner.review(id, reviewInput(evaluation))
+  if (outcome === 'passed') {
+    runner.review(id, reviewInput(evaluation))
+  }
   return { prepared, evaluation, id }
 }
 
@@ -755,7 +764,9 @@ test('experiment compares declared instruction changes, freezes candidate conten
   const original = fs.readFileSync
   const spy = t.mock.method(fs, 'readFileSync', (file, ...args) => {
     const value = original(file, ...args)
-    if (file === path.join(repositoryRoot, changed)) return value + suffix
+    if (file === path.join(repositoryRoot, changed)) {
+      return value + suffix
+    }
     return value
   })
   syncBuiltinESMExports()
@@ -821,9 +832,12 @@ test('comparison validates each candidate snapshot once, shares source reads, an
   let sharedReads = 0
   let candidateReads = 0
   const spy = t.mock.method(fs, 'readFileSync', (file, ...args) => {
-    if (file === path.join(repositoryRoot, 'AGENTS.md')) sharedReads += 1
-    if (file === path.join(candidate.prepared.workspace, 'src/view.mjs'))
+    if (file === path.join(repositoryRoot, 'AGENTS.md')) {
+      sharedReads += 1
+    }
+    if (file === path.join(candidate.prepared.workspace, 'src/view.mjs')) {
       candidateReads += 1
+    }
     return original(file, ...args)
   })
   syncBuiltinESMExports()
@@ -932,9 +946,13 @@ test('CLI creates frozen experiments and reports incomplete comparisons without 
     assert.equal(trialResult.status, 0, trialResult.stderr)
     const trial = JSON.parse(trialResult.stdout)
     plan(runner, trial, runId)
-    if (outcome === 'passed') correctCandidate(runner, trial, runId)
+    if (outcome === 'passed') {
+      correctCandidate(runner, trial, runId)
+    }
     const evaluation = runner.evaluate(runId)
-    if (outcome === 'passed') runner.review(runId, reviewInput(evaluation))
+    if (outcome === 'passed') {
+      runner.review(runId, reviewInput(evaluation))
+    }
   }
   const regressed = invoke('compare', id)
   assert.equal(regressed.status, 1, regressed.stderr)

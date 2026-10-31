@@ -34,7 +34,9 @@ it.skipIf(process.env.E2E_LARGE_DOCUMENT !== 'true')(
     const decodedAt = performance.now()
     const parsed = parseCollaborationServerMessage(decoded)
     expect(parsed?.type).toBe('ready')
-    if (parsed?.type !== 'ready') throw new Error('Missing parsed bootstrap')
+    if (parsed?.type !== 'ready') {
+      throw new Error('Missing parsed bootstrap')
+    }
     expect(
       createHash('sha256')
         .update(JSON.stringify(parsed.bootstrap.checkpoint))

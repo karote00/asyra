@@ -111,7 +111,7 @@ describe('explicit history groups', () => {
     factory.subscribeToCommitCapture(captures)
     try {
       const group = factory.startHistoryGroup()
-      for (const after of [1, 2])
+      for (const after of [1, 2]) {
         factory.updateHistoryGroup(group, () =>
           factory.updateTransaction({
             type: EventTypes.UPDATE_TRANSACTION,
@@ -120,6 +120,7 @@ describe('explicit history groups', () => {
             options: {}
           })
         )
+      }
       expect(captures).toHaveBeenCalledTimes(2)
       expect(completed).not.toHaveBeenCalled()
       factory.endHistoryGroup(group)
@@ -140,8 +141,9 @@ describe('explicit history groups', () => {
         const { id, after } = (
           event as AllEvent & { payload: { id: string; after: number } }
         ).payload
-        if (reject && id === 'x' && after === 0)
+        if (reject && id === 'x' && after === 0) {
           throw new Error('target unavailable')
+        }
         values.set(id, after)
         return true
       }
@@ -363,8 +365,9 @@ describe('explicit history groups', () => {
         throw new Error('observer')
       }
     })
-    for (let index = 1; index <= 3; index++)
+    for (let index = 1; index <= 3; index++) {
       factory.updateHistoryGroup(group, () => write('x', index))
+    }
     expect(
       notices.map((notice) => [
         notice.memberCount,
@@ -425,8 +428,9 @@ describe('explicit history groups', () => {
       expect(projected).toEqual(['y', 'x', 'y', 'x'])
       factory.endHistoryGroup(group)
       projected.length = 0
-      if (mode === 'atomic') factory.undo()
-      else {
+      if (mode === 'atomic') {
+        factory.undo()
+      } else {
         factory.startTransaction()
         await factory
           .getTransactionOwner()
@@ -435,8 +439,9 @@ describe('explicit history groups', () => {
       }
       expect(projected).toEqual(['x', 'y', 'x', 'y'])
       projected.length = 0
-      if (mode === 'atomic') factory.redo()
-      else {
+      if (mode === 'atomic') {
+        factory.redo()
+      } else {
         factory.startTransaction()
         await factory
           .getTransactionOwner()
@@ -453,8 +458,9 @@ describe('explicit history groups', () => {
       const { factory, write } = setup()
       const props = SharedDataChannelNames.PROPS
       const scene = SharedDataChannelNames.SCENE_TREE
-      for (const channel of [props, scene])
+      for (const channel of [props, scene]) {
         factory.registerSharedDataChannel(channel, new LocalSharedDataChannel())
+      }
       const publications: import('..').SharedPublication[] = []
       factory.subscribeToSharedPublication((value) => publications.push(value))
       const group = factory.startHistoryGroup()
@@ -469,8 +475,9 @@ describe('explicit history groups', () => {
       factory.endHistoryGroup(group)
       publications.length = 0
       const replay = async (direction: 'undo' | 'redo') => {
-        if (replayMode === 'atomic') factory[direction]()
-        else {
+        if (replayMode === 'atomic') {
+          factory[direction]()
+        } else {
           factory.startTransaction()
           await factory
             .getTransactionOwner()
@@ -492,8 +499,9 @@ describe('explicit history groups', () => {
     const { factory } = setup()
     const props = SharedDataChannelNames.PROPS
     const scene = SharedDataChannelNames.SCENE_TREE
-    for (const channel of [props, scene])
+    for (const channel of [props, scene]) {
       factory.registerSharedDataChannel(channel, new LocalSharedDataChannel())
+    }
     const publications: import('..').SharedPublication[] = []
     factory.subscribeToSharedPublication((value) => publications.push(value))
     const write = (id: string, options: UpdateTransactionEvent['options']) =>

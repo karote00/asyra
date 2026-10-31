@@ -64,13 +64,17 @@ const boundedActivityMessage = (
   value: string | undefined
 ): string | undefined => {
   const message = value?.trim()
-  if (message && message.length <= 1000) return message
+  if (message && message.length <= 1000) {
+    return message
+  }
 }
 
 const executionActivityMessage = (
   update: AiRuntimeProgressUpdate
 ): string | undefined => {
-  if (update.phase !== 'execution' || update.activity?.kind !== 'work') return
+  if (update.phase !== 'execution' || update.activity?.kind !== 'work') {
+    return
+  }
   return boundedActivityMessage(update.summary)
 }
 
@@ -94,7 +98,9 @@ const activityLabel = (update: AiRuntimeProgressUpdate): string => {
       return 'Awaiting approval'
     case 'execution': {
       const summary = executionActivityMessage(update)
-      if (summary) return summary
+      if (summary) {
+        return summary
+      }
       return update.tool && Object.hasOwn(activityToolLabels, update.tool)
         ? activityToolLabels[update.tool]
         : 'Preparing the drawing'
@@ -102,8 +108,12 @@ const activityLabel = (update: AiRuntimeProgressUpdate): string => {
     case 'settlement':
       return update.summary
     case 'settled':
-      if (update.outcome === 'failed') return 'Failed'
-      if (update.outcome === 'cancelled') return 'Stopped'
+      if (update.outcome === 'failed') {
+        return 'Failed'
+      }
+      if (update.outcome === 'cancelled') {
+        return 'Stopped'
+      }
       return 'Finished'
   }
 }
@@ -169,12 +179,18 @@ const settledEntry = (
   const settled = Object.values(closedCalls).filter(
     (call): call is Exclude<ClosedCall, true> => call !== true
   )
-  if (!settled.length) return
+  if (!settled.length) {
+    return
+  }
   const statuses = settled.map((call) => call.outcome?.status ?? 'unknown')
   let status: 'unknown' | 'success' | 'failed' | 'partial' = 'partial'
-  if (statuses.includes('unknown')) status = 'unknown'
-  else if (statuses.every((value) => value === 'success')) status = 'success'
-  else if (statuses.every((value) => value === 'failed')) status = 'failed'
+  if (statuses.includes('unknown')) {
+    status = 'unknown'
+  } else if (statuses.every((value) => value === 'success')) {
+    status = 'success'
+  } else if (statuses.every((value) => value === 'failed')) {
+    status = 'failed'
+  }
   const labels = {
     success: 'Completed operation',
     partial: 'Partially completed operation',
@@ -242,13 +258,16 @@ const authorPurpose = (
   scope: ActivityPurpose['scope'],
   sequence: number
 ): ActivityPurpose | undefined => {
-  if (!message) return previous
+  if (!message) {
+    return previous
+  }
   if (
     previous?.message === message &&
     previous.id === id &&
     previous.scope === scope
-  )
+  ) {
     return previous
+  }
   return { id, scope, revision: sequence, message }
 }
 
@@ -275,11 +294,15 @@ const livePurpose = (
   const entries = Object.entries(calls)
   const parents = new Set(entries.map(([, call]) => call.parentCallId))
   const leaves = entries.filter(([id]) => !parents.has(id))
-  if (!leaves.length) return
+  if (!leaves.length) {
+    return
+  }
   const paths = (selectedIds ?? leaves.map(([id]) => id)).map((id) =>
     callAncestry(id, calls)
   )
-  if (!paths.length) return
+  if (!paths.length) {
+    return
+  }
   const common = paths[0].find(
     (id) => calls[id].purpose && paths.every((path) => path.includes(id))
   )
@@ -294,7 +317,9 @@ const livePhaseLabel = (
   const entries = Object.entries(calls)
   const parents = new Set(entries.map(([, call]) => call.parentCallId))
   const leaves = entries.filter(([id]) => !parents.has(id))
-  if (leaves.length === 1) return leaves[0][1].label
+  if (leaves.length === 1) {
+    return leaves[0][1].label
+  }
   return leaves.length ? `Running ${leaves.length} operations` : fallback
 }
 
@@ -327,9 +352,13 @@ const principalOperationLabel = (
   const parents = new Set(descendants.map(([, call]) => call.parentCallId))
   const leaves = descendants.filter(([child]) => !parents.has(child))
   const effects = new Set(leaves.map(([, call]) => call.effect))
-  if (!effects.size || effects.has(undefined)) return calls[id].operationLabel
+  if (!effects.size || effects.has(undefined)) {
+    return calls[id].operationLabel
+  }
   const effect = [...effects][0]
-  if (!effect) return calls[id].operationLabel
+  if (!effect) {
+    return calls[id].operationLabel
+  }
   return effects.size > 1 ? dispatchLabels.mixed : dispatchLabels[effect]
 }
 
@@ -352,10 +381,11 @@ const projectCallEntry = (
     visibleIds.map((id) => principalOperationLabel(id, calls))
   )
   let label = `${[...descriptions].join(' - ')} - ${visible.length} operations`
-  if (visible.length === 1)
+  if (visible.length === 1) {
     label = principalOperationLabel(visibleIds[0], calls)
-  else if (descriptions.size === 1)
+  } else if (descriptions.size === 1) {
     label = `${[...descriptions][0]} - ${visible.length} operations`
+  }
   return { label, ...(message ? { message } : {}) }
 }
 
@@ -442,38 +472,47 @@ export const reduceAiActivity = (
   if (event.type === 'conversation') {
     const snapshot = event.snapshot
     // The conversation is authoritative. A question is not a completed drawing.
-    if (snapshot.awaitingAnswer)
+    if (snapshot.awaitingAnswer) {
       return transition(
         { ...state, lifecycle: 'awaiting-answer' },
         'accepted',
         'awaiting-answer'
       )
+    }
     if (snapshot.outcome) {
       let label = 'Finished'
       if (snapshot.outcome === 'partial') {
         label = 'Partially completed'
-        if (state.failed) label = 'Failed'
+        if (state.failed) {
+          label = 'Failed'
+        }
       }
-      if (snapshot.outcome === 'failed') label = 'Failed'
-      if (snapshot.outcome === 'cancelled') label = 'Stopped'
+      if (snapshot.outcome === 'failed') {
+        label = 'Failed'
+      }
+      if (snapshot.outcome === 'cancelled') {
+        label = 'Stopped'
+      }
       return transition(
         { ...state, lifecycle: 'settled', entry: { label } },
         'accepted',
         'conversation-outcome'
       )
     }
-    if (state.lifecycle === 'settled')
+    if (state.lifecycle === 'settled') {
       return transition(state, 'retained', 'terminal-state')
-    if (snapshot.stopping)
+    }
+    if (snapshot.stopping) {
       return transition(
         { ...state, lifecycle: 'stopping', entry: { label: 'Stopping…' } },
         'accepted',
         'lifecycle-control'
       )
+    }
     if (
       snapshot.awaitingApproval &&
       allowedTransitions[state.lifecycle].includes('awaiting-approval')
-    )
+    ) {
       return transition(
         {
           ...state,
@@ -483,17 +522,22 @@ export const reduceAiActivity = (
         'accepted',
         'lifecycle-control'
       )
+    }
     return transition(state, 'retained', 'no-control-change')
   }
 
   const update = event.update
-  if (update.attempt < state.attempt)
+  if (update.attempt < state.attempt) {
     return transition(state, 'rejected', 'older-attempt')
+  }
   let sequence = state.sequence
-  if (update.attempt > state.attempt) sequence = 0
+  if (update.attempt > state.attempt) {
+    sequence = 0
+  }
   if (update.activity) {
-    if (update.activity.sequence <= sequence)
+    if (update.activity.sequence <= sequence) {
       return transition(state, 'rejected', 'old-sequence')
+    }
     sequence = update.activity.sequence
   }
   const ordered = {
@@ -507,15 +551,17 @@ export const reduceAiActivity = (
   }
 
   const lifecycle = transitionKind(update)
-  if (!allowedTransitions[state.lifecycle].includes(lifecycle))
+  if (!allowedTransitions[state.lifecycle].includes(lifecycle)) {
     return transition(ordered, 'rejected', 'illegal-lifecycle-transition')
+  }
   if (
     state.lifecycle === 'awaiting-approval' &&
     lifecycle === 'running' &&
     !['provider', 'execution', 'context'].includes(update.phase) &&
     !(update.activity && update.toolStatus === 'completed')
-  )
+  ) {
     return transition(ordered, 'retained', 'awaiting-approval')
+  }
 
   if (lifecycle !== 'running') {
     return transition(
@@ -548,18 +594,26 @@ export const reduceAiActivity = (
     if (
       closedCalls[activity.callId] ||
       (activity.parentCallId && closedCalls[activity.parentCallId])
-    )
+    ) {
       return transition(ordered, 'rejected', 'completed-call')
+    }
     if (activity.scope === 'request') {
       if (update.toolStatus === 'completed') {
         closedCalls[activity.callId] = true
-        if (requestPurpose?.id === activity.callId) requestPurpose = undefined
+        if (requestPurpose?.id === activity.callId) {
+          requestPurpose = undefined
+        }
       } else if (Object.values(calls).some((call) => !call.parentCallId)) {
         // Unscoped commentary during principal work is informational only.
         closedCalls[activity.callId] = true
       } else {
-        if (authored && requestPurpose && requestPurpose.id !== activity.callId)
+        if (
+          authored &&
+          requestPurpose &&
+          requestPurpose.id !== activity.callId
+        ) {
           closedCalls[requestPurpose.id] = true
+        }
         requestPurpose = authorPurpose(
           requestPurpose,
           authored,
@@ -599,7 +653,9 @@ export const reduceAiActivity = (
         !activity.parentCallId &&
         !publicOperationIds(calls, false).length
       ) {
-        for (const id of Object.keys(closedCalls)) closedCalls[id] = true
+        for (const id of Object.keys(closedCalls)) {
+          closedCalls[id] = true
+        }
       }
       if (!previous && !activity.parentCallId && requestPurpose) {
         closedCalls[requestPurpose.id] = true
@@ -618,8 +674,9 @@ export const reduceAiActivity = (
         activity.phase &&
         !['queued', 'admission'].includes(activity.phase) &&
         !previous?.named
-      )
+      ) {
         operationLabel = ownerPhaseLabels[activity.phase]
+      }
       calls[activity.callId] = {
         effect: activity.effect ?? previous?.effect,
         executing:
@@ -717,7 +774,9 @@ export const reduceAiActivity = (
 const activityMode = (
   state: ActivityState
 ): 'control' | 'operation' | 'context' => {
-  if (state.lifecycle !== 'running') return 'control'
+  if (state.lifecycle !== 'running') {
+    return 'control'
+  }
   return publicOperationIds(state.calls).length ? 'operation' : 'context'
 }
 
@@ -732,7 +791,9 @@ export const createAiActivityProjection = (
     purposeKey?: string
   }[] = []
   const purposeKey = (value: ActivityState) => {
-    if (value.lifecycle !== 'running') return
+    if (value.lifecycle !== 'running') {
+      return
+    }
     const ids = publicOperationIds(value.calls)
     const purpose =
       livePurpose(
@@ -763,12 +824,13 @@ export const createAiActivityProjection = (
     if (
       result.decision.status !== 'rejected' &&
       !sameSubject(history.at(-1), state.entry, key)
-    )
+    ) {
       history.push({
         entry: state.entry,
         lifecycle: state.lifecycle,
         purposeKey: key
       })
+    }
     return result.decision
   }
   const result = (overrides: AiActivityProjectionState = {}) => {
@@ -800,11 +862,15 @@ export const createAiActivityProjection = (
             projected.lifecycle !== 'awaiting-answer' &&
             !sameActivity(entries.at(-1), current)
           ) {
-            if (sameSubject(history.at(-1), current, purposeKey(projected)))
+            if (sameSubject(history.at(-1), current, purposeKey(projected))) {
               entries[entries.length - 1] = current
-            else entries.push(current)
+            } else {
+              entries.push(current)
+            }
           }
-          if (!entries.length) entries.push({ label: 'Starting request' })
+          if (!entries.length) {
+            entries.push({ label: 'Starting request' })
+          }
         }
         return entries
       }

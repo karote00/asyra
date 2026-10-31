@@ -21,7 +21,9 @@ export async function originalWorkcellSnapshot() {
       (body) => body.id === `example:${part.body}`
     )
 
-    if (!body) throw new Error('Missing mechanical body')
+    if (!body) {
+      throw new Error('Missing mechanical body')
+    }
 
     body.visuals = [
       {

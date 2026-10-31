@@ -184,7 +184,9 @@ describe('AI runtime invocation lifecycle', () => {
         },
         provider: {
           requestActionBatch: async (_request, options) => {
-            if (!options.executeBatch) throw new Error('Batch executor missing')
+            if (!options.executeBatch) {
+              throw new Error('Batch executor missing')
+            }
             await options.executeBatch(candidateActionBatch())
             throw new Error('provider failed')
           }
@@ -729,7 +731,9 @@ it('preserves an explicitly public executor failure reason without exposing ordi
         actionDefinitions: [
           visibilityAction(
             vi.fn(async () => {
-              if (known) throw new AiActionExecutionError(message)
+              if (known) {
+                throw new AiActionExecutionError(message)
+              }
               throw new Error('private execution details')
             })
           )

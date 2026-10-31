@@ -327,8 +327,9 @@ describe('App document replacement controller', () => {
       let checks = 0
       await expect(
         controller.replace(snapshot(), () => {
-          if (++checks === 2 && failure === 'stale preparation')
+          if (++checks === 2 && failure === 'stale preparation') {
             throw new Error(failure)
+          }
         })
       ).rejects.toThrow(failure)
       expect(decoder.dispose).toHaveBeenCalledOnce()
@@ -424,12 +425,13 @@ describe('App document replacement controller', () => {
     async (failure) => {
       const { a, factory, controller } = await setup(),
         target = snapshot()
-      if (failure === 'run evidence')
+      if (failure === 'run evidence') {
         Object.assign(target, { runs: [{ version: 999 }] })
-      else
+      } else {
         Object.assign(target.document.props, {
           invalidNumber: Number.POSITIVE_INFINITY
         })
+      }
       await expect(
         controller.replace(target, () => undefined)
       ).rejects.toThrow()
@@ -473,14 +475,16 @@ describe('App document replacement controller', () => {
     'resumes A after a %s rejection before retirement',
     async (failure) => {
       const { a, controller } = await setup()
-      if (failure === 'capture')
+      if (failure === 'capture') {
         a.value.captureSnapshot = vi.fn(async () => {
           throw new Error('capture failed')
         })
+      }
       let calls = 0
       const guard = () => {
-        if (failure === 'stale' && ++calls > 2)
+        if (failure === 'stale' && ++calls > 2) {
           throw new Error('stale acceptance')
+        }
       }
       await expect(controller.replace(snapshot(), guard)).rejects.toThrow(
         failure
@@ -504,11 +508,13 @@ describe('App document replacement controller', () => {
       source.loadIssues.push({ path: 'A', message: 'Retained diagnostic' })
       a.value.captureSnapshot = vi.fn(async () => source)
       const cause = new Error(`${failure} failed`)
-      if (failure === 'cleanup')
+      if (failure === 'cleanup') {
         a.value.dispose = vi.fn(async () => {
           throw cause
         })
-      else factory.mockRejectedValue(cause)
+      } else {
+        factory.mockRejectedValue(cause)
+      }
       await expect(
         controller.replace(snapshot(), () => undefined)
       ).rejects.toBe(cause)
@@ -520,12 +526,16 @@ describe('App document replacement controller', () => {
       const recovery = controller.getRecovery()
       expect(recovery).toEqual(source)
       source.loadIssues.length = 0
-      if (!recovery) throw new Error('Missing recovery snapshot')
+      if (!recovery) {
+        throw new Error('Missing recovery snapshot')
+      }
       recovery.loadIssues[0].message = 'changed by caller'
       expect(controller.getRecovery()?.loadIssues[0].message).toBe(
         'Retained diagnostic'
       )
-      if (failure === 'cleanup') expect(factory).toHaveBeenCalledTimes(1)
+      if (failure === 'cleanup') {
+        expect(factory).toHaveBeenCalledTimes(1)
+      }
       await controller.dispose().catch(() => undefined)
     }
   )
@@ -625,7 +635,9 @@ describe('App document replacement controller', () => {
     let checks = 0
     await expect(
       controller.replace(snapshot(), () => {
-        if (++checks === 5) throw new Error('Storage session closed')
+        if (++checks === 5) {
+          throw new Error('Storage session closed')
+        }
       })
     ).rejects.toThrow('Storage session closed')
     expect(b.value.dispose).toHaveBeenCalledOnce()

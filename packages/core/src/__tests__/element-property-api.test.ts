@@ -238,9 +238,12 @@ it('resolves nested shared property owners through canonical indexes without sca
   const { Core } = await import('../core.js')
   const resolvePropertyAncestorIds = vi.fn(() => ['color', 'fill', 'fills'])
   const getElementPropertyRelations = vi.fn((id: string) => {
-    if (id === 'fills')
+    if (id === 'fills') {
       return [{ ownerElementId: 'tier-3' }, { ownerElementId: 'tier-5' }]
-    if (id === 'fill') return [{ ownerElementId: 'tier-3' }]
+    }
+    if (id === 'fill') {
+      return [{ ownerElementId: 'tier-3' }]
+    }
     return []
   })
   const host = {
@@ -263,7 +266,9 @@ it('resolves nested shared property owners through canonical indexes without sca
 it('does not treat retired property cleanup as an unknown document mutation', async () => {
   const { Core } = await import('../core.js')
   const resolvePropertyAncestorIds = vi.fn((ids: readonly string[]) => {
-    if (ids.includes('retired')) throw new Error('Property is retired')
+    if (ids.includes('retired')) {
+      throw new Error('Property is retired')
+    }
     return ids
   })
   const getElementPropertyRelations = vi.fn((id: string) =>

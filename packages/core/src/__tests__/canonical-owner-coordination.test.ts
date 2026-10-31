@@ -54,9 +54,15 @@ const createHarness = () => {
   const sequence: string[] = []
   const parent = {
     get: vi.fn((key: string) => {
-      if (key === 'id') return 'workspace-1'
-      if (key === 'type') return EntityTypes.WORKSPACE
-      if (key === 'children') return []
+      if (key === 'id') {
+        return 'workspace-1'
+      }
+      if (key === 'type') {
+        return EntityTypes.WORKSPACE
+      }
+      if (key === 'children') {
+        return []
+      }
       return undefined
     })
   }
@@ -227,9 +233,12 @@ const createHarness = () => {
         }
         if (operation?.kind === 'create-exact-property-records') {
           const ids = request.operations.flatMap((mutation) => {
-            if (mutation.kind === 'create-exact-property-records')
+            if (mutation.kind === 'create-exact-property-records') {
               return mutation.components.map(({ id }) => id)
-            if (mutation.kind === 'values') return [mutation.propertyId]
+            }
+            if (mutation.kind === 'values') {
+              return [mutation.propertyId]
+            }
             return []
           })
           return preparedProperties([], [...new Set(ids)])

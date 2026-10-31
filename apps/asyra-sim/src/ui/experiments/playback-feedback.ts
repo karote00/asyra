@@ -44,19 +44,30 @@ export function feedbackFromIssues(
   for (const issue of issues) {
     if (issue.kind === 'collision') {
       collisions.push(issue)
-      for (const id of issue.bodyIds) colors.set(id, 0xff625e)
+      for (const id of issue.bodyIds) {
+        colors.set(id, 0xff625e)
+      }
     } else if (issue.kind === 'clearance') {
       clearances.push(issue)
-      for (const id of issue.bodyIds)
-        if (colors.get(id) !== 0xff625e) colors.set(id, 0xffbd59)
-    } else unknowns.push(issue)
+      for (const id of issue.bodyIds) {
+        if (colors.get(id) !== 0xff625e) {
+          colors.set(id, 0xffbd59)
+        }
+      }
+    } else {
+      unknowns.push(issue)
+    }
   }
 
   let kind: PlaybackFeedback['kind'] = 'clear'
 
-  if (collisions.length) kind = 'collision'
-  else if (!input.complete || unknowns.length) kind = 'unresolved'
-  else if (clearances.length) kind = 'clearance'
+  if (collisions.length) {
+    kind = 'collision'
+  } else if (!input.complete || unknowns.length) {
+    kind = 'unresolved'
+  } else if (clearances.length) {
+    kind = 'clearance'
+  }
 
   return {
     ...input,
@@ -80,10 +91,14 @@ export function playbackFeedback(
   for (const pair of sample.pairs) {
     let kind: PlaybackFindingKind | undefined
 
-    if (pair.evidence.coverage === 'partial') kind = 'unresolved'
+    if (pair.evidence.coverage === 'partial') {
+      kind = 'unresolved'
+    }
 
     for (const leaf of pair.evidence.leaves) {
-      if (leaf.state !== 'finding') continue
+      if (leaf.state !== 'finding') {
+        continue
+      }
 
       kind = 'clearance'
       if (leaf.penetration) {
@@ -92,16 +107,22 @@ export function playbackFeedback(
       }
     }
 
-    if (!kind) continue
+    if (!kind) {
+      continue
+    }
 
     const source = sources.get(pair.pairId)
 
-    if (!source) throw new Error('Live evidence is missing its source pair')
+    if (!source) {
+      throw new Error('Live evidence is missing its source pair')
+    }
 
     const a = bodies.get(source.a.bodyId)
     const b = bodies.get(source.b.bodyId)
 
-    if (!a || !b) throw new Error('Live evidence is missing its source body')
+    if (!a || !b) {
+      throw new Error('Live evidence is missing its source body')
+    }
 
     issues.push({
       pairId: pair.pairId,

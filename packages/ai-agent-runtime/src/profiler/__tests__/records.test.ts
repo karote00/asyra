@@ -78,8 +78,9 @@ it.each([
     expect(
       report.findings.some((finding) => finding.kind === 'unavailable-result')
     ).toBe(['partial', 'rejected', 'failed'].includes(expected))
-    if ('settlement' in outcome)
+    if ('settlement' in outcome) {
       expect(report.toolCalls[0].execution.settlement).toBe(outcome.settlement)
+    }
   }
 )
 
@@ -483,8 +484,9 @@ it('retains bounded source-fact provenance and invalidation evidence', () => {
       'Corrected source',
       'dependencies',
       'invalidatedBy'
-    ])
+    ]) {
       expect(serialized).toContain(expected)
+    }
     expect(serialized).not.toContain('PRIVATE_DOCUMENT')
   } finally {
     log.mockRestore()
@@ -658,7 +660,9 @@ it('retains detached complete tool payloads locally with explicit redactions and
     usage.finish('completed')
     const saved = await sink.flush()
     expect(saved.status).toBe('saved')
-    if (!saved.path) throw new Error('Missing saved record')
+    if (!saved.path) {
+      throw new Error('Missing saved record')
+    }
     const report = parseExecutionRecord(await readFile(saved.path, 'utf8'))
     const diagnostic = report.steps[0].diagnostics as {
       input: { payload: { path: string } }
@@ -1297,7 +1301,9 @@ it('distinguishes redacted resource variants and measures local recording work',
     bytes[0] = 99
     const result = await sink.flush()
     expect(result.status).toBe('saved')
-    if (!first?.path) throw new Error('Missing saved asset path')
+    if (!first?.path) {
+      throw new Error('Missing saved asset path')
+    }
     expect([...(await readFile(join(directory, first.path)))]).toEqual([
       1, 2, 3, 4
     ])
@@ -1404,7 +1410,9 @@ it.each(
         sink: {
           write: (record) => records.push(record),
           writePayload: (_requestId, _callId, _phase, value) => {
-            if (mode === 'throws') throw new Error('storage unavailable')
+            if (mode === 'throws') {
+              throw new Error('storage unavailable')
+            }
             payloads.push(serializeToolPayload(value))
             return {
               status: mode === 'failed' ? 'failed' : 'queued',

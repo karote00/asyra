@@ -43,8 +43,9 @@ const describeDifference = (
   current: unknown,
   path: string
 ): string => {
-  if (typeof expected === 'number' && typeof current === 'number')
+  if (typeof expected === 'number' && typeof current === 'number') {
     return `${path}: expected ${expected}, current ${current}, delta ${current - expected}`
+  }
   if (
     expected &&
     current &&
@@ -57,12 +58,13 @@ const describeDifference = (
       ...Object.keys(before),
       ...Object.keys(after)
     ])) {
-      if (!lodash.isEqual(before[key], after[key]))
+      if (!lodash.isEqual(before[key], after[key])) {
         return describeDifference(
           before[key],
           after[key],
           `${path}.${key.slice(0, 128)}`
         )
+      }
     }
   }
   return `${path} differs`
@@ -70,7 +72,9 @@ const describeDifference = (
 
 /** Group normalization changes local translations, not canonical world geometry. */
 const sameNormalizedGeometry = (before: unknown, after: unknown): boolean => {
-  if (lodash.isEqual(before, after)) return true
+  if (lodash.isEqual(before, after)) {
+    return true
+  }
   const record = (value: unknown): value is Record<string, unknown> =>
     !!value && typeof value === 'object' && !Array.isArray(value)
   if (
@@ -82,8 +86,9 @@ const sameNormalizedGeometry = (before: unknown, after: unknown): boolean => {
     !Array.isArray(after.placements) ||
     !before.placements.length ||
     before.placements.length !== after.placements.length
-  )
+  ) {
     return false
+  }
   const original = [before.computed, before.placements[0]]
   const current = [after.computed, after.placements[0]]
   if (
@@ -99,22 +104,25 @@ const sameNormalizedGeometry = (before: unknown, after: unknown): boolean => {
           (key) => value[key] !== undefined && value[key] !== 1
         )
     )
-  )
+  ) {
     return false
+  }
   if (
     (original[1].rotation ?? 0) !== 0 ||
     (current[1].rotation ?? 0) !== 0 ||
     (original[0].rotation ?? 0) !== (current[0].rotation ?? 0)
-  )
+  ) {
     return false
+  }
   for (const axis of ['x', 'y']) {
     const a = original.reduce((sum, value) => sum + Number(value[axis]), 0)
     const b = current.reduce((sum, value) => sum + Number(value[axis]), 0)
     if (
       Math.abs(a - b) >
       64 * Number.EPSILON * Math.max(1, Math.abs(a), Math.abs(b))
-    )
+    ) {
       return false
+    }
   }
   const normalized = original.map((value, i) => ({
     ...value,
@@ -134,14 +142,20 @@ const sameNormalizedGeometry = (before: unknown, after: unknown): boolean => {
 const readProvenance = (elementId: string): MaterialProvenance | null => {
   const element = core.getElementMetadata(elementId)
   const workspace = core.getCurrentWorkspaceId()
-  if (!element || element.lock || !workspace) return null
+  if (!element || element.lock || !workspace) {
+    return null
+  }
   const parents: string[] = []
   let id = element.parentId
   while (id !== workspace) {
-    if (!id || parents.includes(id)) return null
+    if (!id || parents.includes(id)) {
+      return null
+    }
     parents.push(id)
     const parent = core.getElementMetadata(id)
-    if (!parent || parent.lock) return null
+    if (!parent || parent.lock) {
+      return null
+    }
     id = parent.parentId
   }
   const computed = core.getElementComputedData(elementId, [
@@ -155,18 +169,24 @@ const readProvenance = (elementId: string): MaterialProvenance | null => {
     'fillRule',
     'pointCoordinateSpace'
   ])
-  if (!computed) return null
+  if (!computed) {
+    return null
+  }
   // The document's local placements and ancestry determine its world placement.
   // Never use viewport-dependent render round trips as a validity authority.
   const placements = parents.map((parentId) =>
     core.getElementComputedData(parentId, placementFields)
   )
-  if (placements.some((placement) => !placement)) return null
+  if (placements.some((placement) => !placement)) {
+    return null
+  }
   const [root] = core.readElementPropertyTargets([
     { elementId, propertyName: PropertyTypes.FILLS, path: [] }
   ])
   const child = root.children[0]
-  if (!child) return null
+  if (!child) {
+    return null
+  }
   const [row] = core.readElementPropertyTargets([
     {
       elementId,
@@ -206,8 +226,11 @@ export const createPreparedMaterialApplication = (
   >()
   let stop: (() => void) | undefined
   const releaseFor = (signal: AbortSignal) => {
-    for (const [id, source] of sources)
-      if (source.signal === signal) sources.delete(id)
+    for (const [id, source] of sources) {
+      if (source.signal === signal) {
+        sources.delete(id)
+      }
+    }
   }
   const action: AiActionDefinition<PreparedMaterialInput> = {
     ...actionToolSemantics(
@@ -262,38 +285,46 @@ export const createPreparedMaterialApplication = (
         const source = (() => {
           try {
             const source = sources.get(rootId)
-            if (!source || source.signal !== context.signal)
+            if (!source || source.signal !== context.signal) {
               throw new Error(
                 'Original material provenance is unavailable in this request.'
               )
+            }
             if (
               !updates.length ||
               new Set(updates.map((item) => item.elementId)).size !==
                 updates.length
-            )
+            ) {
               throw new Error('Material targets must be nonempty and unique.')
+            }
             for (const item of updates) {
               const expected = source.members.get(item.elementId)
-              if (!expected)
+              if (!expected) {
                 throw new Error(
                   `Material member ${item.elementId} has no retained creation provenance; do not replay creation.`
                 )
+              }
               const current = apis.read(item.elementId)
-              if (!current)
+              if (!current) {
                 throw new Error(
                   `Material member ${item.elementId} is unavailable or no longer editable; inspect current membership and permissions before continuing.`
                 )
+              }
               for (const dependency of ['geometry', 'binding'] as const) {
-                if (!lodash.isEqual(expected[dependency], current[dependency]))
+                if (
+                  !lodash.isEqual(expected[dependency], current[dependency])
+                ) {
                   throw new Error(
                     `Material member ${item.elementId} changed ${dependency}: ${describeDifference(expected[dependency], current[dependency], dependency)}. Inspect current source before choosing a correction; preparing the retained recipe again does not refresh provenance. Do not replay completed edits.`
                   )
+                }
               }
               if (
                 !isDesignGradient(item.gradient) ||
                 !/^#[0-9a-fA-F]{6}$/.test(item.color)
-              )
+              ) {
                 throw new Error('Invalid prepared material value.')
+              }
             }
             return source
           } catch (error) {
@@ -358,29 +389,34 @@ export const createPreparedMaterialApplication = (
       continuation = false
     ) {
       signal.throwIfAborted()
-      if (!ids.length && (!continuation || !sources.has(rootId))) return
+      if (!ids.length && (!continuation || !sources.has(rootId))) {
+        return
+      }
       const members = new Map<string, MaterialProvenance>()
       const earlier = sources.get(rootId)
       if (continuation && earlier) {
-        if (earlier.signal !== signal || earlier.signal.aborted)
+        if (earlier.signal !== signal || earlier.signal.aborted) {
           throw new Error('Material continuation belongs to another request.')
+        }
         for (const [id, expected] of earlier.members) {
           const current = apis.read(id)
           if (
             !current ||
             !lodash.isEqual(current.binding, expected.binding) ||
             !sameNormalizedGeometry(expected.geometry, current.geometry)
-          )
+          ) {
             throw new Error(
               'Earlier material geometry or binding changed during continuation.'
             )
+          }
           members.set(id, structuredClone(current))
         }
       }
       for (const id of ids) {
         const value = apis.read(id)
-        if (!value)
+        if (!value) {
           throw new Error('Material creation provenance is unavailable.')
+        }
         members.set(id, structuredClone(value))
       }
       sources.set(rootId, { signal, members })

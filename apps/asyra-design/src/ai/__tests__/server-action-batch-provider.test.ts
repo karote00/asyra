@@ -268,8 +268,9 @@ describe('sequential server prepared batch transport', () => {
     let sent = 0
     const stream = new ReadableStream({
       pull(controller) {
-        if (sent++ < 65) controller.enqueue(frame)
-        else {
+        if (sent++ < 65) {
+          controller.enqueue(frame)
+        } else {
           controller.enqueue(
             encoder.encode(JSON.stringify({ type: 'result', batch }) + '\n')
           )
@@ -302,8 +303,11 @@ describe('sequential server prepared batch transport', () => {
     let sent = 0
     const stream = new ReadableStream({
       pull(controller) {
-        if (sent++ < 65) controller.enqueue(chunk)
-        else controller.close()
+        if (sent++ < 65) {
+          controller.enqueue(chunk)
+        } else {
+          controller.close()
+        }
       }
     })
     const provider = createServerActionBatchProvider({
@@ -439,7 +443,9 @@ it.each(['stop', 'lost-ack'])(
           signal: controller.signal,
           executeBatch: async () => {
             executions++
-            if (mode === 'stop') controller.abort()
+            if (mode === 'stop') {
+              controller.abort()
+            }
             throw new Error('executor failed')
           }
         })
@@ -490,8 +496,9 @@ it.each(['ACTION_BATCH_INVALID_RECEIPT', 'private body with secrets'])(
       })
       expect(String(failure)).toContain('receipt')
       expect(String(failure)).not.toContain('private')
-      if (code === 'ACTION_BATCH_INVALID_RECEIPT')
+      if (code === 'ACTION_BATCH_INVALID_RECEIPT') {
         expect(String(failure)).toContain(code)
+      }
       expect(executeBatch).toHaveBeenCalledOnce()
       expect(posts).toBe(1)
     } finally {
@@ -515,10 +522,14 @@ it.each(['activity', 'receipt', 'handoff'])(
       fetch: (async (_url, init) => {
         if ((init.headers as Record<string, string>)['x-ai-batch-receipt']) {
           receipts++
-          if (phase === 'receipt') controller.abort()
+          if (phase === 'receipt') {
+            controller.abort()
+          }
           return new Response('{}')
         }
-        if (phase === 'handoff') controller.abort()
+        if (phase === 'handoff') {
+          controller.abort()
+        }
         return new Response(
           [
             { type: 'activity', tool: 'prepare_design', status: 'running' },
@@ -540,7 +551,9 @@ it.each(['activity', 'receipt', 'handoff'])(
           signal: controller.signal,
           executeBatch,
           onProgress: () => {
-            if (phase === 'activity') controller.abort()
+            if (phase === 'activity') {
+              controller.abort()
+            }
           }
         })
       ).rejects.toMatchObject({ code: 'AI_PROVIDER_ABORTED' })
@@ -589,11 +602,14 @@ describe('evaluation capture and actual provider protocol', () => {
             },
             'http://capture.test'
           )
-          if (id) identities.push(id)
+          if (id) {
+            identities.push(id)
+          }
           if (headers[AI_BATCH_RECEIPT_HEADER] !== undefined) {
             receipts.push(JSON.parse(String(init.body)))
-            if (mode === 'lost-receipt')
+            if (mode === 'lost-receipt') {
               throw new Error('Acknowledgement connection lost')
+            }
             return new Response('{}', {
               status: mode === 'rejected-receipt' ? 409 : 200
             })
@@ -625,22 +641,28 @@ describe('evaluation capture and actual provider protocol', () => {
             signal: controller.signal,
             executeBatch: async () => {
               executions++
-              if (mode === 'cancelled') controller.abort()
-              if (mode === 'execution-failure')
+              if (mode === 'cancelled') {
+                controller.abort()
+              }
+              if (mode === 'execution-failure') {
                 throw new Error('Canonical execution rejected')
+              }
               return { actionResults: [], context: { executed: true } }
             }
           }
         )
-        if (['success', 'execution-failure'].includes(mode))
+        if (['success', 'execution-failure'].includes(mode)) {
           await expect(pending).resolves.toEqual(batch)
-        else await expect(pending).rejects.toBeDefined()
+        } else {
+          await expect(pending).rejects.toBeDefined()
+        }
         expect(identities).toEqual(['real-provider-request'])
         expect(modelRequests).toBe(1)
         expect(executions).toBe(1)
         expect(receipts).toHaveLength(mode === 'cancelled' ? 0 : 1)
-        if (mode === 'execution-failure')
+        if (mode === 'execution-failure') {
           expect(receipts[0]).toHaveProperty('batchFailure')
+        }
       } finally {
         controller.abort()
         provider.dispose()

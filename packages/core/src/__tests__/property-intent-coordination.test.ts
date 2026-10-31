@@ -155,7 +155,9 @@ describe('Canonical property intention coordination', () => {
     )
     expect(read()[0].effective.opacity).toBe(0.9)
     const oldRoot = scene.getElementById('a')?.props.getPropId('material')
-    if (!oldRoot) throw new Error('Missing canonical root')
+    if (!oldRoot) {
+      throw new Error('Missing canonical root')
+    }
     run(() => api.detachElementPropertyTargets([target()]))
     expect(props.getPropertyById(oldRoot)).toBeUndefined()
     expect(read()[0].mode).toBe('independent')

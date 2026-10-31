@@ -31,8 +31,9 @@ export function createShadowFrame(renderer: Renderer) {
           object instanceof THREE.Line ||
           object instanceof THREE.Points
         )
-      )
+      ) {
         return
+      }
       const materials = Array.isArray(object.material)
         ? object.material
         : [object.material]
@@ -59,7 +60,9 @@ export function createShadowFrame(renderer: Renderer) {
         )
       })
     const automatic = shadow.autoUpdate
-    if (reusable && !shadow.needsUpdate) shadow.autoUpdate = false
+    if (reusable && !shadow.needsUpdate) {
+      shadow.autoUpdate = false
+    }
     try {
       renderer.render(scene, camera)
       previous = { scene, camera, casters }

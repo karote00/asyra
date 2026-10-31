@@ -28,9 +28,15 @@ function readJSON(filePath) {
 }
 
 function sourceFileKind(filePath) {
-  if (filePath.endsWith('.tsx')) return ts.ScriptKind.TSX
-  if (filePath.endsWith('.jsx')) return ts.ScriptKind.JSX
-  if (filePath.endsWith('.js')) return ts.ScriptKind.JS
+  if (filePath.endsWith('.tsx')) {
+    return ts.ScriptKind.TSX
+  }
+  if (filePath.endsWith('.jsx')) {
+    return ts.ScriptKind.JSX
+  }
+  if (filePath.endsWith('.js')) {
+    return ts.ScriptKind.JS
+  }
   return ts.ScriptKind.TS
 }
 
@@ -39,7 +45,9 @@ function moduleSpecifierText(node) {
 }
 
 function importTypeSpecifierText(node) {
-  if (!ts.isLiteralTypeNode(node.argument)) return
+  if (!ts.isLiteralTypeNode(node.argument)) {
+    return
+  }
   return moduleSpecifierText(node.argument.literal)
 }
 
@@ -64,13 +72,17 @@ export function extractInternalImports(source, filePath) {
   const imports = []
 
   function addImport(specifier) {
-    if (specifier?.startsWith(INTERNAL_SCOPE)) imports.push(specifier)
+    if (specifier?.startsWith(INTERNAL_SCOPE)) {
+      imports.push(specifier)
+    }
   }
 
   function visit(node) {
     for (const jsDoc of node.jsDoc ?? []) {
       for (const tag of jsDoc.tags ?? []) {
-        if (tag.typeExpression?.type) visit(tag.typeExpression.type)
+        if (tag.typeExpression?.type) {
+          visit(tag.typeExpression.type)
+        }
       }
     }
 
@@ -148,7 +160,9 @@ export function validateSourceImports({
   for (const importedPackage of extractInternalImports(source, relativeFile)) {
     const owner = resolveWorkspaceImport(importedPackage, workspaceNames)
 
-    if (owner === workspaceName) continue
+    if (owner === workspaceName) {
+      continue
+    }
     if (!owner || !declaredDependencies.has(owner)) {
       missing.add(owner ?? importedPackage)
     }
@@ -231,10 +245,14 @@ export async function validateDependencies({
     .map(({ name }) => name)
   const missingDependencies = new Map()
 
-  if (verbose) console.log(`Found ${workspaces.length} workspaces`)
+  if (verbose) {
+    console.log(`Found ${workspaces.length} workspaces`)
+  }
 
   for (const workspace of workspaces) {
-    if (verbose) console.log(`\nScanning ${workspace.name}`)
+    if (verbose) {
+      console.log(`\nScanning ${workspace.name}`)
+    }
 
     const nestedManifests = await glob('**/package.json', {
       cwd: workspace.directory,

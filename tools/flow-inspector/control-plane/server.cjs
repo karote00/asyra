@@ -9,8 +9,9 @@ const { createService, LOCAL_ACTOR, ActionError } = require('./service.cjs')
 const { validId } = require('./store.cjs')
 
 function parseLocalUrl(value) {
-  if (!value)
+  if (!value) {
     throw new Error('Set FLOW_PROOF_URL, for example http://127.0.0.1:4318')
+  }
   const url = new URL(value)
   if (
     url.protocol !== 'http:' ||
@@ -21,24 +22,29 @@ function parseLocalUrl(value) {
     url.pathname !== '/' ||
     url.search ||
     url.hash
-  )
+  ) {
     throw new Error(
       'FLOW_PROOF_URL must be an HTTP loopback origin with an explicit port'
     )
+  }
   return url
 }
 const readBody = async (request, limit = 4096) => {
   if (
     request.headers['content-type']?.split(';')[0].trim() !== 'application/json'
-  )
+  ) {
     throw new ActionError(415, 'JSON body required')
-  if (Number(request.headers['content-length']) > limit)
+  }
+  if (Number(request.headers['content-length']) > limit) {
     throw new ActionError(413, 'Request too large')
+  }
   const chunks = []
   let size = 0
   for await (const chunk of request) {
     size += chunk.length
-    if (size > limit) throw new ActionError(413, 'Request too large')
+    if (size > limit) {
+      throw new ActionError(413, 'Request too large')
+    }
     chunks.push(chunk)
   }
   try {
@@ -55,27 +61,9 @@ async function startServer(
   const address = parseLocalUrl(url)
   const capability = randomBytes(32).toString('hex')
   const workspacePath = '/tools/flow-inspector/workspace/'
-  const targetPath = workspacePath + 'target.html'
-  const assets = new Map([
-    [
-      '/board.js',
-      [
-        path.join(__dirname, 'public/board.js'),
-        'text/javascript; charset=utf-8'
-      ]
-    ],
-    [
-      '/board.css',
-      [path.join(__dirname, 'public/board.css'), 'text/css; charset=utf-8']
-    ]
-  ])
+  const assets = new Map()
   for (const relative of [
-    'viewer.js',
-    'viewer.css',
     'workspace/workspace.html',
-    'workspace/target.html',
-    'workspace/target.js',
-    'workspace/legacy-viewer.js',
     'workspace/workspace-bundle.data.js',
     'workspace/generated/flow-inspector-workspace.js',
     'workspace/generated/flow-inspector-workspace.css'
@@ -103,25 +91,23 @@ async function startServer(
     { timeout: 1000 }
   )
   const localBase = new URL('http://catalog.local/')
-  const standaloneRoutes = new Map()
   const workspaceAsset = assets.get(workspacePath + 'workspace.html')
   assets.set('/', workspaceAsset)
   for (const entry of workspaceSnapshot.FLOW_INSPECTOR_WORKSPACE_BUNDLE
     .entries) {
     assets.set('/' + entry.slug, workspaceAsset)
-    if (entry.standalonePath) {
-      const standalone = new URL(entry.standalonePath, localBase)
-      if (standalone.origin === localBase.origin)
-        standaloneRoutes.set(standalone.pathname, '/' + entry.slug)
-    }
     const source = new URL(entry.sourcePath, localBase)
     const resources = [
       source,
       ...(entry.data?.links ?? []).map((link) => new URL(link.href, source))
     ]
     for (const resource of resources) {
-      if (resource.origin !== localBase.origin || assets.has(resource.pathname))
+      if (
+        resource.origin !== localBase.origin ||
+        assets.has(resource.pathname)
+      ) {
         continue
+      }
       const file = path.resolve(
         repositoryRoot,
         decodeURIComponent(resource.pathname.slice(1))
@@ -134,15 +120,12 @@ async function startServer(
         !fs.existsSync(file) ||
         fs.realpathSync(file) !== file ||
         !fs.statSync(file).isFile()
-      )
+      ) {
         continue
+      }
       assets.set(resource.pathname, [file, 'text/plain; charset=utf-8'])
     }
   }
-  assets.set('/localization.js', [
-    path.join(__dirname, 'public/localization.js'),
-    'text/javascript; charset=utf-8'
-  ])
   const service = createService(repositoryRoot, serviceOptions)
   let origin
   let closing = false
@@ -162,17 +145,16 @@ async function startServer(
         "default-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'none'"
       )
       try {
-        if (closing) throw new ActionError(503, 'Service is closing')
+        if (closing) {
+          throw new ActionError(503, 'Service is closing')
+        }
         if (
           request.headers.host !== new URL(origin).host ||
           (request.headers.origin && request.headers.origin !== origin)
-        )
+        ) {
           throw new ActionError(403, 'Origin is not authorized')
+        }
         const route = new URL(request.url, origin)
-        const targetQuery =
-          route.pathname === targetPath &&
-          [...route.searchParams.keys()].length === 1 &&
-          Boolean(route.searchParams.get('inspector'))
         const observationSelector = route.searchParams
           .get('observation')
           ?.match(/^([a-f0-9-]{36}):(0|[1-9][0-9]{0,8})$/)
@@ -183,8 +165,9 @@ async function startServer(
           [...route.searchParams.keys()].length === 1 &&
           observationSelector &&
           validId(observationSelector[1])
-        if (route.search && !targetQuery && !observationQuery)
+        if (route.search && !observationQuery) {
           throw new ActionError(400, 'Query parameters are unsupported')
+        }
         if (request.method === 'GET') {
           if (
             route.pathname.endsWith('/') &&
@@ -194,44 +177,48 @@ async function startServer(
             response.writeHead(308, { Location: route.pathname.slice(0, -1) })
             return response.end()
           }
-          const standaloneRoute = standaloneRoutes.get(route.pathname)
-          if (standaloneRoute) {
-            response.writeHead(302, { Location: standaloneRoute })
-            return response.end()
-          }
-          if (route.pathname === '/api/session')
+          if (route.pathname === '/api/session') {
             return send(200, { capability })
+          }
           const reviewRoute = route.pathname.match(
             /^\/api\/tasks\/([a-f0-9-]{36})\/review$/
           )
-          if (reviewRoute) return send(200, service.getReview(reviewRoute[1]))
+          if (reviewRoute) {
+            return send(200, service.getReview(reviewRoute[1]))
+          }
           const taskRoute = route.pathname.match(
             /^\/api\/tasks\/([a-f0-9-]{36})(\/changes)?$/
           )
-          if (taskRoute)
+          if (taskRoute) {
             return send(
               200,
               taskRoute[2]
                 ? service.taskChanges(taskRoute[1])
                 : service.getTask(taskRoute[1])
             )
-          if (route.pathname === '/api/target-assessments')
+          }
+          if (route.pathname === '/api/target-assessments') {
             return send(200, service.targetAssessments())
+          }
           const assessmentRoute = route.pathname.match(
             /^\/api\/target-assessments\/([a-f0-9-]{36})$/
           )
-          if (assessmentRoute && validId(assessmentRoute[1]))
+          if (assessmentRoute && validId(assessmentRoute[1])) {
             return send(200, service.getTargetAssessment(assessmentRoute[1]))
-          if (route.pathname === '/api/targets')
+          }
+          if (route.pathname === '/api/targets') {
             return send(200, service.targets())
+          }
           const targetRoute = route.pathname.match(
             /^\/api\/targets\/([a-f0-9-]{36})$/
           )
-          if (targetRoute) return send(200, service.getTarget(targetRoute[1]))
+          if (targetRoute) {
+            return send(200, service.getTarget(targetRoute[1]))
+          }
           const nodeRoute = route.pathname.match(
             /^\/api\/node-context\/([a-f0-9-]{36})\/([0-9]+)(\/summary)?$/
           )
-          if (nodeRoute)
+          if (nodeRoute) {
             return send(
               200,
               service.nodeContext(
@@ -240,7 +227,8 @@ async function startServer(
                 Boolean(nodeRoute[3])
               )
             )
-          if (route.pathname === '/api/test-results')
+          }
+          if (route.pathname === '/api/test-results') {
             return send(200, {
               ...service.testResults(),
               targets:
@@ -251,14 +239,19 @@ async function startServer(
                   })
                 )
             })
+          }
           const observationRoute = route.pathname.match(
             /^\/api\/test-results\/([a-f0-9-]{36})$/
           )
-          if (observationRoute)
+          if (observationRoute) {
             return send(200, service.testResult(observationRoute[1]))
-          if (route.pathname === '/api/state') return send(200, service.state())
-          if (route.pathname === '/api/shared')
+          }
+          if (route.pathname === '/api/state') {
+            return send(200, service.state())
+          }
+          if (route.pathname === '/api/shared') {
             return send(200, service.shared())
+          }
           const ciArtifact = route.pathname.match(
             /^\/api\/ci\/([a-f0-9-]{36})\/artifacts\/(report|envelope)$/
           )
@@ -280,7 +273,9 @@ async function startServer(
             return response.end(bytes)
           }
           const match = route.pathname.match(/^\/api\/runs\/([a-f0-9-]{36})$/)
-          if (match) return send(200, service.get(match[1]))
+          if (match) {
+            return send(200, service.get(match[1]))
+          }
           let asset = assets.get(route.pathname)
           let status = 200
           if (
@@ -293,14 +288,14 @@ async function startServer(
             asset = workspaceAsset
             status = 404
           }
-          if (!asset) throw new ActionError(404, 'Route not found')
-          // Existing canvas geometry uses style attributes; target.js owns a
-          // same-origin base URL. Scripts remain external and same-origin only.
+          if (!asset) {
+            throw new ActionError(404, 'Route not found')
+          }
+          // React canvas geometry uses style attributes. Scripts remain
+          // external and same-origin; no embedded renderer is permitted.
           response.setHeader(
             'Content-Security-Policy',
-            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-ancestors " +
-              (route.pathname === targetPath ? "'self'" : "'none'") +
-              "; object-src 'none'; base-uri 'self'"
+            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'"
           )
           let content = fs.readFileSync(asset[0])
           if (asset === workspaceAsset) {
@@ -312,40 +307,37 @@ async function startServer(
               )
               .replace('<head>', '<head><base href="' + workspacePath + '" />')
           }
-          if (route.pathname === targetPath) {
-            content = content
-              .toString()
-              .replace(
-                '</head>',
-                '<link rel="stylesheet" href="/board.css" /></head>'
-              )
-              .replace(
-                '</body>',
-                '<script src="/board.js"></script><script src="/localization.js"></script></body>'
-              )
-          }
           response.writeHead(status, { 'Content-Type': asset[1] })
           return response.end(content)
         }
-        if (request.method !== 'POST')
+        if (request.method !== 'POST') {
           throw new ActionError(405, 'Method not allowed')
+        }
         const provided = request.headers['x-proof-capability']
         if (
           typeof provided !== 'string' ||
           provided.length !== capability.length ||
           !timingSafeEqual(Buffer.from(provided), Buffer.from(capability))
-        )
+        ) {
           throw new ActionError(403, 'Action is not authorized')
+        }
         let bodyLimit = route.pathname === '/api/node-comments' ? 16384 : 4096
-        if (route.pathname === '/api/ci/ingest') bodyLimit = 2097152
-        if (route.pathname === '/api/targets/decide') bodyLimit = 131072
+        if (route.pathname === '/api/ci/ingest') {
+          bodyLimit = 2097152
+        }
+        if (route.pathname === '/api/targets/decide') {
+          bodyLimit = 131072
+        }
         const body = await readBody(request, bodyLimit)
-        if (route.pathname === '/api/node-reruns/preview')
+        if (route.pathname === '/api/node-reruns/preview') {
           return send(200, service.previewNodeRerun(body, LOCAL_ACTOR))
-        if (route.pathname === '/api/node-reruns')
+        }
+        if (route.pathname === '/api/node-reruns') {
           return send(202, service.startNodeRerun(body, LOCAL_ACTOR))
-        if (route.pathname === '/api/node-comments')
+        }
+        if (route.pathname === '/api/node-comments') {
           return send(200, service.addNodeComment(body, LOCAL_ACTOR))
+        }
         const nodeCancel = route.pathname.match(
           /^\/api\/node-reruns\/([a-f0-9-]{36})\/cancel$/
         )
@@ -355,8 +347,9 @@ async function startServer(
             typeof body !== 'object' ||
             Array.isArray(body) ||
             Object.keys(body).length
-          )
+          ) {
             throw new ActionError(400, 'Invalid cancellation request')
+          }
           return send(
             200,
             await service.cancelNodeRerun(nodeCancel[1], LOCAL_ACTOR)
@@ -365,7 +358,7 @@ async function startServer(
         const scopedReviewAction = route.pathname.match(
           /^\/api\/tasks\/([a-f0-9-]{36})\/review\/scoped$/
         )
-        if (scopedReviewAction)
+        if (scopedReviewAction) {
           return send(
             200,
             await service.prepareScopedReview(
@@ -374,18 +367,21 @@ async function startServer(
               LOCAL_ACTOR
             )
           )
+        }
         const reviewAction = route.pathname.match(
           /^\/api\/tasks\/([a-f0-9-]{36})\/review$/
         )
-        if (reviewAction)
+        if (reviewAction) {
           return send(
             200,
             await service.reviewTask(reviewAction[1], body, LOCAL_ACTOR)
           )
-        if (route.pathname === '/api/target-assessments')
+        }
+        if (route.pathname === '/api/target-assessments') {
           return send(202, {
             id: service.startTargetAssessment(body, LOCAL_ACTOR)
           })
+        }
         const assessmentCancel = route.pathname.match(
           /^\/api\/target-assessments\/([a-f0-9-]{36})\/cancel$/
         )
@@ -395,11 +391,12 @@ async function startServer(
             typeof body !== 'object' ||
             Array.isArray(body) ||
             Object.keys(body).length
-          )
+          ) {
             throw new ActionError(
               400,
               'Invalid target assessment cancellation request'
             )
+          }
           return send(
             200,
             await service.cancelTargetAssessment(
@@ -408,34 +405,45 @@ async function startServer(
             )
           )
         }
-        if (route.pathname === '/api/targets/decide')
+        if (route.pathname === '/api/targets/decide') {
           return send(200, service.decideTarget(body, LOCAL_ACTOR))
-        if (route.pathname === '/api/targets/accept')
+        }
+        if (route.pathname === '/api/targets/accept') {
           return send(200, service.acceptTargetBaseline(body, LOCAL_ACTOR))
-        if (route.pathname === '/api/tasks')
+        }
+        if (route.pathname === '/api/tasks') {
           return send(202, { id: service.startTask(body, LOCAL_ACTOR) })
+        }
         const taskControl = route.pathname.match(
           /^\/api\/tasks\/([a-f0-9-]{36})\/control$/
         )
-        if (taskControl)
+        if (taskControl) {
           return send(
             200,
             await service.controlTask(taskControl[1], body, LOCAL_ACTOR)
           )
-        if (route.pathname === '/api/work')
+        }
+        if (route.pathname === '/api/work') {
           return send(200, service.setWork(body, LOCAL_ACTOR))
-        if (route.pathname === '/api/contracts/prepare')
+        }
+        if (route.pathname === '/api/contracts/prepare') {
           return send(200, service.prepareEvolution(body, LOCAL_ACTOR))
-        if (route.pathname === '/api/contracts/decide')
+        }
+        if (route.pathname === '/api/contracts/decide') {
           return send(200, service.decideEvolution(body, LOCAL_ACTOR))
-        if (route.pathname === '/api/ci/ingest')
+        }
+        if (route.pathname === '/api/ci/ingest') {
           return send(200, service.ingestCI(body, LOCAL_ACTOR))
-        if (route.pathname === '/api/mapping/prepare')
+        }
+        if (route.pathname === '/api/mapping/prepare') {
           return send(200, service.prepareMapping(body, LOCAL_ACTOR))
-        if (route.pathname === '/api/mapping/decide')
+        }
+        if (route.pathname === '/api/mapping/decide') {
           return send(200, service.decideMapping(body, LOCAL_ACTOR))
-        if (route.pathname === '/api/runs')
+        }
+        if (route.pathname === '/api/runs') {
           return send(202, { id: service.start(body, LOCAL_ACTOR) })
+        }
         const cancel = route.pathname.match(
           /^\/api\/runs\/([a-f0-9-]{36})\/cancel$/
         )
@@ -445,15 +453,17 @@ async function startServer(
             typeof body !== 'object' ||
             Array.isArray(body) ||
             Object.keys(body).length
-          )
+          ) {
             throw new ActionError(400, 'Cancellation takes an empty body')
+          }
           await service.cancel(cancel[1], LOCAL_ACTOR)
           return send(200, { id: cancel[1] })
         }
         throw new ActionError(404, 'Action not found')
       } catch (error) {
-        if (!response.destroyed)
+        if (!response.destroyed) {
           send(error.status ?? 500, { error: error.message })
+        }
       }
     }
   )

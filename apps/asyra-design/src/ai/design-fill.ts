@@ -73,8 +73,9 @@ export const isDesignGradient = (v: unknown): v is DesignGradientData => {
     !Array.isArray(v.gradientStops) ||
     v.gradientStops.length < 2 ||
     v.gradientStops.length > 64
-  )
+  ) {
     return false
+  }
   let previous = -1
   return v.gradientStops.every((s) => {
     if (
@@ -84,8 +85,9 @@ export const isDesignGradient = (v: unknown): v is DesignGradientData => {
       s.position < previous ||
       !isColor(s.color) ||
       !finite(s.opacity, 0, 1)
-    )
+    ) {
       return false
+    }
     previous = s.position
     return true
   })

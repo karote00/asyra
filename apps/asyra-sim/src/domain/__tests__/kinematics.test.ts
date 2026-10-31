@@ -57,7 +57,7 @@ describe('SIM-05 shared units and canonical pose evaluation', () => {
   it('matches an independent two-link planar formula', () => {
     const model = workcell()
     validateWorkcell(model)
-    for (const shoulder of [0, Math.PI / 2, Math.PI, -Math.PI / 3])
+    for (const shoulder of [0, Math.PI / 2, Math.PI, -Math.PI / 3]) {
       for (const elbow of [0, 0.2, -Math.PI / 4]) {
         const pose = forwardKinematics(model, { shoulder, elbow }).get('tool')
         expect(pose?.position[0]).toBeCloseTo(
@@ -70,6 +70,7 @@ describe('SIM-05 shared units and canonical pose evaluation', () => {
         )
         expect(pose?.position[2]).toBeCloseTo(0, 12)
       }
+    }
   })
   it('preserves mm/m and deg/rad equivalence without using renderer math', () => {
     expect(lengthInMeters(1234, 'mm')).toBe(lengthInMeters(1.234, 'm'))

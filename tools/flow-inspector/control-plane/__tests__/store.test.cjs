@@ -101,7 +101,9 @@ test('history ordering remains correct after insertion, settlement and restart',
     ...attempt(),
     startedAt: '2026-09-0' + day + 'T00:00:00.000Z'
   }))
-  for (const record of records) store.save(record)
+  for (const record of records) {
+    store.save(record)
+  }
   const ids = [records[1].id, records[2].id, records[0].id]
   assert.deepEqual(
     store.list().map((item) => item.id),
@@ -161,7 +163,7 @@ test('mapping and decision commit together and an interrupted write cannot accep
   recovered.close()
 })
 
-for (const authorityFormat of [1, 2])
+for (const authorityFormat of [1, 2]) {
   test(
     'derived attempt retains source authority format ' +
       authorityFormat +
@@ -330,3 +332,4 @@ for (const authorityFormat of [1, 2])
       }
     }
   )
+}

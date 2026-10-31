@@ -67,8 +67,14 @@ it('collects independent nested errors and identifies their fields', () => {
       }
     }
   )
-  for (const path of ['rows[0].name', 'rows[0].x', 'rows[1].name', 'rows[1].x'])
+  for (const path of [
+    'rows[0].name',
+    'rows[0].x',
+    'rows[1].name',
+    'rows[1].x'
+  ]) {
     expect(issue).toContain(path)
+  }
 })
 
 it('does not prune overlapping enum and const branches of oneOf', () => {
@@ -220,19 +226,22 @@ it('compacts redundant native choices while preserving overlap and contradictory
     { mode: null },
     { mode: 1 },
     { mode: 'a', extra: 1 }
-  ])
+  ]) {
     expect(!operationInputIssue(value, converted)).toBe(
       !operationInputIssue(value, schema)
     )
+  }
   for (const candidate of [
     { oneOf: [{ const: 'a' }, { const: 'a' }] },
     { const: 'a', enum: ['b'] },
     { allOf: [{ type: 'string' }, { type: 'string' }, { const: 'a' }] }
-  ])
-    for (const value of ['a', 'b', 1, null, {}])
+  ]) {
+    for (const value of ['a', 'b', 1, null, {}]) {
       expect(
         !operationInputIssue(value, nativeToolInputSchema(candidate))
       ).toBe(!operationInputIssue(value, candidate))
+    }
+  }
   expect(schema.anyOf).toHaveLength(3)
   const first = { value: 1 }
   const second = { value: 1 }
@@ -240,11 +249,13 @@ it('compacts redundant native choices while preserving overlap and contradictory
     { enum: [first, second, first] },
     { anyOf: [{ enum: [first] }, { enum: [second] }] },
     { allOf: [{ const: first }, { const: second }] }
-  ])
-    for (const value of [first, second, { value: 1 }])
+  ]) {
+    for (const value of [first, second, { value: 1 }]) {
       expect(
         !operationInputIssue(value, nativeToolInputSchema(objectChoices))
       ).toBe(!operationInputIssue(value, objectChoices))
+    }
+  }
 })
 
 it('preserves real review and action schema admission after native conversion', () => {
@@ -265,10 +276,11 @@ it('preserves real review and action schema admission after native conversion', 
     { phase: 'structure', ...wholeViewJudgments(['image'], []) }
   ]
   expect(operationInputIssue(reviewPlanExample, converted)).toBeUndefined()
-  for (const input of candidates)
+  for (const input of candidates) {
     expect(!operationInputIssue(input, converted), JSON.stringify(input)).toBe(
       !operationInputIssue(input, schema)
     )
+  }
   for (const api of basicApiContracts) {
     const native = nativeToolInputSchema(api.inputSchema)
     for (const input of [
@@ -277,10 +289,11 @@ it('preserves real review and action schema admission after native conversion', 
       null,
       [],
       { elementId: 'known' }
-    ])
+    ]) {
       expect(!operationInputIssue(input, native), api.name).toBe(
         !operationInputIssue(input, api.inputSchema)
       )
+    }
   }
   expect(nativeToolInputSchema(converted)).toEqual(converted)
 })
@@ -314,10 +327,11 @@ it('materializes common union fields for native declarations without weakening a
     { name: 'f', type: 'frame' },
     { name: 'f', type: 'frame', width: -1 },
     { name: 'g', type: 'group', extra: true }
-  ])
+  ]) {
     expect(!operationInputIssue(input, native), JSON.stringify(input)).toBe(
       !operationInputIssue(input, schema)
     )
+  }
   expect(schema.properties).toHaveProperty('width')
 })
 it('retains nullable control IDs, definitions and nested array union fields in native schemas', () => {
@@ -447,7 +461,9 @@ it('preserves composed capture inputs and strict target validation through nativ
   const tool = designEvidenceDefinitions.find(
     (item) => item.name === 'review_drawing'
   )
-  if (!tool) throw new Error('Missing review tool')
+  if (!tool) {
+    throw new Error('Missing review tool')
+  }
   const native = nativeToolInputSchema(tool.inputSchema)
   const checks = [
     {
@@ -520,10 +536,11 @@ it('preserves composed capture inputs and strict target validation through nativ
       [{ inspectionIds: [undefined], inspections: targets }, false],
       [{ inspections: targets, unexpected: true }, false]
     ] as const) {
-      for (const schema of [tool.inputSchema, native])
+      for (const schema of [tool.inputSchema, native]) {
         expect(
           operationInputIssue({ phase, ...input }, schema) === undefined
         ).toBe(valid)
+      }
     }
   }
 })

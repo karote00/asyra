@@ -81,7 +81,6 @@
       "subgroup": "Asyra Design",
       "lifecycle": "current",
       "sourcePath": "tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs",
-      "standalonePath": null,
       "labels": [
         "ai-execution",
         "Apps",
@@ -1847,7 +1846,6 @@
       "subgroup": "Asyra Design",
       "lifecycle": "retained",
       "sourcePath": "tools/flow-inspector/inspectors/ai-conversational-drawing-performance-flow-inspector.data.cjs",
-      "standalonePath": "tools/flow-inspector/inspectors/ai-conversational-drawing-performance-flow-inspector.html",
       "labels": [
         "ai-conversational-drawing-performance",
         "Apps",
@@ -4875,7 +4873,6 @@
       "subgroup": "Asyra Design",
       "lifecycle": "retained",
       "sourcePath": "tools/flow-inspector/inspectors/group-context-menu-flow-inspector.data.cjs",
-      "standalonePath": "tools/flow-inspector/inspectors/group-context-menu-flow-inspector.html",
       "labels": [
         "group-context-menu",
         "Apps",
@@ -4910,7 +4907,7 @@
             "id": "existing-group-inspector",
             "kind": "prerequisite",
             "label": "Existing Group feature authority",
-            "href": "../inspectors/group-interaction-mvp-flow-inspector.html"
+            "href": "../workspace/workspace.html#inspector=asyra-design-group-interaction-mvp"
           }
         ],
         "lanes": [
@@ -5701,7 +5698,6 @@
       "subgroup": "Asyra Design",
       "lifecycle": "retained",
       "sourcePath": "tools/flow-inspector/inspectors/group-interaction-mvp-flow-inspector.data.cjs",
-      "standalonePath": "tools/flow-inspector/inspectors/group-interaction-mvp-flow-inspector.html",
       "labels": [
         "group-interaction-mvp",
         "Apps",
@@ -6920,7 +6916,6 @@
       "subgroup": "Asyra Design",
       "lifecycle": "retained",
       "sourcePath": "tools/flow-inspector/inspectors/layer-tree-reparent-reorder-flow-inspector.data.cjs",
-      "standalonePath": "tools/flow-inspector/inspectors/layer-tree-reparent-reorder-flow-inspector.html",
       "labels": [
         "layer-tree-reparent-reorder",
         "Apps",
@@ -7957,7 +7952,6 @@
       "subgroup": "Asyra Design",
       "lifecycle": "current",
       "sourcePath": "tools/flow-inspector/inspectors/socket-authoritative-document-persistence-flow-inspector.data.cjs",
-      "standalonePath": null,
       "labels": [
         "socket-authoritative-document-persistence",
         "Apps",
@@ -9522,7 +9516,6 @@
       "subgroup": "Asyra Design",
       "lifecycle": "retained",
       "sourcePath": "tools/flow-inspector/inspectors/vector-local-geometry-transform-flow-inspector.data.cjs",
-      "standalonePath": "tools/flow-inspector/inspectors/vector-local-geometry-transform-flow-inspector.html",
       "labels": [
         "vector-local-geometry-transform",
         "Apps",
@@ -10165,7 +10158,6 @@
       "subgroup": "Asyra Design",
       "lifecycle": "current",
       "sourcePath": "tools/flow-inspector/inspectors/container-double-click-selection-flow-inspector.data.cjs",
-      "standalonePath": null,
       "labels": [
         "container-double-click-selection",
         "Apps",
@@ -10363,7 +10355,6 @@
       "subgroup": "Asyra Design",
       "lifecycle": "current",
       "sourcePath": "tools/flow-inspector/inspectors/design-collaboration-flow-inspector.data.cjs",
-      "standalonePath": null,
       "labels": [
         "design-collaboration",
         "Apps",
@@ -10704,7 +10695,6 @@
       "subgroup": "Asyra Design",
       "lifecycle": "current",
       "sourcePath": "tools/flow-inspector/inspectors/design-functional-flow-inspector.data.cjs",
-      "standalonePath": null,
       "labels": [
         "design-functional",
         "Apps",
@@ -12638,7 +12628,6 @@
       "subgroup": "Asyra Design",
       "lifecycle": "retained",
       "sourcePath": "tools/flow-inspector/inspectors/remote-subtree-restore-snapshot-flow-inspector.data.cjs",
-      "standalonePath": "tools/flow-inspector/inspectors/remote-subtree-restore-snapshot-flow-inspector.html",
       "labels": [
         "remote-subtree-restore-snapshot",
         "Apps",
@@ -12678,7 +12667,7 @@
           {
             "id": "gate-3-inspector",
             "label": "Gate 3 Hierarchy Inspector",
-            "href": "../inspectors/group-component-and-hierarchy-flow-inspector.html",
+            "href": "../workspace/workspace.html#inspector=group-component-and-hierarchy",
             "kind": "authority"
           },
           {
@@ -14101,7 +14090,6 @@
       "subgroup": "Asyra Sim",
       "lifecycle": "current",
       "sourcePath": "tools/flow-inspector/inspectors/asyra-sim-r0-flow-inspector.data.cjs",
-      "standalonePath": "tools/flow-inspector/inspectors/asyra-sim-r0-flow-inspector.html",
       "labels": [
         "asyra-sim-r0",
         "Apps",
@@ -16424,7 +16412,6 @@
       "subgroup": "Architecture and Runtime",
       "lifecycle": "retained",
       "sourcePath": "tools/flow-inspector/inspectors/ai-agent-runtime-flow-inspector.data.cjs",
-      "standalonePath": "tools/flow-inspector/inspectors/ai-agent-runtime-flow-inspector.html",
       "labels": [
         "ai-agent-runtime",
         "Framework",
@@ -18516,7 +18503,6 @@
       "subgroup": "Architecture and Runtime",
       "lifecycle": "retained",
       "sourcePath": "tools/flow-inspector/inspectors/app-level-migration-flow-inspector.data.cjs",
-      "standalonePath": "tools/flow-inspector/inspectors/app-level-migration-flow-inspector.html",
       "labels": [
         "app-level-migration",
         "Framework",
@@ -19650,7 +19636,6 @@
       "subgroup": "Architecture and Runtime",
       "lifecycle": "current",
       "sourcePath": "tools/flow-inspector/inspectors/asyra-office-flow-inspector.data.cjs",
-      "standalonePath": null,
       "labels": [
         "asyra-office",
         "Framework",
@@ -20506,7 +20491,6 @@
       "subgroup": "Architecture and Runtime",
       "lifecycle": "current",
       "sourcePath": "tools/flow-inspector/inspectors/canonical-projection-and-collaboration-contract-flow-inspector.data.cjs",
-      "standalonePath": "tools/flow-inspector/inspectors/canonical-projection-and-collaboration-contract-flow-inspector.html",
       "labels": [
         "canonical-projection-and-collaboration-contract",
         "Framework",
@@ -20547,7 +20531,7 @@
             "id": "transaction-inspector",
             "kind": "framework",
             "label": "Existing Factory transaction authority",
-            "href": "../inspectors/transaction-flow-inspector.html"
+            "href": "../workspace/workspace.html#inspector=transaction-atomicity"
           }
         ],
         "lanes": [
@@ -22177,7 +22161,6 @@
       "subgroup": "Architecture and Runtime",
       "lifecycle": "retained",
       "sourcePath": "tools/flow-inspector/inspectors/canvas-pipeline-debugger-flow-inspector.data.cjs",
-      "standalonePath": "tools/flow-inspector/inspectors/canvas-pipeline-debugger-flow-inspector.html",
       "labels": [
         "canvas-pipeline-debugger",
         "Framework",
@@ -22797,7 +22780,6 @@
       "subgroup": "Architecture and Runtime",
       "lifecycle": "current",
       "sourcePath": "tools/flow-inspector/inspectors/design-deletion-flow-inspector.data.cjs",
-      "standalonePath": null,
       "labels": [
         "design-deletion",
         "Framework",
@@ -22916,7 +22898,6 @@
       "subgroup": "Architecture and Runtime",
       "lifecycle": "current",
       "sourcePath": "tools/flow-inspector/inspectors/editable-design-flow-inspector.data.cjs",
-      "standalonePath": null,
       "labels": [
         "editable-design",
         "Framework",
@@ -23611,7 +23592,6 @@
       "subgroup": "Architecture and Runtime",
       "lifecycle": "current",
       "sourcePath": "tools/flow-inspector/inspectors/editable-text-flow-inspector.data.cjs",
-      "standalonePath": null,
       "labels": [
         "editable-text",
         "Framework",
@@ -24028,17 +24008,16 @@
       "id": "extendable-preset",
       "slug": "extendable-preset",
       "title": "Extendable Preset Relation and Unregister Flow",
-      "kind": "legacy-v1",
+      "kind": "contract-document",
       "group": "Framework",
       "subgroup": "Architecture and Runtime",
       "lifecycle": "retained",
       "sourcePath": "tools/flow-inspector/inspectors/extendable-preset-flow-inspector.data.cjs",
-      "standalonePath": "tools/flow-inspector/inspectors/extendable-preset-flow-inspector.html",
       "labels": [
         "extendable-preset",
         "Framework",
         "Architecture and Runtime",
-        "legacy-v1"
+        "contract-document"
       ],
       "data": {
         "schema": "flow-inspector.v1",
@@ -25028,7 +25007,6 @@
       "subgroup": "Architecture and Runtime",
       "lifecycle": "retained",
       "sourcePath": "tools/flow-inspector/inspectors/group-component-and-hierarchy-flow-inspector.data.cjs",
-      "standalonePath": "tools/flow-inspector/inspectors/group-component-and-hierarchy-flow-inspector.html",
       "labels": [
         "group-component-and-hierarchy",
         "Framework",
@@ -26298,7 +26276,6 @@
       "subgroup": "Architecture and Runtime",
       "lifecycle": "current",
       "sourcePath": "tools/flow-inspector/inspectors/history-replay-flow-inspector.data.cjs",
-      "standalonePath": null,
       "labels": [
         "history-replay",
         "Framework",
@@ -26584,7 +26561,6 @@
       "subgroup": "Architecture and Runtime",
       "lifecycle": "current",
       "sourcePath": "tools/flow-inspector/inspectors/history-shortcut-flow-inspector.data.cjs",
-      "standalonePath": null,
       "labels": [
         "history-shortcut",
         "Framework",
@@ -26695,17 +26671,16 @@
       "id": "input-system-environment-neutrality",
       "slug": "input-environments",
       "title": "Input System Environment Neutrality Flow",
-      "kind": "legacy-v1",
+      "kind": "contract-document",
       "group": "Framework",
       "subgroup": "Architecture and Runtime",
       "lifecycle": "retained",
       "sourcePath": "tools/flow-inspector/inspectors/input-system-environment-neutrality-flow-inspector.data.cjs",
-      "standalonePath": "tools/flow-inspector/inspectors/input-system-environment-neutrality-flow-inspector.html",
       "labels": [
         "input-system-environment-neutrality",
         "Framework",
         "Architecture and Runtime",
-        "legacy-v1"
+        "contract-document"
       ],
       "data": {
         "schema": "flow-inspector.v1",
@@ -27060,7 +27035,6 @@
       "subgroup": "Architecture and Runtime",
       "lifecycle": "current",
       "sourcePath": "tools/flow-inspector/inspectors/local-affected-validation-flow-inspector.data.cjs",
-      "standalonePath": null,
       "labels": [
         "local-affected-validation",
         "Framework",
@@ -27323,7 +27297,6 @@
       "subgroup": "Architecture and Runtime",
       "lifecycle": "retained",
       "sourcePath": "tools/flow-inspector/inspectors/network-collaboration-transport-flow-inspector.data.cjs",
-      "standalonePath": "tools/flow-inspector/inspectors/network-collaboration-transport-flow-inspector.html",
       "labels": [
         "network-collaboration-transport",
         "Framework",
@@ -28327,17 +28300,16 @@
       "id": "preset-profile-selectable-defaults",
       "slug": "preset-profiles",
       "title": "Preset Profile and Selectable Defaults Flow",
-      "kind": "legacy-v1",
+      "kind": "contract-document",
       "group": "Framework",
       "subgroup": "Architecture and Runtime",
       "lifecycle": "retained",
       "sourcePath": "tools/flow-inspector/inspectors/preset-composition-flow-inspector.data.cjs",
-      "standalonePath": "tools/flow-inspector/inspectors/preset-composition-flow-inspector.html",
       "labels": [
         "preset-composition",
         "Framework",
         "Architecture and Runtime",
-        "legacy-v1"
+        "contract-document"
       ],
       "data": {
         "schema": "flow-inspector.v1",
@@ -29253,7 +29225,6 @@
       "subgroup": "Architecture and Runtime",
       "lifecycle": "retained",
       "sourcePath": "tools/flow-inspector/inspectors/property-type-redefinition-flow-inspector.data.cjs",
-      "standalonePath": "tools/flow-inspector/inspectors/property-type-redefinition-flow-inspector.html",
       "labels": [
         "property-type-redefinition",
         "Framework",
@@ -30051,7 +30022,6 @@
       "subgroup": "Architecture and Runtime",
       "lifecycle": "retained",
       "sourcePath": "tools/flow-inspector/inspectors/render-delta-update-flow-inspector.data.cjs",
-      "standalonePath": "tools/flow-inspector/inspectors/render-delta-update-flow-inspector.html",
       "labels": [
         "render-delta-update",
         "Framework",
@@ -30691,6 +30661,16 @@
               "fill rule",
               "material input identity"
             ],
+            "cacheEvidence": {
+              "measuredPhase": "prepareVectorCompoundFill invocation count",
+              "baseline": "The retained coverage regression measures 1 preparation after initial render, paint and transform edits; 2 after a fill-rule change; 3 after immutable geometry changes.",
+              "decision": "Retain the existing graphic-owned coverage and mesh projection across paint and transform updates; this contract correction introduces no new cache.",
+              "invalidation": "Changed immutable points, segments, networks or fill rule replace geometry; changed material input updates paint without preparing coverage.",
+              "equivalenceOracle": "The shared coverage supplies the rendered mesh and hit predicate for all supported materials without changing canonical input or invoking CPU rasterization.",
+              "cleanup": "Graphic destroy releases its mesh children; projection maps use weak graphic keys and do not retain destroyed graphics independently.",
+              "memoryBound": "At most one current fill projection per live graphic; replacement does not accumulate prior geometry versions.",
+              "testPath": "packages/preset/src/__tests__/vector-mesh-fill.test.ts"
+            },
             "implementationBoundary": [
               "packages/preset/src/components/vector.ts",
               "packages/preset/src/components/fills.ts",
@@ -31374,7 +31354,6 @@
       "subgroup": "Architecture and Runtime",
       "lifecycle": "retained",
       "sourcePath": "tools/flow-inspector/inspectors/render-engine-boundary-flow-inspector.data.cjs",
-      "standalonePath": "tools/flow-inspector/inspectors/render-engine-boundary-flow-inspector.html",
       "labels": [
         "render-engine-boundary",
         "Framework",
@@ -32656,7 +32635,6 @@
       "subgroup": "Architecture and Runtime",
       "lifecycle": "current",
       "sourcePath": "tools/flow-inspector/inspectors/reusable-tool-composition-flow-inspector.data.cjs",
-      "standalonePath": null,
       "labels": [
         "reusable-tool-composition",
         "Framework",
@@ -33014,7 +32992,6 @@
       "subgroup": "Architecture and Runtime",
       "lifecycle": "current",
       "sourcePath": "tools/flow-inspector/inspectors/stroke-flow-inspector.data.cjs",
-      "standalonePath": "tools/flow-inspector/inspectors/stroke-flow-inspector.html",
       "labels": [
         "stroke",
         "Framework",
@@ -33917,7 +33894,6 @@
       "subgroup": "Architecture and Runtime",
       "lifecycle": "retained",
       "sourcePath": "tools/flow-inspector/inspectors/transaction-flow-inspector.data.cjs",
-      "standalonePath": "tools/flow-inspector/inspectors/transaction-flow-inspector.html",
       "labels": [
         "transaction",
         "Framework",
@@ -34758,7 +34734,6 @@
       "subgroup": "CLI and Generated App",
       "lifecycle": "retained",
       "sourcePath": "tools/flow-inspector/inspectors/create-asyra-design-app-release-flow-inspector.data.cjs",
-      "standalonePath": null,
       "labels": [
         "create-asyra-design-app-release",
         "Release",
@@ -35994,7 +35969,6 @@
       "subgroup": "Framework Packages",
       "lifecycle": "current",
       "sourcePath": "tools/flow-inspector/inspectors/framework-package-release-flow-inspector.data.cjs",
-      "standalonePath": "tools/flow-inspector/inspectors/framework-package-release-flow-inspector.html",
       "labels": [
         "framework-package-release",
         "Release",
@@ -37422,7 +37396,6 @@
       "subgroup": "Framework Readiness",
       "lifecycle": "retained",
       "sourcePath": "tools/flow-inspector/inspectors/framework-release-readiness-flow-inspector.data.cjs",
-      "standalonePath": "tools/flow-inspector/inspectors/framework-release-readiness-flow-inspector.html",
       "labels": [
         "framework-release-readiness",
         "Release",
@@ -37537,10 +37510,9 @@
             "implementationBoundary": [
               "docs/ai/framework/plans/completed/framework-release-readiness-and-closeout-plan.md",
               "tools/flow-inspector/inspectors/framework-release-readiness-flow-inspector.data.cjs",
-              "tools/flow-inspector/inspectors/framework-release-readiness-flow-inspector.html",
               "tools/flow-inspector/inspectors/__tests__/framework-release-readiness-flow-inspector.contract.test.cjs",
-              "tools/flow-inspector/embed-viewer.cjs",
-              "tools/flow-inspector/__tests__/viewer-entry.test.cjs",
+              "tools/flow-inspector/workspace/generate-workspace.cjs",
+              "tools/flow-inspector/__tests__/react-delivery.test.cjs",
               "scripts/framework-release-packages.js",
               "scripts/__tests__/framework-release-packages.test.mjs",
               "packages/*/package.json",
@@ -38001,7 +37973,6 @@
               "docs/ai/framework/plans/completed/framework-release-readiness-and-closeout-plan.md",
               "docs/ai/framework/plans/completed/framework-release-readiness-and-closeout-plan.md",
               "tools/flow-inspector/inspectors/framework-release-readiness-flow-inspector.data.cjs",
-              "tools/flow-inspector/inspectors/framework-release-readiness-flow-inspector.html",
               "docs/ai/framework/decisions/releases/unreleased.md",
               "RELEASE_NOTES.md",
               "scripts/release-records.js",
@@ -38637,7 +38608,6 @@
       "subgroup": "Runtime Prerequisite",
       "lifecycle": "retained",
       "sourcePath": "tools/flow-inspector/inspectors/node-24-runtime-upgrade-flow-inspector.data.cjs",
-      "standalonePath": "tools/flow-inspector/inspectors/node-24-runtime-upgrade-flow-inspector.html",
       "labels": [
         "node-24-runtime-upgrade",
         "Release",
@@ -38759,7 +38729,6 @@
               "scripts/__tests__/node-runtime-contract.test.mjs",
               "docs/ai/framework/plans/completed/node-24-runtime-upgrade-and-vercel-validation-plan.md",
               "tools/flow-inspector/inspectors/node-24-runtime-upgrade-flow-inspector.data.cjs",
-              "tools/flow-inspector/inspectors/node-24-runtime-upgrade-flow-inspector.html",
               "tools/flow-inspector/inspectors/__tests__/node-24-runtime-upgrade-flow-inspector.contract.test.cjs"
             ],
             "specRefs": [
@@ -39041,7 +39010,7 @@
               "scripts/release-package-artifacts.js",
               "scripts/release-readiness.js",
               "scripts/release-template-readiness.js",
-              "tools/flow-inspector/__tests__/viewer-entry.test.cjs"
+              "tools/flow-inspector/__tests__/architecture-contract.test.cjs"
             ],
             "specRefs": [
               "#4-validate-locally-on-nodejs-24",
@@ -39237,7 +39206,6 @@
               "docs/ai/framework/PLANS.md",
               "docs/ai/framework/plans/completed/node-24-runtime-upgrade-and-vercel-validation-plan.md",
               "tools/flow-inspector/inspectors/node-24-runtime-upgrade-flow-inspector.data.cjs",
-              "tools/flow-inspector/inspectors/node-24-runtime-upgrade-flow-inspector.html",
               "tools/flow-inspector/inspectors/__tests__/node-24-runtime-upgrade-flow-inspector.contract.test.cjs",
               "docs/ai/framework/decisions/releases/unreleased.md",
               "docs/ai/decisions/releases/unreleased.md"
@@ -40165,17 +40133,16 @@
       "id": "asyra-public-package-documentation",
       "slug": "public-docs",
       "title": "Asyra Public Package Documentation",
-      "kind": "plan-contract",
+      "kind": "contract-document",
       "group": "Release",
       "subgroup": "Website and Distribution",
       "lifecycle": "retained",
       "sourcePath": "tools/flow-inspector/inspectors/asyra-public-package-documentation-flow-inspector.data.cjs",
-      "standalonePath": null,
       "labels": [
         "asyra-public-package-documentation",
         "Release",
         "Website and Distribution",
-        "plan-contract"
+        "contract-document"
       ],
       "data": {
         "authority": {
@@ -40777,17 +40744,16 @@
       "id": "asyra-public-readme-and-entrypoint-alignment",
       "slug": "public-entrypoints",
       "title": "Asyra Public Readme And Entrypoint Alignment",
-      "kind": "plan-contract",
+      "kind": "contract-document",
       "group": "Release",
       "subgroup": "Website and Distribution",
       "lifecycle": "retained",
       "sourcePath": "tools/flow-inspector/inspectors/asyra-public-readme-and-entrypoint-alignment-flow-inspector.data.cjs",
-      "standalonePath": null,
       "labels": [
         "asyra-public-readme-and-entrypoint-alignment",
         "Release",
         "Website and Distribution",
-        "plan-contract"
+        "contract-document"
       ],
       "data": {
         "authority": {
@@ -41377,17 +41343,16 @@
       "id": "asyra-runtime-atlas",
       "slug": "runtime-atlas",
       "title": "Asyra Runtime Atlas",
-      "kind": "plan-contract",
+      "kind": "contract-document",
       "group": "Release",
       "subgroup": "Website and Distribution",
       "lifecycle": "retained",
       "sourcePath": "tools/flow-inspector/inspectors/asyra-runtime-atlas-flow-inspector.data.cjs",
-      "standalonePath": null,
       "labels": [
         "asyra-runtime-atlas",
         "Release",
         "Website and Distribution",
-        "plan-contract"
+        "contract-document"
       ],
       "data": {
         "authority": {
@@ -41855,17 +41820,16 @@
       "id": "asyra-website-landing",
       "slug": "website-landing",
       "title": "Asyra Website Landing",
-      "kind": "plan-contract",
+      "kind": "contract-document",
       "group": "Release",
       "subgroup": "Website and Distribution",
       "lifecycle": "current",
       "sourcePath": "tools/flow-inspector/inspectors/asyra-website-landing-flow-inspector.data.cjs",
-      "standalonePath": null,
       "labels": [
         "asyra-website-landing",
         "Release",
         "Website and Distribution",
-        "plan-contract"
+        "contract-document"
       ],
       "data": {
         "authority": {
@@ -42087,19 +42051,19 @@
       "id": "asyra-website-launch-and-operations",
       "slug": "website-operations",
       "title": "Asyra Website Launch And Operations",
-      "kind": "plan-contract",
+      "kind": "contract-document",
       "group": "Release",
       "subgroup": "Website and Distribution",
       "lifecycle": "retained",
       "sourcePath": "tools/flow-inspector/inspectors/asyra-website-launch-and-operations-flow-inspector.data.cjs",
-      "standalonePath": null,
       "labels": [
         "asyra-website-launch-and-operations",
         "Release",
         "Website and Distribution",
-        "plan-contract"
+        "contract-document"
       ],
       "data": {
+        "lifecycle": "historical",
         "authority": {
           "specPath": "docs/ai/framework/plans/completed/asyra-website-launch-and-operations-plan.md",
           "inspectorPath": "tools/flow-inspector/inspectors/asyra-website-launch-and-operations-flow-inspector.data.cjs",
@@ -42107,7 +42071,7 @@
           "siteWorkspacePath": "apps/asyra-framework-site",
           "contentIndexPath": "docs/public/generated/content-index.json",
           "advancedGuidesRoot": "docs/public",
-          "rootHostingConfigPath": "vercel.json",
+          "currentHostingWorkflowPath": ".github/workflows/site-cloudflare.yml",
           "atlasPlanPath": "docs/ai/framework/plans/completed/asyra-runtime-atlas-plan.md"
         },
         "caseIds": [
@@ -42528,17 +42492,16 @@
       "id": "asyra-website-platform",
       "slug": "website-platform",
       "title": "Asyra Website Platform",
-      "kind": "plan-contract",
+      "kind": "contract-document",
       "group": "Release",
       "subgroup": "Website and Distribution",
       "lifecycle": "retained",
       "sourcePath": "tools/flow-inspector/inspectors/asyra-website-platform-flow-inspector.data.cjs",
-      "standalonePath": null,
       "labels": [
         "asyra-website-platform",
         "Release",
         "Website and Distribution",
-        "plan-contract"
+        "contract-document"
       ],
       "data": {
         "authority": {
@@ -43081,7 +43044,6 @@
       "subgroup": "Flow Inspector",
       "lifecycle": "current",
       "sourcePath": "tools/flow-inspector/inspectors/flow-document-workflow-flow-inspector.data.cjs",
-      "standalonePath": null,
       "labels": [
         "flow-document-workflow",
         "Tools",
@@ -43337,10 +43299,8 @@
               "tools/flow-inspector/flow-files/view.cjs",
               "tools/flow-inspector/flow-files/public/**",
               "tools/flow-inspector/control-plane/server.cjs",
-              "tools/flow-inspector/workspace/target.js",
               "tools/flow-inspector/src/**",
-              "tools/flow-inspector/viewer.js",
-              "tools/flow-inspector/viewer.css",
+              "tools/flow-inspector/src/architecture/styles.css",
               "tools/flow-inspector/flow-files/__tests__/**",
               "tools/flow-inspector/bin/**",
               "tools/flow-inspector/flow-files/api.cjs",
@@ -43762,7 +43722,6 @@
       "subgroup": "Flow Inspector",
       "lifecycle": "current",
       "sourcePath": "tools/flow-inspector/inspectors/flow-inspector-core-proof-flow-inspector.data.cjs",
-      "standalonePath": null,
       "labels": [
         "flow-inspector-core-proof",
         "Tools",
@@ -44823,7 +44782,7 @@
             ],
             "allowedContributors": [
               "same-origin proof HTTP API",
-              "existing static workspace and native browser DOM"
+              "shared React workspace and architecture components"
             ],
             "forbiddenContributors": [
               "static architecture data or renderer mutation",
@@ -44832,9 +44791,9 @@
             ],
             "cacheDimensions": [],
             "implementationBoundary": [
-              "tools/flow-inspector/control-plane/public/board.js",
-              "tools/flow-inspector/control-plane/public/board.css",
-              "tools/flow-inspector/control-plane/public/localization.js",
+              "tools/flow-inspector/src/control-plane/ControlPlane.jsx",
+              "tools/flow-inspector/src/control-plane/styles.css",
+              "tools/flow-inspector/src/control-plane/Localization.jsx",
               "tools/flow-inspector/control-plane/__tests__/board-localization.test.cjs",
               "tools/flow-inspector/control-plane/__tests__/board.test.cjs"
             ],
@@ -45691,7 +45650,6 @@
       "subgroup": "Flow Inspector",
       "lifecycle": "current",
       "sourcePath": "tools/flow-inspector/inspectors/flow-inspector-static-workspace-flow-inspector.data.cjs",
-      "standalonePath": "tools/flow-inspector/inspectors/flow-inspector-static-workspace-flow-inspector.html",
       "labels": [
         "flow-inspector-static-workspace",
         "Tools",
@@ -45919,7 +45877,7 @@
             "laneId": "target",
             "title": "Isolate selected target",
             "ownerPackage": "tools/flow-inspector/workspace",
-            "purpose": "Navigate a dedicated target iframe so every selection receives a fresh document and global scope.",
+            "purpose": "Mount the selected contract in a keyed React subtree with independent selection and subscription lifetime.",
             "inputs": [
               "artifact:selected-workspace-route"
             ],
@@ -45928,14 +45886,14 @@
             ],
             "conditions": [
               "Selected id resolves to one included bundle entry.",
-              "Target query and hash ids match before rendering."
+              "The current route resolves before React receives the selected data."
             ],
             "bypasses": [
-              "Overview creates no target document."
+              "Overview mounts no target presentation."
             ],
             "allowedContributors": [
               "selected catalog entry",
-              "target iframe"
+              "React composition"
             ],
             "forbiddenContributors": [
               "parent DOM as target authority",
@@ -45945,10 +45903,8 @@
             "implementationBoundary": [
               "tools/flow-inspector/src/App.tsx",
               "tools/flow-inspector/src/routing.ts",
-              "tools/flow-inspector/workspace/target.html",
-              "tools/flow-inspector/workspace/target.js",
               "tools/flow-inspector/src/__tests__/workspace.test.tsx",
-              "tools/flow-inspector/workspace/__tests__/workspace.test.cjs"
+              "tools/flow-inspector/workspace/__tests__/react-workspace.contract.test.cjs"
             ],
             "specRefs": [
               "#routing-and-isolation"
@@ -45961,18 +45917,18 @@
             "laneId": "target",
             "title": "Render selected contract",
             "ownerPackage": "tools/flow-inspector",
-            "purpose": "Render v2 targets with the shared viewer and label legacy compatibility data without inventing semantics.",
+            "purpose": "Render v2 architectures and explicitly registered contract documents in React without inventing semantics.",
             "inputs": [
               "artifact:isolated-target-document",
               "artifact:workspace-browser-snapshot",
-              "optional flowfitrequest with rendered step IDs"
+              "optional controlled focus request with rendered step IDs"
             ],
             "outputs": [
               "artifact:rendered-static-inspector"
             ],
             "conditions": [
               "Renderer kind follows catalog classification.",
-              "Command+1 restores All lanes and fits every card with at least 24 screen CSS pixels to the viewport outer border, exact on the limiting axis; fit-all may exceed manual scale limits. Page-delivered Command keys include editable focus; Shift+1/0 exclude editable controls and provide alternatives to browser-reserved shortcuts. Visible fit/reset buttons and authenticated parent command messages share the same operation owner. Native disclosure summaries retain visible markers, hover and focus affordances. Command+0 clears fit translation and resets scale. Card geometry stays unchanged.",
+              "Command+1 restores All lanes and fits every card with at least 24 screen CSS pixels to the viewport outer border, exact on the limiting axis; fit-all may exceed manual scale limits. Page-delivered Command keys include editable focus; Shift+1/0 exclude editable controls and provide alternatives to browser-reserved shortcuts. Visible fit/reset buttons use the same React viewport owner. Native disclosure summaries retain visible markers, hover and focus affordances. Command+0 clears fit translation and resets scale. Card geometry stays unchanged.",
               "Fit requests frame rendered cards through the existing zoom owner with padding and reveal the canvas, bounded from 20% to 100%; absent cards do not change the viewport. Manual zoom and reset remain available. No execution state enters this owner.",
               "Document, source, and related Inspector links preserve authored destinations and open in an isolated new tab without replacing the canvas."
             ],
@@ -45980,8 +45936,8 @@
               "Invalid targets render an explicit error instead of fallback."
             ],
             "allowedContributors": [
-              "shared v2 renderer",
-              "legacy read-only renderer"
+              "React architecture view",
+              "React contract document"
             ],
             "forbiddenContributors": [
               "schema coercion",
@@ -45989,11 +45945,10 @@
             ],
             "cacheDimensions": [],
             "implementationBoundary": [
-              "tools/flow-inspector/viewer.js",
-              "tools/flow-inspector/viewer.css",
-              "tools/flow-inspector/workspace/legacy-viewer.js",
-              "tools/flow-inspector/workspace/target.js",
-              "tools/flow-inspector/workspace/__tests__/workspace.test.cjs"
+              "tools/flow-inspector/src/architecture/",
+              "tools/flow-inspector/src/architecture/styles.css",
+              "tools/flow-inspector/src/ContractDocument.tsx",
+              "tools/flow-inspector/workspace/__tests__/react-workspace.contract.test.cjs"
             ],
             "specRefs": [
               "#ownership",
@@ -46003,40 +45958,41 @@
             "failureOwnerStepId": "render-selected-contract"
           },
           {
-            "id": "preserve-standalone-entries",
+            "id": "verify-react-delivery",
             "order": 7,
             "laneId": "verification",
-            "title": "Preserve standalone entries",
+            "title": "Verify React delivery",
             "ownerPackage": "tools/flow-inspector",
-            "purpose": "Keep existing target HTML entries directly openable and synchronized with the shared renderer.",
+            "purpose": "Deliver the shared React build through supported workspace and service entrypoints with no parallel renderer.",
             "inputs": [
               "artifact:rendered-static-inspector"
             ],
             "outputs": [
-              "artifact:standalone-compatibility-proof"
+              "artifact:react-delivery-proof"
             ],
             "conditions": [
-              "Every retained standalone entry passes its existing gate."
+              "React build, package and served-entry tests pass."
             ],
             "bypasses": [
-              "A source without an existing standalone entry creates no compatibility claim."
+              "Removed standalone URLs have no compatibility redirect."
             ],
             "allowedContributors": [
-              "existing target HTML",
-              "shared snapshot embedder"
+              "Vite build",
+              "React mount documents"
             ],
             "forbiddenContributors": [
-              "workspace dependency in standalone entries"
+              "embedded renderer snapshots",
+              "iframe adapters"
             ],
             "cacheDimensions": [],
             "implementationBoundary": [
-              "tools/flow-inspector/embed-viewer.cjs",
-              "tools/flow-inspector/__tests__/viewer-entry.test.cjs"
+              "tools/flow-inspector/vite.config.ts",
+              "tools/flow-inspector/__tests__/react-delivery.test.cjs"
             ],
             "specRefs": [
               "#definition-of-done"
             ],
-            "failureOwnerStepId": "preserve-standalone-entries"
+            "failureOwnerStepId": "verify-react-delivery"
           },
           {
             "id": "verify-static-preview",
@@ -46048,7 +46004,7 @@
             "inputs": [
               "artifact:workspace-browser-snapshot",
               "artifact:rendered-static-inspector",
-              "artifact:standalone-compatibility-proof"
+              "artifact:react-delivery-proof"
             ],
             "outputs": [
               "artifact:verified-static-workspace-preview"
@@ -46072,7 +46028,7 @@
             "cacheDimensions": [],
             "implementationBoundary": [
               "tools/flow-inspector/workspace/__tests__/catalog.contract.test.cjs",
-              "tools/flow-inspector/workspace/__tests__/workspace.test.cjs",
+              "tools/flow-inspector/workspace/__tests__/react-workspace.contract.test.cjs",
               "tools/flow-inspector/src/__tests__/workspace.test.tsx",
               "tools/flow-inspector/tsconfig.json",
               "tools/flow-inspector/package.json",
@@ -46165,11 +46121,11 @@
             ]
           },
           {
-            "id": "render-to-standalone-proof",
+            "id": "render-to-delivery-proof",
             "from": "render-selected-contract",
-            "to": "preserve-standalone-entries",
-            "kind": "compatibility",
-            "predicate": "selected source owns an existing standalone entry",
+            "to": "verify-react-delivery",
+            "kind": "required",
+            "predicate": "selected source renders through React",
             "producedArtifacts": [
               "artifact:rendered-static-inspector"
             ]
@@ -46185,13 +46141,13 @@
             ]
           },
           {
-            "id": "standalone-proof-to-preview-verification",
-            "from": "preserve-standalone-entries",
+            "id": "delivery-proof-to-preview-verification",
+            "from": "verify-react-delivery",
             "to": "verify-static-preview",
             "kind": "required",
-            "predicate": "retained standalone entries remain independent",
+            "predicate": "React delivery gates pass",
             "producedArtifacts": [
-              "artifact:standalone-compatibility-proof"
+              "artifact:react-delivery-proof"
             ]
           },
           {
@@ -46246,7 +46202,7 @@
           {
             "id": "artifact:isolated-target-document",
             "ownerStepId": "isolate-selected-target",
-            "channel": "iframe navigation",
+            "channel": "keyed React props",
             "consumerStepIds": [
               "render-selected-contract"
             ],
@@ -46257,14 +46213,14 @@
             "ownerStepId": "render-selected-contract",
             "channel": "isolated DOM",
             "consumerStepIds": [
-              "preserve-standalone-entries",
+              "verify-react-delivery",
               "verify-static-preview"
             ],
             "terminal": false
           },
           {
-            "id": "artifact:standalone-compatibility-proof",
-            "ownerStepId": "preserve-standalone-entries",
+            "id": "artifact:react-delivery-proof",
+            "ownerStepId": "verify-react-delivery",
             "channel": "formal test result",
             "consumerStepIds": [
               "verify-static-preview"
@@ -46296,8 +46252,8 @@
             ]
           },
           {
-            "id": "selection-is-document-isolated",
-            "statement": "Every selected target renders in a fresh iframe document and cannot retain the previous target global or DOM.",
+            "id": "selection-is-react-isolated",
+            "statement": "Every selected target has a keyed React lifetime and cannot retain subscriptions or selected state from the previous target.",
             "stepIds": [
               "route-workspace-selection",
               "isolate-selected-target",
@@ -46362,10 +46318,10 @@
           {
             "id": "preview-release-ready",
             "assertions": [
-              "All static integration, standalone compatibility, and synchronized browser gates pass without dynamic Control Plane claims."
+              "All static integration, React delivery, and synchronized browser gates pass without dynamic Control Plane claims."
             ],
             "stepIds": [
-              "preserve-standalone-entries",
+              "verify-react-delivery",
               "verify-static-preview"
             ],
             "specRefs": [

@@ -36,13 +36,15 @@ export async function createExecutionEvidence(options: {
         kind === 'navigation' &&
         permitted?.name === participant.name &&
         permitted.remaining === 1
-      if (planned && permitted) permitted.remaining--
-      else
+      if (planned && permitted) {
+        permitted.remaining--
+      } else {
         violations.push({
           kind:
             kind === 'closed' ? 'participant-closed' : 'unexpected-navigation',
           participant: participant.name
         })
+      }
       navigation.push({
         participant: participant.name,
         kind,
@@ -51,8 +53,9 @@ export async function createExecutionEvidence(options: {
       })
     })
   )
-  if (sourceBefore.sourceIdentityStatus !== 'captured')
+  if (sourceBefore.sourceIdentityStatus !== 'captured') {
     violations.push({ kind: 'source-unavailable' })
+  }
   for (const participant of options.participants) {
     try {
       baselines.set(participant.name, await participant.readRuntime())
@@ -70,12 +73,13 @@ export async function createExecutionEvidence(options: {
     for (const participant of options.participants) {
       try {
         const actual = await participant.readRuntime()
-        if (actual !== baselines.get(participant.name))
+        if (actual !== baselines.get(participant.name)) {
           violations.push({
             kind: 'runtime-replaced',
             participant: participant.name,
             detail: { expected: baselines.get(participant.name), actual }
           })
+        }
       } catch (error) {
         violations.push({
           kind: 'runtime-unavailable',
@@ -84,7 +88,9 @@ export async function createExecutionEvidence(options: {
         })
       }
     }
-    if (violations.length) throw environmentError()
+    if (violations.length) {
+      throw environmentError()
+    }
   }
   const capture = async () => {
     const participants = []
@@ -154,36 +160,44 @@ export async function createExecutionEvidence(options: {
       status: failed ? 'failed' : 'passed',
       ...(failed ? { error: describeError(original) } : {})
     })
-    if (violations.length) throw environmentError(original)
-    if (failed) throw original
+    if (violations.length) {
+      throw environmentError(original)
+    }
+    if (failed) {
+      throw original
+    }
     return result
   }
   return {
     assertContinuous,
     phase,
     reload: async (name: string, action: () => Promise<void>) => {
-      if (!baselines.has(name) || permitted)
+      if (!baselines.has(name) || permitted) {
         throw new Error('Invalid planned reload participant')
+      }
       await phase('planned reload - ' + name, async () => {
         permitted = { name, remaining: 1 }
         try {
           await action()
-          if (permitted.remaining !== 0)
+          if (permitted.remaining !== 0) {
             violations.push({
               kind: 'planned-reload-missing',
               participant: name
             })
+          }
           const participant = options.participants.find(
             (entry) => entry.name === name
           )
-          if (!participant)
+          if (!participant) {
             throw new Error('Missing planned reload participant')
+          }
           const next = await participant.readRuntime()
-          if (next === baselines.get(name))
+          if (next === baselines.get(name)) {
             violations.push({
               kind: 'planned-runtime-unchanged',
               participant: name
             })
+          }
           baselines.set(name, next)
         } finally {
           permitted = undefined
@@ -201,13 +215,14 @@ export async function createExecutionEvidence(options: {
             detail: describeError(error)
           })
         }
-        if (sourceAfter.sourceIdentityStatus !== 'captured')
+        if (sourceAfter.sourceIdentityStatus !== 'captured') {
           violations.push({ kind: 'source-unavailable' })
-        else if (
+        } else if (
           sourceAfter.sourceFingerprint !== sourceBefore.sourceFingerprint ||
           sourceAfter.sourceRevision !== sourceBefore.sourceRevision
-        )
+        ) {
           violations.push({ kind: 'source-changed' })
+        }
         try {
           await assertContinuous()
         } catch {
@@ -226,16 +241,21 @@ export async function createExecutionEvidence(options: {
             violations
           })
         } catch (error) {
-          if (originalError !== undefined)
+          if (originalError !== undefined) {
             throw new AggregateError(
               [originalError, error],
               'E2E failure evidence attachment failed'
             )
+          }
           throw error
         }
-        if (violations.length) throw environmentError(originalError)
+        if (violations.length) {
+          throw environmentError(originalError)
+        }
       } finally {
-        for (const stop of dispose) stop()
+        for (const stop of dispose) {
+          stop()
+        }
       }
     }
   }
@@ -287,11 +307,12 @@ export function observeExecutionPage(page: Page, name: string) {
     name,
     readRuntime: () => page.evaluate(() => performance.timeOrigin),
     read: async () => {
-      if (page.url() === 'about:blank')
+      if (page.url() === 'about:blank') {
         return {
           runtimeId: await page.evaluate(() => performance.timeOrigin),
           state: 'not-started'
         }
+      }
       const snapshot = await page.evaluate(async () => {
         const { core } = await import('../src/testing/runtime-access')
         const data = await core.save()

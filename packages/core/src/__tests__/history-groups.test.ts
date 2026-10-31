@@ -57,7 +57,9 @@ describe('Core history group facade', () => {
     const core = create(factory)
     const other = create(new Factory())
     const workspaceId = core.getCurrentWorkspaceId()
-    if (!workspaceId) throw new Error('Missing workspace')
+    if (!workspaceId) {
+      throw new Error('Missing workspace')
+    }
     const originalName = core.getElementData(workspaceId)?.name
     const group = core.startHistoryGroup()
     core.updateHistoryGroup(group, () =>
@@ -84,7 +86,9 @@ describe('Core history group facade', () => {
     const factory = new Factory()
     const core = create(factory)
     const id = core.getCurrentWorkspaceId()
-    if (!id) throw new Error('Missing workspace')
+    if (!id) {
+      throw new Error('Missing workspace')
+    }
     const original = core.getElementData(id)?.name
     runWithTransactionOwner(factory.getTransactionOwner(), () =>
       runTransaction(() => core.updateElementData(id, { name: 'User' }))
@@ -113,7 +117,9 @@ describe('Core history group facade', () => {
       const factory = new Factory()
       const core = create(factory)
       const id = core.getCurrentWorkspaceId()
-      if (!id) throw new Error('Missing workspace')
+      if (!id) {
+        throw new Error('Missing workspace')
+      }
       const original = core.getElementData(id)?.name
       runWithTransactionOwner(factory.getTransactionOwner(), () =>
         runTransaction(() => {
@@ -130,10 +136,13 @@ describe('Core history group facade', () => {
         (event, mode) => {
           const change = (event as UpdateElementDataEvent).payload.changes[0]
           const fails = mode === 'undo' && change.after === original
-          if (fails && failurePoint === 'before')
+          if (fails && failurePoint === 'before') {
             throw new Error('Replay failure')
+          }
           const applied = applyEventToSynchronousOwners(event)
-          if (fails) throw new Error('Replay failure')
+          if (fails) {
+            throw new Error('Replay failure')
+          }
           return applied
         }
       )

@@ -55,12 +55,13 @@ const exercise = async (cancel: boolean) => {
         sharedDelivery: cancel ? 'immediate' : 'transaction-end'
       }
     })
-    if (cancel)
+    if (cancel) {
       handle?.setDeliverySequence({
         mode: 'atomic',
         batchPublications: false,
         slices: []
       })
+    }
     await Promise.resolve()
     const beforeClose = {
       projectionCount: projected.length,
@@ -200,7 +201,7 @@ describe('Factory flow proof history group', () => {
     factory.observeSharedDataChannel(channel, (value) => projected.push(value))
     factory.subscribeToCommitCapture((value) => commits.push(value))
     const group = factory.startHistoryGroup()
-    for (const after of [1, 2])
+    for (const after of [1, 2]) {
       factory.updateHistoryGroup(group, () =>
         factory.updateTransaction({
           type: EventTypes.UPDATE_TRANSACTION,
@@ -209,6 +210,7 @@ describe('Factory flow proof history group', () => {
           options: { shared: channel }
         })
       )
+    }
     expect(projected).toHaveLength(2)
     expect(commits).toHaveLength(2)
     expect(factory.getUndoHistoryDepth()).toBe(0)
@@ -224,8 +226,9 @@ describe('Factory flow proof history group', () => {
       SharedDataChannelNames.PROPS,
       SharedDataChannelNames.SCENE_TREE
     ]
-    for (const channel of channels)
+    for (const channel of channels) {
       factory.registerSharedDataChannel(channel, new LocalSharedDataChannel())
+    }
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       () => true
@@ -240,12 +243,13 @@ describe('Factory flow proof history group', () => {
         payload: { id: `entry-${index}`, before: 0, after: 1 },
         options: { shared: channel, sharedDelivery: 'immediate' }
       })
-      if (index === 0)
+      if (index === 0) {
         handle?.setDeliverySequence({
           mode: 'atomic',
           batchPublications: false,
           slices: []
         })
+      }
     }
     await Promise.resolve()
     expect(publications).toHaveLength(1)
@@ -270,8 +274,9 @@ describe('Factory flow proof history group', () => {
     const factory = new Factory()
     const props = SharedDataChannelNames.PROPS
     const scene = SharedDataChannelNames.SCENE_TREE
-    for (const channel of [props, scene])
+    for (const channel of [props, scene]) {
       factory.registerSharedDataChannel(channel, new LocalSharedDataChannel())
+    }
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       () => true
@@ -280,13 +285,14 @@ describe('Factory flow proof history group', () => {
     factory.subscribeToSharedPublication((value) => publications.push(value))
     const group = factory.startHistoryGroup()
     factory.updateHistoryGroup(group, () => {
-      for (const [index, channel] of [props, scene, props].entries())
+      for (const [index, channel] of [props, scene, props].entries()) {
         factory.updateTransaction({
           type: EventTypes.UPDATE_TRANSACTION,
           eventName: EventTypes.UPDATE_PROPERTY,
           payload: { id: `entry-${index}`, before: 0, after: 1 },
           options: { shared: channel }
         })
+      }
     })
     factory.endHistoryGroup(group)
     publications.length = 0

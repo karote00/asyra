@@ -673,7 +673,9 @@ it('distinguishes usable discovery pages from incomplete mutations through publi
   const tool = operations.definitions.find(
     (entry) => entry.name === 'describe_design_apis'
   )
-  if (!tool) throw new Error('Discovery tool is not registered')
+  if (!tool) {
+    throw new Error('Discovery tool is not registered')
+  }
   const first = await invokeLocalTool(
     operations,
     tool,

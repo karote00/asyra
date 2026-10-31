@@ -20,7 +20,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             pair.a.bodyId === 'example:joint-2' &&
             pair.b.bodyId === 'obstacle-11'
         )
-        if (!pair) throw new Error('Missing measured pair')
+        if (!pair) {
+          throw new Error('Missing measured pair')
+        }
         interface Completed {
           a: Bounds
           b: Bounds
@@ -39,8 +41,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         const original = projection.projectedBoundsGap
         vi.spyOn(projection, 'projectedBoundsGap').mockImplementation(
           (a, aPose, b, bPose, threshold, checkpoint) => {
-            if (!active)
+            if (!active) {
               throw new Error('Projection escaped its direct query lifetime')
+            }
             expect(aPose).toBe(active.aPose)
             expect(bPose).toBe(active.bPose)
             const key = [...a.flat(), ...b.flat(), threshold]
@@ -63,8 +66,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                 referenceCalls++
                 referenceAxes += work
               }
-            } else
+            } else {
               active.completed.set(key, { a, b, value: result, axes: work })
+            }
             return result
           }
         )

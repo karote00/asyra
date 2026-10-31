@@ -76,8 +76,9 @@ type PreparedVectorRecordDelivery = Readonly<Record<string, unknown>> & {
 function deliverVectorRecords(
   input: unknown
 ): Record<string, PreparedVectorRecordDelivery> {
-  if (!input || typeof input !== 'object' || Array.isArray(input))
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
     throw new Error('Prepared vector identity map is invalid.')
+  }
   return Object.fromEntries(
     Object.entries(input).map(([key, value]) => {
       if (
@@ -85,8 +86,9 @@ function deliverVectorRecords(
         typeof value !== 'object' ||
         Array.isArray(value) ||
         value.id !== key
-      )
+      ) {
         throw new Error('Prepared vector identity is inconsistent.')
+      }
       const { id: _id, ...record } = value
       return [key, record]
     })
@@ -109,20 +111,23 @@ export function deliverPreparedDesign(
   design: PreparedDesign
 ): PreparedDesignDelivery {
   const { keyToId, entries, ...rest } = design
-  if (Object.keys(keyToId).length !== entries.length)
+  if (Object.keys(keyToId).length !== entries.length) {
     throw new Error('Prepared design identity map is inconsistent.')
+  }
   const keys = new Set<string>()
   return {
     ...rest,
     version: PREPARED_DESIGN_DELIVERY_VERSION,
     entries: entries.map((entry) => {
       const { props, ...descriptor } = entry.descriptor
-      if (keys.has(entry.key) || keyToId[entry.key] !== descriptor.id)
+      if (keys.has(entry.key) || keyToId[entry.key] !== descriptor.id) {
         throw new Error('Prepared design identity map is inconsistent.')
+      }
       keys.add(entry.key)
       const names = Object.keys(props)
-      if (names.some((name) => props[name] !== `${descriptor.id}-${name}`))
+      if (names.some((name) => props[name] !== `${descriptor.id}-${name}`)) {
         throw new Error('Prepared design property identity is inconsistent.')
+      }
       const vector =
         descriptor.type === 'vector'
           ? Object.fromEntries(

@@ -95,7 +95,9 @@ function cycleBounds(
   const result = { sin: read('sin'), cos: read('cos') }
   // Cosine is positive over the admitted fixed-polynomial domain. Squaring
   // its positive lower bound proves the similarity denominator is positive.
-  if (result.cos.low <= 0) fail('cycle norm unproved')
+  if (result.cos.low <= 0) {
+    fail('cycle norm unproved')
+  }
   return result
 }
 function cycleRotation<T>(a: Algebra<T>, axis: 'x' | 'z', sin: T, cos: T) {
@@ -179,7 +181,9 @@ function cycleFrames<T>(
       const parent = body.parentBodyId
         ? result.get(body.parentBodyId)
         : undefined
-      if (!parent) continue
+      if (!parent) {
+        continue
+      }
       const local =
         body.attachment === 'fixed'
           ? required(template.bodyFrames.get(body))
@@ -194,7 +198,9 @@ function cycleFrames<T>(
       pending.delete(body)
       advanced = true
     }
-    if (!advanced) fail('cycle source dependency')
+    if (!advanced) {
+      fail('cycle source dependency')
+    }
   }
   return result
 }
@@ -243,9 +249,15 @@ function cycleAnchor(
 }
 function patchVertices(part: WalkingRobotPart, patch: SourcePatch) {
   const indices = new Set<number>()
-  for (const range of patch.ranges)
-    for (let i = range.indexStart; i < range.indexStart + range.indexCount; i++)
+  for (const range of patch.ranges) {
+    for (
+      let i = range.indexStart;
+      i < range.indexStart + range.indexCount;
+      i++
+    ) {
       indices.add(part.shape.indices[i])
+    }
+  }
   return [...indices]
 }
 function admitCycle(
@@ -268,8 +280,9 @@ function admitCycle(
     raw.source !== source ||
     !Object.isFrozen(source) ||
     raw.fixedJoints !== source.rig.presets.stowed
-  )
+  ) {
     fail('cycle source or stowed identity')
+  }
   const a = e.exact
   const rational = (value: unknown) => {
     if (
@@ -277,21 +290,25 @@ function admitCycle(
       typeof value.numerator !== 'bigint' ||
       typeof value.denominator !== 'bigint' ||
       value.denominator <= 0n
-    )
+    ) {
       fail('cycle rational')
+    }
     const result = e.fraction(value.numerator, value.denominator)
     if (
       result.numerator !== value.numerator ||
       result.denominator !== value.denominator
-    )
+    ) {
       fail('cycle noncanonical rational')
+    }
     return result
   }
   const alpha = rational(raw.alpha)
-  if (alpha.numerator <= 0n || cycleCompare(alpha, a.literal(1), e) >= 0)
+  if (alpha.numerator <= 0n || cycleCompare(alpha, a.literal(1), e) >= 0) {
     fail('cycle alpha domain')
-  if (!Array.isArray(raw.baseOrientation) || raw.baseOrientation.length !== 4)
+  }
+  if (!Array.isArray(raw.baseOrientation) || raw.baseOrientation.length !== 4) {
     fail('cycle orientation')
+  }
   const baseOrientation = raw.baseOrientation.map(
     rational
   ) as unknown as WalkingConstrainedRecipe['baseOrientation']
@@ -299,8 +316,9 @@ function admitCycle(
     baseOrientation[0].numerator !== 0n ||
     baseOrientation[2].numerator !== 0n ||
     (baseOrientation[1].numerator === 0n && baseOrientation[3].numerator === 0n)
-  )
+  ) {
     fail('cycle gravity-preserving yaw')
+  }
   if (
     source.rig.legChains.length !== 6 ||
     !Array.isArray(raw.groups) ||
@@ -311,14 +329,16 @@ function admitCycle(
         g.length !== 3 ||
         g.some((id) => typeof id !== 'string')
     )
-  )
+  ) {
     fail('cycle tripod groups')
+  }
   const groups = raw.groups.map((g) => [...g]) as [string[], string[]]
   if (
     new Set(groups.flat()).size !== 6 ||
     groups.flat().some((id) => !source.rig.legChains.some((c) => c.id === id))
-  )
+  ) {
     fail('cycle tripod coverage')
+  }
   for (const group of groups) {
     const chains = group.map((id) =>
       required(source.rig.legChains.find((c) => c.id === id))
@@ -330,17 +350,20 @@ function admitCycle(
       chains.some(
         (c) => ((c.side === 'left') !== (c.station === 'middle')) !== parity
       )
-    )
+    ) {
       fail('cycle complementary tripod')
+    }
   }
-  if (!Array.isArray(raw.anchors) || raw.anchors.length !== 6)
+  if (!Array.isArray(raw.anchors) || raw.anchors.length !== 6) {
     fail('cycle anchors')
+  }
   const anchors = raw.anchors.map((entry) => {
     if (
       !record(entry, ['chainId', 'part', 'patch', 'anchorOrigin']) ||
       typeof entry.chainId !== 'string'
-    )
+    ) {
       fail('cycle anchor')
+    }
     const chain = required(
       source.rig.legChains.find((c) => c.id === entry.chainId)
     )
@@ -352,8 +375,9 @@ function admitCycle(
       entry.patch !== contact.patch ||
       !Array.isArray(entry.anchorOrigin) ||
       entry.anchorOrigin.length !== 3
-    )
+    ) {
       fail('cycle sole binding')
+    }
     return {
       chainId: chain.id,
       part: contact.part,
@@ -361,36 +385,44 @@ function admitCycle(
       anchorOrigin: vector(entry.anchorOrigin.map(rational))
     }
   })
-  if (new Set(anchors.map((v) => v.chainId)).size !== 6)
+  if (new Set(anchors.map((v) => v.chainId)).size !== 6) {
     fail('cycle duplicate anchors')
-  for (const leg of source.rig.presets.stowed.legs)
-    if (leg.abduction !== 0 || leg.hip !== 0 || leg.knee !== 0)
+  }
+  for (const leg of source.rig.presets.stowed.legs) {
+    if (leg.abduction !== 0 || leg.hip !== 0 || leg.knee !== 0) {
       fail('cycle neutral stowed legs')
-  for (const arm of source.rig.presets.stowed.arms)
+    }
+  }
+  for (const arm of source.rig.presets.stowed.arms) {
     if (
       arm.rootYaw !== 0 ||
       arm.shoulderPitch !== 0 ||
       arm.elbowPitch !== 0 ||
       arm.wristPitch !== 0
-    )
+    ) {
       fail('cycle fixed exact stowed arms')
+    }
+  }
   const minusAlpha = a.subtract(a.literal(0), alpha)
   for (const chain of source.rig.legChains) {
     const joints = chain.jointIds.map((id) =>
       required(source.rig.joints.find((j) => j.id === id))
     )
-    for (const j of joints.slice(1))
+    for (const j of joints.slice(1)) {
       if (
         cycleCompare(minusAlpha, a.literal(j.domain[0]), e) < 0 ||
         cycleCompare(alpha, a.literal(j.domain[1]), e) > 0
-      )
+      ) {
         fail('cycle authored domain')
+      }
+    }
     const abduct = chain.side === 'left' ? minusAlpha : alpha
     if (
       cycleCompare(abduct, a.literal(joints[0].domain[0]), e) < 0 ||
       cycleCompare(abduct, a.literal(joints[0].domain[1]), e) > 0
-    )
+    ) {
       fail('cycle abduction domain')
+    }
   }
   return freeze({
     format: 'walking-constrained-cycle/1',
@@ -443,8 +475,13 @@ function cyclePrepare(
     template: prepareTemplate(firstRecipe, e)
   }
   const kt = first.template.kneeTranslation
-  if (kt[0].numerator !== 0n || kt[2].numerator !== 0n || kt[1].numerator >= 0n)
+  if (
+    kt[0].numerator !== 0n ||
+    kt[2].numerator !== 0n ||
+    kt[1].numerator >= 0n
+  ) {
     fail('cycle upper direction')
+  }
   const upper = a.subtract(zero, kt[1])
   const netDisplacement = rotate(
     a,
@@ -477,13 +514,16 @@ function cyclePrepare(
       first.template.footTranslation,
       second.template.footTranslation
     )
-  )
+  ) {
     fail('cycle shared six-leg dimensions')
+  }
   // Exact station spacing, complete source Z extent and finite excursion bound.
   const chains = recipe.source.rig.legChains
   for (const side of ['left', 'right']) {
     const sideChains = chains.filter((c) => c.side === side)
-    if (sideChains.length !== 3) fail('cycle side coverage')
+    if (sideChains.length !== 3) {
+      fail('cycle side coverage')
+    }
     const positions = sideChains
       .map((c) =>
         a.literal(
@@ -507,8 +547,9 @@ function cyclePrepare(
             remaining,
             e
           ) > 0
-        )
+        ) {
           fail('cycle source-derived alpha bound')
+        }
       }
     }
   }
@@ -520,16 +561,18 @@ function cycleParameter(value: unknown, e: CycleEngine) {
     typeof value.numerator !== 'bigint' ||
     typeof value.denominator !== 'bigint' ||
     value.denominator <= 0n
-  )
+  ) {
     fail('cycle parameter rational')
+  }
   const result = e.fraction(value.numerator, value.denominator)
   if (
     result.numerator !== value.numerator ||
     result.denominator !== value.denominator ||
     result.numerator < 0n ||
     cycleCompare(result, e.exact.literal(1), e) > 0
-  )
+  ) {
     fail('cycle parameter domain')
+  }
   return result
 }
 function cycleGeometry(
@@ -557,8 +600,9 @@ function cycleGeometry(
   const betaMinimum =
     cycleCompare(betaLow, betaHigh, e) <= 0 ? betaLow : betaHigh
   let betaMaximum = cycleCompare(betaLow, betaHigh, e) >= 0 ? betaLow : betaHigh
-  if (cycleCompare(low, half, e) <= 0 && cycleCompare(high, half, e) >= 0)
+  if (cycleCompare(low, half, e) <= 0 && cycleCompare(high, half, e) >= 0) {
     betaMaximum = a.divide(recipe.alpha, two)
+  }
   const theta = cycleBounds(e, thetaAt(low), thetaAt(high))
   const beta = cycleBounds(e, betaMinimum, betaMaximum)
   const bounded = cycleFrames(prepared, phase, r, theta, beta)
@@ -657,8 +701,9 @@ function cycleGeometry(
         const rho =
           chain.side === 'left' ? r.subtract(r.literal(0), p[0]) : p[0]
         const down = r.subtract(r.literal(0), p[1])
-        if (rho.low <= 0 || down.low < 0)
+        if (rho.low <= 0 || down.low < 0) {
           fail('cycle swing sole radial/downward source constraint')
+        }
         return { index, rho, down }
       })
       return {
@@ -684,9 +729,11 @@ export class WalkingConstrainedCycleOwner {
   private prepared: CyclePrepared | undefined
   private totals = { ...zeroWork(), preparations: 0, evaluations: 0 }
   private onWork = (key: keyof Work, amount: number) => {
-    if (key === 'maxBits')
+    if (key === 'maxBits') {
       this.totals.maxBits = Math.max(this.totals.maxBits, amount)
-    else this.totals[key] += amount
+    } else {
+      this.totals[key] += amount
+    }
   }
   get work() {
     return Object.freeze({ ...this.totals })
@@ -723,8 +770,9 @@ export class WalkingConstrainedCycleOwner {
       this.current &&
       raw === this.current.recipe &&
       source === this.current.source
-    )
+    ) {
       return this.current
+    }
     this.dispose()
     this.totals.preparations++
     if (
@@ -738,8 +786,9 @@ export class WalkingConstrainedCycleOwner {
       !Number.isSafeInteger(raw.budget.maxBits) ||
       Number(raw.budget.maxBits) < 1 ||
       Number(raw.budget.maxBits) > 24000
-    )
+    ) {
       fail('cycle finite budget')
+    }
     const work = zeroWork(),
       e = arithmetic(
         {
@@ -762,14 +811,16 @@ export class WalkingConstrainedCycleOwner {
       p1 = cyclePointFrames(prepared, 0, one, e),
       q0 = cyclePointFrames(prepared, 1, zero, e),
       q1 = cyclePointFrames(prepared, 1, one, e)
-    for (const anchor of recipe.anchors)
+    for (const anchor of recipe.anchors) {
       if (
         !equalVector(
           cycleAnchor(anchor.part, anchor.chainId, source, p0, a),
           anchor.anchorOrigin
         )
-      )
+      ) {
         fail('cycle initial anchor incompatibility')
+      }
+    }
     let soleY: ConstrainedFraction | undefined
     for (const anchor of recipe.anchors) {
       const frame = compose(
@@ -778,7 +829,9 @@ export class WalkingConstrainedCycleOwner {
         required(prepared.phases[0].template.partFrames.get(anchor.part))
       )
       const vertices = patchVertices(anchor.part, anchor.patch)
-      if (vertices.length < 3) fail('cycle incomplete sole')
+      if (vertices.length < 3) {
+        fail('cycle incomplete sole')
+      }
       for (const index of vertices) {
         const p = plusVector(
           a,
@@ -793,8 +846,9 @@ export class WalkingConstrainedCycleOwner {
             )
           )
         )
-        if (soleY && !equalFraction(soleY, p[1]))
+        if (soleY && !equalFraction(soleY, p[1])) {
           fail('cycle soles not one level plane')
+        }
         soleY = p[1]
       }
     }
@@ -806,16 +860,18 @@ export class WalkingConstrainedCycleOwner {
       if (
         !equalVector(left.origin, right.origin) ||
         left.matrix.some((row, i) => !equalVector(row, right.matrix[i]))
-      )
+      ) {
         fail('cycle exact handoff')
+      }
       if (
         !equalVector(
           end.origin,
           plusVector(a, start.origin, prepared.netDisplacement)
         ) ||
         end.matrix.some((row, i) => !equalVector(row, start.matrix[i]))
-      )
+      ) {
         fail('cycle periodic net motion')
+      }
     }
     // cycleFrames uses this same template matrix for the root at every real
     // parameter; only its shared support-expression origin changes. These
@@ -825,8 +881,9 @@ export class WalkingConstrainedCycleOwner {
     )
     const rootMatrix = prepared.phases[0].template.base.matrix
     const otherMatrix = prepared.phases[1].template.base.matrix
-    if (rootMatrix.some((row, i) => !equalVector(row, otherMatrix[i])))
+    if (rootMatrix.some((row, i) => !equalVector(row, otherMatrix[i]))) {
       fail('cycle base matrix mismatch')
+    }
     const minor = (i: number, j: number, k: number, l: number) =>
       a.subtract(
         a.multiply(rootMatrix[i][k], rootMatrix[j][l]),
@@ -839,7 +896,9 @@ export class WalkingConstrainedCycleOwner {
       ),
       a.multiply(rootMatrix[0][2], minor(1, 2, 0, 1))
     )
-    if (determinant.numerator <= 0n) fail('cycle singular base matrix')
+    if (determinant.numerator <= 0n) {
+      fail('cycle singular base matrix')
+    }
     const baseParts = source.parts
       .filter((part) => part.bodyId === baseBody.id)
       .map((part) => {
@@ -848,8 +907,9 @@ export class WalkingConstrainedCycleOwner {
         if (
           !equalVector(local.origin, other.origin) ||
           local.matrix.some((row, i) => !equalVector(row, other.matrix[i]))
-        )
+        ) {
           fail('cycle base local mismatch')
+        }
         return { part, local }
       })
     // This is the constant branch of cycleFrames, with the root factored out.
@@ -878,9 +938,13 @@ export class WalkingConstrainedCycleOwner {
       while (advanced) {
         advanced = false
         for (const body of source.rig.bodies) {
-          if (locals.has(body.id) || dynamic.has(body.id)) continue
+          if (locals.has(body.id) || dynamic.has(body.id)) {
+            continue
+          }
           const parent = body.parentBodyId && locals.get(body.parentBodyId)
-          if (!parent) continue
+          if (!parent) {
+            continue
+          }
           const local =
             body.attachment === 'fixed'
               ? required(template.bodyFrames.get(body))
@@ -906,12 +970,14 @@ export class WalkingConstrainedCycleOwner {
         if (
           !equalVector(local.origin, other.origin) ||
           local.matrix.some((row, i) => !equalVector(row, other.matrix[i]))
-        )
+        ) {
           fail('cycle constant local mismatch')
+        }
         return { body, local }
       })
-    if (constants[0].size !== constants[1].size)
+    if (constants[0].size !== constants[1].size) {
       fail('cycle constant membership mismatch')
+    }
     const constantParts = source.parts
       .filter((part) => constants[0].has(part.bodyId))
       .map((part) => {
@@ -928,8 +994,9 @@ export class WalkingConstrainedCycleOwner {
         if (
           !equalVector(local.origin, other.origin) ||
           local.matrix.some((row, i) => !equalVector(row, other.matrix[i]))
-        )
+        ) {
           fail('cycle constant part mismatch')
+        }
         return { part, local }
       })
     const phaseLocals = prepared.phases.map(({ template }) => {
@@ -1018,8 +1085,9 @@ export class WalkingConstrainedCycleOwner {
     cycle: WalkingConstrainedCycle,
     raw: unknown
   ): WalkingSelectedChainMotion {
-    if (this.current !== cycle || !this.prepared)
+    if (this.current !== cycle || !this.prepared) {
       fail('selected motion stale cycle')
+    }
     if (
       !record(raw, [
         'format',
@@ -1034,8 +1102,9 @@ export class WalkingConstrainedCycleOwner {
       !Number.isInteger(raw.phase) ||
       Number(raw.phase) < 0 ||
       Number(raw.phase) > 1
-    )
+    ) {
       fail('selected motion recipe')
+    }
     const work = zeroWork(),
       e = arithmetic(cycle.recipe.budget, work, this.onWork),
       a = e.exact
@@ -1045,14 +1114,16 @@ export class WalkingConstrainedCycleOwner {
     const chain = required(
       cycle.source.rig.legChains.find((c) => c.id === raw.chainId)
     )
-    if (cycle.recipe.groups[phase].includes(chain.id))
+    if (cycle.recipe.groups[phase].includes(chain.id)) {
       fail('selected motion requires swing chain')
+    }
     const template = this.prepared.phases[phase].template
     const joints = chain.jointIds.map((id) =>
       required(cycle.source.rig.joints.find((j) => j.id === id))
     )
-    if (joints[0].axis !== 'z' || joints[0].motion !== 'revolute')
+    if (joints[0].axis !== 'z' || joints[0].motion !== 'revolute') {
       fail('selected root joint')
+    }
     const signedTarget =
       chain.side === 'left'
         ? a.subtract(a.literal(0), targetAbduction)
@@ -1060,8 +1131,9 @@ export class WalkingConstrainedCycleOwner {
     if (
       cycleCompare(signedTarget, a.literal(joints[0].domain[0]), e) < 0 ||
       cycleCompare(signedTarget, a.literal(joints[0].domain[1]), e) > 0
-    )
+    ) {
       fail('selected root domain')
+    }
     const one = a.literal(1),
       two = a.literal(2)
     const startAbduction = a.multiply(
@@ -1096,7 +1168,9 @@ export class WalkingConstrainedCycleOwner {
       body: required(cycle.source.rig.bodies.find((b) => b.id === id)),
       local: locals[index]
     }))
-    if (bodies.length !== 4) fail('selected source chain')
+    if (bodies.length !== 4) {
+      fail('selected source chain')
+    }
     const selected = new Set(chain.bodyIds)
     const parts = bodies.flatMap((entry) =>
       entry.body.parts.map((part) => ({
@@ -1148,8 +1222,9 @@ export class WalkingConstrainedCycleOwner {
     motion: WalkingSelectedChainMotion,
     raw: unknown
   ) {
-    if (!this.readSelectedChainMotion(motion.cycle, motion))
+    if (!this.readSelectedChainMotion(motion.cycle, motion)) {
       fail('selected motion stale point')
+    }
     const work = zeroWork(),
       e = arithmetic(motion.cycle.recipe.budget, work, this.onWork)
     const u = cycleParameter(raw, e),
@@ -1182,14 +1257,19 @@ export class WalkingConstrainedCycleOwner {
     })
   }
   boundSelectedChainMotion(motion: WalkingSelectedChainMotion, raw: unknown) {
-    if (!this.readSelectedChainMotion(motion.cycle, motion))
+    if (!this.readSelectedChainMotion(motion.cycle, motion)) {
       fail('selected motion stale bound')
+    }
     const work = zeroWork(),
       e = arithmetic(motion.cycle.recipe.budget, work, this.onWork)
-    if (!record(raw, ['low', 'high'])) fail('selected interval')
+    if (!record(raw, ['low', 'high'])) {
+      fail('selected interval')
+    }
     const low = cycleParameter(raw.low, e),
       high = cycleParameter(raw.high, e)
-    if (cycleCompare(low, high, e) > 0) fail('selected reversed interval')
+    if (cycleCompare(low, high, e) > 0) {
+      fail('selected reversed interval')
+    }
     const first = selectedAngle(motion, low, e),
       last = selectedAngle(motion, high, e)
     const ascending = cycleCompare(first, last, e) <= 0
@@ -1237,17 +1317,21 @@ export class WalkingConstrainedCycleOwner {
       !Number.isInteger(phase) ||
       phase < 0 ||
       phase > 1
-    )
+    ) {
       fail('cycle stale bound or phase')
+    }
     const work = zeroWork(),
       e = arithmetic(cycle.recipe.budget, work, this.onWork)
-    if (!record(raw, ['low', 'high'])) fail('cycle parameter interval')
+    if (!record(raw, ['low', 'high'])) {
+      fail('cycle parameter interval')
+    }
     const parameter = freeze({
       low: cycleParameter(raw.low, e),
       high: cycleParameter(raw.high, e)
     })
-    if (cycleCompare(parameter.low, parameter.high, e) > 0)
+    if (cycleCompare(parameter.low, parameter.high, e) > 0) {
       fail('cycle reversed parameter interval')
+    }
     const result = cycleGeometry(this.prepared, phase, e, parameter)
     return freeze({
       cycle,
@@ -1270,8 +1354,9 @@ export class WalkingConstrainedCycleOwner {
       !Number.isInteger(phase) ||
       phase < 0 ||
       phase > 1
-    )
+    ) {
       fail('cycle stale handle or phase')
+    }
     this.totals.evaluations++
     const work = zeroWork(),
       e = arithmetic(cycle.recipe.budget, work, this.onWork),
@@ -1281,15 +1366,17 @@ export class WalkingConstrainedCycleOwner {
       typeof u.numerator !== 'bigint' ||
       typeof u.denominator !== 'bigint' ||
       u.denominator <= 0n
-    )
+    ) {
       fail('cycle point rational')
+    }
     const value = e.fraction(u.numerator, u.denominator)
     if (
       !equalFraction(value, u) ||
       value.numerator < 0n ||
       cycleCompare(value, a.literal(1), e) > 0
-    )
+    ) {
       fail('cycle point domain')
+    }
     const computed = cyclePointFrames(this.prepared, phase, value, e)
     const display = (frame: ExactFrame) => ({
       origin: vector(
@@ -1523,7 +1610,9 @@ const zeroWork = (): Work => ({
 })
 function freeze<T>(value: T): T {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
-    for (const item of Object.values(value)) freeze(item)
+    for (const item of Object.values(value)) {
+      freeze(item)
+    }
     Object.freeze(value)
   }
   return value
@@ -1558,16 +1647,22 @@ function arithmetic(
     if (key === 'maxBits') {
       work.maxBits = Math.max(work.maxBits, amount)
       onWork(key, amount)
-      if (amount > budget.maxBits) fail('rational bit budget')
+      if (amount > budget.maxBits) {
+        fail('rational bit budget')
+      }
       return
     }
     work[key] += amount
     onWork(key, amount)
-    if (work.operations > budget.maxOperations) fail('operation budget')
+    if (work.operations > budget.maxOperations) {
+      fail('operation budget')
+    }
   }
   const width = (value: bigint) => {
     const bits = (value < 0n ? -value : value).toString(2).length
-    if (bits > budget.maxBits) fail('rational bit budget')
+    if (bits > budget.maxBits) {
+      fail('rational bit budget')
+    }
     count('maxBits', bits)
   }
   const fraction = (
@@ -1575,7 +1670,9 @@ function arithmetic(
     denominator = 1n
   ): ConstrainedFraction => {
     count('operations')
-    if (denominator === 0n) fail('zero norm or denominator')
+    if (denominator === 0n) {
+      fail('zero norm or denominator')
+    }
     width(numerator)
     width(denominator)
     if (denominator < 0n) {
@@ -1591,7 +1688,9 @@ function arithmetic(
   const exact: Algebra<ConstrainedFraction> = {
     composition: () => count('frameCompositions'),
     literal(value) {
-      if (!Number.isFinite(value)) fail('nonfinite source scalar')
+      if (!Number.isFinite(value)) {
+        fail('nonfinite source scalar')
+      }
       const v = dyadic(value)
       return v.exponent >= 0
         ? fraction(v.significand << BigInt(v.exponent))
@@ -1621,8 +1720,9 @@ function arithmetic(
       !Number.isFinite(value.low) ||
       !Number.isFinite(value.high) ||
       value.low > value.high
-    )
+    ) {
       fail('unproved interval')
+    }
     return value
   }
   const ranges: Algebra<Interval> = {
@@ -1644,7 +1744,9 @@ function arithmetic(
     subtract: (a, b) => bounded(subtract(a, b)),
     multiply: (a, b) => bounded(multiply(a, b)),
     divide: (a, b) => {
-      if (b.low <= 0 && b.high >= 0) fail('unproved positive norm')
+      if (b.low <= 0 && b.high >= 0) {
+        fail('unproved positive norm')
+      }
       return bounded(divide(a, b))
     }
   }
@@ -1865,8 +1967,9 @@ function admit(
     raw.format !== 'walking-constrained-kinematic-projection/1' ||
     raw.source !== source ||
     !Object.isFrozen(source)
-  )
+  ) {
     fail('source or recipe binding')
+  }
   if (
     !record(raw.budget, ['maxOperations', 'maxBits']) ||
     !Number.isSafeInteger(raw.budget.maxOperations) ||
@@ -1875,8 +1978,9 @@ function admit(
     !Number.isSafeInteger(raw.budget.maxBits) ||
     Number(raw.budget.maxBits) < 1 ||
     Number(raw.budget.maxBits) > 24000
-  )
+  ) {
     fail('finite budget required')
+  }
   const budget = {
     maxOperations: Number(raw.budget.maxOperations),
     maxBits: Number(raw.budget.maxBits)
@@ -1889,17 +1993,20 @@ function admit(
       typeof value.numerator !== 'bigint' ||
       typeof value.denominator !== 'bigint' ||
       value.denominator <= 0n
-    )
+    ) {
       fail('invalid rational')
+    }
     return a.fraction(value.numerator, value.denominator)
   }
-  if (!Array.isArray(raw.baseOrientation) || raw.baseOrientation.length !== 4)
+  if (!Array.isArray(raw.baseOrientation) || raw.baseOrientation.length !== 4) {
     fail('base orientation')
+  }
   const baseOrientation = raw.baseOrientation.map(
     rational
   ) as unknown as WalkingConstrainedRecipe['baseOrientation']
-  if (baseOrientation.every((value) => value.numerator === 0n))
+  if (baseOrientation.every((value) => value.numerator === 0n)) {
     fail('zero norm')
+  }
   if (
     !record(raw.interval, ['low', 'high']) ||
     typeof raw.interval.low !== 'number' ||
@@ -1907,16 +2014,19 @@ function admit(
     !Number.isFinite(raw.interval.low) ||
     !Number.isFinite(raw.interval.high) ||
     raw.interval.low > raw.interval.high
-  )
+  ) {
     fail('parameter interval')
+  }
   if (
     !Object.values(source.rig.presets).includes(
       raw.fixedJoints as WalkingRobotJointState
     )
-  )
+  ) {
     fail('fixed state must be current admitted preset')
-  if (!Array.isArray(raw.supports) || raw.supports.length !== 3)
+  }
+  if (!Array.isArray(raw.supports) || raw.supports.length !== 3) {
     fail('three support anchors required')
+  }
   const supports = raw.supports
     .map((value) => {
       if (
@@ -1924,8 +2034,9 @@ function admit(
         typeof value.chainId !== 'string' ||
         !Array.isArray(value.anchorOrigin) ||
         value.anchorOrigin.length !== 3
-      )
+      ) {
         fail('support binding')
+      }
       const chain = source.rig.legChains.find(
         (chain) => chain.id === value.chainId
       )
@@ -1933,8 +2044,9 @@ function admit(
         (contact) =>
           contact.part === value.part && contact.patch === value.patch
       )
-      if (!chain || !contact || contact.part.bodyId !== chain.footBodyId)
+      if (!chain || !contact || contact.part.bodyId !== chain.footBodyId) {
         fail('stale support patch')
+      }
       return {
         chainId: chain.id,
         part: contact.part,
@@ -1943,15 +2055,18 @@ function admit(
       }
     })
     .sort((a, b) => a.chainId.localeCompare(b.chainId))
-  if (new Set(supports.map((entry) => entry.chainId)).size !== 3)
+  if (new Set(supports.map((entry) => entry.chainId)).size !== 3) {
     fail('duplicate support')
+  }
   const groups = supports.map((entry) => {
     const chain = required(
       source.rig.legChains.find((chain) => chain.id === entry.chainId)
     )
     return (chain.side === 'left') !== (chain.station === 'middle')
   })
-  if (groups.some((value) => value !== groups[0])) fail('unsupported tripod')
+  if (groups.some((value) => value !== groups[0])) {
+    fail('unsupported tripod')
+  }
   const recipe: WalkingConstrainedRecipe = freeze({
     format: 'walking-constrained-kinematic-projection/1',
     source,
@@ -1968,7 +2083,9 @@ function jointValues(recipe: WalkingConstrainedRecipe) {
   const source = recipe.source,
     state = recipe.fixedJoints
   const lift = source.rig.joints.filter((joint) => joint.motion === 'prismatic')
-  if (lift.length !== 1) fail('unsupported lift layout')
+  if (lift.length !== 1) {
+    fail('unsupported lift layout')
+  }
   values.set(lift[0].id, state.carriage)
   for (const chain of source.rig.armChains) {
     const arm = required(
@@ -1996,8 +2113,9 @@ function jointValues(recipe: WalkingConstrainedRecipe) {
       !Number.isFinite(value) ||
       value < joint.domain[0] ||
       value > joint.domain[1]
-    )
+    ) {
       fail('fixed joint domain')
+    }
   }
   return values
 }
@@ -2035,8 +2153,9 @@ function prepareTemplate(
     if (
       dimensions &&
       shapeDimensions.some((value, index) => value !== dimensions?.[index])
-    )
+    ) {
       fail('unsupported unequal support dimensions')
+    }
     dimensions = shapeDimensions
     const abduction = required(
       source.rig.joints.find((joint) => joint.id === chain.jointIds[0])
@@ -2071,22 +2190,25 @@ function prepareTemplate(
       foot.attachment !== 'fixed' ||
       values.get(abduction.id) !== 0 ||
       ![abduction.frame, hip.frame, knee.frame, fixed].every(identityRotation)
-    )
+    ) {
       fail('unsupported conjugate layout')
+    }
     if (
       recipe.interval.low < knee.domain[0] ||
       recipe.interval.high > knee.domain[1] ||
       -recipe.interval.high < hip.domain[0] ||
       -recipe.interval.low > hip.domain[1]
-    )
+    ) {
       fail('support joint domain')
+    }
     const kt = vector(knee.frame.position.map(a.literal)),
       ft = vector(fixed.position.map(a.literal))
     if (
       (kneeTranslation && !equalVector(kt, kneeTranslation)) ||
       (footTranslation && !equalVector(ft, footTranslation))
-    )
+    ) {
       fail('inexact shared displacement dependency')
+    }
     kneeTranslation = kt
     footTranslation = ft
     const hipOffset = plusVector(
@@ -2110,8 +2232,12 @@ function prepareTemplate(
         entry.anchorOrigin,
         recipe.supports[0].anchorOrigin
       )
-      if (!equalVector(expected, actual)) fail('incompatible exact anchors')
-    } else referenceOffset = offset
+      if (!equalVector(expected, actual)) {
+        fail('incompatible exact anchors')
+      }
+    } else {
+      referenceOffset = offset
+    }
     const localLower = minusVector(
       a,
       minusVector(a, hipOffset, required(referenceOffset)),
@@ -2145,18 +2271,20 @@ function prepareTemplate(
   }
   const fixedFrames = new Map<WalkingRobotJoint, ExactFrame>()
   for (const joint of source.rig.joints) {
-    if (variable.has(joint.id)) continue
+    if (variable.has(joint.id)) {
+      continue
+    }
     const value = required(values.get(joint.id))
     let motion = identity(a)
     const axis = { x: 0, y: 1, z: 2 }[joint.axis]
-    if (joint.motion === 'prismatic')
+    if (joint.motion === 'prismatic') {
       motion = {
         ...motion,
         origin: vector(
           [0, 1, 2].map((index) => a.literal(index === axis ? value : 0))
         )
       }
-    else {
+    } else {
       const q = [
         a.literal(0),
         a.literal(0),
@@ -2243,12 +2371,15 @@ function frames<T>(
       const parent = body.parentBodyId
         ? result.get(body.parentBodyId)
         : undefined
-      if (!parent) continue
+      if (!parent) {
+        continue
+      }
       let frame: ConstrainedFrame<T>
       const lower = supportLower.get(body.id),
         upper = supportUpper.get(body.id)
-      if (lower) frame = convertFrame(a, lower.fixedLower)
-      else if (upper)
+      if (lower) {
+        frame = convertFrame(a, lower.fixedLower)
+      } else if (upper) {
         frame = {
           matrix: compose(a, base, {
             origin: vector([zero, zero, zero]),
@@ -2260,13 +2391,13 @@ function frames<T>(
             rotate(a, base.matrix, vector(upper.hipOffset.map(a.rational)))
           )
         }
-      else if (body.attachment === 'fixed')
+      } else if (body.attachment === 'fixed') {
         frame = compose(
           a,
           parent,
           convertFrame(a, required(template.bodyFrames.get(body)))
         )
-      else {
+      } else {
         const joint = required(
           recipe.source.rig.joints.find(
             (joint) => joint.childBodyId === body.id
@@ -2282,7 +2413,9 @@ function frames<T>(
       pending.delete(body)
       advanced = true
     }
-    if (!advanced) fail('unsupported source dependency')
+    if (!advanced) {
+      fail('unsupported source dependency')
+    }
   }
   return result
 }
@@ -2295,9 +2428,11 @@ export class WalkingConstrainedKinematicsOwner {
     return Object.freeze({ ...this.totals })
   }
   private onWork = (key: keyof Work, amount: number) => {
-    if (key === 'maxBits')
+    if (key === 'maxBits') {
       this.totals.maxBits = Math.max(this.totals.maxBits, amount)
-    else this.totals[key] += amount
+    } else {
+      this.totals[key] += amount
+    }
   }
   read(source: WalkingRobotSource, recipe: WalkingConstrainedRecipe) {
     return this.current?.source === source && this.current.recipe === recipe
@@ -2312,8 +2447,9 @@ export class WalkingConstrainedKinematicsOwner {
       this.current &&
       raw === this.current.recipe &&
       source === this.current.source
-    )
+    ) {
       return this.current
+    }
     this.current = undefined
     this.template = undefined
     this.point = undefined
@@ -2333,7 +2469,9 @@ export class WalkingConstrainedKinematicsOwner {
       engine.ranges.multiply(sin.bounds, sin.bounds),
       engine.ranges.multiply(cos.bounds, cos.bounds)
     )
-    if (quaternionNormBounds.low <= 0) fail('unproved positive norm')
+    if (quaternionNormBounds.low <= 0) {
+      fail('unproved positive norm')
+    }
     const boundedFrames = frames(
       recipe,
       template,
@@ -2387,13 +2525,15 @@ export class WalkingConstrainedKinematicsOwner {
         required(template.partFrames.get(s.entry.part))
       )
       const indices = new Set<number>()
-      for (const range of s.entry.patch.ranges)
+      for (const range of s.entry.patch.ranges) {
         for (
           let index = range.indexStart;
           index < range.indexStart + range.indexCount;
           index++
-        )
+        ) {
           indices.add(s.entry.part.shape.indices[index])
+        }
+      }
       const fixedVertices = [...indices].map((index) => {
         engine.count('supportVertices')
         const local = vector(
@@ -2419,8 +2559,9 @@ export class WalkingConstrainedKinematicsOwner {
           vector(s.contact.localFrame.position.map(engine.exact.literal))
         )
       )
-      if (!equalVector(actual, s.entry.anchorOrigin))
+      if (!equalVector(actual, s.entry.anchorOrigin)) {
         fail('unproved shared support anchor')
+      }
       return {
         chainId: s.entry.chainId,
         part: s.entry.part,
@@ -2452,15 +2593,19 @@ export class WalkingConstrainedKinematicsOwner {
     projection: WalkingConstrainedProjection,
     parameter: number
   ): WalkingConstrainedPoint {
-    if (projection !== this.current || !this.template) fail('stale projection')
+    if (projection !== this.current || !this.template) {
+      fail('stale projection')
+    }
     if (
       !Number.isFinite(parameter) ||
       parameter < projection.interval.low ||
       parameter > projection.interval.high
-    )
+    ) {
       fail('parameter outside interval')
-    if (this.point && Object.is(this.point.parameter, parameter))
+    }
+    if (this.point && Object.is(this.point.parameter, parameter)) {
       return this.point
+    }
     this.totals.evaluations++
     const work = zeroWork(),
       engine = arithmetic(projection.recipe.budget, work, this.onWork)
@@ -2490,8 +2635,9 @@ export class WalkingConstrainedKinematicsOwner {
         [...display.origin, ...display.matrix.flat()].some(
           (value) => !Number.isFinite(value)
         )
-      )
+      ) {
         fail('nonfinite display projection')
+      }
       return { body, exact, display }
     })
     const parts = projection.source.parts.map((part) => ({

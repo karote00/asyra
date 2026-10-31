@@ -63,7 +63,9 @@ export function useWorkbenchController() {
 
     setWireframe(false)
 
-    if (value) setPendingRuns([])
+    if (value) {
+      setPendingRuns([])
+    }
 
     setShowRuns(false)
 
@@ -91,8 +93,9 @@ export function useWorkbenchController() {
 
   const onRun = useCallback(
     (run: RunRecord) => {
-      if (runtime && isCurrent(runtime))
+      if (runtime && isCurrent(runtime)) {
         setPendingRuns((current) => [...current, run])
+      }
     },
     [runtime, isCurrent]
   )
@@ -132,7 +135,9 @@ export function useWorkbenchController() {
   ).length
 
   useEffect(() => {
-    if (!unsavedRunCount) return
+    if (!unsavedRunCount) {
+      return
+    }
 
     const guard = (event: BeforeUnloadEvent) => {
       event.preventDefault()
@@ -168,8 +173,9 @@ export function useWorkbenchController() {
       message: string | (() => string)
     ) => {
       const assertCurrent = () => {
-        if (!runtime || !isCurrent(runtime))
+        if (!runtime || !isCurrent(runtime)) {
           throw new Error('The document is no longer active')
+        }
       }
 
       try {
@@ -183,7 +189,9 @@ export function useWorkbenchController() {
 
         setStatus(typeof message === 'function' ? message() : message)
       } catch (reason) {
-        if (!runtime || !isCurrent(runtime)) return
+        if (!runtime || !isCurrent(runtime)) {
+          return
+        }
 
         setError(reason instanceof Error ? reason.message : String(reason))
 
@@ -195,7 +203,9 @@ export function useWorkbenchController() {
 
   const performHistory = useCallback(
     (direction: HistoryDirection) => {
-      if (!runtime) return
+      if (!runtime) {
+        return
+      }
 
       const applied = direction === 'undo' ? 'Undo applied' : 'Redo applied'
       let before = 0
@@ -217,9 +227,11 @@ export function useWorkbenchController() {
 
   let runtimeStatus = status
 
-  if (lifecycle.status === 'failed') runtimeStatus = 'Runtime unavailable'
-  else if (lifecycle.status === 'replacing')
+  if (lifecycle.status === 'failed') {
+    runtimeStatus = 'Runtime unavailable'
+  } else if (lifecycle.status === 'replacing') {
     runtimeStatus = 'Replacing document…'
+  }
 
   const {
     addBody,

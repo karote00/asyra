@@ -32,7 +32,9 @@ test('finite history members project nested hierarchy before the history group c
         const { getActiveCollaborationHandle } =
           await import('../src/testing/runtime-access')
         const session = getActiveCollaborationHandle()
-        if (!session) throw new Error('Missing document session')
+        if (!session) {
+          throw new Error('Missing document session')
+        }
         return session.confirmPersistence(AbortSignal.timeout(10000))
       })
       expect(receipt.durableSequence).toBeGreaterThanOrEqual(receipt.sequence)
@@ -59,9 +61,13 @@ test('finite history members project nested hierarchy before the history group c
       const { core } = await import('../src/testing/runtime-access')
       const { hierarchyApis } = await import('../src/common-apis/hierarchy')
       const workspace = hierarchyApis.getWorkspaceId()
-      if (!workspace) throw new Error('Missing workspace')
+      if (!workspace) {
+        throw new Error('Missing workspace')
+      }
       const ids = [...(core.getElementData(workspace)?.children ?? [])]
-      if (ids.length !== 2) throw new Error('Expected two rectangles')
+      if (ids.length !== 2) {
+        throw new Error('Expected two rectangles')
+      }
       const immediate = { undoable: true, sharedDelivery: 'immediate' } as const
       const history = core.startHistoryGroup()
       const historyBefore = core.getUndoHistoryDepth()
@@ -169,7 +175,9 @@ test('finite history members project nested hierarchy before the history group c
         await import('../src/common-apis')
       const workspace = core.getCurrentWorkspaceId()
       const id = core.getElementData(workspace)?.children?.[0]
-      if (!id) throw new Error('Reloaded group missing')
+      if (!id) {
+        throw new Error('Reloaded group missing')
+      }
       transactionApis.runTransaction(() =>
         elementApis.setElementsVisible([id], false)
       )

@@ -29,7 +29,9 @@ it.each([
       (pair) =>
         pair.a.bodyId === 'example:joint-2' && pair.b.bodyId === 'obstacle-11'
     )
-    if (!pair) throw new Error('Missing admitted source pair')
+    if (!pair) {
+      throw new Error('Missing admitted source pair')
+    }
     const query: continuous.PairQuery = {
       workcell: snapshot.workcell,
       trajectory: snapshot.trajectory,
@@ -186,7 +188,9 @@ it.each([
         )
       }
       expect(candidate.result).toEqual(expected)
-    } else expect(candidate.result).toEqual(control.result)
+    } else {
+      expect(candidate.result).toEqual(control.result)
+    }
     expect(candidate.result.coverage).toBe('complete')
     expect(control.result.coverage).toBe('complete')
     expect(candidate.categories.sourceWork).toBeGreaterThan(0)
@@ -209,7 +213,9 @@ it(
       (pair) =>
         pair.a.bodyId === 'example:joint-2' && pair.b.bodyId === 'obstacle-11'
     )
-    if (!pair) throw new Error('Missing admitted source pair')
+    if (!pair) {
+      throw new Error('Missing admitted source pair')
+    }
     const node = [
       snapshot.trajectory.keyframes[segment].time,
       snapshot.trajectory.keyframes[segment + 1].time
@@ -242,8 +248,9 @@ it(
           tick,
           (a, b, seed) => {
             if (seed) {
-              if (!previous || !target)
+              if (!previous || !target) {
                 throw new Error('Missing actual source issuance')
+              }
               expect(target.previous).toBe(previous.handle)
               expect(target.shapes).toEqual([a, b])
               expect(previous.source.time).toBeLessThan(target.origin.time)
@@ -337,7 +344,9 @@ it(
     const selected = records.find(
       (record) => record.targetTime === result.leaves[0].witnessTime
     )
-    if (!selected) throw new Error('Selected target must have an issued source')
+    if (!selected) {
+      throw new Error('Selected target must have an issued source')
+    }
     expect(selected.seed.upper).toBe(selected.finalUpper)
     expect(selected.finalUpper).toBe(result.leaves[0].upper)
     expect(result.leaves[0]).toMatchObject({

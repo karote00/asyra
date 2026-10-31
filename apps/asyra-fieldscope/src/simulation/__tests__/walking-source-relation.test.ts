@@ -81,11 +81,15 @@ describe('selected-chain source relations', () => {
     const chain = source.rig.legChains.find(
       (entry) => entry.id === 'right-front'
     )
-    if (!chain) throw new Error('Missing selected chain')
+    if (!chain) {
+      throw new Error('Missing selected chain')
+    }
     const rootJoint = source.rig.joints.find(
       (entry) => entry.id === chain.jointIds[0]
     )
-    if (!rootJoint) throw new Error('Missing selected root')
+    if (!rootJoint) {
+      throw new Error('Missing selected root')
+    }
     const motion = owner.prepareSelectedChainMotion(cycle, {
       format: 'walking-selected-chain-root-motion/1',
       cycle,
@@ -310,8 +314,9 @@ function material(kind: 'closed-solid' | 'open-shell' = 'closed-solid') {
     wireframe: false,
     selectable: false
   })
-  if (descriptor.kind !== 'mesh' || descriptor.shape.kind !== 'triangles')
+  if (descriptor.kind !== 'mesh' || descriptor.shape.kind !== 'triangles') {
     throw new Error('Missing test material')
+  }
   return {
     shape: descriptor.shape,
     region: Object.freeze({ ...builder.regions()[0], kind })
@@ -893,9 +898,13 @@ describe('canonical nonlinear exact axis work', () => {
     for (const value of values) {
       const reduced = direction(value),
         first = reduced.find((v) => v !== 0n)
-      if (first === undefined) continue
+      if (first === undefined) {
+        continue
+      }
       const key = reduced.map((v) => (first < 0n ? -v : v)).join(',')
-      if (!result.has(key)) result.set(key, reduced)
+      if (!result.has(key)) {
+        result.set(key, reduced)
+      }
     }
     return [...result.values()]
   }
@@ -1201,9 +1210,13 @@ describe('canonical nonlinear exact axis work', () => {
           ]
         )
         const sign = v.find((n) => n !== 0n)
-        if (!sign) return false
+        if (!sign) {
+          return false
+        }
         const key = v.map((n) => (sign < 0n ? -n : n)).join(',')
-        if (seen.has(key)) return false
+        if (seen.has(key)) {
+          return false
+        }
         seen.add(key)
         return true
       })
@@ -1364,13 +1377,15 @@ describe('canonical nonlinear exact axis work', () => {
         max = (p: bigint[]) => p.reduce((a, b) => (a > b ? a : b))
       return max(left) < min(right) || max(right) < min(left)
     }
-    if (kind === 'axisConstraint')
+    if (kind === 'axisConstraint') {
       for (const axis of [
         [1n, 0n, 0n],
         [0n, 1n, 0n],
         [0n, 0n, 1n]
-      ] as const)
+      ] as const) {
         expect(strict(axis)).toBe(false)
+      }
+    }
     expect(strict(expectedAxis)).toBe(true)
     // The oracle needs only ordered exact projection signs, never gap².
     expect(
@@ -1411,8 +1426,9 @@ describe('canonical nonlinear exact axis work', () => {
         axis: input.expectedAxis
       })
       expect(excess).toEqual([])
-      if (stage === 'XYZ') expect(work.directionPreparationAttempts).toBe(0)
-      else {
+      if (stage === 'XYZ') {
+        expect(work.directionPreparationAttempts).toBe(0)
+      } else {
         expect(work.axisProjectionPairs).toBe(1)
         expect(work.edgeCrossProducts).toBe(0)
       }
@@ -1441,7 +1457,9 @@ describe('canonical nonlinear exact axis work', () => {
   const canonicalResult = (
     result: ReturnType<WalkingSourceRelationEvaluator['relate']>
   ) => {
-    if (!result.axis) return result
+    if (!result.axis) {
+      return result
+    }
     const exponent = Math.min(...result.axis.map((v) => v.exponent))
     const vector = result.axis.map(
       (v) => v.significand << BigInt(v.exponent - exponent)
@@ -1459,7 +1477,9 @@ describe('canonical nonlinear exact axis work', () => {
       (p) =>
         p.map((v) => {
           const power = v.exponent + 3
-          if (power >= 0) return v.significand << BigInt(power)
+          if (power >= 0) {
+            return v.significand << BigInt(power)
+          }
           const denominator = 1n << BigInt(-power)
           expect(v.significand % denominator).toBe(0n)
           return v.significand / denominator
@@ -1527,7 +1547,7 @@ describe('canonical nonlinear exact axis work', () => {
       [1n, 0n, 0n],
       [0n, 1n, 0n],
       [0n, 0n, 1n]
-    ] as const)
+    ] as const) {
       if (
         whole(
           projection(a.points, axis),
@@ -1535,8 +1555,10 @@ describe('canonical nonlinear exact axis work', () => {
           dotInteger(velocity, axis),
           axis
         )
-      )
+      ) {
         return { kind: 'separated', proof: 'strict-bounds', axis }
+      }
+    }
     const axes = unique([
       ...a.normals,
       ...b.normals,
@@ -1551,7 +1573,9 @@ describe('canonical nonlinear exact axis work', () => {
     }
     const compare = (a: Bound, b: Bound) => {
       const x = a.n * b.d - b.n * a.d
-      if (x < 0n) return -1
+      if (x < 0n) {
+        return -1
+      }
       return x > 0n ? 1 : 0
     }
     const timeRange = () => ({
@@ -1567,7 +1591,9 @@ describe('canonical nonlinear exact axis work', () => {
       slope: bigint,
       strict: boolean
     ) => {
-      if (range.empty) return
+      if (range.empty) {
+        return
+      }
       if (slope === 0n) {
         range.empty = strict ? offset <= 0n : offset < 0n
         return
@@ -1579,9 +1605,11 @@ describe('canonical nonlinear exact axis work', () => {
       }
       const key = slope > 0n ? 'low' : 'high',
         order = compare(threshold, range[key])
-      if ((key === 'low' && order > 0) || (key === 'high' && order < 0))
+      if ((key === 'low' && order > 0) || (key === 'high' && order < 0)) {
         range[key] = threshold
-      else if (order === 0) range[key].strict ||= strict
+      } else if (order === 0) {
+        range[key].strict ||= strict
+      }
       const crossed = compare(range.low, range.high)
       range.empty =
         crossed > 0 ||
@@ -1594,7 +1622,9 @@ describe('canonical nonlinear exact axis work', () => {
       const left = projection(a.points, axis),
         right = projection(b.points, axis),
         slope = dotInteger(velocity, axis)
-      if (!separating && whole(left, right, slope, axis)) separating = axis
+      if (!separating && whole(left, right, slope, axis)) {
+        separating = axis
+      }
       constrain(closed, left.max - right.min, slope, false)
       constrain(closed, right.max - left.min, -slope, false)
       constrain(interior, left.max - right.min, slope, true)
@@ -1609,13 +1639,20 @@ describe('canonical nonlinear exact axis work', () => {
         }
       }
     }
-    if (separating) return { kind: 'separated', proof, axis: separating }
-    if (!interior.empty) return { kind: 'volume-overlap', proof }
-    if (closed.empty)
+    if (separating) {
+      return { kind: 'separated', proof, axis: separating }
+    }
+    if (!interior.empty) {
+      return { kind: 'volume-overlap', proof }
+    }
+    if (closed.empty) {
       return margin === 0
         ? { kind: 'separated', proof }
         : { kind: 'unknown', proof: 'unproved' }
-    if (margin !== 0) return { kind: 'unknown', proof: 'unproved' }
+    }
+    if (margin !== 0) {
+      return { kind: 'unknown', proof: 'unproved' }
+    }
     if (contact && level !== undefined) {
       const axis = contact,
         feature = (points: readonly IntegerVector[]) =>
@@ -1919,7 +1956,9 @@ describe('canonical nonlinear rational source placement', () => {
 describe('canonical nonlinear budgeted region covers', () => {
   function inputs(count: number) {
     const builder = new TriangleBuilder()
-    for (let i = 0; i < count; i++) builder.box([i / 1000, 0, 0], [1, 1, 1])
+    for (let i = 0; i < count; i++) {
+      builder.box([i / 1000, 0, 0], [1, 1, 1])
+    }
     const descriptor = readSpatialDescriptor({
       kind: 'mesh',
       position: [0, 0, 0],
@@ -1934,8 +1973,9 @@ describe('canonical nonlinear budgeted region covers', () => {
       wireframe: false,
       selectable: false
     })
-    if (descriptor.kind !== 'mesh' || descriptor.shape.kind !== 'triangles')
+    if (descriptor.kind !== 'mesh' || descriptor.shape.kind !== 'triangles') {
       throw new Error('Missing cover source')
+    }
     return {
       shape: descriptor.shape,
       regions: Object.freeze(builder.regions().map((r) => Object.freeze(r)))
@@ -2006,8 +2046,9 @@ describe('canonical nonlinear budgeted region covers', () => {
       { movingGroups: 1, maxGroupPairs: 100, maxLeaves: 100, margin: 0 }
     )
     const proofs = []
-    for (let proof = cover.next(); proof; proof = cover.next())
+    for (let proof = cover.next(); proof; proof = cover.next()) {
       proofs.push(proof)
+    }
     expect(proofs.every((p) => p.kind === 'strictBounds')).toBe(true)
     expect(proofs.reduce((sum, p) => sum + p.cardinality, 0)).toBe(4)
     expect(cover.work.groupPairs).toBe(5)
@@ -2065,15 +2106,19 @@ describe('canonical nonlinear budgeted region covers', () => {
           key,
           proof.kind === 'strictBounds' ? 'separated' : relation(i, j)
         )
-        if (proof.kind === 'leaf') order.push(i * cover.inventory.length + j)
+        if (proof.kind === 'leaf') {
+          order.push(i * cover.inventory.length + j)
+        }
       }
     }
     expect(order).toEqual([...order].sort((a, b) => a - b))
     expect(cover.finish()).toEqual([])
     expect(actual.size).toBe(4)
-    for (let i = 0; i < 2; i++)
-      for (let j = 2; j < 4; j++)
+    for (let i = 0; i < 2; i++) {
+      for (let j = 2; j < 4; j++) {
         expect(actual.get(i + ':' + j)).toBe(relation(i, j))
+      }
+    }
     expect(cover.coRigidOwner).toBe(1)
     expect(cover.required).toBe(4)
   })
@@ -2112,7 +2157,9 @@ describe('canonical nonlinear budgeted region covers', () => {
     }
     const cover = evaluator.prepareRegionCover(groups, node, options)
     const leaves = []
-    for (let p = cover.next(); p; p = cover.next()) leaves.push(p)
+    for (let p = cover.next(); p; p = cover.next()) {
+      leaves.push(p)
+    }
     expect(leaves).toHaveLength(4)
     expect(leaves.every((p) => p.kind === 'leaf')).toBe(true)
     expect(cover.coRigidOwner).toBe(2)

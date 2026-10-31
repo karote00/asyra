@@ -81,12 +81,24 @@ describe('lazy render presentation bounds', () => {
     (change) => {
       const { group, child, query } = setup()
       group.getBounds()
-      if (change === 'geometry') child.clear().rect(0, 0, 20, 10).fill(0x123456)
-      if (change === 'position') child.x = 30
-      if (change === 'rotation') child.rotation = 0.4
-      if (change === 'visibility') child.visible = false
-      if (change === 'renderable') child.renderable = false
-      if (change === 'dimension') child.width = 50
+      if (change === 'geometry') {
+        child.clear().rect(0, 0, 20, 10).fill(0x123456)
+      }
+      if (change === 'position') {
+        child.x = 30
+      }
+      if (change === 'rotation') {
+        child.rotation = 0.4
+      }
+      if (change === 'visibility') {
+        child.visible = false
+      }
+      if (change === 'renderable') {
+        child.renderable = false
+      }
+      if (change === 'dimension') {
+        child.width = 50
+      }
       expect(query).toHaveBeenCalledTimes(1)
       query.mockReturnValue({
         type: 'bounds',

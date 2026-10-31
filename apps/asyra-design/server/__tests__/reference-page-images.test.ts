@@ -318,7 +318,9 @@ it('pages candidate discovery while reusing the already selected image bytes', a
         (candidate) => candidate.imageUrl
       )
     )
-    if (result.pageAcquisition.complete) break
+    if (result.pageAcquisition.complete) {
+      break
+    }
     result = await read(result.pageAcquisition.next.arguments)
   }
   expect(new Set(urls).size).toBe(41)
@@ -372,8 +374,9 @@ it.each([true, false])(
             `<a href="/gallery-${i}.png"><img src="/preview-${i}.png"></a>`
         ).join('')
     )
-    if (!representativeAvailable)
+    if (!representativeAvailable) {
       download.mockRejectedValueOnce(new Error('Representative unavailable'))
+    }
     const call = async (args: unknown) =>
       JSON.parse(await tools.call('import_reference_image', args, signal()))
     const first = await call({ sourceUrl })

@@ -1041,7 +1041,9 @@ it('settles after remote apply without saving the receiving document', async () 
     endpoint: 'ws://127.0.0.1:4101/collaboration'
   })
   const composition = createCollaboration.mock.calls[0]?.[0]
-  if (!composition) throw new Error('Expected collaboration composition')
+  if (!composition) {
+    throw new Error('Expected collaboration composition')
+  }
 
   await composition.processRemotePublication(
     remotePublication('remote-success')
@@ -1881,14 +1883,16 @@ it.each(['resolved', 'rejected'] as const)(
       endpoint: 'ws://127.0.0.1:4101/collaboration'
     })
     const active = await successor.activate()
-    if (settlement === 'resolved')
+    if (settlement === 'resolved') {
       pending.resolve({
         checkpoint: EMPTY_DOCUMENT,
         durableSequence: 0,
         headSequence: 0,
         pendingTail: []
       })
-    else pending.reject(new Error('Bootstrap failed'))
+    } else {
+      pending.reject(new Error('Bootstrap failed'))
+    }
     await rejected
     await disposal
     expect(unsubscribe).toHaveBeenCalledOnce()

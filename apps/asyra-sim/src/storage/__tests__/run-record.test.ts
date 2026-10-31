@@ -143,8 +143,9 @@ describe('retained runs and portable reporting', () => {
     )
     b.snapshot.methodDescriptor = structuredClone(a.snapshot.methodDescriptor)
     expect(compareRuns([a, b]).directlyComparable).toBe(true)
-    if (!b.snapshot.methodDescriptor.manifest)
+    if (!b.snapshot.methodDescriptor.manifest) {
       throw new Error('Missing test declaration')
+    }
     b.snapshot.methodDescriptor.manifest.validation.evidence =
       'Different private validation evidence'
     const changed = compareRuns([a, b])
@@ -170,8 +171,9 @@ describe('retained runs and portable reporting', () => {
     run.snapshot.methodDescriptor = structuredClone(
       INSTALLED_METHOD_CATALOG.descriptors[0]
     )
-    if (!run.snapshot.methodDescriptor.manifest)
+    if (!run.snapshot.methodDescriptor.manifest) {
       throw new Error('Missing test declaration')
+    }
     run.snapshot.methodDescriptor.manifest.source =
       '<private source & evidence>'
     const csv = exportRunCsv(run)

@@ -2057,5 +2057,5 @@
     return value
   }
   globalThis.FLOW_INSPECTOR_DATA = freeze(data)
-  if (typeof module !== 'undefined') module.exports = data
+  if (typeof module !== 'undefined') {module.exports = data}
 })()

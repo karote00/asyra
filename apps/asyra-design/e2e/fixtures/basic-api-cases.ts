@@ -28,8 +28,9 @@ import { operationInputIssue } from '../../server/operation-input-schema'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Value = any
 const required = <T>(value: T | null | undefined): T => {
-  if (value === null || value === undefined)
+  if (value === null || value === undefined) {
     throw new Error('Missing fixture value')
+  }
   return value
 }
 interface Case {
@@ -38,13 +39,16 @@ interface Case {
   setup?: () => void
 }
 const equal = (actual: unknown, expected: unknown) => {
-  if (JSON.stringify(actual) !== JSON.stringify(expected))
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
     throw new Error(
       `Expected ${JSON.stringify(expected)}, received ${JSON.stringify(actual)}`
     )
+  }
 }
 const assert = (condition: unknown, message: string) => {
-  if (!condition) throw new Error(message)
+  if (!condition) {
+    throw new Error(message)
+  }
 }
 const includes = (actual: unknown, value: string) =>
   assert(
@@ -69,10 +73,11 @@ export const isBasicApiFixtureReady = () => {
 export const createBasicApiCases = async () => {
   const deadline = performance.now() + 10000
   while (!isBasicApiFixtureReady()) {
-    if (performance.now() > deadline)
+    if (performance.now() > deadline) {
       throw new Error(
         'The document session did not become ready for fixture creation'
       )
+    }
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
   }
 
@@ -197,13 +202,17 @@ export const createBasicApiCases = async () => {
     setup?: Case['setup']
   ) => {
     const name = `api_${owner}_${method}`
-    if (cases[name]) throw new Error(`Duplicate case: ${name}`)
+    if (cases[name]) {
+      throw new Error(`Duplicate case: ${name}`)
+    }
     cases[name] = { input, check, setup }
   }
   const eq = (v: unknown) => (actual: unknown) => equal(actual, v)
   const has = (v: string) => (actual: unknown) => includes(actual, v)
   const geometry = (patch: Record<string, number>) => () => {
-    for (const [k, v] of Object.entries(patch)) equal(bounds()[k], v)
+    for (const [k, v] of Object.entries(patch)) {
+      equal(bounds()[k], v)
+    }
   }
   const color = (expected: string) => () => equal(fill().color, expected)
   const removed = () => equal(core.getElementData(rect), undefined)
@@ -401,8 +410,9 @@ export const createBasicApiCases = async () => {
   for (const method of [
     'getElementIdAtClientPos',
     'getRenderElementIdAtClientPos'
-  ])
+  ]) {
     add('element', method, { clientPos: client(point) }, hitRect)
+  }
   add(
     'element',
     'getMousePosInWorkspace',
@@ -547,20 +557,22 @@ export const createBasicApiCases = async () => {
   for (const space of ['Workspace', 'Client'] as const) {
     const key = space === 'Workspace' ? 'workspacePos' : 'clientPos'
     const p = (v: typeof point) => (space === 'Workspace' ? v : client(v))
-    for (const method of ['getVectorAnchorPoint', 'getVectorEditablePoint'])
+    for (const method of ['getVectorAnchorPoint', 'getVectorEditablePoint']) {
       add(
         'element',
         `${method}At${space}Pos`,
         { elementId: vector, [key]: p(anchor) },
         has('case-a')
       )
-    for (const method of ['getVectorSegment', 'getVectorSegmentHit'])
+    }
+    for (const method of ['getVectorSegment', 'getVectorSegmentHit']) {
       add(
         'element',
         `${method}At${space}Pos`,
         { elementId: vector, [key]: p(middle), hitRadius: 8 },
         has(segment)
       )
+    }
     add(
       'element',
       `isPointNearVectorPathAt${space}Pos`,
@@ -572,8 +584,9 @@ export const createBasicApiCases = async () => {
     'getVectorAnchorPoints',
     'getVectorAnchorSubpaths',
     'getVectorTopology'
-  ])
+  ]) {
     add('element', method, { elementId: vector }, has('case-a'))
+  }
   add(
     'element',
     'getVectorAnchorPointById',
@@ -1094,7 +1107,7 @@ export const createBasicApiCases = async () => {
   for (const method of [
     'connectVectorAnchorEndpoints',
     'connectVectorAnchorPoints'
-  ])
+  ]) {
     add(
       'element',
       method,
@@ -1106,6 +1119,7 @@ export const createBasicApiCases = async () => {
           'Missing new connection'
         )
     )
+  }
   add('element', 'removeLastSinglePointSubpath', { elementId: vector }, () =>
     assert(!vectorPoint('case-c'), 'Last isolated point retained')
   )
@@ -1168,7 +1182,9 @@ export const createBasicApiCases = async () => {
   add('core', 'allocateIds', { types: ['el', 'el'] }, (ids) => {
     equal(ids.length, 2)
     equal(new Set(ids).size, 2)
-    for (const id of ids) equal(core.getElementMetadata(id), undefined)
+    for (const id of ids) {
+      equal(core.getElementMetadata(id), undefined)
+    }
   })
 
   equal(Object.keys(cases).sort(), basicApiContracts.map((c) => c.name).sort())

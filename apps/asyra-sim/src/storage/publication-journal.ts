@@ -43,8 +43,9 @@ export function canonicalPublicationSlices(
     !publication.publicationId ||
     !Array.isArray(publication.slices) ||
     !publication.slices.length
-  )
+  ) {
     throw new Error('Invalid local document publication')
+  }
   if (
     !['atomic', 'progressive'].includes(publication.mode) ||
     ![
@@ -55,8 +56,9 @@ export function canonicalPublicationSlices(
       'load-migration',
       'rollback-compensation'
     ].includes(publication.origin)
-  )
+  ) {
     throw new Error('Unsupported publication policy')
+  }
   const slices =
     publication.mode === 'atomic'
       ? [
@@ -67,8 +69,9 @@ export function canonicalPublicationSlices(
         ]
       : publication.slices
   return slices.map((slice: SharedPublicationSlice) => {
-    if (!Array.isArray(slice.batches) || !slice.batches.length)
+    if (!Array.isArray(slice.batches) || !slice.batches.length) {
       throw new Error('Missing publication batches')
+    }
     const properties = new Map<string, PropertyComponentRawData>()
     const deliveries = slice.batches.flatMap(
       (batch: SharedPublicationBatch) => {
@@ -77,10 +80,12 @@ export function canonicalPublicationSlices(
             SharedDataChannelNames.PROPS,
             SharedDataChannelNames.SCENE_TREE
           ].includes(batch.channel as typeof SharedDataChannelNames.PROPS)
-        )
+        ) {
           throw new Error('Non-document publication channel')
-        if (!Array.isArray(batch.deliveries))
+        }
+        if (!Array.isArray(batch.deliveries)) {
           throw new Error('Invalid publication deliveries')
+        }
         return batch.deliveries.map((delivery: SharedPublicationDelivery) => ({
           channel: batch.channel,
           change: delivery.payload as PropsChange | SceneTreeChange
@@ -88,22 +93,27 @@ export function canonicalPublicationSlices(
       }
     )
     for (const { channel, change } of deliveries) {
-      if (!change || typeof change !== 'object')
+      if (!change || typeof change !== 'object') {
         throw new Error('Invalid publication change')
+      }
       if (
         channel === SharedDataChannelNames.PROPS &&
         change.action === PROPS_ACTIONS.ADD_PROPERTY
-      )
+      ) {
         for (const property of (
           change as PropsChange & { data: PropertyComponentRawData[] }
-        ).data)
+        ).data) {
           properties.set(property.id, property)
+        }
+      }
     }
     const takeProperties = (elements: readonly ElementRawData[]) =>
       elements.flatMap((element) =>
         Object.values(element.props ?? {}).map((id) => {
           const property = properties.get(id)
-          if (!property) throw new Error(`Missing creation property ${id}`)
+          if (!property) {
+            throw new Error(`Missing creation property ${id}`)
+          }
           properties.delete(id)
           return property
         })
@@ -112,7 +122,9 @@ export function canonicalPublicationSlices(
     for (const { channel, change } of deliveries) {
       if (channel === SharedDataChannelNames.PROPS) {
         const value = change as PropsChange
-        if (value.action === PROPS_ACTIONS.ADD_PROPERTY) continue
+        if (value.action === PROPS_ACTIONS.ADD_PROPERTY) {
+          continue
+        }
         if (value.action === PROPS_ACTIONS.REMOVE_PROPERTY && 'data' in value) {
           changes.push({
             kind: 'property-components',
@@ -125,8 +137,9 @@ export function canonicalPublicationSlices(
           value.action !== PROPS_ACTIONS.UPDATE_PROPERTY ||
           !('id' in value) ||
           typeof value.key !== 'string'
-        )
+        ) {
           throw new Error('Unsupported property publication')
+        }
         changes.push({
           kind: 'property-components',
           updates: [
@@ -158,8 +171,9 @@ export function canonicalPublicationSlices(
           }
           break
         case SCENE_TREE_ACTIONS.MOVE_ELEMENTS:
-          if (!('moves' in value))
+          if (!('moves' in value)) {
             throw new Error('Invalid hierarchy publication')
+          }
           changes.push({ kind: 'hierarchy-moves', moves: value.moves })
           break
         case SCENE_TREE_ACTIONS.ADD_ELEMENT:
@@ -169,18 +183,23 @@ export function canonicalPublicationSlices(
             parentId?: string
             index?: number
           }[] = []
-          if ('entries' in value) entries = value.entries
-          else if ('data' in value)
+          if ('entries' in value) {
+            entries = value.entries
+          } else if ('data' in value) {
             entries = [
               { data: value.data, parentId: value.parentId, index: value.index }
             ]
-          if (!entries.length) throw new Error('Missing created elements')
+          }
+          if (!entries.length) {
+            throw new Error('Missing created elements')
+          }
           const insertions = entries.map((entry) => {
             if (
               typeof entry.parentId !== 'string' ||
               !Number.isInteger(entry.index)
-            )
+            ) {
               throw new Error('Missing canonical insertion location')
+            }
             return {
               data: entry.data,
               parentId: entry.parentId,
@@ -201,18 +220,23 @@ export function canonicalPublicationSlices(
             parentId?: string
             index?: number
           }[] = []
-          if ('entries' in value) entries = value.entries
-          else if ('data' in value)
+          if ('entries' in value) {
+            entries = value.entries
+          } else if ('data' in value) {
             entries = [
               { data: value.data, parentId: value.parentId, index: value.index }
             ]
-          if (!entries.length) throw new Error('Missing removed elements')
+          }
+          if (!entries.length) {
+            throw new Error('Missing removed elements')
+          }
           for (const entry of entries) {
             if (
               typeof entry.parentId !== 'string' ||
               !Number.isInteger(entry.index)
-            )
+            ) {
               throw new Error('Missing canonical removal location')
+            }
             changes.push({
               kind: 'element-removal',
               removals: [
@@ -228,9 +252,10 @@ export function canonicalPublicationSlices(
         }
         case SCENE_TREE_ACTIONS.REMOVE_SUBTREE:
         case SCENE_TREE_ACTIONS.RESTORE_SUBTREE: {
-          if (!('removed' in value))
+          if (!('removed' in value)) {
             throw new Error('Invalid subtree publication')
-          if (value.action === SCENE_TREE_ACTIONS.REMOVE_SUBTREE)
+          }
+          if (value.action === SCENE_TREE_ACTIONS.REMOVE_SUBTREE) {
             changes.push({
               kind: 'subtree-removal',
               change: {
@@ -242,7 +267,7 @@ export function canonicalPublicationSlices(
                 rootParentChildrenAfter: value.rootParentChildrenAfter
               }
             })
-          else
+          } else {
             changes.push({
               kind: 'subtree-restore',
               sceneSnapshot: {
@@ -256,16 +281,18 @@ export function canonicalPublicationSlices(
                 )
               }
             })
+          }
           break
         }
         default:
           throw new Error('Unsupported canonical scene publication')
       }
     }
-    if (properties.size)
+    if (properties.size) {
       throw new Error(
         `Unowned creation properties in publication: ${[...properties.values()].map((item) => item.type).join(', ')}; actions: ${deliveries.map(({ change }) => change.action).join(', ')}`
       )
+    }
     return changes
   })
 }
@@ -277,8 +304,9 @@ export function validateJournalEntry(
     entry.version !== 1 ||
     !entry.resources ||
     typeof entry.resources !== 'object'
-  )
+  ) {
     throw new Error('Unsupported local journal entry')
+  }
   return canonicalPublicationSlices(entry.publication)
 }
 
@@ -288,30 +316,45 @@ export function publicationReferences(publication: SharedPublication) {
     runs = new Set<string>(),
     observations = new Set<string>()
   const visit = (value: unknown) => {
-    if (!value || typeof value !== 'object') return
+    if (!value || typeof value !== 'object') {
+      return
+    }
     const record = value as Record<string, unknown>
-    if (Array.isArray(record.visuals))
-      for (const binding of record.visuals) visuals.add(binding.assetId)
-    if (typeof record.runId === 'string') runs.add(record.runId)
-    if (Array.isArray(record.observations))
-      for (const note of record.observations)
-        for (const attachment of note.attachments ?? [])
+    if (Array.isArray(record.visuals)) {
+      for (const binding of record.visuals) {
+        visuals.add(binding.assetId)
+      }
+    }
+    if (typeof record.runId === 'string') {
+      runs.add(record.runId)
+    }
+    if (Array.isArray(record.observations)) {
+      for (const note of record.observations) {
+        for (const attachment of note.attachments ?? []) {
           observations.add(attachment.sourceId)
+        }
+      }
+    }
   }
-  for (const slice of publication.slices)
+  for (const slice of publication.slices) {
     for (const batch of slice.batches) {
-      if (batch.channel !== SharedDataChannelNames.PROPS) continue
+      if (batch.channel !== SharedDataChannelNames.PROPS) {
+        continue
+      }
       for (const { payload } of batch.deliveries) {
         const change = payload as PropsChange
-        if ('after' in change) visit(change.after)
-        else if (change.action === PROPS_ACTIONS.ADD_PROPERTY)
+        if ('after' in change) {
+          visit(change.after)
+        } else if (change.action === PROPS_ACTIONS.ADD_PROPERTY) {
           for (const property of change.data) {
             const record = property as unknown as Record<string, unknown>
             visit(record[PropertyFields.BODY])
             visit(record[PropertyFields.RUN_REFERENCE])
           }
+        }
       }
     }
+  }
   return { visuals, runs, observations }
 }
 
@@ -331,7 +374,9 @@ export function restoreJournal(
   checkpoint: ProjectSnapshot,
   entries: readonly JournalEntry[]
 ): ProjectSnapshot {
-  if (!entries.length) return checkpoint
+  if (!entries.length) {
+    return checkpoint
+  }
   const runs = new Map(
     (checkpoint.runs ?? []).map((run) => [run.result.runId, run])
   )
@@ -351,20 +396,28 @@ export function restoreJournal(
       origin: entry.publication.origin,
       slices: validateJournalEntry(entry)
     })
-    if (seen.has(entry.publication.publicationId))
+    if (seen.has(entry.publication.publicationId)) {
       throw new Error('Duplicate journal publication')
+    }
     seen.add(entry.publication.publicationId)
     const merge = <T>(map: Map<string, T>, id: string, value: T) => {
-      if (map.has(id) && JSON.stringify(map.get(id)) !== JSON.stringify(value))
+      if (
+        map.has(id) &&
+        JSON.stringify(map.get(id)) !== JSON.stringify(value)
+      ) {
         throw new Error('Conflicting immutable journal resource')
+      }
       map.set(id, value)
     }
-    for (const run of entry.resources.runs ?? [])
+    for (const run of entry.resources.runs ?? []) {
       merge(runs, run.result.runId, run)
-    for (const source of entry.resources.visualSources ?? [])
+    }
+    for (const source of entry.resources.visualSources ?? []) {
       merge(visuals, source.assetId, source)
-    for (const source of entry.resources.observationSources ?? [])
+    }
+    for (const source of entry.resources.observationSources ?? []) {
       merge(observations, source.sourceId, source)
+    }
   }
   return {
     ...checkpoint,

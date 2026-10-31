@@ -1212,7 +1212,7 @@ it('keeps unrelated concurrent work distinct without adopting the objective or l
   for (const [index, message] of [
     'Check the roof',
     'Read the windows'
-  ].entries())
+  ].entries()) {
     projection.append({
       attempt: 1,
       phase: 'provider',
@@ -1227,6 +1227,7 @@ it('keeps unrelated concurrent work distinct without adopting the objective or l
         phase: 'inspecting'
       }
     })
+  }
   expect(projection.result().current).toEqual({
     label: 'Checking the drawing - 2 operations'
   })
@@ -1643,8 +1644,9 @@ it('retires preceding stage context while preserving principal phase ownership',
     })
   }
   const history = projection.result().entries
-  for (let index = 1; index < history.length; index++)
+  for (let index = 1; index < history.length; index++) {
     expect(history[index]).not.toEqual(history[index - 1])
+  }
   projection.append({
     attempt: 1,
     phase: 'provider',
@@ -1910,7 +1912,7 @@ it('names distinct concurrent operations instead of hiding both behind a count',
   const projection = createAiActivityProjection({
     purpose: 'Draw the building'
   })
-  for (const [index, phase] of ['preparing', 'inspecting'].entries())
+  for (const [index, phase] of ['preparing', 'inspecting'].entries()) {
     projection.append({
       attempt: 1,
       phase: 'provider',
@@ -1924,6 +1926,7 @@ it('names distinct concurrent operations instead of hiding both behind a count',
         phase: phase as 'preparing' | 'inspecting'
       }
     })
+  }
   expect(projection.result().current?.label).toBe(
     'Preparing geometry - Checking the drawing - 2 operations'
   )
@@ -2060,10 +2063,11 @@ it('replays saved operation admission without public phase churn before executio
       summary: 'Recorded start phase',
       toolStatus: 'running'
     } as AiRuntimeProgressUpdate)
-    if (start.activity.phase !== 'executing')
+    if (start.activity.phase !== 'executing') {
       expect(projection.result().current).toEqual({
         label: 'Processing your request'
       })
+    }
     return decision
   })
   expect(decisions.map((item) => item.phaseLabel)).toEqual([
@@ -2136,16 +2140,17 @@ it('replays every retained provider input without labeling generic batches as ed
   for (const input of recordedEvents.events) {
     const update = input as AiRuntimeProgressUpdate
     projection.append(update)
-    if (update.tool === 'execute_design_batch')
+    if (update.tool === 'execute_design_batch') {
       expect(projection.result().current.label).not.toContain(
         'Applying planned edits'
       )
+    }
   }
 })
 
 it('keeps distinct authored purpose identities in history even when their prose matches', () => {
   const projection = createAiActivityProjection()
-  for (const [index, callId] of ['first-stage', 'second-stage'].entries())
+  for (const [index, callId] of ['first-stage', 'second-stage'].entries()) {
     projection.append({
       attempt: 1,
       phase: 'provider',
@@ -2153,6 +2158,7 @@ it('keeps distinct authored purpose identities in history even when their prose 
       message: 'Check the crown',
       activity: { kind: 'work', scope: 'request', callId, sequence: index + 1 }
     })
+  }
   expect(
     projection
       .result()

@@ -36,15 +36,18 @@ for (const [view, zoomSteps] of [
       p.drawElements = function (...args) {
         if (state.active) {
           state.draws++
-          if (args[0] === this.TRIANGLES) state.triangles += args[1] / 3
+          if (args[0] === this.TRIANGLES) {
+            state.triangles += args[1] / 3
+          }
         }
         return draw.apply(this, args)
       }
       p.drawElementsInstanced = function (...args) {
         if (state.active) {
           state.draws++
-          if (args[0] === this.TRIANGLES)
+          if (args[0] === this.TRIANGLES) {
             state.triangles += (args[1] * args[4]) / 3
+          }
         }
         return instanced.apply(this, args)
       }
@@ -59,14 +62,19 @@ for (const [view, zoomSteps] of [
     const canvas = page.getByLabel('Office 3D scene').locator('canvas')
     const gpu = await canvas.evaluate((node) => {
       const gl = (node as HTMLCanvasElement).getContext('webgl2')
-      if (!gl) throw new Error('Missing WebGL')
+      if (!gl) {
+        throw new Error('Missing WebGL')
+      }
       const ext = gl.getExtension('WEBGL_debug_renderer_info')
-      if (!ext) throw new Error('Missing renderer information')
+      if (!ext) {
+        throw new Error('Missing renderer information')
+      }
       return String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL))
     })
     expect(gpu).not.toMatch(/swiftshader|llvmpipe|softpipe/i)
-    for (let index = 0; index < zoomSteps; index++)
+    for (let index = 0; index < zoomSteps; index++) {
       await page.getByRole('button', { name: 'Zoom in', exact: true }).click()
+    }
     await canvas.click({ position: { x: 20, y: 20 } })
     await canvas.screenshot({ path: info.outputPath('navigation-start.png') })
     await page.evaluate(
@@ -126,7 +134,9 @@ for (const [view, zoomSteps] of [
                   if (now - started >= 1250) {
                     probe.active = false
                     resolve(probe.frames)
-                  } else requestAnimationFrame(next)
+                  } else {
+                    requestAnimationFrame(next)
+                  }
                 }
                 requestAnimationFrame(next)
               }

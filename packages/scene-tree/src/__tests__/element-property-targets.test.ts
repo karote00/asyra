@@ -37,8 +37,12 @@ const createProperty = (
 ): PropertyComponentInstanceTypes =>
   ({
     get: vi.fn((key: string) => {
-      if (key === 'id') return id
-      if (key === 'type') return type
+      if (key === 'id') {
+        return id
+      }
+      if (key === 'type') {
+        return type
+      }
       return undefined
     })
   }) as unknown as PropertyComponentInstanceTypes
@@ -52,8 +56,12 @@ const createElement = (
       getPropId: vi.fn((name: string) => propertyIds[name])
     },
     get: vi.fn((key: string) => {
-      if (key === 'id') return id
-      if (key === 'type') return TARGET_ELEMENT_TYPE
+      if (key === 'id') {
+        return id
+      }
+      if (key === 'type') {
+        return TARGET_ELEMENT_TYPE
+      }
       return undefined
     })
   }) as unknown as ElementInstanceTypes

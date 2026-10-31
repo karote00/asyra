@@ -63,7 +63,9 @@ async function select(value: string) {
     '[aria-label="Analysis method"]'
   )
 
-  if (!element) throw new Error('Missing method selector')
+  if (!element) {
+    throw new Error('Missing method selector')
+  }
 
   await act(() => {
     element.value = value
@@ -77,7 +79,9 @@ async function editParameter(value: string) {
     '[aria-label="Method parameter additionalError"]'
   )
 
-  if (!element) throw new Error('Missing parameter field')
+  if (!element) {
+    throw new Error('Missing parameter field')
+  }
 
   await act(() => {
     Object.getOwnPropertyDescriptor(
@@ -185,7 +189,9 @@ it('uses typed boolean and enum controls and renders private declarations as ine
       `[aria-label="Method parameter ${key}"]`
     )
 
-    if (!field) throw new Error('Missing typed method parameter')
+    if (!field) {
+      throw new Error('Missing typed method parameter')
+    }
 
     await act(() => {
       field.value = value

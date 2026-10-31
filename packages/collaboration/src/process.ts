@@ -65,16 +65,22 @@ export type CollaborationPublicationOutcome =
 const callLifecycle = async (
   resource: LifecycleResource | undefined
 ): Promise<void> => {
-  if (!resource) return
+  if (!resource) {
+    return
+  }
   if (typeof resource.destroy === 'function') {
     await resource.destroy()
     return
   }
-  if (typeof resource.dispose === 'function') await resource.dispose()
+  if (typeof resource.dispose === 'function') {
+    await resource.dispose()
+  }
 }
 
 const requireIdentity = (name: string, value: string): string => {
-  if (!value.trim()) throw new Error(`[collaboration] ${name} is required`)
+  if (!value.trim()) {
+    throw new Error(`[collaboration] ${name} is required`)
+  }
   return value
 }
 
@@ -88,7 +94,9 @@ const resolveOwnership = (
       `[collaboration] resourceOwnership.${name} must be owned or borrowed`
     )
   }
-  if (requested) return requested
+  if (requested) {
+    return requested
+  }
   return name === 'awareness' && !injected ? 'owned' : 'borrowed'
 }
 
@@ -155,7 +163,9 @@ const assertProviderIdentity = (
   provider: Provider | undefined,
   identity: Collaboration['identity']
 ): void => {
-  if (!provider) return
+  if (!provider) {
+    return
+  }
   if (
     provider.identity.documentId !== identity.documentId ||
     provider.identity.roomId !== identity.roomId ||
@@ -215,7 +225,9 @@ export class Collaboration {
 
   start(): Promise<void> {
     this.requireUsable()
-    if (this.startPromise) return this.startPromise
+    if (this.startPromise) {
+      return this.startPromise
+    }
     this.startPromise = this.activate().catch((error) => {
       this.startPromise = null
       throw error
@@ -235,14 +247,18 @@ export class Collaboration {
 
   async reconnect(): Promise<void> {
     this.requireUsable()
-    if (!this.provider) return
+    if (!this.provider) {
+      return
+    }
     if (!this.observersBound) {
       await this.start()
       return
     }
     this.invalidateConnection()
     await this.provider.reconnect()
-    if (!this.disposed) this.started = true
+    if (!this.disposed) {
+      this.started = true
+    }
   }
 
   async updateAwareness(
@@ -293,7 +309,9 @@ export class Collaboration {
   }
 
   dispose(): Promise<void> {
-    if (this.disposePromise) return this.disposePromise
+    if (this.disposePromise) {
+      return this.disposePromise
+    }
     this.disposed = true
     this.invalidateConnection()
     this.disposePromise = this.disposeOwnedResources()
@@ -302,12 +320,18 @@ export class Collaboration {
 
   private async activate(): Promise<void> {
     this.bindObservers()
-    if (this.provider) await this.provider.connect()
-    if (!this.disposed) this.started = true
+    if (this.provider) {
+      await this.provider.connect()
+    }
+    if (!this.disposed) {
+      this.started = true
+    }
   }
 
   private bindObservers(): void {
-    if (this.observersBound) return
+    if (this.observersBound) {
+      return
+    }
     this.observersBound = true
     if (this.publicationSource) {
       this.addDisposer(
@@ -316,7 +340,9 @@ export class Collaboration {
         })
       )
     }
-    if (!this.provider) return
+    if (!this.provider) {
+      return
+    }
     this.addDisposer(
       this.provider.onPublication((publication) =>
         this.scheduleInbound(publication)
@@ -324,12 +350,16 @@ export class Collaboration {
     )
     this.addDisposer(
       this.provider.onAwareness((message) => {
-        if (!this.disposed) this.awareness.applyRemote(message)
+        if (!this.disposed) {
+          this.awareness.applyRemote(message)
+        }
       })
     )
     this.addDisposer(
       this.provider.onAwarenessDisconnect((event) => {
-        if (!this.disposed) this.awareness.handleDisconnect(event)
+        if (!this.disposed) {
+          this.awareness.handleDisconnect(event)
+        }
       })
     )
     this.addDisposer(
@@ -347,7 +377,9 @@ export class Collaboration {
   }
 
   private scheduleOutbound(publication: SharedPublication): void {
-    if (this.disposed) return
+    if (this.disposed) {
+      return
+    }
     const generation = this.connectionGeneration
     this.outboundQueue = this.outboundQueue.then(() =>
       this.dispatchOutboundPublication(publication, generation)
@@ -358,7 +390,9 @@ export class Collaboration {
     publication: SharedPublication,
     generation: number
   ): Promise<void> {
-    if (this.disposed) return
+    if (this.disposed) {
+      return
+    }
     if (
       !this.provider ||
       !this.started ||
@@ -429,7 +463,9 @@ export class Collaboration {
   }
 
   private invalidateConnection(): void {
-    if (!this.started) return
+    if (!this.started) {
+      return
+    }
     this.started = false
     this.connectionGeneration += 1
   }
@@ -464,13 +500,17 @@ export class Collaboration {
     if (this.composition.resourceOwnership.provider === 'owned') {
       await attempt(() => callLifecycle(this.provider))
     }
-    if (this.startPromise) await this.startPromise.catch(() => undefined)
+    if (this.startPromise) {
+      await this.startPromise.catch(() => undefined)
+    }
     await this.whenIdle()
     if (this.composition.resourceOwnership.awareness === 'owned') {
       await attempt(() => callLifecycle(this.awareness))
     }
 
-    if (failures.length > 0) throw new DisposalError(failures)
+    if (failures.length > 0) {
+      throw new DisposalError(failures)
+    }
   }
 
   private requireUsable(): void {

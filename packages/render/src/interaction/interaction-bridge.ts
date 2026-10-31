@@ -73,7 +73,9 @@ export class RenderInteractionBridge {
         failures.push(error)
       }
     })
-    if (failures.length > 0) throw failures[0]
+    if (failures.length > 0) {
+      throw failures[0]
+    }
   }
 
   private detachBindings(attempt: (cleanup: () => void) => void): void {

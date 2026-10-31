@@ -80,7 +80,9 @@ it('translates structured validation in either language without changing its bou
 for (const saved of [null, 'en', 'zh-CN', 'bogus']) {
   it(`defaults to Traditional Chinese unless an explicit English preference exists: ${saved}`, async () => {
     vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
-    if (saved) localStorage.setItem(LOCALE_STORAGE_KEY, saved)
+    if (saved) {
+      localStorage.setItem(LOCALE_STORAGE_KEY, saved)
+    }
     const host = document.createElement('div')
     const root = createRoot(host)
     try {
@@ -123,7 +125,9 @@ it('switches language when browser storage is unavailable', async () => {
       )
     )
     const select = host.querySelector('select')
-    if (!select) throw new Error('Missing language selector')
+    if (!select) {
+      throw new Error('Missing language selector')
+    }
     expect(select.value).toBe('zh-TW')
     await act(async () => {
       select.value = 'en'

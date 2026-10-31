@@ -99,8 +99,9 @@ const fail = (message: string): never => {
 const requireCapability = (raw: Raw) => {
   const config = getPropertyComponentConfigDefinition(raw.type)
   const schema = getPropertySchema(raw.type)
-  if (!config || !schema)
+  if (!config || !schema) {
     return fail(`Property "${raw.id}" has no declarative intention capability`)
+  }
   return { config, schema }
 }
 
@@ -110,9 +111,13 @@ const createDraft = (manager: PropsManager) => {
   const created = new Map<string, Raw>()
   const read = (propertyId: string): Raw => {
     const known = drafts.get(propertyId)
-    if (known) return known
+    if (known) {
+      return known
+    }
     const property = manager.getPropertyById(propertyId)
-    if (!property) return fail(`Missing property "${propertyId}"`)
+    if (!property) {
+      return fail(`Missing property "${propertyId}"`)
+    }
     const raw = structuredClone(property.save()) as Raw
     requireCapability(raw)
     originals.set(propertyId, structuredClone(raw))
@@ -128,7 +133,9 @@ const createDraft = (manager: PropsManager) => {
         raw.inheritance && own(raw.inheritance.overrides, key)
           ? raw.inheritance.overrides[key]
           : basis[key]
-      if (value !== undefined) result[key] = structuredClone(value)
+      if (value !== undefined) {
+        result[key] = structuredClone(value)
+      }
     }
     const children = config.children
     if (raw.inheritance && children && Array.isArray(result[children.key])) {
@@ -145,28 +152,31 @@ const createDraft = (manager: PropsManager) => {
         manager.getPropertyById(requestedId) ||
         manager.getRestoreComponentById(requestedId) ||
         drafts.has(requestedId))
-    )
+    ) {
       return fail('Unavailable explicit child identity')
+    }
     let propertyId = requestedId ?? id(IDTypes.PROPS)
     while (
       manager.getPropertyById(propertyId) ||
       manager.getRestoreComponentById(propertyId) ||
       drafts.has(propertyId)
-    )
+    ) {
       propertyId = id(IDTypes.PROPS)
+    }
     const value = { ...raw, id: propertyId } as Raw
     created.set(propertyId, value)
     drafts.set(propertyId, value)
     return value
   }
   const inherit = (raw: Raw, isolate = false): Raw => {
-    if (raw.inheritance)
+    if (raw.inheritance) {
       return isolate
         ? allocate({
             type: raw.type,
             inheritance: structuredClone(raw.inheritance)
           })
         : raw
+    }
     raw.sharedSource = true
     return allocate({
       type: raw.type,
@@ -180,8 +190,9 @@ const createDraft = (manager: PropsManager) => {
       !isRecord(target) ||
       !isRecord(target.root) ||
       !Array.isArray(target.path)
-    )
+    ) {
       fail('Invalid property target')
+    }
     if (
       typeof target.sharedRoot !== 'boolean' ||
       [
@@ -190,15 +201,17 @@ const createDraft = (manager: PropsManager) => {
         target.root.ownerElementType,
         target.root.ownerPropertyName
       ].some((value) => typeof value !== 'string' || !value)
-    )
+    ) {
       fail('Invalid canonical owner target')
+    }
     let raw = read(target.root.componentId)
     const definition = elementPropertyRegistry.getForComponent(
       target.root.ownerElementType,
       target.root.ownerPropertyName
     )
-    if (!definition || definition.type !== raw.type)
+    if (!definition || definition.type !== raw.type) {
       fail('Target does not match the registered owner property')
+    }
     const chain: { parent: Raw; key: string; logicalId: string }[] = []
     for (const step of target.path) {
       const relation = requireCapability(raw).config.children
@@ -206,26 +219,31 @@ const createDraft = (manager: PropsManager) => {
         !relation ||
         relation.key !== step.key ||
         typeof step.childId !== 'string'
-      )
+      ) {
         return fail('Invalid registered child path')
+      }
       const basis = raw.inheritance ? read(raw.inheritance.sourceId) : raw
       const childIds =
         raw.inheritance && own(raw.inheritance.overrides, step.key)
           ? raw.inheritance.overrides[step.key]
           : basis[step.key]
-      if (!Array.isArray(childIds) || !childIds.includes(step.childId))
+      if (!Array.isArray(childIds) || !childIds.includes(step.childId)) {
         fail(`Missing logical child "${step.childId}"`)
+      }
       chain.push({ parent: raw, key: step.key, logicalId: step.childId })
       raw = read(raw.inheritance?.childBindings[step.childId] ?? step.childId)
-      if (raw.type !== relation.childType) fail('Wrong registered child type')
+      if (raw.type !== relation.childType) {
+        fail('Wrong registered child type')
+      }
     }
     if (
       (target.expectedPropertyId !== undefined &&
         target.expectedPropertyId !== raw.id) ||
       (target.expectedSourceId !== undefined &&
         target.expectedSourceId !== raw.inheritance?.sourceId)
-    )
+    ) {
       fail('Stale retained property target')
+    }
     return { raw, chain }
   }
   return { originals, drafts, created, read, fields, allocate, inherit, locate }
@@ -239,15 +257,20 @@ export const readPropertyTargets = (
   return targets.map((target) => {
     const { raw } = draft.locate(target)
     let mode: PropertyTargetView['mode'] = 'independent'
-    if (raw.sharedSource) mode = 'source'
-    if (raw.inheritance) mode = 'source-backed'
+    if (raw.sharedSource) {
+      mode = 'source'
+    }
+    if (raw.inheritance) {
+      mode = 'source-backed'
+    }
     const relation = requireCapability(raw).config.children
     const basis = raw.inheritance ? draft.read(raw.inheritance.sourceId) : raw
     let members: unknown = []
     if (relation) {
       members = basis[relation.key]
-      if (raw.inheritance && own(raw.inheritance.overrides, relation.key))
+      if (raw.inheritance && own(raw.inheritance.overrides, relation.key)) {
         members = raw.inheritance.overrides[relation.key]
+      }
     }
     const children =
       relation && Array.isArray(members)
@@ -292,8 +315,9 @@ export const preparePropertyIntentBatch = (
     const key = JSON.stringify([identity(intent.target), intent.target.path])
     const kinds = kindsByTarget.get(key) ?? new Set<string>()
     kinds.add(intent.kind)
-    if (kinds.size > 1 && (kinds.has('detach') || kinds.has('share')))
+    if (kinds.size > 1 && (kinds.has('detach') || kinds.has('share'))) {
       fail('Conflicting identity and field intentions')
+    }
     kindsByTarget.set(key, kinds)
   })
   const isolated = (target: PropertyTarget, leafBinding: boolean) => {
@@ -303,16 +327,18 @@ export const preparePropertyIntentBatch = (
       const before = draft.read(target.root.componentId)
       root = { target, before, after: before }
       roots.set(key, root)
-    } else if (root.target.root.componentId !== target.root.componentId)
+    } else if (root.target.root.componentId !== target.root.componentId) {
       fail('Conflicting owner root identities')
+    }
     if (
       target.path.length ||
       (leafBinding && (target.sharedRoot || root.after.sharedSource))
-    )
+    ) {
       root.after = draft.inherit(
         root.after,
         target.sharedRoot && root.after === root.before
       )
+    }
     let current = root.after
     let parent: Raw | undefined
     let logicalId: string | undefined
@@ -327,19 +353,23 @@ export const preparePropertyIntentBatch = (
       const ownedChild =
         current.inheritance?.childBindings[step.childId] === child.id
       const sharedChild = hasOtherOwners(child.id, current.id)
-      if (!mustBind) current = child
-      else if (
+      if (!mustBind) {
+        current = child
+      } else if (
         ownedChild &&
         !sharedChild &&
         !child.sharedSource &&
         !child.inheritance &&
         i === target.path.length - 1
-      )
+      ) {
         current = child
-      else current = draft.inherit(child, !ownedChild || sharedChild)
+      } else {
+        current = draft.inherit(child, !ownedChild || sharedChild)
+      }
       if (current !== child) {
-        if (!parent.inheritance)
+        if (!parent.inheritance) {
           return fail('Local child edit requires an isolated parent')
+        }
         parent.inheritance.childBindings[step.childId] = current.id
       }
     }
@@ -353,8 +383,9 @@ export const preparePropertyIntentBatch = (
     ])
     const registerWrite = (key: string, value: unknown) => {
       const token = JSON.stringify([targetKey, key])
-      if (writes.has(token) && !isEqual(writes.get(token), value))
+      if (writes.has(token) && !isEqual(writes.get(token), value)) {
         fail('Conflicting local property writes')
+      }
       writes.set(token, value)
     }
     if (intent.kind === 'records') {
@@ -375,9 +406,12 @@ export const preparePropertyIntentBatch = (
         !relation ||
         relation.key !== intent.key ||
         relation.collection !== 'array-or-record'
-      )
+      ) {
         fail('Invalid registered record relationship')
-      if (!relation) return fail('Missing registered record relationship')
+      }
+      if (!relation) {
+        return fail('Missing registered record relationship')
+      }
       const set = intent.set ?? {},
         remove = intent.remove ?? []
       if (
@@ -385,8 +419,9 @@ export const preparePropertyIntentBatch = (
         !Array.isArray(remove) ||
         remove.some((id) => typeof id !== 'string' || !id) ||
         new Set(remove).size !== remove.length
-      )
+      ) {
         fail('Invalid record patch')
+      }
       const basis = current.inheritance
         ? draft.read(current.inheritance.sourceId)
         : current
@@ -397,15 +432,18 @@ export const preparePropertyIntentBatch = (
       if (
         !Array.isArray(membership) ||
         membership.some((id) => typeof id !== 'string')
-      )
+      ) {
         fail('Invalid canonical record membership')
+      }
       const members = [...(membership as string[])]
       const logical = (id: string) => {
         const matches = members.filter(
           (member) =>
             member === id || current.inheritance?.childBindings[member] === id
         )
-        if (matches.length > 1) fail('Ambiguous record identity')
+        if (matches.length > 1) {
+          fail('Ambiguous record identity')
+        }
         return matches[0]
       }
       const removed = new Set(
@@ -414,8 +452,9 @@ export const preparePropertyIntentBatch = (
       const next = members.filter((id) => !removed.has(id))
       const fieldIntents: PropertyIntent[] = []
       for (const [recordId, recordValues] of Object.entries(set)) {
-        if (!recordId || !isRecord(recordValues) || remove.includes(recordId))
+        if (!recordId || !isRecord(recordValues) || remove.includes(recordId)) {
           fail('Invalid or conflicting record patch')
+        }
         const mapped = relation.toChildData
           ? relation.toChildData(
               recordValues as Record<string, unknown>,
@@ -426,8 +465,9 @@ export const preparePropertyIntentBatch = (
           !isRecord(mapped) ||
           (mapped.id !== undefined && mapped.id !== recordId) ||
           (mapped.type !== undefined && mapped.type !== relation.childType)
-        )
+        ) {
           return fail('Invalid mapped record identity')
+        }
         const values = Object.fromEntries(
           Object.entries(mapped).filter(
             ([key]) => key !== 'id' && key !== 'type'
@@ -435,7 +475,9 @@ export const preparePropertyIntentBatch = (
         )
         const member = logical(recordId)
         if (member) {
-          if (removed.has(member)) fail('Conflicting local record operations')
+          if (removed.has(member)) {
+            fail('Conflicting local record operations')
+          }
           fieldIntents.push({
             kind: 'override',
             target: {
@@ -453,9 +495,12 @@ export const preparePropertyIntentBatch = (
           const config = getPropertyComponentConfigDefinition(
             relation.childType
           )
-          if (!config || !getPropertySchema(relation.childType))
+          if (!config || !getPropertySchema(relation.childType)) {
             fail('New local record requires registered declarative capability')
-          if (!config) return fail('Missing child capability')
+          }
+          if (!config) {
+            return fail('Missing child capability')
+          }
           const roles = resolvePropertyComponentConfigRoles(config)
           const defaults = Object.fromEntries(
             roles.persistKeys
@@ -473,8 +518,9 @@ export const preparePropertyIntentBatch = (
           const { schema } = requireCapability(child)
           for (const [key, value] of Object.entries(values)) {
             const field = schema.fields.find((field) => field.key === key)
-            if (!field || !isRuntimePropertyFieldValueValid(field, value))
+            if (!field || !isRuntimePropertyFieldValueValid(field, value)) {
               fail(`Invalid new record field "${key}"`)
+            }
           }
           next.push(child.id)
         }
@@ -484,14 +530,21 @@ export const preparePropertyIntentBatch = (
         const raw = isolated(intent.target, true).raw
         if (raw.inheritance) {
           raw.inheritance.overrides[relation.key] = next
-          for (const childId of removed)
+          for (const childId of removed) {
             Reflect.deleteProperty(raw.inheritance.childBindings, childId)
-        } else raw[relation.key] = next
+          }
+        } else {
+          raw[relation.key] = next
+        }
       }
       pending.push(...fieldIntents)
     } else if (intent.kind === 'override') {
-      if (!isRecord(intent.values)) fail('Invalid local values')
-      if (Object.keys(intent.values).length === 0) continue
+      if (!isRecord(intent.values)) {
+        fail('Invalid local values')
+      }
+      if (Object.keys(intent.values).length === 0) {
+        continue
+      }
       const original = draft.locate({
         ...intent.target,
         root: {
@@ -517,26 +570,34 @@ export const preparePropertyIntentBatch = (
             const logical = Object.keys(links).filter(
               (key) => links[key] === value
             )
-            if (logical.length > 1) fail('Ambiguous local membership identity')
+            if (logical.length > 1) {
+              fail('Ambiguous local membership identity')
+            }
             return logical[0] ?? value
           }
         )
       }
       for (const [key, value] of Object.entries(values)) {
         const field = schema.fields.find((field) => field.key === key)
-        if (!field || !isRuntimePropertyFieldValueValid(field, value))
+        if (!field || !isRuntimePropertyFieldValueValid(field, value)) {
           fail(`Unknown or invalid property field "${key}"`)
+        }
         registerWrite(key, { kind: intent.kind, value })
       }
       const { raw } = isolated(intent.target, true)
       for (const [key, value] of Object.entries(values)) {
         if (raw.inheritance) {
           raw.inheritance.overrides[key] = value
-          if (key === relation?.key && Array.isArray(value))
-            for (const childId of Object.keys(raw.inheritance.childBindings))
-              if (!value.includes(childId))
+          if (key === relation?.key && Array.isArray(value)) {
+            for (const childId of Object.keys(raw.inheritance.childBindings)) {
+              if (!value.includes(childId)) {
                 Reflect.deleteProperty(raw.inheritance.childBindings, childId)
-        } else raw[key] = value
+              }
+            }
+          }
+        } else {
+          raw[key] = value
+        }
       }
     } else if (intent.kind === 'reset') {
       const { raw } = draft.locate({
@@ -552,8 +613,9 @@ export const preparePropertyIntentBatch = (
       })
       const { schema } = requireCapability(raw)
       for (const key of intent.keys) {
-        if (!schema.fields.some((field) => field.key === key))
+        if (!schema.fields.some((field) => field.key === key)) {
           fail(`Unknown override field "${key}"`)
+        }
         registerWrite(key, { kind: intent.kind })
       }
       if (
@@ -561,9 +623,11 @@ export const preparePropertyIntentBatch = (
         intent.keys.some((key) => own(raw.inheritance?.overrides ?? {}, key))
       ) {
         const isolatedRaw = isolated(intent.target, true).raw
-        for (const key of intent.keys)
-          if (isolatedRaw.inheritance)
+        for (const key of intent.keys) {
+          if (isolatedRaw.inheritance) {
             Reflect.deleteProperty(isolatedRaw.inheritance.overrides, key)
+          }
+        }
       }
     } else if (intent.kind === 'detach' || intent.kind === 'share') {
       registerWrite('$binding', intent)
@@ -575,8 +639,9 @@ export const preparePropertyIntentBatch = (
           !located.raw.inheritance &&
           !located.raw.sharedSource &&
           !intent.target.sharedRoot
-        )
+        ) {
           continue
+        }
         replacement = draft.allocate({
           type: located.raw.type,
           ...draft.fields(located.raw)
@@ -586,26 +651,33 @@ export const preparePropertyIntentBatch = (
           located.raw.inheritance &&
           (Object.keys(located.raw.inheritance.overrides).length > 0 ||
             Object.keys(located.raw.inheritance.childBindings).length > 0)
-        )
+        ) {
           fail('Reset or detach local overrides before sharing another source')
+        }
         const source = draft.read(intent.sourceId)
-        if (source.inheritance || source.type !== located.raw.type)
+        if (source.inheritance || source.type !== located.raw.type) {
           fail('Shared source must be independent and match the target type')
+        }
         replacement = draft.inherit(source)
       }
       if (located.parent && located.logicalId) {
-        if (!located.parent.inheritance)
+        if (!located.parent.inheritance) {
           return fail('Local child edit requires an isolated parent')
+        }
         located.parent.inheritance.childBindings[located.logicalId] =
           replacement.id
-      } else located.root.after = replacement
-    } else fail('Unknown property intention')
+      } else {
+        located.root.after = replacement
+      }
+    } else {
+      fail('Unknown property intention')
+    }
   }
   const operations: PropertyMutation[] = [...directOperations]
   for (const [propertyId, original] of draft.originals) {
     const current = draft.read(propertyId)
     const changes: PropertyLayerEdit[] = []
-    if (original.sharedSource !== current.sharedSource)
+    if (original.sharedSource !== current.sharedSource) {
       changes.push({
         layer: 'sharedSource',
         key: 'sharedSource',
@@ -613,6 +685,7 @@ export const preparePropertyIntentBatch = (
           ? { present: true, value: true }
           : { present: false }
       })
+    }
     if (original.inheritance && current.inheritance) {
       for (const layer of ['overrides', 'childBindings'] as const) {
         for (const key of new Set([
@@ -626,8 +699,9 @@ export const preparePropertyIntentBatch = (
               original.inheritance[layer][key],
               current.inheritance[layer][key]
             )
-          )
+          ) {
             continue
+          }
           changes.push({
             layer,
             key,
@@ -638,7 +712,9 @@ export const preparePropertyIntentBatch = (
         }
       }
     }
-    if (changes.length) operations.push({ kind: 'layers', propertyId, changes })
+    if (changes.length) {
+      operations.push({ kind: 'layers', propertyId, changes })
+    }
     if (!current.inheritance) {
       const values = Object.fromEntries(
         Object.entries(current).filter(
@@ -647,8 +723,9 @@ export const preparePropertyIntentBatch = (
             !isEqual(value, original[key])
         )
       )
-      if (Object.keys(values).length)
+      if (Object.keys(values).length) {
         operations.push({ kind: 'values', propertyId, values })
+      }
     }
   }
   const rootBindings = [...roots.values()]
@@ -660,7 +737,7 @@ export const preparePropertyIntentBatch = (
       before: before.id,
       after: after.id
     }))
-  if (draft.created.size)
+  if (draft.created.size) {
     operations.push({
       kind: 'create-exact-property-graph',
       ownerRelations: [...roots.values()].map(({ target, after }) => ({
@@ -669,6 +746,7 @@ export const preparePropertyIntentBatch = (
       })),
       components: [...draft.created.values()]
     })
+  }
   const retainedExistingPropertyIds = new Set<string>()
   for (const raw of draft.created.values()) {
     const relation = requireCapability(raw).config.children
@@ -677,9 +755,11 @@ export const preparePropertyIntentBatch = (
       (relation && Array.isArray(raw[relation.key])
         ? (raw[relation.key] as string[])
         : [])
-    for (const propertyId of dependencies)
-      if (!draft.created.has(propertyId))
+    for (const propertyId of dependencies) {
+      if (!draft.created.has(propertyId)) {
         retainedExistingPropertyIds.add(propertyId)
+      }
+    }
   }
   const properties = manager.preparePropertyMutationBatch({
     operations,
@@ -710,17 +790,22 @@ export const prepareSharedPropertySourceBatch = (
   const valuesById = new Map<string, Record<string, unknown>>()
   for (const update of updates) {
     const source = draft.read(update.propertyId)
-    if (source.inheritance || !source.sharedSource)
+    if (source.inheritance || !source.sharedSource) {
       fail('Explicit source mutation requires an independent shared source')
+    }
     const values = valuesById.get(source.id) ?? {}
-    if (!isRecord(update.values)) fail('Invalid shared source values')
+    if (!isRecord(update.values)) {
+      fail('Invalid shared source values')
+    }
     const { schema } = requireCapability(source)
     for (const [key, value] of Object.entries(update.values)) {
       const field = schema.fields.find((field) => field.key === key)
-      if (!field || !isRuntimePropertyFieldValueValid(field, value))
+      if (!field || !isRuntimePropertyFieldValueValid(field, value)) {
         fail(`Unknown or invalid source field "${key}"`)
-      if (own(values, key) && !isEqual(values[key], value))
+      }
+      if (own(values, key) && !isEqual(values[key], value)) {
         fail('Conflicting shared source writes')
+      }
       values[key] = structuredClone(value)
     }
     valuesById.set(source.id, values)
@@ -750,10 +835,13 @@ export const prepareOwnerPropertyMutations = (
     if (
       target.path.length !== 0 ||
       target.root.componentId !== mutation.propertyId
-    )
+    ) {
       fail('Owner mutation requires its exact root target')
+    }
     const component = manager.getPropertyById(mutation.propertyId)
-    if (!component) return fail('Missing owner property')
+    if (!component) {
+      return fail('Missing owner property')
+    }
     const raw = component.save() as Raw
     let isolated =
       target.sharedRoot || !!raw.inheritance || raw.sharedSource === true
@@ -764,7 +852,9 @@ export const prepareOwnerPropertyMutations = (
           ? (raw[relation.key] as string[])
           : []
       isolated = Object.keys(mutation.set ?? {}).some((childId) => {
-        if (!members.includes(childId)) return false
+        if (!members.includes(childId)) {
+          return false
+        }
         const child = manager.getPropertyById(childId)?.save()
         return (
           !!child?.inheritance ||
@@ -777,9 +867,10 @@ export const prepareOwnerPropertyMutations = (
       direct.push(mutation)
       continue
     }
-    if (mutation.values && Object.keys(mutation.values).length)
+    if (mutation.values && Object.keys(mutation.values).length) {
       intents.push({ kind: 'override', target, values: mutation.values })
-    if (mutation.kind === 'records')
+    }
+    if (mutation.kind === 'records') {
       intents.push({
         kind: 'records',
         target,
@@ -787,6 +878,7 @@ export const prepareOwnerPropertyMutations = (
         set: mutation.set,
         remove: mutation.remove
       })
+    }
   }
   return preparePropertyIntentBatch(
     manager,

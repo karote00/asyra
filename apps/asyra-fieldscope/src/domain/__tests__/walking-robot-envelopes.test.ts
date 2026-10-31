@@ -107,7 +107,9 @@ it('includes every original robot and mounted crate vertex and retains contribut
   const f = fixture(),
     result = f.owner.prepare(f.source, f.request)
   expect(result.status).toBe('complete')
-  if (result.status !== 'complete') throw new Error(result.reason)
+  if (result.status !== 'complete') {
+    throw new Error(result.reason)
+  }
   expect(result.contributors.filter((c) => c.kind === 'crate')).toHaveLength(11)
   const canonical = f.sourceOwner.evaluate(f.source, {
     base: identity(),
@@ -123,9 +125,13 @@ it('includes every original robot and mounted crate vertex and retains contribut
       let p = c.part.shape.positions.slice(offset, offset + 3).map(dyadic)
       if (c.kind === 'robot') {
         const part = f.source.parts.find((p) => p === c.part)
-        if (!part) throw new Error('Missing original part')
+        if (!part) {
+          throw new Error('Missing original part')
+        }
         const body = transforms.get(part.bodyId)
-        if (!body) throw new Error('Missing original body frame')
+        if (!body) {
+          throw new Error('Missing original body frame')
+        }
         p = placed(body, placed(part.localFrame, p))
         robotVertices++
       } else {
@@ -161,7 +167,9 @@ it('includes every original robot and mounted crate vertex and retains contribut
 it('invalidates for source, pose, mounted identity and declared load without omitting geometry', () => {
   const f = fixture(),
     first = f.owner.prepare(f.source, f.request)
-  if (first.status !== 'complete') throw new Error(first.reason)
+  if (first.status !== 'complete') {
+    throw new Error(first.reason)
+  }
   const before = { ...f.owner.work }
   expect(f.owner.read(f.source, first.request)).toBe(first)
   expect(f.owner.prepare(f.source, first.request)).toBe(first)
@@ -174,7 +182,9 @@ it('invalidates for source, pose, mounted identity and declared load without omi
     parts: [loadPart()]
   }
   const second = f.owner.prepare(f.source, { ...first.request, load })
-  if (second.status !== 'complete') throw new Error(second.reason)
+  if (second.status !== 'complete') {
+    throw new Error(second.reason)
+  }
   expect(second.bounds.max[0]).toBeGreaterThan(first.bounds.max[0])
   expect(second.work.fk).toBe(1)
   expect(second.contributors.filter((c) => c.kind === 'load')).toHaveLength(1)
@@ -187,7 +197,9 @@ it('invalidates for source, pose, mounted identity and declared load without omi
       base: { ...identity(), position: [1, 0, 0] }
     }
   })
-  if (third.status !== 'complete') throw new Error(third.reason)
+  if (third.status !== 'complete') {
+    throw new Error(third.reason)
+  }
   expect(third.bounds.min[0]).toBeCloseTo(second.bounds.min[0] + 1, 12)
   const unknown = f.owner.prepare(f.source, {
     ...third.request,
@@ -196,7 +208,9 @@ it('invalidates for source, pose, mounted identity and declared load without omi
   expect(unknown.status).toBe('unavailable')
   expect(f.owner.read(f.source, third.request)).toBeUndefined()
   const replaced = f.owner.prepare(f.source, f.request)
-  if (replaced.status !== 'complete') throw new Error(replaced.reason)
+  if (replaced.status !== 'complete') {
+    throw new Error(replaced.reason)
+  }
   f.removeCrate()
   expect(f.owner.read(f.source, replaced.request)).toBeUndefined()
   f.sourceOwner.clear()
@@ -244,8 +258,9 @@ it('rejects omitted, foreign, partial and nonfinite contributors without mutatin
       pose: { ...f.request.pose, joints: { ...f.source.rig.presets.stowed } }
     }
   ]
-  for (const request of bad)
+  for (const request of bad) {
     expect(f.owner.prepare(f.source, request).status).toBe('unavailable')
+  }
   expect(Object.isFrozen(fake)).toBe(false)
   expect(f.owner.prepare({ ...f.source }, f.request).status).toBe('unavailable')
 })
@@ -304,7 +319,9 @@ it('publishes the complete stowed envelope separately from active body width', (
     load: { kind: 'empty', id: 'empty-load' }
   })
   expect(result.status).toBe('complete')
-  if (result.status !== 'complete') throw new Error(result.reason)
+  if (result.status !== 'complete') {
+    throw new Error(result.reason)
+  }
   expect(result.bodyBounds.size[0]).toBeLessThanOrEqual(0.8)
   expect(result.bounds.size[0]).toBeCloseTo(0.94625, 12)
   expect(result.contributors).toHaveLength(source.parts.length)

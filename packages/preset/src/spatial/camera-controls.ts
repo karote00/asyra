@@ -4,8 +4,9 @@ import type { SpatialCamera } from './spatial-layer.js'
 import type { SpatialBounds } from './bounds.js'
 type Vector = SpatialVector
 const finite = (...values: number[]) => {
-  if (!values.every(Number.isFinite))
+  if (!values.every(Number.isFinite)) {
     throw new Error('Invalid camera control input')
+  }
 }
 const tuple = (values: number[]): Vector => [values[0], values[1], values[2]]
 const add = (a: Vector, b: Vector): Vector => tuple(a.map((n, i) => n + b[i]))
@@ -21,7 +22,9 @@ const normalize = (v: Vector): Vector => scale(v, 1 / Math.hypot(...v))
 /** Uses the same admission owner as spatial submission. */
 export function readSpatialCamera(value: unknown): SpatialCamera {
   const camera = readSpatialDescriptor(value)
-  if (camera.kind !== 'camera') throw new Error('Expected perspective camera')
+  if (camera.kind !== 'camera') {
+    throw new Error('Expected perspective camera')
+  }
   return camera
 }
 function basis(camera: SpatialCamera) {
@@ -66,8 +69,9 @@ export function panSpatialCamera(
     reference.distance <= 0 ||
     reference.fov <= 0 ||
     reference.fov >= 180
-  )
+  ) {
     throw new Error('Invalid camera pan')
+  }
   const units =
     (2 * reference.distance * Math.tan((reference.fov * Math.PI) / 360)) /
     height
@@ -80,7 +84,9 @@ export function dollySpatialCamera(
   camera = readSpatialCamera(camera)
   finite(distance)
   const b = basis(camera)
-  if (distance <= 0) throw new Error('Invalid camera distance')
+  if (distance <= 0) {
+    throw new Error('Invalid camera distance')
+  }
   return readSpatialCamera({
     ...camera,
     position: add(camera.target, scale(b.back, distance))
@@ -103,8 +109,9 @@ function rotate(
     limits.minPolar <= 0 ||
     limits.maxPolar >= Math.PI ||
     limits.minPolar > limits.maxPolar
-  )
+  ) {
     throw new Error('Invalid polar limits')
+  }
   const offset = orbit
     ? sub(camera.position, camera.target)
     : sub(camera.target, camera.position)
@@ -146,8 +153,9 @@ export function zoomSpatialCamera(
 ): SpatialCamera {
   camera = readSpatialCamera(camera)
   finite(magnification, maxFov)
-  if (magnification <= 0 || maxFov <= 0 || maxFov >= 180)
+  if (magnification <= 0 || maxFov <= 0 || maxFov >= 180) {
     throw new Error('Invalid camera zoom')
+  }
   return readSpatialCamera({
     ...camera,
     fov: Math.min(
@@ -162,11 +170,13 @@ export function projectSpatialCamera(
   aspect: number,
   policy: { projection: 'perspective'; minimumAspect: number; maxFov: number }
 ): SpatialCamera {
-  if (policy.projection !== 'perspective')
+  if (policy.projection !== 'perspective') {
     throw new Error('Unsupported world camera projection')
+  }
   finite(aspect, policy.minimumAspect)
-  if (aspect <= 0 || policy.minimumAspect <= 0)
+  if (aspect <= 0 || policy.minimumAspect <= 0) {
     throw new Error('Invalid viewport aspect')
+  }
   return zoomSpatialCamera(
     camera,
     1 / Math.max(1, policy.minimumAspect / aspect),
@@ -175,8 +185,9 @@ export function projectSpatialCamera(
 }
 function viewport(width: number, height: number, padding: number) {
   finite(width, height, padding)
-  if (padding < 0 || width <= 2 * padding || height <= 2 * padding)
+  if (padding < 0 || width <= 2 * padding || height <= 2 * padding) {
     throw new Error('Viewport too small for fit padding')
+  }
 }
 export function fitSpatialCameraBounds(
   camera: SpatialCamera,
@@ -190,18 +201,22 @@ export function fitSpatialCameraBounds(
   const b = basis(camera)
   viewport(width, height, options.padding)
   finite(options.verticalFov)
-  if (options.verticalFov <= 0 || options.verticalFov >= 180)
+  if (options.verticalFov <= 0 || options.verticalFov >= 180) {
     throw new Error('Invalid fit FOV')
-  if (!bounds) return original
+  }
+  if (!bounds) {
+    return original
+  }
   finite(...bounds.min, ...bounds.max)
-  if (bounds.min.some((n, i) => n > bounds.max[i]))
+  if (bounds.min.some((n, i) => n > bounds.max[i])) {
     throw new Error('Invalid bounds')
+  }
   const target = tuple(bounds.min.map((n, i) => (n + bounds.max[i]) / 2))
   const vertical = Math.tan((options.verticalFov * Math.PI) / 360),
     horizontal = (vertical * width) / height
   let distance = 0
-  for (const x of [bounds.min[0], bounds.max[0]])
-    for (const y of [bounds.min[1], bounds.max[1]])
+  for (const x of [bounds.min[0], bounds.max[0]]) {
+    for (const y of [bounds.min[1], bounds.max[1]]) {
       for (const z of [bounds.min[2], bounds.max[2]]) {
         const p = sub([x, y, z], target),
           depth = dot(b.back, p)
@@ -216,6 +231,8 @@ export function fitSpatialCameraBounds(
           depth + camera.near
         )
       }
+    }
+  }
   distance += 1e-6
   return readSpatialCamera({
     ...camera,
@@ -257,8 +274,9 @@ export function frameSpatialCameraPoints(
     options.nearFraction >= 1 ||
     options.minimumFarPadding < 0 ||
     options.farPaddingRatio < 0
-  )
+  ) {
     throw new Error('Invalid framing limits')
+  }
   const min = [Infinity, Infinity, Infinity],
     max = [-Infinity, -Infinity, -Infinity]
   let count = 0
@@ -271,7 +289,9 @@ export function frameSpatialCameraPoints(
     }
     count++
   }
-  if (!count) return original
+  if (!count) {
+    return original
+  }
   const middle = tuple(min.map((n, i) => n + (max[i] - n) / 2)),
     half = tuple(min.map((n, i) => (max[i] - n) / 2))
   const target = add(

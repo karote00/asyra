@@ -890,7 +890,9 @@ it('uses the same lifecycle decisions for recorded progress and the visible turn
       reason: 'illegal-lifecycle-transition'
     })
     const active = controller.getSnapshot().activeTurn
-    if (!active) throw new Error('Expected an active turn before settlement')
+    if (!active) {
+      throw new Error('Expected an active turn before settlement')
+    }
     expect(projectAiActivity(active.progress).current.label).toBe(
       'Saving the drawing'
     )
@@ -925,7 +927,9 @@ it('retains the original activity objective through a failed clarification and r
     progressObserver
   }) => {
     const initial = controller.getSnapshot().activeTurn
-    if (!initial) throw new Error('Missing active continuation')
+    if (!initial) {
+      throw new Error('Missing active continuation')
+    }
     activePurposes.push(initial.originalIntent)
     progressObserver({
       attempt: 1,
@@ -947,7 +951,9 @@ it('retains the original activity objective through a failed clarification and r
       }
     })
     const active = controller.getSnapshot().activeTurn
-    if (!active) throw new Error('Missing active continuation')
+    if (!active) {
+      throw new Error('Missing active continuation')
+    }
     expect(
       projectAiActivity(active.progress, { purpose: active.originalIntent })
         .current
@@ -1048,7 +1054,9 @@ describe('settled conversation context delivery', () => {
 
   const requireHistory = (feature: AiConversationFeature, index: number) => {
     const history = historyFrom(feature, index)
-    if (!history) throw new Error('Expected settled conversation history')
+    if (!history) {
+      throw new Error('Expected settled conversation history')
+    }
     return history
   }
 
@@ -1261,8 +1269,9 @@ describe('settled conversation context delivery', () => {
       getElementType: () => undefined
     })
     try {
-      for (let index = 0; index < 12; index += 1)
+      for (let index = 0; index < 12; index += 1) {
         await controller.submit(`${index}:` + '界\n"'.repeat(800))
+      }
       await controller.submit('Continue')
       const all = controller.getSnapshot().settledTurns.slice(0, -1)
       const history = requireHistory(feature, 12)

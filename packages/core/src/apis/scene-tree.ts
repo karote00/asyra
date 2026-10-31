@@ -207,7 +207,9 @@ export const createSceneTreeAPIs = (
         )
       }
       const data = sceneTreeRequests.getElementComputedData(elementId, fields)
-      if (!data) return
+      if (!data) {
+        return
+      }
       if (typeof globalThis.structuredClone === 'function') {
         return globalThis.structuredClone(data)
       }
@@ -246,7 +248,9 @@ export const createSceneTreeAPIs = (
       )
     },
     removeSubtrees(elementIds: readonly string[], options?: EVENT_OPTIONS) {
-      if (elementIds.length === 0) return freezeOrderedElementIds([])
+      if (elementIds.length === 0) {
+        return freezeOrderedElementIds([])
+      }
       return freezeOrderedElementIds(
         sceneTreeRequests.removeSubtrees(elementIds, options)
       )

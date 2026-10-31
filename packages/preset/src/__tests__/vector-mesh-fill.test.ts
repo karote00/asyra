@@ -87,7 +87,9 @@ describe('retained vector coverage and material', () => {
     for (const type of ['linear', 'radial', 'angular', 'diamond'] as const) {
       const data = dataFor()
       const gradient = data.fills[0].gradient
-      if (!gradient) throw new Error('Missing gradient fixture')
+      if (!gradient) {
+        throw new Error('Missing gradient fixture')
+      }
       gradient.gradientType = type
       data.fills[0].opacity = 0.5
       const source = JSON.stringify(data)

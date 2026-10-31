@@ -572,8 +572,9 @@ it('records domain waits and shows settlement progress after provider completion
       phase: 'settlement',
       summary: 'Saving the drawing'
     })
-    if (!context.observe)
+    if (!context.observe) {
       throw new Error('Missing Runtime observation boundary')
+    }
     return context.observe(
       'durability',
       'Confirm durable publication target',
@@ -638,7 +639,9 @@ it.each(['failed', 'cancelled'] as const)(
         actionDefinitions: [
           visibilityAction(
             vi.fn(async () => {
-              if (outcome === 'cancelled') controller.abort()
+              if (outcome === 'cancelled') {
+                controller.abort()
+              }
               throw new Error('action failed')
             })
           )
@@ -681,7 +684,9 @@ it('links host publication observations without appending after the request term
       intent: 'Draw',
       signal: new AbortController().signal
     })
-    if (!result.recordingId) throw new Error('Missing request recording ID')
+    if (!result.recordingId) {
+      throw new Error('Missing request recording ID')
+    }
     runtime.observe?.({
       sourceRequestId: result.recordingId,
       purpose: 'conversation-publication',
@@ -775,8 +780,9 @@ it('rejects invalid activity parent and phase contracts at the shared transport 
     {},
     { status: 'completed', settlement: 'completed' },
     { status: 'success', settlement: 'saved' }
-  ])
+  ]) {
     expect(isExecutionActivity({ ...value, outcome })).toBe(false)
+  }
 })
 
 it.each(['success', 'failure', 'cancelled'] as const)(
@@ -798,7 +804,9 @@ it.each(['success', 'failure', 'cancelled'] as const)(
           visibilityAction(
             vi.fn(async () => {
               if (executions++ === 0 && outcome !== 'success') {
-                if (outcome === 'cancelled') controller.abort()
+                if (outcome === 'cancelled') {
+                  controller.abort()
+                }
                 throw new Error('Action did not complete')
               }
               return { apiKey: 'executor-secret', changed: true }
@@ -815,11 +823,16 @@ it.each(['success', 'failure', 'cancelled'] as const)(
       })
       const scoped = updates.filter((update) => update.activity)
       const expected = ['running']
-      if (outcome !== 'cancelled') expected.push('completed')
-      if (outcome === 'success') expected.push('running', 'completed')
+      if (outcome !== 'cancelled') {
+        expected.push('completed')
+      }
+      if (outcome === 'success') {
+        expected.push('running', 'completed')
+      }
       expect(scoped.map((update) => update.toolStatus)).toEqual(expected)
-      if (outcome !== 'cancelled')
+      if (outcome !== 'cancelled') {
         expect(scoped[0].activity?.callId).toBe(scoped[1].activity?.callId)
+      }
       if (outcome === 'success') {
         expect(scoped[2].activity?.callId).toBe(scoped[3].activity?.callId)
         expect(scoped[0].activity?.callId).not.toBe(scoped[2].activity?.callId)
@@ -839,8 +852,9 @@ it.each(['success', 'failure', 'cancelled'] as const)(
       const completion = scoped[1]
       expect(completion.activity?.kind).toBe('system')
       expect(completion.tool).toBe('set_element_visibility')
-      if (!completion.activity || !scoped[0].activity)
+      if (!completion.activity || !scoped[0].activity) {
         throw new Error('Expected paired scoped activity')
+      }
       expect(completion.activity.sequence).toBeGreaterThan(
         scoped[0].activity.sequence
       )
@@ -876,7 +890,9 @@ it('keeps authored action activity identities distinct across batches reusing ac
       }),
       provider: {
         requestActionBatch: async (_input, options) => {
-          if (!options.executeBatch) throw new Error('Expected batch executor')
+          if (!options.executeBatch) {
+            throw new Error('Expected batch executor')
+          }
           await options.executeBatch(makeBatch('first'))
           return makeBatch('second')
         }
@@ -936,8 +952,9 @@ it('admits only declared actual dispatch effects on activity transport', () => {
     sequence: 1,
     phase: 'executing'
   }
-  for (const effect of ['read', 'prepare', 'mutation', 'external', 'mixed'])
+  for (const effect of ['read', 'prepare', 'mutation', 'external', 'mixed']) {
     expect(isExecutionActivity({ ...activity, effect })).toBe(true)
+  }
   expect(isExecutionActivity({ ...activity, effect: 'draw-anything' })).toBe(
     false
   )

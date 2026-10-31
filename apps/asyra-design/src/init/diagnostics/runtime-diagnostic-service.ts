@@ -104,7 +104,9 @@ export const installRuntimeDiagnosticService = (): (() => void) => {
   }
   const handleRequest = (event: Event): void => {
     const request = (event as CustomEvent<RuntimeDiagnosticRequest>).detail
-    if (!request || typeof request.operation !== 'string') return
+    if (!request || typeof request.operation !== 'string') {
+      return
+    }
     try {
       if (request.operation === 'collaboration:get-status') {
         request.response =

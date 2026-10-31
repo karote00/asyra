@@ -45,9 +45,15 @@ describe('createElementSelectionAPIs.selectElements', () => {
     return {
       get: (type: string) => selections.get(type),
       getChannelByAction: (action: string) => {
-        if (action === 'selectElements') return channels.element
-        if (action === 'selectVectorPoints') return channels.vectorPoint
-        if (action === 'selectVectorSegments') return channels.vectorSegment
+        if (action === 'selectElements') {
+          return channels.element
+        }
+        if (action === 'selectVectorPoints') {
+          return channels.vectorPoint
+        }
+        if (action === 'selectVectorSegments') {
+          return channels.vectorSegment
+        }
         return
       }
     }

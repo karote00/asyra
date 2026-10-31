@@ -33,7 +33,9 @@ for (const scenario of [
           elementApis.createVectorElementFromSinglePoint('a', { x: 10, y: 20 })
             .value
       )
-      if (!elementId) throw new Error('Vector creation failed')
+      if (!elementId) {
+        throw new Error('Vector creation failed')
+      }
       transactionApis.runTransaction(() => {
         elementApis.appendVectorAnchorPoint(elementId, {
           id: 'b',
@@ -191,8 +193,9 @@ for (const scenario of [
       )
     )
     expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
-    if (scenario.startsWith('AI'))
+    if (scenario.startsWith('AI')) {
       await page.getByRole('button', { name: 'Close Agent panel' }).click()
+    }
     await undo(page)
     expect(await read()).toEqual(closePoints(fixture.before))
     await redo(page)
@@ -285,7 +288,9 @@ test('delivers canonical mutation scope through real history-group publication',
     const invoke = (name: string, args: Record<string, unknown>) =>
       runner.run('Scope proof', async (runMutation) => {
         const action = actions.find((entry) => entry.name === name)
-        if (!action) throw new Error('Missing action')
+        if (!action) {
+          throw new Error('Missing action')
+        }
         return action.execute(args, {
           signal: new AbortController().signal,
           runMutation
@@ -422,7 +427,9 @@ test('delivers canonical mutation scope through real history-group publication',
     const { core, getActiveCollaborationHandle } =
       await import('../src/testing/runtime-access')
     const session = getActiveCollaborationHandle()
-    if (!session) throw new Error('Missing session')
+    if (!session) {
+      throw new Error('Missing session')
+    }
     const receipt = await session.confirmPersistence(AbortSignal.timeout(10000))
     return { receipt, document: await core.save() }
   })
@@ -476,7 +483,9 @@ for (const path of ['registered', 'canonical'] as const) {
           core.getCurrentWorkspaceId()
         )
       )
-      if (ids.some((id) => !id)) throw new Error('Fixture creation failed')
+      if (ids.some((id) => !id)) {
+        throw new Error('Fixture creation failed')
+      }
       const queries = createRetainedDesignContext(core, observeDesignChanges)
       const actions = createBasicApiActions(undefined, undefined, queries)
       const signal = new AbortController().signal
@@ -487,18 +496,24 @@ for (const path of ['registered', 'canonical'] as const) {
       const edit = actions.find(
         (action) => action.name === 'api_element_setElementsVisible'
       )
-      if (!group || !edit) throw new Error('Missing registered operations')
+      if (!group || !edit) {
+        throw new Error('Missing registered operations')
+      }
       try {
         const receipt = await runner.run(
           'Retained structural edit',
           async (runMutation) => {
             const context = { signal, runMutation }
             if (path === 'canonical') {
-              if (!runMutation) throw new Error('Missing transaction owner')
+              if (!runMutation) {
+                throw new Error('Missing transaction owner')
+              }
               const value = await runMutation(() =>
                 hierarchyApis.groupElements(ids)
               )
-              if (!value) throw new Error('Grouping failed')
+              if (!value) {
+                throw new Error('Grouping failed')
+              }
               const grouped = {
                 value,
                 retained: queries.retainReceipt(ids, { value }, signal)
@@ -626,27 +641,37 @@ test('persists grouped structural actions and each history transition for a fres
         core.getCurrentWorkspaceId()
       )
     )
-    if (ids.some((id) => !id)) throw new Error('Fixture creation failed')
+    if (ids.some((id) => !id)) {
+      throw new Error('Fixture creation failed')
+    }
     const nestedId = transactionApis.runTransaction(() => {
       const [parentId] = core.createElementsInParent(
         [{ type: 'group' }],
         core.getCurrentWorkspaceId()
       )
-      if (!parentId) throw new Error('Missing second parent')
+      if (!parentId) {
+        throw new Error('Missing second parent')
+      }
       const [childId] = core.createElementsInParent(
         [{ type: 'rect', width: 20, height: 20 }],
         parentId
       )
-      if (!childId) throw new Error('Missing nested child')
+      if (!childId) {
+        throw new Error('Missing nested child')
+      }
       return childId
     })
     const { createAiTransactionRunner } = await import('../src/ai/transaction')
     const groupId = await createAiTransactionRunner().run(
       'Group and edit structural members',
       async (runMutation) => {
-        if (!runMutation) throw new Error('Missing transaction owner')
+        if (!runMutation) {
+          throw new Error('Missing transaction owner')
+        }
         const result = await runMutation(() => hierarchyApis.groupElements(ids))
-        if (!result) throw new Error('Grouping failed')
+        if (!result) {
+          throw new Error('Grouping failed')
+        }
         await runMutation(() => elementApis.setElementsVisible(ids, false))
         return result.groupId
       }
@@ -675,13 +700,15 @@ test('persists grouped structural actions and each history transition for a fres
         async ({ operation, fixture }) => {
           const { historyApis, hierarchyApis, elementApis, transactionApis } =
             await import('../src/common-apis')
-          if (operation === 'undo' || operation === 'redo')
+          if (operation === 'undo' || operation === 'redo') {
             await historyApis[operation]()
-          if (operation === 'ungroup')
+          }
+          if (operation === 'ungroup') {
             transactionApis.runTransaction(() =>
               hierarchyApis.ungroupElement(fixture.groupId)
             )
-          if (operation === 'delete')
+          }
+          if (operation === 'delete') {
             transactionApis.runTransaction(() =>
               elementApis.deleteElements([
                 fixture.ids[0],
@@ -689,6 +716,7 @@ test('persists grouped structural actions and each history transition for a fres
                 fixture.nestedId
               ])
             )
+          }
         },
         { operation, fixture }
       )
@@ -705,7 +733,9 @@ test('persists grouped structural actions and each history transition for a fres
         const { getActiveCollaborationHandle } =
           await import('../src/testing/runtime-access')
         const session = getActiveCollaborationHandle()
-        if (!session) throw new Error('Missing document session')
+        if (!session) {
+          throw new Error('Missing document session')
+        }
         return session.confirmPersistence(AbortSignal.timeout(10000))
       })
       expect(receipt.sequence).toBeGreaterThan(previousSequence)
@@ -817,7 +847,9 @@ test('exports immutable document bytes through the runtime and browser download 
             name: string
             arguments: Record<string, unknown>
           }>('export-action')
-          if (!action) throw new Error('Missing explicit export action')
+          if (!action) {
+            throw new Error('Missing explicit export action')
+          }
           return {
             batchId: crypto.randomUUID(),
             actions: [
@@ -846,13 +878,16 @@ test('exports immutable document bytes through the runtime and browser download 
           testRuntimeState.get<
             import('@asyra/ai-agent-runtime').AiAgentRuntime
           >('export-runtime')
-        if (!runtime) throw new Error('Missing export runtime')
+        if (!runtime) {
+          throw new Error('Missing export runtime')
+        }
         const result = await runtime.run({
           intent: 'Export this document',
           signal: AbortSignal.timeout(15000)
         })
-        if (result.status !== 'executed')
+        if (result.status !== 'executed') {
           throw new Error(JSON.stringify(result))
+        }
         return result.actionResults[0].result as {
           artifact: { artifactId: string; bytes: number; sha256: string }
           released?: boolean
@@ -903,7 +938,9 @@ test('exports immutable document bytes through the runtime and browser download 
       const session = (
         await import('../src/testing/runtime-access')
       ).getActiveCollaborationHandle()
-      if (!session) throw new Error('Missing document session')
+      if (!session) {
+        throw new Error('Missing document session')
+      }
       return session.confirmPersistence(AbortSignal.timeout(10000))
     })
     expect(persisted.durableSequence).toBeGreaterThanOrEqual(persisted.sequence)
@@ -953,7 +990,9 @@ test('exports immutable document bytes through the runtime and browser download 
         testRuntimeState.delete('export-action')
       })
       .catch(async (error: unknown) => {
-        if (!primaryFailure) throw error
+        if (!primaryFailure) {
+          throw error
+        }
         await testInfo.attach('export-cleanup-failure', {
           body: String(error),
           contentType: 'text/plain'
@@ -971,7 +1010,9 @@ test('exports and reloads a retained large document without delivering its body 
     !path,
     'Provide a project-local saved document for deterministic export replay.'
   )
-  if (!path) return
+  if (!path) {
+    return
+  }
   test.setTimeout(180000)
   const { resolve, relative, isAbsolute } = await import('node:path')
   const { readFile, appendFile } = await import('node:fs/promises')
@@ -979,16 +1020,18 @@ test('exports and reloads a retained large document without delivering its body 
   const { createServer } = await import('node:http')
   const filePath = resolve(path)
   const within = relative(resolve(process.cwd(), '../..'), filePath)
-  if (isAbsolute(within) || within === '..' || within.startsWith('../'))
+  if (isAbsolute(within) || within === '..' || within.startsWith('../')) {
     throw new Error('Export replay must remain inside the project')
+  }
   const downloadedPath = testInfo.outputPath('large-document.json')
   // Send document bytes through HTTP, never one oversized DevTools protocol frame.
   const fixtureServer = createServer((request, response) => {
     const original = request.url === '/source'
     response.setHeader('Access-Control-Allow-Origin', '*')
     response.setHeader('Content-Type', 'application/json')
-    if (original && filePath.endsWith('.gz'))
+    if (original && filePath.endsWith('.gz')) {
       response.setHeader('Content-Encoding', 'gzip')
+    }
     createReadStream(original ? filePath : downloadedPath)
       .on('error', () => response.destroy())
       .pipe(response)
@@ -997,8 +1040,9 @@ test('exports and reloads a retained large document without delivering its body 
     fixtureServer.listen(0, '127.0.0.1', resolve)
   )
   const address = fixtureServer.address()
-  if (!address || typeof address === 'string')
+  if (!address || typeof address === 'string') {
     throw new Error('Missing export fixture server')
+  }
   const fixtureURL = `http://127.0.0.1:${address.port}`
   const stagesPath = testInfo.outputPath('export-stages.jsonl')
   await page.exposeFunction('recordExportReplayStage', (stage: string) =>
@@ -1028,7 +1072,9 @@ test('exports and reloads a retained large document without delivering its body 
       const action = owner.actions.find(
         (entry) => entry.name === 'export_document'
       )
-      if (!action) throw new Error('Missing export action')
+      if (!action) {
+        throw new Error('Missing export action')
+      }
       const result = (await action.execute(
         {},
         { signal: AbortSignal.timeout(120000) }
@@ -1063,7 +1109,9 @@ test('exports and reloads a retained large document without delivering its body 
       const download = owner?.actions.find(
         (entry) => entry.name === 'download_document_export'
       )
-      if (!download) throw new Error('Missing download action')
+      if (!download) {
+        throw new Error('Missing download action')
+      }
       await download.execute(
         { artifactId },
         { signal: new AbortController().signal }
@@ -1134,8 +1182,9 @@ test('visibility receipts preserve unchanged and unavailable outcomes through hi
         workspaceId
       )
     )
-    if (ids.length !== 2 || ids.some((id) => !id))
+    if (ids.length !== 2 || ids.some((id) => !id)) {
       throw new Error('Missing fixture')
+    }
     return { id: ids[0], sibling: ids[1], workspaceId }
   })
   const invoke = (elementId: string, visible: boolean) =>
@@ -1149,7 +1198,9 @@ test('visibility receipts preserve unchanged and unavailable outcomes through hi
         const action = createAiActions().find(
           (item) => item.name === AiActionNames.SET_ELEMENT_VISIBILITY
         )
-        if (!action) throw new Error('Visibility action missing')
+        if (!action) {
+          throw new Error('Visibility action missing')
+        }
         return createAiTransactionRunner().run('Visibility', (runMutation) =>
           observeAiAction(action).execute(input, {
             runMutation,
@@ -1210,10 +1261,13 @@ test('visibility receipts preserve unchanged and unavailable outcomes through hi
     const { core, getActiveCollaborationHandle } =
       await import('../src/testing/runtime-access')
     const session = getActiveCollaborationHandle()
-    if (!session) throw new Error('Document session missing')
+    if (!session) {
+      throw new Error('Document session missing')
+    }
     const receipt = await session.confirmPersistence(AbortSignal.timeout(10000))
-    if (receipt.durableSequence < receipt.sequence)
+    if (receipt.durableSequence < receipt.sequence) {
       throw new Error('Document changes were not durably persisted')
+    }
     return core.save()
   })
   expect(

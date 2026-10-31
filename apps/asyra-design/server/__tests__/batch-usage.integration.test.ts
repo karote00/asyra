@@ -35,11 +35,15 @@ let batchRuntime: Awaited<ReturnType<typeof loadBatchRuntime>>
 beforeAll(async () => {
   const startedAt = performance.now()
   const hadWindow = 'window' in globalThis
-  if (!hadWindow) vi.stubGlobal('window', {})
+  if (!hadWindow) {
+    vi.stubGlobal('window', {})
+  }
   try {
     batchRuntime = await loadBatchRuntime()
   } finally {
-    if (!hadWindow) vi.unstubAllGlobals()
+    if (!hadWindow) {
+      vi.unstubAllGlobals()
+    }
     console.info(
       JSON.stringify({
         measurement: 'batch-usage-module-initialization',
@@ -51,7 +55,9 @@ beforeAll(async () => {
 
 it('delivers selected batch usage independent of unrelated inventory and executes its real owner example', async () => {
   const hadWindow = 'window' in globalThis
-  if (!hadWindow) vi.stubGlobal('window', {})
+  if (!hadWindow) {
+    vi.stubGlobal('window', {})
+  }
   const {
     core,
     applyPreset,
@@ -123,7 +129,9 @@ it('delivers selected batch usage independent of unrelated inventory and execute
           modelActions: (v) => v,
           resolveBatch: (v) => v,
           resolveTargets: () => {
-            if (!boundIds) throw new Error('Expired retained source')
+            if (!boundIds) {
+              throw new Error('Expired retained source')
+            }
             return boundIds
           }
         },
@@ -131,7 +139,9 @@ it('delivers selected batch usage independent of unrelated inventory and execute
           const actionResults = []
           for (const action of batch.actions) {
             const owner = owners.find((entry) => entry.name === action.name)
-            if (!owner) throw new Error('Unexpected owner')
+            if (!owner) {
+              throw new Error('Unexpected owner')
+            }
             dispatched.push(action.name)
             actionResults.push({
               actionId: action.id,
@@ -218,7 +228,9 @@ it('delivers selected batch usage independent of unrelated inventory and execute
       activeSignal = signal
     ) => {
       const definition = tools.definitions.find((d) => d.name === name)
-      if (!definition) throw new Error('Missing tool definition')
+      if (!definition) {
+        throw new Error('Missing tool definition')
+      }
       return JSON.parse(
         (
           await host.invoke({
@@ -342,16 +354,22 @@ it('delivers selected batch usage independent of unrelated inventory and execute
     // The saved model reply lacked complete partial/recovery result declarations.
     // The same-source unrelated-catalog comparison above bounds acquisition growth.
     expect(dispatched).toEqual(['api_element_deleteElements'])
-    for (const id of ids) expect(core.getElementMetadata(id)).toBeUndefined()
+    for (const id of ids) {
+      expect(core.getElementMetadata(id)).toBeUndefined()
+    }
     const removed = await core.save()
     factory.undo()
     expect((await core.save()).sceneTree).toEqual(saved.sceneTree)
     factory.redo()
     expect((await core.save()).sceneTree).toEqual(removed.sceneTree)
     core.load(saved)
-    for (const id of ids) expect(core.getElementMetadata(id)).toBeDefined()
+    for (const id of ids) {
+      expect(core.getElementMetadata(id)).toBeDefined()
+    }
     core.load(removed)
-    for (const id of ids) expect(core.getElementMetadata(id)).toBeUndefined()
+    for (const id of ids) {
+      expect(core.getElementMetadata(id)).toBeUndefined()
+    }
     const invalid = await call(invocation.tool, {
       operations: [
         { name: 'api_element_deleteElements', arguments: { elementIds: 5 } }
@@ -441,8 +459,9 @@ it('delivers selected batch usage independent of unrelated inventory and execute
       )
     )
     expect(multiple.apis).toHaveLength(2)
-    for (const selected of multiple.apis)
+    for (const selected of multiple.apis) {
       expect(selected.usageGuide.operationParameters).toBeDefined()
+    }
     // Independent full schema remains available through the existing paged read.
     const full = JSON.parse(
       await readCompleteInformation(
@@ -643,10 +662,14 @@ it('delivers selected batch usage independent of unrelated inventory and execute
       }) + '\n'
     )
   } finally {
-    for (const host of hosts) await host.dispose()
+    for (const host of hosts) {
+      await host.dispose()
+    }
     queries.dispose()
     reviewer.dispose()
-    if (!hadWindow) vi.unstubAllGlobals()
+    if (!hadWindow) {
+      vi.unstubAllGlobals()
+    }
   }
 })
 
@@ -814,7 +837,7 @@ it.each(
               definitions: [source],
               call: async () => {
                 calls++
-                if (view === 'interrupted')
+                if (view === 'interrupted') {
                   return JSON.stringify({
                     available: false,
                     recoverable: true,
@@ -827,7 +850,10 @@ it.each(
                       ]
                     }
                   })
-                if (shape.startsWith('canonical')) return JSON.stringify(view)
+                }
+                if (shape.startsWith('canonical')) {
+                  return JSON.stringify(view)
+                }
                 return JSON.stringify({
                   ids: ['a', 'b', 'c'],
                   payload: { view }
@@ -927,10 +953,11 @@ it.each(
           ...valueOf(success),
           toolOutcome: { status: 'invented', settlement: 'completed' }
         }
-      ])
+      ]) {
         expect(
           operationInputIssue(modifiedResult(invalid), entry.usageGuide.results)
         ).toBeDefined()
+      }
       expect(success.ids).toBeUndefined()
       expect(success.payload).toBeUndefined()
       const outerFailure = await host.invoke({
@@ -1008,11 +1035,12 @@ it.each(
         expect(
           operationInputIssue(rejected, entry.usageGuide.results)
         ).toBeUndefined()
-      } else
+      } else {
         expect(rejected).toMatchObject({
           stage: 'admission',
           settlement: 'not-started'
         })
+      }
       await expect(
         host.invoke({
           name: `${entry.execution.namespace}.${invocation.tool}`,

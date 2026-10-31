@@ -142,8 +142,9 @@ describe('canonical nonlinear offline geometry profiles', () => {
         )
     )
     expect(plantCollision, summary).toBeDefined()
-    if (!plantCollision)
+    if (!plantCollision) {
       throw new Error('Missing current home-farm plant collision')
+    }
     const plantProof = plantCollision.proofs.find(
       (proof) =>
         proof.kind === 'blocked' &&

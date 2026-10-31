@@ -3,8 +3,9 @@ import type { Vec } from './geometry'
 
 /** One transform per primary subtree; child ownership is never reassigned. */
 export function createTreeGrowth(seed: number, trunk: (z: number) => Vec) {
-  if (!Number.isInteger(seed) || seed < 0 || seed > 0xffffffff)
+  if (!Number.isInteger(seed) || seed < 0 || seed > 0xffffffff) {
     throw new Error('Tree seed must be an unsigned 32-bit integer')
+  }
   let state = seed >>> 0
   const next = () => {
     state = (Math.imul(1664525, state) + 1013904223) >>> 0
@@ -44,14 +45,17 @@ export function createTreeGrowth(seed: number, trunk: (z: number) => Vec) {
       })
     } else {
       const parent = transforms.get(branch.parent)
-      if (!parent)
+      if (!parent) {
         throw new Error('Tree growth requires the primary parent first')
+      }
       transforms.set(branch.id, parent)
     }
   }
   return (id: string, point: readonly number[], lift: number) => {
     const t = transforms.get(id)
-    if (!t) throw new Error('Missing tree growth transform')
+    if (!t) {
+      throw new Error('Missing tree growth transform')
+    }
     const x = point[0] - t.origin[0],
       y = point[1] - t.origin[1]
     const end: Vec = [

@@ -49,7 +49,7 @@ export function leaf(detail: 'near' | 'far' = 'near'): Mesh {
       spec.leaf.bulge - (back ? spec.leaf.shellTranslation : 0)
     )
     m.uvs.push(0.5, 0.5)
-    for (const rho of radial)
+    for (const rho of radial) {
       for (const p of boundary) {
         m.positions.push(
           rho * p[0],
@@ -59,6 +59,7 @@ export function leaf(detail: 'near' | 'far' = 'near'): Mesh {
         )
         m.uvs.push((rho * p[0]) / 0.1 + 0.5, (rho * p[1]) / 0.058 + 0.5)
       }
+    }
     const tri = (a: number, b: number, c: number) =>
       m.indices.push(...(back ? [a, c, b] : [a, b, c]))
     for (let i = 0; i < n; i++) {
@@ -75,10 +76,11 @@ export function leaf(detail: 'near' | 'far' = 'near'): Mesh {
   const side = 1 + radial.length * n
   const rim = m.positions.length / 3
   const perimeter = [0]
-  for (let i = 1; i <= n; i++)
+  for (let i = 1; i <= n; i++) {
     perimeter.push(
       perimeter[i - 1] + Math.hypot(...sub(boundary[i % n], boundary[i - 1]))
     )
+  }
   for (let i = 0; i <= n; i++) {
     const index = 1 + (radial.length - 1) * n + (i % n)
     for (const offset of [0, side]) {
@@ -114,7 +116,9 @@ function buildTree(
     let i = stations.findIndex(
       (s, j) => j < stations.length - 1 && z <= stations[j + 1][2]
     )
-    if (i < 0) i = stations.length - 2
+    if (i < 0) {
+      i = stations.length - 2
+    }
     const a = stations[i],
       b = stations[i + 1],
       d = b[2] - a[2],
@@ -142,7 +146,9 @@ function buildTree(
       let i = stations.findIndex(
         (s, j) => j < stations.length - 1 && z <= stations[j + 1][2]
       )
-      if (i < 0) i = stations.length - 2
+      if (i < 0) {
+        i = stations.length - 2
+      }
       const a = stations[i],
         b = stations[i + 1],
         u = (z - a[2]) / (b[2] - a[2])
@@ -155,7 +161,9 @@ function buildTree(
     (a, b) => a.level - b.level
   )) {
     const parent = curves.get(branch.parent)
-    if (!parent) throw new Error('Missing parent branch')
+    if (!parent) {
+      throw new Error('Missing parent branch')
+    }
     const at =
         branch.parent === 'trunk'
           ? (branch.attachmentZ ?? 0) / 2.55
@@ -179,7 +187,7 @@ function buildTree(
     })
   }
   const additions = growTreeBranches(seed, curves)
-  for (const [id, curve] of curves)
+  for (const [id, curve] of curves) {
     p.push(
       part(
         id,
@@ -193,13 +201,16 @@ function buildTree(
         spec.materials.bark.roughness
       )
     )
+  }
   const proto = prototypes.near,
     distant = prototypes.far,
     groups: GeometryInstance[][] = [[], [], []]
   const clusters = distributeTreeFoliage(seed, additions)
   clusters.forEach((cluster, g) => {
     const curve = curves.get(cluster.branch)
-    if (!curve) throw new Error('Missing foliage branch')
+    if (!curve) {
+      throw new Error('Missing foliage branch')
+    }
     const t =
         cluster.branch === 'trunk'
           ? (cluster.attachmentZ ?? 0) / 2.55
@@ -214,7 +225,9 @@ function buildTree(
       rng = random(seed + 1009 * g)
     const dominant = spec.foliage.subgroups.map((_, j) => {
       const u = random(seed + 1009 * g + 65537 * (j + 1))()
-      if (u < 0.5) return 0
+      if (u < 0.5) {
+        return 0
+      }
       return u < 0.8 ? 1 : 2
     })
     for (let i = 0; i < cluster.count; i++) {
@@ -293,11 +306,12 @@ function leafScale(subgroup: number, u: number) {
   }
   let start = 0
   for (const range of spec.foliage.sizeMixture) {
-    if (u < start + range.probability)
+    if (u < start + range.probability) {
       return (
         range.scale[0] +
         ((range.scale[1] - range.scale[0]) * (u - start)) / range.probability
       )
+    }
     start += range.probability
   }
   throw new Error('Leaf size mixture must cover the unit interval')

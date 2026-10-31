@@ -41,8 +41,9 @@ export function installVisualStorageFeatures(
       if (
         !bytes.byteLength ||
         bytes.byteLength > VISUAL_SOURCE_PROFILE.maxBytes
-      )
+      ) {
         return Promise.reject(new Error('Visual source byte limit exceeded'))
+      }
       return invokeFeatureTask(
         FeatureNames.PREPARE_VISUAL,
         {
@@ -81,8 +82,9 @@ export function installVisualStorageFeatures(
         !isPlainRecord(input) ||
         !(input.bytes instanceof Uint8Array) ||
         typeof input.filename !== 'string'
-      )
+      ) {
         throw new Error('Invalid visual preparation Feature input')
+      }
       return archive.prepare(input.bytes, input.filename, signal)
     }
   })

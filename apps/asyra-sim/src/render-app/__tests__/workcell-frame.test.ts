@@ -28,7 +28,9 @@ it('projects independent whole-part colors without replacing shapes and restores
   for (const mesh of highlighted.meshes) {
     const source = original.meshes.find((item) => item.id === mesh.id)
 
-    if (!source) throw new Error('Missing original mesh')
+    if (!source) {
+      throw new Error('Missing original mesh')
+    }
 
     expect(mesh.descriptor.shape).toBe(source.descriptor.shape)
     expect(mesh.descriptor.position).toEqual(source.descriptor.position)
@@ -74,7 +76,9 @@ it('projects shared domain poses and body identity without mutating canonical in
     before = structuredClone(workcell)
   const body = workcell.bodies[3],
     pose = forwardKinematics(workcell).get(body.id)
-  if (!pose) throw new Error('Missing example pose')
+  if (!pose) {
+    throw new Error('Missing example pose')
+  }
   const frame = createWorkcellFrame(workcell, {
     camera: DEFAULT_CAMERA,
     selectedId: body.id,
@@ -95,8 +99,9 @@ it('projects shared domain poses and body identity without mutating canonical in
   layer.submit(frame)
   layer.registration.update?.()
   const container = layer.registration.layer
-  if (!(container instanceof RenderContainer))
+  if (!(container instanceof RenderContainer)) {
     throw new Error('Missing registered container')
+  }
   const selectedMesh = container.children.find(
     (child) => child.label === body.id
   )

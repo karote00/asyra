@@ -24,8 +24,9 @@ const args = process.argv.slice(2)
 let environment = 'prod'
 
 args.forEach((arg) => {
-  if (arg.startsWith('--env=')) environment = arg.split('=')[1]
-  else {
+  if (arg.startsWith('--env=')) {
+    environment = arg.split('=')[1]
+  } else {
     console.error(`Unknown argument: ${arg}`)
     process.exit(1)
   }

@@ -26,7 +26,9 @@ export function rotateIndex(
     bounds: union(a, b)
   })
   const materialize = (part: Part): MeshNode => {
-    if ('triangles' in part) return part
+    if ('triangles' in part) {
+      return part
+    }
     checkpoint()
     return { ...part, triangles: [] }
   }
@@ -36,7 +38,9 @@ export function rotateIndex(
   ]
   while (pending.length) {
     const next = pending.pop()
-    if (!next) throw new Error('Missing original node')
+    if (!next) {
+      throw new Error('Missing original node')
+    }
     const { node, ready } = next
     if (node.children && !ready) {
       pending.push(
@@ -53,13 +57,20 @@ export function rotateIndex(
     }
     const left = done.get(node.children[0]),
       right = done.get(node.children[1])
-    if (!left || !right) throw new Error('Incomplete original postorder')
+    if (!left || !right) {
+      throw new Error('Incomplete original postorder')
+    }
     let best: { parts: [Part, Part]; delta: number } | undefined
     const consider = (parts: [Part, Part], before: number, after: number) => {
       checkpoint()
       const delta = after - before
-      if (Number.isFinite(delta) && delta < 0 && (!best || delta < best.delta))
+      if (
+        Number.isFinite(delta) &&
+        delta < 0 &&
+        (!best || delta < best.delta)
+      ) {
         best = { parts, delta }
+      }
     }
     if (left.children) {
       const [a, b] = left.children
@@ -97,6 +108,8 @@ export function rotateIndex(
     done.set(node, { bounds: node.bounds, triangles: [], children })
   }
   const root = done.get(index.root)
-  if (!root) throw new Error('Incomplete rotation')
+  if (!root) {
+    throw new Error('Incomplete rotation')
+  }
   return { ...index, root }
 }

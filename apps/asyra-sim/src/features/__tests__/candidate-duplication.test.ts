@@ -171,7 +171,9 @@ it('retains original correspondence for copies of copies and assigns independent
   const fixture = structuredClone(
     example.workcell.bodies.find((body) => body.role === 'fixture')
   )
-  if (!fixture) throw new Error('Missing fixture')
+  if (!fixture) {
+    throw new Error('Missing fixture')
+  }
   fixture.id = 'new-fixture'
   await features.edit.upsert(b, fixture)
   expect(readCandidateLineage(core, b)?.bodyOrigins['new-fixture']).toEqual({

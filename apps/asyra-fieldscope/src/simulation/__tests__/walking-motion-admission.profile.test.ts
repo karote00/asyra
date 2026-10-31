@@ -146,7 +146,9 @@ describe('canonical nonlinear admission negatives', () => {
         }
       ]
     ]
-    for (const [name, input] of cases) expect(() => read(input), name).toThrow()
+    for (const [name, input] of cases) {
+      expect(() => read(input), name).toThrow()
+    }
     expect(cycleOwner.work).toEqual(before)
     expect(owner.work.preparations).toBe(0)
     raw.terrain.revision++

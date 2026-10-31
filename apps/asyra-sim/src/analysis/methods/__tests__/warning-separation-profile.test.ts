@@ -33,7 +33,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             pair.a.bodyId === 'example:joint-2' &&
             pair.b.bodyId === 'obstacle-11'
         )
-        if (!pair) throw new Error('Missing measured pair')
+        if (!pair) {
+          throw new Error('Missing measured pair')
+        }
         const context = new OriginalMeshQuery()
         const indices = new WeakMap<object, MeshIndex>()
         const build = meshIndex.buildMeshIndex
@@ -73,13 +75,19 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         const distance = convex.convexDistance
         vi.spyOn(convex, 'convexDistance').mockImplementation((...args) => {
           const result = distance(...args)
-          if (result.penetration) convexStates.penetration++
-          else if (result.upper < snapshot.rule.minimumClearance) {
-            if (result.lower > 0) convexStates.positiveLowerWarning++
-            else convexStates.zeroLowerWarning++
-          } else if (result.lower > snapshot.rule.minimumClearance)
+          if (result.penetration) {
+            convexStates.penetration++
+          } else if (result.upper < snapshot.rule.minimumClearance) {
+            if (result.lower > 0) {
+              convexStates.positiveLowerWarning++
+            } else {
+              convexStates.zeroLowerWarning++
+            }
+          } else if (result.lower > snapshot.rule.minimumClearance) {
             convexStates.separated++
-          else convexStates.uncertain++
+          } else {
+            convexStates.uncertain++
+          }
           if (
             active &&
             !active.attempted &&
@@ -107,13 +115,14 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             } else {
               const ai = indices.get(active.a.geometry),
                 bi = indices.get(active.b.geometry)
-              if (!ai || !bi)
+              if (!ai || !bi) {
                 throw new Error('Missing exact complete source index')
+              }
               gap = meshIndex.boundsGap(
                 meshIndex.worldBounds(ai.root.bounds, active.a.pose),
                 meshIndex.worldBounds(bi.root.bounds, active.b.pose)
               )
-              if (gap <= 0)
+              if (gap <= 0) {
                 gap = projectedBoundsGap(
                   ai.root.bounds,
                   active.a.pose,
@@ -124,6 +133,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                     axisChecks++
                   }
                 )
+              }
             }
             active.gap = gap
             active.upper = result.upper
@@ -136,15 +146,22 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           active = { a: args[0], b: args[1], attempted: false }
           const result = queryDistance(...args)
           if (active.attempted) {
-            if (result.penetration) finalStates.penetration++
-            else if (result.upper < snapshot.rule.minimumClearance) {
-              if (result.lower > 0) finalStates.positiveLowerWarning++
-              else finalStates.zeroLowerWarning++
-            } else finalStates.other++
+            if (result.penetration) {
+              finalStates.penetration++
+            } else if (result.upper < snapshot.rule.minimumClearance) {
+              if (result.lower > 0) {
+                finalStates.positiveLowerWarning++
+              } else {
+                finalStates.zeroLowerWarning++
+              }
+            } else {
+              finalStates.other++
+            }
           }
           if (active.gap && active.gap > 0) {
-            if (active.upper === undefined || active.work === undefined)
+            if (active.upper === undefined || active.work === undefined) {
               throw new Error('Missing established warning evidence')
+            }
             expect(result.penetration).toBe(false)
             expect(active.gap).toBeLessThanOrEqual(active.upper)
             certified++

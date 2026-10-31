@@ -34,7 +34,9 @@ interface MutationScopeSource {
 const mutationScopeSource: MutationScopeSource = {
   observe: observeInspectionChanges,
   resolve: (id) => {
-    if (id === core.getCurrentWorkspaceId()) return 'workspace'
+    if (id === core.getCurrentWorkspaceId()) {
+      return 'workspace'
+    }
     return core.getElementMetadata(id) ? 'live' : 'removed'
   }
 }
@@ -51,19 +53,29 @@ const owners = (): ApiOwners => ({
 })
 
 const basicApiToolEffect = (effect: BasicApiContract['effect']) => {
-  if (effect === 'read') return 'read'
-  if (effect === 'prepare') return 'prepare'
+  if (effect === 'read') {
+    return 'read'
+  }
+  if (effect === 'prepare') {
+    return 'prepare'
+  }
   return 'mutation'
 }
 
 const basicApiResources = (effect: BasicApiContract['effect']) => {
-  if (effect === 'prepare') return ['request']
-  if (effect === 'viewport' || effect === 'selection') return [effect]
+  if (effect === 'prepare') {
+    return ['request']
+  }
+  if (effect === 'viewport' || effect === 'selection') {
+    return [effect]
+  }
   return ['document']
 }
 
 const basicApiRevision = (contract: BasicApiContract): number => {
-  if (contract.result.kind === 'mutation-receipt') return 9
+  if (contract.result.kind === 'mutation-receipt') {
+    return 9
+  }
   if (
     [
       'property-mutation',
@@ -72,13 +84,15 @@ const basicApiRevision = (contract: BasicApiContract): number => {
       'moves',
       'removed'
     ].includes(contract.result.kind)
-  )
+  ) {
     return 8
+  }
   if (
     ['created-items', 'status-items'].includes(contract.result.kind) &&
     ['write', 'delete'].includes(contract.effect)
-  )
+  ) {
     return 7
+  }
   if (
     contract.effect === 'write' &&
     (['fill', 'stroke'].includes(contract.owner) ||
@@ -86,13 +100,17 @@ const basicApiRevision = (contract: BasicApiContract): number => {
         ['updateElementProperties', 'patchElementProperties'].includes(
           contract.method
         )))
-  )
+  ) {
     return 7
+  }
   if (
     ['grouped', 'ungrouped', 'moves', 'removed'].includes(contract.result.kind)
-  )
+  ) {
     return 5
-  if (hasElementTargetSchema(contract.inputSchema)) return 4
+  }
+  if (hasElementTargetSchema(contract.inputSchema)) {
+    return 4
+  }
   return ['write', 'delete'].includes(contract.effect) ? 3 : 2
 }
 
@@ -131,13 +149,16 @@ export const createBasicApiActions = (
       const args = input as Record<string, unknown>
       const owner = getOwners()[contract.owner]
       const method = (owner as Record<string, unknown>)[contract.method]
-      if (typeof method !== 'function')
+      if (typeof method !== 'function') {
         throw new Error(
           `Public API unavailable: ${contract.owner}.${contract.method}`
         )
+      }
       let resolvedArgs = args
       const resolve = (value: unknown, schema: unknown): unknown => {
-        if (!schema || typeof schema !== 'object') return value
+        if (!schema || typeof schema !== 'object') {
+          return value
+        }
         const shape = schema as Record<string, unknown>
         if (
           isElementTargetSchema(schema) &&
@@ -145,8 +166,12 @@ export const createBasicApiActions = (
           !Array.isArray(value)
         ) {
           const issue = operationInputIssue(value, retainedElementSetSchema)
-          if (issue) throw new Error(issue)
-          if (!queries) throw new Error('Retained targets unavailable.')
+          if (issue) {
+            throw new Error(issue)
+          }
+          if (!queries) {
+            throw new Error('Retained targets unavailable.')
+          }
           const reference = value as {
             snapshotId: string
             leaseId: string
@@ -160,10 +185,11 @@ export const createBasicApiActions = (
           if (
             snapshot.result.missingIds.length ||
             reference.total !== snapshot.orderedIds.length
-          )
+          ) {
             throw new Error(
               'Retained targets are incomplete or have a different count.'
             )
+          }
           return [...snapshot.orderedIds]
         }
         if (
@@ -212,8 +238,11 @@ export const createBasicApiActions = (
             for (const id of [
               ...change.elementIds,
               ...(change.parentIds ?? [])
-            ])
-              if (id) touched.add(id)
+            ]) {
+              if (id) {
+                touched.add(id)
+              }
+            }
           })
         }
         return call()
@@ -224,14 +253,19 @@ export const createBasicApiActions = (
           value,
           resolvedArgs[contract.parameters[0]]
         )
-        if (!documentMutation) return result
+        if (!documentMutation) {
+          return result
+        }
         const elementIds: string[] = [],
           removedElementIds: string[] = []
         for (const id of touched) {
           try {
             const state = scopeSource.resolve(id)
-            if (state === 'live') elementIds.push(id)
-            else if (state === 'removed') removedElementIds.push(id)
+            if (state === 'live') {
+              elementIds.push(id)
+            } else if (state === 'removed') {
+              removedElementIds.push(id)
+            }
           } catch {
             complete = false
           }
@@ -249,16 +283,18 @@ export const createBasicApiActions = (
         if (
           !['grouped', 'ungrouped', 'moves', 'removed'].includes(kind) ||
           !['complete', 'no-change'].includes(result.status)
-        )
+        ) {
           return receipt
+        }
         const structural = value as Record<string, unknown>
         let count = 0
-        if (kind === 'removed' && Array.isArray(structural.removed))
+        if (kind === 'removed' && Array.isArray(structural.removed)) {
           count = structural.removed.length
-        else if (Array.isArray(structural.elementIds))
+        } else if (Array.isArray(structural.elementIds)) {
           count = structural.elementIds.length
-        else if (Array.isArray(structural.moves))
+        } else if (Array.isArray(structural.moves)) {
           count = structural.moves.length
+        }
         const summary = {
           status: receipt.status,
           value: {
@@ -277,19 +313,23 @@ export const createBasicApiActions = (
           }
         }
         try {
-          if (!atSettlement)
+          if (!atSettlement) {
             throw new Error(
               'The mutation executor did not report synchronous settlement.'
             )
-          if (!queries)
+          }
+          if (!queries) {
             throw new Error('Retained structural delivery is unavailable.')
+          }
           let ids: string[] = []
-          if (kind === 'grouped' || kind === 'ungrouped')
+          if (kind === 'grouped' || kind === 'ungrouped') {
             ids = structural.elementIds as string[]
-          if (kind === 'moves')
+          }
+          if (kind === 'moves') {
             ids = (structural.moves as { elementId: string }[]).map(
               (item) => item.elementId
             )
+          }
           const retained = queries.retainReceipt(ids, receipt, context.signal)
           return { ...receipt, retained, modelResult: { ...summary, retained } }
         } catch (error) {

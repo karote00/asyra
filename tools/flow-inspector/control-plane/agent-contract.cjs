@@ -28,7 +28,9 @@ const TASK_POLICY = freeze({
   ]
 })
 function requireTask(condition, message) {
-  if (!condition) throw new Error('Task admission: ' + message)
+  if (!condition) {
+    throw new Error('Task admission: ' + message)
+  }
 }
 function canonicalFile(file) {
   return (
@@ -100,11 +102,12 @@ function admitTask(
     'forbiddenContributors',
     'implementationBoundary',
     'specRefs'
-  ])
+  ]) {
     requireTask(
       Array.isArray(step[key]) && step[key].length,
       'incomplete step ' + key
     )
+  }
   requireTask(
     step.failureOwnerStepId && step.ownerPackage,
     'missing failure owner'
@@ -206,13 +209,14 @@ function admitTask(
       Object.keys(budgets).every((key) => key in TASK_POLICY.maximums),
     'unsupported budget; token and cost telemetry are unknown'
   )
-  for (const [key, max] of Object.entries(TASK_POLICY.maximums))
+  for (const [key, max] of Object.entries(TASK_POLICY.maximums)) {
     requireTask(
       Number.isSafeInteger(budgets[key]) &&
         budgets[key] > 0 &&
         budgets[key] <= max,
       'invalid ' + key
     )
+  }
   const routes = contract.architectureDefinition.routes.filter(
     (route) => route.from === step.id || route.to === step.id
   )

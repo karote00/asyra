@@ -34,7 +34,9 @@ it('delivers complete advice through bounded same-owner pages without source rel
     offset = 0,
     pages = 0
   const definition = owner.definitions.find((d) => d.name === tool)
-  if (!definition) throw new Error('Missing read declaration')
+  if (!definition) {
+    throw new Error('Missing read declaration')
+  }
   try {
     for (;;) {
       const raw = await owner.call(tool, input, new AbortController().signal)
@@ -108,23 +110,31 @@ const verifyPagedDiscovery = async (includeNative: boolean) => {
     const declared = owner.definitions.find(
       (d) => d.name === AiDesignToolIds.DESCRIBE_DESIGN_APIS
     )
-    if (!declared) throw new Error('Missing discovery contract')
-    if (includeNative)
+    if (!declared) {
+      throw new Error('Missing discovery contract')
+    }
+    if (includeNative) {
       await verifyNativePage(owner, declared, input, 'design_operations')
+    }
     const page = JSON.parse(raw).contentDelivery
     expect(page.kind).toBe('json-fragment')
     text += page.text
-    if (!first) first = page.next.arguments
-    if (page.lastPage) break
+    if (!first) {
+      first = page.next.arguments
+    }
+    if (page.lastPage) {
+      break
+    }
     input = page.next.arguments
   }
   const saved = JSON.parse(text)
-  for (let i = 0; i < 63; i++)
+  for (let i = 0; i < 63; i++) {
     await owner.call(
       AiDesignToolIds.DESCRIBE_DESIGN_APIS,
       { names: ['unrelated-' + i] },
       new AbortController().signal
     )
+  }
   let selectedInput: Record<string, unknown> = {
     names: ['test_tools.choose'],
     fromResult: saved.resultKey
@@ -145,7 +155,9 @@ const verifyPagedDiscovery = async (includeNative: boolean) => {
     ).toBe(raw)
     const page = JSON.parse(raw).contentDelivery
     selectedText += page.text
-    if (page.lastPage) break
+    if (page.lastPage) {
+      break
+    }
     selectedInput = page.next.arguments
   }
   expect(JSON.parse(selectedText).tools).toEqual(saved.tools)
@@ -193,7 +205,9 @@ nativeIt(
     )
     const tool = AiDesignToolIds.READ_KNOWLEDGE
     const definition = owner.definitions.find((d) => d.name === tool)
-    if (!definition) throw new Error('Missing definition')
+    if (!definition) {
+      throw new Error('Missing definition')
+    }
     let input: Record<string, unknown> = { ids: ['test.advice'] },
       assembled = ''
     try {
@@ -234,7 +248,9 @@ nativeIt(
         expect(evidence.receipt.status).toBe('saved')
         const page = JSON.parse(reply.text).contentDelivery
         assembled += page.text
-        if (page.lastPage) break
+        if (page.lastPage) {
+          break
+        }
         input = page.next.arguments
       }
       expect(JSON.parse(assembled).documents[0].text).toBe(advice)
@@ -341,7 +357,9 @@ nativeIt(
       const definition = owner.definitions.find(
         (tool) => tool.name === AiDesignToolIds.READ_KNOWLEDGE
       )
-      if (!definition) throw new Error('Missing Knowledge read definition')
+      if (!definition) {
+        throw new Error('Missing Knowledge read definition')
+      }
       const executions = []
       for (const entry of recorded.cases) {
         const reply = await invokeLocalTool(
@@ -426,7 +444,9 @@ it('rehydrates paged reuse after lost context and executes only the returned rea
     (d) => d.name === AiDesignToolIds.READ_KNOWLEDGE
   )
 
-  if (!definition) throw new Error('Missing Knowledge read definition')
+  if (!definition) {
+    throw new Error('Missing Knowledge read definition')
+  }
   const read = async (input: Record<string, unknown>) => {
     const reply = await invokeLocalTool(
       owner,
@@ -451,7 +471,9 @@ it('rehydrates paged reuse after lost context and executes only the returned rea
       const page = current.contentDelivery
       text += page.text
       pages++
-      if (!page.next) break
+      if (!page.next) {
+        break
+      }
       expect(page.next.tool).toBe(AiDesignToolIds.READ_KNOWLEDGE)
       expect(page.next.arguments.reuseFrom).toBeUndefined()
       current = await read(page.next.arguments)
@@ -476,7 +498,9 @@ it('recovers unavailable retained advice by executing the returned same-read exa
     (d) => d.name === AiDesignToolIds.READ_KNOWLEDGE
   )
 
-  if (!definition) throw new Error('Missing Knowledge read definition')
+  if (!definition) {
+    throw new Error('Missing Knowledge read definition')
+  }
   try {
     const invalid = await invokeLocalTool(
       owner,
@@ -539,7 +563,9 @@ it('keeps cross-query pages byte-stable and rejects stale continuation without w
     (d) => d.name === AiDesignToolIds.READ_KNOWLEDGE
   )
 
-  if (!definition) throw new Error('Missing Knowledge read definition')
+  if (!definition) {
+    throw new Error('Missing Knowledge read definition')
+  }
   const read = (input: Record<string, unknown>) =>
     invokeLocalTool(owner, definition, input, new AbortController().signal)
   try {
@@ -557,7 +583,9 @@ it('keeps cross-query pages byte-stable and rejects stale continuation without w
       const page = JSON.parse(a.text).contentDelivery
       firstPage ??= page.next.arguments
       joined += page.text
-      if (page.lastPage) break
+      if (page.lastPage) {
+        break
+      }
       args = page.next.arguments
     }
     const complete = JSON.parse(joined)
@@ -566,7 +594,9 @@ it('keeps cross-query pages byte-stable and rejects stale continuation without w
     })
     expect(complete.documents[1].text).toBe('Child condition 🌲. '.repeat(2000))
     owner.invalidateContext()
-    if (!firstPage) throw new Error('Missing expected continuation')
+    if (!firstPage) {
+      throw new Error('Missing expected continuation')
+    }
     const stale = await read(firstPage)
     expect(stale.success).toBe(false)
     expect(stale.text).toContain('KNOWLEDGE_REUSE_UNAVAILABLE')
@@ -590,7 +620,9 @@ nativeIt(
       (d) => d.name === AiDesignToolIds.READ_KNOWLEDGE
     )
 
-    if (!definition) throw new Error('Missing Knowledge read definition')
+    if (!definition) {
+      throw new Error('Missing Knowledge read definition')
+    }
     const signal = new AbortController().signal
     try {
       const first = await invokeLocalTool(
@@ -957,7 +989,9 @@ it('preserves saved discovery scope, partial results, ambiguity and foreign-key 
   expect(selectedMenu.tools).toEqual(menu.tools)
   expect(selectedMenu.tools[0].inputSchema).toBeUndefined()
   const old = await read({ names: ['left.choose'] })
-  for (let i = 0; i < 65; i++) await read({ names: ['missing' + i] })
+  for (let i = 0; i < 65; i++) {
+    await read({ names: ['missing' + i] })
+  }
   expect(
     (await read({ names: ['left.choose'], fromResult: old.resultKey }))
       .toolOutcome.status
@@ -983,15 +1017,21 @@ it('keeps selected retained information page bytes stable at capacity without an
     for (;;) {
       const raw = await owner.call(tool, query, new AbortController().signal)
       const page = JSON.parse(raw).contentDelivery
-      if (!page) return JSON.parse(raw)
+      if (!page) {
+        return JSON.parse(raw)
+      }
       text += page.text
-      if (page.lastPage) return JSON.parse(text)
+      if (page.lastPage) {
+        return JSON.parse(text)
+      }
       query = page.next.arguments
     }
   }
   try {
     const original = await assemble({ ids: ['test.advice'] })
-    for (const filler of fillers) await assemble({ ids: [filler.id] })
+    for (const filler of fillers) {
+      await assemble({ ids: [filler.id] })
+    }
     const query = { ids: ['test.advice'], fromResult: original.contextKey }
     const raw = await owner.call(tool, query, new AbortController().signal)
     expect(await owner.call(tool, query, new AbortController().signal)).toBe(
@@ -1015,7 +1055,9 @@ it('keeps selected retained information page bytes stable at capacity without an
 
 function requiredInformationTool(owner: LocalToolOwner, name: string) {
   const definition = owner.definitions.find((entry) => entry.name === name)
-  if (!definition) throw new Error('Missing information tool: ' + name)
+  if (!definition) {
+    throw new Error('Missing information tool: ' + name)
+  }
   return definition
 }
 

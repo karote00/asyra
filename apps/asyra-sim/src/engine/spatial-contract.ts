@@ -41,15 +41,20 @@ const record = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
 function shapeInput(value: unknown): unknown {
-  if (!record(value)) return value
-  if (projectedShapes.has(value)) return value
+  if (!record(value)) {
+    return value
+  }
+  if (projectedShapes.has(value)) {
+    return value
+  }
   const snapshot = { ...value }
-  if (snapshot.kind === 'triangles')
+  if (snapshot.kind === 'triangles') {
     return {
       kind: snapshot.kind,
       positions: snapshot.positions,
       indices: snapshot.indices
     }
+  }
   return snapshot
 }
 
@@ -64,12 +69,16 @@ export function readSpatialShape(value: unknown): SpatialShape {
 }
 
 export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
-  if (record(value) && projectedDescriptors.has(value))
+  if (record(value) && projectedDescriptors.has(value)) {
     return admitDescriptor(value) as SpatialDescriptor
-  if (!record(value)) return admitDescriptor(value) as SpatialDescriptor
+  }
+  if (!record(value)) {
+    return admitDescriptor(value) as SpatialDescriptor
+  }
   const snapshot = { ...value }
-  if (snapshot.kind === 'mesh' && snapshot.scale !== undefined)
+  if (snapshot.kind === 'mesh' && snapshot.scale !== undefined) {
     throw new Error('Sim requires rigid poses')
+  }
   const input =
     snapshot.kind === 'mesh'
       ? {

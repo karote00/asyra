@@ -21,7 +21,9 @@ test('timeline dragging keeps last checked feedback until valid target evidence 
   const feedback = page.getByTestId('playback-feedback')
   const bounds = await time.boundingBox()
 
-  if (!bounds) throw new Error('Missing Sim Preview timeline control')
+  if (!bounds) {
+    throw new Error('Missing Sim Preview timeline control')
+  }
 
   const drag = async (target: number) => {
     const previous = Number(await time.inputValue())
@@ -48,8 +50,9 @@ test('timeline dragging keeps last checked feedback until valid target evidence 
   await expect(feedback).toHaveAttribute('data-pose-matches', 'true')
 
   await page.evaluate(() => {
-    if (!document.querySelector('[data-testid="playback-feedback"]'))
+    if (!document.querySelector('[data-testid="playback-feedback"]')) {
       throw new Error('Missing playback feedback')
+    }
 
     const frames: {
       kind: string | null
@@ -61,7 +64,9 @@ test('timeline dragging keeps last checked feedback until valid target evidence 
     const capture = () => {
       const notice = document.querySelector('[data-testid="playback-feedback"]')
 
-      if (!notice) return
+      if (!notice) {
+        return
+      }
       frames.push({
         kind: notice.getAttribute('data-kind'),
         matches: notice.getAttribute('data-pose-matches'),

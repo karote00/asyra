@@ -138,8 +138,9 @@ describe('optional knowledge access', () => {
       metadata('right', { extends: ['button'] }),
       metadata('button'),
       metadata('left', { references: ['button'] })
-    ])
+    ]) {
       access.register(entry, admin)
+    }
     const result = await access
       .openSession(reader, 'task')
       .retrieve({ ids: ['page'] }, signal())
@@ -188,8 +189,9 @@ describe('optional knowledge access', () => {
       metadata('b', { overrides: [{ target: 'button', priority: 0 }] }),
       metadata('cycle', { extends: ['cycle'] }),
       metadata('missing', { references: ['absent'] })
-    ])
+    ]) {
       access.register(entry, admin)
+    }
     const session = access.openSession(reader, 'task')
     await expect(
       session.retrieve({ ids: ['a', 'b'] }, signal())
@@ -306,21 +308,23 @@ describe('optional knowledge access', () => {
       'file:///secret',
       'a/b',
       'a\\b'
-    ])
+    ]) {
       expect(() => access.register(metadata(id), admin)).toThrow(
         'KNOWLEDGE_INVALID_METADATA'
       )
+    }
     expect(() =>
       access.register(
         metadata('large', { description: 'x'.repeat(2049) }),
         admin
       )
     ).toThrow('KNOWLEDGE_INVALID_METADATA')
-    for (let i = 0; i < 18; i++)
+    for (let i = 0; i < 18; i++) {
       access.register(
         metadata(`node${i}`, { references: i < 17 ? [`node${i + 1}`] : [] }),
         admin
       )
+    }
     await expect(
       access.openSession(reader, 'task').retrieve({ ids: ['node0'] }, signal())
     ).rejects.toMatchObject({ code: 'KNOWLEDGE_LIMIT' })
@@ -391,8 +395,10 @@ it('does not share delivered context across distinct tenant and scope identities
   const a = create('a', 'one'),
     b = create('b', 'one'),
     c = create('a', 'two')
-  for (const access of [a, b, c]) access.register(metadata('button'), admin)
-  for (const access of [a, b, c])
+  for (const access of [a, b, c]) {
+    access.register(metadata('button'), admin)
+  }
+  for (const access of [a, b, c]) {
     expect(
       (
         await access
@@ -400,6 +406,7 @@ it('does not share delivered context across distinct tenant and scope identities
           .retrieve({ ids: ['button'] }, signal())
       ).alreadyDelivered
     ).toBe(false)
+  }
   expect(seen).toEqual(['a/one', 'b/one', 'a/two'])
 })
 
@@ -455,7 +462,9 @@ it('aborted reads do not consume delivery context and thrown policy errors deny 
     tenantId: 'a',
     scopeId: 'one',
     authorize: () => {
-      if (failPolicy) throw Error('private policy detail')
+      if (failPolicy) {
+        throw Error('private policy detail')
+      }
       return true
     },
     read: async () => ({ revision: 1, text: 'advice' })
@@ -481,8 +490,9 @@ it('rejects equal priority competitors even when a stronger override is visited 
     metadata('a', { overrides: [{ target: 'button', priority: 1 }] }),
     metadata('b', { overrides: [{ target: 'button', priority: 2 }] }),
     metadata('c', { overrides: [{ target: 'button', priority: 1 }] })
-  ])
+  ]) {
     access.register(entry, admin)
+  }
   await expect(
     access
       .openSession(reader, 'task')
@@ -493,7 +503,9 @@ it('rejects equal priority competitors even when a stronger override is visited 
 it('deduplicates an already visited dependency at the graph capacity boundary', async () => {
   const { access } = fixture()
   access.register(metadata('base'), admin)
-  for (let i = 0; i < 60; i++) access.register(metadata(`leaf${i}`), admin)
+  for (let i = 0; i < 60; i++) {
+    access.register(metadata(`leaf${i}`), admin)
+  }
   access.register(
     metadata('left', {
       references: ['base', ...Array.from({ length: 30 }, (_, i) => `leaf${i}`)]
@@ -663,9 +675,12 @@ it('requires exact bounded target content and preserves unrelated losing-module 
     authorize: () => true,
     read: async (entry) => {
       let overrides: { target: string; text: string }[] = []
-      if (entry.id === 'low') overrides = contributions as typeof overrides
-      if (entry.id === 'high')
+      if (entry.id === 'low') {
+        overrides = contributions as typeof overrides
+      }
+      if (entry.id === 'high') {
         overrides = [{ target: 'button', text: 'Winning button advice' }]
+      }
       return { revision: 1, text: `Own ${entry.id}`, overrides }
     }
   })
@@ -718,8 +733,9 @@ it('does not propagate an override into unrelated contributions of its target', 
       }))
     })
   })
-  for (const id of ['a', 'b', 'c', 'd', 'e'])
+  for (const id of ['a', 'b', 'c', 'd', 'e']) {
     access.register(metadata(id), admin)
+  }
   access.register(
     metadata('middle', {
       overrides: ['a', 'b', 'c', 'd', 'e'].map((target) => ({
@@ -826,7 +842,9 @@ describe('scoped Knowledge navigation', () => {
       tenantId: 'tenant',
       scopeId: 'scope',
       authorize: (operation, _identity, entry) => {
-        if (operation === 'discover' && entry) inspected.push(entry.id)
+        if (operation === 'discover' && entry) {
+          inspected.push(entry.id)
+        }
         return true
       },
       read: async (entry) => {
@@ -840,8 +858,9 @@ describe('scoped Knowledge navigation', () => {
       metadata('leaf', { references: ['constraint'] }),
       metadata('constraint'),
       metadata('topic.unrelated')
-    ])
+    ]) {
       access.register(entry, admin)
+    }
     const session = access.openSession(reader, 'scoped')
     const before = session.discover([], ['topic', 'choice'])
     expect(before.map(({ id }) => id)).toEqual(['choice', 'leaf', 'topic'])
@@ -850,8 +869,9 @@ describe('scoped Knowledge navigation', () => {
     ])
     expect(inspected.sort()).toEqual(['choice', 'leaf', 'topic'])
     expect(reads).toBe(0)
-    for (let i = 0; i < 100; i++)
+    for (let i = 0; i < 100; i++) {
       access.register(metadata(`unrelated-${i}`), admin)
+    }
     inspected.length = 0
     expect(session.discover([], ['topic'])).toEqual(before)
     expect(inspected.sort()).toEqual(['choice', 'leaf', 'topic'])
@@ -879,8 +899,9 @@ describe('scoped Knowledge navigation', () => {
       metadata('hidden', { children: ['independent'] }),
       metadata('special', { contexts: ['special'] }),
       metadata('independent')
-    ])
+    ]) {
       access.register(entry, admin)
+    }
     const session = access.openSession(reader, 'visibility')
     expect(session.discover([], ['missing', 'hidden', 'special'])).toEqual([])
     expect(session.discover([], ['root']).map(({ id }) => id)).toEqual(['root'])
@@ -915,16 +936,18 @@ describe('scoped Knowledge navigation', () => {
       metadata('safe'),
       metadata('a', { children: ['b'] }),
       metadata('b', { children: ['a'] })
-    ])
+    ]) {
       f.access.register(entry, admin)
+    }
     const session = f.access.openSession(reader, 'cycles')
     expect(session.discover([], ['safe']).map(({ id }) => id)).toEqual(['safe'])
     expect(() => session.discover([], ['a'])).toThrow('KNOWLEDGE_CYCLE')
     expect(() => session.discover()).toThrow('KNOWLEDGE_CYCLE')
-    for (const ids of [[], ['safe', 'safe'], ['bad id'], null, 'safe'])
+    for (const ids of [[], ['safe', 'safe'], ['bad id'], null, 'safe']) {
       expect(() => session.discover([], ids as string[])).toThrow(
         'KNOWLEDGE_INVALID_METADATA'
       )
+    }
     f.access.dispose()
   })
 })
@@ -1071,7 +1094,7 @@ it('keeps concurrent same-query retained results addressable by one stable ident
     session.retrieve({ ids: ['constraint'] }, signal())
   ])
   expect(first).toBe(second)
-  for (const previous of [first, second])
+  for (const previous of [first, second]) {
     expect(
       (
         await session.retrieve(
@@ -1080,6 +1103,7 @@ it('keeps concurrent same-query retained results addressable by one stable ident
         )
       ).documents[0].retainedFrom
     ).toBe(previous.contextKey)
+  }
   state.access.dispose()
 })
 
@@ -1132,8 +1156,9 @@ it.each(['foreign', 'context', 'revision', 'evicted'] as const)(
     const state = fixture()
     state.access.register(metadata('base'), admin)
     state.access.register(metadata('child', { references: ['base'] }), admin)
-    for (let i = 0; i < 65; i++)
+    for (let i = 0; i < 65; i++) {
       state.access.register(metadata(`other-${i}`), admin)
+    }
     const session = state.access.openSession(reader, 'current', {
       retainResults: true
     })
@@ -1142,13 +1167,20 @@ it.each(['foreign', 'context', 'revision', 'evicted'] as const)(
       kind === 'foreign'
         ? state.access.openSession(reader, 'other', { retainResults: true })
         : session
-    if (kind === 'foreign') await consumer.retrieve({ ids: ['base'] }, signal())
-    if (kind === 'context') session.invalidateContext()
-    if (kind === 'revision')
+    if (kind === 'foreign') {
+      await consumer.retrieve({ ids: ['base'] }, signal())
+    }
+    if (kind === 'context') {
+      session.invalidateContext()
+    }
+    if (kind === 'revision') {
       state.access.update(metadata('base', { revision: 2 }), 1, admin)
-    if (kind === 'evicted')
-      for (let i = 0; i < 65; i++)
+    }
+    if (kind === 'evicted') {
+      for (let i = 0; i < 65; i++) {
         await session.retrieve({ ids: [`other-${i}`] }, signal())
+      }
+    }
     const query = { ids: ['child'], reuseFrom: [previous.contextKey] }
     await expect(consumer.retrieve(query, signal())).rejects.toMatchObject({
       code: 'KNOWLEDGE_REUSE_UNAVAILABLE'
@@ -1185,10 +1217,11 @@ it('rechecks permission, cancellation, disposal and invalid reuse selectors befo
     [''],
     Array(33).fill('key'),
     ['key', 'key']
-  ])
+  ]) {
     await expect(
       session.retrieve({ ids: ['base'], reuseFrom } as never, signal())
     ).rejects.toMatchObject({ code: 'KNOWLEDGE_INVALID_QUERY' })
+  }
   await expect(session.retrieve(query, AbortSignal.abort())).rejects.toThrow()
   await session.retrieve(query, signal())
   state.revoke()
@@ -1216,7 +1249,9 @@ it.each(['context', 'revision', 'permission', 'cancel', 'dispose'] as const)(
       scopeId: 'scope',
       authorize: () => allowed,
       read: async (entry) => {
-        if (pause && entry.id === 'child') await waiting
+        if (pause && entry.id === 'child') {
+          await waiting
+        }
         return { revision: entry.revision, text: entry.id }
       }
     })
@@ -1235,12 +1270,21 @@ it.each(['context', 'revision', 'permission', 'cancel', 'dispose'] as const)(
     // Let the dependency read settle and the child provider become pending.
     await Promise.resolve()
     await Promise.resolve()
-    if (kind === 'context') session.invalidateContext()
-    if (kind === 'revision')
+    if (kind === 'context') {
+      session.invalidateContext()
+    }
+    if (kind === 'revision') {
       access.update(metadata('base', { revision: 2 }), 1, admin)
-    if (kind === 'permission') allowed = false
-    if (kind === 'cancel') controller.abort()
-    if (kind === 'dispose') session.dispose()
+    }
+    if (kind === 'permission') {
+      allowed = false
+    }
+    if (kind === 'cancel') {
+      controller.abort()
+    }
+    if (kind === 'dispose') {
+      session.dispose()
+    }
     resume()
     await expect(pending).rejects.toThrow()
     access.dispose()
@@ -1270,7 +1314,7 @@ it('keeps direct child reads complete and non-retaining sessions explicit', asyn
 describe('selected retained Knowledge redisplay', () => {
   it('selects two of seven topics with shared restrictions and no repeated content reads', async () => {
     const f = fixture()
-    for (const id of ['a.1', 'a.2', 'a.3', 'b', 'b.1', 'c.3', 'd.5'])
+    for (const id of ['a.1', 'a.2', 'a.3', 'b', 'b.1', 'c.3', 'd.5']) {
       f.access.register(
         metadata(id, {
           ...(id === 'a.3' || id === 'c.3' ? { references: ['b'] } : {}),
@@ -1278,6 +1322,7 @@ describe('selected retained Knowledge redisplay', () => {
         }),
         admin
       )
+    }
     const session = f.access.openSession(reader, 'selected', {
       retainResults: true
     })
@@ -1351,13 +1396,14 @@ describe('selected retained Knowledge redisplay', () => {
     for (const extra of [
       { rehydrate: true },
       { reuseFrom: [original.contextKey] }
-    ])
+    ]) {
       await expect(
         session.retrieve(
           { ids: ['a'], fromResult: original.contextKey, ...extra },
           signal()
         )
       ).rejects.toThrow('KNOWLEDGE_INVALID_QUERY')
+    }
     expect(
       (await session.retrieve({ ids: ['a'], contexts: ['design'] }, signal()))
         .documents[0].text
@@ -1397,13 +1443,16 @@ describe('selected retained Knowledge redisplay', () => {
 
   it('expires selections on revision changes and bounded-map eviction with ordinary read recovery', async () => {
     const f = fixture()
-    for (let i = 0; i < 66; i++) f.access.register(metadata('topic' + i), admin)
+    for (let i = 0; i < 66; i++) {
+      f.access.register(metadata('topic' + i), admin)
+    }
     const session = f.access.openSession(reader, 'bounded', {
       retainResults: true
     })
     const first = await session.retrieve({ ids: ['topic0'] }, signal())
-    for (let i = 1; i < 66; i++)
+    for (let i = 1; i < 66; i++) {
       await session.retrieve({ ids: ['topic' + i] }, signal())
+    }
     await expect(
       session.retrieve(
         { ids: ['topic0'], fromResult: first.contextKey },

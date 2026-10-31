@@ -56,11 +56,21 @@ describe('local subscription endpoint admission', () => {
         headers.origin = origin
         headers['sec-fetch-site'] = 'same-origin'
       }
-      if (kind === 'foreign-origin') headers.origin = 'https://attacker.example'
-      if (kind === 'null-origin') headers.origin = 'null'
-      if (kind === 'foreign-host') headers.host = 'attacker.example'
-      if (kind === 'form') headers['content-type'] = 'text/plain'
-      if (kind === 'cross-site') headers['sec-fetch-site'] = 'cross-site'
+      if (kind === 'foreign-origin') {
+        headers.origin = 'https://attacker.example'
+      }
+      if (kind === 'null-origin') {
+        headers.origin = 'null'
+      }
+      if (kind === 'foreign-host') {
+        headers.host = 'attacker.example'
+      }
+      if (kind === 'form') {
+        headers['content-type'] = 'text/plain'
+      }
+      if (kind === 'cross-site') {
+        headers['sec-fetch-site'] = 'cross-site'
+      }
       const response = await new Promise<{
         status: number | undefined
         body: unknown

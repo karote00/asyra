@@ -33,7 +33,9 @@ export class MeshMaterialResources {
 
   release(key: string): void {
     const entry = this.entries.get(key)
-    if (!entry) return
+    if (!entry) {
+      return
+    }
     if (--entry.users === 0) {
       entry.texture.destroy(true)
       this.entries.delete(key)

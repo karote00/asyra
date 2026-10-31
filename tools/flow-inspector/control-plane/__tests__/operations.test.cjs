@@ -122,7 +122,7 @@ test(
 for (const [githubActions, provider] of [
   ['false', 'local-ci-trial'],
   ['true', 'github-actions']
-])
+]) {
   test(
     'CI uses all flows, retains raw report and explicit external blockers, and request retry never executes twice - ' +
       provider,
@@ -131,8 +131,11 @@ for (const [githubActions, provider] of [
       const previous = process.env.GITHUB_ACTIONS
       process.env.GITHUB_ACTIONS = githubActions
       t.after(() => {
-        if (previous === undefined) delete process.env.GITHUB_ACTIONS
-        else process.env.GITHUB_ACTIONS = previous
+        if (previous === undefined) {
+          delete process.env.GITHUB_ACTIONS
+        } else {
+          process.env.GITHUB_ACTIONS = previous
+        }
       })
       const service = createService(root, { directory: directory(t) })
       try {
@@ -173,6 +176,7 @@ for (const [githubActions, provider] of [
       }
     }
   )
+}
 test('unknown or denied evolution decisions have no version side effects', async (t) => {
   const service = createService(root, { directory: directory(t) })
   try {
@@ -311,11 +315,12 @@ test('reported work completion is independent of verification and shared snapsho
         ),
       /authorized/
     )
-    for (const stepId of steps)
+    for (const stepId of steps) {
       service.setWork(
         { stepId, status: 'complete', reason: 'Implementation reviewed' },
         LOCAL_ACTOR
       )
+    }
     assert.equal(service.shared().workStatus, 'reported-complete')
     assert.equal(service.shared().verificationStatus, 'unknown')
     assert.equal(service.shared().deliveryStatus, 'not-assessed')

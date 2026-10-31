@@ -197,22 +197,27 @@ export const createRetainedFillAction = (
           const visited = new Set<string>()
           let id: string | undefined = elementId
           while (id && !checkedAncestors.has(id)) {
-            if (visited.has(id))
+            if (visited.has(id)) {
               throw new Error('Target hierarchy contains a cycle.')
+            }
             visited.add(id)
             const data = apis.metadata(id)
-            if (!data || data.lock)
+            if (!data || data.lock) {
               throw new Error('Target or parent is unavailable or locked.')
+            }
             id = data.parentId
           }
-          for (const ancestor of visited) checkedAncestors.add(ancestor)
+          for (const ancestor of visited) {
+            checkedAncestors.add(ancestor)
+          }
         }
         if (
           !Array.isArray(mappings) ||
           !mappings.length ||
           mappings.length > 32
-        )
+        ) {
           throw new Error('A bounded mappings array is required.')
+        }
         const index = mappings[0].index
         for (const mapping of mappings) {
           if (
@@ -228,10 +233,11 @@ export const createRetainedFillAction = (
             mapping.domain[0] >= mapping.domain[1] ||
             !Number.isFinite(mapping.domain[1] - mapping.domain[0]) ||
             !['clamp', 'reject'].includes(mapping.outside)
-          )
+          ) {
             throw new Error(
               'Use one fill index and a finite increasing domain in declared parent-local coordinates.'
             )
+          }
           const stops = mapping.stops
           if (
             !Array.isArray(stops) ||
@@ -254,17 +260,19 @@ export const createRetainedFillAction = (
                 (stop.opacity === undefined) !==
                 (stops[0].opacity === undefined)
             )
-          )
+          ) {
             throw new Error(
               'Provide ordered color stops from 0 to 1; opacity must be specified for all stops or none.'
             )
+          }
           if (
             Boolean(mapping.query) === Boolean(mapping.snapshotId) ||
             (mapping.query && mapping.leaseId)
-          )
+          ) {
             throw new Error(
               'Provide either a query or a retained snapshot and its lease.'
             )
+          }
           let snapshotId = mapping.snapshotId
           let leaseId = mapping.leaseId
           if (mapping.query) {
@@ -279,29 +287,35 @@ export const createRetainedFillAction = (
             )
             snapshotId = receipt.snapshotId
             leaseId = receipt.leaseId
-            if (leaseId) consumedLeases.add(leaseId)
+            if (leaseId) {
+              consumedLeases.add(leaseId)
+            }
           }
-          if (!snapshotId)
+          if (!snapshotId) {
             throw new Error('Mapping has no retained snapshot identity')
+          }
           const snapshot = queries.get(snapshotId, leaseId, context.signal)
           if (
             snapshot.coordinateSpace !== mapping.coordinateSpace ||
             !snapshot.fields.includes(mapping.axis) ||
             snapshot.result.missingIds.length
-          )
+          ) {
             throw new Error(
               'Retained query lacks complete targets or the required position column; read the scope again.'
             )
+          }
           const channels = stops.map((stop) => colorChannels(stop.color))
           for (const element of snapshot.result.elements) {
             assertUnlocked(element.id)
-            if (unique.has(element.id))
+            if (unique.has(element.id)) {
               throw new Error(
                 'Targets must exist, be unlocked and occur once across all mappings.'
               )
+            }
             const position = element.properties[mapping.axis]
-            if (!finite(position))
+            if (!finite(position)) {
               throw new Error('Retained position is unavailable or non-finite.')
+            }
             let normalized =
               (position - mapping.domain[0]) /
               (mapping.domain[1] - mapping.domain[0])
@@ -309,10 +323,11 @@ export const createRetainedFillAction = (
               !finite(normalized) ||
               (mapping.outside === 'reject' &&
                 (normalized < 0 || normalized > 1))
-            )
+            ) {
               throw new Error(
                 'Position lies outside the explicit mapping domain.'
               )
+            }
             normalized = Math.min(1, Math.max(0, normalized))
             const right = Math.max(
               1,
@@ -410,14 +425,16 @@ export const createRetainedFillAction = (
         context.signal.aborted ||
         error instanceof AiToolContractError ||
         error instanceof AiTransactionSettlementError
-      )
+      ) {
         throw error
+      }
       throw new AiActionExecutionError(
         error instanceof Error ? error.message : 'Retained fill mapping failed.'
       )
     } finally {
-      for (const leaseId of consumedLeases)
+      for (const leaseId of consumedLeases) {
         queries.releaseLease(leaseId, context.signal)
+      }
     }
   }
 })

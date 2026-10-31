@@ -47,7 +47,9 @@ export function parseMarkdownBlocks(markdown) {
         codeLines.push(lines[index])
         index += 1
       }
-      if (index >= lines.length) throw new Error('Unclosed Markdown code fence')
+      if (index >= lines.length) {
+        throw new Error('Unclosed Markdown code fence')
+      }
       blocks.push({ code: codeLines.join('\n'), language, type: 'code' })
       index += 1
       continue
@@ -76,7 +78,9 @@ export function parseMarkdownBlocks(markdown) {
       const items = []
       while (index < lines.length) {
         const item = lines[index].match(pattern)
-        if (!item) break
+        if (!item) {
+          break
+        }
         const itemLines = [item[1]]
         index += 1
         while (
@@ -91,8 +95,12 @@ export function parseMarkdownBlocks(markdown) {
           index += 1
         }
         items.push(itemLines.join(' '))
-        while (index < lines.length && lines[index].trim() === '') index += 1
-        if (!lines[index]?.match(pattern)) break
+        while (index < lines.length && lines[index].trim() === '') {
+          index += 1
+        }
+        if (!lines[index]?.match(pattern)) {
+          break
+        }
       }
       blocks.push({ items, ordered, type: 'list' })
       continue

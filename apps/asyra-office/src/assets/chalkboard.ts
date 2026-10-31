@@ -15,7 +15,7 @@ export function chalkboard(): AssetPart[] {
     board = parseInt(specification.materials.board.baseColorSRGB.slice(1), 16),
     metal = parseInt(specification.materials.metal.baseColorSRGB.slice(1), 16)
   const angle = (14 * Math.PI) / 180
-  for (const side of [-1, 1])
+  for (const side of [-1, 1]) {
     for (const id of ['side-posts', 'rails', 'panels']) {
       const c = requiredSpecValue(
         source.components.find((c) => c.partId === id),
@@ -44,8 +44,9 @@ export function chalkboard(): AssetPart[] {
           ],
           [side * 14, 0, 0]
         )
-        for (let j = 2; j < mesh.positions.length; j += 3)
+        for (let j = 2; j < mesh.positions.length; j += 3) {
           mesh.positions[j] = Math.max(0, mesh.positions[j])
+        }
         pieces.push(
           part(
             `${side === -1 ? 'front' : 'rear'}-${id}-${i}`,
@@ -56,6 +57,7 @@ export function chalkboard(): AssetPart[] {
         )
       })
     }
+  }
   for (const id of [
     'side-spreaders',
     'hinges',

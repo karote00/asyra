@@ -308,8 +308,11 @@ const AiConversationPanelLayout = ({
       text: draft,
       attachments: draftAttachments
     })
-    if (id === null) conversation.newConversation()
-    else conversation.selectConversation(id)
+    if (id === null) {
+      conversation.newConversation()
+    } else {
+      conversation.selectConversation(id)
+    }
     const restored = drafts.current.get(
       conversation.getSnapshot().conversationId
     )
@@ -540,7 +543,9 @@ const AiConversationFeed = ({
   )
   const syncScrollPosition = useCallback(() => {
     const body = conversationBodyRef.current
-    if (!body) return
+    if (!body) {
+      return
+    }
     const atBottom = body.scrollHeight - body.scrollTop - body.clientHeight <= 1
     followLatestRef.current = atBottom
     setShowJump(!atBottom)
@@ -621,8 +626,12 @@ const AiConversationFeed = ({
             !active &&
             turns.at(-1)?.turnId === turn.turnId
           let questionStatus = 'Superseded'
-          if (answer) questionStatus = 'Answered'
-          if (canAnswer) questionStatus = 'Waiting for your answer'
+          if (answer) {
+            questionStatus = 'Answered'
+          }
+          if (canAnswer) {
+            questionStatus = 'Waiting for your answer'
+          }
           const latest = timeline.at(-1)?.turnId === turn.turnId
           const stopping = !settled && conversationSnapshot.activeTurn?.stopping
           const activity = conversation.getActivity(turn.turnId, {
@@ -665,8 +674,11 @@ const AiConversationFeed = ({
                     const open = event.currentTarget.open
                     setExpandedHistory((previous) => {
                       const next = new Set(previous)
-                      if (open) next.add(turn.turnId)
-                      else next.delete(turn.turnId)
+                      if (open) {
+                        next.add(turn.turnId)
+                      } else {
+                        next.delete(turn.turnId)
+                      }
                       return next
                     })
                   }}
@@ -886,7 +898,9 @@ const AiConversationFeed = ({
             followLatestRef.current = true
             setShowJump(false)
             const body = conversationBodyRef.current
-            if (body) body.scrollTop = body.scrollHeight
+            if (body) {
+              body.scrollTop = body.scrollHeight
+            }
           }}
         >
           Jump to latest

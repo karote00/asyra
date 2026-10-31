@@ -30,14 +30,16 @@ export const projectEvaluationReport = (turn: {
     !Array.isArray(preview.actions) ||
     preview.actions.length !== 1 ||
     !Array.isArray(result.actionResults)
-  )
+  ) {
     return
+  }
   const action = reportRecord(preview.actions[0])
   if (
     action?.name !== AiActionNames.REPORT_OUTCOME ||
     typeof action.id !== 'string'
-  )
+  ) {
     return
+  }
   // Runtime appends the final batch receipts after all earlier acknowledged work.
   const receipt = reportRecord(result.actionResults.at(-1))
   const value = reportRecord(receipt?.result)
@@ -53,8 +55,9 @@ export const projectEvaluationReport = (turn: {
     typeof value.message !== 'string' ||
     !value.message.trim() ||
     value.message.length > 1000
-  )
+  ) {
     return
+  }
   return {
     attribution: 'model-self-report' as const,
     sourceRequestId: result.recordingId,
@@ -73,9 +76,12 @@ export interface EvaluationWindow {
 export const readEvaluationWindow = (
   value: unknown
 ): EvaluationWindow | undefined => {
-  if (value === undefined) return undefined
-  if (!value || typeof value !== 'object' || Array.isArray(value))
+  if (value === undefined) {
+    return undefined
+  }
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new Error('Invalid evaluation window')
+  }
   const { workDeadlineAt, reportTimeoutMs, expandedNodeLimit } =
     value as EvaluationWindow
   if (
@@ -86,8 +92,9 @@ export const readEvaluationWindow = (
     reportTimeoutMs <= 0 ||
     reportTimeoutMs > 60000 ||
     workDeadlineAt > Date.now() + 900000
-  )
+  ) {
     throw new Error('Invalid evaluation window')
+  }
   return {
     workDeadlineAt,
     reportTimeoutMs,

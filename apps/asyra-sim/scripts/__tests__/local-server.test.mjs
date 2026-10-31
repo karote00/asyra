@@ -113,8 +113,9 @@ test('rejects traversal, symlinks, dotfiles, malformed URLs and directory enumer
     '/%00',
     '/%5c..%5cprivate.txt',
     '/%ZZ'
-  ])
+  ]) {
     assert.equal((await get(server.origin, target)).status, 400, target)
+  }
 })
 
 test('rejects remote authorities, cross-site requests, writes and request bodies', async (t) => {
@@ -123,10 +124,12 @@ test('rejects remote authorities, cross-site requests, writes and request bodies
     { host: 'example.test' },
     { origin: 'https://example.test' },
     { 'sec-fetch-site': 'cross-site' }
-  ])
+  ]) {
     assert.equal((await get(server.origin, '/', { headers })).status, 403)
-  for (const method of ['POST', 'PUT', 'DELETE', 'OPTIONS'])
+  }
+  for (const method of ['POST', 'PUT', 'DELETE', 'OPTIONS']) {
     assert.equal((await get(server.origin, '/', { method })).status, 405)
+  }
   assert.equal(
     (await get(server.origin, '/', { headers: { 'content-length': '1' } }))
       .status,
@@ -158,8 +161,9 @@ test('uses a stable default origin and refuses unsupported launch arguments or r
     ['--port=80'],
     ['--port=65536'],
     ['--port=3020', '--port=3021']
-  ])
+  ]) {
     assert.throws(() => parsePort(args), /Use node/)
+  }
   const { root } = await fixture(t)
   await assert.rejects(startLocalServer({ root: '.', port: 0 }), /absolute/)
   await assert.rejects(
@@ -189,7 +193,9 @@ test(
       child.once('exit', (code) => resolve(code))
     })
     t.after(async () => {
-      if (child.exitCode === null) child.kill('SIGTERM')
+      if (child.exitCode === null) {
+        child.kill('SIGTERM')
+      }
       await exited
     })
     let output = '',

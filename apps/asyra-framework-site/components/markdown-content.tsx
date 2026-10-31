@@ -12,7 +12,9 @@ const resolveMarkdownHref = (
   currentPath: string,
   pages: readonly PublicPage[]
 ) => {
-  if (/^(?:https?:|mailto:|#)/.test(href)) return href
+  if (/^(?:https?:|mailto:|#)/.test(href)) {
+    return href
+  }
   const [targetPath, hash] = href.split('#', 2)
   const currentRepositoryPath = `docs/public/${currentPath}`
   const repositoryPath = new URL(
@@ -25,7 +27,9 @@ const resolveMarkdownHref = (
     : null
   const publicPage = pages.find(({ path }) => path === publicPath)
   const suffix = hash ? `#${hash}` : ''
-  if (publicPage) return `${publicPage.href}${suffix}`
+  if (publicPage) {
+    return `${publicPage.href}${suffix}`
+  }
   return `${githubSourceRoot}${repositoryPath}${suffix}`
 }
 
@@ -144,12 +148,20 @@ function MarkdownBlockView({
     <InlineMarkdown currentPath={currentPath} pages={pages} text={text} />
   )
   if (block.type === 'heading') {
-    if (block.depth === 1) return null
-    if (block.depth === 2) return <h2 id={block.id}>{inline(block.text)}</h2>
-    if (block.depth === 3) return <h3 id={block.id}>{inline(block.text)}</h3>
+    if (block.depth === 1) {
+      return null
+    }
+    if (block.depth === 2) {
+      return <h2 id={block.id}>{inline(block.text)}</h2>
+    }
+    if (block.depth === 3) {
+      return <h3 id={block.id}>{inline(block.text)}</h3>
+    }
     return <h4 id={block.id}>{inline(block.text)}</h4>
   }
-  if (block.type === 'paragraph') return <p>{inline(block.text)}</p>
+  if (block.type === 'paragraph') {
+    return <p>{inline(block.text)}</p>
+  }
   if (block.type === 'list') {
     const List = block.ordered ? 'ol' : 'ul'
     return (

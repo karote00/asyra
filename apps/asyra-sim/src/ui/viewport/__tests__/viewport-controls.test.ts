@@ -212,8 +212,11 @@ it.each(['pointercancel', 'lostpointercapture', 'blur'])(
   (reason) => {
     pointer('pointerdown', { shiftKey: true })
 
-    if (reason === 'blur') window.dispatchEvent(new Event('blur'))
-    else pointer(reason)
+    if (reason === 'blur') {
+      window.dispatchEvent(new Event('blur'))
+    } else {
+      pointer(reason)
+    }
 
     pointer('pointermove', { clientX: 180 })
 
@@ -298,8 +301,9 @@ it('preserves editable controls and ignores ambiguous, consumed and composing fi
     { ctrlKey: true },
     { metaKey: false },
     { isComposing: true }
-  ])
+  ]) {
     shortcut(options)
+  }
 
   const consumed = new KeyboardEvent('keydown', {
     bubbles: true,
@@ -413,7 +417,9 @@ it('handles canvas wheel intent before Framework bubble listeners suppress brows
 })
 
 it('accumulates every wheel delta before the next React render', () => {
-  for (let i = 0; i < 20; i++) wheel({ deltaX: 3, deltaY: 1.5 })
+  for (let i = 0; i < 20; i++) {
+    wheel({ deltaX: 3, deltaY: 1.5 })
+  }
 
   expectZoom(30)
 })
@@ -431,7 +437,9 @@ it.each([
 )
 
 it('pinch events zoom without panning, including multiple events in one render', () => {
-  for (let i = 0; i < 3; i++) wheel({ ctrlKey: true, deltaX: 4, deltaY: -10 })
+  for (let i = 0; i < 3; i++) {
+    wheel({ ctrlKey: true, deltaX: 4, deltaY: -10 })
+  }
 
   const camera = onCamera.mock.calls.at(-1)?.[0]
 

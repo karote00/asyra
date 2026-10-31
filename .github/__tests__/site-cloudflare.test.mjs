@@ -91,8 +91,9 @@ test('production admission allows only explicit manual dispatch on upstream main
     'pull_request_target',
     'workflow_run',
     'repository_dispatch'
-  ])
+  ]) {
     assert.equal(evaluate({ ...valid, event_name }), false)
+  }
   assert.deepEqual(Object.keys(workflow.on), ['workflow_dispatch'])
   assert.equal(workflow.env.SOURCE_SHA, '${{ github.sha }}')
 })
@@ -128,7 +129,9 @@ test('only the verified same-run artifact reaches the credential-bearing job', (
   )
   for (const job of Object.values(workflow.jobs)) {
     for (const step of job.steps) {
-      if (step.uses) assert.match(step.uses, /@[a-f0-9]{40}$/)
+      if (step.uses) {
+        assert.match(step.uses, /@[a-f0-9]{40}$/)
+      }
       if (step.uses?.startsWith('actions/checkout@')) {
         assert.equal(step.with.ref, '${{ env.SOURCE_SHA }}')
         assert.equal(step.with['persist-credentials'], false)
@@ -141,8 +144,9 @@ test('publication waits for its own successful validation and keeps dependency a
   assert.equal(workflow.jobs.publish.needs, 'build')
   assert.equal(workflow.jobs.publish.if, undefined)
   assert.equal(workflow.jobs.build['continue-on-error'], undefined)
-  for (const step of workflow.jobs.build.steps)
+  for (const step of workflow.jobs.build.steps) {
     assert.equal(step['continue-on-error'], undefined)
+  }
   assert.ok(
     workflow.jobs.build.steps.some((step) =>
       step.run?.includes('yarn security:audit')

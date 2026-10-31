@@ -8,7 +8,9 @@ export const readAiStatus = async (signal?: AbortSignal) => {
   const backend = process.env.AI_PROVIDER_BACKEND?.trim() || 'http'
   if (backend === 'local-codex') {
     const model = process.env.AI_PROVIDER_MODEL?.trim()
-    if (!model) return { state: 'unconfigured' }
+    if (!model) {
+      return { state: 'unconfigured' }
+    }
     try {
       await checkLocalAiProvider({
         model,
@@ -20,7 +22,9 @@ export const readAiStatus = async (signal?: AbortSignal) => {
       return { state: 'local-unavailable' }
     }
   }
-  if (backend !== 'http') return { state: 'unconfigured' }
+  if (backend !== 'http') {
+    return { state: 'unconfigured' }
+  }
   try {
     resolveAiModelBackendConfiguration()
     return { state: 'configured' }
@@ -52,13 +56,17 @@ export const createAiStatusMiddleware =
     }
     const controller = new AbortController()
     const abort = () => {
-      if (!response.writableEnded) controller.abort()
+      if (!response.writableEnded) {
+        controller.abort()
+      }
     }
     response.once('close', abort)
     request.once('aborted', abort)
     try {
       const status = await readAiStatus(controller.signal)
-      if (!response.destroyed) response.end(JSON.stringify(status))
+      if (!response.destroyed) {
+        response.end(JSON.stringify(status))
+      }
     } finally {
       response.removeListener('close', abort)
       request.removeListener('aborted', abort)

@@ -26,14 +26,16 @@ function resolveRunner(project, selected) {
         ' runner before executing this action'
     )
   }
-  if (!manifest.startsWith(project.root + path.sep))
+  if (!manifest.startsWith(project.root + path.sep)) {
     throw new Error('Runner resolves outside selected project')
+  }
   const metadata = readJson(manifest)
   const supported = selected.producer === 'vitest' ? '3.2.' : '1.62.'
-  if (!metadata.version.startsWith(supported))
+  if (!metadata.version.startsWith(supported)) {
     throw new Error(
       'Unsupported ' + name + ' version: expected ' + supported + 'x'
     )
+  }
   return {
     cwd,
     cli: path.join(
@@ -44,8 +46,9 @@ function resolveRunner(project, selected) {
 }
 async function runSelected(project, filter, options = {}) {
   const receipt = capture(project, filter)
-  if (receipt.cases.length !== 1)
+  if (receipt.cases.length !== 1) {
     throw new Error('Explicit rerun requires one exact criterion')
+  }
   const captured = receipt.cases[0]
   if (process.env.FLOW_PARENT_EXECUTION) {
     if (
@@ -54,13 +57,15 @@ async function runSelected(project, filter, options = {}) {
       Number(process.env.FLOW_EXPECTED_REVISION) !== captured.revision ||
       process.env.FLOW_BINDING !== captured.binding ||
       !process.env.FLOW_EXECUTION_ID
-    )
+    ) {
       throw new Error('Parent action scope is stale or mismatched')
+    }
     receipt.executionId = process.env.FLOW_EXECUTION_ID
   }
   const selected = captured.selector
-  if (selected.project.includes('*') || selected.project.startsWith('!'))
+  if (selected.project.includes('*') || selected.project.startsWith('!')) {
     throw new Error('Wildcard project names cannot be selected exactly')
+  }
   const runner = resolveRunner(project, selected)
   const parent = dataPath(project.root, '.flow-runtime')
   fs.mkdirSync(parent, { recursive: true })
@@ -242,10 +247,12 @@ async function runSelected(project, filter, options = {}) {
       } catch (error) {
         diagnostic = error.message
       }
-    } else
+    } else {
       diagnostic ||= 'Runner produced no report: ' + result.output.slice(-1000)
-    if (result.code !== 0 && !records.some((r) => r.status === 'failed'))
+    }
+    if (result.code !== 0 && !records.some((r) => r.status === 'failed')) {
       diagnostic ||= 'Runner failed without a completed failing test'
+    }
     const documents = publish(project, receipt, records, diagnostic)
     return {
       code:

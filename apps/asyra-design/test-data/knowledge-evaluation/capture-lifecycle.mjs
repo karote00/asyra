@@ -1,8 +1,9 @@
 /* global AbortController, setTimeout, clearTimeout, requestAnimationFrame */
 /** Evaluation-only bounds. Late reads cannot become successful evidence. */
 export async function boundedCapture(label, task, timeoutMs = 30000) {
-  if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0)
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0) {
     throw new Error('Invalid capture deadline')
+  }
   const controller = new AbortController()
   let timer
   try {
@@ -37,10 +38,11 @@ export async function captureSession({
           !handle ||
           getHandle() !== handle ||
           handle.getStatus() !== 'connected'
-        )
+        ) {
           throw new Error(
             'Capture session unavailable, disconnected or replaced'
           )
+        }
       }
       assertCurrent()
       await handle.whenIdle()
@@ -49,8 +51,9 @@ export async function captureSession({
       assertCurrent()
       const roots = readRoots()
       assertCurrent()
-      if (receipt.sequence !== receipt.durableSequence)
+      if (receipt.sequence !== receipt.durableSequence) {
         throw new Error('Capture persistence is not settled')
+      }
       return { roots, receipt }
     },
     timeoutMs
@@ -117,23 +120,28 @@ export async function readEvaluationReport(page, sourceRequestIds) {
       typeof report.text !== 'string' ||
       !report.text.trim() ||
       report.text.length > 1000
-    )
+    ) {
       throw new Error('Malformed evaluation self-report')
-    if (!sourceRequestIds.includes(report.sourceRequestId)) continue
+    }
+    if (!sourceRequestIds.includes(report.sourceRequestId)) {
+      continue
+    }
     if (
       entry.turnId !== report.turnId ||
       !['partial', 'success', 'no-change'].includes(entry.outcome) ||
       !entry.text?.includes(report.text)
-    )
+    ) {
       throw new Error('Evaluation report identity or rendered text mismatch')
+    }
     matches.push({
       ...report,
       messageIndex: entry.messageIndex,
       receivedAt: new Date().toISOString()
     })
   }
-  if (matches.length !== 1)
+  if (matches.length !== 1) {
     throw new Error('Expected exactly one matching settled evaluation report')
+  }
   return matches[0]
 }
 
@@ -153,12 +161,14 @@ export async function captureReportImage(page, report, path) {
       current.turnId !== report.turnId ||
       current.text !== report.text ||
       (await target.getAttribute('data-turn-id')) !== report.turnId
-    )
+    ) {
       throw new Error('Evaluation report identity changed before capture')
-    if (!(await rendered.textContent())?.includes(report.text))
+    }
+    if (!(await rendered.textContent())?.includes(report.text)) {
       throw new Error(
         'The rendered report does not match the retained model output'
       )
+    }
   }
   await verify()
   await rendered.screenshot({ path })
@@ -181,8 +191,9 @@ export function captureEvaluationReport({
       boundedCapture(
         'self-report',
         async (signal) => {
-          if (!report)
+          if (!report) {
             throw new Error('No host-admitted evaluation self-report received')
+          }
           meta.selfReport = { ...report, textSaved: false, imageSaved: false }
           await writeText(report.text)
           signal.throwIfAborted()
@@ -213,7 +224,9 @@ export async function waitForCaptureReady(page, signal) {
       )
     })
     signal.throwIfAborted()
-    if (ready) return
+    if (ready) {
+      return
+    }
     await page.waitForTimeout(100)
   }
 }
@@ -287,8 +300,9 @@ export async function captureReload({
               captured.receipt.durableSequence ||
             result.receipt.documentGeneration !==
               captured.receipt.documentGeneration)
-        )
+        ) {
           throw new Error('Reload root/order or durable receipt mismatch')
+        }
         await reloaded.keyboard.press('Meta+1')
         signal.throwIfAborted()
         await reloaded.evaluate(

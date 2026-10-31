@@ -38,7 +38,9 @@ for (const width of [320, 394, 1440]) {
             lineHeight: css.lineHeight
           }
         })
-        if (!reference) reference = style
+        if (!reference) {
+          reference = style
+        }
         expect.soft(style, `${route} ${region}`).toEqual(reference)
         await logo.screenshot({
           path: testInfo.outputPath(

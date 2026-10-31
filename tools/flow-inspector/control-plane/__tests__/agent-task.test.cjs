@@ -281,12 +281,16 @@ test(
         previousVerification
       }) => {
         let operation = { tool: 'finish' }
-        if (history.length === 0) operation = { tool: 'read', path: sourceFile }
+        if (history.length === 0) {
+          operation = { tool: 'read', path: sourceFile }
+        }
         if (history.length === 1) {
           const mutation = f.contract.definition.scenarios.find(
             (item) => item.id === 'inverse-regression'
           ).mutation
-          if (correction) assert.equal(previousVerification.status, 'failed')
+          if (correction) {
+            assert.equal(previousVerification.status, 'failed')
+          }
           operation = {
             tool: 'replace',
             path: sourceFile,
@@ -588,13 +592,14 @@ test(
       'task does not duplicate combined source full-manifest hashing'
     )
     const sourceRoot = path.join(root, verdict.artifactDirectory, 'source')
-    for (const entry of verdict.files)
+    for (const entry of verdict.files) {
       assert.equal(
         reads.mock.calls.filter(
           (call) => call.arguments[0] === path.join(sourceRoot, entry.path)
         ).length,
         1
       )
+    }
     reads.mock.resetCalls()
     reopened.get(result.id)
     reopened.list()
@@ -650,8 +655,9 @@ test('work admission blocks before capture and rejects source before adapter eff
         deny === 'prerequisite' ||
         (deny === 'source' && snapshot) ||
         deny === 'resume'
-      )
+      ) {
         throw new Error('Work admission ' + deny)
+      }
     },
     capture: (...args) => {
       captures++
@@ -794,9 +800,10 @@ test(
         return {
           async next(observation) {
             turn++
-            if (turn === 1 || turn === 3)
+            if (turn === 1 || turn === 3) {
               return { tool: 'read', path: sourceFile }
-            if (turn === 2)
+            }
+            if (turn === 2) {
               return {
                 tool: 'replace',
                 path: sourceFile,
@@ -804,7 +811,8 @@ test(
                 before: observation.content,
                 after: '// formal reversible change\n' + observation.content
               }
-            if (turn === 4)
+            }
+            if (turn === 4) {
               return {
                 tool: 'replace',
                 path: sourceFile,
@@ -812,6 +820,7 @@ test(
                 before: '// formal reversible change\n',
                 after: ''
               }
+            }
             return { tool: 'finish' }
           }
         }
@@ -838,8 +847,9 @@ test(
       'runtimeAuthority',
       'verificationSource',
       'executionSource'
-    ])
+    ]) {
       Reflect.deleteProperty(record.attempts.at(-1).verdict, key)
+    }
     fs.writeFileSync(recordPath, JSON.stringify(record))
     const bootstrap = path.join(
       root,
@@ -881,8 +891,11 @@ test(
       })
     for (const format of [undefined, null, 0, 3, '2']) {
       const changed = structuredClone(retained)
-      if (format === undefined) delete changed.format
-      else changed.format = format
+      if (format === undefined) {
+        delete changed.format
+      } else {
+        changed.format = format
+      }
       fs.writeFileSync(recordPath, JSON.stringify(changed))
       assert.throws(open, /persisted task/)
     }
@@ -963,7 +976,7 @@ test(
         ).length,
         0
       )
-      for (const entry of attempt.verdict.files)
+      for (const entry of attempt.verdict.files) {
         assert.equal(
           reads.mock.calls.filter(
             (call) =>
@@ -971,6 +984,7 @@ test(
           ).length,
           1
         )
+      }
       reads.mock.resetCalls()
       assert.equal(reopened.start(f.request, 'human'), failed.id)
       reopened.get(failed.id)
@@ -1080,8 +1094,9 @@ test(
       assert.ok(source)
       const fingerprint = t.mock.method(require('../snapshot.cjs'), 'sha256')
       const reads = t.mock.method(fs, 'readFileSync')
-      for (let i = 0; i < 3; i++)
+      for (let i = 0; i < 3; i++) {
         assert.strictEqual(f.owner.sourceFor(first.id, firstAttempt), source)
+      }
       assert.equal(fingerprint.mock.callCount(), 0)
       assert.equal(reads.mock.callCount(), 0)
       reads.mock.restore()
@@ -1131,8 +1146,9 @@ test(
       if (
         fail &&
         to === path.join(f.directory, f.request.requestId, 'task.json')
-      )
+      ) {
         throw new Error('completed-save-failure')
+      }
       return rename(from, to)
     })
     try {

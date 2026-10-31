@@ -503,10 +503,11 @@ describe('App component mapping before drawing', () => {
         { pathId: 'path-1', componentType: 'oval' }
       ],
       [{ pathId: 'path-1', componentType: 'rect', extra: true }]
-    ])
+    ]) {
       expect(() =>
         prepareLocalVectorArtifact(artifact, { ...args, componentMappings })
       ).toThrow()
+    }
     const mapping = [{ pathId: 'path-1', componentType: 'rect' }]
     expect(() =>
       prepareLocalVectorArtifact(artifact, {

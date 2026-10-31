@@ -20,7 +20,9 @@ export function frameNightLight(
     )
     result.metalness = region.metalness
     result.environmentIntensity = region.environmentIntensity
-    if (region.opacity < 1) result.opacity = region.opacity
+    if (region.opacity < 1) {
+      result.opacity = region.opacity
+    }
     if ('emissive' in region && typeof region.emissive === 'string') {
       result.emissive =
         colors[region.id] ?? Number.parseInt(region.emissive.slice(1), 16)

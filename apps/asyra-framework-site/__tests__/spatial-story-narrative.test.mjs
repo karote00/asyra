@@ -58,8 +58,9 @@ test('growth adds two different capabilities sequentially and retains the create
 
 test('the projected saved result survives adaptation, growth and the ending', () => {
   for (let chapter = 3; chapter < 6; chapter++) {
-    for (const progress of [0, 0.5, 1])
+    for (const progress of [0, 0.5, 1]) {
       assert.equal(getStoryFrame(chapter, progress).effects.published, 1)
+    }
   }
 })
 

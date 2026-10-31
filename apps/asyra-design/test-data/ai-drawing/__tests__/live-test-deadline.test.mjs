@@ -144,7 +144,9 @@ test(
       assert.deepEqual(receipt.errors, [])
       assert.doesNotThrow(() => process.kill(sibling.child.pid, 0))
     } finally {
-      if (timer) await timer.stop()
+      if (timer) {
+        await timer.stop()
+      }
       launcher.kill('SIGKILL')
       if (descendant) {
         try {
@@ -219,7 +221,9 @@ test(
         'surviving provider group must still stop'
       )
     } finally {
-      if (timer) await timer.stop()
+      if (timer) {
+        await timer.stop()
+      }
       launcher.kill('SIGKILL')
       if (child) {
         try {

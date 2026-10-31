@@ -21,7 +21,9 @@ describe('asset preview work boundary', () => {
       build
     )
     const original = layer.getBounds()
-    for (const view of REVIEW_VIEWS.slice(0, 5)) controller.setView(view)
+    for (const view of REVIEW_VIEWS.slice(0, 5)) {
+      controller.setView(view)
+    }
     expect(build).toHaveBeenCalledOnce()
     expect(submit).toHaveBeenCalledOnce()
     expect(camera).toHaveBeenCalledTimes(5)
@@ -47,7 +49,9 @@ describe('asset preview work boundary', () => {
     controller.setView('Front')
     controller.setNeutral(true)
     const last = submit.mock.lastCall
-    if (!last) throw new Error('Expected submitted frame')
+    if (!last) {
+      throw new Error('Expected submitted frame')
+    }
     expect(last[0].meshes[0].descriptor.shape).toBe(near)
     expect(last[0].meshes[0].descriptor.color).toBe(0xb9b9b9)
     expect(build).toHaveBeenCalledOnce()
@@ -74,8 +78,9 @@ describe('asset preview work boundary', () => {
     expect(detailForError('near', 0.39)).toBe('distant')
     expect(detailForError('distant', 0.61)).toBe('near')
     expect(() => detailForError('near', NaN)).toThrow()
-    for (const view of REVIEW_VIEWS)
+    for (const view of REVIEW_VIEWS) {
       expect(cameraForView(view).kind).toBe('camera')
+    }
     const layer = new SpatialLayer(vi.fn()),
       controller = createPreviewController(layer, {
         height: 800,

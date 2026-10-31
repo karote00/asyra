@@ -13,7 +13,9 @@ const scenario = manifest.scenarios.find(
   (entry: { id: string }) =>
     entry.id === (process.env.FLOW_PROOF_SCENARIO ?? 'baseline')
 )
-if (!scenario) throw new Error('Unknown coverage proof scenario')
+if (!scenario) {
+  throw new Error('Unknown coverage proof scenario')
+}
 // Public source entries consumed by the existing Core/Render/Utils closure.
 const sourceAliases = [
   'core',
@@ -40,14 +42,18 @@ export default {
       name: 'coverage-owner-scenario',
       enforce: 'pre' as const,
       resolveId(id: string) {
-        if (id.startsWith('@asyra/'))
+        if (id.startsWith('@asyra/')) {
           throw new Error('Uncaptured source dependency: ' + id)
+        }
       },
       transform(code: string, id: string) {
         const mutation = scenario.mutation
-        if (!mutation || id !== resolve(sourceRoot, mutation.file)) return
-        if (code.split(mutation.from).length !== 2)
+        if (!mutation || id !== resolve(sourceRoot, mutation.file)) {
+          return
+        }
+        if (code.split(mutation.from).length !== 2) {
           throw new Error('Coverage mutation site changed')
+        }
         return { code: code.replace(mutation.from, mutation.to), map: null }
       }
     }

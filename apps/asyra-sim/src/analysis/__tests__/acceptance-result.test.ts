@@ -43,11 +43,18 @@ function scenario(
   penetration = false
 ) {
   const snapshot = structuredClone(base)
-  if (expression) snapshot.rule.acceptance = expression
+  if (expression) {
+    snapshot.rule.acceptance = expression
+  }
   let state: 'finding' | 'clear' | 'unresolved' = 'unresolved'
-  if (penetration || (upper !== null && upper < snapshot.rule.minimumClearance))
+  if (
+    penetration ||
+    (upper !== null && upper < snapshot.rule.minimumClearance)
+  ) {
     state = 'finding'
-  else if (lower > snapshot.rule.minimumClearance) state = 'clear'
+  } else if (lower > snapshot.rule.minimumClearance) {
+    state = 'clear'
+  }
   const coverage = state === 'unresolved' ? 'partial' : 'complete'
   const pairs: MethodPairEvidence[] = snapshot.pairs.map((pair) => ({
     pairId: pair.id,
@@ -116,8 +123,8 @@ it('evaluates all nine AND and OR truth combinations, including nested unknown b
     ['true', 'false', 'unknown'],
     ['true', 'unknown', 'unknown']
   ]
-  for (const kind of ['all', 'any'] as const)
-    for (let a = 0; a < 3; a++)
+  for (const kind of ['all', 'any'] as const) {
+    for (let a = 0; a < 3; a++) {
       for (let b = 0; b < 3; b++) {
         const result = scenario({
           kind,
@@ -126,6 +133,8 @@ it('evaluates all nine AND and OR truth combinations, including nested unknown b
         expect(result.decision?.value).toBe((kind === 'all' ? all : any)[a][b])
         expect(result.decision?.children).toHaveLength(2)
       }
+    }
+  }
   expect(
     scenario({
       kind: 'all',
@@ -218,8 +227,9 @@ it('freezes rule evaluation and rejects forged, omitted or extra historical conc
     { decision: { ...retained.decision, reason: 'Forged reason' } },
     { decision: { ...retained.decision, children: [] } },
     { decision: { ...retained.decision, executable: 'true' } }
-  ])
+  ]) {
     expect(() =>
       validateHistoricalResult(snapshot, { ...retained, ...patch })
     ).toThrow()
+  }
 })

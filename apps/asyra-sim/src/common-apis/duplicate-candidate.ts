@@ -27,8 +27,9 @@ export function duplicateCandidate(
   )
   const remap = (id: string): string => {
     const next = ids.get(id)
-    if (!next)
+    if (!next) {
       throw new Error(`Unresolved body reference in source candidate: ${id}`)
+    }
     return next
   }
   const remapRecord = <T>(
@@ -73,8 +74,9 @@ export function duplicateCandidate(
                   : definition.trajectoryInput.text.replace(
                       /"(?:\\.|[^"\\])*"/g,
                       (token: string, offset: number, text: string) => {
-                        if (!/^\s*:/.test(text.slice(offset + token.length)))
+                        if (!/^\s*:/.test(text.slice(offset + token.length))) {
                           return token
+                        }
                         try {
                           const next = ids.get(JSON.parse(token))
                           return next ? JSON.stringify(next) : token
@@ -153,8 +155,9 @@ export function duplicateCandidate(
         }
       }
     ])
-    for (const experiment of experiments)
+    for (const experiment of experiments) {
       createExperiment(core, id, experiment.name, experiment.draft)
+    }
     return id
   })
 }

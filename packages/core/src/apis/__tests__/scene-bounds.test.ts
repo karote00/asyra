@@ -353,8 +353,9 @@ it('uses analytic rotated oval extents through canonical nested Group world posi
   expect(direct?.maxX).toBeCloseTo(cx + r, 10)
   expect(direct?.minY).toBeCloseTo(cy - r, 10)
   expect(direct?.maxY).toBeCloseTo(cy + r, 10)
-  for (const key of ['minX', 'maxX', 'minY', 'maxY'] as const)
+  for (const key of ['minX', 'maxX', 'minY', 'maxY'] as const) {
     expect(nested?.[key]).toBeCloseTo(Number(direct?.[key]), 10)
+  }
   expect(
     getBounds([
       workspace(),

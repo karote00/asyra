@@ -24,7 +24,9 @@ export const partitionExecutionTime = (
   type Category = (typeof categories)[number]
   const spans: { start: number; end: number; category: Category }[] = []
   for (const step of steps) {
-    if (step.startedMs === null) continue
+    if (step.startedMs === null) {
+      continue
+    }
     const start = Math.min(durationMs, step.startedMs)
     const end = Math.min(durationMs, step.endedMs ?? durationMs)
     const evidence = step.evidence.filter(
@@ -34,7 +36,7 @@ export const partitionExecutionTime = (
     const kind = evidence.find((item) => typeof item.kind === 'string')?.kind
     if (step.kind === 'lifecycle') {
       const ownership = evidence.find((item) => typeof item.owner === 'string')
-      if (ownership?.owner === 'provider')
+      if (ownership?.owner === 'provider') {
         spans.push({
           start,
           end,
@@ -42,8 +44,9 @@ export const partitionExecutionTime = (
             ? 'childProviderMs'
             : 'providerWaitMs'
         })
-      else if (ownership?.owner === 'app')
+      } else if (ownership?.owner === 'app') {
         spans.push({ start, end, category: 'appOrchestrationMs' })
+      }
     } else if (step.kind === 'action') {
       const internal = evidence.some(
         (item) =>
@@ -61,20 +64,32 @@ export const partitionExecutionTime = (
           { start, end: boundary, category: 'toolQueueMs' },
           { start: boundary, end, category: 'toolExecutionMs' }
         )
-      } else spans.push({ start, end, category: 'toolUnsplitMs' })
+      } else {
+        spans.push({ start, end, category: 'toolUnsplitMs' })
+      }
     } else {
       let category: Category = 'unattributedMs'
-      if (evidence.some((item) => typeof item.method === 'string'))
+      if (evidence.some((item) => typeof item.method === 'string')) {
         category = 'providerRequestMs'
-      if (kind === 'agentMessage') category = 'providerResponseEventMs'
-      if (kind === 'reasoning') category = 'providerReasoningEventMs'
-      if (kind === 'sleep') category = 'nativeWaitMs'
+      }
+      if (kind === 'agentMessage') {
+        category = 'providerResponseEventMs'
+      }
+      if (kind === 'reasoning') {
+        category = 'providerReasoningEventMs'
+      }
+      if (kind === 'sleep') {
+        category = 'nativeWaitMs'
+      }
       if (
         kind === 'functionCallOutput' &&
         ['exec', 'wait'].includes(step.tool ?? '')
-      )
+      ) {
         category = 'providerOrchestrationEventMs'
-      if (step.kind === 'research') category = 'researchMs'
+      }
+      if (step.kind === 'research') {
+        category = 'researchMs'
+      }
       spans.push({ start, end, category })
     }
   }
@@ -122,7 +137,7 @@ export const summarizeAppCallGaps = (
     beforeTool: string | null = null
   for (const call of calls) {
     const start = Math.min(durationMs, call.startedMs ?? 0)
-    if (start > end)
+    if (start > end) {
       gaps.push({
         startMs: end,
         endMs: start,
@@ -130,13 +145,14 @@ export const summarizeAppCallGaps = (
         beforeTool,
         afterTool: call.tool
       })
+    }
     const finish = Math.min(durationMs, call.endedMs ?? durationMs)
     if (finish > end) {
       end = finish
       beforeTool = call.tool
     }
   }
-  if (end < durationMs)
+  if (end < durationMs) {
     gaps.push({
       startMs: end,
       endMs: durationMs,
@@ -144,6 +160,7 @@ export const summarizeAppCallGaps = (
       beforeTool,
       afterTool: null
     })
+  }
   return gaps
     .sort((a, b) => b.durationMs - a.durationMs)
     .slice(0, 10)
@@ -155,8 +172,9 @@ export const summarizeAppCallGaps = (
             step.startedMs === null ||
             step.startedMs >= gap.endMs ||
             (step.endedMs ?? durationMs) <= gap.startMs
-          )
+          ) {
             return []
+          }
           return [
             {
               ...step,

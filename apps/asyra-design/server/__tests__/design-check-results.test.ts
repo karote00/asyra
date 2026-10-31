@@ -103,7 +103,7 @@ describe('retained design check results', () => {
 
 it('reads unresolved work without scanning accumulated passes and rejects dependency cycles', () => {
   const store = createDesignCheckResults()
-  for (let index = 0; index < 2000; index++)
+  for (let index = 0; index < 2000; index++) {
     store.record({
       id: `part-${index}`,
       origin: 'tool',
@@ -111,6 +111,7 @@ it('reads unresolved work without scanning accumulated passes and rejects depend
       evidence: 'Validated',
       dependencies: { [`part:${index}`]: '1' }
     })
+  }
   store.record({
     id: 'pending',
     origin: 'main-agent',
@@ -375,7 +376,9 @@ it('selects transitive check dependencies without enumerating unrelated result p
   record('root')
   record('middle', { 'check:root': '1' })
   record('leaf', { 'check:middle': '1' })
-  for (let index = 0; index < 100; index++) record(`other-${index}`)
+  for (let index = 0; index < 100; index++) {
+    record(`other-${index}`)
+  }
   expect(store.dependencyIds(['leaf'])).toEqual(['leaf', 'middle', 'root'])
   expect(store.dependencyIds(['missing'])).toEqual(['missing'])
 })
@@ -383,7 +386,7 @@ it('selects transitive check dependencies without enumerating unrelated result p
 it('summarizes large retained failures without retransmitting their evidence', () => {
   const store = createDesignCheckResults()
   const ids = Array.from({ length: 5000 }, (_, index) => `measurement:${index}`)
-  for (const id of ids)
+  for (const id of ids) {
     store.record({
       id,
       origin: 'tool',
@@ -391,6 +394,7 @@ it('summarizes large retained failures without retransmitting their evidence', (
       evidence: 'retained detail '.repeat(100),
       dependencies: { [id]: 'unknown' }
     })
+  }
   const summary = store.summary(ids)
   expect(summary).toEqual({
     countsScope: 'selected-checks',
@@ -399,7 +403,9 @@ it('summarizes large retained failures without retransmitting their evidence', (
     firstPendingId: ids[0]
   })
   expect(JSON.stringify(summary).length).toBeLessThan(200)
-  if (!summary.firstPendingId) throw new Error('Missing pending check identity')
+  if (!summary.firstPendingId) {
+    throw new Error('Missing pending check identity')
+  }
   expect(store.read({ ids: [summary.firstPendingId] }).items[0].evidence).toBe(
     'retained detail '.repeat(100)
   )
@@ -491,7 +497,7 @@ it('admits a complete detached mechanical selection and rejects mixed ownership'
 
 it('delivers bounded summaries and revision-bound complete details without cloning pending rows', () => {
   const store = createDesignCheckResults()
-  for (let i = 0; i < 137; i++)
+  for (let i = 0; i < 137; i++) {
     store.record({
       id: `check-${i}`,
       origin: 'tool',
@@ -499,6 +505,7 @@ it('delivers bounded summaries and revision-bound complete details without cloni
       evidence: 'x'.repeat(3000),
       dependencies: { geometry: '1' }
     })
+  }
   const clone = vi.spyOn(globalThis, 'structuredClone')
   const summary = store.deliver()
   expect(clone).not.toHaveBeenCalled()
@@ -519,7 +526,9 @@ it('delivers bounded summaries and revision-bound complete details without cloni
       offset,
       revision: summary.revision
     })
-    if (!page.items) throw new Error('Detail page omitted items')
+    if (!page.items) {
+      throw new Error('Detail page omitted items')
+    }
     expect(page.items.length).toBeLessThanOrEqual(40)
     for (const item of page.items) {
       found.push(item.id)
@@ -590,7 +599,7 @@ it('selects result origin before cloning while retaining full and exact reads', 
     ['mechanical', 'tool', 'fail'],
     ['visual-pass', 'main-agent', 'pass'],
     ['visual-fail', 'main-agent', 'fail']
-  ] as const)
+  ] as const) {
     store.record({
       id,
       origin,
@@ -598,6 +607,7 @@ it('selects result origin before cloning while retaining full and exact reads', 
       evidence: id,
       dependencies: { source: '1' }
     })
+  }
   const clone = vi.spyOn(globalThis, 'structuredClone')
   try {
     const selection = { includePassed: true, origin: 'main-agent' as const }

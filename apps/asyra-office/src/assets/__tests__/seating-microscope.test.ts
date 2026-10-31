@@ -9,9 +9,11 @@ it('retains a broad tea-chair crown across the central half-width of the approve
   ).mesh.positions
   for (const sign of [-1, 1]) {
     const heights: number[] = []
-    for (let i = 0; i < positions.length; i += 3)
-      if (Math.abs(positions[i] - sign * 0.12) < 0.003)
+    for (let i = 0; i < positions.length; i += 3) {
+      if (Math.abs(positions[i] - sign * 0.12) < 0.003) {
         heights.push(positions[i + 2])
+      }
+    }
     expect(Math.max(...heights)).toBeGreaterThan(0.64)
   }
 })

@@ -6,7 +6,9 @@ const { canonicalFile } = require('./agent-contract.cjs')
 const { validateMetadata } = require('./pr-review.cjs')
 const hex = (value) => typeof value === 'string' && /^[a-f0-9]{40}$/.test(value)
 const need = (value, message) => {
-  if (!value) throw new Error('GitHub delivery: ' + message)
+  if (!value) {
+    throw new Error('GitHub delivery: ' + message)
+  }
 }
 function transportError(error) {
   const raw = String(error.stderr ?? '')
@@ -47,7 +49,9 @@ function ghRequest(root, method, route, body) {
       'X-GitHub-Api-Version: 2022-11-28',
       route
     ]
-    if (body !== undefined) args.push('--input', '-')
+    if (body !== undefined) {
+      args.push('--input', '-')
+    }
     const child = execFile(
       'gh',
       args,
@@ -67,8 +71,9 @@ function ghRequest(root, method, route, body) {
       },
       (error, stdout, stderr) => {
         if (error) {
-          if (method === 'GET' && /HTTP 404\b/.test(stderr))
+          if (method === 'GET' && /HTTP 404\b/.test(stderr)) {
             return resolve(null)
+          }
           return reject(transportError({ stderr }))
         }
         try {
@@ -165,7 +170,7 @@ function createGitHubDelivery(
         p.changes.length <= 10,
       'invalid changes'
     )
-    for (const c of p.changes)
+    for (const c of p.changes) {
       need(
         canonicalFile(c.path) &&
           sourcePrefix &&
@@ -175,6 +180,7 @@ function createGitHubDelivery(
           sha256(c.after) === c.afterDigest,
         'invalid source difference'
       )
+    }
   }
   function project(pr, p, expectedHead) {
     need(
@@ -202,8 +208,9 @@ function createGitHubDelivery(
     }
   }
   async function findPR(p, record) {
-    if (record.observation?.number)
+    if (record.observation?.number) {
       return api('GET', 'pulls/' + record.observation.number)
+    }
     const list = await api(
       'GET',
       'pulls?state=all&head=' +
@@ -218,7 +225,9 @@ function createGitHubDelivery(
         pr.base?.ref === base
     )
     need(matches.length <= 1, 'ambiguous PR identity')
-    if (!matches.length) return null
+    if (!matches.length) {
+      return null
+    }
     // List responses do not reliably include the merged boolean.
     return api('GET', 'pulls/' + matches[0].number)
   }
@@ -326,7 +335,9 @@ function createGitHubDelivery(
     async observe(p, record) {
       validatePreview(p)
       const pr = await findPR(p, record)
-      if (!pr) return null
+      if (!pr) {
+        return null
+      }
       let result = project(pr, p, record.expectedHead)
       try {
         const [runs, statuses] = await Promise.all([
@@ -365,9 +376,9 @@ function createGitHubDelivery(
             (item) =>
               item.status === 'completed' && item.conclusion === 'success'
           )
-        )
+        ) {
           status = 'passed'
-        else if (
+        } else if (
           items.some((item) =>
             [
               'failure',
@@ -377,15 +388,16 @@ function createGitHubDelivery(
               'action_required'
             ].includes(item.conclusion)
           )
-        )
+        ) {
           status = 'failed'
-        else if (
+        } else if (
           items.some(
             (item) =>
               item.status !== 'completed' || item.conclusion === 'pending'
           )
-        )
+        ) {
           status = 'pending'
+        }
         const latest = await api('GET', 'pulls/' + result.number)
         if (latest.head?.sha !== result.headSha) {
           result = project(latest, p, record.expectedHead)

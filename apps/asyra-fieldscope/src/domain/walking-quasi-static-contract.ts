@@ -149,7 +149,9 @@ function frame(v: unknown) {
 }
 function freeze<T>(v: T): T {
   if (v && typeof v === 'object') {
-    for (const child of Object.values(v)) freeze(child)
+    for (const child of Object.values(v)) {
+      freeze(child)
+    }
     Object.freeze(v)
   }
   return v
@@ -161,7 +163,9 @@ export function readWalkingQuasiStaticRequest(
   motion: WalkingQuasiStaticMotionBinding
 ): WalkingQuasiStaticRequest {
   if (record(raw) && admitted.has(raw)) {
-    if (admitted.get(raw) !== motion.identity) return fail()
+    if (admitted.get(raw) !== motion.identity) {
+      return fail()
+    }
     return raw as unknown as WalkingQuasiStaticRequest
   }
   const r: unknown = structuredClone(raw)
@@ -190,8 +194,9 @@ export function readWalkingQuasiStaticRequest(
       'stanceId',
       'loadCaseId'
     ])
-  )
+  ) {
     return fail()
+  }
   const descriptor = {
     revision: motion.revision,
     sourceId: motion.source.id,
@@ -207,8 +212,9 @@ export function readWalkingQuasiStaticRequest(
       ([key, value]) =>
         r.motion && (r.motion as Record<string, unknown>)[key] === value
     )
-  )
+  ) {
     return fail()
+  }
   if (
     !record(r.configuration) ||
     !exact(r.configuration, ['id', 'kind']) ||
@@ -224,19 +230,23 @@ export function readWalkingQuasiStaticRequest(
     r.time > motion.evaluation.until ||
     !record(r.phase) ||
     !exact(r.phase, ['from', 'until'])
-  )
+  ) {
     return fail()
+  }
   const phase = motion.stance.phases.find(
     (p) =>
       record(r.phase) && p.from === r.phase.from && p.until === r.phase.until
   )
-  if (!phase || r.time < phase.from || r.time > phase.until) return fail()
+  if (!phase || r.time < phase.from || r.time > phase.until) {
+    return fail()
+  }
   const support = r.support
   if (
     !record(support) ||
     !exact(support, ['plane', 'contacts', 'lineOfActionReserve'])
-  )
+  ) {
     return fail()
+  }
   const plane = support.plane,
     reserve = support.lineOfActionReserve
   if (
@@ -257,14 +267,16 @@ export function readWalkingQuasiStaticRequest(
         reserve.metres >= 0 &&
         evidence(reserve.evidence))
     )
-  )
+  ) {
     return fail()
+  }
   const legs = phase.legs.filter((l) => l.state.kind === 'support')
   if (
     !Array.isArray(support.contacts) ||
     support.contacts.length !== legs.length
-  )
+  ) {
     return fail()
+  }
   const chains = new Set<string>()
   for (const contact of support.contacts) {
     if (
@@ -277,16 +289,18 @@ export function readWalkingQuasiStaticRequest(
         'position'
       ]) ||
       !id(contact.chainId)
-    )
+    ) {
       return fail()
+    }
     const leg = legs.find((l) => l.chainId === contact.chainId)
     if (
       !leg ||
       leg.state.kind !== 'support' ||
       chains.has(leg.chainId) ||
       contact.contactAssessmentId !== leg.state.contactAssessmentId
-    )
+    ) {
       return fail()
+    }
     const bound = motion.contacts.find(
       (c) =>
         c.chainId === leg.chainId &&
@@ -300,8 +314,9 @@ export function readWalkingQuasiStaticRequest(
       bound.terrainRegionId !== contact.terrainRegionId ||
       bound.pathId !== motion.path.id ||
       bound.loadCaseId !== motion.load.id
-    )
+    ) {
       return fail()
+    }
     const position = contact.position
     if (!(
       unknown(position) ||
@@ -310,8 +325,9 @@ export function readWalkingQuasiStaticRequest(
         position.kind === 'plane-point' &&
         point(position.coordinates, 2) &&
         evidence(position.evidence))
-    ))
+    )) {
       return fail()
+    }
     chains.add(leg.chainId)
   }
   const load = r.loadMasses
@@ -319,8 +335,9 @@ export function readWalkingQuasiStaticRequest(
     !record(load) ||
     !exact(load, ['sourceMassPropertiesId', 'crate', 'carried']) ||
     load.sourceMassPropertiesId !== motion.source.massProperties.id
-  )
+  ) {
     return fail()
+  }
   const crate = load.crate
   if (!unknown(crate)) {
     if (
@@ -339,26 +356,31 @@ export function readWalkingQuasiStaticRequest(
       crate.massKg <= 0 ||
       !point(crate.holderLocalCoM) ||
       !evidence(crate.evidence)
-    )
+    ) {
       return fail()
+    }
   }
   const items =
     motion.load.carried.kind === 'attached' ? motion.load.carried.items : []
-  if (!Array.isArray(load.carried) || load.carried.length !== items.length)
+  if (!Array.isArray(load.carried) || load.carried.length !== items.length) {
     return fail()
+  }
   const attachmentIds = new Set<string>()
   for (const entry of load.carried) {
     if (
       !record(entry) ||
       !exact(entry, ['attachmentId', 'massPropertiesId', 'properties'])
-    )
+    ) {
       return fail()
+    }
     const item = items.find(
       (i) =>
         i.id === entry.attachmentId &&
         i.massPropertiesId === entry.massPropertiesId
     )
-    if (!item || attachmentIds.has(item.id)) return fail()
+    if (!item || attachmentIds.has(item.id)) {
+      return fail()
+    }
     const properties = entry.properties
     if (!(
       unknown(properties) ||
@@ -369,8 +391,9 @@ export function readWalkingQuasiStaticRequest(
         properties.massKg > 0 &&
         point(properties.localCoM) &&
         evidence(properties.evidence))
-    ))
+    )) {
       return fail()
+    }
     attachmentIds.add(item.id)
   }
   const result = freeze(r) as unknown as WalkingQuasiStaticRequest

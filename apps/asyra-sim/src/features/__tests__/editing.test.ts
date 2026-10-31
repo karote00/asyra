@@ -251,7 +251,9 @@ describe('normal canonical editing and replay', () => {
     )
     const saved = await core.save()
     const propertyId = core.getElementData(experimentId)?.props?.experiment
-    if (!propertyId) throw new Error('Missing experiment property')
+    if (!propertyId) {
+      throw new Error('Missing experiment property')
+    }
     ;(saved.props[propertyId] as Record<string, unknown>)[
       PropertyFields.EXPERIMENT
     ] = { invalid: true }
@@ -345,7 +347,9 @@ describe('normal canonical editing and replay', () => {
     const candidate = await features.edit.createCandidate('A', model),
       saved = await core.save()
     const propertyId = core.getElementData('fixture')?.props?.body
-    if (!propertyId) throw new Error('Missing body property')
+    if (!propertyId) {
+      throw new Error('Missing body property')
+    }
     ;(saved.props[propertyId] as Record<string, unknown>)[PropertyFields.BODY] =
       { invalid: true }
     const diagnostics = loadCanonicalDocument(core, saved)
@@ -359,7 +363,9 @@ describe('normal canonical editing and replay', () => {
     const candidate = await features.edit.createCandidate('A', model),
       saved = await core.save()
     const propertyId = core.getElementData('fixture')?.props?.body
-    if (!propertyId) throw new Error('Missing body property')
+    if (!propertyId) {
+      throw new Error('Missing body property')
+    }
     const property = saved.props[propertyId] as Record<string, unknown>
     property[PropertyFields.BODY] = {
       ...(property[PropertyFields.BODY] as Record<string, unknown>),
@@ -549,8 +555,9 @@ it.each(['csv', 'json'] as const)(
     const fixtureId = copiedModel.bodies.find(
       (body) => body.name === 'Fixture'
     )?.id
-    if (!baseId || !fixtureId || !input.trajectoryInput)
+    if (!baseId || !fixtureId || !input.trajectoryInput) {
       throw new Error('Missing copied input')
+    }
     expect(copied.trajectoryInput?.mapping.joints).toEqual({
       [baseId]: { column: 'base', unit: 'rad' }
     })

@@ -34,7 +34,7 @@
       "id": "transaction-inspector",
       "kind": "framework",
       "label": "Existing Factory transaction authority",
-      "href": "../inspectors/transaction-flow-inspector.html"
+      "href": "../workspace/workspace.html#inspector=transaction-atomicity"
     }
   ],
   "lanes": [
@@ -1655,11 +1655,11 @@
   ]
 }
   const deepFreeze = value => {
-    if (!value || typeof value !== 'object' || Object.isFrozen(value)) return value
+    if (!value || typeof value !== 'object' || Object.isFrozen(value)) {return value}
     Object.values(value).forEach(deepFreeze)
     return Object.freeze(value)
   }
   deepFreeze(data)
   globalThis.FLOW_INSPECTOR_DATA = data
-  if (typeof module !== 'undefined' && module.exports) module.exports = data
+  if (typeof module !== 'undefined' && module.exports) {module.exports = data}
 })()

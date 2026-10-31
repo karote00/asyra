@@ -414,7 +414,9 @@ describe('Asyra Design collaboration composition', () => {
       publicationId: 'document-action'
     })
     const propsSlice = mixedPublication.slices[1]
-    if (!propsSlice) throw new Error('Expected retained Props slice')
+    if (!propsSlice) {
+      throw new Error('Expected retained Props slice')
+    }
     expect(received).toHaveBeenCalledOnce()
     expect(received).toHaveBeenCalledWith(
       prepareDocumentPublication(

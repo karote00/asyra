@@ -102,7 +102,9 @@ const documentPersistenceClient = createHttpDocumentPersistenceClient({
 })
 const persistencePolicyNumber = (name: string, fallback: number): number => {
   const value = process.env[name]?.trim()
-  if (!value) return fallback
+  if (!value) {
+    return fallback
+  }
   const parsed = Number(value)
   if (!Number.isSafeInteger(parsed) || parsed <= 0) {
     throw new Error(`${name} must be a positive integer`)
@@ -181,7 +183,9 @@ const recordCollaborationProfile = (
   evidence: Readonly<Record<string, unknown>>,
   { immediate = false }: Readonly<{ immediate?: boolean }> = {}
 ): void => {
-  if (!collaborationProfilingEnabled) return
+  if (!collaborationProfilingEnabled) {
+    return
+  }
   if (immediate) {
     console.log(`${prefix} ${JSON.stringify({ ...evidence, sampleCount: 1 })}`)
     return
@@ -327,7 +331,9 @@ const sendControl = (
   socket: WebSocket,
   message: CollaborationServerMessage
 ): boolean => {
-  if (socket.readyState !== WebSocket.OPEN) return false
+  if (socket.readyState !== WebSocket.OPEN) {
+    return false
+  }
   socket.send(encodeCollaborationControlMessage(message), {
     binary: false,
     compress: false
@@ -352,7 +358,9 @@ const rawDataToBytes = (data: RawData): Uint8Array => {
     })
     return output
   }
-  if (data instanceof ArrayBuffer) return new Uint8Array(data)
+  if (data instanceof ArrayBuffer) {
+    return new Uint8Array(data)
+  }
   return new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
 }
 
@@ -361,11 +369,15 @@ const isWellFormedFrameString = (value: string): boolean => {
     const code = value.charCodeAt(index)
     if (code >= 0xd800 && code <= 0xdbff) {
       const next = value.charCodeAt(index + 1)
-      if (next < 0xdc00 || next > 0xdfff) return false
+      if (next < 0xdc00 || next > 0xdfff) {
+        return false
+      }
       index += 1
       continue
     }
-    if (code >= 0xdc00 && code <= 0xdfff) return false
+    if (code >= 0xdc00 && code <= 0xdfff) {
+      return false
+    }
   }
   return true
 }
@@ -533,7 +545,9 @@ const getOrCreateRoom = async (
 ): Promise<RoomState> => {
   signal.throwIfAborted()
   const existing = rooms.get(fileId)
-  if (existing) return existing
+  if (existing) {
+    return existing
+  }
   let pending = roomInitializations.get(fileId)
   if (!pending) {
     const controller = new AbortController()
@@ -560,7 +574,9 @@ const getOrCreateRoom = async (
         },
         onDurableSequenceChange: (durableSequence) => {
           const room = roomReference.current
-          if (!room) return
+          if (!room) {
+            return
+          }
           room.pendingPublications = room.pendingPublications.filter(
             ({ sequence }) => sequence > durableSequence
           )
@@ -592,8 +608,9 @@ const getOrCreateRoom = async (
     pending = initialization
     roomInitializations.set(fileId, initialization)
     const forget = () => {
-      if (roomInitializations.get(fileId) === initialization)
+      if (roomInitializations.get(fileId) === initialization) {
         roomInitializations.delete(fileId)
+      }
     }
     void promise.then(forget, forget)
   }
@@ -602,7 +619,9 @@ const getOrCreateRoom = async (
   return new Promise<RoomState>((resolveRoom, rejectRoom) => {
     let settled = false
     const release = (): boolean => {
-      if (settled) return false
+      if (settled) {
+        return false
+      }
       settled = true
       signal.removeEventListener('abort', abort)
       initialization.waiters -= 1
@@ -616,18 +635,26 @@ const getOrCreateRoom = async (
       return true
     }
     const abort = () => {
-      if (release()) rejectRoom(signal.reason)
+      if (release()) {
+        rejectRoom(signal.reason)
+      }
     }
     signal.addEventListener('abort', abort, { once: true })
     initialization.promise.then(
       (room) => {
-        if (release()) resolveRoom(room)
+        if (release()) {
+          resolveRoom(room)
+        }
       },
       (error) => {
-        if (release()) rejectRoom(error)
+        if (release()) {
+          rejectRoom(error)
+        }
       }
     )
-    if (signal.aborted) abort()
+    if (signal.aborted) {
+      abort()
+    }
   })
 }
 
@@ -638,8 +665,12 @@ const notifyCapacityWaiters = (peer: PeerSession, available: boolean): void => {
 }
 
 const canAdmitFrame = (peer: PeerSession, frameByteLength: number): boolean => {
-  if (peer.closed || peer.socket.readyState !== WebSocket.OPEN) return false
-  if (peer.queuedBytes === 0) return true
+  if (peer.closed || peer.socket.readyState !== WebSocket.OPEN) {
+    return false
+  }
+  if (peer.queuedBytes === 0) {
+    return true
+  }
   return (
     frameByteLength <= PEER_QUEUE_CAPACITY_BYTES &&
     peer.queuedBytes + frameByteLength <= PEER_QUEUE_CAPACITY_BYTES
@@ -660,7 +691,9 @@ const waitForFrameCapacity = async (
     const available = await new Promise<boolean>((resolveWaiter) => {
       let settled = false
       const settle = (value: boolean): void => {
-        if (settled) return
+        if (settled) {
+          return
+        }
         settled = true
         signal.removeEventListener('abort', abort)
         peer.capacityWaiters.delete(settle)
@@ -669,9 +702,13 @@ const waitForFrameCapacity = async (
       const abort = (): void => settle(false)
       peer.capacityWaiters.add(settle)
       signal.addEventListener('abort', abort, { once: true })
-      if (signal.aborted) settle(false)
+      if (signal.aborted) {
+        settle(false)
+      }
     })
-    if (!available) return false
+    if (!available) {
+      return false
+    }
   }
   return (
     !signal.aborted && !peer.closed && peer.socket.readyState === WebSocket.OPEN
@@ -684,15 +721,18 @@ const retireIdleRoom = (room: RoomState): boolean => {
     room.pendingAdmissions !== 0 ||
     room.pendingPublications.length !== 0 ||
     rooms.get(room.fileId) !== room
-  )
+  ) {
     return false
+  }
   room.persistenceQueue.dispose()
   rooms.delete(room.fileId)
   return true
 }
 
 const removePeer = (peer: PeerSession): void => {
-  if (peer.closed) return
+  if (peer.closed) {
+    return
+  }
   const wasReady = peer.ready
   peer.closed = true
   peer.outboundQueue.length = 0
@@ -700,11 +740,15 @@ const removePeer = (peer: PeerSession): void => {
   notifyCapacityWaiters(peer, false)
   const room = peer.room
   const actorId = peer.actorId
-  if (!room || !actorId || room.peers.get(actorId) !== peer) return
+  if (!room || !actorId || room.peers.get(actorId) !== peer) {
+    return
+  }
   room.peers.delete(actorId)
   if (wasReady) {
     for (const roomPeer of room.peers.values()) {
-      if (!roomPeer.ready) continue
+      if (!roomPeer.ready) {
+        continue
+      }
       sendControl(roomPeer.socket, {
         type: CollaborationMessageTypes.AWARENESS_DISCONNECT,
         actorId,
@@ -712,19 +756,29 @@ const removePeer = (peer: PeerSession): void => {
       })
     }
   }
-  if (retireIdleRoom(room)) return
-  if (room.peers.size === 0) void room.persistenceQueue.flushNow()
+  if (retireIdleRoom(room)) {
+    return
+  }
+  if (room.peers.size === 0) {
+    void room.persistenceQueue.flushNow()
+  }
 }
 
 const retireCompletedOutboundFrames = (peer: PeerSession): void => {
-  if (peer.closed) return
+  if (peer.closed) {
+    return
+  }
   let retired = false
   while (true) {
     const active = peer.outboundQueue[0]
-    if (!active?.sendCallbackDone || !active.frameConsumed) break
+    if (!active?.sendCallbackDone || !active.frameConsumed) {
+      break
+    }
     peer.outboundQueue.shift()
     peer.queuedBytes -= active.bytes.byteLength
-    if (peer.queuedBytes < 0) peer.queuedBytes = 0
+    if (peer.queuedBytes < 0) {
+      peer.queuedBytes = 0
+    }
     retired = true
     recordCollaborationProfile('AI_COLLABORATION_SERVER_PEER_DRAIN', {
       requestId: active.sourceRequestId,
@@ -771,7 +825,9 @@ const sendAdmittedFrame = (
   peer: PeerSession,
   frame: OutboundPublicationFrame
 ): void => {
-  if (peer.closed) return
+  if (peer.closed) {
+    return
+  }
   if (peer.socket.readyState !== WebSocket.OPEN) {
     removePeer(peer)
     return
@@ -825,12 +881,16 @@ const enqueueOutboundFrame = (
     frameConsumed: false
   }
   peer.outboundQueue.push(outbound)
-  if (peer.ready) sendAdmittedFrame(peer, outbound)
+  if (peer.ready) {
+    sendAdmittedFrame(peer, outbound)
+  }
 }
 
 const sendQueuedBootstrapSuccessorFrames = (peer: PeerSession): void => {
   for (const frame of peer.outboundQueue) {
-    if (!frame.sendCallbackDone) sendAdmittedFrame(peer, frame)
+    if (!frame.sendCallbackDone) {
+      sendAdmittedFrame(peer, frame)
+    }
   }
 }
 
@@ -985,7 +1045,9 @@ const consumeFrameCredit = (
       candidate.header.publicationId === message.publicationId &&
       candidate.header.frameByteLength === message.frameByteLength
   )
-  if (!frame) return
+  if (!frame) {
+    return
+  }
   frame.frameConsumed = true
   retireCompletedOutboundFrames(peer)
 }
@@ -1057,7 +1119,9 @@ webSocketServer.on('connection', (socket) => {
   }, 5_000)
 
   const rejectConnection = (error: unknown, reason: string): void => {
-    if (inboundFailed) return
+    if (inboundFailed) {
+      return
+    }
     inboundFailed = true
     sourceFrameAdmission?.controller.abort()
     pendingSourcePublicationSettlement?.abort()
@@ -1093,11 +1157,12 @@ webSocketServer.on('connection', (socket) => {
     const bootstrap = await enqueueRoomAdmission(room, async () => {
       const requireOpenPeer = () => {
         bootstrapController.signal.throwIfAborted()
-        if (peer.closed || socket.readyState !== WebSocket.OPEN)
+        if (peer.closed || socket.readyState !== WebSocket.OPEN) {
           throw new SocketServerFailure(
             'connection-rejected',
             '[collaboration] document session closed during bootstrap'
           )
+        }
       }
       requireOpenPeer()
       if (room.resetting) {
@@ -1165,7 +1230,9 @@ webSocketServer.on('connection', (socket) => {
       )
     }
     for (const roomPeer of room.peers.values()) {
-      if (roomPeer === peer || !roomPeer.ready) continue
+      if (roomPeer === peer || !roomPeer.ready) {
+        continue
+      }
       sendControl(roomPeer.socket, {
         type: CollaborationMessageTypes.AWARENESS,
         ...message.message
@@ -1212,18 +1279,20 @@ webSocketServer.on('connection', (socket) => {
         !room ||
         room.resetting ||
         room.documentGeneration !== message.documentGeneration
-      )
+      ) {
         throw new Error(
           'Document generation changed; persistence cannot be confirmed'
         )
+      }
       const durableSequence = await room.persistenceQueue.whenDurable(
         message.sequence,
         cancellation.signal
       )
-      if (room.resetting || peer.room !== room || peer.closed)
+      if (room.resetting || peer.room !== room || peer.closed) {
         throw new Error(
           'Document session changed during persistence confirmation'
         )
+      }
       sendControl(socket, {
         type: CollaborationMessageTypes.RESPONSE,
         requestId: message.requestId,
@@ -1236,13 +1305,14 @@ webSocketServer.on('connection', (socket) => {
         }
       })
     } catch (error) {
-      if (!peer.closed)
+      if (!peer.closed) {
         sendControl(socket, {
           type: CollaborationMessageTypes.RESPONSE,
           requestId: message.requestId,
           ok: false,
           error: failureMessage(error)
         })
+      }
     } finally {
       socket.removeListener('close', closed)
     }
@@ -1285,7 +1355,9 @@ webSocketServer.on('connection', (socket) => {
       }
       if (room.resetting) {
         for (const roomPeer of room.peers.values()) {
-          if (roomPeer === peer || roomPeer.closed) continue
+          if (roomPeer === peer || roomPeer.closed) {
+            continue
+          }
           roomPeer.socket.close(1012, 'document reset')
         }
       }
@@ -1455,7 +1527,9 @@ webSocketServer.on('connection', (socket) => {
     return new Promise<boolean>((resolve, reject) => {
       let settled = false
       const finish = (operation: () => void): void => {
-        if (settled) return
+        if (settled) {
+          return
+        }
         settled = true
         signal.removeEventListener('abort', abort)
         if (pendingSourcePublicationSettlement === pending) {
@@ -1493,7 +1567,9 @@ webSocketServer.on('connection', (socket) => {
         publicationIds,
         sequences
       })
-      if (!proposed) abort()
+      if (!proposed) {
+        abort()
+      }
     })
   }
 
@@ -1799,7 +1875,9 @@ webSocketServer.on('connection', (socket) => {
           publicationId: header.publicationId,
           frameByteLength: header.frameByteLength
         })
-        if (!credited || !complete) return
+        if (!credited || !complete) {
+          return
+        }
         sendControl(socket, {
           type: CollaborationMessageTypes.RESPONSE,
           requestId: request.requestId,
@@ -1821,7 +1899,9 @@ webSocketServer.on('connection', (socket) => {
         })
       })
       .catch((error) => {
-        if (sourceFrameAdmission !== admission || inboundFailed) return
+        if (sourceFrameAdmission !== admission || inboundFailed) {
+          return
+        }
         sourceFrameAdmission = null
         if (
           error instanceof SocketServerFailure &&
@@ -1840,7 +1920,9 @@ webSocketServer.on('connection', (socket) => {
             publicationId: header.publicationId,
             frameByteLength: header.frameByteLength
           })
-          if (!credited) return
+          if (!credited) {
+            return
+          }
           sendControl(socket, {
             type: CollaborationMessageTypes.RESPONSE,
             requestId: rejectedRequestId,
@@ -1854,7 +1936,9 @@ webSocketServer.on('connection', (socket) => {
   }
 
   socket.on('message', (data, isBinary) => {
-    if (inboundFailed) return
+    if (inboundFailed) {
+      return
+    }
     if (isBinary && sourceFrameAdmission) {
       rejectConnection(
         new SocketServerFailure(
@@ -1915,7 +1999,9 @@ console.log(
 
 let closing = false
 const close = async (): Promise<void> => {
-  if (closing) return
+  if (closing) {
+    return
+  }
   closing = true
   for (const client of webSocketServer.clients) {
     client.close(1001, 'server shutdown')

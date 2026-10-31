@@ -715,12 +715,13 @@ const createCompositionActions = (
         assertNotAborted(context)
         let status: 'complete' | 'no-change' | 'partial' | 'failed' =
           statusForMutation(appliedElementIds.length, 0)
-        if (skipped.some((item) => item.reason !== 'no-change'))
+        if (skipped.some((item) => item.reason !== 'no-change')) {
           status =
             appliedElementIds.length ||
             skipped.some((item) => item.reason === 'no-change')
               ? 'partial'
               : 'failed'
+        }
         return Object.freeze({
           action: AiActionNames.UPDATE_COMPOSITION_ELEMENTS,
           appliedElementIds: Object.freeze(appliedElementIds),
@@ -893,31 +894,35 @@ const createCompositionActions = (
       if (
         !isCompositionType(targetType) ||
         args.compositionId === args.drawing.groupDescriptor.id
-      )
+      ) {
         throw new AiCompositionError(
           'The original drawing is missing or is not an editable composition. Select the drawing to revise and try again.'
         )
+      }
       const result = (await insert.execute(args.drawing, context)) as {
         status: string
         compositionId: string
       }
-      if (result.status !== 'complete')
+      if (result.status !== 'complete') {
         throw new AiCompositionError(
           'The new drawing was only partly created. The original drawing is still on the canvas; review both before continuing.'
         )
+      }
       assertNotAborted(context)
-      if (apis.getElementType(args.compositionId) !== targetType)
+      if (apis.getElementType(args.compositionId) !== targetType) {
         throw new AiCompositionError(
           'The original drawing changed during this revision. Review the canvas and select the drawing again.'
         )
+      }
       const removal = (await remove.execute(
         { compositionId: args.compositionId },
         context
       )) as { status: string }
-      if (removal.status !== 'complete')
+      if (removal.status !== 'complete') {
         throw new AiCompositionError(
           'The new drawing was created, but the original could not be removed. Review the two drawings before continuing.'
         )
+      }
       return Object.freeze({
         ...result,
         action: AiActionNames.REPLACE_VECTOR_COMPOSITION
@@ -1017,14 +1022,19 @@ export const createAiActions = (
         if (
           results.length !== 1 ||
           !['changed', 'unchanged', 'unavailable'].includes(results[0])
-        )
+        ) {
           throw new AiActionExecutionError(
             'The visibility owner returned an invalid target receipt.'
           )
+        }
         const result = results[0]
         let status = 'no-change'
-        if (result === 'changed') status = 'complete'
-        if (result === 'unavailable') status = 'failed'
+        if (result === 'changed') {
+          status = 'complete'
+        }
+        if (result === 'unavailable') {
+          status = 'failed'
+        }
         return Object.freeze({
           action: AiActionNames.SET_ELEMENT_VISIBILITY,
           changed: result === 'changed',
@@ -1073,8 +1083,9 @@ export const createAiActions = (
         try {
           apis.selectElements([...args.elementIds], mutationOptions)
         } catch (error) {
-          if (error instanceof SelectionTargetUnavailableError)
+          if (error instanceof SelectionTargetUnavailableError) {
             throw new AiActionExecutionError(error.message)
+          }
           throw error
         }
       })
@@ -1122,8 +1133,9 @@ export const createAiActions = (
           typeof args.question !== 'string' ||
           !args.question.trim() ||
           args.question.length > 1000
-        )
+        ) {
           throw new AiActionError()
+        }
         return Object.freeze({
           action: AiActionNames.REQUEST_CLARIFICATION,
           status: 'no-change',
@@ -1187,8 +1199,9 @@ export const createAiActions = (
         typeof args.message !== 'string' ||
         !args.message.trim() ||
         args.message.length > 1000
-      )
+      ) {
         throw new AiActionError()
+      }
       let persistence:
         | Awaited<
             ReturnType<

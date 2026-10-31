@@ -35,7 +35,9 @@ function NativePart({
   const geometry = (id: string, value: Geometry) =>
     shape(id, { geometry: value })
 
-  if (!collider) return null
+  if (!collider) {
+    return null
+  }
 
   return (
     <details key={collider.id} open>

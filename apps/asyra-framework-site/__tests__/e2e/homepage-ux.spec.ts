@@ -14,7 +14,9 @@ for (const width of [320, 394, 820, 1024, 1280, 1440, 2560]) {
       .getByRole('link', { name: 'Asyra home' })
       .boundingBox()
     const actions = await header.locator(':scope > div').boundingBox()
-    if (!logo || !actions) throw new Error('Header layout is missing')
+    if (!logo || !actions) {
+      throw new Error('Header layout is missing')
+    }
     expect(actions.x - logo.x - logo.width).toBeGreaterThanOrEqual(8)
     if (width >= 1024) {
       await expect(header.locator('summary')).toBeHidden()
@@ -30,13 +32,17 @@ for (const width of [320, 394, 820, 1024, 1280, 1440, 2560]) {
     const links = await header.locator('a, summary').all()
     const boxes = []
     for (const link of links) {
-      if (!(await link.isVisible())) continue
+      if (!(await link.isVisible())) {
+        continue
+      }
       const font = await link.evaluate((el) =>
         parseFloat(getComputedStyle(el).fontSize)
       )
       expect.soft(font).toBeGreaterThanOrEqual(14)
       const box = await link.boundingBox()
-      if (!box) throw new Error('Header control has no bounds')
+      if (!box) {
+        throw new Error('Header control has no bounds')
+      }
       expect.soft(box.height).toBeGreaterThanOrEqual(40)
       expect.soft(box.x).toBeGreaterThanOrEqual(0)
       expect.soft(box.x + box.width).toBeLessThanOrEqual(width)

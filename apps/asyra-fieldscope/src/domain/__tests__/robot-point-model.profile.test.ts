@@ -10,7 +10,7 @@ it('profiles four complete affine-entry batches with the fixed scalar and elapse
     started = performance.now(),
     report = []
   try {
-    for (const kind of ['normal', 'subnormal'] as const)
+    for (const kind of ['normal', 'subnormal'] as const) {
       for (const pass of ['first', 'repeated'] as const) {
         const start = performance.now()
         let evaluations = 0,
@@ -21,8 +21,9 @@ it('profiles four complete affine-entry batches with the fixed scalar and elapse
           if (
             performance.now() - start > 1000 ||
             performance.now() - started > 10000
-          )
+          ) {
             throw new Error('Point profile budget exceeded')
+          }
           const angles =
             kind === 'normal'
               ? [-0.7, -0.31, 0.19, 0.4].map((x) => 2 * (x + pose / 2000))
@@ -62,6 +63,7 @@ it('profiles four complete affine-entry batches with the fixed scalar and elapse
           milliseconds
         })
       }
+    }
   } finally {
     call.mockRestore()
   }

@@ -23,16 +23,22 @@ export function useTriangleProjectionControl(omit: boolean) {
     const pending = [index.root]
     while (pending.length) {
       const node = pending.pop()
-      if (!node) throw new Error('Missing complete measured node')
-      if (triangles.has(node.bounds))
+      if (!node) {
+        throw new Error('Missing complete measured node')
+      }
+      if (triangles.has(node.bounds)) {
         throw new Error('Ambiguous node/source identity')
+      }
       nodes.add(node.bounds)
       for (const triangle of node.triangles) {
-        if (nodes.has(triangle.bounds))
+        if (nodes.has(triangle.bounds)) {
           throw new Error('Ambiguous triangle/node identity')
+        }
         triangles.add(triangle.bounds)
       }
-      if (node.children) pending.push(...node.children)
+      if (node.children) {
+        pending.push(...node.children)
+      }
     }
   }
   const build = meshIndex.buildMeshIndex
@@ -51,10 +57,14 @@ export function useTriangleProjectionControl(omit: boolean) {
   vi.spyOn(projections, 'projectedBoundsGap').mockImplementation(
     (a, ap, b, bp, threshold, checkpoint) => {
       const triangle = triangles.has(a) && triangles.has(b)
-      if (!triangle && (!nodes.has(a) || !nodes.has(b)))
+      if (!triangle && (!nodes.has(a) || !nodes.has(b))) {
         throw new Error('Unknown measured projection level')
-      if (triangle) counts.triangleCalls++
-      else counts.nodeCalls++
+      }
+      if (triangle) {
+        counts.triangleCalls++
+      } else {
+        counts.nodeCalls++
+      }
       if (triangle && omit) {
         counts.omittedTriangleCalls++
         return 0
@@ -62,13 +72,19 @@ export function useTriangleProjectionControl(omit: boolean) {
       const started = performance.now()
       try {
         const gap = project(a, ap, b, bp, threshold, () => {
-          if (triangle) counts.triangleAxes++
-          else counts.nodeAxes++
+          if (triangle) {
+            counts.triangleAxes++
+          } else {
+            counts.nodeAxes++
+          }
           checkpoint()
         })
         if (gap > threshold) {
-          if (triangle) counts.triangleRejections++
-          else counts.nodeRejections++
+          if (triangle) {
+            counts.triangleRejections++
+          } else {
+            counts.nodeRejections++
+          }
         }
         return gap
       } finally {

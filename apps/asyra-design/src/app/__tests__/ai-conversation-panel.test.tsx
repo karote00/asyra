@@ -26,7 +26,9 @@ import { documentInteractionLock } from '../../ai/document-interaction-lock'
 
 const openHistory = (element: HTMLElement) => {
   const details = element.closest('details')
-  if (!details) throw new Error('Missing work disclosure')
+  if (!details) {
+    throw new Error('Missing work disclosure')
+  }
   act(() => {
     Object.defineProperty(details, 'open', { get: () => true })
     fireEvent(details, new Event('toggle'))
@@ -400,7 +402,9 @@ describe('AI Agent conversation panel intent boundary', () => {
     const body = screen.getByRole('region', { name: 'Conversation messages' })
     const list = screen.getByLabelText('Operational progress')
     const details = screen.getByLabelText('Work history').closest('details')
-    if (!details) throw new Error('Missing history')
+    if (!details) {
+      throw new Error('Missing history')
+    }
     Object.defineProperties(body, {
       scrollHeight: { get: () => (list.children.length ? 1200 : 200) },
       clientHeight: { get: () => 500 }
@@ -431,7 +435,9 @@ describe('AI Agent conversation panel intent boundary', () => {
     })
     const body = screen.getByRole('region', { name: 'Conversation messages' })
     const details = screen.getByLabelText('Work history').closest('details')
-    if (!details) throw new Error('Missing Activity disclosure')
+    if (!details) {
+      throw new Error('Missing Activity disclosure')
+    }
     let height = 1200
     Object.defineProperties(body, {
       scrollHeight: { get: () => height },

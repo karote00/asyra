@@ -20,10 +20,11 @@ afterAll(() => progress?.finish(1))
 it.skipIf(!enabled)(
   'measures both unchanged timeout candidates once with a finite diagnostic window',
   async () => {
-    if (!progress)
+    if (!progress) {
       throw new Error(
         'Capacity profiling requires the owned external supervisor'
       )
+    }
     for (const candidate of [1, 2]) {
       progress.stage('fixture-' + candidate)
       const original = await representativeSnapshot(candidate)
@@ -169,7 +170,9 @@ it.skipIf(!enabled)(
       vi.spyOn(meshIndex, 'worldBounds').mockImplementation((box, pose) => {
         counts.worldBoundsCalls++
         const poses = transformed.get(box) ?? new WeakSet<object>()
-        if (poses.has(pose)) counts.repeatedWorldBounds++
+        if (poses.has(pose)) {
+          counts.repeatedWorldBounds++
+        }
         poses.add(pose)
         transformed.set(box, poses)
         const start = performance.now()
@@ -202,8 +205,9 @@ it.skipIf(!enabled)(
           snapshot,
           () => {
             reportProgress()
-            if (performance.now() - start >= snapshot.budget.maxDurationMs)
+            if (performance.now() - start >= snapshot.budget.maxDurationMs) {
               throw expired
+            }
           },
           (pair) => {
             const now = performance.now(),
@@ -233,7 +237,9 @@ it.skipIf(!enabled)(
       }
       const elapsedMs = performance.now() - start
       let execution = failure ? 'failed' : 'completed'
-      if (failure === expired) execution = 'timed-out'
+      if (failure === expired) {
+        execution = 'timed-out'
+      }
       const report = {
         candidate: candidate + 1,
         diagnosticOnly: true,

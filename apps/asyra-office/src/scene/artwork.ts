@@ -27,8 +27,9 @@ export async function prepareArtwork(
     canvas.width = image.naturalWidth
     canvas.height = image.naturalHeight
     const context = canvas.getContext('2d')
-    if (!context || !canvas.width || !canvas.height)
+    if (!context || !canvas.width || !canvas.height) {
       throw new Error('Artwork source cannot be decoded')
+    }
     context.drawImage(image, 0, 0)
     result.set(source, {
       width: canvas.width,
@@ -56,13 +57,15 @@ export function sampleArtwork(
         p[1] < 0 ||
         p[1] > source.height - 1
     )
-  )
+  ) {
     throw new Error('Artwork corners must stay within the source image')
-  if (!Number.isInteger(size) || size < 2 || size > 512)
+  }
+  if (!Number.isInteger(size) || size < 2 || size > 512) {
     throw new Error('Invalid artwork resolution')
+  }
   const albedo: number[] = [],
     normals: number[] = []
-  for (let y = 0; y < size; y++)
+  for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const u = x / (size - 1),
         v = y / (size - 1)
@@ -89,5 +92,6 @@ export function sampleArtwork(
       }
       normals.push(128, 128, 255, 255)
     }
+  }
   return { width: size, height: size, albedo, normals }
 }

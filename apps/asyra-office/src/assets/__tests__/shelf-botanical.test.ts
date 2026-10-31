@@ -51,8 +51,9 @@ it('distinguishes veined broad foliage, banded swords and a thick spiral succule
   expect(snake.filter((p) => p.material === 'snake-leaf')).toHaveLength(5)
   expect(snake.some((p) => p.id === 'pebbles')).toBe(true)
   expect(succulent.filter((p) => p.id.startsWith('leaf-'))).toHaveLength(21)
-  for (const id of ['cat-ears', 'cat-feet', 'cat-face'])
+  for (const id of ['cat-ears', 'cat-feet', 'cat-face']) {
     expect(succulent.some((p) => p.id === id)).toBe(true)
+  }
   const ears = requiredSpecValue(
     succulent.find((p) => p.id === 'cat-ears'),
     'cat-ears'

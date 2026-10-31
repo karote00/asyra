@@ -414,12 +414,18 @@ describe('transaction batch publishing', () => {
     const applied = vi.fn()
     const committed = vi.fn()
     const projection = subscribeToAppliedEventBatches((events) => {
-      if (events.some((event) => event.type === EventTypes.UPDATE_TRANSACTION))
+      if (
+        events.some((event) => event.type === EventTypes.UPDATE_TRANSACTION)
+      ) {
         applied(events)
+      }
     })
     const observer = subscribeToEventBatches((events) => {
-      if (events.some((event) => event.type === EventTypes.UPDATE_TRANSACTION))
+      if (
+        events.some((event) => event.type === EventTypes.UPDATE_TRANSACTION)
+      ) {
         committed(events)
+      }
     })
     const first = createTransactionEvent('property.first', { value: 1 })
     const second = createTransactionEvent('property.second', { value: 2 })

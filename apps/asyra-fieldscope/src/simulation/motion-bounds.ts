@@ -31,13 +31,16 @@ function fail(): never {
   throw new Error('Invalid robot motion bounds request')
 }
 function keys(value: unknown, names: readonly string[]) {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) fail()
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    fail()
+  }
   const actual = Object.keys(value)
   if (
     actual.length !== names.length ||
     actual.some((key) => !names.includes(key))
-  )
+  ) {
     fail()
+  }
 }
 function readAssumptions(raw: MotionAssumptions) {
   const input = structuredClone(raw)
@@ -48,22 +51,32 @@ function readAssumptions(raw: MotionAssumptions) {
     !input.assumption.trim() ||
     input.shapes !== 'rigid-source-shapes-throughout' ||
     input.held !== 'empty-held-throughout'
-  )
+  ) {
     fail()
+  }
   keys(input.base, ['kind', 'transform'])
-  if (input.base.kind !== 'fixed-pose') fail()
+  if (input.base.kind !== 'fixed-pose') {
+    fail()
+  }
   const transform = input.base.transform
   keys(transform, ['position', 'rotation'])
   for (const [values, length] of [
     [transform.position, 3],
     [transform.rotation, 4]
   ] as const) {
-    if (!Array.isArray(values) || values.length !== length) fail()
-    for (let index = 0; index < length; index++)
-      if (!Number.isFinite(values[index])) fail()
+    if (!Array.isArray(values) || values.length !== length) {
+      fail()
+    }
+    for (let index = 0; index < length; index++) {
+      if (!Number.isFinite(values[index])) {
+        fail()
+      }
+    }
   }
   const norm = Math.hypot(...transform.rotation)
-  if (!Number.isFinite(norm) || Math.abs(norm - 1) > 1e-12) fail()
+  if (!Number.isFinite(norm) || Math.abs(norm - 1) > 1e-12) {
+    fail()
+  }
   Object.freeze(transform.position)
   Object.freeze(transform.rotation)
   Object.freeze(transform)
@@ -88,14 +101,20 @@ export class RobotMotionBounds {
     const input = readAssumptions(assumptions)
     const domain = this.motion.enclose(source, raw, window)
     const rig = source.receipt.robot.rig
-    if (!rig) fail()
+    if (!rig) {
+      fail()
+    }
     const pose = evaluateRobotIntervalPose(rig, domain.domains)
     const parts = new Map<unknown, (typeof pose.parts)[number]>(
       pose.parts.map((part) => [part.source, part])
     )
-    if (parts.size !== pose.parts.length) fail()
+    if (parts.size !== pose.parts.length) {
+      fail()
+    }
     const robot = source.meshes.filter((mesh) => mesh.kind === 'robot')
-    if (robot.length !== pose.parts.length) fail()
+    if (robot.length !== pose.parts.length) {
+      fail()
+    }
     const work = {
       domains: domain.work,
       pose: pose.work,
@@ -119,7 +138,9 @@ export class RobotMotionBounds {
         products.set(affine, group)
       }
       const previous = group.get(local)
-      if (previous) return previous
+      if (previous) {
+        return previous
+      }
       work.envelopes++
       const min: [number, number, number] = [Infinity, Infinity, Infinity],
         max: [number, number, number] = [-Infinity, -Infinity, -Infinity]
@@ -153,7 +174,9 @@ export class RobotMotionBounds {
     const meshes = Object.freeze(
       robot.map((mesh) => {
         const part = parts.get(mesh.origin)
-        if (!part || seen.has(part.source) || part.body !== mesh.body) fail()
+        if (!part || seen.has(part.source) || part.body !== mesh.body) {
+          fail()
+        }
         seen.add(part.source)
         work.parts++
         const whole = envelope(part.affine, mesh.prepared.bounds)

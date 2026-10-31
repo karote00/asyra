@@ -66,7 +66,9 @@ export const installPresetDefaults = ({
   const installed: PresetDefaultId[] = []
 
   PRESET_DEFAULT_MODULES.forEach((module) => {
-    if (!requested.has(module.id)) return
+    if (!requested.has(module.id)) {
+      return
+    }
     registerCleanup(
       `default:${module.id}:owned-state`,
       createOwnedStateCleanup(core)

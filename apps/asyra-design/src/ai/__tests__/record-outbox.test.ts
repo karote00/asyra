@@ -42,8 +42,9 @@ describe('browser diagnostic outbox', () => {
       record('a', 1),
       record('a', 2),
       record('b', 0)
-    ])
+    ]) {
       await outbox.append([item])
+    }
     expect(await outbox.read('a', 1, 1)).toEqual([record('a', 1)])
     await outbox.remove('a')
     expect(await outbox.requests()).toEqual(['b'])
@@ -146,7 +147,9 @@ it('replaces reserved padding with bounded loss metadata without growing the con
     const initial = added.mock.calls.find(
       ([value]) => value.sequence === -1
     )?.[0]
-    if (!initial) throw new Error('Missing control reservation')
+    if (!initial) {
+      throw new Error('Missing control reservation')
+    }
     await outbox.recordGap({
       requestId: 'reserved',
       fromSequence: 0,
@@ -173,8 +176,9 @@ it('recovers a real browser storage gap after payload quota failure without inve
   const add = vi
     .spyOn(IDBObjectStore.prototype, 'add')
     .mockImplementation(function (this: IDBObjectStore, value, key) {
-      if (value.sequence === 1)
+      if (value.sequence === 1) {
         throw new DOMException('Payload quota reached', 'QuotaExceededError')
+      }
       return original.call(this, value, key)
     })
   const send = vi.fn(async () => ({

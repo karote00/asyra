@@ -7,9 +7,15 @@ const freeze = (value) => {
   return value
 }
 const statusFor = (statuses, blockers = [], absent = 'unknown') => {
-  if (statuses.includes('failed')) return 'failed'
-  if (blockers.length || statuses.includes('unknown')) return 'unknown'
-  if (statuses.includes('pending')) return 'pending'
+  if (statuses.includes('failed')) {
+    return 'failed'
+  }
+  if (blockers.length || statuses.includes('unknown')) {
+    return 'unknown'
+  }
+  if (statuses.includes('pending')) {
+    return 'pending'
+  }
   return statuses.length ? 'passed' : absent
 }
 
@@ -18,20 +24,23 @@ function projectTargetAssessmentCurrentness(result, current) {
   if (
     current?.targetId !== result.targetId ||
     current?.allocationRevision !== result.allocationRevision
-  )
+  ) {
     staleReasons.push('Target allocation changed')
+  }
   if (
     current?.acceptedBaseline?.revision !== result.acceptedBaseline.revision ||
     current?.acceptedBaseline?.contractDigest !==
       result.acceptedBaseline.contractDigest
-  )
+  ) {
     staleReasons.push('Accepted baseline changed')
+  }
   if (
     ['repository', 'head', 'runtimeSourceDigest'].some(
       (key) => current?.source?.[key] !== result.source[key]
     )
-  )
+  ) {
     staleReasons.push('Integration source changed')
+  }
   return Object.freeze({
     ...result,
     current: staleReasons.length === 0,
@@ -55,8 +64,9 @@ function assessTargetSource(input) {
     proofRequests,
     current
   } = input
-  if (![1, 2, 3].includes(format))
+  if (![1, 2, 3].includes(format)) {
     throw new Error('Target assessment: invalid result format')
+  }
   const identityOnly = Object.hasOwn(input, 'sourceIdentity')
   const selected = identityOnly
     ? sourceIdentity
@@ -81,8 +91,9 @@ function assessTargetSource(input) {
       (typeof selected.head !== 'string' || !selected.head.trim())) ||
     typeof selected.runtimeSourceDigest !== 'string' ||
     !/^[a-f0-9]{64}$/.test(selected.runtimeSourceDigest)
-  )
+  ) {
     throw new Error('Target assessment: invalid selected source identity')
+  }
   const entry = target?.history?.filter(
     (item) => item.revision === allocationRevision
   )
@@ -103,8 +114,9 @@ function assessTargetSource(input) {
       (digest) => typeof digest === 'string' && /^[a-f0-9]{64}$/.test(digest)
     ) ||
     !Array.isArray(proofRequests)
-  )
+  ) {
     throw new Error('Target assessment: invalid selected owner artifacts')
+  }
   const state = entry[0].state
   const source = {
     repository: selected.repository,
@@ -121,8 +133,9 @@ function assessTargetSource(input) {
   const assessedCases = new Map()
   const requested = new Set()
   const requestIds = new Map()
-  for (const request of proofRequests)
+  for (const request of proofRequests) {
     requestIds.set(request.id, (requestIds.get(request.id) ?? 0) + 1)
+  }
   const contracts = new Map(
     (format === 3 ? [targetContract] : [acceptedContract, targetContract]).map(
       (contract) => [contract.digest, contract]
@@ -219,17 +232,23 @@ function assessTargetSource(input) {
           )
         : []
       const blockers = []
-      if (!completeInventory)
+      if (!completeInventory) {
         blockers.push('Incomplete producer observation inventory')
-      if (!bound)
+      }
+      if (!bound) {
         blockers.push(
           'Producer is missing, unsettled or has mismatched provenance'
         )
-      if (found.length !== 1)
+      }
+      if (found.length !== 1) {
         blockers.push('Missing or duplicate obligation observation')
-      if (requestIds.get(request.id) !== 1)
+      }
+      if (requestIds.get(request.id) !== 1) {
         blockers.push('Duplicate producer request')
-      if (bound && evidence.issues.length) blockers.push(...evidence.issues)
+      }
+      if (bound && evidence.issues.length) {
+        blockers.push(...evidence.issues)
+      }
       const statuses = found.map((observed) =>
         ['passed', 'failed', 'pending'].includes(observed.status)
           ? observed.status
@@ -268,10 +287,12 @@ function assessTargetSource(input) {
       let result = assessedCases.get(key)
       if (!result) {
         const reasons = found.flatMap((value) => value.blockers)
-        if (found.length > 1)
+        if (found.length > 1) {
           reasons.push('Multiple producers for one obligation')
-        if (!found.length && missing === 'unknown')
+        }
+        if (!found.length && missing === 'unknown') {
           reasons.push('Required proof is unavailable')
+        }
         result = {
           id: item.id,
           status: statusFor(
@@ -333,8 +354,9 @@ function assessTargetSource(input) {
         !cases.length ||
         cases.length !== work.obligationIds.length ||
         cases.some((item) => item.stepId !== work.stepId)
-      )
+      ) {
         own.blockers.push('Invalid obligation promise for work: ' + work.id)
+      }
       if (
         work.obligationIds.some(
           (id) =>
@@ -342,10 +364,11 @@ function assessTargetSource(input) {
             state.works.filter((other) => other.obligationIds.includes(id))
               .length !== 1
         )
-      )
+      ) {
         own.blockers.push(
           'Overlapping obligation ownership for work: ' + work.id
         )
+      }
       own.status = statusFor(
         own.cases.map((item) => item.status),
         own.blockers,
@@ -357,8 +380,12 @@ function assessTargetSource(input) {
   const visiting = new Set()
   const completed = new Map()
   const assessWork = (work) => {
-    if (completed.has(work.id)) return completed.get(work.id)
-    if (visiting.has(work.id)) return { status: 'unknown' }
+    if (completed.has(work.id)) {
+      return completed.get(work.id)
+    }
+    if (visiting.has(work.id)) {
+      return { status: 'unknown' }
+    }
     visiting.add(work.id)
     const blockers = []
     const statuses = []
@@ -372,21 +399,23 @@ function assessTargetSource(input) {
       }
       const upstreamResult = assessWork(upstream)
       statuses.push(upstreamResult.status)
-      if (upstreamResult.status !== 'passed')
+      if (upstreamResult.status !== 'passed') {
         unavailable.push(
           'Prerequisite work ' + upstream.id + ' is ' + upstreamResult.status
         )
+      }
       if (
         !flow.handoffs.some(
           (route) => route.from === upstream.stepId && route.to === work.stepId
         )
-      )
+      ) {
         blockers.push(
           'Prerequisite work ' +
             upstream.id +
             ' has no admitted architecture route to ' +
             work.stepId
         )
+      }
     }
     const incoming = targetContract.architectureDefinition.routes.filter(
       (route) => route.to === work.stepId && route.producedArtifacts.length
@@ -406,8 +435,9 @@ function assessTargetSource(input) {
       const cases = target.obligations.filter((item) =>
         handoff.caseIds.includes(item.id)
       )
-      if (cases.length !== handoff.caseIds.length)
+      if (cases.length !== handoff.caseIds.length) {
         blockers.push('Unresolved handoff proving case: ' + route.id)
+      }
       const proof = assessCases(
         targetContract,
         cases,
@@ -421,8 +451,9 @@ function assessTargetSource(input) {
         proof
       })
       statuses.push(proof.status)
-      if (proof.status !== 'passed')
+      if (proof.status !== 'passed') {
         unavailable.push('Handoff ' + route.id + ' is ' + proof.status)
+      }
     }
     const own = ownById.get(work.id)
     const prerequisites = {
@@ -466,8 +497,9 @@ function assessTargetSource(input) {
     target.obligations.some(
       (item) => allocated.filter((id) => id === item.id).length !== 1
     )
-  )
+  ) {
     integration.blockers.push('Incomplete or contradictory frozen allocation')
+  }
   integration.pending = [...state.pending]
   integration.status = statusFor(
     [

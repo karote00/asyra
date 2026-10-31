@@ -93,8 +93,9 @@ const finite = (value: unknown, name: string, minimum = 0): number => {
     !Number.isFinite(value) ||
     value < minimum ||
     value > limits.dimension
-  )
+  ) {
     return fail(name)
+  }
   return value
 }
 const textKeys = Object.keys(DesignTextDefaults)
@@ -147,112 +148,141 @@ const admitDraft = (input: unknown): DraftNode => {
       !record(source) ||
       depth > limits.depth ||
       ++count > limits.expandedNodes
-    )
+    ) {
       return fail('node/depth limit')
+    }
     const type = source.type
     if (
       !DesignNodeTypes.some((kind) => kind === type) ||
       (root && !isDesignContainerType(type))
-    )
+    ) {
       return fail('unsupported component')
+    }
     const allowed = designNodeInputFields(type)
-    if (Object.keys(source).some((key) => !allowed.includes(key)))
+    if (Object.keys(source).some((key) => !allowed.includes(key))) {
       return fail('unknown field')
+    }
     const key = source.key
     if (
       typeof key !== 'string' ||
       !key.trim() ||
       key.length > 160 ||
       keys.has(key)
-    )
+    ) {
       return fail('duplicate or invalid key')
+    }
     keys.add(key)
     if (
       typeof source.name !== 'string' ||
       !source.name.trim() ||
       source.name.length > 160
-    )
+    ) {
       return fail('name')
+    }
     if (
       parentLayout !== 'absolute' &&
       (source.x !== undefined || source.y !== undefined)
-    )
+    ) {
       return fail('flow child position')
-    if (source.fill !== undefined && !isDesignFill(source.fill))
+    }
+    if (source.fill !== undefined && !isDesignFill(source.fill)) {
       return fail('fill')
+    }
     if (type === 'text') {
-      if (typeof source.text !== 'string') return fail('missing text')
+      if (typeof source.text !== 'string') {
+        return fail('missing text')
+      }
       characters += source.text.length
-      if (characters > limits.textCharacters) return fail('text limit')
+      if (characters > limits.textCharacters) {
+        return fail('text limit')
+      }
       for (const [key, validate] of Object.entries(DesignTextValidators)) {
-        if (source[key] !== undefined && !validate(source[key]))
+        if (source[key] !== undefined && !validate(source[key])) {
           return fail(`text ${key}`)
+        }
       }
     }
     if (type === 'vector') {
-      if (!Array.isArray(source.rings) || !source.rings.length)
+      if (!Array.isArray(source.rings) || !source.rings.length) {
         return fail('missing vector rings')
+      }
       const admitPoint = (value: unknown, control = false) => {
         if (
           !record(value) ||
           Object.keys(value).some((k) => !['x', 'y'].includes(k))
-        )
+        ) {
           return fail('vector control')
+        }
         finite(value.x, `node ${key} vector x`, control ? -limits.dimension : 0)
         finite(value.y, `node ${key} vector y`, control ? -limits.dimension : 0)
-        if (++pathPoints > limits.expandedPathCommands)
+        if (++pathPoints > limits.expandedPathCommands) {
           return fail('vector point limit')
+        }
       }
       const pairIssues: string[] = []
       for (const [ringIndex, ring] of source.rings.entries()) {
-        if (!Array.isArray(ring) || ring.length < 2) return fail('vector ring')
+        if (!Array.isArray(ring) || ring.length < 2) {
+          return fail('vector ring')
+        }
         for (const anchor of ring) {
           if (
             !record(anchor) ||
             Object.keys(anchor).some(
               (k) => !['x', 'y', 'inControl', 'outControl'].includes(k)
             )
-          )
+          ) {
             return fail('vector anchor')
+          }
           admitPoint({ x: anchor.x, y: anchor.y })
-          if (anchor.inControl !== undefined) admitPoint(anchor.inControl, true)
-          if (anchor.outControl !== undefined)
+          if (anchor.inControl !== undefined) {
+            admitPoint(anchor.inControl, true)
+          }
+          if (anchor.outControl !== undefined) {
             admitPoint(anchor.outControl, true)
+          }
         }
         ring.forEach((anchor, index) => {
           const next = ring[(index + 1) % ring.length]
           if (
             (anchor.outControl !== undefined) !==
             (next.inControl !== undefined)
-          )
+          ) {
             pairIssues.push(
               `rings[${ringIndex}] edge ${index} -> ${(index + 1) % ring.length}: unpaired cubic controls; pair outControl with the next inControl, or omit both for a straight edge`
             )
+          }
         })
       }
-      if (pairIssues.length) fail(`node ${key}: ${pairIssues.join('; ')}`)
+      if (pairIssues.length) {
+        fail(`node ${key}: ${pairIssues.join('; ')}`)
+      }
     }
     const layout = source.layout ?? 'absolute'
-    if (!['absolute', 'row', 'column', 'grid'].includes(String(layout)))
+    if (!['absolute', 'row', 'column', 'grid'].includes(String(layout))) {
       return fail('layout')
+    }
     const align = source.align ?? 'start'
-    if (!['start', 'center', 'end'].includes(String(align)))
+    if (!['start', 'center', 'end'].includes(String(align))) {
       return fail('alignment')
+    }
     const columns = source.columns ?? 1
     if (
       !Number.isInteger(columns) ||
       Number(columns) < 1 ||
       Number(columns) > 24 ||
       (source.columns !== undefined && layout !== 'grid')
-    )
+    ) {
       return fail('grid columns')
-    if (source.children !== undefined && !Array.isArray(source.children))
+    }
+    if (source.children !== undefined && !Array.isArray(source.children)) {
       return fail('children')
+    }
     if (
       type === 'vector' &&
       (source.width === undefined) !== (source.height === undefined)
-    )
+    ) {
       return fail(`node ${key}: supply both vector dimensions or omit both`)
+    }
     const deriveVectorDimensions =
       type === 'vector' && source.width === undefined
     const node: DraftNode = {
@@ -283,7 +313,9 @@ const admitDraft = (input: unknown): DraftNode => {
       )
     }
     if (type === 'vector') {
-      if (!node.rings) return fail('missing vector rings')
+      if (!node.rings) {
+        return fail('missing vector rings')
+      }
       let b = vectorBounds.get(node.rings)
       if (!b) {
         b = measureVectorPath({
@@ -304,8 +336,9 @@ const admitDraft = (input: unknown): DraftNode => {
           (deriveVectorDimensions ? limits.dimension : node.width) ||
         b.y + b.height >
           (deriveVectorDimensions ? limits.dimension : node.height)
-      )
+      ) {
         fail(`node ${key}: vector exceeds declared bounds`)
+      }
       node.vectorBounds = b
       node.x += b.x
       node.y += b.y
@@ -360,8 +393,9 @@ function* prepareDesignSteps(
       ([key, value]) =>
         !key.trim() || key.length > 160 || !isDesignInlineFill(value)
     )
-  )
+  ) {
     return fail('sharedFills must define named inline colors or gradients')
+  }
   const fillTemplates =
     record(input) && input.fillTemplates !== undefined
       ? input.fillTemplates
@@ -372,8 +406,9 @@ function* prepareDesignSteps(
       ([key, value]) =>
         !key.trim() || key.length > 160 || !isDesignInlineFill(value)
     )
-  )
+  ) {
     return fail('fillTemplates must define named inline colors or gradients')
+  }
   const reuse = {
     fillOccurrences: 0,
     compiledFillDefinitions: 0,
@@ -382,26 +417,33 @@ function* prepareDesignSteps(
   const compiledFills = new Map<unknown, Record<string, unknown>>()
   const sharedFillIds: Record<string, string> = Object.create(null)
   const compileFill = (value: unknown, elementId: string): unknown[] => {
-    if (value === undefined) return []
+    if (value === undefined) {
+      return []
+    }
     reuse.fillOccurrences++
     let definition: unknown = value
     if (isDesignFillTemplate(value)) {
-      if (!Object.hasOwn(fillTemplates, value.template))
+      if (!Object.hasOwn(fillTemplates, value.template)) {
         return fail(`unknown Fill template ${value.template}`)
+      }
       definition = fillTemplates[value.template]
       reuse.fillTemplateUses++
     }
     if (isDesignSharedFill(value)) {
-      if (!Object.hasOwn(sharedFills, value.shared))
+      if (!Object.hasOwn(sharedFills, value.shared)) {
         return fail(`unknown shared Fill ${value.shared}`)
-      if (Object.hasOwn(sharedFillIds, value.shared))
+      }
+      if (Object.hasOwn(sharedFillIds, value.shared)) {
         return [sharedFillIds[value.shared]]
+      }
       definition = sharedFills[value.shared]
       sharedFillIds[value.shared] = `${elementId}-fill`
     }
     let compiled = compiledFills.get(definition)
     if (!compiled) {
-      if (!isDesignInlineFill(definition)) return fail('fill')
+      if (!isDesignInlineFill(definition)) {
+        return fail('fill')
+      }
       const gradient = isDesignGradient(definition)
       compiled = {
         type: 'fill',
@@ -493,9 +535,13 @@ function* prepareDesignSteps(
     } as PreparedDesignEntry['descriptor']
     if (node.type === 'vector') {
       const rings = node.rings
-      if (!rings) return fail('missing vector rings')
+      if (!rings) {
+        return fail('missing vector rings')
+      }
       const b = node.vectorBounds
-      if (!b) return fail('missing measured vector bounds')
+      if (!b) {
+        return fail('missing measured vector bounds')
+      }
       const points: Record<string, unknown> = {},
         segments: Record<string, unknown> = {},
         networks: Record<string, unknown> = {}
@@ -520,7 +566,9 @@ function* prepareDesignSteps(
           anchorId: string,
           role: 'in' | 'out'
         ) => {
-          if (!p) return null
+          if (!p) {
+            return null
+          }
           const controlId = `${anchorId}-${role}`
           points[controlId] = {
             id: controlId,
@@ -578,8 +626,9 @@ function* prepareDesignSteps(
       })
     }
     entries.push({ key: node.key, parentId, descriptor })
-    if (node.type === 'text')
+    if (node.type === 'text') {
       findings.push({ kind: 'text-metrics-required', key: node.key })
+    }
     const columnWidths = Array.from({ length: node.columns }, (_, column) =>
       Math.max(
         0,
@@ -603,8 +652,12 @@ function* prepareDesignSteps(
       let cx = child.x,
         cy = child.y
       const alignOffset = (available: number) => {
-        if (node.align === 'center') return available / 2
-        if (node.align === 'end') return available
+        if (node.align === 'center') {
+          return available / 2
+        }
+        if (node.align === 'end') {
+          return available
+        }
         return 0
       }
       if (node.layout === 'row') {
@@ -654,8 +707,9 @@ function* prepareDesignSteps(
       if (
         node.type === 'frame' &&
         Object.values(overflow).some((value) => value > 0)
-      )
+      ) {
         findings.push({ kind: 'overflow', key: child.key, ...overflow })
+      }
       visit(child, id, cx, cy, parentX + x, parentY + y)
     })
   }
@@ -663,7 +717,9 @@ function* prepareDesignSteps(
   // Box intersections are advisory: actual glyphs and artistic intent require review.
   const textByParent = new Map<string | null, PreparedDesignEntry[]>()
   for (const entry of entries) {
-    if (entry.descriptor.type !== 'text') continue
+    if (entry.descriptor.type !== 'text') {
+      continue
+    }
     const siblings = textByParent.get(entry.parentId) ?? []
     siblings.push(entry)
     textByParent.set(entry.parentId, siblings)
@@ -681,7 +737,9 @@ function* prepareDesignSteps(
       const a = siblings[i].descriptor
       for (let j = i + 1; j < siblings.length; j++) {
         const b = siblings[j].descriptor
-        if (Number(b.x) >= Number(a.x) + Number(a.width)) break
+        if (Number(b.x) >= Number(a.x) + Number(a.width)) {
+          break
+        }
         const width =
           Math.min(
             Number(a.x) + Number(a.width),
@@ -692,7 +750,9 @@ function* prepareDesignSteps(
             Number(a.y) + Number(a.height),
             Number(b.y) + Number(b.height)
           ) - Math.max(Number(a.y), Number(b.y))
-        if (width <= 0 || height <= 0) continue
+        if (width <= 0 || height <= 0) {
+          continue
+        }
         if (textBoxOverlaps.length === limits.checks) {
           truncated = true
           break scan
@@ -712,7 +772,9 @@ function* prepareDesignSteps(
     const passed =
       Number.isFinite(actual) &&
       Math.abs(actual - check.expected) <= check.tolerance
-    if (!passed) findings.push({ kind: 'requirement', ...check, actual })
+    if (!passed) {
+      findings.push({ kind: 'requirement', ...check, actual })
+    }
     return { ...check, actual, passed }
   })
   onMaterialFields?.(freeze(materialFields))
@@ -753,11 +815,17 @@ export const createDesignPreparationSession = (
   ownership?: LocalToolOwnership,
   expandedNodeLimit: number = limits.expandedNodes
 ) => {
-  if (expandedNodeLimit !== limits.expandedNodes && expandedNodeLimit !== 2000)
+  if (
+    expandedNodeLimit !== limits.expandedNodes &&
+    expandedNodeLimit !== 2000
+  ) {
     throw new Error('Invalid evaluation artifact budget')
+  }
   const assertBudget = (input: unknown) => {
     const issue = inspectDesignBudget(input, expandedNodeLimit)
-    if (issue) throw new Error(issue.message)
+    if (issue) {
+      throw new Error(issue.message)
+    }
   }
   const checkResults = createDesignCheckResults()
   const artifacts = new Map<string, PreparedDesign>()
@@ -805,8 +873,9 @@ export const createDesignPreparationSession = (
       | undefined
   ) => {
     const { review, layoutReview, sharedFillIds, ...compiled } = result
-    if (!sourceIdentities.has(artifactId))
+    if (!sourceIdentities.has(artifactId)) {
       sourceIdentities.set(artifactId, artifactId)
+    }
     const artifact = freeze(compiled)
     artifacts.set(artifactId, artifact)
     try {
@@ -816,8 +885,9 @@ export const createDesignPreparationSession = (
           removeArtifact(artifactId)
         },
         () => {
-          if (!artifacts.has(artifactId))
+          if (!artifacts.has(artifactId)) {
             throw new Error('Design artifact is unavailable in this request')
+          }
         }
       )
     } catch (error) {
@@ -853,10 +923,11 @@ export const createDesignPreparationSession = (
     recipe(artifactId: string) {
       ownership?.assertOwned(artifactId)
       const artifact = artifacts.get(artifactId)
-      if (!artifact || !recipes.has(artifactId))
+      if (!artifact || !recipes.has(artifactId)) {
         throw new Error(
           'Prepared source recipe is unavailable in this request.'
         )
+      }
       return {
         recipe: recipes.get(artifactId),
         findings: artifact.findings,
@@ -874,15 +945,17 @@ export const createDesignPreparationSession = (
       const original = artifacts.get(artifactId)
       const recipe = recipes.get(artifactId)
       const identity = sourceIdentities.get(artifactId)
-      if (!original || !record(recipe) || !identity)
+      if (!original || !record(recipe) || !identity) {
         throw new Error(
           'Prepared material source is unavailable in this request.'
         )
+      }
       if (
         !record(recipe.linearFields) ||
         !Object.hasOwn(recipe.linearFields, field)
-      )
+      ) {
         throw new Error('Select an existing explicit world material field.')
+      }
       const revisedRecipe = freeze(
         structuredClone({
           ...recipe,
@@ -905,21 +978,24 @@ export const createDesignPreparationSession = (
       const selected = compiled.entries.filter(
         (entry) => members[entry.key] === field
       )
-      if (!selected.length)
+      if (!selected.length) {
         throw new Error('Material field has no prepared members.')
+      }
       if (
         compiled.findings.some(
           (finding) => finding.kind !== 'text-metrics-required'
         )
-      )
+      ) {
         throw new Error('Resolve source findings before revising material.')
+      }
       const updates = selected.map(({ descriptor }) => {
         const fills = descriptor.fills
         const fill = Array.isArray(fills) ? fills[0] : undefined
-        if (!record(fill) || !isDesignGradient(fill.gradient))
+        if (!record(fill) || !isDesignGradient(fill.gradient)) {
           throw new Error(
             'Material revision did not produce a native gradient.'
           )
+        }
         return {
           elementId: descriptor.id,
           gradient: fill.gradient,
@@ -948,13 +1024,17 @@ export const createDesignPreparationSession = (
     materialRevision(id: string) {
       ownership?.assertOwned(id)
       const value = materialRevisions.get(id)
-      if (!value) throw new Error('Prepared material revision is unavailable.')
+      if (!value) {
+        throw new Error('Prepared material revision is unavailable.')
+      }
       return value
     },
     materialMembers(id: string) {
       ownership?.assertOwned(id)
       const artifact = artifacts.get(id)
-      if (!artifact) throw new Error('Material source is unavailable.')
+      if (!artifact) {
+        throw new Error('Material source is unavailable.')
+      }
       return Object.keys(materialFields.get(id) ?? {}).map(
         (key) => artifact.keyToId[key]
       )
@@ -963,10 +1043,12 @@ export const createDesignPreparationSession = (
     withMaterialSource(input: unknown, sourceId: string) {
       ownership?.assertOwned(sourceId)
       const source = recipes.get(sourceId)
-      if (!record(source) || !record(source.linearFields) || !record(input))
+      if (!record(source) || !record(source.linearFields) || !record(input)) {
         throw new Error('Prepared world material source is unavailable.')
-      if (input.linearFields !== undefined)
+      }
+      if (input.linearFields !== undefined) {
         throw new Error('materialSourceId conflicts with inline linearFields.')
+      }
       return { ...input, linearFields: structuredClone(source.linearFields) }
     },
     retainTargetSets(
@@ -974,10 +1056,11 @@ export const createDesignPreparationSession = (
     ) {
       const prepared = selections.map(({ artifactId, ids }) => {
         ownership?.assertOwned(artifactId)
-        if (!artifacts.has(artifactId) || ids.length === 0)
+        if (!artifacts.has(artifactId) || ids.length === 0) {
           throw new Error(
             'Target artifact or selected identities are unavailable.'
           )
+        }
         const unique = Object.freeze([...new Set(ids)])
         return {
           artifactId,
@@ -989,10 +1072,11 @@ export const createDesignPreparationSession = (
         (sum, item) => sum + item.bytes,
         0
       )
-      if (targetBytes + additionalBytes > limits.retainedTargetBytes)
+      if (targetBytes + additionalBytes > limits.retainedTargetBytes) {
         throw new Error(
           'Retained target capacity exceeded; release unneeded artifacts or reuse existing target sets.'
         )
+      }
       const receipts = prepared.map((item) => {
         const targetSetId = randomUUID()
         return {
@@ -1021,15 +1105,18 @@ export const createDesignPreparationSession = (
         !selected ||
         selected.artifactId !== artifactId ||
         !artifacts.has(artifactId)
-      )
+      ) {
         throw new Error(
           'Target set is unavailable in this request or belongs to another artifact.'
         )
+      }
       return [...selected.ids]
     },
     retainRejectedDraft(input: unknown) {
       const handle = rejectedDrafts.retain(input)
-      if (!handle) return
+      if (!handle) {
+        return
+      }
       try {
         ownership?.publish(
           handle,
@@ -1037,8 +1124,9 @@ export const createDesignPreparationSession = (
             rejectedDrafts.release(handle)
           },
           () => {
-            if (!rejectedDrafts.describe(handle))
+            if (!rejectedDrafts.describe(handle)) {
               throw new Error('Rejected source is unavailable.')
+            }
           },
           'request'
         )
@@ -1057,8 +1145,9 @@ export const createDesignPreparationSession = (
         typeof input === 'object' &&
         'draftId' in input &&
         typeof input.draftId === 'string'
-      )
+      ) {
         ownership?.assertOwned(input.draftId)
+      }
       return rejectedDrafts.repair(input, admitMissing)
     },
     describeRejectedDraft: rejectedDrafts.describe,
@@ -1081,20 +1170,23 @@ export const createDesignPreparationSession = (
         if (
           recovery.partition === 0 &&
           recovery.continueFromArtifact !== undefined
-        )
+        ) {
           throw new Error(
             'The first partition cannot continue an existing root.'
           )
+        }
         if (recovery.partition > 0) {
           const first = `${recovery.draftId}-part-0`
-          if (recovery.continueFromArtifact !== first)
+          if (recovery.continueFromArtifact !== first) {
             throw new Error(
               'Continue the acknowledged first partition artifact.'
             )
+          }
           ownership?.assertOwned(first)
           continuation = artifacts.get(first)
-          if (!continuation || sourceIdentities.get(first) !== first)
+          if (!continuation || sourceIdentities.get(first) !== first) {
             throw new Error('The original partition artifact is unavailable.')
+          }
         }
         const retained = artifacts.get(artifactId)
         if (retained) {
@@ -1141,10 +1233,11 @@ export const createDesignPreparationSession = (
           root.descriptor.type !== 'group' ||
           !anchor ||
           anchor.parentId !== continuation.rootId
-        )
+        ) {
           throw new Error(
             'Partition continuation requires the original flat group and anchor.'
           )
+        }
         const currentRoot = result.entries[0]
         const dx = Number(currentRoot.descriptor.x) - Number(root.descriptor.x)
         const dy = Number(currentRoot.descriptor.y) - Number(root.descriptor.y)
@@ -1214,7 +1307,9 @@ export const createDesignPreparationSession = (
       const releasedArtifactIds: string[] = [],
         missingArtifactIds: string[] = []
       const unique = [...new Set(artifactIds)]
-      for (const artifactId of unique) ownership?.assertRelease(artifactId)
+      for (const artifactId of unique) {
+        ownership?.assertRelease(artifactId)
+      }
       for (const artifactId of unique) {
         const result = removeArtifact(artifactId)
           ? releasedArtifactIds
@@ -1227,8 +1322,9 @@ export const createDesignPreparationSession = (
     selectKeys(artifactId: string, prefix?: string): string[] {
       ownership?.assertOwned(artifactId)
       const artifact = artifacts.get(artifactId)
-      if (!artifact)
+      if (!artifact) {
         throw new Error('Design artifact is unavailable in this request')
+      }
       let index = targetIndexes.get(artifactId)
       if (!index) {
         index = createDesignTargetIndex(artifact.keyToId)
@@ -1239,8 +1335,9 @@ export const createDesignPreparationSession = (
     resolve(artifactId: string): PreparedDesign {
       ownership?.assertOwned(artifactId)
       const artifact = artifacts.get(artifactId)
-      if (!artifact)
+      if (!artifact) {
         throw new Error('Design artifact is unavailable in this request')
+      }
       return artifact
     }
   }

@@ -23,23 +23,30 @@ export const createDesignDraftRepairStore = (
   let retainedBytes = 0
   const remove = (id: string) => {
     const draft = drafts.get(id)
-    if (draft) retainedBytes -= draft.bytes
+    if (draft) {
+      retainedBytes -= draft.bytes
+    }
     return drafts.delete(id)
   }
   return {
     retain(input: unknown): string | undefined {
       const source = JSON.stringify(input)
-      if (source === undefined) return
+      if (source === undefined) {
+        return
+      }
       const plan = partitionDesignBudget(input, expandedNodeLimit)
       const bytes =
         Buffer.byteLength(source, 'utf8') +
         Buffer.byteLength(JSON.stringify(plan), 'utf8')
-      if (bytes > limits.retainedDraftBytes) return
+      if (bytes > limits.retainedDraftBytes) {
+        return
+      }
       if (
         drafts.size >= limits.retainedDrafts ||
         retainedBytes + bytes > limits.retainedDraftBytes
-      )
+      ) {
         return
+      }
       const id = randomUUID()
       drafts.set(id, { source, bytes, plan })
       retainedBytes += bytes
@@ -78,15 +85,17 @@ export const createDesignDraftRepairStore = (
         ) ||
         typeof value.draftId !== 'string' ||
         'partition' in value === 'replacements' in value
-      )
+      ) {
         throw new Error(
           'Provide repair.draftId and exactly one partition or replacements array.'
         )
+      }
       const draft = drafts.get(value.draftId)
-      if (!draft)
+      if (!draft) {
         throw new Error(
           'Rejected draft is unavailable in this request; resend the source draft.'
         )
+      }
       const result = JSON.parse(draft.source)
       if ('partition' in value) {
         if (
@@ -95,21 +104,26 @@ export const createDesignDraftRepairStore = (
           (value.continueFromArtifact !== undefined &&
             (typeof value.continueFromArtifact !== 'string' ||
               !value.continueFromArtifact))
-        )
+        ) {
           throw new Error('Invalid retained partition reference.')
+        }
         const partition = draft.plan.partitions?.[Number(value.partition)]
-        if (!partition) throw new Error('Retained partition is unavailable.')
+        if (!partition) {
+          throw new Error('Retained partition is unavailable.')
+        }
         return selectDesignSource(result, partition.selections)
       }
       if (
         value.continueFromArtifact !== undefined ||
         !Array.isArray(value.replacements)
-      )
+      ) {
         throw new Error('Provide a replacements array.')
-      if (!value.replacements.length && !admitMissing?.(result))
+      }
+      if (!value.replacements.length && !admitMissing?.(result)) {
         throw new Error(
           'Unchanged retained source requires complete owner admission.'
         )
+      }
       const paths = new Set<string>()
       let addedField = false
       for (const replacement of value.replacements) {
@@ -123,25 +137,28 @@ export const createDesignDraftRepairStore = (
           /~(?![01])/u.test(replacement.path) ||
           !Object.hasOwn(replacement, 'value') ||
           paths.has(replacement.path)
-        )
+        ) {
           throw new Error(
             'Each replacement requires one unique JSON Pointer path and a value.'
           )
+        }
         paths.add(replacement.path)
         const parts = replacement.path
           .slice(1)
           .split('/')
           .map((part) => part.replace(/~1/g, '/').replace(/~0/g, '~'))
-        if (parts.some(isReservedDraftRepairKey))
+        if (parts.some(isReservedDraftRepairKey)) {
           throw new Error(`Reserved repair path: ${replacement.path}`)
+        }
         let parent = result
         for (const part of parts.slice(0, -1)) {
           if (
             !parent ||
             typeof parent !== 'object' ||
             !Object.hasOwn(parent, part)
-          )
+          ) {
             throw new Error(`Repair path does not exist: ${replacement.path}`)
+          }
           parent = parent[part]
         }
         const key = parts[parts.length - 1]
@@ -151,9 +168,12 @@ export const createDesignDraftRepairStore = (
           (!Object.hasOwn(parent, key) &&
             (!admitMissing || Array.isArray(parent))) ||
           (Array.isArray(parent) && !/^(0|[1-9]\d*)$/.test(key))
-        )
+        ) {
           throw new Error(`Repair path does not exist: ${replacement.path}`)
-        if (!Object.hasOwn(parent, key)) addedField = true
+        }
+        if (!Object.hasOwn(parent, key)) {
+          addedField = true
+        }
         Object.defineProperty(parent, key, {
           value: structuredClone(replacement.value),
           enumerable: true,
@@ -161,10 +181,11 @@ export const createDesignDraftRepairStore = (
           configurable: true
         })
       }
-      if (addedField && !admitMissing?.(result))
+      if (addedField && !admitMissing?.(result)) {
         throw new Error(
           'Missing-field repair does not satisfy the complete owner input contract.'
         )
+      }
       return result
     },
     release: remove

@@ -108,13 +108,17 @@ it('rejects incomplete or duplicate lineage instead of guessing and retains it i
   expect(validateRunRecord(b).lineage).toEqual(b.lineage)
   expect(Object.isFrozen(validateRunRecord(b).lineage?.bodyOrigins)).toBe(true)
   const incomplete = structuredClone(b)
-  if (!incomplete.lineage) throw new Error('Missing test lineage')
+  if (!incomplete.lineage) {
+    throw new Error('Missing test lineage')
+  }
   incomplete.lineage.bodyOrigins = {
     'B:left': { candidateId: 'A', bodyId: 'A:left' }
   }
   expect(() => validateRunRecord(incomplete)).toThrow('lineage')
   const duplicated = structuredClone(b)
-  if (!duplicated.lineage) throw new Error('Missing test lineage')
+  if (!duplicated.lineage) {
+    throw new Error('Missing test lineage')
+  }
   duplicated.lineage.bodyOrigins = {
     'B:left': { candidateId: 'A', bodyId: 'A:left' },
     'B:right': { candidateId: 'A', bodyId: 'A:left' }

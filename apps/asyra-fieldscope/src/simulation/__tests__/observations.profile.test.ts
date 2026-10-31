@@ -31,7 +31,9 @@ it('declared synthetic sight volume below route height is obstacle-inventory evi
   expect(result.detections).toEqual([])
   expect(result.work.sightQueries).toBe(1)
   const space = walking.getSpace()
-  if (!space) throw new Error('Missing lazy obstacle inventory')
+  if (!space) {
+    throw new Error('Missing lazy obstacle inventory')
+  }
   expect(space.provenance).toBe('w1-canonical-obstacles/1')
   expect(
     space.sources.some(

@@ -136,10 +136,11 @@ it('uses durable evidence only outside its bounded recent digest window', async 
     })
   })
   try {
-    for (let sequence = 0; sequence <= recordDigestWindowSize; sequence++)
+    for (let sequence = 0; sequence <= recordDigestWindowSize; sequence++) {
       await collector.accept([
         record(sequence, sequence ? 'ai_request_trace' : 'ai_request_started')
       ])
+    }
     await collector.accept([record(recordDigestWindowSize)])
     expect(readPersistedHashes).not.toHaveBeenCalled()
     await collector.accept([record(0, 'ai_request_started')])

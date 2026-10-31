@@ -14,7 +14,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         (pair) =>
           pair.a.bodyId === 'example:joint-2' && pair.b.bodyId === 'obstacle-11'
       )
-      if (!pair) throw new Error('Missing exact measured pair')
+      if (!pair) {
+        throw new Error('Missing exact measured pair')
+      }
       const query = {
         workcell: snapshot.workcell,
         trajectory: snapshot.trajectory,

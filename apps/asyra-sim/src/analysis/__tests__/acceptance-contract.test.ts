@@ -58,8 +58,9 @@ it('admits and freezes typed acceptance trees without adding them to legacy snap
 
 it('rejects unsupported, malformed, oversized and cyclic rule expressions', () => {
   let tooDeep: unknown = predicate
-  for (let i = 0; i < 4; i++)
+  for (let i = 0; i < 4; i++) {
     tooDeep = { kind: 'all', conditions: [predicate, tooDeep] }
+  }
   const cycle: { kind: string; conditions: unknown[] } = {
     kind: 'all',
     conditions: [predicate]
@@ -91,8 +92,9 @@ it('rejects unsupported, malformed, oversized and cyclic rule expressions', () =
     tooDeep,
     tooMany,
     cycle
-  ])
+  ]) {
     expect(() => validateExperimentDefinition(definition(invalid))).toThrow()
+  }
 })
 
 it('accepts exactly 31 nodes at four levels and preserves strict zero thresholds', () => {

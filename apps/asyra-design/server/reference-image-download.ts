@@ -24,15 +24,20 @@ export const referenceFailure = (
   error: unknown,
   stage: ReferenceFailure['stage']
 ): ReferenceFailure => {
-  if (error instanceof ReferenceAcquisitionError) return error.failure
+  if (error instanceof ReferenceAcquisitionError) {
+    return error.failure
+  }
   const code =
     typeof error === 'object' && error !== null && 'code' in error
       ? error.code
       : undefined
   const timeout = error instanceof Error && error.name === 'TimeoutError'
   let reason = 'network-error'
-  if (timeout) reason = 'timeout'
-  else if (stage === 'dns') reason = 'dns-failed'
+  if (timeout) {
+    reason = 'timeout'
+  } else if (stage === 'dns') {
+    reason = 'dns-failed'
+  }
   return {
     stage,
     reason,
@@ -66,7 +71,9 @@ const awaitAddress = (
   new Promise((resolve, reject) => {
     const abort = () => reject(signal.reason)
     signal.addEventListener('abort', abort, { once: true })
-    if (signal.aborted) abort()
+    if (signal.aborted) {
+      abort()
+    }
     value
       .then(resolve, reject)
       .finally(() => signal.removeEventListener('abort', abort))
@@ -89,8 +96,9 @@ for (const [address, prefix] of [
   ['203.0.113.0', 24],
   ['224.0.0.0', 4],
   ['240.0.0.0', 4]
-] as const)
+] as const) {
   blockedAddresses.addSubnet(address, prefix, 'ipv4')
+}
 
 export const validateReferenceImageUrl = (value: string): URL => {
   let url: URL
@@ -109,8 +117,9 @@ export const validateReferenceImageUrl = (value: string): URL => {
     url.hostname.endsWith('.localhost') ||
     url.hostname.endsWith('.local') ||
     url.hostname.startsWith('[')
-  )
+  ) {
     throw referenceRejection('url', 'unsupported-url')
+  }
   return url
 }
 
@@ -133,10 +142,13 @@ export const resolvePublicImageAddress = async (
         !isIP(item.address) ||
         blockedAddresses.check(item.address, 'ipv4')
     )
-  )
+  ) {
     throw referenceRejection('dns', 'non-public-host')
+  }
   const first = addresses[0]
-  if (!first) throw referenceRejection('dns', 'missing-public-address')
+  if (!first) {
+    throw referenceRejection('dns', 'missing-public-address')
+  }
   return first.address
 }
 
@@ -276,8 +288,9 @@ const downloadReference = async (
         failure.retryable &&
         !failure.retryAfter &&
         !deadline.aborted
-      )
+      ) {
         continue
+      }
       throw new ReferenceAcquisitionError(failure)
     }
   }

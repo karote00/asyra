@@ -89,9 +89,13 @@ it.each([
   (width, height) => {
     const bounds = { min: [-2, -3, -4] as const, max: [5, 6, 7] as const }
     const points = []
-    for (const x of [-2, 5])
-      for (const y of [-3, 6])
-        for (const z of [-4, 7]) points.push([x, y, z] as const)
+    for (const x of [-2, 5]) {
+      for (const y of [-3, 6]) {
+        for (const z of [-4, 7]) {
+          points.push([x, y, z] as const)
+        }
+      }
+    }
     const projected = projectSpatialCamera(camera, width / height, {
       projection: 'perspective',
       minimumAspect: 1.5,
@@ -111,7 +115,7 @@ it.each([
     for (const [c, pad] of [
       [{ ...bound, fov: projected.fov }, 24],
       [point, 32]
-    ] as const)
+    ] as const) {
       for (const p of points) {
         const v = project(c, p, width, height)
         expect(((v.x + 1) * width) / 2).toBeGreaterThanOrEqual(pad - 1e-6)
@@ -123,6 +127,7 @@ it.each([
         expect(v.z).toBeGreaterThanOrEqual(-1 - 1e-6)
         expect(v.z).toBeLessThanOrEqual(1 + 1e-6)
       }
+    }
     expect(
       fitSpatialCameraBounds(camera, null, width, height, {
         padding: 24,
@@ -217,13 +222,15 @@ it('expands clipping around the accepted fit set and rejects invalid viewport or
     verticalFov: 60
   })
   expect(fitted.far).toBeGreaterThan(clipped.far)
-  for (const x of [-100, 100])
-    for (const y of [-200, 200])
+  for (const x of [-100, 100]) {
+    for (const y of [-200, 200]) {
       for (const z of [-300, 300]) {
         const p = project(fitted, [x, y, z], 600, 400)
         expect(p.z).toBeGreaterThanOrEqual(-1)
         expect(p.z).toBeLessThanOrEqual(1)
       }
+    }
+  }
   expect(() =>
     fitSpatialCameraBounds(camera, bounds, 48, 400, {
       padding: 24,

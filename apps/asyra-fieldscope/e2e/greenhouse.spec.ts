@@ -30,8 +30,9 @@ test('real greenhouse route exposes the structure, section, inner aisle and resp
   await expect(page.locator('canvas')).toHaveCount(1)
   const graphics = await page.locator('canvas').evaluate((canvas) => {
     const gl = (canvas as HTMLCanvasElement).getContext('webgl2')
-    if (!gl || gl.isContextLost())
+    if (!gl || gl.isContextLost()) {
       throw new Error('Missing live WebGL2 context')
+    }
     const info = gl.getExtension('WEBGL_debug_renderer_info')
     return {
       version: gl.getParameter(gl.VERSION),
@@ -167,7 +168,9 @@ test('film is visible by default and Shift drag, Command 1 and Command 0 operate
   await page.getByLabel('塑膠覆膜', { exact: true }).check()
   const scene = page.getByTestId('scene')
   const bounds = await scene.boundingBox()
-  if (!bounds) throw new Error('Missing canvas bounds')
+  if (!bounds) {
+    throw new Error('Missing canvas bounds')
+  }
   await settle()
   const beforePan = await canvas.screenshot()
   await page.mouse.move(
@@ -221,17 +224,22 @@ test('film is visible by default and Shift drag, Command 1 and Command 0 operate
         buffer.width = image.width
         buffer.height = image.height
         const context = buffer.getContext('2d')
-        if (!context) throw new Error('Missing comparison canvas')
+        if (!context) {
+          throw new Error('Missing comparison canvas')
+        }
         context.drawImage(image, 0, 0)
         image.close()
         return context.getImageData(0, 0, buffer.width, buffer.height).data
       }
       const a = await pixels(first),
         b = await pixels(second)
-      if (a.length !== b.length)
+      if (a.length !== b.length) {
         throw new Error('Screenshot dimensions changed')
+      }
       let delta = 0
-      for (let i = 0; i < a.length; i++) delta += Math.abs(a[i] - b[i])
+      for (let i = 0; i < a.length; i++) {
+        delta += Math.abs(a[i] - b[i])
+      }
       return delta / a.length
     },
     { first: fitted.toString('base64'), second: refitted.toString('base64') }

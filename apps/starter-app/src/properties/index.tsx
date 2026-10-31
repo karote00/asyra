@@ -22,8 +22,12 @@ const SelectedItemEditor = ({ item }: { readonly item: ItemProjection }) => {
   }
   const commitTitle = (): boolean => {
     const title = draftRef.current
-    if (title === null) return true
-    if (!controller.editItem(item.id, { title }, 'Title accepted')) return false
+    if (title === null) {
+      return true
+    }
+    if (!controller.editItem(item.id, { title }, 'Title accepted')) {
+      return false
+    }
     updateDraft(null)
     return true
   }
@@ -52,10 +56,15 @@ const SelectedItemEditor = ({ item }: { readonly item: ItemProjection }) => {
           if (
             event.nativeEvent.isComposing ||
             event.nativeEvent.keyCode === 229
-          )
+          ) {
             return
-          if (event.key === 'Enter') controller.prepareAction()
-          if (event.key === 'Escape') cancelTitle()
+          }
+          if (event.key === 'Enter') {
+            controller.prepareAction()
+          }
+          if (event.key === 'Escape') {
+            cancelTitle()
+          }
         }}
       />
       <p className="field-help">Press Enter to apply - Escape to cancel</p>
@@ -77,7 +86,9 @@ const SelectedItemEditor = ({ item }: { readonly item: ItemProjection }) => {
             aria-pressed={status === item.status}
             className={status === item.status ? 'active' : undefined}
             onClick={() => {
-              if (status === item.status) return
+              if (status === item.status) {
+                return
+              }
               controller.editItem(item.id, { status }, 'Status accepted')
             }}
           >

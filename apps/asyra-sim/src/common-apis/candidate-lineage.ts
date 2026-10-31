@@ -23,10 +23,13 @@ export function validCandidateLineage(
     input.version !== 1 ||
     !validIdentifier(input.copiedFromCandidateId) ||
     !isPlainRecord(input.bodyOrigins)
-  )
+  ) {
     return false
+  }
   const entries = Object.entries(input.bodyOrigins)
-  if (entries.length > GEOMETRY_PROFILE.maxBodies) return false
+  if (entries.length > GEOMETRY_PROFILE.maxBodies) {
+    return false
+  }
   const origins = new Set<string>()
   return entries.every(([id, origin]) => {
     if (
@@ -34,10 +37,13 @@ export function validCandidateLineage(
       !hasExactOwnKeys(origin, ['candidateId', 'bodyId']) ||
       !validIdentifier(origin.candidateId) ||
       !validIdentifier(origin.bodyId)
-    )
+    ) {
       return false
+    }
     const key = JSON.stringify([origin.candidateId, origin.bodyId])
-    if (origins.has(key)) return false
+    if (origins.has(key)) {
+      return false
+    }
     origins.add(key)
     return true
   })

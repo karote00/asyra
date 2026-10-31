@@ -7,8 +7,9 @@ it('retains the source light envelope and separates the glass, diffuser and cap'
   const bounds = meshBounds(parts)
   expect(bounds[2][0]).toBeCloseTo(0, 6)
   expect(bounds[2][1]).toBeCloseTo(0.3, 6)
-  for (const axis of [0, 1])
+  for (const axis of [0, 1]) {
     expect(bounds[axis][1] - bounds[axis][0]).toBeCloseTo(0.136, 6)
+  }
   const shade = meshBounds(parts.filter((p) => p.id === 'glass-shade'))
   const core = meshBounds(parts.filter((p) => p.id === 'diffuser'))
   for (const axis of [0, 1, 2]) {
@@ -21,8 +22,9 @@ it('retains the source light envelope and separates the glass, diffuser and cap'
   expect(loop[2][1]).toBeGreaterThan(cap[2][1])
   for (const p of parts) {
     expect(p.mesh.positions.every(Number.isFinite)).toBe(true)
-    for (const index of p.mesh.indices)
+    for (const index of p.mesh.indices) {
       expect(index).toBeLessThan(p.mesh.positions.length / 3)
+    }
   }
 })
 
@@ -42,7 +44,8 @@ it('emits warm light only from the core while preserving transparent glass and d
   const parts = pantryNightLight()
   const core = parts.find((p) => p.id === 'diffuser')
   expect(core).toMatchObject({ emissive: 0xffb35c, emissiveIntensity: 1.75 })
-  for (const part of parts.filter((p) => p.id !== 'diffuser'))
+  for (const part of parts.filter((p) => p.id !== 'diffuser')) {
     expect(part).not.toHaveProperty('emissiveIntensity')
+  }
   expect(parts.find((p) => p.id === 'glass-shade')?.opacity).toBe(0.22)
 })

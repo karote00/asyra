@@ -27,7 +27,7 @@ export const requireBatchSuccess = (
   receipt: AiBatchReceipt,
   executionMs: number
 ) => {
-  if (receipt.failure)
+  if (receipt.failure) {
     throw new BrowserBatchExecutionError(
       {
         batchId: batch.batchId,
@@ -39,6 +39,7 @@ export const requireBatchSuccess = (
       },
       receipt
     )
+  }
   return receipt
 }
 
@@ -46,7 +47,9 @@ const admitFailure = (
   value: unknown,
   batch: AiActionBatch
 ): value is BrowserBatchFailure => {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return false
+  }
   const failure = value as Record<string, unknown>
   const duration = (value: unknown) =>
     typeof value === 'number' && Number.isFinite(value) && value >= 0
@@ -83,7 +86,9 @@ export const createBatchExchange = () => {
       send: (frame: PreparedBatchFrame) => void
     ): Promise<AiBatchReceipt> =>
       new Promise((resolve, reject) => {
-        if (signal.aborted) return reject(new Error('Request cancelled'))
+        if (signal.aborted) {
+          return reject(new Error('Request cancelled'))
+        }
         const token = randomUUID()
         const cleanup = () => {
           pending.delete(token)
@@ -94,14 +99,20 @@ export const createBatchExchange = () => {
           reject(new Error('Request cancelled'))
         }
         pending.set(token, (receipt) => {
-          if (!receipt || typeof receipt !== 'object' || Array.isArray(receipt))
+          if (
+            !receipt ||
+            typeof receipt !== 'object' ||
+            Array.isArray(receipt)
+          ) {
             return false
+          }
           if ('batchFailure' in receipt) {
             if (
               Object.keys(receipt).length !== 1 ||
               !admitFailure(receipt.batchFailure, batch)
-            )
+            ) {
               return false
+            }
             cleanup()
             reject(new BrowserBatchExecutionError(receipt.batchFailure))
             return true
@@ -110,8 +121,9 @@ export const createBatchExchange = () => {
             !('actionResults' in receipt) ||
             !Array.isArray(receipt.actionResults) ||
             !('context' in receipt)
-          )
+          ) {
             return false
+          }
           cleanup()
           resolve(receipt as AiBatchReceipt)
           return true

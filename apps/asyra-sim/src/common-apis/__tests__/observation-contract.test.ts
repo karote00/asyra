@@ -81,8 +81,9 @@ it('rejects malformed, oversized, duplicate or inconsistent annotations without 
         sourceId: `sha256:${String(i).repeat(64)}`
       }))
     }
-  ])
+  ]) {
     expect(validObservationDraft(invalid)).toBe(false)
+  }
   for (const invalid of [
     { ...note, version: 2 },
     { ...note, revision: 0 },
@@ -92,8 +93,9 @@ it('rejects malformed, oversized, duplicate or inconsistent annotations without 
     { ...note, updatedAt: '2026-09-04T00:00:00.000Z' },
     { ...note, createdAt: '2026-02-31T00:00:00.000Z' },
     { ...note, createdAt: '2026-09-05T08:00:00+08:00' }
-  ])
+  ]) {
     expect(validFieldObservations([invalid])).toBe(false)
+  }
   expect(validFieldObservations([note, note])).toBe(false)
   expect(
     validFieldObservations(
@@ -116,8 +118,9 @@ it('admits only bounded inert attachment references with content identity and sa
     { ...attachment, byteLength: NaN },
     { ...attachment, byteLength: OBSERVATION_LIMITS.fileBytes + 1 },
     { ...attachment, bytes: [1] }
-  ])
+  ]) {
     expect(validObservationAttachment(invalid)).toBe(false)
+  }
 })
 
 it('preserves incomplete authored title and text as bounded metadata', () => {

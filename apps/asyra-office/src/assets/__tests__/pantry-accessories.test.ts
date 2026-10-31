@@ -37,8 +37,9 @@ it('aligns the sink basin and its cabinet clearance left of the drawer column', 
       components.find((c) => c.partId === id),
       id
     )
-    if (!('subtract' in component) || !component.subtract)
+    if (!('subtract' in component) || !component.subtract) {
       throw new Error('Missing sink clearance')
+    }
     expect(component.subtract[0].centre[0]).toBeCloseTo(-0.06, 6)
   }
 })

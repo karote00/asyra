@@ -87,20 +87,28 @@ export class MemoryHub {
         let settle: (() => void) | undefined
         const ended = new Promise<void>((resolve) => {
           settle = () => {
-            if (settle) endWaiters.delete(settle)
+            if (settle) {
+              endWaiters.delete(settle)
+            }
             resolve()
           }
         })
-        if (settle) endWaiters.add(settle)
+        if (settle) {
+          endWaiters.add(settle)
+        }
         return Object.freeze({
           ended,
           cancel: () => {
-            if (settle) endWaiters.delete(settle)
+            if (settle) {
+              endWaiters.delete(settle)
+            }
           }
         })
       },
       end: () => {
-        if (!active) return
+        if (!active) {
+          return
+        }
         active = false
         ;[...endWaiters].forEach((settle) => settle())
       }
@@ -112,7 +120,9 @@ export class MemoryHub {
   disconnect(peer: MemoryPeer, connectionToken?: symbol): void {
     const key = roomKey(peer.identity)
     const room = this.rooms.get(key)
-    if (!room) return
+    if (!room) {
+      return
+    }
     if (
       connectionToken !== undefined &&
       room.providers.get(peer) !== connectionToken
@@ -120,7 +130,9 @@ export class MemoryHub {
       return
     }
     const activeConnectionToken = room.providers.get(peer)
-    if (!room.providers.delete(peer)) return
+    if (!room.providers.delete(peer)) {
+      return
+    }
     this.endPeerConnection(peer, activeConnectionToken)
 
     const event: ProviderAwarenessDisconnect = Object.freeze({
@@ -130,7 +142,9 @@ export class MemoryHub {
     room.providers.forEach((_token, connectedPeer) =>
       connectedPeer.receiveAwarenessDisconnect(event)
     )
-    if (room.providers.size === 0) this.rooms.delete(key)
+    if (room.providers.size === 0) {
+      this.rooms.delete(key)
+    }
   }
 
   async receivePublication(
@@ -141,7 +155,9 @@ export class MemoryHub {
     const room = this.room(sender.identity)
     const acceptances: Promise<void>[] = []
     room.providers.forEach((connectionToken, peer) => {
-      if (peer === sender) return
+      if (peer === sender) {
+        return
+      }
       acceptances.push(
         this.acceptPeerPublication(room, peer, connectionToken, publication)
       )
@@ -163,7 +179,9 @@ export class MemoryHub {
       .then(async () => {
         const previousApplication = this.peerApplicationTails.get(peer)
         if (previousApplication) {
-          if (connection?.connectionToken !== connectionToken) return
+          if (connection?.connectionToken !== connectionToken) {
+            return
+          }
           const endWait = connection.waitForEnd()
           try {
             const capacityOutcome = await Promise.race([
@@ -173,12 +191,16 @@ export class MemoryHub {
               ),
               endWait.ended.then(() => 'disconnected' as const)
             ])
-            if (capacityOutcome === 'disconnected') return
+            if (capacityOutcome === 'disconnected') {
+              return
+            }
           } finally {
             endWait.cancel()
           }
         }
-        if (room.providers.get(peer) !== connectionToken) return
+        if (room.providers.get(peer) !== connectionToken) {
+          return
+        }
         const application = peer.receivePublication(
           clonePublication(publication)
         )
@@ -263,7 +285,9 @@ export class MemoryHub {
   ): void {
     const room = this.room(sender.identity)
     room.providers.forEach((_token, peer) => {
-      if (peer === sender) return
+      if (peer === sender) {
+        return
+      }
       peer.receiveAwareness(cloneAwareness(message))
     })
   }

@@ -37,13 +37,17 @@ export const buildVectorIconPath = (
   Object.values(networks).forEach((network) => {
     const firstId = network.pointIds[0]
     const first = firstId ? points[firstId] : undefined
-    if (!first || first.kind !== VECTOR_TOKENS.POINT.KIND.ANCHOR) return
+    if (!first || first.kind !== VECTOR_TOKENS.POINT.KIND.ANCHOR) {
+      return
+    }
 
     let path = `M ${(first.x - cx) * scale + 12} ${(first.y - cy) * scale + 12}`
 
     network.segmentIds.forEach((segmentId) => {
       const segment = segments[segmentId]
-      if (!segment) return
+      if (!segment) {
+        return
+      }
 
       const start = points[segment.startId]
       const end = points[segment.endId]

@@ -264,12 +264,16 @@ class TestCollaborationTransportWorker implements CollaborationTransportWorkerLi
   private terminated = false
 
   postMessage(message: CollaborationTransportWorkerRequest): void {
-    if (this.terminated) throw new Error('worker is terminated')
+    if (this.terminated) {
+      throw new Error('worker is terminated')
+    }
     this.posted.push({ message })
     this.postObserver?.(message)
     const workerMessage = structuredClone(message)
     const run = () => {
-      if (this.terminated) return
+      if (this.terminated) {
+        return
+      }
       this.runtime.handle(workerMessage)
     }
     if (this.paused) {
@@ -296,7 +300,9 @@ class TestCollaborationTransportWorker implements CollaborationTransportWorkerLi
   }
 
   terminate(): void {
-    if (this.terminated) return
+    if (this.terminated) {
+      return
+    }
     this.terminated = true
     this.terminateCount += 1
     this.runtime.destroy()
@@ -400,8 +406,9 @@ const createLoopbackServer = async (
       if (
         beginsBootstrap ||
         data === JSON.stringify({ type: 'bootstrap-checkpoint-ready' })
-      )
+      ) {
         return sendOriginal(normalized, args)
+      }
       if (!bootstrapReleased) {
         bootstrapSuccessorMessages.push({ data: normalized, args })
         return
@@ -453,7 +460,9 @@ const createLoopbackServer = async (
               publicationHeaders.length === publicationHeaders[0]?.chunkCount
             )
           })
-        if (!complete) return
+        if (!complete) {
+          return
+        }
         publicationFramesByRequest.delete(requestKey)
         const orderedFrames = frames
           .map((item) => ({
@@ -475,7 +484,9 @@ const createLoopbackServer = async (
       }
       const message = decodeCollaborationMessage(encoded) as ClientMessage
       const releasesBootstrap = message.type === 'bootstrap-consumed'
-      if (releasesBootstrap) bootstrapReleased = true
+      if (releasesBootstrap) {
+        bootstrapReleased = true
+      }
       onMessage(socket, message, encoded)
       if (
         autoCompleteBootstrap &&
@@ -490,7 +501,9 @@ const createLoopbackServer = async (
           })
         )
       }
-      if (releasesBootstrap) flushBootstrapSuccessors()
+      if (releasesBootstrap) {
+        flushBootstrapSuccessors()
+      }
     })
   })
   await new Promise<void>((resolve, reject) => {
@@ -764,7 +777,9 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
   it('forwards opaque app metadata and reports connected', async () => {
     let hello: ClientMessage | undefined
     const server = await createLoopbackServer((socket, message) => {
-      if (message.type !== 'hello') return
+      if (message.type !== 'hello') {
+        return
+      }
       hello = message
       socket.send(JSON.stringify({ type: 'ready' }))
     })
@@ -790,7 +805,9 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
 
   it('reports a rejected real connection as failed', async () => {
     const server = await createLoopbackServer((socket, message) => {
-      if (message.type !== 'hello') return
+      if (message.type !== 'hello') {
+        return
+      }
       socket.send(
         JSON.stringify({
           type: 'connection-error',
@@ -910,7 +927,9 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
             socket.send(
               kind === 'late' ? JSON.stringify({ type: 'ready' }) : marker
             )
-            if (kind === 'late') socket.send(marker)
+            if (kind === 'late') {
+              socket.send(marker)
+            }
           }
         },
         { autoCompleteBootstrap: false }
@@ -1402,7 +1421,9 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
           message.requestId
         ) {
           const sourceHeader = sourceHeaders.get(message.requestId)
-          if (!sourceHeader) return
+          if (!sourceHeader) {
+            return
+          }
           settlements.push(message)
           socket.send(
             JSON.stringify({
@@ -1449,7 +1470,9 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       {
         autoAdmitSourceFrames: false,
         onSourceFrame: (_socket, header) => {
-          if (header.requestId) sourceHeaders.set(header.requestId, header)
+          if (header.requestId) {
+            sourceHeaders.set(header.requestId, header)
+          }
         }
       }
     )
@@ -1720,7 +1743,9 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     const counterSink = vi.fn()
     diagnosticDisposers.push(subscribeToDiagnosticCounters(counterSink))
     const server = await createLoopbackServer((socket, message) => {
-      if (message.type !== 'hello') return
+      if (message.type !== 'hello') {
+        return
+      }
       socket.send(JSON.stringify({ type: 'ready' }))
       sendInbound = () =>
         socket.send(
@@ -1768,7 +1793,9 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
   it('does not expose inbound control payloads to main when diagnostics are disabled', async () => {
     let sendInbound: (() => void) | undefined
     const server = await createLoopbackServer((socket, message) => {
-      if (message.type !== 'hello') return
+      if (message.type !== 'hello') {
+        return
+      }
       socket.send(JSON.stringify({ type: 'ready' }))
       sendInbound = () =>
         socket.send(
@@ -1810,7 +1837,9 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
         socket.send(JSON.stringify({ type: 'ready' }))
         return
       }
-      if (message.type !== 'send-awareness' || !message.requestId) return
+      if (message.type !== 'send-awareness' || !message.requestId) {
+        return
+      }
       receivedAwareness = message
       socket.send(
         JSON.stringify({
@@ -1823,7 +1852,9 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     const provider = createProvider(server.endpoint)
     await provider.connect()
     const worker = transportWorkers[0]
-    if (!worker) throw new Error('Expected a transport worker')
+    if (!worker) {
+      throw new Error('Expected a transport worker')
+    }
 
     await provider.sendAwareness({
       actorId: 'actor-a',
@@ -1849,7 +1880,9 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
         socket.send(JSON.stringify({ type: 'ready' }))
         return
       }
-      if (message.type !== 'reset-document' || !message.requestId) return
+      if (message.type !== 'reset-document' || !message.requestId) {
+        return
+      }
       receivedReset = message
       socket.send(
         JSON.stringify({
@@ -1896,7 +1929,9 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
         socket.send(JSON.stringify({ type: 'ready' }))
         return
       }
-      if (message.type !== 'send-publication' || !message.requestId) return
+      if (message.type !== 'send-publication' || !message.requestId) {
+        return
+      }
       encodedRequest = encoded
       received = message.publication
       socket.send(
@@ -1929,7 +1964,9 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     const largePublication = createLargePublication()
     let sendInbound: (() => void) | undefined
     const server = await createLoopbackServer((socket, message) => {
-      if (message.type !== 'hello') return
+      if (message.type !== 'hello') {
+        return
+      }
       socket.send(JSON.stringify({ type: 'ready' }))
       sendInbound = () =>
         sendPublicationFrames(socket, {
@@ -1994,7 +2031,9 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
           inboundFrames.forEach((frame) => socket.send(new Uint8Array(frame)))
         return
       }
-      if (message.type !== 'send-publication' || !message.requestId) return
+      if (message.type !== 'send-publication' || !message.requestId) {
+        return
+      }
       socket.send(
         JSON.stringify({
           type: 'response',
@@ -2016,9 +2055,13 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       await vi.waitFor(() => expect(inbound).toHaveBeenCalledOnce())
 
       const creditCalls = send.mock.calls.flatMap(([value], index) => {
-        if (typeof value !== 'string') return []
+        if (typeof value !== 'string') {
+          return []
+        }
         const message = decodeCollaborationMessage(value) as ClientMessage
-        if (message.type !== 'frame-consumed') return []
+        if (message.type !== 'frame-consumed') {
+          return []
+        }
         return [
           {
             message,
@@ -2108,7 +2151,9 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
         socket.send(JSON.stringify({ type: 'ready' }))
         sendFirstChunk = () => {
           const frame = inboundFrames[0]
-          if (frame) socket.send(new Uint8Array(frame))
+          if (frame) {
+            socket.send(new Uint8Array(frame))
+          }
         }
         return
       }
@@ -2116,7 +2161,9 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
         consumedFrameIds.push(message.frameId)
         const nextFrame = inboundFrames[nextChunkIndex]
         nextChunkIndex += 1
-        if (nextFrame) socket.send(new Uint8Array(nextFrame))
+        if (nextFrame) {
+          socket.send(new Uint8Array(nextFrame))
+        }
         return
       }
       if (message.type === 'peer-applied' && message.requestId) {
@@ -2205,7 +2252,9 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
         socket.send(JSON.stringify({ type: 'ready' }))
         sendFirstFrame = () => {
           const frame = inboundFrames[0]
-          if (frame) socket.send(new Uint8Array(frame))
+          if (frame) {
+            socket.send(new Uint8Array(frame))
+          }
         }
         return
       }
@@ -2213,7 +2262,9 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
         consumedFrameIds.push(message.frameId)
         const nextFrame = inboundFrames[nextFrameIndex]
         nextFrameIndex += 1
-        if (nextFrame) socket.send(new Uint8Array(nextFrame))
+        if (nextFrame) {
+          socket.send(new Uint8Array(nextFrame))
+        }
         return
       }
       if (message.type === 'peer-applied' && message.requestId) {
@@ -2311,7 +2362,9 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
         consumedFrameIds.push(message.frameId)
         if (consumedFrameIds.length === 1) {
           const tailFrame = inboundFrames[3]
-          if (tailFrame) socket.send(new Uint8Array(tailFrame))
+          if (tailFrame) {
+            socket.send(new Uint8Array(tailFrame))
+          }
         }
         return
       }
@@ -2469,7 +2522,9 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
   it('rejects a live document-sequence gap before invoking the App consumer', async () => {
     let sendGap: (() => void) | undefined
     const server = await createLoopbackServer((socket, message) => {
-      if (message.type !== 'hello') return
+      if (message.type !== 'hello') {
+        return
+      }
       socket.send(JSON.stringify({ type: 'ready' }))
       sendGap = () =>
         sendPublicationFrames(socket, {
@@ -2524,7 +2579,9 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
         socket.send(JSON.stringify({ type: 'ready' }))
         sendInbound = () => {
           const frame = frames[0]
-          if (frame) socket.send(new Uint8Array(frame))
+          if (frame) {
+            socket.send(new Uint8Array(frame))
+          }
         }
         return
       }
@@ -2653,9 +2710,13 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       await vi.waitFor(() => expect(delayedReceiptResponses).toHaveLength(2))
 
       const peerAppliedSends = send.mock.calls.flatMap(([value], index) => {
-        if (typeof value !== 'string') return []
+        if (typeof value !== 'string') {
+          return []
+        }
         const message = decodeCollaborationMessage(value) as ClientMessage
-        if (message.type !== 'peer-applied') return []
+        if (message.type !== 'peer-applied') {
+          return []
+        }
         return [
           {
             message,
@@ -2780,7 +2841,9 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
       { softTargetBytes: 256 }
     )
     const duplicateFrame = frames[0]
-    if (!duplicateFrame) throw new Error('Expected a publication frame')
+    if (!duplicateFrame) {
+      throw new Error('Expected a publication frame')
+    }
     let sendDuplicate: (() => void) | undefined
     const consumedFrameIds: string[] = []
     const server = await createLoopbackServer((socket, message) => {
@@ -3000,7 +3063,9 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
         socket.send(JSON.stringify({ type: 'ready' }))
         return
       }
-      if (message.type !== 'send-publication' || !message.requestId) return
+      if (message.type !== 'send-publication' || !message.requestId) {
+        return
+      }
       publicationRequestCount += 1
       socket.send(
         JSON.stringify({
@@ -3035,7 +3100,9 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
 
   it('rejects a schema-valid JSON publication once without delivering it', async () => {
     const server = await createLoopbackServer((socket, message) => {
-      if (message.type !== 'hello') return
+      if (message.type !== 'hello') {
+        return
+      }
       socket.send(JSON.stringify({ type: 'ready' }))
       socket.send(
         JSON.stringify({
@@ -3071,7 +3138,9 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
 
   it('receives one detached live publication as the direct callback payload', async () => {
     const server = await createLoopbackServer((socket, message) => {
-      if (message.type !== 'hello') return
+      if (message.type !== 'hello') {
+        return
+      }
       socket.send(JSON.stringify({ type: 'ready' }))
       sendPublicationFrames(socket, {
         type: 'publication',
@@ -3093,7 +3162,9 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
 
   it('rejects malformed publication messages as transport failure', async () => {
     const server = await createLoopbackServer((socket, message) => {
-      if (message.type !== 'hello') return
+      if (message.type !== 'hello') {
+        return
+      }
       socket.send(JSON.stringify({ type: 'ready' }))
       socket.send(
         JSON.stringify({
@@ -3127,14 +3198,18 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
         consumed()
         return
       }
-      if (message.type !== 'hello') return
+      if (message.type !== 'hello') {
+        return
+      }
       socket.send(JSON.stringify({ type: 'ready' }))
       const frame = encodePublicationMessageFrames({
         type: 'publication',
         publication,
         fromActorId: 'actor-b'
       })[0]
-      if (!frame) throw new Error('Expected a publication frame')
+      if (!frame) {
+        throw new Error('Expected a publication frame')
+      }
       const invalid = frame.slice(0)
       new Uint8Array(invalid)[PUBLICATION_FRAME_VERSION_OFFSET] = 0xff
       sendInvalidFrame = () => socket.send(new Uint8Array(invalid))
@@ -3174,14 +3249,18 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
         consumed()
         return
       }
-      if (message.type !== 'hello') return
+      if (message.type !== 'hello') {
+        return
+      }
       socket.send(JSON.stringify({ type: 'ready' }))
       const frame = encodePublicationMessageFrames({
         type: 'publication',
         publication,
         fromActorId: 'actor-b'
       })[0]
-      if (!frame) throw new Error('Expected a publication frame')
+      if (!frame) {
+        throw new Error('Expected a publication frame')
+      }
       const truncated = frame.slice(0, frame.byteLength - 1)
       sendTruncatedFrame = () => socket.send(new Uint8Array(truncated))
     })
@@ -3211,7 +3290,9 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
   it('does not emit late delivery or credit after a pending inbound worker failure tears down the codec', async () => {
     let sendInbound: (() => void) | undefined
     const server = await createLoopbackServer((socket, message) => {
-      if (message.type !== 'hello') return
+      if (message.type !== 'hello') {
+        return
+      }
       socket.send(JSON.stringify({ type: 'ready' }))
       sendInbound = () =>
         sendPublicationFrames(socket, {
@@ -3227,7 +3308,9 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
     provider.onFailure(failures)
     await provider.connect()
     const worker = transportWorkers[0]
-    if (!worker) throw new Error('Expected a transport worker')
+    if (!worker) {
+      throw new Error('Expected a transport worker')
+    }
     const send = vi.spyOn(NodeWebSocket.prototype, 'send')
 
     try {
@@ -3273,7 +3356,9 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
 
     await provider.connect()
     const worker = transportWorkers[0]
-    if (!worker) throw new Error('Expected a transport worker')
+    if (!worker) {
+      throw new Error('Expected a transport worker')
+    }
     worker.paused = true
     const sendingOutcome = provider
       .sendPublication(publication)
@@ -3332,7 +3417,9 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
   it('reconnects with a new socket and exposes no state-vector methods', async () => {
     let connectionCount = 0
     const server = await createLoopbackServer((socket, message) => {
-      if (message.type !== 'hello') return
+      if (message.type !== 'hello') {
+        return
+      }
       connectionCount += 1
       socket.send(JSON.stringify({ type: 'ready' }))
     })
@@ -3353,7 +3440,9 @@ describe('CollaborationWebSocketProvider real connection contract', () => {
 it('confirms the captured document version through the transport worker', async () => {
   let captured: ClientMessage | undefined
   const server = await createLoopbackServer((socket, message) => {
-    if (message.type === 'hello') socket.send(JSON.stringify({ type: 'ready' }))
+    if (message.type === 'hello') {
+      socket.send(JSON.stringify({ type: 'ready' }))
+    }
     if (message.type === 'confirm-persistence') {
       captured = message
       socket.send(
@@ -3393,8 +3482,10 @@ it('confirms the captured document version through the transport worker', async 
 
 it('rejects a durable receipt for a different document generation', async () => {
   const server = await createLoopbackServer((socket, message) => {
-    if (message.type === 'hello') socket.send(JSON.stringify({ type: 'ready' }))
-    if (message.type === 'confirm-persistence')
+    if (message.type === 'hello') {
+      socket.send(JSON.stringify({ type: 'ready' }))
+    }
+    if (message.type === 'confirm-persistence') {
       socket.send(
         JSON.stringify({
           type: 'response',
@@ -3408,6 +3499,7 @@ it('rejects a durable receipt for a different document generation', async () => 
           }
         })
       )
+    }
   })
   const provider = createProvider(server.endpoint)
   try {
@@ -3423,7 +3515,9 @@ it('rejects a durable receipt for a different document generation', async () => 
 
 it('cancels persistence confirmation while leaving the document session usable', async () => {
   const server = await createLoopbackServer((socket, message) => {
-    if (message.type === 'hello') socket.send(JSON.stringify({ type: 'ready' }))
+    if (message.type === 'hello') {
+      socket.send(JSON.stringify({ type: 'ready' }))
+    }
   })
   const provider = createProvider(server.endpoint)
   try {

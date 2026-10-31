@@ -344,7 +344,9 @@ export class PublicationCodecWorkerRuntime {
         })
         return
       }
-      if (!this.acceptInboundFrame(pending)) return
+      if (!this.acceptInboundFrame(pending)) {
+        return
+      }
     }
   }
 
@@ -379,9 +381,15 @@ export class PublicationCodecWorkerRuntime {
     assemblyKey: string
   ): boolean {
     const nextReservedBytes = this.inboundReservedBytes + header.frameByteLength
-    if (nextReservedBytes <= PUBLICATION_FRAME_INBOUND_WINDOW_BYTES) return true
-    if (this.oversizedAssemblyKey === assemblyKey) return true
-    if (this.oversizedAssemblyKey) return false
+    if (nextReservedBytes <= PUBLICATION_FRAME_INBOUND_WINDOW_BYTES) {
+      return true
+    }
+    if (this.oversizedAssemblyKey === assemblyKey) {
+      return true
+    }
+    if (this.oversizedAssemblyKey) {
+      return false
+    }
     const assembly = this.inboundAssemblies.get(assemblyKey)
     const isOldestAssembly = this.inboundAssemblyOrder[0] === assemblyKey
     return (
@@ -506,11 +514,17 @@ export class PublicationCodecWorkerRuntime {
     jobId: string,
     post: PublicationCodecWorkerPost
   ): boolean {
-    if (this.activeDecodedPublicationDelivery) return false
+    if (this.activeDecodedPublicationDelivery) {
+      return false
+    }
     const key = this.inboundAssemblyOrder[0]
-    if (!key) return false
+    if (!key) {
+      return false
+    }
     const assembly = this.inboundAssemblies.get(key)
-    if (!assembly?.decoded) return false
+    if (!assembly?.decoded) {
+      return false
+    }
     this.inboundAssemblyOrder.shift()
     this.inboundAssemblies.delete(key)
     this.activeDecodedPublicationDelivery = {

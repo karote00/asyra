@@ -7,7 +7,9 @@ export function parseGlobalHeaders(source) {
   let global = false
   for (const line of source.split(/\r?\n/u)) {
     const value = line.trim()
-    if (!value || value.startsWith('#')) continue
+    if (!value || value.startsWith('#')) {
+      continue
+    }
     assert.ok(line.length <= 2000, 'Pages header line exceeds 2,000 characters')
     if (!/^\s/u.test(line)) {
       assert.equal(

@@ -27,6 +27,23 @@ const readPlan = (script, args = []) => {
   return JSON.parse(result.stdout)
 }
 
+test('development and release artifact checks have separate entrypoints', () => {
+  const { scripts } = JSON.parse(
+    readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8')
+  )
+  assert.equal(
+    scripts['test:release-artifacts'],
+    'node --test scripts/__tests__/release-template-artifacts.test.mjs'
+  )
+  assert.doesNotMatch(scripts['test:scripts'], /release-template-artifacts/)
+  const plan = readPlan('scripts/release-validate.js', ['--prod=asyra-design'])
+  assert.ok(plan.includes('yarn test:release-artifacts'))
+  assert.ok(
+    plan.indexOf('yarn test:release-artifacts') >
+      plan.indexOf('yarn release:app:check --prod=asyra-design')
+  )
+})
+
 test('full release keeps Framework and create-app publication in ordered stages', () => {
   const plan = readPlan('scripts/release-full.js', ['--prod=asyra-design'])
 
@@ -107,11 +124,12 @@ test('release validation covers build, tests, dependencies, collaboration, and g
     'yarn gen:turbo:check',
     'yarn clean',
     'yarn react:build',
-    'yarn lint:workspaces:ci',
+    'yarn lint',
     'yarn test:workspaces:ci',
     'yarn deps:validate',
     'yarn workspace @asyra/asyra-design test:e2e:collaboration',
     'yarn release:app:check --prod=asyra-design',
+    'yarn test:release-artifacts',
     'yarn release:app:build --prod=asyra-design --prebuilt'
   ])
 })
@@ -125,7 +143,7 @@ test('Framework validation is app-independent and does not generate or build app
     'yarn gen:turbo:check',
     'yarn clean',
     'yarn react:build',
-    'yarn lint:workspaces:ci',
+    'yarn lint',
     'yarn test:workspaces:ci',
     'yarn deps:validate'
   ])
@@ -144,7 +162,7 @@ test('Framework release validation can preserve its successful isolated build fo
     'yarn gen:turbo:check',
     'yarn clean',
     'yarn react:build',
-    'yarn lint:workspaces:ci',
+    'yarn lint',
     'yarn test:workspaces:ci',
     'yarn deps:validate'
   ])
@@ -165,7 +183,7 @@ test('public release gates high-severity dependency advisories', () => {
   )
   assert.match(
     workflow,
-    /- name: Audit high-severity dependencies\s+id: security_audit\s+if: \$\{\{ fromJSON\(needs.scope.outputs.execution_plan\).checks.securityAudit.mode == 'full' \}\}\s+run: yarn security:audit/u
+    /- name: Audit high-severity dependencies\s+id: security_audit\s+if: \$\{\{ fromJSON\(needs.scope.outputs.execution_plan\).checks.securityAudit.mode == 'full' \}\}\s+run: node scripts\/validation-checks.mjs --check security-audit/u
   )
 })
 
@@ -224,82 +242,7 @@ test('general README checks do not force a selected app template to synchronize'
   assert.doesNotMatch(command, /release:app:check|--prod=/u)
 })
 
-test('generated app exposes reproducible standalone lint tooling', () => {
-  const rootManifest = JSON.parse(
-    readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8')
-  )
-  const manifest = JSON.parse(
-    readFileSync(
-      path.join(
-        repositoryRoot,
-        'create-app/asyra-design/template/package.json'
-      ),
-      'utf8'
-    )
-  )
-  const eslintConfig = readFileSync(
-    path.join(
-      repositoryRoot,
-      'create-app/asyra-design/template/eslint.config.js'
-    ),
-    'utf8'
-  )
-
-  assert.equal(manifest.scripts.lint, 'eslint .')
-  assert.equal(
-    manifest.devDependencies.prettier,
-    rootManifest.devDependencies.prettier
-  )
-  assert.match(eslintConfig, /files: \['\*\*\/\*\.\{ts,tsx\}'\]/u)
-})
-
-test('release template excludes local runtime data directories', () => {
-  const config = JSON.parse(
-    readFileSync(
-      path.join(repositoryRoot, 'release-configs/asyra-design.json'),
-      'utf8'
-    )
-  )
-
-  assert.deepEqual(config.cleanFiles, [
-    'node_modules',
-    'yarn.lock',
-    'package-lock.json',
-    'pnpm-lock.yaml',
-    '.pnp.cjs',
-    '.pnp.loader.mjs',
-    '.DS_Store',
-    '.env*',
-    '.*-data',
-    '.turbo',
-    'coverage',
-    'dist',
-    'playwright-report',
-    'test-results',
-    'visual-review-records',
-    'samples/crdt-7076',
-    'test-data/ai-drawing',
-    'e2e/crdt-7076-render.spec.ts',
-    'e2e/action-batch-interceptor.ts',
-    'e2e/ai-drawing-performance.spec.ts',
-    'e2e/collaboration-ai-agent-video.spec.ts',
-    'e2e/collaboration.spec.ts',
-    'e2e/conversational-ai.spec.ts',
-    'e2e/crdt-endpoint-performance.spec.ts',
-    'e2e/prepared-server-response-artifacts.mjs',
-    'scripts/generate-crdt-7076-document.ts',
-    '__tests__/prepared-server-response-artifacts.test.mjs',
-    '__tests__/playwright-config.test.mjs',
-    'server/__tests__/action-batch.test.ts',
-    'src/ai/__tests__/detailed-tabby.test.ts',
-    'src/common-apis/element/__tests__/vector-parent-creation.test.ts',
-    'e2e/ai-conversation-flow.spec.ts',
-    'server/__tests__/basic-api-contracts.test.ts',
-    'flow-contracts.json',
-    'server/__tests__/execution-flow.config.ts',
-    'server/__tests__/execution-flow-proof.test.ts'
-  ])
-
+test('release template cleanup handles ignored files and directories', () => {
   const releaseTemplate = readFileSync(
     path.join(repositoryRoot, 'scripts/release-template.js'),
     'utf8'
@@ -320,26 +263,7 @@ test('Asyra Design release template retains only active drawing fixtures', () =>
       'utf8'
     )
   )
-  const retiredPaths = [
-    'visual-review-records',
-    'test-data/ai-drawing/detailed-tabby-cat-only-white-background.png',
-    'test-data/ai-drawing/detailed-tabby-polygon.svg'
-  ]
-
   assert.equal(config.cleanFiles.includes('visual-review-records'), true)
-  for (const retiredPath of retiredPaths) {
-    assert.equal(
-      existsSync(
-        path.join(
-          repositoryRoot,
-          'create-app/asyra-design/template',
-          retiredPath
-        )
-      ),
-      false,
-      `generated ${retiredPath}`
-    )
-  }
 
   for (const requiredPath of [
     'test-data/ai-drawing/__tests__/action-batch-interceptor.test.ts',
@@ -365,13 +289,7 @@ test('Asyra Design keeps the large CRDT fixture out of the generated template', 
     repositoryRoot,
     'apps/asyra-design/samples/crdt-7076/action-batch.json'
   )
-  const generatedFixtureRoot = path.join(
-    repositoryRoot,
-    'create-app/asyra-design/template/samples/crdt-7076'
-  )
-
   assert.equal(existsSync(canonicalFixture), true)
-  assert.equal(existsSync(generatedFixtureRoot), false)
   assert.deepEqual(config.removeScripts, [
     'generate:crdt-7076-document',
     'test:e2e:crdt-7076',
@@ -409,61 +327,6 @@ test('Asyra Design keeps the large CRDT fixture out of the generated template', 
     ),
     true
   )
-  assert.equal(
-    existsSync(
-      path.join(
-        repositoryRoot,
-        'create-app/asyra-design/template/test-data/ai-drawing'
-      )
-    ),
-    false
-  )
-  for (const generatedOnlyTestPath of [
-    'e2e/crdt-7076-render.spec.ts',
-    'e2e/action-batch-interceptor.ts',
-    'e2e/ai-drawing-performance.spec.ts',
-    'e2e/collaboration-ai-agent-video.spec.ts',
-    'e2e/collaboration.spec.ts',
-    'e2e/conversational-ai.spec.ts',
-    'e2e/crdt-endpoint-performance.spec.ts',
-    'e2e/prepared-server-response-artifacts.mjs',
-    'scripts/generate-crdt-7076-document.ts',
-    '__tests__/prepared-server-response-artifacts.test.mjs',
-    '__tests__/playwright-config.test.mjs',
-    'server/__tests__/action-batch.test.ts',
-    'src/ai/__tests__/detailed-tabby.test.ts',
-    'src/common-apis/element/__tests__/vector-parent-creation.test.ts'
-  ]) {
-    assert.equal(
-      existsSync(
-        path.join(
-          repositoryRoot,
-          'create-app/asyra-design/template',
-          generatedOnlyTestPath
-        )
-      ),
-      false,
-      generatedOnlyTestPath
-    )
-  }
-
-  const generatedManifest = JSON.parse(
-    readFileSync(
-      path.join(
-        repositoryRoot,
-        'create-app/asyra-design/template/package.json'
-      ),
-      'utf8'
-    )
-  )
-  for (const excludedArgument of Object.values(
-    config.removeScriptArguments
-  ).flat()) {
-    assert.doesNotMatch(
-      Object.values(generatedManifest.scripts).join('\n'),
-      new RegExp(excludedArgument.replaceAll('/', String.raw`\/`), 'u')
-    )
-  }
 })
 
 test('Asyra Design canonical source excludes retired CRA and duplicate template artifacts', () => {
@@ -499,17 +362,6 @@ test('Asyra Design canonical source excludes retired CRA and duplicate template 
       false,
       retiredPath
     )
-    assert.equal(
-      existsSync(
-        path.join(
-          repositoryRoot,
-          'create-app/asyra-design/template',
-          retiredPath
-        )
-      ),
-      false,
-      `generated ${retiredPath}`
-    )
   }
 
   assert.equal(
@@ -521,22 +373,7 @@ test('Asyra Design canonical source excludes retired CRA and duplicate template 
   )
 })
 
-test('generated template contains required public files and no repository-only state', () => {
-  const templateRoot = path.join(
-    repositoryRoot,
-    'create-app/asyra-design/template'
-  )
-  const expectedLicense = readFileSync(
-    path.join(repositoryRoot, 'create-app/asyra-design/LICENSE'),
-    'utf8'
-  )
-
-  assert.equal(
-    readFileSync(path.join(templateRoot, 'LICENSE'), 'utf8'),
-    expectedLicense
-  )
-  assert.equal(existsSync(path.join(templateRoot, '.env')), false)
-  assert.equal(existsSync(path.join(templateRoot, '.env.example')), true)
+test('canonical app environment remains private with a public example', () => {
   const trackedEnvironment = spawnSync(
     'git',
     ['ls-files', '--', 'apps/asyra-design/.env'],
@@ -548,32 +385,6 @@ test('generated template contains required public files and no repository-only s
     existsSync(path.join(repositoryRoot, 'apps/asyra-design', '.env.example')),
     true
   )
-  assert.equal(
-    readFileSync(
-      path.join(
-        repositoryRoot,
-        'create-app/asyra-design/template/.env.example'
-      ),
-      'utf8'
-    ),
-    readFileSync(
-      path.join(repositoryRoot, 'apps/asyra-design/.env.example'),
-      'utf8'
-    )
-  )
-  for (const repositoryOnlyPath of [
-    '.turbo',
-    'coverage',
-    'dist',
-    'playwright-report',
-    'test-results'
-  ]) {
-    assert.equal(
-      existsSync(path.join(templateRoot, repositoryOnlyPath)),
-      false,
-      repositoryOnlyPath
-    )
-  }
 })
 
 test('repository ignores private environment files without hiding examples', () => {
@@ -616,38 +427,6 @@ test('repository ignores private environment files without hiding examples', () 
       result.status,
       1,
       `${exampleEnvironmentPath} must remain available as documentation`
-    )
-  }
-})
-
-test('packed create-app inventory excludes repository-only generated state', () => {
-  const result = spawnSync(
-    'npm',
-    ['pack', './create-app/asyra-design', '--dry-run', '--json'],
-    {
-      cwd: repositoryRoot,
-      encoding: 'utf8'
-    }
-  )
-  assert.equal(result.status, 0, result.stderr || result.stdout)
-  const [pack] = JSON.parse(result.stdout)
-  const packedPaths = pack.files.map(({ path: packedPath }) => packedPath)
-
-  assert.ok(packedPaths.includes('README.md'))
-  assert.ok(packedPaths.includes('LICENSE'))
-  assert.ok(packedPaths.includes('bin/index.js'))
-  assert.ok(packedPaths.includes('template/LICENSE'))
-  for (const segment of [
-    '.turbo/',
-    'coverage/',
-    'dist/',
-    'playwright-report/',
-    'test-results/'
-  ]) {
-    assert.equal(
-      packedPaths.some((packedPath) => packedPath.includes(segment)),
-      false,
-      segment
     )
   }
 })
@@ -750,13 +529,19 @@ test('every public Framework package identifies its repository location', () => 
   const packagesRoot = path.join(repositoryRoot, 'packages')
 
   for (const entry of readdirSync(packagesRoot, { withFileTypes: true })) {
-    if (!entry.isDirectory()) continue
+    if (!entry.isDirectory()) {
+      continue
+    }
 
     const manifestPath = path.join(packagesRoot, entry.name, 'package.json')
-    if (!existsSync(manifestPath)) continue
+    if (!existsSync(manifestPath)) {
+      continue
+    }
 
     const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
-    if (manifest.private === true) continue
+    if (manifest.private === true) {
+      continue
+    }
 
     assert.deepEqual(
       manifest.repository,
@@ -808,52 +593,6 @@ test('Asyra Design keeps build and test tooling out of production dependencies',
     'apps/asyra-design/src/setupTests.ts'
   )
   assert.equal(existsSync(retiredSetupPath), false)
-})
-
-test('generated template manifest is standalone on the supported release runtime', () => {
-  const rootManifest = JSON.parse(
-    readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8')
-  )
-  const manifest = JSON.parse(
-    readFileSync(
-      path.join(
-        repositoryRoot,
-        'create-app/asyra-design/template/package.json'
-      ),
-      'utf8'
-    )
-  )
-  const serializedScripts = JSON.stringify(manifest.scripts ?? {})
-
-  assert.deepEqual(manifest.engines, { node: '24.x' })
-  assert.equal(manifest.packageManager, 'yarn@4.3.1')
-  assert.equal(manifest.scripts?.start, 'vite dev')
-  assert.equal(manifest.scripts?.['react:start'], undefined)
-  assert.equal(
-    manifest.devDependencies?.prettier,
-    rootManifest.devDependencies.prettier
-  )
-  assert.doesNotMatch(serializedScripts, /(?:\.\.\/){2}|--cwd\s+\.\.\/\.\./)
-  assert.doesNotMatch(JSON.stringify(manifest), /workspace:|(?:link|portal):/)
-  for (const [packageName, version] of Object.entries(
-    manifest.dependencies ?? {}
-  )) {
-    if (!packageName.startsWith('@asyra/')) continue
-    assert.match(version, /^\d+\.\d+\.\d+$/u, packageName)
-  }
-
-  const exampleEnvironment = readFileSync(
-    path.join(repositoryRoot, 'create-app/asyra-design/template/.env.example'),
-    'utf8'
-  )
-  assert.match(exampleEnvironment, /^APP_URL=http:\/\/localhost:3000$/m)
-  assert.match(exampleEnvironment, /^COLLABORATION_WS_HOST=127\.0\.0\.1$/m)
-  assert.match(exampleEnvironment, /^COLLABORATION_WS_PORT=4101$/m)
-  assert.match(
-    exampleEnvironment,
-    /^VITE_COLLABORATION_WS_URL=ws:\/\/127\.0\.0\.1:4101\/collaboration$/m
-  )
-  assert.doesNotMatch(exampleEnvironment, /(?:SECRET|TOKEN|PASSWORD|API_KEY)=/i)
 })
 
 test('template generation pins the selected Framework set and detects fixture drift', () => {
@@ -1012,38 +751,6 @@ test('canonical Asyra Design source uses workspace Framework dependencies during
   assert.equal(typecheckConfig.extends, './tsconfig.json')
   assert.ok(typecheckConfig.exclude.includes('src/**/__tests__/**'))
   assert.ok(typecheckConfig.exclude.includes('src/**/*.test.*'))
-})
-
-test('generated template documents its verified standalone commands and opt-ins', () => {
-  const source = readFileSync(
-    path.join(repositoryRoot, 'apps/asyra-design/README.md'),
-    'utf8'
-  )
-  const generated = readFileSync(
-    path.join(repositoryRoot, 'create-app/asyra-design/template/README.md'),
-    'utf8'
-  )
-
-  assert.equal(generated, source.replaceAll('../../LICENSE', 'LICENSE'))
-  assert.match(generated, /Node\.js 24\.x/)
-  for (const command of [
-    'yarn install',
-    'yarn react:build',
-    'yarn test',
-    'yarn start'
-  ]) {
-    assert.match(generated, new RegExp(command.replace(' ', String.raw`\s+`)))
-  }
-  assert.match(generated, /Preset/)
-  assert.match(generated, /migration/i)
-  assert.match(generated, /Group/)
-  assert.match(generated, /Without `.env`.*local-only mode/is)
-  assert.match(generated, /no Collaboration or server connection/i)
-  assert.match(generated, /Collaboration offline state.*durable outbox/is)
-  assert.match(generated, /reconciles them after reconnection/i)
-  assert.match(generated, /local editing remains available/i)
-  assert.doesNotMatch(generated, /Collaboration is disabled/i)
-  assert.match(generated, /opt in to AI/i)
 })
 
 test('create-app installs once and hands the selected package manager a runnable start command', () => {

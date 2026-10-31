@@ -23,7 +23,9 @@ const createCore = ({
 } = {}) => {
   const providerCleanup = vi.fn()
   const setRenderEngineProvider = vi.fn(() => {
-    if (providerFailure) throw providerFailure
+    if (providerFailure) {
+      throw providerFailure
+    }
     return providerCleanup
   })
   const core = {
@@ -182,8 +184,9 @@ describe('applyPreset', () => {
       applyPreset(core, { profile: PresetProfiles['3D'] })
     )
     expect(error.code).toBe(PRESET_APPLY_ERROR_CODES.INVALID_OPTIONS)
-    for (const id of allDefaults.filter((id) => id !== PresetDefaults.INPUT))
+    for (const id of allDefaults.filter((id) => id !== PresetDefaults.INPUT)) {
       expect(error.message).toContain(id)
+    }
     expect(defaults.installPresetDefaults).not.toHaveBeenCalled()
     expect(setRenderEngineProvider).not.toHaveBeenCalled()
   })

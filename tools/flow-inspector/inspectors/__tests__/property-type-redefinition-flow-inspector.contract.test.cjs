@@ -45,14 +45,7 @@ test('plan and dedicated Inspector remain resolvable authorities', () => {
   assert.ok(productLink)
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.specPath)))
   assert.ok(fs.existsSync(path.resolve(__dirname, '..', productLink.href)))
-  assert.ok(
-    fs.existsSync(
-      path.resolve(
-        repoRoot,
-        'tools/flow-inspector/inspectors/property-type-redefinition-flow-inspector.html'
-      )
-    )
-  )
+  require('./assert-react-catalog.cjs')(data)
 })
 
 test('app composition uses public Core and keeps semantic consumers explicit', () => {

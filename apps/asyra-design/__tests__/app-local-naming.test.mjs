@@ -48,7 +48,9 @@ const collectSourceFiles = (directory) =>
 
 test('App-local code identifiers do not repeat the containing product name', () => {
   const violations = collectSourceFiles(appRoot).flatMap((filePath) => {
-    if (filePath.endsWith('app-local-naming.test.mjs')) return []
+    if (filePath.endsWith('app-local-naming.test.mjs')) {
+      return []
+    }
     const source = fs.readFileSync(filePath, 'utf8')
     const matches = source.match(redundantNamePattern) ?? []
     return matches.map((identifier) => ({

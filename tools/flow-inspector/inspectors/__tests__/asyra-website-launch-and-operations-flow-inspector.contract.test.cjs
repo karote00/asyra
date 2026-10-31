@@ -18,6 +18,16 @@ test('Launch authority paths resolve without treating ignored provider state as 
   })
 })
 
+test('retired launch history delegates current hosting to the manual Cloudflare workflow', () => {
+  assert.equal(data.lifecycle, 'historical')
+  assert.equal(data.authority.currentHostingWorkflowPath, '.github/workflows/site-cloudflare.yml')
+  assert.equal(Object.hasOwn(data.authority, 'rootHostingConfigPath'), false)
+  const workflow = fs.readFileSync(path.join(repoRoot, data.authority.currentHostingWorkflowPath), 'utf8')
+  assert.match(workflow, /workflow_dispatch:/)
+  assert.doesNotMatch(workflow, /^ {2}(push|pull_request|workflow_run|schedule):/m)
+  assert.equal(fs.existsSync(path.join(repoRoot, 'vercel.json')), false)
+})
+
 test('Launch owns six exact and unique public release cases', () => {
   assert.deepEqual(data.caseIds, [
     'distinct-project-preservation',

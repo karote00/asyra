@@ -17,7 +17,9 @@ function checkRings(
         (v, k) => mesh.positions[(i * 8 + side) * 3 + k] - v
       )
       expect(Math.hypot(...radial)).toBeCloseTo(radius, 10)
-      if (!i) continue
+      if (!i) {
+        continue
+      }
       const previous = points[i - 1].map(
         (v, k) => mesh.positions[((i - 1) * 8 + side) * 3 + k] - v
       )
@@ -50,7 +52,9 @@ it('keeps every installed spring clip orientation continuous around both arms an
       clip.firstDiameter,
       clip.secondDiameter
     ])
-    if (seen.has(key)) continue
+    if (seen.has(key)) {
+      continue
+    }
     seen.add(key)
     const wire = springClipWire(clip)
     checkRings(wire.points, wire.diameter, 0)

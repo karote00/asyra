@@ -117,8 +117,9 @@ const memory = () => {
       expectedVersion?: string
       record: AiToolStoreEntry['record']
     }) => {
-      if (entries.get(input.key)?.version !== input.expectedVersion)
+      if (entries.get(input.key)?.version !== input.expectedVersion) {
         throw new Error('Conflict')
+      }
       const entry = {
         key: input.key,
         record: input.record,
@@ -270,7 +271,9 @@ it.each([false, true])(
         inspection: 'defer'
       })
       expect(result.toolOutcome.status).toBe('partial')
-      if (!stopped) expect(result.toolOutcome.settlement).toBe('completed')
+      if (!stopped) {
+        expect(result.toolOutcome.settlement).toBe('completed')
+      }
       expect(result.parts).toHaveLength(stopped ? 2 : 3)
       for (const part of result.parts) {
         const selected = await invoke(
@@ -285,8 +288,9 @@ it.each([false, true])(
         })
       }
       await host.dispose()
-      for (const part of result.parts)
+      for (const part of result.parts) {
         expect(() => resolve(part.artifactId)).toThrow()
+      }
     } finally {
       await host.dispose()
     }
@@ -552,8 +556,9 @@ it('returns cleanup failure with execution evidence and retries actual cleanup a
             ownership.publish(
               'temporary',
               () => {
-                if (++releaseCalls === 1)
+                if (++releaseCalls === 1) {
                   throw new Error('Store temporarily unavailable')
+                }
               },
               () => undefined
             )
@@ -589,7 +594,9 @@ it('retries failed terminal cleanup without reopening the host to new work', asy
       ownership.publish(
         'diagnostic',
         () => {
-          if (++releaseCalls === 1) throw new Error('Retry cleanup')
+          if (++releaseCalls === 1) {
+            throw new Error('Retry cleanup')
+          }
         },
         () => undefined,
         'request'
@@ -726,11 +733,12 @@ it('delivers a registered model view after canonical validation while recipe suc
           definitions: [source, consume],
           call: async (name, input) => {
             calls++
-            if (name === 'source')
+            if (name === 'source') {
               return JSON.stringify({
                 ids: ['a', 'b', 'c'],
                 modelResult: { count: 3 }
               })
+            }
             const ids = (input as { ids: string[] }).ids
             seen.push(ids)
             return JSON.stringify({ count: ids.length })
@@ -1096,8 +1104,9 @@ it.each(['direct', 'registered', 'direct-projector', 'registered-projector'])(
       const definition = host
         .definitions()
         .find((item) => item.registeredName === 'example.read')
-      if (!definition?.registeredName)
+      if (!definition?.registeredName) {
         throw new Error('Missing registered definition')
+      }
       const reply = await host.invoke({
         name: route.startsWith('direct')
           ? 'example.read'
@@ -1307,8 +1316,9 @@ it.each(['direct', 'registered'])(
       const definition = host
         .definitions()
         .find((entry) => entry.name === 'prepare_and_apply_design')
-      if (!definition?.registeredName)
+      if (!definition?.registeredName) {
         throw new Error('Missing registered definition')
+      }
       const input = {
         parts: [
           {
@@ -1477,8 +1487,9 @@ it.each(['direct', 'registered'])(
       const definition = host
         .definitions()
         .find((entry) => entry.name === action.name)
-      if (!definition?.registeredName)
+      if (!definition?.registeredName) {
         throw new Error('Missing registered definition')
+      }
       const input = { arguments: {} }
       const raw = JSON.parse(
         (
@@ -1664,8 +1675,9 @@ it.each([
               return JSON.stringify({ status: 'complete', identity: 'created' })
             },
             projectModelResult: () => {
-              if (mode === 'throws')
+              if (mode === 'throws') {
                 throw new Error('Projection unavailable after execution')
+              }
               return { status: 'complete' }
             }
           }
@@ -1783,8 +1795,9 @@ it.each(['native', 'registered', 'batch'])(
             entry.name ===
             (route === 'batch' ? 'execute_design_batch' : action.name)
         )
-      if (!definition?.registeredName)
+      if (!definition?.registeredName) {
         throw new Error('Missing operation route')
+      }
       const input =
         route === 'batch'
           ? {
@@ -1820,14 +1833,16 @@ it.each(['native', 'registered', 'batch'])(
         code: 'TOOL_DELIVERY_INVALID',
         executionResult: { identity: 'read-0' }
       })
-      if (route === 'batch')
+      if (route === 'batch') {
         expect(result.actionResults[1].result).toEqual({ identity: 'read-1' })
+      }
       if (route === 'registered') {
         const discovery = host
           .definitions()
           .find((entry) => entry.name === 'describe_design_apis')
-        if (!discovery?.registeredName)
+        if (!discovery?.registeredName) {
           throw new Error('Missing discovery route')
+        }
         const guide = JSON.parse(
           await readCompleteInformation(
             async (args) =>

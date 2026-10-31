@@ -27,8 +27,11 @@ function setup(
   const architecture = structuredClone(accepted.architectureDefinition)
   if (appOwner) {
     definition.version = 2
-    for (const scenario of definition.scenarios)
-      if (scenario.mutation) scenario.mutation.file = appFile
+    for (const scenario of definition.scenarios) {
+      if (scenario.mutation) {
+        scenario.mutation.file = appFile
+      }
+    }
     definition.workspaceSources = [
       {
         name: '@asyra/asyra-design',
@@ -216,13 +219,14 @@ for (const [name, edit, error] of [
     },
     /file/i
   ]
-])
+]) {
   test('rejects ' + name + ' without retaining a target', (t) => {
     const { owner, request } = setup(t)
     edit(request)
     assert.throws(() => owner.decide(request, 'local-developer'), error)
     assert.deepEqual(owner.list(), [])
   })
+}
 test('exact task scope, multiple PR records and unknown handoffs never complete target', (t) => {
   const { owner, request, task, reviews, options } = setup(t)
   request.works[1].prerequisites = [
@@ -360,7 +364,9 @@ test('repeated target reads reuse admitted revision history and allocation proje
   const values = Object.values
   let historyTraversals = 0
   Object.values = (value) => {
-    if (value === first.history) historyTraversals++
+    if (value === first.history) {
+      historyTraversals++
+    }
     return values(value)
   }
   try {
@@ -586,7 +592,7 @@ test('admission reserves source and task before execution and survives restart w
   )
 })
 
-for (const authorityFormat of [1, 2])
+for (const authorityFormat of [1, 2]) {
   test(`assessment-bound admission with authority ${authorityFormat} survives restart without accepting the target`, (t) => {
     const f = dependentAdmissionFixture(t)
     f.assessment.runtime.runtimeAuthorityFormat = authorityFormat
@@ -617,6 +623,7 @@ for (const authorityFormat of [1, 2])
     )
     assert.equal(restored.get(f.target.id).status, 'pending')
   })
+}
 
 test('assessment-bound task start rejects retired source authority after its own admission revision', (t) => {
   const f = dependentAdmissionFixture(t)
@@ -712,9 +719,14 @@ test('assessment-bound admission rejects non-current or unsatisfied owner eviden
   ]
   for (const [name, mutate] of mutations) {
     const value = structuredClone(f.assessment)
-    if (mutate) mutate(value)
-    if (name === 'missing') f.assessments.delete(f.assessment.id)
-    else f.assessments.set(f.assessment.id, value)
+    if (mutate) {
+      mutate(value)
+    }
+    if (name === 'missing') {
+      f.assessments.delete(f.assessment.id)
+    } else {
+      f.assessments.set(f.assessment.id, value)
+    }
     assert.throws(
       () => f.owner.decide(f.admission, 'local-developer'),
       /assessment|prerequisite|preservation|source|actor|allocation/i,
@@ -764,11 +776,12 @@ test('admission checks source, task identity, actor and complete promise; omissi
     { ...f.task, obligations: [] },
     { ...f.task, allowedFiles: [] },
     { ...f.task, workBinding: { ...f.task.workBinding, workId: randomUUID() } }
-  ])
+  ]) {
     assert.throws(
       () => f.owner.checkTask(task, f.source.snapshot),
       /admission|scope|obligation|actor|identity/i
     )
+  }
   assert.throws(
     () =>
       f.owner.checkTask(f.task, {
@@ -789,7 +802,7 @@ test('admission checks source, task identity, actor and complete promise; omissi
   )
 })
 
-for (const field of ['scenario', 'phase', 'contractDigest'])
+for (const field of ['scenario', 'phase', 'contractDigest']) {
   test('admission refuses ineligible proof ' + field, (t) => {
     const f = admissionFixture(t)
     f.source[field] = 'invalid'
@@ -799,6 +812,7 @@ for (const field of ['scenario', 'phase', 'contractDigest'])
     )
     assert.equal(f.owner.get(f.target.id).history.length, 1)
   })
+}
 
 test('bounded assessment preserves failed attempts and does not combine work passes into target acceptance', (t) => {
   const f = admissionFixture(t)

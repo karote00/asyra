@@ -13,7 +13,9 @@ const collectValueStringCounts = (
     counts.set(value, (counts.get(value) ?? 0) + 1)
     return
   }
-  if (!value || typeof value !== 'object') return
+  if (!value || typeof value !== 'object') {
+    return
+  }
   if (Array.isArray(value)) {
     value.forEach((child) => collectValueStringCounts(child, counts))
     return
@@ -30,7 +32,9 @@ const encodeCompactJsonValue = (value: unknown): string => {
   const dictionaryIndices = new Map<string, number>()
   const intern = (text: string): number => {
     const existing = dictionaryIndices.get(text)
-    if (existing !== undefined) return existing
+    if (existing !== undefined) {
+      return existing
+    }
     const index = dictionary.length
     dictionary.push(text)
     dictionaryIndices.set(text, index)
@@ -46,7 +50,9 @@ const encodeCompactJsonValue = (value: unknown): string => {
       }
       return child
     }
-    if (!child || typeof child !== 'object') return child
+    if (!child || typeof child !== 'object') {
+      return child
+    }
     if (Array.isArray(child)) {
       return [COMPACT_ARRAY_TAG, ...child.map(encodeValue)]
     }
@@ -64,7 +70,9 @@ const decodeCompactJsonValue = (
   value: unknown,
   dictionary: readonly string[]
 ): unknown => {
-  if (!value || typeof value !== 'object') return value
+  if (!value || typeof value !== 'object') {
+    return value
+  }
   if (!Array.isArray(value) || value.length === 0) {
     throw new TypeError('[collaboration] invalid compact JSON value')
   }
@@ -120,7 +128,9 @@ export const encodeCompactJsonIfSmaller = (
   value: unknown,
   plain: string
 ): string => {
-  if (plain.length < COMPACT_JSON_MIN_LENGTH) return plain
+  if (plain.length < COMPACT_JSON_MIN_LENGTH) {
+    return plain
+  }
   const compact = encodeCompactJsonValue(value)
   return compact.length < plain.length ? compact : plain
 }

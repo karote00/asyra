@@ -107,7 +107,9 @@ describe('M2 explicit trajectory source normalization', () => {
       input.keyframes[1]?.joints
     )
     const sourceFrame = input.keyframes[1]
-    if (!sourceFrame) throw new Error('Expected the second source frame')
+    if (!sourceFrame) {
+      throw new Error('Expected the second source frame')
+    }
     ;(sourceFrame.joints as Record<string, number>).turn = 180
     expect(normalized.trajectory.keyframes[1]?.joints.turn).toBeCloseTo(
       Math.PI * 2.5,
@@ -141,10 +143,11 @@ describe('M2 explicit trajectory source normalization', () => {
         ...source(),
         jointUnits: { turn: 'deg', slide: 'mm', ghost: 'm' }
       }
-    ])
+    ]) {
       expect(() =>
         normalizeTrajectorySource(workcell(), invalid as TrajectorySource)
       ).toThrow('unit')
+    }
   })
 
   it('rejects missing, unknown, or inherited joint columns', () => {
@@ -155,13 +158,14 @@ describe('M2 explicit trajectory source normalization', () => {
       { turn: 0 },
       { turn: 0, slide: 0, ghost: 0 },
       inherited
-    ])
+    ]) {
       expect(() =>
         normalizeTrajectorySource(workcell(), {
           ...source(),
           keyframes: [{ time: 0, joints }]
         })
       ).toThrow('joint')
+    }
   })
 
   it('applies canonical trajectory time and joint limit validation after conversion', () => {

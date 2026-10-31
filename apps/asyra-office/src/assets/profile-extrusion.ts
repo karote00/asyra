@@ -9,13 +9,15 @@ export function extrudeProfile(
 ): Mesh {
   const m = emptyMesh(),
     n = points.length
-  if (n < 3 || !(range[1] > range[0])) throw new Error('Invalid extrusion')
+  if (n < 3 || !(range[1] > range[0])) {
+    throw new Error('Invalid extrusion')
+  }
   const area = points.reduce((sum, p, i) => {
     const q = points[(i + 1) % n]
     return sum + p[0] * q[1] - q[0] * p[1]
   }, 0)
   const p = area > 0 ? [...points] : [...points].reverse()
-  for (const height of range)
+  for (const height of range) {
     for (const [u, v] of p) {
       const point: Vec = [0, 0, 0]
       point[axis] = height
@@ -24,6 +26,7 @@ export function extrudeProfile(
       m.positions.push(...point)
       m.uvs.push(u, v)
     }
+  }
   for (let i = 0; i < n; i++) {
     const j = (i + 1) % n
     m.indices.push(i, j, j + n, i, j + n, i + n)
@@ -50,20 +53,27 @@ export function extrudeProfile(
             cross(b, c, q) >= -1e-12 &&
             cross(c, a, q) >= -1e-12
         )
-      )
+      ) {
         continue
+      }
       triangles.push(a, b, c)
       indices.splice(i, 1)
       ear = true
       break
     }
-    if (!ear) throw new Error('Profile has an invalid or crossing boundary')
+    if (!ear) {
+      throw new Error('Profile has an invalid or crossing boundary')
+    }
   }
   triangles.push(...indices)
   for (let i = 0; i < triangles.length; i += 3) {
     const [a, b, c] = triangles.slice(i, i + 3)
-    if (caps[0]) m.indices.push(a, c, b)
-    if (caps[1]) m.indices.push(a + n, b + n, c + n)
+    if (caps[0]) {
+      m.indices.push(a, c, b)
+    }
+    if (caps[1]) {
+      m.indices.push(a + n, b + n, c + n)
+    }
   }
   // Planar cut faces retain independent normal domains at every sharp edge.
   const flat = emptyMesh()

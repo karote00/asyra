@@ -63,7 +63,9 @@ function shapeSeries(path: string, shape: RobotPart['shape']) {
 function captureRepresentativeSourceValues() {
   const robot = createRobotModel(DEFAULT_ROBOT)
   const crop = createCropModels({ netTop: 3, netBottom: 0.45 })[0]
-  if (!crop) throw new Error('Missing representative crop model')
+  if (!crop) {
+    throw new Error('Missing representative crop model')
+  }
   const values = [
     ...robot.flatMap((part) => shapeSeries(`robot.${part.id}`, part.shape)),
     ...crop.parts.flatMap((part) => [
@@ -131,9 +133,11 @@ it('reports rerunnable per-value source portability diagnostics without setting 
       const sides = after.path.includes('.near.') ? 8 : 3
       const added = crop.fruits.length * sides * 3
       // A rerun against the already-updated fixture must be byte-identical.
-      if (after.values.length === before.values.length)
+      if (after.values.length === before.values.length) {
         expect(after).toEqual(before)
-      else expect(after.values.length - before.values.length).toBe(added)
+      } else {
+        expect(after.values.length - before.values.length).toBe(added)
+      }
     }
     expect(actual.reduce((count, item) => count + item.values.length, 0)).toBe(
       179390 + addedRingValues
@@ -156,15 +160,20 @@ it('reports rerunnable per-value source portability diagnostics without setting 
     for (let valueIndex = 0; valueIndex < before.values.length; valueIndex++) {
       compared++
       const distance = ulps(after.values[valueIndex], before.values[valueIndex])
-      if (!distance) continue
+      if (!distance) {
+        continue
+      }
       changed++
       const absoluteDifference = Math.abs(
         fromBits(after.values[valueIndex]) - fromBits(before.values[valueIndex])
       )
-      if (distance > maxUlps) maxUlps = distance
-      if (absoluteDifference > maxAbsoluteDifference)
+      if (distance > maxUlps) {
+        maxUlps = distance
+      }
+      if (absoluteDifference > maxAbsoluteDifference) {
         maxAbsoluteDifference = absoluteDifference
-      if (differences.length < 32)
+      }
+      if (differences.length < 32) {
         differences.push({
           path: after.path,
           index: valueIndex,
@@ -173,6 +182,7 @@ it('reports rerunnable per-value source portability diagnostics without setting 
           absoluteDifference,
           ulps: distance.toString()
         })
+      }
     }
   }
   const report = {
@@ -184,8 +194,9 @@ it('reports rerunnable per-value source portability diagnostics without setting 
     maxUlps: maxUlps.toString(),
     firstDifferences: differences
   }
-  if (changed || process.env.FIELDSCOPE_REPORT_SOURCE_TRACE === '1')
+  if (changed || process.env.FIELDSCOPE_REPORT_SOURCE_TRACE === '1') {
     console.info('source Float64 portability', JSON.stringify(report))
+  }
   expect(report).toMatchObject({
     series: 135,
     compared: 179390 + addedRingValues

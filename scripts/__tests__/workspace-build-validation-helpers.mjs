@@ -15,8 +15,11 @@ export const runOwnedBuildCommand = (
 ) =>
   new Promise((resolve, reject) => {
     const env = { ...process.env, CI: 'true', FORCE_COLOR: '0' }
-    if (githubActions) env.GITHUB_ACTIONS = 'true'
-    else delete env.GITHUB_ACTIONS
+    if (githubActions) {
+      env.GITHUB_ACTIONS = 'true'
+    } else {
+      delete env.GITHUB_ACTIONS
+    }
     const child = spawn(command, args, {
       cwd: repositoryRoot,
       env,
@@ -27,11 +30,15 @@ export const runOwnedBuildCommand = (
     let timedOut = false
     let oversized = false
     const killGroup = () => {
-      if (!child.pid) return
+      if (!child.pid) {
+        return
+      }
       try {
         process.kill(-child.pid, 'SIGKILL')
       } catch (error) {
-        if (error.code !== 'ESRCH') throw error
+        if (error.code !== 'ESRCH') {
+          throw error
+        }
       }
     }
     const timer = setTimeout(() => {
@@ -59,7 +66,9 @@ export const runOwnedBuildCommand = (
         )
         error.output = output
         reject(error)
-      } else resolve({ code, output })
+      } else {
+        resolve({ code, output })
+      }
     })
   })
 
@@ -98,5 +107,7 @@ export async function assertStarterBuildArtifacts() {
 }
 
 function assertStarterArtifact(passed, artifact) {
-  if (!passed) throw new Error(`Missing built Starter artifact: ${artifact}`)
+  if (!passed) {
+    throw new Error(`Missing built Starter artifact: ${artifact}`)
+  }
 }

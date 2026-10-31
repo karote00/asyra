@@ -20,8 +20,9 @@ const readFill = (page: Page) =>
     const { core } = await import('../src/testing/runtime-access')
     const elementId = core.getSelectedElementIds()[0]
     const fills = core.getElementComputedData(elementId, ['fills'])?.fills
-    if (!Array.isArray(fills) || !fills[0])
+    if (!Array.isArray(fills) || !fills[0]) {
       throw new Error('Missing selected fill')
+    }
     return fills[0]
   })
 
@@ -37,7 +38,9 @@ test('nested gradient batch patches reach the durable checkpoint and survive rel
 }) => {
   test.setTimeout(60_000)
   const fileId = new URL(page.url()).searchParams.get('fileId')
-  if (!fileId) throw new Error('The test document has no file ID')
+  if (!fileId) {
+    throw new Error('The test document has no file ID')
+  }
   const result = await page.evaluate(async () => {
     const { core } = await import('../src/testing/runtime-access')
     const { fillApis } = await import('../src/common-apis')
@@ -352,8 +355,9 @@ test('multi-selection Fill UI edits both elements in one Undo action', async ({
   await openGradientFillEditor(page)
   await page.getByTestId('prop-fill-gradient-type-0').selectOption('radial')
   const gradient = await readAll()
-  for (const fills of gradient)
+  for (const fills of gradient) {
     expect(fills[0].gradient.gradientType).toBe('radial')
+  }
   const gradientHistory = await getTransactionSnapshot(page)
   await page.getByTestId('prop-fill-gradient-flip-0').click()
   const flipped = await readAll()
@@ -416,7 +420,9 @@ test('shared Fill intents preserve local masks, peers, Undo/Redo and durable rel
         const action = createBasicApiActions().find(
           (action) => action.name === name
         )
-        if (!action) throw new Error(`Missing action ${name}`)
+        if (!action) {
+          throw new Error(`Missing action ${name}`)
+        }
         return createAiTransactionRunner().run(
           'Shared property intent',
           (runMutation) =>
@@ -463,7 +469,9 @@ test('shared Fill intents preserve local masks, peers, Undo/Redo and durable rel
   )
   const initial = await read()
   const sourceId = initial[0]?.id
-  if (!sourceId) throw new Error('Missing independent source')
+  if (!sourceId) {
+    throw new Error('Missing independent source')
+  }
   await page.evaluate(
     async (ids) =>
       (await import('../src/common-apis')).fillApis.shareFillAtIndex(
@@ -569,7 +577,9 @@ test('shared Fill intents preserve local masks, peers, Undo/Redo and durable rel
     await expect.poll(() => read(peer)).toEqual(final)
     const savedDigest = await getCoreDocumentDigest(page)
     const fileId = new URL(page.url()).searchParams.get('fileId')
-    if (!fileId) throw new Error('Missing document identity')
+    if (!fileId) {
+      throw new Error('Missing document identity')
+    }
     await expect
       .poll(() => getPersistedDocumentDigest(fileId), { timeout: 25_000 })
       .toEqual(savedDigest)
@@ -617,14 +627,19 @@ test('Stroke batches preserve intervening fields and multi-owner Undo/Redo', asy
       height: 60,
       workspacePosition: { x: 100, y: 100 }
     })
-    if (!second) throw new Error('Second target missing')
+    if (!second) {
+      throw new Error('Second target missing')
+    }
     const ids = [first, second]
     const targets = ids.map((elementId) => {
       const receipt = strokeApis.addStroke(elementId)
-      if (!receipt.changed || receipt.unavailableIds.length)
+      if (!receipt.changed || receipt.unavailableIds.length) {
         throw new Error('Stroke creation did not settle')
+      }
       const strokeId = receipt.value
-      if (!strokeId) throw new Error('Missing created Stroke')
+      if (!strokeId) {
+        throw new Error('Missing created Stroke')
+      }
       return { elementId, strokeId }
     })
     strokeApis.updatePrimaryStrokeColors(

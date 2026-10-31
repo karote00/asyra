@@ -14,8 +14,9 @@ const stopAgentInteractionPropagation = (event: SyntheticEvent): void => {
   if (
     (event.type === 'keydown' || event.type === 'keyup') &&
     !['Enter', ' '].includes((event as KeyboardEvent).key)
-  )
+  ) {
     return
+  }
   event.stopPropagation()
 }
 

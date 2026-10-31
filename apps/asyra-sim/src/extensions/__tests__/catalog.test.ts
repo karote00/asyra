@@ -209,7 +209,9 @@ describe('trusted pre-start method catalog', () => {
       ).toContainEqual(expect.objectContaining({ code: 'method-parameters' }))
     }
     const forged = structuredClone(snapshot)
-    if (!forged.methodDescriptor) throw new Error('Missing descriptor')
+    if (!forged.methodDescriptor) {
+      throw new Error('Missing descriptor')
+    }
     forged.methodDescriptor.version = 'different'
     expect(() => validateHistoricalSnapshot(forged)).toThrow('identity')
   })

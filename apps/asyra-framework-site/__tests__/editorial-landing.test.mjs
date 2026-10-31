@@ -16,7 +16,9 @@ const listFiles = async (directory) => {
       .filter((entry) => /\.[^.]+$/.test(entry))
       .sort()
   } catch (error) {
-    if (error && error.code === 'ENOENT') return []
+    if (error && error.code === 'ENOENT') {
+      return []
+    }
     throw error
   }
 }

@@ -22,10 +22,11 @@ const assigned = CI_E2E_GROUPS.flatMap(({ files }) => files).toSorted()
 if (
   assigned.length !== new Set(assigned).size ||
   JSON.stringify(assigned) !== JSON.stringify(collectBrowserSpecFiles(appRoot))
-)
+) {
   throw new Error(
     'Asyra FieldScope CI groups must cover every browser spec once'
   )
+}
 
 const artifactDirectory = path.join(appRoot, '.artifacts', 'e2e-ci')
 // Chrome's Linux singleton socket must fit sun_path independently of report paths.
@@ -39,11 +40,12 @@ fs.mkdirSync(temporaryDirectory, { recursive: true })
 
 let activeChild
 let receivedSignal = null
-for (const signal of ['SIGINT', 'SIGTERM'])
+for (const signal of ['SIGINT', 'SIGTERM']) {
   process.on(signal, () => {
     receivedSignal = signal
     activeChild?.kill(signal)
   })
+}
 
 function runPlaywright(command, environment) {
   return new Promise((resolve) => {
@@ -135,16 +137,19 @@ for (const [index, group] of selectBrowserGroups(
     process.stderr.write(
       `Asyra FieldScope E2E group failed or incomplete: ${group.name}; report ${childReportPath}\n`
     )
-  } else fs.rmSync(childReportPath, { force: true })
+  } else {
+    fs.rmSync(childReportPath, { force: true })
+  }
 
   if (receivedSignal) {
     failedGroups.push(`interrupted-${receivedSignal}`)
-    for (const pending of CI_E2E_GROUPS.slice(index + 1))
+    for (const pending of CI_E2E_GROUPS.slice(index + 1)) {
       groupRuns.push({
         group: pending.name,
         exitCode: 1,
         error: `Not started because the runner received ${receivedSignal}.`
       })
+    }
     break
   }
 }

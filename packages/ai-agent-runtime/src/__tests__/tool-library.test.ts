@@ -112,7 +112,7 @@ describe('tool candidate registration', () => {
 
   it('bounds retained submissions without evicting a live candidate', () => {
     const { library, registry } = setup()
-    for (let i = 0; i < 8; i++)
+    for (let i = 0; i < 8; i++) {
       expect(
         library.submit({
           requestId: 'author',
@@ -120,6 +120,7 @@ describe('tool candidate registration', () => {
           proposal: { ...proposal(), name: `tool-${i}` }
         }).ok
       ).toBe(true)
+    }
     expect(
       library.submit({
         requestId: 'author',
@@ -210,7 +211,9 @@ it('counts nested repair dependencies before publishing a bounded candidate', ()
     }).ok
   ).toBe(true)
   const primitive = host.registry.get('set')
-  if (!primitive) throw new Error('Missing scalar primitive')
+  if (!primitive) {
+    throw new Error('Missing scalar primitive')
+  }
   host.registry.register({
     ...primitive,
     name: 'verify',

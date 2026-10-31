@@ -42,7 +42,9 @@ const button = (name: string) => {
   const value = [...host.querySelectorAll('button')].find(
     (el) => el.textContent === name || el.getAttribute('aria-label') === name
   )
-  if (!value) throw new Error(`Missing action: ${name}`)
+  if (!value) {
+    throw new Error(`Missing action: ${name}`)
+  }
   return value
 }
 beforeEach(async () => {
@@ -51,7 +53,9 @@ beforeEach(async () => {
   HTMLDialogElement.prototype.showModal = vi.fn()
   HTMLDialogElement.prototype.close = vi.fn()
   Object.values(session).forEach((value) => {
-    if (vi.isMockFunction(value)) value.mockReset()
+    if (vi.isMockFunction(value)) {
+      value.mockReset()
+    }
   })
   session.list.mockResolvedValue({ projects: [summary], limited: false })
   host = document.createElement('div')
@@ -119,7 +123,9 @@ it('reveals the validated project preview and reports import progress without re
   const input = host.querySelector<HTMLInputElement>(
     '[aria-label="Portable project file"]'
   )
-  if (!input) throw new Error('Missing portable input')
+  if (!input) {
+    throw new Error('Missing portable input')
+  }
   Object.defineProperty(input, 'files', { configurable: true, value: [file] })
   await act(() => input.dispatchEvent(new Event('change', { bubbles: true })))
   expect(document.activeElement?.getAttribute('data-testid')).toBe(

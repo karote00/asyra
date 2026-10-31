@@ -38,7 +38,9 @@ const fail = (code: PresetApplyError['code'], message: string): never => {
 }
 
 const parseOptions = (value: unknown): ApplyPresetOptions => {
-  if (value === undefined) return {}
+  if (value === undefined) {
+    return {}
+  }
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return fail(
       PRESET_APPLY_ERROR_CODES.INVALID_OPTIONS,
@@ -127,7 +129,9 @@ const expandDefaults = (
 ): readonly PresetDefaultId[] => {
   const applied = new Set<PresetDefaultId>()
   const addWithDependencies = (id: PresetDefaultId): void => {
-    if (applied.has(id)) return
+    if (applied.has(id)) {
+      return
+    }
     const entry = PresetCatalog.defaults.find(
       (candidate) => candidate.id === id
     )
@@ -151,11 +155,12 @@ export const resolvePresetRequest = (
   const appliedDefaults = expandDefaults(selectedDefaults)
   let spatial: SpatialPresentationOptions | undefined
   if (options.spatial !== undefined) {
-    if (profile !== PresetProfiles['3D'])
+    if (profile !== PresetProfiles['3D']) {
       return fail(
         PRESET_APPLY_ERROR_CODES.INVALID_OPTIONS,
         'Spatial presentation settings require profile 3D'
       )
+    }
     try {
       spatial = readSpatialPresentationOptions(options.spatial)
     } catch (cause) {

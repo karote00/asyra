@@ -9,12 +9,15 @@ import type {
 
 export function measureWorkerPayload(input: unknown): number {
   const encoded = JSON.stringify(input)
-  if (typeof encoded !== 'string') throw new Error('Invalid worker payload')
+  if (typeof encoded !== 'string') {
+    throw new Error('Invalid worker payload')
+  }
   const bytes = new TextEncoder().encode(encoded).byteLength
-  if (bytes > EXPERIMENT_RESOURCE_PROFILE.maxEvidenceBytes)
+  if (bytes > EXPERIMENT_RESOURCE_PROFILE.maxEvidenceBytes) {
     throw new Error(
       'Analysis worker payload exceeds the encoded evidence limit'
     )
+  }
   return bytes
 }
 

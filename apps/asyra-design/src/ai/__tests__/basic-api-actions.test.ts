@@ -31,11 +31,17 @@ it('delegates every contract in parameter order without copying inputs or inject
     const action = createBasicApiActions(() => owners).find(
       (a) => a.name === contract.name
     )
-    if (!action) throw new Error('Missing action')
+    if (!action) {
+      throw new Error('Missing action')
+    }
     const args = Object.fromEntries(
       contract.parameters.map((p) => {
-        if (p === 'types') return [p, ['el']]
-        if (p === 'elementIds') return [p, ['first', 'second']]
+        if (p === 'types') {
+          return [p, ['el']]
+        }
+        if (p === 'elementIds') {
+          return [p, ['first', 'second']]
+        }
         return [p, { input: p }]
       })
     )
@@ -53,8 +59,9 @@ it('delegates every contract in parameter order without copying inputs or inject
     expect(method).toHaveBeenCalledExactlyOnceWith(
       ...contract.parameters.map((p) => args[p])
     )
-    for (let i = 0; i < contract.parameters.length; i++)
+    for (let i = 0; i < contract.parameters.length; i++) {
       expect(method.mock.calls[0][i]).toBe(args[contract.parameters[i]])
+    }
     expect(basicApiPermissionRules[contract.name]).toBe('allow')
   }
 })
@@ -76,7 +83,9 @@ it('cancels before dispatch and preserves null/false and owner failures', async 
     fill: {},
     stroke: {}
   })).find((a) => a.name === 'api_element_setVectorClosed')
-  if (!action) throw new Error('Missing action')
+  if (!action) {
+    throw new Error('Missing action')
+  }
   await expect(
     action.execute({}, { signal: AbortSignal.abort() })
   ).rejects.toThrow()
@@ -107,7 +116,9 @@ it('rejects invalid declared owner results while preserving completed settlement
   const context = { signal: new AbortController().signal }
   const write = actions.find((a) => a.name === 'api_element_setVectorClosed')
   const read = actions.find((a) => a.name === 'api_core_getElementData')
-  if (!write || !read) throw new Error('Missing API actions')
+  if (!write || !read) {
+    throw new Error('Missing API actions')
+  }
   expect(await write.execute({}, context)).toMatchObject({
     status: 'failed',
     code: 'OWNER_RESULT_INVALID',
@@ -148,7 +159,9 @@ it('reports mixed creation outcomes in order instead of claiming complete', asyn
     fill: {},
     stroke: {}
   })).find((a) => a.name === 'api_element_createElements')
-  if (!action) throw new Error('Missing batch creation')
+  if (!action) {
+    throw new Error('Missing batch creation')
+  }
   const context = { signal: new AbortController().signal }
   expect(
     await action.execute({ createOptions: [{}, {}, {}] }, context)
@@ -222,7 +235,9 @@ it.each([
       fill: {},
       stroke: {}
     })).find((entry) => entry.name === 'api_element_setElementsVisible')
-    if (!action) throw new Error('Missing visibility action')
+    if (!action) {
+      throw new Error('Missing visibility action')
+    }
     const result = await action.execute(
       { elementIds: ids, visible: false },
       {
@@ -256,7 +271,9 @@ it.each([
       fill: {},
       stroke: {}
     })).find((entry) => entry.name === 'api_element_setElementsVisible')
-    if (!action) throw new Error('Missing visibility action')
+    if (!action) {
+      throw new Error('Missing visibility action')
+    }
     const result = await action.execute(
       { elementIds: ids, visible: false },
       {
@@ -315,7 +332,9 @@ it('captures only admitted execution through settlement and releases the scope o
       resolve: read
     }
   ).find((action) => action.name === 'api_core_updateElementProperties')
-  if (!action) throw new Error('Missing action')
+  if (!action) {
+    throw new Error('Missing action')
+  }
   const result = await action.execute(
     { updates: [] },
     {
@@ -373,7 +392,9 @@ it('does not certify unknown publication or unavailable scope resolution as empt
       }
     }
   ).find((action) => action.name === 'api_core_updateElementProperties')
-  if (!action) throw new Error('Missing action')
+  if (!action) {
+    throw new Error('Missing action')
+  }
   const context = { signal: new AbortController().signal }
   expect(await action.execute({ updates: [] }, context)).toMatchObject({
     mutationScope: { complete: false }
@@ -410,7 +431,9 @@ it('exposes distinct owner-local and shared-source operations with exact target 
       (item) => item.owner === 'core' && item.method === method
     )
     expect(contract, method).toBeDefined()
-    if (!contract) throw new Error(`Missing ${method}`)
+    if (!contract) {
+      throw new Error(`Missing ${method}`)
+    }
     expect(operationInputIssue(input, contract.inputSchema)).toBeUndefined()
     expect(
       operationInputIssue(
@@ -442,8 +465,12 @@ it('versions selected-owner property semantics separately from read and structur
     'api_stroke_updateStrokeFieldsBatch'
   ]) {
     let revision = 9
-    if (name.startsWith('api_core_')) revision = 8
-    if (name === 'api_element_setElementsVisible') revision = 7
+    if (name.startsWith('api_core_')) {
+      revision = 8
+    }
+    if (name === 'api_element_setElementsVisible') {
+      revision = 7
+    }
     expect(actions.find((action) => action.name === name)?.revision, name).toBe(
       revision
     )
@@ -468,7 +495,9 @@ it('rejects misaligned creation receipts while preserving acknowledged IDs', asy
     }),
     { observe: () => () => undefined, resolve: () => 'live' }
   ).find((entry) => entry.name === 'api_element_createElements')
-  if (!action) throw new Error('Missing creation action')
+  if (!action) {
+    throw new Error('Missing creation action')
+  }
   const result = await action.execute(
     { createOptions: [{}, {}] },
     { signal: new AbortController().signal }
@@ -501,7 +530,9 @@ it.each([
     const contract = basicApiContracts.find(
       (item) => item.name === 'api_element_setElementsVisible'
     )
-    if (!contract) throw new Error('Missing visibility contract')
+    if (!contract) {
+      throw new Error('Missing visibility contract')
+    }
     expect(
       describeBasicApiResult(
         contract,
@@ -544,7 +575,9 @@ it.each([
     const contract = basicApiContracts.find(
       (item) => item.owner === 'core' && item.method === method
     )
-    if (!contract) throw new Error('Missing Core mutation')
+    if (!contract) {
+      throw new Error('Missing Core mutation')
+    }
     for (const changed of [false, true]) {
       expect(
         describeBasicApiResult(
@@ -577,7 +610,9 @@ it('treats only the declared canonical changed flag as a valid boolean no-op', (
   const contract = basicApiContracts.find(
     (item) => item.name === 'api_core_updateElementData'
   )
-  if (!contract) throw new Error('Missing element data mutation')
+  if (!contract) {
+    throw new Error('Missing element data mutation')
+  }
   expect(describeBasicApiResult(contract, false, 'a')).toMatchObject({
     status: 'no-change',
     value: false
@@ -596,7 +631,9 @@ it('rejects misaligned Core creation output while retaining the acknowledged pre
   const contract = basicApiContracts.find(
     (item) => item.name === 'api_core_createElementsInParent'
   )
-  if (!contract) throw new Error('Missing Core creation contract')
+  if (!contract) {
+    throw new Error('Missing Core creation contract')
+  }
   expect(describeBasicApiResult(contract, ['created'], [{}, {}])).toMatchObject(
     {
       status: 'failed',
@@ -610,7 +647,9 @@ it.each(['api_core_createElementsInParent', 'api_core_moveElements'])(
   'fails missing %s owner output with its original value retained',
   (name) => {
     const contract = basicApiContracts.find((item) => item.name === name)
-    if (!contract) throw new Error('Missing Core contract')
+    if (!contract) {
+      throw new Error('Missing Core contract')
+    }
     expect(describeBasicApiResult(contract, undefined, [])).toMatchObject({
       status: 'failed',
       code: 'OWNER_RESULT_INVALID',

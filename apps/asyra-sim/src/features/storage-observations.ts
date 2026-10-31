@@ -56,8 +56,9 @@ function validateIntent(input: ObservationWriteIntent): void {
         typeof input.edit.expectedRevision !== 'number' ||
         !Number.isSafeInteger(input.edit.expectedRevision) ||
         input.edit.expectedRevision < 1))
-  )
+  ) {
     throw new Error('Invalid field observation acceptance intent')
+  }
 }
 
 /** Accept bytes first; the existing editing owner alone commits canonical metadata. */
@@ -89,10 +90,11 @@ export function installObservationStorageFeatures(
               reference.byteLength === prepared.byteLength
           )
         )
-      )
+      ) {
         throw new Error(
           'Observation metadata must include every prepared attachment'
         )
+      }
       archive.accept(receipt)
       archive.resolve(input.draft.attachments)
       let id: string
@@ -104,7 +106,9 @@ export function installObservationStorageFeatures(
           input.draft
         )
         id = input.edit.id
-      } else id = await editing.addObservation(input.runId, input.draft)
+      } else {
+        id = await editing.addObservation(input.runId, input.draft)
+      }
       archive.discard(receipt)
       return id
     }

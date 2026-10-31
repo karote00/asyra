@@ -14,7 +14,9 @@ it('creates one shared reflection resource, refreshes intensity and reuses it af
   expect(first.envMap).toBeNull()
   owner.apply(first, 0.8, {})
   const version = first.version
-  for (let i = 0; i < 20; i++) owner.apply(first, 1.2, {})
+  for (let i = 0; i < 20; i++) {
+    owner.apply(first, 1.2, {})
+  }
   owner.apply(second, 0.6, {})
   expect(create).toHaveBeenCalledOnce()
   expect(first.envMap).toBe(target.texture)

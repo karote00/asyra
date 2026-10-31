@@ -35,10 +35,13 @@ const descriptors = new WeakMap<object, NeutralDescriptor>()
 export function readSpatialInstances(
   value: unknown
 ): readonly SpatialInstance[] {
-  if (typeof value === 'object' && value !== null && placements.has(value))
+  if (typeof value === 'object' && value !== null && placements.has(value)) {
     return value as readonly SpatialInstance[]
+  }
   const input = structuredClone(value)
-  if (!Array.isArray(input)) throw new Error('Invalid placements')
+  if (!Array.isArray(input)) {
+    throw new Error('Invalid placements')
+  }
   const counts = new Map<string, number>()
   const neutral = admitInstances(
     input.map((item) => {
@@ -48,8 +51,9 @@ export function readSpatialInstances(
         !Number.isFinite(item.yaw) ||
         item.scale !== undefined ||
         item.rotation !== undefined
-      )
+      ) {
         throw new Error('Invalid yaw placement')
+      }
       const key = `${item.position.join(',')}:${item.yaw}`
       const ordinal = counts.get(key) ?? 0
       counts.set(key, ordinal + 1)
@@ -69,13 +73,16 @@ export function readSpatialInstances(
   return result
 }
 export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
-  if (typeof value === 'object' && value !== null && descriptors.has(value))
+  if (typeof value === 'object' && value !== null && descriptors.has(value)) {
     return value as SpatialDescriptor
-  if (!value || typeof value !== 'object')
+  }
+  if (!value || typeof value !== 'object') {
     throw new Error('Invalid spatial descriptor')
+  }
   const input = { ...value } as Record<string, unknown>
-  if (input.kind === 'mesh' && input.scale !== undefined)
+  if (input.kind === 'mesh' && input.scale !== undefined) {
     throw new Error('Domain projection requires rigid poses')
+  }
   const instances =
     input.instances === undefined
       ? undefined
@@ -103,6 +110,8 @@ export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
 export function toSpatialProjection(value: unknown): NeutralDescriptor {
   const accepted = readSpatialDescriptor(value)
   const result = descriptors.get(accepted)
-  if (!result) throw new Error('Missing admitted projection')
+  if (!result) {
+    throw new Error('Missing admitted projection')
+  }
   return result
 }

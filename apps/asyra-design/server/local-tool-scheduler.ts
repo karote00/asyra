@@ -15,11 +15,12 @@ export const createLocalToolScheduler = (signal: AbortSignal) => {
     work: () => Promise<T>
   ): Promise<T> => {
     // Host-declared orchestration never owns the barrier needed by its leaves.
-    if (access === LocalToolAccess.COORDINATOR)
+    if (access === LocalToolAccess.COORDINATOR) {
       return Promise.resolve().then(() => {
         signal.throwIfAborted()
         return work()
       })
+    }
     const independent = access === LocalToolAccess.INDEPENDENT
     const before = independent
       ? exclusive

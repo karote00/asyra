@@ -12,8 +12,9 @@ export async function showSetup(page: Page, advanced = false) {
       !(await section.evaluate(
         (element) => (element as HTMLDetailsElement).open
       ))
-    )
+    ) {
       await section.locator(':scope > summary').click()
+    }
   }
 }
 

@@ -146,8 +146,9 @@ const fixture = () => {
       read: async (key) => entries.get(key),
       list: async () => [...entries.values()],
       write: async (input) => {
-        if (entries.get(input.key)?.version !== input.expectedVersion)
+        if (entries.get(input.key)?.version !== input.expectedVersion) {
           throw new Error('Conflict')
+        }
         const entry = {
           key: input.key,
           record: input.record,
@@ -174,7 +175,9 @@ const fixture = () => {
                 const action = actions.find(
                   (action) => action.name === call.name
                 )
-                if (!action) throw new Error('Unknown action')
+                if (!action) {
+                  throw new Error('Unknown action')
+                }
                 return {
                   actionId: call.id,
                   actionName: call.name,
@@ -366,7 +369,9 @@ const inspectionHandoffFixture = () => {
               })
             }
             const value = values.get(name)
-            if (value instanceof Error) throw value
+            if (value instanceof Error) {
+              throw value
+            }
             return value
           }
       }
@@ -408,8 +413,9 @@ const inspectionHandoffFixture = () => {
         if (call.name === AiActionNames.REVIEW_DESIGN) {
           const target = String(call.arguments.elementId)
           checked.push(target)
-          if (state.checkFailure)
+          if (state.checkFailure) {
             throw new Error('Mechanical service unavailable')
+          }
           result = {
             available: !state.unavailable,
             complete: true,
@@ -419,15 +425,18 @@ const inspectionHandoffFixture = () => {
         } else if (call.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE) {
           const evidence = call.arguments.evidence as { receiptId: string }
           validated.push(evidence.receiptId)
-          if (state.validationFailure)
+          if (state.validationFailure) {
             throw new Error('Validation transport unavailable')
+          }
           result = {
             current: state.current,
             validatedAt: { sessionId: 'consumer-validation', revision: 1 }
           }
         } else {
           const action = actions.find((action) => action.name === call.name)
-          if (!action) throw new Error('Unknown canonical action')
+          if (!action) {
+            throw new Error('Unknown canonical action')
+          }
           result = await action.execute(call.arguments, {
             signal,
             runMutation: async (work, settled) => {
@@ -437,8 +446,13 @@ const inspectionHandoffFixture = () => {
             }
           })
         }
-        if (state.missingMutationScope && result && typeof result === 'object')
+        if (
+          state.missingMutationScope &&
+          result &&
+          typeof result === 'object'
+        ) {
           delete (result as Record<string, unknown>).mutationScope
+        }
         if (
           state.incompleteMutationScope &&
           call.name.startsWith('api_') &&
@@ -447,16 +461,19 @@ const inspectionHandoffFixture = () => {
         ) {
           const scope = (result as { mutationScope?: { complete: boolean } })
             .mutationScope
-          if (scope) scope.complete = false
+          if (scope) {
+            scope.complete = false
+          }
         }
         let actionId = call.id
-        if (state.mismatchedMutation && call.name.startsWith('api_'))
+        if (state.mismatchedMutation && call.name.startsWith('api_')) {
           actionId = 'wrong-write'
-        else if (
+        } else if (
           state.mismatchedReceipt &&
           call.name === AiActionNames.REVIEW_DESIGN
-        )
+        ) {
           actionId = 'different-call'
+        }
         return {
           actionId,
           actionName: call.name,
@@ -482,10 +499,11 @@ const inspectionHandoffFixture = () => {
             const receipt = await dispatch(submitted)
             const exchange = createBatchExchange()
             return exchange.execute(submitted, signal, (frame) => {
-              if (!exchange.accept(frame.receiptToken, receipt))
+              if (!exchange.accept(frame.receiptToken, receipt)) {
                 throw new Error(
                   'Canonical receipt transport rejected the fixture'
                 )
+              }
             })
           },
           definitions,
@@ -708,7 +726,9 @@ it('preserves known evidence as unresolved when a subsequent check is unavailabl
 
 it('validates only requested measurement dependencies for an explicit check read', async () => {
   const f = inspectionHandoffFixture()
-  for (const id of ['a', 'b', 'c']) await f.review(id)
+  for (const id of ['a', 'b', 'c']) {
+    await f.review(id)
+  }
   f.validated.length = 0
   await f.read(['measurement:b'])
   expect(f.validated).toEqual(['b'])
@@ -736,7 +756,9 @@ it('does not block completion after a canonical empty creation receipt', async (
 
 it('keeps unrelated passed checks intact after invalidating another target', async () => {
   const f = inspectionHandoffFixture()
-  for (const id of ['a', 'b']) await f.review(id)
+  for (const id of ['a', 'b']) {
+    await f.review(id)
+  }
   f.checkResults.invalidate(['measurement:a'], 'Only a changed')
   expect(
     f.checkResults.read({ ids: ['measurement:b'], includePassed: true })
@@ -1021,7 +1043,9 @@ it.each([
           Object.assign(geometry.child, values)
           changed?.({ elementIds: ['child'] })
         }
-        if (mode === 'cancel') controller.abort()
+        if (mode === 'cancel') {
+          controller.abort()
+        }
         // Missing output violates the explicit property receipt contract after the write.
         return mode === 'unconfirmed'
           ? undefined
@@ -1095,8 +1119,9 @@ it.each([
         read: async (key) => entries.get(key),
         list: async () => [...entries.values()],
         write: async (input) => {
-          if (entries.get(input.key)?.version !== input.expectedVersion)
+          if (entries.get(input.key)?.version !== input.expectedVersion) {
             throw new Error('Conflict')
+          }
           const entry = {
             key: input.key,
             record: input.record,
@@ -1122,7 +1147,9 @@ it.each([
                 { context: null, actionResults: [] }
               for (const call of batch.actions) {
                 const action = actions.find((item) => item.name === call.name)
-                if (!action) throw new Error('Unknown action')
+                if (!action) {
+                  throw new Error('Unknown action')
+                }
                 calls.push(call.name)
                 const result = await action.execute(call.arguments as never, {
                   signal: controller.signal,
@@ -1140,7 +1167,7 @@ it.each([
                 if (
                   mode === 'partial' &&
                   call.name === 'api_element_updateElementProperties'
-                )
+                ) {
                   return requireBatchSuccess(
                     batch,
                     {
@@ -1158,6 +1185,7 @@ it.each([
                     },
                     1
                   )
+                }
               }
               return receipt
             },
@@ -1186,8 +1214,9 @@ it.each([
     const initialRead = host
       .definitions()
       .find((tool) => tool.name === 'api_core_getElementMetadata')
-    if (!checker || !repair || !initialRead)
+    if (!checker || !repair || !initialRead) {
       throw new Error('Missing registered mechanical tools')
+    }
     const checkInput = {
       kind: 'object',
       fields: {
@@ -1338,10 +1367,11 @@ it.each([
           )
         ).toHaveLength(1)
       }
-      if (mode === 'stuck')
+      if (mode === 'stuck') {
         expect(result.execution.issues.join(' ')).toContain(
           'Repeated verification progress'
         )
+      }
       if (mode === 'decision') {
         expect(result.execution.status).toBe('failed')
         expect(JSON.stringify(result.execution.recovery)).toContain(
@@ -1507,7 +1537,9 @@ it('retains typed known findings when a later canonical measurement is unavailab
   const next = await f.review('frame')
   const current = f.checkResults.select(next.mechanicalSelection.checks)[0]
   expect(current.retired).toBe(false)
-  if (current.retired) throw new Error('Unexpected retirement')
+  if (current.retired) {
+    throw new Error('Unexpected retirement')
+  }
   expect(current.recheck).toMatchObject({
     kind: 'measurement',
     findings: [finding]

@@ -39,7 +39,9 @@ const compose = async (runtime: Core, host: HTMLElement, name: string) => {
 }
 
 afterEach(async () => {
-  if (core.getRuntimeState() === 'active') await core.resetRuntime()
+  if (core.getRuntimeState() === 'active') {
+    await core.resetRuntime()
+  }
 })
 
 describe('Core runtime handoff with real Framework owners', () => {

@@ -19,8 +19,9 @@ const csvCell = (value: unknown) => {
   if (
     typeof value === 'string' &&
     (/^\s*[=+\-@]/.test(text) || /^[\t\r\n]/.test(text))
-  )
+  ) {
     text = `'${text}`
+  }
   return `"${text.replaceAll('"', '""')}"`
 }
 function bounded(text: string): string {
@@ -109,7 +110,7 @@ export function exportRunCsv(input: RunRecord): string {
     )
     for (const pair of snapshot.pairs) {
       const item = evidence.get(pair.id)
-      if (!item)
+      if (!item) {
         yield '\r\n' +
           encodedPrefix +
           ',' +
@@ -125,8 +126,8 @@ export function exportRunCsv(input: RunRecord): string {
           ]
             .map(csvCell)
             .join(',')
-      else
-        for (const leaf of item.leaves)
+      } else {
+        for (const leaf of item.leaves) {
           yield '\r\n' +
             encodedPrefix +
             ',' +
@@ -143,6 +144,8 @@ export function exportRunCsv(input: RunRecord): string {
             ]
               .map(csvCell)
               .join(',')
+        }
+      }
     }
   }
   return collectReportText(rows())
@@ -159,7 +162,7 @@ export function exportRunHtml(input: RunRecord): string {
   const pairRows = snapshot.pairs
     .flatMap((pair) => {
       const item = evidence.get(pair.id)
-      if (!item)
+      if (!item) {
         return [
           row([
             pair.id,
@@ -170,6 +173,7 @@ export function exportRunHtml(input: RunRecord): string {
             result.errors.join('; ')
           ])
         ]
+      }
       return item.leaves.map((leaf) =>
         row([
           pair.id,

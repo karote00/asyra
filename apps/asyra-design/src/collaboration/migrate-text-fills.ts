@@ -5,15 +5,17 @@ const record = (value: unknown): value is Record<string, unknown> =>
 export const migrateTextFills = (
   input: unknown
 ): { version: string } & Record<string, unknown> => {
-  if (!record(input) || typeof input.version !== 'string')
+  if (!record(input) || typeof input.version !== 'string') {
     throw new Error('Text fill migration requires a versioned document.')
+  }
   if (
     input.version !== '1.0.0' ||
     !record(input.sceneTree) ||
     !record(input.sceneTree.elements) ||
     !record(input.props)
-  )
+  ) {
     return input as { version: string }
+  }
 
   const candidates = Object.values(input.sceneTree.elements).filter(
     (element) =>
@@ -27,19 +29,24 @@ export const migrateTextFills = (
     id: string
     props: Record<string, string>
   })[]
-  if (!candidates.length) return input as { version: string }
+  if (!candidates.length) {
+    return input as { version: string }
+  }
   const props = { ...input.props }
   const elements = { ...input.sceneTree.elements }
   const allocateId = (base: string) => {
     let id = base
     let suffix = 1
-    while (Object.hasOwn(props, id)) id = `${base}-${suffix++}`
+    while (Object.hasOwn(props, id)) {
+      id = `${base}-${suffix++}`
+    }
     return id
   }
   for (const element of candidates) {
     const typography = input.props[element.props.typography]
-    if (!record(typography) || typography.type !== 'typography')
+    if (!record(typography) || typography.type !== 'typography') {
       throw new Error('Text fill migration requires the typography property.')
+    }
     const color =
       typeof typography.textColor === 'string' &&
       /^#[0-9a-f]{6}$/i.test(typography.textColor)

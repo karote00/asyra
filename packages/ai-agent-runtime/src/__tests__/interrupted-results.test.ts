@@ -41,7 +41,9 @@ it.each(['callback', 'cancel-committed', 'cancel-rolled-back'] as const)(
           },
           execute: async () => {
             writes++
-            if (mode !== 'callback') controller.abort()
+            if (mode !== 'callback') {
+              controller.abort()
+            }
             throw new AiActionExecutionError('Drawing interrupted.', {
               settlement: 'partial',
               result: {
@@ -96,12 +98,13 @@ it.each(['callback', 'cancel-committed', 'cancel-rolled-back'] as const)(
           status: mode === 'cancel-rolled-back' ? 'rolled-back' : 'committed'
         }
       })
-      if (mode === 'cancel-rolled-back')
+      if (mode === 'cancel-rolled-back') {
         expect(result).not.toHaveProperty('actionResults')
-      else
+      } else {
         expect(result).toMatchObject({
           actionResults: [{ result: { appliedElementCount: 1 } }]
         })
+      }
     }
     await runtime.dispose()
   }

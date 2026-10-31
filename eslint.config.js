@@ -21,6 +21,7 @@ export default tseslint.config(
   },
   {
     ignores: [
+      'create-app/*/template/**',
       '.claude/**/*',
       'docs/**/*',
       'tools/flow-inspector/workspace/generated/**/*',
@@ -36,6 +37,7 @@ export default tseslint.config(
   eslintPluginPrettierRecommended,
   {
     rules: {
+      curly: ['error', 'all'],
       'no-nested-ternary': 'error',
       'no-unassigned-vars': 'off',
       'no-useless-assignment': 'off',
@@ -77,9 +79,35 @@ export default tseslint.config(
     }
   },
   {
+    files: ['tools/flow-inspector/src/**/*.jsx'],
+    languageOptions: {
+      parserOptions: { ecmaFeatures: { jsx: true } },
+      globals: {
+        fetch: 'readonly',
+        window: 'readonly',
+        crypto: 'readonly',
+        AbortController: 'readonly',
+        TextEncoder: 'readonly',
+        URLSearchParams: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly'
+      }
+    }
+  },
+  {
     files: ['**/enum.ts'],
     rules: {
       'no-unused-vars': 'off'
+    }
+  },
+  {
+    // Manifest-pinned historical evidence must retain its original bytes.
+    files: [
+      'apps/asyra-fieldscope/src/domain/__tests__/fixtures/pre-p5b-source/**/*.ts'
+    ],
+    rules: {
+      curly: 'off',
+      'prettier/prettier': 'off'
     }
   },
   {

@@ -14,11 +14,15 @@ function compactContext(context) {
   } = context
   const truncatedFields = []
   const take = (name, values, limit) => {
-    if (values.length > limit) truncatedFields.push(name)
+    if (values.length > limit) {
+      truncatedFields.push(name)
+    }
     return values.slice(0, limit)
   }
   const text = (name, value) => {
-    if (value.length > 1200) truncatedFields.push(name)
+    if (value.length > 1200) {
+      truncatedFields.push(name)
+    }
     return value.slice(0, 1200)
   }
   return {

@@ -21,7 +21,9 @@ export function SiteGoogleAnalytics({
 }: {
   measurementId?: string
 }) {
-  if (!measurementId) return null
+  if (!measurementId) {
+    return null
+  }
 
   return (
     <>

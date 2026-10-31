@@ -65,16 +65,18 @@ describe('registered structured contract constraints', () => {
           value: number
         }),
         { ...flat, required: ['value'] }
-      ])
+      ]) {
         expect(admitStructured(schema, source, binding).ok).toBe(false)
+      }
       for (const sibling of [
         { ...opaque, properties: { kind: { const: 'flat' }, value: number } },
         { allOf: [opaque] },
         { ...opaque, properties: { value: number }, required: ['value'] }
-      ])
+      ]) {
         expect(
           admitStructured({ [mode]: [flat, sibling] }, flat, binding).ok
         ).toBe(false)
+      }
     }
   )
 
@@ -154,7 +156,7 @@ describe('registered structured contract constraints', () => {
         additionalProperties: false,
         anyOf: [object({ value: number })]
       }
-    ])
+    ]) {
       expect(
         admitStructured(schema, object({ value: number, extra: number }), {
           kind: 'object',
@@ -164,6 +166,7 @@ describe('registered structured contract constraints', () => {
           }
         }).ok
       ).toBe(false)
+    }
   })
 
   it('proves strict numeric bounds and string patterns without relaxing them', () => {
@@ -231,10 +234,11 @@ describe('registered structured contract constraints', () => {
       { $ref: '#/$defs/missing' },
       { $ref: '#/$defs/loop', $defs: { loop: { $ref: '#/$defs/loop' } } },
       { $ref: 'https://example.invalid/schema' }
-    ])
+    ]) {
       expect(
         admitStructured(target, number, { kind: 'input', path: '' }).ok
       ).toBe(false)
+    }
   })
 })
 
@@ -322,8 +326,12 @@ const proposal = (): {
 })
 const options = (overrides = {}) => ({
   resolve: (name: string) => {
-    if (name === 'find') return find
-    if (name === 'edit') return edit
+    if (name === 'find') {
+      return find
+    }
+    if (name === 'edit') {
+      return edit
+    }
     return undefined
   },
   validate: vi.fn((): string | undefined => undefined),
@@ -339,7 +347,9 @@ const options = (overrides = {}) => ({
 const rejected = (input: unknown, overrides = {}) => {
   const result = admitAiRecipe(input, options(overrides))
   expect(result.ok).toBe(false)
-  if (result.ok) throw new Error('Expected admission issues')
+  if (result.ok) {
+    throw new Error('Expected admission issues')
+  }
   return result
 }
 
@@ -348,7 +358,9 @@ describe('typed recipe admission', () => {
     const input = proposal()
     const result = admitAiRecipe(input, options())
     expect(result.ok).toBe(true)
-    if (!result.ok) throw new Error(JSON.stringify(result))
+    if (!result.ok) {
+      throw new Error(JSON.stringify(result))
+    }
     expect(result.value.contract).toMatchObject({
       effect: 'mutation',
       resources: ['document'],
@@ -1027,10 +1039,11 @@ it('requires fresh typed values for undeclared fields of an open registered obje
     value: { label: 'Part', ref: 'prior-document-id' }
   })
   expect(captured.ok).toBe(false)
-  if (!captured.ok)
+  if (!captured.ok) {
     expect(
       captured.issues.some((issue) => issue.code === 'captured-value')
     ).toBe(true)
+  }
   expect(
     admitStructured(
       schema,
@@ -1158,21 +1171,31 @@ describe('bounded repair admission', () => {
   ])('rejects a %s verification contract without executing it', (mode) => {
     const { contracts, admit } = fixture()
     const original = contracts.get('check')
-    if (!original) throw new Error('Missing checker')
+    if (!original) {
+      throw new Error('Missing checker')
+    }
     const replacement = { ...original, outputSchema: structuredClone(outcome) }
-    if (mode === 'missing') delete replacement.verification
-    if (mode === 'mutation') replacement.effect = 'mutation'
-    if (mode === 'optional') replacement.outputSchema.required = ['remaining']
-    if (mode === 'wrong-status')
+    if (mode === 'missing') {
+      delete replacement.verification
+    }
+    if (mode === 'mutation') {
+      replacement.effect = 'mutation'
+    }
+    if (mode === 'optional') {
+      replacement.outputSchema.required = ['remaining']
+    }
+    if (mode === 'wrong-status') {
       replacement.outputSchema.properties.status = {
         type: 'string',
         enum: ['done']
       }
-    if (mode === 'empty-progress')
+    }
+    if (mode === 'empty-progress') {
       replacement.outputSchema.properties.progress = {
         type: 'string',
         minLength: 0
       }
+    }
     // Malformed host descriptors must also fail admission, not just registration.
     contracts.set('check', {
       ...replacement,
@@ -1199,16 +1222,25 @@ describe('bounded repair admission', () => {
     'captured-state'
   ])('rejects %s without weakening binding rules', (mode) => {
     const { proposal, admit } = fixture()
-    if (mode === 'state-outside') proposal.steps[0].input.kind = 'state'
-    if (mode === 'forward')
+    if (mode === 'state-outside') {
+      proposal.steps[0].input.kind = 'state'
+    }
+    if (mode === 'forward') {
       proposal.iteration.check.input = {
         kind: 'step',
         step: 'correction',
         path: ''
       } as never
-    if (mode === 'optional-repair-output') proposal.output.step = 'correction'
-    if (mode === 'next-type') proposal.iteration.next.path = '/missing'
-    if (mode === 'duplicate') proposal.iteration.check.id = 'initial'
+    }
+    if (mode === 'optional-repair-output') {
+      proposal.output.step = 'correction'
+    }
+    if (mode === 'next-type') {
+      proposal.iteration.next.path = '/missing'
+    }
+    if (mode === 'duplicate') {
+      proposal.iteration.check.id = 'initial'
+    }
     if (mode === 'captured-state') {
       proposal.iteration.stateSchema = {
         type: 'string',

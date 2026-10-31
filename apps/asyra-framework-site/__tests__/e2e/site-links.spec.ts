@@ -65,7 +65,9 @@ for (const source of publicRoutes) {
 
     for (const anchor of anchors) {
       const rawHref = anchor.match(/\bhref="([^"]+)"/)?.[1]
-      if (!rawHref) continue
+      if (!rawHref) {
+        continue
+      }
 
       const href = rawHref.replaceAll('&amp;', '&')
       const destination = new URL(href, new URL(source, siteOrigin))
@@ -105,7 +107,9 @@ for (const source of publicRoutes) {
       const destinationRoute = destination.pathname
       // Each known route has its own HTTP assertion above. Fetch additional
       // bodies only for fragment targets or routes outside the sitemap.
-      if (!destination.hash && publicRoutes.includes(destinationRoute)) continue
+      if (!destination.hash && publicRoutes.includes(destinationRoute)) {
+        continue
+      }
       let destinationBody = routeBodies.get(destinationRoute)
       if (!destinationBody) {
         const response = await request.get(
@@ -119,7 +123,9 @@ for (const source of publicRoutes) {
         routeBodies.set(destinationRoute, destinationBody)
       }
 
-      if (!destination.hash) continue
+      if (!destination.hash) {
+        continue
+      }
 
       const id = decodeURIComponent(destination.hash.slice(1))
       expect(
@@ -133,8 +139,9 @@ for (const source of publicRoutes) {
         'https://asyra-sim.pages.dev',
         'https://asyra-fieldscope.pages.dev',
         'https://github.com'
-      ])
+      ]) {
         expect(externalOrigins).toContain(origin)
+      }
       expect(externalUrls).toContain(
         'https://asyra-design.pages.dev/?fileId=demo'
       )

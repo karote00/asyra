@@ -44,7 +44,9 @@ export class MeshMaterialBatcher extends Batcher {
     if (hasMaterial) {
       this.materialShader ??= createMeshMaterialShader(this.maxTextures)
       this.shader = this.materialShader
-    } else this.shader = this.ordinaryShader
+    } else {
+      this.shader = this.ordinaryShader
+    }
   }
 
   // The standard vertex layout and packing remain owned by Pixi.
@@ -64,8 +66,12 @@ export class MeshMaterialBatcher extends Batcher {
     offset: number,
     count: number
   ): void {
-    if (!meshMaterialSources.has(element.texture.source)) return
-    for (let i = 0; i < count; i++) attributes[offset + i * 6 + 5] |= 2
+    if (!meshMaterialSources.has(element.texture.source)) {
+      return
+    }
+    for (let i = 0; i < count; i++) {
+      attributes[offset + i * 6 + 5] |= 2
+    }
   }
   override destroy(): void {
     super.destroy()
@@ -88,7 +94,9 @@ export class MaterialMesh extends Mesh {
 
   setBatching(enabled: boolean): void {
     const mode = enabled ? 'auto' : 'no-batch'
-    if (this.geometry.batchMode === mode) return
+    if (this.geometry.batchMode === mode) {
+      return
+    }
     this.geometry.batchMode = mode
     this.onViewUpdate()
   }
@@ -140,8 +148,9 @@ export class MeshMaterialPipe implements RenderPipe<MaterialMesh> {
       entry.batchMode !== mesh.geometry.batchMode ||
       entry.indexSize !== mesh.geometry.indices.length ||
       entry.attributeSize !== mesh.geometry.positions.length
-    )
+    ) {
       return true
+    }
     return !entry.element._batcher?.checkAndUpdateTexture(
       entry.element,
       mesh.texture
@@ -155,9 +164,13 @@ export class MeshMaterialPipe implements RenderPipe<MaterialMesh> {
     entry.attributeSize = mesh.geometry.positions.length
     const batch = this.renderer.renderPipes.batch
     const isolated = mesh.geometry.batchMode === 'no-batch'
-    if (isolated) batch.break(instructions)
+    if (isolated) {
+      batch.break(instructions)
+    }
     batch.addToBatch(entry.element, instructions)
-    if (isolated) batch.break(instructions)
+    if (isolated) {
+      batch.break(instructions)
+    }
   }
 
   updateRenderable(mesh: MaterialMesh): void {
@@ -198,8 +211,9 @@ export class MeshMaterialBatchPipe extends BatcherPipe {
     element: BatchableElement,
     instructions: InstructionSet
   ): void {
-    if (element.batcherName === 'default')
+    if (element.batcherName === 'default') {
       element.batcherName = materialBatchName
+    }
     super.addToBatch(element, instructions)
   }
 }

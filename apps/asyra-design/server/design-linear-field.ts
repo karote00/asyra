@@ -36,8 +36,9 @@ const point = (value: unknown): Point => {
         Number.isFinite(value[k]) &&
         Math.abs(value[k] as number) <= DesignPreparationLimits.dimension
     )
-  )
+  ) {
     return invalid('finite world point required')
+  }
   return { x: value.x as number, y: value.y as number, z: value.z as number }
 }
 const dot = (a: Point, b: Point) => a.x * b.x + a.y * b.y + a.z * b.z
@@ -51,8 +52,12 @@ export const readLinearFields = (
   input: unknown
 ): ReadonlyMap<string, LinearField> => {
   const fields = new Map<string, LinearField>()
-  if (input === undefined) return fields
-  if (!record(input)) return invalid('linearFields must be a named map')
+  if (input === undefined) {
+    return fields
+  }
+  if (!record(input)) {
+    return invalid('linearFields must be a named map')
+  }
   for (const [key, value] of Object.entries(input)) {
     if (
       !key.trim() ||
@@ -60,14 +65,16 @@ export const readLinearFields = (
       !record(value) ||
       Object.keys(value).length !== 4 ||
       value.frame !== 'world'
-    )
+    ) {
       return invalid('expected frame, start, end and gradientStops')
+    }
     const start = point(value.start),
       end = point(value.end),
       delta = sub(end, start),
       length = dot(delta, delta)
-    if (!length || !Number.isFinite(length))
+    if (!length || !Number.isFinite(length)) {
       return invalid('start and end must be distinct')
+    }
     const gradient = {
       gradientType: 'linear',
       gradientHandles: [
@@ -76,8 +83,9 @@ export const readLinearFields = (
       ],
       gradientStops: value.gradientStops
     }
-    if (!isDesignGradient(gradient))
+    if (!isDesignGradient(gradient)) {
       return invalid('ordered native gradientStops required')
+    }
     fields.set(key, {
       start: { ...start },
       direction: delta,
@@ -102,7 +110,9 @@ const constantStops = (
     }
     left = right = stops[i]
   }
-  if (t < left.position) right = left
+  if (t < left.position) {
+    right = left
+  }
   const mix =
     right.position === left.position
       ? 0
@@ -134,16 +144,20 @@ export const createLinearFieldFill = (
   localBounds?: { x: number; y: number; width: number; height: number }
 ): ((offset?: Point) => DesignGradientData) => {
   const field = typeof key === 'string' ? fields.get(key) : undefined
-  if (!field) return invalid(`unknown materialField ${String(key)}`)
+  if (!field) {
+    return invalid(`unknown materialField ${String(key)}`)
+  }
   const q = points[0],
     p = vertices[0]
   let first = 1
-  for (let i = 2; i < points.length; i++)
+  for (let i = 2; i < points.length; i++) {
     if (
       Math.hypot(points[i].x - q.x, points[i].y - q.y) >
       Math.hypot(points[first].x - q.x, points[first].y - q.y)
-    )
+    ) {
       first = i
+    }
+  }
   const dx = points[first].x - q.x,
     dy = points[first].y - q.y
   let second = 0,
@@ -155,8 +169,9 @@ export const createLinearFieldFill = (
       det = value
     }
   }
-  if (!det || !Number.isFinite(det))
+  if (!det || !Number.isFinite(det)) {
     return invalid('degenerate projected plane')
+  }
   // Divide after the dot product so exact perpendicular planes stay constant.
   const firstPhase =
       dot(field.direction, sub(vertices[first], p)) / field.lengthSquared,
@@ -178,7 +193,7 @@ export const createLinearFieldFill = (
   return (offset = { x: 0, y: 0, z: 0 }) => {
     const phase = initial + dot(field.direction, offset) / field.lengthSquared
     let gradient: DesignGradientData
-    if (length === 0)
+    if (length === 0) {
       gradient = {
         gradientType: 'linear',
         gradientHandles: [
@@ -187,7 +202,7 @@ export const createLinearFieldFill = (
         ],
         gradientStops: constantStops(field.stops, phase)
       }
-    else
+    } else {
       gradient = {
         gradientType: 'linear',
         gradientHandles: [
@@ -196,8 +211,10 @@ export const createLinearFieldFill = (
         ],
         gradientStops: field.stops
       }
-    if (!Number.isFinite(phase) || !isDesignGradient(gradient))
+    }
+    if (!Number.isFinite(phase) || !isDesignGradient(gradient)) {
       return invalid('field cannot be represented by native bounded handles')
+    }
     return gradient
   }
 }

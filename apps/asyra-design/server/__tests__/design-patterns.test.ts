@@ -54,8 +54,8 @@ describe('compact planar patterns', () => {
     const input = draft([pattern()])
     const before = structuredClone(input)
     const explicit = []
-    for (let x = 0; x < 3; x++)
-      for (let z = 0; z < 2; z++)
+    for (let x = 0; x < 3; x++) {
+      for (let z = 0; z < 2; z++) {
         explicit.push({
           ...face(),
           key: `e${x}${z}`,
@@ -66,6 +66,8 @@ describe('compact planar patterns', () => {
             z: p.z + z * 12
           }))
         })
+      }
+    }
     const actual = constructDesign(input).draft.children as Record<
       string,
       unknown
@@ -77,8 +79,9 @@ describe('compact planar patterns', () => {
     expect(actual).toHaveLength(6)
     actual.forEach((node, i) => {
       expect(node.type).toBe('vector')
-      for (const k of ['x', 'y', 'width', 'height'])
+      for (const k of ['x', 'y', 'width', 'height']) {
         expect(node[k]).toBeCloseTo(expected[i][k] as number, 8)
+      }
       expect(node.fill).toBe(expected[i].fill)
     })
     expect(new Set(actual.map((n) => n.key)).size).toBe(6)
@@ -212,11 +215,13 @@ describe('compact planar patterns', () => {
           return 'Rejected'
         }
       })
-      if (mode === 'sync') expect(() => session.prepare(input)).toThrow()
-      else
+      if (mode === 'sync') {
+        expect(() => session.prepare(input)).toThrow()
+      } else {
         await expect(
           session.prepareAsync(input, new AbortController().signal)
         ).rejects.toThrow()
+      }
       expect(reads).toEqual(['vertices'])
       expect(compile).toHaveBeenCalledOnce()
       expect(session.resolve(good.artifactId)).toBe(retained)
@@ -590,13 +595,14 @@ describe('construction budget recovery diagnostics', () => {
       width: 1,
       height: 1
     }
-    for (let level = 0; level < 11; level++)
+    for (let level = 0; level < 11; level++) {
       child = {
         type: 'group',
         key: `level-${level}`,
         name: 'Group',
         children: [child]
       }
+    }
     expect(() => constructDesign(draft([child]))).toThrow(
       'depth 13 exceeds 12 per artifact; reduce container nesting without changing visible geometry'
     )
@@ -849,8 +855,9 @@ it.each(['cell-major', 'motif-major'])(
         name: b[i].name,
         fill: b[i].fill
       })
-      for (const field of ['x', 'y', 'width', 'height'] as const)
+      for (const field of ['x', 'y', 'width', 'height'] as const) {
         expect(a[i][field]).toBeCloseTo(b[i][field], 9)
+      }
       for (let j = 0; j < 4; j++) {
         expect(a[i].rings[0][j].x).toBeCloseTo(b[i].rings[0][j].x, 9)
         expect(a[i].rings[0][j].y).toBeCloseTo(b[i].rings[0][j].y, 9)
@@ -937,14 +944,17 @@ it('preserves all 3000 recorded facade faces, per-cell materials and interleaved
     const sourceKey = /^basefine(g|tr)([01])-(\d+)-(\d+)$/.exec(
       originals[i].key
     )
-    if (!sourceKey) throw new Error('Recorded face key is invalid')
+    if (!sourceKey) {
+      throw new Error('Recorded face key is invalid')
+    }
     const [, motif, side, row, column] = sourceKey
     expect(vectors[i].key).toBe(
       `side${side}-${Number(row) * 30 + Number(column)}-${motif === 'g' ? 'glass' : 'trim'}`
     )
     expect(vectors[i].fill).toEqual(originals[i].fill)
-    for (const field of ['x', 'y', 'width', 'height'] as const)
+    for (const field of ['x', 'y', 'width', 'height'] as const) {
       expect(vectors[i][field]).toBeCloseTo(originals[i][field], 8)
+    }
     for (let j = 0; j < 4; j++) {
       expect(vectors[i].rings[0][j].x).toBeCloseTo(
         originals[i].rings[0][j].x,
@@ -977,19 +987,22 @@ it('preserves every saved ornament contour, material and painter position with e
   const budget = 64 * Number.EPSILON * 100000
   // The coordinate contract bounds both world/projected values to 100,000.
   const close = (a: unknown, b: unknown): void => {
-    if (typeof a === 'number' && typeof b === 'number')
+    if (typeof a === 'number' && typeof b === 'number') {
       assert.ok(Math.abs(a - b) <= budget)
-    else if (Array.isArray(a) && Array.isArray(b)) {
+    } else if (Array.isArray(a) && Array.isArray(b)) {
       assert.equal(a.length, b.length)
       a.forEach((v, i) => close(v, b[i]))
     } else if (a && b && typeof a === 'object' && typeof b === 'object') {
       assert.deepEqual(Object.keys(a), Object.keys(b))
-      for (const k of Object.keys(a))
+      for (const k of Object.keys(a)) {
         close(
           (a as Record<string, unknown>)[k],
           (b as Record<string, unknown>)[k]
         )
-    } else assert.deepEqual(a, b)
+      }
+    } else {
+      assert.deepEqual(a, b)
+    }
   }
   expect(actual).toHaveLength(output.elementCount - 1)
   expect(before.sourceWork.projectionCalls).toBe(
@@ -1010,8 +1023,9 @@ it('preserves every saved ornament contour, material and painter position with e
       })
     )
     expect(actual[index].key).toBe(correspondence[index].compact)
-    for (const k of ['type', 'x', 'y', 'width', 'height', 'rings', 'fill'])
+    for (const k of ['type', 'x', 'y', 'width', 'height', 'rings', 'fill']) {
       close(actual[index][k], expected[index][k])
+    }
   })
   const canonical = prepareDesign(compact)
   const explicit = prepareDesign(input.draft)
@@ -1022,7 +1036,9 @@ it('preserves every saved ornament contour, material and painter position with e
   for (let i = 0; i < canonical.entries.length; i++) {
     const a = canonical.entries[i].descriptor,
       b = explicit.entries[i].descriptor
-    for (const k of ['x', 'y', 'width', 'height']) close(a[k], b[k])
+    for (const k of ['x', 'y', 'width', 'height']) {
+      close(a[k], b[k])
+    }
     if (i) {
       const { id: _a, ...fill } = (a.fills as { id: string }[])[0]
       const { id: _b, ...other } = (b.fills as { id: string }[])[0]
@@ -1087,9 +1103,12 @@ const equivalentValue = (actual: unknown, expected: unknown) => {
       Object.keys(actual as object).sort(),
       Object.keys(expected).sort()
     )
-    for (const [key, value] of Object.entries(expected))
+    for (const [key, value] of Object.entries(expected)) {
       equivalentValue((actual as Record<string, unknown>)[key], value)
-  } else assert.deepEqual(actual, expected)
+    }
+  } else {
+    assert.deepEqual(actual, expected)
+  }
 }
 
 it('expands the recorded mixed component once per template with equivalent geometry and fewer input bytes', () => {
@@ -1290,8 +1309,9 @@ it.each([
 
 it('does not traverse unsupported recursive members in structural admission', () => {
   let member: unknown = pattern()
-  for (let i = 0; i < 20000; i++)
+  for (let i = 0; i < 20000; i++) {
     member = { ...pattern(), faces: undefined, members: [member] }
+  }
   expect(() => inspectDesignBudget(draft([member]))).not.toThrow()
   expect(() => constructDesign(draft([member]))).toThrow(/members support/)
 })

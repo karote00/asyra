@@ -22,8 +22,9 @@ it('detaches and validates surface pixels and shares accepted immutable values',
     { ...source, width: 513 },
     { ...source, albedo: [2] },
     { ...source, normals: Array(16).fill(NaN) }
-  ])
+  ]) {
     expect(() => readSpatialSurface(invalid)).toThrow()
+  }
 })
 
 it('shares one GPU texture pair across materials and releases it only after the last owner', () => {
@@ -35,7 +36,9 @@ it('shares one GPU texture pair across materials and releases it only after the 
   store.apply(b, surface)
   expect(a.map).toBe(b.map)
   expect(a.normalMap).toBe(b.normalMap)
-  if (!a.map || !a.normalMap) throw new Error('Missing maps')
+  if (!a.map || !a.normalMap) {
+    throw new Error('Missing maps')
+  }
   const colorDispose = vi.spyOn(a.map, 'dispose'),
     normalDispose = vi.spyOn(a.normalMap, 'dispose')
   a.dispose()

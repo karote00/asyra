@@ -23,7 +23,7 @@ const percentile = (values: number[], fraction: number) => {
 }
 test.use({ launchOptions: { args: [] } })
 
-for (const dpr of [1, 2])
+for (const dpr of [1, 2]) {
   test.describe(`hardware workload - DPR ${dpr}`, () => {
     test.use({
       viewport: { width: 1440, height: 960 },
@@ -47,12 +47,18 @@ for (const dpr of [1, 2])
         .waitFor()
       const canvas = page.getByLabel('Office 3D scene').locator('canvas')
       const bounds = await canvas.boundingBox()
-      if (!bounds) throw new Error('Missing scene viewport')
+      if (!bounds) {
+        throw new Error('Missing scene viewport')
+      }
       const hardware = await canvas.evaluate((node) => {
         const gl = (node as HTMLCanvasElement).getContext('webgl2')
-        if (!gl || gl.isContextLost()) throw new Error('Missing WebGL2')
+        if (!gl || gl.isContextLost()) {
+          throw new Error('Missing WebGL2')
+        }
         const ext = gl.getExtension('WEBGL_debug_renderer_info')
-        if (!ext) throw new Error('Missing GPU identity')
+        if (!ext) {
+          throw new Error('Missing GPU identity')
+        }
         return {
           gpu: String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)),
           width: gl.drawingBufferWidth,
@@ -81,8 +87,12 @@ for (const dpr of [1, 2])
           )
           const start = Date.now()
           let panKey = 'd'
-          if (action === 'pan') await page.keyboard.down(panKey)
-          if (action === 'orbit') await page.mouse.down()
+          if (action === 'pan') {
+            await page.keyboard.down(panKey)
+          }
+          if (action === 'orbit') {
+            await page.mouse.down()
+          }
           let steps = 0
           while (Date.now() - start < 2000) {
             if (action === 'pan') {
@@ -94,13 +104,15 @@ for (const dpr of [1, 2])
                 await page.keyboard.down(panKey)
               }
             }
-            if (action === 'orbit')
+            if (action === 'orbit') {
               await page.mouse.move(
                 bounds.x + bounds.width / 2 + 55 * Math.sin(steps / 10),
                 bounds.y + bounds.height / 2
               )
-            if (action === 'zoom')
+            }
+            if (action === 'zoom') {
               await page.mouse.wheel(0, steps % 40 < 20 ? 8 : -8)
+            }
             steps++
             await page.waitForTimeout(20)
           }
@@ -110,11 +122,17 @@ for (const dpr of [1, 2])
               window as unknown as { __renderWorkload: { stop(): Workload } }
             ).__renderWorkload.stop()
           )
-          if (action === 'pan') await page.keyboard.up(panKey)
-          if (action === 'orbit') await page.mouse.up()
+          if (action === 'pan') {
+            await page.keyboard.up(panKey)
+          }
+          if (action === 'orbit') {
+            await page.mouse.up()
+          }
           const metrics = await cdp.send('Performance.getMetrics')
           expect(measured.intervals.length).toBeGreaterThan(1)
-          if (action !== 'idle') expect(measured.calls).toBeGreaterThan(0)
+          if (action !== 'idle') {
+            expect(measured.calls).toBeGreaterThan(0)
+          }
           scenarios.push({
             action,
             elapsedMs,
@@ -154,9 +172,11 @@ for (const dpr of [1, 2])
           }
           const opaqueKeys = new Set<string>()
           for (const mesh of meshes) {
-            if (mesh.id.startsWith('instances-')) categories.instancedParts++
-            else if (mesh.descriptor.opacity < 1) categories.transparentParts++
-            else {
+            if (mesh.id.startsWith('instances-')) {
+              categories.instancedParts++
+            } else if (mesh.descriptor.opacity < 1) {
+              categories.transparentParts++
+            } else {
               categories.opaqueMaterialBatches++
               opaqueKeys.add(mesh.id)
             }
@@ -192,3 +212,4 @@ for (const dpr of [1, 2])
       }
     })
   })
+}

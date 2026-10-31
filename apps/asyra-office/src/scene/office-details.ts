@@ -18,7 +18,7 @@ export function addInteriorDetails(composer: OfficeComposer) {
     f = OFFICE_FLOORS
   const panelLength = p.rearY - p.discussionFront,
     panelHeight = p.rearTop - f.discussion - 0.08
-  for (let i = 0; i < 9; i++)
+  for (let i = 0; i < 9; i++) {
     block(
       `discussion-panel-${i}`,
       [0.026, panelLength / 9 - 0.003, panelHeight],
@@ -31,6 +31,7 @@ export function addInteriorDetails(composer: OfficeComposer) {
       'wood',
       0.002
     )
+  }
   block(
     'discussion-wood-cornice',
     [0.09, panelLength, 0.06],
@@ -40,7 +41,7 @@ export function addInteriorDetails(composer: OfficeComposer) {
   )
   const console = referencePoint([700, 216], 1, p.rearY - 0.24)
   block('discussion-console', [0.92, 0.28, 0.045], console, 0xc7a376, 'wood')
-  for (const side of [-1, 1])
+  for (const side of [-1, 1]) {
     block(
       `discussion-console-leg-${side}`,
       [0.045, 0.045, console[2] - 0.0225 - f.discussion],
@@ -52,6 +53,7 @@ export function addInteriorDetails(composer: OfficeComposer) {
       0x9b7854,
       'wood'
     )
+  }
   plant(
     'discussion-console-plant',
     [console[0], console[1], console[2] + 0.0225],
@@ -71,8 +73,8 @@ export function addInteriorDetails(composer: OfficeComposer) {
   ] as const) {
     const pos = referencePoint(pixel, 0, -2.84)
     block('work-shelf-' + name, [0.2, 0.7, 0.035], pos, 0xba9263, 'wood')
-    if (name === 'lower')
-      for (let i = 0; i < 4; i++)
+    if (name === 'lower') {
+      for (let i = 0; i < 4; i++) {
         block(
           `wall-book-${i}`,
           [0.13, 0.04, 0.18],
@@ -81,17 +83,20 @@ export function addInteriorDetails(composer: OfficeComposer) {
           'plain',
           0.002
         )
+      }
+    }
     plant(
       'work-shelf-plant-' + name,
       [pos[0] + 0.01, pos[1] + 0.2, pos[2] + 0.0175],
       0.65
     )
-    if (name === 'upper')
+    if (name === 'upper') {
       plant(
         'work-shelf-plant-top-left',
         [pos[0] + 0.01, pos[1] - 0.18, pos[2] + 0.0175],
         0.75
       )
+    }
   }
   const bookcase = referencePoint([619, 498], 2, f.lounge)
   const bookcaseParts = placeParts(
@@ -106,7 +111,7 @@ export function addInteriorDetails(composer: OfficeComposer) {
     [bookcase[0], bookcase[1], f.lounge + 0.82 * 0.64],
     0.47
   )
-  for (let i = 0; i < 5; i++)
+  for (let i = 0; i < 5; i++) {
     block(
       `lounge-book-${i}`,
       [0.12, 0.032, 0.14],
@@ -119,6 +124,7 @@ export function addInteriorDetails(composer: OfficeComposer) {
       'plain',
       0.002
     )
+  }
   const workCase = referencePoint([519, 363], 2, f.work)
   const workCaseParts = placeParts(
     catalogAsset('low-bookcase'),

@@ -28,7 +28,9 @@ it('admits actual recursive preparation inputs and preserves forbidden fields an
   const native = owner.definitions.find(
     (item) => item.name === 'prepare_design'
   )
-  if (!native) throw new Error('Missing preparation contract')
+  if (!native) {
+    throw new Error('Missing preparation contract')
+  }
   const dependency = createAiToolContract(native)
   const literal = (value: unknown) => ({ kind: 'literal', value })
   const child = {
@@ -128,8 +130,9 @@ const memory = () => {
     read: async (key) => entries.get(key),
     list: async (limit) => [...entries.values()].slice(0, limit),
     write: vi.fn(async (input) => {
-      if (entries.get(input.key)?.version !== input.expectedVersion)
+      if (entries.get(input.key)?.version !== input.expectedVersion) {
         throw new Error('CAS conflict')
+      }
       const entry = {
         key: input.key,
         version: String(++sequence),
@@ -455,7 +458,9 @@ it('refuses externally suspended revisions in an already-loaded request without 
     capacity: 16
   })
   const entry = await management.read('double-write', 1)
-  if (!entry) throw new Error('Expected saved revision')
+  if (!entry) {
+    throw new Error('Expected saved revision')
+  }
   expect(
     await management.setState({
       name: 'double-write',
@@ -504,7 +509,9 @@ it('lets an already-started graph settle after external retirement without repub
   await start
   const management = createAiToolStoreManagement({ store, capacity: 16 })
   const entry = await management.read('double-write', 1)
-  if (!entry) throw new Error('Expected saved revision')
+  if (!entry) {
+    throw new Error('Expected saved revision')
+  }
   await management.setState({
     name: 'double-write',
     revision: 1,
@@ -550,7 +557,9 @@ for (const fault of ['before-commit', 'after-commit'] as const) {
         list: (limit) => database.list(limit),
         write: async (input) => {
           if (fail && input.key === JSON.stringify(['double-write', 1])) {
-            if (fault === 'after-commit') await database.write(input)
+            if (fault === 'after-commit') {
+              await database.write(input)
+            }
             throw new Error('Injected child save acknowledgement failure')
           }
           return database.write(input)
@@ -628,7 +637,9 @@ for (const fault of ['before-commit', 'after-commit'] as const) {
         capacity: 16
       })
       const child = await management.read('double-write', 1)
-      if (!child) throw new Error('Missing saved child')
+      if (!child) {
+        throw new Error('Missing saved child')
+      }
       expect(
         await management.setState({
           name: 'double-write',
@@ -690,7 +701,9 @@ for (const availability of ['suspended', 'retired'] as const) {
       read: async (key) => {
         const snapshot = await database.read(key)
         if (interrupt && ++reads === 2) {
-          if (!snapshot) throw new Error('Expected saved definition')
+          if (!snapshot) {
+            throw new Error('Expected saved definition')
+          }
           expect(
             await management.setState({
               name: 'double-write',
@@ -790,10 +803,11 @@ for (const mode of ['load', 'resume'] as const) {
       expect(
         await first.host.submit({ submissionId: 'parent', proposal })
       ).toMatchObject({ ok: true })
-      if (mode === 'load')
+      if (mode === 'load') {
         expect(
           await first.host.invoke({ name: 'nested', input: 2 })
         ).toMatchObject({ storage: { status: 'saved' } })
+      }
       await first.host.dispose()
       let childReads = 0
       let armed = mode === 'load'
@@ -806,7 +820,9 @@ for (const mode of ['load', 'resume'] as const) {
             ++childReads === (mode === 'load' ? 2 : 1)
           ) {
             const parent = await management.read('nested', 1)
-            if (!parent) throw new Error('Missing saved parent')
+            if (!parent) {
+              throw new Error('Missing saved parent')
+            }
             expect(
               await management.setState({
                 name: 'nested',
@@ -823,8 +839,9 @@ for (const mode of ['load', 'resume'] as const) {
       }
       next = setup(store, 'reopened')
       const loaded = await next.host.load()
-      if (mode === 'load') expect(loaded.loaded).toEqual(['double-write'])
-      else {
+      if (mode === 'load') {
+        expect(loaded.loaded).toEqual(['double-write'])
+      } else {
         armed = true
         expect(await next.host.resume('nested', 1)).toMatchObject({ ok: false })
       }
@@ -880,8 +897,9 @@ for (const acknowledgement of ['returned', 'lost'] as const) {
               availability: 'retired'
             })
           ).toMatchObject({ status: 'saved', availability: 'retired' })
-          if (acknowledgement === 'lost')
+          if (acknowledgement === 'lost') {
             throw new Error('Committed acknowledgement was lost')
+          }
         }
         return ack
       }

@@ -23,8 +23,9 @@ describe('current reference composition', () => {
       'park-bench',
       'canal',
       'actor-kai'
-    ])
+    ]) {
       expect(ids.has(id), id).toBe(true)
+    }
     expect(ids.size).toBe(scene.assemblies.length)
     const door = scene.assemblies.find((a) => a.id === 'entrance-door')
     expect(door?.parts).toContain('fixed-left-panel')
@@ -117,11 +118,12 @@ it('moves camera and target together on the ground plane relative to the current
     after.position[2] - before.position[2]
   ]
   expect(delta[0] * direction[0] + delta[1] * direction[1]).toBeGreaterThan(0)
-  for (let axis = 0; axis < 3; axis++)
+  for (let axis = 0; axis < 3; axis++) {
     expect(after.position[axis] - before.position[axis]).toBeCloseTo(
       after.target[axis] - before.target[axis],
       12
     )
+  }
   controller.move(0, -1)
   expect(controller.getCamera().position).toEqual(
     expect.arrayContaining(before.position.map((n) => expect.closeTo(n, 10)))
@@ -173,7 +175,9 @@ it('gives each actual scene planter a distinct normalized foliage layout', () =>
   for (const assembly of scene.assemblies) {
     const parts = scene.parts.slice(offset, offset + assembly.parts.length)
     offset += assembly.parts.length
-    if (assembly.asset !== 'planter') continue
+    if (assembly.asset !== 'planter') {
+      continue
+    }
     const leaves = parts.filter((p) => p.id.startsWith('leaf-'))
     expect(leaves.length, assembly.id).toBeGreaterThan(0)
     // Normalize by the vessel shared by stemmed plants and soil-rooted rosettes.
@@ -209,7 +213,9 @@ it('keeps rotated wall-cap ends flush while overhanging across thickness only', 
     for (const a of scene.assemblies) {
       const parts = scene.parts.slice(offset, offset + a.parts.length)
       offset += a.parts.length
-      if (a.id !== id) continue
+      if (a.id !== id) {
+        continue
+      }
       const values = parts.flatMap((p) =>
         p.mesh.positions.filter((_, i) => i % 3 === axis)
       )
@@ -228,10 +234,11 @@ it('keeps road markings clear of the cover', () => {
   )
   for (const marking of scene.assemblies.filter((a) =>
     a.id.startsWith('road-line-')
-  ))
+  )) {
     expect(Math.abs(marking.position[1] - cover.position[1])).toBeGreaterThan(
       0.36
     )
+  }
 })
 it('keeps equal-sized furniture within fifteen percent projected scale across the office depth', () => {
   const controller = createSceneController({ submitCamera: vi.fn() })
@@ -252,7 +259,9 @@ it('uses outdoor-sized pots rather than desktop-sized vessels along the terrace'
   for (const a of s.assemblies) {
     const pieces = s.parts.slice(offset, offset + a.parts.length)
     offset += a.parts.length
-    if (!a.id.startsWith('park-pot-')) continue
+    if (!a.id.startsWith('park-pot-')) {
+      continue
+    }
     const p = requiredSpecValue(
       pieces.find((p) => p.id === 'pot'),
       'terrace pot'

@@ -16,7 +16,9 @@ const repoRoot = path.resolve(__dirname, '../../../..')
 const listSourceFiles = (directory: string): string[] =>
   fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const absolutePath = path.join(directory, entry.name)
-    if (entry.isDirectory()) return listSourceFiles(absolutePath)
+    if (entry.isDirectory()) {
+      return listSourceFiles(absolutePath)
+    }
     return /\.[cm]?[jt]sx?$/.test(entry.name) ? [absolutePath] : []
   })
 

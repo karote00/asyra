@@ -535,8 +535,9 @@ const createRetrievalCase = () => {
           api: {
             setStatus(recordId, status) {
               const current = records()
-              if (!current[recordId])
+              if (!current[recordId]) {
                 throw new Error(`Unknown record: ${recordId}`)
+              }
               systemContext.setManagedProperty(key, {
                 ...current,
                 [recordId]: { ...current[recordId], status }
@@ -600,8 +601,9 @@ const snapshot = (run) => ({
 export const createAtlasRun = async (caseId) => {
   const definition = getAtlasCase(caseId)
   const build = builders[caseId]
-  if (!definition || !build)
+  if (!definition || !build) {
     throw new Error(`Unknown Runtime Atlas case: ${caseId}`)
+  }
   const run = {
     definition,
     runId: createRunId(),
@@ -628,7 +630,9 @@ export const advanceAtlasRun = async (run) => {
     const output = await run.runtime.execute(action.id)
     run.actionIndex += 1
     const isComplete = run.actionIndex === run.definition.actions.length
-    if (isComplete) run.status = run.runtime.expectedStatus
+    if (isComplete) {
+      run.status = run.runtime.expectedStatus
+    }
     run.evidence.push({
       caseId: run.definition.id,
       runId: run.runId,

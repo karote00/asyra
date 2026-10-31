@@ -26,11 +26,17 @@ vi.mock('react/jsx-dev-runtime', async (original) => {
     jsxDEV: (...args: Parameters<typeof actual.jsxDEV>) => {
       const props = args[1] as { className?: string; 'aria-label'?: string }
 
-      if (props?.className?.startsWith('experiment-panel ')) renders.layout++
+      if (props?.className?.startsWith('experiment-panel ')) {
+        renders.layout++
+      }
 
-      if (props?.className?.startsWith('experiment-picker ')) renders.picker++
+      if (props?.className?.startsWith('experiment-picker ')) {
+        renders.picker++
+      }
 
-      if (props?.['aria-label']?.endsWith(' analysis role')) renders.scopeRows++
+      if (props?.['aria-label']?.endsWith(' analysis role')) {
+        renders.scopeRows++
+      }
 
       return actual.jsxDEV(...args)
     }
@@ -47,11 +53,15 @@ function renderExperiment(input: ExperimentInputs) {
   const snapshot = {
     experiments: input.runtime.getExperiments(input.candidateId)
   }
-  if (registered) registered.publish(snapshot)
-  else registered = new ViewSource(snapshot)
+  if (registered) {
+    registered.publish(snapshot)
+  } else {
+    registered = new ViewSource(snapshot)
+  }
   input.runtime.views = registered as unknown as SimRuntime['views']
-  if (inputSource) inputSource.publish(input)
-  else {
+  if (inputSource) {
+    inputSource.publish(input)
+  } else {
     inputSource = new ViewSource(input)
 
     root.render(createElement(ExperimentPanel, { inputs: inputSource }))
@@ -146,7 +156,9 @@ it('preserves an unapplied experiment draft when the workcell changes', async ()
     '[aria-label="Minimum clearance (mm)"]'
   )
 
-  if (!field) throw new Error('Missing clearance field')
+  if (!field) {
+    throw new Error('Missing clearance field')
+  }
 
   await act(() => {
     const setter = Object.getOwnPropertyDescriptor(
@@ -154,7 +166,9 @@ it('preserves an unapplied experiment draft when the workcell changes', async ()
       'value'
     )?.set
 
-    if (!setter) throw new Error('Missing value setter')
+    if (!setter) {
+      throw new Error('Missing value setter')
+    }
 
     setter.call(field, '75')
 
@@ -255,7 +269,9 @@ it('shows mapped canonical columns before preview and invalidates acceptance aft
 
   const timeColumn = host.querySelector('select')
 
-  if (!timeColumn) throw new Error('Missing CSV column selector')
+  if (!timeColumn) {
+    throw new Error('Missing CSV column selector')
+  }
 
   expect(timeColumn.value).toBe('time')
 
@@ -324,7 +340,9 @@ it('applies the validated trajectory after a completed field edit without duplic
   let finishSave: () => void = () => undefined
   let count = 0
   const updateExperiment = vi.fn(() => {
-    if (++count === 1) return Promise.resolve()
+    if (++count === 1) {
+      return Promise.resolve()
+    }
     return new Promise<void>((resolve) => {
       finishSave = resolve
     })
@@ -358,7 +376,9 @@ it('applies the validated trajectory after a completed field edit without duplic
   const field = host.querySelector<HTMLInputElement>(
     '[aria-label="Minimum clearance (mm)"]'
   )
-  if (!field) throw new Error('Missing clearance input')
+  if (!field) {
+    throw new Error('Missing clearance input')
+  }
   await act(() => {
     Object.getOwnPropertyDescriptor(
       HTMLInputElement.prototype,
@@ -432,7 +452,9 @@ it('commits a completed valid field edit without Save and leaves intermediate te
   const field = host.querySelector<HTMLInputElement>(
     '[aria-label="Minimum clearance (mm)"]'
   )
-  if (!field) throw new Error('Missing clearance field')
+  if (!field) {
+    throw new Error('Missing clearance field')
+  }
   const input = async (text: string) =>
     act(() => {
       Object.getOwnPropertyDescriptor(
@@ -468,7 +490,9 @@ it('commits a completed valid field edit without Save and leaves intermediate te
   const budget = host.querySelector<HTMLInputElement>(
     '[aria-label="Wall-time budget (ms)"]'
   )
-  if (!budget) throw new Error('Missing budget')
+  if (!budget) {
+    throw new Error('Missing budget')
+  }
   await act(() => {
     Object.getOwnPropertyDescriptor(
       HTMLInputElement.prototype,
@@ -495,14 +519,16 @@ it('serializes completed edits arriving during a Feature action against the next
   let finishSecond: () => void = () => undefined
   const updateExperiment = vi.fn(
     async (_id: string, revision: number, next: typeof draft) => {
-      if (revision === 1)
+      if (revision === 1) {
         await new Promise<void>((resolve) => {
           finish = resolve
         })
-      if (revision === 2)
+      }
+      if (revision === 2) {
         await new Promise<void>((resolve) => {
           finishSecond = resolve
         })
+      }
       current = {
         ...current,
         definition: {
@@ -511,11 +537,12 @@ it('serializes completed edits arriving during a Feature action against the next
           rule: { ...next.rule, revision: revision + 1 }
         }
       }
-      if (inputSource)
+      if (inputSource) {
         inputSource.publish({
           ...inputSource.getSnapshot(),
           revision: revision + 1
         })
+      }
     }
   )
   const editingRuntime = {
@@ -545,7 +572,9 @@ it('serializes completed edits arriving during a Feature action against the next
   const field = host.querySelector<HTMLInputElement>(
     '[aria-label="Minimum clearance (mm)"]'
   )
-  if (!field) throw new Error('Missing clearance')
+  if (!field) {
+    throw new Error('Missing clearance')
+  }
   const edit = async (value: string) => {
     await act(async () => {
       Object.getOwnPropertyDescriptor(
@@ -600,7 +629,9 @@ it('reuses an edited import source across a non-trajectory canonical revision wi
     const source = host.querySelector<HTMLTextAreaElement>(
       '[aria-label="Trajectory source data"]'
     )
-    if (!source) throw new Error('Missing source')
+    if (!source) {
+      throw new Error('Missing source')
+    }
     const text = source.value.replace('\n8,', '\n9,')
     await act(async () => {
       Object.getOwnPropertyDescriptor(
@@ -644,7 +675,9 @@ it('keeps preview playback across unrelated publications and invalidates it for 
   await act(() => renderExperiment(input))
   onPlayback.mockClear()
   const source = inputSource
-  if (!source) throw new Error('Missing input source')
+  if (!source) {
+    throw new Error('Missing input source')
+  }
   await act(() => source.publish({ ...input, revision: 2 }))
   expect(onPlayback).not.toHaveBeenCalled()
   await act(() =>
@@ -690,7 +723,9 @@ it('does not acknowledge a failed edit when the shell reports and consumes the F
   const field = host.querySelector<HTMLInputElement>(
     '[aria-label="Minimum clearance (mm)"]'
   )
-  if (!field) throw new Error('Missing clearance')
+  if (!field) {
+    throw new Error('Missing clearance')
+  }
   await act(() => {
     Object.getOwnPropertyDescriptor(
       HTMLInputElement.prototype,
@@ -742,7 +777,9 @@ it('preserves the authored analysis interval when an inline trajectory edit comp
   const field = host.querySelector<HTMLTextAreaElement>(
     '[aria-label="Trajectory source data"]'
   )
-  if (!field) throw new Error('Missing source')
+  if (!field) {
+    throw new Error('Missing source')
+  }
   await act(() => {
     Object.getOwnPropertyDescriptor(
       HTMLTextAreaElement.prototype,
@@ -854,7 +891,9 @@ it('does not execute the last valid scalar when unfinished numerical text is inv
   const field = host.querySelector<HTMLInputElement>(
     '[aria-label="Minimum clearance (mm)"]'
   )
-  if (!field) throw new Error('Missing input control')
+  if (!field) {
+    throw new Error('Missing input control')
+  }
   await act(() => {
     Object.getOwnPropertyDescriptor(
       HTMLInputElement.prototype,
@@ -895,7 +934,9 @@ it('shows required resource acknowledgement before snapshot allocation and runs 
   const warning = host.querySelector<HTMLInputElement>(
     '[data-testid="preflight-report"] input[type="checkbox"]'
   )
-  if (!warning) throw new Error('Missing input control')
+  if (!warning) {
+    throw new Error('Missing input control')
+  }
   await act(() => warning.click())
   await act(() =>
     inputSource?.publish({
@@ -909,7 +950,9 @@ it('shows required resource acknowledgement before snapshot allocation and runs 
   const refreshedWarning = host.querySelector<HTMLInputElement>(
     '[data-testid="preflight-report"] input[type="checkbox"]'
   )
-  if (!refreshedWarning) throw new Error('Missing refreshed warning')
+  if (!refreshedWarning) {
+    throw new Error('Missing refreshed warning')
+  }
   expect(refreshedWarning.checked).toBe(false)
   await act(() => refreshedWarning.click())
   await act(() => button('Run analysis')?.click())
@@ -953,7 +996,9 @@ it('switches accessible tabs with preserved fields and zero canonical or source 
   const field = host.querySelector<HTMLInputElement>(
     '[aria-label="Minimum clearance (mm)"]'
   )
-  if (!field) throw new Error('Missing input control')
+  if (!field) {
+    throw new Error('Missing input control')
+  }
   const source = host.querySelector('[aria-label="Trajectory source data"]')
   const tabs = [...host.querySelectorAll<HTMLButtonElement>('[role="tab"]')]
   expect(tabs.map((tab) => tab.textContent)).toEqual([
@@ -1000,7 +1045,9 @@ it('keeps Run outside scrolling tab content and routes invalid input back to Set
   const field = host.querySelector<HTMLInputElement>(
     '[aria-label="Minimum clearance (mm)"]'
   )
-  if (!field) throw new Error('Missing input control')
+  if (!field) {
+    throw new Error('Missing input control')
+  }
   await act(() => {
     Object.getOwnPropertyDescriptor(
       HTMLInputElement.prototype,
@@ -1049,7 +1096,9 @@ it('offers completion without changing the editing tab, focus or unfinished text
   const field = host.querySelector<HTMLInputElement>(
     '[aria-label="Minimum clearance (mm)"]'
   )
-  if (!field) throw new Error('Missing input control')
+  if (!field) {
+    throw new Error('Missing input control')
+  }
   await act(() => {
     field.focus()
     Object.getOwnPropertyDescriptor(
@@ -1086,7 +1135,9 @@ it('routes an undeclared time unit to its declaration field without allocating a
   const field = host.querySelector<HTMLSelectElement>(
     '[aria-label="Time unit"]'
   )
-  if (!field) throw new Error('Missing time unit')
+  if (!field) {
+    throw new Error('Missing time unit')
+  }
   await act(() => {
     field.value = ''
     field.dispatchEvent(new Event('change', { bubbles: true }))

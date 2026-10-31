@@ -16,7 +16,9 @@ import type {
 } from '../document-materializer'
 
 const required = <T>(value: T | undefined): T => {
-  if (value === undefined) throw new Error('Missing fixture entry')
+  if (value === undefined) {
+    throw new Error('Missing fixture entry')
+  }
   return value
 }
 
@@ -422,8 +424,9 @@ it('acknowledges the retried batch boundary even after later publications become
     initialDurableSequence: 0,
     sendBatch: async (input) => {
       const response = await request(input)
-      if (response.status !== 200)
+      if (response.status !== 200) {
         throw new Error(JSON.stringify(response.body))
+      }
       return response.body
     }
   })

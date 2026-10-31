@@ -54,7 +54,9 @@ const ItemRow = ({
   const item = useItem(id)
   const selected = useIsSelected(id)
   const { controller } = useApp()
-  if (!item) return null
+  if (!item) {
+    return null
+  }
   return (
     <button
       type="button"

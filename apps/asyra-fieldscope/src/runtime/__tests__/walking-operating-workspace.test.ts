@@ -71,8 +71,9 @@ it('keeps the legacy view inert and prepares one current walking owner product',
   )
   const active = owner.apply(selection)
   expect(active.status).toBe('ready-fast')
-  if (active.status === 'legacy-view' || !active.envelope)
+  if (active.status === 'legacy-view' || !active.envelope) {
     throw new Error('Missing active report')
+  }
   expect(active.envelope.bounds.size[0]).toBeGreaterThan(0.8)
   expect(active.envelope.bodyBounds.size[0]).toBeLessThanOrEqual(0.8)
   expect(active.source.definition).toBe(selection.definition)
@@ -82,8 +83,9 @@ it('keeps the legacy view inert and prepares one current walking owner product',
   expect(owner.envelopeOwner.work.preparations).toBe(1)
   currentDemand = demand()
   const refreshed = owner.refreshDemand()
-  if (refreshed.status === 'legacy-view' || !refreshed.envelope)
+  if (refreshed.status === 'legacy-view' || !refreshed.envelope) {
     throw new Error('Missing active report')
+  }
   expect(refreshed.source).toBe(active.source)
   expect(refreshed.envelope).toBe(active.envelope)
   expect(owner.sourceOwner.work.builds).toBe(1)

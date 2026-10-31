@@ -59,7 +59,9 @@ function crossGap(
   for (const axis of axes) {
     tick()
     const norm = ops.norm(ops.vector(axis))
-    if (norm[0] <= 0) continue
+    if (norm[0] <= 0) {
+      continue
+    }
     const pa = projectBounds(a, ap, axis),
       pb = projectBounds(b, bp, axis)
     lower = Math.max(
@@ -110,8 +112,9 @@ it('certifies independent rational skew boxes that overlap on all six face direc
     [2n, 14n, -5n],
     [-10n, 5n, 10n],
     [11n, 2n, 10n]
-  ])
+  ]) {
     expect(gap(axis)).toBeLessThan(0n)
+  }
   expect(gap([0n, 5n, 14n])).toBe(6720n) // 6720/28800 = 7/30.
   expect(projectedBoundsGap(bounds, a, bounds, b, 0, () => undefined)).toBe(0)
   let preparation = 0,
@@ -133,7 +136,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
       const pair = snapshot.pairs.find(
         (p) => p.a.bodyId === 'example:joint-2' && p.b.bodyId === 'obstacle-11'
       )
-      if (!pair) throw new Error('Missing source pair')
+      if (!pair) {
+        throw new Error('Missing source pair')
+      }
       const time = snapshot.trajectory.keyframes[67].time
       expect(time).toBe(2.693467336683417)
       const context = new OriginalMeshQuery()
@@ -145,14 +150,18 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         ]
         while (pending.length) {
           const entry = pending.pop()
-          if (!entry) throw new Error('Missing observed node')
+          if (!entry) {
+            throw new Error('Missing observed node')
+          }
           const prior = nodes.get(entry.node.bounds)
-          if (prior && prior !== entry.node)
+          if (prior && prior !== entry.node) {
             throw new Error('Ambiguous exact Bounds identity')
+          }
           parents.set(entry.node, entry.parent)
           nodes.set(entry.node.bounds, entry.node)
-          for (const child of entry.node.children ?? [])
+          for (const child of entry.node.children ?? []) {
             pending.push({ node: child, parent: entry.node })
+          }
         }
       }
       let preparation = 0,
@@ -182,8 +191,11 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         try {
           context.chargeSourceWitness()
         } finally {
-          if (kind === 'prepare') extraPreparation += context.work - before
-          else extraAttempts += context.work - before
+          if (kind === 'prepare') {
+            extraPreparation += context.work - before
+          } else {
+            extraAttempts += context.work - before
+          }
         }
       }
       interface Event {
@@ -212,10 +224,14 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
       const original = owner.projectGap.bind(context)
       const descriptor = Object.getOwnPropertyDescriptor(owner, 'projectGap')
       owner.projectGap = (a, b, ab, bb, gap, threshold) => {
-        if (!ab || !bb) throw new Error('Unexpected nonmesh path')
+        if (!ab || !bb) {
+          throw new Error('Unexpected nonmesh path')
+        }
         const an = nodes.get(ab),
           bn = nodes.get(bb)
-        if (!an || !bn) throw new Error('Unknown exact source lineage')
+        if (!an || !bn) {
+          throw new Error('Unknown exact source lineage')
+        }
         const entered = baseline() - (events.length === 0 ? 0 : 1)
         const legacy = original(a, b, ab, bb, gap, threshold)
         const event: Event = {
@@ -260,8 +276,11 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           context
         )
       } finally {
-        if (descriptor) Object.defineProperty(owner, 'projectGap', descriptor)
-        else Reflect.deleteProperty(owner, 'projectGap')
+        if (descriptor) {
+          Object.defineProperty(owner, 'projectGap', descriptor)
+        } else {
+          Reflect.deleteProperty(owner, 'projectGap')
+        }
       }
       const originalWork = baseline()
       expect(originalWork).toBe(16564)
@@ -278,7 +297,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
       ): boolean => {
         let current: mesh.MeshNode | undefined = node
         while (current) {
-          if (current === ancestor) return true
+          if (current === ancestor) {
+            return true
+          }
           current = parents.get(current)
         }
         return false
@@ -292,7 +313,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         positive = 0,
         prunedAttempts = 0
       for (const [index, event] of events.entries()) {
-        if (event.candidate === undefined) continue
+        if (event.candidate === undefined) {
+          continue
+        }
         if (
           spans.some(
             (span) => event.entered >= span.start && event.entered < span.end
@@ -302,7 +325,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           continue
         }
         retainedAttempts += 9
-        if (event.candidate <= event.threshold) continue
+        if (event.candidate <= event.threshold) {
+          continue
+        }
         positive++
         if (event.root) {
           expect(result.upper).not.toBeNull()
@@ -313,7 +338,9 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           : events.slice(index + 1).find((other) => !beneath(other, event))
         const end = next?.entered ?? originalWork
         expect(end).toBeGreaterThanOrEqual(event.after)
-        if (end > event.after) spans.push({ start: event.after, end, index })
+        if (end > event.after) {
+          spans.push({ start: event.after, end, index })
+        }
       }
       const avoidedUpperLimit = spans.reduce(
         (sum, span) => sum + span.end - span.start,

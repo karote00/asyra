@@ -392,7 +392,9 @@ describe('component property relations', () => {
 
     const registration = componentRegistry.get('relation-shape')
     expect(registration).toBeDefined()
-    if (!registration) throw new Error('Expected component registration')
+    if (!registration) {
+      throw new Error('Expected component registration')
+    }
     const instance = new registration.constructor()
     expect(instance.props.getPropId('position')).toBeDefined()
     expect(instance.props.getPropId('fills')).toBeUndefined()
@@ -432,7 +434,9 @@ describe('component property relations', () => {
 
     const registration = componentRegistry.get('relation-shape')
     expect(registration).toBeDefined()
-    if (!registration) throw new Error('Expected component registration')
+    if (!registration) {
+      throw new Error('Expected component registration')
+    }
     const instance = new registration.constructor()
     expect(instance.props.getPropId('position')).toBeDefined()
     expect(instance.props.getPropId('fills')).toBeUndefined()
@@ -472,7 +476,9 @@ describe('component property relations', () => {
 
     const registration = componentRegistry.get('relation-shape')
     expect(registration).toBeDefined()
-    if (!registration) throw new Error('Expected component registration')
+    if (!registration) {
+      throw new Error('Expected component registration')
+    }
     const active = new registration.constructor()
     sceneTree.addToMap(active)
 

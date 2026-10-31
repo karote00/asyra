@@ -46,8 +46,9 @@ const anchorHarness = async (page: Page) => {
       >
       const input = testRuntimeState.get<Input>('anchor-runtime')
       const request = testRuntimeState.get<AbortController>('anchor-request')
-      if (!input?.transactionRunner || !request)
+      if (!input?.transactionRunner || !request) {
         throw new Error('Missing runtime transaction owner')
+      }
       return input.transactionRunner.run(
         'Retained anchor scenario',
         async (runMutation) => {
@@ -56,7 +57,9 @@ const anchorHarness = async (page: Page) => {
             const action = input.actionDefinitions.find(
               (d) => d.name === a.name
             )
-            if (!action) throw new Error('Unknown action')
+            if (!action) {
+              throw new Error('Unknown action')
+            }
             actionResults.push({
               actionId: a.id,
               actionName: a.name,
@@ -125,8 +128,9 @@ test('retained anchor reaches real hierarchy, rejects ambiguity, and preserves p
       const result = (
         await import('../src/testing/runtime-access')
       ).core.getElementChildren(rootId)
-      if (!result.available || result.nextOffset !== null)
+      if (!result.available || result.nextOffset !== null) {
         throw new Error('Incomplete known sibling read')
+      }
       return result.elementIds
     }, design.rootId)
   const originalOrder = await readOrder(page)

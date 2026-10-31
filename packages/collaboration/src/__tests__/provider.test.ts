@@ -367,7 +367,9 @@ describe('replaceable collaboration Provider contract', () => {
     receiver.onFailure(providerFailure)
     receiver.onPublication(async (inbound) => {
       receivedPublicationIds.push(inbound.publicationId)
-      if (inbound.publicationId === 'publication-a') throw failure
+      if (inbound.publicationId === 'publication-a') {
+        throw failure
+      }
     })
     await sender.connect()
     await receiver.connect()

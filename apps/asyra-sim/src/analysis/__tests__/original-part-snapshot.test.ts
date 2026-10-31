@@ -91,7 +91,9 @@ describe('original part snapshot admission', () => {
     ).toBeGreaterThan(0)
     data.workcell = original
     const geometry = data.workcell.bodies[0].colliders[0].geometry
-    if (geometry.kind !== 'mesh') throw new Error('Missing test geometry')
+    if (geometry.kind !== 'mesh') {
+      throw new Error('Missing test geometry')
+    }
     geometry.indices = geometry.indices.slice(3)
     expect(
       preflightExperiment(data.workcell, data.definition, data.methods).blockers

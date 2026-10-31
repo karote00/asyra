@@ -35,7 +35,9 @@ const run = (command) => {
   execSync(command, { stdio: 'inherit' })
 }
 
-for (const command of releasePlan.prepare) run(command)
+for (const command of releasePlan.prepare) {
+  run(command)
+}
 releasePlan.publish.forEach(run)
 releasePlan.verify.forEach(run)
 

@@ -76,11 +76,12 @@ test('offline production, refresh, restart and idempotent import consume evidenc
     'execSync',
     'execFile',
     'execFileSync'
-  ])
+  ]) {
     t.mock.method(childProcess, name, () => {
       executions++
       throw new Error('Unexpected execution')
     })
+  }
   Reflect.deleteProperty(require.cache, require.resolve('../localization.cjs'))
   Reflect.deleteProperty(
     require.cache,
@@ -179,8 +180,9 @@ test('a recovered case summary retains the earlier discovery recovery link', (t)
     stats: { expected: 0, unexpected: 0, flaky: 0, skipped: 0 }
   }
   previous.finishedAt = new Date(1700000000001).toISOString()
-  for (const value of [previous, failed, passed])
+  for (const value of [previous, failed, passed]) {
     saveObservation(observationDirectory(dir), value)
+  }
   associate(dir, previous.id, failed.id, {
     version: 1,
     manifestPath: contract.manifestPath,
@@ -267,11 +269,12 @@ test('CI projects every retained mapped case, isolates identity and never launch
   saveObservation(observationDirectory(dir), localized)
   exportBundle(dir, 'bundles/flow-observations-design-123-2', identity)
   let executions = 0
-  for (const name of ['spawn', 'spawnSync', 'execFile', 'execFileSync'])
+  for (const name of ['spawn', 'spawnSync', 'execFile', 'execFileSync']) {
     t.mock.method(childProcess, name, () => {
       executions++
       throw new Error('Unexpected execution')
     })
+  }
   const { projectObservations } = require('../workflow-results.cjs')
   const envelopes = [
     {

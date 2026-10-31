@@ -246,7 +246,9 @@ class Factory {
     mutateSlices: readonly (() => void)[],
     settleAfterSlice: (completedSliceIndex: number) => Promise<void>
   ): Promise<void> {
-    if (mutateSlices.length === 0) return
+    if (mutateSlices.length === 0) {
+      return
+    }
 
     this.transact.start('remote')
     const reactiveBoundaryOwner = this.createRemoteReactiveBoundaryOwner()
@@ -258,7 +260,9 @@ class Factory {
         completedSliceIndex += 1
       ) {
         const mutate = mutateSlices[completedSliceIndex]
-        if (!mutate) continue
+        if (!mutate) {
+          continue
+        }
         runWithTransactionOwner(reactiveBoundaryOwner, () =>
           runTransaction(() => this.runSynchronousRemoteMutation(mutate), {
             failureKind: 'handler-error'
@@ -347,8 +351,9 @@ class Factory {
 
   /** Lifecycle owner only, after external work has quiesced. Never canonical load. */
   resetRuntime(): void {
-    if (this.resettingRuntime)
+    if (this.resettingRuntime) {
       throw new Error('Factory runtime reset is already active')
+    }
     // The transaction owner rejects before any Factory registration is changed.
     this.sharedDataChannels.assertRuntimeResetAllowed()
     this.transact.resetRuntime()

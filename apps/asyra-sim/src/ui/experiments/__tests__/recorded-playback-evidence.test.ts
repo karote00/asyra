@@ -107,8 +107,9 @@ it('reuses an exact witness without treating earlier unclassified poses as known
 
   expect(appearance).toBeDefined()
 
-  for (let request = 0; request < 120; request += 1)
+  for (let request = 0; request < 120; request += 1) {
     expect(evidence.at(4)?.highlight).toBe(appearance)
+  }
 
   expect(readLeaves).toHaveBeenCalledTimes(lookups)
 
@@ -166,8 +167,9 @@ it('reuses only all-pair clear certificates, including their boundaries, and nev
     })
   }
 
-  for (const time of [-1, 2.1, 8, 9, NaN])
+  for (const time of [-1, 2.1, 8, 9, NaN]) {
     expect(evidence.at(time)).toBeUndefined()
+  }
 
   const missing = new RecordedPlaybackEvidence({
     snapshot,
@@ -203,8 +205,9 @@ it('queries immutable interval leaves with bounded binary-search work across tim
     const pairReads = { value: 0 }
     const indexedLeaves = new Proxy(leaves, {
       get(target, property, receiver) {
-        if (typeof property === 'string' && /^\d+$/u.test(property))
+        if (typeof property === 'string' && /^\d+$/u.test(property)) {
           pairReads.value += 1
+        }
 
         return Reflect.get(target, property, receiver)
       }

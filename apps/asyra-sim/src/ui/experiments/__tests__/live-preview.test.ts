@@ -28,7 +28,9 @@ it.each(['checking', 'ready'] as const)(
       penetration: true,
       witnessTime: 3.2
     })
-    if (status === 'checking') sample.complete = false
+    if (status === 'checking') {
+      sample.complete = false
+    }
     sample.diagnosticId = 22
 
     let state: LiveState = { status: 'idle', sample: null, error: null }
@@ -92,8 +94,9 @@ it.each(['checking', 'ready'] as const)(
 
     preview.sample(3.51, options)
     expect(publish.mock.lastCall?.[0].time).toBe(3.51)
-    if (status === 'checking')
+    if (status === 'checking') {
       expect(api.sample).toHaveBeenLastCalledWith(3.2, false)
+    }
 
     preview.sample(1, { ...options, discontinuity: true })
     expect(publish.mock.lastCall?.[0]).toMatchObject({

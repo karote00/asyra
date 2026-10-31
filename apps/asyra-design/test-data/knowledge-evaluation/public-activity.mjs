@@ -4,7 +4,9 @@ export function restorePublicActivity(rows, readPayload, nativeDiagnostics) {
   const events = []
   const gaps = []
   for (const row of rows) {
-    if (!Number.isFinite(row.elapsedMs)) continue
+    if (!Number.isFinite(row.elapsedMs)) {
+      continue
+    }
     const evidence = row.evidence ?? {}
     const event = {
       sequence: row.sequence,
@@ -18,7 +20,9 @@ export function restorePublicActivity(rows, readPayload, nativeDiagnostics) {
     }
     // Include transport and lifecycle metadata: a tool gap is not an event gap.
     events.push(event)
-    if (evidence.phase !== 'public-activity') continue
+    if (evidence.phase !== 'public-activity') {
+      continue
+    }
     const ref = row.diagnostic?.output?.payload
     if (!ref?.path || ref.status !== 'queued') {
       activities.push({ ...event, status: ref?.status ?? 'unavailable' })
@@ -31,16 +35,18 @@ export function restorePublicActivity(rows, readPayload, nativeDiagnostics) {
       value.nativeThreadId !== evidence.nativeThreadId ||
       value.nativeTurnId !== evidence.nativeTurnId ||
       (value.itemId !== null && value.itemId !== event.callId)
-    )
+    ) {
       throw new Error('Public activity provenance mismatch')
+    }
     activities.push({ ...value, ...event, payload: ref })
   }
   if (nativeDiagnostics) {
     const threads = new Set(
       rows.map((row) => row.evidence?.nativeThreadId).filter(Boolean)
     )
-    if (!threads.has(nativeDiagnostics.threadId))
+    if (!threads.has(nativeDiagnostics.threadId)) {
       throw new Error('Native diagnostic provenance mismatch')
+    }
     for (const boundary of nativeDiagnostics.boundaries ?? []) {
       if (
         boundary.threadId !== nativeDiagnostics.threadId ||
@@ -50,8 +56,9 @@ export function restorePublicActivity(rows, readPayload, nativeDiagnostics) {
         boundary.elapsedMs >
           nativeDiagnostics.endMs - nativeDiagnostics.startMs ||
         !/^[a-f0-9]{64}$/.test(boundary.bodySha256)
-      )
+      ) {
         throw new Error('Native diagnostic provenance mismatch')
+      }
       events.push({ ...boundary })
     }
   }
@@ -59,7 +66,7 @@ export function restorePublicActivity(rows, readPayload, nativeDiagnostics) {
   for (let index = 1; index < events.length; index++) {
     const startMs = events[index - 1].elapsedMs
     const endMs = events[index].elapsedMs
-    if (endMs > startMs)
+    if (endMs > startMs) {
       gaps.push({
         startMs,
         endMs,
@@ -67,6 +74,7 @@ export function restorePublicActivity(rows, readPayload, nativeDiagnostics) {
         meaning: 'no-recorded-event',
         cause: null
       })
+    }
   }
   return {
     ...(nativeDiagnostics ? { nativeDiagnostics } : {}),

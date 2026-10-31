@@ -61,7 +61,6 @@
         'scripts/__tests__/node-runtime-contract.test.mjs',
         'docs/ai/framework/plans/completed/node-24-runtime-upgrade-and-vercel-validation-plan.md',
         'tools/flow-inspector/inspectors/node-24-runtime-upgrade-flow-inspector.data.cjs',
-        'tools/flow-inspector/inspectors/node-24-runtime-upgrade-flow-inspector.html',
         'tools/flow-inspector/inspectors/__tests__/node-24-runtime-upgrade-flow-inspector.contract.test.cjs'
       ],
       specRefs: [
@@ -340,7 +339,7 @@
         'scripts/release-package-artifacts.js',
         'scripts/release-readiness.js',
         'scripts/release-template-readiness.js',
-        'tools/flow-inspector/__tests__/viewer-entry.test.cjs'
+        'tools/flow-inspector/__tests__/architecture-contract.test.cjs'
       ],
       specRefs: ['#4-validate-locally-on-nodejs-24', '#definition-of-done'],
       failureOwnerStepId: 'validate-asyra-design-runtime'
@@ -530,7 +529,6 @@
         'docs/ai/framework/PLANS.md',
         'docs/ai/framework/plans/completed/node-24-runtime-upgrade-and-vercel-validation-plan.md',
         'tools/flow-inspector/inspectors/node-24-runtime-upgrade-flow-inspector.data.cjs',
-        'tools/flow-inspector/inspectors/node-24-runtime-upgrade-flow-inspector.html',
         'tools/flow-inspector/inspectors/__tests__/node-24-runtime-upgrade-flow-inspector.contract.test.cjs',
         'docs/ai/framework/decisions/releases/unreleased.md',
         'docs/ai/decisions/releases/unreleased.md'
@@ -760,7 +758,7 @@
           route.to === consumerStepId &&
           route.producedArtifacts.includes(id)
       )
-      if (routeExists) return
+      if (routeExists) {return}
       routes.push({
         id: `${ownerStepId}-to-${consumerStepId}-${id.slice('artifact:'.length)}`,
         from: ownerStepId,
@@ -1019,6 +1017,6 @@
   }
 
   freeze(data)
-  if (typeof globalThis !== 'undefined') globalThis.FLOW_INSPECTOR_DATA = data
-  if (typeof module !== 'undefined' && module.exports) module.exports = data
+  if (typeof globalThis !== 'undefined') {globalThis.FLOW_INSPECTOR_DATA = data}
+  if (typeof module !== 'undefined' && module.exports) {module.exports = data}
 })()

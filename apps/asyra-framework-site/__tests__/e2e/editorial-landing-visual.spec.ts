@@ -25,8 +25,9 @@ for (const width of [320, 390, 820, 1024, 1280, 1440, 2560]) {
       expect(
         await section.evaluate((element) => element.scrollWidth <= innerWidth)
       ).toBe(true)
-      for (const img of await section.locator('img').all())
+      for (const img of await section.locator('img').all()) {
         await img.evaluate((element: HTMLImageElement) => element.decode())
+      }
       await section.screenshot({
         path: testInfo.outputPath(`home-${id}-${width}.png`)
       })
@@ -51,7 +52,9 @@ test('the preview route is removed and home keeps canonical metadata', async ({
   const home = await request.get('/')
   const html = await home.text()
   const canonical = html.match(/<link rel="canonical" href="([^"]+)"/)?.[1]
-  if (!canonical) throw new Error('Homepage canonical link is missing')
+  if (!canonical) {
+    throw new Error('Homepage canonical link is missing')
+  }
   expect(new URL(canonical).pathname).toBe('/')
   expect(new URL(canonical).protocol).toBe('https:')
   expect(html).not.toContain(
@@ -68,13 +71,16 @@ test('story layout reflows with its artwork instead of retaining empty space', a
   const artwork = chapter.locator('[data-static-scene]')
   await page.setViewportSize({ width: 390, height: 1000 })
   const mobileArt = await artwork.boundingBox()
-  if (!mobileArt) throw new Error('Mobile artwork is missing')
+  if (!mobileArt) {
+    throw new Error('Mobile artwork is missing')
+  }
   expect(mobileArt.height).toBeLessThan(360)
   await page.setViewportSize({ width: 820, height: 1000 })
   const tabletCopy = await copy.boundingBox()
   const tabletArt = await artwork.boundingBox()
-  if (!tabletArt || !tabletCopy)
+  if (!tabletArt || !tabletCopy) {
     throw new Error('Tablet composition is missing')
+  }
   expect(tabletArt.x).toBeGreaterThanOrEqual(tabletCopy.x + tabletCopy.width)
   expect(Math.abs(tabletArt.y - tabletCopy.y)).toBeLessThan(100)
   await page.setViewportSize({ width: 1024, height: 1000 })
@@ -83,7 +89,9 @@ test('story layout reflows with its artwork instead of retaining empty space', a
     'on'
   )
   const shared = await page.locator('[data-shared-scene]').boundingBox()
-  if (!shared) throw new Error('Shared scene is missing')
+  if (!shared) {
+    throw new Error('Shared scene is missing')
+  }
   expect(shared.height).toBeLessThan(700)
   await page.setViewportSize({ width: 2560, height: 1000 })
   await expect(page.locator('.spatial-story-shell')).toHaveAttribute(
@@ -91,7 +99,9 @@ test('story layout reflows with its artwork instead of retaining empty space', a
     'on'
   )
   const track = await page.locator('[data-story-track]').boundingBox()
-  if (!track) throw new Error('Story track is missing')
+  if (!track) {
+    throw new Error('Story track is missing')
+  }
   expect(track.width).toBeLessThanOrEqual(1800)
   expect(track.x).toBeGreaterThan(300)
 })
@@ -109,7 +119,9 @@ test('compact architecture snapshots keep the state plane above the caption', as
       .locator('[data-story-layer="state"] > div')
       .boundingBox()
     const caption = await scene.locator('[data-scene-caption]').boundingBox()
-    if (!state || !caption) throw new Error('Architecture snapshot is missing')
+    if (!state || !caption) {
+      throw new Error('Architecture snapshot is missing')
+    }
     expect(state.y + state.height).toBeLessThanOrEqual(caption.y - 8)
   }
 })
@@ -128,19 +140,26 @@ test('394px story artwork stays between chapter copy and its caption', async ({
     const copy = await chapter.locator(':scope > div').first().boundingBox()
     const scene = chapter.locator('[data-static-scene]')
     const caption = await scene.locator('[data-scene-caption]').boundingBox()
-    if (!copy || !caption) throw new Error('Chapter layout is missing')
+    if (!copy || !caption) {
+      throw new Error('Chapter layout is missing')
+    }
     const sectionBox = await chapter.boundingBox()
-    if (!sectionBox) throw new Error('Chapter bounds are missing')
+    if (!sectionBox) {
+      throw new Error('Chapter bounds are missing')
+    }
     expect
       .soft(caption.y + caption.height)
       .toBeLessThanOrEqual(sectionBox.y + sectionBox.height - 16)
     for (const layer of await scene.locator('[data-story-layer]').all()) {
       if (
         Number(await layer.evaluate((el) => getComputedStyle(el).opacity)) < 0.1
-      )
+      ) {
         continue
+      }
       const box = await layer.locator(':scope > *').first().boundingBox()
-      if (!box) continue
+      if (!box) {
+        continue
+      }
       expect
         .soft(box.y, `chapter ${index} artwork above copy`)
         .toBeGreaterThanOrEqual(copy.y + copy.height)
@@ -182,7 +201,9 @@ for (const width of [320, 394, 576]) {
     await picture.evaluate((img: HTMLImageElement) => img.decode())
     const imageBox = await picture.boundingBox()
     const caption = await scene.locator('[data-scene-caption]').boundingBox()
-    if (!imageBox || !caption) throw new Error('Opening composition is missing')
+    if (!imageBox || !caption) {
+      throw new Error('Opening composition is missing')
+    }
     expect.soft(Math.abs(imageBox.x - caption.x)).toBeLessThanOrEqual(1)
     expect
       .soft(Math.abs(imageBox.x + imageBox.width - caption.x - caption.width))
@@ -205,20 +226,25 @@ for (const width of [394, 820, 1440, 2560]) {
   }, testInfo) => {
     await page.setViewportSize({ width, height: 1000 })
     await page.goto('/')
-    if (width >= 1024)
+    if (width >= 1024) {
       await expect(page.locator('.spatial-story-shell')).toHaveAttribute(
         'data-motion',
         'on'
       )
+    }
     const story = await page
       .locator('[data-story-chapter="0"] > div')
       .first()
       .boundingBox()
-    if (!story) throw new Error('Story copy is missing')
+    if (!story) {
+      throw new Error('Story copy is missing')
+    }
     for (const id of ['built-with-asyra', 'start-building']) {
       const section = page.locator(`#${id}`)
       const content = await section.locator('h2').boundingBox()
-      if (!content) throw new Error('Resource content is missing')
+      if (!content) {
+        throw new Error('Resource content is missing')
+      }
       expect.soft(Math.abs(content.x - story.x)).toBeLessThanOrEqual(1)
       await section.scrollIntoViewIfNeeded()
       for (const img of await section.locator('img').all()) {
@@ -237,16 +263,19 @@ for (const width of [394, 820, 1440, 2560]) {
   }, testInfo) => {
     await page.setViewportSize({ width, height: 1000 })
     await page.goto('/')
-    if (width >= 1024)
+    if (width >= 1024) {
       await expect(page.locator('.spatial-story-shell')).toHaveAttribute(
         'data-motion',
         'on'
       )
+    }
     const story = await page
       .locator('[data-story-chapter="0"] > div')
       .first()
       .boundingBox()
-    if (!story) throw new Error('Story copy is missing')
+    if (!story) {
+      throw new Error('Story copy is missing')
+    }
     const closing = page.getByRole('region', {
       name: 'Start your next product'
     })
@@ -255,7 +284,9 @@ for (const width of [394, 820, 1440, 2560]) {
       page.locator('footer .wordmark')
     ]) {
       const box = await content.boundingBox()
-      if (!box) throw new Error('Closing content is missing')
+      if (!box) {
+        throw new Error('Closing content is missing')
+      }
       expect.soft(Math.abs(box.x - story.x)).toBeLessThanOrEqual(1)
     }
     await closing.screenshot({

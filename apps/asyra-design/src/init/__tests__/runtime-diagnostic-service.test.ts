@@ -14,7 +14,9 @@ const request = (operation: string, args: readonly unknown[] = []) => {
   document.dispatchEvent(
     new CustomEvent(RUNTIME_DIAGNOSTIC_REQUEST_EVENT, { detail })
   )
-  if (detail.error) throw new Error(detail.error)
+  if (detail.error) {
+    throw new Error(detail.error)
+  }
   return detail.response
 }
 

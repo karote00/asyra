@@ -7,7 +7,9 @@ export function createWorkspaceSourceResolver(root, workspaces, ts) {
   const entries = new Map()
   const within = (directory, file) => file.startsWith(`${directory}${path.sep}`)
   const prepare = (workspace) => {
-    if (entries.has(workspace.name)) return entries.get(workspace.name)
+    if (entries.has(workspace.name)) {
+      return entries.get(workspace.name)
+    }
     let entry = null
     try {
       const directory = path.resolve(root, workspace.directory)
@@ -28,16 +30,19 @@ export function createWorkspaceSourceResolver(root, workspaces, ts) {
         parsed.errors.length ||
         parsed.options.paths ||
         parsed.options.baseUrl
-      )
+      ) {
         throw new Error('Unproven workspace source resolution')
+      }
       const sources = new Map()
       for (const source of parsed.fileNames) {
-        if (!within(directory, source))
+        if (!within(directory, source)) {
           throw new Error('Source outside workspace')
+        }
         sources.set(source, source)
         for (const output of ts.getOutputFileNames(parsed, source, false)) {
-          if (sources.has(output) && sources.get(output) !== source)
+          if (sources.has(output) && sources.get(output) !== source) {
             throw new Error('Ambiguous output owner')
+          }
           sources.set(output, source)
         }
       }
@@ -49,7 +54,9 @@ export function createWorkspaceSourceResolver(root, workspaces, ts) {
     return entry
   }
   const targets = (value) => {
-    if (typeof value === 'string') return [value]
+    if (typeof value === 'string') {
+      return [value]
+    }
     if (value && typeof value === 'object') {
       const children = Object.values(value).map(targets)
       return children.every(Boolean) ? children.flat() : null
@@ -62,9 +69,13 @@ export function createWorkspaceSourceResolver(root, workspaces, ts) {
       .slice(0, specifier.startsWith('@') ? 2 : 1)
       .join('/')
     const workspace = workspaces.get(name)
-    if (!workspace) return { kind: 'external', files: [] }
+    if (!workspace) {
+      return { kind: 'external', files: [] }
+    }
     const entry = prepare(workspace)
-    if (!entry) return { kind: 'unknown', files: [] }
+    if (!entry) {
+      return { kind: 'unknown', files: [] }
+    }
     const key = specifier === name ? '.' : `.${specifier.slice(name.length)}`
     const exports = entry.manifest.exports
     let declaration
@@ -78,7 +89,9 @@ export function createWorkspaceSourceResolver(root, workspaces, ts) {
       declaration = exports ?? entry.manifest.main
     }
     const paths = targets(declaration)
-    if (!paths?.length) return { kind: 'unknown', files: [] }
+    if (!paths?.length) {
+      return { kind: 'unknown', files: [] }
+    }
     const files = paths.map((target) => {
       const output = path.resolve(entry.directory, target)
       return within(entry.directory, output)

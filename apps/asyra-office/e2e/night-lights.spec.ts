@@ -36,7 +36,9 @@ test('retains both lights and exports five views of the framed light from one ge
           )
       )
       const bounds = await viewport.boundingBox()
-      if (!bounds) throw new Error('Missing asset viewport')
+      if (!bounds) {
+        throw new Error('Missing asset viewport')
+      }
       // Omit the surrounding UI's rounded corners; retain the camera's 40 px asset margin.
       const bytes = await page.screenshot({
         clip: {
@@ -47,8 +49,9 @@ test('retains both lights and exports five views of the framed light from one ge
         },
         path: info.outputPath(`${asset}-${view.toLowerCase()}.png`)
       })
-      if (asset === 'frame-night-light')
+      if (asset === 'frame-night-light') {
         images.push({ title: view, data: bytes.toString('base64') })
+      }
     }
     await expect(page.getByRole('alert')).toHaveCount(0)
   }

@@ -94,8 +94,9 @@ describe('canonical design organization', () => {
   ])('rejects invalid operation without writes: %j', (request) => {
     const { organize, apis } = fixture()
     expect(() => organize(request as never)).toThrow()
-    for (const fn of [apis.group, apis.ungroup, apis.move, apis.rename])
+    for (const fn of [apis.group, apis.ungroup, apis.move, apis.rename]) {
       expect(fn).not.toHaveBeenCalled()
+    }
   })
   it('rechecks locks on later calls and rejects inconsistent parent membership', () => {
     const { organize, records, apis } = fixture()
@@ -118,7 +119,9 @@ it('groups a complete known sibling set in one native operation rather than maki
   const { organize, records, apis } = fixture()
   const ids = Array.from({ length: 250 }, (_, i) => `item-${i}`)
   records.frame.children = ids
-  for (const id of ids) records[id] = { type: 'rect', parentId: 'frame' }
+  for (const id of ids) {
+    records[id] = { type: 'rect', parentId: 'frame' }
+  }
   expect(organize({ operation: 'group', elementIds: ids }).elementIds).toEqual(
     ids
   )

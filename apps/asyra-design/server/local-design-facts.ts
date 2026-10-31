@@ -164,11 +164,14 @@ export const createDesignFacts = (
     snapshot,
     recordCalculations(input: unknown) {
       const issue = operationInputIssue(input, designCalculationsSchema)
-      if (issue) throw new Error(issue)
+      if (issue) {
+        throw new Error(issue)
+      }
       const additions =
         (input as { calculations?: DesignCalculation[] }).calculations ?? []
-      if (new Set(additions.map((item) => item.id)).size !== additions.length)
+      if (new Set(additions.map((item) => item.id)).size !== additions.length) {
         throw new Error('Calculation IDs must be unique.')
+      }
       const admitted = additions.map((value) => {
         if (
           ![
@@ -177,21 +180,25 @@ export const createDesignFacts = (
             value.verification,
             ...value.sourceFactIds
           ].every((text) => text.trim())
-        )
+        ) {
           throw new Error(
             'Calculation identities and evidence must be nonempty.'
           )
+        }
         const sourceFacts = value.sourceFactIds.map((id) => {
           const fact = facts.get(id)
-          if (!fact || fact.status !== 'valid')
+          if (!fact || fact.status !== 'valid') {
             throw new Error(
               'Calculations require a retained valid source fact.'
             )
+          }
           return fact
         })
         return { value: structuredClone(value), sourceFacts }
       })
-      for (const item of admitted) calculations.set(item.value.id, item)
+      for (const item of admitted) {
+        calculations.set(item.value.id, item)
+      }
       return {
         diagnosticOnly: true,
         calculations: [...calculations.values()].map(
@@ -219,7 +226,9 @@ export const createDesignFacts = (
       ) => void
     ) {
       const issue = operationInputIssue(input, designFactsSchema)
-      if (issue) throw new Error(issue)
+      if (issue) {
+        throw new Error(issue)
+      }
       const value = input as {
         facts?: SourceFact[]
         sourceCorrections?: {
@@ -239,18 +248,20 @@ export const createDesignFacts = (
       if (
         new Set(additions.map((fact) => fact.id)).size !== additions.length ||
         new Set(changes.map((change) => change.key)).size !== changes.length
-      )
+      ) {
         throw new Error('Fact IDs and changed dependency keys must be unique.')
+      }
       const nextFacts = new Map(facts)
       const nextVersions = new Map(versions)
       const corrections = value.sourceCorrections ?? []
       if (
         new Set(corrections.map((c) => c.factId)).size !== corrections.length ||
         corrections.some((c) => additions.some((f) => f.id === c.factId))
-      )
+      ) {
         throw new Error(
           'Source corrections require unique facts separate from fact additions.'
         )
+      }
       for (const correction of corrections) {
         const previous = nextFacts.get(correction.factId)
         if (
@@ -258,16 +269,18 @@ export const createDesignFacts = (
           previous.status !== 'valid' ||
           !correction.reason.trim() ||
           !correction.verification.trim()
-        )
+        ) {
           throw new Error(
             'Source correction requires a valid existing fact and explicit evidence and reason.'
           )
+        }
         const sources = resolveSources(correction.sources)
         if (
           isDeepStrictEqual(previous.sources, sources) &&
           previous.verification === correction.verification
-        )
+        ) {
           continue
+        }
         nextFacts.set(correction.factId, {
           ...previous,
           sources,
@@ -280,17 +293,18 @@ export const createDesignFacts = (
           !nonempty(change.evidence) ||
           !nonempty(change.version) ||
           versions.get(change.key) === change.version
-        )
+        ) {
           throw new Error(
             'A known dependency needs a changed version and concrete evidence.'
           )
+        }
         nextVersions.set(change.key, change.version)
       }
       for (const [id, fact] of nextFacts) {
         const invalidatedBy = changes.filter((change) =>
           fact.dependencies.some((dep) => dep.key === change.key)
         )
-        if (invalidatedBy.length)
+        if (invalidatedBy.length) {
           nextFacts.set(id, {
             ...fact,
             status: 'invalidated',
@@ -299,6 +313,7 @@ export const createDesignFacts = (
               ...structuredClone(invalidatedBy)
             ]
           })
+        }
       }
       for (const fact of additions) {
         if (
@@ -311,29 +326,32 @@ export const createDesignFacts = (
           ].every(nonempty) ||
           new Set(fact.dependencies.map((dep) => dep.key)).size !==
             fact.dependencies.length
-        )
+        ) {
           throw new Error(
             'Facts require nonempty evidence and unique dependencies.'
           )
+        }
         for (const dep of fact.dependencies) {
           if (
             !nonempty(dep.key) ||
             !nonempty(dep.version) ||
             (nextVersions.has(dep.key) &&
               nextVersions.get(dep.key) !== dep.version)
-          )
+          ) {
             throw new Error(
               'Fact dependency version must match the recorded current version.'
             )
+          }
           nextVersions.set(dep.key, dep.version)
         }
         const previous = nextFacts.get(fact.id)
         if (previous?.status === 'valid') {
           const { status: _status, ...old } = previous
-          if (!isDeepStrictEqual(old, fact))
+          if (!isDeepStrictEqual(old, fact)) {
             throw new Error(
               'Cannot overwrite a valid fact without an evidenced dependency change.'
             )
+          }
           continue
         }
         nextFacts.set(fact.id, { ...structuredClone(fact), status: 'valid' })

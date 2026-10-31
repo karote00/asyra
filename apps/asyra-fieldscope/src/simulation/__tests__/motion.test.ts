@@ -63,12 +63,15 @@ it('admits exact rig speed boundaries for all five joints without physical movem
   const f = setup(),
     segment = input(),
     rig = f.source.receipt.robot.rig
-  if (!rig) throw new Error('Missing fixture rig')
+  if (!rig) {
+    throw new Error('Missing fixture rig')
+  }
   segment.end = { ...rig.speeds }
   const result = f.motion.assess(f.source, segment)
   expect(result.status).toBe('admissible')
-  for (const key of Object.keys(rig.limits) as (keyof RobotJoints)[])
+  for (const key of Object.keys(rig.limits) as (keyof RobotJoints)[]) {
     expect(result.checks[key]).toEqual({ limits: 'within', speed: 'within' })
+  }
   expect(result.source).toBe(f.source)
   expect(result.work).toEqual({ joints: 5, exactComparisons: 5 })
   expect(result).not.toHaveProperty('clearance')
@@ -81,7 +84,9 @@ it('admits exact rig speed boundaries for all five joints without physical movem
 it('rejects just-over speeds and preserves exact full-stroke arithmetic beyond rounded products', () => {
   const f = setup(),
     rig = f.source.receipt.robot.rig
-  if (!rig) throw new Error('Missing rig')
+  if (!rig) {
+    throw new Error('Missing rig')
+  }
   for (const key of Object.keys(rig.speeds) as (keyof RobotJoints)[]) {
     const segment = input()
     segment.end[key] = nextUp(rig.speeds[key])
@@ -105,7 +110,9 @@ it('rejects just-over speeds and preserves exact full-stroke arithmetic beyond r
 it('uses original closed joint limits and never wraps an out-of-range angle', () => {
   const f = setup(),
     rig = f.source.receipt.robot.rig
-  if (!rig) throw new Error('Missing rig')
+  if (!rig) {
+    throw new Error('Missing rig')
+  }
   for (const key of Object.keys(rig.limits) as (keyof RobotJoints)[]) {
     const segment = input()
     segment.start[key] = rig.limits[key][0]
@@ -147,10 +154,15 @@ it('validates one detached exact schema before returning candidate evidence', ()
     segment.until = value
     expect(() => f.motion.assess(f.source, segment)).toThrow()
   }
-  for (const start of [{ lift: 0 }, { ...REST_JOINTS, extra: 0 }, new Array(5)])
+  for (const start of [
+    { lift: 0 },
+    { ...REST_JOINTS, extra: 0 },
+    new Array(5)
+  ]) {
     expect(() =>
       f.motion.assess(f.source, { ...input(), start } as JointSegmentInput)
     ).toThrow()
+  }
   const segment = input()
   let reads = 0
   Object.defineProperty(segment, 'until', {
@@ -241,7 +253,9 @@ function expectedAt(
   return [numerator[0] * duration[1], numerator[1] * duration[0]]
 }
 function adjacent(value: number, up: boolean) {
-  if (value === 0) return up ? Number.MIN_VALUE : -Number.MIN_VALUE
+  if (value === 0) {
+    return up ? Number.MIN_VALUE : -Number.MIN_VALUE
+  }
   const view = new DataView(new ArrayBuffer(8))
   view.setFloat64(0, value)
   view.setBigUint64(0, view.getBigUint64(0) + (value > 0 === up ? 1n : -1n))
@@ -304,9 +318,15 @@ it('encloses exact point-time extrema for forward reverse constant and rounded m
       }
     }
     expect(result.work.pointEvaluations).toBe(a === b ? 1 : 2)
-    if (a === b) expect(result.start).toBe(result.end)
-    if (a === 0) expect(Object.is(result.start.elbow, -0)).toBe(true)
-    if (b === 1) expect(Object.is(result.end.elbow, 0)).toBe(true)
+    if (a === b) {
+      expect(result.start).toBe(result.end)
+    }
+    if (a === 0) {
+      expect(Object.is(result.start.elbow, -0)).toBe(true)
+    }
+    if (b === 1) {
+      expect(Object.is(result.end.elbow, 0)).toBe(true)
+    }
     expect(result.work.conversions).toBeLessThanOrEqual(10)
   }
   expect(
@@ -378,8 +398,9 @@ it('rejects incomplete validity invalid windows and caller-forged admissibility'
     { ...windowFor(), queryFrom: NaN },
     { ...windowFor(), validUntil: Infinity },
     { ...windowFor(), extra: 1 }
-  ])
+  ]) {
     expect(() => f.motion.enclose(f.source, segment, request)).toThrow()
+  }
   expect(() =>
     f.motion.enclose(
       f.source,
@@ -477,8 +498,9 @@ it('profiles fixed normal and extreme point-domain requests within existing exac
       conversions = 0,
       maxBigIntBits = 0
     for (let index = 0; index < 100; index++) {
-      if (performance.now() - start > 1000 || performance.now() - all > 10000)
+      if (performance.now() - start > 1000 || performance.now() - all > 10000) {
         throw new Error('Point-domain profile guard exceeded')
+      }
       const a = segment.until * (index / 200),
         b = segment.until * ((index + 1) / 200)
       const result = f.motion.enclose(f.source, segment, {

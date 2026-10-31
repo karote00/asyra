@@ -175,17 +175,26 @@ export function transformRobotPoint(
   return numericOperations.transform(transform, value)
 }
 function bodyFor(id: string): RobotBody {
-  if (id === 'lift-carriage') return 'lift'
-  if (id === 'shoulder') return 'yaw'
-  if (id === 'upper-arm') return 'shoulder'
-  if (id === 'elbow' || id === 'forearm') return 'elbow'
+  if (id === 'lift-carriage') {
+    return 'lift'
+  }
+  if (id === 'shoulder') {
+    return 'yaw'
+  }
+  if (id === 'upper-arm') {
+    return 'shoulder'
+  }
+  if (id === 'elbow' || id === 'forearm') {
+    return 'elbow'
+  }
   if (
     id === 'wrist' ||
     id === 'tool-guard' ||
     id.startsWith('jaw-') ||
     id.startsWith('pad-')
-  )
+  ) {
     return 'wrist'
+  }
   return 'fixed'
 }
 function admitPart(part: RobotPart): Readonly<RobotPart> {
@@ -201,8 +210,9 @@ function admitPart(part: RobotPart): Readonly<RobotPart> {
     Object.isFrozen(shape.indices) &&
     (!shape.colors || Object.isFrozen(shape.colors)) &&
     (!shape.uvs || Object.isFrozen(shape.uvs))
-  )
+  ) {
     return part
+  }
   return Object.freeze({
     ...part,
     regions,
@@ -226,14 +236,16 @@ export function prepareRobotRig(
       (value) => Number.isFinite(value) && value > 0
     ) ||
     !['cucumber', 'tomato'].includes(tool)
-  )
+  ) {
     throw new Error('Invalid robot definition')
+  }
   const r = Math.min(length * 0.13, height * 0.12)
   if (
     height * 0.67 - 0.1 - 0.06 < r + 0.2 ||
     height * 0.67 + 0.1 + 0.06 > height - 0.045
-  )
+  ) {
     throw new UnsupportedRobotRigError('Unsupported lift stroke')
+  }
   const frames = robotRestFrames(definition)
   Object.values(frames).forEach(Object.freeze)
   Object.freeze(frames)
@@ -251,8 +263,9 @@ export function prepareRobotRig(
       'pad--1',
       'pad-1'
     ].every((id) => ids.has(id))
-  )
+  ) {
     throw new Error('Incomplete robot source')
+  }
   return Object.freeze({
     parts: Object.freeze(
       parts.map((part) =>
@@ -271,8 +284,9 @@ export function prepareRobotRig(
   })
 }
 export function evaluateRobotPose(rig: RobotRig, input: RobotJoints) {
-  if (!input || typeof input !== 'object')
+  if (!input || typeof input !== 'object') {
     throw new Error('Invalid robot joints')
+  }
   for (const key of Object.keys(ROBOT_JOINT_LIMITS) as (keyof RobotJoints)[]) {
     const value = input[key],
       [min, max] = ROBOT_JOINT_LIMITS[key]
@@ -281,8 +295,9 @@ export function evaluateRobotPose(rig: RobotRig, input: RobotJoints) {
       !Number.isFinite(value) ||
       value < min ||
       value > max
-    )
+    ) {
       throw new Error(`Invalid robot joint: ${key}`)
+    }
   }
   const joints = Object.freeze({ ...input })
   return Object.freeze({
@@ -342,8 +357,9 @@ export function evaluateRobotDomains<T>(
     !domains ||
     typeof domains !== 'object' ||
     Object.keys(domains).length !== keys.length
-  )
+  ) {
     throw new Error('Invalid robot joint domains')
+  }
   for (const key of keys) {
     const domain = domains[key],
       [min, max] = rig.limits[key]
@@ -358,8 +374,9 @@ export function evaluateRobotDomains<T>(
       domain[0] > domain[1] ||
       domain[0] < min ||
       domain[1] > max
-    )
+    ) {
       throw new Error(`Invalid robot joint domain: ${key}`)
+    }
   }
   // Freeze only detached numeric domains and C-owned containers, not scalar T.
   keys.forEach((key) => Object.freeze(domains[key]))

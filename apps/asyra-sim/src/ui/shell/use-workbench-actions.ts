@@ -33,7 +33,9 @@ export function useWorkbenchActions({
   setStatus: (value: string) => void
 }) {
   const addBody = useCallback(() => {
-    if (!runtime || !candidateId) return
+    if (!runtime || !candidateId) {
+      return
+    }
 
     const body: Body = {
       id: crypto.randomUUID(),
@@ -64,7 +66,9 @@ export function useWorkbenchActions({
 
   const updateBody = useCallback(
     (body: Body) => {
-      if (!runtime || !candidateId) return Promise.resolve()
+      if (!runtime || !candidateId) {
+        return Promise.resolve()
+      }
 
       return perform(
         () => runtime.features.edit.upsert(candidateId, body),
@@ -75,13 +79,15 @@ export function useWorkbenchActions({
   )
 
   const removeBody = useCallback(() => {
-    if (!runtime || !candidateId || !selected) return
+    if (!runtime || !candidateId || !selected) {
+      return
+    }
 
     if (
       window.confirm(
         'Delete this object and all its descendants? You can Undo this action.'
       )
-    )
+    ) {
       void perform(async (assertCurrent) => {
         await runtime.features.edit.remove(candidateId, selected.id)
 
@@ -89,11 +95,14 @@ export function useWorkbenchActions({
 
         setSelectedId(null)
       }, 'Object removed')
+    }
   }, [runtime, candidateId, selected, perform, setSelectedId])
 
   const isRunStale = useCallback(
     (run: RunRecord) => {
-      if (!runtime) return true
+      if (!runtime) {
+        return true
+      }
 
       try {
         const experiment = runtime.getExperiment(
@@ -118,12 +127,15 @@ export function useWorkbenchActions({
 
   const retainRun = useCallback(
     async (run: RunRecord) => {
-      if (!runtime || !isCurrent(runtime))
+      if (!runtime || !isCurrent(runtime)) {
         throw new Error('The document is no longer active')
+      }
 
       await runtime.features.storage.retain(run)
 
-      if (isCurrent(runtime)) setStatus('Result retained in project')
+      if (isCurrent(runtime)) {
+        setStatus('Result retained in project')
+      }
     },
     [runtime, isCurrent, setStatus]
   )
@@ -134,7 +146,7 @@ export function useWorkbenchActions({
       time: number,
       bodyIds: readonly string[]
     ) => {
-      if (runtime && isCurrent(runtime))
+      if (runtime && isCurrent(runtime)) {
         setPlayback({
           workcell: snapshot.workcell,
           joints: jointValuesAt(snapshot.trajectory, time),
@@ -142,6 +154,7 @@ export function useWorkbenchActions({
           historical: true,
           bodyIds
         })
+      }
     },
     [runtime, isCurrent, setPlayback]
   )
@@ -168,14 +181,18 @@ export function useWorkbenchActions({
   )
 
   const duplicateCandidate = useCallback(() => {
-    if (!runtime || !candidateId) return
+    if (!runtime || !candidateId) {
+      return
+    }
 
     const name = window.prompt(
       'Name the independent candidate. Copies committed model and experiment inputs only; unsaved drafts and historical runs are not copied.',
       'New candidate'
     )
 
-    if (name === null) return
+    if (name === null) {
+      return
+    }
 
     void perform(async (assertCurrent) => {
       const id = await runtime.features.edit.duplicateCandidate(

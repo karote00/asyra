@@ -196,10 +196,11 @@ it('enforces half-open observation validity and rejects wrong revisions or nonfi
     ).toThrow()
     expect(query).not.toHaveBeenCalled()
   }
-  for (const time of [-1, NaN, Infinity, 100])
+  for (const time of [-1, NaN, Infinity, 100]) {
     expect(() =>
       admitDispatch(mission, evidence(), time, owners, clear)
     ).toThrow()
+  }
   const input = evidence()
   input.validUntil = 21
   expect(admitDispatch(mission, input, 0, owners, clear).accepted).toBe(true)
@@ -236,10 +237,14 @@ it('holds incomplete evidence, insufficient budgets and unsupported posture inst
       input.crate.cultivar = 'tomato'
     },
     (input: DispatchEvidence) => {
-      if (input.crate.load) input.crate.load.latched = false
+      if (input.crate.load) {
+        input.crate.load.latched = false
+      }
     },
     (input: DispatchEvidence) => {
-      if (input.crate.load) input.crate.load.fill = 1
+      if (input.crate.load) {
+        input.crate.load.fill = 1
+      }
     }
   ]) {
     const input = evidence()
@@ -278,10 +283,11 @@ it('requires complete exact request coverage and never trusts an unrelated clear
       clear(requests)[0],
       clear(requests)[0]
     ]
-  ])
+  ]) {
     expect(admitDispatch(mission, evidence(), 0, owners, query).accepted).toBe(
       false
     )
+  }
   expect(admitDispatch(mission, evidence(), 0, owners, clear)).toEqual(
     admitDispatch(mission, evidence(), 0, owners, clear)
   )
@@ -297,8 +303,9 @@ it('rejects forged prepared missions', async () => {
     { ...mission, report: { ...mission.report, route: null } },
     { ...mission, scene: { ...mission.scene } },
     { ...mission, robot: { ...mission.robot } }
-  ])
+  ]) {
     expect(() => admitDispatch(forged, evidence(), 0, owners, query)).toThrow()
+  }
   expect(query).not.toHaveBeenCalled()
 })
 

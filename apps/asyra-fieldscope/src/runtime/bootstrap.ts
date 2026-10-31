@@ -83,7 +83,9 @@ export async function bootstrap(
   const speedListeners = new Set<() => void>()
   const listeners = new Set<() => void>()
   const assertLive = () => {
-    if (closed) throw new Error('Runtime is closed')
+    if (closed) {
+      throw new Error('Runtime is closed')
+    }
   }
   applyPreset(core, { profile: PresetProfiles.CUSTOM, defaults: [] })
   core.setRenderEngineProvider(provider)
@@ -161,15 +163,18 @@ export async function bootstrap(
       if (outermost) {
         const shouldUpdate = completed && selectedRobotUpdatePending
         selectedRobotUpdatePending = false
-        if (shouldUpdate) projectSelectedRobot()
+        if (shouldUpdate) {
+          projectSelectedRobot()
+        }
       }
     }
   }
   const robot = createRobotWorkspace(
     () => config,
     () => {
-      if (walkingOperating.getSelection().mode === 'legacy-view')
+      if (walkingOperating.getSelection().mode === 'legacy-view') {
         updateSelectedRobot()
+      }
     }
   )
   const sceneDemandWorkspace = createSceneDemandWorkspace(
@@ -183,8 +188,9 @@ export async function bootstrap(
   )
   const walkingObservation = createWalkingObservationWorkspace({
     prepareObservationSpace: (demand) => {
-      if (!sceneDemandWorkspace.isCurrent(demand))
+      if (!sceneDemandWorkspace.isCurrent(demand)) {
         throw new Error('Stale walking observation demand')
+      }
       return sceneDemandWorkspace.prepareObservationSpace()
     },
     isCurrentObservationSpace: sceneDemandWorkspace.isCurrentObservationSpace,
@@ -227,7 +233,9 @@ export async function bootstrap(
     const property = propertyId
       ? getPropertyComponentAccessor().getPropertyById(propertyId)
       : undefined
-    if (!property) throw new Error('Missing canonical farm configuration')
+    if (!property) {
+      throw new Error('Missing canonical farm configuration')
+    }
     return validateConfiguration(
       (property.save() as unknown as { settings: FarmConfiguration }).settings
     )
@@ -268,7 +276,9 @@ export async function bootstrap(
             () => core.getSystemContextSnapshot(),
             () => {
               assertLive()
-              if (JSON.stringify(next) === JSON.stringify(config)) return
+              if (JSON.stringify(next) === JSON.stringify(config)) {
+                return
+              }
               const prepared = buildSiteMeshes(next, geometry)
               runTransaction(() =>
                 core.updateElementProperties([
@@ -301,12 +311,16 @@ export async function bootstrap(
           () => core.getSystemContextSnapshot(),
           async () => {
             assertLive()
-            if (redo) await redoWithRenderPolicy({ mode: 'atomic' })
-            else await undoWithRenderPolicy({ mode: 'atomic' })
+            if (redo) {
+              await redoWithRenderPolicy({ mode: 'atomic' })
+            } else {
+              await undoWithRenderPolicy({ mode: 'atomic' })
+            }
             runSceneComposition(() => {
               const next = readConfiguration()
-              if (JSON.stringify(next) !== JSON.stringify(config))
+              if (JSON.stringify(next) !== JSON.stringify(config)) {
                 publishConfiguration(next, undefined, false)
+              }
               robot.refresh()
               const previousDemand = sceneDemandWorkspace.get()
               sceneDemandWorkspace.refresh(config, geometry.getScene())
@@ -314,8 +328,9 @@ export async function bootstrap(
               if (
                 !selectionChanged &&
                 sceneDemandWorkspace.get() !== previousDemand
-              )
+              ) {
                 walkingOperating.refreshDemand()
+              }
               updateSelectedRobot()
             })
           },
@@ -337,7 +352,9 @@ export async function bootstrap(
           () => {
             assertLive()
             const current = core.getSystemProperty<ViewState>(RuntimeKeys.VIEW)
-            if (!current) throw new Error('Missing view state')
+            if (!current) {
+              throw new Error('Missing view state')
+            }
             const next = {
               ...current,
               ...(typeof patch === 'function' ? patch(current) : patch)
@@ -346,22 +363,25 @@ export async function bootstrap(
               !Number.isFinite(next.filmOpacity) ||
               next.filmOpacity < 0 ||
               next.filmOpacity > 0.65
-            )
+            ) {
               throw new Error('Film opacity must be between 0 and 0.65')
+            }
             if (
               !['overview', 'top', 'front', 'inside', 'joint'].includes(
                 next.camera
               )
-            )
+            ) {
               throw new Error('Unknown camera preset')
+            }
             if (
               Object.keys(next.layers).length !==
                 Object.keys(INITIAL_LAYERS).length ||
               Object.keys(INITIAL_LAYERS).some(
                 (key) => typeof next.layers[key as LayerId] !== 'boolean'
               )
-            )
+            ) {
               throw new Error('Invalid display layers')
+            }
             core.setSystemProperty(RuntimeKeys.VIEW, next)
           },
           FeatureNames.VIEW
@@ -388,9 +408,12 @@ export async function bootstrap(
       },
       setMovementSpeed: (speed: number) => {
         assertLive()
-        if (!Number.isFinite(speed) || speed < 0.01 || speed > 60)
+        if (!Number.isFinite(speed) || speed < 0.01 || speed > 60) {
           throw new Error('Movement speed must be between 0.01 and 60 m/s')
-        if (speed === movementSpeed) return
+        }
+        if (speed === movementSpeed) {
+          return
+        }
         movementSpeed = speed
         speedListeners.forEach((listener) => listener())
       },
@@ -400,7 +423,9 @@ export async function bootstrap(
       },
       orbit: (dx: number, dy: number) => {
         assertLive()
-        if (!Number.isFinite(dx) || !Number.isFinite(dy)) return
+        if (!Number.isFinite(dx) || !Number.isFinite(dy)) {
+          return
+        }
         publishCamera(
           orbitSpatialCamera(camera, -dx * 0.006, -dy * 0.006, {
             minPolar: 0.02,
@@ -410,7 +435,9 @@ export async function bootstrap(
       },
       dolly: (delta: number) => {
         assertLive()
-        if (!Number.isFinite(delta)) return
+        if (!Number.isFinite(delta)) {
+          return
+        }
         const current = readZoom(camera)
         const next = Math.max(
           1,
@@ -428,7 +455,9 @@ export async function bootstrap(
       },
       zoom: (delta: number) => {
         assertLive()
-        if (!Number.isFinite(delta)) return
+        if (!Number.isFinite(delta)) {
+          return
+        }
         const current = readZoom(camera)
         const next = Math.max(
           1,
@@ -489,7 +518,9 @@ export async function bootstrap(
         assertLive()
         const walking = walkingOperating.get()
         if (walking.status !== 'legacy-view') {
-          if (!walking.envelope) return
+          if (!walking.envelope) {
+            return
+          }
           const bounds = walking.envelope.bounds
           const target = bounds.min.map(
             (value, index) => (value + bounds.max[index]) / 2
@@ -532,7 +563,9 @@ export async function bootstrap(
   const subscription = core
     .getSystemPropertyObservable<ViewState>(RuntimeKeys.VIEW)
     ?.subscribe((next) => {
-      if (closed) return
+      if (closed) {
+        return
+      }
       const previous = view
       view = next
       if (previous.camera !== next.camera) {
@@ -543,7 +576,9 @@ export async function bootstrap(
       listeners.forEach((listener) => listener())
     })
   const dispose = () => {
-    if (disposePromise) return disposePromise
+    if (disposePromise) {
+      return disposePromise
+    }
     closed = true
     sceneDemandWorkspace.close()
     walkingLocalAction.close()
@@ -651,8 +686,9 @@ export async function bootstrap(
         const previous = sceneDemandWorkspace.get()
         const operation = sceneDemandWorkspace.setConfiguration(next)
         return operation.then(() => {
-          if (sceneDemandWorkspace.get() !== previous)
+          if (sceneDemandWorkspace.get() !== previous) {
             walkingOperating.refreshDemand()
+          }
         })
       },
       getSceneDemand: sceneDemandWorkspace.get,

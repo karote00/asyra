@@ -36,14 +36,18 @@ it('admits detached snapshots only against the exact installed method declaratio
   expect(Object.isFrozen(admitted.workcell.bodies)).toBe(true)
   expect(INSTALLED_METHOD_CATALOG.descriptors).toHaveLength(3)
   const changed = structuredClone(input)
-  if (!changed.methodDescriptor) throw new Error('Missing descriptor')
+  if (!changed.methodDescriptor) {
+    throw new Error('Missing descriptor')
+  }
   changed.methodDescriptor.manifest.resources =
     'Different resources under an unchanged version'
   expect(() =>
     admitSnapshotExecution(changed, INSTALLED_METHOD_CATALOG)
   ).toThrow('declaration')
   const reordered = structuredClone(input)
-  if (!reordered.methodDescriptor) throw new Error('Missing descriptor')
+  if (!reordered.methodDescriptor) {
+    throw new Error('Missing descriptor')
+  }
   reordered.methodDescriptor.manifest = Object.fromEntries(
     Object.entries(reordered.methodDescriptor.manifest).reverse()
   ) as typeof reordered.methodDescriptor.manifest

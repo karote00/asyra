@@ -543,7 +543,9 @@ describe('Fill property reuse', () => {
   })
   it('rejects a source-backed row without silently dropping its overrides', () => {
     const read = mocks.readElementPropertyTargets.getMockImplementation()
-    if (!read) throw new Error('Missing target read fixture')
+    if (!read) {
+      throw new Error('Missing target read fixture')
+    }
     mocks.readElementPropertyTargets.mockImplementation((targets) =>
       read(targets).map((view, i) =>
         targets[i].path.length
@@ -614,7 +616,9 @@ it('delivers actual primary-color owner outcomes through registered action and h
     }),
     { observe: () => () => undefined, resolve: () => 'live' }
   ).find((entry) => entry.name === 'api_fill_updatePrimaryFillColors')
-  if (!action) throw new Error('Missing primary Fill action')
+  if (!action) {
+    throw new Error('Missing primary Fill action')
+  }
   const context = {
     signal: new AbortController().signal,
     runMutation: async <T>(write: () => T) => write()

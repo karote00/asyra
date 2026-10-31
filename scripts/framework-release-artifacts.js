@@ -281,8 +281,9 @@ export function recordFrameworkGuidance({
     consumer.status !== 'READY' ||
     expectedConsumerPhases.some((phase) => !consumer.phases?.includes(phase)) ||
     consumer.packages?.length !== guidance.deliveries.length
-  )
+  ) {
     throw new Error('Registry consumer verification is missing or incomplete')
+  }
   const records = guidance.deliveries.map(({ id, artifact }) => ({
     artifact,
     current: registryRecord(repositoryRoot, id, runCommand)
@@ -298,12 +299,13 @@ export function recordFrameworkGuidance({
           pkg.resolution === 'npm' &&
           pkg.checksum
       )
-    )
+    ) {
       throw new Error(
         'Framework registry or consumer evidence does not match the candidate'
       )
+    }
   }
-  for (const { artifact } of records)
+  for (const { artifact } of records) {
     recordGuidanceResult(
       path.join(repositoryRoot, 'tmp/framework-release-guidance-result.json'),
       guidance,
@@ -316,6 +318,7 @@ export function recordFrameworkGuidance({
           'tmp/framework-release-evidence/registry-only-consumer.json'
       }
     )
+  }
 }
 
 const isDirectExecution =

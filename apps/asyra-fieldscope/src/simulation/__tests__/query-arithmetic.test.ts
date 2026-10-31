@@ -56,7 +56,7 @@ it('encloses exact arithmetic across normal, subnormal and extreme finite values
     2 ** -1022,
     1e308
   ]
-  for (const a of values)
+  for (const a of values) {
     for (const b of values) {
       const [an, ad] = rational(a),
         [bn, bd] = rational(b)
@@ -67,9 +67,11 @@ it('encloses exact arithmetic across normal, subnormal and extreme finite values
         ...(b
           ? [[divide(interval(a), interval(b)), an * bd, ad * bn] as const]
           : [])
-      ] as const)
+      ] as const) {
         encloses(result.low, result.high, n, d)
+      }
     }
+  }
 })
 
 it('retains generically exact operations and encloses non-perfect square roots', () => {
@@ -79,8 +81,9 @@ it('retains generically exact operations and encloses non-perfect square roots',
     multiply(interval(0.625), interval(8)),
     divide(interval(10), interval(2)),
     squareRoot(interval(25))
-  ])
+  ]) {
     expect(result).toEqual({ low: 5, high: 5 })
+  }
   for (const value of [0.1, 2, 3, Number.MIN_VALUE, 1e308]) {
     const result = squareRoot(interval(value))
     const [n, d] = rational(value),
@@ -130,7 +133,9 @@ it('shares exactly one scalar implementation through the supported query facade'
     [...exports, 'roundFraction'].sort()
   )
   expect(Object.keys(facade).sort()).toEqual([...exports].sort())
-  for (const name of exports) expect(facade[name]).toBe(common[name])
+  for (const name of exports) {
+    expect(facade[name]).toBe(common[name])
+  }
   expect(Object.is(common.interval(-0).low, -0)).toBe(true)
   expect(
     common.add(

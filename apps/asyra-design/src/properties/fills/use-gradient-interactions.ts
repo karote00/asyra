@@ -70,7 +70,9 @@ export const useGradientInteractions = ({
 
     // Find if a stop was re-added (e.g. Redo) or added
     if (gradient.gradientStops.length > prevStops.length) {
-      if (isDraggingRef.current) return
+      if (isDraggingRef.current) {
+        return
+      }
 
       // Find the first index where they differ or the first added index
       let addedIndex = -1

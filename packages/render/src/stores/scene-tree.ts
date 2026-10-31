@@ -856,7 +856,9 @@ class RenderSceneTree {
 
   reload() {
     this.clearProjection()
-    if (!sceneTree.currentWorkspace) return
+    if (!sceneTree.currentWorkspace) {
+      return
+    }
 
     const currentWorkspaceData =
       sceneTree.currentWorkspace.save() as WorkspaceRawData
@@ -1636,11 +1638,14 @@ class RenderSceneTree {
   ) {
     const entry = this.computedDataMirror.get(elementId)
     const before = entry?.rawDataSnapshot.props
-    if (!isRecord(before)) return this.resyncElement(elementId)
+    if (!isRecord(before)) {
+      return this.resyncElement(elementId)
+    }
     const after = { ...before }
     for (const change of changes) {
-      if (after[change.key] !== change.before)
+      if (after[change.key] !== change.before) {
         return this.resyncElement(elementId)
+      }
       after[change.key] = change.after
     }
     return this.updateElementBatch(elementId, [
@@ -1816,7 +1821,9 @@ class RenderSceneTree {
 
     const generation = this.runtimeGeneration
     schedule(() => {
-      if (generation !== this.runtimeGeneration) return
+      if (generation !== this.runtimeGeneration) {
+        return
+      }
       this.flushPendingChanges()
     })
   }
@@ -1995,7 +2002,9 @@ const installPendingRenderLayer = (store: RenderSceneTree) => {
     typeof renderWithLifecycle.registerTeardownCleanup === 'function'
   ) {
     renderWithLifecycle.registerTeardownCleanup(() => {
-      if (token !== pendingRenderRuntimeToken) return
+      if (token !== pendingRenderRuntimeToken) {
+        return
+      }
       activeRenderSceneTree?.clearProjection()
     })
     pendingRenderTeardownInstalled = true

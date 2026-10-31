@@ -23,12 +23,17 @@ export function validParameterValues(
   schema: MethodParameterSchema,
   input: unknown
 ): boolean {
-  if (!hasExactOwnKeys(input, Object.keys(schema))) return false
+  if (!hasExactOwnKeys(input, Object.keys(schema))) {
+    return false
+  }
   return Object.entries(schema).every(([key, field]) => {
     const value = input[key]
-    if (field.kind === 'boolean') return typeof value === 'boolean'
-    if (field.kind === 'enum')
+    if (field.kind === 'boolean') {
+      return typeof value === 'boolean'
+    }
+    if (field.kind === 'enum') {
       return typeof value === 'string' && field.values.includes(value)
+    }
     return (
       typeof value === 'number' &&
       Number.isFinite(value) &&
@@ -52,16 +57,18 @@ function validateParameterSchema(
   if (
     !isPlainRecord(input) ||
     Object.keys(input).length > METHOD_CATALOG_LIMITS.parameters
-  )
+  ) {
     throw new Error('Invalid method parameter schema')
+  }
   for (const [key, field] of Object.entries(input)) {
     if (
       !validIdentifier(key) ||
       ['__proto__', 'constructor', 'prototype'].includes(key) ||
       !isPlainRecord(field) ||
       !text(field.label, 100)
-    )
+    ) {
       throw new Error('Invalid method parameter declaration')
+    }
     if (field.kind === 'number') {
       if (
         !hasExactOwnKeys(field, [
@@ -78,11 +85,13 @@ function validateParameterSchema(
         typeof field.max !== 'number' ||
         !Number.isFinite(field.max) ||
         field.min > field.max
-      )
+      ) {
         throw new Error('Invalid numeric method parameter')
+      }
     } else if (field.kind === 'boolean') {
-      if (!hasExactOwnKeys(field, ['kind', 'label', 'default']))
+      if (!hasExactOwnKeys(field, ['kind', 'label', 'default'])) {
         throw new Error('Invalid boolean method parameter')
+      }
     } else if (field.kind === 'enum') {
       if (
         !hasExactOwnKeys(field, ['kind', 'label', 'values', 'default']) ||
@@ -93,13 +102,17 @@ function validateParameterSchema(
           text(value, METHOD_CATALOG_LIMITS.scalarText)
         ) ||
         new Set(field.values).size !== field.values.length
-      )
+      ) {
         throw new Error('Invalid enum method parameter')
-    } else throw new Error('Unsupported method parameter kind')
+      }
+    } else {
+      throw new Error('Unsupported method parameter kind')
+    }
   }
   const schema = input as MethodParameterSchema
-  if (!validParameterValues(schema, defaultMethodParameters(schema)))
+  if (!validParameterValues(schema, defaultMethodParameters(schema))) {
     throw new Error('Invalid method parameter default')
+  }
 }
 
 export function validateInstalledDescriptor(
@@ -139,8 +152,9 @@ export function validateInstalledDescriptor(
     (optionalWarning.length &&
       (!Number.isSafeInteger(input.warningWorkUnits) ||
         (input.warningWorkUnits as number) < 1))
-  )
+  ) {
     throw new Error('Invalid installed method descriptor')
+  }
   const manifest = input.manifest
   if (
     !hasExactOwnKeys(manifest, [
@@ -190,7 +204,8 @@ export function validateInstalledDescriptor(
       manifest.validation.status as string
     ) ||
     !text(manifest.validation.evidence)
-  )
+  ) {
     throw new Error('Invalid or incompatible method manifest')
+  }
   validateParameterSchema(input.parameterSchema)
 }

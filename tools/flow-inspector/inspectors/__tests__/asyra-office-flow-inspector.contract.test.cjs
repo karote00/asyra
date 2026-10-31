@@ -21,16 +21,16 @@ test('Office static architecture retains one owner per artifact and complete han
       'implementationBoundary',
       'specRefs'
     ])
-      assert.ok(step[key].length, step.id + ' ' + key)
+      {assert.ok(step[key].length, step.id + ' ' + key)}
     assert.ok(steps.has(step.failureOwnerStepId))
     for (const id of [...step.inputs, ...step.outputs].filter((id) =>
       id.startsWith('artifact:')
     ))
-      assert.ok(artifacts.has(id), id)
+      {assert.ok(artifacts.has(id), id)}
     for (const ref of step.specRefs)
-      assert.ok(
+      {assert.ok(
         fs.existsSync(path.resolve(__dirname, '../../../..', ref.split('#')[0]))
-      )
+      )}
   }
   for (const artifact of artifacts.values()) {
     assert.ok(steps.get(artifact.ownerStepId).outputs.includes(artifact.id))

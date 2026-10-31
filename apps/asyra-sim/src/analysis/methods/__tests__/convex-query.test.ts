@@ -71,7 +71,7 @@ describe('convex distance certificates', () => {
     expect(result.upper).toBeGreaterThanOrEqual(9.9999)
     expect(result.upper - result.lower).toBeLessThan(1e-6)
   })
-  for (let a = 0; a < 3; a++)
+  for (let a = 0; a < 3; a++) {
     for (let b = a; b < 3; b++) {
       const ga = geometries[a],
         gb = geometries[b]
@@ -113,6 +113,7 @@ describe('convex distance certificates', () => {
         expect(touching.upper).toBeLessThan(1e-5)
       })
     }
+  }
   it('bounds an independent sphere diagonal and capsule endpoint distance', () => {
     const sphere = { kind: 'sphere', radius: 0.5 } as const
     const diagonal = convexDistance(

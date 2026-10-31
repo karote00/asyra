@@ -14,7 +14,9 @@ import {
 } from './source-geometry-oracle'
 
 const required = <T>(value: T | undefined): T => {
-  if (value === undefined) throw new Error('Missing source product')
+  if (value === undefined) {
+    throw new Error('Missing source product')
+  }
   return value
 }
 
@@ -82,8 +84,9 @@ function admitFrozenSourceFiles(
   bytesByPath: ReadonlyMap<string, Uint8Array>
 ): FrozenSourceManifest {
   const manifestBytes = required(bytesByPath.get('manifest.json'))
-  if (sha256(manifestBytes) !== FROZEN_SOURCE_MANIFEST_SHA256)
+  if (sha256(manifestBytes) !== FROZEN_SOURCE_MANIFEST_SHA256) {
     throw new Error('Frozen source manifest digest mismatch')
+  }
   const manifest = JSON.parse(
     Buffer.from(manifestBytes).toString('utf8')
   ) as FrozenSourceManifest
@@ -99,8 +102,9 @@ function admitFrozenSourceFiles(
     manifest.historicalDarwinDiagnostics.runtime.platform !== 'darwin' ||
     manifest.historicalDarwinDiagnostics.runtime.node !== 'v24.13.0' ||
     manifest.historicalDarwinDiagnostics.snapshotExports.length !== 2
-  )
+  ) {
     throw new Error('Frozen source manifest identity mismatch')
+  }
   for (const [index, path] of FROZEN_SOURCE_FILES.entries()) {
     const file = manifest.files[index]
     if (
@@ -108,8 +112,9 @@ function admitFrozenSourceFiles(
       file.sourcePath !== `apps/fieldscope/src/domain/${path}` ||
       !/^[0-9a-f]{40}$/.test(file.gitBlob) ||
       sha256(required(bytesByPath.get(path))) !== file.sha256
-    )
+    ) {
       throw new Error(`Frozen source file digest mismatch: ${path}`)
+    }
   }
   if (
     !manifest.historicalDarwinDiagnostics.snapshotExports[0].includes(
@@ -118,8 +123,9 @@ function admitFrozenSourceFiles(
     !manifest.historicalDarwinDiagnostics.snapshotExports[1].includes(
       'preserves every source buffer outside cucumber stems 1'
     )
-  )
+  ) {
     throw new Error('Frozen source diagnostic history mismatch')
+  }
   return manifest
 }
 
@@ -175,24 +181,33 @@ function firstDifference(
   right: unknown,
   path = 'source'
 ): string | null {
-  if (Object.is(left, right)) return null
+  if (Object.is(left, right)) {
+    return null
+  }
   if (
     left === null ||
     right === null ||
     typeof left !== 'object' ||
     typeof right !== 'object'
-  )
+  ) {
     return path
+  }
   if (Array.isArray(left) || Array.isArray(right)) {
-    if (!Array.isArray(left) || !Array.isArray(right)) return path
-    if (left.length !== right.length) return `${path}.length`
+    if (!Array.isArray(left) || !Array.isArray(right)) {
+      return path
+    }
+    if (left.length !== right.length) {
+      return `${path}.length`
+    }
     for (let index = 0; index < left.length; index++) {
       const difference = firstDifference(
         left[index],
         right[index],
         `${path}[${index}]`
       )
-      if (difference) return difference
+      if (difference) {
+        return difference
+      }
     }
     return null
   }
@@ -203,22 +218,27 @@ function firstDifference(
   if (
     leftKeys.length !== rightKeys.length ||
     leftKeys.some((key, index) => key !== rightKeys[index])
-  )
+  ) {
     return `${path}.keys`
+  }
   for (const key of leftKeys) {
     const difference = firstDifference(
       leftRecord[key],
       rightRecord[key],
       `${path}.${key}`
     )
-    if (difference) return difference
+    if (difference) {
+      return difference
+    }
   }
   return null
 }
 
 const expectExactValue = (left: unknown, right: unknown, path: string) => {
   const difference = firstDifference(left, right, path)
-  if (difference) throw new Error(`Frozen source mismatch at ${difference}`)
+  if (difference) {
+    throw new Error(`Frozen source mismatch at ${difference}`)
+  }
 }
 
 function retainedStemTriangles(
@@ -243,9 +263,10 @@ function retainedStemTriangles(
   const excluded = [...pedicelRanges, ...pedicelHairs]
   const patchesByTriangle = new Map<number, typeof patches>()
   for (const patch of patches) {
-    if (patch.role === 'plant-pedicel' || patch.role === 'retained-pedicel')
+    if (patch.role === 'plant-pedicel' || patch.role === 'retained-pedicel') {
       continue
-    for (const range of patch.source.ranges)
+    }
+    for (const range of patch.source.ranges) {
       for (
         let index = range.indexStart;
         index < range.indexStart + range.indexCount;
@@ -254,6 +275,7 @@ function retainedStemTriangles(
         const owners = patchesByTriangle.get(index) ?? []
         patchesByTriangle.set(index, [...owners, patch])
       }
+    }
   }
   let regionIndex = 0
   let partitionIndex = 0
@@ -264,10 +286,15 @@ function retainedStemTriangles(
     patches: (typeof patches)[number][]
   }[] = []
   for (let index = 0; index < shape.indices.length; index += 3) {
-    if (excluded.some((range) => includesIndex(range, index))) continue
-    while (!includesIndex(required(regions[regionIndex]), index)) regionIndex++
-    while (!includesIndex(required(partitions[partitionIndex]), index))
+    if (excluded.some((range) => includesIndex(range, index))) {
+      continue
+    }
+    while (!includesIndex(required(regions[regionIndex]), index)) {
+      regionIndex++
+    }
+    while (!includesIndex(required(partitions[partitionIndex]), index)) {
       partitionIndex++
+    }
     triangles.push({
       index,
       region: required(regions[regionIndex]),
@@ -307,10 +334,11 @@ function validateRevisionPatchIdentities(
             region.indexStart + region.indexCount ||
           range.indexStart + range.indexCount > shape.indices.length
       )
-    )
+    ) {
       throw new Error(
         `Invalid revision-local patch reference at ${path}.patches[${patchIndex}]`
       )
+    }
   }
 }
 
@@ -370,10 +398,11 @@ function compareStemShape(
         !afterPatch.source.ranges.some((range) =>
           includesIndex(range, after.index)
         )
-      )
+      ) {
         throw new Error(
           `Invalid revision-local patch reference at ${path}.triangles[${triangleIndex}].patches[${patchIndex}]`
         )
+      }
       expectExactValue(
         {
           targetFruitId: beforePatch.targetFruitId,
@@ -395,7 +424,7 @@ function compareStemShape(
         },
         `${path}.triangles[${triangleIndex}].patches[${patchIndex}]`
       )
-      if (beforePatch.id !== afterPatch.id)
+      if (beforePatch.id !== afterPatch.id) {
         identityDifferences.push({
           triangle: triangleIndex,
           baselineId: beforePatch.id,
@@ -406,6 +435,7 @@ function compareStemShape(
           baselineSourceTriangle: before.index,
           currentSourceTriangle: after.index
         })
+      }
     }
     for (let corner = 0; corner < 3; corner++) {
       const beforeVertex = baseline.shape.indices[before.index + corner]
@@ -437,12 +467,13 @@ function compareStemShape(
           `${path}.triangles[${triangleIndex}].corners[${corner}].color[${axis}]`
         )
       }
-      for (let axis = 0; axis < 2; axis++)
+      for (let axis = 0; axis < 2; axis++) {
         expectExactValue(
           baseline.shape.uvs?.[beforeVertex * 2 + axis],
           current.shape.uvs?.[afterVertex * 2 + axis],
           `${path}.triangles[${triangleIndex}].corners[${corner}].uv[${axis}]`
         )
+      }
     }
   }
 }
@@ -561,7 +592,9 @@ function expectExactCropSource(
           `${path}.distant`,
           identityDifferences
         )
-      } else expectExactValue(beforePart, afterPart, path)
+      } else {
+        expectExactValue(beforePart, afterPart, path)
+      }
     }
   }
   return identityDifferences
@@ -721,8 +754,9 @@ it('provides an actual shared cucumber source ring between plant and retained pe
     for (const fruit of model.fruits) {
       const cut = fruit.cutSite
       expect(cut?.kind).toBe('synthetic-source-boundary')
-      if (cut?.kind !== 'synthetic-source-boundary')
+      if (cut?.kind !== 'synthetic-source-boundary') {
         throw new Error('Missing cucumber source cut ring')
+      }
       const plant = required(
         stems.patches.find((patch) => patch.id === cut.boundary.plantPatchId)
       )
@@ -780,7 +814,7 @@ it('provides an actual shared cucumber source ring between plant and retained pe
       }
       for (const start of [ringStart - 8, ringStart, ringStart + 8]) {
         const center = centroid(start)
-        for (let index = 0; index < 8; index++)
+        for (let index = 0; index < 8; index++) {
           expect(
             Math.hypot(
               ...center.map(
@@ -789,6 +823,7 @@ it('provides an actual shared cucumber source ring between plant and retained pe
               )
             )
           ).toBeCloseTo(0.0009, 12)
+        }
       }
       expect(cut.sourceAssumptions).toEqual(DEFAULT_CROP_SOURCE_ASSUMPTIONS)
       expect(Object.isFrozen(cut.sourceAssumptions)).toBe(true)
@@ -810,8 +845,9 @@ it('captures each source assumption once before validating', () => {
   const generated = createCropModels({ netTop: 3, netBottom: 0.45 }, source)
   expect(reads).toBe(1)
   const cut = generated[0].fruits[0].cutSite
-  if (cut?.kind !== 'synthetic-source-boundary')
+  if (cut?.kind !== 'synthetic-source-boundary') {
     throw new Error('Missing captured source')
+  }
   expect(cut.sourceAssumptions?.cucumberCutSite.fraction).toBe(0.5)
   const surface = vi.spyOn(fruitSource, 'appendFruitSurface')
   try {
@@ -847,15 +883,17 @@ it('owns synthetic cut assumptions once per source generation and rejects collap
     .filter((model) => model.species === 'cucumber-1914')
     .flatMap((model) => model.fruits.map((fruit) => fruit.cutSite))
   const first = cuts[0]
-  if (first?.kind !== 'synthetic-source-boundary')
+  if (first?.kind !== 'synthetic-source-boundary') {
     throw new Error('Missing assumption source')
+  }
   const admitted = required(first.sourceAssumptions)
   expect(admitted).not.toBe(assumptions)
   expect(Object.isFrozen(admitted.cucumberCutSite)).toBe(true)
   expect(Object.isFrozen(admitted.cucumberCutSite.evidence)).toBe(true)
   for (const cut of cuts) {
-    if (cut?.kind !== 'synthetic-source-boundary')
+    if (cut?.kind !== 'synthetic-source-boundary') {
       throw new Error('Missing custom cut source')
+    }
     expect(cut.sourceAssumptions).toBe(admitted)
   }
   assumptions.cucumberCutSite.fraction = 0.75
@@ -865,14 +903,15 @@ it('owns synthetic cut assumptions once per source generation and rejects collap
     DEFAULT_CROP_SOURCE_ASSUMPTIONS.cucumberCutSite.evidence.label
   )
   const defaultCut = models[0].fruits[0].cutSite
-  if (defaultCut?.kind !== 'synthetic-source-boundary')
+  if (defaultCut?.kind !== 'synthetic-source-boundary') {
     throw new Error('Missing default cut')
+  }
   expect(defaultCut.sourceAssumptions).not.toBe(admitted)
   expect(defaultCut.position).not.toEqual(first.position)
   expect(
     digest(generated.filter((model) => model.species === 'tomato-yu-nu'))
   ).toBe(digest(models.filter((model) => model.species === 'tomato-yu-nu')))
-  for (const fraction of [0, 1, -1, NaN, Infinity, Number.MIN_VALUE])
+  for (const fraction of [0, 1, -1, NaN, Infinity, Number.MIN_VALUE]) {
     expect(() =>
       createCropModels(
         { netTop: 3, netBottom: 0.45 },
@@ -882,6 +921,7 @@ it('owns synthetic cut assumptions once per source generation and rejects collap
         }
       )
     ).toThrow()
+  }
 })
 
 it('preserves exact botanical structure and materials plus the render handoff', () => {
@@ -931,18 +971,23 @@ it('partitions every near and distant source buffer exactly once with stable fru
         [required(part.distantShape), part.distantPartitions, distantFruit]
       ] as const) {
         expect(spans).toBeDefined()
-        if (!spans) throw new Error('Missing source partitions')
+        if (!spans) {
+          throw new Error('Missing source partitions')
+        }
         let indices = 0
         const restored: number[] = []
         for (const span of spans) {
           expect(span.indexStart).toBe(indices)
           for (let i = indices; i < indices + span.indexCount; i++) {
             const sourceIndex = shape.indices[i]
-            if (sourceIndex < 0 || sourceIndex >= shape.positions.length / 3)
+            if (sourceIndex < 0 || sourceIndex >= shape.positions.length / 3) {
               throw new Error('Invalid source vertex reference')
+            }
             restored.push(sourceIndex)
           }
-          if (span.fruitId !== null) owners.add(span.fruitId)
+          if (span.fruitId !== null) {
+            owners.add(span.fruitId)
+          }
           indices += span.indexCount
         }
         expect(indices).toBe(shape.indices.length)
@@ -969,8 +1014,9 @@ it('owns cucumber spines and tomato calyx and distal pedicel with the target', (
       ).toBe(true)
       expect(owned.some((span) => span.part === 'stems')).toBe(true)
       if (model.species === 'tomato-yu-nu') {
-        if (fruit.cutSite?.kind !== 'synthetic-source-boundary')
+        if (fruit.cutSite?.kind !== 'synthetic-source-boundary') {
           throw new Error('Missing synthetic source cut boundary')
+        }
         expect(fruit.cutSite.kind).toBe('synthetic-source-boundary')
         expect(fruit.cutSite.position[1]).toBeCloseTo(
           fruit.center[1] + fruit.length / 2 + 0.009 * Math.min(1, 3 / 3)
@@ -1032,8 +1078,9 @@ it('identifies exact botanical roles without changing source triangle ownership'
             index < range.indexStart + range.indexCount;
             index += 3
           ) {
-            if (occupied.has(index))
+            if (occupied.has(index)) {
               throw new Error('Overlapping semantic source triangles')
+            }
             occupied.add(index)
             const partition = required(
               part.partitions.find(
@@ -1045,8 +1092,9 @@ it('identifies exact botanical roles without changing source triangle ownership'
             if (
               partition.fruitId !==
               (patch.owner === 'plant' ? null : patch.targetFruitId)
-            )
+            ) {
               throw new Error('Semantic source ownership mismatch')
+            }
           }
         }
       }
@@ -1074,8 +1122,9 @@ it('identifies exact botanical roles without changing source triangle ownership'
           patches.filter((patch) => patch.role === 'retained-pedicel')
         ).toHaveLength(1)
         const cut = fruit.cutSite
-        if (cut?.kind !== 'synthetic-source-boundary')
+        if (cut?.kind !== 'synthetic-source-boundary') {
           throw new Error('Missing source boundary')
+        }
         expect(cut.evidence.kind).toBe('synthetic')
         expect(Math.hypot(...cut.towardPlant)).toBeGreaterThan(0)
         const stems = required(
@@ -1183,8 +1232,8 @@ it('assigns every generated fruit surface, calyx and late hair to its source own
     let retainedHair = 0,
       retainedCalyx = 0,
       retainedSurface = 0
-    for (const model of generated)
-      for (const part of model.parts)
+    for (const model of generated) {
+      for (const part of model.parts) {
         for (const [shape, partitions] of [
           [part.shape, part.partitions],
           [required(part.distantShape), required(part.distantPartitions)]
@@ -1199,22 +1248,31 @@ it('assigns every generated fruit surface, calyx and late hair to its source own
             const owner = ownerAt(event.start)
             if (event.source !== undefined) {
               expect(owner).toBe(ownerAt(event.source))
-              if (owner) retainedHair++
+              if (owner) {
+                retainedHair++
+              }
             } else {
               expect(owner).toBeTypeOf('string')
-              if (event.kind === 'calyx') retainedCalyx++
-              else retainedSurface++
+              if (event.kind === 'calyx') {
+                retainedCalyx++
+              } else {
+                retainedSurface++
+              }
             }
             // Every source triangle in the generated detail follows that owner.
             for (
               let index = event.start;
               index < event.start + event.count;
               index += 3
-            )
-              if (ownerAt(index) !== owner)
+            ) {
+              if (ownerAt(index) !== owner) {
                 throw new Error('Partial fruit detail ownership')
+              }
+            }
           }
         }
+      }
+    }
     expect(retainedHair).toBeGreaterThan(0)
     expect(retainedCalyx).toBeGreaterThan(0)
     expect(retainedSurface).toBe(

@@ -16,10 +16,11 @@ it('compares complete model result contracts against the same owner declarations
   const complete = JSON.parse(JSON.stringify(prior))
   complete.source =
     'Deterministic complete owner schemas before model field selection; internal fields included. No model execution.'
-  for (const source of Object.keys(complete.sources))
+  for (const source of Object.keys(complete.sources)) {
     complete.sources[source] = createHash('sha256')
       .update(readFileSync(resolve(source)))
       .digest('hex')
+  }
   const cases = {
     ...prior.entries,
     vector: {
@@ -40,7 +41,7 @@ it('compares complete model result contracts against the same owner declarations
     }[] = []
     for (const baseline of [true, false]) {
       const project = vi.spyOn(contracts, 'modelToolResultSchemas')
-      if (baseline)
+      if (baseline) {
         project.mockImplementation((contract, stage) =>
           original(
             JSON.parse(JSON.stringify(contract), (key, value) =>
@@ -49,6 +50,7 @@ it('compares complete model result contracts against the same owner declarations
             stage
           )
         )
+      }
       try {
         const actions = [
           AiActionNames.APPLY_PREPARED_DESIGN,
@@ -89,7 +91,7 @@ it('compares complete model result contracts against the same owner declarations
         const resultSchema = selected.usageGuide.results
         const serialized = JSON.stringify(resultSchema)
         sizes.push(Buffer.byteLength(serialized))
-        if (baseline)
+        if (baseline) {
           complete.entries[key] = {
             query: entry.query,
             resultSchema,
@@ -98,6 +100,7 @@ it('compares complete model result contracts against the same owner declarations
               fragmented: Buffer.byteLength(JSON.stringify(serialized)) - 2
             }
           }
+        }
         expect(execute).not.toHaveBeenCalled()
         expect(serialized).toContain('settlement')
         expect(serialized).toContain('partial')
@@ -120,9 +123,10 @@ it('compares complete model result contracts against the same owner declarations
       }) + '\n'
     )
   }
-  if (process.env.TOOL_DELIVERY_COST_REPORT === '1')
+  if (process.env.TOOL_DELIVERY_COST_REPORT === '1') {
     writeFileSync(
       resolve('tmp/model-delivery-complete-baseline.json'),
       JSON.stringify(complete, null, 2) + '\n'
     )
+  }
 })

@@ -61,7 +61,9 @@ describe('outward arithmetic', () => {
         shift = 2 * re - ve
       const left = shift >= 0 ? (r * r) << BigInt(shift) : r * r,
         right = shift >= 0 ? v : v << BigInt(-shift)
-      if (left < right) return -1
+      if (left < right) {
+        return -1
+      }
       return left > right ? 1 : 0
     }
     for (const value of [Number.MIN_VALUE, Number.MIN_VALUE * 7, 1e-310]) {
@@ -87,8 +89,9 @@ describe('outward arithmetic', () => {
     expect(s[1]).toBeGreaterThanOrEqual(1)
     expect(c[0]).toBeLessThanOrEqual(0)
     expect(c[1]).toBeGreaterThanOrEqual(0)
-    for (let n = -1000; n <= 1000; n++)
+    for (let n = -1000; n <= 1000; n++) {
       check(n / 10, Math.sin(n / 10), Math.cos(n / 10))
+    }
   })
   it('encloses all phases of a wide input interval', () => {
     const [s, c] = isinCos(interval(-100, 100))

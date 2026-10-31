@@ -68,7 +68,9 @@ export const ContextMenu = ({
 
   useLayoutEffect(() => {
     const menu = menuRef.current
-    if (!menu) return
+    if (!menu) {
+      return
+    }
 
     const bounds = menu.getBoundingClientRect()
     const nextPlacement = {
@@ -145,7 +147,9 @@ export const ContextMenu = ({
       return
     }
 
-    if (enabledIndices.length === 0) return
+    if (enabledIndices.length === 0) {
+      return
+    }
 
     const activeIndex = itemRefs.current.findIndex(
       (item) => item === document.activeElement
@@ -185,7 +189,9 @@ export const ContextMenu = ({
       event.preventDefault()
       event.stopPropagation()
       const item = items[activeIndex]
-      if (item) onActivate(item.id)
+      if (item) {
+        onActivate(item.id)
+      }
     }
   }
 
@@ -215,7 +221,9 @@ export const ContextMenu = ({
               : 'cursor-default text-text-disabled'
           }`}
           onClick={() => {
-            if (item.enabled) onActivate(item.id)
+            if (item.enabled) {
+              onActivate(item.id)
+            }
           }}
         >
           <span data-context-menu-label>{item.label}</span>

@@ -38,8 +38,9 @@ it('mounted crate consumer admits only the current original source artifact', ()
     mounted
   )
   expect(admitted.load.crate.kind).toBe('mounted')
-  if (admitted.load.crate.kind !== 'mounted')
+  if (admitted.load.crate.kind !== 'mounted') {
     throw new Error('Missing mounted input')
+  }
   expect(admitted.load.crate.artifact).toBe(crate)
   expect(admitted.load.crate.artifact.geometry.parts).toHaveLength(11)
   expect(() =>

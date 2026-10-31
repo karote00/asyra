@@ -453,7 +453,9 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
 
   const handleInputChange = (value: string, index: number) => {
     const currentDef = formatDefinitions.find((d) => d.id === colorFormat)
-    if (!currentDef) return
+    if (!currentDef) {
+      return
+    }
 
     const nextDrafts = [...draftValues]
 
@@ -474,7 +476,9 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
 
   const handleInputBlur = (index: number) => {
     const currentDef = formatDefinitions.find((d) => d.id === colorFormat)
-    if (!currentDef) return
+    if (!currentDef) {
+      return
+    }
 
     if (
       showAlpha &&
@@ -505,7 +509,9 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
 
   const syncDraftsFromHsva = (current: HSVAColor) => {
     const currentDef = formatDefinitions.find((d) => d.id === colorFormat)
-    if (!currentDef) return
+    if (!currentDef) {
+      return
+    }
 
     const base = currentDef.toValues(current)
     if (showAlpha && colorFormat !== 'css') {

@@ -232,8 +232,12 @@ const createServerPreparedCompositionArtifact = (
   acceptedItems.forEach((item, index) => {
     const elementId = preparedDescriptors[index].id
     roleToElementIds[item.role] = Object.freeze([elementId])
-    if (item.role.includes('pupil')) pupilIds.push(elementId)
-    if (item.role.includes('whisker')) whiskerIds.push(elementId)
+    if (item.role.includes('pupil')) {
+      pupilIds.push(elementId)
+    }
+    if (item.role.includes('whisker')) {
+      whiskerIds.push(elementId)
+    }
   })
   if (pupilIds.length > 0) {
     roleToElementIds.pupils = Object.freeze(pupilIds)
@@ -251,7 +255,9 @@ const createServerPreparedCompositionArtifact = (
   let currentPointCount = 0
   let currentRoles: string[] = []
   const flushSlice = () => {
-    if (currentDescriptors.length === 0) return
+    if (currentDescriptors.length === 0) {
+      return
+    }
     slices.push({
       descriptors: currentDescriptors,
       pointCount: currentPointCount,

@@ -18,7 +18,9 @@ const mesh = (patch: Record<string, unknown> = {}) => {
     selectable: true,
     ...patch
   })
-  if (value.kind !== 'mesh') throw new Error('Expected mesh')
+  if (value.kind !== 'mesh') {
+    throw new Error('Expected mesh')
+  }
   return value
 }
 it('bounds primitives, empty scenes and current mesh/instance transforms using corner equivalence', () => {
@@ -48,10 +50,10 @@ it('bounds primitives, empty scenes and current mesh/instance transforms using c
       ]
     })
     const expected = new Box3()
-    for (const instance of value.instances ?? [])
-      for (const x of [-1, 1])
-        for (const y of [-2, 2])
-          for (const z of [-3, 3])
+    for (const instance of value.instances ?? []) {
+      for (const x of [-1, 1]) {
+        for (const y of [-2, 2]) {
+          for (const z of [-3, 3]) {
             expected.expandByPoint(
               new Vector3(x, y, z)
                 .multiply(new Vector3(...(instance.scale ?? [1, 1, 1])))
@@ -61,8 +63,14 @@ it('bounds primitives, empty scenes and current mesh/instance transforms using c
                 .applyQuaternion(q)
                 .add(new Vector3(...value.position))
             )
+          }
+        }
+      }
+    }
     const result = owner.measure([value])
-    if (!result) throw new Error('Missing bounds')
+    if (!result) {
+      throw new Error('Missing bounds')
+    }
     result.min.forEach((n, i) =>
       expect(n).toBeCloseTo(expected.min.toArray()[i])
     )
@@ -128,7 +136,9 @@ it('does not trust frozen caller identities, keeps results immutable and validat
   } as SpatialDescriptor & { kind: 'mesh' }
   const owner = new SpatialBoundsOwner()
   const before = owner.measure([value])
-  if (!before) throw new Error('Missing bounds')
+  if (!before) {
+    throw new Error('Missing bounds')
+  }
   expect(Object.isFrozen(before.min)).toBe(true)
   positions[3] = 8
   expect(owner.measure([value])?.max[0]).toBe(8)

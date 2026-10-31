@@ -77,7 +77,9 @@ test('Agent organization preserves artwork and each request is one durable Undo'
   await waitForAppReady(page)
   const send = async (text: string) => {
     const open = page.getByRole('button', { name: 'Open Agent' })
-    if (await open.isVisible()) await open.click()
+    if (await open.isVisible()) {
+      await open.click()
+    }
     await page.getByLabel('Message Agent').fill(text)
     requests++
     await page.getByRole('button', { name: 'Send', exact: true }).click()
@@ -156,7 +158,9 @@ test('Agent organization preserves artwork and each request is one durable Undo'
     name: 'Primary artwork',
     children: [design.keyToId.a, design.keyToId.b]
   })
-  if (!group) throw new Error('Missing group')
+  if (!group) {
+    throw new Error('Missing group')
+  }
   const grouped = await getCoreDocumentDigest(page)
   await page.getByRole('button', { name: 'Close Agent panel' }).click()
   await undo(page)

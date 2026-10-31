@@ -22,7 +22,9 @@ export function walkingObservationWorkspaceFixture(
     walkingObservationScene(kind)
   let observationSpace:
     ReturnType<typeof prepareSceneObservationSpace> | undefined
-  if (!demand.route) throw new Error('Missing route')
+  if (!demand.route) {
+    throw new Error('Missing route')
+  }
   const operating = new WalkingOperatingOwner(
     () => demand,
     (value) => value === demand
@@ -30,7 +32,9 @@ export function walkingObservationWorkspaceFixture(
   const report = operating.apply(createWalkingRuntimeSelection(definition))
   const workspace = createWalkingObservationWorkspace({
     prepareObservationSpace: (value) => {
-      if (value !== demand) throw new Error('Foreign demand')
+      if (value !== demand) {
+        throw new Error('Foreign demand')
+      }
       return (observationSpace ??= prepareSceneObservationSpace(
         demand,
         sourceOwner

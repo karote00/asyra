@@ -39,7 +39,9 @@ export function growTreeBranches(
     rise: number
   ) => {
     const parent = curves.get(parentId)
-    if (!parent) throw new Error('Missing branch growth parent')
+    if (!parent) {
+      throw new Error('Missing branch growth parent')
+    }
     const start = parent.at(attachment),
       end = add(start, [
         Math.cos(angle) * reach,
@@ -88,7 +90,9 @@ export function growTreeBranches(
   ]
   for (const id of primary) {
     const parent = curves.get(id)
-    if (!parent) throw new Error('Missing primary branch')
+    if (!parent) {
+      throw new Error('Missing primary branch')
+    }
     const n = integer(config.secondaryPerPrimary)
     for (let j = 0; j < n; j++) {
       const t =
@@ -145,20 +149,22 @@ export function distributeTreeFoliage(
     ...spec.branches.entries.filter((b) => b.level === 1).map((b) => b.id),
     ...added.filter((b) => b.level === 1).map((b) => b.id)
   ]
-  for (const branch of primary)
+  for (const branch of primary) {
     insert(
       branch,
       sample(config.interiorAttachment),
       config.interiorRadii,
       config.interiorWeight
     )
-  for (const branch of added)
+  }
+  for (const branch of added) {
     insert(
       branch.id,
       sample(config.terminalAttachment),
       branch.level === 1 ? config.primaryRadii : config.secondaryRadii,
       branch.level === 1 ? config.primaryWeight : config.secondaryWeight
     )
+  }
   const total = clusters.reduce((n, c) => n + c.weight, 0)
   const allocation = clusters.map((c, index) => ({
     index,

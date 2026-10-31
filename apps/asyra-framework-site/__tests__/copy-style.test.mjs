@@ -36,11 +36,15 @@ test('website copy and tracked READMEs use spaced ASCII hyphens', async () => {
 
   for (const file of candidateFiles) {
     const source = await readFile(path.join(repositoryRoot, file), 'utf8')
-    if (!source.includes(emDash)) continue
+    if (!source.includes(emDash)) {
+      continue
+    }
 
     const lines = source.split('\n')
     lines.forEach((line, index) => {
-      if (line.includes(emDash)) violations.push(`${file}:${index + 1}`)
+      if (line.includes(emDash)) {
+        violations.push(`${file}:${index + 1}`)
+      }
     })
   }
 

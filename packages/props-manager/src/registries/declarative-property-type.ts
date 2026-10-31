@@ -107,7 +107,9 @@ const failDefinition = (
 }
 
 const valuesEqual = (left: unknown, right: unknown): boolean => {
-  if (Object.is(left, right)) return true
+  if (Object.is(left, right)) {
+    return true
+  }
   if (Array.isArray(left) || Array.isArray(right)) {
     return (
       Array.isArray(left) &&
@@ -116,7 +118,9 @@ const valuesEqual = (left: unknown, right: unknown): boolean => {
       left.every((item, index) => valuesEqual(item, right[index]))
     )
   }
-  if (!isRecord(left) || !isRecord(right)) return false
+  if (!isRecord(left) || !isRecord(right)) {
+    return false
+  }
 
   const leftKeys = Object.keys(left)
   const rightKeys = Object.keys(right)
@@ -444,7 +448,9 @@ export const getDeclarativePropertyTypeDefinition = <
   const component = getPropertyComponent(type)
   const config = getPropertyComponentConfigDefinition(type)
 
-  if (!schema && !component && !config) return
+  if (!schema && !component && !config) {
+    return
+  }
   if (component && !config) {
     return failDefinition(
       'PROPERTY_TYPE_NOT_DECLARATIVE',
@@ -510,7 +516,9 @@ export const createPropertyComponentFromConfig = (
   const allowDynamicKeys = config.allowDynamicKeys === true
   const children = config.children
   const fixedKeys = new Set(Object.keys(defaults))
-  if (children) fixedKeys.add(children.key)
+  if (children) {
+    fixedKeys.add(children.key)
+  }
   const reservedDynamicKeys = new Set(
     uniqueKeys([
       'id',
@@ -536,9 +544,13 @@ export const createPropertyComponentFromConfig = (
     value: unknown,
     accessor: PropertyComponentAccessor
   ): string[] | null => {
-    if (!children || !Array.isArray(value)) return null
+    if (!children || !Array.isArray(value)) {
+      return null
+    }
     const mode = children.mode ?? 'ids'
-    if (mode === 'ids') return value.every(isString) ? value : null
+    if (mode === 'ids') {
+      return value.every(isString) ? value : null
+    }
 
     const childIds: string[] = []
     value.forEach((item) => {
@@ -546,10 +558,14 @@ export const createPropertyComponentFromConfig = (
         childIds.push(item)
         return
       }
-      if (!isRecord(item)) return
+      if (!isRecord(item)) {
+        return
+      }
 
       const mapped = children.toChildData ? children.toChildData(item) : item
-      if (!isRecord(mapped)) return
+      if (!isRecord(mapped)) {
+        return
+      }
       const childData: Record<string, unknown> = {
         ...mapped,
         type: children.childType
@@ -561,7 +577,9 @@ export const createPropertyComponentFromConfig = (
       if (isString(childData.id)) {
         childId = childData.id
       }
-      if (!childId && 'id' in childData) delete childData.id
+      if (!childId && 'id' in childData) {
+        delete childData.id
+      }
 
       const existing = childId ? accessor.getPropertyById(childId) : undefined
       if (
@@ -571,7 +589,9 @@ export const createPropertyComponentFromConfig = (
         typeof existing.set === 'function'
       ) {
         Object.entries(childData).forEach(([key, childValue]) => {
-          if (key === 'id' || key === 'type') return
+          if (key === 'id' || key === 'type') {
+            return
+          }
           ;(
             existing as unknown as {
               set: (field: string, value: unknown) => void
@@ -579,17 +599,23 @@ export const createPropertyComponentFromConfig = (
           ).set(key, childValue)
         })
         const existingId = existing.get('id')
-        if (isString(existingId)) childIds.push(existingId)
+        if (isString(existingId)) {
+          childIds.push(existingId)
+        }
         return
       }
 
       const created = accessor.createComponent(
         childId ? { id: childId, ...childData } : childData
       )
-      if (!created) return
+      if (!created) {
+        return
+      }
       accessor.addToMap(created)
       const createdId = created.get('id')
-      if (isString(createdId)) childIds.push(createdId)
+      if (isString(createdId)) {
+        childIds.push(createdId)
+      }
     })
     return childIds
   }
@@ -598,12 +624,16 @@ export const createPropertyComponentFromConfig = (
     value: unknown,
     accessor: PropertyComponentAccessor
   ): unknown => {
-    if (!children?.toValue || !Array.isArray(value)) return value
+    if (!children?.toValue || !Array.isArray(value)) {
+      return value
+    }
     return value
       .filter(isString)
       .map((childId) => {
         const child = accessor.getPropertyById(childId)
-        if (!child || typeof child.get !== 'function') return null
+        if (!child || typeof child.get !== 'function') {
+          return null
+        }
         return children.toValue?.(
           child as unknown as { get: (key: string) => unknown },
           childId
@@ -645,8 +675,11 @@ export const createPropertyComponentFromConfig = (
           ...clonePropertyDefinitionRecord(defaults)
         } as PropertyComponentInstanceDataTypes
       }
-      if (data.sharedSource === true) this.data.sharedSource = true
-      else delete this.data.sharedSource
+      if (data.sharedSource === true) {
+        this.data.sharedSource = true
+      } else {
+        delete this.data.sharedSource
+      }
       this.data.id = typeof data.id === 'string' ? data.id : this.data.id
       const rawData: Record<string, unknown> = isRecord(data) ? data : {}
       persistKeys.forEach((key) => {
@@ -661,16 +694,22 @@ export const createPropertyComponentFromConfig = (
           }
           return
         }
-        if (!(key in rawData)) return
+        if (!(key in rawData)) {
+          return
+        }
         this.assignLoadedValue(
           key as keyof PropertyComponentInstanceDataTypes,
           rawData[key]
         )
       })
 
-      if (!allowDynamicKeys) return
+      if (!allowDynamicKeys) {
+        return
+      }
       Object.entries(rawData).forEach(([key, value]) => {
-        if (!isAllowedDynamicKey(key) || value === undefined) return
+        if (!isAllowedDynamicKey(key) || value === undefined) {
+          return
+        }
         ;(this.data as unknown as Record<string, unknown>)[key] =
           clonePropertyDefinitionValue(value)
       })
@@ -686,13 +725,15 @@ export const createPropertyComponentFromConfig = (
         key === 'type' ||
         String(key) === 'inheritance' ||
         String(key) === 'sharedSource'
-      )
+      ) {
         return super.get(key)
+      }
       const field = String(key)
-      if (!persistKeys.includes(field))
+      if (!persistKeys.includes(field)) {
         throw new Error(
           `Property inheritance cannot read unknown field "${field}"`
         )
+      }
       const source = this.propertyComponentAccessor.getPropertyById(
         inheritance.sourceId
       )
@@ -701,8 +742,9 @@ export const createPropertyComponentFromConfig = (
         source.get('type') !== config.type ||
         'inheritance' in
           (source as unknown as { data: Record<string, unknown> }).data
-      )
+      ) {
         throw new Error('Property inheritance source is unavailable or invalid')
+      }
       const current = Object.prototype.hasOwnProperty.call(
         inheritance.overrides,
         field
@@ -718,21 +760,26 @@ export const createPropertyComponentFromConfig = (
     }
 
     save(): PropertyComponentRawData {
-      if (this.data.inheritance)
+      if (this.data.inheritance) {
         return {
           id: this.data.id,
           type: this.data.type,
           inheritance: clonePropertyDefinitionValue(this.data.inheritance)
         } as PropertyComponentRawData
+      }
       const saved = super.save() as Record<string, unknown>
-      if (this.data.sharedSource) saved.sharedSource = true
+      if (this.data.sharedSource) {
+        saved.sharedSource = true
+      }
       const data = this.data as unknown as Record<string, unknown>
       const dynamicPersistKeys = allowDynamicKeys
         ? Object.keys(data).filter(isAllowedDynamicKey)
         : []
       uniqueKeys([...persistKeys, ...dynamicPersistKeys]).forEach((key) => {
         const current = data[key]
-        if (current !== undefined) saved[key] = current
+        if (current !== undefined) {
+          saved[key] = current
+        }
       })
       return saved as PropertyComponentRawData
     }
@@ -763,7 +810,9 @@ export const createPropertyComponentFromConfig = (
         const current = this.get(
           key as keyof PropertyComponentInstanceDataTypes
         )
-        if (current !== undefined) units[key] = current as Unit
+        if (current !== undefined) {
+          units[key] = current as Unit
+        }
       })
       return units
     }
@@ -782,18 +831,21 @@ export const createPropertyComponentFromConfig = (
           'Canonical property layers require an explicit prepared layer mutation'
         )
       }
-      if (this.data.sharedSource)
+      if (this.data.sharedSource) {
         this.propertyComponentAccessor.validateSharedWrite(
           this.data.id,
           String(key),
           value
         )
+      }
       if (children && key === (children.key as K)) {
         const normalized = normalizeChildrenValue(
           value,
           this.propertyComponentAccessor
         )
-        if (!normalized) return
+        if (!normalized) {
+          return
+        }
         super.set(
           key,
           normalized as unknown as PropertyComponentInstanceDataTypes[K],
@@ -812,7 +864,9 @@ export const createPropertyComponentFromConfig = (
         super.set(key, value, options)
         return
       }
-      if (!(key in this.data)) return
+      if (!(key in this.data)) {
+        return
+      }
       super.set(key, value, options)
     }
   }
@@ -839,7 +893,9 @@ const assertPropertyTypeUnused = (
   manager: PropsManager
 ): void => {
   const propertyIds = manager.getPropertyIdsByType(type)
-  if (propertyIds.length === 0) return
+  if (propertyIds.length === 0) {
+    return
+  }
 
   throw new PropertyRegistrationError({
     ok: false,

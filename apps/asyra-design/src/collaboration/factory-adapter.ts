@@ -33,8 +33,12 @@ export const prepareCollaborationPublication = (
     if (batches.length !== slice.batches.length) {
       publicationIsDocumentOnly = false
     }
-    if (batches.length === 0) return []
-    if (batches.length === slice.batches.length) return [slice]
+    if (batches.length === 0) {
+      return []
+    }
+    if (batches.length === slice.batches.length) {
+      return [slice]
+    }
 
     const retainedIds = new Set(
       batches.flatMap(({ deliveries }) =>
@@ -57,9 +61,13 @@ export const prepareCollaborationPublication = (
   const deliveries = slices.flatMap(({ batches }) =>
     batches.flatMap(({ deliveries: batchDeliveries }) => batchDeliveries)
   )
-  if (deliveries.length === 0) return
+  if (deliveries.length === 0) {
+    return
+  }
   const firstSlice = slices[0]
-  if (!firstSlice) return
+  if (!firstSlice) {
+    return
+  }
   const requiresAtomicCollapse =
     publication.mode === 'atomic' && slices.length > 1
   const transportSlices: readonly SharedPublicationSlice[] =
@@ -122,6 +130,8 @@ export const createDocumentCollaborationPublicationSource = (
         )
         return
       }
-      if (prepared) subscriber(prepared)
+      if (prepared) {
+        subscriber(prepared)
+      }
     })
 })

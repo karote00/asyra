@@ -224,16 +224,25 @@ describe('unified vector material work', () => {
         .mockReturnValue(null)
       const data = dataFor()
       const fill = data.fills[0]
-      if (!fill.gradient) throw new Error('Gradient fixture missing')
-      if (kind === 'radial') fill.gradient.gradientType = 'radial'
+      if (!fill.gradient) {
+        throw new Error('Gradient fixture missing')
+      }
+      if (kind === 'radial') {
+        fill.gradient.gradientType = 'radial'
+      }
       if (kind === 'steep') {
         fill.gradient.gradientStops[1].position = 0.01
         fill.gradient.gradientStops[1].color = '#ffffff'
       }
-      if (kind === 'sharp') fill.gradient.gradientStops[1].position = 0
-      if (kind === 'alpha') fill.gradient.gradientStops[1].opacity = 0.5
-      if (kind === 'degenerate')
+      if (kind === 'sharp') {
+        fill.gradient.gradientStops[1].position = 0
+      }
+      if (kind === 'alpha') {
+        fill.gradient.gradientStops[1].opacity = 0.5
+      }
+      if (kind === 'degenerate') {
         fill.gradient.gradientHandles[1] = { x: 0, y: 0 }
+      }
       const graphic = new RenderGraphics()
       VECTOR_RENDER_STRATEGY(graphic, data)
       expect(vectorFillMaterial(graphic)).toMatchObject({

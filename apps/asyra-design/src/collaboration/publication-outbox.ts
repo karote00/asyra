@@ -205,12 +205,16 @@ export class IndexedDbPublicationOutboxStorage implements PublicationOutboxStora
   }
 
   private openDatabase(): Promise<IDBDatabase> {
-    if (this.databasePromise) return this.databasePromise
+    if (this.databasePromise) {
+      return this.databasePromise
+    }
     const opening = new Promise<IDBDatabase>((resolve, reject) => {
       const request = this.factory.open(this.databaseName, DATABASE_VERSION)
       request.addEventListener('upgradeneeded', () => {
         const database = request.result
-        if (database.objectStoreNames.contains(PUBLICATION_STORE_NAME)) return
+        if (database.objectStoreNames.contains(PUBLICATION_STORE_NAME)) {
+          return
+        }
         const store = database.createObjectStore(PUBLICATION_STORE_NAME, {
           keyPath: ['fileId', 'publicationId']
         })
@@ -273,7 +277,9 @@ export class DocumentPublicationOutbox {
 
   initialize(): Promise<void> {
     return this.schedule(async () => {
-      if (this.initialized) return
+      if (this.initialized) {
+        return
+      }
       try {
         const records = await this.storage.load(this.fileId)
         records.forEach((record) => {
@@ -317,7 +323,9 @@ export class DocumentPublicationOutbox {
     return this.schedule(async () => {
       this.requireInitialized()
       this.documentGeneration = documentGeneration
-      if (!this.storageLoaded) return
+      if (!this.storageLoaded) {
+        return
+      }
       try {
         await this.bindRetainedGeneration()
         await this.flushUnwritten()
@@ -333,9 +341,13 @@ export class DocumentPublicationOutbox {
 
   private async bindRetainedGeneration(): Promise<void> {
     const documentGeneration = this.documentGeneration
-    if (documentGeneration === null) return
+    if (documentGeneration === null) {
+      return
+    }
     for (const record of this.sortedRecords()) {
-      if (record.documentGeneration === documentGeneration) continue
+      if (record.documentGeneration === documentGeneration) {
+        continue
+      }
       if (record.documentGeneration === null) {
         this.records.set(
           record.publicationId,
@@ -427,7 +439,9 @@ export class DocumentPublicationOutbox {
     return this.schedule(async () => {
       this.requireInitialized()
       const record = this.records.get(acceptance.publicationId)
-      if (!record || record.status !== 'pending') return false
+      if (!record || record.status !== 'pending') {
+        return false
+      }
       try {
         await this.storage.delete(this.fileId, record.publicationId)
       } catch (error) {
@@ -474,7 +488,9 @@ export class DocumentPublicationOutbox {
     return this.schedule(async () => {
       this.requireInitialized()
       const existing = this.records.get(publicationId)
-      if (!existing) return false
+      if (!existing) {
+        return false
+      }
       const conflicted = freezeValue({
         ...existing,
         status: 'conflicted' as const,
@@ -501,10 +517,13 @@ export class DocumentPublicationOutbox {
 
   /** Flush retained predecessors before admitting successors to storage. */
   private async flushUnwritten(): Promise<void> {
-    if (!this.storageLoaded)
+    if (!this.storageLoaded) {
       throw new Error('Publication storage has not been loaded')
+    }
     for (const record of this.sortedRecords()) {
-      if (!this.unwritten.has(record.publicationId)) continue
+      if (!this.unwritten.has(record.publicationId)) {
+        continue
+      }
       await measureBrowserDragAsyncPhase(
         'collaboration:outbox-storage-put',
         () => this.storage.put(record)
@@ -525,14 +544,16 @@ export class DocumentPublicationOutbox {
             if (
               record.fileId !== this.fileId ||
               record.publicationId !== record.publication.publicationId
-            )
+            ) {
               throw new Error('Invalid retained publication identity')
+            }
             const current = this.records.get(record.publicationId)
             if (
               current &&
               !samePublication(current.publication, record.publication)
-            )
+            ) {
               throw new Error('Retained publication identity conflict')
+            }
           }
           const obsolete = saved.filter(
             (record) =>
@@ -540,15 +561,18 @@ export class DocumentPublicationOutbox {
               record.documentGeneration !== null &&
               record.documentGeneration !== this.documentGeneration
           )
-          for (const record of obsolete)
+          for (const record of obsolete) {
             await this.storage.delete(this.fileId, record.publicationId)
+          }
           const obsoleteIds = new Set(
             obsolete.map(({ publicationId }) => publicationId)
           )
           this.records.clear()
           this.nextAppendOrder = 1
           for (const record of saved) {
-            if (obsoleteIds.has(record.publicationId)) continue
+            if (obsoleteIds.has(record.publicationId)) {
+              continue
+            }
             this.records.set(record.publicationId, snapshotRecord(record))
             this.nextAppendOrder = Math.max(
               this.nextAppendOrder,
@@ -556,7 +580,9 @@ export class DocumentPublicationOutbox {
             )
           }
           for (const record of buffered) {
-            if (this.records.has(record.publicationId)) continue
+            if (this.records.has(record.publicationId)) {
+              continue
+            }
             this.records.set(
               record.publicationId,
               freezeValue({ ...record, appendOrder: this.nextAppendOrder++ })
@@ -587,8 +613,12 @@ export class DocumentPublicationOutbox {
         const publication = record.preparationFailed
           ? prepare(record.publication)
           : record.publication
-        if (!publication || publication.publicationId !== record.publicationId)
+        if (
+          !publication ||
+          publication.publicationId !== record.publicationId
+        ) {
           throw new Error('Recovery must preserve publication identity')
+        }
         const {
           failureReason: _reason,
           preparationFailed: _failed,
@@ -619,7 +649,9 @@ export class DocumentPublicationOutbox {
   retainRecoveryDocument(document: unknown): Promise<void> {
     return this.schedule(async () => {
       const record = this.sortedRecords().at(-1)
-      if (!record) return
+      if (!record) {
+        return
+      }
       this.records.set(
         record.publicationId,
         freezeValue({ ...record, recoveryDocument: structuredClone(document) })
@@ -672,7 +704,9 @@ export class DocumentPublicationOutbox {
     if (records.some((record) => record.status === 'conflicted')) {
       status = 'conflicted'
     }
-    if (this.storageFailed) status = 'storage-failed'
+    if (this.storageFailed) {
+      status = 'storage-failed'
+    }
     return Object.freeze({
       pendingCount: records.length,
       status
@@ -712,7 +746,9 @@ export class DocumentPublicationOutbox {
   }
 
   private markStorageFailed(): void {
-    if (this.storageFailed) return
+    if (this.storageFailed) {
+      return
+    }
     this.storageFailed = true
     this.emitState()
   }

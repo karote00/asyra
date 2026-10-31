@@ -30,11 +30,15 @@ import type {
   WalkingTerrainObservation
 } from '../../domain/walking-motion-contract'
 function required<T>(v: T | undefined | null): T {
-  if (v == null) throw new Error('Missing actual fixture dependency')
+  if (v == null) {
+    throw new Error('Missing actual fixture dependency')
+  }
   return v
 }
 function gcd(a: bigint, b: bigint): bigint {
-  if (b) return gcd(b, a % b)
+  if (b) {
+    return gcd(b, a % b)
+  }
   return a < 0n ? -a : a
 }
 function f(n: bigint, d = 1n): F {
@@ -324,13 +328,14 @@ describe('actual terrain placement geometry with unbound physical evidence', () 
       3, 7, 2, 7, 6, 3, 0, 4, 3, 4, 7
     ]
     const edges = new Map<string, number>()
-    for (let i = 0; i < indices.length; i += 3)
+    for (let i = 0; i < indices.length; i += 3) {
       for (let j = 0; j < 3; j++) {
         const edge = [indices[i + j], indices[i + ((j + 1) % 3)]]
           .sort((a, b) => a - b)
           .join(':')
         edges.set(edge, (edges.get(edge) ?? 0) + 1)
       }
+    }
     expect([...edges.values()].every((count) => count === 2)).toBe(true)
     const result = new WalkingTerrainPlacementOwner().prepare(source, demand, {
       ...raw,
@@ -572,9 +577,11 @@ describe('actual terrain placement geometry with unbound physical evidence', () 
       du = div(residual, width)
     for (const seed of raw.seeds) {
       const b = seed.barycentric
-      if (seed.triangleOffset === 0)
+      if (seed.triangleOffset === 0) {
         seed.barycentric = [sub(b[0], du), add(b[1], du), b[2]]
-      else seed.barycentric = [b[0], add(b[1], du), sub(b[2], du)]
+      } else {
+        seed.barycentric = [b[0], add(b[1], du), sub(b[2], du)]
+      }
     }
     const result = new WalkingTerrainPlacementOwner().prepare(
       source,
@@ -657,9 +664,15 @@ describe('actual terrain placement geometry with unbound physical evidence', () 
         r.shape.indices.push(0, 1, 2)
         raw.partitions[0].regions[0].indexCount = 9
       }
-      if (kind === 'noncoplanar') r.shape.positions[10] = 0.01
-      if (kind === 'degenerate') r.shape.indices[1] = 0
-      if (kind === 'partial') raw.partitions[0].regions[0].indexCount = 3
+      if (kind === 'noncoplanar') {
+        r.shape.positions[10] = 0.01
+      }
+      if (kind === 'degenerate') {
+        r.shape.indices[1] = 0
+      }
+      if (kind === 'partial') {
+        raw.partitions[0].regions[0].indexCount = 3
+      }
       const result = new WalkingTerrainPlacementOwner().prepare(
         source,
         demand,
@@ -713,7 +726,9 @@ describe('actual terrain placement geometry with unbound physical evidence', () 
     )
     expect(result.sourceGeometry.status).toBe('unknown')
     expect(result.reasons.join(';')).toMatch(/budget/)
-    if (key === 'maxPredicates') expect(result.work.unvisited).toBe(16)
+    if (key === 'maxPredicates') {
+      expect(result.work.unvisited).toBe(16)
+    }
   })
   it('rejects currentness, original triangle and exact seed mismatches', () => {
     const raw = fixture(),

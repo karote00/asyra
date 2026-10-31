@@ -41,7 +41,9 @@ export const registerDefaultSharedDataChannels = (
   let disposed = false
 
   const dispose = (): void => {
-    if (disposed) return
+    if (disposed) {
+      return
+    }
 
     for (let index = acquiredChannels.length - 1; index >= 0; index--) {
       const name = acquiredChannels[index]
@@ -93,7 +95,9 @@ export const registerDefaultSharedDataChannels = (
       cleanupReporter.report()
     })
   } catch (error) {
-    if (!cleanupReporter.hasReported()) dispose()
+    if (!cleanupReporter.hasReported()) {
+      dispose()
+    }
     throw error
   }
 

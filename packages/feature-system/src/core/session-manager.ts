@@ -380,7 +380,9 @@ export class SessionManager {
   ): Promise<T | undefined> {
     return this.runImmediately((assertOpen) => {
       const snapshot = getSnapshot()
-      if (!activeSessionManager) return operation(snapshot)
+      if (!activeSessionManager) {
+        return operation(snapshot)
+      }
       return this.cancelRuntimeActiveSessionsNow({
         ...snapshot,
         detail: { ...snapshot.detail, cancelled: true, cancelledBy }
@@ -631,7 +633,9 @@ export class SessionManager {
 
   /** Lifecycle owner only: admission must close before this synchronous abort. */
   static abortRuntime(): void {
-    for (const controller of pendingHandlers.values()) controller?.abort()
+    for (const controller of pendingHandlers.values()) {
+      controller?.abort()
+    }
     for (const session of activeSessionManager?.activeSessions.values() ?? []) {
       session.abortController?.abort()
     }
@@ -662,7 +666,9 @@ export class SessionManager {
             firstError = result.error
           }
         }
-        if (failed) throw firstError
+        if (failed) {
+          throw firstError
+        }
       }
     } finally {
       // Cleanup itself can time out. Do not signal quiescence until its actual
