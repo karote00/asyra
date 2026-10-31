@@ -1056,6 +1056,45 @@ test('selected lint cannot pass without at least one executed-file result', () =
   )
 })
 
+test('root lint producer evidence survives aggregation and rejects execution failure', async () => {
+  const { executeSelectedChecks, runYarnScript } =
+    await import('../../../../scripts/run-ci-checks.mjs')
+  const scope = makeScope()
+  const plan = scope.relationshipMap.executionPlan
+  const calls = []
+  const runners = {
+    identity,
+    relationshipMapDigest: scope.relationshipMapDigest,
+    lint: () =>
+      runYarnScript('lint', (command, args) => calls.push([command, args])),
+    repositoryScripts: () => checkResultsFor(scope).checks.repositoryScripts,
+    naming: () => checkResultsFor(scope).checks.naming
+  }
+  const results = await executeSelectedChecks(plan, runners)
+
+  assert.deepEqual(calls, [['yarn', ['lint']]])
+  assert.deepEqual(results.checks.lint.executedFiles, ['.'])
+  assert.equal(
+    assess(envelopes(), { selectedCheckResults: results }, scope).status,
+    'passed'
+  )
+
+  const failed = await executeSelectedChecks(plan, {
+    ...runners,
+    lint: () =>
+      runYarnScript('lint', () => {
+        throw new Error('Lint failed')
+      })
+  })
+
+  assert.equal(failed.checks.lint.status, 'failed')
+  assert.equal(failed.checks.lint.executedFiles, undefined)
+  assert.notEqual(
+    assess(envelopes(), { selectedCheckResults: failed }, scope).status,
+    'passed'
+  )
+})
+
 test('workflow wires non-workspace owners to their concrete readiness producers', () => {
   const root = path.resolve(__dirname, '../../../..')
   const main = fs.readFileSync(

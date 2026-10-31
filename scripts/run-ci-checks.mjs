@@ -89,9 +89,13 @@ async function resolveLintFiles(selection, repositoryRoot, eslint) {
   return [...new Set(selected)].sort()
 }
 
-function runYarnScript(script) {
-  execFileSync('yarn', [script], { stdio: 'inherit' })
-  return { status: 'passed' }
+function runYarnScript(script, execute = execFileSync) {
+  execute('yarn', [script], { stdio: 'inherit' })
+
+  return {
+    status: 'passed',
+    ...(script === 'lint' ? { executedFiles: ['.'] } : {})
+  }
 }
 
 function runRepositoryScripts(selection, execute = execFileSync) {
@@ -236,6 +240,7 @@ export {
   executeSelectedChecks,
   resolveLintFiles,
   validateExecutionPlan,
+  runYarnScript,
   runRepositoryScripts
 }
 

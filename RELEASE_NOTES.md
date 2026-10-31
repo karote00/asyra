@@ -1,5 +1,23 @@
 # Asyra Release Notes
 
+## Pending - Root lint execution evidence
+
+```update-note
+{
+  "change": "root-lint-execution-evidence",
+  "owner": "Repository validation",
+  "summary": "Record the repository root target after the root lint command succeeds so final CI aggregation can verify its execution evidence.",
+  "reason": "The root lint command passed but omitted the executedFiles field required by the aggregate. Real CLI and producer-to-aggregate regression tests now cover the handoff and failed execution rejection.",
+  "impact": "no-action",
+  "sources": [
+    "scripts/run-ci-checks.mjs",
+    "scripts/__tests__/local-validation.test.mjs",
+    "tools/flow-inspector/control-plane/__tests__/workflow-results.test.cjs"
+  ],
+  "guides": []
+}
+```
+
 ## Pending - Full validation consumer repairs
 
 ```update-note

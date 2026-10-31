@@ -9,6 +9,25 @@ for the current delivery.
 
 ### Shared validation inventory and PR delivery
 
+Follow-up for run `41206334526`: all upstream jobs passed, but the lint
+producer omitted `executedFiles` after switching to the root lint command.
+The aggregate correctly rejected that incomplete evidence. Repair the producer
+in `scripts/run-ci-checks.mjs`, prove the real CLI reports its root target, and
+pass producer-generated results through the existing aggregate tests. Retain
+identity, digest, failure and missing-evidence rejection. Scope is limited to
+this producer, its direct tests and delivery notes; no product or template
+changes. Validate CI/local orchestration suites, lint, naming and metadata,
+then push for ordinary PR execution without dispatching or monitoring CI.
+
+The real CLI regression failed with `executedFiles` undefined before correction.
+After correction, 160 CI/local/aggregate tests pass, including producer-to-
+aggregate success and execution-failure rejection; 72 final aggregate/document
+contracts also pass. The downloaded CI artifact matches the source/run identity,
+relationship digest, execution-plan digest and all selected inputs: the missing
+lint target is the isolated mismatch. Naming, formatting and update guidance
+pass. Evidence: `tmp/readability/validate-*`. No aggregate acceptance rule,
+workflow dispatch, product test or resource guard was changed.
+
 Follow-up after PR run `41200509598`: the previous gate selection missed two
 direct workflow-string consumers and the generated public source map after the
 root manifest changed. Correct the release-audit and Sim supervision contracts

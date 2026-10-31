@@ -489,6 +489,7 @@ test('local shared checks consume file evidence and reject a mismatched executio
   const report = JSON.parse(fs.readFileSync(shared.evidence.path, 'utf8'))
   assert.equal(report.identity.run, path.basename(outputDirectory))
   assert.equal(report.relationshipMapDigest, plan.relationshipMapDigest)
+  assert.deepEqual(report.checks.lint.executedFiles, ['.'])
   assert.ok(
     Object.values(report.checks).every(({ status }) => status === 'passed')
   )
