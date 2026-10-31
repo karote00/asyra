@@ -1436,6 +1436,27 @@ function loadChangedPaths(base, head) {
     .filter(Boolean)
 }
 
+function workflowScheduling(classification) {
+  const checks = {}
+  for (const name of [
+    'securityAudit',
+    'dependencyValidation',
+    'turboValidation',
+    'frameworkDeclarations'
+  ]) {
+    checks[name] = { mode: classification.executionPlan.checks[name].mode }
+  }
+  return {
+    workspaceMatrix: classification.workspaceMatrix.map((workspace) => ({
+      name: workspace.name,
+      directory: workspace.directory,
+      artifactId: workspace.artifactId,
+      e2eSelection: { mode: workspace.e2eSelection.mode }
+    })),
+    executionPlan: { checks }
+  }
+}
+
 function main() {
   const root = process.cwd()
   const base = process.env.CI_SCOPE_BASE
@@ -1487,13 +1508,14 @@ function main() {
   }
   const outputPath = process.env.GITHUB_OUTPUT
   if (outputPath) {
+    const scheduling = workflowScheduling(classification)
     fs.writeFileSync(
       path.join(root, 'ci-scope-evidence.json'),
       `${JSON.stringify(evidence)}\n`
     )
     fs.appendFileSync(
       outputPath,
-      `production_apps=${JSON.stringify(classification.relationshipMap.productionApps)}\nworkspace_matrix=${JSON.stringify(classification.workspaceMatrix)}\n`
+      `production_apps=${JSON.stringify(classification.relationshipMap.productionApps)}\nworkspace_matrix=${JSON.stringify(scheduling.workspaceMatrix)}\n`
     )
     fs.appendFileSync(
       outputPath,
@@ -1502,7 +1524,7 @@ function main() {
     )
     fs.appendFileSync(
       outputPath,
-      `execution_plan=${JSON.stringify(classification.executionPlan)}\n`
+      `execution_plan=${JSON.stringify(scheduling.executionPlan)}\n`
     )
     fs.appendFileSync(
       outputPath,
@@ -1546,6 +1568,7 @@ function main() {
 }
 
 export {
+  workflowScheduling,
   selectUpstreamBrowserProofs,
   classifyChanges,
   readWorkspaceManifests,

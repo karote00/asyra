@@ -7,6 +7,16 @@ for the current delivery.
 
 ## Task contract
 
+PR #363 delivery correction: the scope job exceeded GitHub Actions' 1 MB
+job-output limit before product checks started. The bounded correction covers
+CI plan serialization, workspace artifact consumption, workflow wiring and
+regression coverage; it does not change selected checks or product behavior.
+The full evidence artifact remains authoritative. Workspace readers verify its
+execution identity, relationship digest and scheduled owner. The large-plan
+regression and existing CI/local-runner suites pass (88 tests); focused lint,
+workflow formatting and naming pass. Replaying the actual PR classification
+produces 13,822 UTF-16 output bytes. Remote exact-head validation remains pending.
+
 This chat owns the correction and closeout. Implement all maintained Flow
 Inspector browser presentation in React. Remove iframe composition, imperative
 viewer implementations, standalone embedded-renderer HTML generation, legacy

@@ -9,11 +9,15 @@ import { fileURLToPath } from 'node:url'
 import {
   selectUpstreamBrowserProofs,
   classifyChanges,
+  workflowScheduling,
   readCreateAppManifests,
   readDocumentationDirectories,
   readWorkspaceManifests
 } from '../ci-scope.mjs'
-import { executeWorkspaceChecks } from '../run-workspace-checks.mjs'
+import {
+  executeWorkspaceChecks,
+  resolveWorkspaceEvidence
+} from '../run-workspace-checks.mjs'
 import {
   executeSelectedChecks,
   runRepositoryScripts
@@ -42,6 +46,94 @@ test('model reference documents and images are recognized without runtime select
   assert.deepEqual(names(result), [])
   assert.equal(result.designE2ERequired, false)
   assert.equal(result.frameworkReleaseRequired, false)
+})
+
+test('large CI plans cross jobs without placing execution inputs in scheduling outputs', () => {
+  const scope = classifyChanges(['tsconfig.json'], manifests)
+  const inputs = Array.from(
+    { length: 20000 },
+    (_, i) => `src/changed-file-${i}.ts`
+  )
+  scope.executionPlan.changedPaths = inputs
+  for (const workspace of scope.relationshipMap.workspaceMatrix) {
+    workspace.testSelection.inputs = inputs
+  }
+  const before = JSON.stringify(scope)
+  const scheduling = workflowScheduling(scope)
+  assert.ok(Buffer.byteLength(before, 'utf16le') > 1048576)
+  assert.ok(Buffer.byteLength(JSON.stringify(scheduling), 'utf16le') < 65536)
+  assert.equal(JSON.stringify(scope), before)
+  assert.equal(scheduling.workspaceMatrix.length, scope.workspaceMatrix.length)
+  for (const name of [
+    'securityAudit',
+    'dependencyValidation',
+    'turboValidation',
+    'frameworkDeclarations'
+  ]) {
+    assert.equal(
+      scheduling.executionPlan.checks[name].mode,
+      scope.executionPlan.checks[name].mode
+    )
+  }
+  const identity = {
+    repository: 'local',
+    base: 'a'.repeat(40),
+    head: 'b'.repeat(40),
+    integration: 'b'.repeat(40),
+    run: '1',
+    attempt: '1'
+  }
+  const mapDigest = createHash('sha256')
+    .update(JSON.stringify(scope.relationshipMap))
+    .digest('hex')
+  const evidence = {
+    ...scope,
+    version: 2,
+    identity,
+    relationshipMapDigest: mapDigest
+  }
+  const selected = scheduling.workspaceMatrix[0]
+  const resolved = resolveWorkspaceEvidence(
+    selected,
+    evidence,
+    identity,
+    mapDigest
+  )
+  assert.deepEqual(resolved.testSelection.inputs, inputs)
+  assert.deepEqual(resolved, scope.relationshipMap.workspaceMatrix[0])
+  assert.throws(
+    () =>
+      resolveWorkspaceEvidence(
+        selected,
+        { ...evidence, identity: { ...identity, head: 'c'.repeat(40) } },
+        identity,
+        mapDigest
+      ),
+    /identity/
+  )
+  assert.throws(
+    () =>
+      resolveWorkspaceEvidence(
+        { ...selected, artifactId: '0'.repeat(16) },
+        evidence,
+        identity,
+        mapDigest
+      ),
+    /workspace/
+  )
+  assert.throws(
+    () =>
+      resolveWorkspaceEvidence(
+        selected,
+        {
+          ...evidence,
+          relationshipMap: { ...evidence.relationshipMap, workspaceMatrix: [] }
+        },
+        identity,
+        mapDigest
+      ),
+    /digest/
+  )
 })
 
 test('model reference measurements and review evidence stay outside runtime selection', () => {

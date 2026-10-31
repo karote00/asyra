@@ -225,10 +225,16 @@ jobs:
           node-version: 24
           cache: yarn
       - run: yarn install --immutable
+      - name: Download CI scope evidence for workspace checks
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ci-scope-evidence
+          path: tmp/ci-scope
       - name: Build then test the selected workspace
         id: workspace-checks
         env:
           CI_WORKSPACE_MATRIX_ITEM: ${{ toJSON(matrix.workspace) }}
+          CI_SCOPE_EVIDENCE_FILE: tmp/ci-scope/ci-scope-evidence.json
           CI_RELATIONSHIP_MAP_DIGEST: ${{ needs.scope.outputs.relationship_map_digest }}
           CI_SCOPE_REPOSITORY: ${{ github.repository }}
           CI_SCOPE_BASE: ${{ github.event.pull_request.base.sha || github.sha }}

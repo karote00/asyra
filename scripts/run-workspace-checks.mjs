@@ -225,10 +225,38 @@ function writeWorkspaceResult(record, artifactId, repositoryRoot) {
   return destination
 }
 
-async function main() {
-  const workspace = validateWorkspaceEntry(
-    JSON.parse(process.env.CI_WORKSPACE_MATRIX_ITEM ?? '')
+function resolveWorkspaceEvidence(selected, evidence, identity, mapDigest) {
+  if (
+    evidence.version !== 2 ||
+    Object.entries(identity).some(
+      ([key, value]) => evidence.identity?.[key] !== value
+    )
+  ) {
+    throw new Error('Workspace evidence identity does not match this execution')
+  }
+  if (
+    evidence.relationshipMapDigest !== mapDigest ||
+    crypto
+      .createHash('sha256')
+      .update(JSON.stringify(evidence.relationshipMap))
+      .digest('hex') !== mapDigest
+  ) {
+    throw new Error('Workspace evidence relationship digest does not match')
+  }
+  const matches = evidence.relationshipMap.workspaceMatrix.filter(
+    (entry) =>
+      entry.name === selected.name &&
+      entry.directory === selected.directory &&
+      entry.artifactId === selected.artifactId &&
+      entry.e2eSelection.mode === selected.e2eSelection?.mode
   )
+  if (matches.length !== 1) {
+    throw new Error('Scheduled workspace does not match the admitted evidence')
+  }
+  return validateWorkspaceEntry(matches[0])
+}
+
+async function main() {
   const relationshipMapDigest = process.env.CI_RELATIONSHIP_MAP_DIGEST ?? ''
   if (!/^[a-f0-9]{64}$/.test(relationshipMapDigest)) {
     throw new Error('Workspace relationship map digest is unavailable')
@@ -243,6 +271,12 @@ async function main() {
     throw new Error('Workspace validation identity is incomplete')
   }
   const repositoryRoot = process.cwd()
+  const workspace = resolveWorkspaceEvidence(
+    JSON.parse(process.env.CI_WORKSPACE_MATRIX_ITEM ?? ''),
+    JSON.parse(fs.readFileSync(process.env.CI_SCOPE_EVIDENCE_FILE, 'utf8')),
+    identity,
+    relationshipMapDigest
+  )
   const record = await executeWorkspaceChecks(workspace, {
     identity,
     relationshipMapDigest,
@@ -410,6 +444,7 @@ function playwrightObservations(report) {
 }
 
 export {
+  resolveWorkspaceEvidence,
   executeWorkspaceChecks,
   validateWorkspaceEntry,
   resolveWorkspaceResultDirectory

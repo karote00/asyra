@@ -1,5 +1,24 @@
 # Asyra Release Notes
 
+## Pending - Large CI plan transport
+
+```update-note
+{
+  "change": "ci-plan-artifact-transport",
+  "owner": "Repository CI",
+  "summary": "Transport complete workspace validation selections through the scope evidence artifact and keep job outputs limited to scheduling metadata.",
+  "reason": "Large PR execution plans exceeded the GitHub Actions job-output limit before validation jobs could start. Workspace runners verify execution identity and relationship digests before consuming the unchanged selections.",
+  "impact": "no-action",
+  "sources": [
+    ".github/workflows/main.yml",
+    "scripts/ci-scope.mjs",
+    "scripts/run-workspace-checks.mjs",
+    "scripts/__tests__/ci-scope.test.mjs"
+  ],
+  "guides": []
+}
+```
+
 ## Pending - Historical source preservation
 
 ```update-note
