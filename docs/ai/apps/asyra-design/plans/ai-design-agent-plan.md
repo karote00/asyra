@@ -2,11 +2,10 @@
 
 ## Status and authority
 
-Current planning update - 2026-11-02: the next bounded work is
+Current execution update - 2026-11-02: the bounded follow-up is
 [Conversation continuity and tool contract corrections](#conversation-continuity-and-tool-contract-corrections---2026-11-02).
-This update integrates the current source review and existing plans; it does not
-claim implementation, failing regression evidence, Inspector admission or live
-acceptance. The earlier delivery status and authorizations below are historical;
+Tasks 1-4 and their local reviews are complete, including one fixed-prompt live
+run and its evidence report. Visual product acceptance remains with Asa. The earlier delivery status and authorizations below are historical;
 they do not authorize remote operations for this follow-up.
 
 ### Historical delivery context
@@ -28,7 +27,8 @@ before including them in the PR. Never reset unrelated changes.
 
 ## Conversation continuity and tool contract corrections - 2026-11-02
 
-Status: active - Tasks 1-4 implemented and reviewed locally; fixed-prompt live run pending.
+Status: locally complete - Tasks 1-4 reviewed; one fixed-prompt live run recorded.
+Awaiting Asa review; see the [detailed report](ai-conversation-improvements-2026-11-02-report.md).
 Parent: this Editable Design Agent plan. Whole-plan closeout remains with its
 coordinating owner and product acceptance with Asa. This follow-up closes only
 the bounded corrections below, not historical PRs or the entire Design Agent.
@@ -172,7 +172,7 @@ history behavior or increase assertion deadlines. The static-source rerun passed
 29 cases with three opt-in performance cases skipped. Preserve all attempts.
 
 Template synchronization regenerates pre-existing drift as well as this task's
-source changes (337 generated paths); never hand-edit that output. Parity passes.
+source changes (349 generated paths); never hand-edit that output. Parity passes.
 The extra `release:template` probe failed on pre-existing root content package
 `@asyra/domain-knowledge: workspace:*`. Package-release-validation assigns that
 artifact-only clean-consumer to Framework Release Gate 5; no package publication
@@ -201,6 +201,47 @@ the four implementation slices. Framework release clean-consumer remains a known
 out-of-scope release limitation, not a passed or skipped App assertion. Preserve
 all failed pre-live attempts. Next: exactly one live run, visual inspection and
 actual evidence report; no code/build edits during that run.
+
+### Post-live recording correction and review
+
+Step card: Task 4 test recorder and read-only retained-evidence verification;
+production request/compose/inspect/settle contracts remain unchanged. Rechecked
+Inspector observe rules: execution receipts do not certify visuals, missing data
+stays unknown, and diagnostics never change product settlement. Inputs: the one
+completed run and exact retained document. Outputs: corrected classification and
+bootstrap readiness tests plus a separate no-AI reopen proof. Boundary: the
+permanent recording scripts, their Node contract tests and these docs. Preserve
+original evidence; no second drawing request, model assessment or artwork repair.
+
+Two recorder defects were reproduced before correction: receipt POSTs on the same
+endpoint were counted as user submissions, and socket connection was mistaken for
+completed document bootstrap. Use the canonical receipt header and wait for the
+expected canonical node count before capturing reload. Tests: two red cases before
+correction; all three contract cases green afterward; scoped lint and naming pass.
+The separate retained-document helper blocks AI requests and proves exact document
+equality with 20,920 nodes, zero AI requests, and a visibly loaded screenshot.
+Original `run.json` and blank `reload.png` remain unchanged. No production changes
+followed the tested source `ca83647639baa03906a467942cd9c0f20f8225d2`.
+
+One live drawing completed in 352.501 seconds, with first paint opportunity at
+50.205 seconds and 20,906 editable vectors. The App settled successfully and the
+backend checkpoint matches the source. Overview, base, tiers, spire, native detail
+and corrected reopen images were inspected. The result remains a stylized vector
+illustration; high object count and model-accepted checks do not establish full
+architectural realism. Offline report freshness remains `current: false`, so no
+blanket current-review certification is claimed. Report, raw records and video are
+linked in the detailed report. Task-local implementation review is complete;
+artwork acceptance, future quality work and unrelated release limitations remain
+explicit. No push, merge or additional AI run.
+
+Final template check exposed local App `tmp/ai-executions` records as 30 candidate
+publication files. Within Task 4 template synchronization, add `tmp` to the existing
+App release exclusions; preserve the raw files. The focused release contracts failed
+before correction and pass afterward, including the locked-recorder exclusions.
+The full release suite has 32 passes and one existing standalone workspace-protocol
+failure, matching the documented Framework Gate 5 limitation. Template parity then
+passes without generating execution records. This is artifact hygiene, not a
+release-set change or a repair of the separate clean-consumer limitation.
 
 ### Objective, evidence and boundaries
 

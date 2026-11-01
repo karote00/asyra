@@ -15,6 +15,7 @@ import { saveRemoteRecording } from './remote-recording.mjs'
 import {
   readTaipei101Prompt,
   assertTaipei101Submission,
+  waitForRecordedDocument,
   TAIPEI_101_DEADLINE_MS
 } from './taipei-101-live-contract.mjs'
 
@@ -160,7 +161,15 @@ try {
       return
     const body = request.postDataJSON()
     try {
-      assertTaipei101Submission(body, prompt)
+      if (!assertTaipei101Submission(body, prompt, request.headers())) {
+        meta.receiptPosts ??= []
+        meta.receiptPosts.push({
+          at: Date.now(),
+          bytes: Buffer.byteLength(request.postData() ?? '')
+        })
+        save()
+        return
+      }
     } catch (error) {
       meta.errors.push(error.message)
     }
@@ -353,13 +362,9 @@ try {
   )
   await page.evaluate(() => window.stopFixedDrawingObservation())
   await page.reload()
-  await page.waitForFunction(
-    async () =>
-      (await import('/src/testing/runtime-access.ts'))
-        .getActiveCollaborationHandle()
-        ?.getStatus() === 'connected',
-    null,
-    { timeout: 30000 }
+  await waitForRecordedDocument(
+    page,
+    Object.values(final.counts).reduce((sum, count) => sum + count, 0)
   )
   await page.keyboard.press('Meta+1')
   await page.screenshot({ path: path.join(directory, 'reload.png') })

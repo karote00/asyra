@@ -33,3 +33,49 @@ test('fixed benchmark removes only the fixture final newline and keeps the ten m
       /exact prompt/
     )
 })
+
+test('tool receipts on the same endpoint do not become user prompt submissions', async () => {
+  const { AI_BATCH_RECEIPT_HEADER } =
+    await import('../src/ai/action-batch-endpoint.ts')
+  const { prompt } = readTaipei101Prompt()
+  assert.equal(
+    assertTaipei101Submission({ batchId: 'b', actionResults: [] }, prompt, {
+      [AI_BATCH_RECEIPT_HEADER]: 'owned-token'
+    }),
+    false
+  )
+  assert.equal(assertTaipei101Submission({ intent: prompt }, prompt, {}), true)
+})
+
+test('a connected socket cannot certify an empty or partially loaded drawing', async () => {
+  const { recordedDocumentReady } =
+    await import('../test-data/ai-drawing/taipei-101-live-contract.mjs')
+  assert.equal(
+    recordedDocumentReady(
+      { connected: true, workspaceId: null, elementCount: 0 },
+      20920
+    ),
+    false
+  )
+  assert.equal(
+    recordedDocumentReady(
+      { connected: true, workspaceId: 'w', elementCount: 100 },
+      20920
+    ),
+    false
+  )
+  assert.equal(
+    recordedDocumentReady(
+      { connected: false, workspaceId: 'w', elementCount: 20920 },
+      20920
+    ),
+    false
+  )
+  assert.equal(
+    recordedDocumentReady(
+      { connected: true, workspaceId: 'w', elementCount: 20920 },
+      20920
+    ),
+    true
+  )
+})
