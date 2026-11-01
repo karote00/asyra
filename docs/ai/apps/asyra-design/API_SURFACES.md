@@ -128,6 +128,17 @@ Completed plan:
   a waiting state, and submits the selection once with the retained attachments
   and `metadata.replyTo` containing the original intent and turn id. Stale reply
   targets are rejected before provider work; past questions are inactive.
+- `metadata.conversationContext` contains `turns` and current-message
+  `attachmentIndexes`. Each chronological turn has `turnId`, exact `intent`,
+  public `message`, `outcome`, original `attachmentIndexes`, optional
+  `replyToTurnId` / `retryOfTurnId` and optional `question: {message, choices}`.
+  Indexes address the deduplicated `metadata.imageAttachments` array; they do
+  not claim source suitability. Links refer to earlier turns in the same context.
+  The App controller computes this once per submission; the server rejects
+  extra fields, invalid indexes/links, duplicate turn IDs and exceeded bounds.
+  Limits and no-write failure are specified in `specs/ai-conversation-experience.md`.
+  Current intent stays separate; raw tool results and request-owned handles are
+  never conversation context. New conversations omit the field.
 - follow-up updates consume only canonical ids projected from the preceding
   action result; each target is revalidated immediately before its common-API
   mutation

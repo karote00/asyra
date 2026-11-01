@@ -1,3 +1,4 @@
+import { admitsConversationContext } from '../src/ai/conversation-context'
 import {
   createExecutionRecordSink,
   createRecordCollector,
@@ -212,8 +213,12 @@ export const resolveActionBatchRequest = async (
       'The action-batch request was aborted.'
     )
   }
+  if (
+    !isRecord(input) ||
+    typeof input.intent !== 'string' ||
+    !admitsConversationContext(input.intent, input.metadata)
+  ) {
 
-  if (!isRecord(input) || typeof input.intent !== 'string') {
     throw new ActionBatchServerError(
       'ACTION_BATCH_INVALID_INPUT',
       'The action-batch input is invalid.'

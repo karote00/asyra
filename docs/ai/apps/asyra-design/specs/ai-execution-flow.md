@@ -48,30 +48,13 @@ state stays in the App. A new request never assumes prior inspection evidence is
 current. Deleted targets, changed document identity and replacement invalidate
 continuity references; no geometry or image cache crosses requests in this slice.
 
-Successor requests also carry bounded prior messages from the selected App
-conversation's existing settled turns: exact request text, original objective
-when distinct, the existing presentation owner's assistant answer and actual
-outcome, with turn identity. These are historical messages, not current document
-facts, tool programs, valid inspection evidence or caller-held Knowledge results.
-Current instructions and corrections take precedence; never replay prior actions
-or infer omitted content. Native threads and Knowledge sessions remain scoped to
-the current request. History interpretation guidance is included only when history
-is present, without increasing first-use instructions.
+Conversation continuity follows the bounded public history contract in
+[conversation experience](ai-conversation-experience.md). Metadata carries exact
+prior user turns and public replies/questions with source-attachment indexes;
+current intent stays separate. The backend validates this data before invoking a
+provider. Historical outcomes do not authorize replay or reuse of request-owned
+evidence. Fresh ephemeral provider threads receive the same admitted context.
 
-The App includes the newest contiguous complete turns in chronological order
-within a 32 KiB serialized UTF-8 history envelope and explicitly reports the number
-of omitted older turns. This bounds context cost, not model capacity. No message
-is sliced. An oversized newest pair yields an empty history with an omission count;
-an empty/new conversation omits history. Switching conversations restores only
-that conversation's messages. Raw results, action arguments, progress, image bytes
-and retained session credentials are excluded. Failed, partial and cancelled
-results use the same authoritative presentation as the user sees. Current target
-validation and safe retry rules remain unchanged.
-
-Formal cases must prove controller-to-native-input continuity with the saved
-ordinary consultation answer, isolation, clarification/retry, failure/cancellation,
-whole-turn Unicode bounds and unchanged tool/work-turn counts. They must retain
-session expiry and no-replay protections. Local delivery does not prove adoption.
 
 ## Capability discovery and composition
 

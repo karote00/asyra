@@ -1807,6 +1807,92 @@ describe('local subscription AI backend', () => {
     expect(items[0].text).not.toContain('hostOnlyReceipt')
   })
 
+  it('delivers controller follow-up history and original sources through one fresh native turn', async () => {
+    const { createAiConversationController } =
+      await import('../../src/ai/conversation')
+    const image = {
+      ...(await rasterAttachment()),
+      mediaType: 'image/png' as const,
+      name: 'reference.png'
+    }
+    const firstServer = fakeServer()
+    const feature = {
+      cancel: vi.fn(() => true),
+      execute: vi.fn(
+        async (request: { intent: string; metadata?: unknown }) => {
+          await requestConfiguredAiActionBatch(
+            { ...input, ...request } as AiProviderInput,
+            { environment }
+          )
+          return {
+            status: 'executed',
+            actionResults: [
+              {
+                actionId: 'question',
+                actionName: 'request_clarification',
+                result: {
+                  status: 'no-change',
+                  clarification: {
+                    kind: 'question',
+                    question: 'Change the group or only its title?'
+                  }
+                }
+              }
+            ]
+          }
+        }
+      )
+    }
+    const controller = createAiConversationController({
+      feature,
+      getElementType: () => undefined
+    })
+    await controller.submit({
+      intent: 'Refine this card using the reference.',
+      attachments: [image]
+    })
+    const secondServer = fakeServer()
+    await controller.submit('Only its title; make it blue.')
+    const turn = secondServer.packets.filter(
+      ({ method }) => method === 'turn/start'
+    )
+    expect(turn).toHaveLength(1)
+    const items = turn[0].params.input as {
+      type: string
+      text?: string
+      url?: string
+    }[]
+    const payload = JSON.parse(String(items[0].text))
+    expect(payload.input.intent).toBe('Only its title; make it blue.')
+    expect(payload.input.metadata.conversationContext).toMatchObject({
+      turns: [
+        {
+          intent: 'Refine this card using the reference.',
+          attachmentIndexes: [0],
+          question: {
+            message: 'Change the group or only its title?',
+            choices: []
+          }
+        }
+      ],
+      attachmentIndexes: []
+    })
+    expect(items.filter(({ type }) => type === 'image')).toEqual([
+      { type: 'image', url: image.dataUrl }
+    ])
+    expect(items[0].text).not.toContain(image.dataUrl)
+    for (const server of [firstServer, secondServer]) {
+      const thread = server.packets.find(
+        ({ method }) => method === 'thread/start'
+      )
+      expect(thread?.params.ephemeral).toBe(true)
+      expect(thread?.params.baseInstructions).toContain(
+        'current input.intent overrides'
+      )
+    }
+    await controller.dispose()
+  })
+
   it('passes the original multilingual brief unchanged without a translation turn', async () => {
     const server = fakeServer()
     const intent =

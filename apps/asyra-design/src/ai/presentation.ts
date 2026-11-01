@@ -175,6 +175,12 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
       ? ` ${turn.result.message}`
       : ''
   let message = 'The request failed. Review the canvas before trying again.'
+  if (
+    isPlainObject(turn.result) &&
+    turn.result.code === 'AI_CONVERSATION_CONTEXT_LIMIT'
+  )
+    message =
+      'This conversation exceeds the request context limit. Start a new conversation with the needed brief and references. No changes were made.'
 
   if (isPlainObject(turn.result) && turn.result.stage === 'provider') {
     message = 'Could not complete the AI request. Your drawing is unchanged.'
@@ -352,13 +358,9 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
 
 /** Only pre-execution failures are admitted for replay. Unknown transaction state is never guessed. */
 export const canRetryAiTurn = (turn: AiSettledTurn): boolean => {
-  if (turn.outcome !== 'failed' && turn.outcome !== 'cancelled') {
-    return false
-  }
-
-  if (!isPlainObject(turn.result)) {
-    return false
-  }
+  if (turn.outcome !== 'failed' && turn.outcome !== 'cancelled') return false
+  if (!isPlainObject(turn.result)) return false
+  if (turn.result.code === 'AI_CONVERSATION_CONTEXT_LIMIT') return false
 
   if (
     isPlainObject(turn.result.transaction) &&
