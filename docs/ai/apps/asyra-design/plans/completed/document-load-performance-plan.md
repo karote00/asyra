@@ -618,3 +618,11 @@ its selected-frame screenshot was inspected. It retains 18,287 elements,
 Local load observation was 11.10 seconds with zero CPU raster allocations;
 this is not a timing acceptance threshold. Evidence is under
 `tmp/document-load/ci-298/selection-*`. Original user storage was untouched.
+
+## Closeout - 2026-11-02
+
+Completed: 2026-11-02
+Reviewed source: cb66b095f6ad55d2793ca3cd7b950c13f478dcbb
+Outcome: Batched vector materials, complete-document load and post-load selection corrections are implemented; PR #298 is merged.
+Decision: Accept the recorded full-document milestone and user acceptance. Historical load observations are not a universal timing guarantee. Earlier pending-delivery statements remain historical checkpoints.
+Exit criteria: The scope review checked current implementation and permanent tests, merged delivery, recorded milestone acceptance and PR #363 full CI on b738ff4333a4de0ee920a171fec2c40af897884a (run 41323723485, all 44 jobs successful). Conditional local/live cases retain their recorded evidence and are not represented as rerun by CI.

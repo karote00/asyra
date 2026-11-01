@@ -19,7 +19,7 @@ flow files, including offline writes and live replacements; it never schedules
 product tests on read or refresh. Resolved warnings are replaced after coverage
 validation rather than retained in a mandatory history.
 
-The [adoption plan](plans/flow-inspector-independent-project-adoption-plan.md)
+The [adoption plan](plans/completed/flow-inspector-independent-project-adoption-plan.md)
 tracks the two complete stages. The installed runtime's config, producer and CI
 contracts are specified in [Independent Project Runtime](PROJECT_RUNTIME.md);
 consumer commands and examples are in the [package guide](../../../../tools/flow-inspector/README.md).

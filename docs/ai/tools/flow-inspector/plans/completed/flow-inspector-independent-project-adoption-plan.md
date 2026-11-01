@@ -192,7 +192,7 @@ completion. A test's passed/failed result is not the whole task lifecycle.
 - Existing recovery coverage safeguards remain; resolved warnings are replaced, not archived.
   Source edits alone do not clear failure; comments cannot change verdicts.
 
-The [Flow Document Contract](../FLOW_DOCUMENT.md), public JSON schema and
+The [Flow Document Contract](../../FLOW_DOCUMENT.md), public JSON schema and
 `flow-document-workflow` architecture Inspector freeze the Stage 1 transitions
 and owner boundaries. Stage 2 consumes these owners without another state store.
 
@@ -425,7 +425,7 @@ were performed in Stage 1.
 
 ### Stage 2 - Independent installation, CI and release readiness
 
-Implementation contract: [Independent Project Runtime](../PROJECT_RUNTIME.md).
+Implementation contract: [Independent Project Runtime](../../PROJECT_RUNTIME.md).
 Base: `e00bdbdc6690cafdcb3d6a4cbea0dfe329a54b67` (merged PR #342).
 The architecture flow extends the existing owners with project admission, current
 bundle transfer and installed distribution. All ten acceptance conditions below
@@ -598,3 +598,11 @@ one-request Agent context and manual-only headless CI acceptance. Stage 2 proves
 those same capabilities from the installed package. Exact schema/owner-flow
 review remains a required Stage 1 design gate before production coding; this
 planning review does not claim that implementation admission already passed.
+
+## Closeout - 2026-11-02
+
+Completed: 2026-11-02
+Reviewed source: cb66b095f6ad55d2793ca3cd7b950c13f478dcbb
+Outcome: Stages 1 and 2 are implemented; PR #344 is merged and installed manual, custom, Vitest and Playwright consumers passed current CI.
+Decision: Close development and independent-consumer acceptance. Registry publication and registry-install verification remain separately authorized release work. Earlier pending-delivery statements remain historical checkpoints.
+Exit criteria: The scope review checked current implementation and permanent tests, merged delivery, recorded milestone acceptance and PR #363 full CI on b738ff4333a4de0ee920a171fec2c40af897884a (run 41323723485, all 44 jobs successful). Conditional local/live cases retain their recorded evidence and are not represented as rerun by CI.

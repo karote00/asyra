@@ -166,3 +166,11 @@ current permission rechecks, cancellation, receipt settlement, source validation
 and bounded diagnostics. Generated Inspector workspace data is synchronized.
 No new callbacks, execution owner, model configuration, renderer or reference
 policy was added. UI geometry/artistic choices remain the model's responsibility.
+
+## Closeout - 2026-11-02
+
+Completed: 2026-11-02
+Reviewed source: cb66b095f6ad55d2793ca3cd7b950c13f478dcbb
+Outcome: Exact operation discovery and ordered ready-part composition are implemented; PR #301 is merged.
+Decision: Accept ordered execution and retained partial receipts with canonical permission, cancellation and history ownership. Earlier pending-delivery statements remain historical checkpoints.
+Exit criteria: The scope review checked current implementation and permanent tests, merged delivery, recorded milestone acceptance and PR #363 full CI on b738ff4333a4de0ee920a171fec2c40af897884a (run 41323723485, all 44 jobs successful). Conditional local/live cases retain their recorded evidence and are not represented as rerun by CI.

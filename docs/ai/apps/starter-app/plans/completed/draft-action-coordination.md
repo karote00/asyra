@@ -121,3 +121,11 @@ correction. No unresolved defect was found in that scope. No Framework behavior,
 external consumer App or installed Agent bundle was changed. Consumers already
 created from older templates still require their own update; regeneration does
 not rewrite those projects.
+
+## Closeout - 2026-11-02
+
+Completed: 2026-11-02
+Reviewed source: cb66b095f6ad55d2793ca3cd7b950c13f478dcbb
+Outcome: Draft commit admission, rejection, action coordination and lifetime behavior are implemented and reviewed; PR #284 is merged.
+Decision: Accept the bounded Starter interaction repair with existing persisted identities and single-step history preserved. Earlier pending-delivery statements remain historical checkpoints.
+Exit criteria: The scope review checked current implementation and permanent tests, merged delivery, recorded milestone acceptance and PR #363 full CI on b738ff4333a4de0ee920a171fec2c40af897884a (run 41323723485, all 44 jobs successful). Conditional local/live cases retain their recorded evidence and are not represented as rerun by CI.

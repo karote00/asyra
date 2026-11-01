@@ -160,7 +160,7 @@ push, PR, merge, monitoring or subagents. Preserve .env.
 - Branch: codex/ai-reusable-tool-design.
 - Pushed HEAD (Stages 1/2/3): b1c8f9ac8bbc4cc7380aee677b27629136de1514.
 - Integrated main: eac2b0d8e719ee9055c846a24a033020c4b1c3cd.
-- Current plan: reusable-tool-composition-plan.md, section
+- Current plan: completed/reusable-tool-composition-plan.md, section
   **4. Preserve purpose, save eligibility and cross-request reuse** (locally complete).
 - Older **Stage 3 - Direct structural delivery** is historical, not current work.
 

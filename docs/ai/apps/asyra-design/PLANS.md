@@ -4,26 +4,14 @@ Never record completed plans here.
 
 ## Current Status
 
-- Active - [Operation discovery and ordered drawing composition](plans/ai-operation-pipeline-plan.md).
-
-- Active - [Container double-click selection](plans/container-double-click-selection-plan.md).
-
-- Active - locally verified, awaiting review: [Large document load performance](plans/document-load-performance-plan.md) - unified vector fill materials; full Taipei 101 source preserved and applicable local gates passed. No push authorized.
-
 - Active - final validation: [Large document navigation performance](plans/large-document-navigation-performance-plan.md) -
   user accepted the candidate's navigation speed; retained navigation, shared
   native materials, bounded GPU batches and input scheduling corrections are
   implemented. Continuous timing measurements stay local-only. Full local CI
   resumes before the authorized feature-branch push; AI workflow work is deferred.
 
-- Active: [Tool definition delivery](plans/ai-tool-definition-delivery-plan.md) -
-  selective API documentation, equivalent native schemas and explicit recovery.
-
 - Active: [AI execution improvement](plans/ai-execution-improvement-plan.md) -
   recording first, then evaluation, retrieval, efficiency and local validation.
-- Active preparation: [AI Design Execution Flow](plans/ai-execution-flow-plan.md).
-  Continues the merged AI panel with intent-driven orchestration and work reuse;
-  see its preparation prerequisite before starting production implementation.
 - Active: [Editable Design Agent](plans/ai-design-agent-plan.md), including the
   accepted [AI Conversation Experience](plans/ai-conversation-experience-plan.md) contracts.
   Implementation is in progress under the plan’s bounded owner stages.

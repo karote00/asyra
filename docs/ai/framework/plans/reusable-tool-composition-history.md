@@ -2,7 +2,7 @@
 
 Historical evidence only. All execution, push, merge, monitoring and automatic
 continuation instructions below are superseded. This file does not authorize
-work. The active contract is [the current plan](reusable-tool-composition-plan.md).
+work. The active contract is [the current plan](completed/reusable-tool-composition-plan.md).
 Previous completion statements describe their recorded scope, not current
 whole-product acceptance. Preserve failed and partial evidence as such.
 

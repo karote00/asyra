@@ -402,3 +402,11 @@ covered the diff, direct consumers, source-fact freshness, real partial-result
 semantics and the fixed gates. Final edits after local validation are this plan's
 status/evidence only; runtime and test inputs remain byte-identical. No push or
 merge is included in this follow-up.
+
+## Closeout - 2026-11-02
+
+Completed: 2026-11-02
+Reviewed source: cb66b095f6ad55d2793ca3cd7b950c13f478dcbb
+Outcome: Indexed queries and compact local edits are implemented; PR #300 is merged, with subsequent local acceptance preserved below.
+Decision: Accept the bounded query/edit scope. Large-document opt-in acceptance is the recorded milestone evidence, not a claim that ordinary CI reran it. Earlier pending-delivery statements remain historical checkpoints.
+Exit criteria: The scope review checked current implementation and permanent tests, merged delivery, recorded milestone acceptance and PR #363 full CI on b738ff4333a4de0ee920a171fec2c40af897884a (run 41323723485, all 44 jobs successful). Conditional local/live cases retain their recorded evidence and are not represented as rerun by CI.

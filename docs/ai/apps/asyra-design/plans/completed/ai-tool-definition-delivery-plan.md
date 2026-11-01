@@ -110,3 +110,11 @@ Actual registered `api_fill_updateFillsAtIndex` query replies measured 4,154
 UTF-8 bytes full, 1,524 usage, 685 for `/properties/elementIds`, and 528 for a
 prior-delivery reference. Source-bound target assessment
 `c9138565-b74c-4d8c-9ac1-a983516c5233` passed both new and retained obligations.
+
+## Closeout - 2026-11-02
+
+Completed: 2026-11-02
+Reviewed source: cb66b095f6ad55d2793ca3cd7b950c13f478dcbb
+Outcome: Selective usage/schema delivery, schema equivalence and full recovery are implemented; PR #293 is merged.
+Decision: Accept the bounded transmission improvement, without claiming model latency gains. Earlier pending-delivery statements remain historical checkpoints.
+Exit criteria: The scope review checked current implementation and permanent tests, merged delivery, recorded milestone acceptance and PR #363 full CI on b738ff4333a4de0ee920a171fec2c40af897884a (run 41323723485, all 44 jobs successful). Conditional local/live cases retain their recorded evidence and are not represented as rerun by CI.
