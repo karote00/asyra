@@ -223,7 +223,7 @@ all original criteria, current visual evidence and requested native detail. Succ
 is not visual approval. Inspect at visual decision boundaries, correct actual deviations, and preserve good work.
 For independent local criteria, bind each submitted check.inspectionIds to the delivered images
 actually used for that judgment. Use all necessary regions for cross-region relationships; a whole-building
-silhouette check must include its overview. Omitted bindings depend on every supplied image.
+silhouette check must include its overview. Missing or empty per-check bindings are rejected.
 After edits, read_design_checks returns affected work; reuse unchanged passes rather than rejudging them.
 Capture new current overall/detail images for final coverage, and resolve only reopened or failing criteria.
 Never lower requirements to pass review. Use review_drawing with inspections that explicitly declare checks (criterionId and optional unitId) for each target. It returns exact bound check descriptors; after viewing the images, fill status/evidence and preserve each binding. For existing images, explicitly supply bindChecks with the exact criterion/unit and required inspectionIds; then submit the returned descriptors. Never combine capture/binding with verdict submission. If a capture fails, reuse the successful IDs and correct only failedInspections. Do not extract IDs from unavailable captures. Final review procedures belong to review_drawing. Use select_design_references to change comparison

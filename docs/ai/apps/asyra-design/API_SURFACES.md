@@ -937,7 +937,7 @@ Capture targets share the `inspect_drawing` schema. Capture-only calls return im
 pending coverage and the next judgment input, without inventing visual approval.
 Failed captures return successful IDs and exact failed targets for retry. Each
 submitted judgment names its own nonempty `inspectionIds` subset of the enclosing
-image menu. Unused menu images are not dependencies and cannot veto local recovery;
+image menu; omitted bindings are rejected, never inherited. Unused menu images are not dependencies and cannot veto local recovery;
 deferred-detail decisions still depend on their enclosing images. Actual referenced
 images must be current. Independent current passes accumulate; changed image,
 criterion or source dependencies reopen only dependent results. `final=true` checks

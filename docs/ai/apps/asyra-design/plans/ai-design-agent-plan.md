@@ -28,7 +28,7 @@ before including them in the PR. Never reset unrelated changes.
 
 ## Conversation continuity and tool contract corrections - 2026-11-02
 
-Status: active - Tasks 1 and 2 implemented and reviewed; Task 3 tool guidance next.
+Status: active - Tasks 1-3 implemented and reviewed; Task 4 integrated validation next.
 Parent: this Editable Design Agent plan. Whole-plan closeout remains with its
 coordinating owner and product acceptance with Asa. This follow-up closes only
 the bounded corrections below, not historical PRs or the entire Design Agent.
@@ -117,6 +117,32 @@ concurrent out-of-order reads, newer text, unmount and no accidental Feature cal
 Types/lint/naming pass; 22 Inspector contract tests pass. Direct consumer closes the
 panel by unmounting it. No unresolved task-local review finding. Evidence:
 `tmp/conversation-improvements/task2-*`; browser acceptance remains Task 4.
+
+
+### Task 3 guidance owner
+
+Step card: `compose` consuming `inspect` registered review contracts. Sources:
+execution spec review binding rules and Inspector `inspect` explicit dependencies.
+Input: current registered descriptions, schemas and returned bound descriptors.
+Output: shared prompt consistent with mandatory per-check nonempty image IDs;
+operation procedures stay in `review_drawing`. Capture/bind precedes judgment,
+with exact request ownership, freshness and separate overall criterion preserved.
+Boundary: `server/ai-domain-prompt.ts`, its formal tests, existing review-stage
+admission cases and contract docs. Do not change review admission or introduce a
+second schema/registry. Existing stage tests already cover omitted, foreign and
+forged bindings, stale evidence and local subset recovery. Run those unchanged,
+add the contradictory-guidance regression first, then correct only the obsolete
+sentence. Gates: prompt and review-stage suites, lint/types, bounded self-review.
+Stop if registered owner and product contract disagree beyond this correction.
+
+Review outcome: removed only the obsolete implicit-dependency sentence. Existing
+registered descriptions, schemas and admission agree; executable published fact
+examples and exact returned review descriptors already have formal owner tests.
+The new prompt regression failed before correction; all 129 prompt/review-stage
+cases now pass. These include missing scope, foreign/forged bindings, stale
+successors, valid sparse subsets and retained independent passes. Scoped lint and
+naming pass. No validator weakening or extra workflow gate; no unresolved local
+finding. Evidence: `tmp/conversation-improvements/task3-*`.
 
 
 ### Objective, evidence and boundaries
