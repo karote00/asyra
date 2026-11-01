@@ -266,6 +266,12 @@ only for the current document runtime and cleared on disposal. A separate stable
 navigation subscription projects identity, short title and busy state; progress
 updates must not rebuild or notify unchanged navigation. Composer drafts and
 attachments are preserved per conversation by presentation, never sent on switch.
+Asynchronous image reads and their errors belong to the originating draft generation.
+Switching conversations preserves that draft; completion must not modify the visible
+unrelated draft. An accepted send retires pending reads for the submitted generation,
+even if the request has already settled when a read completes. Panel/document disposal
+retires pending completions. Concurrent reads on a live draft accumulate without losing
+newer text or attachments.
 
 Panel text supports native selection and copy. Clicking non-interactive panel
 text focuses the panel without entering the Tab order, keeping copy shortcuts
