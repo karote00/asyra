@@ -28,7 +28,7 @@ before including them in the PR. Never reset unrelated changes.
 
 ## Conversation continuity and tool contract corrections - 2026-11-02
 
-Status: active - Tasks 1-3 implemented and reviewed; Task 4 integrated validation next.
+Status: active - Tasks 1-4 implemented and reviewed locally; fixed-prompt live run pending.
 Parent: this Editable Design Agent plan. Whole-plan closeout remains with its
 coordinating owner and product acceptance with Asa. This follow-up closes only
 the bounded corrections below, not historical PRs or the entire Design Agent.
@@ -144,6 +144,63 @@ successors, valid sparse subsets and retained independent passes. Scoped lint an
 naming pass. No validator weakening or extra workflow gate; no unresolved local
 finding. Evidence: `tmp/conversation-improvements/task3-*`.
 
+
+### Task 4 integration and live evidence
+
+Step card: existing conversation/request/compose/inspect/settle handoffs; no new
+product owner. Inputs: implementations from Tasks 1-3, unchanged registered
+Feature/canonical mutation routes, fixed Taipei 101 fixture. Outputs: deterministic
+browser and provider evidence, current docs/template parity, then one bounded live
+record with actual submitted prompt, original provider records, timings, editable
+source, overview/detail screenshots and honest result assessment. Mocked evidence
+establishes wiring and semantics, never live quality or speedup.
+Boundary: existing App tests/E2E, a permanent fixed-prompt recorder, provider spec,
+App guide, generated template and this plan/report. No additional production
+feature, model settings, prompt coaching or geometry repair. Full AI/server gates,
+focused browser conversation/navigation, build/types/lint/naming, Inspector source
+proof and template parity precede live execution. Use the reference procedure's
+10-minute live-run ceiling and normal Stop/cleanup; retain failures without reruns.
+If AI asks a genuine clarification, preserve it and ask Asa instead of inventing
+an answer. Credit checks stay on the 30-minute cadence; wind down at 15,000.
+
+### Task 4 validation iteration
+
+Two browser attempts were invalidated by concurrent manifest/package-build changes.
+Their traces show Vite reconnects during the cases and lost test listeners. Keep
+source and dependency outputs static during every browser/live run; do not patch
+history behavior or increase assertion deadlines. The static-source rerun passed
+29 cases with three opt-in performance cases skipped. Preserve all attempts.
+
+Template synchronization regenerates pre-existing drift as well as this task's
+source changes (337 generated paths); never hand-edit that output. Parity passes.
+The extra `release:template` probe failed on pre-existing root content package
+`@asyra/domain-knowledge: workspace:*`. Package-release-validation assigns that
+artifact-only clean-consumer to Framework Release Gate 5; no package publication
+is requested here. Record the standalone limitation, do not change release-set
+ownership or claim that probe passed. The applicable generated-template build
+uses the existing prebuilt local graph. The earlier scope question is withdrawn;
+no additional permission or scope expansion is needed for the remaining App work.
+
+### Task 4 pre-live review
+
+Formal gates: AI 619 pass; App local 159 Node cases plus 666 Vitest cases pass;
+server harness 1308 pass and two existing skips; framework boundary 13 pass;
+static-source browser flow 29 pass and three opt-in performance skips; the four
+navigation/style cases pass, including targeted color change, two-object revision,
+unrelated-object preservation, exact prior intent, and one Undo/Redo per request.
+The deferred-image browser case verifies the subsequent submission's actual image
+ownership. Inspected narrow and wide panel screenshots and attachment isolation.
+Inspector candidate `cab4e9b3-7cee-4173-9c71-b7af69b5d9e4` passes. App build,
+types, scoped lint/naming, template parity and local template build pass. Fixed
+prompt/recording contract has a permanent Node gate and immutable fixture digest.
+
+Bounded review rechecked request-owned history/evidence separation, draft lifetime,
+registered explicit image binding, generated-script exclusions and recorder cleanup.
+No production timing promise follows from mock results. No unresolved finding in
+the four implementation slices. Framework release clean-consumer remains a known,
+out-of-scope release limitation, not a passed or skipped App assertion. Preserve
+all failed pre-live attempts. Next: exactly one live run, visual inspection and
+actual evidence report; no code/build edits during that run.
 
 ### Objective, evidence and boundaries
 

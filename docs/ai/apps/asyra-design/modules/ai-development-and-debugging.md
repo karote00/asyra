@@ -39,6 +39,33 @@ Preserve their original evidence without rewriting it. Existing test resource,
 recording and cancellation guards remain in force; a timeout does not authorize
 changing the brief to make the next attempt pass.
 
+### Recorded baseline runner
+
+After the applicable App validation gates pass, run
+`yarn workspace @asyra/asyra-design test:live:taipei-101` once. Build the existing
+App, document backend and collaboration server first. Keep the source and package
+outputs static throughout recording. The runner reads the App `.env`, refuses
+occupied service ports, starts and tracks its own local services, and stops them
+on exit. No remote publication or new dependency installation is involved.
+
+The runner verifies fixture SHA-256
+`25b9ad1aeb523fdb590a39d090a37fdc65ed62ff081a27acfa92d946f9b2ff51`,
+the composer value and the actual submitted intent. It supplies no reference
+attachments, prior conversation or extra test instructions. A user-approved prompt
+change must explicitly update the fixture and its contract; no default adaptation.
+The test guard is ten minutes, independent of production task duration. It requests
+Stop before the hard deadline to retain evidence, with the existing worker-owned
+hard termination as backup. A timeout, failure or clarification is an outcome to
+report, not permission to rerun or coach the model.
+
+Evidence is retained under `tmp/conversation-improvements/live/<run-id>/`: exact
+request metadata, provider JSONL/payloads/assets, service logs and PIDs, recording,
+first/final/reloaded screenshots, detail views, editable source snapshot and durable
+checkpoint. First paint opportunity is a rendering opportunity metric, not proof
+of visible quality; inspect the saved images. Report request bytes, tool/research
+activity, rejected inputs, completion/timeout and unresolved review work from the
+actual records. Keep unmeasured CPU or provider metrics explicitly unmeasured.
+
 ## Current Drawing Flow
 
 The production frontend consumes one server-prepared `AiActionBatch`. The
