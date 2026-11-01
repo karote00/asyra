@@ -66,6 +66,22 @@ of visible quality; inspect the saved images. Report request bytes, tool/researc
 activity, rejected inputs, completion/timeout and unresolved review work from the
 actual records. Keep unmeasured CPU or provider metrics explicitly unmeasured.
 
+Receipt POSTs share the action-batch endpoint. Classify them by the canonical
+receipt header before validating user intent; they are not additional submissions.
+A connected collaboration socket alone does not prove document bootstrap. Wait for
+the expected canonical node count before taking the reload screenshot.
+
+To verify an existing retained drawing without another AI run, use:
+
+```sh
+node apps/asyra-design/test-data/ai-drawing/review-recorded-document.mjs <absolute-run-directory>
+```
+
+This helper only accepts runs inside the current project `tmp`, blocks AI routes,
+compares the loaded document with the retained source, and writes a separate
+`reload-review-<timestamp>` directory. Preserve original failed evidence. The helper
+requires the same built services and App environment as the original recorder.
+
 ## Current Drawing Flow
 
 The production frontend consumes one server-prepared `AiActionBatch`. The

@@ -43,6 +43,7 @@
     ".env*",
     ".*-data",
     ".turbo",
+    "tmp",
     "coverage",
     "dist",
     "playwright-report",
@@ -69,8 +70,6 @@
     "flow-contracts.json",
     "server/__tests__/execution-flow.config.ts",
     "server/__tests__/execution-flow-proof.test.ts",
-    "tmp",
     "__tests__/taipei-101-live-contract.test.mjs"
-
   ]
 }

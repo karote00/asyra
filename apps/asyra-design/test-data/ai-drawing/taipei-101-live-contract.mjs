@@ -1,3 +1,6 @@
+/* global requestAnimationFrame */
+import { AI_BATCH_RECEIPT_HEADER } from '../../src/ai/action-batch-endpoint.ts'
+import { setTimeout } from 'node:timers'
 import { URL } from 'node:url'
 import { readFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
@@ -18,7 +21,8 @@ export const readTaipei101Prompt = () => {
     sha256
   }
 }
-export const assertTaipei101Submission = (request, prompt) => {
+export const assertTaipei101Submission = (request, prompt, headers = {}) => {
+  if (Object.hasOwn(headers, AI_BATCH_RECEIPT_HEADER)) return false
   if (
     request.intent !== prompt ||
     request.metadata?.imageAttachments?.length ||
@@ -27,4 +31,39 @@ export const assertTaipei101Submission = (request, prompt) => {
     throw new Error(
       'The fixed benchmark requires the exact prompt in a fresh conversation without attachments.'
     )
+  return true
+}
+
+/** A connected transport alone does not prove bootstrap application. */
+export const recordedDocumentReady = (state, expectedCount) =>
+  state.connected && !!state.workspaceId && state.elementCount === expectedCount
+
+export const waitForRecordedDocument = async (page, expectedCount) => {
+  const until = Date.now() + 60000
+  while (Date.now() < until) {
+    const state = await page.evaluate(async () => {
+      const { core, getActiveCollaborationHandle } =
+        await import('/src/testing/runtime-access.ts')
+      return {
+        connected: getActiveCollaborationHandle()?.getStatus() === 'connected',
+        workspaceId: core.getCurrentWorkspaceId(),
+        elementCount: core.deps.sceneTree.getAllElements().size
+      }
+    })
+    if (recordedDocumentReady(state, expectedCount)) {
+      await page.evaluate(async () => {
+        const { getActiveCollaborationHandle } =
+          await import('/src/testing/runtime-access.ts')
+        await getActiveCollaborationHandle()?.whenIdle()
+        await new Promise((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(resolve))
+        )
+      })
+      return state
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250))
+  }
+  throw new Error(
+    'The recorded document did not finish loading within 60 seconds.'
+  )
 }
