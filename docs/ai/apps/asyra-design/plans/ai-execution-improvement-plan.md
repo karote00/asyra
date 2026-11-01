@@ -22,7 +22,7 @@ remains evidence and requires a bounded owner correction before retrying.
 2. [Evaluation and periodic reports](ai-execution-evaluation-plan.md).
 3. [Precise retrieval and reuse](ai-execution-retrieval-plan.md).
 4. [Execution efficiency](ai-execution-efficiency-plan.md).
-5. [Local affected validation](../../../framework/plans/local-affected-validation-plan.md)
+5. [Local affected validation](../../../framework/plans/completed/local-affected-validation-plan.md)
    - independent developer-tool work, reusable by the other plans.
 
 Mutation scope: Design provider/diagnostics/tool owners and their direct tests,

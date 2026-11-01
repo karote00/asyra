@@ -1,7 +1,7 @@
 # Local affected validation
 
 Created: 2026-10-03. Status: completed locally; no remote operation. Independent tooling plan coordinated by
-the [AI execution improvement plan](../../apps/asyra-design/plans/ai-execution-improvement-plan.md).
+the [AI execution improvement plan](../../../apps/asyra-design/plans/ai-execution-improvement-plan.md).
 
 ## Outcome
 
@@ -144,3 +144,11 @@ Bounded review checked the collect/select/execute flow, direct runner and map
 consumers, cancellation ownership, result interpretation and source identity.
 No workspace allowlist, second relationship graph, remote operation or unrelated
 product fix was added. Local evidence does not replace remote CI.
+
+## Closeout - 2026-11-02
+
+Completed: 2026-11-02
+Reviewed source: cb66b095f6ad55d2793ca3cd7b950c13f478dcbb
+Outcome: Affected local preview and execution use the shared CI classifier, command inventory and guarded runner.
+Decision: The bounded local-validation capability is accepted; local results remain distinct from remote CI. Earlier pending-delivery statements remain historical checkpoints.
+Exit criteria: The scope review checked current implementation and permanent tests, merged delivery, recorded milestone acceptance and PR #363 full CI on b738ff4333a4de0ee920a171fec2c40af897884a (run 41323723485, all 44 jobs successful). Conditional local/live cases retain their recorded evidence and are not represented as rerun by CI.

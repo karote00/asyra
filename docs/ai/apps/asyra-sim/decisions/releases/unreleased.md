@@ -294,3 +294,9 @@ Pending saves disable both save entry points and guard duplicate dispatch.
   Capacity, reference hardware, independent reviews/pilots and maintenance policy
   remain open. M6 PR creation and CI are authorized; its merge and R0 publication
   still require separate user acceptance.
+
+## 2026-11-02 - Frontier diagnostic workload correction accepted
+
+Context: PR #363 restored the actual-frontier diagnostic to its explicit shared 500,000-unit workload context.
+Decision: Accept the [bounded M6 diagnostic correction](/docs/ai/apps/asyra-sim/plans/m6-pilot-review.md#diagnostic-limit-correction---2026-11-01). Both diagnostic modes, nine adjacent tests, type checking and lint passed locally; the Sim job and all 44 full-CI jobs passed on b738ff4333a4de0ee920a171fec2c40af897884a.
+Consequences: Production computation, numerical assertions and resource guards are unchanged. This completes only the diagnostic correction; M6 external acceptance and publication remain separate open work.

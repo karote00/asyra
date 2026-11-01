@@ -128,3 +128,11 @@ personal absolute paths in the Agent plan with portable home placeholders.
 Naming (13), scoped ESLint, formatting, document/bundle freshness and whitespace
 checks pass. Public distribution strings are permitted only in the exact CI
 policy/test owners; unknown roots and executable baseline files stay rejected.
+
+## Closeout - 2026-11-02
+
+Completed: 2026-11-02
+Reviewed source: cb66b095f6ad55d2793ca3cd7b950c13f478dcbb
+Outcome: Operation feedback and IME-safe title handling are implemented; PR #285 is merged.
+Decision: Accept operation-result feedback and composition handling without introducing document-dirty state. Earlier pending-delivery statements remain historical checkpoints.
+Exit criteria: The scope review checked current implementation and permanent tests, merged delivery, recorded milestone acceptance and PR #363 full CI on b738ff4333a4de0ee920a171fec2c40af897884a (run 41323723485, all 44 jobs successful). Conditional local/live cases retain their recorded evidence and are not represented as rerun by CI.

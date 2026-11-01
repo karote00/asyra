@@ -30,7 +30,7 @@ forward publication crosses the existing Factory handoff before cancellation.
 App feature and cross-owner integration flows are intended development targets.
 The package-only execution restriction below is a known implementation defect
 being corrected under
-`docs/ai/apps/asyra-design/plans/ai-execution-flow-plan.md`, Task 0; App runtime
+`docs/ai/apps/asyra-design/plans/completed/ai-execution-flow-plan.md`, Task 0; App runtime
 verification is not complete until its source and execution gates pass.
 
 A product proof manifest may declare its canonical repository-relative

@@ -91,3 +91,10 @@ are implemented; the recorded local checks passed.
 Decision: Implementation accepted locally. PR CI verification and the final
 before/after report follow the delivery procedure.
 Exit criteria: Applicable local checks pass; workflow separation and protected paths are verified.
+
+## Final delivery confirmation - 2026-11-02
+
+Reviewed source: b738ff4333a4de0ee920a171fec2c40af897884a
+Merged source: cb66b095f6ad55d2793ca3cd7b950c13f478dcbb (PR #363).
+Evidence: <a href="https://github.com/karote00/asyra/actions/runs/41323723485" target="_blank" rel="noopener noreferrer">Full PR validation</a> completed with all 44 jobs successful, including all required checks and final validate.
+The final full run contains 44 successful jobs, compared with 45 in baseline run 41230021980. The removed job is framework-release-readiness. Workspace behavior, Fieldscope profiles, specialized E2E, production artifacts and final aggregation remain verified. This is a job-count comparison, not a test-case count or a runtime speed claim. Publication remains separate from merge.

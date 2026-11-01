@@ -20,7 +20,7 @@ Merge is not authorized. Single-agent execution remains the default.
 
 This is a continuation of the merged Design implementation, not a restart of
 the discarded delegated AI panel experiment. The existing
-[Editable Design Agent plan](ai-design-agent-plan.md) is historical execution
+[Editable Design Agent plan](../ai-design-agent-plan.md) is historical execution
 context for this work; this task does not declare that entire plan complete or
 activate deferred manual Text authoring.
 
@@ -72,10 +72,10 @@ Preserve:
 
 Current product contracts:
 
-- [Local AI provider](../specs/local-ai-provider.md).
-- [Design preparation](../specs/design-preparation.md).
-- [Conversation experience](../specs/ai-conversation-experience.md).
-- [Socket document session](../specs/socket-authoritative-document-session.md).
+- [Local AI provider](../../specs/local-ai-provider.md).
+- [Design preparation](../../specs/design-preparation.md).
+- [Conversation experience](../../specs/ai-conversation-experience.md).
+- [Socket document session](../../specs/socket-authoritative-document-session.md).
 
 Current source establishes Code Mode, parameterized design preparation,
 `prepare_and_apply_design`, `prepareOperationBatch`, semantic target maps,
@@ -105,7 +105,7 @@ execution and outcome evaluation. It does not establish a speedup for this App:
 
 ## Preparation blocker: App evidence admission
 
-The new [task workflow](../../../workflows/task-context.md#plan-to-flow-development-and-review-before-implementation)
+The new [task workflow](../../../../workflows/task-context.md#plan-to-flow-development-and-review-before-implementation)
 requires reviewed flow admission before production implementation. A static
 Inspector and ordinary green CI do not establish that admission.
 
@@ -1147,7 +1147,7 @@ repair contract, not admitted implementation scope or a completion claim.
 
 The user requested a Framework plan for explicit collection of independently
 committed batches into one pending Undo group. The planning authority is
-[Transaction History Groups](../../../framework/plans/transaction-history-group-plan.md).
+[Transaction History Groups](../../../../framework/plans/transaction-history-group-plan.md).
 PR #280 delivered and merged the reviewed Framework implementation after all
 33 checks passed, including validate-only attempt 2 reusing attempt 1 evidence.
 The App integration now consumes those APIs; whole-plan acceptance remains open.
@@ -1887,3 +1887,11 @@ and recovery; CLI trial, the real board case, public-doc generation check,
 focused lint and naming pass. Protected CI remains blocked by independent
 accepted-base/protection requirements; a passing trial does not waive them.
 This closes the bounded local correction; updated-head remote CI is pending.
+
+## Closeout - 2026-11-02
+
+Completed: 2026-11-02
+Reviewed source: cb66b095f6ad55d2793ca3cd7b950c13f478dcbb
+Outcome: Original Tasks 0-5 and their recorded native end-to-end acceptance are complete; PR #281 is merged.
+Decision: Close only the original execution-flow scope. Later AI improvement, evaluation, efficiency and retrieval plans retain their own acceptance boundaries. Earlier pending-delivery statements remain historical checkpoints.
+Exit criteria: The scope review checked current implementation and permanent tests, merged delivery, recorded milestone acceptance and PR #363 full CI on b738ff4333a4de0ee920a171fec2c40af897884a (run 41323723485, all 44 jobs successful). Conditional local/live cases retain their recorded evidence and are not represented as rerun by CI.

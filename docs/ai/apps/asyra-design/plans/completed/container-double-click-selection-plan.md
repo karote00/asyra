@@ -294,3 +294,11 @@ report that boundary. Final review stays within these owners and direct runners.
 - Final selector/metadata verification and the actual narrowed supervised
   invocation follow the profile-retention correction. No renderer, App runtime,
   dependency or environment code changed during this CI-routing segment.
+
+## Closeout - 2026-11-02
+
+Completed: 2026-11-02
+Reviewed source: cb66b095f6ad55d2793ca3cd7b950c13f478dcbb
+Outcome: Nested container selection, feedback and hover corrections are implemented; PR #299 is merged.
+Decision: Accept the bounded interaction contract and its recorded integration checks. Earlier pending-delivery statements remain historical checkpoints.
+Exit criteria: The scope review checked current implementation and permanent tests, merged delivery, recorded milestone acceptance and PR #363 full CI on b738ff4333a4de0ee920a171fec2c40af897884a (run 41323723485, all 44 jobs successful). Conditional local/live cases retain their recorded evidence and are not represented as rerun by CI.

@@ -497,3 +497,13 @@ code-example and table formatting; the new contributor instructions introduce no
 formatter differences. The previously documented unrelated repository failures
 remain unresolved and are not reclassified as passing. No template was changed,
 and this slice was not pushed.
+
+## Closeout
+
+Completed: 2026-11-02
+Reviewed source: b738ff4333a4de0ee920a171fec2c40af897884a
+Merged source: cb66b095f6ad55d2793ca3cd7b950c13f478dcbb (PR #363).
+Evidence: <a href="https://github.com/karote00/asyra/actions/runs/41323723485" target="_blank" rel="noopener noreferrer">Full PR validation</a> completed with all 44 jobs successful, including all required checks and final validate.
+Outcome: Architecture, workspace, live dashboard and control-plane presentation are React-owned, with superseded renderers and iframe composition removed. Required mount, style, build and service files remain at their current owners.
+Decision: Accept the complete React project and preserved service behavior. Earlier pending-delivery and failure notes describe their historical checkpoint; final CI resolves those delivery blockers. Future dashboard architecture is outside this migration.
+Exit criteria: Recorded component, service, delivery, installed-consumer and browser checks passed; final full CI also passed Inspector validation and all product jobs.

@@ -245,3 +245,20 @@ regressions and execution resource guards remain. Local validation passed; remot
 CI and its comparison report follow delivery.
 
 Completed plan: [Workflow Validation Simplification](/docs/ai/framework/plans/completed/release-record-workflow-unification-plan.md).
+
+## 2026-11-02 - Readability migration closeout
+
+Context: PR #363 merged after all 44 full-CI jobs and required checks passed on b738ff4333a4de0ee920a171fec2c40af897884a.
+Decision: Close the [readability migration](/docs/ai/framework/plans/completed/code-readability-rule-migration-plan.md), including the reviewed handler-map and named-condition slices. Rules 1-4 remain enforced; other audit findings are advisory.
+Consequences: Accepted behavior and frozen historical fixtures remain preserved. No remaining bulk rewrite is scheduled. The [workflow simplification](/docs/ai/framework/plans/completed/release-record-workflow-unification-plan.md) also has final remote validation. Closeout creates no version, Changeset, tag or publication.
+
+## 2026-11-02 - Reviewed plan closeout
+
+Context: The user approved closing the reviewed implementation scopes after confirming merged delivery and acceptance evidence on main cb66b095f6ad55d2793ca3cd7b950c13f478dcbb.
+
+Decision:
+
+- [local-affected-validation-plan](/docs/ai/framework/plans/completed/local-affected-validation-plan.md): The bounded local-validation capability is accepted; local results remain distinct from remote CI.
+- [reusable-tool-composition-plan](/docs/ai/framework/plans/completed/reusable-tool-composition-plan.md): Close the five-correction scope. Retain documented diagnostic and model/reference-selection limits; no universal quality or latency claim.
+
+Consequences: Historical plan and acceptance records remain intact. Closeout changes documentation only; no package version, Changeset, template, tag or publication is created. Evaluation, efficiency and retrieval plans remain open.
