@@ -28,7 +28,7 @@ before including them in the PR. Never reset unrelated changes.
 
 ## Conversation continuity and tool contract corrections - 2026-11-02
 
-Status: active - Task 1 implemented and reviewed; Task 2 attachment isolation next.
+Status: active - Tasks 1 and 2 implemented and reviewed; Task 3 tool guidance next.
 Parent: this Editable Design Agent plan. Whole-plan closeout remains with its
 coordinating owner and product acceptance with Asa. This follow-up closes only
 the bounded corrections below, not historical PRs or the entire Design Agent.
@@ -91,6 +91,33 @@ source proof `a897b846-7a98-4ae8-9eb8-5ea1598b0035` passed. Types and naming pas
 scoped lint has zero errors (two pre-existing console warnings in proof/provider
 tests). No unresolved task-local review finding; no claim of live model quality.
 Evidence logs are under `tmp/conversation-improvements/task1-*`.
+
+### Task 2 attachment owner
+
+Step card: `conversation-lifecycle`, conversation spec `Document-scoped history`.
+Input: selected files, originating conversation/draft generation and panel lifetime.
+Output: source attachments or read errors only on that still-live draft. Navigation
+preserves a pending draft; accepted send retires its generation; panel/document
+disposal retires reads. No model request on attachment/navigation and no canonical
+writes. Use one presentation-owned draft map, not a second active-draft copy.
+Boundary: panel draft handlers, panel regression tests, conversation spec and
+conversation-lifecycle Inspector. No provider, Runtime or canvas changes.
+Cases: delayed success/error after navigation, sending before read completion,
+concurrent reads, unmount, normal removal/submission and unchanged navigation.
+Gates: reproduce with controlled FileReader completion first, panel suite,
+types/lint/naming, Inspector contracts, bounded diff/direct-consumer review.
+Stop for ownership mismatch or required out-of-scope changes.
+
+Review outcome: one authoritative per-conversation draft map replaces the copied
+active draft. Delayed success/error updates use the captured conversation and
+generation; accepted composer submission advances the generation; unmount rejects
+late state updates. Navigation has no draft-copy overwrite. Three regressions
+failed before implementation and pass afterward. All 40 panel tests pass, including
+concurrent out-of-order reads, newer text, unmount and no accidental Feature calls.
+Types/lint/naming pass; 22 Inspector contract tests pass. Direct consumer closes the
+panel by unmounting it. No unresolved task-local review finding. Evidence:
+`tmp/conversation-improvements/task2-*`; browser acceptance remains Task 4.
+
 
 ### Objective, evidence and boundaries
 

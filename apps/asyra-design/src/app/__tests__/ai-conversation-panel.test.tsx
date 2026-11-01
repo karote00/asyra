@@ -283,6 +283,181 @@ describe('AI Agent conversation panel intent boundary', () => {
     expect(onClose).toHaveBeenCalledOnce()
   })
 
+  it.each(['load', 'error'] as const)(
+    'keeps delayed image %s with the originating conversation draft',
+    async (completion) => {
+      const readers: FileReader[] = []
+      const spy = vi
+        .spyOn(FileReader.prototype, 'readAsDataURL')
+        .mockImplementation(function (this: FileReader) {
+          readers.push(this)
+        })
+      try {
+        const harness = createPanelHarness()
+        harness.pending.resolve({ status: 'executed', actionResults: [] })
+        render(
+          <AiConversationPanel
+            confirmation={harness.confirmation}
+            conversation={harness.conversation}
+            onClose={vi.fn()}
+          />
+        )
+        await act(async () => {
+          await harness.conversation.submit('First design')
+        })
+        fireEvent.change(screen.getByLabelText('Choose images'), {
+          target: {
+            files: [new File(['a'], 'late.png', { type: 'image/png' })]
+          }
+        })
+        fireEvent.click(
+          screen.getByRole('button', { name: 'New conversation' })
+        )
+        fireEvent.change(screen.getByLabelText('Message Agent'), {
+          target: { value: 'Second draft' }
+        })
+        await act(async () => {
+          Object.defineProperty(readers[0], 'result', {
+            value: 'data:image/png;base64,YQ=='
+          })
+          readers[0].dispatchEvent(new ProgressEvent(completion))
+        })
+        expect(screen.queryByAltText('late.png')).toBeNull()
+        expect(
+          screen.queryByText(
+            'Could not read one or more images. Try adding them again.'
+          )
+        ).toBeNull()
+        expect(screen.getByLabelText('Message Agent')).toHaveProperty(
+          'value',
+          'Second draft'
+        )
+        fireEvent.click(
+          screen.getByRole('button', { name: 'Toggle conversation history' })
+        )
+        fireEvent.click(
+          screen.getByRole('button', { name: 'First design', exact: true })
+        )
+        if (completion === 'load')
+          expect(screen.getByAltText('late.png')).toBeTruthy()
+        else
+          expect(
+            screen.getByText(
+              'Could not read one or more images. Try adding them again.'
+            )
+          ).toBeTruthy()
+        expect(harness.feature.execute).toHaveBeenCalledTimes(1)
+      } finally {
+        spy.mockRestore()
+      }
+    }
+  )
+
+  it('retires pending image reads when their draft is sent even after fast settlement', async () => {
+    const readers: FileReader[] = []
+    const spy = vi
+      .spyOn(FileReader.prototype, 'readAsDataURL')
+      .mockImplementation(function (this: FileReader) {
+        readers.push(this)
+      })
+    try {
+      const harness = createPanelHarness()
+      harness.pending.resolve({ status: 'executed', actionResults: [] })
+      render(
+        <AiConversationPanel
+          confirmation={harness.confirmation}
+          conversation={harness.conversation}
+          onClose={vi.fn()}
+        />
+      )
+      fireEvent.change(screen.getByLabelText('Choose images'), {
+        target: { files: [new File(['a'], 'late.png', { type: 'image/png' })] }
+      })
+      fireEvent.change(screen.getByLabelText('Message Agent'), {
+        target: { value: 'Draw a card' }
+      })
+      await act(async () => {
+        fireEvent.submit(
+          screen.getByRole('form', { name: 'Agent message form' })
+        )
+      })
+      fireEvent.change(screen.getByLabelText('Message Agent'), {
+        target: { value: 'Next draft' }
+      })
+      await act(async () => {
+        Object.defineProperty(readers[0], 'result', {
+          value: 'data:image/png;base64,YQ=='
+        })
+        readers[0].dispatchEvent(new ProgressEvent('load'))
+      })
+      expect(screen.queryByAltText('late.png')).toBeNull()
+      expect(screen.getByLabelText('Message Agent')).toHaveProperty(
+        'value',
+        'Next draft'
+      )
+      expect(harness.feature.execute).toHaveBeenCalledTimes(1)
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
+  it('accumulates independent image reads without replacing newer text and ignores retired panels', async () => {
+    const readers: FileReader[] = []
+    const spy = vi
+      .spyOn(FileReader.prototype, 'readAsDataURL')
+      .mockImplementation(function (this: FileReader) {
+        readers.push(this)
+      })
+    try {
+      const harness = createPanelHarness()
+      const view = render(
+        <AiConversationPanel
+          confirmation={harness.confirmation}
+          conversation={harness.conversation}
+          onClose={vi.fn()}
+        />
+      )
+      for (const name of ['first.png', 'second.png', 'retired.png']) {
+        fireEvent.change(screen.getByLabelText('Choose images'), {
+          target: { files: [new File(['a'], name, { type: 'image/png' })] }
+        })
+      }
+      fireEvent.change(screen.getByLabelText('Message Agent'), {
+        target: { value: 'Newest text' }
+      })
+      const complete = async (index: number) =>
+        act(async () => {
+          Object.defineProperty(readers[index], 'result', {
+            value: 'data:image/png;base64,YQ=='
+          })
+          readers[index].dispatchEvent(new ProgressEvent('load'))
+        })
+      await complete(1)
+      await complete(0)
+      expect(screen.getByAltText('first.png')).toBeTruthy()
+      expect(screen.getByAltText('second.png')).toBeTruthy()
+      expect(screen.getByLabelText('Message Agent')).toHaveProperty(
+        'value',
+        'Newest text'
+      )
+      view.unmount()
+      render(
+        <AiConversationPanel
+          confirmation={harness.confirmation}
+          conversation={harness.conversation}
+          onClose={vi.fn()}
+        />
+      )
+      await complete(2)
+      expect(screen.queryByAltText('retired.png')).toBeNull()
+      expect(screen.getByLabelText('Message Agent')).toHaveProperty('value', '')
+      expect(spy).toHaveBeenCalledTimes(3)
+      expect(harness.feature.execute).not.toHaveBeenCalled()
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
   it('navigates history without sending and preserves each unsent draft', async () => {
     const harness = createPanelHarness()
 
