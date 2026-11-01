@@ -4,6 +4,15 @@ Never record completed plans here.
 
 ## Current Status
 
+- Full-building Taipei 101 testing uses the
+  [fixed user-approved prompt](modules/ai-development-and-debugging.md#fixed-full-building-taipei-101-test-prompt).
+  Only an explicit user request may change that baseline input.
+
+- Next planned AI work: [Conversation continuity and tool contract corrections](plans/ai-design-agent-plan.md#conversation-continuity-and-tool-contract-corrections---2026-11-02),
+  under Editable Design Agent. Start with its bounded tasks and document/admission
+  requirements; this entry does not activate implementation.
+
+
 - Active - final validation: [Large document navigation performance](plans/large-document-navigation-performance-plan.md) -
   user accepted the candidate's navigation speed; retained navigation, shared
   native materials, bounded GPU batches and input scheduling corrections are

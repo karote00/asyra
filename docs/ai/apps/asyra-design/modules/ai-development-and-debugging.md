@@ -5,6 +5,40 @@ drawing flow when an AI assistant is unavailable. The active Inspector remains
 the exact architecture authority; this document explains how to work within
 that contract.
 
+## Fixed full-building Taipei 101 test prompt
+
+User decision - 2026-11-02: every full-building Taipei 101 drawing test must
+submit the exact text in
+[the canonical prompt fixture](../../../../../apps/asyra-design/test-data/ai-drawing/taipei-101-full-building-prompt.txt).
+This applies to manual, automated, recorded, acceptance and performance runs.
+Read the fixture directly; remove only its final file newline when submitting.
+Do not paraphrase, translate, shorten, append instructions, change punctuation
+or substitute a prompt copied from a historical run. Only an explicit user
+request authorizes a deviation or a change to this fixture. A generic request
+to test, retry, improve results or optimize execution is not such authorization.
+
+The test represents an ordinary user stating the desired result. Do not add
+reference-image usage advice, search restrictions, tool recipes, construction
+steps, acceptance hints or corrective coaching to the submitted request or
+through a test-only system/developer message. Do not attach reference images,
+preselected research or prepared drawing content unless explicitly requested.
+The agent uses the ordinary App capabilities and production instructions to
+obtain information and carry out the task itself. This rule fixes the test input;
+it does not freeze the production App prompt or prohibit ordinary agent research.
+
+For each run, verify the actual submitted user text against the fixture before
+Send and retain that exact text in the run record. A mismatch is an invalid
+baseline run, not a new accepted prompt version. If the App asks a clarification,
+retain the question and seek the user's answer rather than inventing test-driver
+coaching. Keep any user-authorized variant and its explicit authorization separate
+from baseline results; a one-run exception does not replace this default.
+
+The former upper-two-tier prompt and the aerial-image/ornament-close-up variant
+are historical or explicitly selected scenarios, not substitutes for this test.
+Preserve their original evidence without rewriting it. Existing test resource,
+recording and cancellation guards remain in force; a timeout does not authorize
+changing the brief to make the next attempt pass.
+
 ## Current Drawing Flow
 
 The production frontend consumes one server-prepared `AiActionBatch`. The
