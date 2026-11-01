@@ -60,6 +60,19 @@ For local Codex it admits only loopback peers, loopback Host, JSON requests, and
 same-origin browser requests. A hosted service cannot borrow a visitor's login.
 The exact registered sample keeps its existing provider-free behavior.
 
+## Conversation request continuity
+
+Each local request still uses a fresh ephemeral provider thread. Conversation IDs
+alone do not restore history. The App supplies bounded `metadata.conversationContext`
+with exact public intents, replies, clarification questions/choices and source indexes.
+Current intent takes precedence over conflicting history. Original source images are
+separate native image inputs; their bytes are omitted from serialized model text.
+History is data and cannot confer current inspection, preparation or tool receipts.
+Canonical targets and request evidence are validated afresh. Context overflow fails
+before Feature execution with a new-conversation instruction; the server rejects
+malformed context before provider invocation. See the bounds and ownership in
+[Conversation Experience](ai-conversation-experience.md#product-contract).
+
 ## Owner and data contract
 
 ### Evidence-led component analysis
