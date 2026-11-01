@@ -2,6 +2,15 @@
 
 ## Status and authority
 
+Current planning update - 2026-11-02: the next bounded work is
+[Conversation continuity and tool contract corrections](#conversation-continuity-and-tool-contract-corrections---2026-11-02).
+This update integrates the current source review and existing plans; it does not
+claim implementation, failing regression evidence, Inspector admission or live
+acceptance. The earlier delivery status and authorizations below are historical;
+they do not authorize remote operations for this follow-up.
+
+### Historical delivery context
+
 Active - implementation and local validation complete; latest PR CI pending.
 Planned 2026-09-19. The user explicitly selected Figma Design (editable
 canvas designs), not Figma Make (executable websites). Complete the plan, including
@@ -16,6 +25,209 @@ that this larger plan is complete. No blanket claim of all-product Figma parity.
 Worktree: `.worktrees/design-local-codex`, branch `codex/design-local-codex`.
 Preserve the existing dirty work. Inventory and validate earlier task-owned changes
 before including them in the PR. Never reset unrelated changes.
+
+## Conversation continuity and tool contract corrections - 2026-11-02
+
+Status: planned; production implementation has not started.
+Parent: this Editable Design Agent plan. Whole-plan closeout remains with its
+coordinating owner and product acceptance with Asa. This follow-up closes only
+the bounded corrections below, not historical PRs or the entire Design Agent.
+Planning baseline: `b60cec0abdd9c3b12e5c912fd76a1f7fbf8b8e6e`.
+
+### Objective, evidence and boundaries
+
+Make ordinary design follow-ups and clarification answers carry the information
+needed to act on the intended editable design. Keep reference provenance and
+conversation isolation, remove contradictory tool guidance, and measure the
+resulting complete task flow without weakening current review requirements.
+
+Source review found four concrete gaps:
+
+- `src/ai/conversation.ts` sends the current intent and target hints, but not
+  prior conversational requirements or decisions. Ordinary follow-ups do not
+  inherit references; only clarification and retry do. The local provider starts
+  a new ephemeral thread per request, so a conversation ID does not restore memory.
+- Clarification metadata contains the original intent and prior turn ID, but
+  not the actual assistant question, offered choices or intervening answers.
+- `server/ai-domain-prompt.ts` both requires per-check `inspectionIds` and says
+  omitted bindings use every supplied image. `local-design-review.ts` rejects
+  missing per-check IDs; the existing explicit binding contract is authoritative.
+- `src/app/ai-conversation-panel.tsx` awaits image reads without binding their
+  result to the originating conversation and draft lifetime.
+
+The existing conversation and panel suites passed 63 tests during review. This
+is baseline evidence, not proof of these cases: establish permanent failing
+regressions before changing each implementation owner. No live-model latency
+baseline or browser reproduction of the attachment race has yet been collected.
+
+Mutation scope for future implementation: the existing App conversation and
+panel owners, their Feature/provider handoff and bounded input validation,
+domain/tool guidance, direct tests, affected current specifications/API docs,
+existing Inspector steps and generated Design template. Shared Runtime changes
+require evidence that the existing public handoff cannot express the contract
+and a separately bounded owner slice. No new dependencies, model changes,
+geometry/rendering changes, persistent chat store or external integrations.
+
+Discovery stays within these four gaps, their direct consumers, and the task
+cases below. Retain permission checks, cancellation, request-owned evidence,
+partial-result recovery, grouped Undo and current native editable capabilities.
+Do not add raster insertion/image generation or relax final visual verification.
+
+### Task 1 - Preserve conversation intent and clarification context
+
+Owner: App `conversation-lifecycle`, followed by the existing Feature and
+`request-backend-action-batch` handoff. The controller owns conversation memory;
+the panel displays it and the provider consumes one immutable request projection.
+
+Design the bounded context contract before coding. It must retain the original
+applicable requirements, explicit user revisions, assistant questions and choices,
+answers, relevant prior outcomes and user-supplied reference provenance. Keep the
+current request distinguishable from history and treat quoted/source content as
+data. Latest explicit user instructions supersede conflicting earlier instructions.
+Do not infer a permanent requirement from an assistant suggestion or a failed action.
+
+Keep conversation-owned source references distinct from request-owned artifacts.
+Resolve needed reference bytes into each new request without presenting them as
+new user attachments. Do not carry old inspection IDs, tool leases, check receipts
+or provider call identities as usable authority. Previously imported backend
+references may require reacquisition from retained provenance; do not retain an
+expired request handle. Revalidate target existence and current selection/locks.
+Do not cache canonical context across submissions.
+
+Use the existing conversation as the source, not a second mutable history store
+or a long-lived provider process. Select explicit transport/attachment bounds
+against existing endpoint limits before admission. Ordinary growth must have a
+deterministic bounded retrieval/retention policy; never silently truncate an
+active requirement, pending question or needed reference. If necessary context
+cannot be delivered, report that precise limitation before executing ambiguous
+edits. Do not introduce a summarization model call or send all canvas geometry.
+
+Permanent cases: referenced design then text-only refinement; retained dimensions
+and color constraints; an explicit replacement instruction; two successive
+clarifications with a short answer such as "the latter"; clickable answers;
+new/history conversation isolation; deleted targets and changed selection;
+retry without duplicated writes; missing references and over-limit context;
+read-only advice with no mutation. Provider tests must inspect the actual serialized
+input of a fresh request, not merely the controller's rendered message history.
+
+### Task 2 - Bind asynchronous attachments to their draft
+
+Owner: existing panel draft presentation under `conversation-lifecycle`.
+Associate each pending read with its originating conversation and draft generation.
+Completion updates that originating draft only while it is still valid, even if
+another conversation is visible; never append to the currently visible draft by
+accident. Sending/resetting that draft or disposing the document retires its pending
+reads. Late success or failure cannot restore submitted attachments or overwrite
+another conversation's error. Keep native FileReader and current accepted formats.
+
+Permanent cases use deferred FileReader completion: A -> B -> completion -> A;
+new conversation during read; send before read completes; document disposal;
+mixed read success/failure; out-of-order reads. Browser navigation tests verify
+draft restoration and subsequent send uses only that conversation's attachments.
+
+### Task 3 - Make guidance agree with executable tool contracts
+
+Owner: existing backend guidance/discovery and inspect input admission.
+Remove the obsolete implicit-binding instruction. Require explicit nonempty
+per-check image dependencies exactly as the current schema and validator do;
+retain capture/binding before verdict submission and request-local freshness.
+
+Keep stable App policy in the shared prompt and operation-specific instructions
+at their registered tool owner. Review only the affected review/capture examples
+and their discovery delivery. Do not add another registry or rewrite the entire
+prompt based on token count alone. Direct known-value edits remain direct batch
+operations; do not invent a prepared-content gate, and do not remove applicable
+current rendered-result review to make simple edits appear faster.
+
+Permanent cases: published examples succeed through actual admission; absent,
+foreign and stale inspection dependencies fail; a valid explicit subset succeeds;
+unrelated retained passes survive. Check both native tool delivery and composed
+invocation where the same contract is exposed. A string assertion alone does not
+prove an example is executable.
+
+### Task 4 - Validate the complete task flow and measure cost
+
+For full-building Taipei 101 tests, use the
+[fixed prompt and baseline rules](../modules/ai-development-and-debugging.md#fixed-full-building-taipei-101-test-prompt).
+The exact user-approved fixture is mandatory unless the user explicitly requests
+a change. Do not add reference instructions, search restrictions or test-driver
+coaching. Other task cases below remain distinct scenarios, not modified versions
+of the Taipei 101 baseline.
+
+Run after Tasks 1-3 and their focused gates pass. Cover selected-object color
+editing, multi-object style revision, referenced editable drawing followed by
+text-only refinement, chained clarification, and partial failure followed by a
+safe remaining-work request. Include a separate read-only advice case.
+
+Deterministic browser/provider tests establish context delivery, intended targets,
+unchanged unrelated content, editable results, one Undo per modifying request,
+Stop/failure behavior and document/conversation isolation. Inspect the actual
+panel and resulting canvas for affected visual cases; screenshots are not a
+substitute for semantic regression assertions.
+
+Use existing profiling/recording owners to measure submission-to-first-visible
+change, total completion time, request bytes, discovery/tool calls, rejected inputs,
+repeated acquisition and unresolved review work. Read-only tasks have no
+first-mutation metric. Compare equivalent briefs, documents and reference inputs
+under the same provider configuration; preserve failed runs and separate browser,
+tool and model time. Report unmeasured or inconclusive results explicitly. Do not
+claim a speedup from prompt size, fewer calls, mocked runs or different artwork.
+This task adds no total production duration limit or review quota.
+
+### Required document changes and implementation admission
+
+Before production edits, update the affected current contracts and admit the
+existing matching Inspector steps; this plan is not admission or a second spec.
+
+- `specs/ai-conversation-experience.md`: define cross-turn requirements, exact
+  question/answer continuity, source-reference lifetime and pending draft reads.
+- `specs/ai-execution-flow.md` and, where the transport changes,
+  `specs/local-ai-provider.md`: distinguish conversation data from current
+  canonical context and fresh request evidence; document overflow and failure.
+- `API_SURFACES.md`: document the chosen bounded metadata contract, input
+  validation and tool-binding semantics after names/ownership are resolved.
+- Existing conversation/request/inspect Inspector steps: align inputs, outputs,
+  routes, bypasses, failure owners, boundaries and exact product-case evidence.
+  Preserve unrelated steps and accepted behavior; use supported admission and
+  generated-catalog tooling, not a new Inspector or parallel execution path.
+- `apps/asyra-design/docs/ai-agent-guide.md`: explain follow-up/reference behavior,
+  supported tasks and honest capability limits after implementation. Regenerate
+  the standalone template through its existing generator and verify parity.
+
+Per-task gates: red/green formal regressions, affected App/server integration,
+types, naming when identifiers change, scoped lint and corresponding Inspector
+proof. At the integrated milestone run complete applicable AI/server and browser
+suites, build, generated-template parity and applicable clean-consumer checks.
+Use current project scripts and preserve their guards. Planning-only completion
+requires document/link consistency and a bounded diff review, not runtime claims.
+
+Stop the affected implementation slice if bounded retention cannot preserve its
+required context, current spec and Inspector disagree, or the repair needs an
+excluded owner. Record a bounded revision before proceeding. Delivery/remote CI
+and user visual acceptance remain separate from local passing tests.
+
+### Existing plan disposition
+
+Use current specs and executable contracts as behavior authority. Historical
+results are not evidence for this follow-up's eventual source revision.
+
+- This plan remains the product parent; Conversation Experience retains accepted
+  UI/lifecycle requirements and links here for these new corrections.
+- Reusable Tool Composition records later tool, reference, activity and durable
+  completion work. Preserve those contracts; do not restart its completed stages.
+- Runtime Profiler and Execution Recording retain failed historical whole-flow
+  acceptances. Map an issue to current code and this task's cases before reopening
+  it; passing later unit tests does not retroactively turn that run into a pass.
+- Execution Flow, Tool Definition Delivery and Operation Pipeline have local
+  implementation evidence and historical delivery gates. Their outstanding PR/CI
+  status needs exact remote verification before administrative closeout, not an
+  assumed new implementation backlog.
+- Tool Selection Evaluation is explicitly historical as of 2026-10-17. Basic API
+  Coverage and the retrieval/efficiency/evaluation slices record local completion.
+  Reuse their contracts and tests rather than repeating those projects.
+
+This planning update makes no GitHub status claim, closes no historical plan,
+and authorizes no push, merge, publication or deployment.
 
 ## Product target
 
