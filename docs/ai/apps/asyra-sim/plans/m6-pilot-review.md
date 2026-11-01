@@ -8,6 +8,28 @@ original PR #195 on 2026-09-13; it merged as `7e9ad9734`. Continued work now use
 capacity commits replayed. This new goal branch must not be merged into main
 without new authorization. External acceptance and R0 publication remain open.
 
+## Diagnostic limit correction - 2026-11-01
+
+This chat owns a bounded correction to the existing actual-frontier profile.
+Its representative diagnostic requires the original shared 500,000-unit limit;
+formal method version 1.0.3 intentionally has no fixed logical-work abort gate.
+The existing profile fails without the diagnostic limit (zero exhausted rows
+instead of one). Use the existing finite-limit query context and canonical
+clearance runner in this test only. Preserve every numerical expectation,
+fixture, instrumentation and supervisor guard. Production code and Inspector
+contracts remain unchanged. Validate both profile modes, adjacent finite-limit
+tests, Sim type checking, scoped lint and naming. After reviewing the passing
+results, the user authorized committing and pushing this correction and checking
+PR CI every ten minutes until all required checks pass on the current head.
+
+Validation: the unchanged test failed before correction with zero exhausted
+rows. Both diagnostic modes now pass under the supervisor with the original
+expectations: one exhausted row, 20,265 total evaluations, 166 target
+evaluations, and 398,216 target work units exactly matching invocation work.
+All nine adjacent component-lifetime tests, Sim type checking, scoped ESLint
+and 15 naming tests pass. No numerical expectations or production files changed.
+Evidence: `tmp/readability/sim-frontier-*.log` and the existing capacity artifact.
+
 ## Original recovery slice contract
 
 Baseline: 599cb5b916d25e157c3d5b40ce14b3bb5e93785f from fetched main after PR #192.

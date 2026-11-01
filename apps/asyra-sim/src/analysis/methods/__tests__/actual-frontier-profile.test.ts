@@ -12,10 +12,12 @@ import * as samplers from '../fresh-static-sampler'
 import type { PairEvidence } from '../continuous-query'
 import { MeshWorkLimit, OriginalMeshQuery } from '../original-mesh-query'
 import {
-  runOriginalPartMethod,
+  ORIGINAL_PART_METHOD,
   queryOriginalPartPair
 } from '../original-part-method'
 import { representativeSnapshot } from './representative-fixture'
+
+const diagnosticWorkLimit = 500000
 
 afterEach(() => vi.restoreAllMocks())
 
@@ -652,9 +654,27 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           return value
         })
         let evaluations: number
+        // This diagnostic measures exhaustion under its original shared limit.
+        // Formal execution keeps its current resource policy.
+        const diagnosticContext = new OriginalMeshQuery(
+          undefined,
+          diagnosticWorkLimit
+        )
 
         if (mode === 'representative') {
-          const evidence = runOriginalPartMethod(snapshot)
+          const evidence = official.runClearanceQueries(
+            snapshot,
+            ORIGINAL_PART_METHOD,
+            (query, settings, checkpoint) =>
+              queryOriginalPartPair(
+                query,
+                settings,
+                checkpoint,
+                diagnosticContext
+              ),
+            () => undefined,
+            () => undefined
+          )
 
           evaluations = evidence.evaluations
         } else {
@@ -686,7 +706,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               maxIntervals: snapshot.budget.maxIntervals
             },
             () => undefined,
-            new OriginalMeshQuery()
+            diagnosticContext
           )
           targetAfter = targetContext?.work
           active = false
