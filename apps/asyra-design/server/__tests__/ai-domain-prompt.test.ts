@@ -61,6 +61,24 @@ describe('stage-owned App guidance', () => {
     )
   })
 
+  it('never promises inherited image dependencies that review admission rejects', () => {
+    expect(general).toContain(
+      'Every submitted check must specify its own inspectionIds'
+    )
+    expect(general).toContain('the enclosing list is not inherited')
+    expect(general).not.toContain(
+      'Omitted bindings depend on every supplied image'
+    )
+    const review = requireTestValue(
+      designEvidenceDefinitions.find((tool) => tool.name === 'review_drawing')
+    )
+    expect(review.description).toContain('exact inspectionIds')
+    expect(review.description).toContain(
+      'Neither capture nor binding records a judgment'
+
+    )
+  })
+
   it('consumes chronological conversation data with current intent precedence', () => {
     expect(AI_APP_PROMPT).toContain('metadata.conversationContext')
     expect(AI_APP_PROMPT).toContain('current input.intent overrides')
