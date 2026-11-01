@@ -46,22 +46,37 @@ export function readActivityEvent(value: unknown): ActivityEvent {
 
   const event = value as ActivityEvent
 
-  if (
+  const hasInvalidEventIdentity =
     event.version !== 1 ||
     !bounded(event.source, 120) ||
     !bounded(event.agentId, 120) ||
-    !bounded(event.agentName, 120) ||
-    !Number.isSafeInteger(event.sequence) ||
-    event.sequence < 1 ||
-    !Number.isSafeInteger(event.attempt) ||
-    event.attempt < 0 ||
-    !statuses.has(event.status) ||
-    !bounded(event.summary, 500) ||
-    !bounded(event.timestamp, 64) ||
-    !Number.isFinite(Date.parse(event.timestamp)) ||
-    !(event.taskId === null || bounded(event.taskId, 120)) ||
-    (['working', 'waiting', 'completed', 'failed'].includes(event.status) &&
-      (!event.taskId || event.attempt < 1))
+    !bounded(event.agentName, 120)
+  const hasInvalidProgress =
+    !hasInvalidEventIdentity &&
+    (!Number.isSafeInteger(event.sequence) ||
+      event.sequence < 1 ||
+      !Number.isSafeInteger(event.attempt) ||
+      event.attempt < 0 ||
+      !statuses.has(event.status) ||
+      !bounded(event.summary, 500))
+  const hasInvalidTimestamp =
+    !hasInvalidEventIdentity &&
+    !hasInvalidProgress &&
+    (!bounded(event.timestamp, 64) ||
+      !Number.isFinite(Date.parse(event.timestamp)))
+  const hasInvalidTaskAssociation =
+    !hasInvalidEventIdentity &&
+    !hasInvalidProgress &&
+    !hasInvalidTimestamp &&
+    (!(event.taskId === null || bounded(event.taskId, 120)) ||
+      (['working', 'waiting', 'completed', 'failed'].includes(event.status) &&
+        (!event.taskId || event.attempt < 1)))
+
+  if (
+    hasInvalidEventIdentity ||
+    hasInvalidProgress ||
+    hasInvalidTimestamp ||
+    hasInvalidTaskAssociation
   ) {
     throw new Error('Invalid activity event')
   }

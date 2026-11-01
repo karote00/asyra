@@ -30,23 +30,29 @@ function validateAsset(input: unknown): asserts input is VisualAsset {
 
   const asset = input as VisualAsset
 
-  if (
+  const hasInvalidSource =
     asset.format !== 'restricted-glb-v0' ||
     !asset.source ||
     !/^[a-f0-9]{64}$/.test(asset.source.sha256) ||
     !Number.isInteger(asset.source.byteLength) ||
     asset.source.byteLength < 1 ||
     asset.source.byteLength > GLB_LIMITS.bytes ||
-    asset.source.lengthUnit !== 'm' ||
-    !Array.isArray(asset.meshes) ||
-    asset.meshes.length < 1 ||
-    asset.meshes.length > GLB_LIMITS.primitives ||
-    !asset.bounds ||
-    !finiteArray(asset.bounds.min, 3) ||
-    !finiteArray(asset.bounds.max, 3) ||
-    asset.bounds.min.length !== 3 ||
-    asset.bounds.max.length !== 3
-  ) {
+    asset.source.lengthUnit !== 'm'
+  const hasInvalidMeshCount =
+    !hasInvalidSource &&
+    (!Array.isArray(asset.meshes) ||
+      asset.meshes.length < 1 ||
+      asset.meshes.length > GLB_LIMITS.primitives)
+  const hasInvalidBounds =
+    !hasInvalidSource &&
+    !hasInvalidMeshCount &&
+    (!asset.bounds ||
+      !finiteArray(asset.bounds.min, 3) ||
+      !finiteArray(asset.bounds.max, 3) ||
+      asset.bounds.min.length !== 3 ||
+      asset.bounds.max.length !== 3)
+
+  if (hasInvalidSource || hasInvalidMeshCount || hasInvalidBounds) {
     throw new Error('Invalid GLB worker result')
   }
 
@@ -54,30 +60,44 @@ function validateAsset(input: unknown): asserts input is VisualAsset {
     indices = 0
 
   for (const mesh of asset.meshes) {
-    if (
+    const hasInvalidMeshIdentity =
       !mesh ||
       typeof mesh.name !== 'string' ||
       mesh.name.length > 200 ||
       !Number.isInteger(mesh.sourceNode) ||
-      mesh.sourceNode < 0 ||
-      !finiteArray(mesh.positions, 3) ||
-      mesh.positions.length < 9 ||
-      !Array.isArray(mesh.indices) ||
-      mesh.indices.length < 3 ||
-      mesh.indices.length % 3 !== 0 ||
-      !mesh.indices.every(
-        (index: unknown) =>
-          typeof index === 'number' &&
-          Number.isInteger(index) &&
-          index >= 0 &&
-          index < mesh.positions.length / 3
-      ) ||
-      !Number.isInteger(mesh.color) ||
-      mesh.color < 0 ||
-      mesh.color > 0xffffff ||
-      !Number.isFinite(mesh.opacity) ||
-      mesh.opacity < 0 ||
-      mesh.opacity > 1
+      mesh.sourceNode < 0
+    const hasInvalidVertexData =
+      !hasInvalidMeshIdentity &&
+      (!finiteArray(mesh.positions, 3) || mesh.positions.length < 9)
+    const hasInvalidTriangleIndices =
+      !hasInvalidMeshIdentity &&
+      !hasInvalidVertexData &&
+      (!Array.isArray(mesh.indices) ||
+        mesh.indices.length < 3 ||
+        mesh.indices.length % 3 !== 0 ||
+        !mesh.indices.every(
+          (index: unknown) =>
+            typeof index === 'number' &&
+            Number.isInteger(index) &&
+            index >= 0 &&
+            index < mesh.positions.length / 3
+        ))
+    const hasInvalidMaterial =
+      !hasInvalidMeshIdentity &&
+      !hasInvalidVertexData &&
+      !hasInvalidTriangleIndices &&
+      (!Number.isInteger(mesh.color) ||
+        mesh.color < 0 ||
+        mesh.color > 0xffffff ||
+        !Number.isFinite(mesh.opacity) ||
+        mesh.opacity < 0 ||
+        mesh.opacity > 1)
+
+    if (
+      hasInvalidMeshIdentity ||
+      hasInvalidVertexData ||
+      hasInvalidTriangleIndices ||
+      hasInvalidMaterial
     ) {
       throw new Error('Invalid GLB worker result')
     }

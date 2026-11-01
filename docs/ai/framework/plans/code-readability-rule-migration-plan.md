@@ -4,6 +4,20 @@ Status: Rules 1-4 enforced; decision and guard review remains available as a rea
 
 ## Current scope
 
+The follow-up guard slice is limited to `packages/preset/src/agent-activity.ts`
+and `packages/preset/src/spatial/assets/preview-worker.ts`, selected from the
+existing 67 repeated-error candidates. Name validation purposes within each
+stage while preserving short-circuit evaluation, accepted inputs and errors.
+Validate the activity and spatial-assets suites, Preset compilation, scoped
+lint and naming. No new validation framework, public error changes or broader
+audit is included. The user authorized committing and pushing this slice after
+review.
+
+The follow-up slice passed all 16 focused tests, Preset compilation, scoped
+ESLint (including formatting), and 15 naming tests. Per-file diff review
+confirmed unchanged field access order, short-circuiting, errors and resource
+totals. Evidence: `tmp/readability/preset-guard-*.log`.
+
 The approved guard readability slice covers nine audited groups at eleven
 positions: Design workflow discovery, discovery input, part ordering, provider
 completion, draft repair paths, publication identity, three exclusive source
