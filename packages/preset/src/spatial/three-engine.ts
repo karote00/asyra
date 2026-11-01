@@ -48,6 +48,20 @@ import {
 } from './spatial-contract.js'
 import { disposeObject, drawGraphics } from './graphics.js'
 
+const unsupportedQueryCapabilities = {
+  'measure-text': RenderEngineCapabilities.TEXT_MEASUREMENT,
+  snapshot: RenderEngineCapabilities.SNAPSHOT,
+  'get-local-content-bounds': RenderEngineCapabilities.LOCAL_CONTENT_BOUNDS
+} as const
+
+const isUnsupportedQuery = (
+  query: RenderEngineQuery
+): query is Extract<
+  RenderEngineQuery,
+  { type: keyof typeof unsupportedQueryCapabilities }
+> =>
+  Object.prototype.hasOwnProperty.call(unsupportedQueryCapabilities, query.type)
+
 export interface GraphicsDriver {
   domElement: HTMLCanvasElement
   autoClear: boolean
@@ -530,21 +544,9 @@ export class ThreeEngine implements RenderEngine {
 
   query(query: RenderEngineQuery): RenderEngineQueryResult {
     this.assertActive()
-    if (query.type === 'measure-text') {
+    if (isUnsupportedQuery(query)) {
       throw new UnsupportedRenderEngineCapabilityError(this.name, [
-        RenderEngineCapabilities.TEXT_MEASUREMENT
-      ])
-    }
-
-    if (query.type === 'snapshot') {
-      throw new UnsupportedRenderEngineCapabilityError(this.name, [
-        RenderEngineCapabilities.SNAPSHOT
-      ])
-    }
-
-    if (query.type === 'get-local-content-bounds') {
-      throw new UnsupportedRenderEngineCapabilityError(this.name, [
-        RenderEngineCapabilities.LOCAL_CONTENT_BOUNDS
+        unsupportedQueryCapabilities[query.type]
       ])
     }
 

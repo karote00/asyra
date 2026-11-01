@@ -35,40 +35,47 @@ export const browserEvaluationWindow = () => {
 
 export { ACTION_BATCH_ENDPOINT } from './action-batch-endpoint'
 
-const backendFailure = (code: unknown): AiProviderError => {
-  if (code === 'ACTION_BATCH_MODEL_TIMEOUT') {
-    return new AiProviderError({
+const backendFailureDescriptions = new Map<
+  unknown,
+  ConstructorParameters<typeof AiProviderError>[0]
+>([
+  [
+    'ACTION_BATCH_MODEL_TIMEOUT',
+    {
       code: 'AI_PROVIDER_TIMEOUT',
       message: 'The AI request timed out.'
-    })
-  }
-
-  if (code === 'ACTION_BATCH_MODEL_CONFIGURATION_REQUIRED') {
-    return new AiProviderError({
+    }
+  ],
+  [
+    'ACTION_BATCH_MODEL_CONFIGURATION_REQUIRED',
+    {
       code: 'AI_PROVIDER_INVALID_CONFIGURATION',
       message: 'The AI provider is unavailable or not configured.'
-    })
-  }
-
-  if (code === 'ACTION_BATCH_MODEL_INVALID_RESPONSE') {
-    return new AiProviderError({
+    }
+  ],
+  [
+    'ACTION_BATCH_MODEL_INVALID_RESPONSE',
+    {
       code: 'AI_PROVIDER_MALFORMED_RESPONSE',
       message: 'The AI returned an invalid drawing response.'
-    })
-  }
-
-  if (code === 'ACTION_BATCH_IMAGE_CONVERSION_FAILED') {
-    return new AiProviderError({
+    }
+  ],
+  [
+    'ACTION_BATCH_IMAGE_CONVERSION_FAILED',
+    {
       code: 'AI_PROVIDER_HTTP_STATUS',
       message: 'Image conversion failed. Your drawing is unchanged.'
-    })
-  }
+    }
+  ]
+])
 
-  return new AiProviderError({
-    code: 'AI_PROVIDER_HTTP_STATUS',
-    message: 'The AI request failed.'
-  })
-}
+const backendFailure = (code: unknown): AiProviderError =>
+  new AiProviderError(
+    backendFailureDescriptions.get(code) ?? {
+      code: 'AI_PROVIDER_HTTP_STATUS',
+      message: 'The AI request failed.'
+    }
+  )
 
 const isResponse = (value: AiFetchResponse): value is Response =>
   'headers' in value && typeof (value.headers as Headers)?.get === 'function'

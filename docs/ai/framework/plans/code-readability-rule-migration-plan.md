@@ -1,6 +1,26 @@
 # Code Readability Rule Migration
 
-Status: Rules 1-4 enforced; structural rules 5-8 remain deferred.
+Status: Rules 1-4 enforced; decision and guard review remains available as a read-only audit.
+
+## Current scope
+
+The current implementation slice replaces repeated error construction in
+Design's server action-batch and browser provider, plus unsupported-query errors
+in the Three engine, with module-owned parameter tables. Preserve error codes,
+messages, fallback behavior, fresh error instances and validation order. The
+selection-channel switch remains unchanged. Validate the affected server,
+browser-provider and spatial tests, owner type checks, lint and naming.
+
+This slice is complete: server tests passed (15), browser-provider tests passed
+(29), and spatial engine/query tests passed (37). Design type checking, Preset
+compilation, scoped ESLint, naming and diff checks passed. Review confirmed
+unchanged mappings, unknown-input handling, fresh errors and rejection order.
+
+Review decision dispatch and guard candidates before selecting any source edits.
+Audit findings are advisory and do not require mechanical rewrites. Closure and
+import/export cleanup are removed from this plan; handle specific cases through
+direct requests when they arise. Contextual filenames remain a naming principle,
+not a repository-wide rename task.
 
 ## Spacing CI declaration correction
 
@@ -93,10 +113,6 @@ behavior bug.
    Keep existing nested-ternary enforcement.
 6. Meaningful guard grouping and diagnostic ownership without changing public
    error contracts merely for readability.
-7. Thin closures, external named implementations and appropriately scoped
-   static declarations, preserving live instance/request state.
-8. Contextual filenames and local import/export consistency; direct re-exports
-   remain appropriate for forwarding-only modules.
 
 ## Validation and adoption
 

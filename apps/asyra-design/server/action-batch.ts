@@ -71,6 +71,43 @@ export class ActionBatchServerError extends Error {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
+const modelFailureDescriptions = new Map<
+  string,
+  [ActionBatchServerError['code'], string]
+>([
+  [
+    'AI_MODEL_BACKEND_TIMEOUT',
+    ['ACTION_BATCH_MODEL_TIMEOUT', 'The AI request timed out.']
+  ],
+  [
+    'AI_MODEL_BACKEND_IMAGE_CONVERSION_FAILED',
+    ['ACTION_BATCH_IMAGE_CONVERSION_FAILED', 'The image conversion failed.']
+  ],
+  [
+    'AI_MODEL_BACKEND_INVALID_RESPONSE',
+    ['ACTION_BATCH_MODEL_INVALID_RESPONSE', 'The AI response was invalid.']
+  ],
+  [
+    'AI_MODEL_BACKEND_ABORTED',
+    ['ACTION_BATCH_ABORTED', 'The action-batch request was aborted.']
+  ],
+  [
+    'AI_MODEL_BACKEND_INVALID_CONFIGURATION',
+    [
+      'ACTION_BATCH_MODEL_CONFIGURATION_REQUIRED',
+      'The action-batch model backend is not fully configured.'
+    ]
+  ],
+  [
+    'AI_MODEL_BACKEND_HTTP_STATUS',
+    ['ACTION_BATCH_MODEL_FAILED', 'The action-batch model backend failed.']
+  ],
+  [
+    'AI_MODEL_BACKEND_TRANSPORT_FAILED',
+    ['ACTION_BATCH_MODEL_FAILED', 'The action-batch model backend failed.']
+  ]
+])
+
 const unsupportedSample = (): never => {
   throw new ActionBatchServerError(
     'ACTION_BATCH_UNSUPPORTED_SAMPLE',
@@ -219,49 +256,11 @@ export const resolveActionBatchRequest = async (
   } catch (error) {
     const code = readErrorCode(error)
 
-    if (code === 'AI_MODEL_BACKEND_TIMEOUT') {
-      throw new ActionBatchServerError(
-        'ACTION_BATCH_MODEL_TIMEOUT',
-        'The AI request timed out.'
-      )
-    }
+    const description =
+      code === undefined ? undefined : modelFailureDescriptions.get(code)
 
-    if (code === 'AI_MODEL_BACKEND_IMAGE_CONVERSION_FAILED') {
-      throw new ActionBatchServerError(
-        'ACTION_BATCH_IMAGE_CONVERSION_FAILED',
-        'The image conversion failed.'
-      )
-    }
-
-    if (code === 'AI_MODEL_BACKEND_INVALID_RESPONSE') {
-      throw new ActionBatchServerError(
-        'ACTION_BATCH_MODEL_INVALID_RESPONSE',
-        'The AI response was invalid.'
-      )
-    }
-
-    if (code === 'AI_MODEL_BACKEND_ABORTED') {
-      throw new ActionBatchServerError(
-        'ACTION_BATCH_ABORTED',
-        'The action-batch request was aborted.'
-      )
-    }
-
-    if (code === 'AI_MODEL_BACKEND_INVALID_CONFIGURATION') {
-      throw new ActionBatchServerError(
-        'ACTION_BATCH_MODEL_CONFIGURATION_REQUIRED',
-        'The action-batch model backend is not fully configured.'
-      )
-    }
-
-    if (
-      code === 'AI_MODEL_BACKEND_HTTP_STATUS' ||
-      code === 'AI_MODEL_BACKEND_TRANSPORT_FAILED'
-    ) {
-      throw new ActionBatchServerError(
-        'ACTION_BATCH_MODEL_FAILED',
-        'The action-batch model backend failed.'
-      )
+    if (description) {
+      throw new ActionBatchServerError(...description)
     }
 
     throw error
