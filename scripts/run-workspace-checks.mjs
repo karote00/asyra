@@ -10,53 +10,68 @@ const workspaceDirectoryPattern =
   /^(?:apps|packages|tools)\/[a-z0-9][a-z0-9-]*$/
 
 function validateWorkspaceEntry(workspace) {
-  if (
+  const hasInvalidIdentity =
     !workspace ||
     !workspaceNamePattern.test(workspace.name ?? '') ||
     !workspaceDirectoryPattern.test(workspace.directory ?? '') ||
     !/^[a-z0-9]+$/.test(workspace.artifactId ?? '') ||
-    !/^build(?::[a-z0-9-]+)?$|^react:build$/.test(workspace.buildTask ?? '') ||
-    !['lint', 'eslint'].includes(workspace.lintTask) ||
-    !['full', 'not-selected'].includes(workspace.lintSelection?.mode) ||
-    typeof workspace.lintSelection?.reason !== 'string' ||
-    !Array.isArray(workspace.lintSelection?.inputs) ||
-    workspace.testTask !== 'test:ci' ||
-    !['full', 'related', 'files', 'not-selected'].includes(
-      workspace.testSelection?.mode
-    ) ||
-    typeof workspace.testSelection?.reason !== 'string' ||
-    !Array.isArray(workspace.testSelection?.inputs) ||
-    (workspace.testSelection.mode === 'related' &&
-      (workspace.testSelection.inputs.length === 0 ||
-        workspace.testSelection.runner?.command !== 'vitest' ||
-        !Array.isArray(workspace.testSelection.runner.args))) ||
-    (workspace.testSelection.mode === 'files' &&
-      (!(
-        (workspace.testSelection.runner?.command === 'test:affected' &&
-          !workspace.testSelection.runner.argumentStyle) ||
-        (workspace.testSelection.runner?.command === 'test:ci' &&
-          workspace.testSelection.runner.argumentStyle === 'positional')
+    !/^build(?::[a-z0-9-]+)?$|^react:build$/.test(workspace.buildTask ?? '')
+  const hasInvalidLintSelection =
+    !hasInvalidIdentity &&
+    (!['lint', 'eslint'].includes(workspace.lintTask) ||
+      !['full', 'not-selected'].includes(workspace.lintSelection?.mode) ||
+      typeof workspace.lintSelection?.reason !== 'string' ||
+      !Array.isArray(workspace.lintSelection?.inputs))
+  const hasInvalidTestSelection =
+    !hasInvalidIdentity &&
+    !hasInvalidLintSelection &&
+    (workspace.testTask !== 'test:ci' ||
+      !['full', 'related', 'files', 'not-selected'].includes(
+        workspace.testSelection?.mode
       ) ||
-        !workspace.testSelection.inputs.length ||
-        workspace.testSelection.inputs.some(
-          (f) =>
-            !/^src\/.*\.test\.[jt]sx?$/.test(f) || f.split('/').includes('..')
-        ))) ||
-    (workspace.e2eTask !== null &&
+      typeof workspace.testSelection?.reason !== 'string' ||
+      !Array.isArray(workspace.testSelection?.inputs) ||
+      (workspace.testSelection.mode === 'related' &&
+        (workspace.testSelection.inputs.length === 0 ||
+          workspace.testSelection.runner?.command !== 'vitest' ||
+          !Array.isArray(workspace.testSelection.runner.args))) ||
+      (workspace.testSelection.mode === 'files' &&
+        (!(
+          (workspace.testSelection.runner?.command === 'test:affected' &&
+            !workspace.testSelection.runner.argumentStyle) ||
+          (workspace.testSelection.runner?.command === 'test:ci' &&
+            workspace.testSelection.runner.argumentStyle === 'positional')
+        ) ||
+          !workspace.testSelection.inputs.length ||
+          workspace.testSelection.inputs.some(
+            (f) =>
+              !/^src\/.*\.test\.[jt]sx?$/.test(f) || f.split('/').includes('..')
+          ))))
+  const hasInvalidE2eSelection =
+    !hasInvalidIdentity &&
+    !hasInvalidLintSelection &&
+    !hasInvalidTestSelection &&
+    ((workspace.e2eTask !== null &&
       workspace.e2eTask !== undefined &&
       workspace.e2eTask !== 'test:e2e:ci') ||
-    !['full', 'related', 'not-selected'].includes(
-      workspace.e2eSelection?.mode
-    ) ||
-    ![null, 'has:test'].includes(workspace.hasTestTask ?? null) ||
-    typeof workspace.e2eSelection?.reason !== 'string' ||
-    !Array.isArray(workspace.e2eSelection?.inputs) ||
-    (workspace.e2eTask &&
-      workspace.e2eSelection.mode !== 'not-selected' &&
-      workspace.e2eSelection.mode === 'related' &&
-      (workspace.e2eSelection.inputs.length === 0 ||
-        workspace.e2eSelection.runner?.command !== 'playwright')) ||
-    (!workspace.e2eTask && workspace.e2eSelection.mode !== 'not-selected')
+      !['full', 'related', 'not-selected'].includes(
+        workspace.e2eSelection?.mode
+      ) ||
+      ![null, 'has:test'].includes(workspace.hasTestTask ?? null) ||
+      typeof workspace.e2eSelection?.reason !== 'string' ||
+      !Array.isArray(workspace.e2eSelection?.inputs) ||
+      (workspace.e2eTask &&
+        workspace.e2eSelection.mode !== 'not-selected' &&
+        workspace.e2eSelection.mode === 'related' &&
+        (workspace.e2eSelection.inputs.length === 0 ||
+          workspace.e2eSelection.runner?.command !== 'playwright')) ||
+      (!workspace.e2eTask && workspace.e2eSelection.mode !== 'not-selected'))
+
+  if (
+    hasInvalidIdentity ||
+    hasInvalidLintSelection ||
+    hasInvalidTestSelection ||
+    hasInvalidE2eSelection
   ) {
     throw new Error('Invalid workspace matrix entry')
   }

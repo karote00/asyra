@@ -1084,15 +1084,19 @@ export const createLocalDesignTools = (
         throw new Error('Design preparation is unavailable')
       }
 
-      if (
-        !record(args) ||
-        Object.keys(args).some(
+      const hasValidPreparationFields =
+        record(args) &&
+        !Object.keys(args).some(
           (key) => !['draft', 'repair', 'materialSourceId'].includes(key)
-        ) ||
-        'draft' in args === 'repair' in args ||
-        (args.materialSourceId !== undefined &&
-          typeof args.materialSourceId !== 'string')
-      ) {
+        )
+      const hasExactlyOnePreparationSource =
+        hasValidPreparationFields && 'draft' in args !== 'repair' in args
+      const hasInvalidMaterialSource =
+        hasExactlyOnePreparationSource &&
+        args.materialSourceId !== undefined &&
+        typeof args.materialSourceId !== 'string'
+
+      if (!hasExactlyOnePreparationSource || hasInvalidMaterialSource) {
         return JSON.stringify({
           available: false,
           message:

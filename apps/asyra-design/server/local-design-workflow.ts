@@ -479,9 +479,11 @@ export const createLocalDesignWorkflow = (
       }
 
       const input = args as Record<string, unknown>
+      const hasExactlyOnePreparationSource =
+        'draft' in input !== 'repair' in input
 
       if (
-        'draft' in input === 'repair' in input ||
+        !hasExactlyOnePreparationSource ||
         Object.keys(input).some(
           (key) =>
             ![
@@ -929,19 +931,29 @@ export const createLocalDesignWorkflow = (
     const keys = new Set<string>()
 
     for (const part of parts) {
-      if (
+      const hasInvalidPartIdentity =
         !part.key.trim() ||
         keys.has(part.key) ||
-        (typeof part.parentId === 'string' && !part.parentId.trim()) ||
-        (part.continueFromPart !== undefined &&
-          (part.parentPart !== undefined ||
-            !keys.has(String(part.continueFromPart)) ||
-            !part.repair ||
-            typeof part.repair !== 'object' ||
-            !('partition' in part.repair) ||
-            'continueFromArtifact' in part.repair)) ||
-        (part.parentPart !== undefined &&
-          (part.parentId !== undefined || !keys.has(String(part.parentPart))))
+        (typeof part.parentId === 'string' && !part.parentId.trim())
+      const hasInvalidContinuation =
+        !hasInvalidPartIdentity &&
+        part.continueFromPart !== undefined &&
+        (part.parentPart !== undefined ||
+          !keys.has(String(part.continueFromPart)) ||
+          !part.repair ||
+          typeof part.repair !== 'object' ||
+          !('partition' in part.repair) ||
+          'continueFromArtifact' in part.repair)
+      const hasInvalidParentReference =
+        !hasInvalidPartIdentity &&
+        !hasInvalidContinuation &&
+        part.parentPart !== undefined &&
+        (part.parentId !== undefined || !keys.has(String(part.parentPart)))
+
+      if (
+        hasInvalidPartIdentity ||
+        hasInvalidContinuation ||
+        hasInvalidParentReference
       ) {
         throw new LocalOperationPreparationError(
           'Parts require unique nonempty keys and either parentId or an earlier parentPart.'

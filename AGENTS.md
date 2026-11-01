@@ -33,9 +33,7 @@ These rules apply to every task without requiring additional document reads:
   behavior. Follow `docs/ai/framework/CODING_STANDARDS.md`.
 - On a non-main feature branch, local commits are allowed at completed,
   validated step/stage boundaries. Never push unless the user explicitly
-  requests the remote operation. Before every push, including review fixes to
-  an existing PR, pass the applicable local checks for the version being pushed;
-  failed or unavailable required checks block the push. Follow
+  requests the remote operation. Follow
   `docs/ai/workflows/git-commit-push-policy.md`.
 - Create new linked worktrees under the main repository's `.worktrees/`
   directory, never inside `.git/`. Follow the worktree location and collision

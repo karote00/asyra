@@ -853,6 +853,45 @@ test('deleted and renamed workspace paths preserve base dependency impact', () =
   }
 })
 
+test('invalid workspace selections reject before reading later selections or running tasks', async () => {
+  const validEntry = {
+    name: '@sample/guard-order',
+    directory: 'packages/guard-order',
+    artifactId: 'a'.repeat(16),
+    buildTask: 'build',
+    lintTask: 'eslint',
+    lintSelection: { mode: 'full', inputs: [], reason: 'test fixture' },
+    testTask: 'test:ci',
+    testSelection: { mode: 'full', inputs: [], reason: 'test fixture' }
+  }
+
+  for (const [invalidField, value, unreadField] of [
+    ['name', '', 'lintTask'],
+    ['lintSelection', { mode: 'full', inputs: null }, 'testTask'],
+    ['testSelection', { mode: 'related', inputs: [] }, 'e2eTask']
+  ]) {
+    const entry = { ...validEntry, [invalidField]: value }
+
+    Object.defineProperty(entry, unreadField, {
+      get() {
+        return assert.fail(
+          `Read ${unreadField} after rejecting ${invalidField}`
+        )
+      }
+    })
+
+    await assert.rejects(
+      executeWorkspaceChecks(entry, {
+        identity: {},
+        relationshipMapDigest: 'a'.repeat(64),
+
+        runTask: async () => assert.fail('Invalid selections reached execution')
+      }),
+      { message: 'Invalid workspace matrix entry' }
+    )
+  }
+})
+
 test('a failed workspace build prevents its test task from running', async () => {
   const commands = []
   const entry = {

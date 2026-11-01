@@ -105,8 +105,9 @@ export function createFreshStaticSampler(
 
       if (previous !== undefined) {
         tick()
-        if (
-          FreshSource.belongs(previous, scope) &&
+        const hasOwnedSource = FreshSource.belongs(previous, scope)
+        const hasCompatibleSourceInterval =
+          hasOwnedSource &&
           (previous.boundary
             ? origin.originalRoot === true &&
               previous.origin.originalRoot === true &&
@@ -121,12 +122,15 @@ export function createFreshStaticSampler(
               previous.origin.end === origin.end &&
               previous.origin.time >= origin.start &&
               previous.origin.time <= origin.time &&
-              origin.time <= origin.end) &&
+              origin.time <= origin.end)
+        const hasReusableGeometry =
+          hasCompatibleSourceInterval &&
           previous.shapes[0].geometry === a.geometry &&
           previous.shapes[1].geometry === b.geometry &&
           immutableMesh(a) &&
           immutableMesh(b)
-        ) {
+
+        if (hasReusableGeometry) {
           tick()
           const localA = localPoint(previous.shapes[0].pose, previous.a)
 

@@ -198,28 +198,38 @@ const projectRepetition = (
 export const projectWorkflowInput = (input: unknown, scope: unknown) => {
   const choices = workflowInputScopes(input)
 
-  if (
-    !choices ||
-    !record(scope) ||
-    Object.keys(scope).some(
+  const hasSupportedOperation =
+    choices &&
+    record(scope) &&
+    !Object.keys(scope).some(
       (key) => !['operation', 'nodeTypes', 'optionalInputs'].includes(key)
-    ) ||
-    typeof scope.operation !== 'string' ||
-    !choices.operations.includes(scope.operation) ||
+    ) &&
+    typeof scope.operation === 'string' &&
+    choices.operations.includes(scope.operation)
+  const hasInvalidNodeTypes =
+    hasSupportedOperation &&
     (choices.nodeTypes.length > 0
       ? !Array.isArray(scope.nodeTypes) ||
         !scope.nodeTypes.length ||
         scope.nodeTypes.some((type) => !choices.nodeTypes.includes(type)) ||
         new Set(scope.nodeTypes).size !== scope.nodeTypes.length
-      : scope.nodeTypes !== undefined) ||
-    (scope.optionalInputs !== undefined &&
-      (!Array.isArray(scope.optionalInputs) ||
-        scope.optionalInputs.some(
-          (field) =>
-            !Array.isArray(choices.optionalInputs) ||
-            !choices.optionalInputs.includes(field)
-        ) ||
-        new Set(scope.optionalInputs).size !== scope.optionalInputs.length))
+      : scope.nodeTypes !== undefined)
+  const hasInvalidOptionalInputs =
+    hasSupportedOperation &&
+    !hasInvalidNodeTypes &&
+    scope.optionalInputs !== undefined &&
+    (!Array.isArray(scope.optionalInputs) ||
+      scope.optionalInputs.some(
+        (field) =>
+          !Array.isArray(choices.optionalInputs) ||
+          !choices.optionalInputs.includes(field)
+      ) ||
+      new Set(scope.optionalInputs).size !== scope.optionalInputs.length)
+
+  if (
+    !hasSupportedOperation ||
+    hasInvalidNodeTypes ||
+    hasInvalidOptionalInputs
   ) {
     const invalid = ['operation', 'nodeTypes', 'optionalInputs'].filter(
       (field) => {

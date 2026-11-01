@@ -4,17 +4,36 @@ Status: Rules 1-4 enforced; decision and guard review remains available as a rea
 
 ## Current scope
 
-The current implementation slice replaces repeated error construction in
-Design's server action-batch and browser provider, plus unsupported-query errors
-in the Three engine, with module-owned parameter tables. Preserve error codes,
-messages, fallback behavior, fresh error instances and validation order. The
-selection-channel switch remains unchanged. Validate the affected server,
-browser-provider and spatial tests, owner type checks, lint and naming.
+The approved guard readability slice covers nine audited groups at eleven
+positions: Design workflow discovery, discovery input, part ordering, provider
+completion, draft repair paths, publication identity, three exclusive source
+choices, workspace matrix validation, and Sim source witness reuse. Extract
+purpose-named local conditions while preserving accepted inputs, diagnostics,
+short-circuit evaluation, work accounting and owner boundaries. Retain explicit
+allowed values; no input-domain inversion is justified by this slice.
 
-This slice is complete: server tests passed (15), browser-provider tests passed
-(29), and spatial engine/query tests passed (37). Design type checking, Preset
-compilation, scoped ESLint, naming and diff checks passed. Review confirmed
-unchanged mappings, unknown-input handling, fresh errors and rejection order.
+Discovery is limited to the existing audit candidates and their direct tests.
+Validate Design server and protocol tests, Sim witness and profile proofs,
+workspace runner tests, both app type checks, scoped lint, naming and formatting.
+Keep templates, release configuration and unrelated audit candidates unchanged.
+The user reviewed the changes and authorized committing and pushing this slice.
+
+Implementation and per-file review are complete. Design server tests passed
+(672; three external-provider cases remain opt-in), protocol tests passed (63),
+and runner suites passed (157 plus the new short-circuit case). Both app type
+checks, naming and scoped source lint passed. Sim ordinary witness tests passed
+(51), supervised source-work proofs passed (4), and three profile cases passed.
+One profile case remains failing: actual-frontier representative expects one
+exhausted query but observes none. Repeating it with the unchanged sampler from
+HEAD produced the identical assertion at line 909. Preserve that existing
+failure without changing its expectation or expanding this readability slice.
+Evidence is in `tmp/readability/guard-*.log`. Three live external-provider cases
+were not selected; no claim of complete repository validation is made. Historical
+plan formatting outside this section remains unchanged. The user also requested
+removal of the mandatory pre-push local-validation rule from the Git policy and
+AGENTS.md. Existing test results and the baseline profile failure remain recorded
+above. The previous three error-construction refactors were validated and pushed
+separately.
 
 Review decision dispatch and guard candidates before selecting any source edits.
 Audit findings are advisory and do not require mechanical rewrites. Closure and

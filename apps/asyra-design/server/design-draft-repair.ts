@@ -86,9 +86,9 @@ export const createDesignDraftRepairStore = (
       value: unknown,
       admitMissing?: (candidate: unknown) => boolean
     ): unknown {
-      if (
-        !record(value) ||
-        Object.keys(value).some(
+      const hasValidRepairEnvelope =
+        record(value) &&
+        !Object.keys(value).some(
           (key) =>
             ![
               'draftId',
@@ -96,10 +96,18 @@ export const createDesignDraftRepairStore = (
               'partition',
               'continueFromArtifact'
             ].includes(key)
-        ) ||
-        typeof value.draftId !== 'string' ||
-        'partition' in value === 'replacements' in value
-      ) {
+        )
+
+      if (!hasValidRepairEnvelope || typeof value.draftId !== 'string') {
+        throw new Error(
+          'Provide repair.draftId and exactly one partition or replacements array.'
+        )
+      }
+
+      const hasExactlyOneRepairSource =
+        'partition' in value !== 'replacements' in value
+
+      if (!hasExactlyOneRepairSource) {
         throw new Error(
           'Provide repair.draftId and exactly one partition or replacements array.'
         )
@@ -194,12 +202,21 @@ export const createDesignDraftRepairStore = (
 
         const key = parts[parts.length - 1]
 
+        const hasWritableParent = parent && typeof parent === 'object'
+        const isMissingFieldDisallowed =
+          hasWritableParent &&
+          !Object.hasOwn(parent, key) &&
+          (!admitMissing || Array.isArray(parent))
+        const hasInvalidArrayIndex =
+          hasWritableParent &&
+          !isMissingFieldDisallowed &&
+          Array.isArray(parent) &&
+          !/^(0|[1-9]\d*)$/.test(key)
+
         if (
-          !parent ||
-          typeof parent !== 'object' ||
-          (!Object.hasOwn(parent, key) &&
-            (!admitMissing || Array.isArray(parent))) ||
-          (Array.isArray(parent) && !/^(0|[1-9]\d*)$/.test(key))
+          !hasWritableParent ||
+          isMissingFieldDisallowed ||
+          hasInvalidArrayIndex
         ) {
           throw new Error(`Repair path does not exist: ${replacement.path}`)
         }

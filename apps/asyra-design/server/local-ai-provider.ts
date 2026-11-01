@@ -1913,18 +1913,15 @@ const runLocalAiProvider = async (
 
     if (value.method === 'turn/completed') {
       const turn = params.turn
-
-      if (
-        !isRecord(turn) ||
-        (turn.status !== 'completed' &&
-          !(
-            evaluation &&
+      const hasAcceptedCompletionStatus =
+        isRecord(turn) &&
+        (turn.status === 'completed' ||
+          (evaluation &&
             workStopped &&
             !reportPhase &&
-            turn.status === 'interrupted'
-          )) ||
-        typeof turn.id !== 'string'
-      ) {
+            turn.status === 'interrupted'))
+
+      if (!hasAcceptedCompletionStatus || typeof turn.id !== 'string') {
         return fail(failure('AI_MODEL_BACKEND_TRANSPORT_FAILED'))
       }
 

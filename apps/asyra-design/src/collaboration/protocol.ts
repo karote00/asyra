@@ -1064,13 +1064,22 @@ const inspectPublicationFrame = (
     messageType === CollaborationMessageTypes.SEND_PUBLICATION ||
     messageType === CollaborationMessageTypes.SEND_PUBLICATIONS
 
-  if (
-    !isNonBlankString(publicationId) ||
-    (clientFrame && !isNonBlankString(requestId)) ||
-    (!clientFrame && requestId.length > 0) ||
+  const hasPublicationIdentity = isNonBlankString(publicationId)
+  const hasInvalidRequestIdentity =
+    hasPublicationIdentity &&
+    ((clientFrame && !isNonBlankString(requestId)) ||
+      (!clientFrame && requestId.length > 0))
+  const hasInvalidSenderIdentity =
+    hasPublicationIdentity &&
+    !hasInvalidRequestIdentity &&
     (clientFrame
       ? fromActorId.length !== 0 || sequence !== 0
       : !isNonBlankString(fromActorId) || !isPositiveInteger(sequence))
+
+  if (
+    !hasPublicationIdentity ||
+    hasInvalidRequestIdentity ||
+    hasInvalidSenderIdentity
   ) {
     throw new TypeError('[collaboration] invalid publication frame identity')
   }

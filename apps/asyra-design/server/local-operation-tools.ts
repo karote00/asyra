@@ -417,7 +417,7 @@ const discoveryReceipt = (value: Record<string, unknown>) => {
 const discoveryInputIssue = (args: unknown): string | undefined => {
   const selectors = ['names', 'query', 'operation', 'operations', 'category']
 
-  if (
+  const hasInvalidFields =
     !isRecord(args) ||
     Object.keys(args).some(
       (key) =>
@@ -432,58 +432,79 @@ const discoveryInputIssue = (args: unknown): string | undefined => {
           'offset',
           'registryRevision'
         ].includes(key)
-    ) ||
-    (args.offset !== undefined &&
+    )
+  const hasInvalidPagination =
+    !hasInvalidFields &&
+    ((args.offset !== undefined &&
       (!Number.isSafeInteger(args.offset) ||
         Number(args.offset) < 0 ||
         (args.category === undefined && args.query === undefined))) ||
-    (args.registryRevision !== undefined &&
-      (!Number.isSafeInteger(args.registryRevision) ||
-        Number(args.registryRevision) < 0 ||
-        (args.category === undefined && args.query === undefined))) ||
-    (args.refresh !== undefined && typeof args.refresh !== 'boolean') ||
-    (args.view !== undefined &&
-      (typeof args.view !== 'string' ||
-        !['usage', 'full'].includes(args.view))) ||
-    (args.schemaPaths !== undefined &&
-      (!Array.isArray(args.schemaPaths) ||
-        !args.schemaPaths.length ||
-        args.schemaPaths.some(
-          (path) => typeof path !== 'string' || !path.startsWith('/')
-        ))) ||
-    (args.inputScope !== undefined &&
-      (args.schemaPaths !== undefined ||
-        (args.query === undefined &&
-          (!Array.isArray(args.names) || args.names.length !== 1)))) ||
-    (args.view !== undefined && args.schemaPaths !== undefined) ||
-    (args.view !== undefined &&
-      !selectors.some((key) => args[key] !== undefined)) ||
-    (args.schemaPaths !== undefined &&
-      args.names === undefined &&
-      args.operation === undefined &&
-      args.operations === undefined) ||
-    (args.refreshReason !== undefined &&
+      (args.registryRevision !== undefined &&
+        (!Number.isSafeInteger(args.registryRevision) ||
+          Number(args.registryRevision) < 0 ||
+          (args.category === undefined && args.query === undefined))))
+  const hasInvalidPresentation =
+    !hasInvalidFields &&
+    !hasInvalidPagination &&
+    ((args.refresh !== undefined && typeof args.refresh !== 'boolean') ||
+      (args.view !== undefined &&
+        (typeof args.view !== 'string' ||
+          !['usage', 'full'].includes(args.view))) ||
+      (args.schemaPaths !== undefined &&
+        (!Array.isArray(args.schemaPaths) ||
+          !args.schemaPaths.length ||
+          args.schemaPaths.some(
+            (path) => typeof path !== 'string' || !path.startsWith('/')
+          ))) ||
+      (args.inputScope !== undefined &&
+        (args.schemaPaths !== undefined ||
+          (args.query === undefined &&
+            (!Array.isArray(args.names) || args.names.length !== 1)))) ||
+      (args.view !== undefined && args.schemaPaths !== undefined) ||
+      (args.view !== undefined &&
+        !selectors.some((key) => args[key] !== undefined)) ||
+      (args.schemaPaths !== undefined &&
+        args.names === undefined &&
+        args.operation === undefined &&
+        args.operations === undefined))
+  const hasInvalidRefreshOrSchemaOptions =
+    !hasInvalidFields &&
+    !hasInvalidPagination &&
+    !hasInvalidPresentation &&
+    ((args.refreshReason !== undefined &&
       (args.refresh !== true ||
         typeof args.refreshReason !== 'string' ||
         !['context-loss', 'delivery-failure', 'missing-fields'].includes(
           args.refreshReason
         ))) ||
-    (args.includeSchemas !== undefined &&
-      (typeof args.includeSchemas !== 'boolean' ||
-        args.category === undefined)) ||
-    selectors.filter((key) => args[key] !== undefined).length > 1 ||
-    ['query', 'operation', 'category'].some(
-      (key) =>
-        args[key] !== undefined &&
-        (typeof args[key] !== 'string' || !String(args[key]).trim())
-    ) ||
-    (args.names !== undefined &&
-      (!Array.isArray(args.names) ||
-        args.names.some((v) => typeof v !== 'string'))) ||
-    (args.operations !== undefined &&
-      (!Array.isArray(args.operations) ||
-        !args.operations.length ||
-        args.operations.some((v) => typeof v !== 'string' || !v.trim())))
+      (args.includeSchemas !== undefined &&
+        (typeof args.includeSchemas !== 'boolean' ||
+          args.category === undefined)))
+  const hasInvalidSelector =
+    !hasInvalidFields &&
+    !hasInvalidPagination &&
+    !hasInvalidPresentation &&
+    !hasInvalidRefreshOrSchemaOptions &&
+    (selectors.filter((key) => args[key] !== undefined).length > 1 ||
+      ['query', 'operation', 'category'].some(
+        (key) =>
+          args[key] !== undefined &&
+          (typeof args[key] !== 'string' || !String(args[key]).trim())
+      ) ||
+      (args.names !== undefined &&
+        (!Array.isArray(args.names) ||
+          args.names.some((v) => typeof v !== 'string'))) ||
+      (args.operations !== undefined &&
+        (!Array.isArray(args.operations) ||
+          !args.operations.length ||
+          args.operations.some((v) => typeof v !== 'string' || !v.trim()))))
+
+  if (
+    hasInvalidFields ||
+    hasInvalidPagination ||
+    hasInvalidPresentation ||
+    hasInvalidRefreshOrSchemaOptions ||
+    hasInvalidSelector
   ) {
     return 'Provide one selector: operations, operation, category, names or query; omit selectors for categories. includeSchemas requires category. view (usage/full) requires a selector; nonempty schemaPaths requires exact names/operations. inputScope requires one exact native tool via names or query and cannot combine with schemaPaths; use owner-published scope choices. Partial views cannot combine with each other. refreshReason requires refresh=true and must be context-loss, delivery-failure or missing-fields.'
   }
