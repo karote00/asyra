@@ -61,6 +61,14 @@ describe('stage-owned App guidance', () => {
     )
   })
 
+  it('consumes chronological conversation data with current intent precedence', () => {
+    expect(AI_APP_PROMPT).toContain('metadata.conversationContext')
+    expect(AI_APP_PROMPT).toContain('current input.intent overrides')
+    expect(AI_APP_PROMPT).toContain('attachmentIndexes')
+    expect(AI_APP_PROMPT).toContain('fresh target and evidence checks')
+
+  })
+
   it('uses existing activity fields for concrete work without extra reporting calls', () => {
     expect(general).toContain('existing message field')
     expect(general).toContain('action summary')

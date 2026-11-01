@@ -1193,7 +1193,18 @@ it('execution proof validates continuity references before a successor request',
     )
     expect(execute.mock.calls[1][0]).toMatchObject({
       intent: 'Keep its rough style and adjust the remaining shape',
-      metadata: { aiTargets: { compositionId: 'root', roleToElementIds: {} } }
+      metadata: {
+        aiTargets: { compositionId: 'root', roleToElementIds: {} },
+        conversationContext: {
+          turns: [
+            {
+              intent: 'Create deliberately rough artwork',
+              attachmentIndexes: []
+            }
+          ],
+          attachmentIndexes: []
+        }
+      }
     })
     expect(execute.mock.calls[1][0].metadata.conversationHistory).toMatchObject(
       {
@@ -1205,6 +1216,9 @@ it('execution proof validates continuity references before a successor request',
     )
     controller.newConversation()
     await controller.submit('Create an unrelated simple drawing')
+    expect(execute.mock.calls[2][0].metadata).not.toHaveProperty(
+      'conversationContext'
+    )
     expect(execute.mock.calls[2][0].metadata.aiTargets).toEqual({
       compositionId: null,
       roleToElementIds: {}

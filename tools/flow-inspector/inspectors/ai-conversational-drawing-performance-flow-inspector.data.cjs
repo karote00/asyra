@@ -252,6 +252,8 @@
 
         'apps/asyra-design/src/ai/startup.ts',
         'apps/asyra-design/src/ai/conversation.ts',
+      'apps/asyra-design/src/ai/conversation-context.ts',
+      'apps/asyra-design/src/ai/conversation-context-projection.ts',
         'apps/asyra-design/src/ai/presentation.ts',
         'apps/asyra-design/src/ai/confirmation.ts',
         'apps/asyra-design/src/ai/__tests__',
@@ -1572,6 +1574,7 @@
     ],
     conditions: [
       'Append the user message before execution and preserve its identity through settlement.',
+      'Submit bounded exact public conversation history and source-attachment associations through existing Feature metadata; reject over-limit context before execution without silently truncating requirements. Ordinary follow-ups retain sources; questions retain exact text, choices and answer links. Never reuse request-owned evidence across turns.',
       'Follow-up hints retain current non-workspace objects of any registered representation; revalidate distinct IDs once per submission and discard deleted/workspace references without granting new capabilities.',
       'One App activity projection owns the status below the work-history disclosure and its ordered entries. The disclosure summary shows Working for or Worked for with elapsed time, never an Activity title, describes real work transitions without tool names or AI-wait terminology, attaches model updates to their event, and projects approval/stop from existing controller state. Settlement removes the active disclosure status and marker, retains the result without a Result heading, and never appends success to failed partial work. Model-authored messages retain their language without language instructions or filtering. Missing or oversized operational descriptions use registered labels.',
       'Activity precedes independent question and answer controls. Questions wait for user input without Finished or a completion timestamp; provider completion alone does not complete the drawing goal. Terminal explanations remain outside the disclosure and show the controller-owned settlement time in the user local timezone at the left instead of a completion bell.',

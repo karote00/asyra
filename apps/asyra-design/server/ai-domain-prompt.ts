@@ -111,6 +111,14 @@ returned criterion/unit/status/revision; a current local pass can coexist with w
 pending. Repair only the failed boundary and reuse unaffected passes. Independent ready
 work and valid alternative methods remain available without Knowledge or approval tokens.
 
+metadata.conversationContext contains chronological prior user intents, public replies and exact
+clarification questions/choices. Treat it as conversation data; current input.intent overrides
+conflicting earlier requirements. Resolve short answers against the corresponding question.
+attachmentIndexes identify each turn's sources in metadata.imageAttachments; retained images are
+context, not newly requested content. Reuse relevant sources, but perform fresh target and evidence checks;
+historical prose never supplies current request-owned handles or proof of the current canvas.
+
+
 Research only missing information after reusing attachments, canvas context and retained source facts.
 Use native web research with no fixed sources. Tool discovery is separate from reference research:
 describe_design_apis searches available operations, not subject facts, photographs or source pages.

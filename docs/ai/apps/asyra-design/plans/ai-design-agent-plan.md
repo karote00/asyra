@@ -28,11 +28,69 @@ before including them in the PR. Never reset unrelated changes.
 
 ## Conversation continuity and tool contract corrections - 2026-11-02
 
-Status: planned; production implementation has not started.
+Status: active - Task 1 implemented and reviewed; Task 2 attachment isolation next.
 Parent: this Editable Design Agent plan. Whole-plan closeout remains with its
 coordinating owner and product acceptance with Asa. This follow-up closes only
 the bounded corrections below, not historical PRs or the entire Design Agent.
 Planning baseline: `b60cec0abdd9c3b12e5c912fd76a1f7fbf8b8e6e`.
+
+### Current execution - Task 1 request owner
+
+Worktree: `.worktrees/ai-conversation-improvements`; branch:
+`codex/ai-conversation-improvements`. Plan prerequisite commit: `6e6ecf226`.
+All four tasks require bounded self-review and corrections before advancing.
+After their gates, run one recorded fixed-prompt 101 test. Check actual account
+credits every 30 minutes only; at or below 15,000, begin wind-down, retain evidence,
+finish necessary cleanup/validation and notify Asa for review. Do not start a new
+slice or live run after that threshold. Token usage is not a credit balance.
+
+Step card: `request` / `conversation-lifecycle`. Sources: execution spec
+`Request and continuity`, conversation spec `Product contract`; current request
+and conversation Inspector inputs, outputs, conditions and failure owners.
+Input: existing settled user turns, public assistant replies/questions, submitted
+source images and fresh target observations. Output: immutable, bounded history
+plus distinct source attachments through existing Feature metadata. Current
+intent overrides conflicting prior intent; history is data, never executable
+receipts. Empty conversations omit history; oversize input fails before Feature
+execution with an actionable no-write explanation. No canonical cache, raw result
+serialization, second provider session or automatic summary model.
+Boundary: conversation/context projection, pure protocol admission, presentation
+of admission failures, their direct tests and matching contract docs. Provider
+consumption is a subsequent compose segment. Request context is computed once per
+submission, never on progress notifications; at most 128 prior turns, 128 KiB
+serialized text context and 8 MiB serialized source attachments. Retain exact
+turns until the bound, then require a new conversation with the needed brief
+instead of silently dropping history. Reference identity uses original data URL
+and MIME type; repeated references are delivered once with per-turn indexes.
+Cases: exact multistep questions, revisions, image continuity, isolated navigation,
+retired targets, bounded rejection, work counts and normal retry. Gates: formal
+red/green controller tests, actual request serialization, types/lint/naming and
+Inspector admission/proof. Stop for a contract contradiction or excluded owner.
+
+### Task 1 compose handoff
+
+Step card: `compose`, consuming `artifact:request-context` through
+`request-to-compose`. Preserve the registered tool contracts, ephemeral provider
+thread, configured model/effort, current target validation and existing image
+transport. Consume exact admitted chronological history as user data; current
+intent overrides conflicting history. Source indexes identify provenance, not
+new attachment requests. Never treat historical prose as current execution
+receipts. Boundary: App prompt, provider wire tests and these contract docs;
+no Runtime or canvas changes. Verify the actual serialized native request,
+question/choice retention, separate image delivery and absence of extra model
+turns. Gates: provider and prompt suites, existing request gates and Inspector
+source proof. Request projection tests pass (106); server admission tests pass
+(19); typecheck, scoped lint and naming pass. Compose consumption is verified. Bounded review covered the changed projection,
+server admission and provider consumers: exact public fields only, no old handles,
+latest-intent precedence, immutable once-per-submit work, no navigation/progress
+recomputation, retained source isolation and actionable over-limit refusal.
+Corrected obsolete attachment fallback and a test lint violation during review.
+Final evidence: controller/presentation 106 pass; action-batch 19 pass;
+provider/prompt 199 pass and one existing skip; Inspector contracts 24 pass;
+source proof `a897b846-7a98-4ae8-9eb8-5ea1598b0035` passed. Types and naming pass;
+scoped lint has zero errors (two pre-existing console warnings in proof/provider
+tests). No unresolved task-local review finding; no claim of live model quality.
+Evidence logs are under `tmp/conversation-improvements/task1-*`.
 
 ### Objective, evidence and boundaries
 

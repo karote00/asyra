@@ -18,6 +18,27 @@ it as a newly attached image. No Edit request action or automatic draft restorat
 is offered. Panel text supports native mouse selection and copying. Composer keyboard events stay in the text
 input, preserving native editing and IME without invoking canvas shortcuts.
 
+Each submission projects prior settled turns from the current conversation into
+bounded request data: exact user intent, public assistant explanation or question,
+offered choices, answer/retry links, outcome and source-attachment indexes. Latest
+explicit user revisions supersede earlier conflicting requirements. Assistant
+suggestions and failed work are not adopted user requirements. A new conversation
+starts without this context; returning to history restores its own context.
+
+Source images remain available to ordinary follow-ups as well as answers/retries.
+Inherited images are not displayed as new message attachments. Send each distinct
+source once and preserve its original per-turn association. Inspection IDs, leases,
+prepared artifacts, tool-call identities and raw execution results are excluded;
+current targets and permissions are freshly checked. Source URLs in public replies
+remain provenance, not proof or a reusable backend handle.
+
+Admission retains exact history up to 128 prior turns, 128 KiB of serialized text
+context (including the current intent), and 8 MiB of serialized source attachments.
+It never silently truncates requirements or references. Exceeding a bound produces
+an explicit no-write failure instructing the user to start a new conversation with
+the needed brief/references. Admission runs once on submission, not on progress or
+presentation reads. No extra model summary call or persistent conversation store.
+
 Questions expose clickable choices and a text answer path, preserve subject,
 dimensions, attachments and target context, and record the selected answer. Waiting
 for an answer has no active-work spinner. Registered App editing actions execute

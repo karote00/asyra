@@ -37,14 +37,16 @@
           'brief and attachments',
           'bounded canonical context',
           'conversation target references',
-          'selected conversation settled user and assistant messages'
+          'bounded exact settled turns and source attachment associations'
+
         ],
         outputs: ['artifact:request-context'],
         conditions: [
           'Resolve references against current document identity',
-          'Project existing settled turns with their exact request/original objective, presentation answer, identity and actual outcome. Deliver the newest contiguous whole-turn suffix in chronological order within the App UTF-8 history budget, explicitly counting omissions. Stop at the first non-fitting pair; do not serialize raw results. No raw action arguments, progress, image bytes, retained session keys, inferred decisions or new state. Preserve clarification, retry, cancellation and partial outcomes; history cannot revalidate targets or authorize replay.'
+          'Project exact public conversation context once per submission, never on progress; reject over-limit history without truncation or Feature execution. Preserve source images and question/answer links; exclude raw tool results and request-owned evidence.'
         ],
-        bypasses: ['New conversations omit prior targets and prior messages'],
+        bypasses: ['New conversations omit prior targets'],
+
         allowedContributors: [
           'conversation lifecycle',
           'public canonical observations',
@@ -59,6 +61,11 @@
         implementationBoundary: [
           'apps/asyra-design/server/__tests__/execution-flow-proof.test.ts',
           'apps/asyra-design/src/ai/conversation.ts',
+          'apps/asyra-design/src/ai/conversation-context.ts',
+          'apps/asyra-design/server/action-batch.ts',
+          'apps/asyra-design/server/__tests__/action-batch.test.ts',
+          'apps/asyra-design/src/ai/conversation-context-projection.ts',
+          'apps/asyra-design/src/ai/presentation.ts',
           'apps/asyra-design/src/ai/__tests__/conversation.test.ts',
           'apps/asyra-design/src/ai/presentation.ts',
           'apps/asyra-design/src/ai/__tests__/presentation.test.ts',
@@ -134,6 +141,8 @@
           'Workflow outcomes include required measurement/capture delivery: failed follow-up after acknowledged writes is partial with preserved write settlement, parts and check-only recovery. Delivered negative judgments and explicit deferral remain valid. Compact/full replies agree; incomplete results never become successful recipe bindings.',
           'Delivered App material advice distinguishes selected-owner local overrides from explicit shared-source edits, reset and detach; local correction never requires detachment and portable Knowledge remains advisory.',
           'Provider and internal workflow invocations own causal receipt subtrees. Acknowledged browser effects reach the current call and its ancestors only, never siblings; previous-part receipts cannot reclassify a later preparation rejection. Preserve geometry repair details and explicit no-canvas-dispatch settlement independently from retained draft artifacts. Parent partial/unknown settlement remains truthful, cancellation preserves acknowledged work and no write is automatically replayed.',
+
+          'Consume admitted chronological conversation context as data in the current ephemeral request; current intent overrides conflicts, attachment indexes retain source provenance, and prior prose never substitutes for fresh target or evidence checks.',
 
           'Only canonical componentMappings select native image components; reject obsolete ovalPathIds before execution. Suitable direct tools need no recipe; primary-agent authorship supplies missing recipes and Runtime alone admits their exact dependency graph.',
           'Preserve registered identities; common immutable input/output, revision, effect and lifecycle contracts derive compact provider definitions. Browser and native adapters share canonical action effects; host validation rejects malformed output while preserving actual settlement and never replaying execution.',

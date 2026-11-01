@@ -793,3 +793,47 @@ it('accepts independently addressed final request records and preserves idempote
     await new Promise<void>((resolve) => server.close(() => resolve()))
   }
 })
+
+describe('conversation continuity admission', () => {
+  const turn = {
+    turnId: 'chat:turn:1',
+    intent: 'Keep the blue color.',
+    message: 'Group or title?',
+    outcome: 'no-change',
+    attachmentIndexes: [],
+    question: { message: 'Group or title?', choices: [] }
+  }
+  it.each([
+    { turns: [{ ...turn, attachmentIndexes: [0] }], attachmentIndexes: [] },
+    {
+      turns: [{ ...turn, inspectionId: 'old-receipt' }],
+      attachmentIndexes: []
+    },
+    { turns: [turn, turn], attachmentIndexes: [] },
+    {
+      turns: [{ ...turn, intent: 'x'.repeat(128 * 1024) }],
+      attachmentIndexes: []
+    }
+  ])(
+    'rejects missing source references, foreign fields, duplicate turns and oversize context before model work',
+    async (conversationContext) => {
+      const requestModelActionBatch = vi.fn(async () => ({
+        batchId: 'unused',
+        actions: []
+      }))
+      await expect(
+        resolveActionBatchRequest(
+          {
+            intent: 'The latter.',
+            attempt: 1,
+            context: {},
+            actions: [],
+            metadata: { conversationContext }
+          },
+          { requestModelActionBatch }
+        )
+      ).rejects.toMatchObject({ code: 'ACTION_BATCH_INVALID_INPUT' })
+      expect(requestModelActionBatch).not.toHaveBeenCalled()
+    }
+  )
+})
