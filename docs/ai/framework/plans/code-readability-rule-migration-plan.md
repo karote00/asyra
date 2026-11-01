@@ -4,6 +4,19 @@ Status: Rules 1-4 enforced; decision and guard review remains available as a rea
 
 ## Current scope
 
+PR #363 CI follow-up: synchronize the public documentation source map through
+`yarn docs:public` after the approved Design readability edits. The existing
+`docs:public:check` reproduces the stale-source failure. Scope is generated
+source metadata and this progress record; preserve runtime code, templates and
+release configuration. Validate all public documentation tests and the consuming
+Framework Site production build before pushing. Continue repairing exact-head
+CI failures until all required checks pass; automatic PR runs remain the only
+CI trigger.
+
+The canonical generator changed three source digests only. All 71 public
+documentation tests and the Framework Site production build passed. Evidence:
+`tmp/readability/ci-doc-tests.log` and `tmp/readability/ci-doc-site-build.log`.
+
 The follow-up guard slice is limited to `packages/preset/src/agent-activity.ts`
 and `packages/preset/src/spatial/assets/preview-worker.ts`, selected from the
 existing 67 repeated-error candidates. Name validation purposes within each

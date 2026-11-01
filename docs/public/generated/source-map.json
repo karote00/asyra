@@ -18,7 +18,7 @@
         },
         {
           "path": "apps/asyra-design/server/local-operation-tools.ts",
-          "sha256": "9f5cea26530b5ceccdd599425cc2e0141e720f8563298cffd0b18dc1f4f0dcd3"
+          "sha256": "9431f607b422fbbcdd310bac988b1178220edfd8c162fce03bfd49eac9505b23"
         }
       ]
     },
@@ -918,11 +918,11 @@
       "sources": [
         {
           "path": "apps/asyra-design/server/local-operation-tools.ts",
-          "sha256": "9f5cea26530b5ceccdd599425cc2e0141e720f8563298cffd0b18dc1f4f0dcd3"
+          "sha256": "9431f607b422fbbcdd310bac988b1178220edfd8c162fce03bfd49eac9505b23"
         },
         {
           "path": "apps/asyra-design/server/local-design-workflow.ts",
-          "sha256": "d6631143218b6e75de7d70e51a301af8d989169cde5366c13e69123f444d943e"
+          "sha256": "0c1b0478a58d25027de6d2cd33999f34d4a6efa5f9bc5b0ec8a7e98b6f832e48"
         },
         {
           "path": "packages/ai-agent-runtime/src/recipe-schema.ts",
