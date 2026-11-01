@@ -23,7 +23,7 @@
           }
         ],
         "specRefs": [
-          "docs/ai/tools/flow-inspector/plans/react-presentation-migration-plan.md"
+          "docs/ai/tools/flow-inspector/plans/completed/react-presentation-migration-plan.md"
         ],
         "implementationRefs": [
           "tools/flow-inspector/src/"
@@ -51,7 +51,7 @@
           }
         ],
         "specRefs": [
-          "docs/ai/tools/flow-inspector/plans/react-presentation-migration-plan.md"
+          "docs/ai/tools/flow-inspector/plans/completed/react-presentation-migration-plan.md"
         ],
         "implementationRefs": [
           "tools/flow-inspector/src/",
@@ -80,7 +80,7 @@
           }
         ],
         "specRefs": [
-          "docs/ai/tools/flow-inspector/plans/react-presentation-migration-plan.md"
+          "docs/ai/tools/flow-inspector/plans/completed/react-presentation-migration-plan.md"
         ],
         "implementationRefs": [
           "tools/flow-inspector/src/",
@@ -114,7 +114,7 @@
           }
         ],
         "specRefs": [
-          "docs/ai/tools/flow-inspector/plans/react-presentation-migration-plan.md"
+          "docs/ai/tools/flow-inspector/plans/completed/react-presentation-migration-plan.md"
         ],
         "implementationRefs": [
           "tools/flow-inspector/",
@@ -142,7 +142,7 @@
         "subtitle": "One React presentation implementation without legacy compatibility"
       },
       "authority": {
-        "specPath": "docs/ai/tools/flow-inspector/plans/react-presentation-migration-plan.md",
+        "specPath": "docs/ai/tools/flow-inspector/plans/completed/react-presentation-migration-plan.md",
         "inspectorPath": "docs/ai/tools/flow-inspector/plans/react-presentation-migration/presentation.flow.json",
         "semanticOwner": "Flow Inspector",
         "inspectorOwner": "Flow Inspector"
@@ -188,7 +188,7 @@
             "tools/flow-inspector/src/"
           ],
           "specRefs": [
-            "docs/ai/tools/flow-inspector/plans/react-presentation-migration-plan.md"
+            "docs/ai/tools/flow-inspector/plans/completed/react-presentation-migration-plan.md"
           ],
           "failureOwnerStepId": "architecture"
         },
@@ -226,7 +226,7 @@
             "tools/flow-inspector/workspace/"
           ],
           "specRefs": [
-            "docs/ai/tools/flow-inspector/plans/react-presentation-migration-plan.md"
+            "docs/ai/tools/flow-inspector/plans/completed/react-presentation-migration-plan.md"
           ],
           "failureOwnerStepId": "workspace"
         },
@@ -265,7 +265,7 @@
             "tools/flow-inspector/control-plane/"
           ],
           "specRefs": [
-            "docs/ai/tools/flow-inspector/plans/react-presentation-migration-plan.md"
+            "docs/ai/tools/flow-inspector/plans/completed/react-presentation-migration-plan.md"
           ],
           "failureOwnerStepId": "services"
         },
@@ -304,7 +304,7 @@
             "docs/ai/tools/flow-inspector/"
           ],
           "specRefs": [
-            "docs/ai/tools/flow-inspector/plans/react-presentation-migration-plan.md"
+            "docs/ai/tools/flow-inspector/plans/completed/react-presentation-migration-plan.md"
           ],
           "failureOwnerStepId": "delivery"
         }

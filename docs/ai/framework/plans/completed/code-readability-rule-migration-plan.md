@@ -3106,3 +3106,13 @@ the worktree for review and remove the heartbeat only after successful closure.
   Read its owner instructions and focused contracts before editing. Continue rule 1
   without mixing in spacing/structural rules. Release declarations and complete
   rule milestone gates remain pending. No rule commit or push yet.
+
+## Closeout
+
+Completed: 2026-11-02
+Reviewed source: b738ff4333a4de0ee920a171fec2c40af897884a
+Merged source: cb66b095f6ad55d2793ca3cd7b950c13f478dcbb (PR #363).
+Evidence: <a href="https://github.com/karote00/asyra/actions/runs/41323723485" target="_blank" rel="noopener noreferrer">Full PR validation</a> completed with all 44 jobs successful, including all required checks and final validate.
+Outcome: Rules 1-4 are enforced. The existing decision, long-condition and repeated-error inventories were reviewed; the user-selected handler maps and named conditions were implemented and reviewed without changing behavior.
+Decision: Close the agreed migration and audit. Unselected candidates require no rewrite; closure and import/export work are outside this plan. Earlier progress and failure records remain historical.
+Exit criteria: Scoped tests, source review and final full PR CI passed. This closeout changes documentation and relocated references only.

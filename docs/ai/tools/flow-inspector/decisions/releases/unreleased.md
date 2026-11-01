@@ -304,3 +304,9 @@ this acceptance is not a blind Agent-efficiency benchmark and did not execute
 the selected-rerun preview path. Existing coverage and retention limits remain.
 This closeout changes documentation only, with no tests rerun, runtime changes,
 Changeset, version, tag, publication or deployment.
+
+## 2026-11-02 - Complete React presentation closeout
+
+Context: PR #363 merged with all 44 full-CI jobs successful, including Inspector validation, browser coverage and production artifacts.
+Decision: Close the [React presentation migration](/docs/ai/tools/flow-inspector/plans/completed/react-presentation-migration-plan.md). Architecture, workspace, live dashboard and control-plane UI now use React without a legacy renderer or iframe composition.
+Consequences: Existing service contracts remain owned by their services; future dashboard architecture is separate. Recorded local component, delivery and installed-consumer evidence remains in the completed plan. No publication or version change is part of closeout.
