@@ -10,12 +10,14 @@ test('approved factory media keeps its source bytes and bounded download sizes',
   const provenance = JSON.parse(
     await readFile(new URL('provenance.json', mediaRoot), 'utf8')
   )
+
   for (const [kind, budget] of [
     ['video', 6 * 1024 * 1024],
     ['poster', 160 * 1024]
   ]) {
     const media = provenance[kind]
     const bytes = await readFile(new URL(media.file, mediaRoot))
+
     assert.equal(
       createHash('sha256').update(bytes).digest('hex'),
       media.sha256,
@@ -31,6 +33,7 @@ test('approved factory media keeps its source bytes and bounded download sizes',
       kind === 'video' ? 'ftyp' : 'WEBP'
     )
   }
+
   assert.equal(provenance.durationSeconds, 16)
   assert.equal(provenance.width, 2560)
   assert.equal(provenance.height, 1600)

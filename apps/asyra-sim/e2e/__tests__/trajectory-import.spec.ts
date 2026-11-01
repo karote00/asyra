@@ -6,8 +6,11 @@ import { readHistoryDepth } from '../history-depth'
 async function openImport(page: Page) {
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
   const details = page.locator('.trajectory-import')
-  if (!(await details.evaluate((node) => (node as HTMLDetailsElement).open)))
+
+  if (!(await details.evaluate((node) => (node as HTMLDetailsElement).open))) {
     await details.locator('summary').click()
+  }
+
   return details
 }
 
@@ -42,19 +45,30 @@ async function savedDefinition(
   )
   await page.getByRole('button', { name: 'Projects', exact: true }).click()
   const pending = page.waitForEvent('download')
+
   await page
     .getByRole('button', { name: 'Export project', exact: true })
     .click()
   const stream = await (await pending).createReadStream()
-  if (!stream) throw new Error('Missing portable project stream')
+
+  if (!stream) {
+    throw new Error('Missing portable project stream')
+  }
+
   const chunks: Buffer[] = []
-  for await (const chunk of stream) chunks.push(Buffer.from(chunk))
+
+  for await (const chunk of stream) {
+    chunks.push(Buffer.from(chunk))
+  }
+
   const snapshot = JSON.parse(Buffer.concat(chunks).toString('utf8'))
+
   await page
     .getByRole('button', { name: 'Close projects', exact: true })
     .click()
   const propertyId =
     snapshot.document.sceneTree.elements[experimentId].props.experiment
+
   return snapshot.document.props[propertyId].experimentDefinition
 }
 
@@ -71,6 +85,7 @@ test('external CSV declaration, conversion review, acceptance, Undo/Redo and reo
   const [header] = initial.split('\n')
   const csv = `${header}\n0,1,0,0,0,0,0\n2000,2,0,0,0,0,0`
   const depth = await readHistoryDepth(page)
+
   await showSetup(page)
   await page.getByLabel('Minimum clearance (mm)', { exact: true }).fill('30')
   await page.getByLabel('Load trajectory CSV').setInputFiles({
@@ -93,10 +108,15 @@ test('external CSV declaration, conversion review, acceptance, Undo/Redo and reo
     page.getByRole('button', { name: 'Import trajectory', exact: true })
   ).toHaveCount(0)
   const units = page.locator('select[aria-label$=" CSV unit"]')
+
   await expect(units).toHaveCount(6)
-  for (const unit of await units.all()) await unit.selectOption('deg')
+  for (const unit of await units.all()) {
+    await unit.selectOption('deg')
+  }
+
   await preview(page)
   const review = page.getByLabel('Trajectory conversion preview')
+
   await expect(review).toContainText('2000 ms → 2 s')
   await expect(review).toContainText('1 deg → 0.01745329252 rad')
   await page
@@ -108,7 +128,10 @@ test('external CSV declaration, conversion review, acceptance, Undo/Redo and reo
   await expect(
     page.getByRole('combobox', { name: 'Time unit', exact: true })
   ).toHaveValue('ms')
-  for (const unit of await units.all()) await expect(unit).toHaveValue('deg')
+  for (const unit of await units.all()) {
+    await expect(unit).toHaveValue('deg')
+  }
+
   await preview(page)
   await expect(review).toContainText('3000 ms → 3 s')
   await expect(page.locator('.accepted-preview')).toBeFocused()
@@ -154,6 +177,7 @@ test('external CSV declaration, conversion review, acceptance, Undo/Redo and reo
   await page.getByRole('button', { name: 'Redo', exact: true }).click()
   await openImport(page)
   const canonical = await page.getByLabel('Trajectory source data').inputValue()
+
   expect(canonical).not.toBe(initial)
   await expect(
     page.getByLabel('Minimum clearance (mm)', { exact: true })
@@ -164,6 +188,7 @@ test('external CSV declaration, conversion review, acceptance, Undo/Redo and reo
   )
   await saveProject(page, 'Declared source units')
   const definition = await savedDefinition(page, experimentId)
+
   expect(definition.rule.minimumClearance).toBe(0.03)
   expect(definition.sourceUnits.time).toBe('ms')
   expect(Object.values(definition.sourceUnits.joints)).toEqual(
@@ -218,6 +243,7 @@ for (const [width, theme] of [
       keyframes: [{ time: 2500, joints }]
     }
     const depth = await readHistoryDepth(page)
+
     await page.getByLabel('Load trajectory JSON').setInputFiles({
       name: 'declared.json',
       mimeType: 'application/json',
@@ -227,6 +253,7 @@ for (const [width, theme] of [
     })
     await preview(page)
     const review = page.getByLabel('Trajectory conversion preview')
+
     await expect(review).toContainText('2500 ms → 2.5 s')
     await expect(review).toContainText('0 deg → 0 rad')
     await expect(
@@ -301,9 +328,13 @@ test('editing initial canonical text retains units without a confirmation prompt
     exact: true
   })
   const units = page.locator('select[aria-label$=" CSV unit"]')
+
   await input.fill(original.replace('\n8,', '\nㄉㄢ,'))
   await expect(timeUnit).toHaveValue('s')
-  for (const unit of await units.all()) await expect(unit).toHaveValue('rad')
+  for (const unit of await units.all()) {
+    await expect(unit).toHaveValue('rad')
+  }
+
   await expect(
     page.getByRole('button', { name: 'Confirm displayed units', exact: true })
   ).toHaveCount(0)
@@ -314,7 +345,10 @@ test('editing initial canonical text retains units without a confirmation prompt
   ).toHaveCount(0)
   await input.fill(original.replace('\n8,', '\n9,'))
   await expect(timeUnit).toHaveValue('s')
-  for (const unit of await units.all()) await expect(unit).toHaveValue('rad')
+  for (const unit of await units.all()) {
+    await expect(unit).toHaveValue('rad')
+  }
+
   await expect(
     page.getByRole('button', { name: 'Confirm displayed units', exact: true })
   ).toHaveCount(0)
@@ -338,6 +372,7 @@ test('completed inline trajectory edits preserve source units through acknowledg
   const input = page.getByLabel('Trajectory source data')
   const initial = await input.inputValue()
   const depth = await readHistoryDepth(page)
+
   await input.fill(initial.replace('\n8,', '\n9,'))
   await input.press('Tab')
   await expect(page.getByTestId('history-depth')).toHaveText(
@@ -351,6 +386,7 @@ test('completed inline trajectory edits preserve source units through acknowledg
     name: 'Time unit',
     exact: true
   })
+
   await timeUnit.selectOption('ms')
   await timeUnit.press('Tab')
   await expect(page.getByTestId('history-depth')).toHaveText(
@@ -381,6 +417,7 @@ test('completed inline trajectory edits preserve source units through acknowledg
   await expect(input).toHaveValue(/\n10,/)
   await saveProject(page, 'Inline trajectory')
   const definition = await savedDefinition(page, id)
+
   expect(definition.sourceUnits.time).toBe('ms')
   expect(definition.trajectory.keyframes.at(-1)?.time).toBe(0.01)
 })

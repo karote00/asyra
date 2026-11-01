@@ -12,7 +12,10 @@ export const initProjection = (
   >[0][] = []
   const unsubscribe = core.subscribeToSharedPublication((publication) => {
     pending.push(publication)
-    if (timer !== undefined) return
+    if (timer !== undefined) {
+      return
+    }
+
     timer = setTimeout(() => {
       timer = undefined
       projection.refreshFromPublications(pending.splice(0))
@@ -22,10 +25,14 @@ export const initProjection = (
     onLoadAccepted?.()
     projection.refresh()
   })
+
   return () => {
     unsubscribe()
     loaded.unsubscribe()
-    if (timer !== undefined) clearTimeout(timer)
+    if (timer !== undefined) {
+      clearTimeout(timer)
+    }
+
     pending.length = 0
   }
 }

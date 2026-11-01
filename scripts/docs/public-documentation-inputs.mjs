@@ -33,14 +33,22 @@ const freeze = (value) => {
   if (!value || typeof value !== 'object' || Object.isFrozen(value)) {
     return value
   }
+
   Object.freeze(value)
   Object.values(value).forEach(freeze)
+
   return value
 }
 
 const publicEntriesFor = (exportsValue) => {
-  if (typeof exportsValue === 'string') return ['.']
-  if (!exportsValue || typeof exportsValue !== 'object') return []
+  if (typeof exportsValue === 'string') {
+    return ['.']
+  }
+
+  if (!exportsValue || typeof exportsValue !== 'object') {
+    return []
+  }
+
   return Object.keys(exportsValue).sort()
 }
 
@@ -48,6 +56,7 @@ export const DOCUMENTATION_AUTHORITY = freeze(AUTHORITY)
 
 export const isApprovedDocumentationSource = (sourcePath) => {
   const normalized = sourcePath.replaceAll(path.sep, '/')
+
   if (
     DOCUMENTATION_AUTHORITY.allowedRootFiles.includes(normalized) ||
     DOCUMENTATION_AUTHORITY.allowedPlanFiles.includes(normalized) ||
@@ -55,6 +64,7 @@ export const isApprovedDocumentationSource = (sourcePath) => {
   ) {
     return true
   }
+
   if (
     normalized.includes('/plans/') ||
     normalized.includes('/research/') ||
@@ -64,6 +74,7 @@ export const isApprovedDocumentationSource = (sourcePath) => {
   ) {
     return false
   }
+
   return DOCUMENTATION_AUTHORITY.allowedRoots.some((root) =>
     normalized.startsWith(root)
   )
@@ -80,6 +91,7 @@ export const readApprovedDocumentationInputs = async ({ repositoryRoot }) => {
       version.split('.').slice(0, 2).join('.')
     )
   )
+
   if (releaseFamilies.size !== 1) {
     throw new Error(
       `Public documentation requires one Framework release family, found ${[
@@ -87,6 +99,7 @@ export const readApprovedDocumentationInputs = async ({ repositoryRoot }) => {
       ].join(', ')}`
     )
   }
+
   const [releaseFamily] = releaseFamilies
 
   const packages = releaseSource.packages.map((releasePackage) => {

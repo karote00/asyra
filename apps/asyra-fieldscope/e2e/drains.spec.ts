@@ -25,7 +25,11 @@ test('rounded drain mouth is visible through the real front camera', async ({
   await page.getByRole('button', { name: '端面', exact: true }).click()
   const scene = page.getByTestId('scene')
   const bounds = await scene.boundingBox()
-  if (!bounds) throw new Error('Missing viewport')
+
+  if (!bounds) {
+    throw new Error('Missing viewport')
+  }
+
   const camera = cameraPreset('front')
   const back = new Vector3(...camera.position)
     .sub(new Vector3(...camera.target))
@@ -42,6 +46,7 @@ test('rounded drain mouth is visible through the real front camera', async ({
     bounds.height
   const x = bounds.x + bounds.width / 2,
     y = bounds.y + bounds.height / 2
+
   await page.mouse.move(x, y)
   await page.keyboard.down('Shift')
   await page.mouse.down()

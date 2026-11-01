@@ -66,10 +66,15 @@ export interface WalkingMotionIntervalResult {
 }
 
 type IntervalVector = readonly [Interval, Interval, Interval]
+
 function required<T>(value: T | undefined): T {
-  if (value === undefined) throw new Error('Incomplete admitted walking source')
+  if (value === undefined) {
+    throw new Error('Incomplete admitted walking source')
+  }
+
   return value
 }
+
 interface IntervalTransform {
   readonly position: IntervalVector
   readonly rotation: readonly [Interval, Interval, Interval, Interval]
@@ -86,17 +91,22 @@ interface MotionIntervalInput {
 
 const point = (values: readonly number[]): Point3 =>
   Object.freeze([...values]) as unknown as Point3
+
 const bounds = (min: readonly number[], max: readonly number[]) =>
   Object.freeze({ min: point(min), max: point(max) })
+
 const vector = (x: Interval, y: Interval, z: Interval): IntervalVector =>
   Object.freeze([x, y, z])
+
 const literalVector = (value: Point3): IntervalVector =>
   vector(interval(value[0]), interval(value[1]), interval(value[2]))
+
 const join = (first: Interval, second: Interval): Interval =>
   Object.freeze({
     low: Math.min(first.low, second.low),
     high: Math.max(first.high, second.high)
   })
+
 const exactTransform = (value: WalkingRigidTransform): IntervalTransform =>
   Object.freeze({
     position: literalVector(value.position),
@@ -104,39 +114,49 @@ const exactTransform = (value: WalkingRigidTransform): IntervalTransform =>
       value.rotation.map(interval) as unknown as IntervalTransform['rotation']
     )
   })
+
 function trueTrig(
   kind: 'sin' | 'cos',
   input: Interval,
   work: { trigBounds: number }
 ): Interval {
   work.trigBounds++
-  if (input.low <= -1 || input.high >= 1)
+  if (input.low <= -1 || input.high >= 1) {
     return Object.freeze({ low: -1, high: 1 })
+  }
+
   const polynomial = boundPolynomialTrig(kind, input).bounds,
     magnitude = Math.max(Math.abs(input.low), Math.abs(input.high)),
     exponent = kind === 'sin' ? 21 : 22,
     factorial = kind === 'sin' ? 51090942171709440000 : 1124000727777607680000
   let remainder = interval(1)
-  for (let power = 0; power < exponent; power++)
+
+  for (let power = 0; power < exponent; power++) {
     remainder = multiply(remainder, interval(magnitude))
+  }
+
   remainder = divide(remainder, interval(factorial))
   const enclosed = {
     low: subtract(polynomial, { low: 0, high: remainder.high }).low,
     high: add(polynomial, { low: 0, high: remainder.high }).high
   }
+
   if (input.low === input.high) {
     const pointValue =
       kind === 'sin' ? Math.sin(input.low) : Math.cos(input.low)
+
     return Object.freeze({
       low: Math.max(-1, Math.min(enclosed.low, pointValue)),
       high: Math.min(1, Math.max(enclosed.high, pointValue))
     })
   }
+
   return Object.freeze({
     low: Math.max(-1, enclosed.low),
     high: Math.min(1, enclosed.high)
   })
 }
+
 function operations(work: { trigBounds: number }) {
   const rotate = (
     rotation: IntervalTransform['rotation'],
@@ -155,6 +175,7 @@ function operations(work: { trigBounds: number }) {
         interval(2),
         subtract(multiply(x, value[1]), multiply(y, value[0]))
       )
+
     return vector(
       subtract(
         add(add(value[0], multiply(w, tx)), multiply(y, tz)),
@@ -170,23 +191,27 @@ function operations(work: { trigBounds: number }) {
       )
     )
   }
+
   const transformPoint = (
     transform: IntervalTransform,
     value: IntervalVector
   ) => {
     const rotated = rotate(transform.rotation, value)
+
     return vector(
       add(transform.position[0], rotated[0]),
       add(transform.position[1], rotated[1]),
       add(transform.position[2], rotated[2])
     )
   }
+
   const compose = (
     parent: IntervalTransform,
     child: IntervalTransform
   ): IntervalTransform => {
     const [x, y, z, w] = parent.rotation,
       [u, v, s, t] = child.rotation
+
     return Object.freeze({
       position: transformPoint(parent, child.position),
       rotation: Object.freeze([
@@ -209,6 +234,7 @@ function operations(work: { trigBounds: number }) {
       ] as const)
     })
   }
+
   const axisRotation = (
     axis: 'x' | 'y' | 'z',
     angle: Interval
@@ -217,6 +243,7 @@ function operations(work: { trigBounds: number }) {
       sine = trueTrig('sin', half, work),
       cosine = trueTrig('cos', half, work),
       zero = interval(0)
+
     return Object.freeze({
       position: vector(zero, zero, zero),
       rotation: Object.freeze([
@@ -227,8 +254,10 @@ function operations(work: { trigBounds: number }) {
       ] as const)
     })
   }
+
   const translated = (axis: 'x' | 'y' | 'z', value: Interval) => {
     const zero = interval(0)
+
     return Object.freeze({
       position: vector(
         axis === 'x' ? value : zero,
@@ -238,6 +267,7 @@ function operations(work: { trigBounds: number }) {
       rotation: Object.freeze([zero, zero, zero, interval(1)] as const)
     })
   }
+
   return { transformPoint, compose, axisRotation, translated }
 }
 
@@ -251,8 +281,11 @@ export function walkingSourcePointBounds(
     position: [0, 0, 0],
     rotation: [0, 0, 0, 1]
   })
-  for (const frame of frames)
+
+  for (const frame of frames) {
     transform = ops.compose(transform, exactTransform(frame))
+  }
+
   return Object.freeze(
     [...new Set(shape.indices)].map((index) => {
       const value = ops.transformPoint(
@@ -263,6 +296,7 @@ export function walkingSourcePointBounds(
           shape.positions[index * 3 + 2]
         ])
       )
+
       return bounds(
         value.map(({ low }) => low),
         value.map(({ high }) => high)
@@ -270,20 +304,26 @@ export function walkingSourcePointBounds(
     })
   )
 }
+
 const interpolate = (from: number, until: number, ratio: Interval): Interval =>
   add(
     interval(from),
     multiply(subtract(interval(until), interval(from)), ratio)
   )
+
 function spanAt(path: WalkingMotionPath, time: number) {
-  for (let index = 0; index < path.knots.length - 1; index++)
+  for (let index = 0; index < path.knots.length - 1; index++) {
     if (
       time >= path.knots[index].time &&
       (time < path.knots[index + 1].time || index === path.knots.length - 2)
-    )
+    ) {
       return [path.knots[index], path.knots[index + 1]] as const
+    }
+  }
+
   throw new Error('Walking interval is outside the path')
 }
+
 function rangeBetween(
   from: number,
   until: number,
@@ -299,8 +339,10 @@ function rangeBetween(
         rightValue,
         divide(subtract(interval(time), interval(leftTime)), denominator)
       )
+
   return join(at(from), at(until))
 }
+
 function jointRanges(
   source: WalkingRobotSource,
   path: WalkingMotionPath,
@@ -308,9 +350,13 @@ function jointRanges(
   until: number
 ) {
   const [left, right] = spanAt(path, from)
-  if (until > right.time)
+
+  if (until > right.time) {
     throw new Error('Walking interval crosses a path knot')
+  }
+
   const values = new Map<string, Interval>()
+
   values.set(
     'carriage-lift',
     rangeBetween(
@@ -326,14 +372,19 @@ function jointRanges(
     const rightArm = right.joints.arms.find(
       ({ side, role }) => side === leftArm.side && role === leftArm.role
     )
-    if (!rightArm) throw new Error('Incomplete walking arm path')
+
+    if (!rightArm) {
+      throw new Error('Incomplete walking arm path')
+    }
+
     const id = `${leftArm.side}-${leftArm.role}`
+
     for (const [field, suffix] of [
       ['rootYaw', 'root-yaw'],
       ['shoulderPitch', 'shoulder-pitch'],
       ['elbowPitch', 'elbow-pitch'],
       ['wristPitch', 'wrist-pitch']
-    ] as const)
+    ] as const) {
       values.set(
         `${id}-${suffix}`,
         rangeBetween(
@@ -345,15 +396,22 @@ function jointRanges(
           rightArm[field]
         )
       )
+    }
   }
+
   for (const leftLeg of left.joints.legs) {
     const rightLeg = right.joints.legs.find(
       ({ side, station }) =>
         side === leftLeg.side && station === leftLeg.station
     )
-    if (!rightLeg) throw new Error('Incomplete walking leg path')
+
+    if (!rightLeg) {
+      throw new Error('Incomplete walking leg path')
+    }
+
     const id = `${leftLeg.side}-${leftLeg.station}`
-    for (const field of ['abduction', 'hip', 'knee'] as const)
+
+    for (const field of ['abduction', 'hip', 'knee'] as const) {
       values.set(
         `${id}-${field}`,
         rangeBetween(
@@ -365,9 +423,12 @@ function jointRanges(
           rightLeg[field]
         )
       )
+    }
   }
+
   return { left, right, values }
 }
+
 function numericValue(
   from: number,
   until: number,
@@ -375,10 +436,17 @@ function numericValue(
   fromValue: number,
   untilValue: number
 ) {
-  if (time === from) return fromValue
-  if (time === until) return untilValue
+  if (time === from) {
+    return fromValue
+  }
+
+  if (time === until) {
+    return untilValue
+  }
+
   return fromValue + ((untilValue - fromValue) * (time - from)) / (until - from)
 }
+
 export function walkingMotionPoseAt(
   path: WalkingMotionPath,
   time: number
@@ -404,6 +472,7 @@ export function walkingMotionPoseAt(
             ({ side, role }) => side === arm.side && role === arm.role
           )
         )
+
         return {
           side: arm.side,
           role: arm.role,
@@ -419,6 +488,7 @@ export function walkingMotionPoseAt(
             ({ side, station }) => side === leg.side && station === leg.station
           )
         )
+
         return {
           side: leg.side,
           station: leg.station,
@@ -448,6 +518,7 @@ export function walkingMotionPoseAt(
     ): WalkingRigidTransform => {
       const [x, y, z, w] = first.rotation,
         [u, v, s, t] = second.rotation
+
       return {
         position: point([0, 0, 0]),
         rotation: [
@@ -459,6 +530,7 @@ export function walkingMotionPoseAt(
       }
     },
     rotation = composeNumber(composeNumber(heading, pitch), roll).rotation
+
   return Object.freeze({
     base: Object.freeze({
       position: base.position,
@@ -498,8 +570,10 @@ function intervalTransforms(
     pending = new Set(
       source.rig.bodies.filter(({ id }) => id !== 'base').map(({ id }) => id)
     )
+
   while (pending.size) {
     let advanced = false
+
     for (const id of [...pending]) {
       const body = required(
           source.rig.bodies.find((candidate) => candidate.id === id)
@@ -507,17 +581,22 @@ function intervalTransforms(
         parent = body.parentBodyId
           ? transforms.get(body.parentBodyId)
           : undefined
-      if (!parent) continue
-      if (body.attachment === 'fixed')
+
+      if (!parent) {
+        continue
+      }
+
+      if (body.attachment === 'fixed') {
         transforms.set(
           id,
           ops.compose(parent, exactTransform(required(body.fixedFrame)))
         )
-      else {
+      } else {
         const joint = required(
             source.rig.joints.find(({ childBodyId }) => childBodyId === id)
           ),
           value = required(values.get(joint.id))
+
         transforms.set(
           id,
           ops.compose(
@@ -528,13 +607,19 @@ function intervalTransforms(
           )
         )
       }
+
       pending.delete(id)
       advanced = true
     }
-    if (!advanced) throw new Error('Incomplete walking interval rig')
+
+    if (!advanced) {
+      throw new Error('Incomplete walking interval rig')
+    }
   }
+
   return { transforms, ops }
 }
+
 function envelopeFor(
   body: WalkingRobotBody,
   part: WalkingRobotPart,
@@ -545,6 +630,7 @@ function envelopeFor(
 ) {
   const min = [Infinity, Infinity, Infinity],
     max = [-Infinity, -Infinity, -Infinity]
+
   for (
     let indexOffset = region.indexStart;
     indexOffset < region.indexStart + region.indexCount;
@@ -559,13 +645,16 @@ function envelopeFor(
           interval(part.shape.positions[vertex + 2])
         )
       )
+
     work.vertexVisits++
     for (let axis = 0; axis < 3; axis++) {
       min[axis] = Math.min(min[axis], value[axis].low)
       max[axis] = Math.max(max[axis], value[axis].high)
     }
   }
+
   work.partBounds++
+
   return Object.freeze({
     body,
     part,
@@ -596,11 +685,13 @@ export function evaluateWalkingMotionInterval(
     singleton = input.from === input.until
   let transforms: Map<string, IntervalTransform>,
     ops: ReturnType<typeof operations>
+
   if (singleton) {
     const pose = evaluateWalkingRobotPose(
       source,
       walkingMotionPoseAt(path, input.from)
     )
+
     mutableWork.pointFk++
     transforms = new Map(
       pose.bodyTransforms.map(({ id, transform }) => [
@@ -617,18 +708,22 @@ export function evaluateWalkingMotionInterval(
       input.until,
       mutableWork
     )
+
     transforms = prepared.transforms
     ops = prepared.ops
     mutableWork.intervalFk++
   }
+
   const envelopes: WalkingPartIntervalEnvelope[] = []
-  for (const body of source.rig.bodies)
+
+  for (const body of source.rig.bodies) {
     for (const part of body.parts) {
       const transform = ops.compose(
         required(transforms.get(body.id)),
         exactTransform(part.localFrame)
       )
-      for (const region of part.regions)
+
+      for (const region of part.regions) {
         envelopes.push(
           envelopeFor(
             body,
@@ -639,10 +734,17 @@ export function evaluateWalkingMotionInterval(
             mutableWork
           )
         )
+      }
     }
+  }
+
   const carriedEnvelopes: WalkingCarriedIntervalEnvelope[] = []
+
   for (const attachment of input.attachments) {
-    if (attachment.shape.kind === 'unknown') continue
+    if (attachment.shape.kind === 'unknown') {
+      continue
+    }
+
     const body = required(
         source.rig.bodies.find(({ id }) => id === attachment.holderBodyId)
       ),
@@ -652,6 +754,7 @@ export function evaluateWalkingMotionInterval(
       ),
       min = [Infinity, Infinity, Infinity],
       max = [-Infinity, -Infinity, -Infinity]
+
     for (
       let offset = 0;
       offset < attachment.shape.positions.length;
@@ -665,12 +768,14 @@ export function evaluateWalkingMotionInterval(
           interval(attachment.shape.positions[offset + 2])
         )
       )
+
       mutableWork.vertexVisits++
       for (let axis = 0; axis < 3; axis++) {
         min[axis] = Math.min(min[axis], value[axis].low)
         max[axis] = Math.max(max[axis], value[axis].high)
       }
     }
+
     mutableWork.partBounds++
     carriedEnvelopes.push(
       Object.freeze({
@@ -682,6 +787,7 @@ export function evaluateWalkingMotionInterval(
       })
     )
   }
+
   return Object.freeze({
     from: input.from,
     until: input.until,
@@ -700,7 +806,11 @@ export function prepareWalkingMotionIntervals(
     ...(input.load.crate.kind === 'attached'
       ? input.load.crate.sourceParts.map((part, index) => {
           const crate = input.load.crate
-          if (crate.kind !== 'attached') throw new Error('Invalid crate source')
+
+          if (crate.kind !== 'attached') {
+            throw new Error('Invalid crate source')
+          }
+
           const attachment = Object.freeze({
             ...part,
             sourceCoverage: crate.sourceCoverage,
@@ -708,7 +818,9 @@ export function prepareWalkingMotionIntervals(
             localFrame: crate.localFrames[index],
             massPropertiesId: crate.massIdentity
           })
+
           assemblies.set(attachment, crate)
+
           return attachment
         })
       : []),
@@ -748,9 +860,11 @@ export function prepareWalkingMotionIntervals(
     trigBounds: 0
   }
   let unvisitedIntervals = 0
+
   for (let index = 0; index < breaks.length - 1; index++) {
     const from = breaks[index],
       until = breaks[index + 1]
+
     if (work.intervals >= input.budget.maxIntervals) {
       unvisitedIntervals++
       segments.push({
@@ -762,14 +876,18 @@ export function prepareWalkingMotionIntervals(
       })
       continue
     }
+
     const result = evaluateWalkingMotionInterval(source, input.path, {
       from,
       until,
       attachments,
       assemblies
     })
-    for (const key of Object.keys(work) as (keyof typeof work)[])
+
+    for (const key of Object.keys(work) as (keyof typeof work)[]) {
       work[key] += result.work[key]
+    }
+
     segments.push({
       from,
       until,
@@ -778,6 +896,7 @@ export function prepareWalkingMotionIntervals(
       carriedEnvelopes: result.carriedEnvelopes
     })
   }
+
   return Object.freeze({
     source,
     // Provenance only: low-level callers retain their existing admission semantics.

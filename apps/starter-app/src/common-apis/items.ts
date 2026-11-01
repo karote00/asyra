@@ -41,6 +41,7 @@ const assertStatus = (status: unknown): ItemStatus => {
       `Unsupported item status: ${String(status)}`
     )
   }
+
   return status
 }
 
@@ -48,10 +49,13 @@ const assertTitle = (title: unknown): string => {
   if (typeof title !== 'string') {
     throw new StarterDomainError('item-title', 'Item title must be a string.')
   }
+
   const normalized = normalizeItemTitle(title)
+
   if (normalized.length === 0) {
     throw new StarterDomainError('item-title', 'Item title is required.')
   }
+
   return normalized
 }
 
@@ -61,6 +65,7 @@ export const assertItemFieldExtension = (
   if (!itemField) {
     return
   }
+
   if (
     !itemField.key ||
     itemField.key === 'title' ||
@@ -85,20 +90,27 @@ const assertItemFields = (
   ) {
     throw new StarterDomainError('item-field', 'Item fields must be an object.')
   }
+
   const keys = fields ? Object.keys(fields) : []
+
   if (keys.some((key) => key !== itemField?.key)) {
     throw new StarterDomainError('item-field', 'Unsupported Item field.')
   }
+
   if (!itemField) {
     return {}
   }
+
   if (keys.length === 0) {
     return includeDefault ? { [itemField.key]: itemField.defaultValue } : {}
   }
+
   const value = fields?.[itemField.key]
+
   if (!itemField.validate(value)) {
     throw new StarterDomainError('item-field', itemField.invalidMessage)
   }
+
   return { [itemField.key]: value as string }
 }
 
@@ -114,6 +126,7 @@ export const createItemApi = (
       const title = assertTitle(input.title ?? 'Untitled item')
       const status = assertStatus(input.status ?? 'todo')
       const fields = assertItemFields(input.fields, itemField, true)
+
       return runActionTransaction(() => {
         const elementId = id(ITEM_COMPONENT_TYPE)
         const propertyId = id(IDTypes.PROPS)
@@ -142,20 +155,26 @@ export const createItemApi = (
           [property],
           core.getCurrentWorkspaceId()
         )
+
         if (!createdId) {
           throw new Error('Item creation did not return an element id.')
         }
+
         return createdId
       })
     },
+
     editItem(id, update) {
       const values: Record<string, string> = {}
+
       if (update.title !== undefined) {
         values.title = assertTitle(update.title)
       }
+
       if (update.status !== undefined) {
         values.status = assertStatus(update.status)
       }
+
       Object.assign(values, assertItemFields(update.fields, itemField, false))
       if (Object.keys(values).length === 0) {
         return Object.freeze([])
@@ -171,6 +190,7 @@ export const createItemApi = (
           ]).acceptedIds
       )
     },
+
     moveItem(id, offset) {
       if (!isValidItemOffset(offset.x) || !isValidItemOffset(offset.y)) {
         throw new StarterDomainError(
@@ -178,6 +198,7 @@ export const createItemApi = (
           'Item position must be finite numbers.'
         )
       }
+
       return runActionTransaction(
         () =>
           core.updateElementProperties([

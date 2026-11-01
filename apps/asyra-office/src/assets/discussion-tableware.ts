@@ -34,6 +34,7 @@ export function americanoGlass(
 ): AssetPart[] {
   // Split the actual shell at its thicker lip and base, without overlapping faces.
   const wall = emptyMesh()
+
   append(
     wall,
     lathe(
@@ -55,6 +56,7 @@ export function americanoGlass(
     )
   )
   const glass = part('glass', wall, glassColor, 'plain', 0.08)
+
   glass.opacity = 1
   glass.optics = {
     transmission: 1,
@@ -82,6 +84,7 @@ export function americanoGlass(
     'plain',
     0.08
   )
+
   rim.opacity = 1
   rim.optics = { ...glass.optics }
   rim.environmentIntensity = 0.4
@@ -105,6 +108,7 @@ export function americanoGlass(
     'plain',
     0.08
   )
+
   base.opacity = 1
   base.optics = { ...glass.optics, thickness: 0.014 }
   base.environmentIntensity = 0.4
@@ -119,8 +123,10 @@ export function americanoGlass(
     { p: [-0.007, -0.001, 0.091], r: [18, 14, 29], s: [0.011, 0.01, 0.012] },
     { p: [0.007, 0.001, 0.0915], r: [-16, 9, -31], s: [0.01, 0.011, 0.012] }
   ]
+
   for (const [index, pose] of poses.entries()) {
     const mesh = emptyMesh()
+
     append(
       mesh,
       box(pose.s as [number, number, number], 0.003, 2),
@@ -128,6 +134,7 @@ export function americanoGlass(
       pose.r as [number, number, number]
     )
     const cube = part(`ice-${index}`, mesh, 0xffffff, 'plain', 0.04)
+
     cube.opacity = 1
     cube.optics = {
       transmission: 1,
@@ -140,6 +147,7 @@ export function americanoGlass(
     cube.environmentIntensity = 0.5
     ice.push(cube)
   }
+
   // Remove displaced liquid, including real openings where ice crosses the surface.
   const liquid = subtractSolids(
     lathe(
@@ -157,29 +165,43 @@ export function americanoGlass(
     surfaceMesh = emptyMesh(),
     interfaceMesh = emptyMesh()
   const vertices = new Map<Mesh, Map<number, number>>()
-  for (const mesh of [bodyMesh, surfaceMesh, interfaceMesh])
+
+  for (const mesh of [bodyMesh, surfaceMesh, interfaceMesh]) {
     vertices.set(mesh, new Map())
+  }
+
   for (let i = 0; i < liquid.indices.length; i += 3) {
     const ids = liquid.indices.slice(i, i + 3)
     let target = bodyMesh
-    if (liquid.triangleRegions[i / 3] > 0) target = interfaceMesh
-    else if (
+
+    if (liquid.triangleRegions[i / 3] > 0) {
+      target = interfaceMesh
+    } else if (
       ids.every((id) => Math.abs(liquid.positions[id * 3 + 2] - 0.096) < 1e-8)
-    )
+    ) {
       target = surfaceMesh
+    }
+
     const mapping = vertices.get(target)
-    if (!mapping) throw new Error('Missing liquid region vertex map')
+
+    if (!mapping) {
+      throw new Error('Missing liquid region vertex map')
+    }
+
     for (const id of ids) {
       let vertex = mapping.get(id)
+
       if (vertex === undefined) {
         vertex = target.positions.length / 3
         mapping.set(id, vertex)
         target.positions.push(...liquid.positions.slice(id * 3, id * 3 + 3))
         target.uvs.push(...liquid.uvs.slice(id * 2, id * 2 + 2))
       }
+
       target.indices.push(vertex)
     }
   }
+
   // Index-matched liquid/ice boundaries must not repaint the ice with coffee alpha.
   const contact = part(
     'coffee-ice-interface',
@@ -188,8 +210,10 @@ export function americanoGlass(
     'plain',
     0.08
   )
+
   contact.opacity = 0
   const coffee = part('coffee', bodyMesh, 0xffffff, 'plain', 0.035)
+
   coffee.opacity = 1
   coffee.optics = {
     captureLayer: 1,
@@ -200,6 +224,7 @@ export function americanoGlass(
     attenuationDistance: 0.06
   }
   const surface = part('coffee-surface', surfaceMesh, 0xffffff, 'plain', 0.015)
+
   surface.opacity = 1
   surface.optics = {
     captureLayer: 1,
@@ -210,6 +235,7 @@ export function americanoGlass(
     attenuationDistance: 0.06
   }
   surface.environmentIntensity = 0.005
+
   return [glass, rim, base, coffee, surface, contact, ...ice]
 }
 
@@ -259,6 +285,7 @@ export function sugarJar(
   )
   // A physical slot through the lip and seated lid admits the spoon handle.
   const slot = emptyMesh()
+
   append(slot, box([0.036, 0.01, 0.026]), [0.054, 0, 0.0505])
   const spoon = emptyMesh()
   const bowl = lathe(
@@ -274,6 +301,7 @@ export function sugarJar(
     ],
     32
   )
+
   append(spoon, bowl, [0.012, 0, 0.0315], [0, 0, 0], [1.5, 1, 1])
   append(
     spoon,
@@ -291,6 +319,7 @@ export function sugarJar(
   )
   append(spoon, ellipsoid([0.004, 0.0028, 0.0014], 16, 8), [0.095, 0, 0.065])
   const utensil = part('teaspoon', spoon, 0xc5c9ca, 'metal', 0.16)
+
   utensil.metalness = 1
   utensil.environmentIntensity = 1
   const seatedLid = subtractSolid(lid, slot)
@@ -330,11 +359,13 @@ export function sugarJar(
     ]
   ]
   let cube = 0
+
   layers.forEach((layer, level) =>
     layer.forEach(([x, y]) => {
       // Frozen irregular placement: stable identities and no per-frame randomness.
       const index = cube++
       const yaw = ((index * 137.508 + 17) % 80) - 40
+
       parts.push(
         ...placeParts(
           [
@@ -356,6 +387,7 @@ export function sugarJar(
       )
     })
   )
+
   return parts
 }
 
@@ -368,43 +400,66 @@ export function handlelessCup(color = 0xe8dbc0): AssetPart[] {
 /** Place the same rigid lid on the table, tangent to the jar's front envelope. */
 function leanLid(source: Mesh, outer: number[][]): Mesh {
   const result = emptyMesh()
+
   append(result, source, [0, 0, 0], [65, 0, 0])
   let minimumZ = Infinity
-  for (let i = 2; i < result.positions.length; i += 3)
+
+  for (let i = 2; i < result.positions.length; i += 3) {
     minimumZ = Math.min(minimumZ, result.positions[i])
-  for (let i = 2; i < result.positions.length; i += 3)
+  }
+
+  for (let i = 2; i < result.positions.length; i += 3) {
     result.positions[i] -= minimumZ
+  }
+
   const radiusAt = (z: number) => {
     for (let j = 1; j < outer.length; j++) {
       const [r0, z0] = outer[j - 1],
         [r1, z1] = outer[j]
-      if (z >= z0 && z <= z1) return r0 + ((r1 - r0) * (z - z0)) / (z1 - z0)
+
+      if (z >= z0 && z <= z1) {
+        return r0 + ((r1 - r0) * (z - z0)) / (z1 - z0)
+      }
     }
+
     return 0
   }
+
   let translationY = Infinity
+
   // Include triangle interiors, not just vertices, in the support envelope.
   for (let i = 0; i < result.indices.length; i += 3) {
-    for (let a = 0; a <= 4; a++)
+    for (let a = 0; a <= 4; a++) {
       for (let b = 0; b <= 4 - a; b++) {
         const weights = [a / 4, b / 4, 1 - (a + b) / 4]
         const point = [0, 0, 0]
+
         weights.forEach((weight, corner) => {
           const vertex = result.indices[i + corner] * 3
-          for (let axis = 0; axis < 3; axis++)
+
+          for (let axis = 0; axis < 3; axis++) {
             point[axis] += result.positions[vertex + axis] * weight
+          }
         })
         const radius = radiusAt(point[2])
-        if (radius > Math.abs(point[0]))
+
+        if (radius > Math.abs(point[0])) {
           translationY = Math.min(
             translationY,
             -Math.sqrt(radius * radius - point[0] * point[0]) - point[1]
           )
+        }
       }
+    }
   }
-  if (!Number.isFinite(translationY))
+
+  if (!Number.isFinite(translationY)) {
     throw new Error('Lid cannot reach sugar jar support')
-  for (let i = 1; i < result.positions.length; i += 3)
+  }
+
+  for (let i = 1; i < result.positions.length; i += 3) {
     result.positions[i] += translationY - 0.00005
+  }
+
   return result
 }

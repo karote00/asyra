@@ -43,7 +43,9 @@ it('commits mount rotation when its angle field is completed, without a second a
       'value'
     )?.set
 
-    if (!input || !setValue) throw new Error('Missing rotation input')
+    if (!input || !setValue) {
+      throw new Error('Missing rotation input')
+    }
 
     await act(() => {
       input.focus()

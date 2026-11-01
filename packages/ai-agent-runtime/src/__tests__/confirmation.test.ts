@@ -14,6 +14,7 @@ const permissionReadyActionBatch = (
   readonly batch: PermissionReadyAiActionBatch
 } => {
   const execute = vi.fn(async () => null)
+
   return {
     execute,
     batch: Object.freeze({
@@ -77,6 +78,7 @@ describe('AI complete action-batch confirmation', () => {
 
     expect(confirm).toHaveBeenCalledOnce()
     const [preview, options] = confirm.mock.calls[0]
+
     expect(options.signal).toBe(controller.signal)
     expect(preview).toEqual({
       batchId: 'batch-1',
@@ -127,6 +129,7 @@ describe('AI complete action-batch confirmation', () => {
   it('bypasses the handler on pre-abort and settles an in-flight abort', async () => {
     const { batch } = permissionReadyActionBatch(true)
     const preAborted = new AbortController()
+
     preAborted.abort()
     const confirm = vi.fn(async () => true)
 

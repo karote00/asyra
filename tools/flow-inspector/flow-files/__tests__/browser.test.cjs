@@ -7,6 +7,7 @@ const test = require('node:test'),
 const { chromium } = require('@playwright/test')
 const { document: flowDocument, directory } = require('./fixtures.cjs')
 const { startFlowServer } = require('../server.cjs')
+
 test(
   'human panel shows primary actions, folds technical detail and updates file state live',
   { timeout: 30000 },
@@ -14,35 +15,47 @@ test(
     const root = directory(t),
       file = path.join(root, 'checkout.flow.json'),
       doc = flowDocument()
+
     fs.writeFileSync(file, JSON.stringify(doc))
     const server = await startFlowServer(root, {
       directory: root,
       url: 'http://127.0.0.1:0'
     })
+
     t.after(() => server.close())
     const browserRoot = path.resolve(
       __dirname,
       '../../../../tmp/flow-stage-one/browser'
     )
+
     fs.mkdirSync(browserRoot, { recursive: true })
     const browser = await chromium.launch({
       headless: true,
       channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || 'chrome',
       env: { ...process.env, TMPDIR: browserRoot }
     })
+
     t.after(() => browser.close())
     const page = await browser.newPage({
       viewport: { width: 1440, height: 1000 }
     })
     const errors = []
+
     page.on('pageerror', (e) => errors.push(e.message))
     page.on('console', (message) => {
-      if (message.type() === 'error') errors.push(message.text())
+      if (message.type() === 'error') {
+        errors.push(message.text())
+      }
     })
     await page.goto(server.origin)
     await page
       .getByRole('button', { name: 'Accept - Order accepted', exact: true })
       .waitFor()
+    assert.equal(
+      await page.evaluate(() => typeof globalThis.FLOW_INSPECTOR_VIEW),
+      'undefined',
+      'The task dashboard must render through React without the old viewer'
+    )
     await page
       .getByLabel('Acceptance reason or note')
       .fill('Reviewed the order manually')
@@ -75,7 +88,10 @@ test(
       fullPage: true
     })
     fs.writeFileSync(file, '{')
-    await page.waitForFunction(() => document.body.dataset.invalid === 'true')
+    await page.waitForFunction(
+      () =>
+        document.querySelector('.flow-dashboard')?.dataset.invalid === 'true'
+    )
     assert.equal(
       await page
         .getByRole('button', { name: 'Accept - Order accepted', exact: true })
@@ -86,11 +102,26 @@ test(
     fs.writeFileSync(file, JSON.stringify(doc))
     await page.waitForFunction(
       () =>
-        document.body.dataset.invalid === 'false' &&
+        document.querySelector('.flow-dashboard')?.dataset.invalid ===
+          'false' &&
         document.querySelector('#feature-status')?.textContent !==
           'Feature - done'
     )
     await page.setViewportSize({ width: 600, height: 900 })
+    await page
+      .getByLabel('Acceptance reason or note')
+      .fill('Retained narrow draft')
+    await page
+      .getByRole('button', { name: 'Hide details', exact: true })
+      .click({ timeout: 3000 })
+    await page.getByRole('button', { name: 'Fit all', exact: true }).click()
+    await page
+      .getByRole('button', { name: 'Show details', exact: true })
+      .click()
+    assert.equal(
+      await page.getByLabel('Acceptance reason or note').inputValue(),
+      'Retained narrow draft'
+    )
     await page.screenshot({
       path: path.join(browserRoot, 'narrow.png'),
       fullPage: true
@@ -120,9 +151,11 @@ test(
           'utf8'
         )
       )
+
     fs.writeFileSync(path.join(dir, 'mixed.flow.json'), JSON.stringify(doc))
     const store = openProject(dir),
       binding = store.snapshot().evaluation.flows[0].nodes[0].binding
+
     store.update('mixed', {
       expectedRevision: 0,
       kind: 'observation',
@@ -143,20 +176,25 @@ test(
       directory: dir,
       url: 'http://127.0.0.1:0'
     })
+
     t.after(() => server.close())
     const artifacts = path.join(root, 'tmp/flow-stage-one/browser')
+
     fs.mkdirSync(artifacts, { recursive: true })
     const browser = await chromium.launch({
       headless: true,
       channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || 'chrome',
       env: { ...process.env, TMPDIR: artifacts }
     })
+
     t.after(() => browser.close())
     const page = await browser.newPage({
       viewport: { width: 1440, height: 1000 }
     })
+
     await page.goto(server.origin)
     const rerun = page.getByRole('button', { name: 'Rerun', exact: true })
+
     await rerun.waitFor()
     assert.ok((await rerun.boundingBox()).y < 450)
     assert.equal(

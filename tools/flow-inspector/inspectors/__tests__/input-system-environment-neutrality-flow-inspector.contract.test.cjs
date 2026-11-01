@@ -6,11 +6,15 @@ const test = require('node:test')
 const data = require('../input-system-environment-neutrality-flow-inspector.data.cjs')
 const repoRoot = path.resolve(__dirname, '../../../..')
 const spec = fs.readFileSync(path.resolve(repoRoot, data.authority.specPath), 'utf8')
+
 const step = (id) => {
   const value = data.steps.find((item) => item.id === id)
+
   assert.ok(value, `Missing Inspector step: ${id}`)
+
   return value
 }
+
 const contractText = (owner) =>
   [
     owner.purpose,
@@ -30,14 +34,7 @@ test('plan and direct-open Inspector are resolvable authorities', () => {
   )
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.specPath)))
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.inspectorPath)))
-  assert.ok(
-    fs.existsSync(
-      path.resolve(
-        repoRoot,
-        'tools/flow-inspector/inspectors/input-system-environment-neutrality-flow-inspector.html'
-      )
-    )
-  )
+  require('./assert-react-catalog.cjs')(data)
   data.links.forEach((link) =>
     assert.ok(fs.existsSync(path.resolve(__dirname, '..', link.href)))
   )
@@ -46,6 +43,7 @@ test('plan and direct-open Inspector are resolvable authorities', () => {
 test('construction is DOM-neutral and browser activation is explicit', () => {
   const construction = contractText(step('construct-input-system'))
   const attachment = contractText(step('attach-browser-host'))
+
   assert.match(construction, /without reading browser globals/i)
   assert.match(construction, /window and document do not exist/i)
   assert.match(construction, /zero keyboard, pointer, or wheel listeners/i)
@@ -60,6 +58,7 @@ test('construction is DOM-neutral and browser activation is explicit', () => {
 
 test('visual compatibility preserves the event boundary and excludes Headless Core', () => {
   const integration = contractText(step('preserve-visual-integration'))
+
   assert.match(integration, /typed watched-element event route/i)
   assert.match(integration, /default Input System activates against the rendered canvas/i)
   assert.match(integration, /keyboard, pointer, wheel, canvas, and Feature paths remain/i)
@@ -70,6 +69,7 @@ test('visual compatibility preserves the event boundary and excludes Headless Co
 
 test('release acceptance requires truthful future references and continuous authorized execution', () => {
   const acceptance = contractText(step('accept-input-release-child'))
+
   assert.match(acceptance, /Node-safe import from future Headless\/Core Kernel support/i)
   assert.match(acceptance, /future plan cites the retained architecture research report/i)
   assert.match(acceptance, /all required automated and PR checks pass for the current head/i)
@@ -81,6 +81,7 @@ test('release acceptance requires truthful future references and continuous auth
 test('Inspector enumerates bounded product cases and definition of done', () => {
   const caseIds = new Set(data.productCases.map((item) => item.id))
   const dodIds = new Set(data.definitionOfDone.map((item) => item.id))
+
   ;[
     'node-imports',
     'inert-construction',
@@ -100,6 +101,7 @@ test('every owner, route, and artifact resolves and the contract is frozen', () 
   const laneIds = new Set(data.lanes.map((item) => item.id))
   const stepIds = new Set(data.steps.map((item) => item.id))
   const artifactIds = new Set(data.artifacts.map((item) => item.id))
+
   data.steps.forEach((item) => {
     assert.ok(laneIds.has(item.laneId), `Unknown lane: ${item.id}`)
     assert.ok(item.ownerPackage, `Missing owner: ${item.id}`)

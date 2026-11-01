@@ -8,7 +8,9 @@ const repoRoot = path.resolve(__dirname, '../../../..')
 
 const step = (id) => {
   const value = data.steps.find((item) => item.id === id)
+
   assert.ok(value, `Missing Inspector step: ${id}`)
+
   return value
 }
 
@@ -59,9 +61,11 @@ test('endpoint routes and artifacts resolve through exact owners', () => {
 
   data.routes.forEach((route) => {
     assert.ok(stepIds.has(route.from), `${route.id} source`)
-    if (route.to) assert.ok(stepIds.has(route.to), `${route.id} target`)
+    if (route.to) {assert.ok(stepIds.has(route.to), `${route.id} target`)}
+
     route.producedArtifacts.forEach((artifactId) => {
       const artifact = artifacts.get(artifactId)
+
       assert.ok(artifact, `${route.id} artifact ${artifactId}`)
       assert.equal(artifact.ownerStepId, route.from, `${route.id} owner`)
       if (route.to) {
@@ -143,6 +147,7 @@ test('production conversational AI uses one ActionBatch contract without compati
   const runtimeOwner = step('resolve-server-prepared-action-batch')
   const providerText = contractText(providerOwner)
   const runtimeText = contractText(runtimeOwner)
+
   const activeText = (owner) =>
     [
       owner.purpose,
@@ -152,6 +157,7 @@ test('production conversational AI uses one ActionBatch contract without compati
       ...owner.bypasses,
       ...owner.allowedContributors
     ].join(' ')
+
   const plan = read(data.authority.specPath)
   const feature = read(
     'docs/ai/apps/asyra-design/bdd-features/ai-conversational-drawing-performance.feature'
@@ -285,6 +291,7 @@ test('Actor A requests the exact backend sample only after Send', () => {
   const actionBatch = data.artifacts.find(
     ({ id }) => id === 'artifact:server-prepared-action-batch'
   )
+
   assert.equal(actionBatch?.ownerStepId, 'request-backend-action-batch')
   assert.deepEqual(actionBatch?.consumerStepIds, [
     'resolve-server-prepared-action-batch'
@@ -294,6 +301,7 @@ test('Actor A requests the exact backend sample only after Send', () => {
     'artifact:provider-request-timing'
   ].forEach((artifactId) => {
     const artifact = data.artifacts.find(({ id }) => id === artifactId)
+
     assert.equal(artifact?.ownerStepId, 'request-backend-action-batch')
     assert.deepEqual(artifact?.consumerStepIds, [
       'evaluate-endpoint-performance',
@@ -303,6 +311,7 @@ test('Actor A requests the exact backend sample only after Send', () => {
   const actionBatchRoute = data.routes.find(
     ({ id }) => id === 'route-server-prepared-action-batch-to-runtime'
   )
+
   assert.equal(actionBatchRoute?.from, 'request-backend-action-batch')
   assert.equal(actionBatchRoute?.to, 'resolve-server-prepared-action-batch')
   assert.deepEqual(actionBatchRoute?.producedArtifacts, [
@@ -315,6 +324,7 @@ test('Actor A requests the exact backend sample only after Send', () => {
     'route-provider-request-timing-to-final-proof'
   ].forEach((routeId) => {
     const route = data.routes.find(({ id }) => id === routeId)
+
     assert.equal(route?.from, 'request-backend-action-batch')
   })
   assert.equal(
@@ -1224,6 +1234,7 @@ test('each ranked endpoint closes through the guarded proof schedule', () => {
   const attributionRoutes = data.routes.filter(({ id }) =>
     id.startsWith('route-attribution-to-')
   )
+
   assert.deepEqual(successRoute?.producedArtifacts, [
     'artifact:endpoint-performance-proof'
   ])
@@ -1231,6 +1242,7 @@ test('each ranked endpoint closes through the guarded proof schedule', () => {
   const endpointProofArtifact = data.artifacts.find(
     ({ id }) => id === 'artifact:endpoint-performance-proof'
   )
+
   assert.deepEqual(endpointProofArtifact?.consumerStepIds, [
     'evaluate-performance-and-equivalence'
   ])
@@ -1273,6 +1285,7 @@ test('each ranked endpoint closes through the guarded proof schedule', () => {
   const acceptedBaseline = data.artifacts.find(
     ({ id }) => id === 'artifact:accepted-endpoint-baseline'
   )
+
   assert.equal(acceptedBaseline?.ownerStepId, 'evaluate-endpoint-performance')
   assert.deepEqual(acceptedBaseline?.consumerStepIds, [
     'evaluate-endpoint-performance'
@@ -1281,6 +1294,7 @@ test('each ranked endpoint closes through the guarded proof schedule', () => {
   const ownerAttribution = data.artifacts.find(
     ({ id }) => id === 'artifact:precanonical-owner-attribution'
   )
+
   assert.equal(ownerAttribution?.ownerStepId, 'evaluate-endpoint-performance')
   assert.deepEqual([...(ownerAttribution?.consumerStepIds ?? [])].sort(), [
     'admit-receiver-publication-frames',
@@ -1411,6 +1425,7 @@ test('local progressive drawing paints exact bounds before cooperative canonical
   const feature = read(
     'docs/ai/apps/asyra-design/bdd-features/ai-conversational-drawing-performance.feature'
   )
+
   assert.equal(
     data.steps.some(({ id }) => id === 'evaluate-local-interactive-drawing'),
     false

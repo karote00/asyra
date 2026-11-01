@@ -29,7 +29,9 @@ export function MethodFields({
       )
     )
 
-    if (entry !== undefined) parameters[key] = entry
+    if (entry !== undefined) {
+      parameters[key] = entry
+    }
 
     onChange({ ...value, settings: { ...value.settings, parameters } })
   }
@@ -46,7 +48,7 @@ export function MethodFields({
               (item) => `${item.id}@${item.version}` === event.target.value
             )
 
-            if (method)
+            if (method) {
               onChange({
                 id: method.id,
                 version: method.version,
@@ -57,6 +59,7 @@ export function MethodFields({
                   )
                 }
               })
+            }
           }}
         >
           {!selected && (
@@ -95,7 +98,7 @@ export function MethodFields({
 
               let control
 
-              if (field.kind === 'number')
+              if (field.kind === 'number') {
                 control = (
                   <CommittedInput
                     validateOnCommit
@@ -114,7 +117,7 @@ export function MethodFields({
                     }
                   />
                 )
-              else if (field.kind === 'boolean')
+              } else if (field.kind === 'boolean') {
                 control = (
                   <select
                     aria-label={label}
@@ -135,7 +138,7 @@ export function MethodFields({
                     <option value="false">False</option>
                   </select>
                 )
-              else
+              } else {
                 control = (
                   <select
                     aria-label={label}
@@ -151,6 +154,7 @@ export function MethodFields({
                     ))}
                   </select>
                 )
+              }
 
               return (
                 <label key={key}>

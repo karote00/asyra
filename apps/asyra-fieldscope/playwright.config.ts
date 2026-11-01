@@ -2,6 +2,7 @@ import { defineConfig } from '@playwright/test'
 import { resolveAppEnvironment } from './app-environment.mjs'
 import { usesCpuSoftwareRenderer } from './e2e/renderer-environment'
 const environment = resolveAppEnvironment()
+
 export default defineConfig({
   testDir: './e2e',
   outputDir: './test-results',

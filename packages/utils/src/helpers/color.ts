@@ -18,11 +18,13 @@ export const clampOpacity = (value: number): number => clampUnit(value)
 
 const toHexPair = (value: number, uppercase = false) => {
   const hex = clampColorByte(Math.round(value)).toString(16).padStart(2, '0')
+
   return uppercase ? hex.toUpperCase() : hex
 }
 
 export const parseHexColor = (value: string): RGBAColor | null => {
   const normalized = value.trim().replace('#', '')
+
   if (normalized.length === 3 || normalized.length === 4) {
     const r = Number.parseInt(normalized[0] + normalized[0], 16)
     const g = Number.parseInt(normalized[1] + normalized[1], 16)
@@ -92,6 +94,7 @@ const parseColorWithBrowser = (value: string): RGBAColor | null => {
   }
 
   const element = document.createElement('span')
+
   element.style.color = ''
   element.style.color = value
   if (!element.style.color) {
@@ -101,6 +104,7 @@ const parseColorWithBrowser = (value: string): RGBAColor | null => {
   element.style.display = 'none'
   document.body.appendChild(element)
   const resolved = window.getComputedStyle(element).color
+
   element.remove()
 
   return parseCssRgbColor(resolved)

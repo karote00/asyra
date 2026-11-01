@@ -62,6 +62,7 @@ const selectStyle =
 export function WorkspaceEditor({ runtime }: { runtime: FarmRuntime }) {
   const { t } = useTranslation()
   const [tab, setTab] = useState<'farm' | 'robot'>('farm')
+
   return (
     <>
       <div
@@ -104,20 +105,26 @@ function RobotEditor({ runtime }: { runtime: FarmRuntime }) {
   ).selection
   const [error, setError] = useState(false)
   const settings = report.settings
+
   const act = async (action: () => Promise<unknown>) => {
     try {
       await action()
       setError(false)
+
       return true
     } catch {
       setError(true)
+
       return false
     }
   }
+
   const patch = (value: Partial<RobotConfiguration>) =>
     act(() => runtime.patchRobot(value))
+
   const history = (redo: boolean) =>
     act(() => (redo ? runtime.redo() : runtime.undo()))
+
   const laneId =
     settings.lane.kind === 'strip'
       ? `strip:${settings.lane.bay}:${settings.lane.stripId}`
@@ -137,13 +144,17 @@ function RobotEditor({ runtime }: { runtime: FarmRuntime }) {
       })
     }))
   ).flat()
-  for (let boundary = 1; boundary < 4; boundary++)
-    for (const side of ['left', 'right'] as const)
+
+  for (let boundary = 1; boundary < 4; boundary++) {
+    for (const side of ['left', 'right'] as const) {
       lanes.push({
         id: `shared:${boundary}:${side}`,
         lane: { kind: 'shared', boundary, side },
         label: t('robot.sharedName', { boundary, side: t(`robot.${side}`) })
       })
+    }
+  }
+
   return (
     <section
       className="space-y-4 bg-[#fafbf7] p-3"
@@ -245,7 +256,10 @@ function RobotEditor({ runtime }: { runtime: FarmRuntime }) {
                   const selected = lanes.find(
                     (lane) => lane.id === e.target.value
                   )
-                  if (selected) void patch({ lane: selected.lane })
+
+                  if (selected) {
+                    void patch({ lane: selected.lane })
+                  }
                 }}
               >
                 {!lanes.some((lane) => lane.id === laneId) && (

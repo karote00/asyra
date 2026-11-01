@@ -13,6 +13,7 @@ import { StorageFormats } from './formats'
 import { LEGACY_PROJECT_FORMAT, migrateProjectDocument } from './load-migration'
 
 export const PROJECT_BYTE_LIMIT = 64 * 1024 * 1024
+
 export interface ProjectSnapshot {
   /** Local recovery only; portable captures are materialized documents. */
   replay?: readonly PreparedPublication[]
@@ -28,11 +29,18 @@ export function projectVisualAssetIds(
   snapshot: Pick<ProjectSnapshot, 'document' | 'runs'>
 ): readonly string[] {
   const ids = new Set(readCapturedVisualAssetIds(snapshot.document))
-  for (const run of snapshot.runs ?? [])
-    for (const body of run.snapshot.workcell.bodies)
-      for (const binding of body.visuals ?? []) ids.add(binding.assetId)
+
+  for (const run of snapshot.runs ?? []) {
+    for (const body of run.snapshot.workcell.bodies) {
+      for (const binding of body.visuals ?? []) {
+        ids.add(binding.assetId)
+      }
+    }
+  }
+
   return Object.freeze([...ids])
 }
+
 export interface ProjectSummary {
   id: string
   name: string
@@ -61,6 +69,7 @@ export interface ProjectRepository {
   ): Promise<{ projects: ProjectSummary[]; limited: boolean }>
   close(): void
 }
+
 const record = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value)
 
@@ -76,8 +85,9 @@ export function validateSummary(
         value[key].length <= 200
     ) ||
     !Number.isFinite(Date.parse(value.savedAt as string))
-  )
+  ) {
     throw new Error('Invalid saved project metadata')
+  }
 }
 
 function validateSnapshot(value: unknown): asserts value is ProjectSnapshot {
@@ -97,18 +107,23 @@ function validateSnapshot(value: unknown): asserts value is ProjectSnapshot {
         typeof issue.message === 'string' &&
         issue.message.length <= 4000
     )
-  )
+  ) {
     throw new Error(
       'Invalid or unsupported project document; original data was not changed'
     )
+  }
+
   const scene = value.document.sceneTree
+
   if (
     typeof scene.workspace !== 'string' ||
     !Array.isArray(scene.workspaceList) ||
     !scene.workspaceList.every((id) => typeof id === 'string') ||
     !record(scene.elements)
-  )
+  ) {
     throw new Error('Invalid saved scene envelope')
+  }
+
   const runs = Object.hasOwn(value, 'runs')
     ? validateRunRecords(value.runs)
     : []
@@ -117,6 +132,7 @@ function validateSnapshot(value: unknown): asserts value is ProjectSnapshot {
     ? validateVisualSources(value.visualSources)
     : []
   const sourceIds = new Set(visualSources.map((source) => source.assetId))
+
   validateProjectObservationReferences({
     document: value.document,
     ...(Object.hasOwn(value, 'observationSources')
@@ -126,22 +142,27 @@ function validateSnapshot(value: unknown): asserts value is ProjectSnapshot {
   for (const assetId of projectVisualAssetIds({
     document: value.document,
     runs
-  }))
-    if (!sourceIds.has(assetId))
+  })) {
+    if (!sourceIds.has(assetId)) {
       throw new Error(
         `Missing visual source ${assetId} in the portable project`
       )
+    }
+  }
+
   for (const reference of readCapturedRunReferences(value.document)) {
     const run = records.get(reference.runId)
+
     if (
       !run ||
       run.snapshot.snapshotId !== reference.snapshotId ||
       run.snapshot.source.candidateId !== reference.candidateId ||
       run.snapshot.source.experimentId !== reference.experimentId
-    )
+    ) {
       throw new Error(
         `Missing or mismatched evidence for retained run ${reference.runId}`
       )
+    }
   }
 }
 
@@ -150,14 +171,20 @@ export function encodeProject(snapshot: ProjectSnapshot): string {
   const text = JSON.stringify(
     { format: StorageFormats.PROJECT, version: 1, ...snapshot },
     (_key, value) => {
-      if (typeof value === 'number' && !Number.isFinite(value))
+      if (typeof value === 'number' && !Number.isFinite(value)) {
         throw new Error('Nonfinite project number cannot be saved')
-      if (['bigint', 'function', 'symbol'].includes(typeof value))
+      }
+
+      if (['bigint', 'function', 'symbol'].includes(typeof value)) {
         throw new Error('Project data must be serializable JSON')
+      }
+
       return value
     }
   )
+
   checkSize(text)
+
   return text
 }
 
@@ -165,31 +192,40 @@ function checkSize(text: string): void {
   if (
     text.length > PROJECT_BYTE_LIMIT ||
     new TextEncoder().encode(text).byteLength > PROJECT_BYTE_LIMIT
-  )
+  ) {
     throw new Error('Project exceeds the 64 MiB limit')
+  }
 }
 
 export function decodeProject(text: string): ProjectSnapshot {
-  if (typeof text !== 'string')
+  if (typeof text !== 'string') {
     throw new Error('Saved project document is missing')
+  }
+
   checkSize(text)
   const value: unknown = JSON.parse(text)
+
   if (
     record(value) &&
     (Object.hasOwn(value, 'publications') || Object.hasOwn(value, 'replay'))
-  )
+  ) {
     throw new Error('Local journal is not a portable project')
+  }
+
   if (
     !record(value) ||
     (value.format !== StorageFormats.PROJECT &&
       value.format !== LEGACY_PROJECT_FORMAT) ||
     value.version !== 1
-  )
+  ) {
     throw new Error('Unsupported Asyra Sim project format or version')
+  }
+
   // JSON parsing already detached the envelope. Normalize known type slots
   // before reference validation so legacy sources and runs cannot be skipped.
   value.document = migrateProjectDocument(value.document)
   validateSnapshot(value)
+
   return {
     document: value.document,
     loadIssues: value.loadIssues.map((issue) => ({ ...issue })),

@@ -5,6 +5,7 @@ export function utensilPair(): AssetPart[] {
   return [0, 1].flatMap((i) => {
     const x = i * 0.026 - 0.013,
       top = 0.17 + i * 0.025
+
     return [
       part(
         'handle-' + i,

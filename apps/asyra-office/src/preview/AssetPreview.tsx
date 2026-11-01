@@ -6,6 +6,7 @@ import { REVIEW_ASSETS, type ReviewAsset } from './vegetation-controller'
 function ReviewControls({ runtime }: { runtime: PreviewRuntime }) {
   const state = useSyncExternalStore(runtime.subscribe, runtime.getSnapshot)
   const [error, setError] = useState('')
+
   const run = (action: () => void) => {
     try {
       action()
@@ -14,6 +15,7 @@ function ReviewControls({ runtime }: { runtime: PreviewRuntime }) {
       setError(e instanceof Error ? e.message : String(e))
     }
   }
+
   return (
     <>
       <nav aria-label="Review views" className="flex flex-wrap gap-2">
@@ -56,18 +58,29 @@ export function AssetPreview({ asset }: { asset?: ReviewAsset }) {
   const host = useRef<HTMLDivElement>(null)
   const [runtime, setRuntime] = useState<PreviewRuntime | null>(null)
   const [error, setError] = useState('')
+
   useEffect(() => {
-    if (!host.current) return
+    if (!host.current) {
+      return
+    }
+
     let retired = false
     const pending = startAssetPreview(host.current, asset)
+
     pending
       .then((value) => {
-        if (retired) void value.dispose()
-        else setRuntime(value)
+        if (retired) {
+          void value.dispose()
+        } else {
+          setRuntime(value)
+        }
       })
       .catch((e) => {
-        if (!retired) setError(e instanceof Error ? e.message : String(e))
+        if (!retired) {
+          setError(e instanceof Error ? e.message : String(e))
+        }
       })
+
     return () => {
       retired = true
       void pending
@@ -77,6 +90,7 @@ export function AssetPreview({ asset }: { asset?: ReviewAsset }) {
         })
     }
   }, [asset])
+
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
       <header className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-700 px-5 py-5 md:px-9">

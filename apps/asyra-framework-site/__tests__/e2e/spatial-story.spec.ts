@@ -19,6 +19,7 @@ async function seek(page: Page, chapter: number, progress: number) {
           p,
       progress
     )
+
   await page.evaluate((y) => window.scrollTo(0, y), top)
   await expect(page.locator('[data-shared-scene]')).toHaveAttribute(
     'data-chapter',
@@ -38,6 +39,7 @@ test('one mounted scene carries the idea through six chapters and reversible int
 }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   const errors: string[] = []
+
   page.on('pageerror', (e) => errors.push(e.message))
   await page.goto('/')
   await expect(page.locator('.spatial-story-shell')).toHaveAttribute(
@@ -76,26 +78,34 @@ test('one mounted scene carries the idea through six chapters and reversible int
       })
     }
   }
+
   for (let chapter = 1; chapter < 6; chapter++) {
     await seek(page, chapter - 1, 0.998)
     const before = await page
       .locator('[data-shared-scene] [data-story-layer="notebook"]')
       .boundingBox()
+
     await seek(page, chapter, 0.002)
     const after = await page
       .locator('[data-shared-scene] [data-story-layer="notebook"]')
       .boundingBox()
+
     expect(before).not.toBeNull()
     expect(after).not.toBeNull()
-    if (!before || !after)
+    if (!before || !after) {
       throw new Error('The shared notebook must have visible bounds')
-    for (const key of ['x', 'y', 'width', 'height'] as const)
+    }
+
+    for (const key of ['x', 'y', 'width', 'height'] as const) {
       expect(Math.abs(after[key] - before[key])).toBeLessThan(2)
+    }
   }
+
   await seek(page, 3, 0.5)
   const styles = await page
     .locator('[data-shared-scene] [data-story-layer]')
     .evaluateAll((nodes) => nodes.map((node) => node.getAttribute('style')))
+
   await seek(page, 4, 0.8)
   await seek(page, 3, 0.5)
   expect(
@@ -110,11 +120,14 @@ test('one mounted scene carries the idea through six chapters and reversible int
       const observer = new MutationObserver((records) => {
         count += records.length
       })
+
       observer.observe(node, { attributes: true, subtree: true })
       await new Promise((resolve) => setTimeout(resolve, 250))
       observer.disconnect()
+
       return count
     })
+
   expect(idle).toBe(0)
   expect(errors).toEqual([])
 })
@@ -131,10 +144,12 @@ test('mobile has complete connected snapshots in natural flow and no horizontal 
   await expect(page.locator('[data-shared-scene]')).not.toBeVisible()
   for (let chapter = 0; chapter < 6; chapter++) {
     const section = page.locator(`[data-story-chapter="${chapter}"]`)
+
     await section.scrollIntoViewIfNeeded()
     const y = await section.evaluate(
       (node) => node.getBoundingClientRect().top + scrollY - 80
     )
+
     await page.evaluate((top) => scrollTo(0, top), y)
     await expect(section.locator('[data-static-scene]')).toBeVisible()
     expect(
@@ -191,11 +206,14 @@ test('no JavaScript retains six explanatory compositions and documentation actio
     viewport: { width: 390, height: 900 }
   })
   const page = await context.newPage()
+
   await page.goto('/')
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1)
   await expect(page.locator('[data-story-chapter]')).toHaveCount(6)
-  for (const scene of await page.locator('[data-static-scene]').all())
+  for (const scene of await page.locator('[data-static-scene]').all()) {
     await expect(scene).toBeVisible()
+  }
+
   await page
     .getByRole('link', { name: 'Explore the framework' })
     .scrollIntoViewIfNeeded()
@@ -216,6 +234,7 @@ test('the opened architecture exposes each responsibility label without an overl
     const label = page.locator(
       `[data-shared-scene] [data-story-layer="${name}"] strong`
     )
+
     expect(
       await label.evaluate((node) => {
         const bounds = node.getBoundingClientRect()
@@ -223,6 +242,7 @@ test('the opened architecture exposes each responsibility label without an overl
           bounds.x + bounds.width / 2,
           bounds.y + bounds.height / 2
         )
+
         return hit === node || node.contains(hit)
       }),
       `${name} must remain readable`
@@ -240,9 +260,11 @@ test('a flat plan rises into a house and the replacement grows the same footprin
   )
   const building = notebook.locator('[data-drawing-output]')
   const plan = notebook.locator('[data-building-plan]')
+
   await seek(page, 2, 0.62)
   await expect(building).toHaveAttribute('data-building-height', '0')
   const footprint = await plan.innerHTML()
+
   await page.screenshot({ path: testInfo.outputPath('building-plan.png') })
   await seek(page, 2, 0.635)
   expect(
@@ -265,6 +287,7 @@ test('a flat plan rises into a house and the replacement grows the same footprin
   const partialHouse = Number(
     await building.getAttribute('data-building-height')
   )
+
   expect(partialHouse).toBeGreaterThan(0)
   expect(partialHouse).toBeLessThan(44)
   await page.screenshot({
@@ -276,6 +299,7 @@ test('a flat plan rises into a house and the replacement grows the same footprin
   const house = await notebook
     .locator('[data-building-part="front"]')
     .getAttribute('points')
+
   await expect(
     page.locator('[data-shared-scene] [data-story-layer="feature"] code')
   ).toHaveText('drawHouse(input)')

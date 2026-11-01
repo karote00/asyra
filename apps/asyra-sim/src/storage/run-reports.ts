@@ -14,21 +14,27 @@ const escapeHtml = (value: unknown) =>
         "'": '&#39;'
       })[character] ?? character
   )
+
 const csvCell = (value: unknown) => {
   let text = value === null || value === undefined ? '' : String(value)
+
   if (
     typeof value === 'string' &&
     (/^\s*[=+\-@]/.test(text) || /^[\t\r\n]/.test(text))
-  )
+  ) {
     text = `'${text}`
+  }
+
   return `"${text.replaceAll('"', '""')}"`
 }
+
 function bounded(text: string): string {
   return collectReportText([text])
 }
 
 export function exportRunJson(input: RunRecord): string {
   const run = validateRunRecord(input)
+
   return bounded(
     JSON.stringify(
       { format: StorageFormats.RUN_REPORT, version: 1, run },
@@ -67,6 +73,7 @@ export function exportRunCsv(input: RunRecord): string {
     JSON.stringify(result.decision ?? null)
   ]
   const encodedPrefix = prefix.map(csvCell).join(',')
+
   function* rows() {
     yield [
       'run_name',
@@ -107,9 +114,11 @@ export function exportRunCsv(input: RunRecord): string {
     const evidence = new Map(
       result.pairEvidence.map((pair) => [pair.pairId, pair.evidence])
     )
+
     for (const pair of snapshot.pairs) {
       const item = evidence.get(pair.id)
-      if (!item)
+
+      if (!item) {
         yield '\r\n' +
           encodedPrefix +
           ',' +
@@ -125,8 +134,8 @@ export function exportRunCsv(input: RunRecord): string {
           ]
             .map(csvCell)
             .join(',')
-      else
-        for (const leaf of item.leaves)
+      } else {
+        for (const leaf of item.leaves) {
           yield '\r\n' +
             encodedPrefix +
             ',' +
@@ -143,8 +152,11 @@ export function exportRunCsv(input: RunRecord): string {
             ]
               .map(csvCell)
               .join(',')
+        }
+      }
     }
   }
+
   return collectReportText(rows())
 }
 
@@ -154,12 +166,15 @@ export function exportRunHtml(input: RunRecord): string {
   const evidence = new Map(
     result.pairEvidence.map((pair) => [pair.pairId, pair.evidence])
   )
+
   const row = (values: readonly unknown[]) =>
     `<tr>${values.map((value) => `<td>${escapeHtml(value === null ? 'unknown' : value)}</td>`).join('')}</tr>`
+
   const pairRows = snapshot.pairs
     .flatMap((pair) => {
       const item = evidence.get(pair.id)
-      if (!item)
+
+      if (!item) {
         return [
           row([
             pair.id,
@@ -170,6 +185,8 @@ export function exportRunHtml(input: RunRecord): string {
             result.errors.join('; ')
           ])
         ]
+      }
+
       return item.leaves.map((leaf) =>
         row([
           pair.id,
@@ -182,6 +199,7 @@ export function exportRunHtml(input: RunRecord): string {
       )
     })
     .join('')
+
   return bounded(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(run.name)} - Asyra Sim</title>
 <style>body{font:14px/1.6 system-ui,sans-serif;color:#213442;max-width:1200px;margin:40px auto;padding:0 24px}h1{font-size:28px}table{border-collapse:collapse;width:100%;margin:20px 0}th,td{border:1px solid #cbd8df;padding:9px;text-align:left;overflow-wrap:anywhere}th{background:#edf4f4}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f5f8f9;padding:16px}.notice{background:#fff5df;padding:16px}summary{cursor:pointer;font-weight:bold}</style></head><body>
 <h1>${escapeHtml(run.name)}</h1><p>Asyra Sim ${escapeHtml(run.environment.appVersion)} - retained ${escapeHtml(run.retainedAt)}</p>

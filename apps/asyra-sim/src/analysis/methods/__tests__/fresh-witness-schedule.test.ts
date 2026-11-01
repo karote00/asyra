@@ -27,6 +27,7 @@ const evidence = (lower = 0, upper = 1): DistanceEvidence => ({
     [0, 0]
   ]
 })
+
 const base: Body = {
   id: 'root',
   name: 'Root',
@@ -78,11 +79,14 @@ it('retains the previous completed witness when next fresh consumption exhausts'
   const result = queryContinuousPair(query, settings, () => undefined, {
     sample: () =>
       ++calls === 1 ? { evidence: evidence(0.02, 0.05), source: {} } : null,
+
     distance: () => evidence(),
+
     lower,
     exhaustionReason: 'test budget',
     certifyClearBeforeResampling: true
   })
+
   expect(calls).toBe(2)
   expect(lower).not.toHaveBeenCalled()
   expect(result.leaves[0]).toMatchObject({
@@ -100,17 +104,22 @@ it('uses only consumed fresh samples in the current node and never captures for 
     distance: () => {
       throw new Error('Unexpected unsampled distance')
     },
+
     sample: (_a, _b, origin, source) => {
       rows.push({ origin, source })
+
       return {
         evidence: evidence(),
         source: origin.capture ? origin.time : undefined
       }
     },
+
     lower: () => 0,
+
     handoffEvidence: handoff,
     exhaustionReason: 'test budget'
   }
+
   queryContinuousPair(query, settings, () => undefined, kernel)
   expect(
     rows
@@ -136,11 +145,14 @@ it('retains newly completed finding and stops before any interval or next sample
     sample = vi.fn(() => ({ evidence: evidence(0.02, 0.05), exhausted: true }))
   const result = queryContinuousPair(query, settings, () => undefined, {
     sample,
+
     distance: () => evidence(),
+
     lower,
     exhaustionReason: 'test budget',
     certifyClearBeforeResampling: true
   })
+
   expect(sample).toHaveBeenCalledTimes(1)
   expect(lower).not.toHaveBeenCalled()
   expect(result.leaves[0]).toMatchObject({
@@ -155,19 +167,24 @@ it('does not request capture or a source for an ordinary static point', () => {
     (_a, _b, origin: StaticSampleOrigin, source: unknown) => {
       expect(origin.capture).toBe(false)
       expect(source).toBeUndefined()
+
       return { evidence: evidence(0.2, 0.3) }
     }
   )
+
   queryContinuousPair(
     { ...query, interval: [0.5, 0.5] },
     settings,
     () => undefined,
     {
       sample,
+
       distance: () => evidence(),
+
       lower: () => {
         throw new Error('No interval')
       },
+
       exhaustionReason: 'test budget'
     }
   )

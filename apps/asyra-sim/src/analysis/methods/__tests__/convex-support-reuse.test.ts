@@ -20,15 +20,18 @@ interface Counts {
   dot: number
   norm: number
 }
+
 async function observedQuery(
   inspect: (name: keyof Counts, counts: Counts) => void = () => undefined
 ) {
   const counts: Counts = { rotate: 0, dot: 0, norm: 0 }
+
   vi.resetModules()
   vi.doMock('../../../domain/kinematic-algebra', async () => {
     const actual = await vi.importActual<
       typeof import('../../../domain/kinematic-algebra')
     >('../../../domain/kinematic-algebra')
+
     return {
       ...actual,
       poseOperations: ((
@@ -36,40 +39,55 @@ async function observedQuery(
       ) => {
         const operations = actual.poseOperations(algebra)
         const { rotate, dot, norm } = operations
+
         operations.rotate = (...args) => {
           counts.rotate++
           inspect('rotate', counts)
+
           return rotate(...args)
         }
+
         operations.dot = (...args) => {
           counts.dot++
           inspect('dot', counts)
+
           return dot(...args)
         }
+
         operations.norm = (...args) => {
           counts.norm++
           inspect('norm', counts)
+
           return norm(...args)
         }
+
         return operations
       }) as typeof actual.poseOperations
     }
   })
+
   return { counts, query: (await import('../convex-query')).convexDistance }
 }
+
 function digest(value: unknown): string {
   // Preserve every binary64 bit, including signed zero, rather than rounded JSON numbers.
   return createHash('sha256')
     .update(
       JSON.stringify(value, (_, item: unknown) => {
-        if (typeof item !== 'number') return item
+        if (typeof item !== 'number') {
+          return item
+        }
+
         const bytes = Buffer.alloc(8)
+
         bytes.writeDoubleBE(item)
+
         return bytes.toString('hex')
       })
     )
     .digest('hex')
 }
+
 afterEach(() => {
   vi.doUnmock('../../../domain/kinematic-algebra')
   vi.resetModules()
@@ -79,9 +97,14 @@ it.runIf(process.env.SIM_SUPPORT_REUSE_POPULATION === '1')(
   'preserves the complete recorded scenario-zero population and charged work',
   async () => {
     const controlFile = process.env.SIM_SUPPORT_REUSE_CONTROL_FILE
-    if (!controlFile) throw new Error('Missing reviewed population control')
+
+    if (!controlFile) {
+      throw new Error('Missing reviewed population control')
+    }
+
     const controlText = readFileSync(controlFile, 'utf8')
     const controlSha256 = createHash('sha256').update(controlText).digest('hex')
+
     expect(controlSha256).toBe(
       'b79710033eadf5263f17b13744c754c58ef353abd65f85fedd318cf940014f99'
     )
@@ -96,17 +119,22 @@ it.runIf(process.env.SIM_SUPPORT_REUSE_POPULATION === '1')(
     const inputHash = createHash('sha256')
       .update(JSON.stringify(snapshot))
       .digest('hex')
+
     expect(inputHash).toBe(control.manifest.inputHash)
     expect(snapshot.budget.maxDurationMs).toBe(30000)
     const started = performance.now()
+
     const checkpoint = () => {
-      if (performance.now() - started >= snapshot.budget.maxDurationMs)
+      if (performance.now() - started >= snapshot.budget.maxDurationMs) {
         throw new Error('Analysis exceeded its declared wall-time budget.')
+      }
     }
+
     const context = new OriginalMeshQuery(checkpoint)
     const pairs: OfficialPairEvidence[] = []
     let result: ReturnType<typeof runClearanceQueries> | undefined
     let error: string | undefined
+
     try {
       result = runClearanceQueries(
         snapshot,
@@ -119,6 +147,7 @@ it.runIf(process.env.SIM_SUPPORT_REUSE_POPULATION === '1')(
     } catch (caught) {
       error = caught instanceof Error ? caught.message : String(caught)
     }
+
     const milliseconds = performance.now() - started
     const output = fileURLToPath(
       new URL(
@@ -126,6 +155,7 @@ it.runIf(process.env.SIM_SUPPORT_REUSE_POPULATION === '1')(
         import.meta.url
       )
     )
+
     mkdirSync(dirname(output), { recursive: true })
     writeFileSync(
       output,
@@ -169,8 +199,10 @@ describe('iteration-local convex support reuse', () => {
   it('recomputes on every query and after source or pose replacement', async () => {
     const { counts, query } = await observedQuery()
     const inputs = supportCases()
+
     for (const index of [2, 2, 8, 2, 4, 4]) {
       const input = inputs[index]
+
       counts.rotate = counts.dot = counts.norm = 0
       expect(
         digest(query(input.a, input.b, input.tolerance, input.iterations))
@@ -181,12 +213,15 @@ describe('iteration-local convex support reuse', () => {
         norm: 13
       })
     }
+
     // Reuse the exact shape identity with changed geometry: no identity cache.
     const input = inputs[0]
+
     input.a.geometry = { kind: 'sphere', radius: 0.2 }
     counts.rotate = counts.dot = counts.norm = 0
     const changed = query(input.a, input.b, input.tolerance, input.iterations)
     const changedCounts = { ...counts }
+
     expect(digest(changed)).not.toBe(supportBaseline[0][1])
     counts.rotate = counts.dot = counts.norm = 0
     expect(
@@ -197,13 +232,16 @@ describe('iteration-local convex support reuse', () => {
   })
   it('does not retain a partial record after a synchronous arithmetic failure', async () => {
     const sentinel = new Error('test-owned arithmetic interruption')
+
     for (let stop = 1; stop <= 8; stop++) {
       let armed = true
       const { counts, query } = await observedQuery((name, current) => {
-        if (armed && name === 'rotate' && current.rotate === stop)
+        if (armed && name === 'rotate' && current.rotate === stop) {
           throw sentinel
+        }
       })
       const input = supportCases()[0]
+
       expect(() =>
         query(input.a, input.b, input.tolerance, input.iterations)
       ).toThrow(sentinel)
@@ -220,12 +258,16 @@ describe('iteration-local convex support reuse', () => {
     let nestedDigest: string | undefined
     const input = supportCases()[0]
     const observed = await observedQuery((name) => {
-      if (name !== 'rotate' || nested) return
+      if (name !== 'rotate' || nested) {
+        return
+      }
+
       nested = true
       nestedDigest = digest(
         observed.query(input.a, input.b, input.tolerance, input.iterations)
       )
     })
+
     expect(
       digest(
         observed.query(input.a, input.b, input.tolerance, input.iterations)
@@ -239,12 +281,14 @@ describe('iteration-local convex support reuse', () => {
     const rows = supportCases().map((test) => {
       counts.rotate = counts.dot = counts.norm = 0
       const evidence = query(test.a, test.b, test.tolerance, test.iterations)
+
       return {
         name: test.name,
         digest: digest(evidence),
         counts: { ...counts }
       }
     })
+
     expect(rows.map(({ name, digest }) => ({ name, digest }))).toEqual(
       supportBaseline.map(([name, digest]) => ({ name, digest }))
     )

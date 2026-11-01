@@ -21,7 +21,11 @@ function gitBranch(cwd) {
     timeout: 1000,
     stdio: ['ignore', 'pipe', 'ignore']
   })
-  if (result.status !== 0) return null
+
+  if (result.status !== 0) {
+    return null
+  }
+
   return result.stdout.trim()
 }
 
@@ -32,7 +36,11 @@ function gitWorktreeRoot(cwd) {
     timeout: 1000,
     stdio: ['ignore', 'pipe', 'ignore']
   })
-  if (result.status !== 0) return null
+
+  if (result.status !== 0) {
+    return null
+  }
+
   try {
     return realpathSync(result.stdout.trim())
   } catch {
@@ -51,7 +59,11 @@ function gitCommonDirectory(cwd) {
       stdio: ['ignore', 'pipe', 'ignore']
     }
   )
-  if (result.status !== 0) return null
+
+  if (result.status !== 0) {
+    return null
+  }
+
   try {
     return realpathSync(result.stdout.trim())
   } catch {
@@ -61,26 +73,46 @@ function gitCommonDirectory(cwd) {
 
 function gitCommandDirectory(command, cwd) {
   const tokens = command.match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g) || []
-  if (path.basename((tokens[0] || '').replace(/^['"]|['"]$/g, '')) !== 'git')
+
+  if (path.basename((tokens[0] || '').replace(/^['"]|['"]$/g, '')) !== 'git') {
     return cwd
+  }
+
   let directory = cwd
+
   for (let index = 1; index < tokens.length; index += 1) {
     const argument = tokens[index].replace(/^['"]|['"]$/g, '')
+
     if (argument === '-C') {
       const target = tokens[index + 1]?.replace(/^['"]|['"]$/g, '')
-      if (!target) return null
+
+      if (!target) {
+        return null
+      }
+
       directory = path.resolve(directory, target)
       index += 1
       continue
     }
-    if (argument === '--no-pager') continue
+
+    if (argument === '--no-pager') {
+      continue
+    }
+
     if (argument === '-c') {
       index += 1
       continue
     }
-    if (argument === '--git-dir' || argument === '--work-tree') return null
-    if (!argument.startsWith('-')) break
+
+    if (argument === '--git-dir' || argument === '--work-tree') {
+      return null
+    }
+
+    if (!argument.startsWith('-')) {
+      break
+    }
   }
+
   try {
     return realpathSync(directory)
   } catch {
@@ -94,37 +126,52 @@ function writeTargets(event) {
       typeof event.tool_input === 'string'
         ? event.tool_input
         : event.tool_input?.command
-    if (typeof patch !== 'string') return []
+
+    if (typeof patch !== 'string') {
+      return []
+    }
+
     return [
       ...patch.matchAll(/^\*\*\* (?:Add|Update|Delete) File: (.+)$/gm),
       ...patch.matchAll(/^\*\*\* Move to: (.+)$/gm)
     ].map((match) => match[1])
   }
+
   if (event.tool_name === 'Edit' || event.tool_name === 'Write') {
     const target = event.tool_input?.path ?? event.tool_input?.file_path
+
     return typeof target === 'string' ? [target] : []
   }
+
   return []
 }
 
 function targetWorktreeRoot(target, cwd) {
   const absolute = path.resolve(cwd, target)
   let directory = absolute
+
   try {
     const realTarget = realpathSync(directory)
+
     directory = statSync(realTarget).isDirectory()
       ? realTarget
       : path.dirname(realTarget)
   } catch {
     directory = path.dirname(directory)
   }
+
   while (true) {
     try {
       directory = realpathSync(directory)
+
       return gitWorktreeRoot(directory)
     } catch {
       const parent = path.dirname(directory)
-      if (parent === directory) return null
+
+      if (parent === directory) {
+        return null
+      }
+
       directory = parent
     }
   }
@@ -135,8 +182,10 @@ function destructiveCommandReason(command) {
     typeof command !== 'string' ||
     command.length === 0 ||
     command.length > 100000
-  )
+  ) {
     return 'Shell command is missing or exceeds the bounded input size.'
+  }
+
   const patterns = [
     [/\bgit\b[^\n;&|]*\breset\b[^\n;&|]*--hard\b/i, 'git reset --hard'],
     [/\bgit\b[^\n;&|]*\bclean\b/i, 'git clean'],
@@ -168,8 +217,11 @@ function destructiveCommandReason(command) {
     [/\bsed\b[^\n;&|]*(?:\s-i(?:\s|$)|\s--in-place\b)/i, 'in-place sed'],
     [/\brg\b[^\n;&|]*\s--pre(?:=|\s)/i, 'rg preprocessor execution']
   ]
+
   for (const [pattern, reason] of patterns) {
-    if (pattern.test(command)) return reason
+    if (pattern.test(command)) {
+      return reason
+    }
   }
 }
 
@@ -189,10 +241,14 @@ function targetsMain(command) {
 }
 
 function isReadOnlyOnMain(command) {
-  if (/[;&|<>`\n'"\\]/.test(command)) return false
+  if (/[;&|<>`\n'"\\]/.test(command)) {
+    return false
+  }
+
   const tokens = command.trim().split(/\s+/)
   const executable = tokens[0]?.split('/').at(-1)
   const arguments_ = tokens.slice(1)
+
   if (
     [
       'pwd',
@@ -205,25 +261,49 @@ function isReadOnlyOnMain(command) {
       'true',
       'false'
     ].includes(executable)
-  )
+  ) {
     return true
-  if (executable === 'rg')
+  }
+
+  if (executable === 'rg') {
     return !arguments_.some(
       (argument) => argument === '--pre' || argument.startsWith('--pre=')
     )
+  }
+
   if (executable === 'sed') {
-    if (arguments_[0] !== '-n' || arguments_.length < 3) return false
-    if (!/^(?:\d+|\$)(?:,(?:\d+|\$))?p$/.test(arguments_[1])) return false
+    if (arguments_[0] !== '-n' || arguments_.length < 3) {
+      return false
+    }
+
+    if (!/^(?:\d+|\$)(?:,(?:\d+|\$))?p$/.test(arguments_[1])) {
+      return false
+    }
+
     return arguments_.slice(2).every((argument) => !argument.startsWith('-'))
   }
-  if (executable !== 'git') return false
+
+  if (executable !== 'git') {
+    return false
+  }
+
   let index = 1
-  while (tokens[index] === '-C' && tokens[index + 1]) index += 2
-  if (tokens[index] === '--no-pager') index += 1
+
+  while (tokens[index] === '-C' && tokens[index + 1]) {
+    index += 2
+  }
+
+  if (tokens[index] === '--no-pager') {
+    index += 1
+  }
+
   const subcommand = tokens[index]
   const gitArguments = tokens.slice(index + 1)
-  if (['status', 'rev-parse', 'ls-files', 'merge-base'].includes(subcommand))
+
+  if (['status', 'rev-parse', 'ls-files', 'merge-base'].includes(subcommand)) {
     return true
+  }
+
   if (['diff', 'show', 'log'].includes(subcommand)) {
     return !gitArguments.some(
       (argument) =>
@@ -233,53 +313,79 @@ function isReadOnlyOnMain(command) {
         argument.startsWith('--output=')
     )
   }
+
   if (subcommand === 'branch') {
-    if (gitArguments.length === 0) return true
-    if (gitArguments.length === 1 && gitArguments[0] === '--show-current')
+    if (gitArguments.length === 0) {
       return true
-    if (gitArguments[0] === '--list')
+    }
+
+    if (gitArguments.length === 1 && gitArguments[0] === '--show-current') {
+      return true
+    }
+
+    if (gitArguments[0] === '--list') {
       return gitArguments
         .slice(1)
         .every((argument) => !argument.startsWith('-'))
+    }
   }
+
   return false
 }
 
 function evaluate(event) {
-  if (event?.hook_event_name !== 'PreToolUse') return {}
+  if (event?.hook_event_name !== 'PreToolUse') {
+    return {}
+  }
+
   const command =
     event.tool_name === 'Bash'
       ? (event.tool_input?.command ?? event.tool_input?.cmd)
       : null
+
   if (typeof command === 'string') {
     const segments = command.split(/\s*&&\s*/)
-    if (segments.some((segment) => /[;&|<>`\n]/.test(segment)))
+
+    if (segments.some((segment) => /[;&|<>`\n]/.test(segment))) {
       return deny('Shell control syntax is denied; run one command at a time.')
+    }
+
     for (const segment of segments) {
-      if (/^\s*cd(?:\s|$)/.test(segment))
+      if (/^\s*cd(?:\s|$)/.test(segment)) {
         return deny(
           'Use the tool workdir instead of changing directories in a shell command.'
         )
+      }
+
       const unsafeReason = destructiveCommandReason(segment)
-      if (unsafeReason)
+
+      if (unsafeReason) {
         return deny(`Denied destructive command: ${unsafeReason}.`)
-      if (targetsMain(segment))
+      }
+
+      if (targetsMain(segment)) {
         return deny('Direct push or PR merge to main/master is denied.')
+      }
     }
   }
 
   let eventCwd
+
   try {
     eventCwd = realpathSync(event.cwd)
   } catch {
     return deny('Cannot verify the current Git worktree.')
   }
+
   const eventWorktree = gitWorktreeRoot(eventCwd)
   const repositoryDirectory = gitCommonDirectory(eventCwd)
-  if (!eventWorktree || !repositoryDirectory)
+
+  if (!eventWorktree || !repositoryDirectory) {
     return deny('Cannot verify the current Git worktree.')
+  }
 
   let cwd
+
   try {
     cwd = realpathSync(
       event.tool_input?.workdir ?? event.tool_input?.cwd ?? event.cwd
@@ -287,70 +393,112 @@ function evaluate(event) {
   } catch {
     return deny('Cannot verify the current Git worktree.')
   }
+
   const operationRepository = gitCommonDirectory(cwd)
-  if (!operationRepository)
+
+  if (!operationRepository) {
     return deny('Cannot verify the current Git worktree.')
-  if (operationRepository !== repositoryDirectory)
+  }
+
+  if (operationRepository !== repositoryDirectory) {
     return deny('Tools must stay within the current Git repository.')
+  }
+
   const targets = writeTargets(event)
+
   if (
     ['apply_patch', 'Edit', 'Write'].includes(event.tool_name) &&
     targets.length === 0
-  )
+  ) {
     return deny('Cannot verify the target path of this file operation.')
+  }
+
   const targetWorktrees = targets.map((target) =>
     targetWorktreeRoot(target, cwd)
   )
+
   for (const worktree of targetWorktrees) {
-    if (!worktree || gitCommonDirectory(worktree) !== repositoryDirectory)
+    if (!worktree || gitCommonDirectory(worktree) !== repositoryDirectory) {
       return deny('File changes must stay within the current Git repository.')
+    }
   }
-  if (new Set(targetWorktrees).size > 1)
+
+  if (new Set(targetWorktrees).size > 1) {
     return deny('One file operation must stay within one Git worktree.')
+  }
+
   const operationWorktree = targetWorktrees[0] || gitWorktreeRoot(cwd)
-  if (!operationWorktree)
+
+  if (!operationWorktree) {
     return deny('Cannot verify the operation Git worktree.')
+  }
+
   const branch = gitBranch(operationWorktree)
-  if (!branch) return deny('Cannot verify the current Git branch.')
+
+  if (!branch) {
+    return deny('Cannot verify the current Git branch.')
+  }
+
   if (typeof command === 'string') {
     for (const segment of command.split(/\s*&&\s*/)) {
       const commandDirectory = gitCommandDirectory(segment, cwd)
-      if (!commandDirectory)
+
+      if (!commandDirectory) {
         return deny('Cannot verify the Git command worktree.')
-      if (gitCommonDirectory(commandDirectory) !== repositoryDirectory)
+      }
+
+      if (gitCommonDirectory(commandDirectory) !== repositoryDirectory) {
         return deny('Git commands must stay within the current Git repository.')
+      }
+
       const commandBranch = gitBranch(commandDirectory)
-      if (!commandBranch) return deny('Cannot verify the Git command branch.')
+
+      if (!commandBranch) {
+        return deny('Cannot verify the Git command branch.')
+      }
+
       if (
         ['main', 'master'].includes(commandBranch) &&
         !isReadOnlyOnMain(segment)
-      )
+      ) {
         return deny(
           'Only recognized read-only commands are allowed on main/master.'
         )
+      }
     }
   }
-  if (!['main', 'master'].includes(branch)) return {}
 
-  if (event.tool_name !== 'Bash')
+  if (!['main', 'master'].includes(branch)) {
+    return {}
+  }
+
+  if (event.tool_name !== 'Bash') {
     return deny(
       'File changes are not allowed on main/master; use a feature branch.'
     )
-  if (typeof command === 'string' && isReadOnlyOnMain(command)) return {}
+  }
+
+  if (typeof command === 'string' && isReadOnlyOnMain(command)) {
+    return {}
+  }
+
   return deny('Only recognized read-only commands are allowed on main/master.')
 }
 
 async function main() {
   let input = ''
+
   for await (const chunk of process.stdin) {
     input += chunk
     if (Buffer.byteLength(input) > maximumInputBytes) {
       process.stdout.write(
         `${JSON.stringify(deny('Hook input exceeds 2 MiB.'))}\n`
       )
+
       return
     }
   }
+
   try {
     process.stdout.write(`${JSON.stringify(evaluate(JSON.parse(input)))}\n`)
   } catch {

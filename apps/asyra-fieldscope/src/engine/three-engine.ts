@@ -21,9 +21,11 @@ export class ThreeEngine extends SpatialEngine {
         fillColor: 0xb6d5f5,
         fillIntensity: 1.2
       },
+
       readDescriptor: (value) => {
         const instances = (value as { instances?: readonly { yaw?: number }[] })
           ?.instances
+
         return instances?.every((item) => item.yaw === undefined)
           ? readSpatialDescriptor(value)
           : toSpatialProjection(value)

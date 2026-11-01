@@ -30,14 +30,17 @@ export function validTrajectoryInput(input: unknown): input is TrajectoryInput {
     !hasExactOwnKeys(input.mapping, ['time', 'joints']) ||
     !isPlainRecord(input.mapping.joints) ||
     Object.keys(input.mapping.joints).length > 256
-  )
+  ) {
     return false
+  }
+
   const entry = (value: unknown, units: readonly string[]) =>
     hasExactOwnKeys(value, ['column', 'unit']) &&
     typeof value.column === 'string' &&
     value.column.length <= 1000 &&
     typeof value.unit === 'string' &&
     units.includes(value.unit)
+
   return (
     entry(input.mapping.time, ['', 's', 'ms']) &&
     Object.entries(input.mapping.joints).every(

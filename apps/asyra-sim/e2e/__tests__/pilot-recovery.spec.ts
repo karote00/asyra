@@ -3,11 +3,20 @@ import { expect, test, type Page } from '@playwright/test'
 
 async function download(page: Page, name: string) {
   const pending = page.waitForEvent('download')
+
   await page.getByRole('button', { name, exact: true }).click()
   const stream = await (await pending).createReadStream()
-  if (!stream) throw new Error('Missing download stream')
+
+  if (!stream) {
+    throw new Error('Missing download stream')
+  }
+
   const chunks: Buffer[] = []
-  for await (const chunk of stream) chunks.push(Buffer.from(chunk))
+
+  for await (const chunk of stream) {
+    chunks.push(Buffer.from(chunk))
+  }
+
   return Buffer.concat(chunks)
 }
 
@@ -40,10 +49,13 @@ test('the shipped missing-method project preserves history and blocks rerun with
   )
   const external: string[] = []
   const origin = new URL(info.project.use.baseURL ?? '').origin
+
   await context.route('**/*', async (route) => {
     const url = route.request().url()
-    if (new URL(url).origin === origin) await route.continue()
-    else {
+
+    if (new URL(url).origin === origin) {
+      await route.continue()
+    } else {
       external.push(url)
       await route.abort()
     }
@@ -56,9 +68,11 @@ test('the shipped missing-method project preserves history and blocks rerun with
   })
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
   let analysisWorkers = 0
+
   page.on('worker', (worker) => {
-    if (/\/analysis\.worker(?:\.ts|-[\w-]+\.js)(?:\?.*)?$/.test(worker.url()))
+    if (/\/analysis\.worker(?:\.ts|-[\w-]+\.js)(?:\?.*)?$/.test(worker.url())) {
       analysisWorkers++
+    }
   })
   await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
   await expect(page.getByTestId('preflight-report')).toContainText(
@@ -72,6 +86,7 @@ test('the shipped missing-method project preserves history and blocks rerun with
   const before = JSON.parse(
     (await download(page, 'Export JSON')).toString('utf8')
   )
+
   expect(before.run.snapshot.method.id).toBe('private-retired-spheres')
   expect(before.run.snapshot.methodDescriptor.manifest.origin).toBe('private')
   expect(before.run.result.execution).toBe('completed')
@@ -86,6 +101,7 @@ test('the shipped missing-method project preserves history and blocks rerun with
   await library.getByRole('button', { name: 'Close runs', exact: true }).click()
   await page.getByRole('button', { name: 'Projects', exact: true }).click()
   const portable = await download(page, 'Export project')
+
   await page
     .getByRole('button', { name: 'Close projects', exact: true })
     .click()
@@ -96,6 +112,7 @@ test('the shipped missing-method project preserves history and blocks rerun with
   const after = JSON.parse(
     (await download(page, 'Export JSON')).toString('utf8')
   )
+
   expect(after.run).toEqual(before.run)
   expect(external).toEqual([])
 })

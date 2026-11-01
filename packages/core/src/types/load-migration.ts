@@ -17,6 +17,7 @@ export class LoadHookExecutionError extends Error {
       code === LOAD_HOOK_EXECUTION_ERROR_CODES.ASYNC_UNSUPPORTED
         ? 'returned an unsupported asynchronous result'
         : 'returned an invalid result without a string version'
+
     super(`[Core] Load hook ${hookIndex} ${reason}`)
   }
 }

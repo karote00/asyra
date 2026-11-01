@@ -30,6 +30,7 @@ export function addWorkFurnishings(c: OfficeComposer, deskTop: number) {
     desk.position[1],
     deskTop - computerBounds[2][0] * computerScale
   ]
+
   add('work-laptop', 'laptop', computer, computerPosition, 180, [
     computerScale,
     computerScale,
@@ -62,6 +63,7 @@ export function addWorkFurnishings(c: OfficeComposer, deskTop: number) {
     [-2.68, -1.11, floor]
   )
   const wallX = OFFICE_SHELL.westX + OFFICE_SHELL.exteriorThickness / 2
+
   addPrint(
     c,
     'work-print',
@@ -105,6 +107,7 @@ export function addWorkFurnishings(c: OfficeComposer, deskTop: number) {
         [0.07, 0.26, 0x395c53]
       ]
       let edge = -0.19
+
       books.forEach(([width, height, color], i) => {
         block(
           'work-book-' + i,
@@ -163,16 +166,20 @@ export function addWorkFurnishings(c: OfficeComposer, deskTop: number) {
               form: 'succulent'
             }
           ] as const)
-      for (const pot of pots)
+
+      for (const pot of pots) {
         add(
           'work-shelf-plant-' + level + pot.suffix,
           'planter',
           shelfBotanical(pot.form, pot.color, pot.scale, pot.seed),
           [wallX + 0.15, pot.y, z + 0.0427]
         )
+      }
     }
   }
+
   const tableZ = floor + 0.57
+
   block(
     'work-side-table-top',
     [0.45, 0.32, 0.032],
@@ -181,8 +188,8 @@ export function addWorkFurnishings(c: OfficeComposer, deskTop: number) {
     'wood',
     0.007
   )
-  for (const x of [-1, 1])
-    for (const y of [-1, 1])
+  for (const x of [-1, 1]) {
+    for (const y of [-1, 1]) {
       block(
         `work-side-table-leg-${x}-${y}`,
         [0.028, 0.028, 0.554],
@@ -191,6 +198,9 @@ export function addWorkFurnishings(c: OfficeComposer, deskTop: number) {
         'wood',
         0.003
       )
+    }
+  }
+
   plant('work-side-plant', [-0.82, 0.46, tableZ + 0.016], 1.25, {
     color: 0xeee5d7,
     form: 'stemmed'
@@ -204,6 +214,7 @@ export function addWorkFurnishings(c: OfficeComposer, deskTop: number) {
     returnDepth = 0.32,
     returnThickness = 0.032,
     legHeight = deskTop - floor - returnThickness
+
   block(
     'work-return-top',
     [returnWidth, returnDepth, returnThickness],
@@ -212,8 +223,8 @@ export function addWorkFurnishings(c: OfficeComposer, deskTop: number) {
     'wood',
     0.007
   )
-  for (const x of [-1, 1])
-    for (const y of [-1, 1])
+  for (const x of [-1, 1]) {
+    for (const y of [-1, 1]) {
       block(
         `work-return-leg-${x}-${y}`,
         [0.032, 0.032, legHeight],
@@ -226,6 +237,9 @@ export function addWorkFurnishings(c: OfficeComposer, deskTop: number) {
         'plain',
         0.003
       )
+    }
+  }
+
   plant('work-return-plant', [returnLeft + 0.14, returnY, deskTop], 0.8, {
     color: 0x8d6849,
     form: 'rosette'

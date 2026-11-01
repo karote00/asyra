@@ -6,6 +6,7 @@ const test = require('node:test'),
 const { directory } = require('./fixtures.cjs')
 const { initialize, resolveProject } = require('../project.cjs')
 const { openProject } = require('../store.cjs')
+
 test('initialization supports every template and nested discovery without Git or overwrites', (t) => {
   for (const template of [
     'manual',
@@ -16,6 +17,7 @@ test('initialization supports every template and nested discovery without Git or
   ]) {
     const root = directory(t),
       project = initialize(root, template)
+
     fs.mkdirSync(path.join(root, 'nested folder'))
     assert.equal(
       resolveProject(undefined, path.join(root, 'nested folder')).root,
@@ -31,8 +33,10 @@ test('initialization supports every template and nested discovery without Git or
 })
 test('project admission rejects traversal, symlinks, unknown fields and package data writes', (t) => {
   const root = directory(t)
+
   initialize(root)
   const file = path.join(root, 'flow-inspector.config.json')
+
   for (const flows of [
     '../outside',
     'node_modules/flows',
@@ -45,6 +49,7 @@ test('project admission rejects traversal, symlinks, unknown fields and package 
     )
     assert.throws(() => resolveProject(root), /path/)
   }
+
   fs.symlinkSync('flows', path.join(root, 'linked'))
   fs.writeFileSync(
     file,

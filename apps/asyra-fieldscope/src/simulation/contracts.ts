@@ -86,16 +86,24 @@ export class DispatchAdmissionError extends Error {}
 
 function freeze<T>(value: T): T {
   if (value && typeof value === 'object') {
-    for (const child of Object.values(value)) freeze(child)
+    for (const child of Object.values(value)) {
+      freeze(child)
+    }
+
     Object.freeze(value)
   }
+
   return value
 }
+
 const detached = <T>(value: T): T => freeze(structuredClone(value))
+
 const finiteTime = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value) && value >= 0
+
 const identity = (value: unknown): value is string =>
   typeof value === 'string' && value.trim().length > 0
+
 function assertCurrent(receipt: CanonicalMission, owners: SourceOwners) {
   if (
     !receipt ||
@@ -104,19 +112,23 @@ function assertCurrent(receipt: CanonicalMission, owners: SourceOwners) {
     !owners.isCurrentMission(receipt) ||
     !owners.isCurrentScene(receipt.scene) ||
     !owners.isCurrentRobot(receipt.robot)
-  )
+  ) {
     throw new DispatchAdmissionError(
       'Retired or invalid canonical mission source'
     )
+  }
 }
+
 // Issuance identity is a lifecycle guard, not a computed-output cache.
 const preparedMissions = new WeakSet<PreparedMission>()
+
 export function prepareMission(
   receipt: CanonicalMission,
   owners: SourceOwners
 ): PreparedMission {
   assertCurrent(receipt, owners)
   const farm = detached(validateConfiguration(structuredClone(receipt.farm)))
+
   validateRobot(receipt.report.settings)
   const mission = Object.freeze({
     receipt,
@@ -126,9 +138,12 @@ export function prepareMission(
     scene: receipt.scene,
     robot: receipt.robot
   })
+
   preparedMissions.add(mission)
+
   return mission
 }
+
 function readEvidence(
   input: DispatchEvidence,
   mission: PreparedMission,
@@ -141,8 +156,10 @@ function readEvidence(
     input.missionRevision !== mission.revision ||
     input.sceneRevision !== mission.scene.revision ||
     input.robotRevision !== mission.robot.revision
-  )
+  ) {
     throw new DispatchAdmissionError('Invalid dispatch evidence identity')
+  }
+
   if (
     ![now, input.observedAt, input.validFrom, input.validUntil].every(
       finiteTime
@@ -150,12 +167,15 @@ function readEvidence(
     input.validFrom > input.observedAt ||
     input.observedAt > now ||
     now >= input.validUntil
-  )
+  ) {
     throw new DispatchAdmissionError(
       'Invalid or expired dispatch evidence time'
     )
+  }
+
   for (const purpose of ['dispatch', 'return'] as const) {
     const interval = input.intervals?.[purpose]
+
     if (
       !interval ||
       !finiteTime(interval.from) ||
@@ -163,53 +183,72 @@ function readEvidence(
       interval.from < now ||
       interval.from >= interval.until ||
       interval.until >= input.validUntil
-    )
+    ) {
       throw new DispatchAdmissionError('Invalid movement query interval')
+    }
   }
-  if (input.intervals.return.from < input.intervals.dispatch.until)
+
+  if (input.intervals.return.from < input.intervals.dispatch.until) {
     throw new DispatchAdmissionError(
       'Return query precedes dispatch completion'
     )
+  }
+
   if (
     !input.survey ||
     !input.battery ||
     !input.crate ||
     !['available', 'blocked', 'unknown'].includes(input.dock) ||
     (input.stowed !== null && typeof input.stowed !== 'boolean')
-  )
+  ) {
     throw new DispatchAdmissionError('Invalid dispatch evidence schema')
-  for (const value of [input.battery.soc, input.battery.socUncertainty])
+  }
+
+  for (const value of [input.battery.soc, input.battery.socUncertainty]) {
     if (
       value !== null &&
       (typeof value !== 'number' ||
         !Number.isFinite(value) ||
         value < 0 ||
         value > 1)
-    )
+    ) {
       throw new DispatchAdmissionError('Invalid battery observation')
+    }
+  }
+
   const { crate } = input
+
   if (
     (crate.id !== null && !identity(crate.id)) ||
     (crate.cultivar !== null &&
       !['cucumber', 'tomato'].includes(crate.cultivar)) ||
     (crate.tareKg !== null && !finiteTime(crate.tareKg))
-  )
+  ) {
     throw new DispatchAdmissionError('Invalid crate observation')
+  }
+
   if (
     crate.load &&
     crate.load.payloadLimit !== mission.report.settings.payloadLimit
-  )
+  ) {
     throw new DispatchAdmissionError(
       'Crate evidence cannot replace the mission payload limit'
     )
+  }
+
   return detached(input)
 }
+
 function movementRequests(
   mission: PreparedMission,
   evidence: DispatchEvidence
 ): readonly MovementRequest[] {
   const { settings, lane } = mission.report
-  if (!lane) throw new DispatchAdmissionError('Missing completed route')
+
+  if (!lane) {
+    throw new DispatchAdmissionError('Missing completed route')
+  }
+
   const dock: Point3 = Object.freeze([
     settings.dockX,
     0,
@@ -221,6 +260,7 @@ function movementRequests(
     settings.start
   ] as const)
   const end: Point3 = Object.freeze([lane.centerX, 0, settings.end] as const)
+
   return Object.freeze(
     (['dispatch', 'return'] as const).map((purpose) =>
       Object.freeze({
@@ -247,15 +287,27 @@ export function admitDispatch(
   owners: SourceOwners,
   query: MovementProvider
 ) {
-  if (!preparedMissions.has(mission))
+  if (!preparedMissions.has(mission)) {
     throw new DispatchAdmissionError('Unissued prepared mission')
+  }
+
   assertCurrent(mission.receipt, owners)
   const evidence = readEvidence(input, mission, now)
   const { settings, route } = mission.report
   const reasons: string[] = []
-  if (!mission.robot.rig) reasons.push('unsupported-rig')
-  if (evidence.stowed !== true) reasons.push('unverified-stowed-pose')
-  if (!route || !mission.report.lane) reasons.push('invalid-route')
+
+  if (!mission.robot.rig) {
+    reasons.push('unsupported-rig')
+  }
+
+  if (evidence.stowed !== true) {
+    reasons.push('unverified-stowed-pose')
+  }
+
+  if (!route || !mission.report.lane) {
+    reasons.push('invalid-route')
+  }
+
   const lane = route
     ? assessHarvestLane({
         farm: mission.farm,
@@ -272,30 +324,49 @@ export function admitDispatch(
         survey: evidence.survey
       })
     : null
-  if (lane && lane.status !== 'screened')
+
+  if (lane && lane.status !== 'screened') {
     reasons.push(...lane.blocked, ...lane.unverified)
+  }
+
   if (
     !evidence.crate.id ||
     evidence.crate.tareKg === null ||
     evidence.crate.cultivar !== settings.tool
-  )
+  ) {
     reasons.push('crate-unverified')
+  }
+
   const load = evidence.crate.load ? assessCrateLoad(evidence.crate.load) : null
-  if (!load) reasons.push('missing-load')
-  else if (load.action !== 'continue-screening')
+
+  if (!load) {
+    reasons.push('missing-load')
+  } else if (load.action !== 'continue-screening') {
     reasons.push(...load.stop, ...load.exchange)
-  if (evidence.dock !== 'available') reasons.push('dock-unavailable')
+  }
+
+  if (evidence.dock !== 'available') {
+    reasons.push('dock-unavailable')
+  }
+
   const batteryKnown =
     evidence.battery.soc !== null && evidence.battery.socUncertainty !== null
-  if (!batteryKnown) reasons.push('missing-battery')
+
+  if (!batteryKnown) {
+    reasons.push('missing-battery')
+  }
+
   // Query only after prerequisite screens. A energy still independently requires
   // the provider's complete return result and the declared battery observation.
   let movements: readonly MovementResult[] = []
   let returnAdmitted = false
+
   if (!reasons.length) {
     const requests = movementRequests(mission, evidence)
-    if (typeof query !== 'function') reasons.push('missing-movement-provider')
-    else {
+
+    if (typeof query !== 'function') {
+      reasons.push('missing-movement-provider')
+    } else {
       const results = query(requests)
       const complete =
         Array.isArray(results) &&
@@ -324,6 +395,7 @@ export function admitDispatch(
               )
           )
         : []
+
       movements = Object.freeze(
         admittedResults.map((result) =>
           Object.freeze({
@@ -334,14 +406,17 @@ export function admitDispatch(
           })
         )
       )
-      if (!complete)
+      if (!complete) {
         reasons.push(
           'movement-unresolved',
           ...movements.flatMap((result) => result.reasons)
         )
-      else returnAdmitted = true
+      } else {
+        returnAdmitted = true
+      }
     }
   }
+
   const energy = batteryKnown
     ? assessHarvestEnergy({
         ...settings,
@@ -352,12 +427,16 @@ export function admitDispatch(
         dockAvailable: evidence.dock === 'available'
       })
     : null
-  if (energy && energy.action !== 'continue-screening')
+
+  if (energy && energy.action !== 'continue-screening') {
     reasons.push(
       ...energy.reasons,
       ...(energy.action === 'return-to-charge' ? ['dispatch-energy'] : [])
     )
+  }
+
   assertCurrent(mission.receipt, owners)
+
   return Object.freeze({
     accepted: reasons.length === 0,
     mission,

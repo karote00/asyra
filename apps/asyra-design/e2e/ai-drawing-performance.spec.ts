@@ -50,28 +50,45 @@ const readProfileCanonicalSummary = (page: Page) =>
     const elements = (await import('../src/testing/runtime-access'))
       .getActiveAiDrawingPerformanceProfile()
       ?.readCanonicalElements()
+
     if (!elements) {
       throw new Error(
         'AI drawing performance canonical evidence is unavailable'
       )
     }
+
     const ids: string[] = []
     let groupCount = 0
     let pointCount = 0
     let renderedCount = 0
     let vectorCount = 0
+
     for (const element of elements) {
-      if (element.type === 'workspace') continue
+      if (element.type === 'workspace') {
+        continue
+      }
+
       ids.push(element.id)
-      if (element.rendered) renderedCount += 1
-      if (element.type === 'group') groupCount += 1
-      if (element.type !== 'vector') continue
+      if (element.rendered) {
+        renderedCount += 1
+      }
+
+      if (element.type === 'group') {
+        groupCount += 1
+      }
+
+      if (element.type !== 'vector') {
+        continue
+      }
+
       vectorCount += 1
       const computed = element.computed as {
         points?: Readonly<Record<string, unknown>>
       }
+
       pointCount += Object.keys(computed.points ?? {}).length
     }
+
     return {
       groupCount,
       pointCount,
@@ -87,6 +104,7 @@ const expectProfileOwnerPhases = (
   requiredNames: readonly string[]
 ) => {
   const observedNames = new Set(snapshot.phases.map(({ name }) => name))
+
   expect(
     requiredNames.filter((name) => !observedNames.has(name)),
     'AI drawing profile is missing required owner phases'
@@ -106,6 +124,7 @@ const runProfiledTurn = async (
   }
 ): Promise<ProfiledTurn> => {
   const identity = createTestDocumentIdentity('aiPerformance=profile')
+
   await installGeneratedActionBatchInterceptor(page.context(), {
     appUrl: identity.url,
     fileId: identity.fileId,
@@ -117,6 +136,7 @@ const runProfiledTurn = async (
   await page.getByTestId('ai-agent-toolbar-button').click()
   await expect(page.getByRole('complementary')).toBeVisible()
   const historyBefore = await getUndoHistoryDepth(page)
+
   await page.evaluate(async () => {
     if (
       !(
@@ -125,6 +145,7 @@ const runProfiledTurn = async (
     ) {
       throw new Error('AI drawing performance profile is unavailable')
     }
+
     ;(await import('../src/testing/runtime-access'))
       .getActiveAiDrawingPerformanceProfile()
       .reset()
@@ -132,13 +153,16 @@ const runProfiledTurn = async (
 
   const harnessStart = performance.now()
   const input = page.getByLabel('Message Agent')
+
   await input.fill(intent)
   await page.getByRole('button', { name: 'Send' }).click()
   const settledTurn = page.getByTestId('ai-agent-message').last()
+
   await expect
     .poll(() => settledTurn.getAttribute('data-outcome'), { timeout })
     .toMatch(/^(cancelled|failed|no-change|partial|success)$/)
   const outcome = await settledTurn.getAttribute('data-outcome')
+
   if (outcome !== 'success') {
     const conversation = await page.evaluate(async () => {
       return (
@@ -147,10 +171,12 @@ const runProfiledTurn = async (
           ?.readConversationSnapshot() ?? null
       )
     })
+
     throw new Error(
       `Profiled AI turn settled as ${outcome}: ${JSON.stringify(conversation)}`
     )
   }
+
   const harnessWallMs = performance.now() - harnessStart
   const snapshot = await page.evaluate(
     async () =>
@@ -158,13 +184,16 @@ const runProfiledTurn = async (
         .getActiveAiDrawingPerformanceProfile()
         ?.snapshot() ?? null
   )
+
   expect(snapshot).not.toBeNull()
   const exactSnapshot = snapshot as ProfileSnapshot
   const productSamples = exactSnapshot.phases.filter(
     ({ name }) => name === 'ai-turn:accepted-to-settled'
   )
+
   expect(productSamples).toHaveLength(1)
   const productSample = productSamples[0]
+
   expect(
     exactSnapshot.counters.some(
       ({ name, value }) => name === 'ai-turn:outcome:success' && value === 1

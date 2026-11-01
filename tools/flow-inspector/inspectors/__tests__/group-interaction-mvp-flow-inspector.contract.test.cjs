@@ -8,7 +8,9 @@ const repoRoot = path.resolve(__dirname, '../../../..')
 
 const step = (id) => {
   const value = data.steps.find((item) => item.id === id)
+
   assert.ok(value, `Missing Inspector step: ${id}`)
+
   return value
 }
 
@@ -48,11 +50,7 @@ test('Group Interaction Inspector authorities resolve', () => {
   )
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.specPath)))
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.inspectorPath)))
-  assert.ok(
-    fs.existsSync(
-      path.resolve(__dirname, '../group-interaction-mvp-flow-inspector.html')
-    )
-  )
+  require('./assert-react-catalog.cjs')(data)
   assert.ok(Object.isFrozen(data))
   assert.ok(data.steps.every(Object.isFrozen))
 })
@@ -95,6 +93,7 @@ test('all nine required owner steps expose exact readiness fields', () => {
 
   const laneIds = new Set(data.lanes.map((item) => item.id))
   const stepIds = new Set(requiredStepIds)
+
   data.steps.forEach((item) => {
     assert.deepEqual(Object.keys(item), requiredFields)
     assert.ok(laneIds.has(item.laneId), `${item.id} lane`)
@@ -137,9 +136,11 @@ test('every route and artifact has one resolvable owner-consumer handoff', () =>
 
   data.routes.forEach((route) => {
     assert.ok(stepIds.has(route.from), `${route.id} from`)
-    if (route.to) assert.ok(stepIds.has(route.to), `${route.id} to`)
+    if (route.to) {assert.ok(stepIds.has(route.to), `${route.id} to`)}
+
     route.producedArtifacts.forEach((id) => {
       const artifact = data.artifacts.find((item) => item.id === id)
+
       assert.ok(artifact, `${route.id} artifact ${id}`)
       assert.equal(artifact.ownerStepId, route.from, `${route.id} owner`)
       if (route.to) {
@@ -453,6 +454,7 @@ test('acceptance contracts cover every product family and Definition of Done', (
   const acceptedStepIds = new Set(
     data.acceptanceContracts.flatMap((contract) => contract.stepIds)
   )
+
   data.steps.forEach((item) =>
     assert.ok(acceptedStepIds.has(item.id), `${item.id} lacks acceptance`)
   )

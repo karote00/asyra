@@ -35,6 +35,7 @@ const fixture = () => {
     }),
     getElementChildren: vi.fn((id: string, offset: number, limit: number) => {
       const children = (records[id]?.children ?? []) as string[]
+
       return {
         available: Boolean(records[id]),
         elementIds: children.slice(offset, offset + limit),
@@ -46,14 +47,18 @@ const fixture = () => {
     getElementComputedData: vi.fn((_id: string, fields: readonly string[]) => {
       expect(fields).not.toContain('points')
       expect(fields).not.toContain('segments')
+
       return structuredClone(computed)
     })
   }
+
   return { read: createDesignContextReader(source), source, records, computed }
 }
+
 describe('bounded document context', () => {
   it('reads a page only and advances across missing IDs', () => {
     const { read, source } = fixture()
+
     expect(
       read({ scope: 'children', limit: 2, fields: ['text'] })
     ).toMatchObject({
@@ -77,6 +82,7 @@ describe('bounded document context', () => {
   it('keeps selection order and observes fresh detached values', () => {
     const { read, source, computed } = fixture()
     const first = read({ scope: 'selection', fields: ['text'] })
+
     expect(first.elements.map((e) => e.id)).toEqual(['b', 'a'])
     computed.text = 'Changed'
     expect(
@@ -88,17 +94,20 @@ describe('bounded document context', () => {
   })
   it('reads native text fills using the shared canonical field', () => {
     const { read, source, computed } = fixture()
+
     computed.fills = [{ color: '#123456' }]
     const result = read({
       scope: 'selection',
       limit: 1,
       fields: ['text', 'fills']
     })
+
     expect(source.getElementComputedData.mock.calls[0][1]).toContain('fills')
     expect(result.elements[0].properties.fills).toEqual([{ color: '#123456' }])
   })
   it('reports preview truncation without claiming complete data', () => {
     const { read, computed } = fixture()
+
     computed.text = 'a'.repeat(2100)
     computed.fills = Array.from({ length: 10 }, () => ({ color: '#ffffff' }))
     const entry = read({
@@ -106,6 +115,7 @@ describe('bounded document context', () => {
       limit: 1,
       fields: ['text', 'fills']
     }).elements[0]
+
     expect(entry.properties.text).toHaveLength(2000)
     expect(entry.properties.fills).toHaveLength(8)
     expect(entry.truncatedFields).toEqual(['text', 'fills'])
@@ -123,12 +133,14 @@ describe('bounded document context', () => {
     { scope: 'selection', extra: true }
   ])('rejects invalid query before reading: %j', (query) => {
     const { read, source } = fixture()
+
     expect(() => read(query as never)).toThrow()
     expect(source.getCurrentWorkspaceId).not.toHaveBeenCalled()
     expect(source.getElementMetadata).not.toHaveBeenCalled()
   })
   it('reports unavailable parent without a fallback document scan', () => {
     const { read, source } = fixture()
+
     expect(read({ scope: 'children', parentId: 'missing' })).toMatchObject({
       available: false,
       elements: [],
@@ -143,6 +155,7 @@ describe('bounded document context', () => {
 it('reads explicit identities without traversing parents or calculating unused properties', () => {
   const { read, source, records } = fixture()
   const query = { scope: 'ids', elementIds: ['b', 'a'], fields: [] } as never
+
   expect(read(query).elements.map((e) => e.id)).toEqual(['b', 'a'])
   expect(source.getElementMetadata.mock.calls).toEqual([['b'], ['a']])
   expect(source.getElementComputedData).not.toHaveBeenCalled()
@@ -157,8 +170,13 @@ it('reads explicit identities without traversing parents or calculating unused p
 it('computes only requested fields and does not split a known identity set into pages', () => {
   const { read, source, records } = fixture()
   const ids = Array.from({ length: 250 }, (_, i) => `known-${i}`)
-  for (const id of ids) records[id] = { name: id }
+
+  for (const id of ids) {
+    records[id] = { name: id }
+  }
+
   const result = read({ scope: 'ids', elementIds: ids, fields: ['x'] } as never)
+
   expect(result.elements).toHaveLength(250)
   expect(result.nextOffset).toBeNull()
   expect(source.getElementMetadata).toHaveBeenCalledTimes(250)
@@ -176,12 +194,14 @@ it.each([
   { scope: 'selection', fields: ['points'] }
 ])('rejects invalid narrow queries before reads: %j', (query) => {
   const { read, source } = fixture()
+
   expect(() => read(query as never)).toThrow()
   expect(source.getElementMetadata).not.toHaveBeenCalled()
 })
 
 it('defaults to identity metadata without unused computed data', () => {
   const { read, source } = fixture()
+
   expect(
     read({ scope: 'selection' }).elements.every(
       (e) => Object.keys(e.properties).length === 0
@@ -192,6 +212,7 @@ it('defaults to identity metadata without unused computed data', () => {
 
 it('filters region candidates before paging and never reads unrelated geometry or full element snapshots', () => {
   const { read, source, records } = fixture()
+
   records.b.lock = true
   records.other = { id: 'other', type: 'vector', parentId: 'elsewhere' }
   const result = read({
@@ -200,6 +221,7 @@ it('filters region candidates before paging and never reads unrelated geometry o
     filter: { type: 'vector', ancestorId: 'workspace', locked: true },
     fields: ['x']
   })
+
   expect(result.elements.map((e) => e.id)).toEqual(['b'])
   expect(result.total).toBe(1)
   expect(source.getElementComputedData).toHaveBeenCalledExactlyOnceWith('b', [
@@ -222,23 +244,29 @@ it.each([
   }
 ])('rejects invalid region contracts before reading %j', (query) => {
   const { read, source } = fixture()
+
   expect(() => read(query as never)).toThrow()
   expect(source.getElementIdsInBounds).not.toHaveBeenCalled()
 })
 
 it('finds only the left region of one tier under a shared parent without enumerating its children', () => {
   const { read, source, records } = fixture()
+
   records.tower = { type: 'group', parentId: 'workspace', children: [] }
   for (let tier = 0; tier < 8; tier++) {
     for (const side of ['left', 'right']) {
       const id = `tier-${tier}-${side}`
+
       records[id] = { type: 'vector', parentId: 'tower', name: id }
       ;(records.tower.children as string[]).push(id)
     }
   }
+
   const bounds = { x: 0, y: 200, width: 40, height: 80 }
+
   source.getElementIdsInBounds.mockImplementation((...args: unknown[]) => {
     expect(args[0]).toEqual(bounds)
+
     return ['tower', 'tier-2-left']
   })
   const result = read({
@@ -247,6 +275,7 @@ it('finds only the left region of one tier under a shared parent without enumera
     filter: { ancestorId: 'tower', type: 'vector' },
     result: 'ids'
   } as never)
+
   expect(result).toMatchObject({
     available: true,
     elementIds: ['tier-2-left'],
@@ -266,6 +295,7 @@ it('finds only the left region of one tier under a shared parent without enumera
 
 it('pages compact spatial identities after filtering and observes fresh locks', () => {
   const { read, source, records } = fixture()
+
   records.a.type = 'vector'
   const query = {
     scope: 'region',
@@ -275,6 +305,7 @@ it('pages compact spatial identities after filtering and observes fresh locks', 
     limit: 1
   } as const
   const first = read(query as never)
+
   expect(first).toMatchObject({
     elementIds: ['a'],
     total: 2,
@@ -306,6 +337,7 @@ it.each([
   { scope: 'selection', result: 'ids', fields: ['fills'] }
 ])('rejects contradictory identity projections before reads: %j', (query) => {
   const { read, source } = fixture()
+
   expect(() => read(query as never)).toThrow()
   expect(source.getSelectedElementIds).not.toHaveBeenCalled()
 })
@@ -313,6 +345,7 @@ it.each([
 it('resolves all identity-only region matches once for backend mutation handoff', () => {
   const { read, source, records } = fixture()
   const ids = Array.from({ length: 600 }, (_, i) => `region-${i}`)
+
   ids.forEach((id) => {
     records[id] = { type: 'vector', parentId: 'workspace' }
   })
@@ -323,6 +356,7 @@ it('resolves all identity-only region matches once for backend mutation handoff'
     result: 'ids',
     allMatches: true
   })
+
   expect(result.elementIds).toEqual(ids)
   expect(result.nextOffset).toBeNull()
   expect(result.elements).toEqual([])
@@ -345,6 +379,7 @@ it('resolves all identity-only region matches once for backend mutation handoff'
 
 it('combines literal name predicates before paging and enforces the complete match count', () => {
   const { read, records, source } = fixture()
+
   records.a.name = 'tier-3-left-window'
   records.b.name = 'tier-3-right-window'
   const query = {
@@ -360,6 +395,7 @@ it('combines literal name predicates before paging and enforces the complete mat
     },
     expectedCount: 1
   }
+
   expect(read(query).elementIds).toEqual(['a'])
   expect(() => read({ ...query, expectedCount: 2 })).toThrow(/count/)
   expect(source.getElementComputedData).not.toHaveBeenCalled()

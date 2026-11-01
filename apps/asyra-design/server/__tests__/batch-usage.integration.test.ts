@@ -22,6 +22,7 @@ const loadBatchRuntime = async () => {
   const { createBasicApiActions } =
     await import('../../src/ai/basic-api-actions')
   const { observeAiAction } = await import('../../src/ai/runtime-input')
+
   return {
     core,
     applyPreset,
@@ -31,15 +32,24 @@ const loadBatchRuntime = async () => {
     observeAiAction
   }
 }
+
 let batchRuntime: Awaited<ReturnType<typeof loadBatchRuntime>>
+
 beforeAll(async () => {
   const startedAt = performance.now()
   const hadWindow = 'window' in globalThis
-  if (!hadWindow) vi.stubGlobal('window', {})
+
+  if (!hadWindow) {
+    vi.stubGlobal('window', {})
+  }
+
   try {
     batchRuntime = await loadBatchRuntime()
   } finally {
-    if (!hadWindow) vi.unstubAllGlobals()
+    if (!hadWindow) {
+      vi.unstubAllGlobals()
+    }
+
     console.info(
       JSON.stringify({
         measurement: 'batch-usage-module-initialization',
@@ -51,7 +61,11 @@ beforeAll(async () => {
 
 it('delivers selected batch usage independent of unrelated inventory and executes its real owner example', async () => {
   const hadWindow = 'window' in globalThis
-  if (!hadWindow) vi.stubGlobal('window', {})
+
+  if (!hadWindow) {
+    vi.stubGlobal('window', {})
+  }
+
   const {
     core,
     applyPreset,
@@ -60,6 +74,7 @@ it('delivers selected batch usage independent of unrelated inventory and execute
     createBasicApiActions,
     observeAiAction
   } = batchRuntime
+
   applyPreset(core, {
     profile: PresetProfiles.CUSTOM,
     defaults: [PresetDefaults.BASIC_SHAPES, PresetDefaults.CONTAINERS]
@@ -114,24 +129,36 @@ it('delivers selected batch usage independent of unrelated inventory and execute
   let boundIds: string[] | undefined
   const signal = new AbortController().signal
   const hosts: ReturnType<typeof createLocalToolHost>[] = []
+
   const setup = (unrelated = 0) => {
     let tools: ReturnType<typeof createLocalOperationTools>
+
     const build = (ownership: LocalToolOwnership) =>
       (tools = createLocalOperationTools(
         contracts,
         {
           modelActions: (v) => v,
+
           resolveBatch: (v) => v,
+
           resolveTargets: () => {
-            if (!boundIds) throw new Error('Expired retained source')
+            if (!boundIds) {
+              throw new Error('Expired retained source')
+            }
+
             return boundIds
           }
         },
         async (batch) => {
           const actionResults = []
+
           for (const action of batch.actions) {
             const owner = owners.find((entry) => entry.name === action.name)
-            if (!owner) throw new Error('Unexpected owner')
+
+            if (!owner) {
+              throw new Error('Unexpected owner')
+            }
+
             dispatched.push(action.name)
             actionResults.push({
               actionId: action.id,
@@ -148,6 +175,7 @@ it('delivers selected batch usage independent of unrelated inventory and execute
             })
             if (stopAfterFirst) {
               stopAfterFirst = false
+
               return requireBatchSuccess(
                 batch,
                 {
@@ -168,10 +196,12 @@ it('delivers selected batch usage independent of unrelated inventory and execute
               )
             }
           }
+
           return { context: {}, actionResults }
         },
         {
           ownership,
+
           getNativeTools: () => [
             ...host.definitions(),
             ...Array.from({ length: unrelated }, (_, i) => ({
@@ -183,6 +213,7 @@ it('delivers selected batch usage independent of unrelated inventory and execute
           ]
         }
       ))
+
     const host = createLocalToolHost({
       requestId: `usage-${unrelated}`,
       signal,
@@ -198,11 +229,14 @@ it('delivers selected batch usage independent of unrelated inventory and execute
       },
       store: {
         read: async () => undefined,
+
         list: async () => [],
+
         write: async () => {
           throw new Error('No recipe save requested')
         }
       },
+
       createGroups: (ownership) => [
         {
           name: 'design_operations',
@@ -211,14 +245,20 @@ it('delivers selected batch usage independent of unrelated inventory and execute
         }
       ]
     })
+
     hosts.push(host)
+
     const call = async (
       name: string,
       input: unknown,
       activeSignal = signal
     ) => {
       const definition = tools.definitions.find((d) => d.name === name)
-      if (!definition) throw new Error('Missing tool definition')
+
+      if (!definition) {
+        throw new Error('Missing tool definition')
+      }
+
       return JSON.parse(
         (
           await host.invoke({
@@ -229,14 +269,18 @@ it('delivers selected batch usage independent of unrelated inventory and execute
         ).text
       )
     }
+
     return { tools, call, host }
   }
+
   try {
     const { call, host } = setup()
     const query = { operations: ['element.deleteElements'], view: 'usage' }
     const reply = await call('describe_design_apis', query)
+
     expect(reply.contentDelivery).toBeUndefined()
     const api = reply.apis[0]
+
     expect(api.usageGuide).toBeDefined()
     expect(
       operationInputIssue(
@@ -260,8 +304,10 @@ it('delivers selected batch usage independent of unrelated inventory and execute
     const inventory = await large.call('describe_design_apis', {
       query: 'Unrelated capability'
     })
+
     expect(inventory.count).toBe(10000)
     const expanded = await large.call('describe_design_apis', query)
+
     expect(expanded.resultKey).toEqual(expect.any(String))
     expect(reply.resultKey).toEqual(expect.any(String))
     expect(expanded.resultKey).not.toBe(reply.resultKey)
@@ -270,6 +316,7 @@ it('delivers selected batch usage independent of unrelated inventory and execute
       resultKey: undefined
     })
     const replyBytes = Buffer.byteLength(JSON.stringify(reply))
+
     expect(replyBytes).toBeLessThan(recorded.baselineReplyBytes)
     const menu = await call('describe_design_apis', {
       query: 'element.deleteElements'
@@ -278,6 +325,7 @@ it('delivers selected batch usage independent of unrelated inventory and execute
       (entry: { operation: string }) =>
         entry.operation === 'element.deleteElements'
     )
+
     expect(selected.usage).toEqual({
       tool: 'describe_design_apis',
       arguments: query
@@ -286,11 +334,14 @@ it('delivers selected batch usage independent of unrelated inventory and execute
       api.definition.refresh.tool,
       api.definition.refresh.arguments
     )
+
     expect(again.apis[0].usageGuide).toEqual(api.usageGuide)
     expect(dispatched).toEqual([])
     const invocation = api.invocationExample.invocation
+
     expect(invocation.tool).toBe('execute_design_batch')
     const ids = invocation.arguments.operations[0].arguments.elementIds
+
     core.createElementsInParent(
       ids.map((id: string) => ({ id, type: 'rect', width: 20, height: 20 })),
       'workspace'
@@ -300,6 +351,7 @@ it('delivers selected batch usage independent of unrelated inventory and execute
       ...invocation.arguments,
       inspection: 'defer'
     })
+
     expect(result.toolOutcome.status, JSON.stringify(result)).toBe('success')
     expect(operationInputIssue(result, api.usageGuide.results)).toBeUndefined()
     expect(
@@ -334,6 +386,7 @@ it('delivers selected batch usage independent of unrelated inventory and execute
         actionName
       ).toBeDefined()
     }
+
     expect(result.actionResults[0].result.value).toEqual({ count: ids.length })
     expect(result.actionResults[0].result.modelResult).toBeUndefined()
     expect(
@@ -342,23 +395,35 @@ it('delivers selected batch usage independent of unrelated inventory and execute
     // The saved model reply lacked complete partial/recovery result declarations.
     // The same-source unrelated-catalog comparison above bounds acquisition growth.
     expect(dispatched).toEqual(['api_element_deleteElements'])
-    for (const id of ids) expect(core.getElementMetadata(id)).toBeUndefined()
+    for (const id of ids) {
+      expect(core.getElementMetadata(id)).toBeUndefined()
+    }
+
     const removed = await core.save()
+
     factory.undo()
     expect((await core.save()).sceneTree).toEqual(saved.sceneTree)
     factory.redo()
     expect((await core.save()).sceneTree).toEqual(removed.sceneTree)
     core.load(saved)
-    for (const id of ids) expect(core.getElementMetadata(id)).toBeDefined()
+    for (const id of ids) {
+      expect(core.getElementMetadata(id)).toBeDefined()
+    }
+
     core.load(removed)
-    for (const id of ids) expect(core.getElementMetadata(id)).toBeUndefined()
+    for (const id of ids) {
+      expect(core.getElementMetadata(id)).toBeUndefined()
+    }
+
     const invalid = await call(invocation.tool, {
       operations: [
         { name: 'api_element_deleteElements', arguments: { elementIds: 5 } }
       ]
     })
+
     expect(invalid.toolOutcome.status).not.toBe('success')
     const cancelled = new AbortController()
+
     cancelled.abort()
     await expect(
       call(invocation.tool, invocation.arguments, cancelled.signal)
@@ -367,6 +432,7 @@ it('delivers selected batch usage independent of unrelated inventory and execute
     // Saved target-only invocation uses the same batch binding contract.
     const savedInput = recorded.calls[3].input
     const missing = await call('execute_design_batch', savedInput)
+
     expect(missing.toolOutcome.status).toBe('failed')
     expect(dispatched).toHaveLength(1)
     boundIds = core.createElementsInParent(
@@ -374,6 +440,7 @@ it('delivers selected batch usage independent of unrelated inventory and execute
       'workspace'
     )
     const targetResult = await call('execute_design_batch', savedInput)
+
     expect(targetResult.toolOutcome.status, JSON.stringify(targetResult)).toBe(
       'success'
     )
@@ -390,15 +457,18 @@ it('delivers selected batch usage independent of unrelated inventory and execute
       ...invocation.arguments.operations[0],
       arguments: { elementIds: [id] }
     }))
+
     stopAfterFirst = true
     const partial = await call('execute_design_batch', {
       operations: pendingOperations,
       inspection: 'defer'
     })
+
     expect(partial.toolOutcome.status).not.toBe('success')
     expect(partial.recovery).toContain('do not replay acknowledged mutations')
     expect(operationInputIssue(partial, api.usageGuide.results)).toBeUndefined()
     const acknowledged = partial.executionResult.actionResults
+
     expect(
       operationInputIssue(
         {
@@ -424,6 +494,7 @@ it('delivers selected batch usage independent of unrelated inventory and execute
       operations: pendingOperations.slice(acknowledged.length),
       inspection: 'defer'
     })
+
     expect(resumed.toolOutcome.status, JSON.stringify(resumed)).toBe('success')
     expect(dispatched.length - beforeRetry).toBe(1)
     expect(core.getElementMetadata(pendingIds[1])).toBeUndefined()
@@ -440,9 +511,12 @@ it('delivers selected batch usage independent of unrelated inventory and execute
         }
       )
     )
+
     expect(multiple.apis).toHaveLength(2)
-    for (const selected of multiple.apis)
+    for (const selected of multiple.apis) {
       expect(selected.usageGuide.operationParameters).toBeDefined()
+    }
+
     // Independent full schema remains available through the existing paged read.
     const full = JSON.parse(
       await readCompleteInformation(
@@ -451,6 +525,7 @@ it('delivers selected batch usage independent of unrelated inventory and execute
         { operations: query.operations, view: 'full' }
       )
     )
+
     expect(full.apis[0].inputSchema).toBeDefined()
     // A native recipe dependency keeps canonical schemas, while its usage
     // describes the external envelope even when response=full is requested.
@@ -469,6 +544,7 @@ it('delivers selected batch usage independent of unrelated inventory and execute
       ...nativeUsage.execution.arguments,
       input: { arguments: { elementIds: [] }, inspection: 'defer' }
     }
+
     expect(
       operationInputIssue(nativeInput, nativeUsage.usageGuide.parameters)
     ).toBeUndefined()
@@ -480,6 +556,7 @@ it('delivers selected batch usage independent of unrelated inventory and execute
         })
       ).text
     )
+
     expect(noChange.execution.value.actionResults[0].result).toMatchObject({
       status: 'no-change',
       value: { count: 0 }
@@ -505,6 +582,7 @@ it('delivers selected batch usage independent of unrelated inventory and execute
         )
       }
     }
+
     expect(
       operationInputIssue(nativePartial, nativeUsage.usageGuide.results)
     ).toBeUndefined()
@@ -522,17 +600,20 @@ it('delivers selected batch usage independent of unrelated inventory and execute
       }
     ]) {
       const candidate = structuredClone(nativePartial)
+
       candidate.execution.value.executionResult.actionResults = [invalid]
       expect(
         operationInputIssue(candidate, nativeUsage.usageGuide.results)
       ).toBeDefined()
     }
+
     const fullResult = await call(invocation.tool, {
       ...invocation.arguments,
       operations: [{ name: api.name, arguments: { elementIds: [] } }],
       inspection: 'defer',
       response: 'full'
     })
+
     expect(fullResult.actionResults[0].result.value).toEqual({ count: 0 })
     expect(
       operationInputIssue(fullResult, api.usageGuide.results)
@@ -546,6 +627,7 @@ it('delivers selected batch usage independent of unrelated inventory and execute
       },
       inspection: 'defer'
     })
+
     expect(
       historical.actionResults[0].result.receipt.value.removed.map(
         (item: { elementId: string }) => item.elementId
@@ -561,10 +643,12 @@ it('delivers selected batch usage independent of unrelated inventory and execute
         { names: nativeQuery.names, view: 'full' }
       )
     ).tools[0]
+
     expect(dependency.resultScope).toBe('internal-composition')
     expect(dependency.delivery.outputSchema).toBeDefined()
     expect(operationInputIssue(noChange, dependency.outputSchema)).toBeDefined()
     const field = await call('describe_design_apis', api.fieldQuery.arguments)
+
     expect(field.toolOutcome.status).toBe('success')
     for (const selection of [
       { names: [api.name], view: 'usage' },
@@ -577,11 +661,13 @@ it('delivers selected batch usage independent of unrelated inventory and execute
           selection
         )
       )
+
       expect(selected.apis, JSON.stringify(selected)).toBeDefined()
       expect(selected.apis[0].usageGuide.results).toEqual(
         api.usageGuide.results
       )
     }
+
     const editId = core.createElementsInParent(
       [{ type: 'rect', width: 20, height: 20 }],
       'workspace'
@@ -606,6 +692,7 @@ it('delivers selected batch usage independent of unrelated inventory and execute
       inspection: 'immediate',
       response: 'full'
     })
+
     expect(edited.toolOutcome.status, JSON.stringify(edited)).toBe('success')
     expect(
       operationInputIssue(edited, editGuide.usageGuide.results)
@@ -613,6 +700,7 @@ it('delivers selected batch usage independent of unrelated inventory and execute
     const tails = edited.actionResults.filter(
       (entry: { actionName: string }) => entry.actionName !== editGuide.name
     )
+
     expect(
       tails.map((entry: { actionName: string }) => entry.actionName)
     ).toContain('review_design')
@@ -632,6 +720,7 @@ it('delivers selected batch usage independent of unrelated inventory and execute
         )
       ).toBeDefined()
     }
+
     process.stdout.write(
       JSON.stringify({
         selectedBatchUsage: {
@@ -643,10 +732,15 @@ it('delivers selected batch usage independent of unrelated inventory and execute
       }) + '\n'
     )
   } finally {
-    for (const host of hosts) await host.dispose()
+    for (const host of hosts) {
+      await host.dispose()
+    }
+
     queries.dispose()
     reviewer.dispose()
-    if (!hadWindow) vi.unstubAllGlobals()
+    if (!hadWindow) {
+      vi.unstubAllGlobals()
+    }
   }
 })
 
@@ -698,6 +792,7 @@ it.each(
         propertyNames: { enum: ['count'] }
       }
     }
+
     variants['canonical-metadata-intersection'] = {
       type: 'object',
       properties: { toolOutcome: { type: 'object' } },
@@ -779,11 +874,14 @@ it.each(
       },
       store: {
         read: async () => undefined,
+
         list: async () => [],
+
         write: async () => {
           throw new Error('No recipe write')
         }
       },
+
       createGroups: () => {
         operations = createLocalOperationTools(
           [
@@ -793,7 +891,11 @@ it.each(
               inputSchema: {}
             }
           ],
-          { modelActions: (v) => v, resolveBatch: (v) => v },
+          {
+            modelActions: (v) => v,
+
+            resolveBatch: (v) => v
+          },
           async () => {
             throw new Error('No browser mutation')
           },
@@ -801,6 +903,7 @@ it.each(
             getNativeTools: () => host.definitions()
           }
         )
+
         return [
           {
             name: 'design_operations',
@@ -812,9 +915,10 @@ it.each(
             description: 'Registered view owner',
             owner: {
               definitions: [source],
+
               call: async () => {
                 calls++
-                if (view === 'interrupted')
+                if (view === 'interrupted') {
                   return JSON.stringify({
                     available: false,
                     recoverable: true,
@@ -827,7 +931,12 @@ it.each(
                       ]
                     }
                   })
-                if (shape.startsWith('canonical')) return JSON.stringify(view)
+                }
+
+                if (shape.startsWith('canonical')) {
+                  return JSON.stringify(view)
+                }
+
                 return JSON.stringify({
                   ids: ['a', 'b', 'c'],
                   payload: { view }
@@ -842,6 +951,7 @@ it.each(
       registeredInvocation,
       'registeredToolInvocationSchemas'
     )
+
     try {
       const query = {
         names: ['fixture.retained_source'],
@@ -850,6 +960,7 @@ it.each(
           ? { inputScope: { operation: 'draft', nodeTypes: ['pattern'] } }
           : {})
       }
+
       const read = async (input: unknown) =>
         (
           await host.invoke({
@@ -857,28 +968,37 @@ it.each(
             input
           })
         ).text
+
       const discovered = JSON.parse(await readCompleteInformation(read, query))
+
       expect(discovered.tools, JSON.stringify(discovered)).toBeDefined()
       expect(wrapper).toHaveBeenCalledTimes(exposure === 'registry' ? 1 : 0)
       const entry = discovered.tools[0]
       const invocation = entry.invocationExample.invocation
+
       expect(invocation).toBeDefined()
       expect(
         operationInputIssue(invocation.arguments, entry.usageGuide.parameters)
       ).toBeUndefined()
+
       const invoke = () =>
         host.invoke({
           name: `${entry.execution.namespace}.${invocation.tool}`,
           input: invocation.arguments
         })
+
       const reply = await invoke()
+
       expect(reply.success, reply.text).toBe(true)
       const success = JSON.parse(reply.text)
+
       expect(
         operationInputIssue(success, entry.usageGuide.results)
       ).toBeUndefined()
+
       const valueOf = (result: typeof success) =>
         exposure === 'registry' ? result.execution.value : result
+
       expect(valueOf(success).count).toBe(3)
       if (exposure === 'registry') {
         const savedFailure = {
@@ -886,10 +1006,12 @@ it.each(
           storage: { status: 'unsaved', issue: 'Injected storage outage' },
           toolOutcome: { status: 'partial', settlement: 'completed' }
         }
+
         expect(
           operationInputIssue(savedFailure, entry.usageGuide.results)
         ).toBeUndefined()
         const { value: _value, ...missing } = success.execution
+
         expect(
           operationInputIssue(
             {
@@ -916,10 +1038,12 @@ it.each(
           entry.usageGuide.results
         )
       ).toBeDefined()
+
       const modifiedResult = (value: unknown) =>
         exposure === 'registry'
           ? { ...success, execution: { ...success.execution, value } }
           : value
+
       for (const invalid of [
         { ...valueOf(success), count: -1 },
         { ...valueOf(success), nested: { id: 'child', unrelated: true } },
@@ -927,10 +1051,12 @@ it.each(
           ...valueOf(success),
           toolOutcome: { status: 'invented', settlement: 'completed' }
         }
-      ])
+      ]) {
         expect(
           operationInputIssue(modifiedResult(invalid), entry.usageGuide.results)
         ).toBeDefined()
+      }
+
       expect(success.ids).toBeUndefined()
       expect(success.payload).toBeUndefined()
       const outerFailure = await host.invoke({
@@ -940,6 +1066,7 @@ it.each(
             ? { ...invocation.arguments, revision: 0 }
             : { unknown: true }
       })
+
       expect(outerFailure.success).toBe(false)
       expect(JSON.parse(outerFailure.text).toolOutcome.settlement).toBe(
         'not-started'
@@ -953,11 +1080,14 @@ it.each(
       expect(calls).toBe(1)
       if (shape.startsWith('canonical')) {
         expect(calls).toBe(1)
+
         return
       }
+
       for (view of [undefined, { count: -1 }]) {
         const failed = await invoke()
         const result = JSON.parse(failed.text)
+
         expect(failed.success).toBe(false)
         expect(valueOf(result)).toMatchObject({
           code: 'TOOL_DELIVERY_INVALID',
@@ -968,14 +1098,17 @@ it.each(
           operationInputIssue(result, entry.usageGuide.results)
         ).toBeUndefined()
       }
+
       expect(calls).toBe(3)
       const refreshed = JSON.parse(
         await readCompleteInformation(read, entry.definition.refresh.arguments)
       ).tools[0]
+
       expect(refreshed.usageGuide).toEqual(entry.usageGuide)
       expect(calls).toBe(3)
       view = 'interrupted'
       const partial = JSON.parse((await invoke()).text)
+
       expect(valueOf(partial).code).toBe('OWNER_INTERRUPTED')
       expect(
         valueOf(partial).executionResult.actionResults[0].result.ids
@@ -991,6 +1124,7 @@ it.each(
             : { unknown: true }
       })
       const rejected = JSON.parse(invalid.text)
+
       expect(invalid.success).toBe(false)
       if (exposure === 'registry') {
         expect(rejected.execution).toMatchObject({
@@ -1008,11 +1142,13 @@ it.each(
         expect(
           operationInputIssue(rejected, entry.usageGuide.results)
         ).toBeUndefined()
-      } else
+      } else {
         expect(rejected).toMatchObject({
           stage: 'admission',
           settlement: 'not-started'
         })
+      }
+
       await expect(
         host.invoke({
           name: `${entry.execution.namespace}.${invocation.tool}`,
@@ -1033,12 +1169,14 @@ it.each(
             })
           ).text
         )
+
         expect(stale.execution.status).toBe('failed')
         expect(stale.execution.settlement).toBe('not-started')
         expect(
           operationInputIssue(stale, entry.usageGuide.results)
         ).toBeUndefined()
       }
+
       expect(calls).toBe(4)
     } finally {
       wrapper.mockRestore()

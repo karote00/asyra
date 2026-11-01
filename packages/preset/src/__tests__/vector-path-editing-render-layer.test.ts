@@ -183,6 +183,7 @@ describe('vector path editing handle visibility', () => {
     const visible = getVisibleHandleAnchorIds(subpaths, [
       { pointId: 'a', index: 0 }
     ])
+
     expect(visible).toEqual(new Set(['a', 'b']))
   })
 
@@ -202,6 +203,7 @@ describe('vector path editing handle visibility', () => {
     const visible = getVisibleHandleAnchorIds(subpaths, [
       { pointId: 'a', index: 0 }
     ])
+
     expect(visible).toEqual(new Set(['a', 'b', 'c']))
   })
 
@@ -229,6 +231,7 @@ describe('vector path editing handle visibility', () => {
     const visible = getVisibleHandleAnchorIds(subpaths, [
       { pointId: 'c', index: 2 }
     ])
+
     expect(visible).toEqual(new Set(['c', 'd', 'e']))
   })
 
@@ -251,6 +254,7 @@ describe('vector path editing handle visibility', () => {
       { pointId: 'b', index: 1 },
       { pointId: 'd', index: 3 }
     ])
+
     expect(visible).toEqual(new Set(['a', 'b', 'c', 'd', 'e']))
   })
 })

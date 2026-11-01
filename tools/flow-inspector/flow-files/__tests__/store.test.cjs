@@ -5,16 +5,21 @@ const test = require('node:test'),
   path = require('node:path')
 const { document, directory } = require('./fixtures.cjs')
 const { openProject } = require('../store.cjs')
+
 function setup(t) {
   const root = directory(t),
     flow = document()
+
   fs.writeFileSync(path.join(root, 'checkout.flow.json'), JSON.stringify(flow))
+
   return { root, store: openProject(root) }
 }
+
 test('current manual acceptance survives restart and notes never change completion', (t) => {
   const { root, store } = setup(t)
   let current = store.snapshot()
   const binding = current.evaluation.flows[0].nodes[0].binding
+
   store.update('checkout', {
     expectedRevision: 0,
     kind: 'observation',
@@ -50,6 +55,7 @@ test('stale and simultaneous writes reject, repeated current updates are idempot
     kind: 'note',
     value: { id: 'note', nodeId: 'review', actor: 'owner', text: 'First' }
   }
+
   store.update('checkout', request)
   assert.equal(store.update('checkout', request).revision, 1)
   assert.throws(
@@ -75,6 +81,7 @@ test('stale and simultaneous writes reject, repeated current updates are idempot
 test('invalid, deleted and replaced documents invalidate previous green snapshots', (t) => {
   const { root, store } = setup(t)
   const file = path.join(root, 'checkout.flow.json')
+
   store.snapshot()
   fs.writeFileSync(file, '{')
   assert.throws(() => store.snapshot(), /checkout.flow.json/)
@@ -87,11 +94,13 @@ test('unchanged snapshot consumers reuse admission and evaluation, changed files
   const { root } = setup(t)
   const counts = { admit: 0, evaluate: 0 }
   const store = openProject(root, { onWork: (kind) => counts[kind]++ })
+
   store.snapshot()
   store.snapshot()
   store.snapshot()
   assert.deepEqual(counts, { admit: 1, evaluate: 1 })
   const doc = document()
+
   doc.definition.title = 'Updated'
   fs.writeFileSync(path.join(root, 'checkout.flow.json'), JSON.stringify(doc))
   store.snapshot()
@@ -101,6 +110,7 @@ test('unchanged snapshot consumers reuse admission and evaluation, changed files
 test('incomplete producer results cannot erase failure and discovery correction needs complete exact coverage', (t) => {
   const { root, store } = setup(t)
   const doc = document()
+
   doc.definition.nodes[0].criteria[0].kind = 'automated'
   fs.writeFileSync(path.join(root, 'checkout.flow.json'), JSON.stringify(doc))
   const binding = store.snapshot().evaluation.flows[0].nodes[0].binding
@@ -116,6 +126,7 @@ test('incomplete producer results cannot erase failure and discovery correction 
     executionId: 'run',
     caseId: 'case'
   }
+
   store.update('checkout', {
     expectedRevision: 0,
     kind: 'observation',
@@ -169,6 +180,7 @@ test('replacing current evidence prunes only unreferenced tool-owned artifacts',
     { createHash } = require('node:crypto')
   const source = path.join(root, 'project-evidence.txt'),
     bytes = Buffer.from('current evidence')
+
   fs.writeFileSync(source, bytes)
   const retained = artifacts.retain(root, root, [
     {
@@ -192,6 +204,7 @@ test('replacing current evidence prunes only unreferenced tool-owned artifacts',
       { name: 'Original', path: 'project-evidence.txt', ownership: 'project' }
     ]
   }
+
   store.update('checkout', { expectedRevision: 0, kind: 'observation', value })
   assert.equal(
     store.snapshot().evaluation.flows[0].nodes[0].context.observations[0]

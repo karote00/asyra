@@ -32,6 +32,7 @@ export interface CreateAiRuntimeAuditInput {
 
 export class AiAuditError extends Error {
   readonly code = 'AI_AUDIT_INVALID_INPUT' as const
+
   readonly stage = 'audit' as const
 
   constructor() {
@@ -81,8 +82,10 @@ export const createAiRuntimeAudit = (
   if (input.batchId !== undefined) {
     audit.batchId = input.batchId
   }
+
   if (input.explanation !== undefined) {
     const explanation = redactAiValue(input.explanation, redactionOptions)
+
     audit.explanation =
       typeof explanation === 'string' ? explanation : AI_REDACTED_VALUE
   }

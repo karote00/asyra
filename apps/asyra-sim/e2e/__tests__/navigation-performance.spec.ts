@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { readHistoryDepth } from '../history-depth'
 
-for (const route of ['navigation', 'playback'] as const)
+for (const route of ['navigation', 'playback'] as const) {
   test(`profiles sustained ${route} through the ordinary workbench without model or history changes`, async ({
     page
   }, info) => {
@@ -10,7 +10,11 @@ for (const route of ['navigation', 'playback'] as const)
     const initialDepth = await readHistoryDepth(page)
     const canvas = page.getByTestId('workcell-canvas').locator('canvas')
     const box = await canvas.boundingBox()
-    if (!box) throw new Error('Missing viewport')
+
+    if (!box) {
+      throw new Error('Missing viewport')
+    }
+
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
     if (route === 'playback') {
       await page
@@ -18,13 +22,18 @@ for (const route of ['navigation', 'playback'] as const)
         .click()
       await page.getByRole('tab', { name: 'Preview', exact: true }).click()
     }
+
     const session = await page.context().newCDPSession(page)
+
     await session.send('Profiler.enable')
     await session.send('Profiler.start')
     const start = Date.now()
+
     try {
       if (route === 'navigation') {
-        for (let i = 0; i < 60; i++) await page.mouse.wheel(0, i < 30 ? 3 : -3)
+        for (let i = 0; i < 60; i++) {
+          await page.mouse.wheel(0, i < 30 ? 3 : -3)
+        }
       } else {
         await page.getByRole('button', { name: 'Play trajectory' }).click()
         await expect
@@ -34,6 +43,7 @@ for (const route of ['navigation', 'playback'] as const)
           .toBeGreaterThan(1.5)
         await page.getByRole('button', { name: 'Pause trajectory' }).click()
       }
+
       await expect.poll(() => readHistoryDepth(page)).toBe(initialDepth)
       await expect(page.getByRole('treeitem')).toHaveCount(11)
       const { profile } = await session.send('Profiler.stop')
@@ -41,10 +51,16 @@ for (const route of ['navigation', 'playback'] as const)
         profile.nodes.map((node) => [node.id, node.callFrame])
       )
       const times = new Map<string, number>()
+
       profile.samples?.forEach((id, index) => {
         const frame = nodes.get(id)
-        if (!frame || !frame.url.includes('/src/')) return
+
+        if (!frame || !frame.url.includes('/src/')) {
+          return
+        }
+
         const key = `${frame.functionName || '(anonymous)'} ${frame.url.split('?')[0]}`
+
         times.set(
           key,
           (times.get(key) ?? 0) + (profile.timeDeltas?.[index] ?? 0) / 1000
@@ -74,3 +90,4 @@ for (const route of ['navigation', 'playback'] as const)
       await session.detach()
     }
   })
+}

@@ -42,6 +42,7 @@ export const vectorPointsPropertyComponentDefinition =
     key: 'points',
     childType: PropertyTypes.VECTOR_POINT,
     childIdType: VECTOR_TOPOLOGY_POINT_ID_TYPE,
+
     toChildData: (item) => {
       const kind = toPointKind(item.kind)
 
@@ -63,6 +64,7 @@ export const vectorPointsPropertyComponentDefinition =
         handleMode: toHandleMode(item.handleMode)
       }
     },
+
     toValue: (child, childId) => {
       const kind = toPointKind(child.get('kind'))
       const x = toNumberValue(child.get('x'))

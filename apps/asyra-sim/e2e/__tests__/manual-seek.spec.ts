@@ -42,6 +42,7 @@ for (const kind of ['clearance', 'collision']) {
     const feedback = page.getByTestId('playback-feedback')
     const history = await page.getByTestId('history-depth').textContent()
     const interactions: unknown[] = []
+
     await slider.evaluate((element) => {
       const input = element as HTMLInputElement
       const types = [
@@ -52,8 +53,9 @@ for (const kind of ['clearance', 'collision']) {
         'change'
       ]
       const events: unknown[] = []
+
       const listener = (event: Event) => {
-        if (events.length < 512)
+        if (events.length < 512) {
           events.push({
             type: event.type,
             value: input.value,
@@ -62,8 +64,13 @@ for (const kind of ['clearance', 'collision']) {
               event instanceof PointerEvent ? event.pointerType : null,
             clientX: 'clientX' in event ? event.clientX : null
           })
+        }
       }
-      for (const type of types) input.addEventListener(type, listener)
+
+      for (const type of types) {
+        input.addEventListener(type, listener)
+      }
+
       Object.assign(window, { manualSeekInputEvents: events })
     })
 
@@ -72,12 +79,18 @@ for (const kind of ['clearance', 'collision']) {
         ? [3.872, 3.92, 3.968, 4.016, 4.064, 3.92]
         : [3.52, 3.568, 3.616, 3.664, 3.712, 3.568]
     const sampled: number[] = []
+
     const drag = async (target: number) => {
       const bounds = await slider.boundingBox()
-      if (!bounds) throw new Error('Missing manual time slider')
+
+      if (!bounds) {
+        throw new Error('Missing manual time slider')
+      }
+
       const rangeMin = Number(await slider.getAttribute('min'))
       const rangeMax = Number(await slider.getAttribute('max'))
       const rangeStep = Number(await slider.getAttribute('step'))
+
       expect(rangeMax).toBeGreaterThan(rangeMin)
       const thumbWidth = await slider.evaluate(
         (element) =>
@@ -86,11 +99,13 @@ for (const kind of ['clearance', 'collision']) {
           ) || 0
       )
       const previous = Number(await slider.inputValue())
+
       const x = (time: number) =>
         bounds.x +
         bounds.height / 2 +
         ((bounds.width - bounds.height) * (time - rangeMin)) /
           (rangeMax - rangeMin)
+
       const previousX = x(previous)
       const targetX = x(target)
       const y = bounds.y + bounds.height / 2
@@ -101,6 +116,7 @@ for (const kind of ['clearance', 'collision']) {
       await page.mouse.up()
 
       const actual = Number(await slider.inputValue())
+
       interactions.push({
         min: rangeMin,
         max: rangeMax,
@@ -124,6 +140,7 @@ for (const kind of ['clearance', 'collision']) {
             const notice = document.querySelector(
               '[data-testid="playback-feedback"]'
             )
+
             return notice
               ? {
                   kind: notice.getAttribute('data-kind'),
@@ -150,13 +167,16 @@ for (const kind of ['clearance', 'collision']) {
         pending: string | null
         text: string
       }[] = []
-      if (!document.querySelector('[data-testid="playback-feedback"]'))
+
+      if (!document.querySelector('[data-testid="playback-feedback"]')) {
         throw new Error('Missing playback notice')
+      }
 
       const observer = new MutationObserver((mutations) => {
         const current = document.querySelector<HTMLElement>(
           '[data-testid="playback-feedback"]'
         )
+
         if (
           !current ||
           !mutations.some(
@@ -165,16 +185,21 @@ for (const kind of ['clearance', 'collision']) {
               current.contains(target) ||
               target.contains(current)
           )
-        )
+        ) {
           return
-        if (frames.length >= 512)
+        }
+
+        if (frames.length >= 512) {
           throw new Error('Manual feedback trace exceeded its bound')
+        }
 
         const notice = document.querySelector(
           '[data-testid="playback-feedback"]'
         )
 
-        if (!notice) return
+        if (!notice) {
+          return
+        }
 
         frames.push({
           kind: current.getAttribute('data-kind'),
@@ -185,6 +210,7 @@ for (const kind of ['clearance', 'collision']) {
           text: current.textContent ?? ''
         })
       })
+
       observer.observe(document.body, {
         subtree: true,
         childList: true,
@@ -200,9 +226,14 @@ for (const kind of ['clearance', 'collision']) {
       const notice = document.querySelector<HTMLElement>(
         '[data-testid="playback-feedback"]'
       )
-      if (!notice) throw new Error('Missing playback notice')
+
+      if (!notice) {
+        throw new Error('Missing playback notice')
+      }
+
       const originalKind = notice.getAttribute('data-kind')
       const originalMatches = notice.getAttribute('data-pose-matches')
+
       notice.setAttribute('data-kind', 'checking')
       notice.setAttribute('data-pose-matches', 'false')
       await new Promise<void>((resolve) =>
@@ -223,17 +254,29 @@ for (const kind of ['clearance', 'collision']) {
       const invalid = trace.frames.some(
         (frame) => frame.kind !== expectedKind || frame.matches !== 'true'
       )
+
       trace.frames.length = 0
-      if (originalKind === null) notice.removeAttribute('data-kind')
-      else notice.setAttribute('data-kind', originalKind)
-      if (originalMatches === null) notice.removeAttribute('data-pose-matches')
-      else notice.setAttribute('data-pose-matches', originalMatches)
+      if (originalKind === null) {
+        notice.removeAttribute('data-kind')
+      } else {
+        notice.setAttribute('data-kind', originalKind)
+      }
+
+      if (originalMatches === null) {
+        notice.removeAttribute('data-pose-matches')
+      } else {
+        notice.setAttribute('data-pose-matches', originalMatches)
+      }
+
       return { observed, invalid }
     }, kind)
+
     expect(negativeControl.observed).toBe(true)
     expect(negativeControl.invalid).toBe(true)
 
-    for (const target of targets.slice(1)) await drag(target)
+    for (const target of targets.slice(1)) {
+      await drag(target)
+    }
 
     await page.screenshot({ path: info.outputPath(`${kind}-cold-seek.png`) })
     const records =
@@ -248,6 +291,7 @@ for (const kind of ['clearance', 'collision']) {
       await slider.fill(String(time))
       await expectLiveCheck(feedback, kind, time, info.timeout)
     }
+
     await expect(
       page
         .getByTestId('live-observations')
@@ -267,9 +311,12 @@ for (const kind of ['clearance', 'collision']) {
         }[]
         observer: MutationObserver
       }
+
       trace.observer.disconnect()
+
       return trace.frames
     })
+
     expect(frames.length).toBeGreaterThan(0)
     for (const frame of frames) {
       if (frame.matches === 'true' && frame.kind === kind) {
@@ -282,15 +329,21 @@ for (const kind of ['clearance', 'collision']) {
           expect(frame.complete).toBe('false')
           expect(frame.text).toContain('Incomplete coverage')
         }
-        if (frame.matches !== 'true')
+
+        if (frame.matches !== 'true') {
           expect(frame.text).toContain('Current pose is not yet checked')
+        }
       }
-      if (frame.pending !== null)
+
+      if (frame.pending !== null) {
         expect(Number.isFinite(Number(frame.pending))).toBe(true)
+      }
     }
+
     const inputEvents = await page.evaluate(
       () => Reflect.get(window, 'manualSeekInputEvents') as unknown[]
     )
+
     interactions.push(...inputEvents)
 
     await info.attach('manual-seek-trace', {
@@ -318,6 +371,7 @@ for (const kind of ['clearance', 'collision']) {
     ).toBe(true)
     expect(new Set(sampled).size).toBeGreaterThan(1)
     const heights = frames.map((frame) => frame.height)
+
     expect(
       Math.max(...heights) - Math.min(...heights),
       `Feedback card heights: ${heights.join(', ')}`

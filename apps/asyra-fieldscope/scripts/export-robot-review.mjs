@@ -10,6 +10,7 @@ const server = await createServer({
   optimizeDeps: { noDiscovery: true, include: [] },
   server: { middlewareMode: true }
 })
+
 try {
   const { createRobotModel, createDockModel } = await server.ssrLoadModule(
     '/src/domain/robot-model.ts'
@@ -18,8 +19,10 @@ try {
     '/src/domain/robot-configuration.ts'
   )
   const directory = new URL('../.artifacts/', import.meta.url)
+
   await mkdir(directory, { recursive: true })
   const parts = [...createRobotModel(DEFAULT_ROBOT), ...createDockModel()]
+
   await writeFile(
     new URL('robot-model.json', directory),
     JSON.stringify({ definition: DEFAULT_ROBOT, parts })

@@ -42,6 +42,7 @@ export const resolveSyntheticVectorHandlePosition = (
   const dx = neighbor.x - anchor.x
   const dy = neighbor.y - anchor.y
   const segmentLength = Math.hypot(dx, dy)
+
   if (segmentLength <= SYNTHETIC_HANDLE_POINT_EPSILON) {
     return null
   }
@@ -50,11 +51,13 @@ export const resolveSyntheticVectorHandlePosition = (
     ? getPointDistance(anchor, mirroredHandle)
     : segmentLength / 3
   const handleLength = clampSyntheticHandleLength(mirroredLength, segmentLength)
+
   if (handleLength <= SYNTHETIC_HANDLE_POINT_EPSILON) {
     return null
   }
 
   const scale = handleLength / segmentLength
+
   return {
     x: anchor.x + dx * scale,
     y: anchor.y + dy * scale

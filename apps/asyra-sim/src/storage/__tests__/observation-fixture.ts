@@ -22,6 +22,7 @@ export function observationProject(
     methods: [OFFICIAL_CLEARANCE_METHOD],
     acknowledgedWarningCodes: []
   })
+
   return {
     document: {
       version: '1.0.0',

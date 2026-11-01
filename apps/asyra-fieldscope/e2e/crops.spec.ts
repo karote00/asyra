@@ -19,6 +19,7 @@ for (const [species, rootX, height, stage] of [
     page
   }, testInfo) => {
     const errors: string[] = []
+
     page.on('pageerror', (error) => errors.push(error.message))
     await page.goto('/')
     await expect(page.getByText('空間模型已就緒')).toBeVisible()
@@ -30,9 +31,11 @@ for (const [species, rootX, height, stage] of [
       species === 'cucumber' ? '1914 小胡瓜' : '玉女小蕃茄',
       { exact: true }
     )
+
     await expect(layer).toBeChecked()
     const canvas = page.locator('canvas')
     const visible = await canvas.screenshot()
+
     await layer.uncheck()
     expect((await canvas.screenshot()).equals(visible)).toBe(false)
     await layer.check()
@@ -46,7 +49,11 @@ for (const [species, rootX, height, stage] of [
       .toBeGreaterThan(1300)
     await page.getByRole('button', { name: '走道內部', exact: true }).click()
     const bounds = await page.getByTestId('scene').boundingBox()
-    if (!bounds) throw new Error('Missing viewport')
+
+    if (!bounds) {
+      throw new Error('Missing viewport')
+    }
+
     const camera = cameraPreset('inside')
     const back = new Vector3(...camera.position)
       .sub(new Vector3(...camera.target))
@@ -65,6 +72,7 @@ for (const [species, rootX, height, stage] of [
       bounds.height
     const x = bounds.x + bounds.width / 2,
       y = bounds.y + bounds.height / 2
+
     await page.mouse.move(x, y)
     await page.keyboard.down('Shift')
     await page.mouse.down()

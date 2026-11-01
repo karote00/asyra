@@ -53,12 +53,14 @@ describe('canonical nonlinear offline geometry profiles', () => {
             )
           )
         )
+
         return {
           min: [0, 1, 2].map((k) => Math.min(...points.map((p) => p[k].low))),
           max: [0, 1, 2].map((k) => Math.max(...points.map((p) => p[k].high)))
         }
       })
       const parent = boxes[0]
+
       return [0, 1, 2, 3, 4, 5, 6, 7].flatMap((corner) => {
         // A small triangle lies strictly inside the parent box but outside both
         // half-interval boxes. This chooses an enclosure regression, not a route.
@@ -79,7 +81,11 @@ describe('canonical nonlinear offline geometry profiles', () => {
             ...gaps,
             ...[0, 1, 2].map((k) => parent.max[k] - parent.min[k])
           ) / 8
-        if (!(radius > 0)) return []
+
+        if (!(radius > 0)) {
+          return []
+        }
+
         const centre = p.map(
           (v, k) => v + (corner & (1 << k) ? -radius : radius)
         )
@@ -88,6 +94,7 @@ describe('canonical nonlinear offline geometry profiles', () => {
           ...centre.map((v, k) => v + (k === 0 ? radius / 4 : 0)),
           ...centre.map((v, k) => v + (k === 2 ? radius / 4 : 0))
         ]
+
         return [{ region, positions }]
       })
     })
@@ -106,8 +113,11 @@ describe('canonical nonlinear offline geometry profiles', () => {
       wireframe: false,
       selectable: false
     })
-    if (descriptor.kind !== 'mesh')
+
+    if (descriptor.kind !== 'mesh') {
       throw new Error('Expected admitted sheet mesh')
+    }
+
     const geometry = new SiteGeometry()
     const scene = geometry.prepareScene(fixture.demand.farm, [
       ...fixture.demand.scene.meshes,
@@ -131,6 +141,7 @@ describe('canonical nonlinear offline geometry profiles', () => {
       scene,
       fixture.demand.configuration
     )
+
     expect(
       demand.freePassage.exclusions.some(
         (e) => e.kind === 'source' && e.region.id === 'queue-original-sheet'
@@ -162,6 +173,7 @@ describe('canonical nonlinear offline geometry profiles', () => {
       maxEnvelopePairs: 2 * groupUpper * groupUpper,
       maxExactPredicates: 30000000
     }
+
     expect(
       Object.values(gateBudget).every((v) => Number.isSafeInteger(v) && v > 0)
     ).toBe(true)
@@ -177,6 +189,7 @@ describe('canonical nonlinear offline geometry profiles', () => {
       demand,
       current
     )
+
     process.stdout.write(
       JSON.stringify({
         stage: 'sheet-queue-preflight',
@@ -245,11 +258,13 @@ describe('canonical nonlinear offline geometry profiles', () => {
           reason: v.proof.reason
         }))
     })
+
     process.stdout.write(
       '{"stage":"sheet-queue-result","result":' + summary + '}\n'
     )
     expect(pair, summary).toBeDefined()
     const complete = nonlinearRequired(pair)
+
     expect(['strictBounds', 'exactSeparated'], summary).toContain(complete.kind)
     expect(complete.proofs, summary).toHaveLength(2)
     expect(
@@ -270,6 +285,7 @@ describe('canonical nonlinear offline geometry profiles', () => {
       result.work.sheetTriangleIntervals + result.work.sheetTriangleUnvisited
     )
     const c = result.coverage
+
     expect(c.required, summary).toBe(
       c.strictBounds +
         c.exactSeparated +

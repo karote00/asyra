@@ -21,10 +21,13 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
       'measures original segment prefix - %s',
       async (mode) => {
         const snapshot = await representativeSnapshot(0)
-        if (mode === 'median-control')
+
+        if (mode === 'median-control') {
           vi.spyOn(meshIndex, 'refineMeshIndex').mockImplementation(
             (index) => index
           )
+        }
+
         let active = false,
           segment = -1,
           targetStart: number | undefined,
@@ -45,8 +48,10 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             membership: number
           }
         >()
+
         const row = () => {
           let value = rows.get(segment)
+
           if (!value) {
             value = {
               segment,
@@ -62,9 +67,12 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             }
             rows.set(segment, value)
           }
+
           return value
         }
+
         const run = official.runClearanceQueries
+
         vi.spyOn(official, 'runClearanceQueries').mockImplementation(
           (input, descriptor, query, checkpoint, onPair) =>
             run(
@@ -76,7 +84,11 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                   request.b.bodyId === 'obstacle-11'
                 try {
                   const value = query(request, settings, check)
-                  if (active) target = value
+
+                  if (active) {
+                    target = value
+                  }
+
                   return value
                 } finally {
                   active = false
@@ -87,23 +99,33 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             )
         )
         const interpolate = kinematics.interpolateSegment
+
         vi.spyOn(kinematics, 'interpolateSegment').mockImplementation(
           (...args) => {
-            if (active) segment = args[1]
+            if (active) {
+              segment = args[1]
+            }
+
             return interpolate(...args)
           }
         )
         const distance = OriginalMeshQuery.prototype.distance
+
         vi.spyOn(OriginalMeshQuery.prototype, 'distance').mockImplementation(
           function (this: OriginalMeshQuery, ...args) {
-            if (!active) return distance.apply(this, args)
+            if (!active) {
+              return distance.apply(this, args)
+            }
+
             targetStart ??= this.work
             const before = this.work,
               value = row()
+
             try {
               return distance.apply(this, args)
             } finally {
               const work = this.work - before
+
               value.work += work
               value.staticWork += work
               targetEnd = this.work
@@ -111,15 +133,21 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           }
         )
         const lower = OriginalMeshQuery.prototype.lowerOver
+
         vi.spyOn(OriginalMeshQuery.prototype, 'lowerOver').mockImplementation(
           function (this: OriginalMeshQuery, ...args) {
-            if (!active) return lower.apply(this, args)
+            if (!active) {
+              return lower.apply(this, args)
+            }
+
             const before = this.work,
               value = row()
+
             try {
               return lower.apply(this, args)
             } finally {
               const work = this.work - before
+
               value.work += work
               value.intervalWork += work
               targetEnd = this.work
@@ -127,12 +155,16 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           }
         )
         const build = meshIndex.buildMeshIndex
+
         vi.spyOn(meshIndex, 'buildMeshIndex').mockImplementation(
           (geometry, checkpoint, hierarchy, checkExecution) =>
             build(
               geometry,
               () => {
-                if (active) row().medianPrep++
+                if (active) {
+                  row().medianPrep++
+                }
+
                 checkpoint()
               },
               hierarchy,
@@ -140,32 +172,48 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             )
         )
         const refine = meshIndex.refineMeshIndex
+
         vi.spyOn(meshIndex, 'refineMeshIndex').mockImplementation(
           (index, checkpoint) =>
             refine(index, () => {
-              if (active) row().refinePrep++
+              if (active) {
+                row().refinePrep++
+              }
+
               checkpoint()
             })
         )
         const project = projections.projectedBoundsGap
+
         vi.spyOn(projections, 'projectedBoundsGap').mockImplementation(
           (a, ap, b, bp, threshold, checkpoint) =>
             project(a, ap, b, bp, threshold, () => {
-              if (active) row().axes++
+              if (active) {
+                row().axes++
+              }
+
               checkpoint()
             })
         )
         const contains = membership.shapeMembership
+
         vi.spyOn(membership, 'shapeMembership').mockImplementation(
           (point, shape, index, checkpoint) =>
             contains(point, shape, index, () => {
-              if (active) row().membership++
+              if (active) {
+                row().membership++
+              }
+
               checkpoint()
             })
         )
         const evidence = runOriginalPartMethod(snapshot)
+
         expect(evidence.coverage).toBe('partial')
-        if (!target) throw new Error('Missing exact target result')
+        if (!target) {
+          throw new Error('Missing exact target result')
+        }
+
         expect(target.coverage).toBe('partial')
         // Component/sampling isolation is replayed on current geometry queries.
         // The pre-policy prefix is recorded evidence, not silently relabeled as this run.

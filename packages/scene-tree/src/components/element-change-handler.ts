@@ -14,6 +14,7 @@ export default class ElementChangeHandler implements ChangeHandler {
     if (data.key !== 'name' && data.key !== 'visible' && data.key !== 'lock') {
       return
     }
+
     sceneTree.addChange({
       action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_DATA,
       eventName: EventTypes.UPDATE_ELEMENT_DATA,

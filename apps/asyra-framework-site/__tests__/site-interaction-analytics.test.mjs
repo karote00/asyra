@@ -13,10 +13,13 @@ const setup = (html = '', path = '/docs') => {
   const events = []
   const timers = new Map()
   let timerId = 0
+
   window.setTimeout = (fn) => {
     timers.set(++timerId, fn)
+
     return timerId
   }
+
   window.clearTimeout = (id) => timers.delete(id)
   window.gtag = (...args) => events.push(args)
   window.document.addEventListener('click', (event) => event.preventDefault())
@@ -25,17 +28,21 @@ const setup = (html = '', path = '/docs') => {
     caseIds: ['continuous-pointer-undo']
   }
   const tracker = installSiteAnalytics(window, config)
+
   const click = (selector, type = 'click', button = 0) =>
     window.document
       .querySelector(selector)
       .dispatchEvent(
         new window.MouseEvent(type, { bubbles: true, cancelable: true, button })
       )
+
   const flush = () => {
     const pending = [...timers.values()]
+
     timers.clear()
     pending.forEach((fn) => fn())
   }
+
   return { window, events, timers, tracker, config, click, flush }
 }
 
@@ -43,6 +50,7 @@ test('one semantic event per navigation or CTA, with no custom page_view or auto
   const s = setup(
     '<header><a id="nav" href="/atlas?email=private@example.com#secret"><span>Private text</span></a></header><main><a id="cta" data-site-cta href="/docs/start/custom-composition?token=secret">Start</a><a id="outside" href="https://example.org/private">External</a><a id="unknown" href="/private@example.com">Unknown</a></main>'
   )
+
   s.click('#nav span')
   s.click('#cta')
   s.click('#outside')
@@ -79,6 +87,7 @@ test('middle and keyboard clicks count once; right clicks, disabled controls and
       SITE_ACTIONS.atlasSelect.id +
       '">Case</button>'
   )
+
   s.click('#link', 'auxclick', 1)
   s.click('#link', 'click', 0)
   s.click('#link', 'auxclick', 2)
@@ -93,10 +102,12 @@ test('search consumes rendered results once after input settles, flushes on sele
     '<dialog open data-site-search data-site-result-count="2"><input type="search"><div class="search-results"><a href="/atlas">Atlas</a><a href="/docs">Docs</a></div></dialog>'
   )
   const input = s.window.document.querySelector('input')
+
   for (const value of ['p', 'private@example.com']) {
     input.value = value
     input.dispatchEvent(new s.window.Event('input', { bubbles: true }))
   }
+
   assert.equal(s.timers.size, 1)
   assert.equal(s.events.length, 0)
   s.click('.search-results a')
@@ -125,10 +136,12 @@ test('empty searches, closed dialogs, route changes and disposal cancel pending 
     '<dialog open data-site-search data-site-result-count="0"><input type="search"></dialog>'
   )
   const input = s.window.document.querySelector('input')
+
   const change = (value) => {
     input.value = value
     input.dispatchEvent(new s.window.Event('input', { bubbles: true }))
   }
+
   change('missing')
   s.window.document.querySelector('dialog').removeAttribute('open')
   s.flush()
@@ -152,13 +165,16 @@ test('empty searches, closed dialogs, route changes and disposal cancel pending 
 
 test('cleanup and remount keep exactly one active tracker; transport errors never break interactions', () => {
   const s = setup('<a href="/atlas">Atlas</a>')
+
   s.tracker.dispose()
   const second = installSiteAnalytics(s.window, s.config)
+
   s.click('a')
   assert.equal(s.events.length, 1)
   s.window.gtag = () => {
     throw new Error('blocked')
   }
+
   assert.doesNotThrow(() => s.click('a'))
   delete s.window.gtag
   assert.doesNotThrow(() => s.click('a'))
@@ -177,6 +193,7 @@ test('Atlas emits only allowlisted case IDs and action intent, never runtime pay
       '">Other</button>',
     '/atlas'
   )
+
   s.click('#step')
   s.click('#bad')
   assert.deepEqual(s.events, [
@@ -200,6 +217,7 @@ test('copying code records the action without content; ordinary prose copies are
   )
   const selection = s.window.getSelection()
   const range = s.window.document.createRange()
+
   range.selectNodeContents(s.window.document.querySelector('code'))
   selection.addRange(range)
   s.window.document.dispatchEvent(new s.window.Event('copy'))
@@ -216,37 +234,45 @@ test('copying code records the action without content; ordinary prose copies are
 
 test('allowlists are computed once per mount and every listener is removed once', () => {
   const s = setup('<a href="/atlas">Atlas</a>')
+
   s.tracker.dispose()
   let reads = 0
+
   const counted = (values) => ({
     *[Symbol.iterator]() {
       reads += 1
       yield* values
     }
   })
+
   const added = []
   const removed = []
   const document = s.window.document
   const add = document.addEventListener.bind(document)
   const remove = document.removeEventListener.bind(document)
+
   document.addEventListener = (...args) => {
     added.push(args)
     add(...args)
   }
+
   document.removeEventListener = (...args) => {
     removed.push(args)
     remove(...args)
   }
+
   const tracker = installSiteAnalytics(s.window, {
     pagePaths: counted(s.config.pagePaths),
     caseIds: counted(s.config.caseIds)
   })
+
   assert.equal(reads, 2)
   assert.equal(added.length, 6)
   for (let index = 0; index < 5; index += 1) {
     s.click('a')
     tracker.pageChanged()
   }
+
   assert.equal(s.events.length, 5)
   assert.equal(reads, 2)
   tracker.dispose()
@@ -259,6 +285,7 @@ test('IME composition is not a search and native dialog close cancels pending in
     '<dialog open aria-labelledby="search-title" data-site-search data-site-result-count="1"><input type="search"></dialog>'
   )
   const input = s.window.document.querySelector('input')
+
   input.value = 'test'
   input.dispatchEvent(
     new s.window.InputEvent('input', { bubbles: true, isComposing: true })

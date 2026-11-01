@@ -9,8 +9,10 @@ const { captureSource, sha256 } = require('../snapshot.cjs')
 const { createTaskOwner } = require('../agent-task.cjs')
 const root = path.resolve(__dirname, '../../../..')
 const parent = path.join(root, 'tmp/flow-inspector/agent-task-tests')
+
 fs.mkdirSync(parent, { recursive: true })
 const sourceFile = 'packages/factory/src/data-transact.ts'
+
 const providerAuthorization = () => ({
   id: randomUUID(),
   actor: 'human',
@@ -20,13 +22,17 @@ const providerAuthorization = () => ({
   maxRequests: 4,
   expiresAt: '2099-01-01T00:00:00.000Z'
 })
+
 function fixture(options = {}) {
   const directory = fs.mkdtempSync(path.join(parent, 'run-'))
   const contract = loadContract(root)
   const owner = createTaskOwner(root, {
     directory,
+
     getBaseline: () => ({ contract, revision: 1 }),
+
     available: () => true,
+
     ...options
   })
   const request = {
@@ -40,6 +46,7 @@ function fixture(options = {}) {
     revision: 1,
     budgets: { elapsedMs: 60000, toolCalls: 20, attempts: 3 }
   }
+
   return { owner, request, directory, contract }
 }
 
@@ -48,15 +55,19 @@ test(
   { skip: process.platform !== 'darwin', timeout: 30000 },
   async (t) => {
     const directory = fs.mkdtempSync(path.join(parent, 'app-'))
+
     t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
     const { appRuntimeFixture } = require('./app-runtime-fixture.cjs')
     const contract = appRuntimeFixture(root, directory)
     const options = {
       directory: path.join(directory, 'tasks'),
+
       getBaseline: () => ({ contract, revision: 1 }),
+
       available: () => true
     }
     let owner = createTaskOwner(root, options)
+
     t.after(() => owner.close())
     const request = {
       requestId: randomUUID(),
@@ -71,12 +82,14 @@ test(
     }
     const id = owner.start(request, 'human')
     const completed = await owner.wait(id)
+
     assert.equal(
       completed.verificationStatus,
       'passed',
       JSON.stringify(completed.attempts)
     )
     const attemptId = completed.attempts.at(-1).id
+
     assert.ok(owner.sourceFor(id, attemptId))
     await owner.close()
     owner = createTaskOwner(root, options)
@@ -87,11 +100,13 @@ test(
 
 test('App task cannot mutate a dependency even when a step boundary includes it', async (t) => {
   const directory = fs.mkdtempSync(path.join(parent, 'app-denial-'))
+
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
   const { appRuntimeFixture } = require('./app-runtime-fixture.cjs')
   let contract = appRuntimeFixture(root, directory)
   const architecture = structuredClone(contract.architectureDefinition)
   const dependencyFile = 'packages/utils/src/propsManager/fills.ts'
+
   architecture.steps
     .find((step) => step.id === 'validate')
     .implementationBoundary.push(dependencyFile)
@@ -102,11 +117,15 @@ test('App task cannot mutate a dependency even when a step boundary includes it'
   contract = loadContract(root, undefined, contract.manifestPath)
   const owner = createTaskOwner(root, {
     directory: path.join(directory, 'tasks'),
+
     getBaseline: () => ({ contract, revision: 1 }),
+
     available: () => true
   })
+
   t.after(() => owner.close())
   const id = randomUUID()
+
   assert.throws(
     () =>
       owner.start(
@@ -137,6 +156,7 @@ test('provider reservations precede dispatch and survive failed attempts, handof
   let calls = 0
   const f = fixture({
     providerAuthorization: authorization,
+
     providerComplete: async () => {
       calls++
       const retained = JSON.parse(
@@ -144,8 +164,10 @@ test('provider reservations precede dispatch and survive failed attempts, handof
           path.join(f.directory, f.request.requestId, 'task.json')
         )
       )
+
       assert.equal(retained.providerRequests.length, calls)
       assert.equal(retained.providerRequests.at(-1).state, 'reserved')
+
       return {
         text: '{"tool":"shell"}',
         terminal: true,
@@ -153,6 +175,7 @@ test('provider reservations precede dispatch and survive failed attempts, handof
       }
     }
   })
+
   Object.assign(f.request, {
     adapter: 'provider',
     scenario: 'task',
@@ -160,6 +183,7 @@ test('provider reservations precede dispatch and survive failed attempts, handof
   })
   const id = f.owner.start(f.request, 'human')
   const result = await f.owner.wait(id)
+
   assert.equal(result.phase, 'denied')
   assert.equal(result.providerRequests.length, 1)
   assert.equal(result.providerRequests[0].usage.totalTokens, 5)
@@ -169,13 +193,18 @@ test('provider reservations precede dispatch and survive failed attempts, handof
   await f.owner.close()
   const next = createTaskOwner(root, {
     directory: f.directory,
+
     getBaseline: () => ({ contract: f.contract, revision: 1 }),
+
     available: () => true,
+
     providerAuthorization: authorization,
+
     providerComplete: async () => {
       throw new Error('provider-secret-marker')
     }
   })
+
   await next.wait(next.resume(id, 'task', 'human'))
   assert.equal(next.get(id).providerRequests.length, 2)
   assert.equal(next.get(id).providerRequests[1].state, 'unresolved')
@@ -195,17 +224,21 @@ test('provider cancellation records uncertainty and denies successor dispatch ev
   })
   const f = fixture({
     providerAuthorization: authorization,
+
     providerComplete: async () => {
       dispatched()
+
       return new Promise(() => undefined)
     }
   })
+
   Object.assign(f.request, {
     adapter: 'provider',
     scenario: 'task',
     providerAuthorizationId: authorization.id
   })
   const id = f.owner.start(f.request, 'human')
+
   await ready
   await f.owner.stop(id, 'cancel', 'human')
   assert.equal(f.owner.get(id).providerRequests[0].state, 'unresolved')
@@ -224,27 +257,33 @@ test('provider cancellation awaits owned transport settlement before returning',
   const ready = new Promise((resolve) => {
     dispatched = resolve
   })
+
   const complete = async () => {
     dispatched()
+
     return new Promise((resolve) => {
       confirm = resolve
     })
   }
+
   complete.cancel = async () => {
     await new Promise((resolve) => setTimeout(resolve, 10))
     confirm({ terminal: false, usage: null, interruptionConfirmed: true })
     settled = true
   }
+
   const f = fixture({
     providerAuthorization: authorization,
     providerComplete: complete
   })
+
   Object.assign(f.request, {
     adapter: 'provider',
     scenario: 'task',
     providerAuthorizationId: authorization.id
   })
   const id = f.owner.start(f.request, 'human')
+
   await ready
   await f.owner.stop(id, 'cancel', 'human')
   assert.equal(settled, true)
@@ -253,11 +292,15 @@ test('provider cancellation awaits owned transport settlement before returning',
   await f.owner.close()
   const next = createTaskOwner(root, {
     directory: f.directory,
+
     getBaseline: () => ({ contract: f.contract, revision: 1 }),
+
     available: () => true,
+
     providerAuthorization: authorization,
     providerComplete: complete
   })
+
   assert.equal(next.get(id).providerRequests[0].interruptionConfirmed, true)
   assert.equal(next.get(id).providerRequests[0].state, 'unresolved')
   assert.throws(() => next.resume(id, 'task', 'human'), /unresolved/)
@@ -275,18 +318,27 @@ test(
     let correction = false
     const f = fixture({
       providerAuthorization: authorization,
+
       providerComplete: async ({
         observation,
         history,
         previousVerification
       }) => {
         let operation = { tool: 'finish' }
-        if (history.length === 0) operation = { tool: 'read', path: sourceFile }
+
+        if (history.length === 0) {
+          operation = { tool: 'read', path: sourceFile }
+        }
+
         if (history.length === 1) {
           const mutation = f.contract.definition.scenarios.find(
             (item) => item.id === 'inverse-regression'
           ).mutation
-          if (correction) assert.equal(previousVerification.status, 'failed')
+
+          if (correction) {
+            assert.equal(previousVerification.status, 'failed')
+          }
+
           operation = {
             tool: 'replace',
             path: sourceFile,
@@ -295,6 +347,7 @@ test(
             after: correction ? mutation.from : mutation.to
           }
         }
+
         return {
           text: JSON.stringify(operation),
           terminal: true,
@@ -302,6 +355,7 @@ test(
         }
       }
     })
+
     Object.assign(f.request, {
       adapter: 'provider',
       scenario: 'task',
@@ -310,6 +364,7 @@ test(
     const original = fs.readFileSync(path.join(root, sourceFile))
     const id = f.owner.start(f.request, 'human')
     const failed = await f.owner.wait(id)
+
     assert.equal(failed.verificationStatus, 'failed')
     assert.deepEqual(
       failed.attempts[0].verdict.evidence.cases
@@ -323,6 +378,7 @@ test(
     )
     correction = true
     const passed = await f.owner.wait(f.owner.resume(id, 'task', 'human'))
+
     assert.equal(passed.verificationStatus, 'passed')
     assert.equal(
       passed.attempts[1].verdict.evidence.passedCount,
@@ -340,14 +396,18 @@ test('task source edits are isolated, attributed and read projections do no repe
   const { owner, request } = fixture({
     capture: (...args) => {
       captures++
+
       return captureSource(...args)
     },
+
     verify: async () => ({ evidence: { status: 'unknown' } })
   })
   const original = fs.readFileSync(path.join(root, sourceFile))
   const id = owner.start(request, 'human')
+
   assert.equal(owner.start(request, 'human'), id)
   const result = await owner.wait(id)
+
   assert.equal(result.phase, 'completed')
   assert.equal(result.verificationStatus, 'unknown')
   assert.equal(result.workStatus, 'incomplete')
@@ -357,10 +417,13 @@ test('task source edits are isolated, attributed and read projections do no repe
   assert.equal(result.usage.toolCalls, 3)
   const read = fs.readFileSync
   let reads = 0
+
   fs.readFileSync = (...args) => {
     reads++
+
     return read(...args)
   }
+
   try {
     for (let i = 0; i < 10; i++) {
       owner.list()
@@ -369,6 +432,7 @@ test('task source edits are isolated, attributed and read projections do no repe
   } finally {
     fs.readFileSync = read
   }
+
   assert.equal(reads, 0)
   assert.equal(captures, 1)
   assert.deepEqual(fs.readFileSync(path.join(root, sourceFile)), original)
@@ -396,6 +460,7 @@ test('unsupported tools and filesystem escapes are denied before effects', async
       adapterFactory: () => ({ next: async () => operation })
     })
     const result = await owner.wait(owner.start(request, 'human'))
+
     assert.equal(result.phase, 'denied')
     assert.equal(result.changes.length, 0)
     assert.equal(result.usage.toolCalls, 1)
@@ -407,43 +472,55 @@ test('tool limits, cancellation, restart and handoff preserve budgets and source
   const { owner, request, directory, contract } = fixture({
     verify: async () => ({ evidence: { status: 'unknown' } })
   })
+
   request.scenario = 'tool-limit'
   request.budgets.toolCalls = 2
   const result = await owner.wait(owner.start(request, 'human'))
+
   assert.equal(result.phase, 'limited')
   assert.equal(result.usage.toolCalls, 2)
   assert.throws(() => owner.resume(result.id, 'repair', 'human'), /budget/)
   const handoff = await owner.stop(result.id, 'handoff', 'human')
+
   assert.equal(handoff.phase, 'handed-off')
   assert.equal(handoff.usage.toolCalls, 2)
   await owner.close()
   const reopened = createTaskOwner(root, {
     directory,
+
     getBaseline: () => ({ contract, revision: 1 }),
+
     available: () => true
   })
+
   assert.equal(reopened.get(result.id).usage.toolCalls, 2)
   await reopened.close()
 })
 test('cancel settles a stalled adapter and restart never turns it green', async () => {
   const { owner, request, directory, contract } = fixture()
+
   request.scenario = 'stall'
   const id = owner.start(request, 'human')
   const stopped = await owner.stop(id, 'cancel', 'human')
+
   assert.equal(stopped.phase, 'cancelled')
   assert.equal(stopped.verificationStatus, 'unknown')
   assert.equal(owner.activeId(), null)
   await owner.close()
   const recordPath = path.join(directory, id, 'task.json')
   const record = JSON.parse(fs.readFileSync(recordPath))
+
   record.phase = 'running'
   record.reservedMs = 100
   fs.writeFileSync(recordPath, JSON.stringify(record))
   const reopened = createTaskOwner(root, {
     directory,
+
     getBaseline: () => ({ contract, revision: 1 }),
+
     available: () => true
   })
+
   assert.equal(reopened.get(id).phase, 'interrupted')
   assert.equal(reopened.get(id).usage.elapsedMs, record.usage.elapsedMs + 100)
   assert.equal(reopened.get(id).verificationStatus, 'unknown')
@@ -451,9 +528,11 @@ test('cancel settles a stalled adapter and restart never turns it green', async 
 })
 test('deadline, revocation and stale baseline block further admission', async () => {
   const { owner, request } = fixture()
+
   request.scenario = 'stall'
   request.budgets.elapsedMs = 30
   const result = await owner.wait(owner.start(request, 'human'))
+
   assert.equal(result.phase, 'timed-out')
   assert.equal(result.usage.elapsedMs, 30)
   await owner.stop(result.id, 'revoke', 'human')
@@ -462,8 +541,10 @@ test('deadline, revocation and stale baseline block further admission', async ()
   let revision = 1
   const contract = loadContract(root)
   const stale = fixture({ getBaseline: () => ({ contract, revision }) })
+
   stale.request.scenario = 'scope-violation'
   const old = await stale.owner.wait(stale.owner.start(stale.request, 'human'))
+
   revision++
   assert.throws(() => stale.owner.resume(old.id, 'repair', 'human'), /baseline/)
   await stale.owner.close()
@@ -478,6 +559,7 @@ test('symlink candidate access and stale digests refuse mutation', async () => {
             fs.unlinkSync(target)
             fs.symlinkSync(path.join(root, sourceFile), target)
           }
+
           return {
             tool: 'replace',
             path: sourceFile,
@@ -488,8 +570,10 @@ test('symlink candidate access and stale digests refuse mutation', async () => {
         }
       })
     })
+
     target = path.join(directory, request.requestId, 'candidate', sourceFile)
     const result = await owner.wait(owner.start(request, 'human'))
+
     assert.equal(result.phase, 'denied')
     await owner.close()
   }
@@ -509,18 +593,23 @@ test('restart rejects fabricated task success and invalid cumulative evidence', 
     }
   ]) {
     const { owner, request, directory, contract } = fixture()
+
     request.scenario = 'scope-violation'
     const result = await owner.wait(owner.start(request, 'human'))
+
     await owner.close()
     const file = path.join(directory, result.id, 'task.json')
     const record = JSON.parse(fs.readFileSync(file))
+
     mutate(record)
     fs.writeFileSync(file, JSON.stringify(record))
     assert.throws(
       () =>
         createTaskOwner(root, {
           directory,
+
           getBaseline: () => ({ contract, revision: 1 }),
+
           available: () => true
         }),
       /Invalid|evidence|fingerprint/
@@ -534,6 +623,7 @@ test('verifier infrastructure failure is distinct from a rejected agent operatio
     }
   })
   const result = await owner.wait(owner.start(request, 'human'))
+
   assert.equal(result.phase, 'failed')
   assert.equal(result.verificationStatus, 'unknown')
   await owner.close()
@@ -545,6 +635,7 @@ test(
   async (t) => {
     const { owner, request, directory, contract } = fixture()
     const result = await owner.wait(owner.start(request, 'human'))
+
     assert.equal(result.verificationStatus, 'passed', result.error)
     await owner.close()
     const source = require('../snapshot.cjs')
@@ -553,21 +644,28 @@ test(
     const combined = t.mock.method(source, 'validateSourceSnapshot')
     const modulePath = require.resolve('../agent-task.cjs'),
       saved = require.cache[modulePath]
+
     Reflect.deleteProperty(require.cache, modulePath)
     const retainedOwner = require('../agent-task.cjs').createTaskOwner
+
     require.cache[modulePath] = saved
     const reads = t.mock.method(fs, 'readFileSync')
+
     const open = () =>
       retainedOwner(root, {
         directory,
+
         getBaseline: () => ({ contract, revision: 1 }),
+
         available: () => true
       })
+
     const reopened = open()
     const retainedSource = reopened.sourceFor(
       result.id,
       result.attempts.at(-1).id
     )
+
     assert.ok(retainedSource)
     assert.equal(
       retainedSource.admission.sourceDigest,
@@ -580,6 +678,7 @@ test(
     assert.equal(bytes.mock.callCount(), 1)
     assert.equal(combined.mock.callCount(), 1)
     const verdict = result.attempts.at(-1).verdict
+
     assert.equal(
       fingerprint.mock.calls.filter(
         (call) => call.arguments[0] === JSON.stringify(verdict.files)
@@ -588,13 +687,16 @@ test(
       'task does not duplicate combined source full-manifest hashing'
     )
     const sourceRoot = path.join(root, verdict.artifactDirectory, 'source')
-    for (const entry of verdict.files)
+
+    for (const entry of verdict.files) {
       assert.equal(
         reads.mock.calls.filter(
           (call) => call.arguments[0] === path.join(sourceRoot, entry.path)
         ).length,
         1
       )
+    }
+
     reads.mock.resetCalls()
     reopened.get(result.id)
     reopened.list()
@@ -621,6 +723,7 @@ test(
       verify: (options) =>
         verifyCandidate({
           ...options,
+
           onSpawn: (value) => {
             pid = value
             options.onSpawn(value)
@@ -629,6 +732,7 @@ test(
         })
     })
     const result = await owner.wait(owner.start(request, 'human'))
+
     await cancellation
     assert.equal(result.phase, 'cancelled')
     assert.equal(result.verificationStatus, 'unknown')
@@ -650,20 +754,26 @@ test('work admission blocks before capture and rejects source before adapter eff
         deny === 'prerequisite' ||
         (deny === 'source' && snapshot) ||
         deny === 'resume'
-      )
+      ) {
         throw new Error('Work admission ' + deny)
+      }
     },
+
     capture: (...args) => {
       captures++
+
       return captureSource(...args)
     },
+
     adapterFactory: () => ({
       next: async () => {
         operations++
+
         return { tool: 'shell' }
       }
     })
   })
+
   t.after(async () => {
     await f.owner.close()
     fs.rmSync(f.directory, { recursive: true, force: true })
@@ -678,10 +788,12 @@ test('work admission blocks before capture and rejects source before adapter eff
   assert.equal(f.owner.list().length, 0)
   deny = null
   const id = f.owner.start(f.request, 'human')
+
   await f.owner.wait(id)
   assert.equal(captures, 2)
   const attempts = f.owner.get(id).attempts.length
   const priorOperations = operations
+
   deny = 'resume'
   assert.throws(() => f.owner.resume(id, 'repair', 'human'), /resume/)
   assert.equal(f.owner.get(id).attempts.length, attempts)
@@ -695,16 +807,21 @@ test(
   async () => {
     const { owner, request, directory, contract } = fixture()
     const result = await owner.wait(owner.start(request, 'human'))
+
     assert.equal(result.verificationStatus, 'passed', result.error)
     await owner.close()
     const recordPath = path.join(directory, result.id, 'task.json')
     const original = fs.readFileSync(recordPath, 'utf8')
+
     const open = () =>
       createTaskOwner(root, {
         directory,
+
         getBaseline: () => ({ contract, revision: 1 }),
+
         available: () => true
       })
+
     for (const mutate of [
       (record) => {
         delete record.attempts.at(-1).verdict.runtimeAuthority
@@ -755,12 +872,15 @@ test(
       }
     ]) {
       const changed = JSON.parse(original)
+
       mutate(changed)
       fs.writeFileSync(recordPath, JSON.stringify(changed))
       assert.throws(open, /candidate|source|path|identity|descriptor|baseline/i)
       fs.writeFileSync(recordPath, original)
     }
+
     const verdict = result.attempts.at(-1).verdict
+
     for (const entry of [
       verdict.runtimeSource.files[0],
       verdict.executionSource.files[0]
@@ -772,13 +892,16 @@ test(
         entry.path
       )
       const bytes = fs.readFileSync(file)
+
       fs.chmodSync(file, 0o600)
       fs.writeFileSync(file, Buffer.concat([bytes, Buffer.from('tampered')]))
       assert.throws(open, /fingerprint/)
       fs.writeFileSync(file, bytes)
       fs.chmodSync(file, 0o444)
     }
+
     const restored = open()
+
     assert.equal(restored.get(result.id).verificationStatus, 'passed')
     await restored.close()
   }
@@ -791,12 +914,15 @@ test(
     const { owner, request, directory, contract } = fixture({
       adapterFactory: () => {
         let turn = 0
+
         return {
           async next(observation) {
             turn++
-            if (turn === 1 || turn === 3)
+            if (turn === 1 || turn === 3) {
               return { tool: 'read', path: sourceFile }
-            if (turn === 2)
+            }
+
+            if (turn === 2) {
               return {
                 tool: 'replace',
                 path: sourceFile,
@@ -804,7 +930,9 @@ test(
                 before: observation.content,
                 after: '// formal reversible change\n' + observation.content
               }
-            if (turn === 4)
+            }
+
+            if (turn === 4) {
               return {
                 tool: 'replace',
                 path: sourceFile,
@@ -812,14 +940,18 @@ test(
                 before: '// formal reversible change\n',
                 after: ''
               }
+            }
+
             return { tool: 'finish' }
           }
         }
       }
     })
     const result = await owner.wait(owner.start(request, 'human'))
+
     assert.equal(result.verificationStatus, 'passed', result.error)
     const verdict = result.attempts.at(-1).verdict
+
     assert.equal(
       verdict.runtimeSource.digest,
       result.snapshot.runtimeSource.digest
@@ -833,13 +965,16 @@ test(
     await owner.close()
     const recordPath = path.join(directory, result.id, 'task.json')
     const record = JSON.parse(fs.readFileSync(recordPath, 'utf8'))
+
     for (const key of [
       'runtimeSource',
       'runtimeAuthority',
       'verificationSource',
       'executionSource'
-    ])
+    ]) {
       Reflect.deleteProperty(record.attempts.at(-1).verdict, key)
+    }
+
     fs.writeFileSync(recordPath, JSON.stringify(record))
     const bootstrap = path.join(
       root,
@@ -847,13 +982,16 @@ test(
       'source',
       verdict.executionSource.roles.bootstrap
     )
+
     fs.chmodSync(bootstrap, 0o600)
     fs.appendFileSync(bootstrap, '\n// formal post-proof tamper\n')
     assert.throws(
       () =>
         createTaskOwner(root, {
           directory,
+
           getBaseline: () => ({ contract, revision: 1 }),
+
           available: () => true
         }),
       /candidate|source|fingerprint|descriptor/i
@@ -866,39 +1004,55 @@ test(
   { skip: process.platform !== 'darwin', timeout: 30000 },
   async () => {
     const { owner, request, directory, contract } = fixture()
+
     request.scenario = 'regression'
     const failed = await owner.wait(owner.start(request, 'human'))
+
     assert.equal(failed.verificationStatus, 'failed')
     assert.equal(failed.format, 2)
     await owner.close()
     const recordPath = path.join(directory, failed.id, 'task.json')
     const retained = JSON.parse(fs.readFileSync(recordPath, 'utf8'))
+
     const open = () =>
       createTaskOwner(root, {
         directory,
+
         getBaseline: () => ({ contract, revision: 1 }),
+
         available: () => true
       })
+
     for (const format of [undefined, null, 0, 3, '2']) {
       const changed = structuredClone(retained)
-      if (format === undefined) delete changed.format
-      else changed.format = format
+
+      if (format === undefined) {
+        delete changed.format
+      } else {
+        changed.format = format
+      }
+
       fs.writeFileSync(recordPath, JSON.stringify(changed))
       assert.throws(open, /persisted task/)
     }
+
     const legacy = { ...retained, format: 1 }
+
     fs.writeFileSync(recordPath, JSON.stringify(legacy))
     const reopened = open()
+
     assert.equal(reopened.get(failed.id).format, 1)
     assert.deepEqual(JSON.parse(fs.readFileSync(recordPath, 'utf8')), legacy)
     const passed = await reopened.wait(
       reopened.resume(failed.id, 'repair', 'human')
     )
+
     assert.equal(passed.verificationStatus, 'passed', passed.error)
     assert.equal(passed.format, 2)
     assert.deepEqual(passed.attempts[0], legacy.attempts[0])
     await reopened.close()
     const admitted = open()
+
     assert.equal(admitted.get(failed.id).format, 2)
     await admitted.close()
   }
@@ -910,12 +1064,15 @@ test(
   async (t) => {
     const f = fixture()
     let reopened
+
     try {
       f.request.scenario = 'regression'
       const failed = await f.owner.wait(f.owner.start(f.request, 'human'))
+
       assert.equal(failed.verificationStatus, 'failed', failed.error)
       const attempt = failed.attempts.at(-1)
       const live = f.owner.sourceFor(failed.id, attempt.id)
+
       assert.ok(live)
       assert.equal(live.taskId, failed.id)
       assert.equal(live.admission.attemptId, attempt.id)
@@ -938,16 +1095,22 @@ test(
       const bytes = t.mock.method(source, 'verifyRetainedSnapshotBytes')
       const modulePath = require.resolve('../agent-task.cjs')
       const saved = require.cache[modulePath]
+
       Reflect.deleteProperty(require.cache, modulePath)
       const retainedOwner = require('../agent-task.cjs').createTaskOwner
+
       require.cache[modulePath] = saved
       const reads = t.mock.method(fs, 'readFileSync')
+
       const open = () =>
         retainedOwner(root, {
           directory: f.directory,
+
           getBaseline: () => ({ contract: f.contract, revision: 1 }),
+
           available: () => true
         })
+
       reopened = open()
       assert.deepEqual(
         reopened.get(failed.id),
@@ -963,7 +1126,7 @@ test(
         ).length,
         0
       )
-      for (const entry of attempt.verdict.files)
+      for (const entry of attempt.verdict.files) {
         assert.equal(
           reads.mock.calls.filter(
             (call) =>
@@ -971,6 +1134,8 @@ test(
           ).length,
           1
         )
+      }
+
       reads.mock.resetCalls()
       assert.equal(reopened.start(f.request, 'human'), failed.id)
       reopened.get(failed.id)
@@ -986,6 +1151,7 @@ test(
         live.sourceRoot,
         attempt.verdict.executionSource.roles.bootstrap
       )
+
       fs.chmodSync(bootstrap, 0o600)
       fs.appendFileSync(bootstrap, '\n// altered retained bytes\n')
       reopened = open()
@@ -1008,8 +1174,10 @@ test('legacy verify injection cannot publish task source authority', async () =>
       source: { forged: true }
     })
   })
+
   try {
     const record = await f.owner.wait(f.owner.start(f.request, 'human'))
+
     assert.equal(record.phase, 'completed')
     assert.equal(f.owner.sourceFor(record.id, record.attempts.at(-1).id), null)
   } finally {
@@ -1025,6 +1193,7 @@ test(
     const f = fixture({
       produce: async (options) => {
         const produced = await produceCandidateProof(options)
+
         return {
           verdict: produced.verdict,
           source: {
@@ -1037,8 +1206,10 @@ test(
         }
       }
     })
+
     try {
       const id = f.owner.start(f.request, 'human')
+
       await assert.rejects(f.owner.wait(id), /task source identity/i)
       assert.equal(
         f.owner.sourceFor(id, f.owner.get(id).attempts.at(-1).id),
@@ -1062,6 +1233,7 @@ test(
     const f = fixture({
       produce: async (options) => {
         const result = await produceCandidateProof(options)
+
         produced = result
         if (gate) {
           ready()
@@ -1069,19 +1241,25 @@ test(
             release = resolve
           })
         }
+
         return result
       }
     })
+
     try {
       f.request.scenario = 'regression'
       const first = await f.owner.wait(f.owner.start(f.request, 'human'))
       const firstAttempt = first.attempts.at(-1).id
       const source = f.owner.sourceFor(first.id, firstAttempt)
+
       assert.ok(source)
       const fingerprint = t.mock.method(require('../snapshot.cjs'), 'sha256')
       const reads = t.mock.method(fs, 'readFileSync')
-      for (let i = 0; i < 3; i++)
+
+      for (let i = 0; i < 3; i++) {
         assert.strictEqual(f.owner.sourceFor(first.id, firstAttempt), source)
+      }
+
       assert.equal(fingerprint.mock.callCount(), 0)
       assert.equal(reads.mock.callCount(), 0)
       reads.mock.restore()
@@ -1090,14 +1268,17 @@ test(
       const waiting = new Promise((resolve) => {
         ready = resolve
       })
+
       f.owner.resume(first.id, 'repair', 'human')
       assert.equal(f.owner.sourceFor(first.id, firstAttempt), null)
       await waiting
       assert.ok(produced.source)
       const closing = f.owner.close()
+
       release()
       await closing
       const current = f.owner.get(first.id)
+
       assert.equal(current.phase, 'interrupted')
       assert.equal(
         f.owner.sourceFor(first.id, current.attempts.at(-1).id),
@@ -1121,8 +1302,10 @@ test(
     const f = fixture({
       produce: async (options) => {
         const result = await produceCandidateProof(options)
+
         completedSource = result.source
         fail = true
+
         return result
       }
     })
@@ -1131,12 +1314,16 @@ test(
       if (
         fail &&
         to === path.join(f.directory, f.request.requestId, 'task.json')
-      )
+      ) {
         throw new Error('completed-save-failure')
+      }
+
       return rename(from, to)
     })
+
     try {
       const id = f.owner.start(f.request, 'human')
+
       await assert.rejects(f.owner.wait(id), /completed-save-failure/)
       assert.ok(completedSource)
       assert.equal(

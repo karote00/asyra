@@ -27,6 +27,7 @@ const settings: QuerySettings = {
   maxIntervals: 2048,
   maxIterations: 48
 }
+
 function query(
   kind: 'prismatic' | 'revolute',
   a: number,
@@ -76,6 +77,7 @@ function query(
     robotRootId: 'base',
     bodies: [base, moving, fixed]
   }
+
   return {
     workcell,
     trajectory: {
@@ -90,6 +92,7 @@ function query(
     b: { bodyId: 'fixed', colliderId: 'part' }
   }
 }
+
 describe('original part complete-time evidence', () => {
   it.each([
     ['prismatic', -3, 3, [0.17, 0.2, 0.2]],
@@ -98,14 +101,18 @@ describe('original part complete-time evidence', () => {
     'finds %s crossings between independently clear endpoints',
     (kind, a, b, obstacle) => {
       const input = query(kind, a, b, obstacle)
+
       for (const time of input.interval) {
         const result = queryOriginalPartPair(
           { ...input, interval: [time, time] },
           settings
         )
+
         expect(result.leaves.every((leaf) => leaf.state === 'clear')).toBe(true)
       }
+
       const result = queryOriginalPartPair(input, settings)
+
       expect(result.leaves.some((leaf) => leaf.penetration)).toBe(true)
       expect(result.leaves[0].start).toBe(0)
       expect(result.leaves.at(-1)?.end).toBe(0.01)
@@ -118,6 +125,7 @@ describe('original part complete-time evidence', () => {
       undefined,
       new OriginalMeshQuery(undefined, 1)
     )
+
     expect(result.coverage).toBe('partial')
     expect(result.leaves).toEqual([
       expect.objectContaining({
@@ -131,12 +139,15 @@ describe('original part complete-time evidence', () => {
   })
   it('checks cancellation during geometry work, not just between body pairs', () => {
     let calls = 0
+
     expect(() =>
       queryOriginalPartPair(
         query('prismatic', -3, 3, [0.17, 0.2, 0.2]),
         settings,
         () => {
-          if (++calls > 10) throw new Error('cancelled')
+          if (++calls > 10) {
+            throw new Error('cancelled')
+          }
         }
       )
     ).toThrow('cancelled')
@@ -145,7 +156,11 @@ describe('original part complete-time evidence', () => {
     const source = createMechanicalVisuals().find(
       (part) => part.body === 'fixture-table'
     )
-    if (!source) throw new Error('Missing sample table source')
+
+    if (!source) {
+      throw new Error('Missing sample table source')
+    }
+
     const asset = await decodeRestrictedGlb(source.bytes)
     const part = resolvePart(
       {
@@ -168,6 +183,7 @@ describe('original part complete-time evidence', () => {
       1e-6,
       48
     )
+
     expect(result.penetration).toBe(true)
     expect(result.upper).toBe(0)
   })

@@ -39,6 +39,7 @@ const packages = [
     tarballPath: '/build/core.tgz'
   }
 ]
+
 const lock = (version = '19.2.8', checksum = '10c0/abcd') =>
   `"react@npm:^19.2.8":\n  version: ${version}\n  resolution: "react@npm:${version}"\n  checksum: ${checksum}\n`
 
@@ -48,6 +49,7 @@ test('the independent consumer uses only packed Framework inputs and preserves a
     { resolutions: { react: '^19.2.8' } },
     packages
   )
+
   assert.equal(
     manifest.dependencies['@asyra/core'],
     'file:../framework/core.tgz'
@@ -92,7 +94,7 @@ test('consumer lock evidence rejects upgrades, checksum drift and workspace or p
     () => assertFrozenRegistryLock(lock(), lock('19.2.8', 'changed')),
     /drift/
   )
-  for (const protocol of ['workspace', 'link', 'portal', 'patch'])
+  for (const protocol of ['workspace', 'link', 'portal', 'patch']) {
     assert.throws(
       () =>
         assertFrozenRegistryLock(
@@ -101,6 +103,8 @@ test('consumer lock evidence rejects upgrades, checksum drift and workspace or p
         ),
       /private source/
     )
+  }
+
   assert.equal(
     assertFrozenRegistryLock(
       lock(),
@@ -114,19 +118,24 @@ test('consumer lock evidence rejects upgrades, checksum drift and workspace or p
 test('consumer lock preserves exact existing Yarn builtin compatibility patches but rejects custom patches and drift', () => {
   const locator =
     'typescript@patch:typescript@npm%3A5.8.3#optional!builtin<compat/typescript>::version=5.8.3&hash=379a07'
+
   const record = (identity = locator, checksum = '10c0/original') =>
     `"typescript@patch:fixture":\n  resolution: "${identity}"\n  checksum: ${checksum}\n`
+
   const source = `${lock()}\n${record()}`
+
   assert.equal(assertFrozenRegistryLock(source, source), 2)
   for (const changed of [
     record(locator, '10c0/changed'),
     record(locator.replace('379a07', 'abcdef')),
     record(locator.replaceAll('5.8.3', '5.8.4'))
-  ])
+  ]) {
     assert.throws(
       () => assertFrozenRegistryLock(source, `${lock()}\n${changed}`),
       /drift/
     )
+  }
+
   assert.throws(() => assertFrozenRegistryLock(lock(), source), /drift/)
   for (const identity of [
     'typescript@patch:typescript@npm%3A5.8.3#./custom.patch',
@@ -138,6 +147,7 @@ test('consumer lock preserves exact existing Yarn builtin compatibility patches 
     locator.replace('npm%3A5.8.3', 'file%3A../private')
   ]) {
     const custom = `${lock()}\n${record(identity)}`
+
     assert.throws(
       () => assertFrozenRegistryLock(custom, custom),
       /private source/
@@ -149,15 +159,19 @@ test('type and installed-package evidence cannot use ancestor hoisting or symbol
   const parent = fileURLToPath(
     new URL('../../.artifacts/consumer-tests/', import.meta.url)
   )
+
   mkdirSync(parent, { recursive: true })
   const directory = mkdtempSync(path.join(parent, 'case-'))
+
   t.after(() => rmSync(directory, { recursive: true }))
   const root = path.join(directory, 'consumer'),
     outside = path.join(directory, 'outside.json')
   const pkg = path.join(root, 'node_modules/@asyra/core')
+
   mkdirSync(pkg, { recursive: true })
   writeFileSync(outside, '{}')
   const manifestPath = path.join(pkg, 'package.json')
+
   writeFileSync(
     manifestPath,
     JSON.stringify({ name: '@asyra/core', version: '0.5.1' })
@@ -170,6 +184,7 @@ test('type and installed-package evidence cannot use ancestor hoisting or symbol
     /identity/
   )
   const linked = path.join(root, 'linked.json')
+
   symlinkSync(outside, linked)
   assert.throws(() => assertOwnedPaths(root, [linked]), /escaped/)
 })
@@ -188,11 +203,12 @@ test('the consumer test subprocess preserves the supervisor cleanup window witho
       TEST_CLEANUP_MS: '60000'
     }
   })
-  for (const label of ['consumer-install', 'consumer-build', 'archive'])
+  for (const label of ['consumer-install', 'consumer-build', 'archive']) {
     assert.deepEqual(commandExecutionContract(label), {
       timeoutMs: 5 * 60 * 1000,
       environment: {}
     })
+  }
 })
 
 for (const [kind, base] of [
@@ -205,18 +221,22 @@ for (const [kind, base] of [
     'async factory',
     'async (env) => ({ plugins: [], worker: { format: "es" }, base: env.command === "build" ? "./" : "/dev/" })'
   ]
-])
+]) {
   test(`main and Worker build plugins preserve ${kind} configuration and reject escaping module evidence`, async (t) => {
     const parent = fileURLToPath(
       new URL('../../.artifacts/consumer-tests/', import.meta.url)
     )
+
     mkdirSync(parent, { recursive: true })
     const directory = mkdtempSync(path.join(parent, 'plugins-'))
+
     t.after(() => rmSync(directory, { recursive: true }))
     const root = path.join(directory, 'consumer')
+
     mkdirSync(path.join(root, '.build-evidence'), { recursive: true })
     const outside = path.join(directory, 'outside.js'),
       inside = path.join(root, 'inside.js')
+
     writeFileSync(outside, 'export const value = 1')
     writeFileSync(inside, 'export const value = 2')
     symlinkSync(outside, path.join(root, 'linked.js'))
@@ -226,6 +246,7 @@ for (const [kind, base] of [
       consumerBuildConfig
     )
     const previous = process.cwd()
+
     try {
       process.chdir(root)
       const { default: exported } = await import(
@@ -234,8 +255,12 @@ for (const [kind, base] of [
       const configuration = await (typeof exported === 'function'
         ? exported({ command: 'build', mode: 'production' })
         : exported)
+
       assert.equal(configuration.worker.format, 'es')
-      if (kind !== 'object') assert.equal(configuration.base, './')
+      if (kind !== 'object') {
+        assert.equal(configuration.base, './')
+      }
+
       for (const plugin of [
         configuration.plugins[0],
         ...configuration.worker.plugins()
@@ -262,3 +287,4 @@ for (const [kind, base] of [
       process.chdir(previous)
     }
   })
+}

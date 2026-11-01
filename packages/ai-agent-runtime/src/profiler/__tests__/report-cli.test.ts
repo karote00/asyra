@@ -13,8 +13,10 @@ import { runExecutionReportCli } from '../../node/report-cli.js'
 describe('execution report CLI', () => {
   it('reports a real saved record, explicit feedback and incomplete files without drawing', async () => {
     const base = join(process.cwd(), 'tmp')
+
     await mkdir(base, { recursive: true })
     const directory = await mkdtemp(join(base, 'execution-report-test-'))
+
     try {
       await writeFile(
         join(directory, 'run-1.jsonl'),
@@ -38,6 +40,7 @@ describe('execution report CLI', () => {
       )
       await writeFile(join(directory, 'partial.jsonl'), 'broken')
       const feedback = join(directory, 'feedback.json')
+
       await writeFile(feedback, JSON.stringify({ 'run-1': 'Too plain.' }))
       const result = await runExecutionReportCli([
         '--directory',
@@ -50,6 +53,7 @@ describe('execution report CLI', () => {
         feedback,
         '--json'
       ])
+
       expect(result.code).toBe(0)
       expect(JSON.parse(result.output)).toMatchObject({
         investigationTargets: [],
@@ -64,6 +68,7 @@ describe('execution report CLI', () => {
         '--to',
         '2026-10-03'
       ])
+
       expect(readable.output).toContain('Investigation targets: 0')
       const single = await runExecutionReportCli([
         '--directory',
@@ -71,6 +76,7 @@ describe('execution report CLI', () => {
         '--request',
         'run-1'
       ])
+
       expect(single.output).toContain('run-1')
       expect(single.output).toContain('Unattributed')
       expect(single.output).toContain('Tool outcomes:')
@@ -98,6 +104,7 @@ describe('execution report CLI', () => {
           })
         }
       )
+
       expect(assessed.code).toBe(0)
       expect(JSON.parse(assessed.output).assessment).toMatchObject({
         status: 'recorded',
@@ -106,6 +113,7 @@ describe('execution report CLI', () => {
       const opinions = (await readdir(join(directory, 'assessments'))).filter(
         (name) => name.endsWith('.json')
       )
+
       expect(opinions).toHaveLength(1)
       expect(
         JSON.parse(
@@ -121,6 +129,7 @@ describe('execution report CLI', () => {
         '2026-10-03',
         '--json'
       ])
+
       expect(JSON.parse(period.output).assessments).toEqual([
         expect.objectContaining({
           sourceRequestId: 'run-1',

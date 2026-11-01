@@ -13,6 +13,7 @@ const resolvedActionBatch = (): {
 } => {
   const executeFirst = vi.fn(async () => null)
   const executeSecond = vi.fn(async () => null)
+
   return {
     executeFirst,
     executeSecond,
@@ -154,6 +155,7 @@ describe('AI app permission preflight', () => {
     )
 
     let failure: AiPermissionError | undefined
+
     try {
       await evaluateAiActionBatchPermissions(
         batch,

@@ -278,7 +278,7 @@ claim that those runtime tests were rerun for this documentation revision.
   command. An unexpected test is an evidence issue, not a complete unmapped
   failure experience.
 - **Implemented on the Board:**
-  [the Board adapter](../../../../../tools/flow-inspector/control-plane/public/board.js)
+  [the React Board](../../../../../tools/flow-inspector/src/control-plane/ControlPlane.jsx)
   projects selected-flow evidence onto matching steps, displays assertion
   failures, and provides a run-level failure notice with owner-step navigation.
   Existing failure/recovery and mapping invalidation cases live in

@@ -12,6 +12,7 @@ test('field completion preserves focus, units and consecutive edits with one Und
   await page.getByLabel('Length unit').selectOption('mm')
   const x = page.getByLabel('Mount position (mm) X', { exact: true })
   const y = page.getByLabel('Mount position (mm) Y', { exact: true })
+
   await x.fill('-1234')
   await x.press('Tab')
   await expect(y).toBeFocused()
@@ -28,6 +29,7 @@ test('field completion preserves focus, units and consecutive edits with one Und
   await page.getByRole('button', { name: 'Redo', exact: true }).click()
   await expect(x).toHaveValue('-1234')
   const name = page.getByLabel('Object name')
+
   await name.fill('')
   await name.pressSequentially('Moved fixture')
   await name.press('Enter')
@@ -40,6 +42,7 @@ test('field completion preserves focus, units and consecutive edits with one Und
   await name.press('Escape')
   await expect(name).toHaveValue('fixture post')
   const scale = page.getByLabel('Visual scale X', { exact: true })
+
   await scale.fill('-1')
   await scale.press('Enter')
   await expect(page.getByRole('alert')).toBeVisible()
@@ -94,6 +97,7 @@ test('native shape, role, visibility and joint edits update directly and reject 
     'tool'
   )
   const visible = page.getByLabel('Visible in viewport')
+
   await visible.uncheck()
   await expect(visible).not.toBeChecked()
   await page.getByRole('button', { name: 'Undo', exact: true }).click()
@@ -103,6 +107,7 @@ test('native shape, role, visibility and joint edits update directly and reject 
     .click()
   const value = page.getByLabel('Joint value (deg)', { exact: true })
   const original = await value.inputValue()
+
   await value.fill('10')
   await value.press('Enter')
   await value.fill('900')
@@ -126,12 +131,14 @@ test('original-part and mount rotation fields commit without Set or Apply button
     .filter({ hasText: /^Mount rotation$/ })
     .click()
   const mount = page.getByLabel('Rotation angle (deg)', { exact: true })
+
   await mount.fill('45')
   await mount.press('Enter')
   await expect(mount).toHaveValue('45')
   await page.locator('.visual-bindings > summary').click()
   await page.getByText('Visual rotation', { exact: true }).click()
   const rotation = page.getByLabel('Visual rotation (deg)', { exact: true })
+
   await rotation.fill('90')
   await rotation.press('Enter')
   await expect(rotation).toHaveValue('90')

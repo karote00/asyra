@@ -99,6 +99,7 @@ export const AI_ACTION_BATCH_TRANSACTION_LABEL = 'AI-assisted action'
 
 export class AiTransactionError extends Error {
   readonly code = 'AI_TRANSACTION_ABORTED' as const
+
   readonly stage = 'transaction' as const
 
   constructor() {
@@ -119,16 +120,18 @@ export interface AiActionExecutionBatch {
 
 export class AiExecutionError extends Error {
   readonly code = 'AI_EXECUTION_ABORTED' as const
+
   readonly stage = 'execution' as const
 
   constructor(readonly receipt?: AiActionExecutionError['receipt']) {
     super('AI action execution was aborted.')
     this.name = 'AiExecutionError'
-    if (receipt)
+    if (receipt) {
       this.receipt = Object.freeze({
         ...receipt,
         result: detachAiJsonValue(receipt.result)
       })
+    }
   }
 }
 
@@ -136,6 +139,7 @@ export class AiExecutionError extends Error {
  * Never construct this from raw provider, transport, or canonical exceptions. */
 export class AiActionExecutionError extends Error {
   readonly code = 'AI_EXECUTION_FAILED' as const
+
   readonly stage = 'execution' as const
 
   constructor(
@@ -151,11 +155,12 @@ export class AiActionExecutionError extends Error {
         : 'AI action execution failed.'
     )
     this.name = 'AiActionExecutionError'
-    if (receipt)
+    if (receipt) {
       this.receipt = Object.freeze({
         ...receipt,
         result: detachAiJsonValue(receipt.result)
       })
+    }
   }
 }
 
@@ -342,7 +347,9 @@ export type AiPermissionErrorCode =
 
 export class AiPermissionError extends Error {
   readonly code: AiPermissionErrorCode
+
   readonly deniedActionIds: readonly string[]
+
   readonly stage = 'permission' as const
 
   constructor(
@@ -364,6 +371,7 @@ export type AiConfirmationErrorCode =
 
 export class AiConfirmationError extends Error {
   readonly code: AiConfirmationErrorCode
+
   readonly stage = 'confirmation' as const
 
   constructor(code: AiConfirmationErrorCode, message: string) {
@@ -392,6 +400,7 @@ export const evaluateAiActionBatchPermissions = async <TContext>(
 
   for (const action of batch.actions) {
     let decision: unknown
+
     try {
       decision = await policy.evaluate({
         action: Object.freeze({
@@ -408,12 +417,14 @@ export const evaluateAiActionBatchPermissions = async <TContext>(
     if (!isPermissionDecision(decision)) {
       return permissionPolicyFailed()
     }
+
     decisions.push(decision)
   }
 
   const deniedActionIds = batch.actions.flatMap((action, index) =>
     decisions[index] === 'deny' ? [action.id] : []
   )
+
   if (deniedActionIds.length > 0) {
     throw new AiPermissionError(
       'AI_PERMISSION_DENIED',
@@ -433,6 +444,7 @@ export const evaluateAiActionBatchPermissions = async <TContext>(
     batchId: batch.batchId,
     confirmationRequired: decisions.includes('confirm')
   }
+
   if (batch.explanation !== undefined) {
     Object.defineProperty(ready, 'explanation', {
       configurable: true,
@@ -468,8 +480,10 @@ const createAiActionBatchPreview = (
     actions: Object.freeze(actions),
     batchId: batch.batchId
   }
+
   if (batch.explanation !== undefined) {
     const explanation = redactAiValue(batch.explanation, redactionOptions)
+
     Object.defineProperty(preview, 'explanation', {
       configurable: true,
       enumerable: true,
@@ -508,6 +522,7 @@ export const confirmAiActionBatch = async (
   }
 
   const preview = createAiActionBatchPreview(batch, redactionOptions)
+
   if (!batch.confirmationRequired) {
     return createConfirmedActionBatch(batch, preview, 'bypassed')
   }
@@ -593,7 +608,9 @@ export const runAiActionBatchTransaction = async <T>(
     async (runMutation) => {
       assertTransactionNotAborted(signal)
       const result = await execute(runMutation)
+
       assertTransactionNotAborted(signal)
+
       return result
     },
     { signal }
@@ -612,13 +629,21 @@ export const runAiMutation = async <T>(
   settled?: (value: T) => void
 ): Promise<T> => {
   assertExecutionNotAborted(context.signal)
+
   const guardedMutation = () => {
     assertExecutionNotAborted(context.signal)
+
     return mutate()
   }
-  if (context.runMutation) return context.runMutation(guardedMutation, settled)
+
+  if (context.runMutation) {
+    return context.runMutation(guardedMutation, settled)
+  }
+
   const value = guardedMutation()
+
   settled?.(value)
+
   return value
 }
 
@@ -639,11 +664,14 @@ export const executeAiActions = async (
   for (const action of batch.actions) {
     assertExecutionNotAborted(signal)
     const result = await action.execute(action.arguments, context)
-    if (signal.aborted)
+
+    if (signal.aborted) {
       throw new AiExecutionError({
         result: redactAiValue(result, redactionOptions),
         settlement: 'completed'
       })
+    }
+
     actionResults.push(
       Object.freeze({
         actionId: action.id,
@@ -691,17 +719,20 @@ const emitAiRuntimeProgress = (
 
   try {
     let batchId = update.batchId
+
     if (batchId !== undefined) {
       const redacted = redactAiValue({ batchId }, redactionOptions)
       const redactedBatchId =
         typeof redacted === 'object' && redacted !== null
           ? Reflect.get(redacted, 'batchId')
           : undefined
+
       batchId =
         typeof redactedBatchId === 'string'
           ? redactedBatchId
           : AI_REDACTED_VALUE
     }
+
     return observer(
       Object.freeze({
         ...update,
@@ -742,8 +773,10 @@ const stableFailure = (
   error: unknown,
   fallback: AiStableFailure
 ): AiStableFailure => {
-  if (error instanceof AiActionBatchContractError)
+  if (error instanceof AiActionBatchContractError) {
     return toAiProviderRequestFailure(error, 1)
+  }
+
   if (error instanceof AiActionBatchResolutionError) {
     return {
       code: error.code,
@@ -751,6 +784,7 @@ const stableFailure = (
       stage: error.stage
     }
   }
+
   if (error instanceof AiPermissionError) {
     return {
       code: error.code,
@@ -758,6 +792,7 @@ const stableFailure = (
       stage: error.stage
     }
   }
+
   if (error instanceof AiConfirmationError) {
     return {
       code: error.code,
@@ -765,6 +800,7 @@ const stableFailure = (
       stage: error.stage
     }
   }
+
   if (error instanceof AiToolContractError) {
     return {
       code: 'AI_EXECUTION_FAILED',
@@ -772,6 +808,7 @@ const stableFailure = (
       stage: 'execution'
     }
   }
+
   if (error instanceof AiTransactionError) {
     return {
       code: error.code,
@@ -779,6 +816,7 @@ const stableFailure = (
       stage: error.stage
     }
   }
+
   if (
     error instanceof AiExecutionError ||
     error instanceof AiActionExecutionError
@@ -789,6 +827,7 @@ const stableFailure = (
       stage: error.stage
     }
   }
+
   if (error instanceof AiRetryPolicyError) {
     return {
       code: error.code,
@@ -796,6 +835,7 @@ const stableFailure = (
       stage: 'provider'
     }
   }
+
   if (error instanceof AiActionRegistryError) {
     return {
       code: error.code,
@@ -803,6 +843,7 @@ const stableFailure = (
       stage: 'registry'
     }
   }
+
   if (error instanceof AiAuditError) {
     return {
       code: error.code,
@@ -970,6 +1011,7 @@ const validateRuntimeOptions = (
   readonly retryPolicy?: AiRetryPolicy
 } => {
   const retryPolicy = options?.retryPolicy
+
   if (
     retryPolicy &&
     (!Number.isInteger(retryPolicy.maxAttempts) ||
@@ -990,6 +1032,7 @@ const validateRuntimeOptions = (
   } = {
     redaction
   }
+
   if (retryPolicy) {
     validated.retryPolicy = Object.freeze({
       maxAttempts: retryPolicy.maxAttempts,
@@ -1006,18 +1049,31 @@ const validateRuntimeOptions = (
 
 class DefaultAiAgentRuntime implements AiAgentRuntime {
   private readonly preserveProgress: boolean
+
   private readonly activeInvocations = new Set<ActiveAiInvocation>()
+
   private readonly confirmationHandler: AiConfirmationHandler
+
   private readonly contextProvider: AiContextProvider
+
   private readonly ownedResources: readonly AiRuntimeOwnedResource[]
+
   private readonly permissionPolicy: AiPermissionPolicy
+
   private readonly provider: AiProvider
+
   private readonly redactionOptions: AiRedactionOptions
+
   private readonly registry: AiActionRegistry
+
   private readonly retryPolicy: AiRetryPolicy | undefined
+
   private readonly createRecordingSink?: () => ExecutionRecordSink
+
   private readonly transactionRunner: AiTransactionRunner
+
   private disposal: Promise<void> | undefined
+
   private disposed = false
 
   constructor(input: CreateAiAgentRuntimeInput) {
@@ -1052,12 +1108,21 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
     metadata?: AiJsonValue
     evidence?: AiJsonValue
   }): void {
-    if (this.disposed || !/^[a-zA-Z0-9_-]{1,160}$/.test(input.sourceRequestId))
+    if (
+      this.disposed ||
+      !/^[a-zA-Z0-9_-]{1,160}$/.test(input.sourceRequestId)
+    ) {
       return
+    }
+
     let sink: ExecutionRecordSink | undefined
+
     try {
       sink = this.createRecordingSink?.()
-      if (!sink) return
+      if (!sink) {
+        return
+      }
+
       const observation = createAiExecutionProfiler(
         {
           intent: '',
@@ -1076,9 +1141,11 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
           sourceRequestId: input.sourceRequestId,
           provider: 'host',
           purpose: input.purpose.slice(0, 160),
+
           log: () => undefined
         }
       )
+
       observation.trace(
         'host_observation',
         redactAiValue(input.evidence ?? {}, this.redactionOptions)
@@ -1113,7 +1180,9 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
     }
 
     const controller = new AbortController()
+
     const abortInvocation = () => controller.abort(request.signal.reason)
+
     if (request.signal.aborted) {
       abortInvocation()
     } else {
@@ -1134,12 +1203,14 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
         )
       )
     }
+
     this.activeInvocations.add(active)
     let recording: ReturnType<typeof createAiExecutionProfiler> | undefined
     let sink: ExecutionRecordSink | undefined
+
     try {
       sink = this.createRecordingSink?.()
-      if (sink)
+      if (sink) {
         recording = createAiExecutionProfiler(
           {
             intent: request.intent,
@@ -1156,16 +1227,20 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
             lifecycle: true,
             provider: 'runtime',
             purpose: 'user-request',
+
             log: () => undefined
           }
         )
+      }
     } catch {
       /* Recording admission cannot prevent product execution. */
     }
+
     let metadata =
       request.metadata === undefined
         ? undefined
         : redactAiValue(request.metadata, this.redactionOptions)
+
     if (
       recording &&
       (metadata === undefined ||
@@ -1178,6 +1253,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
         sourceRequestId: recording.requestId
       }
     }
+
     active.settlement = this.runInvocation(
       {
         intent: request.intent,
@@ -1194,6 +1270,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
           recording?.finish(
             result.status === 'executed' ? 'completed' : result.status
           )
+
           return recording
             ? Object.freeze({ ...result, recordingId: recording.requestId })
             : result
@@ -1210,6 +1287,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
         } catch {
           /* Non-authoritative observer. */
         }
+
         request.signal.removeEventListener('abort', abortInvocation)
         this.activeInvocations.delete(active)
       })
@@ -1228,9 +1306,11 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
   private async disposeRuntime(): Promise<void> {
     this.disposed = true
     const active = [...this.activeInvocations]
+
     for (const invocation of active) {
       invocation.controller.abort()
     }
+
     await Promise.allSettled(active.map((invocation) => invocation.settlement))
 
     this.registry.dispose()
@@ -1242,6 +1322,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
     const failed = cleanups.find(
       (result): result is PromiseRejectedResult => result.status === 'rejected'
     )
+
     if (failed) {
       throw failed.reason
     }
@@ -1262,6 +1343,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
     let actionStartedAt: number | undefined
     let currentStage: AiRuntimeStage = 'context'
     let progressSequence = 0
+
     const emitProgress = (update: AiRuntimeProgressUpdate): void => {
       const event = {
         ...update,
@@ -1275,6 +1357,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
         event,
         this.redactionOptions
       )
+
       recording?.trace('progress_projection', {
         phase: event.phase,
         activity: event.activity,
@@ -1291,10 +1374,12 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
     let batchPending = false
     let callbackFailure: unknown
     let batchSettlement: Promise<void> | undefined
+
     try {
       const intent =
         typeof request.intent === 'string' ? request.intent.trim() : ''
-      if (!intent)
+
+      if (!intent) {
         return createFailedResult(
           {
             code: 'AI_RUNTIME_INVALID_INTENT',
@@ -1304,19 +1389,26 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
           evidence,
           this.redactionOptions
         )
-      if (signal.aborted) throw INVOCATION_ABORTED
+      }
+
+      if (signal.aborted) {
+        throw INVOCATION_ABORTED
+      }
+
       emitProgress({
         attempt,
         phase: 'context',
         summary: 'Understanding the request'
       })
       let contextRead = 0
+
       const readContext = async () => {
         const end = recording?.span({
           callId: `context-${++contextRead}`,
           owner: 'app',
           purpose: 'Read current request context'
         })
+
         try {
           return redactAiValue(
             await runAbortable(signal, () =>
@@ -1328,17 +1420,22 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
           end?.()
         }
       }
+
       let context = await readContext()
       let contextStale = false
+
       const refreshContext = async () => {
         currentStage = 'context'
         context = await readContext()
         contextStale = false
+
         return context
       }
+
       currentStage = 'registry'
       const actions = this.registry.list()
       let preparationSequence = 0
+
       const observePreparation = async <T>(
         purpose: string,
         work: () => T | Promise<T>
@@ -1348,17 +1445,22 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
           owner: 'app',
           purpose
         })
+
         try {
           return await work()
         } finally {
           end?.()
         }
       }
+
       const executePrepared = async (actionBatch: AiActionBatch) => {
         failedAction = undefined
         failedActionId = null
         actionStartedAt = undefined
-        if (contextStale) await refreshContext()
+        if (contextStale) {
+          await refreshContext()
+        }
+
         currentStage = 'resolution'
         emitProgress({
           attempt,
@@ -1368,11 +1470,14 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
         const resolved = await observePreparation('Resolve action batch', () =>
           this.resolveAiActionBatch(actionBatch, { signal })
         )
-        if (batchIds.has(resolved.batchId))
+
+        if (batchIds.has(resolved.batchId)) {
           throw new AiActionBatchResolutionError(
             'AI_ACTION_BATCH_DUPLICATE_ACTION_ID',
             'A prepared batch cannot execute twice in one invocation.'
           )
+        }
+
         batchIds.add(resolved.batchId)
         evidence = {
           ...evidence,
@@ -1407,7 +1512,9 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
             summary: 'Waiting for confirmation'
           })
         }
+
         let confirmed: ConfirmedAiActionBatch
+
         try {
           confirmed = await observePreparation(
             'Resolve action confirmation',
@@ -1429,6 +1536,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
           }
           throw error
         }
+
         evidence = {
           ...evidence,
           preview: confirmed.preview
@@ -1437,6 +1545,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
         currentStage = 'execution'
         evidence = { ...evidence, executionStarted: true }
         const actionResults: AiActionExecutionResult[] = []
+
         for (const action of confirmed.actions) {
           const actionCallId = globalThis.crypto.randomUUID()
           const description = action.summary
@@ -1450,6 +1559,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
             typeof description.text === 'string'
               ? description.text
               : undefined
+
           emitProgress({
             ...(authored
               ? {
@@ -1488,7 +1598,11 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
           const actionMutation: AiMutationExecutor | undefined = runMutation
             ? async (mutate, settled) => {
                 const executor = runMutation
-                if (!executor) throw new AiExecutionError()
+
+                if (!executor) {
+                  throw new AiExecutionError()
+                }
+
                 const callId = `${actionCallId}:mutation-${++childSequence}`
                 const endAdmission = recording?.span({
                   callId: `${callId}:admission`,
@@ -1497,6 +1611,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                   purpose: 'Await mutation admission'
                 })
                 let admitted = false
+
                 try {
                   return await executor(() => {
                     admitted = true
@@ -1507,6 +1622,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                       owner: 'app',
                       purpose: 'Apply canonical mutation'
                     })
+
                     try {
                       return mutate()
                     } finally {
@@ -1514,11 +1630,14 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                     }
                   }, settled)
                 } finally {
-                  if (!admitted) endAdmission?.()
+                  if (!admitted) {
+                    endAdmission?.()
+                  }
                 }
               }
             : undefined
           let completed: AiActionExecutionBatch
+
           try {
             completed = await executeAiActions(
               { ...confirmed, actions: [action] },
@@ -1528,6 +1647,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
               {
                 reportProgress: (update) =>
                   emitProgress({ ...update, attempt, tool: action.name }),
+
                 observe: async (stage, purpose, work) => {
                   const end = recording?.span({
                     callId: `${actionCallId}:${stage}-${++childSequence}`,
@@ -1535,6 +1655,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                     owner: 'app',
                     purpose
                   })
+
                   try {
                     return await work()
                   } finally {
@@ -1556,6 +1677,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
               error instanceof AiExecutionError
                 ? error.receipt
                 : undefined
+
             if (receipt) {
               allResults.push(
                 Object.freeze({
@@ -1565,6 +1687,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                 })
               )
             }
+
             recording?.trace('action_failed', {
               ...(receipt
                 ? { result: allResults[allResults.length - 1]?.result }
@@ -1576,7 +1699,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
             })
             throw error
           } finally {
-            if (authored)
+            if (authored) {
               emitProgress({
                 attempt,
                 batchId: confirmed.batchId,
@@ -1590,16 +1713,21 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                   sequence: 0
                 }
               })
+            }
           }
+
           allResults.push(...completed.actionResults)
           actionResults.push(...completed.actionResults)
           failedAction = undefined
         }
+
         const execution = Object.freeze({
           actionResults: Object.freeze(actionResults)
         })
+
         return { confirmed, execution }
       }
+
       currentStage = 'transaction'
       const executed = await runAiActionBatchTransaction(
         {
@@ -1607,6 +1735,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
             let callbackFailed = false
             let callbackError: unknown
             let endHistory: (() => void) | undefined
+
             try {
               return await this.transactionRunner.run(
                 label,
@@ -1634,8 +1763,10 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                   currentStage = 'transaction'
                   providerFailure = undefined
                 }
+
                 throw error.cause
               }
+
               // A conforming runner preserves the callback error only after rollback.
               // A different rejection belongs to the transaction owner itself.
               if (callbackFailed && error === callbackError) {
@@ -1645,6 +1776,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                 currentStage = 'transaction'
                 providerFailure = undefined
               }
+
               throw error
             } finally {
               endHistory?.()
@@ -1656,6 +1788,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
           runMutation = scope
           try {
             let finalBatch: AiActionBatch
+
             while (true) {
               currentStage = 'provider'
               emitProgress({
@@ -1671,6 +1804,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
               })
               const providerAttempt = attempt
               let lastProgressSequence = 0
+
               try {
                 finalBatch = await runAbortable(signal, () =>
                   this.provider.requestActionBatch(
@@ -1685,6 +1819,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                     }),
                     {
                       signal,
+
                       executeBatch: async (batch) => {
                         if (
                           !acceptingBatches ||
@@ -1694,24 +1829,32 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                           callbackFailure = new AiExecutionError()
                           throw callbackFailure
                         }
+
                         batchPending = true
                         let settle!: () => void
+
                         batchSettlement = new Promise<void>((resolve) => {
                           settle = resolve
                         })
                         const resultOffset = allResults.length
+
                         try {
                           const { execution } = await executePrepared(batch)
+
                           contextStale = true
                           const updatedContext = await refreshContext()
+
                           currentStage = 'provider'
+
                           return Object.freeze({
                             actionResults: execution.actionResults,
                             context: updatedContext
                           })
                         } catch (error) {
-                          if (signal.aborted || error === INVOCATION_ABORTED)
+                          if (signal.aborted || error === INVOCATION_ABORTED) {
                             throw INVOCATION_ABORTED
+                          }
+
                           const stage = currentStage
                           const actionExecutionMs =
                             stage === 'execution' &&
@@ -1729,12 +1872,16 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                               stage
                             }
                           )
+
                           contextStale = true
                           try {
                             await refreshContext()
                           } catch {
-                            if (signal.aborted) throw INVOCATION_ABORTED
+                            if (signal.aborted) {
+                              throw INVOCATION_ABORTED
+                            }
                           }
+
                           let settlement:
                             | 'unknown'
                             | 'not-started'
@@ -1743,21 +1890,29 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                             stage === 'execution' || stage === 'context'
                               ? 'unknown'
                               : 'not-started'
+
                           if (error instanceof AiTransactionSettlementError) {
-                            if (error.status === 'rolled-back')
+                            if (error.status === 'rolled-back') {
                               settlement = 'not-started'
-                            else if (error.status === 'committed')
+                            } else if (error.status === 'committed') {
                               settlement = 'completed'
+                            }
                           }
+
                           if (
                             error instanceof AiActionExecutionError &&
                             error.receipt
-                          )
+                          ) {
                             settlement = error.receipt.settlement
-                          if (error instanceof AiToolContractError)
+                          }
+
+                          if (error instanceof AiToolContractError) {
                             settlement =
                               error.inspection?.settlement ?? 'not-started'
+                          }
+
                           currentStage = 'provider'
+
                           return Object.freeze({
                             actionResults: allResults.slice(resultOffset),
                             context,
@@ -1791,6 +1946,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                           settle()
                         }
                       },
+
                       onProgress: (event) => {
                         if (
                           !acceptingBatches ||
@@ -1800,17 +1956,23 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                           typeof event.tool !== 'string' ||
                           !/^[a-zA-Z0-9_-]{1,64}$/.test(event.tool) ||
                           !['running', 'completed'].includes(event.status)
-                        )
+                        ) {
                           return
+                        }
+
                         if (event.activity) {
                           const activity = event.activity
+
                           if (
                             !isExecutionActivity(activity) ||
                             activity.sequence <= lastProgressSequence
-                          )
+                          ) {
                             return
+                          }
+
                           lastProgressSequence = activity.sequence
                         }
+
                         emitProgress({
                           attempt,
                           phase: 'provider',
@@ -1832,14 +1994,26 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                     }
                   )
                 )
-                if (callbackFailure) throw callbackFailure
-                if (batchPending) throw new AiExecutionError()
+                if (callbackFailure) {
+                  throw callbackFailure
+                }
+
+                if (batchPending) {
+                  throw new AiExecutionError()
+                }
+
                 break
               } catch (error) {
-                if (signal.aborted || error === INVOCATION_ABORTED)
+                if (signal.aborted || error === INVOCATION_ABORTED) {
                   throw INVOCATION_ABORTED
-                if (callbackFailure) throw callbackFailure
+                }
+
+                if (callbackFailure) {
+                  throw callbackFailure
+                }
+
                 const failure = toAiProviderRequestFailure(error, attempt)
+
                 if (
                   batchIds.size > 0 ||
                   !shouldRetryAiProviderFailure(failure, this.retryPolicy)
@@ -1847,6 +2021,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                   providerFailure = failure
                   throw error
                 }
+
                 attempt += 1
                 evidence = { retryCount: attempt - 1 }
               } finally {
@@ -1855,7 +2030,9 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                 await batchSettlement
               }
             }
+
             const { confirmed } = await executePrepared(finalBatch)
+
             currentStage = 'audit'
             const audit = createAiRuntimeAudit(
               {
@@ -1869,7 +2046,9 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
               },
               this.redactionOptions
             )
+
             currentStage = 'transaction'
+
             return Object.freeze({
               actionResults: Object.freeze([...allResults]),
               audit,
@@ -1887,14 +2066,17 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
               error === INVOCATION_ABORTED ||
               (error instanceof AiConfirmationError &&
                 error.code === 'AI_CONFIRMATION_CANCELLED')
-            )
+            ) {
               throw error
+            }
+
             const failed = createFailedResult(
               providerFailure ??
                 stableFailure(error, STAGE_FAILURES[currentStage]),
               evidence,
               this.redactionOptions
             )
+
             // Returning normally asks the canonical transaction owner to commit.
             // A settlement error still escapes and must never claim retained progress.
             return Object.freeze({
@@ -1915,6 +2097,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
           }
         }
       )
+
       emitProgress({
         actionCount: allResults.length,
         attempt,
@@ -1923,6 +2106,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
         phase: 'settled',
         summary: executed.status === 'executed' ? 'Completed' : 'Failed'
       })
+
       return executed
     } catch (error) {
       if (signal.aborted || error === INVOCATION_ABORTED) {
@@ -1944,17 +2128,20 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
           phase: 'settled',
           summary: 'Cancelled'
         })
+
         return createCancelledResult(
           'confirmation-cancelled',
           evidence,
           this.redactionOptions
         )
       }
+
       const failed = createFailedResult(
         providerFailure ?? stableFailure(error, STAGE_FAILURES[currentStage]),
         evidence,
         this.redactionOptions
       )
+
       emitProgress({
         attempt: evidence.retryCount + 1,
         outcome: 'failed',
@@ -1966,6 +2153,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
             }),
         summary: 'Failed'
       })
+
       return evidence.transactionStatus === 'committed'
         ? Object.freeze({
             ...failed,

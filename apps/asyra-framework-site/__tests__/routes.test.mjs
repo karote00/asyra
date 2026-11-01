@@ -4,6 +4,7 @@ import path from 'node:path'
 import test from 'node:test'
 
 const siteRoot = path.resolve(import.meta.dirname, '..')
+
 const readSiteFile = (file) => readFile(path.join(siteRoot, file), 'utf8')
 
 test('Asyra Design is presented as the official product and an App-owned reference', async () => {
@@ -54,9 +55,11 @@ test('every external website link opens in a new tab without opener access', asy
       )
     }
   }
+
   assert.ok(externalAnchorCount > 0, 'external link inventory')
 
   const markdown = await readSiteFile('components/markdown-content.tsx')
+
   assert.match(markdown, /const externalWebsite = isExternalWebsite\(href\)/)
   assert.match(markdown, /target=\{externalWebsite \? '_blank' : undefined\}/)
   assert.match(

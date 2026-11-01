@@ -8,18 +8,22 @@ import {
 
 class PixelCanvas {
   static latest: PixelCanvas
+
   pixels = new Uint8ClampedArray()
+
   constructor(
     readonly width: number,
     readonly height: number
   ) {
     PixelCanvas.latest = this
   }
+
   getContext() {
     return {
       createImageData: (width: number, height: number) => ({
         data: new Uint8ClampedArray(width * height * 4)
       }),
+
       putImageData: (image: { data: Uint8ClampedArray }) => {
         this.pixels = image.data
       }
@@ -27,6 +31,7 @@ class PixelCanvas {
   }
 }
 afterEach(() => vi.unstubAllGlobals())
+
 const rectangle = (
   x: number,
   y: number,
@@ -40,6 +45,7 @@ const rectangle = (
     { type: 'line', points: [x, y + height, x, y] }
   ]
 })
+
 const gradient = (
   type: 'linear' | 'radial' | 'angular' | 'diamond',
   opacity = 1
@@ -61,6 +67,7 @@ const gradient = (
       ]
     }
   })
+
 const raster = (fills: FillAttrs[], width = 8, height = 8, hole = true) => {
   vi.stubGlobal('OffscreenCanvas', PixelCanvas)
   const result = createEvenOddFillStyle({
@@ -76,9 +83,12 @@ const raster = (fills: FillAttrs[], width = 8, height = 8, hole = true) => {
     },
     fills
   })
+
   expect(result).not.toBeNull()
   const canvas = PixelCanvas.latest
+
   result?.dispose()
+
   return canvas
 }
 
@@ -91,9 +101,14 @@ it.each(['linear', 'radial', 'angular', 'diamond'] as const)(
       gradient(type, 0.7)
     ])
     const changed = gradient(type)
-    if (!changed.gradient) throw new Error('Missing gradient')
+
+    if (!changed.gradient) {
+      throw new Error('Missing gradient')
+    }
+
     changed.gradient.gradientHandles[1] = { x: 0.7, y: 1 }
     const updated = raster([changed])
+
     for (const canvas of [first, stacked, updated]) {
       expect([canvas.width, canvas.height]).toEqual([16, 16])
       // Inner hole remains empty, including under multiple translucent fills.
@@ -101,6 +116,7 @@ it.each(['linear', 'radial', 'angular', 'diamond'] as const)(
         Array.from(canvas.pixels.slice((8 * 16 + 8) * 4, (8 * 16 + 8) * 4 + 4))
       ).toEqual([0, 0, 0, 0])
     }
+
     expect(
       [first, stacked, updated].map((canvas) =>
         createHash('sha256').update(canvas.pixels).digest('hex')
@@ -111,21 +127,30 @@ it.each(['linear', 'radial', 'angular', 'diamond'] as const)(
 
 it('prepares invariant gradient inputs once per fill instead of once per pixel', () => {
   const fill = gradient('linear')
-  if (!fill.gradient) throw new Error('Missing gradient')
+
+  if (!fill.gradient) {
+    throw new Error('Missing gradient')
+  }
+
   let typeReads = 0
+
   Object.defineProperty(fill.gradient, 'gradientType', {
     get() {
       typeReads++
+
       return 'linear'
     }
   })
   const started = performance.now()
   const count = 24
   let pixels = 0
+
   for (let i = 0; i < count; i++) {
     const canvas = raster([fill], 320, 300, false)
+
     pixels += canvas.width * canvas.height
   }
+
   // Explicit diagnostic output from the retained performance fixture, no timing gate.
   // eslint-disable-next-line no-console
   console.info(
@@ -146,16 +171,24 @@ it.each(['linear', 'radial', 'angular', 'diamond'] as const)(
   'prepares %s handle coordinates once per raster',
   (type) => {
     const fill = gradient(type)
-    if (!fill.gradient) throw new Error('Missing gradient')
+
+    if (!fill.gradient) {
+      throw new Error('Missing gradient')
+    }
+
     let reads = 0
+
     fill.gradient.gradientHandles = fill.gradient.gradientHandles.map(
       ({ x, y }) => ({
         get x() {
           reads++
+
           return x
         },
+
         get y() {
           reads++
+
           return y
         }
       })

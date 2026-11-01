@@ -13,6 +13,7 @@ for (const width of [320, 820, 1440]) {
       name: 'Choose your starting point.'
     })
     const section = startingPoint.getByRole('region', { name: 'Asyra Skill' })
+
     await section.scrollIntoViewIfNeeded()
     await expect(section).toContainText('Asyra Skill')
     await expect(section).toContainText('your existing AI coding agent')
@@ -23,8 +24,11 @@ for (const width of [320, 820, 1440]) {
       .locator('article')
       .first()
       .boundingBox()
-    if (!products || !entry || !starters || !firstStarter)
+
+    if (!products || !entry || !starters || !firstStarter) {
       throw new Error('Homepage entry sections are missing')
+    }
+
     expect(starters.y).toBeGreaterThanOrEqual(products.y + products.height - 1)
     expect(entry.y).toBeGreaterThan(starters.y)
     expect(firstStarter.y).toBeGreaterThanOrEqual(entry.y + entry.height - 1)
@@ -37,31 +41,41 @@ for (const width of [320, 820, 1440]) {
     )
 
     const install = section.getByRole('link', { name: 'Get Asyra Skill' })
+
     await expect(install).toHaveAttribute('href', installGuideUrl)
     await expect(install).toHaveAttribute('target', '_blank')
     await expect(install).toHaveAttribute('rel', 'noopener noreferrer')
     const contrast = await install.evaluate((element) => {
       const style = getComputedStyle(element)
+
       const luminance = (color: string) => {
         const channels = color.match(/[\d.]+/g)
-        if (!channels || channels.length < 3)
+
+        if (!channels || channels.length < 3) {
           throw new Error(`Expected an RGB color: ${color}`)
+        }
+
         const values = channels.slice(0, 3).map(Number)
         const linear = values.map((channel) => {
           const value = channel / 255
+
           return value <= 0.04045
             ? value / 12.92
             : ((value + 0.055) / 1.055) ** 2.4
         })
+
         return linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722
       }
+
       const foreground = luminance(style.color)
       const background = luminance(style.backgroundColor)
+
       return (
         (Math.max(foreground, background) + 0.05) /
         (Math.min(foreground, background) + 0.05)
       )
     })
+
     expect(contrast).toBeGreaterThanOrEqual(4.5)
     await page.keyboard.press('Tab')
     await install.focus()
@@ -70,6 +84,7 @@ for (const width of [320, 820, 1440]) {
       color: getComputedStyle(element).outlineColor,
       width: parseFloat(getComputedStyle(element).outlineWidth)
     }))
+
     expect(focusStyle.visible).toBe(true)
     expect(focusStyle.width).toBeGreaterThanOrEqual(2)
     expect(focusStyle.color).not.toBe(
@@ -79,11 +94,16 @@ for (const width of [320, 820, 1440]) {
     )
     for (const link of await section.getByRole('link').all()) {
       const box = await link.boundingBox()
-      if (!box) throw new Error('Developer entry link is missing')
+
+      if (!box) {
+        throw new Error('Developer entry link is missing')
+      }
+
       expect(box.height).toBeGreaterThanOrEqual(44)
       expect(box.x).toBeGreaterThanOrEqual(0)
       expect(box.x + box.width).toBeLessThanOrEqual(width)
     }
+
     await section.getByRole('link', { name: 'Build with AI guide' }).click()
     await expect(page).toHaveURL(/\/docs\/start\/extend-with-ai$/)
     await expect(
@@ -120,9 +140,11 @@ test('primary Start building CTAs route to Generic Starter source', async ({
   const startBuildingCtas = page.getByRole('link', {
     name: /Start building/
   })
+
   await expect(startBuildingCtas).toHaveCount(2)
   for (let index = 0; index < 2; index += 1) {
     const cta = startBuildingCtas.nth(index)
+
     await expect(cta).toHaveAttribute('href', '/docs#generic-starter-source')
     await cta.evaluate((anchor: HTMLAnchorElement) =>
       anchor.scrollIntoView({ behavior: 'instant', block: 'center' })
@@ -136,7 +158,9 @@ test('primary Start building CTAs route to Generic Starter source', async ({
     await expect(
       page.getByText('npx create-asyra-app@0.1.0 my-app --package-manager=npm')
     ).toBeVisible()
-    if (index === 0) await page.goto('/')
+    if (index === 0) {
+      await page.goto('/')
+    }
   }
 })
 
@@ -148,6 +172,7 @@ for (const width of [1440, 390]) {
     await page.goto('/')
     const section = page.locator('#start-building')
     const cards = section.locator('article')
+
     await expect(cards).toHaveCount(3)
     await expect(cards.nth(0)).toContainText('Generic Starter')
     await expect(cards.nth(0)).toContainText('published CLI')
@@ -200,8 +225,10 @@ test('entry routes and status remain present with reduced motion and no JavaScri
     viewport: { width: 390, height: 900 }
   })
   const page = await context.newPage()
+
   await page.goto('/')
   const developerEntry = page.locator('#build-with-ai')
+
   await expect(developerEntry).toContainText('Asyra Skill')
   await developerEntry
     .getByRole('link', { name: 'Build with AI guide' })

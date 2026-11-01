@@ -13,6 +13,7 @@ const outputUrl = new URL(
 const dom = new JSDOM('<!doctype html><html><body></body></html>', {
   url: 'http://localhost/'
 })
+
 Object.defineProperties(globalThis, {
   document: { configurable: true, value: dom.window.document },
   HTMLElement: { configurable: true, value: dom.window.HTMLElement },
@@ -52,6 +53,7 @@ const preparedAction = record.batch.actions.find(
 )
 const insertAction = createAiActions(undefined, {
   waitForPaint: async () => undefined,
+
   yieldToHost: async () => undefined
 }).find(({ name }) => name === AiActionNames.INSERT_VECTOR_COMPOSITION)
 
@@ -71,6 +73,7 @@ const document = await core.save()
 const canonicalElementCount =
   Object.keys(document.sceneTree.elements).length -
   document.sceneTree.workspaceList.length
+
 if (canonicalElementCount !== EXPECTED_ELEMENT_COUNT) {
   throw new Error(
     `[generate-crdt-7076-document] expected ${String(

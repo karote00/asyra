@@ -7,7 +7,9 @@ const modes = ['standalone', 'plan-task', 'plan-closeout']
 const shaPattern = /^[a-f0-9]{40}$/
 
 function requireValue(condition, message) {
-  if (!condition) throw new Error(message)
+  if (!condition) {
+    throw new Error(message)
+  }
 }
 
 function text(value, field) {
@@ -15,6 +17,7 @@ function text(value, field) {
     typeof value === 'string' && value.trim().length > 0,
     `${field} is required`
   )
+
   return value
 }
 
@@ -30,6 +33,7 @@ export function documentPath(value, field = 'plan.path') {
       ![...value].some((character) => character.charCodeAt(0) < 32),
     `${field} must be a repository-relative owner document path`
   )
+
   return value
 }
 
@@ -73,6 +77,7 @@ export function validateContext(input) {
     )
     text(input.plan.closeoutOwner, 'plan.closeoutOwner')
   }
+
   return structuredClone(input)
 }
 
@@ -80,10 +85,12 @@ export function parseContext(body) {
   const blocks = [
     ...(body ?? '').matchAll(/^```task-context\s*\n([\s\S]*?)^```\s*$/gm)
   ]
+
   requireValue(
     blocks.length === 1,
     'Exactly one task-context block is required'
   )
+
   return validateContext(JSON.parse(blocks[0][1]))
 }
 
@@ -93,6 +100,7 @@ export function renderContext(context) {
 
 export function inheritContext(parentInput, selection) {
   const parent = validateContext(parentInput)
+
   requireValue(
     selection && typeof selection === 'object',
     'Child selection is required'
@@ -110,11 +118,14 @@ export function inheritContext(parentInput, selection) {
       ...new Set([...parent.prerequisites, ...(selection.prerequisites ?? [])])
     ]
   }
-  if (parent.plan)
+
+  if (parent.plan) {
     child.plan = {
       ...parent.plan,
       section: text(selection.section, 'child section')
     }
+  }
+
   return validateContext(child)
 }
 
@@ -122,6 +133,7 @@ export function assertPlanSection(content, context) {
   const matches = content
     .split(/\r?\n/)
     .filter((line) => line === context.plan.section)
+
   requireValue(
     matches.length === 1,
     'Plan section must exist exactly once; read the selected task contract before editing'
@@ -130,13 +142,16 @@ export function assertPlanSection(content, context) {
 
 export function preflight(contextInput, root = process.cwd()) {
   const context = validateContext(contextInput)
+
   const git = (...args) =>
     execFileSync('git', args, {
       cwd: root,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe']
     }).trim()
+
   const branch = git('branch', '--show-current')
+
   requireValue(
     branch && !['main', 'master'].includes(branch),
     'A feature branch is required'
@@ -151,8 +166,10 @@ export function preflight(contextInput, root = process.cwd()) {
       )
     }
   }
+
   if (context.plan) {
     let basePlan
+
     try {
       basePlan = git('show', `${context.base.sha}:${context.plan.path}`)
     } catch {
@@ -160,15 +177,18 @@ export function preflight(contextInput, root = process.cwd()) {
         'Plan must already exist in the selected base; do not import an unmerged plan'
       )
     }
+
     assertPlanSection(basePlan, context)
     const realRoot = realpathSync(root)
     const planFile = realpathSync(path.join(root, context.plan.path))
+
     requireValue(
       planFile.startsWith(`${realRoot}${path.sep}`),
       'Plan symlinks cannot escape the checkout'
     )
     assertPlanSection(readFileSync(planFile, 'utf8'), context)
   }
+
   return context
 }
 
@@ -177,6 +197,7 @@ export function handoff(context) {
   const selection = context.plan
     ? `Read ${context.plan.path}, section ${JSON.stringify(context.plan.section)}. Whole-plan closeout owner: ${context.plan.closeoutOwner}.`
     : 'This task is explicitly standalone.'
+
   return `${selection}\nFollow AGENTS.md. Run task-context preflight in the selected checkout before editing. Read the actual contract, prerequisites and acceptance criteria; metadata alone does not authorize work or remote operations. Preserve this context in the PR body.\n\n${renderContext(context)}\n`
 }
 
@@ -187,6 +208,7 @@ if (
   try {
     const [command, contextFile, selectionFile] = process.argv.slice(2)
     const input = JSON.parse(readFileSync(contextFile, 'utf8'))
+
     if (command === 'check') {
       preflight(input)
       process.stdout.write(
@@ -199,11 +221,13 @@ if (
         input,
         JSON.parse(readFileSync(selectionFile, 'utf8'))
       )
+
       process.stdout.write(handoff(preflight(child)))
-    } else
+    } else {
       throw new Error(
         'Usage: node scripts/task-context.mjs check|handoff <context.json> OR child <parent.json> <selection.json>'
       )
+    }
   } catch (error) {
     process.stderr.write(`${error.message}\n`)
     process.exitCode = 1

@@ -55,6 +55,7 @@ export const createRecordCollector = (options: {
   let disposed = false
   // Serialize admission and final disk flush so concurrent retries see one acknowledgement.
   let pending: Promise<unknown> = Promise.resolve()
+
   const expire = async () => {
     for (const [key, request] of requests) {
       if (now() - request.touched > (options.retentionMs ?? 30 * 60_000)) {
@@ -63,43 +64,62 @@ export const createRecordCollector = (options: {
       }
     }
   }
+
   const timer = setInterval(
     () => {
       pending = pending.then(expire).catch(() => undefined)
     },
     Math.min(options.retentionMs ?? 30 * 60_000, 60_000)
   )
+
   timer.unref()
+
   const accept = async (input: unknown) => {
-    if (disposed || !Array.isArray(input) || !input.length || input.length > 64)
+    if (
+      disposed ||
+      !Array.isArray(input) ||
+      !input.length ||
+      input.length > 64
+    ) {
       throw new ExecutionRecordCollectionError(
         'AI_RECORD_INVALID_BATCH',
         'Invalid record batch'
       )
+    }
+
     const records = input as ExecutionRecord[]
     const id = records[0]?.requestId
-    if (typeof id !== 'string' || !/^[a-zA-Z0-9_-]{1,160}$/.test(id))
+
+    if (typeof id !== 'string' || !/^[a-zA-Z0-9_-]{1,160}$/.test(id)) {
       throw new ExecutionRecordCollectionError(
         'AI_RECORD_INVALID_IDENTITY',
         'Invalid record identity'
       )
+    }
+
     await expire()
     let state = requests.get(id)
+
     if (!state) {
-      if (requests.size >= (options.maxRequests ?? 32))
+      if (requests.size >= (options.maxRequests ?? 32)) {
         throw new ExecutionRecordCollectionError(
           'AI_RECORD_CAPACITY_EXCEEDED',
           'Record capacity exceeded'
         )
+      }
+
       const restored = await options.restore?.(id)
+
       if (
         !restored &&
         (records[0].sequence !== 0 || records[0].event !== 'ai_request_started')
-      )
+      ) {
         throw new ExecutionRecordCollectionError(
           'AI_RECORD_MISSING_SEQUENCE',
           'Missing initial sequence'
         )
+      }
+
       state = {
         sink: restored?.sink ?? options.createSink(),
         nextSequence: restored?.nextSequence ?? 0,
@@ -110,6 +130,7 @@ export const createRecordCollector = (options: {
       }
       requests.set(id, state)
     }
+
     // Validate the whole chunk before writing its first new event.
     const recentFrom = state.nextSequence - state.hashes.length
     const oldHashes = new Map<number, string>()
@@ -120,27 +141,39 @@ export const createRecordCollector = (options: {
         record.sequence >= 0 &&
         record.sequence < recentFrom
     )
+
     if (older.length && options.readPersistedHashes) {
       const sequences = [
         ...new Set(older.map((record) => record.sequence))
       ].sort((a, b) => a - b)
+
       while (sequences.length) {
         const from = sequences.shift()
-        if (from === undefined) break
+
+        if (from === undefined) {
+          break
+        }
+
         let count = 1
+
         while (sequences[0] === from + count) {
           sequences.shift()
           count++
         }
+
         const hashes = await options.readPersistedHashes(id, from, count)
-        if (hashes.length !== count)
+
+        if (hashes.length !== count) {
           throw new ExecutionRecordCollectionError(
             'AI_RECORD_STORAGE_FAILED',
             'Persisted retry evidence unavailable'
           )
+        }
+
         hashes.forEach((hash, index) => oldHashes.set(from + index, hash))
       }
     }
+
     let next = state.nextSequence
     let terminal = state.terminal
     const prepared = records.map((record) => {
@@ -151,91 +184,120 @@ export const createRecordCollector = (options: {
         !Number.isSafeInteger(record.sequence) ||
         record.sequence < 0 ||
         typeof record.event !== 'string'
-      )
+      ) {
         throw new ExecutionRecordCollectionError(
           'AI_RECORD_INVALID_SEQUENCE',
           'Invalid record sequence'
         )
+      }
+
       const text = JSON.stringify(record)
-      if (Buffer.byteLength(text) > 256 * 1024)
+
+      if (Buffer.byteLength(text) > 256 * 1024) {
         throw new ExecutionRecordCollectionError(
           'AI_RECORD_CAPACITY_EXCEEDED',
           'Record capacity exceeded'
         )
+      }
+
       const hash = createHash('sha256').update(text).digest('hex')
+
       if (record.sequence < state.nextSequence) {
         if (
           (record.sequence < recentFrom
             ? oldHashes.get(record.sequence)
             : state.hashes[record.sequence - recentFrom]) !== hash
-        )
+        ) {
           throw new ExecutionRecordCollectionError(
             'AI_RECORD_CONFLICTING_RETRY',
             'Conflicting record retry'
           )
+        }
+
         return { record, hash, duplicate: true }
       }
-      if (terminal)
+
+      if (terminal) {
         throw new ExecutionRecordCollectionError(
           'AI_RECORD_AFTER_TERMINAL',
           'Record after terminal marker'
         )
-      if (record.sequence !== next++)
+      }
+
+      if (record.sequence !== next++) {
         throw new ExecutionRecordCollectionError(
           'AI_RECORD_MISSING_SEQUENCE',
           'Missing or repeated sequence'
         )
+      }
+
       if (
         next >
         (options.maxRecords ??
           (options.readPersistedHashes ? Number.MAX_SAFE_INTEGER : 50_000))
-      )
+      ) {
         throw new ExecutionRecordCollectionError(
           'AI_RECORD_CAPACITY_EXCEEDED',
           'Record capacity exceeded'
         )
+      }
+
       terminal = record.event === 'ai_request_usage'
+
       return { record, hash, duplicate: false }
     })
+
     for (const item of prepared) {
-      if (item.duplicate) continue
+      if (item.duplicate) {
+        continue
+      }
+
       state.sink.write(item.record)
       state.hashes.push(item.hash)
       state.nextSequence++
       if (
         options.readPersistedHashes &&
         state.hashes.length > recordDigestWindowSize
-      )
+      ) {
         state.hashes.shift()
+      }
     }
+
     state.terminal = terminal
     state.touched = now()
     if (terminal && !state.saved) {
       state.saved = (await state.sink.flush()).status === 'saved'
-      if (!state.saved)
+      if (!state.saved) {
         throw new ExecutionRecordCollectionError(
           'AI_RECORD_STORAGE_FAILED',
           'Record storage failed'
         )
+      }
     } else if (!terminal) {
-      if ((await state.sink.checkpoint?.())?.status !== 'saved')
+      if ((await state.sink.checkpoint?.())?.status !== 'saved') {
         throw new ExecutionRecordCollectionError(
           'AI_RECORD_CHECKPOINT_FAILED',
           'Record durable checkpoint failed'
         )
+      }
     }
+
     return {
       requestId: id,
       acknowledgedSequence: records[records.length - 1].sequence,
       complete: state.terminal && state.saved
     }
   }
+
   return {
     accept(input: unknown): Promise<ExecutionRecordAcknowledgement> {
       const result = pending.then(() => accept(input))
+
       pending = result.catch(() => undefined)
+
       return result
     },
+
     async dispose() {
       disposed = true
       clearInterval(timer)

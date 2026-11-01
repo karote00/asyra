@@ -194,10 +194,20 @@ input {
 }
 
 .overview,
-.route-error {
+.route-error,
+.contract-document {
   height: 100%;
   overflow: auto;
   padding: clamp(24px, 5vw, 72px);
+}
+
+.contract-document pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
 }
 
 .eyebrow {
@@ -241,11 +251,67 @@ input {
   font-size: 28px;
 }
 
-.target-frame {
-  width: 100%;
-  height: 100%;
-  border: 0;
-  background: #101418;
+.workspace-main .architecture-view {
+  height: calc(100% - 40px);
+}
+
+.inspector-panels {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 4px 48px 4px 12px;
+}
+
+.inspector-panels button {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 4px 10px;
+  color: var(--text);
+  background: var(--panel);
+  cursor: pointer;
+}
+
+.flow-stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+}
+
+.architecture-view {
+  --accent: #59b7ff;
+}
+
+.architecture-view .detail {
+  scroll-padding-block-start: calc(28px + 24px + 8px);
+}
+
+.architecture-view .detail > .panel-close-button {
+  position: sticky;
+  top: 0;
+  display: block;
+  margin-left: auto;
+  z-index: 6;
+}
+
+.architecture-view .detail[hidden],
+.architecture-view .header[hidden] {
+  display: none;
+}
+
+.architecture-view .header {
+  display: block;
+}
+
+.architecture-view .target-meta {
+  display: block;
+}
+
+.architecture-view .flow-surface {
+  position: relative;
+  min-width: 100%;
+  min-height: 100%;
 }
 
 .route-error {
@@ -253,6 +319,22 @@ input {
 }
 
 @media (max-width: 900px) {
+  .architecture-view:not(.is-detail-collapsed) > .main {
+    visibility: hidden;
+  }
+
+  .workspace-main .architecture-view .detail {
+    position: absolute;
+    inset: 40px 0 0;
+    height: auto;
+    padding: 24px 20px;
+    scroll-padding-block-start: calc(36px + 24px + 8px);
+  }
+
+  .workspace-main .architecture-view .detail::before {
+    display: none;
+  }
+
   .workspace-shell {
     grid-template-areas: 'main';
     grid-template-columns: minmax(0, 1fr);

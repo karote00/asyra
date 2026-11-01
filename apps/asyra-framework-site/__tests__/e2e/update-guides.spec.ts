@@ -16,14 +16,19 @@ test('an agent can follow website discovery to the update index and Text guide',
   request
 }) => {
   const discovery = await request.get('/llms.txt')
+
   expect(discovery.ok()).toBe(true)
   const markdown = await discovery.text()
   const updateLink = markdown.match(
     /\[Update your App with an AI coding agent\]\(([^)]+)\)/
   )
-  if (!updateLink)
+
+  if (!updateLink) {
     throw new Error('Website discovery is missing the update guide entry')
+  }
+
   const response = await page.goto(new URL(updateLink[1], discovery.url()).href)
+
   expect(response?.status()).toBe(200)
   await expect(
     page.getByRole('heading', {
@@ -88,8 +93,10 @@ test('Text source evidence renders as usable external links', async ({
     ['Preset entrypoint', 'packages/preset/src/index.ts'],
     ['Shared fill defaults', 'packages/utils/src/propsManager/fills.ts']
   ] as const
+
   for (const [label, path] of sources) {
     const link = page.getByRole('link', { name: label, exact: true })
+
     await expect(link).toHaveAttribute('href', `${root}${path}`)
     await expect(link).toHaveAttribute('target', '_blank')
     await expect(link).toHaveAttribute('rel', 'noopener noreferrer')
@@ -101,6 +108,7 @@ test('the subsequent guide is discoverable and retains its exact artifact and da
   request
 }) => {
   const discovery = await request.get('/llms.txt')
+
   expect(await discovery.text()).toContain(
     '/docs/updates/text-spacing-example-2-r2'
   )
@@ -140,6 +148,7 @@ test('the subsequent guide is discoverable and retains its exact artifact and da
     name: 'Original Text schema, validation and defaults',
     exact: true
   })
+
   await expect(source).toHaveAttribute('target', '_blank')
   await expect(source).toHaveAttribute('rel', 'noopener noreferrer')
   await page
@@ -153,6 +162,7 @@ test('release history is reachable from discovery and reports declared coverage 
   request
 }) => {
   const discovery = await request.get('/llms.txt')
+
   expect(discovery.ok()).toBe(true)
   expect(await discovery.text()).toContain('/docs/updates/history')
   await page.goto('/docs/updates/index')
@@ -174,11 +184,13 @@ test('release history is reachable from discovery and reports declared coverage 
       page.getByText(/No verified release summaries are registered yet/)
     ).toBeVisible()
   }
+
   for (const record of releaseHistory) {
     await expect(
       page.getByRole('link', { name: record.id, exact: true }).first()
     ).toBeVisible()
   }
+
   await expect(
     page.getByText(/Without a note, inspect the App and sample data/)
   ).toBeVisible()

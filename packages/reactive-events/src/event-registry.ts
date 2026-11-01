@@ -72,12 +72,15 @@ export const eventRegistry = {
 
       publish(payload?: TPayload, options?: TOptions) {
         const event: Record<string, unknown> = { type: eventName }
+
         if (payload !== undefined) {
           event.payload = payload
         }
+
         if (options !== undefined) {
           event.options = options
         }
+
         publishEvent(event as unknown as AllEvent)
       },
 
@@ -87,6 +90,7 @@ export const eventRegistry = {
         return subscribeToEvents((e: AllEvent) => {
           if (e.type === eventName) {
             const custom = e as CustomEventShape
+
             handler(
               custom.payload as TPayload | undefined,
               custom.options as TOptions | undefined
@@ -103,16 +107,19 @@ export const eventRegistry = {
     event: string | EventDefinition<TPayload, TOptions>
   ): EventRegistration<TPayload, TOptions> | undefined {
     const eventName = getEventName(event)
+
     return registry.get(eventName) as EventRegistration<TPayload, TOptions>
   },
 
   has(event: string | EventDefinition): boolean {
     const eventName = getEventName(event)
+
     return registry.has(eventName)
   },
 
   unregister(event: string | EventDefinition): boolean {
     const eventName = getEventName(event)
+
     return registry.delete(eventName)
   },
 

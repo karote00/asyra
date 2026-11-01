@@ -24,6 +24,7 @@ export const measureTextLayout = (
 ): RenderEngineTextMeasurement => {
   const style = new TextStyle(createTextLayoutStyle(layout))
   const metrics = CanvasTextMetrics.measureText(layout.text, style)
+
   return {
     type: 'text-measurement',
     width: layout.width ?? Math.max(1, Math.ceil(metrics.width)),

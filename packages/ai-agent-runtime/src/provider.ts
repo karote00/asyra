@@ -26,10 +26,15 @@ export interface ExecutionActivity {
 export const isExecutionActivity = (
   value: unknown
 ): value is ExecutionActivity => {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return false
+  }
+
   const activity = value as ExecutionActivity
+
   const identity = (id: unknown) =>
     typeof id === 'string' && id.length > 0 && id.length <= 256
+
   return (
     ['work', 'system'].includes(activity.kind) &&
     identity(activity.callId) &&
@@ -147,8 +152,11 @@ export interface AiProviderErrorOptions {
 
 export class AiProviderError extends Error {
   readonly code: AiProviderErrorCode
+
   readonly retryable: boolean
+
   readonly stage = 'provider' as const
+
   readonly status?: number
 
   constructor(options: AiProviderErrorOptions) {

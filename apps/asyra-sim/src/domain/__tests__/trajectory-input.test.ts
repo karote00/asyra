@@ -37,6 +37,7 @@ it('rejects unsupported shapes, declarations and excessive authored payloads', (
     },
     { ...input, kind: 'json', text: 'x'.repeat(1024 * 1024 + 1) },
     { ...input, text: 'x'.repeat(8 * 1024 * 1024 + 1) }
-  ])
+  ]) {
     expect(validTrajectoryInput(invalid)).toBe(false)
+  }
 })

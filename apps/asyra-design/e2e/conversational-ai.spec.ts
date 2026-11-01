@@ -22,6 +22,7 @@ const readCanonicalDrawingSummary = async (
   page.evaluate(async () => {
     const sceneTree = (await import('../src/testing/runtime-access')).core?.deps
       ?.sceneTree
+
     if (!sceneTree) {
       throw new Error('Asyra Design scene tree is unavailable')
     }
@@ -29,13 +30,24 @@ const readCanonicalDrawingSummary = async (
     let groupCount = 0
     let totalCount = 0
     let vectorCount = 0
+
     for (const element of sceneTree.getAllElements().values()) {
       const type = String(element.get('type'))
-      if (type === 'workspace') continue
+
+      if (type === 'workspace') {
+        continue
+      }
+
       totalCount += 1
-      if (type === 'group') groupCount += 1
-      if (type === 'vector') vectorCount += 1
+      if (type === 'group') {
+        groupCount += 1
+      }
+
+      if (type === 'vector') {
+        vectorCount += 1
+      }
     }
+
     return {
       groupCount,
       totalCount,
@@ -49,19 +61,29 @@ const selectFirstEditableFill = async (
   page.evaluate(async () => {
     const core = (await import('../src/testing/runtime-access')).core
     const sceneTree = core?.deps.sceneTree
+
     if (!core || !sceneTree) {
       throw new Error('Asyra Design canonical state is unavailable')
     }
 
     for (const element of sceneTree.getAllElements().values()) {
-      if (element.get('type') !== 'vector') continue
+      if (element.get('type') !== 'vector') {
+        continue
+      }
+
       const computed = element.getAllComputedData() as {
         fills?: readonly { readonly color?: unknown }[]
       }
       const color = computed.fills?.[0]?.color
-      if (typeof color !== 'string') continue
+
+      if (typeof color !== 'string') {
+        continue
+      }
+
       const elementId = String(element.get('id'))
+
       core.selectElements([elementId], { undoable: false })
+
       return { color, elementId }
     }
 
@@ -85,6 +107,7 @@ const readElementFillProjection = async (
       { fills?: readonly { readonly color?: unknown }[] } | undefined
     const computedColor = computed?.fills?.[0]?.color
     const renderedColor = rendered?.fills?.[0]?.color
+
     return {
       computed: typeof computedColor === 'string' ? computedColor : null,
       rendered: typeof renderedColor === 'string' ? renderedColor : null
@@ -96,8 +119,10 @@ test.describe('Conversational AI drawing', () => {
     page
   }) => {
     const pageErrors: string[] = []
+
     page.on('pageerror', (error) => pageErrors.push(error.message))
     const identity = createTestDocumentIdentity()
+
     await installGeneratedActionBatchInterceptor(page.context(), {
       appUrl: identity.url,
       fileId: identity.fileId,
@@ -114,6 +139,7 @@ test.describe('Conversational AI drawing', () => {
     })
 
     const historyBefore = await getUndoHistoryDepth(page)
+
     await page.getByTestId('ai-agent-toolbar-button').click()
     await expect(page.getByTestId('ai-agent-panel')).toBeVisible()
     await page
@@ -122,6 +148,7 @@ test.describe('Conversational AI drawing', () => {
     await page.getByRole('button', { name: 'Send' }).click()
 
     const message = page.getByTestId('ai-agent-message').last()
+
     await expect(message).toHaveAttribute('data-outcome', 'success', {
       timeout: 30_000
     })
@@ -142,6 +169,7 @@ test.describe('Conversational AI drawing', () => {
       page,
       editableFill.elementId
     )
+
     expect(fillBefore).toEqual({
       computed: editableFill.color,
       rendered: editableFill.color
@@ -149,12 +177,14 @@ test.describe('Conversational AI drawing', () => {
     const editHistoryBefore = await getUndoHistoryDepth(page)
     const nextColor =
       editableFill.color.toLowerCase() === '#ff0000' ? '00FF00' : 'FF0000'
+
     await page.getByRole('button', { name: 'Close Agent panel' }).click()
     await expect(
       page.getByTestId('prop-fill-color-picker-0-trigger')
     ).toBeVisible()
     await page.getByTestId('prop-fill-color-picker-0-trigger').click()
     const colorHexInput = page.getByTestId('prop-fill-color-picker-0-hex')
+
     await colorHexInput.fill(nextColor)
     await colorHexInput.press('Enter')
     expect(pageErrors).toEqual([])
@@ -181,6 +211,7 @@ test.describe('Conversational AI drawing', () => {
       })
 
     const finalDocumentDigest = await getCoreDocumentDigest(page)
+
     await expect
       .poll(async () => ({
         current: await getCoreDocumentDigest(page),

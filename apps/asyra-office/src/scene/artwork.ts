@@ -19,16 +19,22 @@ export async function prepareArtwork(
   const sources = new Set(
     labels.flatMap((l) => (l.artwork ? [l.artwork.source] : []))
   )
+
   for (const source of sources) {
     const image = new Image()
+
     image.src = source
     await image.decode()
     const canvas = document.createElement('canvas')
+
     canvas.width = image.naturalWidth
     canvas.height = image.naturalHeight
     const context = canvas.getContext('2d')
-    if (!context || !canvas.width || !canvas.height)
+
+    if (!context || !canvas.width || !canvas.height) {
       throw new Error('Artwork source cannot be decoded')
+    }
+
     context.drawImage(image, 0, 0)
     result.set(source, {
       width: canvas.width,
@@ -36,6 +42,7 @@ export async function prepareArtwork(
       data: context.getImageData(0, 0, canvas.width, canvas.height).data
     })
   }
+
   return result
 }
 
@@ -56,13 +63,18 @@ export function sampleArtwork(
         p[1] < 0 ||
         p[1] > source.height - 1
     )
-  )
+  ) {
     throw new Error('Artwork corners must stay within the source image')
-  if (!Number.isInteger(size) || size < 2 || size > 512)
+  }
+
+  if (!Number.isInteger(size) || size < 2 || size > 512) {
     throw new Error('Invalid artwork resolution')
+  }
+
   const albedo: number[] = [],
     normals: number[] = []
-  for (let y = 0; y < size; y++)
+
+  for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const u = x / (size - 1),
         v = y / (size - 1)
@@ -77,9 +89,11 @@ export function sampleArtwork(
         y1 = Math.min(y0 + 1, source.height - 1),
         fx = p[0] - x0,
         fy = p[1] - y0
+
       for (let channel = 0; channel < 4; channel++) {
         const at = (xx: number, yy: number) =>
           source.data[(yy * source.width + xx) * 4 + channel]
+
         albedo.push(
           Math.round(
             (1 - fy) * ((1 - fx) * at(x0, y0) + fx * at(x1, y0)) +
@@ -87,7 +101,10 @@ export function sampleArtwork(
           )
         )
       }
+
       normals.push(128, 128, 255, 255)
     }
+  }
+
   return { width: size, height: size, albedo, normals }
 }

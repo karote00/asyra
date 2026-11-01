@@ -31,6 +31,7 @@ describe('Shared Render runtime lifecycle', () => {
       handler: vi.fn()
     })
     const strategy = vi.fn()
+
     runtime.renderStrategyRegistry.register('retained-strategy', strategy)
     try {
       render.resetRuntime()
@@ -58,18 +59,28 @@ describe('Shared Render runtime lifecycle', () => {
     render.resetRuntime()
     runtime.resetSharedRenderRuntime()
     const register = vi.spyOn(render, 'registerLayer')
+
     runtime.beginSharedRenderRuntime()
     const old = register.mock.calls[0]?.[0]
-    if (!old) throw new Error('Missing pending projection layer')
+
+    if (!old) {
+      throw new Error('Missing pending projection layer')
+    }
+
     render.resetRuntime()
     runtime.resetSharedRenderRuntime()
     runtime.beginSharedRenderRuntime()
     expect(register).toHaveBeenCalledTimes(2)
     const current = register.mock.calls[1]?.[0]
-    if (!current) throw new Error('Missing successor projection layer')
+
+    if (!current) {
+      throw new Error('Missing successor projection layer')
+    }
+
     const flush = vi
       .spyOn(runtime.renderSceneTreeStore, 'flushPendingChangesForFrame')
       .mockReturnValue(true)
+
     old.update?.()
     expect(flush).not.toHaveBeenCalled()
     current.update?.()
@@ -98,13 +109,17 @@ describe('Shared Render runtime lifecycle', () => {
     runtime.resetSharedRenderRuntime()
     const registerLayer = render.registerLayer
     const queue: (() => void)[] = []
+
     vi.stubGlobal('queueMicrotask', (callback: () => void) =>
       queue.push(callback)
     )
     const data = { id: 'entry', type: 'test', color: 'old' }
+
     vi.spyOn(sceneTree, 'getElementById').mockReturnValue({
       get: (key: keyof typeof data) => data[key],
+
       save: () => ({ ...data }),
+
       getAllComputedData: () => ({})
     } as never)
     vi.spyOn(render, 'addElement').mockReturnValue(new RenderGraphics())
@@ -113,6 +128,7 @@ describe('Shared Render runtime lifecycle', () => {
       .spyOn(render, 'updateElement')
       .mockImplementation(() => undefined)
     const store = runtime.renderSceneTreeStore
+
     // Exercise the supported microtask path without an installed frame layer.
     ;(render as Partial<typeof render>).registerLayer = undefined
     try {

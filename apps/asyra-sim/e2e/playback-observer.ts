@@ -24,11 +24,23 @@ export async function observePlaybackFeedback(
           'input[aria-label="Sampled trajectory preview time"]'
         )
 
-        if (!notice || !checked || !slider) return
-        if (expected.kind && notice.getAttribute('data-kind') !== expected.kind)
+        if (!notice || !checked || !slider) {
           return
-        if (expected.time !== undefined && Number(checked[1]) !== expected.time)
+        }
+
+        if (
+          expected.kind &&
+          notice.getAttribute('data-kind') !== expected.kind
+        ) {
           return
+        }
+
+        if (
+          expected.time !== undefined &&
+          Number(checked[1]) !== expected.time
+        ) {
+          return
+        }
 
         observer.disconnect()
         resolve({
@@ -38,7 +50,9 @@ export async function observePlaybackFeedback(
           text: notice.textContent ?? ''
         })
       }
+
       const observer = new MutationObserver(read)
+
       observer.observe(document.body, {
         subtree: true,
         childList: true,
@@ -48,6 +62,7 @@ export async function observePlaybackFeedback(
       })
       read()
     })
+
     Object.assign(window, { playbackFeedbackObservation: observation })
   }, expected)
 

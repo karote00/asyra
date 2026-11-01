@@ -71,6 +71,7 @@ const applySelectionReplay = (
 ): boolean => {
   const change = (event as AllEvent & { payload: SelectionChange }).payload
   const selectionState = selection.get(change.selectionType)
+
   if (!selectionState) {
     throw new Error(
       `Selection replay channel is not registered: ${change.selectionType}`
@@ -78,8 +79,10 @@ const applySelectionReplay = (
   }
 
   const before = [...selectionState.getSelectedIds()]
+
   const didSelectionChange = () => {
     const after = selectionState.getSelectedIds()
+
     return before.length !== after.size || before.some((id) => !after.has(id))
   }
 
@@ -89,6 +92,7 @@ const applySelectionReplay = (
       if (didSelectionChange()) {
         acknowledgeTransactionReplayApplied()
       }
+
       selectionState.cleanChanges()
     } else {
       apis.selectByChannel(change.selectionType, change.after, change.options)
@@ -97,18 +101,22 @@ const applySelectionReplay = (
     if (didSelectionChange()) {
       acknowledgeTransactionReplayApplied()
     }
+
     throw failure
   }
 
   const applied = didSelectionChange()
+
   if (applied) {
     acknowledgeTransactionReplayApplied()
   }
+
   return applied
 }
 
 const invertSelectionEvent = (event: AllEvent): AllEvent => {
   const change = (event as AllEvent & { payload: SelectionChange }).payload
+
   return {
     ...event,
     payload: {
@@ -130,9 +138,11 @@ const createSelectionReplayRegistrar = (
     if (registeredEventNames.has(eventName)) {
       return
     }
+
     if (!BuiltInSelectionEventNames.has(eventName)) {
       factory.registerTransactionInverter(eventName, invertSelectionEvent)
     }
+
     factory.registerTransactionReplayHandler(eventName, (event, mode) => {
       return applySelectionReplay(selection, apis, event, mode)
     })
@@ -148,13 +158,16 @@ const buildSelectionChange = (
 ): SelectionChange | undefined => {
   const before = Array.from(selectionState.getSelectedIds())
   const beforeSet = new Set(before)
+
   if (
     before.length === after.length &&
     after.every((selectionId) => beforeSet.has(selectionId))
   ) {
     return
   }
+
   const action = selectionState.getSelectAction()
+
   return {
     selectionType: selectionState.getSelectionType(),
     action,
@@ -172,11 +185,13 @@ const getRequiredChannelByAction = (
   action: string
 ): string => {
   const channel = selection.getChannelByAction(action)
+
   if (!channel) {
     throw new Error(
       `[Core] Selection channel is not registered for action "${action}". Register selection definitions before invoking selection APIs.`
     )
   }
+
   return channel
 }
 
@@ -186,14 +201,18 @@ export const createElementSelectionAPIs = (
 ): ElementSelectionActionAPIs => {
   let ensureSelectionReplayContract: (eventName: string) => void = () =>
     undefined
+
   const apis: ElementSelectionActionAPIs = {
     // Low-level API: caller provides the concrete selection channel directly.
     selectByChannel(channel: string, ids: string[], options?: EVENT_OPTIONS) {
       const selectionState = selection.get(channel)
+
       if (!selectionState) {
         return
       }
+
       const change = buildSelectionChange(selectionState, ids, options)
+
       if (!change) {
         return
       }
@@ -201,26 +220,32 @@ export const createElementSelectionAPIs = (
       ensureSelectionReplayContract(change.eventName)
       publishSelectionChange(selectionState, change, options, factory)
     },
+
     // Convenience wrappers: resolve channel from registration metadata, then delegate.
     selectElements(elementIds: string[], options?: EVENT_OPTIONS) {
       const channel = getRequiredChannelByAction(
         selection,
         WrapperSelectionActionNames.ELEMENT
       )
+
       this.selectByChannel(channel, elementIds, options)
     },
+
     selectVectorPoints(pointIds: string[], options?: EVENT_OPTIONS) {
       const channel = getRequiredChannelByAction(
         selection,
         WrapperSelectionActionNames.VECTOR_POINT
       )
+
       this.selectByChannel(channel, pointIds, options)
     },
+
     selectVectorSegments(segmentIds: string[], options?: EVENT_OPTIONS) {
       const channel = getRequiredChannelByAction(
         selection,
         WrapperSelectionActionNames.VECTOR_SEGMENT
       )
+
       this.selectByChannel(channel, segmentIds, options)
     }
   }

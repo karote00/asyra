@@ -16,7 +16,11 @@ const repoRoot = path.resolve(__dirname, '../../../..')
 const listSourceFiles = (directory: string): string[] =>
   fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const absolutePath = path.join(directory, entry.name)
-    if (entry.isDirectory()) return listSourceFiles(absolutePath)
+
+    if (entry.isDirectory()) {
+      return listSourceFiles(absolutePath)
+    }
+
     return /\.[cm]?[jt]sx?$/.test(entry.name) ? [absolutePath] : []
   })
 
@@ -42,6 +46,7 @@ describe('optional collaboration composition', () => {
     }
 
     const instance = createCollaboration(input)
+
     await instance.start()
 
     expect(subscribe).toHaveBeenCalledOnce()
@@ -56,6 +61,7 @@ describe('optional collaboration composition', () => {
     }
 
     const instance = createCollaboration(input)
+
     await expect(instance.start()).resolves.toBeUndefined()
     await instance.dispose()
   })
@@ -78,6 +84,7 @@ describe('optional collaboration composition', () => {
         dependencies?: Record<string, string>
         devDependencies?: Record<string, string>
       }
+
       expect(manifest.dependencies?.['@asyra/collaboration']).toBeUndefined()
       expect(manifest.devDependencies?.['@asyra/collaboration']).toBeUndefined()
 

@@ -23,9 +23,12 @@ const mocks = vi.hoisted(() => {
     resizeRenderer: vi.fn(),
     resetRuntime: vi.fn()
   }
+
   owner.resetRuntime.mockResolvedValue(owner)
+
   return { owner, preset: vi.fn(), unregisterInput }
 })
+
 vi.mock('@asyra/core', () => ({
   default: mocks.owner,
   keyMap: {
@@ -47,12 +50,14 @@ vi.mock('@asyra/preset', () => ({
 }))
 vi.mock('../surfaces', () => ({
   createSurfaces: () => ({}),
+
   labelMeshes: () => []
 }))
 vi.mock('../reference-scene', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../reference-scene')>()
   const { box } = await import('../../assets/geometry')
   const { part } = await import('../../assets/catalog')
+
   return {
     ...actual,
     // This suite proves session ownership and work counts. Full scene geometry
@@ -78,6 +83,7 @@ import { startReferenceScene } from '../runtime'
 
 describe('reference scene session lifetime', () => {
   const cleanup: (() => void)[] = []
+
   afterEach(() => {
     vi.unstubAllGlobals()
     vi.clearAllMocks()
@@ -86,19 +92,23 @@ describe('reference scene session lifetime', () => {
   it('releases once, ignores a retired resize callback and allows a successor', async () => {
     const callbacks: (() => void)[] = []
     const disconnect = vi.fn()
+
     vi.stubGlobal(
       'ResizeObserver',
       class {
         constructor(callback: () => void) {
           callbacks.push(callback)
         }
+
         observe() {
           /* The test controls delivery explicitly. */
         }
+
         disconnect = disconnect
       }
     )
     const preview = await startReferenceScene(document.createElement('div'))
+
     await expect(
       startReferenceScene(document.createElement('div'))
     ).rejects.toThrow('already active')
@@ -119,12 +129,14 @@ describe('reference scene session lifetime', () => {
       preview.move(1, 0)
       preview.move(0, 1, true)
     }
+
     const frames = new Map<number, FrameRequestCallback>()
     let frameId = 0
     const requestFrame = vi
       .spyOn(window, 'requestAnimationFrame')
       .mockImplementation((callback) => {
         frames.set(++frameId, callback)
+
         return frameId
       })
     const cancelFrame = vi
@@ -132,6 +144,7 @@ describe('reference scene session lifetime', () => {
       .mockImplementation((id) => {
         frames.delete(id)
       })
+
     cleanup.push(
       () => requestFrame.mockRestore(),
       () => cancelFrame.mockRestore()
@@ -141,8 +154,13 @@ describe('reference scene session lifetime', () => {
       mocks.owner.registerInputKeyCombinations.mock.calls[0][0]
     )
     const onInput = registration[0].callback
-    if (!onInput) throw new Error('Missing input callback')
+
+    if (!onInput) {
+      throw new Error('Missing input callback')
+    }
+
     const start = performance.now()
+
     onInput({
       type: InputType.KEYBOARD,
       keys: ['W'],
@@ -158,9 +176,11 @@ describe('reference scene session lifetime', () => {
     })
     for (let i = 1; i <= 60; i++) {
       const pending = [...frames.values()]
+
       frames.clear()
       pending.forEach((callback) => callback(start + (i * 1000) / 60))
     }
+
     expect(frames.size).toBe(1)
     expect(createReferenceScene).toHaveBeenCalledOnce()
     expect(buildSpatialMeshes).toHaveBeenCalledOnce()
@@ -173,6 +193,7 @@ describe('reference scene session lifetime', () => {
     expect(mocks.owner.unregisterRenderLayer).toHaveBeenCalledOnce()
     expect(mocks.owner.resetRuntime).toHaveBeenCalledOnce()
     const successor = await startReferenceScene(document.createElement('div'))
+
     mocks.owner.resizeRenderer.mockClear()
     callbacks[0]()
     expect(mocks.owner.resizeRenderer).not.toHaveBeenCalled()
@@ -196,12 +217,14 @@ describe('reference scene session lifetime', () => {
         observe() {
           /* No resize delivery is needed in this startup case. */
         }
+
         disconnect() {
           /* Cleanup work is asserted at the Core owner boundary. */
         }
       }
     )
     const next = await startReferenceScene(document.createElement('div'))
+
     await next.dispose()
     expect(mocks.owner.resetRuntime).toHaveBeenCalledTimes(2)
   })

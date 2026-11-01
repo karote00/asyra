@@ -6,17 +6,22 @@ test('wall review shares one live viewport across views, appearance and LoD', as
   page
 }, testInfo) => {
   const errors: string[] = []
+
   page.on('pageerror', (error) => errors.push(error.message))
   await page.goto('/?review=wall')
   await expect(
     page.getByRole('status').filter({ hasText: '3D preview ready' })
   ).toHaveText('3D preview ready')
   const viewport = page.getByLabel('Wall 3D viewport')
+
   await expect(viewport.locator('canvas')).toHaveCount(1)
   const graphics = await viewport.locator('canvas').evaluate((canvas) => {
     const gl = (canvas as HTMLCanvasElement).getContext('webgl2')
-    if (!gl || gl.isContextLost())
+
+    if (!gl || gl.isContextLost()) {
       throw new Error('Missing live WebGL2 context')
+    }
+
     return {
       version: gl.getParameter(gl.VERSION),
       width: gl.drawingBufferWidth,
@@ -24,10 +29,12 @@ test('wall review shares one live viewport across views, appearance and LoD', as
       pixelRatio: devicePixelRatio
     }
   })
+
   expect(graphics.version).toContain('WebGL 2')
   expect(graphics.width).toBeGreaterThan(0)
   for (const view of views) {
     const button = page.getByRole('button', { name: view, exact: true })
+
     await button.click()
     await expect(button).toHaveAttribute('aria-pressed', 'true')
     await expect(page.getByLabel('Mesh detail')).toHaveText(
@@ -47,6 +54,7 @@ test('wall review shares one live viewport across views, appearance and LoD', as
       )
     })
   }
+
   await page.getByLabel('Neutral geometry').check()
   await expect(page.getByLabel('Neutral geometry')).toBeChecked()
   await viewport.screenshot({

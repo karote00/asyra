@@ -127,19 +127,27 @@ export const CI_E2E_GROUPS = [
 ]
 
 function walkFiles(directory, root, output) {
-  if (!fs.existsSync(directory)) return
+  if (!fs.existsSync(directory)) {
+    return
+  }
+
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     const absolute = path.join(directory, entry.name)
-    if (entry.isDirectory()) walkFiles(absolute, root, output)
-    else if (entry.isFile())
+
+    if (entry.isDirectory()) {
+      walkFiles(absolute, root, output)
+    } else if (entry.isFile()) {
       output.push(path.relative(root, absolute).split(path.sep).join('/'))
+    }
   }
 }
 
 export function collectBrowserSpecFiles(workspaceRoot) {
   const discovered = []
+
   walkFiles(path.join(workspaceRoot, 'e2e'), workspaceRoot, discovered)
   walkFiles(path.join(workspaceRoot, 'src'), workspaceRoot, discovered)
+
   return discovered
     .filter(
       (file) =>
@@ -154,20 +162,28 @@ export function collectBrowserSpecFiles(workspaceRoot) {
 function reportCounts(report) {
   let passedCount = 0
   let failedTestCount = 0
+
   const visit = (suites) => {
     for (const suite of suites ?? []) {
-      for (const spec of suite.specs ?? [])
-        for (const test of spec.tests ?? [])
+      for (const spec of suite.specs ?? []) {
+        for (const test of spec.tests ?? []) {
           for (const result of test.results ?? []) {
-            if (result.status === 'passed') passedCount++
-            else if (['failed', 'timedOut'].includes(result.status))
+            if (result.status === 'passed') {
+              passedCount++
+            } else if (['failed', 'timedOut'].includes(result.status)) {
               failedTestCount++
+            }
           }
+        }
+      }
+
       visit(suite.suites)
     }
   }
+
   visit(report?.suites)
   const errorCount = report?.errors?.length ?? 0
+
   return {
     testCount: passedCount + failedTestCount,
     passedCount,
@@ -193,20 +209,26 @@ export function mergePlaywrightReports(groupRuns, identity) {
   for (const run of groupRuns) {
     const report = run.report ?? { suites: [], errors: [] }
     const counts = reportCounts(report)
+
     suites.push(...(report.suites ?? []))
     errors.push(...(report.errors ?? []))
-    if (run.error)
+    if (run.error) {
       errors.push({ message: `${run.group} runner error: ${run.error}` })
+    }
+
     if (
       run.exitCode !== 0 &&
       !report.errors?.length &&
       counts.failedCount === 0
-    )
+    ) {
       errors.push({
         message: `${run.group} exited with status ${run.exitCode}`
       })
+    }
+
     const failedCount = Math.max(counts.failedCount, run.exitCode === 0 ? 0 : 1)
     const stats = report.stats ?? {}
+
     totals.testCount += counts.testCount
     totals.passedCount += counts.passedCount
     totals.failedCount += failedCount
@@ -248,12 +270,21 @@ export function mergePlaywrightReports(groupRuns, identity) {
 
 export function selectBrowserGroups(inputs) {
   const files = inputs.map((file) => file.replace(/^apps\/asyra-sim\//, ''))
-  if (!files.length) return CI_E2E_GROUPS
-  if (new Set(files).size !== files.length)
+
+  if (!files.length) {
+    return CI_E2E_GROUPS
+  }
+
+  if (new Set(files).size !== files.length) {
     throw new Error('Duplicate browser selection')
+  }
+
   const known = new Set(CI_E2E_GROUPS.flatMap((group) => group.files))
-  if (files.some((file) => !known.has(file)))
+
+  if (files.some((file) => !known.has(file))) {
     throw new Error('Unknown browser selection')
+  }
+
   return CI_E2E_GROUPS.map((group) => ({
     ...group,
     files: group.files.filter((file) => files.includes(file))

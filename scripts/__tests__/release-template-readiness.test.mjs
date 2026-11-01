@@ -43,8 +43,14 @@ let artifactFixture
 let artifactDirectory
 
 const exportedPaths = (exportsValue) => {
-  if (typeof exportsValue === 'string') return [exportsValue]
-  if (!exportsValue || typeof exportsValue !== 'object') return []
+  if (typeof exportsValue === 'string') {
+    return [exportsValue]
+  }
+
+  if (!exportsValue || typeof exportsValue !== 'object') {
+    return []
+  }
+
   return Object.values(exportsValue).flatMap(exportedPaths)
 }
 
@@ -66,6 +72,7 @@ const createPackedArtifactFixture = () => {
     'utf8'
   )
   const temporaryRoot = path.join(repositoryRoot, 'tmp')
+
   fs.mkdirSync(temporaryRoot, { recursive: true })
   const fixtureRoot = fs.mkdtempSync(
     path.join(temporaryRoot, 'framework-release-package-fixture-')
@@ -81,6 +88,7 @@ const createPackedArtifactFixture = () => {
     const manifest = JSON.parse(
       fs.readFileSync(path.join(repositoryRoot, record.manifestPath), 'utf8')
     )
+
     delete manifest.devDependencies
     delete manifest.scripts
     for (const dependencyField of [
@@ -88,7 +96,10 @@ const createPackedArtifactFixture = () => {
       'peerDependencies',
       'optionalDependencies'
     ]) {
-      if (!manifest[dependencyField]) continue
+      if (!manifest[dependencyField]) {
+        continue
+      }
+
       for (const [dependencyName, version] of Object.entries(
         manifest[dependencyField]
       )) {
@@ -98,6 +109,7 @@ const createPackedArtifactFixture = () => {
         }
       }
     }
+
     writeFile(
       path.join(packageRoot, 'package.json'),
       `${JSON.stringify(manifest, null, 2)}\n`
@@ -110,11 +122,13 @@ const createPackedArtifactFixture = () => {
       manifest.types,
       ...exportedPaths(manifest.exports)
     ].filter(Boolean)
+
     for (const publicPath of publicPaths) {
       const source =
         publicPath.endsWith('.d.ts') || publicPath.endsWith('.d.mts')
           ? 'export {}\n'
           : 'export {}\n'
+
       writeFile(
         path.join(packageRoot, publicPath.replace(/^\.\//u, '')),
         source
@@ -146,7 +160,10 @@ before(() => {
 })
 
 after(() => {
-  if (!artifactFixture) return
+  if (!artifactFixture) {
+    return
+  }
+
   fs.rmSync(artifactFixture.artifactDirectory, { recursive: true, force: true })
   fs.rmSync(artifactFixture.fixtureRoot, { recursive: true, force: true })
 })
@@ -161,11 +178,13 @@ test('packed artifact fixture never deletes the shared release artifact owner', 
     sharedArtifactDirectory,
     `fixture-preservation-${randomUUID()}.txt`
   )
+
   fs.mkdirSync(sharedArtifactDirectory, { recursive: true })
   fs.writeFileSync(sentinelPath, 'preserve shared artifacts\n', { flag: 'wx' })
 
   try {
     const isolatedFixture = createPackedArtifactFixture()
+
     try {
       assert.notEqual(
         isolatedFixture.artifactDirectory,
@@ -178,6 +197,7 @@ test('packed artifact fixture never deletes the shared release artifact owner', 
       })
       fs.rmSync(isolatedFixture.fixtureRoot, { recursive: true, force: true })
     }
+
     assert.equal(
       fs.readFileSync(sentinelPath, 'utf8'),
       'preserve shared artifacts\n'
@@ -224,6 +244,7 @@ test('generated template uses only frozen public framework entrypoints', () => {
     repositoryRoot,
     appName: 'starter-app'
   })
+
   assert.ok(starterContract.importCount > 0)
   assert.deepEqual(starterContract.importedPackageNames, [
     '@asyra/core',
@@ -252,6 +273,7 @@ test('generated template replaces framework resolution with packed artifacts', (
     'tmp',
     'framework-template-preparation-test'
   )
+
   try {
     const prepared = prepareGeneratedTemplateConsumer({
       repositoryRoot,
@@ -266,6 +288,7 @@ test('generated template replaces framework resolution with packed artifacts', (
         prepared.manifest.dependencies?.[packageName] ??
         prepared.manifest.devDependencies?.[packageName]
       const artifactDirectoryName = path.basename(artifactDirectory)
+
       assert.match(
         dependency,
         new RegExp(
@@ -277,6 +300,7 @@ test('generated template replaces framework resolution with packed artifacts', (
         )
       )
     }
+
     assert.equal(Object.keys(prepared.manifest.resolutions).length, 19)
     assert.equal(
       fs.readFileSync(path.join(consumerDirectory, '.yarnrc.yml'), 'utf8'),
@@ -302,12 +326,14 @@ test('registry-installed generated app preserves exact public framework resoluti
       recursive: true
     })
     const lockEntries = []
+
     for (const [name, version] of Object.entries(contract.packageVersions)) {
       const packageDirectory = path.join(
         generatedAppDirectory,
         'node_modules',
         ...name.split('/')
       )
+
       fs.mkdirSync(packageDirectory, { recursive: true })
       fs.writeFileSync(
         path.join(packageDirectory, 'package.json'),
@@ -317,6 +343,7 @@ test('registry-installed generated app preserves exact public framework resoluti
         `"${name}@npm:${version}":\n  version: ${version}\n  resolution: "${name}@npm:${version}"\n  checksum: test/${name}\n  languageName: node\n  linkType: hard\n`
       )
     }
+
     fs.writeFileSync(
       path.join(generatedAppDirectory, 'yarn.lock'),
       lockEntries.join('\n')
@@ -344,6 +371,7 @@ test('registry-installed generated app preserves exact public framework resoluti
 
     const manifestPath = path.join(generatedAppDirectory, 'package.json')
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
+
     manifest.dependencies['@asyra/core'] = 'file:../core.tgz'
     fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
     assert.throws(
@@ -385,12 +413,17 @@ test('generated template runner owns install, compile, build, test, smoke, and c
     consumerDirectory,
     evidenceDirectory,
     allowUnsupportedNode: true,
+
     runCommand: (command, args, options) => {
       commands.push({ command: [command, ...args], env: options.env })
-      if (args[0] !== 'install') return
+      if (args[0] !== 'install') {
+        return
+      }
+
       const manifest = JSON.parse(
         fs.readFileSync(path.join(options.cwd, 'package.json'), 'utf8')
       )
+
       Object.keys({
         ...manifest.dependencies,
         ...manifest.devDependencies
@@ -402,6 +435,7 @@ test('generated template runner owns install, compile, build, test, smoke, and c
             'node_modules',
             ...name.split('/')
           )
+
           fs.mkdirSync(packageDirectory, { recursive: true })
           fs.writeFileSync(
             path.join(packageDirectory, 'package.json'),
@@ -412,6 +446,7 @@ test('generated template runner owns install, compile, build, test, smoke, and c
           )
         })
     },
+
     runStartupSmoke: async ({ consumerDirectory: smokeConsumer }) => {
       smokeDirectory = smokeConsumer
     }
@@ -452,6 +487,7 @@ test('generated template runner owns install, compile, build, test, smoke, and c
 
 test('standalone Design template omits repository-only source-proof registration', () => {
   const template = path.join(repositoryRoot, 'create-app/asyra-design/template')
+
   assert.ok(fs.existsSync(path.join(template, 'server/local-ai-provider.ts')))
   for (const internal of [
     'flow-contracts.json',

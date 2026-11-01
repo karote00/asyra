@@ -75,7 +75,10 @@ export function useExperimentController({
   const [tab, setTab] = useState<'setup' | 'preview' | 'results'>('setup')
   const [trajectoryValid, setTrajectoryValid] = useState(true)
   const resolvedInput = useMemo(() => {
-    if (!canonical) return null
+    if (!canonical) {
+      return null
+    }
+
     try {
       return runtime.experimentInputs.resolve(canonical.definition, workcell)
     } catch {
@@ -85,6 +88,7 @@ export function useExperimentController({
   const exclusionsError = useMemo(() => {
     try {
       runtime.experimentInputs.readExclusions(exclusions)
+
       return ''
     } catch (reason) {
       return reason instanceof Error ? reason.message : String(reason)
@@ -124,6 +128,7 @@ export function useExperimentController({
 
   useEffect(() => {
     const acknowledgedWrite = canonicalKey === expectedCanonical.current
+
     expectedCanonical.current = ''
     if (canonical && !acknowledgedWrite) {
       setDraft(definitionToDraft(canonical.definition))
@@ -171,59 +176,84 @@ export function useExperimentController({
     !canonical || JSON.stringify(withExclusions(draft)) !== canonicalKey
 
   const fail = (reason: unknown) => {
-    if (live.current)
+    if (live.current) {
       setError(reason instanceof Error ? reason.message : String(reason))
+    }
   }
 
   const save = async (input: ExperimentDraft = draft) => {
     const next = withExclusions(input)
+
     setDraft(next)
     const key = JSON.stringify(next)
-    if (pendingWrites.current && requestedWrite.current === key)
+
+    if (pendingWrites.current && requestedWrite.current === key) {
       return writeQueue.current
+    }
+
     requestedWrite.current = key
     pendingWrites.current++
     setSaving(true)
+
     const write = async () => {
-      if (!live.current) return
+      if (!live.current) {
+        return
+      }
+
       let committed = false
+
       await perform(async (assertCurrent) => {
         const current = runtime
           .getExperiments(candidateId)
           .find((item) => item.id === experimentId)
+
         expectedCanonical.current = key
-        if (current)
+        if (current) {
           await runtime.features.edit.updateExperiment(
             current.id,
             current.definition.revision,
             next
           )
-        else {
+        } else {
           const id = await runtime.features.edit.createExperiment(
             candidateId,
             name,
             next
           )
+
           assertCurrent()
-          if (live.current) setExperimentId(id)
+          if (live.current) {
+            setExperimentId(id)
+          }
         }
+
         assertCurrent()
         committed = true
       }, 'Experiment updated - one Undo action')
-      if (!committed) throw new Error('Experiment edit was not committed.')
+      if (!committed) {
+        throw new Error('Experiment edit was not committed.')
+      }
     }
+
     const pending = writeQueue.current.then(write)
+
     writeQueue.current = pending.catch(() => undefined)
     try {
       await pending
-      if (live.current) setError('')
+      if (live.current) {
+        setError('')
+      }
+
       return true
     } catch (reason) {
       fail(reason)
+
       return false
     } finally {
       pendingWrites.current--
-      if (live.current) setSaving(pendingWrites.current > 0)
+      if (live.current) {
+        setSaving(pendingWrites.current > 0)
+      }
     }
   }
 
@@ -242,16 +272,19 @@ export function useExperimentController({
   }
 
   const inspect = () => {
-    if (!canonical || dirty || pendingWrites.current)
+    if (!canonical || dirty || pendingWrites.current) {
       throw new Error('Complete the current experiment edits before analysis.')
+    }
+
     // This owner reports the current authored-input diagnostic, never the old
     // normalized trajectory retained alongside invalid authored text.
     runtime.experimentInputs.resolve(canonical.definition, workcell)
-    if (!trajectoryValid || exclusionsError)
+    if (!trajectoryValid || exclusionsError) {
       throw new Error(
         exclusionsError ||
           'Correct trajectory source, mapping and units before analysis.'
       )
+    }
 
     const report = runtime.preflightExperiment(canonical.id)
 
@@ -261,7 +294,9 @@ export function useExperimentController({
   }
 
   const replayCurrent = (value: number) => {
-    if (!resolvedInput || !executable || dirty) return
+    if (!resolvedInput || !executable || dirty) {
+      return
+    }
 
     try {
       const joints = jointValuesAt(resolvedInput.trajectory, value)
@@ -296,29 +331,37 @@ export function useExperimentController({
   }
 
   const run = async () => {
-    if (admissionPending.current || active.current || pendingWrites.current)
+    if (admissionPending.current || active.current || pendingWrites.current) {
       return
+    }
+
     admissionPending.current = true
     try {
       const report = inspect()
+
       if (report.blockers.length || report.assumptions.length) {
         setError(
           [...report.blockers, ...report.assumptions]
             .map((issue) => issue.message)
             .join(' ')
         )
+
         return
       }
+
       if (
         report.resourceWarnings.some((issue) => !warnings.includes(issue.code))
       ) {
         setError(
           'Review and acknowledge the resource warnings before analysis.'
         )
+
         return
       }
 
-      if (!canonical) return
+      if (!canonical) {
+        return
+      }
 
       const snapshot = runtime.createExperimentSnapshot(canonical.id, warnings)
 
@@ -352,7 +395,10 @@ export function useExperimentController({
         signal: controller.signal
       })
 
-      if (!live.current) return
+      if (!live.current) {
+        return
+      }
+
       const record: RunRecord = {
         version: 1,
         name: runName,
@@ -362,12 +408,16 @@ export function useExperimentController({
         result,
         ...(lineage ? { lineage } : {})
       }
+
       try {
         await runtime.features.storage.retain(record)
       } catch (reason) {
         fail(reason)
       }
-      if (live.current) onRun(record)
+
+      if (live.current) {
+        onRun(record)
+      }
     } catch (reason) {
       fail(reason)
     } finally {

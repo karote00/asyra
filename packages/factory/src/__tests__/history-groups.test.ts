@@ -12,12 +12,14 @@ const setup = () => {
   const factory = new Factory()
   const values = new Map<string, number>()
   const replay: number[] = []
+
   const write = (
     id: string,
     after: number,
     options: UpdateTransactionEvent['options'] = {}
   ) => {
     const before = values.get(id) ?? 0
+
     values.set(id, after)
     factory.updateTransaction({
       type: EventTypes.UPDATE_TRANSACTION,
@@ -26,22 +28,27 @@ const setup = () => {
       options
     })
   }
+
   const removeReplayHandler = factory.registerTransactionReplayHandler(
     EventTypes.UPDATE_PROPERTY,
     (event) => {
       const { id, after } = (
         event as AllEvent & { payload: { id: string; after: number } }
       ).payload
+
       values.set(id, after)
       replay.push(after)
+
       return true
     }
   )
+
   const commit = (callback: () => void) => {
     factory.startTransaction()
     callback()
     factory.endTransaction()
   }
+
   return { factory, values, write, commit, replay, removeReplayHandler }
 }
 
@@ -54,6 +61,7 @@ describe('explicit history groups', () => {
     const group = factory.startHistoryGroup({
       onChange: () => members.push(factory.isTransactionBoundaryIdle())
     })
+
     factory.subscribeToCommitCapture(() =>
       statuses.push(factory.isTransactionBoundaryIdle())
     )
@@ -84,6 +92,7 @@ describe('explicit history groups', () => {
   it('returns to idle after a failed member without discarding earlier progress', () => {
     const { factory, values, write } = setup()
     const group = factory.startHistoryGroup()
+
     factory.updateHistoryGroup(group, () => write('x', 1))
     expect(() =>
       factory.updateHistoryGroup(group, () => {
@@ -108,10 +117,12 @@ describe('explicit history groups', () => {
     const completed = vi.fn()
     const captures = vi.fn()
     const dispose = subscribeToUserActionCompleted(completed)
+
     factory.subscribeToCommitCapture(captures)
     try {
       const group = factory.startHistoryGroup()
-      for (const after of [1, 2])
+
+      for (const after of [1, 2]) {
         factory.updateHistoryGroup(group, () =>
           factory.updateTransaction({
             type: EventTypes.UPDATE_TRANSACTION,
@@ -120,6 +131,8 @@ describe('explicit history groups', () => {
             options: {}
           })
         )
+      }
+
       expect(captures).toHaveBeenCalledTimes(2)
       expect(completed).not.toHaveBeenCalled()
       factory.endHistoryGroup(group)
@@ -132,21 +145,28 @@ describe('explicit history groups', () => {
 
   it('restores the full group and its stack position after a later inverse fails', () => {
     const { factory, values, write, removeReplayHandler } = setup()
+
     removeReplayHandler()
     let reject = false
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       (event) => {
         const { id, after } = (
           event as AllEvent & { payload: { id: string; after: number } }
         ).payload
-        if (reject && id === 'x' && after === 0)
+
+        if (reject && id === 'x' && after === 0) {
           throw new Error('target unavailable')
+        }
+
         values.set(id, after)
+
         return true
       }
     )
     const group = factory.startHistoryGroup()
+
     factory.updateHistoryGroup(group, () => write('x', 1))
     factory.updateHistoryGroup(group, () => write('y', 2))
     factory.endHistoryGroup(group)
@@ -164,15 +184,19 @@ describe('explicit history groups', () => {
 
   it('does not enroll a member whose shared settlement fails and retains Redo', () => {
     const { factory, values, write, commit } = setup()
+
     commit(() => write('user', 1))
     factory.undo()
     const channel = SharedDataChannelNames.SCENE_TREE
     const sink = new LocalSharedDataChannel()
+
     sink.appendBatch = () => {
       throw new Error('delivery failed before apply')
     }
+
     factory.registerSharedDataChannel(channel, sink)
     const group = factory.startHistoryGroup()
+
     expect(() =>
       factory.updateHistoryGroup(group, () =>
         write('x', 2, { shared: channel })
@@ -188,6 +212,7 @@ describe('explicit history groups', () => {
     const { factory, write, values, commit } = setup()
     const first = factory.startHistoryGroup()
     const second = factory.startHistoryGroup()
+
     factory.updateHistoryGroup(first, () => write('a', 1))
     commit(() => write('user', 2))
     factory.updateHistoryGroup(second, () => write('b', 3))
@@ -216,6 +241,7 @@ describe('explicit history groups', () => {
     const group = factory.startHistoryGroup({
       onChange: (status) => notices.push(status)
     })
+
     factory.updateHistoryGroup(group, () => write('x', 1))
     expect(() =>
       factory.updateHistoryGroup(group, () => {
@@ -237,6 +263,7 @@ describe('explicit history groups', () => {
     const { factory, write, values } = setup()
     const group = factory.startHistoryGroup()
     let reject = true
+
     factory.registerTransactionValidator('reject', () =>
       reject
         ? { valid: false, code: 'invalid', message: 'Invalid member' }
@@ -256,9 +283,11 @@ describe('explicit history groups', () => {
 
   it('preserves Redo for empty/non-undoable groups and clears it on an undoable member', () => {
     const { factory, commit, write, values } = setup()
+
     commit(() => write('user', 1))
     factory.undo()
     const group = factory.startHistoryGroup()
+
     factory.updateHistoryGroup(group, () => undefined)
     factory.updateHistoryGroup(group, () =>
       write('other', 5, { undoable: false })
@@ -271,6 +300,7 @@ describe('explicit history groups', () => {
     expect(values.get('user')).toBe(1)
     factory.undo()
     const next = factory.startHistoryGroup()
+
     factory.updateHistoryGroup(next, () => write('other', 6))
     factory.redo()
     expect(values.get('user')).toBe(0)
@@ -280,11 +310,13 @@ describe('explicit history groups', () => {
   it('joins nested finite transactions and returns the callback result', () => {
     const { factory, write } = setup()
     const group = factory.startHistoryGroup()
+
     expect(
       factory.updateHistoryGroup(group, () => {
         factory.startTransaction()
         write('x', 1)
         factory.endTransaction()
+
         return 42
       })
     ).toBe(42)
@@ -299,12 +331,14 @@ describe('explicit history groups', () => {
     const { factory } = setup()
     const group = factory.startHistoryGroup()
     const callback = vi.fn()
+
     expect(() => new Factory().updateHistoryGroup(group, callback)).toThrow(
       /handle/
     )
     factory.endHistoryGroup(group)
     expect(() => factory.updateHistoryGroup(group, callback)).toThrow(/handle/)
     const retired = factory.startHistoryGroup()
+
     factory.resetRuntime()
     expect(() => factory.updateHistoryGroup(retired, callback)).toThrow(
       /handle/
@@ -316,8 +350,10 @@ describe('explicit history groups', () => {
   it('rejects unrelated active boundaries and closing an active member', () => {
     const { factory, write } = setup()
     const group = factory.startHistoryGroup()
+
     factory.startTransaction()
     const callback = vi.fn()
+
     expect(() => factory.updateHistoryGroup(group, callback)).toThrow(/idle/)
     factory.endTransaction()
     factory.updateHistoryGroup(group, () => {
@@ -333,9 +369,11 @@ describe('explicit history groups', () => {
   it('rejects a thenable result and rolls back the synchronous work', () => {
     const { factory, values, write } = setup()
     const group = factory.startHistoryGroup()
+
     expect(() =>
       factory.updateHistoryGroup(group, () => {
         write('x', 1)
+
         return Promise.resolve(1)
       })
     ).toThrow(/synchronous/)
@@ -347,6 +385,7 @@ describe('explicit history groups', () => {
   it('keeps remote changes out of a pending group', () => {
     const { factory, write } = setup()
     const group = factory.startHistoryGroup()
+
     factory.runRemoteTransaction(() => write('remote', 1))
     expect(factory.getHistoryGroupStatus(group).memberCount).toBe(0)
     factory.updateHistoryGroup(group, () => write('local', 1))
@@ -358,13 +397,17 @@ describe('explicit history groups', () => {
     const notices: HistoryGroupStatus[] = []
     const group = factory.startHistoryGroup({
       warningChangeCount: 2,
+
       onChange: (status) => {
         notices.push(status)
         throw new Error('observer')
       }
     })
-    for (let index = 1; index <= 3; index++)
+
+    for (let index = 1; index <= 3; index++) {
       factory.updateHistoryGroup(group, () => write('x', index))
+    }
+
     expect(
       notices.map((notice) => [
         notice.memberCount,
@@ -395,12 +438,15 @@ describe('explicit history groups', () => {
     async (mode) => {
       const { factory } = setup()
       const channel = SharedDataChannelNames.SCENE_TREE
+
       factory.registerSharedDataChannel(channel, new LocalSharedDataChannel())
       const projected: string[] = []
+
       factory.observeSharedDataChannel<{ id: string }>(channel, ({ id }) =>
         projected.push(id)
       )
       const group = factory.startHistoryGroup()
+
       for (const after of [1, 2]) {
         factory.updateHistoryGroup(group, () => {
           factory.updateTransactionBatch(
@@ -422,27 +468,32 @@ describe('explicit history groups', () => {
           })
         })
       }
+
       expect(projected).toEqual(['y', 'x', 'y', 'x'])
       factory.endHistoryGroup(group)
       projected.length = 0
-      if (mode === 'atomic') factory.undo()
-      else {
+      if (mode === 'atomic') {
+        factory.undo()
+      } else {
         factory.startTransaction()
         await factory
           .getTransactionOwner()
           .undoProgressively(async () => undefined)
         factory.endTransaction()
       }
+
       expect(projected).toEqual(['x', 'y', 'x', 'y'])
       projected.length = 0
-      if (mode === 'atomic') factory.redo()
-      else {
+      if (mode === 'atomic') {
+        factory.redo()
+      } else {
         factory.startTransaction()
         await factory
           .getTransactionOwner()
           .redoProgressively(async () => undefined)
         factory.endTransaction()
       }
+
       expect(projected).toEqual(['y', 'x', 'y', 'x'])
     }
   )
@@ -453,11 +504,16 @@ describe('explicit history groups', () => {
       const { factory, write } = setup()
       const props = SharedDataChannelNames.PROPS
       const scene = SharedDataChannelNames.SCENE_TREE
-      for (const channel of [props, scene])
+
+      for (const channel of [props, scene]) {
         factory.registerSharedDataChannel(channel, new LocalSharedDataChannel())
+      }
+
       const publications: import('..').SharedPublication[] = []
+
       factory.subscribeToSharedPublication((value) => publications.push(value))
       const group = factory.startHistoryGroup()
+
       factory.updateHistoryGroup(group, () => {
         write('property', 1, { shared: props })
         write('element', 1, { shared: scene })
@@ -468,21 +524,25 @@ describe('explicit history groups', () => {
       )
       factory.endHistoryGroup(group)
       publications.length = 0
+
       const replay = async (direction: 'undo' | 'redo') => {
-        if (replayMode === 'atomic') factory[direction]()
-        else {
+        if (replayMode === 'atomic') {
+          factory[direction]()
+        } else {
           factory.startTransaction()
           await factory
             .getTransactionOwner()
             [`${direction}Progressively`](async () => undefined)
           factory.endTransaction()
         }
+
         return publications
           .splice(0)
           .flatMap(({ slices }) =>
             slices.map(({ batches }) => batches.map(({ channel }) => channel))
           )
       }
+
       expect(await replay('undo')).toEqual([[scene], [props, scene, props]])
       expect(await replay('redo')).toEqual([[props, scene, props], [scene]])
     }
@@ -492,10 +552,15 @@ describe('explicit history groups', () => {
     const { factory } = setup()
     const props = SharedDataChannelNames.PROPS
     const scene = SharedDataChannelNames.SCENE_TREE
-    for (const channel of [props, scene])
+
+    for (const channel of [props, scene]) {
       factory.registerSharedDataChannel(channel, new LocalSharedDataChannel())
+    }
+
     const publications: import('..').SharedPublication[] = []
+
     factory.subscribeToSharedPublication((value) => publications.push(value))
+
     const write = (id: string, options: UpdateTransactionEvent['options']) =>
       factory.updateTransactionBatch([
         {
@@ -505,7 +570,9 @@ describe('explicit history groups', () => {
           options
         }
       ])
+
     const group = factory.startHistoryGroup()
+
     factory.updateHistoryGroup(group, () => {
       write('first-property', { shared: props })
       write('first-element', { shared: scene })
@@ -515,6 +582,7 @@ describe('explicit history groups', () => {
     })
     factory.endHistoryGroup(group)
     publications.length = 0
+
     const takeIds = () =>
       publications
         .splice(0)
@@ -525,6 +593,7 @@ describe('explicit history groups', () => {
             )
           )
         )
+
     factory.undo()
     expect(takeIds()).toEqual([
       ['last-element', 'last-property'],
@@ -540,12 +609,15 @@ describe('explicit history groups', () => {
   it('replays shared publications from separate members without losing delivery evidence', () => {
     const { factory, write } = setup()
     const channel = SharedDataChannelNames.SCENE_TREE
+
     factory.registerSharedDataChannel(channel, new LocalSharedDataChannel())
     const projected: number[] = []
+
     factory.observeSharedDataChannel<{ after: number }>(channel, ({ after }) =>
       projected.push(after)
     )
     const group = factory.startHistoryGroup()
+
     factory.updateHistoryGroup(group, () => write('x', 1, { shared: channel }))
     factory.updateHistoryGroup(group, () => write('x', 2, { shared: channel }))
     factory.endHistoryGroup(group)

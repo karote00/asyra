@@ -57,6 +57,7 @@ const architecture = {
       bypasses: ['No contribution may be inferred from another owner.'],
       allowedContributors: ['@asyra/factory public runtime'],
       forbiddenContributors: ['PR status', 'caller supplied evidence'],
+      cacheDimensions: [],
       implementationBoundary: ['packages/factory/src/index.ts'],
       specRefs: ['#full-runtime-product-evidence'],
       failureOwnerStepId: 'produce-factory-runtime'
@@ -74,6 +75,7 @@ const architecture = {
       bypasses: ['No missing prerequisite may pass.'],
       allowedContributors: ['@asyra/collaboration public runtime'],
       forbiddenContributors: ['evidence from another HEAD'],
+      cacheDimensions: [],
       implementationBoundary: ['packages/collaboration/src/process.ts'],
       specRefs: ['#full-runtime-product-evidence'],
       failureOwnerStepId: 'produce-collaboration-runtime'
@@ -91,6 +93,7 @@ const architecture = {
       bypasses: ['No partial source may become an integrated result.'],
       allowedContributors: ['@asyra/ui-context public runtime'],
       forbiddenContributors: ['combined green results from different sources'],
+      cacheDimensions: [],
       implementationBoundary: ['packages/ui-context/src/property-registry.ts'],
       specRefs: ['#full-runtime-product-evidence'],
       failureOwnerStepId: 'complete-ui-context-runtime'
@@ -189,6 +192,7 @@ function manifest(kind) {
   const negativeCaseIds = selected
     .slice(kind === 'accepted' ? -1 : -2)
     .map(([id]) => id)
+
   return {
     version: 2,
     negativeCaseIds,
@@ -255,6 +259,7 @@ const aliases = packageNames
       `      '@asyra/${name}': path.join(source, 'packages/${name}/src/index.ts')`
   )
   .join(',\n')
+
 const config = (kind) => `import path from 'node:path'
 import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vitest/config'
@@ -463,6 +468,7 @@ function git(repository, args) {
 
 function write(repository, relative, bytes) {
   const file = path.join(repository, relative)
+
   fs.mkdirSync(path.dirname(file), { recursive: true })
   fs.writeFileSync(file, bytes)
 }
@@ -471,6 +477,7 @@ function replace(repository, relative, from, to) {
   const file = path.join(repository, relative)
   const before = fs.readFileSync(file, 'utf8')
   const after = before.replace(from, to)
+
   assert.notEqual(after, before, 'fixture mutation must change ' + relative)
   fs.writeFileSync(file, after)
 }
@@ -491,6 +498,7 @@ function checkout(repository, ref) {
 function commit(repository, message) {
   git(repository, ['add', 'packages'])
   git(repository, ['commit', '-qm', message])
+
   return git(repository, ['rev-parse', 'HEAD'])
 }
 
@@ -498,8 +506,9 @@ function createFullRuntimeFixture(root, parent) {
   fs.mkdirSync(parent, { recursive: true })
   const directory = fs.mkdtempSync(path.join(parent, 'full-runtime-'))
   const repository = path.join(directory, 'repository')
+
   fs.mkdirSync(path.join(repository, 'packages'), { recursive: true })
-  for (const name of packageNames)
+  for (const name of packageNames) {
     fs.cpSync(
       path.join(root, 'packages', name),
       path.join(repository, 'packages', name),
@@ -507,8 +516,12 @@ function createFullRuntimeFixture(root, parent) {
         recursive: true
       }
     )
-  for (const name of ['package.json', 'yarn.lock'])
+  }
+
+  for (const name of ['package.json', 'yarn.lock']) {
     fs.copyFileSync(path.join(root, name), path.join(repository, name))
+  }
+
   write(
     repository,
     architecturePath,
@@ -679,12 +692,15 @@ function createFullRuntimeFixture(root, parent) {
       'baseline',
       sourceAdmission
     )
-    if (expectedStatus)
+
+    if (expectedStatus) {
       assert.equal(
         evidence.status,
         expectedStatus,
         JSON.stringify(evidence.issues)
       )
+    }
+
     const record = {
       id,
       phase: 'completed',
@@ -694,11 +710,13 @@ function createFullRuntimeFixture(root, parent) {
       flowIds,
       scenario: 'baseline'
     }
+
     evidenceOwner.validateStoredEvidence(contract, record, sourceAdmission)
     assert.deepEqual(
       snapshot.runtimeAuthority.packageNames,
       packageNames.map((name) => '@asyra/' + name).sort()
     )
+
     return {
       contract,
       record,
@@ -721,11 +739,13 @@ function createFullRuntimeFixture(root, parent) {
     const acceptedSource = await service.wait(
       service.start({ mode: 'candidate' }, LOCAL_ACTOR)
     )
+
     assert.equal(acceptedSource.evidence.status, 'passed')
     const acceptedReview = service.prepareEvolution(
       { attemptId: acceptedSource.id },
       LOCAL_ACTOR
     )
+
     service.decideEvolution(
       {
         id: acceptedReview.id,
@@ -740,6 +760,7 @@ function createFullRuntimeFixture(root, parent) {
     const targetSource = await service.wait(
       service.start({ mode: 'candidate' }, LOCAL_ACTOR)
     )
+
     assert.equal(targetSource.evidence.status, 'passed')
     const targetReview = service.prepareEvolution(
       { attemptId: targetSource.id },
@@ -806,6 +827,7 @@ function createFullRuntimeFixture(root, parent) {
       },
       LOCAL_ACTOR
     )
+
     const revise = (owner = service) =>
       owner.decideTarget(
         {
@@ -820,8 +842,10 @@ function createFullRuntimeFixture(root, parent) {
         },
         LOCAL_ACTOR
       )
+
     const assess = async (owner, source) => {
       let selected = source
+
       if (typeof source === 'string') {
         checkout(repository, source)
         installContract(repository, 'target')
@@ -829,6 +853,7 @@ function createFullRuntimeFixture(root, parent) {
           owner.start({ mode: 'candidate' }, LOCAL_ACTOR)
         )
       }
+
       const assessment = await owner.waitTargetAssessment(
         owner.startTargetAssessment(
           {
@@ -840,8 +865,10 @@ function createFullRuntimeFixture(root, parent) {
           LOCAL_ACTOR
         )
       )
+
       return { source: selected, assessment }
     }
+
     return {
       service,
       acceptedSource,
@@ -862,8 +889,11 @@ function createFullRuntimeFixture(root, parent) {
     architecture: structuredClone(architecture),
     produce,
     prepareService,
+
     checkout: (ref) => checkout(repository, ref),
+
     installContract: (kind) => installContract(repository, kind),
+
     cleanup: () => fs.rmSync(directory, { recursive: true, force: true })
   }
 }

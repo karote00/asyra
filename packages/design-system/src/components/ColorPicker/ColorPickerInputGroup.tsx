@@ -31,12 +31,15 @@ export const ColorPickerInputGroup: React.FC<ColorPickerInputGroupProps> = (
     if (!dataTestId) {
       return
     }
+
     if (showAlpha && index === values.length - 1) {
       return `${dataTestId}-opacity`
     }
+
     if (colorFormat === 'hex' && index === 0) {
       return `${dataTestId}-hex`
     }
+
     return
   }
 

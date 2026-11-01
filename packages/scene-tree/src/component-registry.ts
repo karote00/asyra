@@ -40,5 +40,6 @@ class ComponentRegistry {
 }
 
 export const componentRegistry = new ComponentRegistry()
+
 export default componentRegistry
 export type { ComponentRegistration }

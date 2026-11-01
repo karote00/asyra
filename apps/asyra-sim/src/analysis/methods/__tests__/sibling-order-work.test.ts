@@ -19,7 +19,11 @@ it.each([
       (pair) =>
         pair.a.bodyId === 'example:joint-2' && pair.b.bodyId === 'obstacle-11'
     )
-    if (!pair) throw new Error('Missing representative source pair')
+
+    if (!pair) {
+      throw new Error('Missing representative source pair')
+    }
+
     const context = new OriginalMeshQuery()
     const result = queryOriginalPartPair(
       {
@@ -37,6 +41,7 @@ it.each([
       () => undefined,
       context
     )
+
     expect(result.coverage).toBe('complete')
     expect(
       result.leaves.some((leaf) => leaf.state === 'finding' && leaf.penetration)
@@ -49,18 +54,25 @@ it.each([
 )
 
 const ops = poseOperations(intervalAlgebra)
+
 function solids(permuted: boolean): MeshGeometry {
   const positions: number[] = [],
     indices: number[] = []
   const centers = Array.from({ length: 16 }, (_, index) => index / 4)
-  if (permuted) centers.reverse()
+
+  if (permuted) {
+    centers.reverse()
+  }
+
   for (const x of centers) {
     const offset = positions.length / 3
+
     positions.push(x, 0, 0, x + 1 / 32, 0, 0, x, 1 / 32, 0, x, 0, 1 / 32)
     indices.push(
       ...[0, 2, 1, 0, 1, 3, 0, 3, 2, 1, 2, 3].map((index) => index + offset)
     )
   }
+
   return {
     kind: 'mesh',
     version: 1,
@@ -74,6 +86,7 @@ it.each([false, true])(
   'retains exhaustive crossing truth under source permutation %s and reversed/rotated queries',
   (permuted) => {
     const geometry = solids(permuted)
+
     for (const rotation of [
       [0, 0, 0, 1],
       [0, 0, 3, 4]
@@ -90,6 +103,7 @@ it.each([false, true])(
           })
         )
       }
+
       for (const [left, right] of [
         [a, b],
         [b, a]
@@ -101,6 +115,7 @@ it.each([false, true])(
           500000,
           false
         ).distance(left, right, 1 / 64, 1e-6, 48)
+
         expect(result.penetration).toBe(true)
         expect(result.penetration).toBe(exhaustive.penetration)
         expect(result.lower).toBe(0)

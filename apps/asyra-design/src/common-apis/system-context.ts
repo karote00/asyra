@@ -73,6 +73,7 @@ export const isAiDrawingProgressState = (
 
   const state = value as Partial<AiDrawingProgressState>
   const bounds = state.bounds
+
   return (
     bounds !== undefined &&
     bounds !== null &&
@@ -338,9 +339,11 @@ export const systemContextApis = {
 
   setHoveredGradientHandle: (handle: GradientHandleState | null) => {
     const current = systemContextApis.getHoveredGradientHandle()
+
     if (gradientHandleEquals(current, handle)) {
       return
     }
+
     core.setSystemProperty('hoveredGradientHandle', handle)
   },
 
@@ -354,9 +357,11 @@ export const systemContextApis = {
 
   setSelectedGradientHandle: (handle: GradientHandleState | null) => {
     const current = systemContextApis.getSelectedGradientHandle()
+
     if (gradientHandleEquals(current, handle)) {
       return
     }
+
     core.setSystemProperty('selectedGradientHandle', handle)
   },
 
@@ -369,9 +374,11 @@ export const systemContextApis = {
 
   setHoveredGradientStop: (stop: GradientStopState | null) => {
     const current = systemContextApis.getHoveredGradientStop()
+
     if (gradientStopEquals(current, stop)) {
       return
     }
+
     core.setSystemProperty('hoveredGradientStop', stop)
   },
 
@@ -385,9 +392,11 @@ export const systemContextApis = {
 
   setSelectedGradientStop: (stop: GradientStopState | null) => {
     const current = systemContextApis.getSelectedGradientStop()
+
     if (gradientStopEquals(current, stop)) {
       return
     }
+
     core.setSystemProperty('selectedGradientStop', stop)
   },
 

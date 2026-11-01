@@ -75,28 +75,38 @@ export function queryOriginalPartPair(
     try {
       return operation()
     } catch (error) {
-      if (error instanceof MeshWorkLimit) return null
+      if (error instanceof MeshWorkLimit) {
+        return null
+      }
+
       throw error
     }
   }
+
   return queryContinuousPair(query, settings, checkpoint, {
     sample: context.createStaticSampler(settings),
     relativeFrames: true,
     certifyClearBeforeResampling: true,
+
     handoffEvidence: () =>
       bounded(() => {
         context.chargeEvidenceHandoff()
+
         return true
       }) === true,
+
     lowerUsesPositiveWitnessOnly: (a, b) =>
       a.geometry.kind === 'mesh' || b.geometry.kind === 'mesh',
+
     deriveZeroLower: (a, b) =>
       a.geometry.kind === 'mesh' || b.geometry.kind === 'mesh'
         ? bounded(() => {
             context.chargeEvidenceDerivation()
+
             return 0 as const
           })
         : undefined,
+
     distance: (a, b) =>
       bounded(() =>
         context.distance(
@@ -107,6 +117,7 @@ export function queryOriginalPartPair(
           settings.maxIterations
         )
       ),
+
     lower: (a, b, witness) =>
       bounded(() =>
         a.geometry.kind === 'mesh' || b.geometry.kind === 'mesh'
@@ -120,6 +131,7 @@ export function queryOriginalPartPair(
             )
           : separationLowerBound(a, b, witness.axis)
       ),
+
     exhaustionReason:
       'Original-triangle work budget exhausted; complete source geometry was not simplified.'
   })
@@ -132,6 +144,7 @@ export function runOriginalPartMethod(
   prepared?: WeakMap<MeshGeometry, PreparedMeshIndex>
 ): OfficialMethodEvidence {
   const context = new OriginalMeshQuery(checkpoint, undefined, true, prepared)
+
   return runClearanceQueries(
     snapshot,
     ORIGINAL_PART_METHOD,

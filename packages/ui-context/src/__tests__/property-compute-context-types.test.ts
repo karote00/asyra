@@ -21,8 +21,10 @@ describe('PropertyComputeContext custom element typing', () => {
   it('keeps a custom registration assignable to the default facade contract', () => {
     const customRegistration: PropertyRegistration<number, AppElementFields> = {
       defaultValue: 0,
+
       compute: (context) => context.elements[0]?.customCount ?? 0
     }
+
     const acceptDefaultRegistration = (
       registration: PropertyRegistration<number>
     ) => registration

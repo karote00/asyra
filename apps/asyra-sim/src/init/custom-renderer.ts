@@ -18,11 +18,17 @@ export function installCustomRenderer(
   const layer = new SpatialLayer(() => {
     core.setSystemProperty(FRAME_REVISION, ++revision)
   })
+
   core.registerRenderLayer(layer.registration)
+
   return {
     layer,
+
     dispose: () => {
-      if (disposed) return
+      if (disposed) {
+        return
+      }
+
       disposed = true
       core.unregisterRenderLayer(SPATIAL_LAYER_NAME)
       layer.dispose()

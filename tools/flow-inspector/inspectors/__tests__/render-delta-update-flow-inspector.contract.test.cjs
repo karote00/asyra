@@ -6,27 +6,36 @@ const test = require('node:test')
 const data = require('../render-delta-update-flow-inspector.data.cjs')
 
 const repoRoot = path.resolve(__dirname, '../../../..')
+
 const step = (id) => {
   const value = data.steps.find((item) => item.id === id)
+
   assert.ok(value, `Missing Inspector step: ${id}`)
+
   return value
 }
 
 const route = (id) => {
   const value = data.routes.find((item) => item.id === id)
+
   assert.ok(value, `Missing Inspector route: ${id}`)
+
   return value
 }
 
 const artifact = (id) => {
   const value = data.artifacts.find((item) => item.id === id)
+
   assert.ok(value, `Missing Inspector artifact: ${id}`)
+
   return value
 }
 
 const acceptance = (id) => {
   const value = data.acceptanceContracts.find((item) => item.id === id)
+
   assert.ok(value, `Missing Inspector acceptance contract: ${id}`)
+
   return value
 }
 
@@ -53,11 +62,7 @@ test('authority resolves to the active product contract and dedicated viewer', (
   )
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.specPath)))
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.inspectorPath)))
-  assert.ok(
-    fs.existsSync(
-      path.resolve(__dirname, '../render-delta-update-flow-inspector.html')
-    )
-  )
+  require('./assert-react-catalog.cjs')(data)
   data.links.forEach((link) => {
     assert.ok(
       fs.existsSync(path.resolve(__dirname, '..', link.href)),
@@ -105,9 +110,11 @@ test('every route and artifact resolves to one declared owner graph', () => {
   data.routes.forEach((item) => {
     assert.ok(stepIds.has(item.from), `Unknown route source: ${item.id}`)
     const source = stepById.get(item.from)
+
     if (item.kind !== 'terminal') {
       assert.ok(stepIds.has(item.to), `Unknown route target: ${item.id}`)
     }
+
     item.producedArtifacts.forEach((artifactId) => {
       assert.ok(
         artifactById.has(artifactId),
@@ -466,6 +473,7 @@ test('all non-empty cache dimensions have profiling and lifecycle evidence', () 
   const cacheSteps = data.steps.filter(
     (item) => item.cacheDimensions.length > 0
   )
+
   assert.deepEqual(
     cacheSteps.map((item) => item.id),
     [
@@ -473,12 +481,12 @@ test('all non-empty cache dimensions have profiling and lifecycle evidence', () 
       'apply-render-delta',
       'resync-render-snapshot',
       'flush-render-snapshot',
+      'evaluate-vector-material',
       'cleanup-render-projection'
     ]
   )
 
   cacheSteps.forEach((item) => {
-    assert.deepEqual(item.cacheDimensions, ['elementId'])
     assert.ok(item.cacheEvidence)
     ;[
       'measuredPhase',
@@ -491,6 +499,24 @@ test('all non-empty cache dimensions have profiling and lifecycle evidence', () 
     ].forEach((field) =>
       assert.equal(typeof item.cacheEvidence[field], 'string')
     )
+    if (item.id === 'evaluate-vector-material') {
+      assert.deepEqual(item.cacheDimensions, [
+        'live graphic',
+        'immutable points, segments and networks',
+        'fill rule',
+        'material input identity'
+      ])
+      assert.match(item.cacheEvidence.baseline, /1 preparation.*paint.*transform.*2.*fill.rule.*3.*geometry/i)
+      assert.match(item.cacheEvidence.invalidation, /immutable.*fill.rule/i)
+      assert.match(item.cacheEvidence.cleanup, /destroy/i)
+      assert.match(item.cacheEvidence.memoryBound, /one.*live graphic/i)
+      assert.equal(item.cacheEvidence.testPath, 'packages/preset/src/__tests__/vector-mesh-fill.test.ts')
+      assert.ok(fs.existsSync(path.join(repoRoot, item.cacheEvidence.testPath)))
+
+      return
+    }
+
+    assert.deepEqual(item.cacheDimensions, ['elementId'])
     assert.match(item.cacheEvidence.decision, /add no cache dimension/i)
     assert.match(
       item.cacheEvidence.memoryBound,
@@ -609,6 +635,7 @@ test('the product contract and shared oracle enforce work counts and retain timi
   )
   ;[plan, renderPackageContract].forEach((contract) => {
     const normalizedContract = contract.replace(/\s+/g, ' ')
+
     assert.match(normalizedContract, /valid mirror.*release failure/i)
     assert.match(
       normalizedContract,

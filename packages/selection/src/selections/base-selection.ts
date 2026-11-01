@@ -13,7 +13,9 @@ export interface SelectionDefinition {
 
 export default class BaseSelection {
   protected selectedIds: Set<string> = new Set()
+
   protected prevSelectedIds: Set<string> = new Set()
+
   changes: SelectionChange[] = []
 
   constructor(private readonly metadata: SelectionDefinition) {}
@@ -36,6 +38,7 @@ export default class BaseSelection {
     }
 
     const before = [...this.getSelectedIds()]
+
     this._updatePrevSelectedIds()
     this.selectedIds = new Set(ids)
     this.addChange(this.metadata.selectAction, before, [...ids], options)
@@ -43,6 +46,7 @@ export default class BaseSelection {
 
   deselect(ids: string[], options?: EvnetOptions): void {
     const nextSelectedIds = new Set(this.selectedIds)
+
     ids.forEach((id) => {
       nextSelectedIds.delete(id)
     })
@@ -54,6 +58,7 @@ export default class BaseSelection {
     }
 
     const before = [...this.getSelectedIds()]
+
     this._updatePrevSelectedIds()
     this.selectedIds = nextSelectedIds
     this.addChange(
@@ -70,6 +75,7 @@ export default class BaseSelection {
     }
 
     const before = [...this.getSelectedIds()]
+
     this._updatePrevSelectedIds()
     this.selectedIds.clear()
     this.addChange(this.metadata.selectAction, before, [], options)

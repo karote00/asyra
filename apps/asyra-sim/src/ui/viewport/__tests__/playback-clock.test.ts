@@ -8,11 +8,13 @@ function setup() {
 
   const clock = new PlaybackClock({
     now: () => 100,
+
     request: (callback) => {
       callbacks.set(++id, callback)
 
       return id
     },
+
     cancel: (handle) => {
       callbacks.delete(handle)
     }
@@ -92,8 +94,9 @@ it('cancels pending and late callbacks and never accumulates loops after repeate
 it('does not schedule a static or invalid interval, and supports cancellation within a sample', () => {
   const { clock, callbacks, tick } = setup()
 
-  for (const from of [8, 9, NaN, Infinity])
+  for (const from of [8, 9, NaN, Infinity]) {
     clock.play(from, 8, vi.fn(), vi.fn())
+  }
 
   expect(callbacks.size).toBe(0)
 

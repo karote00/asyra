@@ -12,19 +12,25 @@ it('shares one GPU texture pair across materials and releases it only after the 
   })
   const a = new MeshStandardMaterial(),
     b = new MeshStandardMaterial()
+
   store.apply(a, surface)
   store.apply(b, surface)
   expect(a.map).toBe(b.map)
   expect(a.normalMap).toBe(b.normalMap)
-  if (!a.map || !a.normalMap) throw new Error('Missing maps')
+  if (!a.map || !a.normalMap) {
+    throw new Error('Missing maps')
+  }
+
   const colorDispose = vi.spyOn(a.map, 'dispose'),
     normalDispose = vi.spyOn(a.normalMap, 'dispose')
+
   a.dispose()
   expect(colorDispose).not.toHaveBeenCalled()
   b.dispose()
   expect(colorDispose).toHaveBeenCalledTimes(1)
   expect(normalDispose).toHaveBeenCalledTimes(1)
   const replacement = new MeshStandardMaterial()
+
   store.apply(replacement, surface)
   expect(replacement.map).not.toBe(a.map)
   replacement.dispose()

@@ -9,9 +9,13 @@ describe('shared invocation dispatch', () => {
     const error = new Error('missing stock')
     const invoker = runtime.createAiInvoker({
       execute: async (call: { name: string }) => {
-        if (call.name === 'missing') throw error
+        if (call.name === 'missing') {
+          throw error
+        }
+
         return result
       },
+
       observe: (event: unknown) => {
         events.push(event)
       }
@@ -30,6 +34,7 @@ describe('shared invocation dispatch', () => {
         parentCallId: 'root'
       })
     ])
+
     expect(calls).toEqual([
       { status: 'fulfilled', value: result },
       { status: 'rejected', reason: error }
@@ -54,10 +59,12 @@ describe('shared invocation dispatch', () => {
       middleware: [
         async (_call, next) => {
           await next()
+
           return next()
         }
       ]
     })
+
     await expect(invoker.invoke({ name: 'write', input: {} })).rejects.toThrow(
       'once'
     )
@@ -71,8 +78,10 @@ describe('shared invocation dispatch', () => {
       throw new Error('sink closed')
     })
     const invoker = runtime.createAiInvoker({ execute, observe })
+
     expect(await invoker.invoke({ name: 'read', input: {} })).toBe(42)
     const controller = new AbortController()
+
     controller.abort()
     await expect(
       invoker.invoke({ name: 'read', input: {}, signal: controller.signal })
@@ -93,11 +102,14 @@ it('does not finish while middleware leaves its invoked executor pending', async
   const invoker = runtime.createAiInvoker({
     execute: async () => {
       await work
+
       return 'saved'
     },
+
     middleware: [
       async (_call, next) => {
         void next()
+
         return 'accepted'
       }
     ],
@@ -107,6 +119,7 @@ it('does not finish while middleware leaves its invoked executor pending', async
   const invocation = invoker.invoke({ name: 'save', input: {} }).then(() => {
     complete = true
   })
+
   await new Promise((resolve) => setTimeout(resolve, 0))
   expect(complete).toBe(false)
   release()

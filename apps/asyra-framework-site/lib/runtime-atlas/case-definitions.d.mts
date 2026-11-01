@@ -18,4 +18,5 @@ export interface AtlasCaseDefinition {
 
 export const ATLAS_CASES: readonly AtlasCaseDefinition[]
 export const ATLAS_CASE_IDS: readonly string[]
+
 export function getAtlasCase(caseId: string): AtlasCaseDefinition | undefined

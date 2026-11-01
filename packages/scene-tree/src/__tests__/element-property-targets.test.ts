@@ -37,8 +37,14 @@ const createProperty = (
 ): PropertyComponentInstanceTypes =>
   ({
     get: vi.fn((key: string) => {
-      if (key === 'id') return id
-      if (key === 'type') return type
+      if (key === 'id') {
+        return id
+      }
+
+      if (key === 'type') {
+        return type
+      }
+
       return undefined
     })
   }) as unknown as PropertyComponentInstanceTypes
@@ -52,8 +58,14 @@ const createElement = (
       getPropId: vi.fn((name: string) => propertyIds[name])
     },
     get: vi.fn((key: string) => {
-      if (key === 'id') return id
-      if (key === 'type') return TARGET_ELEMENT_TYPE
+      if (key === 'id') {
+        return id
+      }
+
+      if (key === 'type') {
+        return TARGET_ELEMENT_TYPE
+      }
+
       return undefined
     })
   }) as unknown as ElementInstanceTypes
@@ -111,6 +123,7 @@ describe('SceneTree element-property target resolution', () => {
         values
       }
     ])
+
     values.x = 999
 
     expect(resolvedTargets).toEqual({
@@ -252,6 +265,7 @@ describe('SceneTree element-property target resolution', () => {
       { kind: 'values', elementId: 'element-1', values: { x: 12 } },
       { kind: 'values', elementId: 'element-2', values: { x: 24 } }
     ])
+
     expect(result.mutations).toEqual([
       { kind: 'values', propertyId: 'position-1', values: { x: 12 } },
       { kind: 'values', propertyId: 'position-1', values: { x: 24 } }

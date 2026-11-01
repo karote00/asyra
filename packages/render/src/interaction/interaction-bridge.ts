@@ -38,9 +38,13 @@ const resolveMouseButton = (button: number): MouseButton => {
 
 export class RenderInteractionBridge {
   private readonly resolvePositions: PositionResolver
+
   private canvas: HTMLCanvasElement | null = null
+
   private hoveredTarget: RenderInteractionTarget | null = null
+
   private capturedTarget: RenderInteractionTarget | null = null
+
   private capturedPointerId: number | null = null
 
   constructor(resolvePositions: PositionResolver) {
@@ -66,6 +70,7 @@ export class RenderInteractionBridge {
 
   resetRuntime(): void {
     const failures: unknown[] = []
+
     this.detachBindings((cleanup) => {
       try {
         cleanup()
@@ -73,7 +78,9 @@ export class RenderInteractionBridge {
         failures.push(error)
       }
     })
-    if (failures.length > 0) throw failures[0]
+    if (failures.length > 0) {
+      throw failures[0]
+    }
   }
 
   private detachBindings(attempt: (cleanup: () => void) => void): void {
@@ -82,6 +89,7 @@ export class RenderInteractionBridge {
     }
 
     const canvas = this.canvas
+
     attempt(() =>
       canvas.removeEventListener('pointerdown', this.handlePointerDown)
     )
@@ -112,11 +120,13 @@ export class RenderInteractionBridge {
     }
 
     const positions = this.resolvePositions(event)
+
     if (!positions) {
       return
     }
 
     const target = this.resolveTarget(positions)
+
     this.updateHover(target, positions, event)
     if (!target) {
       return
@@ -128,6 +138,7 @@ export class RenderInteractionBridge {
 
   private handlePointerMove = (event: PointerEvent) => {
     const positions = this.resolvePositions(event)
+
     if (!positions) {
       return
     }
@@ -141,6 +152,7 @@ export class RenderInteractionBridge {
     }
 
     const target = this.capturedTarget ?? this.resolveTarget(positions)
+
     this.updateHover(target, positions, event)
 
     if (target) {
@@ -150,6 +162,7 @@ export class RenderInteractionBridge {
 
   private handlePointerUp = (event: PointerEvent) => {
     const positions = this.resolvePositions(event)
+
     if (!positions) {
       return
     }
@@ -163,6 +176,7 @@ export class RenderInteractionBridge {
     }
 
     const target = this.capturedTarget ?? this.resolveTarget(positions)
+
     if (target) {
       this.dispatchPointerEvent('pointerup', target, positions, event)
     }
@@ -176,6 +190,7 @@ export class RenderInteractionBridge {
     }
 
     const positions = this.resolvePositions(event)
+
     if (!positions) {
       return
     }
@@ -265,6 +280,7 @@ export class RenderInteractionBridge {
       target.id,
       eventType
     )
+
     registrations.forEach((registration) => {
       registration.handler({ type: eventType, payload })
     })
@@ -303,6 +319,7 @@ export class RenderInteractionBridge {
     event: PointerEvent
   ) {
     const captureMode = target.capture ?? 'none'
+
     if (captureMode === 'none') {
       return
     }

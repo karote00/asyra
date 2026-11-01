@@ -55,6 +55,7 @@ const expectLinearGradientCall = (options: {
   const actual = vi.mocked(core.createRenderGradientFillStyle).mock.calls[
     vi.mocked(core.createRenderGradientFillStyle).mock.calls.length - 1
   ]?.[0]
+
   expect(actual).toMatchObject({
     type: 'linear',
     start: options.start,

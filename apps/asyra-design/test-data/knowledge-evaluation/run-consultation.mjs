@@ -33,13 +33,18 @@ const { installRecordingObserver } = require('./observer-101.cjs')
 const { createRecordingBoundsFit } = require('./fit-101.cjs')
 
 export function consultationScenario(args) {
-  if (!args.length)
+  if (!args.length) {
     return { id: 'consultation', prompts: consultationPrompts, attachments: [] }
-  if (args.length !== 1 || args[0] !== '--scenario=architecture-101')
+  }
+
+  if (args.length !== 1 || args[0] !== '--scenario=architecture-101') {
     throw new Error('Unknown continuity scenario')
+  }
+
   const specification = JSON.parse(
     fs.readFileSync(new URL('./architecture-101.json', import.meta.url))
   )
+
   return {
     id: 'taipei-101-continuity',
     attachments: specification.attachments,
@@ -61,8 +66,12 @@ export async function runConsultationPhases({
   prompts = consultationPrompts
 }) {
   const turns = []
+
   for (const [index, prompt] of prompts.entries()) {
-    if (now() >= workDeadlineAt) return { turns, stopped: 'work-deadline' }
+    if (now() >= workDeadlineAt) {
+      return { turns, stopped: 'work-deadline' }
+    }
+
     const evaluationWindow =
       index === prompts.length - 1
         ? { workDeadlineAt, reportTimeoutMs }
@@ -73,13 +82,19 @@ export async function runConsultationPhases({
       workDeadlineAt,
       evaluationWindow
     })
+
     turns.push(turn)
-    if (!turn.settled || !turn.resultSaved)
+    if (!turn.settled || !turn.resultSaved) {
       return { turns, stopped: 'incomplete-turn' }
-    if (!['success', 'no-change', 'partial'].includes(turn.outcome))
+    }
+
+    if (!['success', 'no-change', 'partial'].includes(turn.outcome)) {
       return { turns, stopped: 'non-successful-turn' }
+    }
+
     if (turn.outcome === 'partial') {
       const hasFollowUp = index < prompts.length - 1
+
       if (
         !turn.documentPath ||
         (hasFollowUp &&
@@ -88,10 +103,12 @@ export async function runConsultationPhases({
             !turn.answer?.turnId ||
             !turn.answer.text?.trim() ||
             turn.answer.attribution !== 'ordinary-assistant-answer'))
-      )
+      ) {
         return { turns, stopped: 'incomplete-turn' }
+      }
     }
   }
+
   return { turns, stopped: 'completed' }
 }
 
@@ -108,6 +125,7 @@ async function main() {
   const producer = verifyEvaluationService(vite, app)
   const id = `knowledge-${scenario.id}-${Date.now()}`
   const directory = path.join(root, 'tmp/knowledge-evaluation', id)
+
   fs.mkdirSync(directory, { recursive: true })
   const meta = {
     id,
@@ -135,11 +153,13 @@ async function main() {
     limitation:
       'Two App messages are not necessarily one native thread or Knowledge session. The predecessor remains an ordinary answer; only the final request reports. No overlapping reads means reuse is unobserved.'
   }
+
   const save = () =>
     fs.writeFileSync(
       path.join(directory, 'run.json'),
       JSON.stringify(meta, null, 2)
     )
+
   meta.sourceManifest = captureSources(
     root,
     path.join(directory, 'source-snapshot.json.gz')
@@ -151,18 +171,22 @@ async function main() {
     page,
     deadline,
     settled = false
+
   const state = () =>
     page.evaluate(async () => {
       const { core } = await import('/src/testing/runtime-access.ts')
+
       return {
         document: await core.save(),
         ids: [...core.deps.sceneTree.getAllElements().keys()]
       }
     })
+
   try {
     owned = await launchCaptureBrowser({
       chromium,
       evidencePath: path.join(directory, 'cleanup-stop.json'),
+
       record: (e) => {
         meta.browserLifecycle.push(e)
         save()
@@ -179,9 +203,13 @@ async function main() {
       save()
     })
     page.on('request', (request) => {
-      if (!meta.sentAt) return
+      if (!meta.sentAt) {
+        return
+      }
+
       try {
         const requestId = captureRequestIdentity(request, environment.appURL)
+
         if (requestId) {
           meta.sourceRequestIds.push(requestId)
           save()
@@ -209,12 +237,15 @@ async function main() {
       await page.getByLabel('Choose images').setInputFiles(
         scenario.attachments.map((attachment) => {
           const filename = path.resolve(here, attachment.path)
+
           if (
             createHash('sha256')
               .update(fs.readFileSync(filename))
               .digest('hex') !== attachment.sha256
-          )
+          ) {
             throw new Error('Reference hash mismatch')
+          }
+
           return filename
         })
       )
@@ -226,21 +257,28 @@ async function main() {
       )
       meta.attachments = scenario.attachments
     }
+
     await page.evaluate(async (source) => {
       const { core } = await import('/src/testing/runtime-access.ts')
+
       window.__qualityObserver = (0, eval)('(' + source + ')')(core)
     }, installRecordingObserver.toString())
     const fit = createRecordingBoundsFit(async () =>
       page.keyboard.press('Meta+1')
     )
+
     await page.screenshot({ path: path.join(directory, 'before.png') })
-    if (captureSources(root).digest !== meta.sourceManifest.digest)
+    if (captureSources(root).digest !== meta.sourceManifest.digest) {
       throw new Error('Source changed before Send')
+    }
+
     verifyEvaluationService(vite, app)
     const started = Date.now()
+
     meta.sentAt = new Date(started).toISOString()
     meta.workDeadlineAt = started + meta.workBudgetMs
     const outerDeadlineAt = meta.workDeadlineAt + meta.reportTimeoutMs
+
     deadline = createLiveTestDeadline({
       deadlineAt: meta.workDeadlineAt,
       groups: [vite.pid],
@@ -254,11 +292,14 @@ async function main() {
       prompts: scenario.prompts,
       workDeadlineAt: meta.workDeadlineAt,
       reportTimeoutMs: meta.reportTimeoutMs,
+
       runTurn: async ({ index, prompt, workDeadlineAt, evaluationWindow }) => {
         if (evaluationWindow) {
           meta.predecessorDeadline = await deadline.finish()
-          if (meta.predecessorDeadline.status !== 'finished')
+          if (meta.predecessorDeadline.status !== 'finished') {
             throw new Error('Predecessor exceeded the shared work deadline')
+          }
+
           deadline = createLiveTestDeadline({
             deadlineAt: outerDeadlineAt + 30000,
             groups: [vite.pid],
@@ -267,6 +308,7 @@ async function main() {
           })
           await deadline.ready
         }
+
         const turn = {
           index,
           prompt,
@@ -275,14 +317,17 @@ async function main() {
           settled: false,
           resultSaved: false
         }
+
         meta.turns.push(turn)
         save()
         const requestOffset = meta.sourceRequestIds.length
         const messagesBefore = await page
           .getByTestId('ai-agent-message')
           .count()
+
         await page.evaluate((evaluationWindow) => {
           const url = new URL(location.href)
+
           if (evaluationWindow) {
             url.searchParams.set(
               'aiEvaluationWindow',
@@ -291,13 +336,17 @@ async function main() {
           } else {
             url.searchParams.delete('aiEvaluationWindow')
           }
+
           history.replaceState(null, '', url)
         }, evaluationWindow ?? null)
         await page.getByLabel('Message Agent').fill(prompt)
-        if (Date.now() >= workDeadlineAt)
+        if (Date.now() >= workDeadlineAt) {
           throw new Error('Work deadline before Send')
+        }
+
         await page.getByRole('button', { name: 'Send', exact: true }).click()
         let previous
+
         while (Date.now() < outerDeadlineAt) {
           const observed = await boundedCapture(
             'turn observation',
@@ -315,9 +364,12 @@ async function main() {
               })),
             Math.max(1, Math.min(5000, outerDeadlineAt - Date.now()))
           )
+
           meta.observation = observed.observation
-          if (observed.observation.errors.length)
+          if (observed.observation.errors.length) {
             throw new Error(JSON.stringify(observed.observation.errors))
+          }
+
           await fit(observed.observation.bounds)
           if (
             meta.firstContentMs === undefined &&
@@ -327,15 +379,20 @@ async function main() {
             save()
             await page.screenshot({ path: path.join(directory, 'first.png') })
           }
+
           if (observed.activity !== previous) {
             previous = observed.activity
             meta.statuses.push({ index, at: Date.now(), text: previous })
             save()
           }
-          if (meta.requestIdentityFailure)
+
+          if (meta.requestIdentityFailure) {
             throw new Error(meta.requestIdentityFailure)
+          }
+
           if (observed.outcomes.length > messagesBefore) {
             const outcome = observed.outcomes.at(-1)
+
             if (
               [
                 'success',
@@ -350,18 +407,23 @@ async function main() {
               break
             }
           }
+
           await page.waitForTimeout(200)
         }
+
         turn.finishedAt = Date.now()
         const documentPath = `turn-${index + 1}-document.json`
+
         fs.writeFileSync(
           path.join(directory, documentPath),
           JSON.stringify(await state())
         )
         turn.documentPath = documentPath
         turn.sourceRequestIds = meta.sourceRequestIds.slice(requestOffset)
-        if (!turn.settled)
+        if (!turn.settled) {
           throw new Error('Turn/report exceeded shared deadline')
+        }
+
         fs.writeFileSync(
           path.join(directory, `turn-${index + 1}-messages.json`),
           JSON.stringify(
@@ -380,10 +442,15 @@ async function main() {
               .getByTestId('ai-agent-result')
               .textContent()
             const turnId = await message.getAttribute('data-turn-id')
-            if (!text?.trim() || !turnId || !turn.sourceRequestIds.length)
+
+            if (!text?.trim() || !turnId || !turn.sourceRequestIds.length) {
               throw new Error('Ordinary predecessor answer unavailable')
-            if (await message.getAttribute('data-evaluation-report'))
+            }
+
+            if (await message.getAttribute('data-evaluation-report')) {
               throw new Error('Evaluation report replaced ordinary predecessor')
+            }
+
             fs.writeFileSync(
               path.join(directory, `turn-${index + 1}-answer.txt`),
               text
@@ -400,9 +467,12 @@ async function main() {
                 .count()) === 0
             turn.resultSaved = true
             save()
+
             return turn
           }
+
           const report = await readEvaluationReport(page, turn.sourceRequestIds)
+
           fs.writeFileSync(
             path.join(directory, `turn-${index + 1}-report.txt`),
             report.text
@@ -417,10 +487,13 @@ async function main() {
         } catch (error) {
           turn.reportError = error.message
         }
+
         save()
+
         return turn
       }
     })
+
     meta.stopped = result.stopped
     meta.elapsedMs = Date.now() - started
     meta.deadline = await deadline.finish()
@@ -432,16 +505,25 @@ async function main() {
     await page.screenshot({ path: path.join(directory, 'final.png') })
     meta.sourceUnchanged =
       captureSources(root).digest === meta.sourceManifest.digest
-    if (!meta.sourceUnchanged)
+    if (!meta.sourceUnchanged) {
       throw new Error('Source changed during observation')
+    }
   } catch (error) {
     meta.errors.push(String(error.stack ?? error))
-    if (deadline && !settled)
+    if (deadline && !settled) {
       meta.deadline = await deadline.stop('collector-failure')
+    }
+
     process.exitCode = 1
   } finally {
-    if (context) await context.close().catch((e) => meta.errors.push(String(e)))
-    if (owned) await owned.close().catch((e) => meta.errors.push(String(e)))
+    if (context) {
+      await context.close().catch((e) => meta.errors.push(String(e)))
+    }
+
+    if (owned) {
+      await owned.close().catch((e) => meta.errors.push(String(e)))
+    }
+
     meta.finishedAt = new Date().toISOString()
     save()
     console.log(
@@ -454,8 +536,10 @@ async function main() {
     )
   }
 }
+
 if (
   process.argv[1] &&
   path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
-)
+) {
   await main()
+}

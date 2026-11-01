@@ -14,6 +14,7 @@ afterEach(() => {
 describe('emitDiagnosticCounter', () => {
   it('forwards explicit and default counter increments', () => {
     const sink = vi.fn<DiagnosticCounterSink>()
+
     disposers.push(subscribeToDiagnosticCounters(sink))
 
     emitDiagnosticCounter('default')

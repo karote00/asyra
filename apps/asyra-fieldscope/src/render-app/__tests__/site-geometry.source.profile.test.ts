@@ -21,18 +21,24 @@ it('carries complete source material regions with every original near scene mesh
   const config = { ...DEFAULT_CONFIGURATION, length: 2.2 }
   const meshes = buildSiteMeshes(config, owner)
   const scene = owner.prepareScene(config, meshes)
+
   for (const mesh of scene.meshes) {
     expect(mesh.regions).toBeDefined()
     expect(Object.isFrozen(mesh.regions)).toBe(true)
     const shape = mesh.descriptor.shape
-    if (shape.kind !== 'triangles')
+
+    if (shape.kind !== 'triangles') {
       throw new Error('Expected original triangles')
+    }
+
     expect(
       mesh.regions.reduce((sum, region) => sum + region.indexCount, 0)
     ).toBe(shape.indices.length)
-    if (mesh.layer === 'film')
+    if (mesh.layer === 'film') {
       expect(mesh.regions.every((region) => region.kind === 'sheet')).toBe(true)
+    }
   }
+
   expect(owner.prepareScene(config, meshes) === scene).toBe(true)
 })
 
@@ -48,30 +54,36 @@ it('detaches direct scene region input and rejects incomplete replacement before
     index ? mesh : { ...mesh, regions }
   )
   const first = owner.prepareScene(config, meshes)
+
   regions[0].kind = 'sheet'
   expect(first.meshes[0].regions[0].kind).toBe('closed-solid')
   const invalid = original.map((mesh, index) =>
     index ? mesh : { ...mesh, regions: [] }
   )
+
   expect(() => owner.prepareScene(config, invalid)).toThrow()
   expect(owner.getScene() === first).toBe(true)
 })
 
 it('retains admitted cultivar shapes only for matching net dimensions and clears them on retirement', () => {
   const build = vi.spyOn(crops, 'createCropModels')
+
   try {
     const owner = new SiteGeometry()
     const first = owner.cropModels(DEFAULT_CONFIGURATION)
+
     expect(owner.cropModels({ ...DEFAULT_CONFIGURATION })).toBe(first)
     const changed = owner.cropModels({ netTop: 2.8, netBottom: 0.45 })
+
     expect(changed[0].parts[0].shape === first[0].parts[0].shape).toBe(false)
     expect(owner.cropModels(DEFAULT_CONFIGURATION)).toBe(first)
     expect(build).toHaveBeenCalledTimes(2)
     owner.cropModels({ netTop: 2.8, netBottom: 0.6 })
     expect(build).toHaveBeenCalledTimes(3)
     const replacement = owner.cropModels(DEFAULT_CONFIGURATION)
+
     expect(build).toHaveBeenCalledTimes(4)
-    for (let i = 0; i < first.length; i++)
+    for (let i = 0; i < first.length; i++) {
       for (let j = 0; j < first[i].parts.length; j++) {
         expect(
           sameSpatialShape(
@@ -86,6 +98,8 @@ it('retains admitted cultivar shapes only for matching net dimensions and clears
           )
         ).toBe(true)
       }
+    }
+
     owner.clear()
     owner.cropModels(DEFAULT_CONFIGURATION)
     expect(build).toHaveBeenCalledTimes(5)
@@ -105,6 +119,7 @@ it('projects shared hardware vertices back to the canonical installed geometry a
     net: net.strands,
     clips: assembly.clips.map(springClipWire)
   }
+
   for (const layer of ['supports', 'net', 'clips'] as const) {
     const members = membersByLayer[layer]
     const origins =
@@ -112,17 +127,23 @@ it('projects shared hardware vertices back to the canonical installed geometry a
         ? assembly.clips.map((clip) => clip.origin)
         : members.map((member) => member.points[0])
     const expected = new Map<string, TriangleBuilder[]>()
+
     origins.forEach((origin, i) => {
       const key = JSON.stringify(origin)
       const builder = new TriangleBuilder()
+
       builder.tube(members[i])
       expected.set(key, [...(expected.get(key) ?? []), builder])
     })
     let count = 0
+
     for (const mesh of meshes.filter((item) => item.layer === layer)) {
       const shape = mesh.descriptor.shape
-      if (shape.kind !== 'triangles' || !mesh.descriptor.instances)
+
+      if (shape.kind !== 'triangles' || !mesh.descriptor.instances) {
         throw new Error('Expected shared hardware')
+      }
+
       for (const instance of mesh.descriptor.instances) {
         const candidates = expected.get(JSON.stringify(instance.position)) ?? []
         const builder = candidates.find((candidate) =>
@@ -135,18 +156,26 @@ it('projects shared hardware vertices back to the canonical installed geometry a
               ) < 1e-10
           )
         )
-        if (!builder) throw new Error('Missing canonical member')
+
+        if (!builder) {
+          throw new Error('Missing canonical member')
+        }
+
         expect(shape.positions.length).toBe(builder.positions.length)
-        for (let i = 0; i < shape.positions.length; i++)
+        for (let i = 0; i < shape.positions.length; i++) {
           expect(shape.positions[i] + instance.position[i % 3]).toBeCloseTo(
             builder.positions[i],
             10
           )
+        }
+
         count++
       }
     }
+
     expect(count).toBe(members.length)
   }
+
   expect(
     meshes
       .filter((mesh) => mesh.layer === 'ties')
@@ -156,6 +185,7 @@ it('projects shared hardware vertices back to the canonical installed geometry a
   const changed = { ...config, netTop: 2.8, length: 3.2 }
   const retained = buildCultivationMeshes(changed, owner)
   const fresh = buildCultivationMeshes(changed, new SiteGeometry())
+
   expect(retained.length).toBe(fresh.length)
   retained.forEach((mesh, i) => {
     expect(
@@ -165,6 +195,7 @@ it('projects shared hardware vertices back to the canonical installed geometry a
   })
   owner.clear()
   const rebuilt = buildCultivationMeshes(changed, owner)
+
   expect(rebuilt[0].descriptor.shape === retained[0].descriptor.shape).toBe(
     false
   )
@@ -173,19 +204,25 @@ it('projects shared hardware vertices back to the canonical installed geometry a
 it('preserves independent descriptors across pole extension and retires projections on clear', () => {
   const owner = new SiteGeometry()
   const config = { ...DEFAULT_CONFIGURATION, length: 2.2 }
+
   try {
     const initial = buildSiteMeshes(config, owner)
     const extension = buildSiteMeshes({ ...config, topExtension: 0.2 }, owner)
+
     for (const mesh of initial.filter(
       (item) => !['supports', 'net', 'ties', 'clips'].includes(item.layer)
-    ))
+    )) {
       expect(
         extension.find((item) => item.id === mesh.id)?.descriptor ===
           mesh.descriptor
       ).toBe(true)
+    }
+
     const beforeClear = buildSiteMeshes(config, owner)
+
     owner.clear()
     const afterClear = buildSiteMeshes(config, owner)
+
     expect(
       afterClear.find((mesh) => mesh.id === 'steel')?.descriptor ===
         beforeClear.find((mesh) => mesh.id === 'steel')?.descriptor
@@ -230,12 +267,14 @@ it.each(
   ({ patch, previous }) => {
     const owner = new SiteGeometry()
     const config = { ...DEFAULT_CONFIGURATION, length: 2.2 }
+
     try {
       buildSiteMeshes(config, owner)
       buildSiteMeshes({ ...config, ...previous }, owner)
       const next = { ...config, ...patch }
       const retained = buildSiteMeshes(next, owner)
       const fresh = buildSiteMeshes(next)
+
       expect(retained.map((mesh) => mesh.id)).toEqual(
         fresh.map((mesh) => mesh.id)
       )
@@ -255,19 +294,23 @@ it.each(
 
 it('keeps cultivar assignments and admitted instance arrays when only the net height changes', () => {
   const build = vi.spyOn(planting, 'createCropPositions')
+
   try {
     const owner = new SiteGeometry()
     const config = { ...DEFAULT_CONFIGURATION, length: 2.2 }
     const first = buildSiteMeshes(config, owner)
     const next = buildSiteMeshes({ ...config, netTop: 2.8 }, owner)
+
     expect(build).toHaveBeenCalledTimes(1)
     for (const mesh of first.filter((item) =>
       ['cucumbers', 'tomatoes'].includes(item.layer)
-    ))
+    )) {
       expect(
         next.find((item) => item.id === mesh.id)?.descriptor.instances ===
           mesh.descriptor.instances
       ).toBe(true)
+    }
+
     buildSiteMeshes({ ...config, startInset: 0.3 }, owner)
     expect(build).toHaveBeenCalledTimes(2)
     owner.clear()
@@ -283,9 +326,11 @@ it('prepares one immutable canonical scene handoff with distinct installed fruit
   const placement = vi.spyOn(planting, 'createCropPositions')
   const owner = new SiteGeometry()
   const config = { ...DEFAULT_CONFIGURATION, length: 2.2 }
+
   try {
     const meshes = buildSiteMeshes(config, owner)
     const scene = owner.prepareScene(config, meshes)
+
     expect(owner.prepareScene(config, meshes)).toBe(scene)
     expect(generation).toHaveBeenCalledTimes(1)
     expect(placement).toHaveBeenCalledTimes(1)
@@ -298,7 +343,11 @@ it('prepares one immutable canonical scene handoff with distinct installed fruit
     )
     expect(scene.meshes.some((mesh) => mesh.layer === 'net')).toBe(true)
     const rotated = scene.fruits.find((fruit) => fruit.plant.yaw === Math.PI)
-    if (!rotated) throw new Error('Missing rotated source fruit')
+
+    if (!rotated) {
+      throw new Error('Missing rotated source fruit')
+    }
+
     expect(rotated.position[0]).toBeCloseTo(
       rotated.plant.position[0] - rotated.source.center[0]
     )
@@ -310,12 +359,17 @@ it('prepares one immutable canonical scene handoff with distinct installed fruit
     expect(Object.isFrozen(rotated.source)).toBe(true)
     expect(Object.isFrozen(rotated.model.parts[0].partitions)).toBe(true)
     const source = rotated.model.parts[0].shape
+
     expect(meshes.some((mesh) => mesh.descriptor.shape === source)).toBe(true)
-    for (let i = 0; i < 10; i++) expect(owner.getScene()).toBe(scene)
+    for (let i = 0; i < 10; i++) {
+      expect(owner.getScene()).toBe(scene)
+    }
+
     expect(generation).toHaveBeenCalledTimes(1)
     expect(placement).toHaveBeenCalledTimes(1)
     const next = { ...config, netTop: 2.8 }
     const changed = owner.prepareScene(next, buildSiteMeshes(next, owner))
+
     expect(changed.revision).not.toBe(scene.revision)
     expect(owner.isCurrentScene(scene)).toBe(false)
     expect(owner.isCurrentScene(changed)).toBe(true)
@@ -336,15 +390,23 @@ it('maps admitted crop source anatomy to exact scene mesh regions and deeply fre
   const models = owner.cropModels(config)
   const meshes = buildSiteMeshes(config, owner)
   const scene = owner.prepareScene(config, meshes)
+
   for (const mesh of scene.meshes.filter(
     ({ sourceAnatomy }) => sourceAnatomy
   )) {
     const part = models
       .flatMap((model) => model.parts)
       .find((candidate) => candidate.shape === mesh.descriptor.shape)
-    if (!part) throw new Error('Missing projected crop source')
+
+    if (!part) {
+      throw new Error('Missing projected crop source')
+    }
+
     expect(mesh.sourceAnatomy).toBe(part.sourceAnatomy)
-    if (!mesh.sourceAnatomy) throw new Error('Missing mapped source anatomy')
+    if (!mesh.sourceAnatomy) {
+      throw new Error('Missing mapped source anatomy')
+    }
+
     expect(Object.isFrozen(mesh.sourceAnatomy)).toBe(true)
     expect(Object.isFrozen(mesh.sourceAnatomy.patches)).toBe(true)
     for (const patch of mesh.sourceAnatomy.patches) {
@@ -363,7 +425,11 @@ it.each(['foreign-region', 'duplicate-id', 'forged-range'] as const)(
     const generated = crops.createCropModels({ netTop: 3, netBottom: 0.45 })
     const model = generated[0]
     const part = model.parts.find(({ sourceAnatomy }) => sourceAnatomy)
-    if (!part?.sourceAnatomy) throw new Error('Missing anatomy fixture')
+
+    if (!part?.sourceAnatomy) {
+      throw new Error('Missing anatomy fixture')
+    }
+
     const patches = part.sourceAnatomy.patches.map((patch) => ({
       ...patch,
       source: {
@@ -371,10 +437,19 @@ it.each(['foreign-region', 'duplicate-id', 'forged-range'] as const)(
         ranges: patch.source.ranges.map((range) => ({ ...range }))
       }
     }))
-    if (failure === 'foreign-region')
+
+    if (failure === 'foreign-region') {
       patches[0].source.region = { ...patches[0].source.region }
-    if (failure === 'duplicate-id') patches[1].id = patches[0].id
-    if (failure === 'forged-range') patches[0].source.ranges[0].indexCount += 3
+    }
+
+    if (failure === 'duplicate-id') {
+      patches[1].id = patches[0].id
+    }
+
+    if (failure === 'forged-range') {
+      patches[0].source.ranges[0].indexCount += 3
+    }
+
     const replacement = generated.map((candidate, index) =>
       index
         ? candidate
@@ -393,6 +468,7 @@ it.each(['foreign-region', 'duplicate-id', 'forged-range'] as const)(
             )
           }
     )
+
     vi.spyOn(crops, 'createCropModels').mockReturnValue(replacement)
     try {
       expect(() =>
@@ -412,6 +488,7 @@ it('keeps a legacy scene mesh without source anatomy viewable and unclassified',
       sourceAnatomy || distantSourceAnatomy ? mesh : mesh
   )
   const scene = owner.prepareScene(config, meshes)
+
   expect(scene.meshes.every((mesh) => mesh.sourceAnatomy === undefined)).toBe(
     true
   )

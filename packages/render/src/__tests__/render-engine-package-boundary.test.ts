@@ -11,11 +11,13 @@ const packageRoot = path.resolve(
 const getSourceFiles = (directory: string, includeTests = false): string[] =>
   fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const entryPath = path.join(directory, entry.name)
+
     if (entry.isDirectory()) {
       return entry.name === '__tests__' && !includeTests
         ? []
         : getSourceFiles(entryPath, includeTests)
     }
+
     return entry.name.endsWith('.ts') ? [entryPath] : []
   })
 
@@ -39,6 +41,7 @@ describe('@asyra/render engine package boundary', () => {
     const violations = getSourceFiles(path.join(packageRoot, 'src'), true)
       .filter((file) => {
         const source = fs.readFileSync(file, 'utf8')
+
         return (
           /from ['"]pixi\.js['"]/.test(source) ||
           /from ['"]@asyra\/render-engine-pixi(?:['"/])/.test(source)
@@ -53,6 +56,7 @@ describe('@asyra/render engine package boundary', () => {
     const violations = getSourceFiles(path.join(packageRoot, 'src'))
       .filter((file) => {
         const source = fs.readFileSync(file, 'utf8')
+
         return /\b(?:ThreeJS|Hybrid)\b/.test(source)
       })
       .map((file) => path.relative(packageRoot, file))

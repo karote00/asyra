@@ -21,6 +21,7 @@ test(
     assert.equal(await service.getCurrentBranch(), branch)
     assert.equal(await service.git.diff(['HEAD...HEAD', '--name-only']), '')
     const history = await service.git.log({ file: 'package.json', maxCount: 1 })
+
     assert.equal(history.all.length, 1)
     assert.match(history.latest.hash, /^[a-f0-9]{40}$/)
   }
@@ -31,6 +32,7 @@ test('Tailwind source maps preserve mappings with the security resolution', () =
   const { SourceMapGenerator, SourceMapConsumer } =
     tailwindRequire('source-map-js')
   const generator = new SourceMapGenerator({ file: 'output.css' })
+
   generator.addMapping({
     generated: { line: 1, column: 0 },
     original: { line: 3, column: 2 },
@@ -59,10 +61,12 @@ test('concurrently preserves additional arguments through its shell-quote consum
     { additionalArguments: values, raw: false }
   )
   let output = ''
+
   commands[0].stdout.subscribe((chunk) => {
     output += chunk.toString()
   })
   const events = await result
+
   assert.equal(events[0].exitCode, 0)
   assert.deepEqual(JSON.parse(output), values)
 })

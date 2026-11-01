@@ -28,6 +28,7 @@ import type { SyntheticSourceBounds } from '../simulation/synthetic-dynamic-scen
 
 const zero = Object.freeze({ numerator: 0n, denominator: 1n })
 const one = Object.freeze({ numerator: 1n, denominator: 1n })
+
 /** The interval owner, never endpoint sampling, supplies this observation volume. */
 export function prepareWalkingSelectedActionSweep(
   owner: WalkingConstrainedCycleOwner,
@@ -39,39 +40,49 @@ export function prepareWalkingSelectedActionSweep(
     sourceVertices: 0,
     otherBodyVisits: 0
   }
+
   work.boundCalls++
   const bound = owner.boundSelectedChainMotion(motion, { low: zero, high: one })
   const min: [number, number, number] = [Infinity, Infinity, Infinity]
   const max: [number, number, number] = [-Infinity, -Infinity, -Infinity]
+
   for (const { part, frame } of bound.parts) {
     work.partVisits++
     const positions = part.shape.positions
+
     for (let offset = 0; offset < positions.length; offset += 3) {
       work.sourceVertices++
       for (let axis = 0; axis < 3; axis++) {
         let value = frame.origin[axis]
-        for (let k = 0; k < 3; k++)
+
+        for (let k = 0; k < 3; k++) {
           value = add(
             value,
             multiply(frame.matrix[axis][k], interval(positions[offset + k]))
           )
+        }
+
         min[axis] = Math.min(min[axis], value.low)
         max[axis] = Math.max(max[axis], value.high)
       }
     }
   }
+
   if (
     !min.every(Number.isFinite) ||
     !max.every(Number.isFinite) ||
     min.some((v, i) => v > max[i])
-  )
+  ) {
     throw new Error('unavailable-selected-sweep')
+  }
+
   return Object.freeze({
     motion,
     bounds: Object.freeze({ min: Object.freeze(min), max: Object.freeze(max) }),
     work: Object.freeze(work)
   })
 }
+
 type ActiveReport = Exclude<WalkingOperatingReport, { status: 'legacy-view' }>
 export interface WalkingLocalActionRequest {
   readonly format: 'synthetic-walking-local-action/1'
@@ -134,6 +145,7 @@ export interface WalkingLocalActionDecision {
   readonly reasons: readonly string[]
   readonly work: Readonly<ActionWork>
 }
+
 function keys(raw: object, names: readonly string[]) {
   if (
     !raw ||
@@ -141,9 +153,11 @@ function keys(raw: object, names: readonly string[]) {
     Array.isArray(raw) ||
     Object.keys(raw).length !== names.length ||
     Object.keys(raw).some((k) => !names.includes(k))
-  )
+  ) {
     throw new Error('invalid-local-action-fields')
+  }
 }
+
 function timing(raw: { actionId: string; now: number; validUntil: number }) {
   if (
     typeof raw.actionId !== 'string' ||
@@ -152,9 +166,11 @@ function timing(raw: { actionId: string; now: number; validUntil: number }) {
     raw.now < 0 ||
     !Number.isFinite(raw.validUntil) ||
     raw.validUntil <= raw.now
-  )
+  ) {
     throw new Error('invalid-local-action-time')
+  }
 }
+
 const overlaps = (a: SyntheticSourceBounds, b: SyntheticSourceBounds) =>
   a.min.every((v, i) => v <= b.max[i] && a.max[i] >= b.min[i])
 
@@ -179,9 +195,13 @@ export function createWalkingLocalActionWorkspace(owners: {
     exactPredicates: 0,
     observationCalls: 0
   }
+
   const live = () => {
-    if (closed) throw new Error('Walking local action workspace is closed')
+    if (closed) {
+      throw new Error('Walking local action workspace is closed')
+    }
   }
+
   const currentAction = (value: PreparedAction) =>
     !closed &&
     action === value &&
@@ -191,8 +211,10 @@ export function createWalkingLocalActionWorkspace(owners: {
     cycleOwner.read(value.report.source, value.cycle.recipe) === value.cycle &&
     cycleOwner.readSelectedChainMotion(value.cycle, value.motion) ===
       value.motion
+
   const monitorOwner = new WalkingRuntimeMonitorOwner((context) => {
     const value = action
+
     return (
       !!value &&
       currentAction(value) &&
@@ -203,6 +225,7 @@ export function createWalkingLocalActionWorkspace(owners: {
       context.phase === value.motion.recipe.phase
     )
   })
+
   const context = (
     value: PreparedAction,
     now: number
@@ -215,14 +238,17 @@ export function createWalkingLocalActionWorkspace(owners: {
     phase: value.motion.recipe.phase,
     now
   })
+
   const counts = () => ({
     cyclePreparations: cycleOwner.work.preparations,
     relationPreparations: relationOwner.work.preparations,
     sourceCertifications: relationOwner.work.sourceCertifications,
     ...totals
   })
+
   const isCurrent = (decision: WalkingLocalActionDecision) => {
     const value = action
+
     return (
       !closed &&
       latest === decision &&
@@ -243,6 +269,7 @@ export function createWalkingLocalActionWorkspace(owners: {
       ) === decision.monitor
     )
   }
+
   const execute = (
     kind: 'start' | 'continue' | 'complete',
     raw: WalkingLocalActionRequest | WalkingLocalActionContinuation
@@ -257,8 +284,11 @@ export function createWalkingLocalActionWorkspace(owners: {
     let observationWork: ActionWork['observation']
     let admitted = false
     let proposedProgress = 0
-    if (kind !== 'start')
+
+    if (kind !== 'start') {
       proposedProgress = 'progress' in raw ? raw.progress : NaN
+    }
+
     try {
       keys(
         raw,
@@ -277,7 +307,10 @@ export function createWalkingLocalActionWorkspace(owners: {
           : ['actionId', 'now', 'validUntil', 'progress', 'monitor']
       )
       timing(raw)
-      if (raw.now <= lastTime) throw new Error('nonmonotonic-action-time')
+      if (raw.now <= lastTime) {
+        throw new Error('nonmonotonic-action-time')
+      }
+
       lastTime = raw.now
       if (kind === 'start') {
         action = undefined
@@ -287,29 +320,39 @@ export function createWalkingLocalActionWorkspace(owners: {
           raw.format !== 'synthetic-walking-local-action/1' ||
           typeof raw.assumption !== 'string' ||
           !raw.assumption.trim()
-        )
+        ) {
           throw new Error('invalid-synthetic-local-proposal')
+        }
+
         const report = owners.getOperating()
+
         if (
           report.status === 'legacy-view' ||
           !owners.isCurrentOperating(report)
-        )
+        ) {
           throw new Error('current-walking-source-required')
+        }
+
         if (
           raw.cycle.source !== report.source ||
           raw.cycle.fixedJoints !== report.source.rig.presets.stowed
-        )
+        ) {
           throw new Error('foreign-cycle-source-or-preset')
+        }
+
         keys(raw.selected, ['phase', 'at', 'chainId', 'targetAbduction'])
         const cycle = cycleOwner.prepare(report.source, raw.cycle)
+
         totals.motionPreparations++
         const motion = cycleOwner.prepareSelectedChainMotion(cycle, {
           ...raw.selected,
           format: 'walking-selected-chain-root-motion/1',
           cycle
         })
+
         totals.sweepPreparations++
         const sweep = prepareWalkingSelectedActionSweep(cycleOwner, motion)
+
         totals.sweepVertices += sweep.work.sourceVertices
         action = Object.freeze({
           actionId: raw.actionId,
@@ -329,11 +372,17 @@ export function createWalkingLocalActionWorkspace(owners: {
       ) {
         throw new Error('invalid-action-progress')
       }
+
       const value = action
-      if (!value || value.actionId !== raw.actionId)
+
+      if (!value || value.actionId !== raw.actionId) {
         throw new Error('missing-or-foreign-local-action')
-      if (!currentAction(value))
+      }
+
+      if (!currentAction(value)) {
         throw new Error('stale-local-action-source-demand-load-or-motion')
+      }
+
       totals.observationCalls++
       const observed = owners.observe({
         actionId: value.actionId,
@@ -342,13 +391,17 @@ export function createWalkingLocalActionWorkspace(owners: {
         validUntil: raw.validUntil,
         binding: { owner: cycleOwner, cycle: value.cycle, motion: value.motion }
       })
+
       if (observed.status === 'available') {
         observation = observed.observation
         observationWork = Object.freeze({
           ...observation.work,
           ...observed.work
         })
-      } else reasons.push(observed.reason)
+      } else {
+        reasons.push(observed.reason)
+      }
+
       if (kind === 'start' && 'relationBudget' in raw) {
         relation = relationOwner.prepare(
           { owner: cycleOwner, cycle: value.cycle },
@@ -359,14 +412,18 @@ export function createWalkingLocalActionWorkspace(owners: {
           }
         )
         totals.exactPredicates += relation.work.evaluator.exactPredicates
-      } else
+      } else {
         relation = relationOwner.read(
           { owner: cycleOwner, cycle: value.cycle },
           value.motion
         )
-      if (!relation) reasons.push('missing-current-local-relation')
-      else {
+      }
+
+      if (!relation) {
+        reasons.push('missing-current-local-relation')
+      } else {
         const coverage = relation.coverage
+
         if (
           relation.status !== 'clear' ||
           coverage.blocked ||
@@ -376,52 +433,71 @@ export function createWalkingLocalActionWorkspace(owners: {
             coverage.strictBounds +
               coverage.exactSeparated +
               coverage.declaredBoundary
-        )
+        ) {
           reasons.push('local-relation-not-complete-clear', ...relation.reasons)
+        }
       }
+
       monitor = monitorOwner.evaluate(context(value, raw.now), raw.monitor)
-      if (monitor.status !== 'within-synthetic-profile')
+      if (monitor.status !== 'within-synthetic-profile') {
         reasons.push(...monitor.reasons)
-      if (!observation || !owners.isCurrentObservation(observation))
+      }
+
+      if (!observation || !owners.isCurrentObservation(observation)) {
         reasons.push(
           'missing-or-stale-action-observation',
           ...(observation?.reasons ?? [])
         )
-      else {
-        if (observation.reliability.status !== 'reliable')
+      } else {
+        if (observation.reliability.status !== 'reliable') {
           reasons.push('insufficient-action-optics')
+        }
+
         for (const detection of observation.detections) {
           if (
             detection.kind === 'dynamic' &&
             overlaps(detection.bounds, value.sweep.bounds)
-          )
+          ) {
             reasons.push(
               detection.actorKind === 'person'
                 ? 'person-policy-hold'
                 : 'moving-object-policy-hold'
             )
-          else if (detection.kind === 'static') {
-            if (detection.anatomy.some((p) => p.role === 'leaf-blade'))
+          } else if (detection.kind === 'static') {
+            if (detection.anatomy.some((p) => p.role === 'leaf-blade')) {
               reasons.push('plant-contact-risk-unavailable')
-            else reasons.push('static-source-policy-hold')
+            } else {
+              reasons.push('static-source-policy-hold')
+            }
           }
         }
-        if (observation.coverage !== 'complete-empty')
+
+        if (observation.coverage !== 'complete-empty') {
           reasons.push('incomplete-action-observation', ...observation.reasons)
+        }
       }
+
       if (
         !currentAction(value) ||
         monitorOwner.read(context(value, raw.now), monitor) !== monitor
-      )
+      ) {
         reasons.push('stale-action-publication')
+      }
+
       admitted = !reasons.length
-      if (admitted) progress = proposedProgress
+      if (admitted) {
+        progress = proposedProgress
+      }
     } catch (error) {
       reasons.push(
         error instanceof Error ? error.message : 'unknown-local-action'
       )
     }
-    if (!Number.isFinite(proposedProgress)) proposedProgress = progress
+
+    if (!Number.isFinite(proposedProgress)) {
+      proposedProgress = progress
+    }
+
     const after = counts()
     const work: ActionWork = {
       cyclePreparations: after.cyclePreparations - before.cyclePreparations,
@@ -438,7 +514,11 @@ export function createWalkingLocalActionWorkspace(owners: {
       monitor: monitor?.work
     }
     let status: WalkingLocalActionDecision['status'] = 'held'
-    if (admitted) status = kind === 'complete' ? 'complete' : 'running'
+
+    if (admitted) {
+      status = kind === 'complete' ? 'complete' : 'running'
+    }
+
     const decision: WalkingLocalActionDecision = Object.freeze({
       format: 'walking-local-action-decision/1',
       identity: Object.freeze({}),
@@ -458,22 +538,31 @@ export function createWalkingLocalActionWorkspace(owners: {
       reasons: Object.freeze([...new Set(reasons)]),
       work: Object.freeze(work)
     })
+
     latest = decision
+
     return decision
   }
+
   return {
     configureMonitor: (profile: WalkingRuntimeMonitorProfile) => {
       live()
       monitorOwner.configure(profile)
       latest = undefined
     },
+
     start: (request: WalkingLocalActionRequest) => execute('start', request),
+
     continue: (request: WalkingLocalActionContinuation) =>
       execute('continue', request),
+
     complete: (request: WalkingLocalActionContinuation) =>
       execute('complete', request),
+
     get: () => latest,
+
     isCurrent,
+
     close: () => {
       closed = true
       latest = undefined

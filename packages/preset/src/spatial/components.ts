@@ -29,6 +29,7 @@ export const SPATIAL_MESH_SCHEMA: PropertySchema = {
       key: 'descriptor',
       kind: 'object',
       defaultValue: descriptor,
+
       validate(value) {
         try {
           return readSpatialDescriptor(value).kind === 'mesh'
@@ -41,6 +42,7 @@ export const SPATIAL_MESH_SCHEMA: PropertySchema = {
       key: 'visible',
       kind: 'boolean',
       defaultValue: true,
+
       validate: (value) => typeof value === 'boolean'
     }
   ]
@@ -67,16 +69,22 @@ const meshes = new WeakMap<
   object,
   { mesh: RenderMesh; descriptor: SpatialMesh }
 >()
+
 export const SPATIAL_MESH_RENDER_STRATEGY: EngineNeutralRenderStrategy<{
   descriptor: SpatialMesh
   visible: boolean
 }> = (graphic, data) => {
   const accepted = readSpatialDescriptor(data.descriptor)
-  if (accepted.kind !== 'mesh' || typeof data.visible !== 'boolean')
+
+  if (accepted.kind !== 'mesh' || typeof data.visible !== 'boolean') {
     throw new Error('Invalid spatial mesh model')
+  }
+
   let state = meshes.get(graphic)
+
   if (!state) {
     const mesh = new RenderMesh({ [SPATIAL_PROPERTY]: accepted })
+
     mesh.projectionIdentity = { visualId: data.id, elementId: data.id }
     graphic.addChild(mesh)
     state = { mesh, descriptor: accepted }
@@ -85,8 +93,10 @@ export const SPATIAL_MESH_RENDER_STRATEGY: EngineNeutralRenderStrategy<{
     state.mesh.update({ [SPATIAL_PROPERTY]: accepted })
     state.descriptor = accepted
   }
+
   graphic.visible = data.visible
 }
+
 Object.assign(SPATIAL_MESH_RENDER_STRATEGY, {
   directPropertyKeys: ['descriptor', 'visible']
 })

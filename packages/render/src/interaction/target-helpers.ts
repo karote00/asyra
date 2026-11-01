@@ -74,6 +74,7 @@ const distanceSquaredToSegment = (
   const dx = end.x - start.x
   const dy = end.y - start.y
   const lengthSq = dx * dx + dy * dy
+
   if (lengthSq === 0) {
     return getPointDistanceSquared(point, start)
   }
@@ -102,6 +103,7 @@ export const createRenderInteractionPointTarget = (
     bounds,
     capture: options.capture,
     meta: options.meta,
+
     hitTest: (point) =>
       getPointDistanceSquared(point, options.center) <= radiusSquared
   }
@@ -128,6 +130,7 @@ export const createRenderInteractionSegmentTarget = (
     bounds,
     capture: options.capture,
     meta: options.meta,
+
     hitTest: (point) =>
       distanceSquaredToSegment(point, options.start, options.end) <=
       radiusSquared
@@ -143,9 +146,11 @@ export const createRenderInteractionPolylineTarget = (
   const bounds = createBoundsForPoints(points, options.hitRadius)
 
   const segments: { start: PositionData; end: PositionData }[] = []
+
   for (let i = 0; i < points.length - 1; i += 1) {
     segments.push({ start: points[i], end: points[i + 1] })
   }
+
   if (closed && points.length > 2) {
     segments.push({ start: points[points.length - 1], end: points[0] })
   }
@@ -158,13 +163,16 @@ export const createRenderInteractionPolylineTarget = (
     bounds,
     capture: options.capture,
     meta: options.meta,
+
     hitTest: (point) => {
       for (const segment of segments) {
         const dist = distanceSquaredToSegment(point, segment.start, segment.end)
+
         if (dist <= radiusSquared) {
           return true
         }
       }
+
       return false
     }
   }

@@ -17,6 +17,7 @@ export const bindPresetProfileProvider = (
   spatial?: SpatialPresentationOptions
 ): PresetProfileProviderResult => {
   const descriptor = PresetCatalog.profiles.find(({ id }) => id === profile)
+
   if (!descriptor?.available) {
     throw new PresetApplyError(
       PRESET_APPLY_ERROR_CODES.UNAVAILABLE_PROFILE,
@@ -37,6 +38,7 @@ export const bindPresetProfileProvider = (
         ? spatialProvider
         : createPixiRenderEngine
     )
+
     return Object.freeze({
       presetEngineId: descriptor.presetEngineId,
       cleanup

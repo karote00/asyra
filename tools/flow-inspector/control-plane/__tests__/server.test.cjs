@@ -8,38 +8,50 @@ const test = require('node:test')
 const vm = require('node:vm')
 const { startServer, parseLocalUrl } = require('../server.cjs')
 const root = path.resolve(__dirname, '../../../..')
+
 test('URL contract rejects remote hosts and missing configuration', () => {
   for (const url of [
     undefined,
     'http://0.0.0.0:4318',
     'https://127.0.0.1:4318',
     'http://127.0.0.1:4318/other'
-  ])
+  ]) {
     assert.throws(() => parseLocalUrl(url))
+  }
 })
 test('HTTP preserves canvas assets and rejects unauthorized, cross-origin, and arbitrary commands before execution', async (context) => {
   const originalEvaluate = vm.runInNewContext
   let catalogLoads = 0
+
   vm.runInNewContext = (...args) => {
     const result = originalEvaluate(...args)
-    if (args[1]?.FLOW_INSPECTOR_WORKSPACE_BUNDLE) catalogLoads++
+
+    if (args[1]?.FLOW_INSPECTOR_WORKSPACE_BUNDLE) {
+      catalogLoads++
+    }
+
     return result
   }
+
   context.after(() => {
     vm.runInNewContext = originalEvaluate
   })
   const parent = path.join(root, 'tmp/flow-inspector/server-tests')
+
   fs.mkdirSync(parent, { recursive: true })
   const directory = fs.mkdtempSync(path.join(parent, 'store-'))
   const server = await startServer(root, {
     url: 'http://127.0.0.1:0',
     serviceOptions: { directory }
   })
+
   try {
     const entry = await fetch(server.origin, { redirect: 'manual' })
+
     assert.equal(entry.status, 200)
     assert.equal(entry.headers.get('location'), null)
     const rootPage = await entry.text()
+
     assert.match(rootPage, /data-workspace-routing="path"/)
     assert.match(rootPage, /<base href="\/tools\/flow-inspector\/workspace\/"/)
     for (const pathname of [
@@ -48,13 +60,16 @@ test('HTTP preserves canvas assets and rejects unauthorized, cross-origin, and a
       '/tools/flow-inspector/workspace/workspace.html'
     ]) {
       const response = await fetch(server.origin + pathname)
+
       assert.equal(response.status, 200, pathname)
       assert.equal(await response.text(), rootPage)
     }
+
     const trailingSlash = await fetch(
       server.origin + '/ai-drawing-performance/',
       { redirect: 'manual' }
     )
+
     assert.equal(trailingSlash.status, 308)
     assert.equal(
       trailingSlash.headers.get('location'),
@@ -65,39 +80,37 @@ test('HTTP preserves canvas assets and rejects unauthorized, cross-origin, and a
       '/asyra-executable-examples'
     ]) {
       const missing = await fetch(server.origin + pathname)
+
       assert.equal(missing.status, 404)
       assert.match(await missing.text(), /data-workspace-routing="path"/)
     }
+
     for (const asset of [
-      'viewer.js',
-      'viewer.css',
-      'workspace/target.js',
       'workspace/generated/flow-inspector-workspace.js',
       'workspace/generated/flow-inspector-workspace.css'
     ]) {
       const response = await fetch(
         server.origin + '/tools/flow-inspector/' + asset
       )
+
       assert.equal(response.status, 200)
       assert.equal(
         await response.text(),
         fs.readFileSync(path.join(root, 'tools/flow-inspector', asset), 'utf8')
       )
     }
-    const target = await fetch(
-      server.origin +
-        '/tools/flow-inspector/workspace/target.html?inspector=transaction-atomicity'
-    )
-    assert.equal(target.status, 200)
-    assert.match(await target.text(), /src="\/board.js"/)
-    assert.match(
-      target.headers.get('content-security-policy'),
-      /frame-ancestors 'self'/
-    )
-    assert.match(
-      target.headers.get('content-security-policy'),
-      /script-src 'self'/
-    )
+
+    for (const retired of [
+      '/board.js',
+      '/localization.js',
+      '/tools/flow-inspector/viewer.js',
+      '/tools/flow-inspector/workspace/target.html',
+      '/tools/flow-inspector/workspace/target.js',
+      '/tools/flow-inspector/workspace/legacy-viewer.js'
+    ]) {
+      assert.equal((await fetch(server.origin + retired)).status, 404, retired)
+    }
+
     assert.equal(
       (await fetch(server.origin + '/api/state?inspector=x')).status,
       400
@@ -126,6 +139,7 @@ test('HTTP preserves canvas assets and rejects unauthorized, cross-origin, and a
       '.github/workflows/main.yml'
     ]) {
       const linked = await fetch(server.origin + '/' + relative)
+
       assert.equal(linked.status, 200)
       assert.match(linked.headers.get('content-type'), /^text\/plain/)
       assert.equal(
@@ -133,6 +147,7 @@ test('HTTP preserves canvas assets and rejects unauthorized, cross-origin, and a
         fs.readFileSync(path.join(root, relative), 'utf8')
       )
     }
+
     for (const [name, id] of [
       ['transaction-flow-inspector', 'transaction-atomicity'],
       ['group-interaction-mvp-flow-inspector', 'group-interaction'],
@@ -142,22 +157,27 @@ test('HTTP preserves canvas assets and rejects unauthorized, cross-origin, and a
         server.origin + '/tools/flow-inspector/inspectors/' + name + '.html',
         { redirect: 'manual' }
       )
-      assert.equal(linked.status, 302, name)
-      assert.equal(linked.headers.get('location'), '/' + id)
+
+      assert.equal(linked.status, 404, name)
+      assert.equal(linked.headers.get('location'), null)
+      assert.equal((await fetch(server.origin + '/' + id)).status, 200)
       assert.match(
         linked.headers.get('content-security-policy'),
         /frame-ancestors 'none'/
       )
     }
+
     for (const privatePath of [
       '/apps/asyra-design/e2e/unknown.spec.ts',
       '/tools/flow-inspector/inspectors/unknown.html'
     ]) {
       assert.equal((await fetch(server.origin + privatePath)).status, 404)
     }
+
     const session = await fetch(server.origin + '/api/session').then(
       (response) => response.json()
     )
+
     for (const endpoint of ['/api/mapping/prepare', '/api/mapping/decide']) {
       assert.equal(
         (
@@ -170,6 +190,7 @@ test('HTTP preserves canvas assets and rejects unauthorized, cross-origin, and a
         403
       )
     }
+
     const mapping = await fetch(server.origin + '/api/mapping/prepare', {
       method: 'POST',
       headers: {
@@ -178,14 +199,17 @@ test('HTTP preserves canvas assets and rejects unauthorized, cross-origin, and a
       },
       body: '{}'
     })
+
     assert.equal(mapping.status, 200)
     assert.equal((await mapping.json()).status, 'unchanged')
+
     const post = (body, headers = {}) =>
       fetch(server.origin + '/api/runs', {
         method: 'POST',
         headers: { 'content-type': 'application/json', ...headers },
         body: JSON.stringify(body)
       })
+
     assert.equal((await post({})).status, 403)
     assert.equal(
       (
@@ -229,6 +253,7 @@ test('HTTP preserves canvas assets and rejects unauthorized, cross-origin, and a
         )
         .on('error', reject)
     })
+
     assert.equal(hostStatus, 403)
     assert.equal(
       (await fetch(server.origin + '/../../package.json')).status,
@@ -239,18 +264,22 @@ test('HTTP preserves canvas assets and rejects unauthorized, cross-origin, and a
       {},
       { 'x-proof-capability': session.capability, origin: server.origin }
     )
+
     assert.equal(response.status, 202)
     const { id } = await response.json()
     const record = await server.service.wait(id)
+
     assert.equal(record.evidence.status, 'passed')
     const saved = await fetch(server.origin + '/api/runs/' + id).then(
       (response) => response.json()
     )
+
     assert.equal(saved.snapshot.digest, record.snapshot.digest)
     for (const name of ['report', 'source-manifest']) {
       const artifact = await fetch(
         server.origin + '/api/runs/' + id + '/artifacts/' + name
       )
+
       assert.equal(artifact.status, 200)
       assert.match(artifact.headers.get('content-type'), /application\/json/)
       const bytes = Buffer.from(await artifact.arrayBuffer())
@@ -258,11 +287,13 @@ test('HTTP preserves canvas assets and rejects unauthorized, cross-origin, and a
         .createHash('sha256')
         .update(bytes)
         .digest('hex')
+
       assert.equal(
         digest,
         name === 'report' ? record.runner.reportDigest : record.snapshot.digest
       )
     }
+
     assert.equal(
       (await fetch(server.origin + '/api/runs/' + id + '/artifacts/record'))
         .status,
@@ -286,6 +317,7 @@ test('HTTP target assessment actions retain service authority and cached results
   const targetEvidenceOwner = require('../target-evidence.cjs')
   const contract = require('../contracts.cjs').loadContract(root)
   const parent = path.join(root, 'tmp/flow-inspector/server-assessment-tests')
+
   fs.mkdirSync(parent, { recursive: true })
   const directory = fs.mkdtempSync(path.join(parent, 'run-'))
   const captured = sourceOwner.captureSource(
@@ -298,15 +330,19 @@ test('HTTP target assessment actions retain service authority and cached results
     url: 'http://127.0.0.1:0',
     serviceOptions: {
       directory: path.join(captured.sourceRoot, 'runs'),
+
       runner: async (options) => {
-        if (holdCancellation && !options.signal.aborted)
+        if (holdCancellation && !options.signal.aborted) {
           await new Promise((resolve) =>
             options.signal.addEventListener('abort', resolve, { once: true })
           )
+        }
+
         return require('../runner.cjs').runVerification(options)
       }
     }
   })
+
   try {
     const service = server.service
     const proof = await service.wait(
@@ -316,6 +352,7 @@ test('HTTP target assessment actions retain service authority and cached results
       { attemptId: proof.id },
       LOCAL_ACTOR
     )
+
     service.decideEvolution(
       {
         id: review.id,
@@ -360,12 +397,14 @@ test('HTTP target assessment actions retain service authority and cached results
       'x-proof-capability': session.capability,
       origin: server.origin
     }
+
     const post = (pathname, body, extra = headers) =>
       fetch(server.origin + pathname, {
         method: 'POST',
         headers: extra,
         body: JSON.stringify(body)
       })
+
     assert.equal(
       (
         await post('/api/target-assessments', request, {
@@ -403,9 +442,11 @@ test('HTTP target assessment actions retain service authority and cached results
     )
     assert.equal(service.targetAssessments().length, 0)
     const started = await post('/api/target-assessments', request)
+
     assert.equal(started.status, 202)
     const { id } = await started.json()
     const completed = await service.waitTargetAssessment(id)
+
     assert.equal(completed.result.targetContract.status, 'passed')
     assert.equal(completed.result.integration.status, 'pending')
     const acceptance = {
@@ -415,6 +456,7 @@ test('HTTP target assessment actions retain service authority and cached results
       reason: 'HTTP must forward only the explicit target acceptance request',
       retirement: []
     }
+
     assert.equal(
       (
         await post('/api/targets/accept', acceptance, {
@@ -431,15 +473,18 @@ test('HTTP target assessment actions retain service authority and cached results
       targetEvidenceOwner,
       'projectTargetAssessmentCurrentness'
     )
+
     for (let i = 0; i < 3; i++) {
       const detail = await fetch(
         server.origin + '/api/target-assessments/' + id
       )
+
       assert.equal(detail.status, 200)
       assert.deepEqual(await detail.json(), completed)
       const list = await fetch(server.origin + '/api/target-assessments').then(
         (response) => response.json()
       )
+
       assert.deepEqual(list, [completed])
       assert.deepEqual(
         await post('/api/target-assessments', request).then((response) =>
@@ -448,6 +493,7 @@ test('HTTP target assessment actions retain service authority and cached results
         { id }
       )
     }
+
     assert.equal(reads.mock.callCount(), 0)
     assert.equal(assess.mock.callCount(), 0)
     assert.equal(project.mock.callCount(), 0)
@@ -500,11 +546,13 @@ test('HTTP target assessment actions retain service authority and cached results
       '/api/target-assessments/' + second.id + '/cancel',
       {}
     )
+
     assert.equal(cancelled.status, 200)
     assert.equal((await cancelled.json()).phase, 'cancelled')
     if (process.platform === 'darwin') {
       holdCancellation = false
       const dependencies = path.join(captured.sourceRoot, 'node_modules')
+
       fs.rmSync(dependencies, { recursive: true, force: true })
       fs.symlinkSync(path.join(root, 'node_modules'), dependencies, 'dir')
       const task = await service.waitTask(
@@ -530,11 +578,12 @@ test('HTTP target assessment actions retain service authority and cached results
         sourceAttemptId: task.attempts.at(-1).id
       }
       const count = service.state().runs.length
+
       for (const [sourceTaskId, status] of [
         [null, 400],
         ['bad-task', 400],
         [randomUUID(), 409]
-      ])
+      ]) {
         assert.equal(
           (
             await post('/api/target-assessments', {
@@ -544,6 +593,8 @@ test('HTTP target assessment actions retain service authority and cached results
           ).status,
           status
         )
+      }
+
       assert.equal(
         (
           await post('/api/target-assessments', taskRequest, {
@@ -564,9 +615,11 @@ test('HTTP target assessment actions retain service authority and cached results
       )
       assert.equal(service.state().runs.length, count)
       const response = await post('/api/target-assessments', taskRequest)
+
       assert.equal(response.status, 202)
       const taskAssessmentId = (await response.json()).id
       const settled = await service.waitTargetAssessment(taskAssessmentId)
+
       assert.equal(settled.phase, 'completed')
       assert.equal(settled.runtime.taskId, task.id)
       assert.equal(settled.runtime.attemptId, taskRequest.sourceAttemptId)
@@ -584,6 +637,7 @@ test('HTTP target assessment actions retain service authority and cached results
         assert.equal(service.get(slot.id).targetAssessmentId, taskAssessmentId)
         assert.equal(service.get(slot.id).format, 3)
       }
+
       await service.controlTask(task.id, { action: 'revoke' }, LOCAL_ACTOR)
       const io = t.mock.method(fs, 'readFileSync')
       const taskAssess = t.mock.method(
@@ -599,11 +653,13 @@ test('HTTP target assessment actions retain service authority and cached results
         taskProject.mock.callCount()
       ]
       const replay = await post('/api/target-assessments', taskRequest)
+
       assert.equal(replay.status, 202)
       assert.equal((await replay.json()).id, taskAssessmentId)
       const detail = await fetch(
         server.origin + '/api/target-assessments/' + taskAssessmentId
       ).then((value) => value.json())
+
       assert.deepEqual(detail.result, settled.result)
       assert.equal(detail.projection.current, false)
       assert.equal(io.mock.callCount(), 0)
@@ -687,6 +743,7 @@ test('ordinary test observations are readable without becoming accepted proof ev
       ]
     }
   )
+
   saveObservation(observationPath, record)
   const server = await startServer(root, {
     url: 'http://127.0.0.1:4349',
@@ -695,23 +752,28 @@ test('ordinary test observations are readable without becoming accepted proof ev
       observationPath
     }
   })
+
   t.after(async () => {
     await server.close()
     fs.rmSync(directory, { recursive: true, force: true })
   })
   const response = await fetch(server.origin + '/api/test-results/' + record.id)
+
   assert.equal(response.status, 200)
   assert.deepEqual(await response.json(), record)
   const output = []
   const { main } = require('../cli.cjs')
+
   await main(['--url', server.origin + '/', 'test-results', record.id], {
     repositoryRoot: root,
+
     write: (line) => output.push(line)
   })
   assert.deepEqual(JSON.parse(output.join('')), record)
   const listing = await (
     await fetch(server.origin + '/api/test-results')
   ).json()
+
   assert.equal(
     listing.currentCases[0].locations[0].stepId,
     contract.cases[0].stepId
@@ -725,6 +787,7 @@ test('ordinary test observations are readable without becoming accepted proof ev
     record.executionFailureDetails
   )
   const selector = encodeURIComponent(record.cases[0].id)
+
   assert.equal(
     (
       await fetch(
@@ -742,8 +805,10 @@ test('ordinary test observations are readable without becoming accepted proof ev
       '&observation=' +
       selector,
     '/unknown-page?observation=' + selector
-  ])
+  ]) {
     assert.equal((await fetch(server.origin + route)).status, 400, route)
+  }
+
   assert.equal(
     (
       await fetch(

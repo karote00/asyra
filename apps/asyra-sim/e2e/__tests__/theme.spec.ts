@@ -7,6 +7,7 @@ test('theme icon retains an explicit choice without editing the experiment or lo
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
   const history = await page.getByTestId('history-depth').textContent()
+
   await page
     .getByRole('button', { name: 'Switch to dark mode', exact: true })
     .click()
@@ -59,6 +60,7 @@ test('system dark preference and blocked preference storage still allow switchin
     Storage.prototype.getItem = () => {
       throw new Error('Storage denied')
     }
+
     Storage.prototype.setItem = () => {
       throw new Error('Storage denied')
     }

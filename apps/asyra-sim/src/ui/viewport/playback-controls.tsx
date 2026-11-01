@@ -39,7 +39,9 @@ export function PlaybackControls({
   useEffect(() => {
     clock.current = new PlaybackClock({
       request: (callback) => requestAnimationFrame(callback),
+
       cancel: (handle) => cancelAnimationFrame(handle),
+
       now: () => performance.now()
     })
 
@@ -60,11 +62,15 @@ export function PlaybackControls({
   }, [])
 
   useEffect(() => {
-    if (!active) pause()
+    if (!active) {
+      pause()
+    }
   }, [active])
 
   const play = () => {
-    if (!active || document.hidden || interval[0] >= interval[1]) return
+    if (!active || document.hidden || interval[0] >= interval[1]) {
+      return
+    }
 
     const from = time >= interval[1] ? interval[0] : time
 
@@ -121,7 +127,9 @@ export function PlaybackControls({
           aria-label={playing ? 'Pause trajectory' : 'Play trajectory'}
           disabled={!active || interval[0] >= interval[1]}
           onClick={() => {
-            if (!playing) return play()
+            if (!playing) {
+              return play()
+            }
 
             pause()
             sample(time, true)

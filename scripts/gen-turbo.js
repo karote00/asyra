@@ -12,15 +12,20 @@ const baseConfigPath = path.join(workspaceRoot, 'turbo.base.json')
 const ignorePackages = ['create-app/*']
 
 const getBuildTask = (pkg) => {
-  if (pkg.contentOnly) return null
+  if (pkg.contentOnly) {
+    return null
+  }
+
   const repoName = pkg.name.split('/').pop()
   const packageBuildTask = `build:${repoName}`
   const task = [packageBuildTask, 'react:build', 'build'].find(
     (candidate) => pkg.scripts[candidate]
   )
+
   if (!task) {
     throw new Error(`${pkg.name} must declare a canonical build task`)
   }
+
   return task
 }
 
@@ -33,7 +38,9 @@ function getWorkspacePackages() {
   const pkgs = []
 
   for (const pattern of workspaces) {
-    if (ignorePackages.includes(pattern)) continue
+    if (ignorePackages.includes(pattern)) {
+      continue
+    }
 
     const baseDir = pattern.replace('/*', '')
     const dirs = pattern.endsWith('/*')
@@ -43,7 +50,10 @@ function getWorkspacePackages() {
     for (const dir of dirs) {
       const pkgDir = path.join(workspaceRoot, baseDir, dir)
       const pkgJsonPath = path.join(pkgDir, 'package.json')
-      if (!fs.existsSync(pkgJsonPath)) continue
+
+      if (!fs.existsSync(pkgJsonPath)) {
+        continue
+      }
 
       const pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf-8'))
 
@@ -59,6 +69,7 @@ function getWorkspacePackages() {
       })
     }
   }
+
   return pkgs.sort((left, right) => left.name.localeCompare(right.name))
 }
 
@@ -69,13 +80,17 @@ function generateTurboJson(packages) {
 
   for (const pkg of packages) {
     const buildCmd = getBuildTask(pkg)
+
     if (buildCmd === null) {
-      if (Object.keys(pkg.scripts).length || pkg.dependencies.length)
+      if (Object.keys(pkg.scripts).length || pkg.dependencies.length) {
         throw new Error(
           `${pkg.name} content-only workspace cannot declare scripts or workspace dependencies`
         )
+      }
+
       continue
     }
+
     if (!pkg.scripts[buildCmd]) {
       throw new Error(`${pkg.name} must declare the canonical ${buildCmd} task`)
     }
@@ -85,10 +100,13 @@ function generateTurboJson(packages) {
       outputs: ['dist/**'],
       dependsOn: pkg.dependencies.flatMap((dep) => {
         const dependency = packagesByName.get(dep)
+
         if (!dependency) {
           throw new Error(`${pkg.name} references unknown workspace ${dep}`)
         }
+
         const dependencyBuild = getBuildTask(dependency)
+
         return dependencyBuild ? [`${dep}#${dependencyBuild}`] : []
       })
     }
@@ -111,6 +129,7 @@ function generateTurboJson(packages) {
 }
 
 const args = process.argv.slice(2)
+
 if (args.length !== 1 || !['--write', '--check'].includes(args[0])) {
   console.error('Usage: node scripts/gen-turbo.js --write|--check')
   process.exit(1)
@@ -126,9 +145,11 @@ if (args[0] === '--write') {
   const current = fs.existsSync(turboJsonPath)
     ? fs.readFileSync(turboJsonPath, 'utf8')
     : ''
+
   if (current !== generated) {
     console.error('turbo.json is stale; run yarn gen:turbo and commit it')
     process.exit(1)
   }
+
   console.log('turbo.json is synchronized')
 }

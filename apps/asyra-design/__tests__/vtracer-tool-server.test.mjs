@@ -59,6 +59,7 @@ test('the server rejects unsupported content, profile, empty input, and pre-abor
   }
 
   const controller = new globalThis.AbortController()
+
   controller.abort('cancelled')
   await assert.rejects(
     convertVTracerBuffer({
@@ -75,6 +76,7 @@ test('the server accepts an explicitly typed WebP reference', async () => {
   const bytes = await readFile(
     path.join(appRoot, 'e2e/fixtures/reference-logo.png')
   )
+
   assert.equal(bytes.subarray(8, 12).toString('ascii'), 'WEBP')
   const svg = await convertVTracerBuffer({
     bytes,
@@ -82,5 +84,6 @@ test('the server accepts an explicitly typed WebP reference', async () => {
     profile: 'photo-faithful',
     signal: new globalThis.AbortController().signal
   })
+
   assert.match(svg, /<svg[^>]+width="250"[^>]+height="253"/)
 })

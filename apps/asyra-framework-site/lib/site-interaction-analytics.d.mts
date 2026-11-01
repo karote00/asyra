@@ -10,6 +10,7 @@ export const SITE_EVENTS: Readonly<
     string
   >
 >
+
 type Action = Readonly<{ id: string; action: string; control_id?: string }>
 export const SITE_ACTIONS: Readonly<
   Record<
@@ -26,6 +27,7 @@ export const SITE_ACTIONS: Readonly<
     Action
   >
 >
+
 export function installSiteAnalytics(
   browser: Window,
   config: { pagePaths: readonly string[]; caseIds: readonly string[] }

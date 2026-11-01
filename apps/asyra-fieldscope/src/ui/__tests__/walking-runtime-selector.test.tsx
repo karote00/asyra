@@ -16,6 +16,7 @@ it('routes explicit model choices to the canonical walking runtime selection', a
       undefined
   )
   const runtime = { setWalkingRuntimeSelection } as unknown as FarmRuntime
+
   const render = async (
     selection: ReturnType<FarmRuntime['getWalkingRuntimeSelection']>
   ) =>
@@ -30,12 +31,14 @@ it('routes explicit model choices to the canonical walking runtime selection', a
   try {
     await render(DEFAULT_WALKING_RUNTIME_SELECTION)
     const [legacy, walking] = host.querySelectorAll('button')
+
     expect(legacy.ariaPressed).toBe('true')
     expect(walking.ariaPressed).toBe('false')
 
     await act(async () => walking.click())
     expect(setWalkingRuntimeSelection).toHaveBeenCalledTimes(1)
     const selected = setWalkingRuntimeSelection.mock.calls[0][0]
+
     expect(selected).toMatchObject({
       format: 'walking-runtime-selection/1',
       mode: 'walking-active',
@@ -46,7 +49,10 @@ it('routes explicit model choices to the canonical walking runtime selection', a
         sourceModel: { kind: 'solid-articulation/2' }
       }
     })
-    if (selected.mode !== 'walking-active') throw new Error('Expected walking')
+    if (selected.mode !== 'walking-active') {
+      throw new Error('Expected walking')
+    }
+
     expect(selected.definition.legs).toHaveLength(6)
     expect(
       selected.definition.arms.map(({ side, role }) => `${side}-${role}`)

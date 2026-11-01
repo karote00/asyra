@@ -59,8 +59,10 @@ it('reuses all-pair clear evidence throughout playback without preparing live in
     new RecordedPlaybackEvidence(run)
   )
 
-  for (const time of [0, 1.234, 4.1, 8])
+  for (const time of [0, 1.234, 4.1, 8]) {
     preview.sample(time, { discontinuity: false })
+  }
+
   await Promise.resolve()
 
   expect(publish.mock.lastCall?.[0]).toMatchObject({
@@ -76,7 +78,9 @@ it('reuses all-pair clear evidence throughout playback without preparing live in
 it('checks an unclassified pose before a recorded witness and fences old live delivery when seeking to known evidence', async () => {
   const run = recordedRun('finding')
   const input = run.snapshot
+
   let notify: () => void = () => undefined
+
   let signal: AbortSignal | undefined
   const state: LiveState = {
     status: 'error',
@@ -93,9 +97,12 @@ it('checks an unclassified pose before a recorded witness and fences old live de
   const api = {
     open,
     sample: vi.fn(),
+
     getState: () => state,
+
     subscribe: (listener: () => void) => {
       notify = listener
+
       return () => undefined
     }
   } as unknown as SimRuntime['features']['live']
@@ -135,7 +142,9 @@ it('checks an unclassified pose before a recorded witness and fences old live de
 
 it('updates the target pose immediately while retaining the last checked feedback until the exact check is accepted', async () => {
   const input = liveFixture()
+
   let notify: () => void = () => undefined
+
   let state: LiveState = { status: 'idle', sample: null, error: null }
   let signal: AbortSignal | undefined
   const open = vi.fn(
@@ -149,9 +158,12 @@ it('updates the target pose immediately while retaining the last checked feedbac
   const api = {
     open,
     sample: request,
+
     getState: () => state,
+
     subscribe: (listener: () => void) => {
       notify = listener
+
       return () => undefined
     }
   } as unknown as SimRuntime['features']['live']
@@ -169,6 +181,7 @@ it('updates the target pose immediately while retaining the last checked feedbac
   await Promise.resolve()
 
   const evidence = runOfficialClearanceMethod(sampleSnapshot(input, 0))
+
   state = {
     status: 'ready',
     sample: {
@@ -182,10 +195,12 @@ it('updates the target pose immediately while retaining the last checked feedbac
   }
   notify()
   const acceptedView = publish.mock.lastCall?.[0]
+
   expect(acceptedView?.feedback?.kind).not.toBe('checking')
 
   const target = 3.872
   const notifications = publish.mock.calls.length
+
   preview.sample(target, { discontinuity: true })
 
   expect(publish.mock.lastCall?.[0]).toMatchObject({

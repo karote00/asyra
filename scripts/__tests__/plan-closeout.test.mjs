@@ -45,15 +45,18 @@ function example(mode = 'plan-closeout') {
     async isAncestor(a, b) {
       return order.includes(a) && order.indexOf(a) <= order.indexOf(b)
     },
+
     async read(sha, file) {
       return files[sha]?.[file] ?? null
     },
+
     async changedPaths(a, b) {
       return [
         ...new Set([...Object.keys(files[a]), ...Object.keys(files[b])])
       ].filter((file) => files[a][file] !== files[b][file])
     }
   }
+
   return { context, baseSha, headSha, reviewedSha, snapshot, files }
 }
 
@@ -75,6 +78,7 @@ test('closeout relocates outgoing links and synchronizes incoming plan reference
   const input = example()
   const links =
     '\n[Contract](../specs/example.md#done)\n[Self](./example.md#task-1)\n[Remote](https://example.com/guide)\n[Local](#task-1)\n[ref]: ../specs/example.md\n'
+
   input.files[reviewedSha][active] += links
   input.files[headSha][paths.completed] = input.files[headSha][
     paths.completed
@@ -109,6 +113,7 @@ test('closeout relocates outgoing links and synchronizes incoming plan reference
     input.files[reviewedSha][file] = before
     input.files[headSha][file] = after
   }
+
   assert.equal((await evaluateCloseout(input)).applicable, true)
 })
 
@@ -116,12 +121,15 @@ test('a related reference does not authorize unrelated edits or historical rewri
   for (const suffix of ['\nChanged acceptance.', '\nconst bypass = true']) {
     const input = example()
     const file = 'docs/ai/framework/specs/example.md'
+
     input.files[reviewedSha][file] = `[Plan](../plans/example.md)`
     input.files[headSha][file] =
       `[Plan](../plans/completed/example.md)${suffix}`
     await assert.rejects(evaluateCloseout(input), /limited/)
   }
+
   const input = example()
+
   input.files[headSha][paths.completed] = input.files[headSha][
     paths.completed
   ].replace('Required outcomes', 'Different outcomes')
@@ -136,6 +144,7 @@ test('similar filenames and external URLs are not incoming plan references', asy
   ]) {
     const input = example()
     const file = 'docs/ai/framework/specs/example.md'
+
     input.files[reviewedSha][file] = `[Other](${reference})`
     input.files[headSha][file] =
       `[Other](${reference.replace(active, paths.completed)})`
@@ -145,6 +154,7 @@ test('similar filenames and external URLs are not incoming plan references', asy
 
 test('task metadata cannot substitute for trusted exact-source review', async () => {
   const input = example()
+
   input.context.reviewedSha = reviewedSha
   await assert.rejects(
     evaluateCloseout({ ...input, reviewedSha: undefined }),
@@ -168,6 +178,7 @@ test('implementation and acceptance changes after review require a new review', 
     'docs/ai/framework/rules/acceptance.md'
   ]) {
     const input = example()
+
     input.files[headSha][file] = 'changed'
     await assert.rejects(evaluateCloseout(input), /limited/)
   }
@@ -204,8 +215,10 @@ test('missing move, missing outcome, stale index and rewritten history fail', as
       files[headSha][paths.decisions] = '# Decisions\n'
     }
   ]
+
   for (const mutate of mutations) {
     const input = example()
+
     mutate(input.files)
     await assert.rejects(evaluateCloseout(input))
   }
@@ -214,6 +227,7 @@ test('missing move, missing outcome, stale index and rewritten history fail', as
 test('standalone and partial modes cannot hide a moved plan', async () => {
   for (const mode of ['standalone', 'plan-task']) {
     const input = example(mode)
+
     Reflect.deleteProperty(input.files[headSha], active)
     input.files[headSha][paths.completed] = plan
     await assert.rejects(evaluateCloseout(input))
@@ -222,6 +236,7 @@ test('standalone and partial modes cannot hide a moved plan', async () => {
 
 test('standalone corrections to an existing completed record do not close another plan', async () => {
   const input = example('standalone')
+
   input.files[baseSha][paths.completed] = 'old record'
   input.files[headSha][paths.completed] = 'corrected link'
   assert.equal((await evaluateCloseout(input)).applicable, false)
@@ -229,9 +244,11 @@ test('standalone corrections to an existing completed record do not close anothe
 
 test('missing base plan and missing integrated prerequisites fail', async () => {
   const input = example('plan-task')
+
   Reflect.deleteProperty(input.files[baseSha], active)
   await assert.rejects(evaluateCloseout(input), /missing/)
   const other = example('plan-task')
+
   other.context.prerequisites = ['d'.repeat(40)]
   await assert.rejects(evaluateCloseout(other), /prerequisite/)
 })
@@ -240,11 +257,15 @@ test('immutable file reads are reused once per evaluation and refreshed for the 
   const input = example()
   const calls = new Map()
   const original = input.snapshot.read
+
   input.snapshot.read = async (sha, file) => {
     const key = JSON.stringify([sha, file])
+
     calls.set(key, (calls.get(key) ?? 0) + 1)
+
     return original(sha, file)
   }
+
   await evaluateCloseout(input)
   assert.ok(calls.size > 0)
   assert.ok([...calls.values()].every((count) => count === 1))

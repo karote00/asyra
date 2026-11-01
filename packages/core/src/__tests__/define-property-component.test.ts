@@ -125,6 +125,7 @@ describe('definePropertyComponent', () => {
     })
 
     const ComponentCtor = getPropertyComponent(TEST_TYPE)
+
     expect(ComponentCtor).toBeDefined()
     if (!ComponentCtor) {
       return
@@ -159,6 +160,7 @@ describe('definePropertyComponent', () => {
     })
 
     const ComponentCtor = getPropertyComponent(TEST_TYPE)
+
     expect(ComponentCtor).toBeDefined()
     if (!ComponentCtor) {
       return
@@ -202,6 +204,7 @@ describe('definePropertyComponent', () => {
         key: 'childIds',
         childType: TEST_CHILD_TYPE,
         mode: 'ids-or-objects',
+
         toChildData: (item) => ({
           id: typeof item.id === 'string' ? item.id : undefined,
           x: typeof item.x === 'number' ? item.x : 0,
@@ -211,6 +214,7 @@ describe('definePropertyComponent', () => {
     })
 
     const ParentCtor = getPropertyComponent(TEST_TYPE)
+
     expect(ParentCtor).toBeDefined()
     if (!ParentCtor) {
       return
@@ -225,11 +229,13 @@ describe('definePropertyComponent', () => {
     const saved = parent.save() as unknown as {
       childIds: string[]
     }
+
     expect(Array.isArray(saved.childIds)).toBe(true)
     expect(saved.childIds).toHaveLength(1)
     expect(typeof saved.childIds[0]).toBe('string')
 
     const child = propsManager.getPropertyById(saved.childIds[0])
+
     expect(child).toBeDefined()
     expect(child?.get('x' as keyof PropertyComponentInstanceDataTypes)).toBe(11)
     expect(child?.get('y' as keyof PropertyComponentInstanceDataTypes)).toBe(22)
@@ -253,10 +259,12 @@ describe('definePropertyComponent', () => {
         key: 'childIds',
         childType: TEST_CHILD_TYPE,
         mode: 'ids-or-objects',
+
         toChildData: (item) => ({
           x: typeof item.x === 'number' ? item.x : 0,
           y: typeof item.y === 'number' ? item.y : 0
         }),
+
         toValue: (child, childId) => ({
           id: childId,
           x: child.get('x'),
@@ -266,6 +274,7 @@ describe('definePropertyComponent', () => {
     })
 
     const ParentCtor = getPropertyComponent(TEST_TYPE)
+
     expect(ParentCtor).toBeDefined()
     if (!ParentCtor) {
       return
@@ -334,19 +343,25 @@ describe('property child relations', () => {
   it('removes a child relation while preserving both property runtimes and disposing old subscriptions', () => {
     const Child = getPropertyComponent(TEST_CHILD_TYPE)
     const Parent = getPropertyComponent(TEST_TYPE)
+
     expect(Child).toBeDefined()
     expect(Parent).toBeDefined()
-    if (!Child || !Parent) throw new Error('Expected property runtimes')
+    if (!Child || !Parent) {
+      throw new Error('Expected property runtimes')
+    }
 
     const child = new Child({ id: 'relation-child', type: TEST_CHILD_TYPE })
+
     propsManager.addToMap(child)
     const parent = new Parent({
       id: 'relation-parent',
       type: TEST_TYPE,
       childIds: ['relation-child']
     } as Partial<PropertyComponentRawData>)
+
     propsManager.addToMap(parent)
     const staleParentListener = vi.fn()
+
     parent.on(staleParentListener)
 
     propsManager.reset()
@@ -373,13 +388,18 @@ describe('property child relations', () => {
 
     propsManager.addToMap(child)
     const RebuiltParent = getPropertyComponent(TEST_TYPE)
-    if (!RebuiltParent) throw new Error('Expected rebuilt parent runtime')
+
+    if (!RebuiltParent) {
+      throw new Error('Expected rebuilt parent runtime')
+    }
+
     const nextParent = new RebuiltParent({
       id: 'relation-parent-next',
       type: TEST_TYPE,
       childIds: ['relation-child']
     } as Partial<PropertyComponentRawData>)
     const nextParentListener = vi.fn()
+
     nextParent.on(nextParentListener)
     child.set(
       'x' as keyof PropertyComponentInstanceDataTypes,
@@ -413,16 +433,23 @@ describe('property child relations', () => {
 
     const Child = getPropertyComponent(TEST_CHILD_TYPE)
     const Parent = getPropertyComponent(TEST_TYPE)
-    if (!Child || !Parent) throw new Error('Expected property runtimes')
+
+    if (!Child || !Parent) {
+      throw new Error('Expected property runtimes')
+    }
+
     const child = new Child({ id: 'relation-child', type: TEST_CHILD_TYPE })
+
     propsManager.addToMap(child)
     const parent = new Parent({
       id: 'relation-parent',
       type: TEST_TYPE,
       childIds: ['relation-child']
     } as Partial<PropertyComponentRawData>)
+
     propsManager.addToMap(parent)
     const listener = vi.fn()
+
     parent.on(listener)
 
     child.set(
@@ -464,8 +491,13 @@ describe('property child relations', () => {
     })
 
     const Parent = getPropertyComponent(TEST_TYPE)
-    if (!Parent) throw new Error('Expected parent runtime')
+
+    if (!Parent) {
+      throw new Error('Expected parent runtime')
+    }
+
     const parent = new Parent({ id: 'active-parent', type: TEST_TYPE })
+
     propsManager.addToMap(parent)
     expectRelationError(
       () => removePropertyChildRelation(TEST_TYPE, 'childIds'),

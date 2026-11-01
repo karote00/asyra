@@ -41,6 +41,7 @@ export const getElementGeometryLocalBounds = (
   element: GeometryBoundsReadable
 ): GeometryBounds => {
   const geometryBounds = element.__geometryLocalBounds
+
   if (geometryBounds) {
     return cloneBounds(geometryBounds)
   }
@@ -60,6 +61,7 @@ export const getElementGeometryWorldBounds = (
   element: GeometryBoundsReadable
 ): GeometryBounds => {
   const geometryBounds = element.__geometryLocalBounds
+
   if (geometryBounds) {
     const localCorners = [
       { x: geometryBounds.x, y: geometryBounds.y },
@@ -75,9 +77,11 @@ export const getElementGeometryWorldBounds = (
     let projectPoint:
       ((point: { x: number; y: number }) => { x: number; y: number }) | null =
       null
+
     if (worldTransform) {
       projectPoint = (point) => transformGeometryPoint(worldTransform, point)
     }
+
     if (typeof toGlobal === 'function') {
       projectPoint = (point) => toGlobal.call(element, point, undefined, false)
     }
@@ -117,13 +121,16 @@ export const calculateEllipseBounds = ({
   height,
   rotation = 0
 }: GeometryBounds & { rotation?: number }): GeometryBounds => {
-  if (![x, y, width, height, rotation].every(Number.isFinite))
+  if (![x, y, width, height, rotation].every(Number.isFinite)) {
     throw new Error('Ellipse bounds require finite geometry')
+  }
+
   const c = Math.cos(rotation),
     s = Math.sin(rotation)
   const cx = x + (c * width) / 2 - (s * height) / 2
   const cy = y + (s * width) / 2 + (c * height) / 2
   const rx = Math.hypot((c * width) / 2, (s * height) / 2)
   const ry = Math.hypot((s * width) / 2, (c * height) / 2)
+
   return { x: cx - rx, y: cy - ry, width: 2 * rx, height: 2 * ry }
 }

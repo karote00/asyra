@@ -10,6 +10,7 @@ const leaf = (x: number): MeshNode => ({
   ],
   triangles: []
 })
+
 const combine = (a: MeshNode, b: MeshNode): MeshNode => ({
   bounds: a.bounds.map((axis, i) => [
     Math.min(axis[0], b.bounds[i][0]),
@@ -18,32 +19,42 @@ const combine = (a: MeshNode, b: MeshNode): MeshNode => ({
   triangles: [],
   children: [a, b]
 })
+
 const index = (root: MeshNode): MeshIndex => ({
   root,
   representatives: [],
   componentCount: 0
 })
+
 function inspect(root: MeshNode) {
   const leaves: MeshNode[] = [],
     pending = [root],
     seen = new Set<MeshNode>()
   let cost = 0
+
   while (pending.length) {
     const node = pending.pop()
-    if (!node || seen.has(node))
+
+    if (!node || seen.has(node)) {
       throw new Error('Repeated source node or cycle')
+    }
+
     seen.add(node)
     if (!node.children) {
       leaves.push(node)
       continue
     }
+
     expect(node.bounds).toEqual(combine(...node.children).bounds)
     const [x, y, z] = node.bounds.map((axis) => axis[1] - axis[0])
+
     cost += 2 * (x * y + x * z + y * z)
     pending.push(...node.children)
   }
+
   return { leaves, cost }
 }
+
 it('selects a strictly improving opposite child swap with every leaf retained', () => {
   const a = leaf(0),
     b = leaf(10),
@@ -52,6 +63,7 @@ it('selects a strictly improving opposite child swap with every leaf retained', 
   const before = JSON.stringify(root)
   let work = 0
   const result = rotateIndex(index(root), () => work++)
+
   expect(result.root.children?.[0].children).toEqual([a, r])
   expect(result.root.children?.[1]).toBe(b)
   expect(new Set(inspect(result.root).leaves)).toEqual(new Set([a, b, r]))
@@ -67,6 +79,7 @@ it('selects the compound regrouping when both original groups span distant leave
   const root = combine(combine(a, b), combine(c, d))
   let work = 0
   const result = rotateIndex(index(root), () => work++)
+
   expect(result.root.children?.[0].children).toEqual([a, c])
   expect(result.root.children?.[1].children).toEqual([b, d])
   expect(new Set(inspect(result.root).leaves)).toEqual(new Set([a, b, c, d]))
@@ -76,6 +89,7 @@ it('selects the compound regrouping when both original groups span distant leave
 it('keeps no-op ties and accounts for all rejected candidates', () => {
   const root = combine(combine(leaf(0), leaf(0)), combine(leaf(0), leaf(0)))
   let work = 0
+
   expect(rotateIndex(index(root), () => work++).root).toBe(root)
   expect(work).toBe(21)
   expect(() =>

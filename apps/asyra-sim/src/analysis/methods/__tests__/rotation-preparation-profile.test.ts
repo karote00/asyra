@@ -32,7 +32,11 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             pair.a.bodyId === 'example:joint-2' &&
             pair.b.bodyId === 'obstacle-11'
         )
-        if (!pair) throw new Error('Missing measured pair')
+
+        if (!pair) {
+          throw new Error('Missing measured pair')
+        }
+
         const query = {
           workcell: snapshot.workcell,
           trajectory: snapshot.trajectory,
@@ -52,14 +56,18 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           () => undefined,
           original
         )
+
         expect(baseline.coverage).toBe('complete')
         let originalPreparation = 0,
           addedPreparation = 0
+
         const offsets = (node: MeshNode): number[] =>
           node.children
             ? node.children.flatMap(offsets)
             : node.triangles.map((triangle) => triangle.offset)
+
         const build = meshIndex.buildMeshIndex
+
         vi.spyOn(meshIndex, 'buildMeshIndex').mockImplementation(
           (mesh, checkpoint, hierarchy, checkExecution) => {
             const index = build(
@@ -71,37 +79,53 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               hierarchy,
               checkExecution
             )
-            if (!hierarchy) return index
+
+            if (!hierarchy) {
+              return index
+            }
+
             const fingerprint = JSON.stringify(index.root)
             const originalLeaves = new Set<MeshNode>()
+
             const inspect = (root: MeshNode, leaves: Set<MeshNode>) => {
               const pending = [root],
                 seen = new Set<MeshNode>()
               let cost = 0
+
               while (pending.length) {
                 const node = pending.pop()
-                if (!node || seen.has(node))
+
+                if (!node || seen.has(node)) {
                   throw new Error('Repeated node or cycle')
+                }
+
                 seen.add(node)
                 if (!node.children) {
                   leaves.add(node)
                   continue
                 }
+
                 const [a, b] = node.children
+
                 if (
                   !node.bounds.every(
                     (axis, i) =>
                       axis[0] === Math.min(a.bounds[i][0], b.bounds[i][0]) &&
                       axis[1] === Math.max(a.bounds[i][1], b.bounds[i][1])
                   )
-                )
+                ) {
                   throw new Error('Incorrect complete child union')
+                }
+
                 const [x, y, z] = node.bounds.map((axis) => axis[1] - axis[0])
+
                 cost += 2 * (x * y + x * z + y * z)
                 pending.push(a, b)
               }
+
               return cost
             }
+
             const beforeCost = inspect(index.root, originalLeaves)
             const result = rotateIndex(index, () => {
               addedPreparation++
@@ -109,6 +133,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             })
             const nextLeaves = new Set<MeshNode>()
             const afterCost = inspect(result.root, nextLeaves)
+
             expect(afterCost).toBeLessThanOrEqual(
               beforeCost + Math.abs(beforeCost) * 1e-12
             )
@@ -122,6 +147,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             )
             expect(result.representatives).toBe(index.representatives)
             expect(result.componentCount).toBe(index.componentCount)
+
             return result
           }
         )
@@ -132,6 +158,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           () => undefined,
           context
         )
+
         // eslint-disable-next-line no-console -- fixed immutable partition feasibility includes original and added preparation
         console.info(
           JSON.stringify({
@@ -147,7 +174,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           })
         )
         expect(context.work).toBeLessThanOrEqual(500001)
-        if (candidate.coverage === 'complete')
+        if (candidate.coverage === 'complete') {
           expect(
             candidate.leaves.map((leaf) => [
               leaf.start,
@@ -163,6 +190,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               leaf.penetration
             ])
           )
+        }
       },
       20000
     )
@@ -173,6 +201,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         addedPreparation = 0,
         builds = 0
       const build = meshIndex.buildMeshIndex
+
       vi.spyOn(meshIndex, 'buildMeshIndex').mockImplementation(
         (mesh, checkpoint, hierarchy, checkExecution) => {
           builds++
@@ -185,6 +214,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             hierarchy,
             checkExecution
           )
+
           return hierarchy
             ? rotateIndex(index, () => {
                 addedPreparation++
@@ -194,6 +224,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         }
       )
       const result = runOriginalPartMethod(snapshot, () => undefined)
+
       // eslint-disable-next-line no-console -- whole-workload feasibility includes all immutable preparation charges
       console.info(
         JSON.stringify({

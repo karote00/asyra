@@ -6,6 +6,7 @@ class Computed<T extends ComputedAttrs>
   implements IComputed<T>
 {
   _idType!: string
+
   _nameType!: string
 
   constructor(
@@ -43,6 +44,7 @@ class Computed<T extends ComputedAttrs>
   ): void {
     propertyNames.forEach((propName) => {
       const initialOwnerValue = initialOwnerValues?.[propName]
+
       if (
         initialOwnerValues &&
         Object.prototype.hasOwnProperty.call(initialOwnerValues, propName) &&
@@ -51,18 +53,24 @@ class Computed<T extends ComputedAttrs>
       ) {
         ;(this.data as unknown as Record<string, unknown>)[propName] =
           initialOwnerValue
+
         return
       }
 
       const propId = props.getPropId(propName)
-      if (!propId) return
+
+      if (!propId) {
+        return
+      }
 
       const propComponent = this.propsManagerOwner.getPropertyById(propId)
+
       if (!propComponent) {
         return
       }
 
       const values = propComponent.getValue()
+
       Object.assign(this.data, values)
     })
   }
@@ -77,7 +85,10 @@ class Computed<T extends ComputedAttrs>
   }
 
   save(fields?: readonly string[]) {
-    if (fields === undefined) return { ...this.data }
+    if (fields === undefined) {
+      return { ...this.data }
+    }
+
     return Object.fromEntries(
       [...new Set(fields)]
         .filter((field) =>

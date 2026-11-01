@@ -27,7 +27,9 @@ export const registerTransactionOwner = (
   if (transactionOwner) {
     throw new Error('A transaction owner is already registered')
   }
+
   transactionOwner = owner
+
   return () => {
     if (transactionOwner === owner) {
       transactionOwner = null
@@ -43,6 +45,7 @@ export const runWithTransactionOwner = <T>(
   callback: () => T
 ): T => {
   const previousOverride = transactionOwnerOverride
+
   transactionOwnerOverride = owner
   try {
     return callback()

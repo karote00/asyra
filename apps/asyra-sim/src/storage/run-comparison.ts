@@ -10,27 +10,36 @@ export interface RunComparison {
   incompatibilities: readonly string[]
   differences: readonly RunDifference[]
 }
+
 const record = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value)
+
 const lexical = (a: string, b: string) => {
-  if (a === b) return 0
+  if (a === b) {
+    return 0
+  }
+
   return a < b ? -1 : 1
 }
 
 /** Correspondence changes identity labels only, never modeled quantities. */
 function comparableInputs(run: RunRecord) {
   const { snapshot } = run
+
   const id = (bodyId: string) => {
     const origin = run.lineage?.bodyOrigins[bodyId] ?? {
       candidateId: snapshot.source.candidateId,
       bodyId
     }
+
     return JSON.stringify([origin.candidateId, origin.bodyId])
   }
+
   const remapRecord = <T>(value: Readonly<Record<string, T>>) =>
     Object.fromEntries(
       Object.entries(value).map(([key, item]) => [id(key), item])
     )
+
   return {
     workcell: {
       ...snapshot.workcell,
@@ -67,6 +76,7 @@ function comparableInputs(run: RunRecord) {
       excludedPairs: snapshot.scope.excludedPairs
         .map((pair) => {
           const [a, b] = [id(pair.a), id(pair.b)].sort()
+
           return { ...pair, a, b }
         })
         .sort((a, b) => lexical(stableJson(a), stableJson(b)))
@@ -80,15 +90,22 @@ function comparableInputs(run: RunRecord) {
 }
 
 export function compareRuns(input: readonly RunRecord[]): RunComparison {
-  if (input.length < 2 || input.length > 3)
+  if (input.length < 2 || input.length > 3) {
     throw new Error('Select two or three runs for comparison')
+  }
+
   const runs = input.map(validateRunRecord)
   const inputs = runs.map(comparableInputs)
-  if (new Set(runs.map((run) => run.result.runId)).size !== runs.length)
+
+  if (new Set(runs.map((run) => run.result.runId)).size !== runs.length) {
     throw new Error('Select distinct runs')
+  }
+
   const differs = (values: readonly unknown[]) =>
     new Set(values.map(stableJson)).size > 1
+
   const incompatibilities: string[] = []
+
   for (const [label, values] of [
     [
       'Methods or numerical settings differ',
@@ -106,28 +123,43 @@ export function compareRuns(input: readonly RunRecord[]): RunComparison {
       'Decision rules differ',
       inputs.map((input) => {
         const { revision: _revision, ...conditions } = input.rule
+
         return conditions
       })
     ],
     ['Analysis intervals differ', inputs.map((input) => input.interval)],
     ['Source units differ', inputs.map((input) => input.sourceUnits)]
-  ] as const)
-    if (differs(values)) incompatibilities.push(label)
+  ] as const) {
+    if (differs(values)) {
+      incompatibilities.push(label)
+    }
+  }
+
   const differences: RunDifference[] = []
+
   const walk = (path: string, values: readonly unknown[]) => {
-    if (!differs(values)) return
+    if (!differs(values)) {
+      return
+    }
+
     if (values.every(record)) {
       const keys = [
         ...new Set(values.flatMap((value) => Object.keys(value)))
       ].sort()
-      for (const key of keys)
+
+      for (const key of keys) {
         walk(
           path ? `${path}.${key}` : key,
           values.map((value) => value[key])
         )
-    } else differences.push({ path, values })
+      }
+    } else {
+      differences.push({ path, values })
+    }
   }
+
   walk('', inputs)
+
   return {
     runs,
     directlyComparable: !incompatibilities.length,

@@ -25,10 +25,12 @@ export class MapRegistry<K, V> {
 
     if (exists && options.onDuplicate) {
       const current = this.map.get(key) as V
+
       options.onDuplicate(key, current, value)
     }
 
     this.map.set(key, value)
+
     return true
   }
 
@@ -37,20 +39,24 @@ export class MapRegistry<K, V> {
 
     if (!exists) {
       this.map.set(key, value)
+
       return value
     }
 
     const current = this.map.get(key) as V
+
     options.onDuplicate?.(key, current, value)
     const message = (() => {
       if (typeof options.duplicateErrorMessage === 'function') {
         return options.duplicateErrorMessage(key, current, value)
       }
+
       return (
         options.duplicateErrorMessage ??
         `Registry key "${String(key)}" is already registered`
       )
     })()
+
     throw new Error(message)
   }
 

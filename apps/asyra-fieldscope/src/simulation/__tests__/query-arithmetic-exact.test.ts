@@ -17,14 +17,19 @@ interface Fraction {
 // Decode the original binary value; never use floating arithmetic to compute
 // the expected sum/product/quotient or an epsilon to accept an incorrect bound.
 function fraction(value: number): Fraction {
-  if (!Number.isFinite(value)) throw new Error('Expected finite oracle input')
+  if (!Number.isFinite(value)) {
+    throw new Error('Expected finite oracle input')
+  }
+
   const buffer = new DataView(new ArrayBuffer(8))
+
   buffer.setFloat64(0, value)
   const bits = buffer.getBigUint64(0)
   const exponent = Number((bits >> 52n) & 0x7ffn)
   const significand = (bits & 0xfffffffffffffn) | (exponent ? 1n << 52n : 0n)
   const signed = bits >> 63n ? -significand : significand
   const power = exponent ? exponent - 1075 : -1074
+
   return power >= 0
     ? { numerator: signed << BigInt(power), denominator: 1n }
     : { numerator: signed, denominator: 1n << BigInt(-power) }
@@ -32,23 +37,28 @@ function fraction(value: number): Fraction {
 
 function enclosed(result: Interval, expected: Fraction, context: string) {
   let { numerator, denominator } = expected
+
   if (denominator < 0n) {
     numerator = -numerator
     denominator = -denominator
   }
+
   expect(denominator > 0n, context).toBe(true)
   expect(result.low <= result.high, context).toBe(true)
   expect(result.low < Infinity, context).toBe(true)
   expect(result.high > -Infinity, context).toBe(true)
   if (Number.isFinite(result.low)) {
     const lower = fraction(result.low)
+
     expect(
       lower.numerator * denominator <= numerator * lower.denominator,
       `${context}: lower bound`
     ).toBe(true)
   }
+
   if (Number.isFinite(result.high)) {
     const upper = fraction(result.high)
+
     expect(
       upper.numerator * denominator >= numerator * upper.denominator,
       `${context}: upper bound`
@@ -62,6 +72,7 @@ function checkCorners(left: Interval, right: Interval) {
       const x = fraction(a),
         y = fraction(b)
       const label = `${a}, ${b}`
+
       enclosed(
         add(left, right),
         {
@@ -86,7 +97,7 @@ function checkCorners(left: Interval, right: Interval) {
         },
         `multiply ${label}`
       )
-      if (b !== 0)
+      if (b !== 0) {
         enclosed(
           divide(left, right),
           {
@@ -95,32 +106,41 @@ function checkCorners(left: Interval, right: Interval) {
           },
           `divide ${label}`
         )
+      }
     }
   }
 }
 
 function samples() {
   let state = 0x713c9e21
+
   const next = () => {
     state ^= state << 13
     state ^= state >>> 17
     state ^= state << 5
+
     return state >>> 0
   }
+
   const buffer = new DataView(new ArrayBuffer(8))
+
   return Array.from({ length: 128 }, () => {
     const sign = BigInt(next() & 1) << 63n
     const exponent = BigInt(next() % 2047) << 52n
     const mantissa = (BigInt(next() & 0xfffff) << 32n) | BigInt(next())
+
     buffer.setBigUint64(0, sign | exponent | mantissa)
+
     return buffer.getFloat64(0)
   })
 }
 
 it('encloses exact corner extrema of reproducible full-exponent nonpoint intervals', () => {
   const values = samples()
+
   for (let i = 0; i < values.length; i += 4) {
     const [a, b, c, d] = values.slice(i, i + 4)
+
     checkCorners(
       { low: Math.min(a, b), high: Math.max(a, b) },
       { low: Math.min(c, d), high: Math.max(c, d) }
@@ -130,12 +150,15 @@ it('encloses exact corner extrema of reproducible full-exponent nonpoint interva
 
 it('encloses reproducible binary operands before interval width can mask rounding errors', () => {
   const values = samples()
-  for (let i = 0; i < values.length; i += 2)
+
+  for (let i = 0; i < values.length; i += 2) {
     checkCorners(interval(values[i]), interval(values[i + 1]))
+  }
 })
 
 it('encloses cancellation, signed underflow and finite-input overflow without invalid infinite bounds', () => {
   const tiny = Number.MIN_VALUE
+
   for (const [left, right] of [
     [
       { low: -tiny, high: tiny },
@@ -165,12 +188,14 @@ it('encloses cancellation, signed underflow and finite-input overflow without in
       { low: -1 - Number.EPSILON, high: -1 },
       { low: -tiny, high: tiny }
     ]
-  ])
+  ]) {
     checkCorners(left, right)
+  }
 })
 
 it('keeps generically exact cancellation and representable subnormal results as point intervals', () => {
   const tiny = Number.MIN_VALUE
+
   for (const [result, value] of [
     [add(interval(Number.MAX_VALUE), interval(-Number.MAX_VALUE)), 0],
     [subtract(interval(3 * tiny), interval(2 * tiny)), tiny],
@@ -194,16 +219,19 @@ it('encloses nonpoint square roots by exact endpoint squaring across exponent ex
     4,
     Number.MAX_VALUE
   ]
+
   for (let i = 0; i < positive.length - 1; i++) {
     const low = positive[i],
       high = positive[i + 1]
     const result = squareRoot({ low, high })
+
     expect(result.low >= 0 && result.low <= result.high).toBe(true)
     expect(Number.isFinite(result.high)).toBe(true)
     const lower = fraction(result.low),
       upper = fraction(result.high)
     const a = fraction(low),
       b = fraction(high)
+
     expect(
       lower.numerator ** 2n * a.denominator <=
         a.numerator * lower.denominator ** 2n

@@ -38,13 +38,19 @@ const headers = {
 }
 
 export function parsePort(args) {
-  if (!args.length) return 3020
+  if (!args.length) {
+    return 3020
+  }
+
   const match = args.length === 1 && /^--port=(\d{4,5})$/.exec(args[0])
   const value = match ? Number(match[1]) : NaN
-  if (!Number.isInteger(value) || value < 1024 || value > 65535)
+
+  if (!Number.isInteger(value) || value < 1024 || value > 65535) {
     throw new Error(
       'Use node server.mjs [--port=3020], with a port from 1024 to 65535.'
     )
+  }
+
   return value
 }
 
@@ -55,18 +61,24 @@ export async function startLocalServer({ root, port = 3020 }) {
     !Number.isInteger(port) ||
     port < 0 ||
     port > 65535
-  )
+  ) {
     throw new Error(
       'An absolute distribution directory and valid port are required.'
     )
-  if (!(await lstat(root)).isDirectory())
+  }
+
+  if (!(await lstat(root)).isDirectory()) {
     throw new Error(
       'The distribution site directory is missing or is a symbolic link.'
     )
-  if (!(await lstat(path.join(root, 'index.html'))).isFile())
+  }
+
+  if (!(await lstat(path.join(root, 'index.html'))).isFile()) {
     throw new Error(
       'The distribution index.html is missing or is a symbolic link.'
     )
+  }
+
   let origin
   const server = createServer(
     { maxHeaderSize: 8192 },
@@ -80,26 +92,38 @@ export async function startLocalServer({ root, port = 3020 }) {
         })
         response.end(text)
       }
+
       // Exact authority checks prevent DNS rebinding and cross-origin access.
       if (
         request.headers.host !== origin.slice(7) ||
         (request.headers.origin && request.headers.origin !== origin) ||
         request.headers['sec-fetch-site'] === 'cross-site'
-      )
+      ) {
         return reject(403, 'Only this loopback origin is allowed.')
-      if (request.method !== 'GET' && request.method !== 'HEAD')
+      }
+
+      if (request.method !== 'GET' && request.method !== 'HEAD') {
         return reject(405, 'Only GET and HEAD are supported.')
+      }
+
       if (
         request.headers['transfer-encoding'] ||
         Number(request.headers['content-length'] ?? 0) !== 0
-      )
+      ) {
         return reject(400, 'Request bodies are not supported.')
+      }
+
       let handle
+
       try {
         const raw = request.url ?? ''
-        if (!raw.startsWith('/') || raw.startsWith('//'))
+
+        if (!raw.startsWith('/') || raw.startsWith('//')) {
           return reject(400, 'Invalid path.')
+        }
+
         const pathname = decodeURIComponent(raw.split('?')[0])
+
         if (
           [...pathname].some(
             (character) =>
@@ -107,34 +131,46 @@ export async function startLocalServer({ root, port = 3020 }) {
               character.charCodeAt(0) === 127 ||
               character === '\\'
           )
-        )
+        ) {
           return reject(400, 'Invalid path.')
+        }
+
         const segments =
           pathname === '/' ? ['index.html'] : pathname.slice(1).split('/')
-        if (segments.some((segment) => !segment || segment.startsWith('.')))
+
+        if (segments.some((segment) => !segment || segment.startsWith('.'))) {
           return reject(404, 'File not found.')
+        }
+
         let filename = root
+
         for (const [index, segment] of segments.entries()) {
           filename = path.join(filename, segment)
           const stat = await lstat(filename)
+
           if (
             stat.isSymbolicLink() ||
             (index < segments.length - 1 ? !stat.isDirectory() : !stat.isFile())
-          )
+          ) {
             return reject(404, 'File not found.')
+          }
         }
+
         handle = await open(filename, 'r')
         const stat = await handle.stat()
+
         response.writeHead(200, {
           ...headers,
           'Content-Type':
             types.get(path.extname(filename)) ?? 'application/octet-stream',
           'Content-Length': stat.size
         })
-        if (request.method === 'HEAD') response.end()
-        else
+        if (request.method === 'HEAD') {
+          response.end()
+        } else {
           await new Promise((resolve, rejectStream) => {
             const stream = handle.createReadStream({ autoClose: false })
+
             stream.on('error', rejectStream)
             response.on('error', rejectStream)
             response.on('close', () => {
@@ -143,13 +179,16 @@ export async function startLocalServer({ root, port = 3020 }) {
             })
             stream.pipe(response)
           })
+        }
       } catch (error) {
-        if (response.headersSent) response.destroy()
-        else
+        if (response.headersSent) {
+          response.destroy()
+        } else {
           reject(
             error instanceof URIError ? 400 : 404,
             'File not found or unreadable.'
           )
+        }
       } finally {
         await handle?.close().catch(() => {
           // The response is already ended or destroyed; do not retry writes.
@@ -157,6 +196,7 @@ export async function startLocalServer({ root, port = 3020 }) {
       }
     }
   )
+
   server.requestTimeout = 10_000
   server.headersTimeout = 10_000
   server.keepAliveTimeout = 1000
@@ -170,14 +210,17 @@ export async function startLocalServer({ root, port = 3020 }) {
     })
   })
   let closing
+
   return Object.freeze({
     origin,
     address: server.address(),
+
     close: () => {
       closing ??= new Promise((resolve, reject) => {
         server.close((error) => (error ? reject(error) : resolve()))
         server.closeAllConnections()
       })
+
       return closing
     }
   })
@@ -188,22 +231,26 @@ if (
   path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 ) {
   try {
-    if (process.versions.node.split('.')[0] !== '24')
+    if (process.versions.node.split('.')[0] !== '24') {
       throw new Error(
         'This candidate requires an existing Node.js 24.x installation.'
       )
+    }
+
     const port = parsePort(process.argv.slice(2))
     const runtime = await startLocalServer({
       root: fileURLToPath(new URL('./site/', import.meta.url)),
       port
     })
+
     process.stdout.write(
       `Asyra Sim local candidate: ${runtime.origin}\nOpen this address in Chrome. Press Ctrl+C to stop.\nKeep this origin unchanged for browser saves; export portable backups.\n`
     )
-    for (const signal of ['SIGINT', 'SIGTERM'])
+    for (const signal of ['SIGINT', 'SIGTERM']) {
       process.once(signal, () => {
         void runtime.close()
       })
+    }
   } catch (error) {
     process.stderr.write(
       `Cannot start Asyra Sim: ${error.message}\nNo alternate port or network service was started.\n`

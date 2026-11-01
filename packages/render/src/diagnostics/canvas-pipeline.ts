@@ -13,6 +13,7 @@ export const markCanvasPipelineDebuggerOwned = <T extends object>(
 ): T => {
   canvasPipelineDebuggerOwnedObjects ??= new WeakSet<object>()
   canvasPipelineDebuggerOwnedObjects.add(value)
+
   return value
 }
 
@@ -135,6 +136,7 @@ const detachValue = (
   if (value === null) {
     return null
   }
+
   switch (typeof value) {
     case 'boolean':
     case 'number':
@@ -153,12 +155,15 @@ const detachValue = (
   if (ancestors.has(value)) {
     return { type: 'circular' }
   }
+
   ancestors.add(value)
   try {
     if (Array.isArray(value)) {
       return value.map((item) => detachValue(item, ancestors))
     }
+
     const detached: Record<string, CanvasPipelineDetachedValue> = {}
+
     Object.keys(value)
       .sort()
       .forEach((key) => {
@@ -167,6 +172,7 @@ const detachValue = (
           ancestors
         )
       })
+
     return detached
   } finally {
     ancestors.delete(value)
@@ -183,9 +189,11 @@ const sanitizeDrawOperation = (
   if (operation.type !== 'fill' && operation.type !== 'stroke') {
     return snapshotCanvasPipelineValue(operation)
   }
+
   const paint = operation.paint.resource
     ? { ...operation.paint, resource: 'opaque-resource' }
     : operation.paint
+
   return snapshotCanvasPipelineValue({ ...operation, paint })
 }
 
@@ -209,6 +217,7 @@ export const snapshotCanvasPipelineCommand = (
       : {}),
     ...(context.projection ? { projection: context.projection } : {})
   }
+
   switch (command.type) {
     case 'create-object':
       return freezeDeep({
@@ -271,13 +280,16 @@ export const subscribeToCanvasPipelineEvidence = (
   subscription: CanvasPipelineEvidenceSubscription
 ): (() => void) => {
   const subscriptions = subscriptionsByOwner.get(owner) ?? new Set()
+
   subscriptions.add(subscription)
   subscriptionsByOwner.set(owner, subscriptions)
   let active = true
+
   return () => {
     if (!active) {
       return
     }
+
     active = false
     subscriptions.delete(subscription)
     if (subscriptions.size === 0) {
@@ -291,14 +303,18 @@ export const publishCanvasPipelineEvidence = (
   createEvidence: () => CanvasPipelineEvidence
 ): void => {
   const subscriptions = subscriptionsByOwner.get(owner)
+
   if (!subscriptions || subscriptions.size === 0) {
     return
   }
+
   let frozenEvidence: CanvasPipelineEvidence
+
   try {
     frozenEvidence = freezeDeep(createEvidence())
   } catch (cause) {
     const error = cause instanceof Error ? cause : new Error(String(cause))
+
     ;[...subscriptions].forEach((subscription) => {
       subscriptions.delete(subscription)
       try {
@@ -308,14 +324,17 @@ export const publishCanvasPipelineEvidence = (
       }
     })
     subscriptionsByOwner.delete(owner)
+
     return
   }
+
   ;[...subscriptions].forEach((subscription) => {
     try {
       subscription.onEvidence(frozenEvidence)
     } catch (cause) {
       subscriptions.delete(subscription)
       const error = cause instanceof Error ? cause : new Error(String(cause))
+
       try {
         subscription.onError?.(error)
       } catch {

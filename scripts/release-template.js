@@ -50,6 +50,7 @@ for (const arg of args) {
 // Load config JSON
 // ----------------------
 const CONFIG_FILE = path.resolve(`release-configs/${APP_NAME}.json`)
+
 if (!fs.existsSync(CONFIG_FILE)) {
   console.error(`Config file ${CONFIG_FILE} not found!`)
   process.exit(1)
@@ -60,10 +61,12 @@ const rootManifest = JSON.parse(
   fs.readFileSync(path.resolve('package.json'), 'utf-8')
 )
 const prettierVersion = rootManifest.devDependencies?.prettier
+
 if (typeof prettierVersion !== 'string') {
   console.error('Root manifest must declare a Prettier devDependency')
   process.exit(1)
 }
+
 const SRC_DIR = path.resolve(config.src)
 const CONFIGURED_DEST_DIR = path.resolve(config.dest)
 const CHECK_DIRECTORY = path.resolve(
@@ -98,19 +101,30 @@ console.log(`Files/folders to clean: ${CLEAN_FILES.join(', ')}`)
 // Remove old template
 // ----------------------
 if (fs.existsSync(DEST_DIR)) {
-  if (VERBOSE) console.log(`Cleaning old template at ${DEST_DIR}...`)
+  if (VERBOSE) {
+    console.log(`Cleaning old template at ${DEST_DIR}...`)
+  }
+
   fse.removeSync(DEST_DIR)
 }
+
 fse.mkdirpSync(DEST_DIR)
 
 // ----------------------
 // Copy source files
 // ----------------------
-if (VERBOSE) console.log('Copying files...')
+if (VERBOSE) {
+  console.log('Copying files...')
+}
+
 fse.copySync(SRC_DIR, DEST_DIR, {
   filter: (src) => {
     const relPath = path.relative(SRC_DIR, src)
-    if (relPath === 'CHANGELOG.md') return false // skip changelog
+
+    if (relPath === 'CHANGELOG.md') {
+      return false
+    } // skip changelog
+
     return true
   }
 })
@@ -118,48 +132,67 @@ fse.copySync(SRC_DIR, DEST_DIR, {
 // ----------------------
 // Remove unnecessary files
 // ----------------------
-if (VERBOSE) console.log('Removing unnecessary files...')
+if (VERBOSE) {
+  console.log('Removing unnecessary files...')
+}
+
 for (const pattern of CLEAN_FILES) {
   const files = globSync(`${DEST_DIR}/**/${pattern}`, {
     nodir: true,
     dot: true
   })
+
   for (const file of files) {
     fs.unlinkSync(file)
-    if (VERBOSE) console.log(`Deleted file: ${file}`)
+    if (VERBOSE) {
+      console.log(`Deleted file: ${file}`)
+    }
   }
 
   const dirs = globSync(`${DEST_DIR}/**/${pattern}`, {
     onlyDirectories: true,
     dot: true
   })
+
   for (const dir of dirs) {
     fse.removeSync(dir)
-    if (VERBOSE) console.log(`Deleted dir: ${dir}`)
+    if (VERBOSE) {
+      console.log(`Deleted dir: ${dir}`)
+    }
   }
 }
 
 if (!fs.existsSync(SOURCE_EXAMPLE_ENVIRONMENT)) {
   throw new Error('Canonical app source must include .env.example')
 }
+
 fse.copySync(SOURCE_EXAMPLE_ENVIRONMENT, path.join(DEST_DIR, '.env.example'))
-if (VERBOSE) console.log('Copied canonical environment example')
+if (VERBOSE) {
+  console.log('Copied canonical environment example')
+}
 
 if (!fs.existsSync(SOURCE_README)) {
   throw new Error('Canonical app source must include README.md')
 }
+
 const standaloneReadme = fs
   .readFileSync(SOURCE_README, 'utf8')
   .replaceAll('../../LICENSE', 'LICENSE')
+
 fs.writeFileSync(path.join(DEST_DIR, 'README.md'), standaloneReadme)
-if (VERBOSE) console.log('Created standalone README from canonical source')
+if (VERBOSE) {
+  console.log('Created standalone README from canonical source')
+}
 
 if (TEMPLATE_LICENSE) {
   if (!fs.existsSync(TEMPLATE_LICENSE)) {
     throw new Error('Template license must be an existing file')
   }
+
   fse.copySync(TEMPLATE_LICENSE, path.join(DEST_DIR, 'LICENSE'))
-  if (VERBOSE) console.log('Created standalone template license')
+  if (VERBOSE) {
+    console.log('Created standalone template license')
+  }
 }
 
 // ----------------------
@@ -167,9 +200,12 @@ if (TEMPLATE_LICENSE) {
 // ----------------------
 const indexHtmlSrc = path.join(SRC_DIR, 'index.html')
 const indexHtmlDest = path.join(DEST_DIR, 'index.html')
+
 if (fs.existsSync(indexHtmlSrc)) {
   fse.copySync(indexHtmlSrc, indexHtmlDest)
-  if (VERBOSE) console.log('Copied index.html to template')
+  if (VERBOSE) {
+    console.log('Copied index.html to template')
+  }
 } else {
   console.warn(`index.html not found in ${SRC_DIR}, Vite app may fail to start`)
 }
@@ -177,7 +213,10 @@ if (fs.existsSync(indexHtmlSrc)) {
 // ----------------------
 // Update @asyra/* dependencies
 // ----------------------
-if (VERBOSE) console.log('Updating @asyra/* dependencies...')
+if (VERBOSE) {
+  console.log('Updating @asyra/* dependencies...')
+}
+
 const pkgPath = path.join(DEST_DIR, 'package.json')
 
 if (!fs.existsSync(pkgPath)) {
@@ -189,7 +228,10 @@ if (!fs.existsSync(pkgPath)) {
   const packagesDir = path.resolve('packages')
 
   function updateDeps(deps) {
-    if (!deps) return
+    if (!deps) {
+      return
+    }
+
     for (const depName of Object.keys(deps)) {
       if (depName.startsWith('@asyra/')) {
         const localPkgPath = path.join(
@@ -197,10 +239,14 @@ if (!fs.existsSync(pkgPath)) {
           depName.replace('@asyra/', ''),
           'package.json'
         )
+
         if (fs.existsSync(localPkgPath)) {
           const localPkg = JSON.parse(fs.readFileSync(localPkgPath, 'utf-8'))
+
           deps[depName] = localPkg.version
-          if (VERBOSE) console.log(`Set ${depName} => ${localPkg.version}`)
+          if (VERBOSE) {
+            console.log(`Set ${depName} => ${localPkg.version}`)
+          }
         }
       }
     }
@@ -223,6 +269,7 @@ if (!fs.existsSync(pkgPath)) {
     pkg.scripts['build:collaboration-server'] =
       'tsc -p tsconfig.collaboration-server.json && vite build --config vite.collaboration-server.config.ts'
   }
+
   if (
     pkg.scripts &&
     fs.existsSync(path.join(DEST_DIR, 'tsconfig.document-backend.json')) &&
@@ -231,6 +278,7 @@ if (!fs.existsSync(pkgPath)) {
     pkg.scripts['build:document-backend'] =
       'tsc -p tsconfig.document-backend.json && vite build --config vite.document-backend.config.ts'
   }
+
   if (pkg.scripts) {
     pkg.scripts.lint = 'eslint .'
     pkg.scripts = Object.fromEntries(
@@ -242,12 +290,17 @@ if (!fs.existsSync(pkgPath)) {
       if (typeof scriptValue !== 'string') {
         throw new Error(`Script override for ${scriptName} must be a string`)
       }
+
       pkg.scripts[scriptName] = scriptValue
     }
+
     for (const [scriptName, scriptArguments] of Object.entries(
       REMOVE_SCRIPT_ARGUMENTS
     )) {
-      if (!pkg.scripts[scriptName]) continue
+      if (!pkg.scripts[scriptName]) {
+        continue
+      }
+
       for (const scriptArgument of scriptArguments) {
         pkg.scripts[scriptName] = pkg.scripts[scriptName].replace(
           ` ${scriptArgument}`,
@@ -269,20 +322,27 @@ if (!fs.existsSync(pkgPath)) {
     prettier: prettierVersion,
     'typescript-eslint': '^8.54.0'
   }
+
   pkg.devDependencies = pkg.devDependencies || {}
   Object.assign(pkg.devDependencies, eslintFlatPackages)
-  if (VERBOSE) console.log('Added ESLint v10 flat config devDependencies')
+  if (VERBOSE) {
+    console.log('Added ESLint v10 flat config devDependencies')
+  }
 
   // ----------------------
   // Remove old eslintConfig (react-app) if present
   // ----------------------
   if (pkg.eslintConfig) {
     delete pkg.eslintConfig
-    if (VERBOSE) console.log('Removed old eslintConfig (react-app)')
+    if (VERBOSE) {
+      console.log('Removed old eslintConfig (react-app)')
+    }
   }
 
   fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2))
-  if (VERBOSE) console.log('package.json updated ✅')
+  if (VERBOSE) {
+    console.log('package.json updated ✅')
+  }
 }
 
 // ----------------------
@@ -354,7 +414,9 @@ export default tseslint.config(
 `
 
 fs.writeFileSync(eslintConfigDest, eslintConfigContent)
-if (VERBOSE) console.log('Created eslint.config.js for template')
+if (VERBOSE) {
+  console.log('Created eslint.config.js for template')
+}
 
 if (STANDALONE_VITEST_CONFIG) {
   const vitestConfigDest = path.join(DEST_DIR, 'vitest.config.ts')
@@ -369,8 +431,11 @@ export default defineConfig({
   }
 })
 `
+
   fs.writeFileSync(vitestConfigDest, vitestConfigContent)
-  if (VERBOSE) console.log('Created standalone vitest.config.ts')
+  if (VERBOSE) {
+    console.log('Created standalone vitest.config.ts')
+  }
 }
 
 // ----------------------
@@ -379,9 +444,12 @@ export default defineConfig({
 const prettierConfig = '.prettierrc'
 const srcPrettier = path.resolve(prettierConfig)
 const destPrettier = path.join(DEST_DIR, prettierConfig)
+
 if (fs.existsSync(srcPrettier)) {
   fse.copySync(srcPrettier, destPrettier)
-  if (VERBOSE) console.log(`Copied ${prettierConfig} to template`)
+  if (VERBOSE) {
+    console.log(`Copied ${prettierConfig} to template`)
+  }
 }
 
 // ----------------------
@@ -389,12 +457,18 @@ if (fs.existsSync(srcPrettier)) {
 // ----------------------
 const gitignoreSrc = path.join(SRC_DIR, '.gitignore')
 const gitignoreDest = path.join(DEST_DIR, '.gitignore')
+
 if (fs.existsSync(gitignoreSrc)) {
   fse.copySync(gitignoreSrc, gitignoreDest)
-  if (VERBOSE) console.log('Copied .gitignore to template')
+  if (VERBOSE) {
+    console.log('Copied .gitignore to template')
+  }
+
   if (PACKABLE_GITIGNORE) {
     fse.copySync(gitignoreSrc, path.join(DEST_DIR, 'gitignore'))
-    if (VERBOSE) console.log('Copied packable gitignore to template')
+    if (VERBOSE) {
+      console.log('Copied packable gitignore to template')
+    }
   }
 }
 
@@ -411,15 +485,20 @@ const isIgnoredComparisonDirectory = (name) =>
   IGNORED_COMPARISON_DIRECTORIES.has(name) || /^\..+-data$/u.test(name)
 
 const collectFiles = (directory, prefix = '') => {
-  if (!fs.existsSync(directory)) return new Map()
+  if (!fs.existsSync(directory)) {
+    return new Map()
+  }
+
   const files = new Map()
 
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     if (entry.isDirectory() && isIgnoredComparisonDirectory(entry.name)) {
       continue
     }
+
     const relativePath = path.join(prefix, entry.name)
     const entryPath = path.join(directory, entry.name)
+
     if (entry.isDirectory()) {
       for (const [nestedPath, value] of collectFiles(entryPath, relativePath)) {
         files.set(nestedPath, value)
@@ -439,6 +518,7 @@ if (CHECK) {
   const differences = [...paths].sort().filter((relativePath) => {
     const expected = expectedFiles.get(relativePath)
     const committed = committedFiles.get(relativePath)
+
     return !expected || !committed || !expected.equals(committed)
   })
 

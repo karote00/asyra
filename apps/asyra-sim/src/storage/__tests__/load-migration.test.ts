@@ -60,6 +60,7 @@ describe('project identity migration at the load boundary', () => {
       source
     })
     const result = previewTrajectoryJson(legacy, workcell)
+
     expect(result.diagnostics).toEqual([])
     expect(result.value).toEqual(previewTrajectoryJson(current, workcell).value)
     expect(
@@ -72,6 +73,7 @@ describe('project identity migration at the load boundary', () => {
 
   it('does not skip invalid original source bindings on legacy body types', () => {
     const input = JSON.parse(JSON.stringify(observationProject([], [])))
+
     input.document.sceneTree.elements.body = {
       id: 'body',
       type: 'asyra-sim-body',
@@ -99,6 +101,7 @@ describe('project identity migration at the load boundary', () => {
   it('normalizes known persisted types without rewriting user data or immutable evidence', () => {
     const original = observationProject([], [])
     const stored = JSON.parse(JSON.stringify(original))
+
     stored.document.sceneTree.elements.candidate.type = 'asyra-sim-candidate'
     stored.document.sceneTree.elements.retained.type = 'asyra-sim-run-reference'
     stored.document.props['retained-props'].type =
@@ -121,6 +124,7 @@ describe('project identity migration at the load boundary', () => {
     })
     const decoded = decodeProject(text)
     const document = decoded.document as typeof stored.document
+
     expect(document.sceneTree.elements.candidate.type).toBe('sim-candidate')
     expect(document.sceneTree.elements.retained.type).toBe('sim-run-reference')
     expect(document.sceneTree.elements.body).toEqual({
@@ -145,6 +149,7 @@ describe('project identity migration at the load boundary', () => {
       'asyra-sim-body'
     )
     const saved = encodeProject(decoded)
+
     expect(JSON.parse(saved).format).toBe('sim-project')
     expect(decodeProject(saved)).toEqual(decoded)
   })
@@ -159,6 +164,7 @@ describe('project identity migration at the load boundary', () => {
     })
       .replaceAll(ComponentTypes.CANDIDATE, 'asyra-sim-candidate')
       .replaceAll(ComponentTypes.RUN_REFERENCE, 'asyra-sim-run-reference')
+
     expect(() => decodeProject(text)).toThrow('Missing or mismatched evidence')
     expect(() =>
       decodeProject(text.replace('"version":1', '"version":2'))
@@ -179,9 +185,11 @@ describe('project identity migration at the load boundary', () => {
         ...observationProject([], [])
       })
     }
+
     await first.write(input, null)
     first.close()
     const second = new IndexedProjectRepository(factory, 'asyra-sim-local-v1')
+
     try {
       expect(await second.read(input.id)).toEqual(input)
       expect((await second.list()).projects[0].id).toBe(input.id)

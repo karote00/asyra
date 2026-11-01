@@ -42,23 +42,32 @@ export type RecordingRenderEngineOptions = Readonly<{
 
 export class RecordingRenderEngine implements RenderEngine {
   readonly name: string
+
   readonly capabilities: ReadonlySet<RenderEngineCapability>
 
   private readonly operations: RecordingRenderEngineOperation[] = []
+
   private readonly objects = new Map<
     RenderEngineObjectHandle,
     StoredObjectHandle
   >()
+
   private readonly resources = new Map<
     RenderEngineResourceHandle,
     StoredResourceHandle
   >()
+
   private readonly interactionListeners =
     new Set<RenderEngineInteractionListener>()
+
   private frameCallback: RenderEngineFrameCallback | null = null
+
   private root: StoredObjectHandle | null = null
+
   private initialized = false
+
   private destroyed = false
+
   private nextHandleId = 1
 
   constructor(options: RecordingRenderEngineOptions) {
@@ -94,16 +103,19 @@ export class RecordingRenderEngine implements RenderEngine {
   execute(command: RenderEngineCommand): RenderEngineCommandResult {
     this.assertReady()
     const result = this.applyCommand(command)
+
     this.operations.push({ type: command.type, command })
+
     return result
   }
 
   query(query: RenderEngineQuery): RenderEngineQueryResult {
     this.assertReady()
-    if (isSpatialQuery(query))
+    if (isSpatialQuery(query)) {
       throw new UnsupportedRenderEngineCapabilityError(this.name, [
         RenderEngineCapabilities.SPATIAL_QUERIES
       ])
+    }
 
     switch (query.type) {
       case 'measure-text':
@@ -114,6 +126,7 @@ export class RecordingRenderEngine implements RenderEngine {
         throw new Error('Recording engine does not produce rendered images')
       case 'get-bounds':
         this.assertOwnedObject(query.object)
+
         return {
           type: 'bounds',
           bounds: { x: 0, y: 0, width: 0, height: 0 }
@@ -121,6 +134,7 @@ export class RecordingRenderEngine implements RenderEngine {
       case 'to-local':
       case 'to-global':
         this.assertOwnedObject(query.object)
+
         return { type: 'point', point: query.point }
       case 'hit-test':
         return { type: 'hit', target: null, point: query.point }
@@ -132,6 +146,7 @@ export class RecordingRenderEngine implements RenderEngine {
   ): () => void {
     this.assertActive()
     this.interactionListeners.add(listener)
+
     return () => {
       this.interactionListeners.delete(listener)
     }
@@ -156,6 +171,7 @@ export class RecordingRenderEngine implements RenderEngine {
   emitFrame(timestamp: number): void {
     this.assertReady()
     const callback = this.frameCallback
+
     this.frameCallback = null
     callback?.(timestamp)
   }
@@ -174,6 +190,7 @@ export class RecordingRenderEngine implements RenderEngine {
       destroyedResources: this.resources.size,
       alreadyDestroyed: false
     }
+
     this.objects.clear()
     this.resources.clear()
     this.root = null
@@ -181,6 +198,7 @@ export class RecordingRenderEngine implements RenderEngine {
     this.frameCallback = null
     this.destroyed = true
     this.operations.push({ type: 'destroy', result })
+
     return result
   }
 
@@ -207,40 +225,51 @@ export class RecordingRenderEngine implements RenderEngine {
             RenderEngineCapabilities.GRAPHICS
           ])
         }
+
         const object = this.createObjectHandle(command.requestId)
+
         this.objects.set(object, object)
+
         return { commandType: command.type, status: 'applied', object }
       }
+
       case 'update-object':
       case 'destroy-object':
         this.assertOwnedObject(command.object)
         if (command.type === 'destroy-object') {
           this.objects.delete(command.object)
         }
+
         return { commandType: command.type, status: 'applied' }
       case 'append-child':
       case 'remove-child':
       case 'set-child-index':
         this.assertOwnedObject(command.parent)
         this.assertOwnedObject(command.child)
+
         return { commandType: command.type, status: 'applied' }
       case 'draw':
         assertRenderEngineCapabilities(this, [
           RenderEngineCapabilities.GRAPHICS
         ])
         this.assertOwnedObject(command.object)
+
         return { commandType: command.type, status: 'applied' }
       case 'create-resource': {
         assertRenderEngineCapabilities(this, [
           RenderEngineCapabilities.RESOURCES
         ])
         const resource = this.createResourceHandle(command.requestId)
+
         this.resources.set(resource, resource)
+
         return { commandType: command.type, status: 'applied', resource }
       }
+
       case 'destroy-resource':
         this.assertOwnedResource(command.resource)
         this.resources.delete(command.resource)
+
         return { commandType: command.type, status: 'applied' }
       case 'resize':
       case 'set-viewport':

@@ -16,6 +16,7 @@ export function useReferenceSceneFixture() {
   let coffee: AssetPart[]
   let sugar: AssetPart[]
   let scene: ReturnType<typeof createReferenceScene> | undefined
+
   beforeAll(() => {
     coffee = tableware.americanoGlass()
   })
@@ -25,14 +26,19 @@ export function useReferenceSceneFixture() {
   beforeAll(() => {
     const coffeeFactory = vi.spyOn(tableware, 'americanoGlass')
     const sugarFactory = vi.spyOn(tableware, 'sugarJar')
+
     coffeeFactory.mockImplementation((...args) => {
-      if (args.length)
+      if (args.length) {
         throw new Error('Scene coffee parameters require a new fixture')
+      }
+
       return coffee
     })
     sugarFactory.mockImplementation((...args) => {
-      if (args.length)
+      if (args.length) {
         throw new Error('Scene sugar parameters require a new fixture')
+      }
+
       return sugar
     })
     try {
@@ -42,9 +48,12 @@ export function useReferenceSceneFixture() {
       sugarFactory.mockRestore()
     }
   })
+
   return () => {
-    if (!scene)
+    if (!scene) {
       throw new Error('Reference scene fixture has not been constructed')
+    }
+
     return scene
   }
 }

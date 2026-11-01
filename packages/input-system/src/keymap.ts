@@ -9,6 +9,7 @@ import {
 
 export class KeyMap {
   private os: Platforms
+
   private keyMap: Record<string, KeyboardKey>
 
   constructor() {
@@ -30,10 +31,14 @@ export class KeyMap {
     ).toLowerCase()
     const userAgent = navigator.userAgent.toLowerCase()
 
-    if (platform.includes('mac') || userAgent.includes('mac'))
+    if (platform.includes('mac') || userAgent.includes('mac')) {
       return Platforms.MAC
-    if (platform.includes('win') || userAgent.includes('win'))
+    }
+
+    if (platform.includes('win') || userAgent.includes('win')) {
       return Platforms.WINDOWS
+    }
+
     return Platforms.LINUX
   }
 

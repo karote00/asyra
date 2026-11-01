@@ -21,6 +21,7 @@ describe('analytic mesh material parameters', () => {
   it('stores stop parameters instead of an image sized by object pixels', () => {
     const original = JSON.stringify(material)
     const encoded = encodeMeshMaterial(material)
+
     expect(encoded.texels).toBe(8)
     expect(encoded.data.length).toBe(encoded.width * encoded.height * 4)
     expect(encoded.data.length).toBeLessThanOrEqual(64)
@@ -43,6 +44,7 @@ describe('analytic mesh material parameters', () => {
         }
       ]
     })
+
     expect([...encoded.data.slice(16, 32)]).toEqual([
       0.5, 0, 0, 0, 1, 0, 0, 0.25, 0.5, 0, 0, 0, 0, 1, 0, 0.75
     ])
@@ -68,6 +70,7 @@ describe('analytic mesh material parameters', () => {
         }
       ]
     })
+
     expect(encoded.data[0]).toBe(2)
     expect(encoded.texels).toBe(409)
   })
@@ -78,6 +81,7 @@ it('preserves parameter bits in portable RGBA8 storage', async () => {
   const expected = encodeMeshMaterial(material)
   const encoded = encodeMeshMaterialBytes(material)
   const view = new DataView(encoded.data.buffer)
+
   expect(Array.from(expected.data)).toEqual(
     Array.from(expected.data, (_, index) => view.getFloat32(index * 4, true))
   )
@@ -90,13 +94,16 @@ it('shares identical material uploads and releases only after the last owner', a
   const resources = new MeshMaterialResources()
   const a = resources.acquire(material)
   const b = resources.acquire(structuredClone(material))
+
   expect(a.texture).toBe(b.texture)
   const source = a.texture.source
+
   resources.release(a.key)
   expect(a.texture.destroyed).toBe(false)
   const changed = resources.acquire({
     fills: [{ kind: 'solid', color: [0, 1, 0, 1] }]
   })
+
   expect(changed.texture).not.toBe(a.texture)
   resources.release(b.key)
   expect(a.texture.destroyed).toBe(true)
@@ -119,6 +126,7 @@ it('rejects non-normalized channels and numbers that overflow GPU parameters', (
       })
     ).toThrow(/color/)
   }
+
   expect(() =>
     encodeMeshMaterial({
       fills: [
@@ -150,6 +158,7 @@ it('packs long stop lists within the portable texture row width', async () => {
       }
     ]
   })
+
   expect(encoded.width).toBeLessThanOrEqual(4096)
   expect(encoded.height).toBeGreaterThan(1)
 })

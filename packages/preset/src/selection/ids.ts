@@ -44,6 +44,7 @@ export const decodeVectorPointSelectionId = (
   value: string
 ): VectorPointSelectionRef | null => {
   const parts = value.split(SELECTION_ID_SEPARATOR)
+
   if (parts.length !== 3) {
     return null
   }
@@ -51,6 +52,7 @@ export const decodeVectorPointSelectionId = (
   const elementId = decodeSelectionToken(parts[0])
   const pointId = decodeSelectionToken(parts[1])
   const target = decodeSelectionToken(parts[2])
+
   if (!elementId || !pointId || !isVectorPointTarget(target)) {
     return null
   }
@@ -70,12 +72,14 @@ export const decodeVectorSegmentSelectionId = (
   value: string
 ): VectorSegmentSelectionRef | null => {
   const parts = value.split(SELECTION_ID_SEPARATOR)
+
   if (parts.length !== 2) {
     return null
   }
 
   const elementId = decodeSelectionToken(parts[0])
   const segmentId = decodeSelectionToken(parts[1])
+
   if (!elementId || !segmentId) {
     return null
   }

@@ -16,6 +16,7 @@ describe('canonical nonlinear offline geometry profiles', () => {
     const result = owner.prepare(raw)
     const relations = result.sourceRelations
     const exactWork = relations.work.kernel
+
     expect(exactWork.axisCandidates).toBe(
       exactWork.normalAxisCandidates + exactWork.crossAxisCandidates
     )
@@ -51,8 +52,10 @@ describe('canonical nonlinear offline geometry profiles', () => {
     const observedRows = relations.phases.flatMap((phase) =>
       phase.pairs.map((pair) => ({ ...pair, phase: phase.phase }))
     )
+
     const provenance = (index: number) => {
       const entry = relations.inventory[index]
+
       return {
         inventoryIndex: index,
         ownerOrdinal: relations.inventory.findIndex(
@@ -75,6 +78,7 @@ describe('canonical nonlinear offline geometry profiles', () => {
         certificationFailureClassification: 'unavailable'
       }
     }
+
     expect(relations.source).toBe(result.source)
     expect(relations.cycle).toBe(result.cycle)
     expect(relations.request).toBe(result.request)
@@ -124,6 +128,7 @@ describe('canonical nonlinear offline geometry profiles', () => {
       },
       (_key, value) => (typeof value === 'bigint' ? value.toString() : value)
     )
+
     expect(relations.footExtrusions, summary).toHaveLength(6)
     expect(relations.coverage.blocked, summary).toBeGreaterThanOrEqual(1)
     expect(result.status, summary).toBe('blocked')
@@ -141,15 +146,19 @@ describe('canonical nonlinear offline geometry profiles', () => {
             proof.sheetTriangle.triangleOffset === 24
         )
     )
+
     expect(plantCollision, summary).toBeDefined()
-    if (!plantCollision)
+    if (!plantCollision) {
       throw new Error('Missing current home-farm plant collision')
+    }
+
     const plantProof = plantCollision.proofs.find(
       (proof) =>
         proof.kind === 'blocked' &&
         proof.reason === 'source-sheet-surface-intersection' &&
         proof.sheetTriangle?.triangleOffset === 24
     )
+
     expect(plantProof?.witness, summary).toEqual({
       numerator: 1n,
       denominator: 2n
@@ -160,6 +169,7 @@ describe('canonical nonlinear offline geometry profiles', () => {
     })
     const robotPart = relations.inventory[plantCollision.first]
     const plantSheet = relations.inventory[plantCollision.second]
+
     expect(robotPart.body?.id, summary).toBe('right-front-lower')
     expect(robotPart.part?.id, summary).toBe('right-front-lower')
     expect(robotPart.region, summary).toMatchObject({
@@ -220,6 +230,7 @@ describe('canonical nonlinear offline geometry profiles', () => {
     const copies = new Set(
       result.terrainBindings.map((binding) => binding.product.request?.terrain)
     )
+
     expect(copies.size).toBe(4)
     for (const binding of result.terrainBindings) {
       expect(binding.terrainInput).toBe(result.request.terrain)
@@ -227,7 +238,9 @@ describe('canonical nonlinear offline geometry profiles', () => {
       expect(binding.product.request).toBe(binding.placementRequest)
       expect(binding.product.request?.terrain).not.toBe(binding.terrainInput)
     }
+
     const preparations = owner.work.preparations
+
     expect(owner.prepare(result.request)).toBe(result)
     expect(owner.work.preparations).toBe(preparations)
     expect(
@@ -246,6 +259,7 @@ describe('canonical nonlinear offline geometry profiles', () => {
       endpoint.parts.map((part) => part.exact),
       24000
     )
+
     expect(node.frames).toHaveLength(endpoint.parts.length)
     expect(evaluator.work.rationalNodePreparations).toBe(1)
     expect(result.sourceRelations.coverage.required).toBeGreaterThan(0)

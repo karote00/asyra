@@ -9,13 +9,17 @@ const repoRoot = path.resolve(__dirname, '../../../..')
 
 const step = (id) => {
   const value = data.steps.find((item) => item.id === id)
+
   assert.ok(value, `Missing Inspector step: ${id}`)
+
   return value
 }
 
 const route = (id) => {
   const value = data.routes.find((item) => item.id === id)
+
   assert.ok(value, `Missing Inspector route: ${id}`)
+
   return value
 }
 
@@ -45,14 +49,7 @@ test('plan and dedicated Inspector remain resolvable authorities', () => {
   assert.ok(productLink)
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.specPath)))
   assert.ok(fs.existsSync(path.resolve(__dirname, '..', productLink.href)))
-  assert.ok(
-    fs.existsSync(
-      path.resolve(
-        repoRoot,
-        'tools/flow-inspector/inspectors/property-type-redefinition-flow-inspector.html'
-      )
-    )
-  )
+  require('./assert-react-catalog.cjs')(data)
 })
 
 test('app composition uses public Core and keeps semantic consumers explicit', () => {
@@ -74,6 +71,7 @@ test('app composition uses public Core and keeps semantic consumers explicit', (
     'docs/ai/apps/asyra-design/modules/registrations.md',
     'docs/ai/apps/asyra-design/ARCHITECTURE.md'
   ]
+
   requiredDocs.forEach((requiredPath) => {
     assert.ok(app.implementationBoundary.includes(requiredPath))
   })

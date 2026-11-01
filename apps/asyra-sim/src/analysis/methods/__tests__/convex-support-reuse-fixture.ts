@@ -101,6 +101,7 @@ export const supportBaseline = [
   ]
 ] as const
 const ops = poseOperations(intervalAlgebra)
+
 export function supportCases() {
   const triangle: ConvexShape = {
     geometry: {
@@ -139,6 +140,7 @@ export function supportCases() {
       ] as ConvexShape['pose']['position']
     }
   }
+
   return [
     {
       name: 'triangle-one',

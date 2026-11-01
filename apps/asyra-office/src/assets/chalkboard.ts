@@ -2,6 +2,7 @@ import specification from '../../../../assets/asyra-office/models/outdoor-accent
 import { append, box, cylinder, emptyMesh, vec } from './geometry'
 import { part, type AssetPart } from './catalog'
 import { requiredSpecValue } from './specification'
+
 export function chalkboard(): AssetPart[] {
   const source = requiredSpecValue(
     specification.modules.find((m) => m.moduleId === 'entry-chalkboard'),
@@ -15,7 +16,8 @@ export function chalkboard(): AssetPart[] {
     board = parseInt(specification.materials.board.baseColorSRGB.slice(1), 16),
     metal = parseInt(specification.materials.metal.baseColorSRGB.slice(1), 16)
   const angle = (14 * Math.PI) / 180
-  for (const side of [-1, 1])
+
+  for (const side of [-1, 1]) {
     for (const id of ['side-posts', 'rails', 'panels']) {
       const c = requiredSpecValue(
         source.components.find((c) => c.partId === id),
@@ -29,9 +31,11 @@ export function chalkboard(): AssetPart[] {
       const centres = c.localCentres ?? [
         requiredSpecValue(c.localCentre, 'local centre')
       ]
+
       centres.forEach(([x, up, normal], i) => {
         const size = c.sizeWidthUpNormal,
           mesh = emptyMesh()
+
         append(
           mesh,
           box([size[0], size[2], size[1]], c.bevel ?? 0.001),
@@ -44,8 +48,10 @@ export function chalkboard(): AssetPart[] {
           ],
           [side * 14, 0, 0]
         )
-        for (let j = 2; j < mesh.positions.length; j += 3)
+        for (let j = 2; j < mesh.positions.length; j += 3) {
           mesh.positions[j] = Math.max(0, mesh.positions[j])
+        }
+
         pieces.push(
           part(
             `${side === -1 ? 'front' : 'rear'}-${id}-${i}`,
@@ -56,6 +62,8 @@ export function chalkboard(): AssetPart[] {
         )
       })
     }
+  }
+
   for (const id of [
     'side-spreaders',
     'hinges',
@@ -73,6 +81,7 @@ export function chalkboard(): AssetPart[] {
       length?: number
       bevel?: number
     }
+
     c.centres.forEach((centre, i) => {
       const mesh = emptyMesh()
       const shape = c.size
@@ -83,6 +92,7 @@ export function chalkboard(): AssetPart[] {
             c.radius,
             24
           )
+
       append(mesh, shape, vec(centre), c.size ? [0, 0, 0] : [0, 90, 0])
       pieces.push(
         part(
@@ -94,5 +104,6 @@ export function chalkboard(): AssetPart[] {
       )
     })
   }
+
   return pieces
 }

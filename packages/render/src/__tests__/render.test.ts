@@ -25,11 +25,13 @@ describe('Render', () => {
   it('suspends presentation with an idempotent lease without changing element geometry', async () => {
     await render.init(800, 600, 0xffffff)
     const graphic = new RenderGraphics().rect(0, 0, 80, 40)
+
     render.viewport.view.addChild(graphic)
     render.viewport.getElementById = vi.fn(() => graphic)
     const redraw = vi.spyOn(render, 'requestRender')
     const resume = render.suspendElementPresentation('text')
     const second = render.suspendElementPresentation('text')
+
     expect(graphic.renderable).toBe(false)
     expect(graphic.presentationSuppressed).toBe(true)
     expect(graphic.visible).toBe(false)
@@ -56,12 +58,14 @@ describe('Render', () => {
       lineHeight: 20,
       letterSpacing: 0
     } as const
+
     expect(() => render.measureText(layout)).toThrow()
     const capable = new RecordingRenderEngine({
       name: 'text-test',
       capabilities: [...engine.capabilities, 'text-measurement']
     })
     const measuredRender = new Render({ engine: capable })
+
     await measuredRender.init(800, 600, 0xffffff)
     capable.query = vi.fn(() => ({
       type: 'text-measurement' as const,
@@ -70,6 +74,7 @@ describe('Render', () => {
       lines: ['Hello']
     }))
     const flush = vi.spyOn(measuredRender, 'flushFrame')
+
     expect(measuredRender.measureText(layout).width).toBe(45)
     expect(capable.query).toHaveBeenCalledExactlyOnceWith({
       type: 'measure-text',
@@ -86,19 +91,25 @@ describe('Render', () => {
     await render.init(800, 600, 0xffffff)
     const element = new RenderContainer()
     const second = new RenderContainer()
+
     render.viewport.view.addChild(element)
     render.viewport.view.addChild(second)
     render.viewport.getElementById = vi.fn((id) => {
-      if (id === 'missing') return undefined
+      if (id === 'missing') {
+        return undefined
+      }
+
       return id === 'b' ? second : element
     })
     Object.defineProperty(engine, 'capabilities', {
       value: new Set([...engine.capabilities, 'local-content-bounds'])
     })
     const bounds = { x: 0, y: 0, width: 120, height: 70 }
+
     engine.query = vi.fn(() => ({ type: 'bounds', bounds }))
     const flush = vi.spyOn(render, 'flushFrame')
     const result = render.measureElementContentBounds(['a', 'missing', 'b'])
+
     expect(result).toEqual([
       { elementId: 'a', bounds },
       { elementId: 'missing', bounds: null },
@@ -128,6 +139,7 @@ describe('Render', () => {
   it('captures only the requested current subtree through the abstract engine', async () => {
     await render.init(800, 600, 0xffffff)
     const element = new RenderContainer()
+
     render.viewport.view.addChild(element)
     render.viewport.getElementById = vi.fn(() => element)
     const expected = {
@@ -137,11 +149,13 @@ describe('Render', () => {
       height: 240,
       bounds: { x: 0, y: 0, width: 240, height: 240 }
     }
+
     engine.query = vi.fn(() => expected)
     Object.defineProperty(engine, 'capabilities', {
       value: new Set([...engine.capabilities, 'snapshot'])
     })
     const flush = vi.spyOn(render, 'flushFrame')
+
     expect(
       render.captureElementSnapshot('drawing', 1024, {
         nativeResolution: true,
@@ -170,6 +184,7 @@ describe('Render', () => {
     } as RenderContainerData)
     const scene = render.viewport.view.children[0] as RenderContainer
     const child = new RenderGraphics().rect(0, 0, 80, 40)
+
     scene.addChild(child)
     Object.defineProperty(engine, 'capabilities', {
       value: new Set([...engine.capabilities, 'snapshot'])
@@ -181,6 +196,7 @@ describe('Render', () => {
       height: 40,
       bounds: { x: 0, y: 0, width: 80, height: 40 }
     }
+
     engine.query = vi.fn(() => expected as never)
     expect(render.viewport.getElementById('sheet-a')).toBeUndefined()
     expect(render.captureElementSnapshot('sheet-a')).toEqual(expected)
@@ -244,11 +260,14 @@ describe('Render', () => {
 
   it('coalesces pan, zoom, canonical, and computed invalidations into one demanded frame', async () => {
     const updateLayer = vi.fn(() => false)
+
     await render.init(100, 100, 0)
     const requestFrame = vi.spyOn(engine, 'requestFrame')
+
     const flushCount = () =>
       engine.getOperations().filter((operation) => operation.type === 'flush')
         .length
+
     vi.spyOn(render.viewport, 'panTo').mockImplementation(() => undefined)
     vi.spyOn(render.viewport, 'zoomTo').mockImplementation(() => undefined)
     vi.spyOn(render.viewport, 'updateElement').mockImplementation(
@@ -297,8 +316,10 @@ describe('Render', () => {
 
   it('does not loop a failed frame without a new invalidation', async () => {
     const app = await render.init(100, 100, 0)
+
     render.start()
     const renderFailure = new Error('render failed')
+
     app.render = vi.fn(() => {
       throw renderFailure
     })
@@ -315,6 +336,7 @@ describe('Render', () => {
     const firstSubscriber = vi.fn()
     const laterSubscriber = vi.fn()
     const disposeFirst = render.subscribeToFrameComplete(firstSubscriber)
+
     render.subscribeToFrameComplete(() => {
       throw new Error('frame observer failed')
     })
@@ -342,6 +364,7 @@ describe('Render', () => {
       x: 0,
       y: 0
     } as unknown as RenderContainerData
+
     vi.spyOn(render.viewport, 'switchWorkspace')
 
     render.switchWorkspace(data)
@@ -357,6 +380,7 @@ describe('Render', () => {
       x: 0,
       y: 0
     } as unknown as RenderContainerData
+
     vi.spyOn(render.viewport, 'addContainer')
 
     render.addContainer(data)
@@ -372,6 +396,7 @@ describe('Render', () => {
       name: 'el1',
       lock: false
     } as unknown as RenderElementData
+
     vi.spyOn(render.viewport, 'addElement')
 
     render.addElement(data)
@@ -383,6 +408,7 @@ describe('Render', () => {
     const errorSpy = vi
       .spyOn(console, 'error')
       .mockImplementation(() => undefined)
+
     render.switchWorkspace({
       id: 'workspace',
       type: 'WORKSPACE',
@@ -399,6 +425,7 @@ describe('Render', () => {
     })
 
     let failedElement: SceneElement | undefined
+
     expect(() => {
       failedElement = render.addElement({
         id: 'bad-vector',
@@ -432,6 +459,7 @@ describe('Render', () => {
 
   it('should not poison render transforms when direct property updates receive invalid values', () => {
     const element = new RenderGraphics()
+
     element.rect(0, 0, 24, 28).fill(0xffffff)
     element.x = 12
     element.y = 16
@@ -487,6 +515,7 @@ describe('Render', () => {
     ).not.toThrow()
 
     const element = render.getElementById('unknown-invalid')
+
     expect(element?.visible).toBe(true)
     expect(element?.x).toBe(0)
     expect(element?.y).toBe(0)
@@ -503,6 +532,7 @@ describe('Render', () => {
   it('destroys removed nodes and recreates them without prior-engine handles', async () => {
     const firstEngine = new RecordingRenderEngine({ name: 'remove-first' })
     const lifecycleRender = new Render({ engine: firstEngine })
+
     await lifecycleRender.init(100, 100, 0, {})
     lifecycleRender.switchWorkspace({ label: 'workspace-1', x: 0, y: 0 })
     const initialData = {
@@ -529,6 +559,7 @@ describe('Render', () => {
 
     lifecycleRender.dispose()
     const secondEngine = new RecordingRenderEngine({ name: 'remove-second' })
+
     lifecycleRender.setEngine(secondEngine)
     await lifecycleRender.init(100, 100, 0, {})
     lifecycleRender.switchWorkspace({ label: 'workspace-1', x: 0, y: 0 })
@@ -556,6 +587,7 @@ describe('Render', () => {
   it('retains a node for retry when the engine destroy command fails', async () => {
     const retryEngine = new RecordingRenderEngine({ name: 'remove-retry' })
     const retryRender = new Render({ engine: retryEngine })
+
     await retryRender.init(100, 100, 0, {})
     retryRender.switchWorkspace({ label: 'workspace-1', x: 0, y: 0 })
     const node = retryRender.addElement({
@@ -567,15 +599,18 @@ describe('Render', () => {
       width: 20,
       height: 20
     } as unknown as RenderElementData)
+
     expect(node).toBeDefined()
     const initialHandle = node?.getEngineHandle()
     const originalExecute = retryEngine.execute.bind(retryEngine)
     let shouldFailDestroy = true
+
     vi.spyOn(retryEngine, 'execute').mockImplementation((command) => {
       if (command.type === 'destroy-object' && shouldFailDestroy) {
         shouldFailDestroy = false
         throw new Error('destroy failed')
       }
+
       return originalExecute(command)
     })
 
@@ -597,6 +632,7 @@ describe('Render', () => {
       name: 'teardown-cleanup-retry'
     })
     const teardownRender = new Render({ engine: teardownEngine })
+
     await teardownRender.init(100, 100, 0, {})
     teardownRender.switchWorkspace({ label: 'workspace-1', x: 0, y: 0 })
     const node = teardownRender.addElement({
@@ -612,11 +648,13 @@ describe('Render', () => {
     const initialHandle = node?.getEngineHandle()
     const originalExecute = teardownEngine.execute.bind(teardownEngine)
     let shouldFailDestroy = true
+
     vi.spyOn(teardownEngine, 'execute').mockImplementation((command) => {
       if (command.type === 'destroy-object' && shouldFailDestroy) {
         shouldFailDestroy = false
         throw new Error('teardown cleanup failed')
       }
+
       return originalExecute(command)
     })
     teardownRender.registerTeardownCleanup(() => {
@@ -649,6 +687,7 @@ describe('Render', () => {
       name: 'parent-remove-readd'
     })
     const hierarchyRender = new Render({ engine: hierarchyEngine })
+
     await hierarchyRender.init(100, 100, 0, {})
     hierarchyRender.switchWorkspace({ label: 'workspace-1', x: 0, y: 0 })
     const childData = {
@@ -671,9 +710,11 @@ describe('Render', () => {
     } as unknown as RenderElementData
     const child = hierarchyRender.addElement(childData)
     const parent = hierarchyRender.addElement(parentData)
+
     if (!child || !parent) {
       throw new Error('Expected parent and child render nodes')
     }
+
     expect(child.parent).toBe(parent)
     const childHandle = child.getEngineHandle()
     const parentHandle = parent.getEngineHandle()
@@ -707,6 +748,7 @@ describe('Render', () => {
       name: 'parent-detach-retry'
     })
     const retryRender = new Render({ engine: retryEngine })
+
     await retryRender.init(100, 100, 0, {})
     retryRender.switchWorkspace({ label: 'workspace-1', x: 0, y: 0 })
     const childData = {
@@ -729,9 +771,11 @@ describe('Render', () => {
     } as unknown as RenderElementData
     const child = retryRender.addElement(childData)
     const parent = retryRender.addElement(parentData)
+
     if (!child || !parent) {
       throw new Error('Expected retry parent and child render nodes')
     }
+
     const childHandle = child.getEngineHandle()
     const parentHandle = parent.getEngineHandle()
     const originalExecute = retryEngine.execute.bind(retryEngine)
@@ -747,6 +791,7 @@ describe('Render', () => {
           shouldFailDetach = false
           throw new Error('child detach failed')
         }
+
         return originalExecute(command)
       })
 
@@ -792,13 +837,17 @@ describe('Render', () => {
     } as unknown as RenderElementData
     const child = render.addElement(childData)
     const parent = render.addElement(parentData)
+
     if (!child || !parent) {
       throw new Error('Expected append retry nodes')
     }
+
     const previousParent = child.parent
+
     if (!previousParent) {
       throw new Error('Expected the child to start in the workspace')
     }
+
     const childHandle = child.getEngineHandle()
     const parentHandle = parent.getEngineHandle()
     const originalExecute = engine.execute.bind(engine)
@@ -815,6 +864,7 @@ describe('Render', () => {
           shouldFailAppend = false
           throw new Error('hierarchy append failed')
         }
+
         return originalExecute(command)
       })
     const completeParentData = {
@@ -884,9 +934,11 @@ describe('Render', () => {
       const child = render.addElement(childData)
       const previousParent = render.addElement(previousParentData)
       const nextParent = render.addElement(nextParentData)
+
       if (!child || !previousParent || !nextParent) {
         throw new Error('Expected reparent retry nodes')
       }
+
       const childHandle = child.getEngineHandle()
       const previousParentHandle = previousParent.getEngineHandle()
       const nextParentHandle = nextParent.getEngineHandle()
@@ -901,10 +953,14 @@ describe('Render', () => {
               if (command.parent !== currentEngineParent) {
                 throw new Error('remove-child parent mismatch')
               }
+
               const result = originalExecute(command)
+
               currentEngineParent = null
+
               return result
             }
+
             if (command.type === 'append-child') {
               if (
                 currentEngineParent !== null &&
@@ -912,6 +968,7 @@ describe('Render', () => {
               ) {
                 throw new Error('engine requires explicit remove before append')
               }
+
               if (
                 command.parent === nextParentHandle &&
                 failureCommand === 'append-child' &&
@@ -920,14 +977,19 @@ describe('Render', () => {
                 shouldFailHandoff = false
                 throw new Error('append-child reparent failed')
               }
+
               const result = originalExecute(command)
+
               currentEngineParent = command.parent
+
               return result
             }
+
             if (command.type === 'set-child-index') {
               if (command.parent !== currentEngineParent) {
                 throw new Error('set-child-index parent mismatch')
               }
+
               if (
                 command.parent === nextParentHandle &&
                 failureCommand === 'set-child-index' &&
@@ -938,6 +1000,7 @@ describe('Render', () => {
               }
             }
           }
+
           return originalExecute(command)
         })
       const completeNextParentData = {
@@ -1022,9 +1085,11 @@ describe('Render', () => {
     const first = render.addElement(firstData)
     const second = render.addElement(secondData)
     const parent = render.addElement(parentData)
+
     if (!first || !second || !parent) {
       throw new Error('Expected reorder retry nodes')
     }
+
     const secondHandle = second.getEngineHandle()
     const parentHandle = parent.getEngineHandle()
     const originalExecute = engine.execute.bind(engine)
@@ -1041,6 +1106,7 @@ describe('Render', () => {
           shouldFailReorder = false
           throw new Error('sibling reorder failed')
         }
+
         return originalExecute(command)
       })
     const reorderedParentData = {
@@ -1088,9 +1154,11 @@ describe('Render', () => {
       height: 20
     } as unknown as RenderElementData
     const element = render.addElement(elementData)
+
     if (!element) {
       throw new Error('Expected destroy retry node')
     }
+
     const handle = element.getEngineHandle()
     const originalExecute = engine.execute.bind(engine)
     let shouldFailDestroy = true
@@ -1105,6 +1173,7 @@ describe('Render', () => {
           shouldFailDestroy = false
           throw new Error('destroy lookup failed')
         }
+
         return originalExecute(command)
       })
     const querySpy = vi.spyOn(engine, 'query').mockReturnValue({
@@ -1162,9 +1231,11 @@ describe('Render', () => {
     const second = render.addElement(secondData)
     const target = render.addElement(targetData)
     const group = render.addElement(groupData)
+
     if (!first || !second || !target || !group || !group.parent) {
       throw new Error('Expected hierarchy render nodes')
     }
+
     const workspace = group.parent
     const stableOrder = workspace.children.map((child) => child.label)
 
@@ -1228,9 +1299,11 @@ describe('Render', () => {
     const sibling = render.addElement(siblingData)
     const source = render.addElement(sourceData)
     const target = render.addElement(targetData)
+
     if (!child || !sibling || !source || !target) {
       throw new Error('Expected identity-safe hierarchy nodes')
     }
+
     const childHandle = child.getEngineHandle()
 
     render.projectHierarchy(targetData.id, [siblingData.id, childData.id])
@@ -1262,6 +1335,7 @@ describe('Render', () => {
       name: 'workspace-reset'
     })
     const workspaceRender = new Render({ engine: workspaceEngine })
+
     await workspaceRender.init(100, 100, 0, {})
     workspaceRender.switchWorkspace({ label: 'workspace-old', x: 24, y: 36 })
     const resetStartIndex = workspaceEngine.getOperations().length
@@ -1274,6 +1348,7 @@ describe('Render', () => {
       .flatMap((operation) =>
         operation.type === 'update-object' ? [operation.command.properties] : []
       )
+
     expect(resetProperties).toContainEqual({ label: '' })
     expect(resetProperties).toContainEqual({ x: 0 })
     expect(resetProperties).toContainEqual({ y: 0 })
@@ -1284,6 +1359,7 @@ describe('Render', () => {
   it('should delegate updateElement to viewport', () => {
     const before = 0
     const after = 10
+
     vi.spyOn(render.viewport, 'updateElement')
 
     render.updateElement('el1', 'x', before, after)
@@ -1300,6 +1376,7 @@ describe('Render', () => {
   it('should delegate updateElementProperties to viewport', () => {
     const element = new RenderContainer()
     const after = 10
+
     vi.spyOn(render.viewport, 'updateElementProperties')
 
     render.updateElementProperties(element, 'x', after)
@@ -1313,6 +1390,7 @@ describe('Render', () => {
 
   it('converts between workspace and element-local coordinates through Render ancestry', () => {
     const element = new RenderGraphics()
+
     element.x = 10
     element.y = 20
     render.viewport.view.x = 100
@@ -1337,6 +1415,7 @@ describe('Render', () => {
 
   it('converts between strategy source space and workspace through the last projected source origin', () => {
     const element = new RenderGraphics()
+
     element.x = 10
     element.y = 20
     element.setSourceSpaceOrigin({ x: 30, y: 40 })
@@ -1436,6 +1515,7 @@ describe('Render', () => {
     }
     const freshEngine = new RecordingRenderEngine({ name: 'fresh-trace' })
     const freshRender = new Render({ engine: freshEngine })
+
     const drawOperationsAfter = (
       targetEngine: RecordingRenderEngine,
       startIndex: number
@@ -1467,6 +1547,7 @@ describe('Render', () => {
 
       await freshRender.init(100, 100, 0)
       const freshStartIndex = freshEngine.getOperations().length
+
       freshRender.addElement(finalData)
       freshRender.flushFrame()
       const freshDrawOperations = drawOperationsAfter(
@@ -1484,16 +1565,21 @@ describe('Render', () => {
   it('should coalesce render requests made during layer updates into the current frame', async () => {
     const appRender = vi.fn()
     const app = await render.init(100, 100, 0)
+
     app.render = appRender
 
     let shouldUpdate = true
+
     render.registerLayer({
       name: 'test-current-frame-request-layer',
       layer: {},
+
       shouldUpdate: () => shouldUpdate,
+
       update: () => {
         shouldUpdate = false
         render.requestRender()
+
         return true
       }
     })
@@ -1539,12 +1625,15 @@ describe('Render', () => {
 
   it('evaluates layers by zIndex and stops evaluating an unregistered layer', () => {
     const order: string[] = []
+
     render.registerLayer({
       name: 'later-layer',
       layer: {},
       zIndex: 20,
+
       update: () => {
         order.push('later')
+
         return false
       }
     })
@@ -1552,8 +1641,10 @@ describe('Render', () => {
       name: 'earlier-layer',
       layer: {},
       zIndex: 10,
+
       update: () => {
         order.push('earlier')
+
         return false
       }
     })
@@ -1572,6 +1663,7 @@ describe('Render', () => {
     await render.init(100, 100, 0)
     const execute = engine.execute.bind(engine)
     let failNextLayerAttach = true
+
     engine.execute = vi.fn((command) => {
       if (
         failNextLayerAttach &&
@@ -1581,6 +1673,7 @@ describe('Render', () => {
         failNextLayerAttach = false
         throw new Error('layer attachment failed')
       }
+
       return execute(command)
     })
 
@@ -1592,6 +1685,7 @@ describe('Render', () => {
     ).toThrow('layer attachment failed')
 
     const replacementUpdate = vi.fn(() => false)
+
     expect(() =>
       render.registerLayer({
         name: 'recoverable-layer',
@@ -1606,6 +1700,7 @@ describe('Render', () => {
 
   it('should delegate zoomFit to viewport', () => {
     const uiBounds = new DOMRect(0, 0, 100, 100)
+
     vi.spyOn(render.viewport, 'zoomFit')
 
     render.zoomFit(uiBounds)
@@ -1655,6 +1750,7 @@ describe('Render', () => {
 
   it('should delegate getMousePosInWorkspace to viewport', () => {
     const mouseData = { clientX: 10, clientY: 20 } as MouseData
+
     vi.spyOn(render.viewport, 'getMousePosInWorkspace')
 
     render.getMousePosInWorkspace(mouseData)
@@ -1666,6 +1762,7 @@ describe('Render', () => {
 
   it('should delegate getElementById to viewport', () => {
     const element = new RenderContainer() as SceneElement
+
     vi.spyOn(render.viewport, 'getElementById').mockReturnValue(element)
 
     const result = render.getElementById('el1')
@@ -1691,6 +1788,7 @@ describe('Render', () => {
       target,
       point: { x: 10, y: 20 }
     }))
+
     engine.query = query
 
     const result = render.getElementIdAtClientPos({ x: 10, y: 20 })
@@ -1714,12 +1812,15 @@ describe('Render', () => {
       width: 10,
       height: 10
     } as unknown as RenderElementData)
+
     if (!element) {
       throw new Error('Expected render element')
     }
+
     parent.addChild(element)
     element.label = ''
     const target = element.getEngineHandle()
+
     engine.query = vi.fn(() => ({
       type: 'hit' as const,
       target,

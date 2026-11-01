@@ -5,6 +5,7 @@ import { resolveAppEnvironment } from './app-environment.mjs'
 
 const environment = resolveAppEnvironment(process.env, { allowHosted: true })
 const hosted = new URL(environment.url).protocol === 'https:'
+
 export default defineConfig({
   testDir: '.',
   testMatch: ['**/e2e/**/*.spec.ts', '**/src/**/__tests__/*.browser.spec.ts'],

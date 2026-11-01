@@ -19,6 +19,7 @@ const withFixture = (run) => {
   const root = fs.mkdtempSync(
     path.join(repositoryRoot, 'tmp', 'framework-release-artifacts-fixture-')
   )
+
   try {
     run(root)
   } finally {
@@ -36,6 +37,7 @@ const createInputs = (root) => {
   ].map((pkg) => {
     const packageRoot = path.join(root, 'packages', pkg.name.split('/')[1])
     const staleDist = path.join(packageRoot, 'dist', 'index.js')
+
     fs.mkdirSync(path.dirname(staleDist), { recursive: true })
     fs.writeFileSync(staleDist, 'stale source checkout build')
     const tarballPath = path.join(
@@ -43,8 +45,10 @@ const createInputs = (root) => {
       'artifacts',
       `${pkg.name.split('/')[1]}-${pkg.version}.tgz`
     )
+
     fs.mkdirSync(path.dirname(tarballPath), { recursive: true })
     fs.writeFileSync(tarballPath, `isolated validated artifact ${pkg.name}`)
+
     return { ...pkg, tarballPath, integrity: integrityOf(tarballPath) }
   })
   const consumerEvidence = {
@@ -54,6 +58,7 @@ const createInputs = (root) => {
       packages.map(({ name, integrity }) => [name, integrity])
     )
   }
+
   return { packages, consumerEvidence }
 }
 

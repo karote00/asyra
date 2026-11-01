@@ -11,16 +11,21 @@ const { openLocalTransport } = require('../agent-transport.cjs')
 const { completeTurn } = require('../agent-transport.cjs')
 const { providerProfile } = require('../agent-transport.cjs')
 const { spawnSync } = require('node:child_process')
+
 function peer() {
   const child = new EventEmitter()
+
   child.stdout = new EventEmitter()
   child.stderr = new EventEmitter()
   child.stdin = { write: (line) => child.emit('request', JSON.parse(line)) }
   child.kill = () => child.emit('close', 0)
+
   return child
 }
+
 test('transport policy has no runtime environment, tools, workspace roots or inherited instructions', () => {
   const request = threadRequest('/isolated', 'selected')
+
   assert.deepEqual(request.environments, [])
   assert.deepEqual(request.dynamicTools, [])
   assert.deepEqual(request.runtimeWorkspaceRoots, [])
@@ -34,6 +39,7 @@ test('transport policy has no runtime environment, tools, workspace roots or inh
 test('protocol routes matching responses and rejects unsolicited tool execution without reflecting raw data', async () => {
   const child = peer()
   const protocol = createProtocol(child)
+
   child.once('request', ({ id }) =>
     child.stdout.emit(
       'data',
@@ -42,6 +48,7 @@ test('protocol routes matching responses and rejects unsolicited tool execution 
   )
   assert.deepEqual(await protocol.request('initialize', {}), { ok: true })
   const pending = protocol.request('turn/start', {})
+
   child.stdout.emit(
     'data',
     Buffer.from(
@@ -56,6 +63,7 @@ test('malformed and oversized protocol output fails closed', async () => {
     const child = peer()
     const protocol = createProtocol(child)
     const pending = protocol.request('initialize', {})
+
     child.stdout.emit('data', Buffer.from(bytes))
     await assert.rejects(pending, /Provider protocol/)
     await protocol.close()
@@ -64,11 +72,13 @@ test('malformed and oversized protocol output fails closed', async () => {
 test('protocol preserves UTF-8 across stream chunk boundaries', async () => {
   const child = peer()
   const protocol = createProtocol(child)
+
   child.once('request', ({ id }) => {
     const bytes = Buffer.from(
       JSON.stringify({ id, result: { text: 'café' } }) + '\n'
     )
     const split = bytes.indexOf(Buffer.from('é')) + 1
+
     child.stdout.emit('data', bytes.subarray(0, split))
     child.stdout.emit('data', bytes.subarray(split))
   })
@@ -79,27 +89,37 @@ test('protocol preserves UTF-8 across stream chunk boundaries', async () => {
 })
 
 const executable = '/Applications/ChatGPT.app/Contents/Resources/codex'
+
 test('subscription transport refuses API-key authentication before starting a model turn', async () => {
   let turns = 0
   const protocol = {
     events: new EventEmitter(),
+
     notify: () => undefined,
+
     async request(method) {
-      if (method === 'account/read') return { account: { type: 'apiKey' } }
-      if (method === 'thread/start')
+      if (method === 'account/read') {
+        return { account: { type: 'apiKey' } }
+      }
+
+      if (method === 'thread/start') {
         return {
           thread: { id: 'thread' },
           model: 'model',
           instructionSources: [],
           runtimeWorkspaceRoots: []
         }
+      }
+
       if (method === 'turn/start') {
         turns++
         throw new Error('turn must not start')
       }
+
       return {}
     }
   }
+
   await assert.rejects(
     completeTurn(
       protocol,
@@ -115,19 +135,29 @@ test('turn completion binds final JSON and provider usage, cancellation stays un
     const controller = new AbortController()
     const protocol = {
       events,
+
       notify: () => undefined,
+
       async request(method) {
-        if (method === 'account/read') return { account: { type: 'chatgpt' } }
-        if (method === 'thread/start')
+        if (method === 'account/read') {
+          return { account: { type: 'chatgpt' } }
+        }
+
+        if (method === 'thread/start') {
           return {
             thread: { id: 'thread' },
             model: 'model',
             instructionSources: [],
             runtimeWorkspaceRoots: []
           }
+        }
+
         if (method === 'turn/start') {
           setImmediate(() => {
-            if (cancelled) return controller.abort()
+            if (cancelled) {
+              return controller.abort()
+            }
+
             for (const item of [
               { type: 'userMessage', content: [] },
               {
@@ -141,6 +171,7 @@ test('turn completion binds final JSON and provider usage, cancellation stays un
                 params: { threadId: 'thread', turnId: 'turn', item }
               })
             }
+
             events.emit('notification', {
               method: 'thread/tokenUsage/updated',
               params: {
@@ -167,8 +198,10 @@ test('turn completion binds final JSON and provider usage, cancellation stays un
               }
             })
           })
+
           return { turn: { id: 'turn' } }
         }
+
         return {}
       }
     }
@@ -177,6 +210,7 @@ test('turn completion binds final JSON and provider usage, cancellation stays un
       { model: 'model', contract: {}, history: [], signal: controller.signal },
       '/isolated'
     )
+
     assert.equal(result.terminal, !cancelled)
     if (!cancelled) {
       assert.equal(result.text, '{"tool":"finish"}')
@@ -196,21 +230,33 @@ test('cancellation waits for the matching interruption receipt without settling 
     })
     const protocol = {
       events,
+
       notify: () => undefined,
+
       async request(method) {
-        if (method === 'account/read') return { account: { type: 'chatgpt' } }
-        if (method === 'thread/start')
+        if (method === 'account/read') {
+          return { account: { type: 'chatgpt' } }
+        }
+
+        if (method === 'thread/start') {
           return {
             thread: { id: 'thread' },
             model: 'model',
             instructionSources: [],
             runtimeWorkspaceRoots: []
           }
+        }
+
         if (method === 'turn/start') {
           setImmediate(release)
+
           return { turn: { id: 'turn' } }
         }
-        if (method === 'turn/interrupt') interrupts++
+
+        if (method === 'turn/interrupt') {
+          interrupts++
+        }
+
         return {}
       }
     }
@@ -225,8 +271,10 @@ test('cancellation waits for the matching interruption receipt without settling 
       '/isolated'
     ).then((result) => {
       finished = true
+
       return result
     })
+
     await started
     controller.abort()
     await new Promise((resolve) => setImmediate(resolve))
@@ -245,8 +293,9 @@ test('cancellation waits for the matching interruption receipt without settling 
     })
     await new Promise((resolve) => setImmediate(resolve))
     assert.equal(finished, false, 'another turn cannot confirm cancellation')
-    if (receipt === 'closed') events.emit('closed')
-    else if (receipt !== 'missing')
+    if (receipt === 'closed') {
+      events.emit('closed')
+    } else if (receipt !== 'missing') {
       events.emit('notification', {
         method: 'turn/completed',
         params: {
@@ -254,7 +303,10 @@ test('cancellation waits for the matching interruption receipt without settling 
           turn: { id: 'turn', status: receipt }
         }
       })
+    }
+
     const result = await pending
+
     assert.equal(result.terminal, false)
     assert.equal(
       result.interruptionConfirmed === true,
@@ -275,11 +327,14 @@ test(
       repositoryRoot,
       'tmp/flow-inspector/provider-containment'
     )
+
     fs.mkdirSync(parent, { recursive: true })
     const directory = fs.mkdtempSync(path.join(parent, 'run-'))
     const credential = path.join(parent, 'fake-auth.json')
+
     fs.writeFileSync(credential, 'formal-test-marker')
     const reference = path.join(directory, 'auth.json')
+
     fs.symlinkSync(credential, reference)
     const script = `const fs=require('node:fs');const cp=require('node:child_process');
     let denied=0;
@@ -306,6 +361,7 @@ test(
         timeout: 5000
       }
     )
+
     assert.equal(result.status, 0)
     assert.equal(fs.readFileSync(credential, 'utf8'), 'formal-test-marker')
     assert.equal(fs.lstatSync(reference).isSymbolicLink(), true)
@@ -322,6 +378,7 @@ test(
       repositoryRoot,
       'tmp/flow-inspector/provider-preflight'
     )
+
     fs.mkdirSync(parent, { recursive: true })
     const directory = fs.mkdtempSync(path.join(parent, 'run-'))
     let pid
@@ -329,32 +386,38 @@ test(
       repositoryRoot,
       directory,
       executable,
+
       onSpawn: (value) => {
         pid = value
       }
     })
+
     try {
       const result = await protocol.request('initialize', {
         clientInfo: { name: 'bounded-provider-contract-test', version: '1' },
         capabilities: { experimentalApi: true }
       })
+
       assert.ok(result)
       protocol.notify('initialized')
       const account = await protocol.request('account/read', {
         refreshToken: false
       })
+
       assert.equal(account.account, null)
       assert.equal(fs.existsSync(path.join(directory, 'auth.json')), false)
       const thread = await protocol.request(
         'thread/start',
         threadRequest(directory, 'gpt-5.6-sol')
       )
+
       assert.equal(thread.model, 'gpt-5.6-sol')
       assert.deepEqual(thread.runtimeWorkspaceRoots, [])
       assert.deepEqual(thread.instructionSources, [])
     } finally {
       await protocol.close()
     }
+
     assert.ok(pid)
     assert.throws(() => process.kill(pid, 0), /ESRCH/)
   }

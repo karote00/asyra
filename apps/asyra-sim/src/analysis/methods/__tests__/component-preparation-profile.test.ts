@@ -32,7 +32,11 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             pair.a.bodyId === 'example:joint-2' &&
             pair.b.bodyId === 'obstacle-11'
         )
-        if (!pair) throw new Error('Missing measured pair')
+
+        if (!pair) {
+          throw new Error('Missing measured pair')
+        }
+
         const query = {
           workcell: snapshot.workcell,
           trajectory: snapshot.trajectory,
@@ -52,14 +56,18 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           () => undefined,
           original
         )
+
         expect(baseline.coverage).toBe('complete')
         let originalPreparation = 0,
           addedPreparation = 0
+
         const offsets = (node: MeshNode): number[] =>
           node.children
             ? node.children.flatMap(offsets)
             : node.triangles.map((triangle) => triangle.offset)
+
         const build = meshIndex.buildMeshIndex
+
         vi.spyOn(meshIndex, 'buildMeshIndex').mockImplementation(
           (mesh, checkpoint, hierarchy, checkExecution) => {
             const index = build(
@@ -71,17 +79,24 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               hierarchy,
               checkExecution
             )
-            if (!hierarchy) return index
+
+            if (!hierarchy) {
+              return index
+            }
+
             const fingerprint = JSON.stringify(index.root)
+
             const sourceTriangles = (node: MeshNode): typeof node.triangles =>
               node.children
                 ? node.children.flatMap(sourceTriangles)
                 : node.triangles
+
             const beforeTriangles = sourceTriangles(index.root)
             const result = componentIndex(index, () => {
               addedPreparation++
               checkpoint()
             })
+
             expect(new Set(sourceTriangles(result.root))).toEqual(
               new Set(beforeTriangles)
             )
@@ -91,6 +106,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             )
             expect(result.representatives).toBe(index.representatives)
             expect(result.componentCount).toBe(index.componentCount)
+
             return result
           }
         )
@@ -101,6 +117,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           () => undefined,
           context
         )
+
         // eslint-disable-next-line no-console -- fixed immutable partition feasibility includes original and added preparation
         console.info(
           JSON.stringify({
@@ -116,7 +133,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           })
         )
         expect(context.work).toBeLessThanOrEqual(500001)
-        if (candidate.coverage === 'complete')
+        if (candidate.coverage === 'complete') {
           expect(
             candidate.leaves.map((leaf) => [
               leaf.start,
@@ -132,6 +149,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
               leaf.penetration
             ])
           )
+        }
       },
       20000
     )
@@ -142,6 +160,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         addedPreparation = 0,
         builds = 0
       const build = meshIndex.buildMeshIndex
+
       vi.spyOn(meshIndex, 'buildMeshIndex').mockImplementation(
         (mesh, checkpoint, hierarchy, checkExecution) => {
           builds++
@@ -154,6 +173,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             hierarchy,
             checkExecution
           )
+
           return hierarchy
             ? componentIndex(index, () => {
                 addedPreparation++
@@ -163,6 +183,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         }
       )
       const result = runOriginalPartMethod(snapshot, () => undefined)
+
       // eslint-disable-next-line no-console -- whole-workload feasibility includes all immutable preparation charges
       console.info(
         JSON.stringify({

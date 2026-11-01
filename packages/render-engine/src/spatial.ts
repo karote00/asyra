@@ -132,6 +132,7 @@ export type RenderEngineSpatialResult =
       readonly type: 'spatial-hits'
       readonly hits: readonly RenderEngineSpatialHit[]
     }
+
 export function isSpatialQuery(
   query: import('./types.js').RenderEngineQuery
 ): query is RenderEngineSpatialQuery {

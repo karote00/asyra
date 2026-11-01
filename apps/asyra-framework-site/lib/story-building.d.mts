@@ -7,6 +7,7 @@ export const buildingExample: Readonly<{
   houseFloors: number
   towerFloors: number
 }>
+
 export function getBuildingGeometry(
   rise: number,
   tower: number

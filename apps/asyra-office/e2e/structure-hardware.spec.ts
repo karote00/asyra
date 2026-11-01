@@ -10,6 +10,7 @@ test('structural review records the actual hardware renderer and enlarged walls'
     'Run explicitly on a hardware WebGL host.'
   )
   const errors: string[] = []
+
   page.on('pageerror', (error) => errors.push(error.message))
   await page.goto('/')
   await page
@@ -22,10 +23,17 @@ test('structural review records the actual hardware renderer and enlarged walls'
   const canvas = page.getByLabel('Office 3D scene').locator('canvas')
   const graphics = await canvas.evaluate((node) => {
     const gl = (node as HTMLCanvasElement).getContext('webgl2')
-    if (!gl || gl.isContextLost())
+
+    if (!gl || gl.isContextLost()) {
       throw new Error('Missing live WebGL2 context')
+    }
+
     const extension = gl.getExtension('WEBGL_debug_renderer_info')
-    if (!extension) throw new Error('Cannot verify the graphics backend')
+
+    if (!extension) {
+      throw new Error('Cannot verify the graphics backend')
+    }
+
     return {
       renderer: String(gl.getParameter(extension.UNMASKED_RENDERER_WEBGL)),
       vendor: String(gl.getParameter(extension.UNMASKED_VENDOR_WEBGL)),
@@ -34,6 +42,7 @@ test('structural review records the actual hardware renderer and enlarged walls'
       pixelRatio: devicePixelRatio
     }
   })
+
   expect(graphics.renderer).not.toMatch(
     /swiftshader|llvmpipe|softpipe|software rasterizer/i
   )
@@ -59,6 +68,7 @@ test('structural review records the actual hardware renderer and enlarged walls'
     path: info.outputPath('structure-hardware-close.png')
   })
   const metadata = info.outputPath('hardware-review-state.json')
+
   await writeFile(
     metadata,
     JSON.stringify(

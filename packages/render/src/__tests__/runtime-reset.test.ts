@@ -21,6 +21,7 @@ describe('Render instance runtime reset', () => {
     const oldViewport = render.viewport,
       oldLayer = vi.fn(() => true),
       oldFrame = vi.fn()
+
     render.registerLayer({ name: 'custom', layer: {}, update: oldLayer })
     render.subscribeToFrameComplete(oldFrame)
     await render.init(10, 10, 0)
@@ -55,6 +56,7 @@ describe('Render instance runtime reset', () => {
       () => new RecordingRenderEngine({ name: 'runtime-reset' })
     )
     const releaseCleanup = render.registerTeardownCleanup(cleanup)
+
     render.resetRuntime()
     render.setEngineProvider(
       () => new RecordingRenderEngine({ name: 'runtime-reset' })
@@ -70,15 +72,21 @@ describe('Render instance runtime reset', () => {
   it('a retained old frame callback cannot consume the successor frame', async () => {
     const engine = new RecordingRenderEngine({ name: 'runtime-reset' }),
       render = new Render({ engine })
+
     engine.requestFrame = vi.fn()
     await render.init(10, 10, 0)
     render.start()
     render.requestRender()
     const oldFrame = vi.mocked(engine.requestFrame).mock.calls[0]?.[0]
-    if (!oldFrame) throw new Error('Missing scheduled frame')
+
+    if (!oldFrame) {
+      throw new Error('Missing scheduled frame')
+    }
+
     render.resetRuntime()
     const next = new RecordingRenderEngine({ name: 'runtime-reset' }),
       frame = vi.fn()
+
     render.setEngine(next)
     await render.init(10, 10, 0)
     render.start()
@@ -95,6 +103,7 @@ describe('Render instance runtime reset', () => {
     const engine = new RecordingRenderEngine({ name: 'runtime-reset' }),
       render = new Render({ engine }),
       later = vi.fn()
+
     render.registerTeardownCleanup(() => {
       throw new Error('render cleanup failed')
     })
@@ -118,11 +127,15 @@ describe('Render instance runtime reset', () => {
     const barrier = new Promise<void>((resolve) => {
       finish = resolve
     })
+
     engine.initialize = async (options) => {
       await barrier
+
       return initialize(options)
     }
+
     const pending = render.init(10, 10, 0)
+
     expect(() => render.resetRuntime()).toThrow('idle')
     finish?.()
     await pending
@@ -135,19 +148,23 @@ describe('Render instance runtime reset', () => {
       engine: new RecordingRenderEngine({ name: 'runtime-reset' })
     })
     const failures: unknown[] = []
+
     render.registerLayer({
       name: 'busy',
       layer: {},
+
       update: () => {
         try {
           render.resetRuntime()
         } catch (error) {
           failures.push(error)
         }
+
         return true
       }
     })
     const app = await render.init(10, 10, 0)
+
     render.start()
     expect(failures).toEqual([
       expect.objectContaining({ message: expect.stringContaining('idle') })
@@ -162,6 +179,7 @@ describe('Render instance runtime reset', () => {
         engine: new RecordingRenderEngine({ name: 'runtime-reset' })
       })
     const app = await second.init(10, 10, 0)
+
     first.resetRuntime()
     expect(second.app).toBe(app)
     second.resetRuntime()
@@ -172,6 +190,7 @@ describe('Render instance runtime reset', () => {
         engine: new RecordingRenderEngine({ name: 'frame-reset' })
       }),
       later = vi.fn()
+
     await render.init(10, 10, 0)
     render.subscribeToFrameComplete(() => render.resetRuntime())
     render.subscribeToFrameComplete(later)
@@ -183,14 +202,20 @@ describe('Render instance runtime reset', () => {
     const first = new RecordingRenderEngine({ name: 'interaction-old' }),
       render = new Render({ engine: first })
     const subscribe = first.subscribeToInteraction.bind(first)
+
     first.subscribeToInteraction = vi.fn(subscribe)
     await render.init(10, 10, 0)
     const old = vi.mocked(first.subscribeToInteraction).mock.calls[0]?.[0]
-    if (!old) throw new Error('Missing interaction subscription')
+
+    if (!old) {
+      throw new Error('Missing interaction subscription')
+    }
+
     render.resetRuntime()
     const next = new RecordingRenderEngine({ name: 'interaction-next' }),
       layer = new RenderContainer(),
       shape = new RenderGraphics()
+
     shape.label = 'next-shape'
     layer.addChild(shape)
     render.setEngine(next)
@@ -214,6 +239,7 @@ describe('Render instance runtime reset', () => {
     const hover = vi
       .spyOn(reactiveEvents, 'renderPointerHover')
       .mockImplementation(() => undefined)
+
     try {
       old(event)
       expect(hover).not.toHaveBeenCalled()
@@ -228,6 +254,7 @@ describe('Render instance runtime reset', () => {
   it('attempts every pointer listener removal even when one fails', () => {
     const target = { addEventListener: vi.fn(), removeEventListener: vi.fn() }
     const bridge = new RenderInteractionBridge(() => null)
+
     bridge.attach(target as unknown as HTMLCanvasElement)
     target.removeEventListener.mockImplementationOnce(() => {
       throw new Error('pointer detach failed')
@@ -243,15 +270,19 @@ describe('Render instance runtime reset', () => {
       initialized = engine.initialize({ host: {}, width: 10, height: 10 })
     const runtime = new RenderObjectRuntime(engine, initialized.root),
       later = vi.fn()
+
     const style = (cleanup: () => void): RenderResourceStyle => ({
       __renderResourceDescriptor: {
         kind: 'gradient',
         data: { type: 'linear', colorStops: [] }
       },
+
       __subscribeRenderResourceRelease: () => cleanup
     })
+
     const first = new RenderGraphics(),
       second = new RenderGraphics()
+
     first.rect(0, 0, 1, 1).fill(
       style(() => {
         throw new Error('resource detach failed')

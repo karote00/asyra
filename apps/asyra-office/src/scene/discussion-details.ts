@@ -23,6 +23,7 @@ function coniferSpray() {
     ],
     uvs: [0, 0.5, 1, 0.5, 0.4, 1, 0.4, 0.5, 0.4, 0, 0.4, 0.5]
   }
+
   append(
     stems,
     tube(
@@ -37,26 +38,33 @@ function coniferSpray() {
   for (let node = 0; node < 6; node++) {
     const x = 0.012 + node * 0.017,
       reach = 0.028 * (1 - node * 0.1)
+
     for (const side of [-1, 1]) {
       const start: Vec = [x, 0, x * 0.04],
         end: Vec = [x + 0.022, side * reach, 0.007]
+
       append(stems, tube([start, end], [0.0007, 0.00025], 5))
       for (let rank = 0; rank < 3; rank++) {
         const t = (rank + 0.4) / 3,
           origin: Vec = start.map((n, axis) => n + (end[axis] - n) * t) as Vec
+
         for (const fork of [-1, 1]) {
           const direction: Vec = [
             0.7,
             side * 0.6 + fork * 0.45,
             0.15 + rank * 0.08
           ]
+
           appendAlong(leaves, needle, origin, direction, 0.75 + rank * 0.09)
         }
       }
+
       appendAlong(leaves, needle, end, [0.7, side * 0.7, 0.15], 0.8)
     }
   }
+
   appendAlong(leaves, needle, [0.115, 0, 0.005], [1, 0, 0.15], 0.8)
+
   return { leaves, stems }
 }
 
@@ -71,6 +79,7 @@ function appendAlong(
   const pitch =
     (-Math.atan2(direction[2], Math.hypot(direction[0], direction[1])) * 180) /
     Math.PI
+
   append(target, source, position, [0, pitch, yaw], [scale, scale, scale])
 }
 
@@ -107,11 +116,14 @@ export function discussionTree(
   seed: number
 ): AssetPart[] {
   const { height, crownRadius, potDiameter, potHeight } = dimensions
+
   if (
     Object.values(dimensions).some((n) => !Number.isFinite(n) || n <= 0) ||
     height <= potHeight
-  )
+  ) {
     throw new Error('Invalid discussion conifer dimensions')
+  }
+
   const stems = emptyMesh(),
     groups: GeometryInstance[][] = [[], [], []],
     prototype = coniferSpray()
@@ -119,9 +131,13 @@ export function discussionTree(
   const branchHeight = (height - potHeight) / 0.98
   const branchCount = Math.ceil(96 * Math.max(1, branchHeight / foliageScale))
   const coreCount = Math.ceil(36 * Math.max(1, branchHeight / foliageScale))
+
   const branchZ = (z: number) => potHeight + (z - 0.22) * branchHeight
+
   const twigs: GeometryInstance[] = []
+
   const variation = (i: number) => (Math.sin(i * 91.73 + seed * 17.17) + 1) / 2
+
   append(
     stems,
     tube(
@@ -133,6 +149,7 @@ export function discussionTree(
       8
     )
   )
+
   const spray = (origin: Vec, direction: Vec, size: number, tint: number) => {
     const length = Math.hypot(...direction)
     const x = direction.map((n) => n / length) as Vec
@@ -156,9 +173,11 @@ export function discussionTree(
       basis: [x, turnedY, turnedZ],
       scale: size * foliageScale
     }
+
     twigs.push(instance)
     groups[tint].push(instance)
   }
+
   for (let branch = 0; branch < branchCount; branch++) {
     const t = branch / (branchCount - 1),
       z = 0.245 + t * 0.765 + (variation(branch + 309) - 0.5) * 0.045,
@@ -170,16 +189,19 @@ export function discussionTree(
       rise = -0.035 + 0.11 * t + 0.085 * variation(branch + 109),
       radial: Vec = [Math.cos(angle), Math.sin(angle), 0],
       tangent: Vec = [-Math.sin(angle), Math.cos(angle), 0]
+
     const path = (u: number): Vec => [
       radial[0] * reach * u,
       radial[1] * reach * u,
       branchZ(z + rise * u * u)
     ]
+
     const stations = [
       0,
       ...Array.from({ length: 5 }, (_, rank) => 0.17 + rank * 0.18),
       1
     ]
+
     append(
       stems,
       tube(
@@ -193,6 +215,7 @@ export function discussionTree(
     )
     for (let rank = 0; rank < 5; rank++) {
       const u = 0.17 + rank * 0.18
+
       for (const side of [-1, 1]) {
         const direction: Vec = [
             radial[0] * 0.75 + tangent[0] * side * 0.65,
@@ -202,11 +225,14 @@ export function discussionTree(
           size =
             (1.16 - t * 0.64) *
             (0.8 + 0.2 * variation(branch * 13 + rank * 2 + side))
+
         spray(path(u), direction, size, (branch + rank + (side + 1) / 2) % 3)
       }
     }
+
     spray(path(1), [radial[0], radial[1], -0.05 + t * 0.8], 0.9 - t * 0.5, 2)
   }
+
   // Upright foliage covers the leader and the core between outward branches.
   for (let i = 0; i < coreCount; i++) {
     const t = i / (coreCount - 1),
@@ -218,6 +244,7 @@ export function discussionTree(
           0.05 * foliageScale +
           t * (height - potHeight - 0.125 * foliageScale)
       ]
+
     spray(
       origin,
       [Math.cos(angle) * 0.4, Math.sin(angle) * 0.4, 1],
@@ -225,6 +252,7 @@ export function discussionTree(
       i % 3
     )
   }
+
   const parts = [
     part(
       'pot',
@@ -260,6 +288,7 @@ export function discussionTree(
       'plain'
     )
   ]
+
   return [
     ...placeParts(parts, [0, 0, 0], 0, [
       potDiameter / 0.26,
@@ -339,20 +368,24 @@ export function discussionStorage(closed: boolean): AssetPart[] {
     h = 0.55,
     t = 0.025
   const parts: AssetPart[] = []
+
   const panel = (id: string, size: Vec, position: Vec, color = 0xb49164) =>
     parts.push(
       ...placeParts([part(id, box(size, 0.003), color, 'wood')], position)
     )
+
   panel('top', [w, d, t], [0, 0, h - t / 2])
   if (closed) {
     panel('base', [w - t * 2, d - t, t], [0, 0, 0.035])
     panel('back', [w - t * 2, t, h - t], [0, (d - t) / 2, (h - t) / 2])
-    for (const side of [-1, 1])
+    for (const side of [-1, 1]) {
       panel(
         'side-' + side,
         [t, d, h - t],
         [(side * (w - t)) / 2, 0, (h - t) / 2]
       )
+    }
+
     panel(
       'door-inset',
       [w - 0.09, 0.014, h - 0.12],
@@ -372,16 +405,20 @@ export function discussionStorage(closed: boolean): AssetPart[] {
       )
     }
   } else {
-    for (const x of [-1, 1])
-      for (const y of [-1, 1])
+    for (const x of [-1, 1]) {
+      for (const y of [-1, 1]) {
         panel(
           `leg-${x}-${y}`,
           [0.03, 0.03, h - t],
           [x * 0.24, y * 0.13, (h - t) / 2],
           0x705739
         )
+      }
+    }
+
     // One open rectangular fabric basket stands on the floor between the legs.
     const basket = emptyMesh()
+
     append(basket, box([0.3, 0.23, 0.012], 0.003), [0, 0, 0.006])
     for (const side of [-1, 1]) {
       append(basket, box([0.012, 0.23, 0.378], 0.003), [side * 0.144, 0, 0.201])
@@ -391,6 +428,7 @@ export function discussionStorage(closed: boolean): AssetPart[] {
         0.201
       ])
     }
+
     parts.push(part('basket', basket, 0xd4c6b0, 'fabric'))
     const vessel = lathe(
       [
@@ -406,6 +444,7 @@ export function discussionStorage(closed: boolean): AssetPart[] {
       ],
       48
     )
+
     parts.push(
       ...placeParts(
         [part('empty-vessel', vessel, 0x89868b, 'ceramic')],
@@ -413,5 +452,6 @@ export function discussionStorage(closed: boolean): AssetPart[] {
       )
     )
   }
+
   return parts
 }

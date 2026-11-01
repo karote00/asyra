@@ -10,6 +10,7 @@ const { captureSource } = require('../snapshot.cjs')
 const { assessEvidence } = require('../evidence.cjs')
 const { runVerification } = require('../runner.cjs')
 const { runProcess, runnerEnvironment } = require('../runner.cjs')
+
 const execute = (code, options = {}) =>
   runProcess({
     executable: process.execPath,
@@ -21,6 +22,7 @@ const execute = (code, options = {}) =>
 
 test('preserves a failing process exit instead of accepting its wrapper', async () => {
   const result = await execute('process.exit(7)')
+
   assert.equal(result.code, 7)
   assert.equal(result.reason, null)
 })
@@ -29,11 +31,13 @@ for (const exitCode of [0, 7]) {
     const kill = process.kill.bind(process)
     let pid
     let denied = 0
+
     t.mock.method(process, 'kill', (target, signal) => {
       if (target === -pid && signal === 'SIGKILL') {
         denied++
         throw Object.assign(new Error('kill EPERM'), { code: 'EPERM' })
       }
+
       return kill(target, signal)
     })
     const result = await execute(`process.exit(${exitCode})`, {
@@ -41,6 +45,7 @@ for (const exitCode of [0, 7]) {
         pid = value
       }
     })
+
     assert.equal(denied, 1)
     assert.equal(result.reason, null)
     assert.equal(result.code, exitCode)
@@ -52,13 +57,17 @@ test('post-exit denial waits for an exiting group to disappear within cleanup gr
   const kill = process.kill.bind(process)
   let pid
   let observations = 0
+
   t.mock.method(childProcess, 'execFileSync', () => {
     observations++
+
     return observations === 1 ? `${pid + 1} ${pid} ?E\n` : '1 1 S\n'
   })
   t.mock.method(process, 'kill', (target, signal) => {
-    if (target === -pid && signal === 'SIGKILL')
+    if (target === -pid && signal === 'SIGKILL') {
       throw Object.assign(new Error('kill EPERM'), { code: 'EPERM' })
+    }
+
     return kill(target, signal)
   })
   const result = await execute('process.exit(7)', {
@@ -66,6 +75,7 @@ test('post-exit denial waits for an exiting group to disappear within cleanup gr
       pid = value
     }
   })
+
   assert.equal(result.reason, null)
   assert.equal(result.code, 7)
   assert.equal(observations, 2)
@@ -74,9 +84,12 @@ test('post-exit denial waits for an exiting group to disappear within cleanup gr
 test('denied cleanup of a surviving owned group is non-passing', async (t) => {
   const kill = process.kill.bind(process)
   let pid
+
   t.mock.method(process, 'kill', (target, signal) => {
-    if (target === -pid && signal === 'SIGKILL')
+    if (target === -pid && signal === 'SIGKILL') {
       throw Object.assign(new Error('kill EPERM'), { code: 'EPERM' })
+    }
+
     return kill(target, signal)
   })
   t.after(() => {
@@ -96,6 +109,7 @@ test('denied cleanup of a surviving owned group is non-passing', async (t) => {
       }
     }
   )
+
   assert.equal(result.code, 0)
   assert.equal(result.reason, 'cleanup-error')
   assert.match(result.error, /EPERM/)
@@ -105,12 +119,15 @@ test('unavailable group observation cannot excuse a cleanup denial', async (t) =
   const childProcess = require('node:child_process')
   const kill = process.kill.bind(process)
   let pid
+
   t.mock.method(childProcess, 'execFileSync', () => {
     throw new Error('Process table unavailable')
   })
   t.mock.method(process, 'kill', (target, signal) => {
-    if (target === -pid && signal === 'SIGKILL')
+    if (target === -pid && signal === 'SIGKILL') {
       throw Object.assign(new Error('kill EPERM'), { code: 'EPERM' })
+    }
+
     return kill(target, signal)
   })
   const result = await execute('process.exit(0)', {
@@ -118,6 +135,7 @@ test('unavailable group observation cannot excuse a cleanup denial', async (t) =
       pid = value
     }
   })
+
   assert.equal(result.reason, 'cleanup-error')
 })
 
@@ -126,10 +144,13 @@ for (const observation of ['', 'unreadable row']) {
     const childProcess = require('node:child_process')
     const kill = process.kill.bind(process)
     let pid
+
     t.mock.method(childProcess, 'execFileSync', () => observation)
     t.mock.method(process, 'kill', (target, signal) => {
-      if (target === -pid && signal === 'SIGKILL')
+      if (target === -pid && signal === 'SIGKILL') {
         throw Object.assign(new Error('kill EPERM'), { code: 'EPERM' })
+      }
+
       return kill(target, signal)
     })
     const result = await execute('process.exit(0)', {
@@ -137,6 +158,7 @@ for (const observation of ['', 'unreadable row']) {
         pid = value
       }
     })
+
     assert.equal(result.reason, 'cleanup-error')
     assert.match(result.error, /malformed/)
   })
@@ -147,24 +169,30 @@ test('a deadline settles an uncooperative process', async () => {
     "process.on('SIGTERM', () => {}); setInterval(() => {}, 1000)",
     { timeoutMs: 150 }
   )
+
   assert.equal(result.reason, 'timeout')
   assert.throws(() => process.kill(result.pid, 0), { code: 'ESRCH' })
 })
 test('cancellation prevents pre-aborted admission and settles active execution', async () => {
   const controller = new AbortController()
   let spawns = 0
+
   controller.abort()
   const result = await execute('process.exit(0)', {
     signal: controller.signal,
+
     onSpawn: () => spawns++
   })
+
   assert.equal(result.reason, 'cancelled')
   assert.equal(spawns, 0)
   const running = new AbortController()
   const active = await execute('setInterval(() => {}, 1000)', {
     signal: running.signal,
+
     onSpawn: () => running.abort()
   })
+
   assert.equal(active.reason, 'cancelled')
   assert.throws(() => process.kill(active.pid, 0), { code: 'ESRCH' })
 })
@@ -173,6 +201,7 @@ test('output is bounded and overflow cannot pass', async () => {
     "setInterval(() => process.stdout.write('x'.repeat(4096)), 1)",
     { maxOutputBytes: 1024 }
   )
+
   assert.equal(result.reason, 'output-limit')
   assert.ok(Buffer.byteLength(result.output) <= 1024)
 })
@@ -188,10 +217,12 @@ test('spawn failure is explicitly non-passing', async () => {
     args: [],
     env: {}
   })
+
   assert.equal(result.reason, 'spawn-error')
 })
 test('an unexpected signal is an infrastructure failure', async () => {
   const result = await execute("process.kill(process.pid, 'SIGTERM')")
+
   assert.equal(result.reason, 'signal')
 })
 test('the owned runner group settles when its service abruptly dies', async () => {
@@ -206,12 +237,14 @@ test('the owned runner group settles when its service abruptly dies', async () =
     { stdio: ['ignore', 'pipe', 'pipe'] }
   )
   let group
+
   try {
     await new Promise((resolve, reject) => {
       const deadline = setTimeout(
         () => reject(new Error('Orphan runner did not settle')),
         5000
       )
+
       owner.stdout.once('data', (data) => {
         group = Number(data.toString().trim())
         owner.kill('SIGKILL')
@@ -242,15 +275,19 @@ test(
   async (t) => {
     const root = path.resolve(__dirname, '../../../..')
     const parent = path.join(root, 'tmp/flow-inspector/runner-proofs')
+
     fs.mkdirSync(parent, { recursive: true })
     const dir = fs.mkdtempSync(path.join(parent, 'proof-'))
+
     t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
     const contract = loadContract(root)
     const flowIds = contract.flows.map((flow) => flow.id)
     let baselineDigest
+
     for (const scenario of [...contract.scenarios, contract.scenarios[0]]) {
       const runDirectory = fs.mkdtempSync(path.join(dir, 'run-'))
       const snapshot = captureSource(root, runDirectory, contract)
+
       baselineDigest ??= snapshot.digest
       assert.equal(snapshot.digest, baselineDigest)
       const result = await runVerification({
@@ -261,6 +298,7 @@ test(
         scenario: scenario.id,
         flowIds
       })
+
       assert.equal(
         result.identity.runtimeSourceDigest,
         snapshot.runtimeSource.digest
@@ -286,6 +324,7 @@ test(
         flowIds,
         scenario.id
       )
+
       assert.deepEqual(
         evidence.issues,
         [],
@@ -312,8 +351,10 @@ test(
 test('verification consumes the trusted execution boundary once without bypassing it', async (t) => {
   const root = path.resolve(__dirname, '../../../..')
   const parent = path.join(root, 'tmp/flow-inspector/runner-boundary')
+
   fs.mkdirSync(parent, { recursive: true })
   const directory = fs.mkdtempSync(path.join(parent, 'run-'))
+
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
   let calls = 0
   const contract = loadContract(root)
@@ -325,12 +366,15 @@ test('verification consumes the trusted execution boundary once without bypassin
     contract,
     scenario: 'baseline',
     flowIds: contract.flows.map((flow) => flow.id),
+
     processRunner: async (options) => {
       calls++
       assert.equal(options.executable, process.execPath)
+
       return { code: null, reason: 'containment-unavailable', output: '' }
     }
   })
+
   assert.equal(calls, 1)
   assert.equal(result.reason, 'containment-unavailable')
   assert.equal(
@@ -352,19 +396,23 @@ test('verification consumes the trusted execution boundary once without bypassin
 test('runner carries producer runtime identity without traversing its manifest and never invents one for historical snapshots', async (t) => {
   const root = path.resolve(__dirname, '../../../..')
   const parent = path.join(root, 'tmp/flow-inspector/runner-identity')
+
   fs.mkdirSync(parent, { recursive: true })
   const directory = fs.mkdtempSync(path.join(parent, 'run-'))
+
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
   const contract = loadContract(root)
   const snapshot = captureSource(root, directory, contract)
   const sourceIdentity = {
     format: 1,
     digest: snapshot.runtimeSource.digest,
+
     get files() {
       throw new Error('Runner must not rebuild runtime inventory')
     }
   }
   let executions = 0
+
   const invoke = (input, name) =>
     runVerification({
       repositoryRoot: root,
@@ -373,15 +421,19 @@ test('runner carries producer runtime identity without traversing its manifest a
       contract,
       scenario: 'baseline',
       flowIds: contract.flows.map((flow) => flow.id),
+
       processRunner: async () => {
         executions++
+
         return { code: null, reason: 'containment-unavailable', output: '' }
       }
     })
+
   const current = await invoke(
     { ...snapshot, runtimeSource: sourceIdentity },
     'current'
   )
+
   assert.equal(
     current.identity.runtimeSourceDigest,
     snapshot.runtimeSource.digest
@@ -399,9 +451,11 @@ test('runner carries producer runtime identity without traversing its manifest a
     }
   )
   const historical = { ...snapshot }
+
   delete historical.runtimeSource
   delete historical.runtimeAuthority
   const old = await invoke(historical, 'historical')
+
   assert.equal(Object.hasOwn(old.identity, 'runtimeSourceDigest'), false)
   assert.equal(Object.hasOwn(old.identity, 'runtimeAuthorityDigest'), false)
   assert.equal(old.identity.sourceDigest, snapshot.digest)
@@ -412,13 +466,16 @@ function derivedRunnerFixture(authorityFormat = 1, createContract) {
   const source = require('../snapshot.cjs')
   const root = path.resolve(__dirname, '../../../..')
   const parent = path.join(root, 'tmp/flow-inspector/contained-runner-tests')
+
   fs.mkdirSync(parent, { recursive: true })
   const runDirectory = fs.mkdtempSync(path.join(parent, 'run-'))
   let contract = loadContract(root)
+
   if (createContract) {
     contract = createContract(root, runDirectory)
   } else if (authorityFormat === 2) {
     const definition = structuredClone(contract.definition)
+
     definition.manifestPath = path.relative(
       root,
       path.join(runDirectory, 'flow-contracts.json')
@@ -430,6 +487,7 @@ function derivedRunnerFixture(authorityFormat = 1, createContract) {
       path.join(root, definition.configFile),
       'utf8'
     )
+
     definition.configFile = path.relative(
       root,
       path.join(runDirectory, 'proof-config.ts')
@@ -447,17 +505,21 @@ function derivedRunnerFixture(authorityFormat = 1, createContract) {
     )
     contract = loadContract(root, undefined, definition.manifestPath)
   }
+
   const snapshot = captureSource(root, runDirectory, contract)
   const generated = source.createDerivedExecution({
     sourceRoot: snapshot.sourceRoot,
     verificationSource: snapshot.verificationSource,
     runtimeAuthority: snapshot.runtimeAuthority
   })
+
   for (const entry of generated.files) {
     const file = path.join(snapshot.sourceRoot, entry.path)
+
     fs.mkdirSync(path.dirname(file), { recursive: true })
     fs.writeFileSync(file, entry.content, { flag: 'wx', mode: 0o444 })
   }
+
   const files = [...snapshot.files, ...generated.executionSource.files].sort(
     (a, b) => a.path.localeCompare(b.path)
   )
@@ -468,9 +530,11 @@ function derivedRunnerFixture(authorityFormat = 1, createContract) {
     configurationDigest: generated.executionSource.digest,
     executionSource: generated.executionSource
   }
+
   source.validateSourceSnapshot(candidate, contract, files, {
     sourceRoot: candidate.sourceRoot
   })
+
   return {
     repositoryRoot: root,
     runDirectory,
@@ -482,7 +546,7 @@ function derivedRunnerFixture(authorityFormat = 1, createContract) {
   }
 }
 
-for (const authorityFormat of [1, 2])
+for (const authorityFormat of [1, 2]) {
   test(
     `contained derived runner executes authority ${authorityFormat} with real settlement`,
     { skip: process.platform !== 'darwin', timeout: 30000 },
@@ -494,14 +558,18 @@ for (const authorityFormat of [1, 2])
       const reads = t.mock.method(fs, 'readFileSync')
       const modulePath = require.resolve('../runner.cjs')
       const saved = require.cache[modulePath]
+
       Reflect.deleteProperty(require.cache, modulePath)
       const { runContainedVerification } = require('../runner.cjs')
+
       require.cache[modulePath] = saved
       let spawned = 0
       const result = await runContainedVerification({
         ...options,
+
         onSpawn: () => spawned++
       })
+
       assert.equal(result.code, 0, result.output)
       assert.equal(result.reason, null)
       assert.equal(spawned, 1)
@@ -511,7 +579,7 @@ for (const authorityFormat of [1, 2])
         1,
         'runner hashes only its report, not source descriptors'
       )
-      for (const entry of options.snapshot.files)
+      for (const entry of options.snapshot.files) {
         assert.equal(
           reads.mock.calls.filter(
             (call) =>
@@ -520,7 +588,10 @@ for (const authorityFormat of [1, 2])
           ).length,
           0
         )
+      }
+
       const [executable, args, actual] = spawnSpy.mock.calls[0].arguments
+
       assert.equal(executable, '/usr/bin/sandbox-exec')
       assert.ok(
         args.includes(
@@ -571,14 +642,17 @@ for (const authorityFormat of [1, 2])
       const cancelled = await runContainedVerification({
         ...options,
         signal: controller.signal,
+
         onSpawn: () => controller.abort()
       })
+
       assert.equal(cancelled.reason, 'cancelled')
       assert.throws(() => process.kill(cancelled.pid, 0), { code: 'ESRCH' })
       const timedOut = await runContainedVerification({
         ...options,
         timeoutMs: 1
       })
+
       assert.equal(timedOut.reason, 'timeout')
       assert.throws(() => process.kill(timedOut.pid, 0), { code: 'ESRCH' })
       const count = spawnSpy.mock.callCount()
@@ -586,10 +660,12 @@ for (const authorityFormat of [1, 2])
         ...options,
         signal: controller.signal
       })
+
       assert.equal(preAborted.reason, 'cancelled')
       assert.equal(spawnSpy.mock.callCount(), count)
     }
   )
+}
 
 test(
   'contained proof executes actual private App server and package integration sources',
@@ -597,11 +673,13 @@ test(
   async (t) => {
     const { appRuntimeFixture } = require('./app-runtime-fixture.cjs')
     const options = derivedRunnerFixture(2, appRuntimeFixture)
+
     t.after(() =>
       fs.rmSync(options.runDirectory, { recursive: true, force: true })
     )
     const { runContainedVerification } = require('../runner.cjs')
     const baseline = await runContainedVerification(options)
+
     assert.equal(baseline.code, 0, baseline.output)
     const assessment = assessEvidence(
       options.contract,
@@ -612,11 +690,13 @@ test(
       undefined,
       { sourceRoot: options.snapshot.sourceRoot }
     )
+
     assert.equal(assessment.status, 'passed', JSON.stringify(assessment))
     const negative = await runContainedVerification({
       ...options,
       scenario: 'reject-gradient'
     })
+
     assert.equal(negative.code, 1, negative.output)
     const rejected = assessEvidence(
       options.contract,
@@ -627,6 +707,7 @@ test(
       undefined,
       { sourceRoot: options.snapshot.sourceRoot }
     )
+
     assert.deepEqual(
       rejected.cases
         .filter((item) => item.status === 'failed')
@@ -646,8 +727,10 @@ test(
     const spawned = t.mock.method(childProcess, 'spawn')
     const modulePath = require.resolve('../runner.cjs')
     const saved = require.cache[modulePath]
+
     Reflect.deleteProperty(require.cache, modulePath)
     const { runContainedVerification } = require('../runner.cjs')
+
     require.cache[modulePath] = saved
     assert.equal(typeof runContainedVerification, 'function')
     for (const mutate of [
@@ -714,17 +797,20 @@ test(
       }
     ]) {
       const changed = structuredClone(options)
+
       mutate(changed)
       await assert.rejects(
         async () => runContainedVerification(changed),
         /contained|closure|execution|location|override|option/i
       )
     }
+
     assert.equal(spawned.mock.callCount(), 0)
     const exists = fs.existsSync
     const unavailable = t.mock.method(fs, 'existsSync', (value) =>
       value === '/usr/bin/sandbox-exec' ? false : exists(value)
     )
+
     await assert.rejects(
       () => runContainedVerification(options),
       /containment unavailable/
@@ -739,12 +825,15 @@ test('a nested current action can inherit its outer owned process group', async 
   const source = `const {runProcess}=require(${JSON.stringify(runnerPath)}); runProcess({executable:process.execPath,args:['-e','setInterval(()=>{},1000)'],cwd:process.cwd(),env:{},inheritProcessGroup:true,onSpawn(pid){process.stdout.write(String(pid));setTimeout(()=>process.exit(0),100)}})`
   const result = await execute(source)
   const pid = Number(result.output)
+
   assert.ok(Number.isInteger(pid) && pid > 1)
   t.after(() => {
     try {
       process.kill(pid, 'SIGKILL')
     } catch (error) {
-      if (error.code !== 'ESRCH') throw error
+      if (error.code !== 'ESRCH') {
+        throw error
+      }
     }
   })
   await new Promise((resolve) => setTimeout(resolve, 100))

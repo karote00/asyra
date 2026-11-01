@@ -20,6 +20,7 @@ export interface RobotPart {
     readonly uvs?: readonly number[]
   }
 }
+
 /** Rest frames share the exact dimensions used by the existing concept meshes. */
 export function robotRestFrames({ length: l, height: h }: RobotDefinition) {
   return {
@@ -37,6 +38,7 @@ export function createRobotModel(
   const { width: w, length: l, height: h, tool } = definition
   const frames = robotRestFrames(definition)
   const parts: RobotPart[] = []
+
   const add = (
     id: string,
     color: number,
@@ -51,6 +53,7 @@ export function createRobotModel(
       regions: mesh.regions()
     })
   }
+
   const box = (
     id: string,
     center: Point3,
@@ -59,9 +62,11 @@ export function createRobotModel(
     metalness = 0.1
   ) => {
     const mesh = new TriangleBuilder()
+
     mesh.box(center, size)
     add(id, color, mesh, metalness)
   }
+
   const cylinder = (
     id: string,
     center: Point3,
@@ -72,17 +77,21 @@ export function createRobotModel(
     metalness = 0.1
   ) => {
     const mesh = new TriangleBuilder()
+
     const point = (angle: number, along: number): Point3 => {
       const a = radius * Math.cos(angle),
         b = radius * Math.sin(angle)
       const delta = { x: [along, a, b], y: [a, along, b], z: [a, b, along] }[
         axis
       ]
+
       return [center[0] + delta[0], center[1] + delta[1], center[2] + delta[2]]
     }
+
     for (let i = 0; i < 32; i++) {
       const a = (i * Math.PI) / 16,
         b = ((i + 1) * Math.PI) / 16
+
       mesh.quad(
         point(a, -depth / 2),
         point(b, -depth / 2),
@@ -92,15 +101,18 @@ export function createRobotModel(
       const first: [number, number, number] = [...center],
         last: [number, number, number] = [...center]
       const k = { x: 0, y: 1, z: 2 }[axis]
+
       first[k] -= depth / 2
       last[k] += depth / 2
       mesh.triangle(first, point(b, -depth / 2), point(a, -depth / 2))
       mesh.triangle(last, point(a, depth / 2), point(b, depth / 2))
     }
+
     // Trigonometric seam endpoints are not welded: preserve open closure status.
     mesh.region('open-shell', 0)
     add(id, color, mesh, metalness)
   }
+
   const tube = (
     id: string,
     points: Point3[],
@@ -108,9 +120,11 @@ export function createRobotModel(
     color: number
   ) => {
     const mesh = new TriangleBuilder()
+
     mesh.tube({ points, diameter }, 16)
     add(id, color, mesh, 0.6)
   }
+
   const steel = 0xb9c4c7,
     dark = 0x283d37,
     shell = 0xe5e9dc,
@@ -118,12 +132,14 @@ export function createRobotModel(
     rubber = 0x252b2b,
     gold = 0xd6ae53
   const r = Math.min(l * 0.13, h * 0.12)
+
   box('battery-case', [0, r + 0.035, 0], [w * 0.69, 0.13, l * 0.76], dark)
   box('chassis', [0, r + 0.12, 0], [w * 0.76, 0.1, l * 0.86], green)
   box('deck', [0, r + 0.182, 0], [w * 0.77, 0.025, l * 0.88], steel, 0.7)
-  for (const side of [-1, 1])
+  for (const side of [-1, 1]) {
     for (const end of [-1, 1]) {
       const center: Point3 = [side * w * 0.415, r, end * l * 0.32]
+
       cylinder(`tire-${side}-${end}`, center, r, w * 0.17, rubber)
       cylinder(
         `hub-${side}-${end}`,
@@ -143,6 +159,7 @@ export function createRobotModel(
       )
       for (let i = 0; i < 12; i++) {
         const a = (i * Math.PI) / 6
+
         cylinder(
           `bolt-${side}-${end}-${i}`,
           [
@@ -155,6 +172,7 @@ export function createRobotModel(
           dark
         )
       }
+
       box(
         `fender-${side}-${end}`,
         [side * w * 0.407, r * 2 + 0.022, end * l * 0.32],
@@ -162,6 +180,8 @@ export function createRobotModel(
         green
       )
     }
+  }
+
   for (const end of [-1, 1]) {
     box(
       `bumper-${end}`,
@@ -169,7 +189,7 @@ export function createRobotModel(
       [w * 0.77, 0.07, l * 0.025],
       rubber
     )
-    for (const side of [-1, 1])
+    for (const side of [-1, 1]) {
       cylinder(
         `lamp-${side}-${end}`,
         [side * w * 0.24, r + 0.14, end * l * 0.471],
@@ -178,9 +198,12 @@ export function createRobotModel(
         0xd8eaba,
         'z'
       )
+    }
   }
+
   const mastZ = -l * 0.3,
     top = h - 0.045
+
   for (const side of [-1, 1]) {
     box(
       `mast-${side}`,
@@ -190,6 +213,7 @@ export function createRobotModel(
       0.8
     )
   }
+
   box('mast-top', [0, top, mastZ], [w * 0.33, 0.035, 0.06], dark)
   tube(
     'lift-screw',
@@ -237,6 +261,7 @@ export function createRobotModel(
       0.8
     )
   }
+
   tube(
     'camera-bracket',
     [
@@ -263,12 +288,14 @@ export function createRobotModel(
       tool === 'cucumber' ? rubber : 0xc89571
     )
   }
+
   // Open, washable crate behind the guarded work head, mechanically retained.
   const floor = r + 0.23,
     cw = w * 0.63,
     cl = l * 0.4,
     cz = l * 0.14,
     ch = h * 0.19
+
   box('crate-bottom', [0, floor, cz], [cw, 0.018, cl], gold)
   for (const side of [-1, 1]) {
     box(
@@ -303,6 +330,7 @@ export function createRobotModel(
       0.8
     )
   }
+
   box(
     'estop-base',
     [-w * 0.28, r + 0.205, -l * 0.15],
@@ -317,13 +345,16 @@ export function createRobotModel(
     0xba3934,
     'y'
   )
+
   return parts
 }
 
 export function createDockModel(): readonly RobotPart[] {
   const parts: RobotPart[] = []
+
   const box = (id: string, center: Point3, size: Point3, color: number) => {
     const mesh = new TriangleBuilder()
+
     mesh.box(center, size)
     parts.push({
       id,
@@ -333,20 +364,26 @@ export function createDockModel(): readonly RobotPart[] {
       regions: mesh.regions()
     })
   }
+
   box('platform', [0, -0.015, 0], [1.5, 0.03, 2.1], 0x90998d)
   box('charger-foot', [0, 0.035, -0.85], [0.45, 0.07, 0.24], 0x33463e)
   box('charger', [0, 0.38, -0.87], [0.29, 0.66, 0.16], 0xdde5d7)
   box('charger-screen', [0, 0.58, -0.782], [0.2, 0.11, 0.008], 0x264b52)
-  for (const side of [-1, 1])
+  for (const side of [-1, 1]) {
     box(
       `charge-contact-${side}`,
       [side * 0.072, 0.24, -0.772],
       [0.035, 0.085, 0.018],
       0xc7a157
     )
+  }
+
   box('exchange-shelf', [1.08, 0.59, 0], [0.55, 0.025, 0.7], 0xb9c4c7)
-  for (const x of [0.85, 1.31])
-    for (const z of [-0.27, 0.27])
+  for (const x of [0.85, 1.31]) {
+    for (const z of [-0.27, 0.27]) {
       box(`exchange-leg-${x}-${z}`, [x, 0.3, z], [0.025, 0.58, 0.025], 0x9ca8a6)
+    }
+  }
+
   return parts
 }

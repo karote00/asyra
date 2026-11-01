@@ -29,6 +29,7 @@ const snapshot = (): ExperimentSnapshot => {
     robotRootId: null,
     bodies: [body('primary', 0), body('obstacle', 0)]
   }
+
   return {
     version: 1,
     snapshotId: 'browser-snapshot',
@@ -76,12 +77,14 @@ test('the production analysis worker returns validated collision evidence', asyn
   page
 }, testInfo) => {
   const requests: string[] = []
+
   page.on('request', (request) => requests.push(request.url()))
   await page.goto('/')
   const result = await page.evaluate(
     async ({ input, moduleUrl }) => {
       const { AnalysisRunner } = await import(moduleUrl)
       const runner = new AnalysisRunner()
+
       try {
         return await runner.run(input)
       } finally {
@@ -90,6 +93,7 @@ test('the production analysis worker returns validated collision evidence', asyn
     },
     { input: snapshot(), moduleUrl: '/src/analysis/runner.ts' }
   )
+
   expect(result).toMatchObject({
     execution: 'completed',
     coverage: 'complete',
@@ -111,6 +115,7 @@ test('the same production worker dispatches the independently implemented instal
 }, testInfo) => {
   await page.goto('/')
   const input = snapshot()
+
   input.method = {
     ...input.method,
     id: MethodIds.STATIC_SPHERES,
@@ -121,6 +126,7 @@ test('the same production worker dispatches the independently implemented instal
     async ({ input, moduleUrl }): Promise<AnalysisResult> => {
       const { AnalysisRunner } = await import(moduleUrl),
         runner = new AnalysisRunner()
+
       try {
         return await runner.run(input)
       } finally {
@@ -129,6 +135,7 @@ test('the same production worker dispatches the independently implemented instal
     },
     { input, moduleUrl: '/src/analysis/runner.ts' }
   )
+
   expect(result).toMatchObject({
     execution: 'completed',
     coverage: 'complete',
@@ -151,11 +158,13 @@ for (const method of [
   }) => {
     await page.goto('/')
     const input = snapshot()
+
     if (method === MethodIds.STATIC_SPHERES) {
       input.method.id = method
       input.method.version = MethodVersions.STATIC_SPHERES
       input.method.settings.parameters = { additionalError: 0 }
     }
+
     input.rule.acceptance = {
       kind: 'any',
       conditions: [
@@ -173,6 +182,7 @@ for (const method of [
       async ({ input, moduleUrl }) => {
         const { AnalysisRunner } = await import(moduleUrl),
           runner = new AnalysisRunner()
+
         try {
           return await runner.run(input)
         } finally {
@@ -181,6 +191,7 @@ for (const method of [
       },
       { input, moduleUrl: '/src/analysis/runner.ts' }
     )
+
     expect(result).toMatchObject({
       execution: 'completed',
       coverage: 'complete',
@@ -205,6 +216,7 @@ for (const stop of ['cancel', 'timeout'] as const) {
   }, testInfo) => {
     await page.goto('/')
     const input = snapshot()
+
     input.method = {
       ...input.method,
       id: MethodIds.STATIC_SPHERES,
@@ -225,21 +237,28 @@ for (const stop of ['cancel', 'timeout'] as const) {
         const runner = new AnalysisRunner(() => {
           const worker = new Worker(workerUrl, { type: 'module' }),
             terminate = worker.terminate.bind(worker)
+
           worker.terminate = () => {
             terminations++
             terminate()
           }
+
           worker.addEventListener('message', (event) => {
             if (event.data?.fixture === 'uncooperative-method-entered') {
               entered = true
-              if (stop === 'cancel') abort.abort()
+              if (stop === 'cancel') {
+                abort.abort()
+              }
             }
           })
+
           return worker
         })
         const started = performance.now()
+
         try {
           const result: AnalysisResult = await runner.run(input, abort.signal)
+
           return {
             result,
             terminations,
@@ -259,6 +278,7 @@ for (const stop of ['cancel', 'timeout'] as const) {
         workerUrl: '/src/analysis/__tests__/fixtures/uncooperative.worker.ts'
       }
     )
+
     expect(observed.entered).toBe(true)
     expect(observed.terminations).toBe(1)
     expect(observed.ticks).toBeGreaterThan(0)

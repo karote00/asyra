@@ -81,87 +81,124 @@ export interface WalkingTerrainPlacement {
   readonly reasons: readonly string[]
   readonly work: Readonly<Work>
 }
+
 function freeze<T>(v: T): T {
   if (v && typeof v === 'object' && !Object.isFrozen(v)) {
     Object.values(v).forEach(freeze)
     Object.freeze(v)
   }
+
   return v
 }
+
 function gcd(a: bigint, b: bigint): bigint {
-  if (b) return gcd(b, a % b)
+  if (b) {
+    return gcd(b, a % b)
+  }
+
   return a < 0n ? -a : a
 }
+
 function arithmetic(
   work: Work,
   budget: WalkingTerrainPlacementRequest['budget']
 ) {
   const tick = () => {
-    if (work.predicates >= budget.maxPredicates)
+    if (work.predicates >= budget.maxPredicates) {
       throw new TerrainPlacementBudgetError('terrain-predicate-budget')
+    }
+
     work.predicates++
   }
+
   const f = (n: bigint, d = 1n): F => {
     tick()
-    if (!d) throw new Error('Unproved terrain denominator')
+    if (!d) {
+      throw new Error('Unproved terrain denominator')
+    }
+
     if (d < 0n) {
       n = -n
       d = -d
     }
+
     const bits = Math.max(
       (n < 0n ? -n : n).toString(2).length,
       d.toString(2).length
     )
+
     work.maxBits = Math.max(work.maxBits, bits)
-    if (bits > budget.maxBits)
+    if (bits > budget.maxBits) {
       throw new TerrainPlacementBudgetError('terrain-bit-budget')
+    }
+
     const g = gcd(n, d)
+
     return { numerator: n / g, denominator: d / g }
   }
+
   const add = (a: F, b: F) =>
     f(
       a.numerator * b.denominator + b.numerator * a.denominator,
       a.denominator * b.denominator
     )
+
   const neg = (a: F) => f(-a.numerator, a.denominator)
+
   const sub = (a: F, b: F) => add(a, neg(b))
+
   const mul = (a: F, b: F) =>
     f(a.numerator * b.numerator, a.denominator * b.denominator)
+
   const div = (a: F, b: F) =>
     f(a.numerator * b.denominator, a.denominator * b.numerator)
+
   const cmp = (a: F, b: F) => {
     tick()
     const d = a.numerator * b.denominator - b.numerator * a.denominator
+
     return d < 0n ? -1 : Number(d > 0n)
   }
+
   const lift = (v: Dyadic): F =>
     v.exponent >= 0
       ? f(v.significand << BigInt(v.exponent))
       : f(v.significand, 1n << BigInt(-v.exponent))
+
   const exact = (v: number) => lift(dyadic(v))
+
   const zero = f(0n)
+
   const va = (a: V, b: V): V => [
     add(a[0], b[0]),
     add(a[1], b[1]),
     add(a[2], b[2])
   ]
+
   const vs = (a: V, b: V): V => [
     sub(a[0], b[0]),
     sub(a[1], b[1]),
     sub(a[2], b[2])
   ]
+
   const scale = (a: V, s: F): V => [mul(a[0], s), mul(a[1], s), mul(a[2], s)]
+
   const dot = (a: V, b: V) => a.reduce((s, v, i) => add(s, mul(v, b[i])), zero)
+
   const cross = (a: V, b: V): V => [
     sub(mul(a[1], b[2]), mul(a[2], b[1])),
     sub(mul(a[2], b[0]), mul(a[0], b[2])),
     sub(mul(a[0], b[1]), mul(a[1], b[0]))
   ]
+
   const pair = () => {
-    if (work.trianglePairs >= budget.maxTrianglePairs)
+    if (work.trianglePairs >= budget.maxTrianglePairs) {
       throw new TerrainPlacementBudgetError('terrain-pair-budget')
+    }
+
     work.trianglePairs++
   }
+
   return {
     f,
     add,
@@ -180,23 +217,34 @@ function arithmetic(
     pair
   }
 }
+
 type Arithmetic = ReturnType<typeof arithmetic>
+
 function plane(t: Triangle, a: Arithmetic) {
   const n = a.cross(a.vs(t[1], t[0]), a.vs(t[2], t[0]))
+
   return { n, d: a.dot(n, t[0]) }
 }
+
 function nonzero(v: V) {
   return v.some((x) => x.numerator !== 0n)
 }
+
 function axis(n: V, a: Arithmetic) {
   let selected = 0
-  for (let i = 1; i < 3; i++)
-    if (a.cmp(a.mul(n[i], n[i]), a.mul(n[selected], n[selected])) > 0)
+
+  for (let i = 1; i < 3; i++) {
+    if (a.cmp(a.mul(n[i], n[i]), a.mul(n[selected], n[selected])) > 0) {
       selected = i
+    }
+  }
+
   return selected
 }
+
 function clip(poly: readonly V[], distance: (v: V) => F, a: Arithmetic): V[] {
   const result: V[] = []
+
   for (let i = 0; i < poly.length; i++) {
     const p = poly[i],
       q = poly[(i + 1) % poly.length],
@@ -204,21 +252,30 @@ function clip(poly: readonly V[], distance: (v: V) => F, a: Arithmetic): V[] {
       dq = distance(q),
       sp = a.cmp(dp, a.zero),
       sq = a.cmp(dq, a.zero)
-    if (sp >= 0) result.push(p)
-    if ((sp < 0 && sq > 0) || (sp > 0 && sq < 0))
+
+    if (sp >= 0) {
+      result.push(p)
+    }
+
+    if ((sp < 0 && sq > 0) || (sp > 0 && sq < 0)) {
       result.push(a.va(p, a.scale(a.vs(q, p), a.div(dp, a.sub(dp, dq)))))
+    }
   }
+
   return result
 }
+
 function projectedCross(p: V, q: V, r: V, drop: number, a: Arithmetic) {
   const axes = [0, 1, 2].filter((i) => i !== drop),
     u = axes[0],
     v = axes[1]
+
   return a.sub(
     a.mul(a.sub(q[u], p[u]), a.sub(r[v], p[v])),
     a.mul(a.sub(q[v], p[v]), a.sub(r[u], p[u]))
   )
 }
+
 function clipTriangle(
   poly: readonly V[],
   t: Triangle,
@@ -227,7 +284,8 @@ function clipTriangle(
 ) {
   const sign = a.cmp(projectedCross(t[0], t[1], t[2], drop, a), a.zero)
   let result = [...poly]
-  for (let i = 0; i < 3; i++)
+
+  for (let i = 0; i < 3; i++) {
     result = clip(
       result,
       (v) =>
@@ -237,21 +295,30 @@ function clipTriangle(
         ),
       a
     )
+  }
+
   return result
 }
+
 function area(poly: readonly V[], drop: number, a: Arithmetic) {
   let sum = a.zero
-  for (let i = 1; i + 1 < poly.length; i++)
+
+  for (let i = 1; i + 1 < poly.length; i++) {
     sum = a.add(sum, projectedCross(poly[0], poly[i], poly[i + 1], drop, a))
+  }
+
   return sum.numerator < 0n ? a.f(-sum.numerator, sum.denominator) : sum
 }
+
 function equal(p: V, q: V, a: Arithmetic) {
   return p.every((v, i) => a.cmp(v, q[i]) === 0)
 }
+
 function tJunction(p: Triangle, q: Triangle, a: Arithmetic) {
   return p.some((v) =>
     q.some((x, i) => {
       const y = q[(i + 1) % 3]
+
       return (
         !equal(v, x, a) &&
         !equal(v, y, a) &&
@@ -261,29 +328,50 @@ function tJunction(p: Triangle, q: Triangle, a: Arithmetic) {
     })
   )
 }
+
 function triangleIntersection(
   p: Triangle,
   q: Triangle,
   a: Arithmetic
 ): boolean {
   const pl = plane(q, a)
-  if (!nonzero(pl.n)) throw new Error('terrain-degenerate-triangle')
+
+  if (!nonzero(pl.n)) {
+    throw new Error('terrain-degenerate-triangle')
+  }
+
   const d = p.map((v) => a.sub(a.dot(pl.n, v), pl.d)),
     sign = d.map((v) => a.cmp(v, a.zero))
-  if (sign.every((v) => v > 0) || sign.every((v) => v < 0)) return false
+
+  if (sign.every((v) => v > 0) || sign.every((v) => v < 0)) {
+    return false
+  }
+
   const drop = axis(pl.n, a)
-  if (sign.every((v) => v === 0)) return clipTriangle(p, q, drop, a).length > 0
+
+  if (sign.every((v) => v === 0)) {
+    return clipTriangle(p, q, drop, a).length > 0
+  }
+
   const line: V[] = []
+
   for (let i = 0; i < 3; i++) {
     const j = (i + 1) % 3
-    if (sign[i] === 0) line.push(p[i])
-    if (sign[i] * sign[j] < 0)
+
+    if (sign[i] === 0) {
+      line.push(p[i])
+    }
+
+    if (sign[i] * sign[j] < 0) {
       line.push(
         a.va(p[i], a.scale(a.vs(p[j], p[i]), a.div(d[i], a.sub(d[i], d[j]))))
       )
+    }
   }
+
   return line.length > 0 && clipTriangle(line, q, drop, a).length > 0
 }
+
 function boxIntersection(
   t: Triangle,
   min: readonly number[],
@@ -291,28 +379,40 @@ function boxIntersection(
   a: Arithmetic
 ) {
   let p: readonly V[] = t
+
   for (let k = 0; k < 3; k++) {
     p = clip(p, (v) => a.sub(v[k], a.exact(min[k])), a)
     p = clip(p, (v) => a.sub(a.exact(max[k]), v[k]), a)
   }
+
   return p.length > 0
 }
+
 function status(values: readonly Status[]): Status {
-  if (values.includes('blocked')) return 'blocked'
+  if (values.includes('blocked')) {
+    return 'blocked'
+  }
+
   return values.every((v) => v === 'admitted') && values.length > 0
     ? 'admitted'
     : 'unknown'
 }
+
 export class WalkingTerrainPlacementOwner {
   private product: WalkingTerrainPlacement | null = null
+
   private projectionOwner = new WalkingConstrainedKinematicsOwner()
+
   private preparations = 0
+
   get current() {
     return this.product
   }
+
   get work() {
     return Object.freeze({ preparations: this.preparations })
   }
+
   read(
     source: WalkingRobotSource,
     demand: SceneDemand,
@@ -324,10 +424,12 @@ export class WalkingTerrainPlacementOwner {
       ? this.product
       : null
   }
+
   dispose() {
     this.product = null
     this.projectionOwner.dispose()
   }
+
   prepare(
     source: WalkingRobotSource,
     demand: SceneDemand,
@@ -338,8 +440,10 @@ export class WalkingTerrainPlacementOwner {
       input === this.product.request &&
       source === this.product.source &&
       demand === this.product.demand
-    )
+    ) {
       return this.product
+    }
+
     this.dispose()
     this.preparations++
     const work: Work = {
@@ -355,10 +459,14 @@ export class WalkingTerrainPlacementOwner {
       projectionPreparations: 0
     }
     let request: WalkingTerrainPlacementRequest
+
     try {
       request = readWalkingTerrainPlacementRequest(input, { source, demand })
     } catch (error) {
-      if (!(error instanceof TerrainPlacementBudgetError)) throw error
+      if (!(error instanceof TerrainPlacementBudgetError)) {
+        throw error
+      }
+
       this.product = freeze({
         format: 'walking-terrain-placement/1',
         identity: {},
@@ -373,14 +481,17 @@ export class WalkingTerrainPlacementOwner {
         reasons: [error.message, 'assessment-context-unbound'],
         work
       })
+
       return this.product
     }
+
     work.inputValues = request.inputValues
     const a = arithmetic(work, request.budget),
       reasons: string[] = [],
       placements: WalkingTerrainSupportPlacement[] = []
     let projection: WalkingConstrainedProjection | null = null
     let expectedPairs = 0
+
     try {
       const terrain = request.terrain,
         route = demand.route
@@ -391,6 +502,7 @@ export class WalkingTerrainPlacementOwner {
       const soilCount = terrain.regions
         .filter((r) => r.classification === 'soil')
         .reduce((n, r) => n + r.shape.indices.length / 3, 0)
+
       expectedPairs =
         (soilCount * (soilCount - 1)) / 2 +
         request.seeds.reduce((n, s) => {
@@ -398,29 +510,37 @@ export class WalkingTerrainPlacementOwner {
             (sum, r) => sum + r.indexCount / 3,
             0
           )
+
           return n + (count * (count - 1)) / 2 + count * terrainCount
         }, 0)
-      if (!Number.isSafeInteger(expectedPairs))
+      if (!Number.isSafeInteger(expectedPairs)) {
         throw new TerrainPlacementBudgetError('terrain-pair-inventory-budget')
+      }
+
       const triangles: OriginalTriangle[] = [],
         bySource = new Map<string, OriginalTriangle[]>(),
         vertices = new Map<string, readonly V[]>()
       let complete = true,
         insideRoute = !!demand.route
+
       for (const region of terrain.regions) {
         const partition = request.partitions.find(
           (p) => p.sourceId === region.sourceId
         )?.regions
+
         if (!partition) {
           complete = false
           continue
         }
+
         const frame = prepareQueryExactForwardFrame(region.frame),
           matrix = frame.matrix.map((row) => row.map(a.lift)),
           translation = frame.position.map(a.lift) as unknown as V
+
         work.shapes++
         work.regions += partition.length
         const points: V[] = []
+
         for (let i = 0; i < region.shape.positions.length; i += 3) {
           const local = region.shape.positions
             .slice(i, i + 3)
@@ -431,6 +551,7 @@ export class WalkingTerrainPlacementOwner {
               row.reduce((sum, v, j) => a.add(sum, a.mul(v, local[j])), a.zero)
             )
           ) as unknown as V
+
           points.push(p)
           work.terrainVertices++
           if (
@@ -441,12 +562,15 @@ export class WalkingTerrainPlacementOwner {
                 a.cmp(v, a.exact(route.volume.min[k])) < 0 ||
                 a.cmp(v, a.exact(route.volume.max[k])) > 0
             )
-          )
+          ) {
             insideRoute = false
+          }
         }
+
         vertices.set(region.sourceId, points)
         const entries: OriginalTriangle[] = []
-        for (const part of partition)
+
+        for (const part of partition) {
           for (
             let offset = part.indexStart;
             offset < part.indexStart + part.indexCount;
@@ -455,6 +579,7 @@ export class WalkingTerrainPlacementOwner {
             const t = region.shape.indices
               .slice(offset, offset + 3)
               .map((i) => points[i]) as unknown as Triangle
+
             entries.push({
               source: region,
               sourceRegionId: part.id,
@@ -463,16 +588,22 @@ export class WalkingTerrainPlacementOwner {
               vertices: t
             })
           }
+        }
+
         triangles.push(...entries)
         bySource.set(region.sourceId, entries)
       }
+
       const seeds = request.seeds.map((seed) => {
         const region = terrain.regions.find(
             (r) => r.id === seed.terrainRegionId
           ),
           v = region && vertices.get(region.sourceId)
-        if (!region || !v)
+
+        if (!region || !v) {
           throw new Error('terrain-source-partition-incomplete')
+        }
+
         const original = bySource
           .get(region.sourceId)
           ?.find(
@@ -480,11 +611,16 @@ export class WalkingTerrainPlacementOwner {
               t.offset === seed.triangleOffset &&
               t.sourceRegionId === seed.sourceRegionId
           )
-        if (!original) throw new Error('terrain-seed-source-unavailable')
+
+        if (!original) {
+          throw new Error('terrain-seed-source-unavailable')
+        }
+
         const anchor = original.vertices.reduce(
           (sum, p, i) => a.va(sum, a.scale(p, seed.barycentric[i])),
           [a.zero, a.zero, a.zero] as V
         )
+
         return {
           chainId: seed.chainId,
           part: seed.footPart,
@@ -492,6 +628,7 @@ export class WalkingTerrainPlacementOwner {
           anchorOrigin: anchor
         }
       })
+
       work.projectionPreparations++
       projection = this.projectionOwner.prepare(source, {
         format: 'walking-constrained-kinematic-projection/1',
@@ -511,8 +648,9 @@ export class WalkingTerrainPlacementOwner {
           ),
           t: Triangle[] = [],
           offsets: number[] = []
+
         work.footVertices += byIndex.size
-        for (const range of support.patch.ranges)
+        for (const range of support.patch.ranges) {
           for (
             let offset = range.indexStart;
             offset < range.indexStart + range.indexCount;
@@ -521,37 +659,54 @@ export class WalkingTerrainPlacementOwner {
             const p = support.part.shape.indices
               .slice(offset, offset + 3)
               .map((i) => byIndex.get(i))
-            if (p.some((v) => !v))
+
+            if (p.some((v) => !v)) {
               throw new Error('foot-original-vertex-missing')
+            }
+
             t.push(p as unknown as Triangle)
             offsets.push(offset)
           }
+        }
+
         return { support, triangles: t, offsets }
       })
       const soil = triangles.filter((t) => t.source.classification === 'soil')
       let soilValid = true
-      for (const t of soil)
-        if (!nonzero(plane(t.vertices, a).n)) soilValid = false
-      for (let i = 0; i < soil.length; i++)
+
+      for (const t of soil) {
+        if (!nonzero(plane(t.vertices, a).n)) {
+          soilValid = false
+        }
+      }
+
+      for (let i = 0; i < soil.length; i++) {
         for (let j = 0; j < i; j++) {
           a.pair()
           const p = soil[i].vertices,
             q = soil[j].vertices,
             pl = plane(p, a)
+
           if (!nonzero(pl.n)) {
             soilValid = false
             continue
           }
+
           if (q.every((v) => a.cmp(a.dot(pl.n, v), pl.d) === 0)) {
             if (
               area(clipTriangle(p, q, axis(pl.n, a), a), axis(pl.n, a), a)
                 .numerator !== 0n ||
               tJunction(p, q, a) ||
               tJunction(q, p, a)
-            )
+            ) {
               soilValid = false
-          } else if (triangleIntersection(p, q, a)) soilValid = false
+            }
+          } else if (triangleIntersection(p, q, a)) {
+            soilValid = false
+          }
         }
+      }
+
       for (const foot of feet) {
         const localReasons: string[] = [],
           contributors = new Map<
@@ -561,17 +716,31 @@ export class WalkingTerrainPlacementOwner {
           pl = plane(foot.triangles[0], a)
         let valid = complete && insideRoute && soilValid && nonzero(pl.n),
           blocked = false
-        if (!complete) localReasons.push('terrain-source-partition-incomplete')
-        if (!insideRoute) localReasons.push('terrain-outside-current-route')
-        if (!soilValid) localReasons.push('terrain-soil-union-unproved')
+
+        if (!complete) {
+          localReasons.push('terrain-source-partition-incomplete')
+        }
+
+        if (!insideRoute) {
+          localReasons.push('terrain-outside-current-route')
+        }
+
+        if (!soilValid) {
+          localReasons.push('terrain-soil-union-unproved')
+        }
+
         const drop = axis(pl.n, a)
-        for (const t of foot.triangles)
+
+        for (const t of foot.triangles) {
           if (
             !nonzero(plane(t, a).n) ||
             !t.every((v) => a.cmp(a.dot(pl.n, v), pl.d) === 0)
-          )
+          ) {
             valid = false
-        for (let i = 0; i < foot.triangles.length; i++)
+          }
+        }
+
+        for (let i = 0; i < foot.triangles.length; i++) {
           for (let j = 0; j < i; j++) {
             a.pair()
             if (
@@ -582,36 +751,46 @@ export class WalkingTerrainPlacementOwner {
               ).numerator !== 0n ||
               tJunction(foot.triangles[i], foot.triangles[j], a) ||
               tJunction(foot.triangles[j], foot.triangles[i], a)
-            )
+            ) {
               valid = false
+            }
           }
+        }
+
         for (const t of foot.triangles) {
-          for (const channel of demand.channels)
+          for (const channel of demand.channels) {
             if (boxIntersection(t, channel.bounds.min, channel.bounds.max, a)) {
               blocked = true
               localReasons.push('support-on-authored-channel')
             }
+          }
+
           let covered = a.zero
+
           for (const terrainTriangle of triangles) {
             a.pair()
             const other = terrainTriangle.vertices,
               region = terrainTriangle.source
+
             if (region.classification === 'soil') {
               if (!other.every((v) => a.cmp(a.dot(pl.n, v), pl.d) === 0)) {
                 valid = false
                 continue
               }
+
               if (!nonzero(plane(other, a).n)) {
                 valid = false
                 continue
               }
+
               const intersection = area(
                 clipTriangle(t, other, drop, a),
                 drop,
                 a
               )
+
               covered = a.add(covered, intersection)
-              if (intersection.numerator !== 0n)
+              if (intersection.numerator !== 0n) {
                 contributors.set(
                   region.sourceId + ':' + terrainTriangle.offset,
                   {
@@ -620,11 +799,13 @@ export class WalkingTerrainPlacementOwner {
                     triangleOffset: terrainTriangle.offset
                   }
                 )
+              }
             } else {
               if (terrainTriangle.sourceKind === 'closed-solid') {
                 valid = false
                 localReasons.push('terrain-solid-interior-unproved')
               }
+
               if (triangleIntersection(t, other, a)) {
                 blocked = true
                 localReasons.push(
@@ -633,6 +814,7 @@ export class WalkingTerrainPlacementOwner {
                     : 'support-on-debris-source'
                 )
               }
+
               if (
                 region.keepOut.kind === 'bounded' &&
                 boxIntersection(t, region.keepOut.min, region.keepOut.max, a)
@@ -642,19 +824,26 @@ export class WalkingTerrainPlacementOwner {
               }
             }
           }
+
           if (a.cmp(covered, area(t, drop, a)) !== 0) {
             valid = false
             localReasons.push('terrain-soil-coverage-incomplete')
           }
         }
+
         const seed = request.seeds.find(
           (s) => s.chainId === foot.support.chainId
         )
-        if (!seed) throw new Error('terrain-seed-missing')
+
+        if (!seed) {
+          throw new Error('terrain-seed-missing')
+        }
+
         const assessment =
           terrain.contactAssessments.find(
             (v) => v.id === seed.contactAssessmentId
           ) ?? null
+
         if (
           Object.values(terrain.observations).some(
             (v) => !('coverage' in v) || v.coverage !== 'complete'
@@ -663,10 +852,17 @@ export class WalkingTerrainPlacementOwner {
           valid = false
           localReasons.push('terrain-observation-incomplete')
         }
-        if (!valid && localReasons.length === 0)
+
+        if (!valid && localReasons.length === 0) {
           localReasons.push('terrain-source-proof-unavailable')
+        }
+
         let localStatus: Status = valid ? 'admitted' : 'unknown'
-        if (blocked) localStatus = 'blocked'
+
+        if (blocked) {
+          localStatus = 'blocked'
+        }
+
         placements.push({
           chainId: foot.support.chainId,
           anchor: foot.support.anchorOrigin,
@@ -697,11 +893,18 @@ export class WalkingTerrainPlacementOwner {
           : 'terrain-source-proof-unavailable'
       )
     }
+
     work.unvisited = Math.max(0, expectedPairs - work.trianglePairs)
     let geometryStatus = status(placements.map((p) => p.sourceGeometry.status))
-    if (placements.length !== 3 && geometryStatus === 'admitted')
+
+    if (placements.length !== 3 && geometryStatus === 'admitted') {
       geometryStatus = 'unknown'
-    if (work.unvisited > 0) reasons.push('terrain-pairs-unvisited')
+    }
+
+    if (work.unvisited > 0) {
+      reasons.push('terrain-pairs-unvisited')
+    }
+
     reasons.push(...placements.flatMap((p) => p.sourceGeometry.reasons))
     this.product = freeze({
       format: 'walking-terrain-placement/1',
@@ -720,6 +923,7 @@ export class WalkingTerrainPlacementOwner {
       reasons: ['assessment-context-unbound', ...new Set(reasons)],
       work
     })
+
     return this.product
   }
 }

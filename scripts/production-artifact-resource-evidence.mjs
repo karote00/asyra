@@ -29,6 +29,7 @@ const defaultSystem = Object.freeze({
 })
 
 const truncate = (value, limit) => String(value ?? '').slice(0, limit)
+
 const finite = (value) =>
   Number.isFinite(Number(value)) ? Number(value) : null
 
@@ -50,8 +51,11 @@ async function optionalRead(io, file) {
 function parseProcCpu(value) {
   const line = value?.split('\n').find((entry) => /^cpu\s/u.test(entry))
   const ticks = line?.trim().split(/\s+/u).slice(1).map(Number)
-  if (!ticks?.length || ticks.some((tick) => !Number.isFinite(tick)))
+
+  if (!ticks?.length || ticks.some((tick) => !Number.isFinite(tick))) {
     return { available: false }
+  }
+
   return {
     available: true,
     totalTicks: ticks.reduce((total, tick) => total + tick, 0),
@@ -62,43 +66,63 @@ function parseProcCpu(value) {
 
 function parseKeyValues(value) {
   const fields = new Map()
+
   for (const line of value?.trim().split('\n') ?? []) {
     const [name, raw, ...extra] = line.trim().split(/\s+/u)
-    if (name && raw && extra.length === 0) fields.set(name, finite(raw))
+
+    if (name && raw && extra.length === 0) {
+      fields.set(name, finite(raw))
+    }
   }
+
   return fields
 }
 
 const processCgroupRoot = (cgroupRoot, membership) => {
   const line = membership?.split('\n').find((value) => value.startsWith('0::/'))
-  if (!line) return null
+
+  if (!line) {
+    return null
+  }
+
   const resolved = path.resolve(cgroupRoot, '.' + line.slice(3))
   const relative = path.relative(cgroupRoot, resolved)
+
   if (
     relative === '..' ||
     relative.startsWith('../') ||
     path.isAbsolute(relative)
-  )
+  ) {
     return null
+  }
+
   return resolved
 }
 
 async function captureCgroup(io, cgroupRoot, procRoot) {
   const membership = await optionalRead(io, path.join(procRoot, 'self/cgroup'))
   const groupRoot = processCgroupRoot(cgroupRoot, membership)
-  if (!groupRoot) return { available: false }
+
+  if (!groupRoot) {
+    return { available: false }
+  }
+
   const [cpuMax, cpuStat, memoryCurrent, memoryMax] = await Promise.all([
     optionalRead(io, path.join(groupRoot, 'cpu.max')),
     optionalRead(io, path.join(groupRoot, 'cpu.stat')),
     optionalRead(io, path.join(groupRoot, 'memory.current')),
     optionalRead(io, path.join(groupRoot, 'memory.max'))
   ])
+
   if (
     [cpuMax, cpuStat, memoryCurrent, memoryMax].every((value) => value === null)
-  )
+  ) {
     return { available: false }
+  }
+
   const [quota, period] = cpuMax?.trim().split(/\s+/u) ?? []
   const cpu = parseKeyValues(cpuStat)
+
   return {
     available: true,
     cpuQuotaMicros: quota === 'max' ? 'max' : finite(quota),
@@ -115,24 +139,35 @@ async function captureCgroup(io, cgroupRoot, procRoot) {
 
 const projectRelativeCwd = (repositoryRoot, cwd) => {
   const relative = path.relative(repositoryRoot, cwd)
-  if (relative === '') return '.'
+
+  if (relative === '') {
+    return '.'
+  }
+
   if (
     relative === '..' ||
     relative.startsWith('../') ||
     path.isAbsolute(relative)
-  )
+  ) {
     return null
+  }
+
   return relative
 }
 
 const parseProcessStat = (value) => {
   const close = value?.lastIndexOf(')') ?? -1
-  if (close < 0) return null
+
+  if (close < 0) {
+    return null
+  }
+
   const fields = value
     .slice(close + 1)
     .trim()
     .split(/\s+/u)
   const ppid = finite(fields[1])
+
   return fields[0] && ppid !== null ? { state: fields[0], ppid } : null
 }
 
@@ -143,6 +178,7 @@ async function captureProjectProcesses({
   io
 }) {
   let entries
+
   try {
     entries = await io.readDirectory(procRoot, { withFileTypes: true })
   } catch (error) {
@@ -154,6 +190,7 @@ async function captureProjectProcesses({
       rows: []
     }
   }
+
   const availablePids = entries
     .filter((entry) => entry.isDirectory() && /^\d+$/u.test(entry.name))
     .map((entry) => Number(entry.name))
@@ -165,19 +202,28 @@ async function captureProjectProcesses({
   ].slice(0, RESOURCE_EVIDENCE_LIMITS.inspectedPids)
   const rows = []
   let matchingProcesses = 0
+
   for (const pid of selected) {
     try {
       const cwd = await io.readLink(path.join(procRoot, String(pid), 'cwd'))
       const relative = projectRelativeCwd(repositoryRoot, cwd)
-      if (relative === null) continue
+
+      if (relative === null) {
+        continue
+      }
+
       const [stat, name] = await Promise.all([
         optionalRead(io, path.join(procRoot, String(pid), 'stat')),
         optionalRead(io, path.join(procRoot, String(pid), 'comm'))
       ])
       const identity = parseProcessStat(stat)
-      if (!identity) continue
+
+      if (!identity) {
+        continue
+      }
+
       matchingProcesses++
-      if (rows.length < RESOURCE_EVIDENCE_LIMITS.processRows)
+      if (rows.length < RESOURCE_EVIDENCE_LIMITS.processRows) {
         rows.push({
           pid,
           ppid: identity.ppid,
@@ -188,10 +234,12 @@ async function captureProjectProcesses({
           ),
           cwd: truncate(relative, RESOURCE_EVIDENCE_LIMITS.processCwd)
         })
+      }
     } catch {
       /* Process exited or denied inspection between fixed reads. */
     }
   }
+
   return {
     available: true,
     inspectedPids: selected.length,
@@ -225,6 +273,7 @@ export async function collectArtifactResourceSnapshot({
     captureCgroup(io, cgroupRoot, procRoot),
     captureProjectProcesses({ repositoryRoot, procRoot, currentPid, io })
   ])
+
   return {
     capturedAt: now(),
     host: {
@@ -247,6 +296,7 @@ export async function collectArtifactResourceSnapshot({
 
 const delta = (before, after) =>
   before === null || after === null ? null : Math.max(0, after - before)
+
 const signedDelta = (before, after) =>
   before === null || after === null ? null : after - before
 
@@ -259,6 +309,7 @@ function summarizeChange(before, after) {
     before?.procCpu?.idleTicks ?? null,
     after?.procCpu?.idleTicks ?? null
   )
+
   return {
     procCpu:
       totalTicks === null || idleTicks === null || totalTicks === 0
@@ -311,6 +362,7 @@ async function safeCapture(capture) {
 function boundedEvidence(packet) {
   const bounded = structuredClone(packet)
   let value = 'PRODUCTION_ARTIFACT_RESOURCE ' + JSON.stringify(bounded)
+
   while (
     Buffer.byteLength(value) > RESOURCE_EVIDENCE_LIMITS.serializedBytes &&
     (bounded.before?.projectProcesses?.rows?.length ||
@@ -318,11 +370,15 @@ function boundedEvidence(packet) {
   ) {
     const beforeRows = bounded.before?.projectProcesses?.rows ?? []
     const afterRows = bounded.after?.projectProcesses?.rows ?? []
+
     ;(beforeRows.length >= afterRows.length ? beforeRows : afterRows).pop()
     value = 'PRODUCTION_ARTIFACT_RESOURCE ' + JSON.stringify(bounded)
   }
-  if (Buffer.byteLength(value) <= RESOURCE_EVIDENCE_LIMITS.serializedBytes)
+
+  if (Buffer.byteLength(value) <= RESOURCE_EVIDENCE_LIMITS.serializedBytes) {
     return value
+  }
+
   return (
     'PRODUCTION_ARTIFACT_RESOURCE ' +
     JSON.stringify({
@@ -340,17 +396,20 @@ export async function runWithArtifactResourceEvidence({
   report = () => undefined,
   clock = {
     iso: () => new Date().toISOString(),
+
     monotonic: () => performance.now()
   }
 }) {
   const readMonotonic = () => {
     try {
       const value = clock.monotonic()
+
       return Number.isFinite(value) ? value : null
     } catch {
       return null
     }
   }
+
   const readIso = () => {
     try {
       return truncate(clock.iso(), 32)
@@ -358,12 +417,18 @@ export async function runWithArtifactResourceEvidence({
       return null
     }
   }
+
   const started = readMonotonic()
   const timeline = []
+
   const mark = (name) => {
     try {
-      if (timeline.length >= RESOURCE_EVIDENCE_LIMITS.timelineMarks) return
+      if (timeline.length >= RESOURCE_EVIDENCE_LIMITS.timelineMarks) {
+        return
+      }
+
       const current = readMonotonic()
+
       timeline.push({
         name: truncate(name, RESOURCE_EVIDENCE_LIMITS.markName),
         observedAt: readIso(),
@@ -376,24 +441,30 @@ export async function runWithArtifactResourceEvidence({
       /* Timeline evidence cannot affect the artifact operation. */
     }
   }
+
   let terminalInactive = false
+
   const observeTerminalInactive = (name) => {
     terminalInactive = true
     mark(name)
   }
+
   const before = await safeCapture(capture)
   let result
   let failure
+
   try {
     result = await operation({ mark, observeTerminalInactive })
   } catch (error) {
     failure = error
   }
+
   const after = terminalInactive
     ? await safeCapture(capture)
     : { available: false, reason: 'terminal-not-observed-ui' }
   const status = failure ? 'failed' : 'returned'
   let evidence
+
   try {
     evidence = boundedEvidence({
       format: 1,
@@ -412,11 +483,16 @@ export async function runWithArtifactResourceEvidence({
         evidenceUnavailable: 'serialization-failed'
       })
   }
+
   try {
     report(evidence)
   } catch {
     /* Diagnostic reporting cannot affect the artifact operation. */
   }
-  if (failure) throw failure
+
+  if (failure) {
+    throw failure
+  }
+
   return result
 }

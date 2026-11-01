@@ -34,13 +34,16 @@ function setup(fail = false) {
     () => now
   )
   const pairs = [pair(0), pair(1), pair(2), pair(3)]
+
   for (const [index, time] of [0, 10, 100, 110].entries()) {
     now = time
     delivery.flush()
     delivery.record(pairs[index])
   }
-  if (fail) delivery.fail('Method stopped')
-  else
+
+  if (fail) {
+    delivery.fail('Method stopped')
+  } else {
     delivery.complete({
       version: 1,
       snapshotId: 'snapshot',
@@ -49,6 +52,8 @@ function setup(fail = false) {
       evaluations: 4,
       pairs
     })
+  }
+
   return { messages }
 }
 
@@ -57,6 +62,7 @@ it('batches progress to ten updates per second and delivers all terminal evidenc
   const progress = messages.filter(
     (message) => message.data.type === 'progress'
   )
+
   expect(progress.map((message) => message.time)).toEqual([0, 100])
   expect(progress[1].data).toMatchObject({ pairs: [pair(1)] })
   expect(messages.at(-1)).toMatchObject({
@@ -70,6 +76,7 @@ it('batches progress to ten updates per second and delivers all terminal evidenc
 
 it('includes unsent partial evidence in an unthrottled terminal error', () => {
   const { messages } = setup(true)
+
   expect(messages.at(-1)).toMatchObject({
     time: 110,
     data: { type: 'error', error: 'Method stopped', pairs: [pair(2), pair(3)] }

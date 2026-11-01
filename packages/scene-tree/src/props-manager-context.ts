@@ -14,6 +14,7 @@ export const runWithSceneTreePropsManager = <T>(
   callback: () => T
 ): T => {
   const previousOwner = scopedPropsManager
+
   scopedPropsManager = owner
   try {
     return callback()
@@ -27,6 +28,7 @@ export const runWithSceneTreeInitialOwnerValues = <T>(
   callback: () => T
 ): T => {
   const previousValues = scopedInitialOwnerValues
+
   scopedInitialOwnerValues = values
   try {
     return callback()

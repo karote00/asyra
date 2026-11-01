@@ -7,6 +7,7 @@ import { AnalysisRunner } from '../runner'
 
 vi.mock('../contracts', async (load) => {
   const actual = await load<typeof import('../contracts')>()
+
   return {
     ...actual,
     EXPERIMENT_RESOURCE_PROFILE: {
@@ -96,10 +97,12 @@ function setup() {
     Date.now,
     () => 'resource-run'
   )
+
   return {
     snapshot,
     worker,
     runner,
+
     emit: (data: object) =>
       worker.onmessage?.(
         new MessageEvent('message', {
@@ -114,6 +117,7 @@ it('rejects cumulative progress over the global leaf capacity while retaining ea
   const { snapshot, worker, runner, emit } = setup(),
     pending = runner.run(snapshot),
     evidence = runOfficialClearanceMethod(snapshot)
+
   for (const original of evidence.pairs) {
     const leaf = original.evidence.leaves[0]
     const pair = {
@@ -126,8 +130,10 @@ it('rejects cumulative progress over the global leaf capacity while retaining ea
         ]
       }
     }
+
     emit({ type: 'progress', pairs: [pair] })
   }
+
   expect(worker.terminate).toHaveBeenCalledOnce()
   await expect(pending).resolves.toMatchObject({
     execution: 'failed',
@@ -155,6 +161,7 @@ it('rejects an oversized encoded response before treating it as completed eviden
       }
     }))
   }
+
   emit({ type: 'complete', evidence })
   await expect(pending).resolves.toMatchObject({
     execution: 'failed',

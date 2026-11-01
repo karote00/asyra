@@ -20,6 +20,7 @@ const event = (
   payload: { id, before: 0, after: 1 },
   options: { undoable: true, ...(shared ? { shared } : {}) }
 })
+
 const commit = (factory: Factory, id = 'A', shared?: string) => {
   factory.startTransaction()
   factory.updateTransaction(event(id, shared))
@@ -34,6 +35,7 @@ describe('Factory complete runtime reset', () => {
   it('clears Undo and Redo without replaying canonical changes and can reset repeatedly', () => {
     const factory = new Factory(),
       replay = vi.fn(() => true)
+
     factory.registerTransactionReplayHandler(EventTypes.UPDATE_PROPERTY, replay)
     commit(factory)
     factory.undo()
@@ -53,11 +55,13 @@ describe('Factory complete runtime reset', () => {
 
   it('releases custom validators, inverters and replay registrations', () => {
     const factory = new Factory()
+
     const register = () => {
       factory.registerTransactionValidator('custom', () => undefined)
       factory.registerTransactionInverter('custom', (change) => change)
       factory.registerTransactionReplayHandler('custom', () => true)
     }
+
     register()
     factory.resetRuntime()
     expect(register).not.toThrow()
@@ -65,6 +69,7 @@ describe('Factory complete runtime reset', () => {
 
   it('rejects active reset before changing history, channels or the transaction', () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel('channel', new LocalSharedDataChannel())
     commit(factory)
     factory.startTransaction()
@@ -81,7 +86,9 @@ describe('Factory complete runtime reset', () => {
   it('rejects reset reentered from commit, publication and status delivery', () => {
     const factory = new Factory(),
       attempts: unknown[] = []
+
     factory.registerSharedDataChannel('channel', new LocalSharedDataChannel())
+
     const tryReset = () => {
       try {
         factory.resetRuntime()
@@ -90,6 +97,7 @@ describe('Factory complete runtime reset', () => {
         attempts.push(error)
       }
     }
+
     factory.subscribeToCommitCapture(tryReset)
     factory.subscribeToSharedPublication(tryReset)
     factory.subscribeToTransactionStatus(tryReset)
@@ -109,9 +117,11 @@ describe('Factory complete runtime reset', () => {
       capture = vi.fn(),
       delivery = vi.fn(),
       publication = vi.fn()
+
     channel.observe(direct)
     factory.registerSharedDataChannel('channel', channel)
     const staleDispose = factory.observeSharedDataChannel('channel', projection)
+
     factory.subscribeToTransactionStatus(status)
     factory.subscribeToCommitCapture(capture)
     factory.subscribeToSharedDeliveryBatch(delivery)
@@ -127,6 +137,7 @@ describe('Factory complete runtime reset', () => {
     expect(projection).not.toHaveBeenCalled()
     const next = new LocalSharedDataChannel(),
       nextProjection = vi.fn()
+
     factory.registerSharedDataChannel('channel', next)
     factory.observeSharedDataChannel('channel', nextProjection)
     staleDispose()
@@ -142,16 +153,20 @@ describe('Factory complete runtime reset', () => {
       observers: SharedDataChannelBatchChangeHandler[] = []
     const remainingCleanup = vi.fn(),
       oldProjection = vi.fn()
+
     const add = (name: string, cleanup: () => void) => {
       factory.registerSharedDataChannel(name, {
         appendBatch: () => undefined,
+
         observeBatch: (handler) => {
           observers.push(handler)
+
           return cleanup
         }
       })
       factory.observeSharedDataChannel(name, oldProjection)
     }
+
     add('first', () => {
       throw new Error('channel cleanup failed')
     })
@@ -166,9 +181,14 @@ describe('Factory complete runtime reset', () => {
 
   it('invalidates retained staged delivery handles even after sequence numbers restart', () => {
     const factory = new Factory()
+
     factory.startTransaction()
     const old = factory.getActiveStagedDeliveryController()
-    if (!old) throw new Error('Missing active delivery controller')
+
+    if (!old) {
+      throw new Error('Missing active delivery controller')
+    }
+
     factory.endTransaction()
     factory.resetRuntime()
     factory.startTransaction()
@@ -181,6 +201,7 @@ describe('Factory complete runtime reset', () => {
       channel = new LocalSharedDataChannel(),
       following = vi.fn()
     let rejection: unknown
+
     factory.registerSharedDataChannel('channel', channel)
     factory.observeSharedDataChannel('channel', () => {
       try {
@@ -202,14 +223,17 @@ describe('Factory complete runtime reset', () => {
     const factory = new Factory(),
       cleanup = vi.fn()
     let rejection: unknown
+
     factory.registerSharedDataChannel('channel', {
       appendBatch: () => undefined,
+
       observeBatch: () => {
         try {
           factory.resetRuntime()
         } catch (error) {
           rejection = error
         }
+
         return cleanup
       }
     })
@@ -243,12 +267,14 @@ describe('Factory complete runtime reset', () => {
         await gate
       }
     )
+
     await waiting
     try {
       expect(() => factory.resetRuntime()).toThrow(/active|settlement/)
     } finally {
       release()
     }
+
     await applying
     expect(factory.getUndoHistoryDepth()).toBe(0)
     factory.resetRuntime()
@@ -258,6 +284,7 @@ describe('Factory complete runtime reset', () => {
 
   it('preserves the default transaction bridge and isolates a different Factory', () => {
     const separate = new Factory()
+
     commit(separate, 'separate')
     defaultFactory.resetRuntime()
     startTransaction()

@@ -12,12 +12,14 @@ describe('App lifecycle review regressions', () => {
       () => null,
       (error: unknown) => error
     )
+
     await starting
     const failure = await closing
     const nextMountFailure = await waitForCore().then(
       () => null,
       (error: unknown) => error
     )
+
     try {
       expect({ failure, nextMountFailure }).toEqual({
         failure: null,
@@ -26,14 +28,18 @@ describe('App lifecycle review regressions', () => {
     } finally {
       // Recover the real Core after the failed disposal so this regression
       // cannot contaminate the other formal App tests.
-      if (failure) await resetCore()
+      if (failure) {
+        await resetCore()
+      }
     }
   })
 
   it('makes a repeated disposal await the in-progress Core reset', async () => {
     const app = initApp()
+
     await app.start(document.createElement('div'))
     const closing = app.dispose()
+
     try {
       await app.dispose()
       expect(app.core.getRuntimeState()).toBe('retired')
@@ -52,9 +58,11 @@ describe('App lifecycle review regressions', () => {
       () => ({ app: initApp() }),
       (error: unknown) => ({ error })
     )
+
     await starting
     const failure = await closing
     const result = await nextMount
+
     try {
       expect(failure).toBeNull()
       expect('app' in result).toBe(true)
@@ -63,16 +71,21 @@ describe('App lifecycle review regressions', () => {
         expect(result.app.core.getRuntimeState()).toBe('active')
       }
     } finally {
-      if ('app' in result) await result.app.dispose()
-      else if (failure) await resetCore()
+      if ('app' in result) {
+        await result.app.dispose()
+      } else if (failure) {
+        await resetCore()
+      }
     }
   })
 
   it('still retires Core when the startup being awaited rejects', async () => {
     const app = initApp()
     const startupError = new Error('Load source unavailable')
+
     app.core.setLoadSource({
       name: 'failing-source',
+
       load: async () => {
         throw startupError
       }
@@ -87,12 +100,15 @@ describe('App lifecycle review regressions', () => {
     )
     const startupFailure = await starting
     const closeFailure = await closing
+
     try {
       expect(startupFailure).toBe(startupError)
       expect(closeFailure).toBeNull()
       expect(app.core.getRuntimeState()).toBe('retired')
     } finally {
-      if (closeFailure) await resetCore()
+      if (closeFailure) {
+        await resetCore()
+      }
     }
   })
 })

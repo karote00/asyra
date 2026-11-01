@@ -11,6 +11,7 @@ if (!product || !/^[a-z0-9-]+$/u.test(product)) {
   console.error('Must specify a safe --prod=<app-name>')
   process.exit(1)
 }
+
 if (args.some((arg) => arg !== productArgument && arg !== '--plan')) {
   console.error('Unknown argument')
   process.exit(1)

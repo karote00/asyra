@@ -27,13 +27,16 @@ const images = [
 for (const [source, destination] of images) {
   const input = path.join(siteRoot, 'assets', source)
   const output = path.join(siteRoot, 'public', destination)
+
   await mkdir(path.dirname(output), { recursive: true })
   const encoder = sharp(input)
+
   if (destination.endsWith('.jpg')) {
     encoder.jpeg({ quality: 85, mozjpeg: true })
   } else {
     encoder.webp({ quality: 78, alphaQuality: 100, effort: 6 })
   }
+
   await encoder.toFile(output)
   console.log(
     `${destination}: ${(await stat(input)).size} -> ${(await stat(output)).size} bytes`

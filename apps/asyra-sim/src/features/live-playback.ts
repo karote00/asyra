@@ -38,18 +38,25 @@ export function installLivePlaybackFeature(
         { snapshot: service.capture(snapshot), time },
         options
       ),
+
     prepare: (key: string, create: () => ExperimentSnapshot) =>
       service.prepare(key, create),
+
     getRecords: service.getRecords,
     getDiagnostics: service.getDiagnostics,
     recordPreviewPublication: service.recordPreviewPublication,
+
     sample: (time: number, discontinuity = false) =>
       service.sample(time, discontinuity),
+
     getState: service.getState,
+
     subscribe: (listener: () => void) =>
       core.onUIPropertyChange<number>(STATE_REVISION_PROPERTY, listener),
+
     subscribeRecords: (listener: () => void) =>
       core.onUIPropertyChange<number>(RECORDS_REVISION_PROPERTY, listener),
+
     cancel: () => cancelFeatureTask(FeatureNames.LIVE_PLAYBACK)
   }
 
@@ -57,14 +64,16 @@ export function installLivePlaybackFeature(
     priority: 80,
     exclusive: true,
     api,
+
     task: (input: unknown, { signal }) => {
       if (
         !input ||
         typeof input !== 'object' ||
         !('snapshot' in input) ||
         !('time' in input)
-      )
+      ) {
         throw new Error('Invalid live playback Feature input')
+      }
 
       return service.open(
         input.snapshot as ExperimentSnapshot,

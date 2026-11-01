@@ -103,6 +103,7 @@ test('the Agent applies editable text, hierarchy and curves in one durable Undo'
       }
     ]
   })
+
   await page.route('**/api/ai/status', (route) =>
     route.fulfill({ json: { state: 'ready' } })
   )
@@ -125,6 +126,7 @@ test('the Agent applies editable text, hierarchy and curves in one durable Undo'
   await waitForAppReady(page)
   const before = await getCoreDocumentDigest(page),
     depth = await getUndoHistoryDepth(page)
+
   await page.getByRole('button', { name: 'Open Agent' }).click()
   await page
     .getByLabel('Message Agent')
@@ -135,6 +137,7 @@ test('the Agent applies editable text, hierarchy and curves in one durable Undo'
     'success'
   )
   expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
+
   const read = () =>
     page.evaluate(async (ids) => {
       const { core } = await import('../src/testing/runtime-access')
@@ -145,6 +148,7 @@ test('the Agent applies editable text, hierarchy and curves in one durable Undo'
       const leaf = core.getElementComputedData(ids.petal) as unknown as {
         points: Record<string, { kind: string }>
       }
+
       return {
         text: heading?.text,
         children: card?.children,
@@ -153,12 +157,14 @@ test('the Agent applies editable text, hierarchy and curves in one durable Undo'
         ).length
       }
     }, design.keyToId)
+
   await expect.poll(read).toEqual({
     text: 'Ideas worth exploring',
     children: [design.keyToId.petal, design.keyToId['card-title']],
     controlCount: 4
   })
   const after = await getCoreDocumentDigest(page)
+
   expect(after).not.toEqual(before)
   await page.getByRole('button', { name: 'Close Agent panel' }).click()
   await undo(page)
@@ -175,16 +181,19 @@ test('the Agent applies editable text, hierarchy and curves in one durable Undo'
     .toMatchObject({ text: 'Ideas worth exploring', controlCount: 4 })
   await page.evaluate(async () => {
     const { viewportApis } = await import('../src/common-apis/viewport')
+
     viewportApis.zoomFit()
   })
   await page.screenshot({
     path: testInfo.outputPath('editable-design.png'),
     fullPage: true
   })
+
   const unchangedObjects = () =>
     page.evaluate(
       async (ids) => {
         const { core } = await import('../src/testing/runtime-access')
+
         return ids.map((id) => ({
           data: core.getElementData(id),
           computed: core.getElementComputedData(id)
@@ -192,13 +201,17 @@ test('the Agent applies editable text, hierarchy and curves in one durable Undo'
       },
       [design.keyToId.body, design.keyToId.card, design.keyToId.petal]
     )
+
   const unchanged = await unchangedObjects()
+
   await page.evaluate(async () => {
     const runtime = await import('../src/testing/runtime-access')
+
     runtime.startDocumentPublicationCapture('targeted-edit')
   })
   const beforeEdit = await getCoreDocumentDigest(page)
   const editDepth = await getUndoHistoryDepth(page)
+
   await page.route('**/api/ai/action-batch', (route) =>
     route.fulfill({
       json: {
@@ -235,8 +248,10 @@ test('the Agent applies editable text, hierarchy and curves in one durable Undo'
   await expect.poll(read).toMatchObject({ text: 'Explore something new' })
   const headingStyle = await page.evaluate(async (id) => {
     const { core } = await import('../src/testing/runtime-access')
+
     return core.getElementComputedData(id, ['fontSize', 'fills', 'x'])
   }, design.keyToId.heading)
+
   expect(headingStyle).toMatchObject({
     fontSize: 32,
     fills: [{ color: '#245640' }],
@@ -245,6 +260,7 @@ test('the Agent applies editable text, hierarchy and curves in one durable Undo'
   expect(await unchangedObjects()).toEqual(unchanged)
   expect(await getUndoHistoryDepth(page)).toBe(editDepth + 1)
   const afterEdit = await getCoreDocumentDigest(page)
+
   await page.getByRole('button', { name: 'Close Agent panel' }).click()
   await undo(page)
   expect(await getCoreDocumentDigest(page)).toEqual(beforeEdit)
@@ -262,24 +278,33 @@ test('the Agent applies editable text, hierarchy and curves in one durable Undo'
       (await import('../src/testing/runtime-access')).core.save()
     )
     const differences: unknown[] = []
+
     const compare = (a: unknown, b: unknown, path: string) => {
-      if (differences.length >= 20 || JSON.stringify(a) === JSON.stringify(b))
+      if (differences.length >= 20 || JSON.stringify(a) === JSON.stringify(b)) {
         return
+      }
+
       if (a && b && typeof a === 'object' && typeof b === 'object') {
         const left = a as Record<string, unknown>,
           right = b as Record<string, unknown>
+
         for (const key of new Set([
           ...Object.keys(left),
           ...Object.keys(right)
-        ]))
+        ])) {
           compare(left[key], right[key], `${path}.${key}`)
-      } else differences.push({ path, current: a, persisted: b })
+        }
+      } else {
+        differences.push({ path, current: a, persisted: b })
+      }
     }
+
     compare(current.sceneTree, persisted.checkpoint?.sceneTree, 'sceneTree')
     compare(current.props, persisted.checkpoint?.props, 'props')
     const transport = await page.evaluate(async () => {
       const runtime = await import('../src/testing/runtime-access')
       const handle = runtime.getActiveCollaborationHandle()
+
       return {
         status: handle?.getStatus(),
         state: handle?.getSessionState(),
@@ -288,6 +313,7 @@ test('the Agent applies editable text, hierarchy and curves in one durable Undo'
         count: runtime.readTestCapture('targeted-edit').length
       }
     })
+
     await testInfo.attach('durable-edit-transport', {
       body: JSON.stringify(transport),
       contentType: 'application/json'
@@ -298,6 +324,7 @@ test('the Agent applies editable text, hierarchy and curves in one durable Undo'
     })
     throw error
   }
+
   await page.reload()
   await waitForAppReady(page)
   await expect.poll(read).toMatchObject({ text: 'Explore something new' })

@@ -6,6 +6,7 @@ import { queryOriginalPartPair } from '../original-part-method'
 import { representativeSnapshot } from './representative-fixture'
 
 const diagnosticWorkLimit = 500000
+
 afterEach(() => vi.restoreAllMocks())
 
 describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
@@ -17,21 +18,29 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         (item) =>
           item.a.bodyId === 'example:joint-2' && item.b.bodyId === 'obstacle-11'
       )
-      if (!pair) throw new Error('Missing measured source pair')
+
+      if (!pair) {
+        throw new Error('Missing measured source pair')
+      }
+
       const context = new OriginalMeshQuery(
         () => undefined,
         diagnosticWorkLimit
       )
       const identities = new WeakMap<object, number>()
       let nextIdentity = 0
+
       const identity = (object: object) => {
         let value = identities.get(object)
+
         if (value === undefined) {
           value = nextIdentity++
           identities.set(object, value)
         }
+
         return value
       }
+
       // JSON numbers round-trip binary64, with an explicit negative-zero token.
       const exact = (value: unknown) =>
         JSON.stringify(value, (_key, item) =>
@@ -39,19 +48,23 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             ? 'negative-zero'
             : item
         )
+
       let time: unknown,
         segment = -1,
         medianPrep = 0,
         refinePrep = 0
       const interpolate = kinematics.interpolateSegment
+
       vi.spyOn(kinematics, 'interpolateSegment').mockImplementation(
         (...args) => {
           segment = args[1]
           time = args[2]
+
           return interpolate(...args)
         }
       )
       const build = meshIndex.buildMeshIndex
+
       vi.spyOn(meshIndex, 'buildMeshIndex').mockImplementation(
         (geometry, checkpoint, hierarchy, checkExecution) =>
           build(
@@ -65,6 +78,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           )
       )
       const refine = meshIndex.refineMeshIndex
+
       vi.spyOn(meshIndex, 'refineMeshIndex').mockImplementation(
         (index, checkpoint) =>
           refine(index, () => {
@@ -82,6 +96,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
       const admittedIntervals = new Map<string, number>()
       let equivalentIntervalCalls = 0,
         equivalentIntervalWork = 0
+
       const record = (
         kind: string,
         args:
@@ -102,20 +117,30 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         const before = context.work
         const output = call()
         const repeated = completed.has(key)
-        if (repeated) expect(output).toEqual(completed.get(key))
-        else completed.set(key, structuredClone(output))
+
+        if (repeated) {
+          expect(output).toEqual(completed.get(key))
+        } else {
+          completed.set(key, structuredClone(output))
+        }
+
         rows.push({ kind, work: context.work - before, repeated, time })
+
         return output
       }
+
       const distance = context.distance.bind(context)
+
       context.distance = (...args) =>
         record('static', args, () => distance(...args)) as ReturnType<
           typeof distance
         >
       const lower = context.lowerOver.bind(context)
+
       context.lowerOver = (...args) => {
         const before = context.work
         const output = record('interval', args, () => lower(...args)) as number
+
         if (args[3].lower > 0) {
           const key = exact([
             segment,
@@ -128,14 +153,19 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             args[4],
             args[5]
           ])
+
           if (admittedIntervals.has(key)) {
             expect(output).toBe(admittedIntervals.get(key))
             equivalentIntervalCalls++
             equivalentIntervalWork += context.work - before
-          } else admittedIntervals.set(key, output)
+          } else {
+            admittedIntervals.set(key, output)
+          }
         }
+
         return output
       }
+
       const interval = [
         snapshot.trajectory.keyframes[115].time,
         snapshot.trajectory.keyframes[116].time
@@ -156,10 +186,13 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         () => undefined,
         context
       )
+
       expect(result.coverage).toBe('complete')
       expect(context.work).toBeLessThanOrEqual(diagnosticWorkLimit)
+
       const summarize = (kind: string) => {
         const selected = rows.filter((row) => row.kind === kind)
+
         return {
           calls: selected.length,
           repeatedCalls: selected.filter((row) => row.repeated).length,
@@ -169,6 +202,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             .reduce((sum, row) => sum + row.work, 0)
         }
       }
+
       // eslint-disable-next-line no-console -- permanent passive exact-input work evidence
       console.info(
         JSON.stringify({

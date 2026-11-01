@@ -15,7 +15,10 @@ const scenario = manifest.scenarios.find(
   (entry: { id: string }) =>
     entry.id === (process.env.FLOW_PROOF_SCENARIO ?? 'baseline')
 )
-if (!scenario) throw new Error('Unknown execution proof scenario')
+
+if (!scenario) {
+  throw new Error('Unknown execution proof scenario')
+}
 
 // These are the public entries consumed by the unchanged case file. Keep
 // isolated execution on source even when workspace dist output is available.
@@ -74,6 +77,7 @@ export default {
   plugins: [
     {
       name: 'registered-execution-proof-mutation',
+
       config(config: {
         resolve?: { alias?: { find: string | RegExp; replacement: string }[] }
       }) {
@@ -81,16 +85,26 @@ export default {
         // must precede them and remain in the same captured source.
         config.resolve?.alias?.unshift(...sourceAliases)
       },
+
       resolveId(id: string) {
-        if (id.startsWith('@asyra/'))
+        if (id.startsWith('@asyra/')) {
           throw new Error('Uncaptured source dependency: ' + id)
+        }
       },
+
       enforce: 'pre' as const,
+
       transform(code: string, id: string) {
         const mutation = scenario.mutation
-        if (!mutation || id !== resolve(sourceRoot, mutation.file)) return
-        if (code.split(mutation.from).length !== 2)
+
+        if (!mutation || id !== resolve(sourceRoot, mutation.file)) {
+          return
+        }
+
+        if (code.split(mutation.from).length !== 2) {
           throw new Error('Execution proof mutation site changed')
+        }
+
         return { code: code.replace(mutation.from, mutation.to), map: null }
       }
     }

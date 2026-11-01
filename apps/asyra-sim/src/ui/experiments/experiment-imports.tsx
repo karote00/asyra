@@ -42,11 +42,13 @@ export function ExperimentTrajectory() {
     key: 0,
     pending: new Set<string>()
   })
+
   if (lifetime.current.identity !== sourceIdentity) {
     if (!lifetime.current.pending.delete(sourceIdentity)) {
       lifetime.current.key++
       lifetime.current.pending.clear()
     }
+
     lifetime.current.identity = sourceIdentity
   }
 
@@ -75,20 +77,30 @@ export function ExperimentTrajectory() {
                 }
               : {})
           }
+
           if (!state.canonical) {
             state.changed(next)
+
             return true
           }
+
           const identity = JSON.stringify({
             id: state.canonical.id,
             trajectory: next.trajectory,
             sourceUnits: next.sourceUnits,
             input
           })
-          if (identity !== lifetime.current.identity)
+
+          if (identity !== lifetime.current.identity) {
             lifetime.current.pending.add(identity)
+          }
+
           const saved = await state.save(next)
-          if (saved === false) lifetime.current.pending.delete(identity)
+
+          if (saved === false) {
+            lifetime.current.pending.delete(identity)
+          }
+
           return saved !== false
         }}
         onAccept={(value, input) => {
@@ -96,8 +108,9 @@ export function ExperimentTrajectory() {
 
           const last = value.trajectory.keyframes.at(-1)
 
-          if (!first || !last)
+          if (!first || !last) {
             throw new Error('Accepted trajectory has no keyframes')
+          }
 
           void view.getSnapshot().save({
             ...view.getSnapshot().draft,

@@ -12,16 +12,22 @@ function setup() {
   const driver = {
     autoClear: true,
     shadowMap: { autoUpdate: true },
+
     getRenderTarget: () => target,
+
     setRenderTarget: vi.fn((value: THREE.WebGLRenderTarget | null) => {
       target = value
     }),
+
     getClearColor: (out: THREE.Color) => out.copy(color),
+
     getClearAlpha: () => alpha,
+
     setClearColor: (value: THREE.Color | number, nextAlpha: number) => {
       color.set(value)
       alpha = nextAlpha
     },
+
     clear: vi.fn(),
     render: vi.fn()
   }
@@ -31,6 +37,7 @@ function setup() {
   })
   const scene = new THREE.Scene()
   const background = new THREE.Color(0x123456)
+
   scene.background = background
   const source = new THREE.MeshStandardMaterial({
     color: 0xffffff,
@@ -48,7 +55,9 @@ function setup() {
   const lamp = new THREE.Mesh(geometry, source)
   const wall = new THREE.Mesh(geometry, normal)
   const shade = new THREE.Mesh(geometry, glass)
+
   scene.add(lamp, wall, shade)
+
   return {
     driver,
     bloom,
@@ -67,8 +76,10 @@ function setup() {
 
 it('masks only emission, preserves occlusion alpha and restores all renderer and scene state', () => {
   const f = setup()
+
   f.bloom.setSize(100, 80, 2)
   let firstMask: THREE.MeshBasicMaterial | undefined
+
   f.driver.render.mockImplementationOnce(() => {
     firstMask = f.lamp.material as unknown as THREE.MeshBasicMaterial
     expect(firstMask.color.toArray()).toEqual(
@@ -82,6 +93,7 @@ it('masks only emission, preserves occlusion alpha and restores all renderer and
     expect(f.scene.background).toBeNull()
     expect(f.driver.shadowMap.autoUpdate).toBe(false)
     const target = f.driver.getRenderTarget()
+
     expect([target?.width, target?.height]).toEqual([200, 160])
   })
   f.bloom.render(f.scene, f.camera)
@@ -104,8 +116,12 @@ it('masks only emission, preserves occlusion alpha and restores all renderer and
     ).toBe(0)
   })
   f.bloom.render(f.scene, f.camera)
-  if (!firstMask) throw new Error('Missing emission mask')
+  if (!firstMask) {
+    throw new Error('Missing emission mask')
+  }
+
   const release = vi.spyOn(firstMask, 'dispose')
+
   f.source.dispose()
   expect(release).toHaveBeenCalledOnce()
   const targets = [
@@ -116,10 +132,14 @@ it('masks only emission, preserves occlusion alpha and restores all renderer and
     )
   ]
   const targetReleases = targets.map((t) => vi.spyOn(t, 'dispose'))
+
   f.bloom.dispose()
   f.bloom.dispose()
   expect(release).toHaveBeenCalledOnce()
-  for (const dispose of targetReleases) expect(dispose).toHaveBeenCalledOnce()
+  for (const dispose of targetReleases) {
+    expect(dispose).toHaveBeenCalledOnce()
+  }
+
   f.geometry.dispose()
   f.normal.dispose()
   f.glass.dispose()
@@ -127,6 +147,7 @@ it('masks only emission, preserves occlusion alpha and restores all renderer and
 
 it('restores materials, target, background and clear state after a failed mask render', () => {
   const f = setup()
+
   f.driver.render.mockImplementationOnce(() => {
     throw new Error('GPU failure')
   })

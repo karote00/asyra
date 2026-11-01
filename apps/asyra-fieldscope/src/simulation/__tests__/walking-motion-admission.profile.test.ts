@@ -6,9 +6,12 @@ describe('canonical nonlinear admission negatives', () => {
   it('binds current identities and rejects malformed finite inputs before traversal', () => {
     const { raw, source, demand, cycle, cycleOwner, owner } = nonlinearFixture()
     const current = { owner: cycleOwner, cycle }
+
     const read = (input: unknown) =>
       readWalkingNonlinearMotionRequest(input, source, demand, current)
+
     const admitted = read(raw)
+
     expect(read(admitted)).toBe(admitted)
     expect(admitted.source).toBe(source)
     expect(admitted.demand).toBe(demand)
@@ -146,7 +149,11 @@ describe('canonical nonlinear admission negatives', () => {
         }
       ]
     ]
-    for (const [name, input] of cases) expect(() => read(input), name).toThrow()
+
+    for (const [name, input] of cases) {
+      expect(() => read(input), name).toThrow()
+    }
+
     expect(cycleOwner.work).toEqual(before)
     expect(owner.work.preparations).toBe(0)
     raw.terrain.revision++

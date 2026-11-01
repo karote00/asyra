@@ -12,6 +12,7 @@ it('counts UTF-8 bytes, including separators, and accepts the exact boundary', (
 it('stops consuming a lazy report as soon as the byte allowance is exceeded', () => {
   let consumed = 0,
     closed = false
+
   function* parts() {
     try {
       for (let i = 0; i < 1000; i++) {
@@ -22,14 +23,16 @@ it('stops consuming a lazy report as soon as the byte allowance is exceeded', ()
       closed = true
     }
   }
+
   expect(() => collectReportText(parts(), 9)).toThrow('Report exceeds')
   expect(consumed).toBe(3)
   expect(closed).toBe(true)
 })
 
 it('never permits a caller to raise or disable the hard report limit', () => {
-  for (const limit of [0, -1, 0.5, NaN, Infinity, 64 * 1024 * 1024 + 1])
+  for (const limit of [0, -1, 0.5, NaN, Infinity, 64 * 1024 * 1024 + 1]) {
     expect(() => collectReportText([], limit)).toThrow(
       'Invalid report byte limit'
     )
+  }
 })

@@ -1,9 +1,7 @@
 # Cloudflare App Delivery
 
-Follow [Release Update Guidance](../framework/rules/release-update-guidance.md)
-for pending impact notes, necessary integration guides and preservation checks.
-The existing publication jobs enforce artifact-bound summary and guide checks.
-See that rule for candidate files, coverage gaps and per-owner recovery.
+Use this workflow's checks for its own outputs. Project release updates follow
+[Release Update Guidance](../framework/rules/release-update-guidance.md).
 
 Task context: standalone continuation of Cloudflare static delivery. This contract
 covers App hosting, deployment verification and the later website entry update.

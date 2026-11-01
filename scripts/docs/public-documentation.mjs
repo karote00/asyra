@@ -52,11 +52,15 @@ const markdownWordCount = (source) => {
     .replace(/[`#*_[\]()>|]/g, ' ')
     .split(/\s+/)
     .filter(Boolean)
+
   return words.length
 }
 
 const sourcePathForTypesTarget = ({ directory, repositoryRoot, target }) => {
-  if (typeof target !== 'string' || !target.endsWith('.d.ts')) return null
+  if (typeof target !== 'string' || !target.endsWith('.d.ts')) {
+    return null
+  }
+
   const relativeSource = target
     .replace(/^\.\/dist\//, 'src/')
     .replace(/\.d\.ts$/, '.ts')
@@ -66,9 +70,17 @@ const sourcePathForTypesTarget = ({ directory, repositoryRoot, target }) => {
     directory,
     relativeSource
   )
-  if (fs.existsSync(sourcePath)) return sourcePath
+
+  if (fs.existsSync(sourcePath)) {
+    return sourcePath
+  }
+
   const tsxPath = sourcePath.replace(/\.ts$/, '.tsx')
-  if (fs.existsSync(tsxPath)) return tsxPath
+
+  if (fs.existsSync(tsxPath)) {
+    return tsxPath
+  }
+
   throw new Error(
     `Cannot resolve public declaration source for packages/${directory}/${target}`
   )
@@ -79,17 +91,20 @@ export const publicApiEntries = ({ packageReference, repositoryRoot }) => {
     const manifest = JSON.parse(
       readSource(repositoryRoot, packageRecord.manifestPath)
     )
+
     return packageRecord.publicEntries.map((entryPath) => {
       const exportValue =
         typeof manifest.exports === 'string'
           ? manifest.exports
           : manifest.exports?.[entryPath]
       let typesTarget = null
+
       if (exportValue && typeof exportValue === 'object') {
         typesTarget = exportValue.types
       } else if (entryPath === '.') {
         typesTarget = manifest.types
       }
+
       return {
         entryPath,
         name: packageRecord.name,
@@ -128,8 +143,13 @@ export const publicApiEntries = ({ packageReference, repositoryRoot }) => {
         ? checker.getAliasedSymbol(exportSymbol)
         : exportSymbol
     const declaration = target.valueDeclaration ?? target.declarations?.[0]
-    if (!declaration) return []
+
+    if (!declaration) {
+      return []
+    }
+
     const types = []
+
     if (
       target.flags &
       (ts.SymbolFlags.Class |
@@ -138,12 +158,14 @@ export const publicApiEntries = ({ packageReference, repositoryRoot }) => {
     ) {
       types.push(checker.getDeclaredTypeOfSymbol(target))
     }
+
     if (
       target.flags &
       (ts.SymbolFlags.Variable | ts.SymbolFlags.Property | ts.SymbolFlags.Alias)
     ) {
       types.push(checker.getTypeOfSymbolAtLocation(target, declaration))
     }
+
     return [
       ...new Set(
         types.flatMap((type) =>
@@ -165,15 +187,19 @@ export const publicApiEntries = ({ packageReference, repositoryRoot }) => {
           if (!sourcePath) {
             return { members: [], path: entryPath, symbols: [] }
           }
+
           const sourceFile = program.getSourceFile(sourcePath)
           const moduleSymbol =
             sourceFile && checker.getSymbolAtLocation(sourceFile)
+
           if (!moduleSymbol) {
             throw new Error(
               `Cannot resolve public module symbols for ${packageRecord.name}${entryPath === '.' ? '' : entryPath.slice(1)}`
             )
           }
+
           const exportedSymbols = checker.getExportsOfModule(moduleSymbol)
+
           return {
             members: [
               ...new Set(exportedSymbols.flatMap(membersForExport))
@@ -208,12 +234,19 @@ const serializeLlms = ({ contentIndex, website = false }) => {
     '## Public pages',
     ''
   ]
+
   for (const page of contentIndex.pages) {
     let href = page.path
-    if (website) href = page.id === 'overview' ? '/docs' : `/docs/${page.id}`
+
+    if (website) {
+      href = page.id === 'overview' ? '/docs' : `/docs/${page.id}`
+    }
+
     lines.push(`- [${page.title}](${href}): ${page.description}`)
   }
+
   lines.push('')
+
   return lines.join('\n')
 }
 
@@ -231,13 +264,16 @@ export const createPublicDocumentationBundle = async ({ repositoryRoot }) => {
   )
   const releaseHistory = readReleaseHistory({
     pages: content.pages,
+
     read: (file) => markdownByPath.get(file)
   })
   const historyMarkdown = renderReleaseHistory(releaseHistory)
+
   markdownByPath.set('updates/history.md', historyMarkdown)
   const pages = content.pages.map((page) => {
     const markdownPath = `docs/public/${page.path}`
     const markdown = markdownByPath.get(page.path)
+
     return {
       contentSha256: sha256(markdown),
       description: page.description,
@@ -323,6 +359,7 @@ export const writePublicDocumentation = async ({ repositoryRoot }) => {
   await writePublicPackageReference({ repositoryRoot })
   const bundle = await createPublicDocumentationBundle({ repositoryRoot })
   const serialized = serializedBundle(bundle)
+
   for (const [key, relativePath] of Object.entries(
     PUBLIC_DOCUMENTATION_PATHS
   )) {
@@ -331,6 +368,7 @@ export const writePublicDocumentation = async ({ repositoryRoot }) => {
     })
     fs.writeFileSync(path.join(repositoryRoot, relativePath), serialized[key])
   }
+
   return bundle
 }
 
@@ -338,21 +376,25 @@ export const checkPublicDocumentation = async ({ repositoryRoot }) => {
   await checkPublicPackageReference({ repositoryRoot })
   const bundle = await createPublicDocumentationBundle({ repositoryRoot })
   const serialized = serializedBundle(bundle)
+
   for (const [key, relativePath] of Object.entries(
     PUBLIC_DOCUMENTATION_PATHS
   )) {
     const artifactPath = path.join(repositoryRoot, relativePath)
+
     if (!fs.existsSync(artifactPath)) {
       throw new Error(
         `${relativePath} is missing; generate public documentation`
       )
     }
+
     if (fs.readFileSync(artifactPath, 'utf8') !== serialized[key]) {
       throw new Error(
         `${relativePath} is stale; regenerate public documentation`
       )
     }
   }
+
   return bundle
 }
 
@@ -362,11 +404,13 @@ const isDirectInvocation =
 
 if (isDirectInvocation) {
   const [mode, ...unexpected] = process.argv.slice(2)
+
   if (!['--check', '--write'].includes(mode) || unexpected.length > 0) {
     throw new Error(
       'Usage: node scripts/docs/public-documentation.mjs --check|--write'
     )
   }
+
   const repositoryRoot = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
     '../..'
@@ -375,6 +419,7 @@ if (isDirectInvocation) {
     mode === '--write'
       ? await writePublicDocumentation({ repositoryRoot })
       : await checkPublicDocumentation({ repositoryRoot })
+
   process.stdout.write(
     `Public documentation ${
       mode === '--write' ? 'written' : 'current'

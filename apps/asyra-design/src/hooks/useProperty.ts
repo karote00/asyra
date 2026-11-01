@@ -18,6 +18,7 @@ const propertySignals = new Map<string, Signal<PropertyValue>>()
 
 const getPropertySignal = <T extends PropertyValue>(key: string): Signal<T> => {
   const existing = propertySignals.get(key) as Signal<T> | undefined
+
   if (existing) {
     return existing
   }
@@ -30,6 +31,7 @@ const getPropertySignal = <T extends PropertyValue>(key: string): Signal<T> => {
   })
 
   propertySignals.set(key, propertySignal as Signal<PropertyValue>)
+
   return propertySignal
 }
 

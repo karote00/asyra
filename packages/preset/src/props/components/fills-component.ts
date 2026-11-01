@@ -11,6 +11,7 @@ export const fillsPropertyComponentDefinition: PropertyComponentDefinition = {
     childType: PropertyTypes.FILL,
     mode: 'ids-or-objects',
     collection: 'array-or-record',
+
     toChildData: (item, childId) => {
       if (typeof item !== 'object' || item === null || Array.isArray(item)) {
         return null
@@ -22,6 +23,7 @@ export const fillsPropertyComponentDefinition: PropertyComponentDefinition = {
         ...item
       }
     },
+
     toValue: (child, childId) => ({
       id: childId,
       kind: child.get('kind'),

@@ -41,6 +41,7 @@ describe('settled evaluation report projection', () => {
   it('uses the final acknowledged report and preserves earlier successful work', () => {
     const turn = admitted()
     const before = structuredClone(turn)
+
     expect(projectEvaluationReport(turn)).toEqual({
       attribution: 'model-self-report',
       sourceRequestId: 'request-1',
@@ -52,6 +53,7 @@ describe('settled evaluation report projection', () => {
 
   it('accepts a final report when an earlier batch legally reused the action ID', () => {
     const turn = admitted()
+
     turn.result.actionResults[0].actionId = 'report'
     expect(projectEvaluationReport(turn)?.text).toBe(
       'Partial drawing; cause unconfirmed.'
@@ -144,6 +146,7 @@ describe('settled evaluation report projection', () => {
     ]
   ])('does not certify %s as report evidence', (_name, alter) => {
     const turn = admitted()
+
     alter(turn)
     expect(projectEvaluationReport(turn)).toBeUndefined()
   })

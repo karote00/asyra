@@ -23,11 +23,14 @@ describe('AI Agent toolbar activation', () => {
 
   it('keeps toggle activation available while locked and restores ordinary shortcuts when unlocked', () => {
     const toggle = vi.fn()
+
     render(<ToolBar aiOpen={false} onAiToggle={toggle} />)
     const button = screen.getByRole('button', { name: 'Open Agent' })
     const shortcut = vi.fn()
+
     document.addEventListener('keydown', shortcut)
     const release = documentInteractionLock.acquire()
+
     try {
       fireEvent.click(button)
       expect(toggle).toHaveBeenCalledOnce()
@@ -49,6 +52,7 @@ describe('AI Agent toolbar activation', () => {
     )
 
     const button = screen.getByRole('button', { name: 'Open Agent' })
+
     expect(screen.getByTestId('ai-agent-toolbar-button')).toBe(button)
     expect(button.getAttribute('aria-expanded')).toBe('false')
     fireEvent.click(button)

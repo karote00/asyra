@@ -19,28 +19,34 @@ const root = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '../../../../..'
 )
+
 const fixture = () => {
   const tmp = path.join(root, 'tmp')
+
   mkdirSync(tmp, { recursive: true })
   const folder = mkdtempSync(path.join(tmp, 'live-deadline-test-'))
   const child = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], {
     detached: true,
     stdio: 'ignore'
   })
+
   return {
     child,
     folder,
     evidencePath: path.join(folder, 'deadline.json'),
+
     close() {
       child.kill('SIGKILL')
       rmSync(folder, { recursive: true, force: true })
     }
   }
 }
+
 test('live execution cap is exactly fifteen minutes', () =>
   assert.equal(LIVE_TEST_LIMIT_MS, 900000))
 test('stops an owned producer while the driver event loop is blocked', async () => {
   const f = fixture()
+
   try {
     const deadlineAt = Date.now() + 300
     const timer = createLiveTestDeadline({
@@ -48,6 +54,7 @@ test('stops an owned producer while the driver event loop is blocked', async () 
       groups: [f.child.pid],
       evidencePath: f.evidencePath
     })
+
     await timer.ready
     Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 900)
     assert.ok(
@@ -55,6 +62,7 @@ test('stops an owned producer while the driver event loop is blocked', async () 
       'worker must stop execution before driver becomes responsive'
     )
     const receipt = JSON.parse(readFileSync(f.evidencePath, 'utf8'))
+
     assert.equal(receipt.status, 'failed')
     assert.equal(receipt.stopped[0].group, f.child.pid)
     assert.ok(receipt.finishedAt < deadlineAt + 500)
@@ -65,12 +73,14 @@ test('stops an owned producer while the driver event loop is blocked', async () 
 })
 test('finishing before the limit disarms termination and leaves the producer alive', async () => {
   const f = fixture()
+
   try {
     const timer = createLiveTestDeadline({
       deadlineAt: Date.now() + 1000,
       groups: [f.child.pid],
       evidencePath: f.evidencePath
     })
+
     await timer.ready
     assert.equal((await timer.finish()).status, 'finished')
     assert.equal(existsSync(f.evidencePath), false)
@@ -88,9 +98,11 @@ test('early collector failure force-stops its producer and preserves a failure r
     groups: [f.child.pid],
     evidencePath: f.evidencePath
   })
+
   try {
     await timer.ready
     const receipt = await timer.stop('collector-navigation')
+
     assert.equal(receipt.reason, 'collector-navigation')
     assert.equal(receipt.status, 'failed')
     assert.equal(
@@ -127,6 +139,7 @@ test(
     )
     let descendant
     let timer
+
     try {
       descendant = await new Promise((resolve, reject) => {
         launcher.once('message', resolve)
@@ -139,12 +152,16 @@ test(
       })
       await timer.ready
       const receipt = await timer.stop('capture-failed')
+
       assert.ok(receipt.stopped.some((entry) => entry.pid === descendant))
       assert.ok(receipt.stopped.some((entry) => entry.group === launcher.pid))
       assert.deepEqual(receipt.errors, [])
       assert.doesNotThrow(() => process.kill(sibling.child.pid, 0))
     } finally {
-      if (timer) await timer.stop()
+      if (timer) {
+        await timer.stop()
+      }
+
       launcher.kill('SIGKILL')
       if (descendant) {
         try {
@@ -153,6 +170,7 @@ test(
           assert.equal(error.code, 'ESRCH')
         }
       }
+
       f.close()
       sibling.close()
     }
@@ -161,14 +179,17 @@ test(
 
 test('receipt write failure still stops the producer and is reported to the caller', async () => {
   const f = fixture()
+
   try {
     const timer = createLiveTestDeadline({
       deadlineAt: Date.now() + 1500,
       groups: [f.child.pid],
       evidencePath: path.join(f.folder, 'missing/deadline.json')
     })
+
     await timer.ready
     const receipt = await timer.stop()
+
     assert.ok(receipt.stopped.some((entry) => entry.group === f.child.pid))
     assert.ok(
       receipt.errors.some((message) =>
@@ -199,6 +220,7 @@ test(
       { detached: true, stdio: ['ignore', 'ignore', 'ignore', 'ipc'] }
     )
     let child, timer
+
     try {
       child = await new Promise((resolve, reject) => {
         launcher.once('message', resolve)
@@ -211,15 +233,20 @@ test(
       })
       await timer.ready
       const exited = new Promise((resolve) => launcher.once('exit', resolve))
+
       launcher.send('exit')
       await exited
       const receipt = await timer.stop('producer-exited')
+
       assert.ok(
         receipt.stopped.some((entry) => entry.group === launcher.pid),
         'surviving provider group must still stop'
       )
     } finally {
-      if (timer) await timer.stop()
+      if (timer) {
+        await timer.stop()
+      }
+
       launcher.kill('SIGKILL')
       if (child) {
         try {
@@ -228,6 +255,7 @@ test(
           assert.equal(error.code, 'ESRCH')
         }
       }
+
       f.close()
     }
   }

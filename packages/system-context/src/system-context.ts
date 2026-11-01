@@ -11,14 +11,23 @@ export class SystemContext implements SystemContextAPIs {
   getSystemContextSnapshot!: RootAPIs['getSystemContextSnapshot']
 
   registerProperty!: ManagedPropertyStateAPIs['registerProperty']
+
   getManagedProperty!: ManagedPropertyStateAPIs['getManagedProperty']
+
   setManagedProperty!: ManagedPropertyStateAPIs['setManagedProperty']
+
   getManagedPropertyObservable!: ManagedPropertyStateAPIs['getManagedPropertyObservable']
+
   hasManagedProperty!: ManagedPropertyStateAPIs['hasManagedProperty']
+
   unregisterProperty!: ManagedPropertyStateAPIs['unregisterProperty']
+
   validateManagedProperties!: ManagedPropertyStateAPIs['validateManagedProperties']
+
   applyValidatedManagedProperties!: ManagedPropertyStateAPIs['applyValidatedManagedProperties']
+
   loadManagedProperties!: ManagedPropertyStateAPIs['loadManagedProperties']
+
   saveManagedProperties!: ManagedPropertyStateAPIs['saveManagedProperties']
 
   constructor(private readonly deps: HandlerDeps) {
@@ -35,4 +44,5 @@ export class SystemContext implements SystemContextAPIs {
 const systemContext = new SystemContext({
   managedPropertyState
 })
+
 export default systemContext

@@ -16,6 +16,7 @@ const env = {
   npm_config_cache: cache,
   npm_config_update_notifier: 'false'
 }
+
 function cli(root, args, expected = 0) {
   const result = spawnSync(
     process.execPath,
@@ -28,15 +29,19 @@ function cli(root, args, expected = 0) {
     ],
     { cwd: root, env, encoding: 'utf8', timeout: 120000 }
   )
+
   assert.equal(result.status, expected, result.stderr + result.stdout)
+
   return JSON.parse(result.stdout || result.stderr)
 }
+
 test(
   'installed tarball runs independent manual, custom, Vitest and Playwright projects',
   { timeout: 360000 },
   async (t) => {
     fs.mkdirSync(output, { recursive: true })
     const archive = path.join(output, 'candidate.tgz')
+
     execFileSync('yarn', ['pack', '--out', archive], {
       cwd: packageRoot,
       env,
@@ -45,12 +50,16 @@ test(
     const entries = execFileSync('tar', ['-tzf', archive], { encoding: 'utf8' })
       .trim()
       .split('\n')
-    for (const entry of entries)
+
+    for (const entry of entries) {
       assert.doesNotMatch(
         entry,
         /(?:^|\/)(?:node_modules|tmp|\.env|\.attachments)(?:\/|$)/
       )
+    }
+
     const root = fs.mkdtempSync(path.join(output, 'consumer space-'))
+
     // Retain this isolated installation and evidence for inspection; it is ignored output.
     fs.writeFileSync(
       path.join(root, 'package.json'),
@@ -75,6 +84,7 @@ test(
     assert.equal(cli(root, ['validate']).status, 'valid')
     const manualFile = path.join(root, 'flows/checkout.flow.json'),
       validManual = fs.readFileSync(manualFile)
+
     fs.writeFileSync(manualFile, '{')
     assert.equal(cli(root, ['ci'], 2).status, 'invalid')
     fs.writeFileSync(manualFile, validManual)
@@ -84,6 +94,7 @@ test(
     const project = api.resolveProject(root),
       store = api.openProject(project.directory)
     const doc = store.snapshot().documents[0]
+
     store.update('checkout', {
       expectedRevision: 0,
       kind: 'observation',
@@ -117,9 +128,12 @@ test(
         ],
         { cwd: root, env, encoding: 'utf8', timeout: 10000 }
       )
+
       assert.equal(read.status, 0, read.stderr)
     }
+
     const nested = path.join(root, 'packages/app')
+
     fs.mkdirSync(nested, { recursive: true })
     fs.writeFileSync(
       path.join(nested, 'package.json'),
@@ -136,15 +150,18 @@ test(
       ],
       { cwd: nested, env, encoding: 'utf8' }
     )
+
     assert.equal(nestedRead.status, 0, nestedRead.stderr)
 
     // Built-in runner absence must not fall back to this repository's node_modules.
     const missing = path.join(root, 'missing-runner')
+
     fs.mkdirSync(missing)
     const missingProject = api.initialize(missing, 'vitest')
     const runner = requireConsumer(
       '@asyra/flow-inspector/flow-files/portable-runner.cjs'
     )
+
     await assert.rejects(
       runner.runSelected(missingProject, {
         flowId: 'checkout',
@@ -171,8 +188,10 @@ test(
         fs.readFileSync(path.join(project.directory, 'checkout.flow.json'))
       )
       const example = path.join(root, 'generated-' + producer)
+
       fs.mkdirSync(example)
       const generated = api.initialize(example, producer, 'consumer')
+
       fs.cpSync(
         path.join(example, 'flow-example'),
         path.join(root, 'flow-example'),
@@ -181,6 +200,7 @@ test(
       const next = JSON.parse(
         fs.readFileSync(path.join(generated.directory, 'checkout.flow.json'))
       )
+
       next.revision = flow.revision + 1
       fs.writeFileSync(
         path.join(project.directory, 'checkout.flow.json'),
@@ -197,11 +217,13 @@ test(
           ? 'flow-example/feature.test.mjs'
           : 'flow-example/feature.spec.cjs'
       )
+
       fs.appendFileSync(
         testFile,
         "\ntest('prefix adds [two] + values', () => { throw new Error('Wrong case executed') })\n"
       )
       const fail = cli(root, ['run', 'checkout', 'review', 'check'], 1)
+
       assert.equal(
         fail.documents[0].current.observations[0]?.status,
         'failed',
@@ -213,6 +235,7 @@ test(
           { flowId: 'checkout', nodeId: 'review', criterionId: 'check' },
           { signal: AbortSignal.abort() }
         )
+
         assert.equal(canceled.code, 1)
         assert.equal(
           api.openProject(project.directory).snapshot().documents[0].current
@@ -220,9 +243,12 @@ test(
           'failed'
         )
       }
+
       const context = cli(root, ['context', 'checkout', 'review'])
+
       assert.match(JSON.stringify(context), /feature.cjs/)
       let server, browser, page
+
       if (producer === 'playwright') {
         server = await requireConsumer(
           '@asyra/flow-inspector/flow-files/server.cjs'
@@ -233,6 +259,7 @@ test(
         })
         t.after(() => server?.close())
         const browserTemp = path.join(repository, 'tmp/flow-browser')
+
         fs.mkdirSync(browserTemp, { recursive: true })
         browser = await requireConsumer('@playwright/test').chromium.launch({
           channel: 'chrome',
@@ -254,6 +281,7 @@ test(
           fullPage: true
         })
       }
+
       fs.writeFileSync(
         path.join(root, 'flow-example/feature.cjs'),
         'exports.add = (a,b) => a + b\n'
@@ -264,6 +292,7 @@ test(
         const rerunResponse = page.waitForResponse((r) =>
           r.url().endsWith('/api/rerun')
         )
+
         await page
           .getByRole('button', { name: 'Confirm rerun', exact: true })
           .click()
@@ -276,11 +305,13 @@ test(
         )
       } else {
         const pass = cli(root, ['run', 'checkout', 'review', 'check'])
+
         assert.equal(
           pass.documents[0].current.observations[0]?.status,
           'passed'
         )
       }
+
       assert.equal(cli(root, ['ci']).status, 'satisfied')
       if (page) {
         await page.waitForFunction(
@@ -294,10 +325,12 @@ test(
         const noteResponse = page.waitForResponse((r) =>
           r.url().endsWith('/api/update')
         )
+
         await page
           .getByRole('button', { name: 'Save note', exact: true })
           .click()
         const saved = await noteResponse
+
         assert.equal(saved.ok(), true, await saved.text())
         await page.getByLabel('Edit note').waitFor()
         assert.equal(
@@ -307,6 +340,7 @@ test(
         const start = requireConsumer(
           '@asyra/flow-inspector/flow-files/server.cjs'
         ).startFlowServer
+
         await assert.rejects(
           start(root, { directory: project.directory, url: server.origin }),
           /EADDRINUSE/
@@ -335,6 +369,7 @@ test(
         await server.close()
         server = null
       }
+
       // Native reporters publish the actual existing execution, without an Inspector process.
       const reporter = path.join(
         root,
@@ -375,6 +410,7 @@ test(
         encoding: 'utf8',
         timeout: 60000
       })
+
       assert.equal(
         nativeResult.status,
         0,
@@ -387,6 +423,7 @@ test(
       assert.equal(cli(root, ['ci']).status, 'satisfied')
       if (producer === 'vitest') {
         const watchArgs = [...native]
+
         watchArgs[1] = '--watch'
         const initialRevision = api.openProject(project.directory).snapshot()
           .documents[0].revision
@@ -398,27 +435,36 @@ test(
         })
         let log = '',
           exited = false
+
         watcher.on('exit', () => {
           exited = true
         })
-        for (const stream of [watcher.stdout, watcher.stderr])
+        for (const stream of [watcher.stdout, watcher.stderr]) {
           stream.on('data', (data) => {
             log = (log + data).slice(-4000)
           })
+        }
+
         const stop = () => {
           if (!exited) {
             try {
               process.kill(-watcher.pid, 'SIGTERM')
             } catch (e) {
-              if (e.code !== 'ESRCH') throw e
+              if (e.code !== 'ESRCH') {
+                throw e
+              }
             }
           }
         }
+
         t.after(stop)
+
         const awaitState = async (revision, state) => {
           const deadline = Date.now() + 15000
+
           while (Date.now() < deadline) {
             let current
+
             try {
               current = api.openProject(project.directory).snapshot()
             } catch (error) {
@@ -427,22 +473,32 @@ test(
                   'Another writer owns this project',
                   'Flow files changed during snapshot'
                 ].includes(error.message)
-              )
+              ) {
                 throw error
+              }
             }
+
             if (
               current &&
               current.documents[0].revision > revision &&
               current.evaluation.flows[0].nodes[0].status === state
-            )
+            ) {
               return current.documents[0].revision
-            if (exited) throw new Error('Watch exited: ' + log)
+            }
+
+            if (exited) {
+              throw new Error('Watch exited: ' + log)
+            }
+
             await new Promise((resolve) => setTimeout(resolve, 100))
           }
+
           throw new Error('Watch publication timed out: ' + log)
         }
+
         try {
           let revision = await awaitState(initialRevision, 'done')
+
           fs.writeFileSync(
             path.join(root, 'flow-example/feature.cjs'),
             'exports.add = (a,b) => a - b\n'
@@ -456,11 +512,15 @@ test(
         } finally {
           stop()
           await new Promise((resolve) => {
-            if (exited) resolve()
-            else watcher.once('exit', resolve)
+            if (exited) {
+              resolve()
+            } else {
+              watcher.once('exit', resolve)
+            }
           })
         }
       }
+
       // Empty discovery must become a current warning and recover through results.
       const configFile = path.join(
         root,
@@ -471,6 +531,7 @@ test(
         producer === 'vitest'
           ? "export default { test: { name: 'example', include: ['never.test.mjs'] } }\n"
           : "export default { testDir: '.', testMatch: 'never.spec.cjs', projects: [{ name: 'example' }] }\n"
+
       fs.writeFileSync(configFile, noTestsConfig)
       cli(root, ['run', 'checkout', 'review', 'check'], 1)
       assert.ok(
@@ -495,6 +556,7 @@ test(
         const selected = JSON.parse(
           current.definition.nodes[0].criteria[0].selector.identity
         )
+
         selected.file = 'packages/app/' + selected.file
         selected.config = 'packages/app/' + selected.config
         selected.cwd = 'packages/app'
@@ -508,6 +570,7 @@ test(
         cli(root, ['run', 'checkout', 'review', 'check'])
         assert.equal(cli(root, ['ci']).status, 'satisfied')
       }
+
       if (producer === 'playwright') {
         const shellTitle = 'literal $(touch sentinel) [case] + value'
         const currentFile = path.join(project.directory, 'checkout.flow.json')
@@ -515,6 +578,7 @@ test(
         const selected = JSON.parse(
           current.definition.nodes[0].criteria[0].selector.identity
         )
+
         selected.title = shellTitle
         current.definition.nodes[0].criteria[0].selector.identity =
           JSON.stringify(selected)
@@ -535,10 +599,13 @@ test(
         assert.equal(cli(root, ['ci']).status, 'satisfied')
       }
     }
+
     for (const template of ['custom', 'mixed']) {
       const example = path.join(root, 'generated-' + template)
+
       fs.mkdirSync(example)
       const generated = api.initialize(example, template, 'consumer')
+
       fs.cpSync(
         path.join(example, 'flow-example'),
         path.join(root, 'flow-example'),
@@ -552,6 +619,7 @@ test(
         '@asyra/flow-inspector/flow-files/service.cjs'
       ).createFlowService(root, project.directory)
       const preview = service.preview('checkout', 'review', 'check')
+
       await service.rerun({ ...preview, confirm: true })
       assert.equal(
         cli(root, ['ci'], template === 'mixed' ? 3 : 0).status,
@@ -559,6 +627,7 @@ test(
       )
       await service.close()
     }
+
     fs.writeFileSync(
       path.join(output, 'evidence.json'),
       JSON.stringify(

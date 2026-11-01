@@ -145,12 +145,11 @@ readiness. Runtime correctness still needs evidence from the implementation.
 
 ### Admit the flow and hand off bounded work
 
-Use Flow Inspector's existing supported contract/target/work admission paths.
-Keep the reviewed flow revision, accepted baseline, complete obligation inventory,
-work allocation, prerequisites and acceptance cases explicit. A tool support gap
-or missing proof mapping is a blocker to resolve during preparation, not
-permission to report an unregistered flow as verified. Resolve necessary gaps
-within the authorized scope or return them to the coordinating owner.
+Use the current flow document and its required criteria. Tests update current
+contract results; completion means all required criteria pass. Missing, failed,
+stale or unexecuted results cannot pass. Do not require historical-baseline
+acceptance, compatibility records or a second candidate proof. Apps and their
+contracts evolve together; retired behavior is not an implicit obligation.
 
 The handoff selects the plan section, reviewed specification and Inspector
 step/route, allowed implementation boundary, required cases and gates, and the
@@ -161,7 +160,7 @@ or duplicate the tool's retained state in a new task registry.
 The worker verifies that the reviewed contract and prerequisites exist in its
 selected checkout and reads them before editing. Follow
 `docs/ai/framework/rules/inspector-step-execution.md`: implement one owner segment
-at a time, use its Step Execution Card and test-first requirements, then recheck
+at a time, identify its required tests in the existing plan, then recheck
 the contract and focused evidence before advancing. Worker entry confirms the
 reviewed design; it does not defer whole-flow design until implementation.
 
@@ -184,7 +183,7 @@ Design changes remain possible. If implementation evidence invalidates an
 assumption, stop the affected segment, identify the cause, and revise the plan,
 flow contract, affected cases and proof mapping together within the authorized
 scope. Review the changed step, its connected consumers, whole-flow implications
-and preservation obligations before resuming. Keep prior evidence historical;
+and preservation obligations before resuming. Prior evidence may remain historical but does not gate the new contract;
 rerun the checks affected by the change. Do not weaken obligations, widen
 boundaries or silently redesign a step just to make a local implementation pass.
 
@@ -194,12 +193,10 @@ contract needs fresh evidence, not an artificial contract rewrite. The
 integrating owner checks the actual diff, design changes and all four results
 before declaring the development target complete.
 
-Flow Inspector's implemented support and evidence boundaries remain owned by
-`docs/ai/tools/flow-inspector/README.md`, `FLOW_INSPECTOR.md`, `CORE_PROOF.md`
-and `PR_REVIEW.md` in that directory. This workflow does not expand its runtime
-coverage. Design review, runtime verification, GitHub review approval and explicit
-accepted-baseline mutation are distinct decisions; none implicitly grants the
-others or authorizes remote operations.
+Flow Inspector's current document and evaluation behavior are owned by
+`docs/ai/tools/flow-inspector/README.md` and `FLOW_DOCUMENT.md`. Current test
+results establish contract completion. GitHub review and remote operations use
+their own authorization workflow.
 
 ## Closeout Verification Contract
 

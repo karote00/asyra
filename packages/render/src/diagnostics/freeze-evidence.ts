@@ -5,5 +5,6 @@ export const freezeEvidence = <T>(value: T): T => {
 
   Object.freeze(value)
   Object.values(value).forEach(freezeEvidence)
+
   return value
 }

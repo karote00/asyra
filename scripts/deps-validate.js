@@ -28,9 +28,18 @@ function readJSON(filePath) {
 }
 
 function sourceFileKind(filePath) {
-  if (filePath.endsWith('.tsx')) return ts.ScriptKind.TSX
-  if (filePath.endsWith('.jsx')) return ts.ScriptKind.JSX
-  if (filePath.endsWith('.js')) return ts.ScriptKind.JS
+  if (filePath.endsWith('.tsx')) {
+    return ts.ScriptKind.TSX
+  }
+
+  if (filePath.endsWith('.jsx')) {
+    return ts.ScriptKind.JSX
+  }
+
+  if (filePath.endsWith('.js')) {
+    return ts.ScriptKind.JS
+  }
+
   return ts.ScriptKind.TS
 }
 
@@ -39,7 +48,10 @@ function moduleSpecifierText(node) {
 }
 
 function importTypeSpecifierText(node) {
-  if (!ts.isLiteralTypeNode(node.argument)) return
+  if (!ts.isLiteralTypeNode(node.argument)) {
+    return
+  }
+
   return moduleSpecifierText(node.argument.literal)
 }
 
@@ -64,13 +76,17 @@ export function extractInternalImports(source, filePath) {
   const imports = []
 
   function addImport(specifier) {
-    if (specifier?.startsWith(INTERNAL_SCOPE)) imports.push(specifier)
+    if (specifier?.startsWith(INTERNAL_SCOPE)) {
+      imports.push(specifier)
+    }
   }
 
   function visit(node) {
     for (const jsDoc of node.jsDoc ?? []) {
       for (const tag of jsDoc.tags ?? []) {
-        if (tag.typeExpression?.type) visit(tag.typeExpression.type)
+        if (tag.typeExpression?.type) {
+          visit(tag.typeExpression.type)
+        }
       }
     }
 
@@ -102,6 +118,7 @@ export function extractInternalImports(source, filePath) {
   }
 
   visit(sourceFile)
+
   return imports
 }
 
@@ -123,6 +140,7 @@ export function resolveWorkspaceImport(importedPackage, workspaceNames) {
 
 function isTestFile(relativeFile) {
   const normalized = relativeFile.replaceAll('\\', '/')
+
   return (
     /(^|\/)__(tests|mocks)__(\/|$)/.test(normalized) ||
     /\.(test|spec)\.[cm]?[jt]sx?$/.test(normalized)
@@ -138,6 +156,7 @@ export function validateSourceImports({
   workspaceNames
 }) {
   const declaredDependencies = new Set(dependencies)
+
   if (isTestFile(relativeFile)) {
     for (const dependency of devDependencies) {
       declaredDependencies.add(dependency)
@@ -145,10 +164,14 @@ export function validateSourceImports({
   }
 
   const missing = new Set()
+
   for (const importedPackage of extractInternalImports(source, relativeFile)) {
     const owner = resolveWorkspaceImport(importedPackage, workspaceNames)
 
-    if (owner === workspaceName) continue
+    if (owner === workspaceName) {
+      continue
+    }
+
     if (!owner || !declaredDependencies.has(owner)) {
       missing.add(owner ?? importedPackage)
     }
@@ -168,9 +191,11 @@ function addMissingDependency(
   }
 
   const dependencies = missingDependencies.get(workspaceName)
+
   if (!dependencies.has(dependency)) {
     dependencies.set(dependency, new Set())
   }
+
   dependencies.get(dependency).add(file)
 }
 
@@ -179,6 +204,7 @@ export async function validateDependencies({
   verbose = false
 } = {}) {
   const rootManifestPath = path.join(rootDir, 'package.json')
+
   if (!fs.existsSync(rootManifestPath)) {
     return {
       workspaces: [],
@@ -192,6 +218,7 @@ export async function validateDependencies({
   const workspacePatterns = Array.isArray(rootManifest.workspaces)
     ? rootManifest.workspaces
     : rootManifest.workspaces?.packages
+
   if (!Array.isArray(workspacePatterns) || workspacePatterns.length === 0) {
     return {
       workspaces: [],
@@ -215,6 +242,7 @@ export async function validateDependencies({
   ].sort()
   const workspaces = workspaceDirs.map((directory) => {
     const manifest = readJSON(path.join(directory, 'package.json'))
+
     return {
       name: manifest.name,
       directory,
@@ -231,10 +259,14 @@ export async function validateDependencies({
     .map(({ name }) => name)
   const missingDependencies = new Map()
 
-  if (verbose) console.log(`Found ${workspaces.length} workspaces`)
+  if (verbose) {
+    console.log(`Found ${workspaces.length} workspaces`)
+  }
 
   for (const workspace of workspaces) {
-    if (verbose) console.log(`\nScanning ${workspace.name}`)
+    if (verbose) {
+      console.log(`\nScanning ${workspace.name}`)
+    }
 
     const nestedManifests = await glob('**/package.json', {
       cwd: workspace.directory,
@@ -285,6 +317,7 @@ export async function validateDependencies({
 function reportValidation(result) {
   if (result.setupError) {
     console.error(`✖ ${result.setupError}`)
+
     return false
   }
 
@@ -293,7 +326,9 @@ function reportValidation(result) {
     for (const name of result.selfDependencies) {
       console.error(`- ${name} depends on itself`)
     }
+
     console.error('\nThis is always invalid in a monorepo.')
+
     return false
   }
 
@@ -301,6 +336,7 @@ function reportValidation(result) {
     console.log('✔ Dependency validation passed\n')
     console.log(`Workspaces scanned: ${result.workspaces.length}`)
     console.log('No missing internal dependencies found.')
+
     return true
   }
 
@@ -315,6 +351,7 @@ function reportValidation(result) {
         console.error(`    - ${file}`)
       }
     }
+
     console.error('')
   }
 
@@ -325,10 +362,12 @@ export async function main(args = process.argv.slice(2)) {
   const result = await validateDependencies({
     verbose: args.includes('--verbose')
   })
+
   return reportValidation(result) ? 0 : 1
 }
 
 const invokedPath = process.argv[1] ? path.resolve(process.argv[1]) : undefined
+
 if (invokedPath === fileURLToPath(import.meta.url)) {
   process.exitCode = await main()
 }

@@ -6,6 +6,7 @@ test('ordinary analysis keeps progress out of history and retains terminal cance
 }, info) => {
   test.setTimeout(60_000)
   const errors: string[] = []
+
   page.on('pageerror', (error) => errors.push(error.message))
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
@@ -22,8 +23,10 @@ test('ordinary analysis keeps progress out of history and retains terminal cance
     page.getByRole('button', { name: 'Run analysis', exact: true })
   ).toBeEnabled()
   const depth = await page.getByTestId('history-depth').textContent()
+
   await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
   const progress = page.getByTestId('analysis-progress')
+
   await expect(progress).toContainText('pair records received')
   await expect(progress).toContainText('not a clearance conclusion')
   await expect(progress).toHaveAttribute('data-run-id', /.+/)
@@ -42,6 +45,7 @@ test('ordinary analysis keeps progress out of history and retains terminal cance
     pipeline:
       'ordinary experiment Feature, production worker, validated bounded progress, CUSTOM renderer'
   }
+
   // Cancel while the real worker is active; screenshot encoding can outlast it.
   await page
     .getByRole('button', { name: 'Cancel analysis', exact: true })

@@ -10,11 +10,13 @@ const Rotation = () => {
   const handleChangeRotation = useCallback(
     (newValue: string) => {
       const nextValue = parseFiniteInputNumber(newValue)
+
       if (nextValue === null) {
         return false
       }
 
       updateSelectedElementProperties('rotation', nextValue)
+
       return true
     },
     [updateSelectedElementProperties]

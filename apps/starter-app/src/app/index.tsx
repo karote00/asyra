@@ -10,6 +10,7 @@ import './styles.css'
 
 const Status = () => {
   const status = useStatus()
+
   return (
     <p
       className={'operation-feedback ' + status?.tone}
@@ -71,32 +72,43 @@ export const AppView = () => (
 export const StarterApp = () => {
   const [app, setApp] = useState<AppSession | null>(null)
   const [error, setError] = useState<string | null>(null)
+
   useEffect(() => {
     let active = true
     let session: AppSession | undefined
+
     void waitForCore()
       .then(() => {
-        if (!active) return
+        if (!active) {
+          return
+        }
+
         session = initApp()
         setApp(session)
       })
       .catch((cause) => {
-        if (active)
+        if (active) {
           setError(cause instanceof Error ? cause.message : String(cause))
+        }
       })
+
     return () => {
       active = false
-      if (session) void session.dispose()
+      if (session) {
+        void session.dispose()
+      }
     }
   }, [])
 
-  if (!app)
+  if (!app) {
     return (
       <main>
         <h1>Item board</h1>
         <p role="status">{error ?? 'Starting runtime...'}</p>
       </main>
     )
+  }
+
   return (
     <AppContext.Provider value={app}>
       <AppView />

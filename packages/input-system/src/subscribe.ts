@@ -14,6 +14,7 @@ export const initInputSystemSubscribe = () => {
     if (!payload.blockInput) {
       return
     }
+
     inputSystem.setPointerCaptureBlock(true, payload.targetId)
   })
 
@@ -21,6 +22,7 @@ export const initInputSystemSubscribe = () => {
     if (!payload.blockInput) {
       return
     }
+
     inputSystem.setPointerCaptureBlock(false, payload.targetId)
   })
 }

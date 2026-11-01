@@ -9,6 +9,7 @@ const sourceRoot = path.resolve(
   '../../work/visualizations/spatial-story-artwork'
 )
 const outputRoot = path.join(siteRoot, 'public/illustrations/spatial-story')
+
 await mkdir(outputRoot, { recursive: true })
 
 // Delivery encoding only; subjects are authored and isolated with image tools.
@@ -28,18 +29,21 @@ for (const [name, width] of [
   const input = path.join(sourceRoot, `${name}.png`)
   const output = path.join(outputRoot, `${name}.webp`)
   const original = await sharp(input).metadata()
+
   if (
     !['closing-atelier', 'prepared-workbench'].includes(name) &&
     !original.hasAlpha
   ) {
     throw new Error(`${name}: real alpha is required before delivery encoding`)
   }
+
   await sharp(input)
     .resize({ width, withoutEnlargement: true })
     .webp({ quality: 88, alphaQuality: 100, effort: 5 })
     .toFile(output)
   const metadata = await sharp(output).metadata()
   const file = await stat(output)
+
   console.log(
     `${name}: ${metadata.width}x${metadata.height}, ${Math.round(file.size / 1024)} KiB, alpha=${metadata.hasAlpha}`
   )

@@ -47,6 +47,7 @@ const sortGradientStops = (
 
 const toGradientStopColor = (color: string, opacity: number): string | null => {
   const parsed = parseColor(color)
+
   if (!parsed) {
     return null
   }
@@ -62,6 +63,7 @@ export const toRenderableGradient = (
   }
 
   const stops = sortGradientStops(entry.gradient.gradientStops)
+
   if (!stops.length) {
     return null
   }
@@ -172,6 +174,7 @@ const getRenderableFillFromEntry = (
 
   if (entry.kind === FillKinds.GRADIENT && entry.gradient) {
     const renderableGradient = toRenderableGradient(entry)
+
     if (!renderableGradient) {
       return null
     }
@@ -183,6 +186,7 @@ const getRenderableFillFromEntry = (
   }
 
   const parsed = parseColor(entry.color)
+
   if (!parsed) {
     return null
   }
@@ -201,11 +205,13 @@ export const getRenderableFills = (fills: unknown): RenderableFill[] => {
 
   return fills.reduce<RenderableFill[]>((result, rawFill) => {
     const fill = normalizeFillEntry(rawFill)
+
     if (!fill) {
       return result
     }
 
     const renderableFill = getRenderableFillFromEntry(fill)
+
     if (renderableFill) {
       result.push(renderableFill)
     }
@@ -218,14 +224,20 @@ export const getRenderableFills = (fills: unknown): RenderableFill[] => {
 export const toMeshProjectionPaint = (fills: unknown): MeshProjectionPaint => {
   type Material = Extract<MeshProjectionPaint, { kind: 'material' }>['material']
   const layers: Material['fills'][number][] = []
-  if (Array.isArray(fills))
+
+  if (Array.isArray(fills)) {
     for (const raw of fills) {
       const entry = normalizeFillEntry(raw)
-      if (!entry?.visible) continue
+
+      if (!entry?.visible) {
+        continue
+      }
+
       if (entry.kind === FillKinds.GRADIENT && entry.gradient) {
         const gradient = entry.gradient
         const stops = gradient.gradientStops.flatMap((stop) => {
           const parsed = parseColor(stop.color)
+
           return parsed
             ? [
                 {
@@ -240,17 +252,24 @@ export const toMeshProjectionPaint = (fills: unknown): MeshProjectionPaint => {
               ]
             : []
         })
-        if (!stops.length) continue
+
+        if (!stops.length) {
+          continue
+        }
+
         const [start = { x: 0, y: 0 }, end = { x: 1, y: 0 }, side] =
           gradient.gradientHandles
         const type = gradient.gradientType
+
         if (
           type !== 'linear' &&
           type !== 'radial' &&
           type !== 'angular' &&
           type !== 'diamond'
-        )
+        ) {
           throw new Error('Unsupported gradient type')
+        }
+
         layers.push({
           kind: 'gradient',
           type,
@@ -261,7 +280,8 @@ export const toMeshProjectionPaint = (fills: unknown): MeshProjectionPaint => {
         })
       } else {
         const parsed = parseColor(entry.color)
-        if (parsed)
+
+        if (parsed) {
           layers.push({
             kind: 'solid',
             color: [
@@ -271,22 +291,29 @@ export const toMeshProjectionPaint = (fills: unknown): MeshProjectionPaint => {
               clampOpacity(parsed.a * entry.opacity)
             ]
           })
+        }
       }
     }
+  }
+
   const onlyLayer = layers.length === 1 ? layers[0] : undefined
+
   if (onlyLayer?.kind === 'solid') {
     const [r, g, b, a] = onlyLayer.color
+
     return {
       kind: 'solid',
       color: rgbaToColorInt({ r: r * 255, g: g * 255, b: b * 255, a }),
       alpha: a
     }
   }
+
   return { kind: 'material', material: { fills: layers } }
 }
 
 export const getRenderableFill = (fills: unknown): RenderableFill | null => {
   const renderableFills = getRenderableFills(fills)
+
   return renderableFills[0] ?? null
 }
 
@@ -299,6 +326,7 @@ export const applyRenderableFill = (
   }
 ): boolean => {
   const renderableFills = getRenderableFills(fills)
+
   if (renderableFills.length === 0) {
     return false
   }
@@ -321,11 +349,13 @@ export const applyRenderableFill = (
 
     if (renderableFill.kind === 'gradient') {
       applyFill(renderableFill.style)
+
       return
     }
 
     if (renderableFill.alpha >= 1) {
       applyFill(renderableFill.color)
+
       return
     }
 
@@ -334,11 +364,13 @@ export const applyRenderableFill = (
       alpha: renderableFill.alpha
     })
   })
+
   return true
 }
 
 export const fillColorToHex = (value: string): string => {
   const parsed = parseColor(value)
+
   if (!parsed) {
     return '#000000'
   }

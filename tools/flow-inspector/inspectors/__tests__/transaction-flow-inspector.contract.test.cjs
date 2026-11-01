@@ -7,7 +7,9 @@ const data = require('../transaction-flow-inspector.data.cjs')
 
 const step = (id) => {
   const value = data.steps.find((item) => item.id === id)
+
   assert.ok(value, `Missing Inspector step: ${id}`)
+
   return value
 }
 

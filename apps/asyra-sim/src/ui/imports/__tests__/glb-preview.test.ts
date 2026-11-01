@@ -41,7 +41,9 @@ function render(model = workcell, active = true) {
       candidateId: 'candidate',
       workcell: model,
       onPreview,
+
       isCurrent: () => true,
+
       active
     })
   )
@@ -86,7 +88,9 @@ beforeEach(async () => {
         candidateId: 'candidate',
         workcell,
         onPreview,
+
         isCurrent: () => true,
+
         active: true
       })
     )
@@ -106,7 +110,9 @@ function input() {
     '[aria-label="Choose original part GLB"]'
   )
 
-  if (!field) throw new Error('Missing GLB input')
+  if (!field) {
+    throw new Error('Missing GLB input')
+  }
 
   return field
 }
@@ -247,7 +253,9 @@ it('invalidates placement after target or workcell changes and revokes it when t
     '[aria-label="Visual target body"]'
   )
 
-  if (!target) throw new Error('Missing target selector')
+  if (!target) {
+    throw new Error('Missing target selector')
+  }
 
   await act(() => {
     target.value = workcell.bodies[1].id
@@ -333,7 +341,9 @@ it('releases the file picker immediately on cancellation and ignores late file b
     (button) => button.textContent === 'Cancel preview'
   )
 
-  if (!cancel) throw new Error('Missing cancellation control')
+  if (!cancel) {
+    throw new Error('Missing cancellation control')
+  }
 
   await act(() => cancel.click())
 
@@ -351,8 +361,11 @@ it('releases the file picker immediately on cancellation and ignores late file b
 it('exposes source preparation and acceptance progress and reveals the prepared source', async () => {
   const scroll = vi.fn()
   const original = HTMLElement.prototype.scrollIntoView
+
   HTMLElement.prototype.scrollIntoView = scroll
+
   let finish: (value: PreparedVisualImport) => void = () => undefined
+
   prepare.mockImplementationOnce(
     () =>
       new Promise<PreparedVisualImport>((resolve) => {
@@ -369,7 +382,9 @@ it('exposes source preparation and acceptance progress and reveals the prepared 
     'Original part source review'
   )
   expect(scroll).toHaveBeenCalledTimes(1)
+
   let complete: () => void = () => undefined
+
   retain.mockImplementationOnce(
     () =>
       new Promise<void>((resolve) => {

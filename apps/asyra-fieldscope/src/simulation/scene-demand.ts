@@ -222,7 +222,10 @@ const contains = (outer: SceneDemandBounds, inner: SceneDemandBounds) =>
   )
 
 const expanded = (value: SceneDemandBounds, margin: number) => {
-  if (margin === 0) return value
+  if (margin === 0) {
+    return value
+  }
+
   return bounds(
     value.min.map(
       (minimum) => subtract(interval(minimum), interval(margin)).low
@@ -240,45 +243,62 @@ function transformedBounds(
 ): SceneDemandBounds {
   const min = [Infinity, Infinity, Infinity]
   const max = [-Infinity, -Infinity, -Infinity]
+
   for (let corner = 0; corner < 8; corner++) {
     let value: ReturnType<typeof transformQueryPoint> = [
       interval(corner & 1 ? local.max[0] : local.min[0]),
       interval(corner & 2 ? local.max[1] : local.min[1]),
       interval(corner & 4 ? local.max[2] : local.min[2])
     ]
-    for (const frame of frames) value = transformQueryPoint(frame, value)
+
+    for (const frame of frames) {
+      value = transformQueryPoint(frame, value)
+    }
+
     work.envelopeCorners++
     for (let axis = 0; axis < 3; axis++) {
       min[axis] = Math.min(min[axis], value[axis].low)
       max[axis] = Math.max(max[axis], value[axis].high)
     }
   }
-  if (![...min, ...max].every(Number.isFinite))
+
+  if (![...min, ...max].every(Number.isFinite)) {
     throw new Error('Unbounded scene demand source envelope')
+  }
+
   return bounds(min, max)
 }
 
 export function joinSceneDemandBounds(
   values: readonly SceneDemandBounds[]
 ): SceneDemandBounds {
-  if (!values.length)
+  if (!values.length) {
     throw new Error('Missing scene demand target source bounds')
+  }
+
   const min = [Infinity, Infinity, Infinity],
     max = [-Infinity, -Infinity, -Infinity]
-  for (const value of values)
+
+  for (const value of values) {
     for (let axis = 0; axis < 3; axis++) {
       min[axis] = Math.min(min[axis], value.min[axis])
       max[axis] = Math.max(max[axis], value.max[axis])
     }
+  }
+
   return bounds(min, max)
 }
 
 const reach = (
   targets: readonly SceneDemandTarget[]
 ): SceneDemandReachSide | null => {
-  if (!targets.length) return null
+  if (!targets.length) {
+    return null
+  }
+
   const low = Math.min(...targets.map((target) => target.bounds.min[1]))
   const high = Math.max(...targets.map((target) => target.bounds.max[1]))
+
   return Object.freeze({
     low: Object.freeze({
       metres: low,
@@ -313,6 +333,7 @@ export interface SceneDemandSourceWork {
   readonly inventoryBuilds: number
   readonly inventoryReuses: number
 }
+
 const sourceWork = () => ({
   sourceKeysEnumerated: 0,
   membershipVisits: 0,
@@ -327,6 +348,7 @@ const sourceWork = () => ({
   inventoryBuilds: 0,
   inventoryReuses: 0
 })
+
 export interface SceneObservationInventory {
   readonly provenance: 'w1-canonical-obstacles/1'
   readonly farm: farmGeometry.FarmConfiguration
@@ -344,14 +366,23 @@ const issuedObservationSpaces = new WeakMap<
 /** The immutable farm/scene owns source preparation; route and sensor views share it. */
 export class SceneDemandSourceBoundsOwner {
   private farm?: farmGeometry.FarmConfiguration
+
   private scene?: PreparedScene
+
   private closed = false
+
   private generation: object = Object.freeze({})
+
   private counts = sourceWork()
+
   private whole = new Map<TriangleShape, SceneDemandBounds>()
+
   private spans = new Map<TriangleShape, Map<object, SceneDemandBounds>>()
+
   private descriptors = new Map<SiteMesh['descriptor'], IntervalFrame>()
+
   private instances = new Map<SpatialInstance, IntervalFrame>()
+
   private meshes = new Map<
     Readonly<SiteMesh>,
     Map<
@@ -362,23 +393,34 @@ export class SceneDemandSourceBoundsOwner {
       }
     >
   >()
+
   private membership?: Set<Readonly<SiteMesh>>
+
   private regions = new Map<Readonly<SiteMesh>, Set<SourceRegion>>()
+
   private inventory?: SceneObservationInventory
 
   get work(): SceneDemandSourceWork {
     return Object.freeze({ ...this.counts })
   }
+
   get identity(): object {
     return this.generation
   }
+
   isCurrentIdentity(identity: object): boolean {
     return !this.closed && identity === this.generation
   }
 
   bind(farm: farmGeometry.FarmConfiguration, scene: PreparedScene) {
-    if (this.closed) throw new Error('Closed scene demand source owner')
-    if (this.farm === farm && this.scene === scene) return
+    if (this.closed) {
+      throw new Error('Closed scene demand source owner')
+    }
+
+    if (this.farm === farm && this.scene === scene) {
+      return
+    }
+
     this.farm = farm
     this.scene = scene
     this.generation = Object.freeze({})
@@ -393,61 +435,102 @@ export class SceneDemandSourceBoundsOwner {
   }
 
   localBounds(shape: TriangleShape, span?: Span & object): SceneDemandBounds {
-    if (this.closed) throw new Error('Closed scene demand source owner')
+    if (this.closed) {
+      throw new Error('Closed scene demand source owner')
+    }
+
     const previous = span
       ? this.spans.get(shape)?.get(span)
       : this.whole.get(shape)
-    if (previous) return previous
+
+    if (previous) {
+      return previous
+    }
+
     const min = [Infinity, Infinity, Infinity],
       max = [-Infinity, -Infinity, -Infinity]
     const count = span?.indexCount ?? shape.positions.length / 3
     const start = span?.indexStart ?? 0
+
     for (let index = start; index < start + count; index++) {
       const vertex = span ? shape.indices[index] : index
-      if (span) this.counts.sourceIndexVisits++
+
+      if (span) {
+        this.counts.sourceIndexVisits++
+      }
+
       for (let axis = 0; axis < 3; axis++) {
         min[axis] = Math.min(min[axis], shape.positions[vertex * 3 + axis])
         max[axis] = Math.max(max[axis], shape.positions[vertex * 3 + axis])
       }
     }
-    if (![...min, ...max].every(Number.isFinite))
+
+    if (![...min, ...max].every(Number.isFinite)) {
       throw new Error('Invalid scene demand source bounds')
+    }
+
     const product = bounds(min, max)
+
     this.counts.localBounds++
     if (span) {
       let products = this.spans.get(shape)
+
       if (!products) {
         products = new Map()
         this.spans.set(shape, products)
       }
+
       products.set(span, product)
-    } else this.whole.set(shape, product)
+    } else {
+      this.whole.set(shape, product)
+    }
+
     return product
   }
 
   descriptorFrame(descriptor: SiteMesh['descriptor']): IntervalFrame {
-    if (this.closed) throw new Error('Closed scene demand source owner')
+    if (this.closed) {
+      throw new Error('Closed scene demand source owner')
+    }
+
     const previous = this.descriptors.get(descriptor)
-    if (previous) return previous
+
+    if (previous) {
+      return previous
+    }
+
     const frame = prepareQueryForwardFrame(descriptor)
+
     this.descriptors.set(descriptor, frame)
     this.counts.descriptorFrames++
+
     return frame
   }
 
   instanceFrame(instance: SpatialInstance): IntervalFrame {
-    if (this.closed) throw new Error('Closed scene demand source owner')
+    if (this.closed) {
+      throw new Error('Closed scene demand source owner')
+    }
+
     const previous = this.instances.get(instance)
-    if (previous) return previous
+
+    if (previous) {
+      return previous
+    }
+
     const frame = prepareQueryInstanceFrame(instance)
+
     this.instances.set(instance, frame)
     this.counts.instanceFrames++
+
     return frame
   }
 
   private placement(mesh: Readonly<SiteMesh>, instance: number) {
-    if (this.closed || !this.scene)
+    if (this.closed || !this.scene) {
       throw new Error('Closed scene demand source owner')
+    }
+
     if (!this.membership) {
       this.membership = new Set()
       for (const item of this.scene.meshes) {
@@ -455,29 +538,40 @@ export class SceneDemandSourceBoundsOwner {
         this.counts.membershipVisits++
       }
     }
-    if (!this.membership.has(mesh))
+
+    if (!this.membership.has(mesh)) {
       throw new Error('Foreign scene demand source mesh')
+    }
+
     const placement = mesh.descriptor.instances?.[instance]
+
     if (
       !Number.isInteger(instance) ||
       instance < 0 ||
       (mesh.descriptor.instances ? !placement : instance !== 0)
-    )
+    ) {
       throw new Error('Foreign scene demand source instance')
+    }
+
     let placements = this.meshes.get(mesh)
+
     if (!placements) {
       placements = new Map()
       this.meshes.set(mesh, placements)
     }
+
     let product = placements.get(instance)
+
     if (!product) {
       product = { regions: new Map() }
       placements.set(instance, product)
     }
+
     const descriptor = this.descriptorFrame(mesh.descriptor)
     const frames = placement
       ? [this.instanceFrame(placement), descriptor]
       : [descriptor]
+
     return { product, placement, frames }
   }
 
@@ -486,16 +580,24 @@ export class SceneDemandSourceBoundsOwner {
     instance: number
   ): SceneDemandBounds {
     const { product, frames } = this.placement(mesh, instance)
-    if (product.whole) return product.whole
+
+    if (product.whole) {
+      return product.whole
+    }
+
     const shape = mesh.descriptor.shape
-    if (shape.kind !== 'triangles')
+
+    if (shape.kind !== 'triangles') {
       throw new Error('Unsupported scene demand source shape')
+    }
+
     product.whole = transformedBounds(
       this.localBounds(shape),
       frames,
       this.counts
     )
     this.counts.wholeWorldBounds++
+
     return product.whole
   }
 
@@ -507,24 +609,34 @@ export class SceneDemandSourceBoundsOwner {
     this.counts.sourceKeysEnumerated++
     const { product, placement, frames } = this.placement(mesh, instance)
     const previous = product.regions.get(region)
-    if (previous) return previous
+
+    if (previous) {
+      return previous
+    }
+
     const shape = mesh.descriptor.shape
     let regions = this.regions.get(mesh)
+
     if (!regions) {
       regions = new Set()
       for (const item of mesh.regions) {
         regions.add(item)
         this.counts.membershipVisits++
       }
+
       this.regions.set(mesh, regions)
     }
-    if (shape.kind !== 'triangles' || !regions.has(region))
+
+    if (shape.kind !== 'triangles' || !regions.has(region)) {
       throw new Error('Foreign scene demand source region')
+    }
+
     const worldBounds = transformedBounds(
       this.localBounds(shape, region),
       frames,
       this.counts
     )
+
     this.counts.regionWorldBounds++
     const source: SceneDemandSource = Object.freeze({
       kind: 'source',
@@ -538,18 +650,24 @@ export class SceneDemandSourceBoundsOwner {
       }),
       bounds: worldBounds
     })
+
     product.regions.set(region, source)
     this.counts.canonicalSources++
+
     return source
   }
 
   prepareInventory(): SceneObservationInventory {
-    if (this.closed || !this.farm || !this.scene)
+    if (this.closed || !this.farm || !this.scene) {
       throw new Error('Unavailable scene demand source owner')
+    }
+
     if (this.inventory) {
       this.counts.inventoryReuses++
+
       return this.inventory
     }
+
     const sources: SceneDemandSource[] = [],
       reasons: string[] = []
     const omitted = new Set<SiteMesh['layer']>([
@@ -559,19 +677,31 @@ export class SceneDemandSourceBoundsOwner {
       'dimensions',
       'base'
     ])
+
     for (const mesh of this.scene.meshes) {
       if (!obstacleLayers.has(mesh.layer)) {
-        if (!omitted.has(mesh.layer))
+        if (!omitted.has(mesh.layer)) {
           reasons.push('unclassified-observation-source-layer')
+        }
+
         continue
       }
+
       try {
-        if (mesh.descriptor.shape.kind !== 'triangles' || !mesh.regions.length)
+        if (
+          mesh.descriptor.shape.kind !== 'triangles' ||
+          !mesh.regions.length
+        ) {
           throw new Error('missing-observation-source-regions')
+        }
+
         const count = mesh.descriptor.instances?.length ?? 1
-        for (let instance = 0; instance < count; instance++)
-          for (const region of mesh.regions)
+
+        for (let instance = 0; instance < count; instance++) {
+          for (const region of mesh.regions) {
             sources.push(this.source(mesh, instance, region))
+          }
+        }
       } catch (error) {
         reasons.push(
           error instanceof Error
@@ -580,7 +710,9 @@ export class SceneDemandSourceBoundsOwner {
         )
       }
     }
+
     const site = farmGeometry.configurationSite(this.farm)
+
     this.inventory = Object.freeze({
       provenance: 'w1-canonical-obstacles/1',
       farm: this.farm,
@@ -599,6 +731,7 @@ export class SceneDemandSourceBoundsOwner {
       reasons: Object.freeze(reasons)
     })
     this.counts.inventoryBuilds++
+
     return this.inventory
   }
 
@@ -644,7 +777,9 @@ export function prepareSceneObservationSpace(
     reasons: inventory?.reasons ?? Object.freeze(['route-unknown']),
     work: Object.freeze(work)
   })
+
   issuedObservationSpaces.set(product, { owner, generation: owner.identity })
+
   return product
 }
 
@@ -653,6 +788,7 @@ export function isSceneObservationSpace(
   space: SceneObservationSpace
 ): boolean {
   const issued = issuedObservationSpaces.get(space)
+
   return (
     !!issued &&
     issued.owner.isCurrentIdentity(issued.generation) &&
@@ -692,15 +828,21 @@ export function prepareSceneDemand(
   } = { left: [], right: [], unassigned: [] }
 
   const site = farmGeometry.configurationSite(farm)
+
   mutableWork.siteConfigurations++
+
   const localBounds = (shape: TriangleShape, span?: Span & object) =>
     sourceOwner.localBounds(shape, span)
+
   const descriptorFrame = (descriptor: SiteMesh['descriptor']) =>
     sourceOwner.descriptorFrame(descriptor)
+
   const installedFrame = (instance: SpatialInstance) =>
     sourceOwner.instanceFrame(instance)
+
   const work = () => {
     const current = sourceOwner.work
+
     return Object.freeze({
       ...mutableWork,
       localBounds: current.localBounds - sourceBefore.localBounds,
@@ -727,11 +869,18 @@ export function prepareSceneDemand(
 
   if (configuration.route.kind === 'unknown') {
     reasons.push('route-unknown')
-    if (configuration.evidence.kind === 'unknown')
+    if (configuration.evidence.kind === 'unknown') {
       reasons.push('evidence-unknown')
-    if (configuration.growth.kind === 'unknown') reasons.push('growth-unknown')
-    if (configuration.clearanceMargin.kind === 'unknown')
+    }
+
+    if (configuration.growth.kind === 'unknown') {
+      reasons.push('growth-unknown')
+    }
+
+    if (configuration.clearanceMargin.kind === 'unknown') {
       reasons.push('clearance-margin-unknown')
+    }
+
     return Object.freeze({
       identity: Object.freeze({}),
       revision: ++demandRevision,
@@ -761,6 +910,7 @@ export function prepareSceneDemand(
   }
 
   const layout = greenhouse.createLayout(site, farm.strips)
+
   mutableWork.layouts++
   const routeInput = configuration.route
   const stripIndex = farm.strips.findIndex(
@@ -772,8 +922,12 @@ export function prepareSceneDemand(
       : layout.strips[routeInput.bay * farm.strips.length + stripIndex]
   const channels = Object.freeze(
     layout.strips.flatMap((strip, index) => {
-      if (strip.kind !== 'drain') return []
+      if (strip.kind !== 'drain') {
+        return []
+      }
+
       const authored = farm.strips[index % farm.strips.length]
+
       return [
         Object.freeze({
           bay: strip.bay,
@@ -789,12 +943,14 @@ export function prepareSceneDemand(
     })
   )
   let route: SceneDemandRouteProduct | null = null
-  if (!selected || selected.bay !== routeInput.bay)
+
+  if (!selected || selected.bay !== routeInput.bay) {
     reasons.push('route-strip-missing')
-  else if (selected.kind !== 'soil') reasons.push('route-is-channel')
-  else if (routeInput.until > site.length)
+  } else if (selected.kind !== 'soil') {
+    reasons.push('route-is-channel')
+  } else if (routeInput.until > site.length) {
     reasons.push('route-interval-outside-farm')
-  else {
+  } else {
     route = Object.freeze({
       bay: routeInput.bay,
       stripId: routeInput.stripId,
@@ -806,6 +962,7 @@ export function prepareSceneDemand(
       )
     })
   }
+
   if (!route) {
     return Object.freeze({
       identity: Object.freeze({}),
@@ -835,31 +992,48 @@ export function prepareSceneDemand(
     })
   }
 
-  if (configuration.evidence.kind === 'unknown')
+  if (configuration.evidence.kind === 'unknown') {
     reasons.push('evidence-unknown')
-  if (configuration.growth.kind === 'unknown') reasons.push('growth-unknown')
-  else if (configuration.growth.coverage === 'discrete')
+  }
+
+  if (configuration.growth.kind === 'unknown') {
+    reasons.push('growth-unknown')
+  } else if (configuration.growth.coverage === 'discrete') {
     reasons.push('growth-coverage-discrete')
-  if (configuration.clearanceMargin.kind === 'unknown')
+  }
+
+  if (configuration.clearanceMargin.kind === 'unknown') {
     reasons.push('clearance-margin-unknown')
+  }
 
   const cropMeshes = new Map<SpatialShape, Readonly<SiteMesh>>()
-  for (const mesh of scene.meshes)
+
+  for (const mesh of scene.meshes) {
     if (mesh.layer === 'cucumbers' || mesh.layer === 'tomatoes') {
-      if (cropMeshes.has(mesh.descriptor.shape))
+      if (cropMeshes.has(mesh.descriptor.shape)) {
         throw new Error('Ambiguous scene demand crop source')
+      }
+
       cropMeshes.set(mesh.descriptor.shape, mesh)
     }
+  }
+
   const plantKey = (position: readonly number[], yaw: number) =>
     `${position[0]}:${position[1]}:${position[2]}:${yaw}`
+
   const cropInstances = new Map<SpatialShape, Map<string, number>>()
   const cropPlacements = new Map<string, SpatialInstance>()
+
   for (const [shape, mesh] of cropMeshes) {
     const instances = new Map<string, number>()
+
     mesh.descriptor.instances?.forEach((instance, index) => {
       const key = plantKey(instance.position, instance.yaw)
+
       instances.set(key, index)
-      if (!cropPlacements.has(key)) cropPlacements.set(key, instance)
+      if (!cropPlacements.has(key)) {
+        cropPlacements.set(key, instance)
+      }
     })
     cropInstances.set(shape, instances)
   }
@@ -868,13 +1042,16 @@ export function prepareSceneDemand(
     add(interval(route.volume.min[0]), interval(route.volume.max[0])),
     interval(2)
   )
+
   for (const fruit of scene.fruits) {
     if (
       fruit.plant.bay !== route.bay ||
       fruit.plant.position[0] < route.volume.min[0] ||
       fruit.plant.position[0] > route.volume.max[0]
-    )
+    ) {
       continue
+    }
+
     const partitions: SceneDemandTargetPartition[] = []
     const targetParts: {
       part: CropGeometry['parts'][number]
@@ -883,26 +1060,38 @@ export function prepareSceneDemand(
       placement: SpatialInstance
     }[] = []
     let targetFrame: IntervalFrame | undefined
+
     for (const part of fruit.model.parts) {
-      if (part.shape.kind !== 'triangles')
+      if (part.shape.kind !== 'triangles') {
         throw new Error('Unsupported scene demand target shape')
+      }
+
       const mesh = cropMeshes.get(part.shape)
       const instance = cropInstances
         .get(part.shape)
         ?.get(plantKey(fruit.plant.position, fruit.plant.yaw))
-      if (!mesh || instance === undefined || !mesh.descriptor.instances)
+
+      if (!mesh || instance === undefined || !mesh.descriptor.instances) {
         throw new Error('Missing installed scene demand crop source')
+      }
+
       const placement = mesh.descriptor.instances[instance]
+
       targetParts.push({ part, mesh, instance, placement })
       for (const partition of part.partitions) {
-        if (partition.fruitId !== fruit.source.id) continue
+        if (partition.fruitId !== fruit.source.id) {
+          continue
+        }
+
         const frame = installedFrame(placement)
+
         targetFrame ??= frame
         const partitionBounds = transformedBounds(
           localBounds(part.shape, partition),
           [frame, descriptorFrame(mesh.descriptor)],
           mutableWork
         )
+
         mutableWork.targetPartitions++
         partitions.push(
           Object.freeze({
@@ -919,23 +1108,36 @@ export function prepareSceneDemand(
         )
       }
     }
-    if (!partitions.length)
+
+    if (!partitions.length) {
       throw new Error('Missing fruit-owned source partition')
-    if (!targetFrame) throw new Error('Missing installed scene demand target')
+    }
+
+    if (!targetFrame) {
+      throw new Error('Missing installed scene demand target')
+    }
+
     const targetBounds = joinSceneDemandBounds(
       partitions.map(({ bounds }) => bounds)
     )
+
     if (
       targetBounds.max[2] < route.volume.min[2] ||
       targetBounds.min[2] > route.volume.max[2]
-    )
+    ) {
       continue
+    }
+
     // PreparedScene admits every patch structure. Installed patch bounds are
     // needed only after partition bounds admit this fruit to the selected route.
     const patches: SceneDemandTargetPatch[] = []
-    for (const { part, mesh, instance, placement } of targetParts)
+
+    for (const { part, mesh, instance, placement } of targetParts) {
       for (const patch of part.patches) {
-        if (patch.targetFruitId !== fruit.source.id) continue
+        if (patch.targetFruitId !== fruit.source.id) {
+          continue
+        }
+
         const frames = [
           installedFrame(placement),
           descriptorFrame(mesh.descriptor)
@@ -949,6 +1151,7 @@ export function prepareSceneDemand(
             )
           )
         )
+
         mutableWork.targetPatches++
         patches.push(
           Object.freeze({
@@ -964,6 +1167,8 @@ export function prepareSceneDemand(
           })
         )
       }
+    }
+
     let cutSite: SceneDemandTarget['cutSite']
     const sourceCut = fruit.source.cutSite
     const plantPatch = patches.find(
@@ -981,7 +1186,11 @@ export function prepareSceneDemand(
           patches.filter(({ patch }) => patch.role === 'fine-spines').length ===
             fruit.source.spineCount
         : roles.has('calyx') && roles.has('retained-pedicel'))
-    if (!supportComplete) anatomyReasons.push('support-anatomy-unknown')
+
+    if (!supportComplete) {
+      anatomyReasons.push('support-anatomy-unknown')
+    }
+
     if (
       sourceCut?.kind === 'synthetic-source-boundary' &&
       sourceCut.evidence?.kind === 'synthetic' &&
@@ -996,6 +1205,7 @@ export function prepareSceneDemand(
         sourceCut.position.slice(),
         sourceCut.position.slice()
       )
+
       cutSite = Object.freeze({
         source: sourceCut,
         transform: plantPatch.transform,
@@ -1009,10 +1219,13 @@ export function prepareSceneDemand(
         )
       })
     }
-    if (!cutSite)
+
+    if (!cutSite) {
       anatomyReasons.push(
         sourceCut?.kind === 'unknown' ? sourceCut.reason : 'cut-anatomy-unknown'
       )
+    }
+
     const target = Object.freeze({
       id: fruit.id,
       fruit,
@@ -1028,31 +1241,44 @@ export function prepareSceneDemand(
       ...(cutSite ? { cutSite } : {})
     })
     const installedCenter = interval(fruit.position[0])
-    if (installedCenter.high < routeCenter.low) targets.left.push(target)
-    else if (installedCenter.low > routeCenter.high) targets.right.push(target)
-    else targets.unassigned.push(target)
+
+    if (installedCenter.high < routeCenter.low) {
+      targets.left.push(target)
+    } else if (installedCenter.low > routeCenter.high) {
+      targets.right.push(target)
+    } else {
+      targets.unassigned.push(target)
+    }
   }
 
   if (configuration.growth.kind === 'bounded') {
     const plants = new Map(scene.plants.map((plant) => [plant.id, plant]))
+
     for (const volume of configuration.growth.volumes) {
       let product = bounds(volume.min.slice(), volume.max.slice())
+
       if (volume.anchor.kind === 'plant') {
         const plant = plants.get(volume.anchor.plantId)
         const placement = plant
           ? cropPlacements.get(plantKey(plant.position, plant.yaw))
           : undefined
+
         if (!plant || !placement) {
           reasons.push('growth-anchor-missing')
           continue
         }
+
         product = transformedBounds(
           product,
           [installedFrame(placement)],
           mutableWork
         )
       }
-      if (!intersects(product, route.volume)) continue
+
+      if (!intersects(product, route.volume)) {
+        continue
+      }
+
       exclusions.push(
         Object.freeze({
           kind: 'growth',
@@ -1064,13 +1290,14 @@ export function prepareSceneDemand(
       if (
         contains(product, route.volume) &&
         !reasons.includes('growth-covers-route')
-      )
+      ) {
         reasons.push('growth-covers-route')
+      }
     }
   }
 
-  for (const channel of channels)
-    if (intersects(channel.bounds, route.volume))
+  for (const channel of channels) {
+    if (intersects(channel.bounds, route.volume)) {
       exclusions.push(
         Object.freeze({
           kind: 'channel',
@@ -1079,27 +1306,44 @@ export function prepareSceneDemand(
           bounds: channel.bounds
         })
       )
+    }
+  }
 
   const margin =
     configuration.clearanceMargin.kind === 'bounded'
       ? configuration.clearanceMargin.metres
       : 0
+
   for (const mesh of scene.meshes) {
-    if (!obstacleLayers.has(mesh.layer)) continue
+    if (!obstacleLayers.has(mesh.layer)) {
+      continue
+    }
+
     try {
-      if (!mesh.regions.length)
+      if (!mesh.regions.length) {
         throw new Error('Missing scene demand source regions')
+      }
+
       const count = mesh.descriptor.instances?.length ?? 1
+
       for (let instance = 0; instance < count; instance++) {
         const whole = expanded(
           sourceOwner.wholeWorldBounds(mesh, instance),
           margin
         )
-        if (!intersects(whole, route.volume)) continue
+
+        if (!intersects(whole, route.volume)) {
+          continue
+        }
+
         for (const region of mesh.regions) {
           const source = sourceOwner.source(mesh, instance, region)
           const product = expanded(source.bounds, margin)
-          if (!intersects(product, route.volume)) continue
+
+          if (!intersects(product, route.volume)) {
+            continue
+          }
+
           exclusions.push(
             margin === 0
               ? source
@@ -1117,28 +1361,48 @@ export function prepareSceneDemand(
       )
     }
   }
+
   if (
     exclusions.some(
       (exclusion) => exclusion.relation === 'conservative-source-envelope'
     )
-  )
+  ) {
     freeReasons.push('exact-source-query-required')
-  if (reasons.includes('growth-covers-route'))
+  }
+
+  if (reasons.includes('growth-covers-route')) {
     freeReasons.push('growth-covers-route')
-  for (const reason of reasons)
-    if (!freeReasons.includes(reason)) freeReasons.push(reason)
+  }
+
+  for (const reason of reasons) {
+    if (!freeReasons.includes(reason)) {
+      freeReasons.push(reason)
+    }
+  }
+
   const blocked = reasons.includes('growth-covers-route')
   let status: SceneDemand['status'] = 'ready'
-  if (blocked) status = 'blocked'
-  else if (reasons.length) status = 'unknown'
+
+  if (blocked) {
+    status = 'blocked'
+  } else if (reasons.length) {
+    status = 'unknown'
+  }
+
   let freeStatus: SceneDemand['freePassage']['status'] = 'ready'
-  if (blocked) freeStatus = 'blocked'
-  else if (freeReasons.length) freeStatus = 'unknown'
+
+  if (blocked) {
+    freeStatus = 'blocked'
+  } else if (freeReasons.length) {
+    freeStatus = 'unknown'
+  }
+
   const frozenTargets = Object.freeze({
     left: Object.freeze(targets.left),
     right: Object.freeze(targets.right),
     unassigned: Object.freeze(targets.unassigned)
   })
+
   return Object.freeze({
     identity: Object.freeze({}),
     revision: ++demandRevision,

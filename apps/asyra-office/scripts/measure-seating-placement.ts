@@ -18,29 +18,39 @@ const up = [
 ]
 const focal = 756 / (2 * Math.tan((structure.camera.fov * Math.PI) / 360))
 const measurements: object[] = []
+
 composeOfficeSeating({
   add(id, asset, parts, position, rotation, scale) {
     const bounds = [Infinity, Infinity, -Infinity, -Infinity]
+
     for (const part of placeParts(parts, position, rotation, scale)) {
       for (let i = 0; i < part.mesh.positions.length; i += 3) {
         const point = part.mesh.positions
           .slice(i, i + 3)
           .map((v, k) => v - eye[k])
+
         const dot = (axis: number[]) =>
           point.reduce((n, v, k) => n + v * axis[k], 0)
+
         const depth = -dot(toward)
         const x = 642.5 + (focal * dot(right)) / depth
         const y = 422 - (focal * dot(up)) / depth
+
         bounds[0] = Math.min(bounds[0], x)
         bounds[1] = Math.min(bounds[1], y)
         bounds[2] = Math.max(bounds[2], x)
         bounds[3] = Math.max(bounds[3], y)
       }
     }
+
     const evidence = Object.entries(source.furniture).find(
       ([key]) => key === id
     )?.[1]
-    if (!evidence) throw new Error(`Missing seating trace ${id}`)
+
+    if (!evidence) {
+      throw new Error(`Missing seating trace ${id}`)
+    }
+
     measurements.push({
       id,
       asset,

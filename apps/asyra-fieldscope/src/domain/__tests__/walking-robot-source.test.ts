@@ -36,6 +36,7 @@ it('publishes only profile2 original tray mounting face', () => {
     const tray = required(
       source.parts.find((part) => part.id === 'empty-payload-tray')
     )
+
     expect(
       tray.patches.map((patch) => ({ id: patch.id, ranges: patch.ranges }))
     ).toEqual(
@@ -48,8 +49,9 @@ it('publishes only profile2 original tray mounting face', () => {
             }
           ]
     )
-    if (profile === 'solid-articulation/2')
+    if (profile === 'solid-articulation/2') {
       expect(tray.patches[0].region).toBe(tray.regions[0])
+    }
   }
 })
 
@@ -57,58 +59,86 @@ it('publishes only profile2 original tray mounting face', () => {
 type Dyadic = readonly [bigint, number]
 type ExactPoint = readonly [Dyadic, Dyadic, Dyadic]
 type ExactTriangle = readonly [ExactPoint, ExactPoint, ExactPoint]
+
 function required<T>(value: T | undefined): T {
-  if (value === undefined) throw new Error('Missing original source evidence')
+  if (value === undefined) {
+    throw new Error('Missing original source evidence')
+  }
+
   return value
 }
+
 const exactZero: Dyadic = [0n, 0]
+
 function dyadic(value: number): Dyadic {
-  if (!Number.isFinite(value)) throw new Error('Non-finite source coefficient')
-  if (value === 0) return exactZero
+  if (!Number.isFinite(value)) {
+    throw new Error('Non-finite source coefficient')
+  }
+
+  if (value === 0) {
+    return exactZero
+  }
+
   const bytes = new DataView(new ArrayBuffer(8))
+
   bytes.setFloat64(0, value)
   const bits = bytes.getBigUint64(0)
   const exponent = Number((bits >> 52n) & 2047n)
   const fraction = bits & ((1n << 52n) - 1n)
+
   return [
     (bits >> 63n ? -1n : 1n) *
       (exponent === 0 ? fraction : fraction + (1n << 52n)),
     exponent === 0 ? -1074 : exponent - 1075
   ]
 }
+
 function exactAdd(a: Dyadic, b: Dyadic): Dyadic {
   const exponent = Math.min(a[1], b[1])
+
   return [
     (a[0] << BigInt(a[1] - exponent)) + (b[0] << BigInt(b[1] - exponent)),
     exponent
   ]
 }
+
 const exactNegate = (a: Dyadic): Dyadic => [-a[0], a[1]]
+
 const exactSubtract = (a: Dyadic, b: Dyadic) => exactAdd(a, exactNegate(b))
+
 const exactMultiply = (a: Dyadic, b: Dyadic): Dyadic => [
   a[0] * b[0],
   a[1] + b[1]
 ]
+
 const exactScale = (a: Dyadic, scale: number) => exactMultiply(a, dyadic(scale))
+
 const exactSign = (a: Dyadic) => {
-  if (a[0] < 0n) return -1
+  if (a[0] < 0n) {
+    return -1
+  }
+
   return a[0] > 0n ? 1 : 0
 }
+
 const vectorSubtract = (a: ExactPoint, b: ExactPoint): ExactPoint => [
   exactSubtract(a[0], b[0]),
   exactSubtract(a[1], b[1]),
   exactSubtract(a[2], b[2])
 ]
+
 const vectorCross = (a: ExactPoint, b: ExactPoint): ExactPoint => [
   exactSubtract(exactMultiply(a[1], b[2]), exactMultiply(a[2], b[1])),
   exactSubtract(exactMultiply(a[2], b[0]), exactMultiply(a[0], b[2])),
   exactSubtract(exactMultiply(a[0], b[1]), exactMultiply(a[1], b[0]))
 ]
+
 const vectorDot = (a: ExactPoint, b: ExactPoint) =>
   exactAdd(
     exactAdd(exactMultiply(a[0], b[0]), exactMultiply(a[1], b[1])),
     exactMultiply(a[2], b[2])
   )
+
 function exactTransform(
   input: ExactPoint,
   transform: { position: readonly number[]; rotation: readonly number[] }
@@ -119,6 +149,7 @@ function exactTransform(
     exactScale(value, 2)
   ) as unknown as ExactPoint
   const second = vectorCross([x, y, z], twiceCross)
+
   return input.map((value, axis) =>
     exactAdd(
       dyadic(transform.position[axis]),
@@ -129,23 +160,28 @@ function exactTransform(
     )
   ) as unknown as ExactPoint
 }
+
 function exactTriangles(
   part: import('../walking-robot-source').WalkingRobotPart,
   transform: { position: readonly number[]; rotation: readonly number[] },
   region?: { indexStart: number; indexCount: number }
 ): ExactTriangle[] {
   const vertices: ExactPoint[] = []
+
   for (let offset = 0; offset < part.shape.positions.length; offset += 3) {
     const local: ExactPoint = [
       dyadic(part.shape.positions[offset]),
       dyadic(part.shape.positions[offset + 1]),
       dyadic(part.shape.positions[offset + 2])
     ]
+
     vertices.push(
       exactTransform(exactTransform(local, part.localFrame), transform)
     )
   }
+
   const triangles: ExactTriangle[] = []
+
   for (
     let offset = region?.indexStart ?? 0;
     offset <
@@ -153,14 +189,17 @@ function exactTriangles(
       ? region.indexStart + region.indexCount
       : part.shape.indices.length);
     offset += 3
-  )
+  ) {
     triangles.push([
       vertices[part.shape.indices[offset]],
       vertices[part.shape.indices[offset + 1]],
       vertices[part.shape.indices[offset + 2]]
     ])
+  }
+
   return triangles
 }
+
 function pointInClosedTriangles(
   point: ExactPoint,
   triangles: readonly ExactTriangle[]
@@ -179,37 +218,48 @@ function pointInClosedTriangles(
     ]
     let crossings = 0,
       ambiguous = false
+
     for (const [a, b, c] of triangles) {
       const edge1 = vectorSubtract(b, a),
         edge2 = vectorSubtract(c, a)
       const fromA = vectorSubtract(point, a)
       const cross = vectorCross(ray, edge2)
       let determinant = vectorDot(edge1, cross)
+
       if (exactSign(determinant) === 0) {
         if (exactSign(vectorDot(fromA, vectorCross(edge1, edge2))) === 0) {
           ambiguous = true
           break
         }
+
         continue
       }
+
       let u = vectorDot(fromA, cross)
       const otherCross = vectorCross(fromA, edge1)
       let v = vectorDot(ray, otherCross)
       let distance = vectorDot(edge2, otherCross)
+
       if (exactSign(determinant) < 0) {
         determinant = exactNegate(determinant)
         u = exactNegate(u)
         v = exactNegate(v)
         distance = exactNegate(distance)
       }
+
       if (
         exactSign(u) < 0 ||
         exactSign(v) < 0 ||
         exactSign(exactSubtract(determinant, exactAdd(u, v))) < 0 ||
         exactSign(distance) < 0
-      )
+      ) {
         continue
-      if (exactSign(distance) === 0) return 'boundary'
+      }
+
+      if (exactSign(distance) === 0) {
+        return 'boundary'
+      }
+
       if (
         exactSign(u) === 0 ||
         exactSign(v) === 0 ||
@@ -218,10 +268,15 @@ function pointInClosedTriangles(
         ambiguous = true
         break
       }
+
       crossings++
     }
-    if (!ambiguous) return crossings % 2 ? 'inside' : 'outside'
+
+    if (!ambiguous) {
+      return crossings % 2 ? 'inside' : 'outside'
+    }
   }
+
   throw new Error('No exact nondegenerate source ray')
 }
 
@@ -232,41 +287,62 @@ function exactPointKey(point: ExactPoint) {
         n /= 2n
         exponent++
       }
+
       return n === 0n ? '0' : `${n}:${exponent}`
     })
     .join(',')
 }
+
 function primitiveAxis(vector: ExactPoint): ExactPoint | undefined {
   const exponent = Math.min(...vector.map((value) => value[1]))
   const values = vector.map(([n, e]) => n << BigInt(e - exponent))
+
   const absolute = (n: bigint) => (n < 0n ? -n : n)
+
   const gcd = (a: bigint, b: bigint) => {
     a = absolute(a)
     b = absolute(b)
     while (b !== 0n) {
       const remainder = a % b
+
       a = b
       b = remainder
     }
+
     return a
   }
+
   let divisor = values.reduce(gcd, 0n)
-  if (divisor === 0n) return undefined
-  if (required(values.find((value) => value !== 0n)) < 0n) divisor = -divisor
+
+  if (divisor === 0n) {
+    return undefined
+  }
+
+  if (required(values.find((value) => value !== 0n)) < 0n) {
+    divisor = -divisor
+  }
+
   return [
     [values[0] / divisor, 0],
     [values[1] / divisor, 0],
     [values[2] / divisor, 0]
   ]
 }
+
 function uniqueAxes(vectors: readonly ExactPoint[]) {
   const axes = new Map<string, ExactPoint>()
+
   for (const vector of vectors) {
     const axis = primitiveAxis(vector)
-    if (axis) axes.set(exactPointKey(axis), axis)
+
+    if (axis) {
+      axes.set(exactPointKey(axis), axis)
+    }
   }
+
   return [...axes.values()]
 }
+
 function certifyConvexTriangles(
   triangles: readonly ExactTriangle[],
   label: string
@@ -278,18 +354,26 @@ function certifyConvexTriangles(
   const edges: ExactPoint[] = [],
     normals: ExactPoint[] = []
   let fullDimensional = false
+
   for (const triangle of triangles) {
     const normal = vectorCross(
       vectorSubtract(triangle[1], triangle[0]),
       vectorSubtract(triangle[2], triangle[0])
     )
-    if (!primitiveAxis(normal)) throw new Error(`${label}: degenerate triangle`)
+
+    if (!primitiveAxis(normal)) {
+      throw new Error(`${label}: degenerate triangle`)
+    }
+
     normals.push(normal)
     const signs = points.map((point) =>
       exactSign(vectorDot(normal, vectorSubtract(point, triangle[0])))
     )
-    if (signs.includes(-1) && signs.includes(1))
+
+    if (signs.includes(-1) && signs.includes(1)) {
       throw new Error(`${label}: nonconvex emitted region`)
+    }
+
     fullDimensional ||= signs.some((sign) => sign !== 0)
     for (let corner = 0; corner < 3; corner++) {
       const from = triangle[corner],
@@ -298,19 +382,26 @@ function certifyConvexTriangles(
         b = exactPointKey(to)
       const key = a < b ? a + '/' + b : b + '/' + a
       const seam = seams.get(key) ?? { count: 0, balance: 0 }
+
       seam.count++
       seam.balance += a < b ? 1 : -1
       seams.set(key, seam)
       edges.push(vectorSubtract(to, from))
     }
   }
-  if (!fullDimensional) throw new Error(`${label}: zero material volume`)
+
+  if (!fullDimensional) {
+    throw new Error(`${label}: zero material volume`)
+  }
+
   if (
     [...seams.values()].some(
       ({ count, balance }) => count !== 2 || balance !== 0
     )
-  )
+  ) {
     throw new Error(`${label}: unpaired emitted seam`)
+  }
+
   return {
     points,
     triangles,
@@ -318,16 +409,25 @@ function certifyConvexTriangles(
     edges: uniqueAxes(edges)
   }
 }
+
 function exactProjection(points: readonly ExactPoint[], axis: ExactPoint) {
   const values = points.map((point) => vectorDot(point, axis))
   let min = values[0],
     max = values[0]
+
   for (const value of values) {
-    if (exactSign(exactSubtract(value, min)) < 0) min = value
-    if (exactSign(exactSubtract(value, max)) > 0) max = value
+    if (exactSign(exactSubtract(value, min)) < 0) {
+      min = value
+    }
+
+    if (exactSign(exactSubtract(value, max)) > 0) {
+      max = value
+    }
   }
+
   return { min, max }
 }
+
 function convexMaterialRelation(
   a: ReturnType<typeof certifyConvexTriangles>,
   b: ReturnType<typeof certifyConvexTriangles>
@@ -340,12 +440,15 @@ function convexMaterialRelation(
     ]
     const first = exactProjection(a.points, direction),
       second = exactProjection(b.points, direction)
+
     if (
       exactSign(exactSubtract(first.max, second.min)) < 0 ||
       exactSign(exactSubtract(second.max, first.min)) < 0
-    )
+    ) {
       return 'separated'
+    }
   }
+
   const axes = uniqueAxes([
     ...a.normals,
     ...b.normals,
@@ -354,15 +457,26 @@ function convexMaterialRelation(
     )
   ])
   let boundary = false
+
   for (const axis of axes) {
     const first = exactProjection(a.points, axis),
       second = exactProjection(b.points, axis)
     const forward = exactSign(exactSubtract(first.max, second.min))
     const reverse = exactSign(exactSubtract(second.max, first.min))
-    if (forward < 0 || reverse < 0) return 'separated'
-    if (forward === 0 || reverse === 0) boundary = true
+
+    if (forward < 0 || reverse < 0) {
+      return 'separated'
+    }
+
+    if (forward === 0 || reverse === 0) {
+      boundary = true
+    }
   }
-  if (!axes.length) throw new Error('No complete material separating axes')
+
+  if (!axes.length) {
+    throw new Error('No complete material separating axes')
+  }
+
   return boundary ? 'boundary' : 'volume-overlap'
 }
 
@@ -384,9 +498,13 @@ function strictInteriorWitness(
           exactAdd(exactScale(q[axis], 0.25), exactScale(r[axis], 0.25))
         )
       ) as unknown as ExactPoint
-      if (pointInClosedTriangles(sample, into) === 'inside') return triangle
+
+      if (pointInClosedTriangles(sample, into) === 'inside') {
+        return triangle
+      }
     }
   }
+
   return undefined
 }
 
@@ -398,15 +516,22 @@ const coordinateAxes: readonly ExactPoint[] = [
   [exactZero, dyadic(1), exactZero],
   [exactZero, exactZero, dyadic(1)]
 ]
+
 function displayDyadic([n, exponent]: Dyadic) {
   const sign = n < 0n ? -1 : 1
-  if (n < 0n) n = -n
+
+  if (n < 0n) {
+    n = -n
+  }
+
   const shift = Math.max(0, n.toString(2).length - 53)
+
   if (shift > 0) {
     const amount = BigInt(shift),
       quotient = n >> amount
     const remainder = n - (quotient << amount),
       halfway = 1n << (amount - 1n)
+
     n =
       quotient +
       (remainder > halfway || (remainder === halfway && quotient % 2n !== 0n)
@@ -414,18 +539,26 @@ function displayDyadic([n, exponent]: Dyadic) {
         : 0n)
     exponent += shift
   }
+
   return sign * Number(n) * 2 ** exponent
 }
+
 function adjacentBinary64(value: number, direction: -1 | 1) {
-  if (value === 0) return direction * Number.MIN_VALUE
+  if (value === 0) {
+    return direction * Number.MIN_VALUE
+  }
+
   const bytes = new DataView(new ArrayBuffer(8))
+
   bytes.setFloat64(0, value)
   bytes.setBigUint64(
     0,
     bytes.getBigUint64(0) + BigInt(value > 0 ? direction : -direction)
   )
+
   return bytes.getFloat64(0)
 }
+
 function actualPoseEnvelope(
   pose: import('../walking-robot-kinematics').WalkingRobotPoseResult
 ) {
@@ -440,8 +573,9 @@ function actualPoseEnvelope(
   const size = projections.map(({ min, max }) =>
     displayDyadic(exactSubtract(max, min))
   )
+
   expect([...min, ...max, ...size].every(Number.isFinite)).toBe(true)
-  for (const point of points)
+  for (const point of points) {
     for (let axis = 0; axis < 3; axis++) {
       expect(
         exactSign(exactSubtract(point[axis], projections[axis].min))
@@ -450,8 +584,11 @@ function actualPoseEnvelope(
         exactSign(exactSubtract(projections[axis].max, point[axis]))
       ).toBeGreaterThanOrEqual(0)
     }
+  }
+
   return { projections, display: { min, max, size } }
 }
+
 function transformCertificate(
   local: MaterialCertificate,
   frame: RigidFrame
@@ -460,10 +597,13 @@ function transformCertificate(
   const columns = coordinateAxes.map((point) =>
     vectorSubtract(exactTransform(point, frame), origin)
   )
+
   if (
     exactSign(vectorDot(columns[0], vectorCross(columns[1], columns[2]))) === 0
-  )
+  ) {
     throw new Error('Singular completed pose affine map')
+  }
+
   const mapped = new Map(
     local.points.map((point) => [
       exactPointKey(point),
@@ -475,6 +615,7 @@ function transformCertificate(
     required(mapped.get(exactPointKey(b))),
     required(mapped.get(exactPointKey(c)))
   ])
+
   return {
     points: [...mapped.values()],
     triangles,
@@ -492,9 +633,14 @@ function transformCertificate(
     )
   }
 }
+
 function pointOnTriangle(point: ExactPoint, [a, b, c]: ExactTriangle) {
   const normal = vectorCross(vectorSubtract(b, a), vectorSubtract(c, a))
-  if (exactSign(vectorDot(normal, vectorSubtract(point, a))) !== 0) return false
+
+  if (exactSign(vectorDot(normal, vectorSubtract(point, a))) !== 0) {
+    return false
+  }
+
   const signs = [
     [a, b],
     [b, c],
@@ -507,14 +653,17 @@ function pointOnTriangle(point: ExactPoint, [a, b, c]: ExactTriangle) {
       )
     )
   )
+
   return !signs.includes(-1) || !signs.includes(1)
 }
+
 function trianglesIntersect(a: ExactTriangle, b: ExactTriangle) {
   const edges = (t: ExactTriangle) => [
     vectorSubtract(t[1], t[0]),
     vectorSubtract(t[2], t[1]),
     vectorSubtract(t[0], t[2])
   ]
+
   const first = edges(a),
     second = edges(b)
   const normals = [
@@ -528,15 +677,18 @@ function trianglesIntersect(a: ExactTriangle, b: ExactTriangle) {
       [...first, ...second].map((edge) => vectorCross(normal, edge))
     )
   ])
+
   return axes.every((axis) => {
     const x = exactProjection(a, axis),
       y = exactProjection(b, axis)
+
     return (
       exactSign(exactSubtract(x.max, y.min)) >= 0 &&
       exactSign(exactSubtract(y.max, x.min)) >= 0
     )
   })
 }
+
 function contactLocusInPatches(
   a: MaterialCertificate,
   b: MaterialCertificate,
@@ -550,15 +702,25 @@ function contactLocusInPatches(
       b.edges.map((other) => vectorCross(edge, other))
     )
   ])
+
   for (const axis of axes) {
     const x = exactProjection(a.points, axis),
       y = exactProjection(b.points, axis)
     let level: Dyadic | undefined
-    if (exactSign(exactSubtract(x.max, y.min)) === 0) level = x.max
-    else if (exactSign(exactSubtract(y.max, x.min)) === 0) level = y.max
-    if (!level) continue
+
+    if (exactSign(exactSubtract(x.max, y.min)) === 0) {
+      level = x.max
+    } else if (exactSign(exactSubtract(y.max, x.min)) === 0) {
+      level = y.max
+    }
+
+    if (!level) {
+      continue
+    }
+
     const onPlane = (point: ExactPoint) =>
       exactSign(exactSubtract(vectorDot(point, axis), level)) === 0
+
     const covered = (
       material: MaterialCertificate,
       patches: ReadonlySet<number>
@@ -570,28 +732,40 @@ function contactLocusInPatches(
       const patchTriangles = material.triangles
         .map((triangle, index) => ({ triangle, index }))
         .filter(({ index }) => patches.has(index))
+
       if (faces.length) {
-        if (!faces.every(({ index }) => patches.has(index))) return undefined
+        if (!faces.every(({ index }) => patches.has(index))) {
+          return undefined
+        }
       } else if (
         !patchTriangles.some(({ triangle }) =>
           feature.every((point) => pointOnTriangle(point, triangle))
         )
-      )
+      ) {
         return undefined
+      }
+
       return patchTriangles
     }
+
     const first = covered(a, patchA),
       second = covered(b, patchB)
-    if (first && second)
-      for (const from of first)
-        for (const into of second)
-          if (trianglesIntersect(from.triangle, into.triangle))
+
+    if (first && second) {
+      for (const from of first) {
+        for (const into of second) {
+          if (trianglesIntersect(from.triangle, into.triangle)) {
             return {
               axis,
               firstTriangle: from.index,
               secondTriangle: into.index
             }
+          }
+        }
+      }
+    }
   }
+
   return undefined
 }
 
@@ -633,13 +807,16 @@ function certifyWholePose(
   let separatedBySAT = 0,
     unprovedBoundaries = 0,
     volumeFailures = 0
-  for (let i = 0; i < local.length; i++)
+
+  for (let i = 0; i < local.length; i++) {
     for (let j = i + 1; j < local.length; j++) {
       const first = local[i],
         second = local[j]
+
       expected += first.regions.length * second.regions.length
       let a = transformed[i],
         b = transformed[j]
+
       // Fixed interfaces use their single authored parent-local affine chain.
       // Rounded completed child translations do not redefine that physical interface.
       if (
@@ -667,6 +844,7 @@ function certifyWholePose(
           )
         }))
       }
+
       const joint = source.rig.joints.find(
         (candidate) =>
           (candidate.parentBodyId === first.body.id &&
@@ -688,43 +866,57 @@ function certifyWholePose(
             chain.footBodyId === second.body.id &&
             second.body.parentBodyId === first.body.id
         )
+
       const namedPatches = (entry: (typeof a)[number], bodyId: string) => {
         if (interfaceOwner) {
           const references =
             bodyId === required(joint).parentBodyId
               ? interfaceOwner.parentPatches
               : interfaceOwner.childPatches
+
           return references
             .filter(({ part }) => part === entry.part)
             .map(({ patch }) => patch)
         }
-        if (fixedInterface)
+
+        if (fixedInterface) {
           return entry.part.patches.filter(({ id }) =>
             id.endsWith('-interface')
           )
+        }
+
         return []
       }
+
       const patchIndices = (entry: (typeof a)[number], bodyId: string) => {
         const patches = namedPatches(entry, bodyId)
         const indices = new Set<number>()
-        for (const patch of patches)
-          if (patch.region === entry.region)
-            for (const range of patch.ranges)
+
+        for (const patch of patches) {
+          if (patch.region === entry.region) {
+            for (const range of patch.ranges) {
               for (
                 let offset = range.indexStart;
                 offset < range.indexStart + range.indexCount;
                 offset += 3
-              )
+              ) {
                 indices.add((offset - entry.region.indexStart) / 3)
+              }
+            }
+          }
+        }
+
         return indices
       }
+
       const boundsA = a.map(({ certificate }) =>
         coordinateAxes.map((axis) => exactProjection(certificate.points, axis))
       )
       const boundsB = b.map(({ certificate }) =>
         coordinateAxes.map((axis) => exactProjection(certificate.points, axis))
       )
-      for (let x = 0; x < a.length; x++)
+
+      for (let x = 0; x < a.length; x++) {
         for (let y = 0; y < b.length; y++) {
           visited++
           if (
@@ -741,15 +933,18 @@ function certifyWholePose(
             strictGaps++
             continue
           }
+
           tested++
           const relation = convexMaterialRelation(
             a[x].certificate,
             b[y].certificate
           )
+
           if (relation === 'separated') {
             separatedBySAT++
             continue
           }
+
           const witness =
             relation === 'boundary'
               ? contactLocusInPatches(
@@ -759,10 +954,12 @@ function certifyWholePose(
                   patchIndices(b[y], second.body.id)
                 )
               : undefined
+
           if (witness) {
             const originalA = a[x].region.indexStart + witness.firstTriangle * 3
             const originalB =
               b[y].region.indexStart + witness.secondTriangle * 3
+
             const ownsTriangle = (
               entry: (typeof a)[number],
               bodyId: string,
@@ -777,19 +974,28 @@ function certifyWholePose(
                       offset + 3 <= range.indexStart + range.indexCount
                   )
               )
+
             expect(ownsTriangle(a[x], first.body.id, originalA)).toBe(true)
             expect(ownsTriangle(b[y], second.body.id, originalB)).toBe(true)
             expect(primitiveAxis(witness.axis)).toBeDefined()
             boundaries++
             continue
           }
-          if (relation === 'boundary') unprovedBoundaries++
-          else volumeFailures++
+
+          if (relation === 'boundary') {
+            unprovedBoundaries++
+          } else {
+            volumeFailures++
+          }
+
           failures.push(
             `${first.body.id}/${a[x].part.id}/${a[x].region.id} : ${second.body.id}/${b[y].part.id}/${b[y].region.id} = ${relation === 'boundary' ? 'unknown - unproved patch subset' : relation}`
           )
         }
+      }
     }
+  }
+
   expect(local).toHaveLength(46)
   expect(visited).toBe(expected)
   expect(visited).toBe(strictGaps + tested)
@@ -802,6 +1008,7 @@ function certifyWholePose(
     failures.slice(0, 12).join('\n') +
       `\nvisited=${visited}, SAT=${tested}, boundaries=${boundaries}, failures=${failures.length}`
   ).toBe(0)
+
   return { visited, tested, boundaries }
 }
 
@@ -838,13 +1045,17 @@ function tripodProfile() {
         ).low
     )
   )
+
   raw.definitionId = 'tripod-material-authored'
   raw.jointEvidence = {
     kind: 'synthetic',
     id: 'tripod-authored-range',
     label: 'Tripod range - synthetic feasibility assumption'
   }
-  for (const leg of raw.legs) leg.jointRanges.knee[0] = -alpha
+  for (const leg of raw.legs) {
+    leg.jointRanges.knee[0] = -alpha
+  }
+
   return {
     baseline,
     candidate: readWalkingRobotDefinition(raw),
@@ -852,14 +1063,18 @@ function tripodProfile() {
     spacing
   }
 }
+
 type ExactRange = readonly [Dyadic, Dyadic]
+
 function productRange(a: ExactRange, b: ExactRange): ExactRange {
   const values = a.flatMap((x) => b.map((y) => exactMultiply(x, y)))
+
   return [
     values.reduce((x, y) => (exactSign(exactSubtract(x, y)) < 0 ? x : y)),
     values.reduce((x, y) => (exactSign(exactSubtract(x, y)) > 0 ? x : y))
   ]
 }
+
 function authoredRotatedRange(
   points: readonly ExactPoint[],
   axis: 1 | 2,
@@ -880,11 +1095,13 @@ function authoredRotatedRange(
     const first = productRange([p[axis], p[axis]], c)
     const other = axis === 1 ? exactNegate(p[2]) : p[1]
     const second = productRange([other, other], s)
+
     return [
       exactAdd(first[0], second[0]),
       exactAdd(first[1], second[1])
     ] as ExactRange
   })
+
   return [
     ranges
       .map((r) => r[0])
@@ -894,6 +1111,7 @@ function authoredRotatedRange(
       .reduce((a, b) => (exactSign(exactSubtract(a, b)) > 0 ? a : b))
   ]
 }
+
 function radialGap(
   inner: ReturnType<typeof certifyConvexTriangles>,
   outer: ReturnType<typeof certifyConvexTriangles>
@@ -901,13 +1119,21 @@ function radialGap(
   const radiusSquared = inner.points
     .map((p) => exactAdd(exactMultiply(p[1], p[1]), exactMultiply(p[2], p[2])))
     .reduce((a, b) => (exactSign(exactSubtract(a, b)) > 0 ? a : b))
+
   return outer.normals.some((normal) => {
-    if (exactSign(normal[0]) !== 0) return false
+    if (exactSign(normal[0]) !== 0) {
+      return false
+    }
+
     const projection = exactProjection(outer.points, normal)
     let support = exactZero
-    if (exactSign(projection.min) > 0) support = projection.min
-    else if (exactSign(projection.max) < 0)
+
+    if (exactSign(projection.min) > 0) {
+      support = projection.min
+    } else if (exactSign(projection.max) < 0) {
       support = exactNegate(projection.max)
+    }
+
     return (
       exactSign(support) > 0 &&
       exactSign(
@@ -919,6 +1145,7 @@ function radialGap(
     )
   })
 }
+
 function certifyAuthoredKneeDomain(
   source: import('../walking-robot-source').WalkingRobotSource,
   alpha: number
@@ -927,10 +1154,12 @@ function certifyAuthoredKneeDomain(
     axial = 0,
     transverse = 0,
     radial = 0
+
   for (const chain of source.rig.legChains) {
     const joint = required(
       source.rig.joints.find((j) => j.id === chain.jointIds[2])
     )
+
     expect(joint.axis).toBe('x')
     expect(joint.frame.rotation).toEqual([0, 0, 0, 1])
     expect(joint.domain[0]).toBe(-alpha)
@@ -944,6 +1173,7 @@ function certifyAuthoredKneeDomain(
       position: joint.frame.position.map((value) => -value),
       rotation: [0, 0, 0, 1]
     }
+
     const regions = (body: typeof parent, frame: typeof parentFrame) =>
       body.parts.flatMap((part) =>
         part.regions.map((region) => ({
@@ -954,17 +1184,20 @@ function certifyAuthoredKneeDomain(
           )
         }))
       )
+
     const first = regions(parent, parentFrame)
     const second = regions(child, {
       position: [0, 0, 0],
       rotation: [0, 0, 0, 1]
     })
-    for (const a of first)
+
+    for (const a of first) {
       for (const b of second) {
         pairs++
         const x: ExactPoint = [dyadic(1), exactZero, exactZero]
         const pa = exactProjection(a.certificate.points, x),
           pb = exactProjection(b.certificate.points, x)
+
         if (
           exactSign(exactSubtract(pa.max, pb.min)) < 0 ||
           exactSign(exactSubtract(pb.max, pa.min)) < 0
@@ -972,6 +1205,7 @@ function certifyAuthoredKneeDomain(
           axial++
           continue
         }
+
         if (
           ([1, 2] as const).some((axis) => {
             const direction: ExactPoint =
@@ -980,6 +1214,7 @@ function certifyAuthoredKneeDomain(
                 : [exactZero, exactZero, dyadic(1)]
             const support = exactProjection(a.certificate.points, direction),
               rotated = authoredRotatedRange(b.certificate.points, axis, alpha)
+
             return (
               exactSign(exactSubtract(support.max, rotated[0])) < 0 ||
               exactSign(exactSubtract(rotated[1], support.min)) < 0
@@ -989,6 +1224,7 @@ function certifyAuthoredKneeDomain(
           transverse++
           continue
         }
+
         if (
           radialGap(a.certificate, b.certificate) ||
           radialGap(b.certificate, a.certificate)
@@ -996,6 +1232,7 @@ function certifyAuthoredKneeDomain(
           radial++
           continue
         }
+
         throw new Error(
           'Unproved authored knee domain: ' +
             joint.id +
@@ -1005,9 +1242,12 @@ function certifyAuthoredKneeDomain(
             b.label
         )
       }
+    }
   }
+
   expect(pairs).toBe(axial + transverse + radial)
   expect(radial).toBeGreaterThan(0)
+
   return { pairs, axial, transverse, radial }
 }
 
@@ -1018,11 +1258,13 @@ describe('authored tripod feasibility - W2 source only', () => {
   it('proves the complete added negative knee interface domain from original material support', () => {
     const { candidate, alpha, spacing } = tripodProfile()
     const source = new WalkingRobotSourceOwner().prepare(candidate)
+
     expect(source.definition).toBe(candidate)
     expect(alpha).toBeGreaterThan(0)
     expect(alpha).toBeLessThan(1)
     for (const leg of candidate.legs) {
       const allowance = exactSubtract(dyadic(spacing), dyadic(leg.foot.size[2]))
+
       expect(
         exactSign(
           exactSubtract(
@@ -1048,15 +1290,18 @@ describe('authored tripod feasibility - W2 source only', () => {
         exactMultiply(dyadic(alpha), dyadic(leg.upper.length)),
         exactScale(dyadic(leg.foot.size[2]), 0.5)
       )
+
       for (const bodyId of chain.bodyIds) {
         const body = required(
           source.rig.bodies.find((body) => body.id === bodyId)
         )
-        for (const part of body.parts)
-          for (const triangle of exactTriangles(part, originFrame))
+
+        for (const part of body.parts) {
+          for (const triangle of exactTriangles(part, originFrame)) {
             for (const point of triangle) {
               const absolute = (value: Dyadic) =>
                 exactSign(value) < 0 ? exactNegate(value) : value
+
               const z = absolute(point[2])
               const bound =
                 bodyId === chain.bodyIds[1]
@@ -1068,14 +1313,19 @@ describe('authored tripod feasibility - W2 source only', () => {
                       z,
                       exactMultiply(dyadic(alpha), dyadic(leg.upper.length))
                     )
+
               expect(
                 exactSign(exactSubtract(footprintLimit, bound)),
                 part.id + ' - complete source Z support'
               ).toBeGreaterThanOrEqual(0)
             }
+          }
+        }
       }
     }
+
     const proof = certifyAuthoredKneeDomain(source, alpha)
+
     expect(proof.pairs).toBeGreaterThan(0)
   }, 30000)
   it.each([-1, 0, 1])(
@@ -1087,12 +1337,16 @@ describe('authored tripod feasibility - W2 source only', () => {
       const joints = structuredClone(candidate.presets.stowed) as Mutable<
         typeof candidate.presets.stowed
       >
+
       for (const leg of joints.legs) {
         const groupA = (leg.side === 'left') !== (leg.station === 'middle')
+
         leg.knee = phase * (groupA ? -alpha : alpha)
         leg.hip = -leg.knee
       }
+
       const pose = owner.evaluate(source, { base: originFrame, joints })
+
       certifyWholePose(source, pose)
       const soles = source.rig.legChains
         .map((chain) => {
@@ -1111,12 +1365,16 @@ describe('authored tripod feasibility - W2 source only', () => {
                 )
               )
           )
+
           expect(points.length).toBeGreaterThan(0)
+
           return points.map((point) => point[1])
         })
         .flat()
-      for (const y of soles)
+
+      for (const y of soles) {
         expect(exactSign(exactSubtract(y, soles[0]))).toBe(0)
+      }
     },
     30000
   )
@@ -1169,23 +1427,29 @@ describe('mounted crate original material evidence', () => {
       const crate = mounted.geometry.parts.flatMap((part) =>
         part.regions.map((region) => {
           const vertices: ExactPoint[] = []
-          for (let i = 0; i < part.shape.positions.length; i += 3)
+
+          for (let i = 0; i < part.shape.positions.length; i += 3) {
             vertices.push(
               [0, 1, 2].map((k) =>
                 exactAdd(dyadic(part.shape.positions[i + k]), shift[k])
               ) as unknown as ExactPoint
             )
+          }
+
           const triangles: ExactTriangle[] = []
+
           for (
             let i = region.indexStart;
             i < region.indexStart + region.indexCount;
             i += 3
-          )
+          ) {
             triangles.push([
               vertices[part.shape.indices[i]],
               vertices[part.shape.indices[i + 1]],
               vertices[part.shape.indices[i + 2]]
             ])
+          }
+
           return {
             part,
             region,
@@ -1205,8 +1469,9 @@ describe('mounted crate original material evidence', () => {
         crate: string
         relation: string
       }[] = []
-      for (const body of source.rig.bodies)
-        for (const part of body.parts)
+
+      for (const body of source.rig.bodies) {
+        for (const part of body.parts) {
           for (const region of part.regions) {
             const triangles = exactTriangles(
               part,
@@ -1217,13 +1482,18 @@ describe('mounted crate original material evidence', () => {
               triangles,
               part.id + '-' + region.id
             )
+
             for (const other of crate) {
               visited++
               const relation = convexMaterialRelation(
                 certificate,
                 other.certificate
               )
-              if (relation === 'separated') continue
+
+              if (relation === 'separated') {
+                continue
+              }
+
               if (
                 relation !== 'boundary' ||
                 part !== mounted.tray ||
@@ -1237,6 +1507,7 @@ describe('mounted crate original material evidence', () => {
                 })
                 continue
               }
+
               boundaries++
               const plane: Dyadic = [
                 mounted.contact.planeY.significand,
@@ -1254,13 +1525,18 @@ describe('mounted crate original material evidence', () => {
                 mounted.trayPatch.ranges[0]
               )
               const bottom = other.triangles.slice(10, 12)
-              for (const a of x)
+
+              for (const a of x) {
                 for (const b of z) {
                   const p: ExactPoint = [a, plane, b]
+
                   expect(top.some((t) => pointOnTriangle(p, t))).toBe(true)
                   expect(bottom.some((t) => pointOnTriangle(p, t))).toBe(true)
                 }
+              }
+
               const vertical: ExactPoint = [dyadic(0), dyadic(1), dyadic(0)]
+
               expect(
                 exactSign(
                   exactSubtract(
@@ -1279,6 +1555,9 @@ describe('mounted crate original material evidence', () => {
               ).toBe(0)
             }
           }
+        }
+      }
+
       expect(visited).toBe(
         source.parts.reduce((n, p) => n + p.regions.length, 0) * crate.length
       )
@@ -1295,6 +1574,7 @@ describe('mounted crate original material evidence', () => {
           0.5
         )
       ) as unknown as ExactPoint
+
       expect(
         crate.every(
           (p) => pointInClosedTriangles(cavity, p.triangles) === 'outside'
@@ -1309,17 +1589,23 @@ describe('walking robot original solid articulation regression', () => {
     const digest = (value: unknown) => {
       const bits = new DataView(new ArrayBuffer(8))
       const serialized = JSON.stringify(value, (_key, entry) => {
-        if (typeof entry !== 'number') return entry
+        if (typeof entry !== 'number') {
+          return entry
+        }
+
         bits.setFloat64(0, entry, false)
+
         return {
           $float64: bits.getBigUint64(0, false).toString(16).padStart(16, '0')
         }
       })
+
       return {
         bytes: Buffer.byteLength(serialized),
         sha256: createHash('sha256').update(serialized).digest('hex')
       }
     }
+
     expect(digest({ value: -0 })).not.toEqual(digest({ value: 0 }))
     const source = new WalkingRobotSourceOwner().prepare(
       createSyntheticWalkingRobotDefinition({
@@ -1327,6 +1613,7 @@ describe('walking robot original solid articulation regression', () => {
         sourceProfile: 'solid-articulation/1'
       })
     )
+
     // Independently compared in fresh Node 24.13.0 / TypeScript 5.8.3 processes
     // against commit 5b623c2ee8880b12402ac79d205dd65f0ef2a583 using this exact
     // fixture/serializer. Baseline substitutes only definition/source modules;
@@ -1352,9 +1639,11 @@ describe('walking robot original solid articulation regression', () => {
       })
       const result = certifyWholePose(source, pose)
       const envelope = actualPoseEnvelope(pose)
+
       expect(result.visited).toBeGreaterThan(0)
       expect(envelope.display.size[0]).toBeCloseTo(0.94625, 14)
       const before = { ...owner.work }
+
       expect(owner.prepare(source.definition)).toBe(source)
       expect(owner.work).toEqual(before)
       console.info(
@@ -1376,6 +1665,7 @@ describe('walking robot original solid articulation regression', () => {
     )
     let certifiedVertices = 0,
       certifiedRegions = 0
+
     for (const root of roots) {
       const child = required(
         source.rig.bodies.find((body) => body.id === root.childBodyId)
@@ -1413,7 +1703,9 @@ describe('walking robot original solid articulation regression', () => {
         exactSubtract(dyadic(Math.abs(root.frame.position[0])), h),
         gap
       )
+
       const squared = (v: Dyadic) => exactMultiply(v, v)
+
       const sleeve = required(
         child.parts.find((part) => part.id === root.id + '-sleeve')
       )
@@ -1421,6 +1713,7 @@ describe('walking robot original solid articulation regression', () => {
       const radialMaximum = ringPoints
         .map((p) => exactAdd(squared(p[0]), squared(p[1])))
         .reduce((a, b) => (exactSign(exactSubtract(a, b)) > 0 ? a : b))
+
       // Nominal libm radius is not a containment certificate.
       expect(
         exactSign(
@@ -1431,8 +1724,13 @@ describe('walking robot original solid articulation regression', () => {
         exactSign(exactSubtract(squared(available), radialMaximum))
       ).toBeGreaterThanOrEqual(0)
       let support = Math.sqrt(displayDyadic(radialMaximum))
-      if (exactSign(exactSubtract(squared(dyadic(support)), radialMaximum)) < 0)
+
+      if (
+        exactSign(exactSubtract(squared(dyadic(support)), radialMaximum)) < 0
+      ) {
         support = adjacentBinary64(support, 1)
+      }
+
       if (
         exactSign(
           exactSubtract(
@@ -1440,8 +1738,10 @@ describe('walking robot original solid articulation regression', () => {
             radialMaximum
           )
         ) >= 0
-      )
+      ) {
         support = adjacentBinary64(support, -1)
+      }
+
       expect(
         exactSign(exactSubtract(squared(dyadic(support)), radialMaximum))
       ).toBeGreaterThanOrEqual(0)
@@ -1455,6 +1755,7 @@ describe('walking robot original solid articulation regression', () => {
       ).toBeLessThan(0)
       const requiredMount = exactAdd(exactAdd(h, dyadic(support)), gap)
       const mount = Math.abs(root.frame.position[0])
+
       expect(
         exactSign(exactSubtract(dyadic(mount), requiredMount))
       ).toBeGreaterThanOrEqual(0)
@@ -1467,12 +1768,13 @@ describe('walking robot original solid articulation regression', () => {
         'External root directed support',
         JSON.stringify({ root: root.id, support, mount })
       )
-      for (const part of child.parts)
+      for (const part of child.parts) {
         for (const region of part.regions) {
           const material = certifyConvexTriangles(
             exactTriangles(part, originFrame, region),
             region.id
           )
+
           certifiedRegions++
           for (const p of material.points) {
             const radial = exactAdd(squared(p[0]), squared(p[1]))
@@ -1481,6 +1783,7 @@ describe('walking robot original solid articulation regression', () => {
               exactScale(p[0], side * cmin),
               exactScale(y, smax)
             )
+
             expect(
               exactSign(exactSubtract(squared(available), radial)) >= 0 ||
                 exactSign(outward) > 0
@@ -1488,6 +1791,8 @@ describe('walking robot original solid articulation regression', () => {
             certifiedVertices++
           }
         }
+      }
+
       const pin = required(
         source.parts.find((part) => part.id === root.id + '-pin')
       )
@@ -1502,6 +1807,7 @@ describe('walking robot original solid articulation regression', () => {
       const pinMax = pinPoints
         .map((p) => exactAdd(squared(p[0]), squared(p[1])))
         .reduce((a, b) => (exactSign(exactSubtract(a, b)) > 0 ? a : b))
+
       for (const region of sleeve.regions) {
         const material = certifyConvexTriangles(
           exactTriangles(sleeve, originFrame, region),
@@ -1513,6 +1819,7 @@ describe('walking robot original solid articulation regression', () => {
           exactZero
         ]
         const minimum = exactProjection(material.points, normal).min
+
         expect(exactSign(minimum)).toBeGreaterThan(0)
         expect(
           exactSign(
@@ -1524,6 +1831,7 @@ describe('walking robot original solid articulation regression', () => {
         ).toBeGreaterThan(0)
       }
     }
+
     expect(roots).toHaveLength(6)
     expect(certifiedRegions).toBe(
       source.rig.legChains.reduce(
@@ -1547,6 +1855,7 @@ describe('walking robot original solid articulation regression', () => {
     const roots = source.rig.joints.filter(
       (joint) => joint.parentBodyId === 'base' && joint.motion === 'revolute'
     )
+
     expect(roots).toHaveLength(6)
     for (const root of roots) {
       const leg = required(
@@ -1558,6 +1867,7 @@ describe('walking robot original solid articulation regression', () => {
         leg.coxa.section * source.definition.sourceModel.axialGapRatio
       )
       const outer = leg.coxa.section / 2
+
       // The old nearest-rounded expression undershoots the authored sum.
       expect(
         exactSign(
@@ -1575,11 +1885,13 @@ describe('walking robot original solid articulation regression', () => {
       const chassis = required(
         source.parts.find((part) => part.id === 'chassis')
       )
+
       expect(chassis.regions).toHaveLength(1)
       const chassisPoints = exactTriangles(chassis, originFrame).flat()
       const side = leg.side === 'left' ? -1 : 1
       const bridgeX = exactProjection(points, coordinateAxes[0])
       const chassisX = exactProjection(chassisPoints, coordinateAxes[0])
+
       expect(
         exactSign(
           exactSubtract(
@@ -1591,6 +1903,7 @@ describe('walking robot original solid articulation regression', () => {
       for (const axis of [1, 2]) {
         const face = exactProjection(points, coordinateAxes[axis])
         const housing = exactProjection(chassisPoints, coordinateAxes[axis])
+
         expect(exactSign(exactSubtract(face.max, face.min))).toBeGreaterThan(0)
         expect(
           exactSign(exactSubtract(face.min, housing.min))
@@ -1599,6 +1912,7 @@ describe('walking robot original solid articulation regression', () => {
           exactSign(exactSubtract(housing.max, face.max))
         ).toBeGreaterThanOrEqual(0)
       }
+
       const plate = certifyConvexTriangles(
         exactTriangles(yoke, originFrame, yoke.regions[0]),
         yoke.id
@@ -1606,7 +1920,8 @@ describe('walking robot original solid articulation regression', () => {
       const pin = required(
         source.parts.find((part) => part.id === root.id + '-pin')
       )
-      for (const region of pin.regions)
+
+      for (const region of pin.regions) {
         expect(
           convexMaterialRelation(
             plate,
@@ -1616,18 +1931,22 @@ describe('walking robot original solid articulation regression', () => {
             )
           )
         ).toBe('volume-overlap')
+      }
+
       const childMin = exactSubtract(
         dyadic(root.frame.position[2]),
         dyadic(outer)
       )
+
       expect(
         exactSign(exactSubtract(childMin, exactAdd(axial.max, gap)))
       ).toBeGreaterThanOrEqual(0)
-      for (const region of yoke.regions)
+      for (const region of yoke.regions) {
         certifyConvexTriangles(
           exactTriangles(yoke, originFrame, region),
           region.id
         )
+      }
     }
   })
   it('rejects external-root mount, frame and unsupported half-domain inputs without source fallback', () => {
@@ -1642,6 +1961,7 @@ describe('walking robot original solid articulation regression', () => {
         jointRanges: { ...baseline.legs[0].jointRanges, abduction: [-1.9, 1.9] }
       }
     ]
+
     for (const variant of variants) {
       const candidate = readWalkingRobotDefinition({
         ...baseline,
@@ -1649,8 +1969,10 @@ describe('walking robot original solid articulation regression', () => {
           index ? leg : { ...leg, ...variant }
         )
       })
+
       expect(() => new WalkingRobotSourceOwner().prepare(candidate)).toThrow()
     }
+
     const tiny = readWalkingRobotDefinition({
       ...baseline,
       legs: baseline.legs.map((leg) => ({
@@ -1661,6 +1983,7 @@ describe('walking robot original solid articulation regression', () => {
         }
       }))
     })
+
     expect(() => new WalkingRobotSourceOwner().prepare(tiny)).toThrow(
       'Unsupported external root abduction domain'
     )
@@ -1677,6 +2000,7 @@ describe('walking robot original solid articulation regression', () => {
         }
       }
     })
+
     expect(() => new WalkingRobotSourceOwner().prepare(obstructed)).toThrow(
       'Unproved external root parent material'
     )
@@ -1707,6 +2031,7 @@ describe('walking robot original solid articulation regression', () => {
       )
     )
     const failures: string[] = []
+
     for (const chain of source.rig.legChains) {
       const child = required(
         source.rig.bodies.find((body) => body.id === chain.bodyIds[0])
@@ -1714,17 +2039,23 @@ describe('walking robot original solid articulation regression', () => {
       const transform = required(
         pose.bodyTransforms.find((body) => body.id === child.id)
       ).transform
-      for (const part of child.parts)
+
+      for (const part of child.parts) {
         for (const region of part.regions) {
           const material = certifyConvexTriangles(
             exactTriangles(part, transform, region),
             region.id
           )
-          for (const parent of retained)
-            if (convexMaterialRelation(parent, material) === 'volume-overlap')
+
+          for (const parent of retained) {
+            if (convexMaterialRelation(parent, material) === 'volume-overlap') {
               failures.push(part.id + ' - ' + region.id)
+            }
+          }
         }
+      }
     }
+
     expect(failures).toEqual([])
   })
   beforeEach(async () => {
@@ -1738,21 +2069,30 @@ describe('walking robot original solid articulation regression', () => {
         definitionId: 'endpoint-support'
       })
     )
+
     const rawVertices = (
       part: import('../walking-robot-source').WalkingRobotPart
     ) => {
       const vertices: ExactPoint[] = []
-      for (let offset = 0; offset < part.shape.positions.length; offset += 3)
+
+      for (let offset = 0; offset < part.shape.positions.length; offset += 3) {
         vertices.push([
           dyadic(part.shape.positions[offset]),
           dyadic(part.shape.positions[offset + 1]),
           dyadic(part.shape.positions[offset + 2])
         ])
+      }
+
       return vertices
     }
+
     const link = (bodyId: string) => {
       const part = source.parts.find(({ id }) => id === bodyId)
-      if (!part) return undefined
+
+      if (!part) {
+        return undefined
+      }
+
       const vertices = rawVertices(part)
       const axes = coordinateAxes.map((direction) =>
         exactProjection(vertices, direction)
@@ -1760,7 +2100,11 @@ describe('walking robot original solid articulation regression', () => {
       const axis = axes.findIndex(
         ({ min, max }) => exactSign(min) > 0 || exactSign(max) < 0
       )
-      if (axis < 0) return undefined
+
+      if (axis < 0) {
+        return undefined
+      }
+
       const sign = exactSign(axes[axis].min) > 0 ? 1 : -1
       const direction: ExactPoint = [
         dyadic(axis === 0 ? sign : 0),
@@ -1770,32 +2114,49 @@ describe('walking robot original solid articulation regression', () => {
       const section = Math.min(
         ...part.size.filter((_, index) => index !== axis)
       )
+
       return { part, vertices, axis, direction, section }
     }
+
     let endpointCount = 0
+
     for (const joint of source.rig.joints.filter(
       ({ motion }) => motion === 'revolute'
     )) {
       const parent = link(joint.parentBodyId),
         child = link(joint.childBodyId)
-      if (!child) throw new Error('Missing actual child core')
-      if (parent) expect(joint.frame.rotation).toEqual([0, 0, 0, 1])
+
+      if (!child) {
+        throw new Error('Missing actual child core')
+      }
+
+      if (parent) {
+        expect(joint.frame.rotation).toEqual([0, 0, 0, 1])
+      }
+
       const origin: ExactPoint = [
         dyadic(joint.frame.position[0]),
         dyadic(joint.frame.position[1]),
         dyadic(joint.frame.position[2])
       ]
+
       const materials = (roles: readonly string[]) =>
         roles.flatMap((role) => {
           const part = source.parts.find(
             ({ id }) => id === `${joint.id}-${role}`
           )
-          if (!part) throw new Error('Missing bounded articulation material')
+
+          if (!part) {
+            throw new Error('Missing bounded articulation material')
+          }
+
           expect(part.localFrame).toEqual(
             role === 'pin' || role === 'yoke' ? joint.frame : originFrame
           )
+
           return rawVertices(part)
         })
+
       const contexts = [
         {
           own: child,
@@ -1806,7 +2167,8 @@ describe('walking robot original solid articulation regression', () => {
           material: materials(['pin', 'yoke'])
         }
       ]
-      if (parent)
+
+      if (parent) {
         contexts.push({
           own: parent,
           other: child,
@@ -1819,6 +2181,8 @@ describe('walking robot original solid articulation regression', () => {
           otherOrigin: [exactZero, exactZero, exactZero],
           material: materials(['sleeve', 'neck'])
         })
+      }
+
       for (const context of contexts) {
         endpointCount++
         const other = context.other
@@ -1845,6 +2209,7 @@ describe('walking robot original solid articulation regression', () => {
           vectorSubtract(p, context.ownOrigin)
         )
         const actual = exactProjection(ownPoints, context.u).min
+
         expect(
           exactSign(exactSubtract(actual, required)),
           joint.id
@@ -1863,6 +2228,7 @@ describe('walking robot original solid articulation regression', () => {
           axis === 1 ? adjacent : raw[1],
           axis === 2 ? adjacent : raw[2]
         ]
+
         expect(
           exactSign(
             exactSubtract(
@@ -1883,6 +2249,7 @@ describe('walking robot original solid articulation regression', () => {
             ),
             context.u
           ).max
+
           expect(
             exactSign(exactSubtract(otherActual, profileSupport)),
             joint.id
@@ -1890,6 +2257,7 @@ describe('walking robot original solid articulation regression', () => {
         }
       }
     }
+
     expect(endpointCount).toBe(58)
   })
 
@@ -1905,6 +2273,7 @@ describe('walking robot original solid articulation regression', () => {
           : arm
       )
     })
+
     expect(() => new WalkingRobotSourceOwner().prepare(changed)).toThrow(
       'No positive link core remains'
     )
@@ -1920,6 +2289,7 @@ describe('walking robot original solid articulation regression', () => {
       ...raw,
       sourceModel: { ...raw.sourceModel, sleeveInnerRadiusRatio: 0.49 }
     }
+
     expect(() =>
       new WalkingRobotSourceOwner().prepare(readWalkingRobotDefinition(changed))
     ).toThrow()
@@ -1942,6 +2312,7 @@ describe('walking robot original solid articulation regression', () => {
           const active =
             (preset === 'leftWorking' && arm.side === 'left') ||
             (preset === 'rightWorking' && arm.side === 'right')
+
           return active
             ? arm
             : {
@@ -1959,7 +2330,8 @@ describe('walking robot original solid articulation regression', () => {
       })
       const actual = actualPoseEnvelope(pose),
         prior = actualPoseEnvelope(previous)
-      for (const axis of [0, 2])
+
+      for (const axis of [0, 2]) {
         expect(
           exactSign(
             exactSubtract(
@@ -1974,16 +2346,21 @@ describe('walking robot original solid articulation regression', () => {
             )
           )
         ).toBeLessThanOrEqual(0)
-      for (const chain of source.rig.armChains)
+      }
+
+      for (const chain of source.rig.armChains) {
         if (
           (preset === 'leftWorking' && chain.side === 'left') ||
           (preset === 'rightWorking' && chain.side === 'right')
-        )
+        ) {
           expect(
             pose.frames.tools.find(({ chainId }) => chainId === chain.id)
           ).toEqual(
             previous.frames.tools.find(({ chainId }) => chainId === chain.id)
           )
+        }
+      }
+
       const soles = source.rig.contacts.feet.map(({ part, patch }) => {
         const frame = required(
           pose.bodyTransforms.find(({ id }) => id === part.bodyId)
@@ -1992,6 +2369,7 @@ describe('walking robot original solid articulation regression', () => {
           exactTriangles(part, frame, range).flat()
         )
         const y = exactProjection(points, coordinateAxes[1])
+
         return { id: part.id, min: y.min, max: y.max }
       })
       const coplanar = soles.every(
@@ -2002,6 +2380,7 @@ describe('walking robot original solid articulation regression', () => {
       const offset = coplanar
         ? displayDyadic(exactNegate(soles[0].min))
         : undefined
+
       console.info(
         'W2 source/FK geometry',
         JSON.stringify({
@@ -2033,6 +2412,7 @@ describe('walking robot original solid articulation regression', () => {
           definitionId: 'whole-material-proof'
         })
       )
+
       certifyWholePose(
         source,
         owner.evaluate(source, {
@@ -2055,6 +2435,7 @@ describe('walking robot original solid articulation regression', () => {
         base: { position: [distance, 0, 0], rotation: [0, 0, 0, 1] },
         joints: source.rig.presets.stowed
       })
+
       certifyWholePose(source, pose)
       expect(owner.prepare(definition)).toBe(source)
       expect(pose.source).toBe(source)
@@ -2072,8 +2453,9 @@ describe('walking robot original solid articulation regression', () => {
       definitionId: 'housing-certificate'
     })
     const source = new WalkingRobotSourceOwner().prepare(definition)
-    for (const part of source.parts)
-      for (const region of part.regions)
+
+    for (const part of source.parts) {
+      for (const region of part.regions) {
         certifyConvexTriangles(
           exactTriangles(
             part,
@@ -2085,6 +2467,9 @@ describe('walking robot original solid articulation regression', () => {
           ),
           `${part.id}/${region.id}`
         )
+      }
+    }
+
     const opposite = structuredClone(definition)
     const changed = readWalkingRobotDefinition({
       ...opposite,
@@ -2104,8 +2489,10 @@ describe('walking robot original solid articulation regression', () => {
       }))
     })
     const other = new WalkingRobotSourceOwner().prepare(changed)
+
     for (const id of ['chassis', 'carriage']) {
       const original = required(source.parts.find((part) => part.id === id))
+
       expect(
         required(other.parts.find((part) => part.id === id)).shape
       ).toEqual(original.shape)
@@ -2121,6 +2508,7 @@ describe('walking robot original solid articulation regression', () => {
           ),
           id
         )
+
         expect(
           certificate.normals.every(
             (normal) =>
@@ -2141,17 +2529,20 @@ describe('walking robot original solid articulation regression', () => {
       base: { position: [0, 0, 0], rotation: [0, 0, 0, 1] },
       joints: source.rig.presets.stowed
     })
+
     for (const role of ['support', 'cutter']) {
       const pair = ['left', 'right'].map((side) => {
         const body = required(
           pose.bodyTransforms.find(({ id }) => id === `${side}-${role}-tool`)
         )
         const part = required(body.sourceParts.find(({ id }) => id === body.id))
+
         return certifyConvexTriangles(
           exactTriangles(part, body.transform, part.regions[0]),
           body.id
         )
       })
+
       expect(convexMaterialRelation(pair[0], pair[1]), role).toBe('separated')
     }
   })
@@ -2165,17 +2556,22 @@ describe('walking robot original solid articulation regression', () => {
     const revolute = source.rig.joints.filter(
       ({ motion }) => motion === 'revolute'
     )
+
     expect(revolute).toHaveLength(34)
     for (const joint of revolute) {
       const sleeve = source.parts.find(({ id }) => id === `${joint.id}-sleeve`)
+
       expect(sleeve, joint.id).toBeDefined()
-      if (!sleeve)
+      if (!sleeve) {
         throw new Error(`Missing canonical annular sleeve: ${joint.id}`)
+      }
+
       expect(sleeve.bodyId).toBe(joint.childBodyId)
       const triangles = exactTriangles(sleeve, {
         position: [0, 0, 0],
         rotation: [0, 0, 0, 1]
       })
+
       expect(
         pointInClosedTriangles([exactZero, exactZero, exactZero], triangles),
         joint.id
@@ -2204,6 +2600,7 @@ describe('walking robot original solid articulation regression', () => {
           `${joint.id}/${region.id}`
         )
       )
+
       expect(
         neckRegions.some((neckRegion) =>
           wedges.some(
@@ -2214,19 +2611,23 @@ describe('walking robot original solid articulation regression', () => {
       ).toBe(true)
       for (let first = 0; first < wedges.length; first++) {
         const wedge = wedges[first]
+
         expect(
           pointInClosedTriangles(
             [exactZero, exactZero, exactZero],
             wedge.triangles
           )
         ).toBe('outside')
+
         const centroid = (axis: number) =>
           wedge.points.reduce(
             (sum, point) =>
               exactAdd(sum, exactScale(point[axis], 1 / wedge.points.length)),
             exactZero
           )
+
         const material: ExactPoint = [centroid(0), centroid(1), centroid(2)]
+
         expect(
           wedges.filter(
             (candidate) =>
@@ -2269,23 +2670,30 @@ describe('walking robot original solid articulation regression', () => {
                   : exactAdd(sum, exactMultiply(value, value)),
               exactZero
             )
-            if (exactSign(exactSubtract(radius, threshold)) >= 0) return p
+
+            if (exactSign(exactSubtract(radius, threshold)) >= 0) {
+              return p
+            }
+
             return [
               axis === 0 ? p[0] : exactZero,
               axis === 1 ? p[1] : exactZero,
               axis === 2 ? p[2] : exactZero
             ]
           })
+
           return [changed[0], changed[1], changed[2]]
         })
+
         expect(() =>
           certifyConvexTriangles(collapsed, 'collapsed inner radius')
         ).toThrow()
-        for (let second = first + 1; second < wedges.length; second++)
+        for (let second = first + 1; second < wedges.length; second++) {
           expect(
             convexMaterialRelation(wedge, wedges[second]),
             joint.id
           ).not.toBe('volume-overlap')
+        }
       }
     }
   }, 30000)
@@ -2320,12 +2728,13 @@ describe('walking robot original solid articulation regression', () => {
       )
       const overlaps: string[] = []
       let visited = 0
+
       for (const joint of source.rig.joints) {
         visited++
         expect(
           byBody.has(joint.parentBodyId) && byBody.has(joint.childBodyId)
         ).toBe(true)
-        for (const parent of required(regions.get(joint.parentBodyId)))
+        for (const parent of required(regions.get(joint.parentBodyId))) {
           for (const child of required(regions.get(joint.childBodyId))) {
             if (
               convexMaterialRelation(parent.certificate, child.certificate) ===
@@ -2335,12 +2744,15 @@ describe('walking robot original solid articulation regression', () => {
                 parent.certificate.triangles,
                 child.certificate.triangles
               )
+
               overlaps.push(
                 `${joint.id}: ${parent.id} / ${child.id} / surface sample ${witness ?? 'none; complete SAT proves volume'}`
               )
             }
           }
+        }
       }
+
       expect(visited).toBe(35)
       expect(overlaps, overlaps.join('\n')).toEqual([])
     },
@@ -2351,11 +2763,14 @@ describe('walking robot original solid articulation regression', () => {
 function bounds(positions: readonly number[]) {
   const min = [Infinity, Infinity, Infinity]
   const max = [-Infinity, -Infinity, -Infinity]
-  for (let offset = 0; offset < positions.length; offset += 3)
+
+  for (let offset = 0; offset < positions.length; offset += 3) {
     for (let axis = 0; axis < 3; axis++) {
       min[axis] = Math.min(min[axis], positions[offset + axis])
       max[axis] = Math.max(max[axis], positions[offset + axis])
     }
+  }
+
   return { min, max }
 }
 
@@ -2364,6 +2779,7 @@ describe('walking robot canonical source', () => {
     const source = new WalkingRobotSourceOwner().prepare(
       createSyntheticWalkingRobotDefinition({ definitionId: 'source-contract' })
     )
+
     expect(source.rig.armChains.map(({ id }) => id).sort()).toEqual([
       'left-cutter',
       'left-support',
@@ -2388,13 +2804,14 @@ describe('walking robot canonical source', () => {
       new Set(source.rig.joints.map(({ childBodyId }) => childBodyId)).size
     ).toBe(source.rig.joints.length)
     const bodyIds = new Set(source.rig.bodies.map(({ id }) => id))
+
     expect(
       source.rig.joints.every(
         ({ parentBodyId, childBodyId }) =>
           bodyIds.has(parentBodyId) && bodyIds.has(childBodyId)
       )
     ).toBe(true)
-    for (const body of source.rig.bodies)
+    for (const body of source.rig.bodies) {
       for (const part of body.parts) {
         expect(part.bodyId).toBe(body.id)
         expect(
@@ -2409,6 +2826,8 @@ describe('walking robot canonical source', () => {
           source.definition.geometryEvidence
         )
       }
+    }
+
     for (const part of source.parts) {
       expect(part.regions.length).toBeGreaterThan(0)
       expect(part.regions.every(({ kind }) => kind === 'closed-solid')).toBe(
@@ -2418,10 +2837,11 @@ describe('walking robot canonical source', () => {
         part.regions.reduce((count, region) => count + region.indexCount, 0)
       ).toBe(part.shape.indices.length)
       const extent = bounds(part.shape.positions)
+
       expect(extent.max.map((value, axis) => value - extent.min[axis])).toEqual(
         part.size
       )
-      for (const patch of part.patches)
+      for (const patch of part.patches) {
         for (const range of patch.ranges) {
           expect(part.regions.includes(patch.region)).toBe(true)
           expect(range.indexStart).toBeGreaterThanOrEqual(
@@ -2431,25 +2851,30 @@ describe('walking robot canonical source', () => {
             patch.region.indexStart + patch.region.indexCount
           )
         }
+      }
     }
+
     expect(source.parts.map(({ id }) => id).join('|')).not.toMatch(
       /wheel|tire|tread|hub|axle|single-wrist/
     )
     expect(
       source.rig.joints.find(({ id }) => id === 'carriage-lift')
     ).toMatchObject({ axis: 'y', motion: 'prismatic' })
-    for (const chain of source.rig.armChains)
+    for (const chain of source.rig.armChains) {
       expect(
         chain.jointIds.map(
           (id) => source.rig.joints.find((joint) => joint.id === id)?.axis
         )
       ).toEqual(['y', 'x', 'x', 'x'])
-    for (const chain of source.rig.legChains)
+    }
+
+    for (const chain of source.rig.legChains) {
       expect(
         chain.jointIds.map(
           (id) => source.rig.joints.find((joint) => joint.id === id)?.axis
         )
       ).toEqual(['z', 'x', 'x'])
+    }
   })
 
   it('keeps synthetic material assumptions distinct from measured geometry evidence', () => {
@@ -2466,6 +2891,7 @@ describe('walking robot canonical source', () => {
     }
     const definition = readWalkingRobotDefinition(raw)
     const source = new WalkingRobotSourceOwner().prepare(definition)
+
     expect(source.definition.geometryEvidence).toEqual({
       kind: 'measured',
       id: 'geometry-survey-12'
@@ -2483,6 +2909,7 @@ describe('walking robot canonical source', () => {
     const source = new WalkingRobotSourceOwner().prepare(
       createSyntheticWalkingRobotDefinition({ definitionId: 'patches' })
     )
+
     expect(source.rig.contacts.feet).toHaveLength(6)
     expect(source.rig.contacts.supportTools).toHaveLength(2)
     expect(source.rig.contacts.cuttingEdges).toHaveLength(2)
@@ -2509,6 +2936,7 @@ describe('walking robot canonical source', () => {
       const joint = source.rig.joints.find(
         ({ id }) => id === jointInterface.jointId
       )
+
       expect(joint).toBeDefined()
       expect(jointInterface.frame).toBe(joint?.frame)
       expect(jointInterface.axis).toBe(joint?.axis)
@@ -2521,6 +2949,7 @@ describe('walking robot canonical source', () => {
         expect(jointInterface.parentPatches).toEqual([])
         expect(jointInterface.childPatches).toEqual([])
       }
+
       expect(jointInterface).not.toHaveProperty('envelope')
       expect(jointInterface).not.toHaveProperty('collisionExemption')
     }
@@ -2532,6 +2961,7 @@ describe('walking robot canonical source', () => {
       definitionId: 'lifetime-a'
     })
     const first = owner.prepare(definition)
+
     expect(owner.prepare(definition)).toBe(first)
     expect(owner.read()).toBe(first)
     expect(owner.isCurrent(first)).toBe(true)
@@ -2552,6 +2982,7 @@ describe('walking robot canonical source', () => {
         definitionId: 'lifetime-b'
       })
     )
+
     expect(next).not.toBe(first)
     expect(owner.isCurrent(first)).toBe(false)
     expect(owner.work.builds).toBe(2)

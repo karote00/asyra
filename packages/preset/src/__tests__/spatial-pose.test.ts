@@ -1,8 +1,10 @@
 import { expect, it } from 'vitest'
 import { SpatialPosePresentation } from '../spatial/pose.js'
 const origin = { position: [0, 0, 0], rotation: [0, 0, 0, 1] } as const
+
 it('interpolates complete poses, replaces and cancels targets without a clock or geometry', () => {
   const owner = new SpatialPosePresentation()
+
   owner.retarget({
     position: [10, 0, 0],
     rotation: [0, 1, 0, 0],
@@ -12,6 +14,7 @@ it('interpolates complete poses, replaces and cancels targets without a clock or
     tolerance: 0,
     reducedMotion: false
   })
+
   expect(next.position).toEqual([5, 0, 0])
   expect(next.scale).toEqual([1.5, 1.5, 1.5])
   expect(next.rotation[1]).toBeCloseTo(Math.SQRT1_2)
@@ -31,6 +34,7 @@ it('interpolates complete poses, replaces and cancels targets without a clock or
 it('snapshots targets and rejects invalid updates without replacing the accepted target', () => {
   const owner = new SpatialPosePresentation(),
     position: [number, number, number] = [4, 0, 0]
+
   owner.retarget({ ...origin, position })
   position[0] = 99
   expect(() => owner.retarget({ ...origin, scale: [0, 1, 1] })).toThrow()

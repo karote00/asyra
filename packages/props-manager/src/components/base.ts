@@ -26,6 +26,7 @@ const cloneFallbackValue = (value: unknown): unknown => {
     return Object.entries(value).reduce<Record<string, unknown>>(
       (cloned, [key, item]) => {
         cloned[key] = cloneFallbackValue(item)
+
         return cloned
       },
       {}
@@ -42,10 +43,12 @@ abstract class BaseComponent<
   implements IProperty
 {
   propNames!: string[]
+
   protected readonly propertyComponentAccessor: PropertyComponentAccessor
 
   constructor() {
     const propertyComponentAccessor = getPropertyComponentAccessor()
+
     super(
       (change) => propertyComponentAccessor.addChange(change),
       acknowledgeTransactionReplayApplied
@@ -55,6 +58,7 @@ abstract class BaseComponent<
 
   private getFieldSchema(key: keyof T): PropertyFieldSchema | undefined {
     const schema = getPropertySchema(this.data.type)
+
     if (!schema) {
       return
     }
@@ -76,6 +80,7 @@ abstract class BaseComponent<
     shouldFallback = false
   ) {
     const field = this.getFieldSchema(key)
+
     if (!field) {
       return { valid: true, value }
     }
@@ -110,17 +115,20 @@ abstract class BaseComponent<
 
   protected assignLoadedValue(key: keyof T, value: unknown) {
     const sanitized = this.validateBySchema(key, value, true)
+
     if (!sanitized.valid || !this.isValidKey(key)) {
       return false
     }
 
     this.data[key] = sanitized.value as T[Extract<keyof T, string>]
+
     return true
   }
 
   _init(data: Partial<T>) {
     Object.keys(data).forEach((dataKey) => {
       const key = dataKey as keyof T
+
       if (this.isValidKey(key) && !isNil(data[key])) {
         this.assignLoadedValue(key, data[key])
       }
@@ -133,6 +141,7 @@ abstract class BaseComponent<
     }
 
     const sanitized = this.validateBySchema(key, value, false)
+
     if (!sanitized.valid) {
       return
     }
@@ -143,6 +152,7 @@ abstract class BaseComponent<
   update(data: Partial<T>) {
     Object.keys(data).forEach((dataKey) => {
       const key = dataKey as keyof T
+
       if (this.isValidKey(key) && !isNil(data[key])) {
         this.set(key, data[key] as T[Extract<keyof T, string>])
       }

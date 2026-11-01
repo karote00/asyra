@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const fs = require('node:fs')
 const path = require('node:path')
+
 function document() {
   return {
     schemaVersion: 1,
@@ -38,11 +39,16 @@ function document() {
     }
   }
 }
+
 function directory(t) {
   const parent = path.resolve(__dirname, '../../../../tmp/flow-files-tests')
+
   fs.mkdirSync(parent, { recursive: true })
   const root = fs.mkdtempSync(path.join(parent, 'case-'))
+
   t.after(() => fs.rmSync(root, { recursive: true, force: true }))
+
   return root
 }
+
 module.exports = { document, directory }

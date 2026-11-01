@@ -29,23 +29,31 @@ const frame: SpatialFrame = {
     }
   ]
 }
+
 afterEach(() => vi.restoreAllMocks())
 describe('Spatial projection owner', () => {
   it('coalesces camera bursts without resubmitting meshes and preserves a pending model update', () => {
     const invalidate = vi.fn(),
       layer = new SpatialLayer(invalidate)
+
     layer.submit(frame)
     layer.registration.update?.()
     const update = vi.spyOn(RenderMesh.prototype, 'update')
+
     invalidate.mockClear()
-    for (let i = 1; i <= 60; i++)
+    for (let i = 1; i <= 60; i++) {
       layer.submitCamera({ ...frame.camera, position: [i, 0, 5] })
+    }
+
     expect(invalidate).toHaveBeenCalledTimes(1)
     layer.registration.update?.()
     expect(update).not.toHaveBeenCalled()
     const container = layer.registration.layer as RenderContainer
-    if (!(container instanceof RenderContainer))
+
+    if (!(container instanceof RenderContainer)) {
       throw new Error('Missing spatial container')
+    }
+
     expect(
       container.children[0].getEngineProperties()[SPATIAL_PROPERTY]
     ).toMatchObject({ position: [60, 0, 5] })
@@ -86,6 +94,7 @@ describe('Spatial projection owner', () => {
   it('retains a pending complete frame and invalidates only accepted submissions', () => {
     const invalidate = vi.fn(),
       layer = new SpatialLayer(invalidate)
+
     layer.submit(frame)
     expect(layer.registration.shouldUpdate?.()).toBe(true)
     expect(layer.registration.update?.()).toBe(true)
@@ -104,6 +113,7 @@ describe('Spatial projection owner', () => {
 it('rejects non-string visual identities before replacing accepted pending output', () => {
   const invalidate = vi.fn(),
     layer = new SpatialLayer(invalidate)
+
   layer.submit(frame)
   expect(() =>
     layer.submit({
@@ -120,15 +130,21 @@ it('rejects non-string visual identities before replacing accepted pending outpu
 it('skips identical admitted submissions and changes only visibility and identity when required', async () => {
   const { readSpatialDescriptor } = await import('../spatial-contract.js')
   const descriptor = readSpatialDescriptor(frame.meshes[0].descriptor)
-  if (descriptor.kind !== 'mesh') throw new Error('Expected mesh')
+
+  if (descriptor.kind !== 'mesh') {
+    throw new Error('Expected mesh')
+  }
+
   const accepted = { ...frame, meshes: [{ ...frame.meshes[0], descriptor }] }
   const invalidate = vi.fn(),
     layer = new SpatialLayer(invalidate)
+
   layer.submit(accepted)
   layer.registration.update?.()
   const mesh = (layer.registration.layer as RenderContainer).children[1]
   const update = vi.spyOn(RenderMesh.prototype, 'update')
   const destroy = vi.spyOn(mesh, 'destroy')
+
   invalidate.mockClear()
   layer.submit(accepted)
   expect(invalidate).not.toHaveBeenCalled()
@@ -157,12 +173,14 @@ it('keeps ordered visual identities and isolates caller mutations and layer life
     other = new SpatialLayer(vi.fn())
   const a = { ...frame.meshes[0], id: 'a' },
     b = { ...frame.meshes[0], id: 'b' }
+
   layer.submit({ ...frame, meshes: [a, b] })
   a.id = 'mutated'
   layer.registration.update?.()
   const container = layer.registration.layer as RenderContainer
   const first = container.children[1],
     second = container.children[2]
+
   expect(first.projectionIdentity?.visualId).toBe('a')
   layer.submit({ ...frame, meshes: [b, { ...a, id: 'a' }] })
   layer.registration.update?.()
@@ -174,6 +192,7 @@ it('keeps ordered visual identities and isolates caller mutations and layer life
 
 it('rejects sparse submissions without losing accepted camera and model work', () => {
   const layer = new SpatialLayer(vi.fn())
+
   layer.submit(frame)
   expect(() => layer.submit({ ...frame, meshes: Array(1) })).toThrow()
   layer.registration.update?.()

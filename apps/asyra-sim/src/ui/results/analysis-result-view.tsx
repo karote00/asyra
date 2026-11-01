@@ -204,10 +204,11 @@ export function AnalysisResultView({
             .map((pair) => {
               const source = pairs.sources.get(pair.pairId)
 
-              if (!source)
+              if (!source) {
                 throw new Error(
                   'Result pair is missing from its frozen snapshot'
                 )
+              }
 
               return (
                 <PairEvidenceView

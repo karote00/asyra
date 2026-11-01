@@ -30,10 +30,12 @@ const freezeTransactionValue = <T>(
   if (value === null || typeof value !== 'object' || seen.has(value)) {
     return value
   }
+
   seen.add(value)
   Reflect.ownKeys(value).forEach((key) => {
     freezeTransactionValue(Reflect.get(value, key), seen)
   })
+
   return Object.freeze(value)
 }
 
@@ -55,8 +57,10 @@ describe('transaction batch publishing', () => {
     const geometry = Object.freeze(
       Object.defineProperty({}, 'points', {
         enumerable: true,
+
         get: () => {
           nestedReadCount += 1
+
           return Object.freeze([1, 2, 3])
         }
       })
@@ -120,6 +124,7 @@ describe('transaction batch publishing', () => {
       expect(ownerUpdate).toHaveBeenCalledOnce()
       const delivered = ownerUpdate.mock.calls[0]?.[0] as
         readonly UpdateTransactionEvent[] | undefined
+
       expect(delivered?.map(({ eventName }) => eventName)).toEqual([
         'property.first',
         'property.second'
@@ -208,6 +213,7 @@ describe('transaction batch publishing', () => {
       expect(ownerUpdate).toHaveBeenCalledOnce()
       const delivered = ownerUpdate.mock.calls[0]?.[0] as
         readonly UpdateTransactionEvent[] | undefined
+
       expect(delivered).toEqual([sourceEvent])
       expect(delivered?.[0]).not.toBe(sourceEvent)
       expect(delivered?.[0]?.canonicalEvidence).not.toBe(
@@ -243,6 +249,7 @@ describe('transaction batch publishing', () => {
     const batchObserver = vi.fn()
     const subscription = subscribeToEvents(observer)
     const batchSubscription = subscribeToEventBatches(batchObserver)
+
     observer.mockClear()
     batchObserver.mockClear()
     const source = [
@@ -275,6 +282,7 @@ describe('transaction batch publishing', () => {
   it('isolates later observers from an earlier observer mutation attempt', () => {
     const firstObserver = vi.fn((sourceEvent) => {
       const event = sourceEvent as UpdateTransactionEvent
+
       try {
         ;(event.payload as { nested: { value: number } }).nested.value = 99
       } catch {
@@ -284,6 +292,7 @@ describe('transaction batch publishing', () => {
     const laterObserver = vi.fn()
     const firstSubscription = subscribeToEvents(firstObserver)
     const laterSubscription = subscribeToEvents(laterObserver)
+
     firstObserver.mockClear()
     laterObserver.mockClear()
 
@@ -318,6 +327,7 @@ describe('transaction batch publishing', () => {
     const batchObserver = vi.fn()
     const subscription = subscribeToEvents(observer)
     const batchSubscription = subscribeToEventBatches(batchObserver)
+
     observer.mockClear()
     batchObserver.mockClear()
 
@@ -362,6 +372,7 @@ describe('transaction batch publishing', () => {
     const batchObserver = vi.fn()
     const subscription = subscribeToEvents(observer)
     const batchSubscription = subscribeToEventBatches(batchObserver)
+
     observer.mockClear()
     batchObserver.mockClear()
     const failure = new Error('later canonical owner failed')
@@ -414,15 +425,22 @@ describe('transaction batch publishing', () => {
     const applied = vi.fn()
     const committed = vi.fn()
     const projection = subscribeToAppliedEventBatches((events) => {
-      if (events.some((event) => event.type === EventTypes.UPDATE_TRANSACTION))
+      if (
+        events.some((event) => event.type === EventTypes.UPDATE_TRANSACTION)
+      ) {
         applied(events)
+      }
     })
     const observer = subscribeToEventBatches((events) => {
-      if (events.some((event) => event.type === EventTypes.UPDATE_TRANSACTION))
+      if (
+        events.some((event) => event.type === EventTypes.UPDATE_TRANSACTION)
+      ) {
         committed(events)
+      }
     })
     const first = createTransactionEvent('property.first', { value: 1 })
     const second = createTransactionEvent('property.second', { value: 2 })
+
     try {
       runTransaction(() => {
         updateTransactionBatch([first])
@@ -453,6 +471,7 @@ describe('transaction batch publishing', () => {
   it('publishes one ordered observer batch only after the owner commits', () => {
     const order: string[] = []
     const owner = createOwner()
+
     owner.endTransaction.mockImplementation(() => {
       order.push('owner-commit')
     })
@@ -465,9 +484,11 @@ describe('transaction batch publishing', () => {
             event.type === EventTypes.UPDATE_TRANSACTION
         )
         .map(({ eventName }) => eventName)
+
       if (eventNames.length === 0) {
         return
       }
+
       order.push('observer-batch')
       observedCanonicalBatches.push(eventNames)
     })
@@ -496,6 +517,7 @@ describe('transaction batch publishing', () => {
   it('discards pending observer evidence when owner finalization fails', () => {
     const finalizationFailure = new Error('owner finalization failed')
     const owner = createOwner()
+
     owner.endTransaction.mockImplementation(() => {
       throw finalizationFailure
     })
@@ -506,6 +528,7 @@ describe('transaction batch publishing', () => {
         (event): event is UpdateTransactionEvent =>
           event.type === EventTypes.UPDATE_TRANSACTION
       )
+
       if (canonicalEvents.length > 0) {
         observedCanonicalBatches.push(canonicalEvents)
       }

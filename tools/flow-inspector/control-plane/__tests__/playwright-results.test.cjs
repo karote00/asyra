@@ -12,6 +12,7 @@ const contract = loadContract(
   undefined,
   'apps/asyra-design/playwright-flow-contracts.json'
 )
+
 const context = () => ({
   format: 1,
   id: require('node:crypto').randomUUID(),
@@ -22,6 +23,7 @@ const context = () => ({
   issues: [],
   command: null
 })
+
 function report(
   results = [
     {
@@ -69,16 +71,21 @@ function report(
     ]
   }
 }
+
 function locate(input, ctx = context()) {
   const normalized = normalizeReport(root, ctx, input)
+
   return localizeReport(root, ctx, normalized.report, normalized.options)
 }
+
 test('expanded Design cases require exact file, full title and project while siblings stay unresolved', () => {
   for (const item of contract.cases) {
     const input = report()
     const spec = input.suites[0].suites[0].specs[0]
+
     spec.title = item.testName.replace('Delete Selected Element ', '')
     const mapped = locate(input).cases[0]
+
     assert.equal(mapped.resolution, 'mapped', item.id)
     assert.equal(mapped.locations[0].caseId, item.id)
     assert.deepEqual(
@@ -88,10 +95,21 @@ test('expanded Design cases require exact file, full title and project while sib
     for (const change of ['file', 'title', 'project']) {
       const other = structuredClone(input)
       const changed = other.suites[0].suites[0].specs[0]
-      if (change === 'file') changed.file = 'selection.spec.ts'
-      if (change === 'title') changed.title += ' renamed'
-      if (change === 'project') changed.tests[0].projectName = 'firefox'
+
+      if (change === 'file') {
+        changed.file = 'selection.spec.ts'
+      }
+
+      if (change === 'title') {
+        changed.title += ' renamed'
+      }
+
+      if (change === 'project') {
+        changed.tests[0].projectName = 'firefox'
+      }
+
       const unresolved = locate(other)
+
       assert.equal(
         unresolved.cases[0].resolution,
         'unmapped',
@@ -100,12 +118,15 @@ test('expanded Design cases require exact file, full title and project while sib
       assert.equal(unresolved.cases[0].status, 'failed')
       assert.deepEqual(unresolved.report, other)
     }
+
     spec.tests.push(structuredClone(spec.tests[0]))
     assert.ok(
       locate(input).cases.every((entry) => entry.resolution === 'ambiguous')
     )
   }
+
   const unknown = report()
+
   unknown.suites[0].suites[0].specs[0].title =
     'delete action supports undo and redo'
   assert.equal(locate(unknown).cases[0].resolution, 'unmapped')
@@ -123,6 +144,7 @@ test(
     const fixture = await playwrightFixture(t)
     const ids = contract.cases.map((item) => item.id)
     const baseline = await fixture.run(ids)
+
     assert.equal(baseline.result.code, 0, baseline.result.output)
     assert.deepEqual(
       baseline.record.cases.map((item) => item.locations[0]?.caseId).sort(),
@@ -135,30 +157,37 @@ test(
     )
     fixture.fault()
     const failures = []
+
     for (const id of ['design.delete', 'design.backspace']) {
       const observed = await fixture.run([id])
+
       assert.equal(observed.result.code, 1, observed.result.output)
       assert.equal(observed.record.cases.length, 1)
       assert.equal(observed.record.cases[0].status, 'failed')
       assert.equal(observed.record.cases[0].locations[0].caseId, id)
       failures.push(observed.record)
     }
+
     const reader = createObservationReader(
       observationDirectory(fixture.repository)
     )
+
     const failedIds = () =>
       reader
         .list()
         .currentCases.filter((item) => item.status === 'failed')
         .map((item) => item.locations[0].caseId)
         .sort()
+
     assert.deepEqual(failedIds(), ['design.backspace', 'design.delete'])
     fixture.restore()
     const partial = await fixture.run(['design.backspace'])
+
     assert.equal(partial.result.code, 0, partial.result.output)
     assert.deepEqual(failedIds(), ['design.delete'])
     fixture.fault('path-mode')
     const guard = await fixture.run(['design.delete-path-mode-without-vector'])
+
     assert.equal(guard.result.code, 1, guard.result.output)
     assert.equal(guard.record.cases[0].status, 'failed')
     assert.equal(
@@ -172,11 +201,14 @@ test(
     ])
     fixture.restore()
     const recovery = await fixture.run(ids)
+
     assert.equal(recovery.result.code, 0, recovery.result.output)
     assert.equal(recovery.record.cases.length, ids.length)
     assert.deepEqual(failedIds(), [])
-    for (const record of failures)
+    for (const record of failures) {
       assert.deepEqual(reader.get(record.id), record)
+    }
+
     t.diagnostic('Expanded Design evidence: ' + fixture.repository)
   }
 )
@@ -184,11 +216,14 @@ test(
 test('Design original report preserves a failed retry, errors and exact node through existing localization', () => {
   const input = report()
   const results = input.suites[0].suites[0].specs[0].tests[0].results
+
   results.push({ status: 'passed', retry: 1, errors: [], attachments: [] })
   const record = locate(input)
+
   assert.deepEqual(record.report, input)
   assert.equal(record.cases.length, 1)
   const item = record.cases[0]
+
   assert.equal(item.status, 'failed')
   assert.equal(item.resolution, 'mapped')
   assert.equal(item.locations[0].stepId, 'delete-selected-element')
@@ -199,30 +234,37 @@ test('Design original report preserves a failed retry, errors and exact node thr
 test('missing, malformed, interrupted and skipped output never becomes recovery', () => {
   for (const input of [null, {}, { suites: [] }]) {
     const value = locate(input)
+
     assert.ok(value.issues.length)
     assert.equal(
       value.cases.some((c) => c.status === 'passed'),
       false
     )
   }
+
   for (const status of ['interrupted', 'skipped', undefined, 'other']) {
     const value = locate(
       report([{ status, retry: 0, errors: [], attachments: [] }])
     )
+
     assert.notEqual(value.cases[0].status, 'passed')
   }
+
   const value = locate(report([]))
+
   assert.notEqual(value.cases[0].status, 'passed')
 })
 test('unknown and duplicated exact identities preserve all received failures without guessing', () => {
   const input = report()
   const spec = input.suites[0].suites[0].specs[0]
+
   spec.tests.push(structuredClone(spec.tests[0]))
   input.suites[0].suites[0].specs.push({
     ...structuredClone(spec),
     title: 'unknown failure'
   })
   const record = locate(input)
+
   assert.equal(record.cases.length, 4)
   assert.ok(
     record.cases.every(
@@ -234,8 +276,10 @@ test('runner errors and unexpected passes cannot retire failures, and foreign re
   const input = report([
     { status: 'passed', retry: 0, errors: [], attachments: [] }
   ])
+
   input.errors = [{ message: 'global setup failure', stack: 'setup stack' }]
   let record = locate(input)
+
   assert.notEqual(record.cases[0].status, 'passed')
   assert.equal(record.executionFailureDetails[0].stack, 'setup stack')
   input.errors = []
@@ -253,8 +297,10 @@ test(
   async (t) => {
     const { playwrightFixture } = require('./playwright-results-fixture.cjs')
     const fixture = await playwrightFixture(t)
+
     t.diagnostic('Evidence: ' + fixture.repository)
     const baseline = await fixture.run()
+
     assert.equal(baseline.result.code, 0, baseline.result.output)
     assert.equal(
       baseline.record.cases.length,
@@ -269,6 +315,7 @@ test(
     assert.equal(baseline.record.cases[0].resolution, 'mapped')
     fixture.fault()
     const fault = await fixture.run()
+
     assert.equal(fault.result.code, 1, fault.result.output)
     assert.equal(fault.record.cases[0].status, 'failed')
     assert.equal(
@@ -282,6 +329,7 @@ test(
     )
     assert.ok(fault.record.cases[0].failures.length)
     const fs = require('node:fs')
+
     assert.ok(fault.record.retainedArtifacts.length > 0)
     const retained = fault.record.retainedArtifacts.map((artifact) => ({
       artifact,
@@ -289,8 +337,10 @@ test(
         path.join(fixture.repository, artifact.retainedPath)
       )
     }))
+
     fixture.restore()
     const recovery = await fixture.run()
+
     assert.equal(recovery.result.code, 0, recovery.result.output)
     assert.equal(recovery.record.cases[0].status, 'passed')
     const {
@@ -300,11 +350,14 @@ test(
     const reader = createObservationReader(
       observationDirectory(fixture.repository)
     )
-    for (const { artifact, bytes } of retained)
+
+    for (const { artifact, bytes } of retained) {
       assert.deepEqual(
         fs.readFileSync(path.join(fixture.repository, artifact.retainedPath)),
         bytes
       )
+    }
+
     assert.deepEqual(reader.get(fault.record.id), fault.record)
     assert.equal(
       reader.list().currentCases.filter((c) => c.status === 'failed').length,
@@ -326,8 +379,10 @@ test('malformed suite or spec identity retains its failures as unresolved eviden
     }
   ]) {
     const input = report()
+
     mutate(input)
     const record = locate(input)
+
     assert.equal(
       record.cases.filter((item) => item.status === 'failed').length,
       1
@@ -362,20 +417,26 @@ function observationFixture(t) {
       )
     ])
   ]
+
   for (const file of new Set(files)) {
     fs.mkdirSync(path.dirname(path.join(repository, file)), { recursive: true })
     fs.copyFileSync(path.join(root, file), path.join(repository, file))
   }
+
   t.after(() => fs.rmSync(repository, { recursive: true, force: true }))
   let index = 0
+
   return {
     repository,
+
     start(environment) {
       const reportPath = 'tmp/report-' + ++index + '.json'
       const context = begin(repository, reportPath, environment ?? {})
+
       return {
         context,
         reportPath,
+
         finish(input) {
           if (input !== undefined) {
             input = structuredClone(input)
@@ -395,6 +456,7 @@ function observationFixture(t) {
               JSON.stringify(input)
             )
           }
+
           return complete(repository, reportPath)
         }
       }
@@ -409,7 +471,9 @@ test('large file evidence survives report ingestion and aggregate verification w
   const bytes = Buffer.from(
     JSON.stringify({ profile: 'retained detail '.repeat(350000) })
   )
+
   assert.ok(bytes.length > 4 * 1024 * 1024)
+
   const passingReport = (attachment) => {
     const value = report([
       {
@@ -419,9 +483,12 @@ test('large file evidence survives report ingestion and aggregate verification w
         attachments: [attachment]
       }
     ])
+
     value.suites[0].suites[0].specs[0].tests[0].status = 'expected'
+
     return value
   }
+
   const inline = observationFixture(t)
     .start()
     .finish(
@@ -431,6 +498,7 @@ test('large file evidence survives report ingestion and aggregate verification w
         body: bytes.toString('base64')
       })
     )
+
   assert.equal(inline.report, null)
   assert.ok(
     inline.issues.some((issue) => issue.includes('4 MiB observation limit'))
@@ -460,6 +528,7 @@ test('large file evidence survives report ingestion and aggregate verification w
     fixture.repository,
     'apps/asyra-design/test-results/profile.json'
   )
+
   fs.mkdirSync(path.dirname(originalPath), { recursive: true })
   fs.writeFileSync(originalPath, bytes)
   const observation = invocation.finish(
@@ -469,6 +538,7 @@ test('large file evidence survives report ingestion and aggregate verification w
       path: originalPath
     })
   )
+
   assert.deepEqual(observation.issues, [])
   assert.equal(observation.cases[0].status, 'passed')
   assert.ok(
@@ -476,6 +546,7 @@ test('large file evidence survives report ingestion and aggregate verification w
       4 * 1024 * 1024
   )
   const retained = observation.retainedArtifacts[0]
+
   assert.equal(retained.size, bytes.length)
   assert.deepEqual(
     fs.readFileSync(path.join(fixture.repository, retained.retainedPath)),
@@ -483,8 +554,10 @@ test('large file evidence survives report ingestion and aggregate verification w
   )
   const directory = path.join(fixture.repository, 'tmp/bundles')
   const bundle = path.join(directory, 'flow-observations-design-123-1')
+
   exportBundle(fixture.repository, bundle, identity)
   const envelope = collect(observation.report, 'design', identity)
+
   const verify = () =>
     projectObservations(
       fixture.repository,
@@ -493,11 +566,13 @@ test('large file evidence survives report ingestion and aggregate verification w
       ['functional'],
       [envelope]
     )
+
   assert.deepEqual(verify().blockers, [])
   assert.equal(verify().producers.design.status, 'observed')
   fs.unlinkSync(originalPath)
   assert.deepEqual(verify().blockers, [])
   const archived = path.join(bundle, retained.retainedPath)
+
   assert.deepEqual(fs.readFileSync(archived), bytes)
   fs.writeFileSync(archived, 'corrupt')
   assert.equal(verify().producers.design.status, 'unverified')
@@ -513,17 +588,21 @@ test('new case mappings never retroactively resolve an earlier unmapped observat
   const manifestPath = path.join(fixture.repository, contract.manifestPath)
   const current = fs.readFileSync(manifestPath, 'utf8')
   const previous = JSON.parse(current)
+
   previous.flows[0].cases = previous.flows[0].cases.filter(
     (item) => item.id === 'design.delete'
   )
   fs.writeFileSync(manifestPath, JSON.stringify(previous))
   const input = report()
+
   input.suites[0].suites[0].specs[0].title =
     'Backspace key removes the single selected element'
   const original = fixture.start().finish(input)
+
   assert.equal(original.cases[0].resolution, 'unmapped')
   fs.writeFileSync(manifestPath, current)
   const next = fixture.start().finish(input)
+
   assert.equal(next.cases[0].resolution, 'mapped')
   assert.equal(next.cases[0].locations[0].caseId, 'design.backspace')
   const {
@@ -533,6 +612,7 @@ test('new case mappings never retroactively resolve an earlier unmapped observat
   const reader = createObservationReader(
     observationDirectory(fixture.repository)
   )
+
   assert.deepEqual(reader.get(original.id), original)
   assert.deepEqual(reader.get(next.id), next)
 })
@@ -544,6 +624,7 @@ test('structurally incomplete reports cannot retire failures regardless of trave
     observationDirectory
   } = require('../localization.cjs')
   const first = fixture.start().finish(report())
+
   for (const before of [true, false]) {
     for (const damage of ['suite', 'spec', 'empty-spec', 'case', 'children']) {
       const input = report([
@@ -551,16 +632,34 @@ test('structurally incomplete reports cannot retire failures regardless of trave
       ])
       const suite = input.suites[0].suites[0]
       const spec = suite.specs[0]
+
       spec.tests[0].status = 'expected'
+
       const insert = (items, value) =>
         before ? items.unshift(value) : items.push(value)
-      if (damage === 'suite') insert(input.suites, null)
-      if (damage === 'spec') insert(suite.specs, { ...spec, tests: null })
-      if (damage === 'empty-spec') insert(suite.specs, { ...spec, tests: [] })
-      if (damage === 'case')
+
+      if (damage === 'suite') {
+        insert(input.suites, null)
+      }
+
+      if (damage === 'spec') {
+        insert(suite.specs, { ...spec, tests: null })
+      }
+
+      if (damage === 'empty-spec') {
+        insert(suite.specs, { ...spec, tests: [] })
+      }
+
+      if (damage === 'case') {
         insert(spec.tests, { ...spec.tests[0], results: null })
-      if (damage === 'children') suite.suites = {}
+      }
+
+      if (damage === 'children') {
+        suite.suites = {}
+      }
+
       const record = fixture.start().finish(input)
+
       assert.ok(record.issues.length)
       assert.equal(
         record.cases.some((item) => item.status === 'passed'),
@@ -570,15 +669,18 @@ test('structurally incomplete reports cannot retire failures regardless of trave
       assert.deepEqual(record.report.suites, input.suites)
     }
   }
+
   const reader = createObservationReader(
     observationDirectory(fixture.repository)
   )
+
   assert.ok(
     reader.list().currentCases.some((item) => item.id === first.cases[0].id)
   )
   const clean = report([
     { status: 'passed', retry: 0, errors: [], attachments: [] }
   ])
+
   clean.suites[0].suites[0].specs[0].tests[0].status = 'expected'
   assert.equal(fixture.start().finish(clean).cases[0].status, 'passed')
   assert.equal(
@@ -597,10 +699,12 @@ test('missing output, changed source and mismatched CI integration retain prior 
   const fixture = observationFixture(t)
   const first = fixture.start().finish(report())
   const missing = fixture.start().finish()
+
   assert.ok(
     missing.issues.some((issue) => issue.includes('report unavailable'))
   )
   const changed = fixture.start()
+
   fs.appendFileSync(
     path.join(fixture.repository, contract.cases[0].implementationPaths[0]),
     '\n// Changed during execution.\n'
@@ -608,6 +712,7 @@ test('missing output, changed source and mismatched CI integration retain prior 
   const passing = report([
     { status: 'passed', retry: 0, errors: [], attachments: [] }
   ])
+
   passing.suites[0].suites[0].specs[0].tests[0].status = 'expected'
   assert.equal(changed.finish(passing).cases[0].resolution, 'stale')
   const mismatch = fixture
@@ -617,10 +722,12 @@ test('missing output, changed source and mismatched CI integration retain prior 
       FLOW_RESULT_ATTEMPT: '2'
     })
     .finish(passing)
+
   assert.equal(mismatch.cases[0].resolution, 'stale')
   const reader = createObservationReader(
     observationDirectory(fixture.repository)
   )
+
   assert.ok(
     reader.list().currentCases.some((item) => item.id === first.cases[0].id)
   )
@@ -631,11 +738,13 @@ test('finalization refuses reuse and makes missing attachment bytes explicit wit
   const { begin, complete } = require('../playwright-results.cjs')
   const fixture = observationFixture(t)
   const invocation = fixture.start()
+
   assert.throws(
     () => begin(fixture.repository, invocation.reportPath),
     /fresh report path/
   )
   const input = report()
+
   input.suites[0].suites[0].specs[0].tests[0].results[0].attachments = [
     {
       name: 'missing trace',
@@ -644,6 +753,7 @@ test('finalization refuses reuse and makes missing attachment bytes explicit wit
     }
   ]
   const record = invocation.finish(input)
+
   assert.equal(record.cases[0].status, 'failed')
   assert.ok(
     record.issues.some((issue) => issue.includes('attachment unavailable'))
@@ -672,8 +782,10 @@ test('unavailable attachment evidence cannot establish recovery from a passing r
       ]
     }
   ])
+
   input.suites[0].suites[0].specs[0].tests[0].status = 'expected'
   const record = fixture.start().finish(input)
+
   assert.ok(
     record.issues.some((issue) => issue.includes('attachment unavailable'))
   )
@@ -681,6 +793,7 @@ test('unavailable attachment evidence cannot establish recovery from a passing r
   const reader = createObservationReader(
     observationDirectory(fixture.repository)
   )
+
   assert.ok(
     reader.list().currentCases.some((item) => item.id === failure.cases[0].id)
   )
@@ -690,6 +803,7 @@ test('unavailable attachment evidence cannot establish recovery from a passing r
 test('Playwright primary error stack survives alongside its formatted JSON error message', () => {
   const input = report()
   const result = input.suites[0].suites[0].specs[0].tests[0].results[0]
+
   result.error = {
     message: 'raw assertion message',
     stack: 'raw assertion stack'
@@ -698,6 +812,7 @@ test('Playwright primary error stack survives alongside its formatted JSON error
     { message: 'formatted assertion and code frame', location: { line: 1 } }
   ]
   const record = locate(input)
+
   assert.ok(
     record.cases[0].failureDetails.some(
       (detail) => detail.stack === result.error.stack
@@ -713,11 +828,13 @@ test('Playwright primary error stack survives alongside its formatted JSON error
 
 test('an alternate Playwright configuration cannot borrow the ordinary Design source identity', () => {
   const input = report()
+
   input.config.configFile = path.join(
     root,
     'apps/asyra-design/playwright.collaboration.config.ts'
   )
   const record = locate(input)
+
   assert.equal(record.cases[0].resolution, 'stale')
   assert.ok(record.issues.some((issue) => issue.includes('configuration')))
 })
@@ -739,6 +856,7 @@ test('valid CI repository, source and attempt identity remains unchanged in the 
     FLOW_RESULT_ATTEMPT: '2'
   }
   const record = fixture.start(environment).finish(report())
+
   assert.equal(record.cases[0].resolution, 'mapped')
   assert.deepEqual(record.command.environment, environment)
   assert.equal(record.head, head)
@@ -746,6 +864,7 @@ test('valid CI repository, source and attempt identity remains unchanged in the 
 
 test('functional and status producers select their complete exact contracts before execution', () => {
   const { sourceManifestPaths } = require('../playwright-results.cjs')
+
   assert.deepEqual(sourceManifestPaths('functional'), [
     'apps/asyra-design/playwright-flow-contracts.json',
     'apps/asyra-design/playwright-functional-flow-contracts.json'
@@ -753,8 +872,9 @@ test('functional and status producers select their complete exact contracts befo
   assert.deepEqual(sourceManifestPaths('status'), [
     'apps/asyra-design/playwright-status-flow-contracts.json'
   ])
-  for (const source of ['', 'unknown-producer', '../other', null])
+  for (const source of ['', 'unknown-producer', '../other', null]) {
     assert.throws(() => sourceManifestPaths(source), /source/)
+  }
 })
 
 test('status reports require the retained status configuration and cannot borrow functional ownership', () => {
@@ -764,8 +884,10 @@ test('status reports require the retained status configuration and cannot borrow
     'apps/asyra-design/playwright-status-flow-contracts.json'
   )
   const ctx = context()
+
   ctx.contracts = [status]
   const input = report()
+
   input.config.configFile = path.join(root, status.configFile)
   input.suites = [
     {
@@ -782,6 +904,7 @@ test('status reports require the retained status configuration and cannot borrow
     }
   ]
   const result = locate(input, ctx)
+
   assert.equal(result.cases[0].resolution, 'mapped')
   assert.equal(result.cases[0].locations[0].stepId, 'show-session-status')
   input.config.configFile = path.join(root, contract.configFile)
@@ -791,24 +914,43 @@ test('status reports require the retained status configuration and cannot borrow
 function verifyOriginalFunctionalOutcomes(observation) {
   assert.deepEqual(observation.issues, [])
   const expected = []
+
   const walk = (suite) => {
-    for (const spec of suite.specs ?? [])
+    for (const spec of suite.specs ?? []) {
       for (const item of spec.tests ?? []) {
         assert.ok(['expected', 'skipped'].includes(item.status), spec.title)
         assert.ok(item.results.length > 0)
         const failed = item.results.some((result) =>
           ['failed', 'timedOut', 'interrupted'].includes(result.status)
         )
-        if (failed) assert.equal(item.expectedStatus, 'failed', spec.title)
+
+        if (failed) {
+          assert.equal(item.expectedStatus, 'failed', spec.title)
+        }
+
         let status = 'passed'
-        if (failed) status = 'failed'
-        else if (item.results.every((result) => result.status === 'skipped'))
+
+        if (failed) {
+          status = 'failed'
+        } else if (
+          item.results.every((result) => result.status === 'skipped')
+        ) {
           status = 'skipped'
+        }
+
         expected.push(status)
       }
-    for (const child of suite.suites ?? []) walk(child)
+    }
+
+    for (const child of suite.suites ?? []) {
+      walk(child)
+    }
   }
-  for (const suite of observation.report.suites) walk(suite)
+
+  for (const suite of observation.report.suites) {
+    walk(suite)
+  }
+
   assert.deepEqual(
     observation.cases.map((item) => item.status).sort(),
     expected.sort()
@@ -824,9 +966,11 @@ function verifyOriginalFunctionalOutcomes(observation) {
 test('original expected failures remain failed observations instead of becoming recovery', () => {
   const input = report()
   const item = input.suites[0].suites[0].specs[0].tests[0]
+
   item.expectedStatus = 'failed'
   item.status = 'expected'
   const observation = locate(input)
+
   verifyOriginalFunctionalOutcomes(observation)
   assert.equal(observation.cases[0].status, 'failed')
   observation.cases[0].status = 'passed'
@@ -850,6 +994,7 @@ test(
       root,
       'tmp/flow-inspector/stage-a/full-' + require('node:crypto').randomUUID()
     )
+
     fs.mkdirSync(path.join(evidence, 'browser'), { recursive: true })
     const reportPath = path.join(evidence, 'functional.json')
     const result = await runProcess({
@@ -869,23 +1014,27 @@ test(
       signal: t.signal,
       timeoutMs: 2640000,
       maxOutputBytes: 2 * 1024 * 1024,
+
       onSpawn: (pid) =>
         fs.writeFileSync(
           path.join(evidence, 'process.json'),
           JSON.stringify({ pid, reportPath })
         )
     })
+
     fs.writeFileSync(path.join(evidence, 'run.log'), result.output)
     t.diagnostic('Full functional evidence: ' + evidence)
     assert.equal(result.reason, null, result.output.slice(-4000))
     assert.equal(result.code, 0, result.output.slice(-4000))
     const reader = createObservationReader(observationDirectory(root))
+
     for (const [file, count] of [
       [reportPath, 411],
       [reportPath.replace(/\.json$/, '-status.json'), 1]
     ]) {
       const { id } = JSON.parse(fs.readFileSync(file + '.context.json', 'utf8'))
       const observation = reader.get(id)
+
       assert.equal(observation.phase, 'completed')
       assert.equal(observation.cases.length, count)
       assert.ok(
@@ -894,6 +1043,7 @@ test(
       )
       verifyOriginalFunctionalOutcomes(observation)
       const original = JSON.parse(fs.readFileSync(file, 'utf8'))
+
       assert.deepEqual(observation.report, original)
       fs.writeFileSync(
         path.join(
@@ -1204,6 +1354,7 @@ const functionalOwnerProofs = [
     'viewportApis.zoomToCenter'
   ]
 ]
+
 for (const [
   stepId,
   caseId,
@@ -1225,11 +1376,14 @@ for (const [
         observationDirectory
       } = require('../localization.cjs')
       const fixture = await playwrightFixture(t, fixtureOptions)
+
       t.diagnostic('Original owner evidence: ' + fixture.repository)
       const item = fixture.cases.find((item) => item.id === caseId)
+
       assert.equal(item.stepId, stepId)
       const testFile = path.join(fixture.repository, item.testFile)
       const unchangedAssertions = fs.readFileSync(testFile, 'utf8')
+
       const verify = (run, status, code) => {
         assert.equal(run.result.reason, null, run.result.output.slice(-3000))
         assert.equal(run.result.code, code, run.result.output.slice(-3000))
@@ -1239,6 +1393,7 @@ for (const [
           JSON.stringify(run.record.issues)
         )
         const observed = run.record.cases[0]
+
         assert.equal(observed.status, status)
         assert.equal(
           observed.resolution,
@@ -1248,19 +1403,27 @@ for (const [
         assert.equal(observed.locations[0].stepId, stepId)
         assert.equal(observed.locations[0].caseId, caseId)
         assert.equal(fs.readFileSync(testFile, 'utf8'), unchangedAssertions)
+
         return observed
       }
+
       verify(await fixture.run([caseId]), 'passed', 0)
       const file = /^(packages|apps)\//.test(relativeFile)
         ? relativeFile
         : 'apps/asyra-design/src/' + relativeFile
-      if (typeof operation === 'string')
+
+      if (typeof operation === 'string') {
         fixture.faultOperation(caseId, file, operation)
-      else fixture.faultCase(caseId, { file, ...operation })
+      } else {
+        fixture.faultCase(caseId, { file, ...operation })
+      }
+
       const failed = await fixture.run([caseId])
       const observed = verify(failed, 'failed', 1)
+
       assert.ok(observed.failures.length)
       const originalFailure = JSON.stringify(failed.record)
+
       fixture.restore()
       verify(await fixture.run([caseId]), 'passed', 0)
       assert.equal(
@@ -1288,6 +1451,7 @@ test('original owner proofs cover every declared functional responsibility', () 
   const steps = new Set(
     functional.flatMap((item) => item.cases.map((item) => item.stepId))
   )
+
   assert.deepEqual(
     [...new Set(functionalOwnerProofs.map(([step]) => step))].sort(),
     [...steps].sort()
@@ -1296,10 +1460,12 @@ test('original owner proofs cover every declared functional responsibility', () 
     const item = functional
       .flatMap((contract) => contract.cases)
       .find((item) => item.id === id)
+
     assert.equal(item?.stepId, step, id)
     const file = /^(packages|apps)\//.test(relative)
       ? relative
       : 'apps/asyra-design/src/' + relative
+
     assert.ok(item.implementationPaths.includes(file), file)
   }
 })
@@ -1319,8 +1485,10 @@ test(
       root,
       process.env.FLOW_DESIGN_RETAINED_REPORT
     )
+
     assert.ok(reportPath.startsWith(path.join(root, 'tmp') + path.sep))
     const reader = createObservationReader(observationDirectory(root))
+
     for (const [file, count] of [
       [reportPath, 411],
       [reportPath.replace(/\.json$/, '-status.json'), 1]
@@ -1329,6 +1497,7 @@ test(
         fs.readFileSync(file + '.context.json', 'utf8')
       )
       const observation = reader.get(context.id)
+
       assert.equal(observation.phase, 'completed')
       assert.equal(observation.cases.length, count)
       assert.ok(observation.cases.every((item) => item.resolution === 'mapped'))
@@ -1348,21 +1517,26 @@ test('selected rerun config admission requires the exact original mapping and re
     root,
     'tmp/flow-inspector/config-binding-' + require('node:crypto').randomUUID()
   )
+
   fs.mkdirSync(directory, { recursive: true })
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
   const file = path.join(directory, 'selected.config.ts')
+
   fs.writeFileSync(file, 'export default {}')
   const bound = context()
+
   bound.executionConfig = {
     path: path.relative(root, file),
     originalConfigFile: contract.configFile,
     digest: createHash('sha256').update(fs.readFileSync(file)).digest('hex')
   }
   const original = report()
+
   original.config.configFile = file
   assert.equal(normalizeReport(root, bound, original).options.stale, false)
   assert.equal(normalizeReport(root, context(), original).options.stale, true)
   const changed = structuredClone(bound)
+
   changed.executionConfig.originalConfigFile = 'unrelated.config.ts'
   assert.equal(normalizeReport(root, changed, original).options.stale, true)
   fs.appendFileSync(file, '\n// changed')
@@ -1380,17 +1554,24 @@ test('current flow publication retains Playwright attachments without an observa
     .sourceManifestPaths()
     .map((manifest) => loadContract(fixture.repository, undefined, manifest))
   const directory = path.join(fixture.repository, 'flows')
+
   fs.mkdirSync(directory)
-  for (const doc of fromContracts(selected, 'example'))
+  for (const doc of fromContracts(selected, 'example')) {
     fs.writeFileSync(
       path.join(directory, doc.flowId + '.flow.json'),
       JSON.stringify(doc)
     )
+  }
+
   const prior = process.env.FLOW_FILE_DIRECTORY
+
   process.env.FLOW_FILE_DIRECTORY = directory
   t.after(() => {
-    if (prior === undefined) delete process.env.FLOW_FILE_DIRECTORY
-    else process.env.FLOW_FILE_DIRECTORY = prior
+    if (prior === undefined) {
+      delete process.env.FLOW_FILE_DIRECTORY
+    } else {
+      process.env.FLOW_FILE_DIRECTORY = prior
+    }
   })
   const invocation = fixture.start()
   const input = report()
@@ -1398,6 +1579,7 @@ test('current flow publication retains Playwright attachments without an observa
     fixture.repository,
     'apps/asyra-design/test-results/failure.txt'
   )
+
   fs.mkdirSync(path.dirname(attachment), { recursive: true })
   fs.writeFileSync(attachment, 'Original attachment bytes')
   input.suites[0].suites[0].specs[0].tests[0].results[0].attachments = [
@@ -1408,6 +1590,7 @@ test('current flow publication retains Playwright attachments without an observa
   const observation = current.documents
     .flatMap((d) => d.current.observations)
     .find((o) => o.status === 'failed')
+
   assert.ok(observation)
   assert.equal(
     fs.readFileSync(
@@ -1450,6 +1633,7 @@ test('fixture settlement awaits all owned services and reports denied cleanup', 
     settled = true
   })
   const rejected = assert.rejects(work, /kill EPERM/)
+
   await new Promise((resolve) => setImmediate(resolve))
   assert.deepEqual(aborted, ['vite', 'backend'])
   assert.equal(settled, false)
@@ -1460,6 +1644,7 @@ test('fixture settlement awaits all owned services and reports denied cleanup', 
 test('fixture settlement preserves successful service cancellation', async () => {
   const { settleFixtureProcesses } = require('./playwright-results-fixture.cjs')
   let aborted = false
+
   await settleFixtureProcesses([
     {
       controller: {

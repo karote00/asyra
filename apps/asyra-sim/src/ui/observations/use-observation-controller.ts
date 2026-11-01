@@ -88,21 +88,26 @@ export function useObservationController({
   }
 
   const currentKey = JSON.stringify(current)
+
   useEffect(() => {
     if (
       saving ||
       !selectedId.current ||
       currentKey === JSON.stringify(editing ?? undefined)
-    )
+    ) {
       return
+    }
+
     // External canonical replay refreshes clean fields. A competing publication
     // must not overwrite an unfinished local gesture.
     if (
       title !== (editing?.title ?? '') ||
       text !== (editing?.text ?? '') ||
       JSON.stringify(existing) !== JSON.stringify(editing?.attachments ?? [])
-    )
+    ) {
       return
+    }
+
     writes.current.acknowledged = current ?? null
     setEditing(current ? structuredClone(current) : null)
     setTitle(current?.title ?? '')
@@ -160,33 +165,45 @@ export function useObservationController({
     includePrepared = true
   ) => {
     const queue = writes.current
+
     if (
       !validObservationDraft(input) ||
       (stale && !queue.pending) ||
       (includePrepared && (files.busy || files.error)) ||
       !isCurrent()
-    )
+    ) {
       return
+    }
+
     if (
       !editing &&
       !queue.pending &&
       !input.title &&
       !input.text &&
       !input.attachments.length
-    )
+    ) {
       return
+    }
+
     const next = structuredClone(input)
     const prepared = includePrepared ? files.prepared : null
     const ticket = generation.current
+
     const active = () =>
       mounted.current && ticket === generation.current && isCurrent()
+
     queue.pending++
     setSaving(true)
+
     const write = async () => {
       // Completed gestures outlive their editor, but never their document.
       // The preceding acknowledgement owns the identity/revision for this queue.
-      if (!isCurrent()) throw new Error('The document is no longer active')
+      if (!isCurrent()) {
+        throw new Error('The document is no longer active')
+      }
+
       const previous = queue.acknowledged
+
       if (
         previous &&
         !prepared &&
@@ -194,11 +211,17 @@ export function useObservationController({
         next.text === previous.text &&
         JSON.stringify(next.attachments) ===
           JSON.stringify(previous.attachments)
-      )
+      ) {
         return
-      if (active()) setError('')
+      }
+
+      if (active()) {
+        setError('')
+      }
+
       let id = previous?.id
-      if (prepared)
+
+      if (prepared) {
         id = await runtime.features.observations.retain(prepared, {
           runId,
           draft: next,
@@ -206,40 +229,57 @@ export function useObservationController({
             ? { edit: { id: previous.id, expectedRevision: previous.revision } }
             : {})
         })
-      else if (previous)
+      } else if (previous) {
         await runtime.features.edit.updateObservation(
           runId,
           previous.id,
           previous.revision,
           next
         )
-      else id = await runtime.features.edit.addObservation(runId, next)
+      } else {
+        id = await runtime.features.edit.addObservation(runId, next)
+      }
+
       const acknowledged = runtime
         .getObservations(runId)
         .find((note) => note.id === id)
-      if (!acknowledged)
+
+      if (!acknowledged) {
         throw new Error('The observation acknowledgement is unavailable')
+      }
+
       queue.acknowledged = acknowledged
       if (active()) {
         selectedId.current = acknowledged.id
         setEditing(structuredClone(acknowledged))
-        if (queue.pending === 1)
+        if (queue.pending === 1) {
           setExisting(structuredClone(acknowledged.attachments))
-        if (prepared) files.clear()
+        }
+
+        if (prepared) {
+          files.clear()
+        }
+
         setStatus(
           'Observation updated - one Undo action for a material change.'
         )
       }
     }
+
     const pending = queue.tail.then(write)
+
     queue.tail = pending.catch(() => undefined)
     try {
       await pending
     } catch (reason) {
-      if (active()) setError(errorMessage(reason))
+      if (active()) {
+        setError(errorMessage(reason))
+      }
     } finally {
       queue.pending--
-      if (active()) setSaving(queue.pending > 0)
+      if (active()) {
+        setSaving(queue.pending > 0)
+      }
     }
   }
 
@@ -247,8 +287,9 @@ export function useObservationController({
     if (
       !isCurrent() ||
       !window.confirm(`Remove observation "${note.title}"? This can be undone.`)
-    )
+    ) {
       return
+    }
 
     const ticket = generation.current
 
@@ -269,15 +310,20 @@ export function useObservationController({
         setStatus('Observation removed - Undo can restore it.')
       }
     } catch (reason) {
-      if (mounted.current && isCurrent()) setError(errorMessage(reason))
+      if (mounted.current && isCurrent()) {
+        setError(errorMessage(reason))
+      }
     } finally {
-      if (mounted.current && ticket === generation.current && isCurrent())
+      if (mounted.current && ticket === generation.current && isCurrent()) {
         setSaving(false)
+      }
     }
   }
 
   const download = (action: () => void) => {
-    if (!isCurrent()) return
+    if (!isCurrent()) {
+      return
+    }
 
     try {
       action()

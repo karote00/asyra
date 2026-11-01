@@ -52,18 +52,24 @@ export const registerSelections = (
   let disposed = false
 
   const dispose = (): void => {
-    if (disposed) return
+    if (disposed) {
+      return
+    }
+
     for (let index = registeredChannels.length - 1; index >= 0; index--) {
       core.unregisterSelection(registeredChannels[index])
       registeredChannels.splice(index, 1)
     }
+
     disposed = true
   }
+
   const cleanupReporter = createCleanupReporter(onCleanupReady, dispose)
 
   try {
     channels.forEach((selectionChannel) => {
       const create = DEFAULT_SELECTION_FACTORIES[selectionChannel]
+
       if (!core.getSelection(selectionChannel)) {
         core.defineSelection(selectionChannel, create())
         registeredChannels.push(selectionChannel)
@@ -71,7 +77,10 @@ export const registerSelections = (
       }
     })
   } catch (error) {
-    if (!cleanupReporter.hasReported()) dispose()
+    if (!cleanupReporter.hasReported()) {
+      dispose()
+    }
+
     throw error
   }
 

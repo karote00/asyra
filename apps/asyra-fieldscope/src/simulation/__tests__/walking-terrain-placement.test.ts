@@ -29,49 +29,68 @@ import type {
   WalkingContactRelation,
   WalkingTerrainObservation
 } from '../../domain/walking-motion-contract'
+
 function required<T>(v: T | undefined | null): T {
-  if (v == null) throw new Error('Missing actual fixture dependency')
+  if (v == null) {
+    throw new Error('Missing actual fixture dependency')
+  }
+
   return v
 }
+
 function gcd(a: bigint, b: bigint): bigint {
-  if (b) return gcd(b, a % b)
+  if (b) {
+    return gcd(b, a % b)
+  }
+
   return a < 0n ? -a : a
 }
+
 function f(n: bigint, d = 1n): F {
   if (d < 0n) {
     n = -n
     d = -d
   }
+
   const g = gcd(n, d)
+
   return { numerator: n / g, denominator: d / g }
 }
+
 function e(n: number): F {
   const v = dyadic(n)
+
   return v.exponent >= 0
     ? f(v.significand << BigInt(v.exponent))
     : f(v.significand, 1n << BigInt(-v.exponent))
 }
+
 function add(a: F, b: F) {
   return f(
     a.numerator * b.denominator + b.numerator * a.denominator,
     a.denominator * b.denominator
   )
 }
+
 function sub(a: F, b: F) {
   return add(a, f(-b.numerator, b.denominator))
 }
+
 function div(a: F, b: F) {
   return f(a.numerator * b.denominator, a.denominator * b.numerator)
 }
+
 function num(a: F) {
   return Number(a.numerator) / Number(a.denominator)
 }
+
 let source: WalkingRobotSource, demand: SceneDemand, alpha: number
 const evidence = {
   kind: 'synthetic' as const,
   id: 'terrain-scenario',
   label: 'Terrain scenario - authored plane'
 }
+
 beforeAll(() => {
   const baseline = createSyntheticWalkingRobotDefinition({
     definitionId: 'terrain-default'
@@ -80,6 +99,7 @@ beforeAll(() => {
     .filter((l) => l.side === 'left')
     .map((l) => l.mount.position[2])
     .sort((a, b) => a - b)
+
   alpha = Math.min(
     ...baseline.legs.map(
       (l) =>
@@ -113,6 +133,7 @@ beforeAll(() => {
           Math.abs(l.mount.position[0]) + l.coxa.length + l.foot.size[0] / 2
       )
     ) * 2
+
   demand = prepareSceneDemand(
     farm,
     scene,
@@ -131,6 +152,7 @@ beforeAll(() => {
     })
   )
 }, 30000)
+
 function fixture(opposite = false) {
   const route = required(demand.route),
     minX = route.volume.min[0],
@@ -168,6 +190,7 @@ function fixture(opposite = false) {
     const u = div(sub(anchor[0], e(minX)), sub(e(maxX), e(minX))),
       v = div(sub(anchor[2], e(minZ)), sub(e(maxZ), e(minZ)))
     const lower = sub(u, v).numerator >= 0n
+
     return {
       chainId: chain.id,
       footPart: contact.part,
@@ -186,6 +209,7 @@ function fixture(opposite = false) {
     coverage: 'complete',
     evidence
   }
+
   return {
     format: 'walking-terrain-placement-request/1',
     source,
@@ -273,9 +297,11 @@ function fixture(opposite = false) {
     }
   }
 }
+
 describe('actual terrain placement geometry with unbound physical evidence', () => {
   it('rejects an unused assessment that names a foreign source foot patch', () => {
     const raw = fixture()
+
     raw.terrain.contactAssessments.push({
       ...raw.terrain.contactAssessments[0],
       id: 'unused-foreign',
@@ -324,13 +350,17 @@ describe('actual terrain placement geometry with unbound physical evidence', () 
       3, 7, 2, 7, 6, 3, 0, 4, 3, 4, 7
     ]
     const edges = new Map<string, number>()
-    for (let i = 0; i < indices.length; i += 3)
+
+    for (let i = 0; i < indices.length; i += 3) {
       for (let j = 0; j < 3; j++) {
         const edge = [indices[i + j], indices[i + ((j + 1) % 3)]]
           .sort((a, b) => a - b)
           .join(':')
+
         edges.set(edge, (edges.get(edge) ?? 0) + 1)
       }
+    }
+
     expect([...edges.values()].every((count) => count === 2)).toBe(true)
     const result = new WalkingTerrainPlacementOwner().prepare(source, demand, {
       ...raw,
@@ -363,6 +393,7 @@ describe('actual terrain placement geometry with unbound physical evidence', () 
         }
       ]
     })
+
     expect(result.sourceGeometry.status, result.reasons.join(';')).toBe(
       'unknown'
     )
@@ -373,6 +404,7 @@ describe('actual terrain placement geometry with unbound physical evidence', () 
       shape = raw.terrain.regions[0].shape,
       x = shape.positions[3],
       z = (shape.positions[2] + shape.positions[8]) / 2
+
     shape.positions.push(x, 0, z, x + 0.1, 0, z + 0.1, x + 0.1, 0, z - 0.1)
     shape.indices.push(4, 5, 6)
     raw.partitions[0].regions[0].indexCount = 9
@@ -381,6 +413,7 @@ describe('actual terrain placement geometry with unbound physical evidence', () 
       demand,
       raw
     )
+
     expect(result.sourceGeometry.status).toBe('unknown')
     expect(result.reasons).toContain('terrain-soil-union-unproved')
   })
@@ -400,6 +433,7 @@ describe('actual terrain placement geometry with unbound physical evidence', () 
         e(minX)
       )
     const apex = num(maximum)
+
     shape.positions = [minX, 0, minZ, apex, 0, middleZ, minX, 0, maxZ]
     shape.indices = [0, 1, 2]
     raw.partitions[0].regions[0].indexCount = 3
@@ -416,14 +450,17 @@ describe('actual terrain placement geometry with unbound physical evidence', () 
         sub(sub(anchor[2], e(minZ)), product),
         sub(e(maxZ), e(minZ))
       )
+
       seed.triangleOffset = 0
       seed.barycentric = [sub(sub(f(1n), u), v), u, v]
     }
+
     const result = new WalkingTerrainPlacementOwner().prepare(
       source,
       demand,
       raw
     )
+
     expect(result.projection?.supports.map((s) => s.anchorOrigin)).toEqual(
       projected.supports.map((s) => s.anchorOrigin)
     )
@@ -468,6 +505,7 @@ describe('actual terrain placement geometry with unbound physical evidence', () 
           ]
         }
       )
+
       expect(result.sourceGeometry.status, result.reasons.join(';')).toBe(
         'blocked'
       )
@@ -481,6 +519,7 @@ describe('actual terrain placement geometry with unbound physical evidence', () 
   it('rejects foreign source and malformed assessment binding without promoting supplied physical flags', () => {
     const raw = fixture(),
       other = new WalkingRobotSourceOwner().prepare(source.definition)
+
     expect(() =>
       new WalkingTerrainPlacementOwner().prepare(other, demand, raw)
     ).toThrow()
@@ -512,6 +551,7 @@ describe('actual terrain placement geometry with unbound physical evidence', () 
       demand,
       altered
     )
+
     expect(result.sourceGeometry.status).toBe('admitted')
     expect(result.physicalStatus).toBe('unknown')
   })
@@ -542,6 +582,7 @@ describe('actual terrain placement geometry with unbound physical evidence', () 
         }))
       }
     })
+
     expect(new Set([first, second, third, fourth]).size).toBe(4)
     expect(owner.work.preparations).toBe(4)
     expect(first.request?.interval.low).toBe(-alpha)
@@ -564,23 +605,30 @@ describe('actual terrain placement geometry with unbound physical evidence', () 
     const delta = sub(e(channel.bounds.max[0]), minimum),
       shift = num(delta),
       residual = sub(delta, e(shift))
+
     raw.terrain.regions[0].frame.position[0] = shift
     const width = sub(
         e(raw.terrain.regions[0].shape.positions[3]),
         e(raw.terrain.regions[0].shape.positions[0])
       ),
       du = div(residual, width)
+
     for (const seed of raw.seeds) {
       const b = seed.barycentric
-      if (seed.triangleOffset === 0)
+
+      if (seed.triangleOffset === 0) {
         seed.barycentric = [sub(b[0], du), add(b[1], du), b[2]]
-      else seed.barycentric = [b[0], add(b[1], du), sub(b[2], du)]
+      } else {
+        seed.barycentric = [b[0], add(b[1], du), sub(b[2], du)]
+      }
     }
+
     const result = new WalkingTerrainPlacementOwner().prepare(
       source,
       demand,
       raw
     )
+
     expect(result.sourceGeometry.status, result.reasons.join(';')).toBe(
       'blocked'
     )
@@ -593,6 +641,7 @@ describe('actual terrain placement geometry with unbound physical evidence', () 
       (m, v) => (sub(v.position[0], m).numerator < 0n ? v.position[0] : m),
       placed[0].position[0]
     )
+
     expect(min).toEqual(e(channel.bounds.max[0]))
   })
   it.each([false, true])(
@@ -601,6 +650,7 @@ describe('actual terrain placement geometry with unbound physical evidence', () 
       const raw = fixture(opposite),
         owner = new WalkingTerrainPlacementOwner(),
         result = owner.prepare(source, demand, raw)
+
       expect(result.sourceGeometry, result.reasons.join(';')).toMatchObject({
         status: 'admitted'
       })
@@ -620,6 +670,7 @@ describe('actual terrain placement geometry with unbound physical evidence', () 
         expect(s.assessment?.friction).toMatchObject({ status: 'admitted' })
         expect(s.physicalStatus).toBe('unknown')
       }
+
       expect(result.work).toMatchObject({
         shapes: 1,
         regions: 1,
@@ -630,6 +681,7 @@ describe('actual terrain placement geometry with unbound physical evidence', () 
       })
       expect(result.work.trianglePairs).toBe(16)
       const before = owner.work
+
       expect(owner.prepare(source, demand, required(result.request))).toBe(
         result
       )
@@ -648,23 +700,36 @@ describe('actual terrain placement geometry with unbound physical evidence', () 
     (kind) => {
       const raw = fixture(),
         r = raw.terrain.regions[0]
+
       if (kind === 'gap') {
         r.shape.positions.push(...r.shape.positions.slice(0, 3))
         r.shape.positions[r.shape.positions.length - 1] += 0.02
         r.shape.indices[3] = 4
       }
+
       if (kind === 'overlap') {
         r.shape.indices.push(0, 1, 2)
         raw.partitions[0].regions[0].indexCount = 9
       }
-      if (kind === 'noncoplanar') r.shape.positions[10] = 0.01
-      if (kind === 'degenerate') r.shape.indices[1] = 0
-      if (kind === 'partial') raw.partitions[0].regions[0].indexCount = 3
+
+      if (kind === 'noncoplanar') {
+        r.shape.positions[10] = 0.01
+      }
+
+      if (kind === 'degenerate') {
+        r.shape.indices[1] = 0
+      }
+
+      if (kind === 'partial') {
+        raw.partitions[0].regions[0].indexCount = 3
+      }
+
       const result = new WalkingTerrainPlacementOwner().prepare(
         source,
         demand,
         raw
       )
+
       expect(result.sourceGeometry.status, result.reasons.join(';')).toBe(
         'unknown'
       )
@@ -672,12 +737,14 @@ describe('actual terrain placement geometry with unbound physical evidence', () 
   )
   it('keeps physical records unbound, independently from valid geometry', () => {
     const raw = fixture()
+
     raw.terrain.contactAssessments[0].friction = { status: 'blocked', evidence }
     const result = new WalkingTerrainPlacementOwner().prepare(
       source,
       demand,
       raw
     )
+
     expect(result.sourceGeometry.status).toBe('admitted')
     expect(result.supports[0].assessmentApplicability).toBe('unbound')
     expect(result.physicalStatus).toBe('unknown')
@@ -689,12 +756,14 @@ describe('actual terrain placement geometry with unbound physical evidence', () 
     'does not let geometry flags replace complete %s observations',
     (key) => {
       const raw = fixture()
+
       raw.terrain.observations[key] = { coverage: 'sampled', evidence }
       const result = new WalkingTerrainPlacementOwner().prepare(
         source,
         demand,
         raw
       )
+
       expect(result.sourceGeometry.status).toBe('unknown')
     }
   )
@@ -705,20 +774,25 @@ describe('actual terrain placement geometry with unbound physical evidence', () 
     'maxBits'
   ] as const)('returns bounded unknown for exhausted %s', (key) => {
     const raw = fixture()
+
     raw.budget[key] = 1
     const result = new WalkingTerrainPlacementOwner().prepare(
       source,
       demand,
       raw
     )
+
     expect(result.sourceGeometry.status).toBe('unknown')
     expect(result.reasons.join(';')).toMatch(/budget/)
-    if (key === 'maxPredicates') expect(result.work.unvisited).toBe(16)
+    if (key === 'maxPredicates') {
+      expect(result.work.unvisited).toBe(16)
+    }
   })
   it('rejects currentness, original triangle and exact seed mismatches', () => {
     const raw = fixture(),
       read = (v: unknown) =>
         readWalkingTerrainPlacementRequest(v, { source, demand })
+
     expect(() => read({ ...raw, farm: { ...demand.farm } })).toThrow()
     expect(() =>
       read({ ...raw, route: { ...required(demand.route) } })
@@ -766,6 +840,7 @@ describe('actual terrain placement geometry with unbound physical evidence', () 
         ...raw.seeds.slice(1)
       ]
     })
+
     expect(result.sourceGeometry.status).toBe('unknown')
     expect(result.reasons.join(';')).toMatch(/anchor/)
   })
@@ -777,6 +852,7 @@ describe('actual terrain placement geometry with unbound physical evidence', () 
         ...raw,
         terrain: { ...raw.terrain, revision: 2 }
       })
+
     expect(next).not.toBe(first)
     expect(owner.work.preparations).toBe(2)
     expect(owner.read(source, demand, required(first.request))).toBeNull()

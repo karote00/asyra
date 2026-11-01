@@ -35,10 +35,13 @@ describe('Asyra Design action-batch interceptor harness', () => {
       request: {
         get: async () => ({
           body: async () => compressed,
+
           ok: () => true,
+
           status: () => 200
         })
       },
+
       route: async (
         pattern: string,
         handler: NonNullable<typeof routeHandler>
@@ -62,8 +65,10 @@ describe('Asyra Design action-batch interceptor harness', () => {
     expect(routePattern).toBe('**/api/ai/action-batch')
     expect(routeHandler).toBeTypeOf('function')
     const fulfill = vi.fn(async () => undefined)
+
     await routeHandler?.({
       fulfill,
+
       request: () => ({ method: () => 'POST' })
     })
     expect(fulfill).toHaveBeenCalledWith({
@@ -93,6 +98,7 @@ describe('Asyra Design action-batch interceptor harness', () => {
       ?.arguments as PreparedDrawingArtifact
     const candidateArtifact = candidate.batch.actions[0]
       ?.arguments as PreparedDrawingArtifact
+
     const descriptorIds = (artifact: PreparedDrawingArtifact) =>
       artifact.slices.flatMap(({ descriptors }) =>
         descriptors.map(({ id }) => id)
@@ -136,6 +142,7 @@ describe('Asyra Design action-batch interceptor harness', () => {
     expect(record.batch.actions).toHaveLength(1)
 
     const action = record.batch.actions[0]
+
     expect(action).toMatchObject({
       id: 'create-fast-crdt-response',
       name: 'insert_vector_composition',
@@ -152,6 +159,7 @@ describe('Asyra Design action-batch interceptor harness', () => {
       }
     })
     const artifact = action.arguments as PreparedDrawingArtifact
+
     expect(artifact).toMatchObject({
       artifactVersion: 1,
       elementCount: 16,
@@ -194,12 +202,14 @@ describe('Asyra Design action-batch interceptor harness', () => {
           role: roles[index]
         }))
     )
+
     expect(descriptorEntries).toHaveLength(16)
     expect(
       artifact.slices.reduce((total, { pointCount }) => total + pointCount, 0)
     ).toBe(12_919)
 
     const elementIds = descriptorEntries.map(({ descriptor }) => descriptor.id)
+
     expect(new Set(elementIds).size).toBe(16)
     expect(
       elementIds.every((elementId) =>
@@ -308,6 +318,7 @@ describe('Asyra Design action-batch interceptor harness', () => {
 
       const fills = descriptor.fills as readonly { readonly id: string }[]
       const strokes = descriptor.strokes as readonly { readonly id: string }[]
+
       expect(fills.every(({ id }) => /^fill-[a-f0-9]{16}-\d+$/.test(id))).toBe(
         true
       )
@@ -328,6 +339,7 @@ describe('Asyra Design action-batch interceptor harness', () => {
     )
 
     const secondRecord = await createServerResponseRecord('file-fast-16', 16)
+
     expect(secondRecord).toEqual(record)
   })
 

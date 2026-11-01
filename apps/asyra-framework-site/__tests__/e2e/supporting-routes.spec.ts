@@ -5,6 +5,7 @@ const assertNoHorizontalOverflow = async (page: Page) => {
     client: document.documentElement.clientWidth,
     scroll: document.documentElement.scrollWidth
   }))
+
   expect(widths.scroll).toBeLessThanOrEqual(widths.client + 1)
 }
 
@@ -14,6 +15,7 @@ const assertHeightAtMost = async (
   maximum: number
 ) => {
   const box = await page.locator(selector).boundingBox()
+
   expect.soft(box, `${selector} must have a measurable box`).not.toBeNull()
   expect
     .soft(box?.height ?? Number.POSITIVE_INFINITY)
@@ -25,6 +27,7 @@ const assertReadingWidth = async (page: Page, selector: string) => {
     page.locator(selector).boundingBox(),
     page.evaluate(() => document.documentElement.clientWidth)
   ])
+
   expect.soft(box, `${selector} must have a measurable box`).not.toBeNull()
   expect.soft(box?.width ?? 0).toBeGreaterThanOrEqual(viewportWidth - 72)
 }
@@ -82,6 +85,7 @@ test('documentation supports search, section navigation, and mobile dialogs', as
   })
   await page.getByRole('button', { name: /^Search \d+ guides$/ }).click()
   const search = page.getByRole('searchbox', { name: 'Search' })
+
   await search.fill('transaction')
   await expect(page.locator('.search-results a')).not.toHaveCount(0)
   await expect(page.locator('.search-dialog__count')).not.toContainText(
@@ -150,6 +154,7 @@ test('mobile documentation navigation scrolls through every guide', async ({
     const close = page.getByRole('button', {
       name: 'Close documentation navigation'
     })
+
     expect(
       await close.evaluate((element) => getComputedStyle(element).borderWidth)
     ).toBe('0px')
@@ -185,6 +190,7 @@ test('the shared mobile menu stays borderless and modal on every page', async ({
       await page.goto(route)
 
       const trigger = page.getByRole('button', { name: 'Open navigation' })
+
       await expect(trigger).toBeVisible()
       if (route === '/docs' && width === 390) {
         await page
@@ -195,6 +201,7 @@ test('the shared mobile menu stays borderless and modal on every page', async ({
             path: testInfo.outputPath('site-mobile-header-borderless.png')
           })
       }
+
       expect(
         await trigger.evaluate(
           (element) => getComputedStyle(element).borderWidth
@@ -210,6 +217,7 @@ test('the shared mobile menu stays borderless and modal on every page', async ({
 
       const dialog = page.getByRole('dialog', { name: 'Navigate Asyra' })
       const close = page.getByRole('button', { name: 'Close navigation' })
+
       await expect(dialog).toBeVisible()
       expect(
         await close.evaluate((element) => getComputedStyle(element).borderWidth)
@@ -271,6 +279,7 @@ test('every mobile popup uses the shared close control and locks the page', asyn
       closeMark.boundingBox(),
       title.boundingBox()
     ])
+
     expect
       .soft(
         Math.abs((closeMarkBox?.y ?? 0) + 4 - (titleBox?.y ?? 0)),
@@ -324,6 +333,7 @@ test('the Documentation Overview alone presents a compact docs-native technical 
     await page.goto('/docs')
 
     const section = page.locator('#framework-flow-technical')
+
     await expect(section).toBeVisible()
     await expect(
       section.getByRole('heading', {
@@ -339,6 +349,7 @@ test('the Documentation Overview alone presents a compact docs-native technical 
       section.locator('.framework-technical__owners li')
     ).toHaveCount(4)
     const outputTags = section.locator('.framework-technical__outputs li')
+
     await expect.soft(outputTags).toHaveCount(6)
     expect
       .soft(await outputTags.allTextContents())
@@ -371,6 +382,7 @@ test('the Documentation Overview alone presents a compact docs-native technical 
       const outputList = outputs?.querySelector<HTMLElement>('ul')
       const currentSupport = document.querySelector('#current-support')
       const ownerModel = document.querySelector('#the-owner-model')
+
       if (
         !routes ||
         !routeCopy ||
@@ -386,6 +398,7 @@ test('the Documentation Overview alone presents a compact docs-native technical 
       ) {
         throw new Error('Missing Documentation Overview flow anchors')
       }
+
       const routeBounds = routeCards.map((route) =>
         route.getBoundingClientRect()
       )
@@ -398,21 +411,28 @@ test('the Documentation Overview alone presents a compact docs-native technical 
         const rows = routeCards.map((route) =>
           route.querySelector<HTMLElement>(selector)?.getBoundingClientRect()
         )
+
         return Boolean(
           rows[0] && rows[1] && Math.abs(rows[0].top - rows[1].top) <= 1
         )
       })
+
       const blocksShareHeights = (selector: string) => {
         const blocks = Array.from(
           element.querySelectorAll<HTMLElement>(selector)
         ).map((block) => block.getBoundingClientRect())
-        if (blocks.length < 2) return false
+
+        if (blocks.length < 2) {
+          return false
+        }
+
         return (
           Math.max(...blocks.map((block) => block.height)) -
             Math.min(...blocks.map((block) => block.height)) <=
           1
         )
       }
+
       const background = getComputedStyle(element).backgroundColor
       const rgb = background.match(/[\d.]+/g)?.map(Number) ?? []
       const tagWidthsFitContents = Array.from(
@@ -421,8 +441,13 @@ test('the Documentation Overview alone presents a compact docs-native technical 
         )
       ).every((tag) => {
         const textNode = tag.firstChild
-        if (!textNode) return false
+
+        if (!textNode) {
+          return false
+        }
+
         const textRange = document.createRange()
+
         textRange.selectNodeContents(textNode)
         const textWidth = textRange.getBoundingClientRect().width
         const style = getComputedStyle(tag)
@@ -431,6 +456,7 @@ test('the Documentation Overview alone presents a compact docs-native technical 
           Number.parseFloat(style.paddingRight) +
           Number.parseFloat(style.borderLeftWidth) +
           Number.parseFloat(style.borderRightWidth)
+
         return tag.getBoundingClientRect().width <= textWidth + insetWidth + 1
       })
       const lowerTagsUseCompactVerticalInsets = Array.from(
@@ -438,6 +464,7 @@ test('the Documentation Overview alone presents a compact docs-native technical 
           '.framework-technical__owners li, .framework-technical__outputs li'
         )
       ).every((tag) => tag.getBoundingClientRect().height <= 34)
+
       return {
         backgroundIsLight:
           rgb.length >= 3 && (rgb[0] + rgb[1] + rgb[2]) / 3 > 180,
@@ -497,6 +524,7 @@ test('the Documentation Overview alone presents a compact docs-native technical 
     if (profile.routeColumns === 2) {
       expect(layout.routeRowsAligned).toBe(true)
     }
+
     expect(layout.routeColumns).toBe(profile.routeColumns)
     expect(layout.routeCopySize).toBeGreaterThanOrEqual(13)
     expect(layout.sectionHeight).toBeLessThanOrEqual(profile.maxHeight)
@@ -521,6 +549,7 @@ test('documentation navigation resets the reader and preserves the sidebar posit
   await page.goto('/docs')
 
   const navigation = page.locator('.docs-navigation')
+
   await page.locator('.docs-layout').scrollIntoViewIfNeeded()
   await navigation.evaluate((element) => {
     element.scrollTop = Math.min(
@@ -531,8 +560,10 @@ test('documentation navigation resets the reader and preserves the sidebar posit
 
   const targetIndex = await navigation.evaluate((element) => {
     const bounds = element.getBoundingClientRect()
+
     return [...element.querySelectorAll('a')].findIndex((link) => {
       const linkBounds = link.getBoundingClientRect()
+
       return (
         link.getAttribute('aria-current') !== 'page' &&
         linkBounds.top >= bounds.top &&
@@ -540,10 +571,12 @@ test('documentation navigation resets the reader and preserves the sidebar posit
       )
     })
   })
+
   expect(targetIndex).toBeGreaterThanOrEqual(0)
 
   const target = navigation.locator('a').nth(targetIndex)
   const targetHref = await target.getAttribute('href')
+
   expect(targetHref).toBeTruthy()
 
   const positionBeforeNavigation = await page.evaluate(() => ({
@@ -551,6 +584,7 @@ test('documentation navigation resets the reader and preserves the sidebar posit
     sidebar:
       document.querySelector<HTMLElement>('.docs-navigation')?.scrollTop ?? 0
   }))
+
   expect(positionBeforeNavigation.page).toBeGreaterThan(0)
   expect(positionBeforeNavigation.sidebar).toBeGreaterThan(0)
 
@@ -564,6 +598,7 @@ test('documentation navigation resets the reader and preserves the sidebar posit
     sidebar:
       document.querySelector<HTMLElement>('.docs-navigation')?.scrollTop ?? 0
   }))
+
   expect(positionAfterNavigation.sidebar).toBeCloseTo(
     positionBeforeNavigation.sidebar,
     0
@@ -592,10 +627,12 @@ test('current navigation and selected controls keep their visual state on hover'
   for (const [route, selector] of selectedTargets) {
     await page.goto(route)
     const selected = page.locator(selector).first()
+
     await expect(selected, `${route} ${selector}`).toBeVisible()
     const beforeHover = await selected.evaluate((element) => {
       const style = getComputedStyle(element)
       const after = getComputedStyle(element, '::after')
+
       return {
         afterBackgroundColor: after.backgroundColor,
         afterTransform: after.transform,
@@ -610,6 +647,7 @@ test('current navigation and selected controls keep their visual state on hover'
     const afterHover = await selected.evaluate((element) => {
       const style = getComputedStyle(element)
       const after = getComputedStyle(element, '::after')
+
       return {
         afterBackgroundColor: after.backgroundColor,
         afterTransform: after.transform,
@@ -619,6 +657,7 @@ test('current navigation and selected controls keep their visual state on hover'
         color: style.color
       }
     })
+
     expect(afterHover, `${route} ${selector}`).toEqual(beforeHover)
   }
 
@@ -646,6 +685,7 @@ test('documentation pages use one compact, high-contrast header before the guide
     page.locator('.docs-hero .page-hero__copy > p:last-child')
   ).toHaveCSS('color', 'rgba(21, 22, 20, 0.82)')
   const overviewHero = await page.locator('.docs-hero').boundingBox()
+
   expect(overviewHero).not.toBeNull()
   expect(overviewHero?.height ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(
     320
@@ -678,6 +718,7 @@ test('documentation pages use one compact, high-contrast header before the guide
   const mobileGuide = await page
     .locator('.docs-article .markdown-content')
     .boundingBox()
+
   expect(mobileGuide?.y ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(640)
   await assertNoHorizontalOverflow(page)
   await page.screenshot({
@@ -708,6 +749,7 @@ test('public subpages use one shared hero layout contract', async ({
       await page.goto(route)
 
       const hero = page.locator('.page-hero')
+
       await expect(hero).toHaveClass(new RegExp(`page-hero--${density}`))
       await expect(hero.locator('.page-hero__copy')).toHaveCount(1)
 
@@ -727,6 +769,7 @@ test('public subpages use one shared hero layout contract', async ({
 
       expect(layout.display).toBe('grid')
       const expectedOuterEdge = 0
+
       expect(layout.left).toBeCloseTo(expectedOuterEdge, 0)
       expect(layout.right).toBeCloseTo(viewport.width - expectedOuterEdge, 0)
       expect(layout.paddingLeft).toBeCloseTo(layout.paddingRight, 5)
@@ -745,12 +788,14 @@ test('Asyra Design ownership rows do not add a disconnected timeline stroke', as
   await page.goto('/asyra-design')
 
   const rows = page.locator('.ownership-map > div')
+
   await expect(rows).toHaveCount(4)
   const connectorContent = await rows.evaluateAll((elements) =>
     elements
       .slice(0, -1)
       .map((element) => getComputedStyle(element, '::after').content)
   )
+
   expect(connectorContent).toEqual(['none', 'none', 'none'])
 
   await page.locator('.ownership-map').screenshot({
@@ -766,10 +811,16 @@ test('landing and supporting routes share footer content with their own responsi
     page.locator('.site-footer').evaluate((footer) => {
       const style = getComputedStyle(footer)
       const footerRect = footer.getBoundingClientRect()
+
       const relativeBounds = (selector: string) => {
         const target = footer.querySelector(selector)
-        if (!(target instanceof HTMLElement)) return null
+
+        if (!(target instanceof HTMLElement)) {
+          return null
+        }
+
         const rect = target.getBoundingClientRect()
+
         return {
           height: rect.height,
           left: rect.left - footerRect.left,
@@ -835,6 +886,7 @@ test('landing and supporting routes share footer content with their own responsi
         )
       ).toBeLessThanOrEqual(1)
     }
+
     await page.locator('.site-footer').screenshot({
       animations: 'disabled',
       path: testInfo.outputPath(`shared-footer-${viewport.width}.png`)
@@ -851,6 +903,7 @@ test('factual support routes lead with their evidence instead of oversized prese
   const desktopHistory = await page
     .locator('.release-history__list')
     .boundingBox()
+
   expect(desktopHistory?.y ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(990)
 
   await page.goto('/roadmap')
@@ -860,6 +913,7 @@ test('factual support routes lead with their evidence instead of oversized prese
     .locator('.status-grid .status-surface')
     .first()
     .boundingBox()
+
   expect(desktopStatus?.y ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(596)
   expect(
     (desktopStatus?.y ?? 0) -
@@ -872,6 +926,7 @@ test('factual support routes lead with their evidence instead of oversized prese
   const mobileHistory = await page
     .locator('.release-history__list')
     .boundingBox()
+
   expect(mobileHistory?.y ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(960)
 
   await page.goto('/roadmap')
@@ -881,6 +936,7 @@ test('factual support routes lead with their evidence instead of oversized prese
     .locator('.status-grid .status-surface')
     .first()
     .boundingBox()
+
   expect(mobileStatus?.y ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(492)
   expect(
     (mobileStatus?.y ?? 0) -
@@ -896,6 +952,7 @@ test('roadmap keeps current support in the summary and internal detail out of th
   await page.goto('/roadmap')
 
   const statusCards = page.locator('.roadmap-status-grid .status-surface')
+
   await expect(statusCards).toHaveCount(3)
   await expect(
     page
@@ -921,6 +978,7 @@ test('roadmap keeps current support in the summary and internal detail out of th
   const desktopColumns = await page
     .locator('.roadmap-status-grid')
     .evaluate((element) => getComputedStyle(element).gridTemplateColumns)
+
   expect(desktopColumns.split(' ')).toHaveLength(3)
   await expect(
     page.locator('.support-document article').getByRole('heading', {
@@ -937,6 +995,7 @@ test('roadmap keeps current support in the summary and internal detail out of th
   const mobileColumns = await page
     .locator('.roadmap-status-grid')
     .evaluate((element) => getComputedStyle(element).gridTemplateColumns)
+
   expect(mobileColumns.split(' ')).toHaveLength(1)
   await assertNoHorizontalOverflow(page)
   await page.locator('.roadmap-status-grid').screenshot({
@@ -970,15 +1029,18 @@ test('releases presents user-facing package and support facts at every width', a
       page.getByText('Releases - Framework milestones', { exact: true })
     ).toBeVisible()
     const evidence = page.locator('.evidence-strip > div')
+
     await expect(evidence).toHaveCount(4)
     const evidenceTopBorderWidth = await page
       .locator('.evidence-strip')
       .evaluate((element) => getComputedStyle(element).borderTopWidth)
+
     expect(evidenceTopBorderWidth).toBe('0px')
     for (const [index, [label, value]] of expectedEvidence.entries()) {
       await expect(evidence.nth(index).locator('dt')).toHaveText(label)
       await expect(evidence.nth(index).locator('dd')).toHaveText(value)
     }
+
     await expect(page.getByText('Release truth', { exact: true })).toHaveCount(
       0
     )
@@ -1008,14 +1070,17 @@ test('releases presents user-facing package and support facts at every width', a
       const inventoryHeading = document.querySelector(
         '.package-inventory .support-section__heading'
       )
+
       if (!history || !inventoryHeading) {
         throw new Error('Missing Releases history or package inventory')
       }
+
       return (
         inventoryHeading.getBoundingClientRect().top -
         history.getBoundingClientRect().bottom
       )
     })
+
     expect(inventoryGap).toBeGreaterThanOrEqual(56)
     await expect(
       page.getByRole('heading', {
@@ -1029,6 +1094,7 @@ test('releases presents user-facing package and support facts at every width', a
       const columns = await page
         .locator('.evidence-strip')
         .evaluate((element) => getComputedStyle(element).gridTemplateColumns)
+
       expect(columns.split(' ')).toHaveLength(2)
     }
 
@@ -1073,12 +1139,15 @@ test('support document headings remain readable inside their narrower column', a
           const header = root.querySelector('header')
           const title = header?.querySelector('h2')
           const article = root.querySelector('article')
+
           if (!header || !title || !article) {
             throw new Error('Support document is missing its heading')
           }
+
           const headerRect = header.getBoundingClientRect()
           const articleRect = article.getBoundingClientRect()
           const titleStyle = getComputedStyle(title)
+
           return {
             fontSize: Number.parseFloat(titleStyle.fontSize),
             headerWidthRatio:
@@ -1184,10 +1253,13 @@ test('every public mobile hero keeps a compact reading hierarchy', async ({
       const body = hero.locator(bodySelector)
       const metrics = await hero.evaluate((element) => {
         const title = element.querySelector('h1')
+
         if (!(title instanceof HTMLElement)) {
           throw new Error('Mobile hero is missing its title')
         }
+
         const titleStyle = getComputedStyle(title)
+
         return {
           height: element.getBoundingClientRect().height,
           titleFontSize: Number.parseFloat(titleStyle.fontSize),
@@ -1206,8 +1278,15 @@ test('every public mobile hero keeps a compact reading hierarchy', async ({
       ).toBeGreaterThanOrEqual(0.98)
       expect(metrics.titleFontSize / bodyFontSize).toBeLessThanOrEqual(2.15)
       let maximumHeroHeight = 430
-      if (name === 'asyra-design') maximumHeroHeight = 1100
-      if (name === 'atlas') maximumHeroHeight = 480
+
+      if (name === 'asyra-design') {
+        maximumHeroHeight = 1100
+      }
+
+      if (name === 'atlas') {
+        maximumHeroHeight = 480
+      }
+
       expect(metrics.height).toBeLessThanOrEqual(maximumHeroHeight)
 
       const sectionTitleSizes = await page
@@ -1217,9 +1296,11 @@ test('every public mobile hero keeps a compact reading hierarchy', async ({
             Number.parseFloat(getComputedStyle(heading).fontSize)
           )
         )
+
       for (const fontSize of sectionTitleSizes) {
         expect(fontSize).toBeLessThanOrEqual(32)
       }
+
       await assertNoHorizontalOverflow(page)
 
       if (width === 390) {
@@ -1257,6 +1338,7 @@ test('public mobile pages use quiet reading surfaces and one text hierarchy', as
         const body = element.querySelector<HTMLElement>(
           '.page-hero__copy > h1 + p, .page-hero__aside p'
         )
+
         if (!label || !title || !body) {
           throw new Error('Mobile Hero is missing its reading hierarchy')
         }
@@ -1327,6 +1409,7 @@ test('mobile supporting copy keeps a readable minimum size', async ({
           Number.parseFloat(getComputedStyle(element, '::before').fontSize)
         )
       )
+
     expect
       .soft(
         Math.min(...metadataLabelSizes),

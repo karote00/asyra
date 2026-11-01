@@ -8,7 +8,9 @@ const repoRoot = path.resolve(__dirname, '../../../..')
 
 const step = (id) => {
   const value = data.steps.find((item) => item.id === id)
+
   assert.ok(value, `Missing Inspector step: ${id}`)
+
   return value
 }
 
@@ -91,9 +93,11 @@ test('every owner step, route, and artifact resolves exactly', () => {
 
   data.routes.forEach((route) => {
     assert.ok(stepIds.has(route.from), `${route.id} source`)
-    if (route.to) assert.ok(stepIds.has(route.to), `${route.id} target`)
+    if (route.to) {assert.ok(stepIds.has(route.to), `${route.id} target`)}
+
     route.producedArtifacts.forEach((artifactId) => {
       const artifact = artifacts.get(artifactId)
+
       assert.ok(artifact, `${route.id} artifact ${artifactId}`)
       assert.equal(artifact.ownerStepId, route.from, `${route.id} owner`)
       if (route.to) {
@@ -136,6 +140,7 @@ test('implementation boundaries and product-spec anchors resolve', () => {
       const target = (
         wildcardIndex === -1 ? boundary : boundary.slice(0, wildcardIndex)
       ).replace(/\/$/, '')
+
       assert.ok(
         target && fs.existsSync(path.resolve(repoRoot, target)),
         `${owner.id} missing boundary ${boundary}`

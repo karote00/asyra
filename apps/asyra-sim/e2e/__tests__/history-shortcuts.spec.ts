@@ -8,10 +8,12 @@ for (const modifier of ['Meta', 'Control']) {
     await page.goto('/')
     await expect(page.getByRole('status')).toHaveText('Local runtime ready')
     const initialDepth = await readHistoryDepth(page)
+
     await page
       .getByRole('treeitem', { name: '◇ fixture post', exact: true })
       .click()
     const x = page.getByLabel('Mount position (m) X', { exact: true })
+
     await x.fill('-1.25')
     await x.press('Enter')
     await expect.poll(() => readHistoryDepth(page)).toBe(initialDepth + 1)
@@ -36,14 +38,17 @@ test('text and numeric input retain native Undo without replaying model history'
   page
 }) => {
   const nativeUndoModifier = process.platform === 'darwin' ? 'Meta' : 'Control'
+
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
   const initialDepth = await readHistoryDepth(page)
+
   await page
     .getByRole('treeitem', { name: '◇ fixture post', exact: true })
     .click()
   const x = page.getByLabel('Mount position (m) X', { exact: true })
   const name = page.getByLabel('Object name')
+
   await x.fill('-1.25')
   await x.press('Enter')
   await name.click()
@@ -68,6 +73,7 @@ test('project replacement binds shortcuts to the successor exactly once', async 
   page
 }) => {
   const errors: string[] = []
+
   page.on('pageerror', (error) => errors.push(error.message))
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
@@ -93,6 +99,7 @@ test('project replacement binds shortcuts to the successor exactly once', async 
     .getByRole('treeitem', { name: '◇ fixture post', exact: true })
     .click()
   const x = page.getByLabel('Mount position (m) X', { exact: true })
+
   await x.fill('-1')
   await x.press('Enter')
   await x.fill('-1.25')

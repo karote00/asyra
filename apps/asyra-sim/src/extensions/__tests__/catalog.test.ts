@@ -63,8 +63,10 @@ function registration(): MethodRegistration {
       enabled: { kind: 'boolean', label: 'Enabled', default: true }
     }
   }
+
   return {
     descriptor,
+
     execute: () => {
       throw new Error('Not executed by admission')
     }
@@ -92,6 +94,7 @@ describe('trusted pre-start method catalog', () => {
   it('detaches and freezes declarations without executing code or permitting replacement', () => {
     const input = registration(),
       catalog = createMethodCatalog([input])
+
     input.descriptor.manifest.name = 'Changed after installation'
     expect(catalog.descriptors[0].manifest.name).toBe('Private clearance')
     expect(Object.isFrozen(catalog.descriptors[0].parameterSchema.margin)).toBe(
@@ -117,6 +120,7 @@ describe('trusted pre-start method catalog', () => {
       }
     ]) {
       const duplicate = registration()
+
       change(duplicate)
       expect(() => createMethodCatalog([registration(), duplicate])).toThrow(
         'Duplicate'
@@ -146,6 +150,7 @@ describe('trusted pre-start method catalog', () => {
       }
     ]) {
       const malformed = registration()
+
       change(malformed)
       expect(() => createMethodCatalog([malformed])).toThrow()
     }
@@ -169,6 +174,7 @@ describe('trusted pre-start method catalog', () => {
         }
       }
     }
+
     expect(
       preflightExperiment(example.workcell, definition, catalog.descriptors)
         .blockers
@@ -182,6 +188,7 @@ describe('trusted pre-start method catalog', () => {
       methods: catalog.descriptors,
       acknowledgedWarningCodes: []
     })
+
     expect(snapshot.methodDescriptor).toEqual(descriptor)
     expect(snapshot.methodDescriptor).not.toBe(descriptor)
     expect(Object.isFrozen(snapshot.methodDescriptor?.manifest)).toBe(true)
@@ -195,6 +202,7 @@ describe('trusted pre-start method catalog', () => {
       { margin: 0, mode: 'strict' },
       { margin: 0, mode: 'strict', enabled: true, unexpected: 1 }
     ]
+
     for (const parameters of invalidParameters) {
       const invalid = {
         ...definition,
@@ -203,13 +211,19 @@ describe('trusted pre-start method catalog', () => {
           settings: { ...definition.method.settings, parameters }
         }
       }
+
       expect(
         preflightExperiment(example.workcell, invalid, catalog.descriptors)
           .blockers
       ).toContainEqual(expect.objectContaining({ code: 'method-parameters' }))
     }
+
     const forged = structuredClone(snapshot)
-    if (!forged.methodDescriptor) throw new Error('Missing descriptor')
+
+    if (!forged.methodDescriptor) {
+      throw new Error('Missing descriptor')
+    }
+
     forged.methodDescriptor.version = 'different'
     expect(() => validateHistoricalSnapshot(forged)).toThrow('identity')
   })

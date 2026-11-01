@@ -79,6 +79,7 @@ for (const formalFirst of [false, true]) {
     await time.fill('8')
     await expect(feedback).toHaveAttribute('data-pose-matches', 'true')
     const restarted = await observePlaybackFeedback(page, { time: 0 })
+
     await page
       .getByRole('button', { name: 'Play trajectory', exact: true })
       .click()

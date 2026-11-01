@@ -155,7 +155,9 @@ export function guessCsvMapping(
   const joints: Record<string, TrajectoryCsvMappingDraft['joints'][string]> = {}
 
   for (const body of workcell.bodies) {
-    if (body.joint.kind === 'fixed') continue
+    if (body.joint.kind === 'fixed') {
+      continue
+    }
 
     joints[body.id] = {
       column: take(

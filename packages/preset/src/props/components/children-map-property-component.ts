@@ -69,6 +69,7 @@ const toChildEntries = (
 ): ChildEntry[] | null => {
   if (Array.isArray(value)) {
     const entries: ChildEntry[] = []
+
     value.forEach((item) => {
       if (!isRecord(item)) {
         return
@@ -76,6 +77,7 @@ const toChildEntries = (
 
       const childId = typeof item.id === 'string' ? item.id : ''
       const childData = toChildData(item, childId)
+
       if (!childData) {
         return
       }
@@ -88,12 +90,14 @@ const toChildEntries = (
 
   if (isRecord(value)) {
     const entries: ChildEntry[] = []
+
     Object.entries(value).forEach(([childId, child]) => {
       if (!isRecord(child)) {
         return
       }
 
       const childData = toChildData(child, childId)
+
       if (!childData) {
         return
       }
@@ -126,6 +130,7 @@ export const createChildrenMapPropertyComponentDefinition = (
 
     private getChildIds(): string[] {
       const raw = this.data[config.key]
+
       if (!Array.isArray(raw)) {
         return []
       }
@@ -139,11 +144,13 @@ export const createChildrenMapPropertyComponentDefinition = (
 
       entries.forEach((entry) => {
         const childId = entry.id
+
         if (childId) {
           syncLoadedId(config.childIdType, childId)
         }
 
         const existing = childId ? accessor.getPropertyById(childId) : undefined
+
         if (
           existing &&
           typeof existing.get === 'function' &&
@@ -163,9 +170,11 @@ export const createChildrenMapPropertyComponentDefinition = (
           })
 
           const existingId = existing.get('id')
+
           if (typeof existingId === 'string' && existingId.length > 0) {
             nextIds.push(existingId)
           }
+
           return
         }
 
@@ -182,12 +191,14 @@ export const createChildrenMapPropertyComponentDefinition = (
                 ...entry.data
               }
         )
+
         if (!created) {
           return
         }
 
         accessor.addToMap(created)
         const createdId = created.get('id')
+
         if (typeof createdId !== 'string' || createdId.length === 0) {
           return
         }
@@ -201,14 +212,17 @@ export const createChildrenMapPropertyComponentDefinition = (
 
     private resolveChildIds(value: unknown): string[] | null {
       const stringIds = toStringArray(value)
+
       if (stringIds) {
         stringIds.forEach((childId) =>
           syncLoadedId(config.childIdType, childId)
         )
+
         return stringIds
       }
 
       const entries = toChildEntries(value, config.toChildData)
+
       if (!entries) {
         return null
       }
@@ -229,6 +243,7 @@ export const createChildrenMapPropertyComponentDefinition = (
       }
 
       const childIds = this.resolveChildIds(value)
+
       if (!childIds) {
         return
       }
@@ -241,6 +256,7 @@ export const createChildrenMapPropertyComponentDefinition = (
       const childIds = this.resolveChildIds(
         (data as Record<string, unknown>)[config.key]
       )
+
       this.data[config.key] = childIds ?? []
     }
 
@@ -257,11 +273,13 @@ export const createChildrenMapPropertyComponentDefinition = (
 
       this.getChildIds().forEach((childId) => {
         const child = accessor.getPropertyById(childId)
+
         if (!child || child.get('type') !== config.childType) {
           return
         }
 
         const childValue = config.toValue(child as ChildGetter, childId)
+
         if (!childValue) {
           return
         }
@@ -287,13 +305,17 @@ export const createChildrenMapPropertyComponentDefinition = (
       childType: config.childType,
       mode: 'ids-or-objects',
       collection: 'array-or-record',
+
       toChildData: (item, childId) => {
         const childData = config.toChildData(item, childId ?? '')
+
         if (!childData) {
           return null
         }
+
         return childId ? { ...childData, id: childId } : childData
       },
+
       toValue: config.toValue
     },
     registration: createPresetRegistration([

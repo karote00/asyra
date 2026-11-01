@@ -21,6 +21,7 @@ export default defineConfig({
     lib: {
       entry: resolve(__dirname, './src/index.tsx'),
       name: 'DesignSystem',
+
       fileName: (format) => `index.${format}.js`
     },
     rollupOptions: {

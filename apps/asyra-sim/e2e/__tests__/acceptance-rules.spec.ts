@@ -4,11 +4,20 @@ import { MethodIds, MethodVersions } from '../../src/constants'
 
 async function download(page: Page, name: string) {
   const pending = page.waitForEvent('download')
+
   await page.getByRole('button', { name, exact: true }).click()
   const stream = await (await pending).createReadStream()
-  if (!stream) throw new Error('Missing report download')
+
+  if (!stream) {
+    throw new Error('Missing report download')
+  }
+
   const chunks: Buffer[] = []
-  for await (const chunk of stream) chunks.push(Buffer.from(chunk))
+
+  for await (const chunk of stream) {
+    chunks.push(Buffer.from(chunk))
+  }
+
   return Buffer.concat(chunks).toString('utf8')
 }
 
@@ -18,14 +27,16 @@ test('ordinary nested acceptance editing preserves findings, versions, compariso
   test.setTimeout(60000)
   const errors: string[] = [],
     external: string[] = []
+
   page.on('pageerror', (error) => errors.push(error.message))
   page.on('request', (request) => {
     if (
       /^https?:/.test(request.url()) &&
       new URL(request.url()).origin !==
         new URL(info.project.use.baseURL ?? '').origin
-    )
+    ) {
       external.push(request.url())
+    }
   })
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
@@ -45,6 +56,7 @@ test('ordinary nested acceptance editing preserves findings, versions, compariso
     await page.getByLabel('Shape 1 type').selectOption('sphere')
     await expect(page.getByLabel('Shape 1 radius (m)')).toHaveValue('0.1')
   }
+
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
   await page.getByLabel('Experiment name').fill('Intentional contact study')
   await showSetup(page, true)
@@ -61,6 +73,7 @@ test('ordinary nested acceptance editing preserves findings, versions, compariso
   await page.getByLabel('Primary-to-influencing collision').check()
   await page.locator('summary').filter({ hasText: 'Analysis scope' }).click()
   const initialDepth = await page.getByTestId('history-depth').textContent()
+
   await page.locator('.acceptance-fields > summary').click()
   await page
     .getByRole('button', { name: 'Add acceptance conditions', exact: true })
@@ -93,6 +106,7 @@ test('ordinary nested acceptance editing preserves findings, versions, compariso
     .click()
   await page.locator('.acceptance-fields > summary').click()
   const result = page.getByTestId('analysis-result')
+
   await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
   await viewResults(page)
   await expect(result).toContainText('Issue found')
@@ -107,6 +121,7 @@ test('ordinary nested acceptance editing preserves findings, versions, compariso
   await showSetup(page)
   await page.locator('.acceptance-fields > summary').click()
   const before = await page.getByTestId('history-depth').textContent()
+
   await page
     .getByLabel('Condition 1.1 expected penetration')
     .selectOption('absent')
@@ -136,6 +151,7 @@ test('ordinary nested acceptance editing preserves findings, versions, compariso
     .getByRole('button', { name: 'Runs & compare', exact: true })
     .click()
   const library = page.getByRole('dialog', { name: 'Runs and comparison' })
+
   await library.getByRole('checkbox').nth(0).check()
   await library.getByRole('checkbox').nth(1).check()
   await library
@@ -144,10 +160,12 @@ test('ordinary nested acceptance editing preserves findings, versions, compariso
   await expect(library).toContainText('Decision rules differ')
   await expect(library).toContainText('Not directly comparable')
   const report = JSON.parse(await download(page, 'Export JSON'))
+
   expect(report.run.result.decision.value).toBe('false')
   expect(report.run.result.findingPairCount).toBe(1)
   expect(report.run.result.rule.revision).toBe(2)
   const csv = await download(page, 'Export CSV')
+
   expect(csv).toContain('rule_evaluation_json')
   expect(csv).toContain('""value"":""false""')
   expect(await download(page, 'Export HTML')).toContain(
@@ -178,6 +196,7 @@ test('ordinary nested acceptance editing preserves findings, versions, compariso
   await library.getByRole('button', { name: 'Close runs', exact: true }).click()
   await page.getByRole('button', { name: 'Projects', exact: true }).click()
   const payload = await download(page, 'Export project')
+
   await page
     .getByLabel('Portable project file', { exact: true })
     .setInputFiles({

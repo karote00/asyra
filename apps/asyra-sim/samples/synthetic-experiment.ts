@@ -20,6 +20,7 @@ export function createSyntheticExperimentDraft(
   const movingJointIds = example.workcell.bodies
     .filter((body) => body.joint.kind !== 'fixed')
     .map((body) => body.id)
+
   return {
     version: 1,
     trajectory: structuredClone(example.trajectory),
@@ -69,8 +70,11 @@ export function createSyntheticExperimentPresets(example: SyntheticExample) {
   const joints = example.workcell.bodies.filter(
     (body) => body.joint.kind !== 'fixed'
   )
-  if (joints.length !== 6)
+
+  if (joints.length !== 6) {
     throw new Error('The sample studies require six actuated joints')
+  }
+
   const study = (
     name: string,
     // Sparse, one-based J1-J6 values; every output frame contains all six joints.
@@ -78,6 +82,7 @@ export function createSyntheticExperimentPresets(example: SyntheticExample) {
     note: string
   ) => {
     const draft = createSyntheticExperimentDraft(example)
+
     draft.trajectory = {
       version: 1,
       keyframes: poses.map((pose, index) => ({
@@ -91,8 +96,10 @@ export function createSyntheticExperimentPresets(example: SyntheticExample) {
       }))
     }
     draft.scope.backgroundNote = note
+
     return { name, draft }
   }
+
   const shoulder = study(
     'Shoulder reach study',
     [{}, { 2: -0.55 }, { 2: -1.4 }],
@@ -118,6 +125,7 @@ export function createSyntheticExperimentPresets(example: SyntheticExample) {
     [{}, { 2: -0.3, 3: -2.1, 5: 0 }, {}],
     'Deliberately lower the gripper and workpiece into the table at 4 s, then return. Check every modeled workcell part with the visible mounting exclusions. Other contacts remain independent; no impact removes or deforms geometry. Run formal analysis for evidence, not a predefined verdict.'
   )
+
   return [
     {
       name: 'Synthetic clearance study',

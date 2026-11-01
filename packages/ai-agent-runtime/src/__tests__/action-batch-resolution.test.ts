@@ -36,6 +36,7 @@ const runBatch = async (
   const transactionRunner: AiTransactionRunner = {
     run: async <T>(label: string, execute: () => Promise<T>) => {
       transactionRun(label)
+
       return execute()
     }
   }
@@ -59,7 +60,9 @@ const runBatch = async (
     intent: 'resolve the action batch',
     signal: new AbortController().signal
   })
+
   await runtime.dispose()
+
   return {
     confirm,
     permission,

@@ -101,6 +101,7 @@ describe('AI runtime audit output', () => {
   it('never invokes accessors while detaching audit summaries', () => {
     const getter = vi.fn(() => 'provider-secret')
     const result: unknown[] = []
+
     Object.defineProperty(result, '0', {
       enumerable: true,
       get: getter

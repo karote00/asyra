@@ -175,9 +175,13 @@ it.each(['box', 'sphere', 'capsule'] as const)(
   (kind) => {
     let shape: SpatialMesh['shape'] = { kind: 'box', size: [1000, 3000, 500] }
 
-    if (kind === 'sphere') shape = { kind, radius: 1500 }
+    if (kind === 'sphere') {
+      shape = { kind, radius: 1500 }
+    }
 
-    if (kind === 'capsule') shape = { kind, radius: 500, length: 2000 }
+    if (kind === 'capsule') {
+      shape = { kind, radius: 500, length: 2000 }
+    }
 
     const part = mesh(shape)
 

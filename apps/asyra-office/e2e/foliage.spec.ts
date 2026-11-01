@@ -9,6 +9,7 @@ test('reviews the same live foliage at overview and close range', async ({
     .getByRole('status', { name: 'Scene status' })
     .filter({ hasText: /^Demo scene ready$/ })
     .waitFor()
+
   const painted = () =>
     page.evaluate(
       () =>
@@ -16,13 +17,16 @@ test('reviews the same live foliage at overview and close range', async ({
           requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
         )
     )
+
   await painted()
   await page.screenshot({ path: info.outputPath('foliage-overview.png') })
   await page
     .getByRole('button', { name: 'Lounge Room to slow down', exact: true })
     .click()
-  for (let i = 0; i < 3; i++)
+  for (let i = 0; i < 3; i++) {
     await page.getByRole('button', { name: 'Zoom in', exact: true }).click()
+  }
+
   await painted()
   await page.screenshot({ path: info.outputPath('potted-leaves-near.png') })
   await page

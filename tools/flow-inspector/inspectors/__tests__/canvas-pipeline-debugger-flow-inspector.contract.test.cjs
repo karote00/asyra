@@ -7,19 +7,25 @@ const data = require('../canvas-pipeline-debugger-flow-inspector.data.cjs')
 
 const step = (id) => {
   const value = data.steps.find((item) => item.id === id)
+
   assert.ok(value, `Missing Inspector step: ${id}`)
+
   return value
 }
 
 const route = (id) => {
   const value = data.routes.find((item) => item.id === id)
+
   assert.ok(value, `Missing Inspector route: ${id}`)
+
   return value
 }
 
 const artifact = (id) => {
   const value = data.artifacts.find((item) => item.id === id)
+
   assert.ok(value, `Missing Inspector artifact: ${id}`)
+
   return value
 }
 

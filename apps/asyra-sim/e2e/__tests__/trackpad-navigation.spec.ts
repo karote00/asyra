@@ -7,6 +7,7 @@ test('two-finger scrolling matches pinch zoom without panning or changing page s
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
   const initialDepth = await readHistoryDepth(page)
+
   await expect(
     page.getByRole('button', { name: /Switch to (mouse|trackpad) controls/ })
   ).toHaveCount(0)
@@ -15,11 +16,16 @@ test('two-finger scrolling matches pinch zoom without panning or changing page s
     .click()
   const canvas = page.getByTestId('workcell-canvas').locator('canvas')
   const box = await canvas.boundingBox()
-  if (!box) throw new Error('Missing viewport')
+
+  if (!box) {
+    throw new Error('Missing viewport')
+  }
+
   const rest = async () => {
     await page.getByRole('button', { name: 'Undo', exact: true }).focus()
     await page.mouse.move(10, 10)
   }
+
   await rest()
   const pageScale = await page.evaluate(() => ({
     scale: visualViewport?.scale,
@@ -27,13 +33,16 @@ test('two-finger scrolling matches pinch zoom without panning or changing page s
     width: innerWidth
   }))
   const initial = await canvas.screenshot()
+
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
   await page.mouse.wheel(75, 35)
   await rest()
   let zoomed = initial
+
   await expect
     .poll(async () => {
       zoomed = await canvas.screenshot()
+
       return zoomed.equals(initial)
     })
     .toBe(false)
@@ -47,6 +56,7 @@ test('two-finger scrolling matches pinch zoom without panning or changing page s
   } finally {
     await page.keyboard.up('Control')
   }
+
   await rest()
   await expect
     .poll(async () => (await canvas.screenshot()).equals(zoomed))
@@ -62,9 +72,11 @@ test('two-finger scrolling matches pinch zoom without panning or changing page s
   await page.keyboard.up('Control')
   await rest()
   let pinched = zoomed
+
   await expect
     .poll(async () => {
       pinched = await canvas.screenshot()
+
       return pinched.equals(zoomed)
     })
     .toBe(false)
@@ -85,11 +97,16 @@ test('two-finger scrolling matches pinch zoom without panning or changing page s
   await page.getByText('Mount rotation', { exact: true }).click()
   await page.locator('summary').filter({ hasText: 'Original parts' }).click()
   const panel = page.locator('.properties-panel .editor-content')
+
   await expect
     .poll(() => panel.evaluate((node) => node.scrollHeight - node.clientHeight))
     .toBeGreaterThan(0)
   const panelBox = await panel.boundingBox()
-  if (!panelBox) throw new Error('Missing inspector')
+
+  if (!panelBox) {
+    throw new Error('Missing inspector')
+  }
+
   await page.mouse.move(panelBox.x + panelBox.width - 20, panelBox.y + 180)
   await page.mouse.wheel(0, 320)
   await expect
@@ -133,22 +150,30 @@ test('a previous trackpad preference cannot restore scroll pan after reload', as
     /^Saved locally - /
   )
   const initialDepth = await readHistoryDepth(page)
+
   await expect(
     page.getByRole('button', { name: /Switch to (mouse|trackpad) controls/ })
   ).toHaveCount(0)
   const canvas = page.getByTestId('workcell-canvas').locator('canvas')
   const box = await canvas.boundingBox()
-  if (!box) throw new Error('Missing viewport')
+
+  if (!box) {
+    throw new Error('Missing viewport')
+  }
+
   await page.getByRole('button', { name: 'Undo', exact: true }).focus()
   await page.mouse.move(10, 10)
   const initial = await canvas.screenshot()
+
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
   await page.mouse.wheel(0, -60)
   await page.mouse.move(10, 10)
   let mouseZoom = initial
+
   await expect
     .poll(async () => {
       mouseZoom = await canvas.screenshot()
+
       return mouseZoom.equals(initial)
     })
     .toBe(false)
@@ -181,9 +206,14 @@ test('navigation controls fit narrow widths without changing panel dimensions', 
       name: 'Fit all',
       exact: true
     })
+
     await expect(button).toBeVisible()
     const bounds = await button.boundingBox()
-    if (!bounds || !before) throw new Error('Missing navigation controls')
+
+    if (!bounds || !before) {
+      throw new Error('Missing navigation controls')
+    }
+
     expect(bounds.x).toBeGreaterThanOrEqual(before.x)
     expect(bounds.x + bounds.width).toBeLessThanOrEqual(before.x + before.width)
     await button.click()

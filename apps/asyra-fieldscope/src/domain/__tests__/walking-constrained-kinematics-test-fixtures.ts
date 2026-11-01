@@ -14,35 +14,51 @@ import { WalkingRobotSourceOwner } from '../walking-robot-source'
 import { evaluateExactPolynomialTrig } from '../kinematic-trigonometry'
 
 export type Fraction = Readonly<{ numerator: bigint; denominator: bigint }>
+
 export function required<T>(value: T | undefined): T {
-  if (value === undefined) throw new Error('Missing formal fixture dependency')
+  if (value === undefined) {
+    throw new Error('Missing formal fixture dependency')
+  }
+
   return value
 }
+
 export function gcd(a: bigint, b: bigint): bigint {
-  if (b !== 0n) return gcd(b, a % b)
+  if (b !== 0n) {
+    return gcd(b, a % b)
+  }
+
   return a < 0n ? -a : a
 }
+
 export function fraction(n: bigint, d = 1n): Fraction {
   if (d < 0n) {
     n = -n
     d = -d
   }
+
   const divisor = gcd(n, d)
+
   return { numerator: n / divisor, denominator: d / divisor }
 }
+
 export function exact(value: number): Fraction {
   const v = dyadic(value)
+
   return v.exponent >= 0
     ? fraction(v.significand << BigInt(v.exponent))
     : fraction(v.significand, 1n << BigInt(-v.exponent))
 }
+
 export const plus = (a: Fraction, b: Fraction) =>
   fraction(
     a.numerator * b.denominator + b.numerator * a.denominator,
     a.denominator * b.denominator
   )
+
 export const minus = (a: Fraction, b: Fraction) =>
   plus(a, fraction(-b.numerator, b.denominator))
+
 export function fixture(
   options: {
     authored?: boolean
@@ -108,6 +124,7 @@ export function fixture(
         required(source.rig.bodies.find((body) => body.id === chain.footBodyId))
           .fixedFrame
       )
+
       return {
         chainId: chain.id,
         part: contact.part,
@@ -129,13 +146,18 @@ export function fixture(
     interval: { low: -alpha, high: alpha },
     budget: { maxOperations: 1000000, maxBits: 24000 }
   }
+
   return { baseline, source, recipe, alpha }
 }
+
 export const times = (a: Fraction, b: Fraction) =>
   fraction(a.numerator * b.numerator, a.denominator * b.denominator)
+
 export const over = (a: Fraction, b: Fraction) =>
   fraction(a.numerator * b.denominator, a.denominator * b.numerator)
+
 export const negate = (a: Fraction) => fraction(-a.numerator, a.denominator)
+
 export function cycleFixture(
   options: {
     authored?: boolean
@@ -179,15 +201,18 @@ export function cycleFixture(
         (l) => l.side === chain.side && l.station === chain.station
       )
     ).upper.length
+
     anchorOrigin[1] = plus(
       anchorOrigin[1],
       times(exact(upper), minus(exact(1), cosine))
     )
     const z = times(exact(upper), sigma)
+
     anchorOrigin[2] = plus(
       anchorOrigin[2],
       groups[0].includes(chain.id) ? negate(z) : z
     )
+
     return {
       chainId: chain.id,
       part: contact.part,
@@ -195,6 +220,7 @@ export function cycleFixture(
       anchorOrigin
     }
   })
+
   return {
     source,
     raw: {
@@ -212,10 +238,13 @@ export function cycleFixture(
 
 export const sum = (values: readonly Fraction[]) =>
   values.reduce(plus, exact(0))
+
 export const vectorPlus = (a: readonly Fraction[], b: readonly Fraction[]) =>
   a.map((value, index) => plus(value, b[index]))
+
 export const vectorMinus = (a: readonly Fraction[], b: readonly Fraction[]) =>
   a.map((value, index) => minus(value, b[index]))
+
 export function hamilton(a: readonly Fraction[], b: readonly Fraction[]) {
   return [
     sum([
@@ -244,16 +273,19 @@ export function hamilton(a: readonly Fraction[], b: readonly Fraction[]) {
     ])
   ]
 }
+
 export function rotateOracle(
   q: readonly Fraction[],
   point: readonly Fraction[]
 ) {
   const norm = sum(q.map((value) => times(value, value)))
   const conjugate = [...q.slice(0, 3).map(negate), q[3]]
+
   return hamilton(hamilton(q, [...point, exact(0)]), conjugate)
     .slice(0, 3)
     .map((value) => over(value, norm))
 }
+
 export function pointOracle(
   frame: {
     origin: readonly Fraction[]
@@ -268,6 +300,7 @@ export function pointOracle(
     )
   )
 }
+
 export const inRange = (
   value: Fraction,
   bounds: { low: number; high: number }

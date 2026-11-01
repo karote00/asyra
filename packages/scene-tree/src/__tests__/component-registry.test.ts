@@ -6,6 +6,7 @@ import { ComponentRegistration } from '../component-registry.js'
 // Mock constructor for testing
 class MockComponent {
   foo = 'bar'
+
   constructor(_data?: unknown) {
     // Constructor
   }
@@ -32,6 +33,7 @@ describe('ComponentRegistry', () => {
 
     expect(componentRegistry.has('test-component')).toBe(true)
     const registration = componentRegistry.get('test-component')
+
     expect(registration?.type).toBe('test-component')
     expect(registration?.idPrefix).toBe('test')
     expect(registration?.namePrefix).toBe('Test')
@@ -75,6 +77,7 @@ describe('ComponentRegistry', () => {
     expect(componentRegistry.has('removable')).toBe(true)
 
     const result = componentRegistry.unregister('removable')
+
     expect(result).toBe(true)
     expect(componentRegistry.has('removable')).toBe(false)
   })
@@ -94,6 +97,7 @@ describe('ComponentRegistry', () => {
     })
 
     const registration = componentRegistry.get('star')
+
     expect(registration?.properties).toEqual(properties)
     expect(registration?.defaults).toEqual(defaults)
   })
@@ -120,6 +124,7 @@ describe('ComponentRegistry', () => {
     })
 
     const all = componentRegistry.getAll()
+
     expect(all.size).toBe(2)
     expect(all.has('comp1')).toBe(true)
     expect(all.has('comp2')).toBe(true)

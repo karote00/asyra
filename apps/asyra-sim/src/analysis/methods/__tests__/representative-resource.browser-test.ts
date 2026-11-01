@@ -13,6 +13,7 @@ export function registerRepresentativeResourceTest(candidate: number) {
   }, info) => {
     test.setTimeout(benchmarkDurationMs + 15000)
     const original = await representativeSnapshot(candidate)
+
     expect(original.budget).toEqual({
       maxDurationMs: 30000,
       maxIntervals: 100000
@@ -24,6 +25,7 @@ export function registerRepresentativeResourceTest(candidate: number) {
       ...original,
       budget: { ...original.budget, maxDurationMs: benchmarkDurationMs }
     }
+
     await page.goto('/')
     await expect(page.getByRole('status')).toHaveText('Local runtime ready')
     const initialWorkers = new Set(page.workers())
@@ -34,18 +36,24 @@ export function registerRepresentativeResourceTest(candidate: number) {
         const start = performance.now()
         let ticks = 0
         let heapPeak = 0
+
         const sample = () => {
           const memory = (
             performance as Performance & { memory?: { usedJSHeapSize: number } }
           ).memory
+
           heapPeak = Math.max(heapPeak, memory?.usedJSHeapSize ?? 0)
           ticks++
         }
+
         sample()
         const timer = setInterval(sample, 50)
+
         try {
           const result: AnalysisResult = await runner.run(snapshot)
+
           sample()
+
           return {
             elapsedMs: performance.now() - start,
             pageHeapPeakBytes: heapPeak || null,
@@ -81,6 +89,7 @@ export function registerRepresentativeResourceTest(candidate: number) {
       },
       { snapshot, moduleUrl: '/src/analysis/runner.ts' }
     )
+
     await expect
       .poll(
         () =>

@@ -39,7 +39,9 @@ export class ViewSource<T> implements ReadonlyView<T> {
     const changed = [...this.subscriptions].filter((subscription) => {
       const value = subscription.read(next)
 
-      if (Object.is(subscription.value, value)) return false
+      if (Object.is(subscription.value, value)) {
+        return false
+      }
 
       subscription.value = value
 
@@ -48,7 +50,9 @@ export class ViewSource<T> implements ReadonlyView<T> {
 
     return () => {
       for (const subscription of changed) {
-        if (this.subscriptions.has(subscription)) subscription.listener()
+        if (this.subscriptions.has(subscription)) {
+          subscription.listener()
+        }
       }
     }
   }

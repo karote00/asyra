@@ -1,6 +1,7 @@
 import { it, expect } from 'vitest'
 
 const nativeIt = it.runIf(Boolean(process.env.NATIVE_DELIVERY_CODEX))
+
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
@@ -16,11 +17,13 @@ nativeIt(
       /* @vite-ignore */ nativeModule
     )
     const fixture = { ...(await loadFixtures())[0], raw: '{"ok":true}' }
+
     for (const outputProbe of ['progressive', 'silent']) {
       const result = await runNativeDelivery({
         fixture,
         outputProbe
       })
+
       expect(result.requests).toBe(2)
       expect(result.comparison.exact).toBe(true)
       expect(result.nativeReplyExact).toBe(true)
@@ -48,12 +51,14 @@ nativeIt(
       const invoked = records.findIndex(
         (r: { stage: string }) => r.stage === 'native-call'
       )
+
       expect(before).toBeGreaterThan(-1)
       expect(invoked).toBeGreaterThan(before)
       const ref = records[before].receipt
       const witness = JSON.parse(
         await readFile(join(result.directory, ref.path), 'utf8')
       )
+
       expect(witness).toEqual(result.outputProbe)
     }
   },
@@ -67,6 +72,7 @@ nativeIt(
       /* @vite-ignore */ nativeModule
     )
     let error: Error | undefined
+
     try {
       await runNativeDelivery({
         fixture: { ...(await loadFixtures())[0], raw: '{"ok":true}' },
@@ -75,10 +81,15 @@ nativeIt(
     } catch (value) {
       error = value as Error
     }
+
     expect(error?.message).toMatch(/Native turn failed/)
     const directory = error?.message.split('; evidence: ')[1]
+
     expect(directory).toBeTruthy()
-    if (!directory) throw new Error('Missing native failure evidence')
+    if (!directory) {
+      throw new Error('Missing native failure evidence')
+    }
+
     const result = JSON.parse(
       await readFile(join(directory, 'result.json'), 'utf8')
     )
@@ -86,6 +97,7 @@ nativeIt(
       .trim()
       .split('\n')
       .map(JSON.parse)
+
     expect(
       records.some(
         (r: { stage: string }) => r.stage === 'unfinished-output-probe'

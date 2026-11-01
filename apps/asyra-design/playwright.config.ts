@@ -12,6 +12,7 @@ const collaborationWebSocketURL = new URL(
   '/collaboration',
   appEnvironment.collaborationHealthURL
 )
+
 collaborationWebSocketURL.protocol = 'ws:'
 const ordinaryTestIgnore = [
   '*.local.spec.ts',

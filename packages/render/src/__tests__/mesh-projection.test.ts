@@ -99,6 +99,7 @@ describe('mesh projection', () => {
     expect(host.children[0]).toBeInstanceOf(RenderContainer)
 
     const root = host.children[0] as RenderContainer
+
     expect(root.children).toHaveLength(1)
     expect(root.children[0]).toBeInstanceOf(RenderMesh)
 
@@ -109,6 +110,7 @@ describe('mesh projection', () => {
       indices: Uint32Array
       uvs: Float32Array
     }
+
     expect(initialProperties.tint).toBe(0x00ff00)
     expect(initialProperties.alpha).toBe(0.5)
     expect(initialGeometry.positions.length).toBe(16)
@@ -138,6 +140,7 @@ describe('mesh projection', () => {
       indices: Uint32Array
       uvs: Float32Array
     }
+
     expect(updatedProperties.tint).toBe(0xff0000)
     expect(updatedProperties.alpha).toBe(1)
     expect(updatedGeometry).not.toBe(initialGeometry)
@@ -194,12 +197,14 @@ it('updates complete mesh materials without rebuilding geometry and clears old p
     },
     paint: { kind: 'solid', color: 0xff0000, alpha: 1 }
   })
+
   projection.attach(host)
   const mesh = host.children[0].children[0] as RenderMesh
   const geometry = mesh.getEngineProperties().geometry
   const material = {
     fills: [{ kind: 'solid' as const, color: [0, 1, 0, 0.5] as const }]
   }
+
   projection.updatePaint({ kind: 'material', material })
   expect(mesh.getEngineProperties()).toMatchObject({
     material,
@@ -230,6 +235,7 @@ it('rejects material delivery to an engine without the required capability', asy
   const mesh = new RenderMesh({
     material: { fills: [{ kind: 'solid', color: [1, 0, 0, 1] }] }
   })
+
   expect(() => runtime.attachNode(mesh)).toThrow(/mesh-materials/)
   expect(
     engine

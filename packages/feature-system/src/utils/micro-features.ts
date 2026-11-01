@@ -44,10 +44,12 @@ export const withTransaction = (packages: MicroFeaturePackages) => {
     packages.factory?.startTransaction?.()
     try {
       const result = callback()
+
       if (isPromiseLike(result)) {
         return Promise.resolve(result).then(
           (value) => {
             packages.factory?.endTransaction?.()
+
             return value
           },
           (error: unknown) => {
@@ -61,6 +63,7 @@ export const withTransaction = (packages: MicroFeaturePackages) => {
       }
 
       packages.factory?.endTransaction?.()
+
       return result
     } catch (error) {
       packages.factory?.endTransaction?.({
@@ -78,6 +81,7 @@ export const withTransaction = (packages: MicroFeaturePackages) => {
 export const withSelection = (packages: MicroFeaturePackages) => {
   return <T>(selectionIds: string[], callback: (ids: string[]) => T): T => {
     const previous = packages.selection?.getElementSelectionIds?.() || []
+
     packages.selection?.selectElements?.(selectionIds)
     try {
       return callback(selectionIds)
@@ -104,10 +108,13 @@ export const withUndoRedo = (packages: MicroFeaturePackages) => {
 export const withContextSnapshot = (packages: MicroFeaturePackages) => {
   return <T>(callback: (snapshot: SystemContextSnapshot) => T): T => {
     const snapshot = packages.systemContext?.getSystemContextSnapshot?.()
+
     if (!snapshot) {
       console.warn('SystemContext not available')
+
       return callback({} as SystemContextSnapshot)
     }
+
     return callback(snapshot)
   }
 }

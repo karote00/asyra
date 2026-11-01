@@ -38,6 +38,7 @@ describe('collaboration provider lifecycle', () => {
     const hub = new MemoryHub({ authorizeConnection })
     const provider = new MemoryProvider(hub, identity)
     const statuses: string[] = []
+
     provider.onStatusChange((status) => statuses.push(status))
 
     expect(provider.getStatus()).toBe('idle')
@@ -62,6 +63,7 @@ describe('collaboration provider lifecycle', () => {
     })
     const provider = new MemoryProvider(hub, identity)
     const failures = vi.fn()
+
     provider.onFailure(failures)
 
     await expect(provider.connect()).rejects.toEqual(
@@ -92,6 +94,7 @@ describe('collaboration provider lifecycle', () => {
     const hub = new MemoryHub()
     const provider = new MemoryProvider(hub, identity)
     const statuses = vi.fn()
+
     provider.onStatusChange(statuses)
     await provider.connect()
 
@@ -116,6 +119,7 @@ describe('collaboration provider lifecycle', () => {
     })
     const provider = new MemoryProvider(hub, identity)
     const connection = provider.connect().catch((error) => error)
+
     await vi.waitFor(() => expect(provider.getStatus()).toBe('connecting'))
 
     await provider.destroy()
@@ -138,6 +142,7 @@ describe('collaboration provider lifecycle', () => {
     })
     const provider = new MemoryProvider(hub, identity)
     const connection = provider.connect().catch((error) => error)
+
     await vi.waitFor(() => expect(provider.getStatus()).toBe('connecting'))
 
     await provider.disconnect()
@@ -155,17 +160,21 @@ describe('collaboration provider lifecycle', () => {
   it('coalesces concurrent connect calls into one authorization and room join', async () => {
     let resolveAuthorization: ((allowed: boolean) => void) | undefined
     let authorizationCount = 0
+
     const authorizeConnection = () => {
       authorizationCount += 1
+
       return new Promise<boolean>((resolve) => {
         resolveAuthorization = resolve
       })
     }
+
     const hub = new MemoryHub({ authorizeConnection })
     const provider = new MemoryProvider(hub, identity)
 
     const first = provider.connect()
     const second = provider.connect()
+
     expect(authorizationCount).toBe(1)
     resolveAuthorization?.(true)
     await Promise.all([first, second])

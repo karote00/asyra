@@ -16,7 +16,9 @@ const captureEndEvents = () => {
   const subscription = subscribeToEndTransaction((event) => {
     events.push(event)
   })
+
   events.length = 0
+
   return { events, subscription }
 }
 
@@ -71,6 +73,7 @@ describe.sequential('programmatic feature task lifecycle', () => {
     defineFeature('feature-task-exclusive', undefined, {
       priority: 90,
       exclusive: true,
+
       task: async (
         input: { intent: string },
         { signal }: { signal: AbortSignal }
@@ -79,6 +82,7 @@ describe.sequential('programmatic feature task lifecycle', () => {
         await new Promise<void>((resolve) => {
           signal.addEventListener('abort', () => resolve(), { once: true })
         })
+
         return { status: 'cancelled' as const, intent: input.intent }
       }
     })
@@ -86,6 +90,7 @@ describe.sequential('programmatic feature task lifecycle', () => {
     const first = invokeFeatureTask('feature-task-exclusive', {
       intent: 'first'
     })
+
     await started
 
     await expect(
@@ -119,11 +124,13 @@ describe.sequential('programmatic feature task lifecycle', () => {
       task: async () => {
         markStarted?.()
         await gate
+
         return { complete: true }
       }
     })
 
     const invocation = invokeFeatureTask('feature-task-unregister', {})
+
     await started
 
     expect(() => unregisterFeature('feature-task-unregister')).toThrowError(
@@ -140,6 +147,7 @@ describe.sequential('programmatic feature task lifecycle', () => {
 
   it('propagates a pre-aborted caller signal and removes settled ownership', async () => {
     const controller = new AbortController()
+
     controller.abort('caller-cancelled')
     const handler = vi.fn(
       async (_input: unknown, { signal }: { signal: AbortSignal }) => ({
@@ -176,6 +184,7 @@ describe.sequential('programmatic feature task lifecycle', () => {
       controller.signal.removeEventListener.bind(controller.signal)
     const addEventListener = vi.fn(originalAddEventListener)
     const removeEventListener = vi.fn(originalRemoveEventListener)
+
     controller.signal.addEventListener = addEventListener
     controller.signal.removeEventListener = removeEventListener
 

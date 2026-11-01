@@ -17,14 +17,19 @@ const REVIEW_POLICY = freeze({
   ],
   capability: 'review-pr'
 })
+
 const need = (condition, message) => {
-  if (!condition) throw new Error('PR review: ' + message)
+  if (!condition) {
+    throw new Error('PR review: ' + message)
+  }
 }
+
 const gitDigest = (bytes) =>
   createHash('sha1')
     .update('blob ' + bytes.length + '\0')
     .update(bytes)
     .digest('hex')
+
 const METADATA_POLICY = freeze({
   version: 1,
   packageName: '@asyra/factory',
@@ -32,17 +37,20 @@ const METADATA_POLICY = freeze({
   sourcePrefix: 'packages/factory/src/',
   releaseType: 'patch'
 })
+
 function metadataPolicy(ownership) {
   const match = /^@asyra\/([a-z0-9]+(?:-[a-z0-9]+)*)$/.exec(
     ownership?.packageName ?? ''
   )
   const manifestPath = match && 'packages/' + match[1] + '/package.json'
+
   need(
     match &&
       ownership.path === manifestPath &&
       /^[a-f0-9]{64}$/.test(ownership.digest ?? ''),
     'invalid metadata package ownership'
   )
+
   return {
     version: METADATA_POLICY.version,
     packageName: ownership.packageName,
@@ -51,6 +59,7 @@ function metadataPolicy(ownership) {
     releaseType: METADATA_POLICY.releaseType
   }
 }
+
 function scopedSelection(selection) {
   need(
     selection &&
@@ -66,27 +75,35 @@ function scopedSelection(selection) {
     attemptId: selection.attemptId,
     assessmentId: selection.assessmentId
   })
+
   need(
     validId(captured.attemptId) && validId(captured.assessmentId),
     'invalid scoped review selection'
   )
+
   return captured
 }
+
 function scopedPayload(scope) {
   // Retained review identity shape, not source admission or case assessment.
   const object = (value) =>
     value !== null && typeof value === 'object' && !Array.isArray(value)
+
   const keys = (value, fields) =>
     object(value) && fields.every((key) => Object.hasOwn(value, key))
+
   const shape = (value, fields) =>
     keys(value, fields) && Object.keys(value).length === fields.length
+
   const digest = (value) =>
     typeof value === 'string' && /^[a-f0-9]{64}$/.test(value)
+
   const version = (value) =>
     shape(value, ['revision', 'contractDigest']) &&
     Number.isInteger(value.revision) &&
     value.revision > 0 &&
     digest(value.contractDigest)
+
   const runtimeFields = [
     'taskId',
     'attemptId',
@@ -113,6 +130,7 @@ function scopedPayload(scope) {
   const runtimeScoped = authorityFields.some((key) =>
     Object.hasOwn(scope?.runtime ?? {}, key)
   )
+
   const reference = (value) =>
     shape(value, [
       'attemptId',
@@ -170,6 +188,7 @@ function scopedPayload(scope) {
         file.size >= 0 &&
         digest(file.digest)
     )
+
   const ids = ['assessmentId', 'taskId', 'attemptId', 'targetId', 'workId']
   const objects = [
     'workBinding',
@@ -181,6 +200,7 @@ function scopedPayload(scope) {
     'work',
     'integration'
   ]
+
   need(
     shape(scope, [...ids, ...objects, 'allocationRevision', 'producers']) &&
       ids.every((key) => validId(scope[key])) &&
@@ -228,6 +248,7 @@ function scopedPayload(scope) {
       shape(scope.roles, roleNames) &&
       roleNames.every((role) => {
         const item = scope.roles[role]
+
         return (
           shape(item, [
             'contractDigest',
@@ -332,8 +353,10 @@ function scopedPayload(scope) {
       ),
     'invalid scoped review handoff identity'
   )
+
   return scope
 }
+
 function reviewFormat(record) {
   need(
     record.format === 1 || record.format === 2,
@@ -341,6 +364,7 @@ function reviewFormat(record) {
   )
   if (record.format === 2) {
     const scope = scopedPayload(record.preview?.scopedWork)
+
     need(
       scope.taskId === record.taskId &&
         scope.attemptId === record.preview.attemptId &&
@@ -349,15 +373,18 @@ function reviewFormat(record) {
         ),
       'invalid scoped preview identity'
     )
-  } else
+  } else {
     need(
       !Object.hasOwn(record.preview ?? {}, 'scopedWork'),
       'scoped review requires format 2'
     )
+  }
 }
+
 function prepareMetadata(input) {
   const ownership = input.packageOwnership
   const policy = metadataPolicy(ownership)
+
   need(
     validId(input.taskId) && validId(input.attemptId),
     'invalid metadata package ownership'
@@ -388,6 +415,7 @@ function prepareMetadata(input) {
     '\n---\n\n' +
     summary +
     '\n'
+
   return {
     policyVersion: policy.version,
     packageName: policy.packageName,
@@ -407,6 +435,7 @@ function prepareMetadata(input) {
     }
   }
 }
+
 function validateMetadata(preview) {
   need(preview.metadata, 'metadata missing - prepare a fresh preview')
   need(
@@ -422,8 +451,10 @@ function validateMetadata(preview) {
       ]),
     'metadata delivery inventory changed'
   )
+
   return preview.metadata
 }
+
 function sourceDifference(changes) {
   return changes
     .map((change) => {
@@ -432,12 +463,15 @@ function sourceDifference(changes) {
       let start = 0,
         endBefore = before.length,
         endAfter = after.length
+
       while (
         start < endBefore &&
         start < endAfter &&
         before[start] === after[start]
-      )
+      ) {
         start++
+      }
+
       while (
         endBefore > start &&
         endAfter > start &&
@@ -446,7 +480,9 @@ function sourceDifference(changes) {
         endBefore--
         endAfter--
       }
+
       const first = Math.max(0, start - 3)
+
       return [
         change.path,
         'Before - from line ' + (first + 1),
@@ -457,12 +493,14 @@ function sourceDifference(changes) {
     })
     .join('\n\n')
 }
+
 function preparePreview(input, remote, adapter) {
   const id = input.taskId
   const metadata = prepareMetadata(input)
   const title =
     (input.scopedWork ? 'Review bounded work - ' : 'Review candidate - ') +
     input.stepId
+
   return {
     ...input,
     metadata,
@@ -509,6 +547,7 @@ function preparePreview(input, remote, adapter) {
     ].join('\n')
   }
 }
+
 function createReviewOwner(
   repositoryRoot,
   {
@@ -525,10 +564,13 @@ function createReviewOwner(
   fs.mkdirSync(directory, { recursive: true })
   const records = new Map(),
     pending = new Map()
+
   const fileFor = (id) => {
     need(validId(id), 'invalid task identity')
+
     return safePath(directory, id + '.json')
   }
+
   const save = (record, event) => {
     const next = freeze(
       structuredClone({
@@ -539,13 +581,20 @@ function createReviewOwner(
         ]
       })
     )
+
     writeAtomic(fileFor(record.taskId), next)
     records.set(record.taskId, next)
+
     return next
   }
+
   for (const file of fs.readdirSync(directory)) {
-    if (!file.endsWith('.json')) continue
+    if (!file.endsWith('.json')) {
+      continue
+    }
+
     const value = JSON.parse(fs.readFileSync(safePath(directory, file), 'utf8'))
+
     reviewFormat(value)
     need(
       (value.format === 1 || value.format === 2) &&
@@ -556,19 +605,25 @@ function createReviewOwner(
       'invalid retained delivery'
     )
     records.set(value.taskId, freeze(value))
-    if (value.state === 'submitting')
+    if (value.state === 'submitting') {
       save(
         { ...value, state: 'uncertain', error: 'interrupted' },
         'interrupted-effect'
       )
+    }
   }
+
   const get = (id) => records.get(id) ?? null
+
   const authorize = (id, actor) => {
     const task = getTask(id)
+
     need(actor && task.actor === actor, 'actor is not authorized')
     need(adapter, 'integration is disabled')
+
     return task
   }
+
   function inputs(id, actor, selection = null) {
     const task = authorize(id, actor),
       baseline = getBaseline(),
@@ -583,7 +638,8 @@ function createReviewOwner(
           )
         )
       : null
-    if (scopedWork)
+
+    if (scopedWork) {
       need(
         scopedWork.taskId === id &&
           scopedWork.attemptId === attempt?.id &&
@@ -591,6 +647,8 @@ function createReviewOwner(
           scopedWork.assessmentId === selection.assessmentId,
         'scoped review identity mismatch'
       )
+    }
+
     need(
       !task.revoked &&
         task.phase !== 'running' &&
@@ -606,6 +664,7 @@ function createReviewOwner(
       'accepted baseline is stale'
     )
     const verdict = attempt.verdict
+
     need(
       verdict?.evidence &&
         (scopedWork || verdict.evidence.status === 'passed') &&
@@ -617,6 +676,7 @@ function createReviewOwner(
       'missing candidate verdict'
     )
     const expected = task.task.obligations.map((c) => c.id).sort()
+
     need(
       JSON.stringify(verdict.evidence.cases.map((c) => c.id).sort()) ===
         JSON.stringify(expected) &&
@@ -625,31 +685,42 @@ function createReviewOwner(
       'incomplete local evidence'
     )
     const checkedBytes = new Map()
+
     const read = (root, file, digest) => {
       const absolute = safePath(root, file)
       const cached = checkedBytes.get(absolute)
+
       if (cached) {
         need(cached.digest === digest, 'conflicting source fingerprint')
+
         return cached.bytes
       }
+
       const stat = fs.lstatSync(absolute)
+
       need(stat.isFile() && stat.size <= 4 * 1024 * 1024, 'invalid source file')
       const bytes = fs.readFileSync(absolute)
+
       need(sha256(bytes) === digest, 'source fingerprint changed')
       checkedBytes.set(absolute, { digest, bytes })
+
       return bytes
     }
+
     const reportRoot = scopedWork
       ? safePath(
           path.dirname(candidateDirectory(id)),
           'verification/' + attempt.id
         )
       : path.dirname(verdict.runner.reportPath)
-    if (scopedWork)
+
+    if (scopedWork) {
       need(
         verdict.runner.reportPath === safePath(reportRoot, 'vitest.json'),
         'scoped report location mismatch'
       )
+    }
+
     safePath(
       repositoryRoot,
       path.relative(repositoryRoot, verdict.runner.reportPath)
@@ -659,13 +730,16 @@ function createReviewOwner(
       path.basename(verdict.runner.reportPath),
       verdict.runner.reportDigest
     )
-    for (const item of verdict.files)
+    for (const item of verdict.files) {
       read(path.join(reportRoot, 'source'), item.path, item.digest)
+    }
+
     const authority = task.snapshot.runtimeAuthority
     const ownerPackage = task.task.step?.ownerPackage
     const scopedAuthority = authority
       ? authority.packages?.filter((item) => item.name === ownerPackage)
       : []
+
     if (authority) {
       need(
         authority.format === 1 &&
@@ -679,12 +753,14 @@ function createReviewOwner(
                 authority.contractScopeDigest)),
         'invalid runtime package authority'
       )
-    } else
+    } else {
       need(
         !scopedWork ||
           !Object.hasOwn(scopedWork.runtime, 'runtimeAuthorityDigest'),
         'runtime package authority is missing'
       )
+    }
+
     const selectedPackage = authority
       ? scopedAuthority[0]
       : {
@@ -703,9 +779,11 @@ function createReviewOwner(
     const manifests = task.snapshot.files.filter(
       (item) => item.path === selectedPolicy.manifestPath
     )
+
     need(manifests.length === 1, 'missing or ambiguous package ownership')
     const manifest = manifests[0]
     let packageInfo
+
     try {
       packageInfo = JSON.parse(
         read(task.snapshot.sourceRoot, manifest.path, manifest.digest)
@@ -713,6 +791,7 @@ function createReviewOwner(
     } catch {
       throw new Error('PR review: invalid package ownership manifest')
     }
+
     need(
       packageInfo.name === selectedPolicy.packageName &&
         packageInfo.private !== true &&
@@ -739,6 +818,7 @@ function createReviewOwner(
       )
     }))
     const diff = changes(id)
+
     need(
       diff.length > 0 && diff.length <= task.task.allowedFiles.length,
       'missing candidate changes'
@@ -746,6 +826,7 @@ function createReviewOwner(
     const verified = new Map(
       verdict.files.map((item) => [item.path, item.digest])
     )
+
     for (const change of diff) {
       need(
         canonicalFile(change.path) &&
@@ -768,35 +849,45 @@ function createReviewOwner(
         'candidate verification differs'
       )
     }
-    for (const item of files)
+
+    for (const item of files) {
       need(
         verified.get(item.path) ===
           (diff.find((c) => c.path === item.path)?.afterDigest ?? item.digest),
         'unauthorized verified source difference'
       )
+    }
+
     const candidateRoot = candidateDirectory(id),
       actual = []
+
     const walk = (dir) => {
       for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
         const absolute = safePath(
           candidateRoot,
           path.relative(candidateRoot, path.join(dir, entry.name))
         )
+
         need(!entry.isSymbolicLink(), 'candidate symlink')
-        if (entry.isDirectory()) walk(absolute)
-        else {
+        if (entry.isDirectory()) {
+          walk(absolute)
+        } else {
           need(entry.isFile(), 'invalid candidate entry')
           actual.push(path.relative(candidateRoot, absolute))
         }
       }
     }
+
     walk(candidateRoot)
     need(
       JSON.stringify(actual.sort()) ===
         JSON.stringify([...task.task.allowedFiles].sort()),
       'extra or missing candidate file'
     )
-    for (const item of actual) read(candidateRoot, item, verified.get(item))
+    for (const item of actual) {
+      read(candidateRoot, item, verified.get(item))
+    }
+
     return {
       ...(scopedWork
         ? { scopedWork, candidateVerification: task.verificationStatus }
@@ -816,20 +907,27 @@ function createReviewOwner(
       changes: diff
     }
   }
+
   const serial = (id, kind, operation) => {
     if (pending.has(id)) {
       need(pending.get(id).kind === kind, 'a different review action is active')
+
       return pending.get(id).promise
     }
+
     need(!pending.size, 'another delivery review is active')
     const promise = Promise.resolve()
       .then(operation)
       .finally(() => pending.delete(id))
+
     pending.set(id, { kind, promise })
+
     return promise
   }
+
   const prepare = async (id, actor, selection = null) => {
     authorize(id, actor)
+
     return serial(
       id,
       selection
@@ -838,6 +936,7 @@ function createReviewOwner(
       async () => {
         const input = inputs(id, actor, selection),
           previous = get(id)
+
         if (previous && previous.state !== 'preview') {
           need(
             previous.preview.attemptId === input.attemptId,
@@ -848,13 +947,19 @@ function createReviewOwner(
               JSON.stringify(input.scopedWork ?? null),
             'delivery belongs to another scope'
           )
+
           return previous
         }
+
         const prepared = preparePreview(input, {}, adapter)
         const remote = await adapter.inspect(prepared)
         const preview = { ...prepared, ...remote }
         const previewDigest = sha256(JSON.stringify(preview))
-        if (previous?.previewDigest === previewDigest) return previous
+
+        if (previous?.previewDigest === previewDigest) {
+          return previous
+        }
+
         return save(
           {
             format: selection ? 2 : 1,
@@ -871,26 +976,38 @@ function createReviewOwner(
       }
     )
   }
+
   return {
     get,
+
     active: () => pending.size > 0,
+
     policy: () =>
       adapter ? { repository: adapter.repository, base: adapter.base } : null,
+
     prepare: (id, actor) => prepare(id, actor),
+
     prepareScoped(id, selection, actor) {
       return prepare(id, actor, scopedSelection(selection))
     },
+
     async confirm(id, request, actor) {
       authorize(id, actor)
       const record = get(id)
+
       need(request?.confirm === true, 'explicit confirmation required')
       need(
         record && request.previewDigest === record.previewDigest,
         'exact preview required'
       )
+
       return serial(id, 'confirm:' + request.previewDigest, async () => {
         let current = get(id)
-        if (current.state === 'submitted-for-review') return current
+
+        if (current.state === 'submitted-for-review') {
+          return current
+        }
+
         need(
           current.state !== 'uncertain',
           'uncertain effect requires reconciliation'
@@ -909,15 +1026,18 @@ function createReviewOwner(
               })
             : null
         const input = inputs(id, actor, selection)
+
         need(
           input.attemptId === current.preview.attemptId,
           'candidate attempt changed'
         )
-        for (const key of Object.keys(input))
+        for (const key of Object.keys(input)) {
           need(
             JSON.stringify(input[key]) === JSON.stringify(current.preview[key]),
             'preview source changed'
           )
+        }
+
         need(
           adapter.repository === current.preview.repository &&
             adapter.base === current.preview.base,
@@ -925,6 +1045,7 @@ function createReviewOwner(
         )
         const prepared = preparePreview(input, {}, adapter)
         const remote = await adapter.inspect(prepared)
+
         need(
           remote.baseSha === current.preview.baseSha &&
             remote.baseTree === current.preview.baseTree,
@@ -950,7 +1071,9 @@ function createReviewOwner(
             },
             current
           )
+
           need(observation?.number, 'missing PR observation')
+
           return save(
             { ...current, state: 'submitted-for-review', observation },
             'review-submitted'
@@ -974,11 +1097,14 @@ function createReviewOwner(
         }
       })
     },
+
     async refresh(id, actor) {
       authorize(id, actor)
+
       return serial(id, 'refresh', async () => {
         authorize(id, actor)
         let current = get(id)
+
         need(current, 'no delivery record')
         // Clear current checks before I/O; a failed read cannot preserve current green.
         current = save(
@@ -992,6 +1118,7 @@ function createReviewOwner(
         )
         try {
           const observation = await adapter.observe(current.preview, current)
+
           return save(
             {
               ...current,
@@ -1011,6 +1138,7 @@ function createReviewOwner(
         }
       })
     },
+
     async close() {
       await Promise.allSettled(
         [...pending.values()].map((value) => value.promise)
@@ -1018,6 +1146,7 @@ function createReviewOwner(
     }
   }
 }
+
 module.exports = {
   createReviewOwner,
   REVIEW_POLICY,

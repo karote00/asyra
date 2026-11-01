@@ -21,8 +21,10 @@ const freeze = (value) => {
   if (!value || typeof value !== 'object' || Object.isFrozen(value)) {
     return value
   }
+
   Object.freeze(value)
   Object.values(value).forEach(freeze)
+
   return value
 }
 
@@ -64,8 +66,14 @@ const tarballText = (tarballPath, entryPath) =>
   })
 
 const exportedPaths = (exportsValue) => {
-  if (typeof exportsValue === 'string') return [exportsValue]
-  if (!exportsValue || typeof exportsValue !== 'object') return []
+  if (typeof exportsValue === 'string') {
+    return [exportsValue]
+  }
+
+  if (!exportsValue || typeof exportsValue !== 'object') {
+    return []
+  }
+
   return Object.values(exportsValue).flatMap(exportedPaths)
 }
 
@@ -88,6 +96,7 @@ const importedSpecifiers = (source, entry) => {
     entry.endsWith('.d.ts') ? ts.ScriptKind.TS : ts.ScriptKind.JS
   )
   const specifiers = []
+
   const visit = (node) => {
     if (
       (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
@@ -110,9 +119,12 @@ const importedSpecifiers = (source, entry) => {
     ) {
       specifiers.push(node.arguments[0].text)
     }
+
     ts.forEachChild(node, visit)
   }
+
   visit(sourceFile)
+
   return specifiers
 }
 
@@ -156,6 +168,7 @@ const runCommandDefault = (command, args, options) => {
     })
   } catch (error) {
     const stderr = typeof error.stderr === 'string' ? error.stderr.trim() : ''
+
     throw new Error(
       `${command} ${args.join(' ')} failed${stderr ? `: ${stderr}` : ''}`,
       { cause: error }
@@ -275,6 +288,7 @@ export const validateFrameworkReleasePackageArtifacts = ({
         `${record.packageName} packed identity does not match the release plan`
       )
     }
+
     if (
       manifest.license !== 'MIT' ||
       manifest.type !== 'module' ||
@@ -282,24 +296,29 @@ export const validateFrameworkReleasePackageArtifacts = ({
     ) {
       throw new Error(`${record.packageName} packed metadata is incomplete`)
     }
+
     if (workspaceProtocolPattern.test(serializedManifest)) {
       throw new Error(
         `${record.packageName} contains a workspace-only dependency`
       )
     }
+
     if (entries.some((entry) => repositoryOnlyEntryPattern.test(entry))) {
       throw new Error(
         `${record.packageName} contains a repository-only artifact`
       )
     }
+
     if (!entries.includes('package/LICENSE')) {
       throw new Error(`${record.packageName} is missing LICENSE`)
     }
+
     if (
       tarballText(record.tarballPath, 'package/LICENSE').trim() !== rootLicense
     ) {
       throw new Error(`${record.packageName} LICENSE differs from root LICENSE`)
     }
+
     for (const publicPath of publicPaths) {
       if (!entries.includes(packageEntry(publicPath))) {
         throw new Error(
@@ -316,8 +335,10 @@ export const validateFrameworkReleasePackageArtifacts = ({
       ...dependencyFields,
       ...(manifest.optionalDependencies ?? {})
     }
+
     for (const [dependencyName, range] of Object.entries(dependencyFields)) {
       const expectedVersion = packageVersions.get(dependencyName)
+
       if (expectedVersion && range !== expectedVersion) {
         throw new Error(
           `${record.packageName} internal dependency ${dependencyName} must resolve to ${expectedVersion}, found ${range}`
@@ -328,6 +349,7 @@ export const validateFrameworkReleasePackageArtifacts = ({
     for (const entry of entries.filter((name) => name.endsWith('.js'))) {
       const source = tarballText(record.tarballPath, entry)
       const sourceMap = source.match(/\/\/# sourceMappingURL=(.+)$/m)?.[1]
+
       if (
         sourceMap &&
         !entries.includes(path.posix.join(path.posix.dirname(entry), sourceMap))
@@ -342,6 +364,7 @@ export const validateFrameworkReleasePackageArtifacts = ({
       (name) => name.endsWith('.js') || name.endsWith('.d.ts')
     )) {
       const source = tarballText(record.tarballPath, entry)
+
       for (const specifier of importedSpecifiers(source, entry)) {
         if (isRelativeSpecifier(specifier)) {
           if (!path.posix.extname(specifier)) {
@@ -349,6 +372,7 @@ export const validateFrameworkReleasePackageArtifacts = ({
               `${record.packageName} contains an extensionless ESM import in ${entry}: ${specifier}`
             )
           }
+
           const resolvedEntry = path.posix.normalize(
             path.posix.join(path.posix.dirname(entry), specifier)
           )
@@ -356,6 +380,7 @@ export const validateFrameworkReleasePackageArtifacts = ({
             entry.endsWith('.d.ts') && /\.[cm]?js$/.test(resolvedEntry)
               ? resolvedEntry.replace(/\.[cm]?js$/, '.d.ts')
               : null
+
           if (
             !resolvedEntry.startsWith('package/') ||
             (!entrySet.has(resolvedEntry) &&
@@ -366,6 +391,7 @@ export const validateFrameworkReleasePackageArtifacts = ({
               `${record.packageName} contains an unresolved relative import in ${entry}: ${specifier}`
             )
           }
+
           continue
         }
 
@@ -413,10 +439,13 @@ if (isDirectInvocation) {
   let printPlan = false
 
   for (const arg of process.argv.slice(2)) {
-    if (arg.startsWith('--out=')) artifactDirectory = arg.slice('--out='.length)
-    else if (arg === '--prebuilt') prebuilt = true
-    else if (arg === '--plan') printPlan = true
-    else {
+    if (arg.startsWith('--out=')) {
+      artifactDirectory = arg.slice('--out='.length)
+    } else if (arg === '--prebuilt') {
+      prebuilt = true
+    } else if (arg === '--plan') {
+      printPlan = true
+    } else {
       throw new Error(`Unknown argument: ${arg}`)
     }
   }
@@ -442,6 +471,7 @@ if (isDirectInvocation) {
       repositoryRoot,
       artifactDirectory
     })
+
     process.stdout.write(
       `Packed and validated ${validated.packages.length} framework packages into ${packed.artifactDirectory}\n`
     )

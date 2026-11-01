@@ -6,9 +6,12 @@ const test = require('node:test')
 const data = require('../asyra-public-readme-and-entrypoint-alignment-flow-inspector.data.cjs')
 
 const repoRoot = path.resolve(__dirname, '../../../..')
+
 const step = (id) => {
   const value = data.steps.find((item) => item.id === id)
+
   assert.ok(value, `Missing README Inspector step: ${id}`)
+
   return value
 }
 
@@ -28,6 +31,7 @@ test('package README inventory matches the release owner exactly', async () => {
   const { FRAMEWORK_RELEASE_PACKAGE_NAMES } = await import(
     '../../../../scripts/framework-release-packages.js'
   )
+
   assert.deepEqual(data.packageNames, FRAMEWORK_RELEASE_PACKAGE_NAMES)
   assert.deepEqual(
     data.packageReadmePaths,
@@ -41,6 +45,7 @@ test('input and content contract exclude handwritten facts and content forks', (
   const input = step('resolve-readme-inputs')
   const contract = step('freeze-readme-contract')
   const source = JSON.stringify([input, contract])
+
   assert.match(source, /manifests and declarations/i)
   assert.match(source, /accepted 41-page public documentation bundle/i)
   assert.doesNotMatch(source, /example inventory|docs\/examples/i)
@@ -56,6 +61,7 @@ test('surface owners preserve product, domain, runtime, and policy boundaries', 
     step('author-design-readme-sources'),
     step('author-cli-readme')
   ])
+
   assert.match(source, /Framework, Preset, App/i)
   assert.match(source, /future Headless\/Core Kernel/i)
   assert.match(source, /turnkey BIM, VR, simulation, or AI-domain/i)
@@ -66,6 +72,7 @@ test('surface owners preserve product, domain, runtime, and policy boundaries', 
 
 test('generated README route preserves canonical source ownership', () => {
   const generated = step('transform-generated-readme')
+
   assert.equal(
     data.authority.generatedReadmeSource,
     'apps/asyra-design/README.md'
@@ -82,6 +89,7 @@ test('generated README route preserves canonical source ownership', () => {
 test('verification fails closed on links, APIs, generated drift, and policy conflicts', () => {
   const verify = step('verify-public-readmes')
   const source = JSON.stringify([verify, data.acceptanceContracts, data.invariants])
+
   assert.match(source, /Every link resolves/i)
   assert.match(source, /approved public entrypoint/i)
   assert.match(source, /stale generated output/i)
@@ -100,6 +108,7 @@ test('routes, artifacts, failure owners, and cache boundaries resolve', () => {
   const artifactOwners = new Map(
     data.artifacts.map(({ id, ownerStepId }) => [id, ownerStepId])
   )
+
   assert.equal(stepIds.size, data.steps.length)
   assert.equal(artifactOwners.size, data.artifacts.length)
 

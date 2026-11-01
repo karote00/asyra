@@ -14,13 +14,16 @@ const snapshot = () => ({
   },
   loadIssues: [] as { path: string; message: string }[]
 })
+
 const deferred = <T>() => {
   let resolve!: (value: T) => void
   const promise = new Promise<T>((accept) => {
     resolve = accept
   })
+
   return { promise, resolve }
 }
+
 function runtime() {
   const resume = vi.fn()
   const value: SimRuntime = {
@@ -124,15 +127,19 @@ function runtime() {
     subscribe: vi.fn(() => vi.fn()),
     dispose: vi.fn(async () => undefined)
   }
+
   return { value, resume }
 }
+
 async function setup() {
   const a = runtime(),
     b = runtime()
   const factory = vi.fn(async () => a.value)
   const controller = new RuntimeController(factory)
+
   await controller.start()
   factory.mockResolvedValue(b.value)
+
   return { a, b, factory, controller }
 }
 
@@ -142,6 +149,7 @@ describe('App document replacement controller', () => {
       factory = vi.fn(async () => a.value)
     const prepare = vi.fn(async () => new VisualAssetArchive())
     const controller = new RuntimeController(factory, prepare)
+
     await controller.start()
     try {
       await expect(
@@ -188,6 +196,7 @@ describe('App document replacement controller', () => {
       factory = vi.fn(async () => a.value)
     const prepare = vi.fn(async () => new VisualAssetArchive())
     const controller = new RuntimeController(factory, prepare)
+
     await controller.start()
     subtle.digest = digest
     try {
@@ -205,9 +214,11 @@ describe('App document replacement controller', () => {
           () => null,
           (error: unknown) => error
         )
+
       await vi.waitFor(() => expect(digest).toHaveBeenCalledOnce())
       expect(a.value.pauseEditing).not.toHaveBeenCalled()
       const closing = controller.dispose()
+
       wait.resolve(actual)
       expect(await replacing).toMatchObject({ name: 'AbortError' })
       await closing
@@ -233,6 +244,7 @@ describe('App document replacement controller', () => {
         })
     )
     const controller = new RuntimeController(factory, prepare)
+
     await controller.start()
     factory.mockResolvedValue(b.value)
     await expect(
@@ -272,6 +284,7 @@ describe('App document replacement controller', () => {
         async (_snapshot?: unknown, _resources?: VisualAssetArchive) => a.value
       )
     const controller = new RuntimeController(factory, prepare)
+
     await controller.start()
     factory.mockResolvedValue(b.value)
     await controller.replace(snapshot(), () => undefined)
@@ -290,22 +303,27 @@ describe('App document replacement controller', () => {
     const prepare = vi.fn(
       async (_target: unknown, ownedSignal: AbortSignal) => {
         signal = ownedSignal
+
         return wait.promise
       }
     )
     const controller = new RuntimeController(factory, prepare)
+
     await controller.start()
     const replacing = controller.replace(snapshot(), () => undefined)
     const rejected = expect(replacing).rejects.toThrow('closed')
+
     await vi.waitFor(() => expect(prepare).toHaveBeenCalledOnce())
     expect(controller.getState().runtime).toBe(a.value)
     expect(a.value.pauseEditing).not.toHaveBeenCalled()
     const closing = controller.dispose()
+
     expect(signal?.aborted).toBe(true)
     const resources = new VisualAssetArchive({
       decode: decodeRestrictedGlb,
       dispose: vi.fn()
     })
+
     wait.resolve(resources)
     await rejected
     await closing
@@ -322,13 +340,16 @@ describe('App document replacement controller', () => {
       const resources = new VisualAssetArchive(decoder),
         factory = vi.fn(async () => a.value)
       const controller = new RuntimeController(factory, async () => resources)
+
       await controller.start()
       factory.mockRejectedValue(new Error('startup failure'))
       let checks = 0
+
       await expect(
         controller.replace(snapshot(), () => {
-          if (++checks === 2 && failure === 'stale preparation')
+          if (++checks === 2 && failure === 'stale preparation') {
             throw new Error(failure)
+          }
         })
       ).rejects.toThrow(failure)
       expect(decoder.dispose).toHaveBeenCalledOnce()
@@ -337,6 +358,7 @@ describe('App document replacement controller', () => {
         expect(a.value.pauseEditing).not.toHaveBeenCalled()
         expect(controller.getState().runtime).toBe(a.value)
       }
+
       await controller.dispose()
     }
   )
@@ -346,16 +368,20 @@ describe('App document replacement controller', () => {
       order: string[] = []
     const wait = deferred<undefined>(),
       entered = deferred<undefined>()
+
     a.value.preflight = vi.fn(() => {
       order.push('preflight')
+
       return []
     })
     a.value.pauseEditing = vi.fn(() => {
       order.push('pause')
+
       return a.resume
     })
     a.value.captureSnapshot = vi.fn(async () => {
       order.push('capture')
+
       return snapshot()
     })
     a.value.dispose = vi.fn(async () => {
@@ -365,6 +391,7 @@ describe('App document replacement controller', () => {
     })
     factory.mockImplementation(async () => {
       order.push('bootstrap')
+
       return b.value
     })
     const target = snapshot(),
@@ -372,6 +399,7 @@ describe('App document replacement controller', () => {
         order.push('guard')
       })
     const replacing = controller.replace(target, assertCurrent)
+
     await entered.promise
     expect(controller.getState().runtime).toBeNull()
     expect(controller.getState().status).toBe('replacing')
@@ -407,6 +435,7 @@ describe('App document replacement controller', () => {
 
   it('preserves A on preflight failure without pausing or capturing', async () => {
     const { a, controller } = await setup()
+
     a.value.preflight = vi.fn(() => {
       throw new Error('invalid target')
     })
@@ -424,12 +453,15 @@ describe('App document replacement controller', () => {
     async (failure) => {
       const { a, factory, controller } = await setup(),
         target = snapshot()
-      if (failure === 'run evidence')
+
+      if (failure === 'run evidence') {
         Object.assign(target, { runs: [{ version: 999 }] })
-      else
+      } else {
         Object.assign(target.document.props, {
           invalidNumber: Number.POSITIVE_INFINITY
         })
+      }
+
       await expect(
         controller.replace(target, () => undefined)
       ).rejects.toThrow()
@@ -451,6 +483,7 @@ describe('App document replacement controller', () => {
   it('preserves A if its recovery capture cannot be exported under the native format contract', async () => {
     const { a, factory, controller } = await setup(),
       source = snapshot()
+
     Object.assign(source.document.props, {
       invalidRecovery: Number.POSITIVE_INFINITY
     })
@@ -473,15 +506,21 @@ describe('App document replacement controller', () => {
     'resumes A after a %s rejection before retirement',
     async (failure) => {
       const { a, controller } = await setup()
-      if (failure === 'capture')
+
+      if (failure === 'capture') {
         a.value.captureSnapshot = vi.fn(async () => {
           throw new Error('capture failed')
         })
-      let calls = 0
-      const guard = () => {
-        if (failure === 'stale' && ++calls > 2)
-          throw new Error('stale acceptance')
       }
+
+      let calls = 0
+
+      const guard = () => {
+        if (failure === 'stale' && ++calls > 2) {
+          throw new Error('stale acceptance')
+        }
+      }
+
       await expect(controller.replace(snapshot(), guard)).rejects.toThrow(
         failure
       )
@@ -501,14 +540,19 @@ describe('App document replacement controller', () => {
     async (failure) => {
       const { a, factory, controller } = await setup(),
         source = snapshot()
+
       source.loadIssues.push({ path: 'A', message: 'Retained diagnostic' })
       a.value.captureSnapshot = vi.fn(async () => source)
       const cause = new Error(`${failure} failed`)
-      if (failure === 'cleanup')
+
+      if (failure === 'cleanup') {
         a.value.dispose = vi.fn(async () => {
           throw cause
         })
-      else factory.mockRejectedValue(cause)
+      } else {
+        factory.mockRejectedValue(cause)
+      }
+
       await expect(
         controller.replace(snapshot(), () => undefined)
       ).rejects.toBe(cause)
@@ -518,14 +562,21 @@ describe('App document replacement controller', () => {
         recoveryAvailable: true
       })
       const recovery = controller.getRecovery()
+
       expect(recovery).toEqual(source)
       source.loadIssues.length = 0
-      if (!recovery) throw new Error('Missing recovery snapshot')
+      if (!recovery) {
+        throw new Error('Missing recovery snapshot')
+      }
+
       recovery.loadIssues[0].message = 'changed by caller'
       expect(controller.getRecovery()?.loadIssues[0].message).toBe(
         'Retained diagnostic'
       )
-      if (failure === 'cleanup') expect(factory).toHaveBeenCalledTimes(1)
+      if (failure === 'cleanup') {
+        expect(factory).toHaveBeenCalledTimes(1)
+      }
+
       await controller.dispose().catch(() => undefined)
     }
   )
@@ -534,17 +585,20 @@ describe('App document replacement controller', () => {
     const { a, factory, controller } = await setup(),
       wait = deferred<undefined>(),
       entered = deferred<undefined>()
+
     a.value.dispose = vi.fn(async () => {
       entered.resolve(undefined)
       await wait.promise
     })
     const replacing = controller.replace(snapshot(), () => undefined)
     const rejected = expect(replacing).rejects.toThrow('closed')
+
     await entered.promise
     await expect(
       controller.replace(snapshot(), () => undefined)
     ).rejects.toThrow('running')
     const closing = controller.dispose()
+
     expect(controller.dispose()).toBe(closing)
     expect(controller.getState().status).toBe('closed')
     wait.resolve(undefined)
@@ -560,12 +614,15 @@ describe('App document replacement controller', () => {
       entered = deferred<undefined>()
     const controller = new RuntimeController(async () => {
       entered.resolve(undefined)
+
       return wait.promise
     })
     const start = controller.start(),
       rejected = expect(start).rejects.toThrow('closed')
+
     await entered.promise
     const closing = controller.dispose()
+
     wait.resolve(a.value)
     await rejected
     await closing
@@ -581,14 +638,18 @@ describe('App document replacement controller', () => {
     const { b, factory, controller } = await setup(),
       wait = deferred<SimRuntime>(),
       entered = deferred<undefined>()
+
     factory.mockImplementation(async () => {
       entered.resolve(undefined)
+
       return wait.promise
     })
     const replacing = controller.replace(snapshot(), () => undefined),
       rejected = expect(replacing).rejects.toThrow('closed')
+
     await entered.promise
     const closing = controller.dispose()
+
     wait.resolve(b.value)
     await rejected
     await closing
@@ -603,14 +664,18 @@ describe('App document replacement controller', () => {
     const { a, factory, controller } = await setup(),
       wait = deferred<ReturnType<typeof snapshot>>(),
       entered = deferred<undefined>()
+
     a.value.captureSnapshot = vi.fn(async () => {
       entered.resolve(undefined)
+
       return wait.promise
     })
     const replacing = controller.replace(snapshot(), () => undefined),
       rejected = expect(replacing).rejects.toThrow('closed')
+
     await entered.promise
     const closing = controller.dispose()
+
     expect(a.value.dispose).not.toHaveBeenCalled()
     wait.resolve(snapshot())
     await rejected
@@ -623,9 +688,12 @@ describe('App document replacement controller', () => {
   it('disposes unpublished B if storage acceptance expires during its startup', async () => {
     const { b, controller } = await setup()
     let checks = 0
+
     await expect(
       controller.replace(snapshot(), () => {
-        if (++checks === 5) throw new Error('Storage session closed')
+        if (++checks === 5) {
+          throw new Error('Storage session closed')
+        }
       })
     ).rejects.toThrow('Storage session closed')
     expect(b.value.dispose).toHaveBeenCalledOnce()
@@ -641,10 +709,12 @@ describe('App document replacement controller', () => {
   it('retains terminal close failure and never reopens admission', async () => {
     const { a, controller } = await setup(),
       cause = new Error('teardown failed')
+
     a.value.dispose = vi.fn(async () => {
       throw cause
     })
     const closing = controller.dispose()
+
     await expect(closing).rejects.toBe(cause)
     expect(controller.dispose()).toBe(closing)
     await expect(controller.start()).rejects.toThrow('closed')

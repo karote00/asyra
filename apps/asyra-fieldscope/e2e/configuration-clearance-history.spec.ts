@@ -11,6 +11,7 @@ test('edits crossbeam height and symmetric clearance with independent history', 
   const margin = page.getByLabel('兩側各留', { exact: true })
   const width = page.getByLabel('單棟寬度', { exact: true })
   const height = page.getByLabel('溫室總高度', { exact: true })
+
   await expect(beam).toHaveValue('3')
   await expect(margin).toHaveValue('0.35')
   await beam.fill('3.4')
@@ -42,15 +43,18 @@ test('edits crossbeam height and symmetric clearance with independent history', 
   await page.getByRole('button', { name: '復原 ⌘Z', exact: true }).click()
   await expect(height).toHaveValue('5')
   await expect(page.getByText(/已套用：/)).toHaveCount(0)
-  if (!usesCpuSoftwareRenderer)
+  if (!usesCpuSoftwareRenderer) {
     await page.screenshot({
       path: testInfo.outputPath('editable-structure-dimensions.png'),
       fullPage: true
     })
+  }
+
   await page.getByLabel('第 7 項寬度').scrollIntoViewIfNeeded()
-  if (!usesCpuSoftwareRenderer)
+  if (!usesCpuSoftwareRenderer) {
     await page.screenshot({
       path: testInfo.outputPath('editable-side-clearance.png'),
       fullPage: true
     })
+  }
 })

@@ -22,6 +22,7 @@ const snapshot = {
   architectureVersion: contract.architectureVersion
 }
 const flowIds = contract.flows.map((flow) => flow.id)
+
 function result() {
   return {
     code: 0,
@@ -62,9 +63,12 @@ function result() {
     }
   }
 }
+
 const assess = (runner) => assessEvidence(contract, snapshot, runner, flowIds)
+
 test('accepts only the complete declared baseline', () => {
   const evidence = assess(result())
+
   assert.equal(evidence.status, 'passed')
   assert.equal(evidence.passedCount, contract.cases.length)
   assert.deepEqual(evidence.issues, [])
@@ -198,14 +202,18 @@ for (const [name, corrupt] of [
       runner.report.testResults[0].assertionResults[0] = null
     }
   ]
-])
+]) {
   test('rejects ' + name, () => {
     const runner = result()
+
     corrupt(runner)
     assert.notEqual(assess(runner).status, 'passed')
   })
+}
+
 test('a zero-exit wrapper cannot conceal real assertion failures', () => {
   const runner = result()
+
   runner.report.testResults[0].assertionResults[0].status = 'failed'
   runner.report.numFailedTests = 1
   runner.report.numPassedTests = contract.cases.length - 1
@@ -216,6 +224,7 @@ test('a zero-exit wrapper cannot conceal real assertion failures', () => {
 })
 test('attributes failed obligations while preserving the passing other flow', () => {
   const runner = result()
+
   runner.code = 1
   runner.report.success = false
   runner.report.numFailedTests = 1
@@ -223,6 +232,7 @@ test('attributes failed obligations while preserving the passing other flow', ()
   runner.report.testResults[0].status = 'failed'
   runner.report.testResults[0].assertionResults[4].status = 'failed'
   const evidence = assess(runner)
+
   assert.equal(evidence.flows[0].status, 'passed')
   assert.equal(evidence.flows[1].status, 'failed')
   assert.equal(evidence.cases[4].stepId, 'finalize-transaction-state')
@@ -250,8 +260,10 @@ test('durable evidence admission checks the required inventory before consumers 
     flowIds,
     evidence: assess(result())
   }
+
   assert.doesNotThrow(() => validateStoredEvidence(contract, record))
   const truncated = structuredClone(record)
+
   truncated.evidence.cases.pop()
   truncated.evidence.expectedCount--
   truncated.evidence.passedCount--
@@ -261,8 +273,8 @@ test('durable evidence admission checks the required inventory before consumers 
   )
 })
 
-for (const format of [2, 3])
-  for (const key of ['mappingVersion', 'architectureVersion'])
+for (const format of [2, 3]) {
+  for (const key of ['mappingVersion', 'architectureVersion']) {
     test(
       'durable format ' + format + ' evidence rejects a mismatched ' + key,
       () => {
@@ -273,17 +285,21 @@ for (const format of [2, 3])
           flowIds,
           evidence: assess(result())
         }
+
         assert.throws(
           () => validateStoredEvidence(contract, record),
           /Stored evidence provenance/
         )
       }
     )
+  }
+}
 
 async function realRuntimeProof(t) {
   const root = path.resolve(__dirname, '../../../..')
   const id = randomUUID()
   const directory = path.join(root, 'tmp/flow-inspector/evidence-runtime', id)
+
   fs.mkdirSync(directory, { recursive: true })
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
   const captured = sourceOwner.captureSource(root, directory, contract)
@@ -296,6 +312,7 @@ async function realRuntimeProof(t) {
     flowIds,
     timeoutMs: 10000
   })
+
   assert.equal(runner.code, 0)
   const admission = Object.freeze({
     attemptId: id,
@@ -304,12 +321,14 @@ async function realRuntimeProof(t) {
     sourceDigest: captured.digest,
     ...sourceOwner.validateSourceSnapshot(captured, contract)
   })
+
   return { id, captured, runner, admission }
 }
 
 test('runtime evidence binds real captured source through the runner and durable admission without promoting historical proof', async (t) => {
   const { id, captured, runner, admission } = await realRuntimeProof(t)
   const evidence = assessEvidence(contract, captured, runner, flowIds)
+
   assert.equal(evidence.status, 'passed')
   assert.equal(evidence.runtimeSourceDigest, captured.runtimeSource.digest)
   assert.equal(
@@ -325,8 +344,10 @@ test('runtime evidence binds real captured source through the runner and durable
     'baseline',
     admission
   )
+
   assert.deepEqual(reused, evidence)
   const retained = structuredClone(captured)
+
   delete retained.files
   delete retained.sourceRoot
   const record = {
@@ -339,6 +360,7 @@ test('runtime evidence binds real captured source through the runner and durable
     flowIds,
     evidence
   }
+
   assert.doesNotThrow(() => validateStoredEvidence(contract, record, admission))
   assert.equal(
     validate.mock.callCount(),
@@ -350,20 +372,24 @@ test('runtime evidence binds real captured source through the runner and durable
     /runtime|manifest/i
   )
   const legacySnapshot = { ...captured }
+
   delete legacySnapshot.runtimeSource
   delete legacySnapshot.runtimeAuthority
   const legacyRunner = structuredClone(runner)
+
   delete legacyRunner.identity.runtimeSourceDigest
   delete legacyRunner.identity.runtimeAuthorityFormat
   delete legacyRunner.identity.runtimeAuthorityDigest
   delete legacyRunner.identity.contractScopeDigest
   const legacy = assessEvidence(contract, legacySnapshot, legacyRunner, flowIds)
+
   assert.equal(legacy.status, 'passed')
   assert.equal(Object.hasOwn(legacy, 'runtimeSourceDigest'), false)
 })
 
 test('runtime evidence refuses malformed, missing and source-substituted provenance while retaining actual assertion failures', async (t) => {
   const { captured, runner, admission } = await realRuntimeProof(t)
+
   for (const [name, corrupt] of [
     [
       'present null source',
@@ -425,16 +451,20 @@ test('runtime evidence refuses malformed, missing and source-substituted provena
   ]) {
     const source = structuredClone(captured)
     const result = structuredClone(runner)
+
     corrupt(source, result)
     const evidence = assessEvidence(contract, source, result, flowIds)
+
     assert.notEqual(evidence.status, 'passed', name)
     assert.ok(
       evidence.issues.some((issue) => /runtime/i.test(issue)),
       name
     )
   }
+
   for (const key of ['digest', 'head']) {
     const replaced = { ...captured, [key]: '0'.repeat(64) }
+
     assert.notEqual(
       assessEvidence(contract, replaced, runner, flowIds, 'baseline', admission)
         .status,
@@ -442,7 +472,9 @@ test('runtime evidence refuses malformed, missing and source-substituted provena
       key
     )
   }
+
   const result = structuredClone(runner)
+
   delete result.identity.runtimeSourceDigest
   result.code = 1
   result.report.success = false
@@ -451,6 +483,7 @@ test('runtime evidence refuses malformed, missing and source-substituted provena
   result.report.testResults[0].status = 'failed'
   result.report.testResults[0].assertionResults[0].status = 'failed'
   const evidence = assessEvidence(contract, captured, result, flowIds)
+
   assert.equal(evidence.status, 'failed')
   assert.equal(evidence.cases[0].status, 'failed')
   assert.equal(evidence.runtimeSourceDigest, captured.runtimeSource.digest)
@@ -471,6 +504,7 @@ test('durable runtime evidence refuses forged pass identities and preserves legi
     evidence
   }
   const forged = structuredClone(record)
+
   forged.evidence.runtimeSourceDigest = '0'.repeat(64)
   assert.throws(
     () => validateStoredEvidence(contract, forged, admission),
@@ -478,6 +512,7 @@ test('durable runtime evidence refuses forged pass identities and preserves legi
   )
   for (const key of ['runtimeSourceDigest', 'lockfileDigest', 'sourceDigest']) {
     const altered = structuredClone(record)
+
     altered.runner.identity[key] = '0'.repeat(64)
     assert.throws(
       () => validateStoredEvidence(contract, altered, admission),
@@ -485,13 +520,16 @@ test('durable runtime evidence refuses forged pass identities and preserves legi
       key
     )
   }
+
   const unavailableRunner = structuredClone(runner)
+
   delete unavailableRunner.identity.runtimeSourceDigest
   const unavailable = {
     ...record,
     runner: unavailableRunner,
     evidence: assessEvidence(contract, captured, unavailableRunner, flowIds)
   }
+
   assert.equal(unavailable.evidence.status, 'unknown')
   assert.doesNotThrow(() =>
     validateStoredEvidence(contract, unavailable, admission)
@@ -523,6 +561,7 @@ test('derived evidence requires direct trusted source admission even without run
       { ...captured, executionSource: { format: 99 } }
     ]
   ]
+
   for (const [name, input] of cases) {
     assert.notEqual(
       assessEvidence(contract, input, runner, flowIds).status,
@@ -536,6 +575,7 @@ test('derived evidence requires direct trusted source admission even without run
       name + ' service tuple'
     )
     const evidence = assessEvidence(contract, captured, runner, flowIds)
+
     assert.throws(
       () =>
         validateStoredEvidence(
@@ -556,15 +596,19 @@ test('derived evidence requires direct trusted source admission even without run
       name + ' retained'
     )
   }
+
   const legacy = { ...captured, executionSource: null }
+
   delete legacy.runtimeSource
   const oldRunner = structuredClone(runner)
+
   delete oldRunner.identity.runtimeSourceDigest
   assert.notEqual(
     assessEvidence(contract, legacy, oldRunner, flowIds).status,
     'passed'
   )
   const missing = { ...captured, executionSource: { format: 1 } }
+
   delete missing.files
   assert.notEqual(
     assessEvidence(contract, missing, runner, flowIds, 'baseline', undefined, {
@@ -581,9 +625,11 @@ async function realDerivedProof(t, outcome = 'passed') {
     'tmp/flow-inspector/evidence-derived',
     randomUUID()
   )
+
   fs.mkdirSync(directory, { recursive: true })
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
   let captured = sourceOwner.captureSource(root, directory, contract)
+
   if (outcome !== 'passed') {
     const mutation =
       outcome === 'failed'
@@ -597,8 +643,10 @@ async function realDerivedProof(t, outcome = 'passed') {
           }
     const file = path.join(captured.sourceRoot, mutation.file)
     const original = fs.readFileSync(file, 'utf8')
+
     assert.ok(original.includes(mutation.from))
     const content = original.replace(mutation.from, mutation.to)
+
     fs.chmodSync(file, 0o644)
     fs.writeFileSync(file, content)
     fs.chmodSync(file, 0o444)
@@ -611,6 +659,7 @@ async function realDerivedProof(t, outcome = 'passed') {
           }
         : entry
     )
+
     captured = {
       ...captured,
       files,
@@ -623,16 +672,20 @@ async function realDerivedProof(t, outcome = 'passed') {
       )
     }
   }
+
   const generated = sourceOwner.createDerivedExecution({
     sourceRoot: captured.sourceRoot,
     verificationSource: captured.verificationSource,
     runtimeAuthority: captured.runtimeAuthority
   })
+
   for (const file of generated.files) {
     const destination = path.join(captured.sourceRoot, file.path)
+
     fs.mkdirSync(path.dirname(destination), { recursive: true })
     fs.writeFileSync(destination, file.content, { flag: 'wx', mode: 0o444 })
   }
+
   const files = [...captured.files, ...generated.executionSource.files].sort(
     (a, b) => a.path.localeCompare(b.path)
   )
@@ -655,6 +708,7 @@ async function realDerivedProof(t, outcome = 'passed') {
     scenario: 'baseline',
     flowIds,
     timeoutMs: 15000,
+
     processRunner: (options) =>
       containedProcess(
         {
@@ -678,7 +732,9 @@ async function realDerivedProof(t, outcome = 'passed') {
         }
       )
   })
+
   assert.equal(runner.code, outcome === 'failed' ? 1 : 0, runner.output)
+
   return { root, directory, captured, generated, derived, runner }
 }
 
@@ -695,8 +751,10 @@ test(
     )
     const modulePath = require.resolve('../snapshot.cjs'),
       saved = require.cache[modulePath]
+
     Reflect.deleteProperty(require.cache, modulePath)
     const counted = require('../snapshot.cjs')
+
     require.cache[modulePath] = saved
     const combined = t.mock.method(
       sourceOwner,
@@ -714,6 +772,7 @@ test(
       undefined,
       { sourceRoot: captured.sourceRoot }
     )
+
     assert.equal(evidence.status, 'passed', JSON.stringify(evidence.issues))
     assert.equal(combined.mock.callCount(), 1)
     assert.equal(runtime.mock.callCount(), 0)
@@ -741,6 +800,7 @@ test(
       'passed'
     )
     const invalid = structuredClone(derived)
+
     invalid.executionSource.files[0].digest = '0'.repeat(64)
     assert.notEqual(
       assessEvidence(
@@ -763,6 +823,7 @@ test(
       flowIds,
       evidence
     }
+
     assert.throws(
       () => validateStoredEvidence(contract, record),
       /derived|execution/i
@@ -775,6 +836,7 @@ test(
   { skip: process.platform !== 'darwin', timeout: 30000 },
   async (t) => {
     const { root, directory, derived, runner } = await realDerivedProof(t)
+
     sourceOwner.verifyRetainedSnapshotBytes(
       root,
       derived.sourceRoot,
@@ -810,6 +872,7 @@ test(
       'baseline',
       admission
     )
+
     assert.equal(evidence.status, 'passed', JSON.stringify(evidence.issues))
     const record = {
       id: admission.attemptId,
@@ -821,6 +884,7 @@ test(
       flowIds,
       evidence
     }
+
     assert.doesNotThrow(() =>
       validateStoredEvidence(contract, record, admission)
     )
@@ -941,9 +1005,11 @@ test(
         }
       ]
     ]
+
     for (const [label, mutate] of cases) {
       const source = structuredClone(derived),
         artifact = structuredClone(admission)
+
       mutate(source, artifact)
       const invalid = assessEvidence(
         contract,
@@ -954,6 +1020,7 @@ test(
         artifact,
         { sourceRoot: derived.sourceRoot }
       )
+
       assert.notEqual(invalid.status, 'passed', label)
       assert.throws(
         () =>
@@ -966,6 +1033,7 @@ test(
         label
       )
     }
+
     assert.throws(
       () =>
         validateStoredEvidence(
@@ -984,8 +1052,9 @@ test(
         ),
       /provenance|admission|derived|execution/i
     )
-    for (const spy of [combined, runtime, bytes, reads, hashes])
+    for (const spy of [combined, runtime, bytes, reads, hashes]) {
       assert.equal(spy.mock.callCount(), 0)
+    }
   }
 )
 
@@ -994,8 +1063,11 @@ test(
   { skip: process.platform !== 'darwin', timeout: 30000 },
   async (t) => {
     const proofs = []
-    for (const outcome of ['passed', 'failed', 'partial'])
+
+    for (const outcome of ['passed', 'failed', 'partial']) {
       proofs.push({ outcome, ...(await realDerivedProof(t, outcome)) })
+    }
+
     const crypto = require('node:crypto'),
       originalHash = crypto.createHash
     const hash = t.mock.method(crypto, 'createHash', (...args) =>
@@ -1003,8 +1075,10 @@ test(
     )
     const modulePath = require.resolve('../snapshot.cjs'),
       saved = require.cache[modulePath]
+
     Reflect.deleteProperty(require.cache, modulePath)
     const counted = require('../snapshot.cjs')
+
     require.cache[modulePath] = saved
     let admitted
     const combined = t.mock.method(
@@ -1012,11 +1086,13 @@ test(
       'validateSourceSnapshot',
       (...args) => {
         admitted = counted.validateSourceSnapshot(...args)
+
         return admitted
       }
     )
     const runtime = t.mock.method(sourceOwner, 'validateRuntimeSource')
     const reads = t.mock.method(fs, 'readFileSync')
+
     for (const [index, proof] of proofs.entries()) {
       const { derived, runner, outcome } = proof
       const args = [
@@ -1029,6 +1105,7 @@ test(
         { sourceRoot: derived.sourceRoot }
       ]
       const { evidence, source } = assessSourceEvidence(...args)
+
       assert.equal(
         evidence.status,
         outcome === 'partial' ? 'unknown' : outcome,
@@ -1060,12 +1137,14 @@ test(
         'runtimeAuthority',
         'verificationSource',
         'executionSource'
-      ])
+      ]) {
         assert.equal(
           source[key],
           admitted[key],
           'forward completed descriptor without cloning'
         )
+      }
+
       assert.equal(combined.mock.callCount(), index * 2 + 1)
       assert.equal(hash.mock.callCount(), (index * 2 + 1) * 7)
       assert.deepEqual(
@@ -1074,6 +1153,7 @@ test(
         'existing API preserves evidence-only output'
       )
     }
+
     assert.equal(combined.mock.callCount(), 6)
     assert.equal(hash.mock.callCount(), 42)
     assert.equal(runtime.mock.callCount(), 0)
@@ -1086,6 +1166,7 @@ test(
   { skip: process.platform !== 'darwin', timeout: 30000 },
   async (t) => {
     const { derived, runner, root, directory } = await realDerivedProof(t)
+
     for (const [label, mutate] of [
       [
         'missing context',
@@ -1142,6 +1223,7 @@ test(
         snapshot: structuredClone(derived),
         context: { sourceRoot: derived.sourceRoot }
       }
+
       mutate(input)
       const result = assessSourceEvidence(
         contract,
@@ -1152,9 +1234,11 @@ test(
         undefined,
         input.context
       )
+
       assert.equal(result.source, null, label)
       assert.notEqual(result.evidence.status, 'passed', label)
     }
+
     const complete = sourceOwner.validateSourceSnapshot(
       derived,
       contract,
@@ -1182,6 +1266,7 @@ test(
       admission,
       { sourceRoot: derived.sourceRoot }
     )
+
     assert.equal(retained.evidence.status, 'passed')
     assert.equal(retained.source, null, 'do not republish service authority')
     assert.equal(combined.mock.callCount(), 0)
@@ -1201,6 +1286,7 @@ test(
     const { runProcess, runnerEnvironment } = require('../runner.cjs')
     const root = path.resolve(__dirname, '../../../..')
     const parent = path.join(root, 'tmp/flow-inspector/fault-injection')
+
     fs.mkdirSync(parent, { recursive: true })
     const directory = fs.mkdtempSync(path.join(parent, 'run-'))
     const repository = path.join(directory, 'repository')
@@ -1209,14 +1295,17 @@ test(
       path.join(directory, 'initial'),
       contract
     )
+
     for (const item of initial.files) {
       const destination = path.join(repository, item.path)
+
       fs.mkdirSync(path.dirname(destination), { recursive: true })
       fs.writeFileSync(
         destination,
         fs.readFileSync(path.join(initial.sourceRoot, item.path))
       )
     }
+
     fs.cpSync(
       path.join(root, 'apps/asyra-design/src'),
       path.join(repository, 'apps/asyra-design/src'),
@@ -1231,6 +1320,7 @@ test(
       ])
     )
     const observations = []
+
     t.after(() => {
       for (const [file, original] of originals) {
         assert.equal(
@@ -1239,14 +1329,17 @@ test(
           'checkout source must remain unchanged'
         )
       }
+
       fs.writeFileSync(
         path.join(directory, 'summary.json'),
         JSON.stringify(observations, null, 2)
       )
       t.diagnostic('Retained fault-injection evidence: ' + directory)
     })
+
     const replace = (file, from, to) => {
       const original = originals.get(file)
+
       assert.equal(
         original.split(from).length,
         2,
@@ -1254,8 +1347,10 @@ test(
       )
       fs.writeFileSync(path.join(repository, file), original.replace(from, to))
     }
+
     const restore = (file) =>
       fs.writeFileSync(path.join(repository, file), originals.get(file))
+
     const prove = async (label, failedIds) => {
       const runDirectory = path.join(repository, '.proofs', label)
       const captured = sourceOwner.captureSource(
@@ -1273,6 +1368,7 @@ test(
         timeoutMs: 20000
       })
       const evidence = assessEvidence(contract, captured, runner, flowIds)
+
       observations.push({
         label,
         pid: runner.pid,
@@ -1301,12 +1397,16 @@ test(
           contract.cases.find((expected) => expected.id === item.id).stepId
         )
       }
+
       return { captured, evidence }
     }
+
     const appConfig = path.join(directory, 'app.config.mjs')
+
     const appProof = async (label, expectedFailed) => {
       const testFile =
         'apps/asyra-design/src/features/undo-redo/__tests__/feature.test.ts'
+
       fs.writeFileSync(
         appConfig,
         'export default ' +
@@ -1324,6 +1424,7 @@ test(
       const reportPath = path.join(directory, label + '.json')
       const sourcePath = path.join(directory, label + '.ts')
       const sourceBytes = fs.readFileSync(path.join(repository, appFile))
+
       fs.writeFileSync(sourcePath, sourceBytes)
       assert.deepEqual(
         fs.readFileSync(path.join(repository, testFile)),
@@ -1331,6 +1432,7 @@ test(
         'the product oracle must remain unchanged'
       )
       const temporary = path.join(directory, 'tmp')
+
       fs.mkdirSync(temporary, { recursive: true })
       const runner = await runProcess({
         executable: process.execPath,
@@ -1349,9 +1451,11 @@ test(
         env: runnerEnvironment(repository, 'baseline', temporary),
         timeoutMs: 20000
       })
+
       assert.equal(runner.reason, null, runner.output)
       assert.ok(fs.existsSync(reportPath), runner.output)
       const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'))
+
       observations.push({
         label,
         pid: runner.pid,
@@ -1383,7 +1487,9 @@ test(
       )
       assert.equal(runner.code, expectedFailed ? 1 : 0)
     }
+
     const baseline = await prove('baseline', [])
+
     await appProof('app-baseline', 0)
     try {
       replace(
@@ -1393,6 +1499,7 @@ test(
       )
       await appProof('app-reversed-shortcut', 2)
       const appChanged = await prove('app-reversed-shortcut', [])
+
       assert.equal(
         appChanged.captured.digest,
         baseline.captured.digest,
@@ -1409,6 +1516,7 @@ test(
     } finally {
       restore(appFile)
     }
+
     await appProof('app-recovery', 0)
     try {
       replace(
@@ -1424,6 +1532,7 @@ test(
         'history-group.ordered-replay',
         'history-group.snapshot'
       ])
+
       assert.notEqual(
         changed.captured.runtimeSource.digest,
         baseline.captured.runtimeSource.digest
@@ -1435,7 +1544,9 @@ test(
     } finally {
       restore(factoryFile)
     }
+
     const recovery = await prove('recovery', [])
+
     assert.equal(recovery.captured.digest, baseline.captured.digest)
   }
 )

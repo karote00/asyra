@@ -5,6 +5,7 @@ import { box, vec } from './geometry'
 import { part, placeParts, type AssetPart } from './catalog'
 const oak = 0xd5b587,
   dark = 0x584333
+
 export function teaTable(): AssetPart[] {
   const module = requiredSpecValue(
     tea.modules.find((m) => m.moduleId === 'round-tea-table'),
@@ -32,11 +33,13 @@ export function teaTable(): AssetPart[] {
       'wood'
     )
   ]
+
   for (const name of ['apron-front-back', 'apron-sides']) {
     const rail = requiredSpecValue(
       module.components.find((c) => c.partId === name),
       name
     ) as { centres: number[][]; size: number[]; bevel: number }
+
     requiredSpecValue(rail.centres, 'apron centres').forEach((centre, i) =>
       pieces.push(
         ...placeParts(
@@ -53,10 +56,12 @@ export function teaTable(): AssetPart[] {
       )
     )
   }
+
   const legs = requiredSpecValue(
     module.components.find((c) => c.partId === 'legs'),
     'tea legs'
   )
+
   requiredSpecValue(legs.endCentres, 'leg endpoints').forEach(
     ({ bottom, top }, i) =>
       pieces.push(
@@ -74,8 +79,10 @@ export function teaTable(): AssetPart[] {
         )
       )
   )
+
   return pieces
 }
+
 export { teaChair } from './tea-chair'
 export { mug, laptop } from './desk-items'
 export { planter } from './plants'

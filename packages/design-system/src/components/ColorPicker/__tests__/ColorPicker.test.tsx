@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import ColorPicker, { type ColorFormatDefinition } from '../ColorPicker'
 
 const formats: ColorFormatDefinition[] = []
+
 afterEach(cleanup)
 
 describe('ColorPicker alpha visibility', () => {

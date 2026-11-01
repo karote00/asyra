@@ -29,24 +29,35 @@ const historicalRobotDigests = new URL(
 )
 const sign = 1n << 63n
 const mask = (1n << 64n) - 1n
+
 const float64Bits = (value: number) => {
   const view = new DataView(new ArrayBuffer(8))
+
   view.setFloat64(0, value)
+
   return view.getBigUint64(0).toString(16).padStart(16, '0')
 }
+
 const ordered = (value: string) => {
   const bits = BigInt(`0x${value}`)
+
   return bits & sign ? ~bits & mask : bits | sign
 }
+
 const ulps = (left: string, right: string) => {
   const delta = ordered(left) - ordered(right)
+
   return delta < 0 ? -delta : delta
 }
+
 const fromBits = (value: string) => {
   const view = new DataView(new ArrayBuffer(8))
+
   view.setBigUint64(0, BigInt(`0x${value}`))
+
   return view.getFloat64(0)
 }
+
 const series = (path: string, values: readonly number[]): SourceSeries => ({
   path,
   values: values.map(float64Bits)
@@ -63,7 +74,11 @@ function shapeSeries(path: string, shape: RobotPart['shape']) {
 function captureRepresentativeSourceValues() {
   const robot = createRobotModel(DEFAULT_ROBOT)
   const crop = createCropModels({ netTop: 3, netBottom: 0.45 })[0]
-  if (!crop) throw new Error('Missing representative crop model')
+
+  if (!crop) {
+    throw new Error('Missing representative crop model')
+  }
+
   const values = [
     ...robot.flatMap((part) => shapeSeries(`robot.${part.id}`, part.shape)),
     ...crop.parts.flatMap((part) => [
@@ -73,6 +88,7 @@ function captureRepresentativeSourceValues() {
         : [])
     ])
   ]
+
   return { crop, values }
 }
 
@@ -93,6 +109,7 @@ it('detects exact topology and render-visible source mutations independently', (
   }
   const structure = digest(exactSourceStructure(source))
   const presentation = digest(renderHandoff(source))
+
   expect(
     digest(exactSourceStructure({ ...source, indices: [0, 2, 1] }))
   ).not.toBe(structure)
@@ -117,54 +134,75 @@ it('reports rerunnable per-value source portability diagnostics without setting 
   // The source revision adds exactly one near eight-vertex and distant
   // three-vertex ring per cucumber fruit, with positions and colors.
   const addedRingValues = crop.fruits.length * (8 + 3) * 3 * 2
+
   if (process.env.FIELDSCOPE_WRITE_SOURCE_TRACE === '1') {
     expect(process.platform).toBe('darwin')
     expect(process.version).toBe('v24.13.0')
     expect(actual).toHaveLength(expected.length)
     for (const [index, after] of actual.entries()) {
       const before = expected[index]
+
       expect(after.path).toBe(before.path)
       if (!after.path.startsWith('crop.stems.')) {
         expect(after).toEqual(before)
         continue
       }
+
       const sides = after.path.includes('.near.') ? 8 : 3
       const added = crop.fruits.length * sides * 3
+
       // A rerun against the already-updated fixture must be byte-identical.
-      if (after.values.length === before.values.length)
+      if (after.values.length === before.values.length) {
         expect(after).toEqual(before)
-      else expect(after.values.length - before.values.length).toBe(added)
+      } else {
+        expect(after.values.length - before.values.length).toBe(added)
+      }
     }
+
     expect(actual.reduce((count, item) => count + item.values.length, 0)).toBe(
       179390 + addedRingValues
     )
     writeFileSync(reference, gzipSync(`${JSON.stringify(actual)}\n`))
     expect(actual.length).toBeGreaterThan(0)
+
     return
   }
+
   expect(actual).toHaveLength(expected.length)
   const differences = []
   let compared = 0
   let changed = 0
   let maxUlps = 0n
   let maxAbsoluteDifference = 0
+
   for (let seriesIndex = 0; seriesIndex < expected.length; seriesIndex++) {
     const before = expected[seriesIndex]
     const after = actual[seriesIndex]
+
     expect(after.path).toBe(before.path)
     expect(after.values).toHaveLength(before.values.length)
     for (let valueIndex = 0; valueIndex < before.values.length; valueIndex++) {
       compared++
       const distance = ulps(after.values[valueIndex], before.values[valueIndex])
-      if (!distance) continue
+
+      if (!distance) {
+        continue
+      }
+
       changed++
       const absoluteDifference = Math.abs(
         fromBits(after.values[valueIndex]) - fromBits(before.values[valueIndex])
       )
-      if (distance > maxUlps) maxUlps = distance
-      if (absoluteDifference > maxAbsoluteDifference)
+
+      if (distance > maxUlps) {
+        maxUlps = distance
+      }
+
+      if (absoluteDifference > maxAbsoluteDifference) {
         maxAbsoluteDifference = absoluteDifference
-      if (differences.length < 32)
+      }
+
+      if (differences.length < 32) {
         differences.push({
           path: after.path,
           index: valueIndex,
@@ -173,8 +211,10 @@ it('reports rerunnable per-value source portability diagnostics without setting 
           absoluteDifference,
           ulps: distance.toString()
         })
+      }
     }
   }
+
   const report = {
     runtime: `${process.platform} ${process.version}`,
     series: actual.length,
@@ -184,8 +224,11 @@ it('reports rerunnable per-value source portability diagnostics without setting 
     maxUlps: maxUlps.toString(),
     firstDifferences: differences
   }
-  if (changed || process.env.FIELDSCOPE_REPORT_SOURCE_TRACE === '1')
+
+  if (changed || process.env.FIELDSCOPE_REPORT_SOURCE_TRACE === '1') {
     console.info('source Float64 portability', JSON.stringify(report))
+  }
+
   expect(report).toMatchObject({
     series: 135,
     compared: 179390 + addedRingValues

@@ -34,6 +34,7 @@ const saved = JSON.parse(
 let createAction: typeof import('../../src/ai/design-actions').createPreparedDesignAction
 let createRunner: typeof import('../../src/ai/transaction').createAiTransactionRunner
 let createEvidence: typeof import('../../src/common-apis/inspection-evidence').createInspectionEvidence
+
 beforeAll(async () => {
   vi.stubGlobal('window', {})
   createAction = (await import('../../src/ai/design-actions'))
@@ -92,6 +93,7 @@ it.each(
       provider: {
         requestActionBatch: async (_input, options) => {
           receipt = await options.executeBatch?.(pending)
+
           return { batchId: 'report', actions: [] }
         }
       },
@@ -108,10 +110,14 @@ it.each(
         intent: 'Create editable objects',
         signal: new AbortController().signal
       })
-      if (!receipt) throw new Error('Missing canonical receipt')
+      if (!receipt) {
+        throw new Error('Missing canonical receipt')
+      }
+
       return receipt
     })
     const operations = createLocalOperationTools(definitions, tools, dispatch)
+
     const run = async (draft: unknown, parentId?: string) => {
       const prepared = JSON.parse(
         await tools.call(
@@ -120,8 +126,10 @@ it.each(
           new AbortController().signal
         )
       )
+
       expect(prepared, JSON.stringify(prepared)).toHaveProperty('artifactId')
       const canonical = preparation.resolve(prepared.artifactId)
+
       await operations.call(
         AiDesignToolIds.EXECUTE_DESIGN_BATCH,
         {
@@ -144,6 +152,7 @@ it.each(
         status: 'complete',
         compositionId: canonical.rootId
       })
+
       return {
         canonical,
         result: receipt?.actionResults[0].result as {
@@ -156,7 +165,9 @@ it.each(
         }
       }
     }
+
     const evidence = createEvidence()
+
     try {
       const seed = await run({
         type: 'group',
@@ -176,11 +187,13 @@ it.each(
       const captured = await evidence.capture(() => ({ available: true }), {
         elementId: seed.canonical.rootId
       })
+
       expect(evidence.isCurrent(captured.evidence)).toBe(true)
       const before = await core.save()
       const applied = await run(input.input.draft)
       const counters = applied.result.timing.canonicalWork.counters
       const copies = counters['scene-tree:membership:snapshot-items'] ?? 0
+
       console.info(
         JSON.stringify({
           measurement: 'metadata-inspection',
@@ -200,6 +213,7 @@ it.each(
         core.getElementMetadata(applied.canonical.rootId)?.childCount
       ).toBe(applied.canonical.entries.length - 1)
       const created = await core.save()
+
       expect(
         created.sceneTree.elements[applied.canonical.rootId].children
       ).toEqual(
@@ -222,6 +236,7 @@ it.each(
         () => ({ available: true }),
         { elementId: applied.canonical.rootId }
       )
+
       await run(
         {
           type: 'group',

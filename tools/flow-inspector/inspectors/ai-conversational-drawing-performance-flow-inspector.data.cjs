@@ -1492,6 +1492,7 @@
   const compositionStep = steps.find(
     (step) => step.id === 'stage-local-interactive-composition'
   )
+
   compositionStep.conditions.push(
     'Reference replacement accepts a context-validated Group or Frame root, inserts the prepared drawing, then removes only that old root inside the same invocation transaction. Incomplete insertion preserves the old root. Target change or failed removal throws an explicit safe public reason. Ordinary failures follow runtime preserve-progress settlement; cancellation rolls back. Each subsequent user request owns a new Undo entry, never replacing prior History.'
   )
@@ -2940,7 +2941,9 @@
     if (!value || typeof value !== 'object' || Object.isFrozen(value)) {
       return value
     }
+
     Object.values(value).forEach(deepFreeze)
+
     return Object.freeze(value)
   }
 

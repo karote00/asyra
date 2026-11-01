@@ -9,6 +9,7 @@ test('container selection flow resolves its product authority, owner and termina
   assert.equal(data.schema.version, 2)
   assert.equal(data.steps.length, 2)
   const step = data.steps[0]
+
   assert.equal(step.failureOwnerStepId, step.id)
   assert.deepEqual(step.cacheDimensions, [])
   for (const key of [
@@ -23,6 +24,7 @@ test('container selection flow resolves its product authority, owner and termina
   ]) {
     assert.ok(step[key].length > 0, key)
   }
+
   for (const file of [
     data.authority.specPath,
     data.authority.inspectorPath,
@@ -30,18 +32,23 @@ test('container selection flow resolves its product authority, owner and termina
   ]) {
     assert.ok(fs.existsSync(path.join(root, file)), file)
   }
+
   const spec = fs.readFileSync(path.join(root, data.authority.specPath), 'utf8')
+
   assert.ok(spec.includes('## Container double-click selection'))
   for (const contract of data.acceptanceContracts) {
     assert.ok(Array.isArray(contract.assertions))
     assert.ok(contract.assertions.length > 0)
   }
+
   for (const route of data.routes) {
     const step = data.steps.find((item) => item.id === route.from)
+
     assert.ok(step)
     assert.equal(route.kind, 'terminal')
     for (const id of route.producedArtifacts) {
       const artifact = data.artifacts.find((item) => item.id === id)
+
       assert.ok(artifact)
       assert.equal(artifact.ownerStepId, step.id)
       assert.equal(artifact.terminal, true)

@@ -20,6 +20,7 @@ function runWaiter(url, method, timeoutMs) {
     )
     let stdout = ''
     let stderr = ''
+
     child.stdout.setEncoding('utf8').on('data', (chunk) => (stdout += chunk))
     child.stderr.setEncoding('utf8').on('data', (chunk) => (stderr += chunk))
     child.once('error', reject)
@@ -32,6 +33,7 @@ async function listen(server) {
     server.once('error', reject)
     server.listen(0, '127.0.0.1', resolve)
   })
+
   return `http://127.0.0.1:${server.address().port}/health`
 }
 
@@ -41,18 +43,23 @@ test('HTTP readiness retries non-2xx responses and follows redirects', async () 
     requests += 1
     if (request.url === '/health' && requests === 1) {
       response.writeHead(503).end()
+
       return
     }
+
     if (request.url === '/health') {
       response.writeHead(302, { location: '/ready' }).end()
+
       return
     }
+
     response.writeHead(204).end()
   })
   const url = await listen(server)
 
   try {
     const result = await runWaiter(url, 'GET', 3000)
+
     assert.equal(result.code, 0, result.stderr)
     assert.ok(
       requests >= 3,
@@ -73,6 +80,7 @@ test('HTTP readiness times out when the endpoint never returns 2xx', async () =>
 
   try {
     const result = await runWaiter(url, 'GET', 350)
+
     assert.notEqual(result.code, 0)
     assert.match(result.stderr, /Timed out.*waiting for HTTP 2xx/u)
   } finally {

@@ -54,6 +54,7 @@ describe('post-run assessment', () => {
     }))
     let time = 5
     const input = report()
+
     Object.assign(input.toolCalls[0], {
       selectors: {
         operations: Array.from({ length: 1000 }, () => ({
@@ -66,8 +67,10 @@ describe('post-run assessment', () => {
       criteria: ['Match an intentionally ugly drawing'],
       purpose: 'process',
       provider,
+
       now: () => (time += 5)
     })
+
     expect(provider).toHaveBeenCalledTimes(1)
     expect(provider.mock.calls[0][0]).toMatchObject({
       sourceRequestId: 'drawing-1',
@@ -99,6 +102,7 @@ describe('post-run assessment', () => {
         requestId: 'failed-assessment'
       })
     })
+
     expect(
       await assessExecution(report(), {
         criteria: ['Find avoidable work'],
@@ -111,6 +115,7 @@ describe('post-run assessment', () => {
       assessmentRequestId: 'failed-assessment'
     })
     expect(provider).toHaveBeenCalledTimes(1)
+
     const invalid = async () => ({
       requestId: 'bad',
       value: {
@@ -125,6 +130,7 @@ describe('post-run assessment', () => {
         ]
       }
     })
+
     expect(
       await assessExecution(report(), {
         criteria: ['Find avoidable work'],
@@ -136,6 +142,7 @@ describe('post-run assessment', () => {
 
   it('reuses an adequate current visual opinion without a new call', async () => {
     const input = report()
+
     input.modelReview = {
       ...input.modelReview,
       status: 'recorded',
@@ -146,6 +153,7 @@ describe('post-run assessment', () => {
       ]
     }
     const provider = vi.fn()
+
     expect(
       await assessExecution(input, {
         criteria: ['Requested rough style'],
@@ -158,6 +166,7 @@ describe('post-run assessment', () => {
 
   it('does not reuse a stale opinion or a review of different criteria', async () => {
     const input = report()
+
     input.modelReview = {
       ...input.modelReview,
       status: 'recorded',

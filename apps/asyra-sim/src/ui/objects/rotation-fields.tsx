@@ -43,8 +43,11 @@ export function RotationFields({
           try {
             const unit = normalize(next)
 
-            if (sine <= 1e-12) setIdentityAxis(unit)
-            else onChange(axisAngle(unit, angle))
+            if (sine <= 1e-12) {
+              setIdentityAxis(unit)
+            } else {
+              onChange(axisAngle(unit, angle))
+            }
 
             setError('')
           } catch (reason) {

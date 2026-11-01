@@ -12,8 +12,10 @@ import {
 
 test('static delivery preserves assets and headers without publishing source or services', async (t) => {
   const temporaryRoot = path.resolve(import.meta.dirname, '../../tmp')
+
   await mkdir(temporaryRoot, { recursive: true })
   const root = await mkdtemp(path.join(temporaryRoot, 'cloudflare-'))
+
   t.after(() => rm(root, { recursive: true, force: true }))
   for (const app of DEPLOYMENT_APPS) {
     await mkdir(path.join(root, app.output, 'assets'), { recursive: true })
@@ -32,10 +34,13 @@ test('static delivery preserves assets and headers without publishing source or 
       `/*\n  X-Test: ${app.id}\n`
     )
   }
+
   const sha = 'a'.repeat(40)
+
   await prepareApps({ root, sha })
   for (const app of DEPLOYMENT_APPS) {
     const output = path.join(root, 'tmp/cloudflare-apps', app.id)
+
     assert.equal(
       await readFile(path.join(output, 'assets/worker.js'), 'utf8'),
       'postMessage(1)'
@@ -58,6 +63,7 @@ test('static delivery preserves assets and headers without publishing source or 
       code: 'ENOENT'
     })
   }
+
   await writeFile(
     path.join(root, DEPLOYMENT_APPS[0].output, '_worker.js'),
     'export default {}'
@@ -75,15 +81,25 @@ test('project admission validates existing fixed projects and their identity', a
     production_branch: 'main',
     subdomain: 'asyra-design.pages.dev'
   }
+
   for (const missing of [false]) {
     const calls = []
+
     await ensureProject('asyra-design', {
       accountId: 'a'.repeat(32),
       token: 'test-token',
+
       request: async (url, options) => {
         calls.push({ url, options })
-        if (missing && calls.length === 1) return { status: 404 }
-        return { ok: true, json: async () => ({ success: true, result }) }
+        if (missing && calls.length === 1) {
+          return { status: 404 }
+        }
+
+        return {
+          ok: true,
+
+          json: async () => ({ success: true, result })
+        }
       }
     })
     assert.equal(calls.length, missing ? 2 : 1)
@@ -97,14 +113,18 @@ test('project admission validates existing fixed projects and their identity', a
       })
     }
   }
+
   for (const status of [401, 403, 429, 500]) {
     let count = 0
+
     await assert.rejects(
       ensureProject('asyra-design', {
         accountId: 'a'.repeat(32),
         token: 'test-token',
+
         request: async () => {
           count++
+
           return { ok: false, status }
         }
       }),
@@ -112,6 +132,7 @@ test('project admission validates existing fixed projects and their identity', a
     )
     assert.equal(count, 1, 'An uncertain failure must not create a project')
   }
+
   for (const mismatch of [
     { name: 'other' },
     { production_branch: 'other' },
@@ -122,8 +143,10 @@ test('project admission validates existing fixed projects and their identity', a
       ensureProject('asyra-design', {
         accountId: 'a'.repeat(32),
         token: 'test-token',
+
         request: async () => ({
           ok: true,
+
           json: async () => ({
             success: true,
             result: { ...result, ...mismatch }
@@ -143,10 +166,16 @@ test('public readiness tolerates initial propagation but never accepts a stale r
     { status: 404 },
     {
       status: 200,
+
       json: async () => ({ app: 'asyra-design', sourceSha: 'a'.repeat(40) })
     },
-    { status: 200, json: async () => ({ app: 'asyra-design', sourceSha: sha }) }
+    {
+      status: 200,
+
+      json: async () => ({ app: 'asyra-design', sourceSha: sha })
+    }
   ]
+
   await waitForDeploymentVersion(
     'https://asyra-design.pages.dev',
     'asyra-design',
@@ -154,17 +183,21 @@ test('public readiness tolerates initial propagation but never accepts a stale r
     {
       request: async (url) => {
         seen.push(url)
+
         return responses.shift()
       },
+
       pause: async () => {
         waits++
       },
+
       attempts: 4
     }
   )
   assert.equal(seen.length, 4)
   assert.equal(waits, 3)
   let calls = 0
+
   await assert.rejects(
     waitForDeploymentVersion(
       'https://asyra-design.pages.dev',
@@ -173,9 +206,12 @@ test('public readiness tolerates initial propagation but never accepts a stale r
       {
         request: async () => {
           calls++
+
           return { status: 522 }
         },
+
         pause: () => Promise.resolve(),
+
         attempts: 3
       }
     ),
@@ -190,9 +226,12 @@ test('public readiness tolerates initial propagation but never accepts a stale r
       {
         request: async () => ({
           status: 200,
+
           json: async () => ({ app: 'other', sourceSha: sha })
         }),
+
         pause: () => Promise.resolve(),
+
         attempts: 3
       }
     ),
@@ -211,15 +250,24 @@ test('public verification uses the native App policy and rejects a missing secur
     )
   )
   let omitPolicy = false
+
   t.mock.method(globalThis, 'fetch', async (url) => {
     const pathname = new URL(url).pathname
-    if (pathname === '/deployment-version.json')
+
+    if (pathname === '/deployment-version.json') {
       return Response.json({ app: 'asyra-sim', sourceSha: sha })
-    if (pathname === '/')
+    }
+
+    if (pathname === '/') {
       return new Response('<script src="/assets/app.js"></script>', {
         headers: omitPolicy ? {} : policy
       })
-    if (pathname === '/assets/app.js') return new Response('console.log(1)')
+    }
+
+    if (pathname === '/assets/app.js') {
+      return new Response('console.log(1)')
+    }
+
     return new Response('Not found', { status: 404 })
   })
   await verifyDeployment('asyra-sim', sha)
@@ -232,13 +280,16 @@ test('public verification uses the native App policy and rejects a missing secur
 
 test('direct project creation stops before POST without matching release guidance', async () => {
   const calls = []
+
   await assert.rejects(
     ensureProject('asyra-design', {
       root: path.join(import.meta.dirname, 'missing-guidance-fixture'),
       accountId: 'a'.repeat(32),
       token: 'test-token',
+
       request: async (url, options) => {
         calls.push(options.method ?? 'GET')
+
         return { status: 404 }
       }
     }),

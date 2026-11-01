@@ -27,6 +27,7 @@ test('unsupported rules fail instead of escaping publication verification', () =
     '/*\n  ! X-Test',
     '/*\n  X-Test: :splat',
     `/*\n  X-Test: ${'a'.repeat(2000)}`
-  ])
+  ]) {
     assert.throws(() => parseGlobalHeaders(source), undefined, source)
+  }
 })

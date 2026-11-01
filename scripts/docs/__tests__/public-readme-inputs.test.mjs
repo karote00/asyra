@@ -13,6 +13,7 @@ const repositoryRoot = path.resolve(
 
 test('README inputs derive the exact release surfaces and owners', async () => {
   const inputs = await readApprovedReadmeInputs({ repositoryRoot })
+
   assert.equal(inputs.packages.length, 19)
   assert.equal(inputs.specialSurfaces.length, 4)
   assert.equal(inputs.surfaces.length, 23)
@@ -33,6 +34,7 @@ test('README inputs derive the exact release surfaces and owners', async () => {
       retiredSurface
     )
   }
+
   assert.deepEqual(inputs.generatedReadme, {
     configPath: 'release-configs/asyra-design.json',
     output: 'create-app/asyra-design/template/README.md',
@@ -79,6 +81,7 @@ test('root README follows the product-to-proof reader journey', () => {
   const externalAnchors = [
     ...readme.matchAll(/<a\s+([^>]*href="https?:\/\/[^"]+"[^>]*)>/gu)
   ]
+
   assert.equal(
     externalAnchors.filter(([, attributes]) =>
       attributes.includes('href="https://asyra-design.pages.dev/?fileId=demo"')
@@ -100,6 +103,7 @@ test('root README follows the product-to-proof reader journey', () => {
       new RegExp(action.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'), 'u')
     )
   }
+
   assert.match(readme, /## Try the demo/u)
   assert.match(readme, /Asyra Design case study/u)
   assert.match(
@@ -107,6 +111,7 @@ test('root README follows the product-to-proof reader journey', () => {
     /!\[Asyra Design showing the complete 7,076-element editable cat drawing\]\(apps\/asyra-design\/brand\/asyra-design-7076-product-evidence\.jpg\)/u
   )
   const productEvidence = fs.readFileSync(productEvidencePath)
+
   assert.deepEqual([...productEvidence.subarray(0, 3)], [0xff, 0xd8, 0xff])
   assert.ok(productEvidence.byteLength < 200_000)
   assert.ok(
@@ -120,6 +125,7 @@ test('root README follows the product-to-proof reader journey', () => {
     /!\[Two live Asyra Design clients converging on the 7,076-element cat drawing\]\(docs\/public\/assets\/asyra-design-7076-crdt\.gif\)/u
   )
   const collaborationAnimation = fs.readFileSync(collaborationAnimationPath)
+
   assert.match(
     collaborationAnimation.subarray(0, 6).toString('ascii'),
     /^GIF8[79]a$/u
@@ -130,6 +136,7 @@ test('root README follows the product-to-proof reader journey', () => {
     /<a href="docs\/public\/assets\/asyra-design-7076-crdt\.mp4\?raw=1"><strong>Download the 13-second high-quality MP4\.<\/strong><\/a>/u
   )
   const collaborationEvidence = fs.readFileSync(collaborationEvidencePath)
+
   assert.equal(collaborationEvidence.subarray(4, 8).toString('ascii'), 'ftyp')
   assert.ok(collaborationEvidence.byteLength < 10_000_000)
   assert.match(readme, /Actor A creates the drawing through the Agent/u)
@@ -147,12 +154,14 @@ test('root README follows the product-to-proof reader journey', () => {
   const featureExcerpt = readme.match(
     /## A real App-owned Feature[\s\S]*?```ts\n([\s\S]*?)\n```/u
   )?.[1]
+
   assert.equal(featureExcerpt, undoRedoSource.trim())
   assert.match(readme, /Build a transaction-safe Feature/u)
   assert.match(readme, /## Choose your starting point/u)
   const starterEntry = readme.indexOf('### Generic Starter')
   const designEntry = readme.indexOf('### Complete design product')
   const advancedEntry = readme.indexOf('### Advanced composition')
+
   assert.ok(starterEntry > 0 && starterEntry < designEntry)
   assert.ok(designEntry < advancedEntry)
   assert.match(readme, /apps\/starter-app\/README\.md/u)
@@ -252,6 +261,7 @@ test('Asyra Design README is the standalone generated-product guide', () => {
 
 test('every package input resolves its complete public guide without example commands', async () => {
   const inputs = await readApprovedReadmeInputs({ repositoryRoot })
+
   inputs.packages.forEach((packageRecord) => {
     assert.equal(packageRecord.guide.title, packageRecord.name)
     assert.equal(
@@ -265,6 +275,7 @@ test('every package input resolves its complete public guide without example com
 
 test('README inputs are deeply immutable', async () => {
   const inputs = await readApprovedReadmeInputs({ repositoryRoot })
+
   assert.ok(Object.isFrozen(inputs))
   assert.ok(Object.isFrozen(inputs.packages))
   assert.ok(Object.isFrozen(inputs.packages[0]))

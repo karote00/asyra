@@ -11,22 +11,30 @@ export const GLB_LIMITS = Object.freeze({
   jsonDepth: 24,
   jsonValues: 50000
 })
+
 export type JsonRecord = Record<string, unknown>
+
 export function record(value: unknown, label: string): JsonRecord {
-  if (!value || typeof value !== 'object' || Array.isArray(value))
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new Error(`Invalid ${label}`)
+  }
+
   return value as JsonRecord
 }
+
 export function list(
   value: unknown,
   label: string,
   max: number,
   min = 0
 ): unknown[] {
-  if (!Array.isArray(value) || value.length < min || value.length > max)
+  if (!Array.isArray(value) || value.length < min || value.length > max) {
     throw new Error(`Invalid or over-budget ${label}`)
+  }
+
   return value
 }
+
 export function integer(
   value: unknown,
   label: string,
@@ -38,22 +46,35 @@ export function integer(
     !Number.isSafeInteger(value) ||
     value < min ||
     value > max
-  )
+  ) {
     throw new Error(`Invalid ${label}`)
+  }
+
   return value
 }
+
 export function tuple(value: unknown, length: number, label: string): number[] {
   const values = list(value, label, length, length)
-  if (!values.every((v) => typeof v === 'number' && Number.isFinite(v)))
+
+  if (!values.every((v) => typeof v === 'number' && Number.isFinite(v))) {
     throw new Error(`Nonfinite ${label}`)
+  }
+
   return values as number[]
 }
+
 export function name(value: unknown, fallback: string): string {
-  if (value === undefined) return fallback
-  if (typeof value !== 'string' || value.length > 200)
+  if (value === undefined) {
+    return fallback
+  }
+
+  if (typeof value !== 'string' || value.length > 200) {
     throw new Error('Invalid asset name')
+  }
+
   return value
 }
+
 const forbidden = new Set([
   'uri',
   'extensions',
@@ -74,20 +95,31 @@ const forbidden = new Set([
   'prototype',
   'constructor'
 ])
+
 /** Reject active/unsupported features anywhere, including otherwise unused metadata. */
 export function inspectJson(input: unknown): void {
   const pending = [{ value: input, depth: 0 }]
   let count = 0
+
   while (pending.length) {
     const item = pending.pop()
-    if (!item) break
-    if (++count > GLB_LIMITS.jsonValues || item.depth > GLB_LIMITS.jsonDepth)
+
+    if (!item) {
+      break
+    }
+
+    if (++count > GLB_LIMITS.jsonValues || item.depth > GLB_LIMITS.jsonDepth) {
       throw new Error('GLB JSON resource limit exceeded')
-    if (item.value && typeof item.value === 'object')
+    }
+
+    if (item.value && typeof item.value === 'object') {
       for (const [key, value] of Object.entries(item.value)) {
-        if (forbidden.has(key) || key.endsWith('Texture'))
+        if (forbidden.has(key) || key.endsWith('Texture')) {
           throw new Error(`Unsupported GLB feature: ${key}`)
+        }
+
         pending.push({ value, depth: item.depth + 1 })
       }
+    }
   }
 }

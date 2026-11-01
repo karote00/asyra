@@ -34,9 +34,14 @@ const cleanupKeys = (
 
 const releaseEntries = (entries: PresetCleanupEntry[]): unknown[] => {
   const failures: unknown[] = []
+
   for (let index = entries.length - 1; index >= 0; index--) {
     const entry = entries[index]
-    if (entry.completed) continue
+
+    if (entry.completed) {
+      continue
+    }
+
     try {
       entry.dispose()
       entry.completed = true
@@ -50,6 +55,7 @@ const releaseEntries = (entries: PresetCleanupEntry[]): unknown[] => {
 
 const rollback = (entries: PresetCleanupEntry[], applyError: unknown): void => {
   const failures = releaseEntries(entries)
+
   if (failures.length > 0) {
     throw new PresetApplyError(
       PRESET_APPLY_ERROR_CODES.CLEANUP_FAILED,
@@ -65,6 +71,7 @@ const rollback = (entries: PresetCleanupEntry[], applyError: unknown): void => {
 
 const disposeRuntime = (entries: PresetCleanupEntry[]): void => {
   const failures = releaseEntries(entries)
+
   if (failures.length > 0) {
     throw new PresetApplyError(
       PRESET_APPLY_ERROR_CODES.CLEANUP_FAILED,
@@ -80,7 +87,11 @@ const disposeRuntime = (entries: PresetCleanupEntry[]): void => {
 
 const retryPendingRollback = (core: PresetCoreAPIs): void => {
   const pending = pendingRollbacks.get(core)
-  if (!pending) return
+
+  if (!pending) {
+    return
+  }
+
   rollback(pending.entries, pending.applyError)
   pendingRollbacks.delete(core)
 }
@@ -96,6 +107,7 @@ export const applyPreset = (
   })
   const dependencies = core.getPresetDependencies()
   const cleanupEntries: PresetCleanupEntry[] = []
+
   const registerCleanup: RegisterPresetCleanup = (key, dispose) => {
     cleanupEntries.push({ key, dispose, completed: false })
   }
@@ -112,19 +124,23 @@ export const applyPreset = (
       resolved.profile,
       resolved.spatial
     )
+
     if (provider.cleanup) {
       registerCleanup('profile:render-engine-provider', provider.cleanup)
     }
+
     const result = createPresetApplyResult({
       profile: resolved.profile,
       presetEngineId: provider.presetEngineId,
       selectedDefaults: resolved.selectedDefaults,
       appliedDefaults: installedDefaults
     })
+
     core.registerRuntimeCleanup?.(PRESET_REGISTRATION_OWNER.packageName, () =>
       disposeRuntime(cleanupEntries)
     )
     appliedCores.add(core)
+
     return result
   } catch (error) {
     try {
@@ -136,9 +152,11 @@ export const applyPreset = (
       })
       throw cleanupError
     }
+
     if (error instanceof PresetApplyError) {
       throw error
     }
+
     throw new PresetApplyError(
       PRESET_APPLY_ERROR_CODES.DEFAULT_INSTALL_FAILED,
       'Preset apply failed',

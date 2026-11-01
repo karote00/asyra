@@ -40,15 +40,18 @@ const createCoreForTest = () => {
     props,
     render: {
       getViewportPosition: () => ({ x: 0, y: 0 }),
+
       getViewportScale: () => 1
     } as never,
     sceneTree: ownedSceneTree,
     selection: {} as never,
     systemContext: {} as never
   })
+
   core.setupInputSystem = vi.fn()
   core.initFeatureSystem = vi.fn()
   core.renderIsReady = vi.fn()
+
   return { core, props, sceneTree: ownedSceneTree }
 }
 
@@ -72,6 +75,7 @@ const leavePropertyTargetPending = (
   const graph = (core as unknown as { registrationGraph: RegistrationGraph })
     .registrationGraph
   const source = { kind: 'a-test-detach-owner', key: propertyType }
+
   graph.registerNode({
     ref: source,
     handlers: {
@@ -91,6 +95,7 @@ const leavePropertyTargetPending = (
     'RELATION_REMOVE_FAILED'
   )
   graph.removeRelation(source, 'pending-target')
+
   return graph
 }
 
@@ -99,6 +104,7 @@ describe('Core composition coordinator', () => {
 
   it('exposes app-friendly component, relation, render, UI, and metadata facades', () => {
     const { core } = createCoreForTest()
+
     core.definePropertyComponent({ type: POSITION, defaults: { x: 0 } })
     core.definePropertyComponent({ type: FILLS, defaults: { color: 'red' } })
     core.defineComponent({
@@ -133,6 +139,7 @@ describe('Core composition coordinator', () => {
     ).toEqual(['position', 'outline'])
 
     const strategy = vi.fn()
+
     core.registerRenderStrategy(SHAPE, strategy)
     expect(renderStrategyRegistry.get(SHAPE)).toBe(strategy)
     expect(core.unregisterRenderStrategy(SHAPE)).toBe(true)
@@ -144,6 +151,7 @@ describe('Core composition coordinator', () => {
 
   it('unregisters one property capability, detaches structural sources, and preserves unrelated nodes', () => {
     const { core } = createCoreForTest()
+
     core.definePropertyComponent({ type: POSITION, defaults: { x: 0 } })
     core.definePropertyComponent({ type: FILLS, defaults: { color: 'red' } })
     core.definePropertyComponent({
@@ -188,6 +196,7 @@ describe('Core composition coordinator', () => {
 
   it('unregisters a component without deleting an independent render strategy owner', () => {
     const { core } = createCoreForTest()
+
     core.definePropertyComponent({ type: FILLS, defaults: {} })
     core.defineComponent({
       type: SHAPE,
@@ -205,6 +214,7 @@ describe('Core composition coordinator', () => {
       ]
     })
     const strategy = vi.fn()
+
     core.registerRenderStrategy(SHAPE, strategy, {
       relations: [
         {
@@ -227,6 +237,7 @@ describe('Core composition coordinator', () => {
 
   it('tracks and recursively cleans a component definition inline render strategy', () => {
     const { core } = createCoreForTest()
+
     core.definePropertyComponent({ type: FILLS, defaults: {} })
     const inlineStrategy = vi.fn()
     const definition = {
@@ -350,6 +361,7 @@ describe('Core composition coordinator', () => {
 
   it('supports unregister then redefine as the explicit full-capability fallback', () => {
     const { core } = createCoreForTest()
+
     core.registerPropertySchema({
       type: FILLS,
       fields: [{ key: 'color', kind: 'string', defaultValue: 'red' }]
@@ -388,6 +400,7 @@ describe('Core composition coordinator', () => {
       type: FILLS,
       fields: [{ key: 'color', kind: 'string' as const, defaultValue: 'red' }]
     }
+
     core.registerPropertySchema(schema)
     expectRelationError(
       () => core.registerPropertySchema(schema),
@@ -447,6 +460,7 @@ describe('Core composition coordinator', () => {
       target: { kind: 'property', key: POSITION },
       onTargetUnregister: 'unregister-source' as const
     }
+
     core.definePropertyComponent({ type: POSITION, defaults: { x: 0 } })
     core.registerPropertySchema(
       {
@@ -472,6 +486,7 @@ describe('Core composition coordinator', () => {
 
   it('rejects pending relation targets before component or property owners mutate', () => {
     const { core } = createCoreForTest()
+
     core.definePropertyComponent({ type: FILLS, defaults: {} })
     core.definePropertyComponent({
       type: PARENT,
@@ -528,6 +543,7 @@ describe('Core composition coordinator', () => {
 
   it('preflights pending targets before declarative or opaque owners register', () => {
     const { core } = createCoreForTest()
+
     core.definePropertyComponent({ type: FILLS, defaults: {} })
     const graph = leavePropertyTargetPending(core, FILLS)
 
@@ -584,6 +600,7 @@ describe('Core composition coordinator', () => {
 
   it('rejects pending relation sources before direct owner mutation', () => {
     const { core } = createCoreForTest()
+
     core.definePropertyComponent({ type: FILLS, defaults: {} })
     core.defineComponent({
       type: SHAPE,
@@ -594,6 +611,7 @@ describe('Core composition coordinator', () => {
     const graph = (core as unknown as { registrationGraph: RegistrationGraph })
       .registrationGraph
     const blocker = { kind: 'a-test-detach-owner', key: SHAPE }
+
     graph.registerNode({
       ref: blocker,
       handlers: {
@@ -646,6 +664,7 @@ describe('Core composition coordinator', () => {
       type: FILLS,
       defaults: { color: 'red' }
     })
+
     props.addToMap(
       new Constructor({ id: 'active-fills', type: FILLS, color: 'blue' })
     )
@@ -664,6 +683,7 @@ describe('Core composition coordinator', () => {
 
   it('uses the injected SceneTree to block active component relation mutations', () => {
     const { core, sceneTree: ownedSceneTree } = createCoreForTest()
+
     core.definePropertyComponent({ type: FILLS, defaults: {} })
     core.defineComponent({
       type: SHAPE,
@@ -679,16 +699,20 @@ describe('Core composition coordinator', () => {
       visible: true,
       lock: false
     }) satisfies ElementRawData
+
     ownedSceneTree.addToMap({
       get: (key: string) => {
         if (key === 'id') {
           return 'owned-active-shape'
         }
+
         if (key === 'type') {
           return SHAPE
         }
+
         return
       },
+
       save: () => activeData
     } as never)
 
@@ -701,6 +725,7 @@ describe('Core composition coordinator', () => {
 
   it('permanently closes composition at first start entry even when renderer init fails', async () => {
     const { core } = createCoreForTest()
+
     core.definePropertyComponent({ type: FILLS, defaults: {} })
     core.defineComponent({
       type: SHAPE,
@@ -709,6 +734,7 @@ describe('Core composition coordinator', () => {
       properties: [{ name: 'fills', type: FILLS }]
     })
     const failure = new Error('renderer failed')
+
     core.setRenderer({
       name: 'failing-renderer',
       init: vi.fn(async () => Promise.reject(failure))
@@ -733,6 +759,7 @@ describe('Core composition coordinator', () => {
 
   it('detects dangling owner registrations before renderer side effects', async () => {
     const { core } = createCoreForTest()
+
     core.definePropertyComponent({ type: FILLS, defaults: {} })
     core.defineComponent({
       type: SHAPE,
@@ -743,6 +770,7 @@ describe('Core composition coordinator', () => {
     unregisterPropertyComponent(FILLS)
 
     const init = vi.fn(async () => ({ canvas: null, instance: null }))
+
     core.setRenderer({ name: 'renderer', init } as never)
 
     await expect(

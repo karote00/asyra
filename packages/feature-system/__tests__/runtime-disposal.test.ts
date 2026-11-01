@@ -4,27 +4,37 @@ import type { RawInputEvent, SystemContextSnapshot } from '@asyra/utils'
 import type { InputSystemLike } from '../src/types/core-packages'
 
 const snapshot = () => ({}) as SystemContextSnapshot
+
 const deferred = () => {
   let resolve!: () => void
   const promise = new Promise<void>((done) => {
     resolve = done
   })
+
   return { promise, resolve }
 }
+
 type InputCallback = (raw: RawInputEvent) => void | Promise<void>
+
 class InputHost implements InputSystemLike {
   readonly listeners = new Map<string, InputCallback>()
+
   on(event: string, callback: InputCallback) {
     this.listeners.set(event, callback)
   }
+
   off(event: string, callback: InputCallback) {
-    if (this.listeners.get(event) !== callback) return false
+    if (this.listeners.get(event) !== callback) {
+      return false
+    }
+
     return this.listeners.delete(event)
   }
 }
 
 describe.sequential('complete Feature runtime disposal', () => {
   let runtime: typeof import('../src')
+
   beforeEach(async () => {
     vi.resetModules()
     runtime = await import('../src')
@@ -35,6 +45,7 @@ describe.sequential('complete Feature runtime disposal', () => {
   it('joins repeated disposal and keeps admission closed until explicit restart', async () => {
     expect(() => runtime.beginFeatureSystemRuntime()).toThrow()
     const closing = runtime.disposeFeatureSystem(snapshot)
+
     expect(runtime.disposeFeatureSystem(snapshot)).toBe(closing)
     await closing
     await expect(runtime.interactionQueue.run(() => 1)).rejects.toMatchObject({
@@ -57,6 +68,7 @@ describe.sequential('complete Feature runtime disposal', () => {
       started.resolve()
       await release.promise
     })
+
     await started.promise
     const queued = runtime.interactionQueue.run(late)
     const rejected = expect(queued).rejects.toMatchObject({
@@ -66,6 +78,7 @@ describe.sequential('complete Feature runtime disposal', () => {
     const closing = runtime.disposeFeatureSystem(snapshot).then(() => {
       stopped = true
     })
+
     expect(() => runtime.beginFeatureSystemRuntime()).toThrow()
     await expect(runtime.interactionQueue.run(late)).rejects.toThrow()
     await Promise.resolve()
@@ -79,22 +92,27 @@ describe.sequential('complete Feature runtime disposal', () => {
     const started = deferred(),
       release = deferred()
     let signal!: AbortSignal
+
     runtime.defineFeature('task', undefined, {
       priority: 10,
       exclusive: true,
+
       task: async (_, context) => {
         signal = context.signal
         started.resolve()
         await release.promise
+
         return 'settled'
       }
     })
     const invocation = runtime.invokeFeatureTask('task', {})
+
     await started.promise
     let stopped = false
     const closing = runtime.disposeFeatureSystem(snapshot).then(() => {
       stopped = true
     })
+
     expect(signal.aborted).toBe(true)
     await expect(runtime.invokeFeatureTask('task', {})).rejects.toMatchObject({
       code: 'FEATURE_RUNTIME_CLOSED'
@@ -113,15 +131,22 @@ describe.sequential('complete Feature runtime disposal', () => {
     const subscription = events.subscribeToEndTransaction((event) =>
       ends.push(event.payload)
     )
+
     ends.length = 0
     const onCancel = vi.fn(),
       onEnd = vi.fn()
+
     runtime.setCorePackages({})
     runtime.defineFeature('drag', 'input.drag', {
       priority: 10,
       exclusive: true,
       cancelPolicy: SessionCancelPolicies.COMMIT_CURRENT,
-      session: { onStart: () => ({}), onCancel, onEnd }
+      session: {
+        onStart: () => ({}),
+
+        onCancel,
+        onEnd
+      }
     })
     await runtime.getSessionManager().handleStart('input.drag', snapshot())
     await runtime.disposeFeatureSystem(snapshot)
@@ -136,6 +161,7 @@ describe.sequential('complete Feature runtime disposal', () => {
   it('waits for the actual handler after its timeout already rolled back', async () => {
     const release = deferred()
     const manager = runtime.getSessionManager()
+
     ;(manager as unknown as { handlerTimeoutMs: number }).handlerTimeoutMs = 5
     manager.registerSession(
       'slow',
@@ -145,6 +171,7 @@ describe.sequential('complete Feature runtime disposal', () => {
       SessionCancelPolicies.ROLLBACK,
       {
         onStart: () => ({}),
+
         onUpdate: () => release.promise
       }
     )
@@ -156,6 +183,7 @@ describe.sequential('complete Feature runtime disposal', () => {
     const closing = runtime.disposeFeatureSystem(snapshot).then(() => {
       stopped = true
     })
+
     await Promise.resolve()
     await Promise.resolve()
     expect(stopped).toBe(false)
@@ -170,18 +198,23 @@ describe.sequential('complete Feature runtime disposal', () => {
     let signal!: AbortSignal
     const onCancel = vi.fn()
     const manager = runtime.getSessionManager()
+
     manager.registerSession('starting', 'starting', 10, true, {
       onStart: async (context) => {
         signal = (context as { detail: { signal: AbortSignal } }).detail.signal
         started.resolve()
         await release.promise
+
         return {}
       },
+
       onCancel
     })
     const starting = manager.handleStart('starting', snapshot())
+
     await started.promise
     const closing = runtime.disposeFeatureSystem(snapshot)
+
     expect(signal.aborted).toBe(true)
     release.resolve()
     await starting
@@ -194,6 +227,7 @@ describe.sequential('complete Feature runtime disposal', () => {
     const input = new InputHost(),
       oldOperation = vi.fn(),
       newOperation = vi.fn()
+
     runtime.setCorePackages({
       inputSystem: input,
       systemContext: { getSystemContextSnapshot: snapshot }
@@ -204,8 +238,13 @@ describe.sequential('complete Feature runtime disposal', () => {
       execution: oldOperation
     })
     const callback = input.listeners.get('input.action')
-    if (!callback) throw new Error('Old input binding was not installed')
+
+    if (!callback) {
+      throw new Error('Old input binding was not installed')
+    }
+
     const manager = runtime.getSessionManager()
+
     await runtime.disposeFeatureSystem(snapshot)
     expect(input.listeners.size).toBe(0)
     runtime.beginFeatureSystemRuntime()
@@ -226,8 +265,11 @@ describe.sequential('complete Feature runtime disposal', () => {
       manager.runAfterCancellingActiveSessions(snapshot, oldOperation, 'old')
     ).rejects.toThrow()
     const currentCallback = input.listeners.get('input.action')
-    if (!currentCallback)
+
+    if (!currentCallback) {
       throw new Error('Successor input binding was not installed')
+    }
+
     await currentCallback({} as RawInputEvent)
     expect(oldOperation).not.toHaveBeenCalled()
     expect(newOperation).toHaveBeenCalledOnce()
@@ -237,6 +279,7 @@ describe.sequential('complete Feature runtime disposal', () => {
   it('contains delayed renderer subscriptions and removes pending definitions', async () => {
     const events = await import('@asyra/reactive-events')
     const operation = vi.fn()
+
     runtime.defineFeature('pending', 'input.pending', {
       priority: 10,
       exclusive: true,
@@ -245,6 +288,7 @@ describe.sequential('complete Feature runtime disposal', () => {
     await runtime.disposeFeatureSystem(snapshot)
     runtime.beginFeatureSystemRuntime()
     const input = new InputHost()
+
     runtime.setCorePackages({
       inputSystem: input,
       systemContext: { getSystemContextSnapshot: snapshot }
@@ -269,6 +313,7 @@ describe.sequential('complete Feature runtime disposal', () => {
       exclusive: true,
       session: {
         onStart: () => ({}),
+
         onCancel: () => {
           throw new Error('cleanup failed')
         }
@@ -276,6 +321,7 @@ describe.sequential('complete Feature runtime disposal', () => {
     })
     await runtime.getSessionManager().handleStart('input.failing', snapshot())
     const closing = runtime.disposeFeatureSystem(snapshot)
+
     await expect(closing).rejects.toThrow('cleanup failed')
     expect(runtime.disposeFeatureSystem(snapshot)).toBe(closing)
     expect(() => runtime.beginFeatureSystemRuntime()).toThrow()
@@ -285,9 +331,11 @@ describe.sequential('complete Feature runtime disposal', () => {
   it('joins disposal reentered synchronously by an owned abort listener', async () => {
     const started = deferred()
     let reentered: Promise<void> | undefined
+
     runtime.defineFeature('reentrant', undefined, {
       priority: 10,
       exclusive: true,
+
       task: (_, context) =>
         new Promise<void>((resolve) => {
           context.signal.addEventListener(
@@ -302,14 +350,17 @@ describe.sequential('complete Feature runtime disposal', () => {
         })
     })
     const running = runtime.invokeFeatureTask('reentrant', {})
+
     await started.promise
     const closing = runtime.disposeFeatureSystem(snapshot)
+
     await Promise.all([closing, running])
     expect(reentered).toBe(closing)
   })
 
   it('does not start a task handler still waiting for its first microtask', async () => {
     const handler = vi.fn()
+
     runtime.defineFeature('not-started', undefined, {
       priority: 10,
       exclusive: true,
@@ -319,6 +370,7 @@ describe.sequential('complete Feature runtime disposal', () => {
     const rejected = expect(running).rejects.toMatchObject({
       code: 'FEATURE_RUNTIME_CLOSED'
     })
+
     await runtime.disposeFeatureSystem(snapshot)
     await rejected
     expect(handler).not.toHaveBeenCalled()

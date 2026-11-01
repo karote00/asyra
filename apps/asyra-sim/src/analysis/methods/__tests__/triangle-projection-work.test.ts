@@ -6,13 +6,18 @@ import { representativeSnapshot } from './representative-fixture'
 import { useTriangleProjectionControl } from './triangle-projection-control'
 
 afterEach(() => vi.restoreAllMocks())
+
 async function sourceQuery() {
   const snapshot = await representativeSnapshot(0)
   const pair = snapshot.pairs.find(
     (pair) =>
       pair.a.bodyId === 'example:joint-2' && pair.b.bodyId === 'obstacle-11'
   )
-  if (!pair) throw new Error('Missing complete source pair')
+
+  if (!pair) {
+    throw new Error('Missing complete source pair')
+  }
+
   return {
     query: {
       workcell: snapshot.workcell,
@@ -31,6 +36,7 @@ async function sourceQuery() {
     }
   }
 }
+
 it('retains node rejection while final source triangles proceed to the owned convex query without extra axes', async () => {
   const { query, settings } = await sourceQuery()
   const counts = useTriangleProjectionControl(false)
@@ -41,6 +47,7 @@ it('retains node rejection while final source triangles proceed to the owned con
     () => undefined,
     context
   )
+
   expect(result.coverage).toBe('complete')
   expect(result.leaves).toHaveLength(1)
   expect(result.leaves[0]).toMatchObject({
@@ -66,23 +73,32 @@ it('checks budget and cancellation before executing an unpaid final source conve
       if (
         args[0].geometry.kind === 'triangle' &&
         args[1].geometry.kind === 'triangle'
-      )
+      ) {
         firstConvexWork ??= context.work
+      }
+
       return solve(...args)
     })
   const distance = vi.spyOn(context, 'distance')
+
   queryOriginalPartPair(query, settings, () => undefined, context)
   const args = distance.mock.calls[0]
-  if (!firstConvexWork || !args)
+
+  if (!firstConvexWork || !args) {
     throw new Error('Missing completed original triangle work boundary')
+  }
+
   convexSpy.mockClear()
   context = new OriginalMeshQuery(() => undefined, firstConvexWork - 1)
   expect(() => context.distance(...args)).toThrow(MeshWorkLimit)
   expect(context.work).toBe(firstConvexWork)
   expect(convexSpy).not.toHaveBeenCalled()
   const cutoff = firstConvexWork
+
   context = new OriginalMeshQuery(() => {
-    if (context.work + 1 === cutoff) throw new Error('cancelled source pair')
+    if (context.work + 1 === cutoff) {
+      throw new Error('cancelled source pair')
+    }
   })
   expect(() => context.distance(...args)).toThrow('cancelled source pair')
   expect(context.work).toBe(cutoff - 1)

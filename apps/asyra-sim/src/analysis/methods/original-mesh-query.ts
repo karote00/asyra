@@ -30,6 +30,7 @@ import {
 } from './fresh-static-sampler'
 
 const ops = poseOperations(intervalAlgebra)
+
 export class MeshWorkLimit extends Error {}
 
 /** Deterministic dual-tree descent; bounds select work, never replace geometry. */
@@ -39,24 +40,34 @@ function splitLeft(
   ab: Bounds,
   bb: Bounds
 ): boolean {
-  if (!a?.children) return false
-  if (!b?.children) return true
+  if (!a?.children) {
+    return false
+  }
+
+  if (!b?.children) {
+    return true
+  }
+
   const width = (bounds: Bounds) =>
     Math.max(...bounds.map((axis) => axis[1] - axis[0]))
+
   return width(ab) >= width(bb)
 }
 
 /** One execution-owned query context. No renderer, document mutation or global state. */
 export class OriginalMeshQuery {
   work = 0
+
   #sourceUpper:
     { a: ConvexShape; b: ConvexShape; seed: SourceUpper } | undefined
+
   createStaticSampler(settings: {
     threshold: number
     distanceTolerance: number
     maxIterations: number
   }) {
     const { threshold, distanceTolerance, maxIterations } = settings
+
     return createFreshStaticSampler(
       threshold,
       () => this.chargeSourceWitness(),
@@ -77,8 +88,11 @@ export class OriginalMeshQuery {
       (error) => error instanceof MeshWorkLimit
     )
   }
+
   private readonly refinedIndices = new WeakMap<MeshGeometry, MeshIndex>()
+
   private readonly indices = new WeakMap<MeshGeometry, MeshIndex>()
+
   constructor(
     private readonly checkpoint: () => void = () => undefined,
     // A finite override is for explicitly bounded diagnostic queries only.
@@ -91,36 +105,53 @@ export class OriginalMeshQuery {
   private tick = (units = 1) => {
     this.checkpoint()
     this.work += units
-    if (this.work > this.maxWork)
+    if (this.work > this.maxWork) {
       throw new MeshWorkLimit('The original-triangle work budget was exhausted')
+    }
   }
+
   chargeEvidenceHandoff(): void {
     this.tick()
   }
+
   chargeEvidenceDerivation(): void {
     this.tick()
   }
+
   chargeSourceWitness(): void {
     this.tick()
   }
+
   private index(shape: ConvexShape): MeshIndex | undefined {
     const geometry = shape.geometry
-    if (geometry.kind !== 'mesh') return undefined
+
+    if (geometry.kind !== 'mesh') {
+      return undefined
+    }
+
     const immutable =
       Object.isFrozen(geometry) &&
       Object.isFrozen(geometry.positions) &&
       Object.isFrozen(geometry.indices)
+
     if (immutable) {
       const retained = this.indices.get(geometry)
-      if (retained) return retained
+
+      if (retained) {
+        return retained
+      }
     }
+
     const prepared = immutable ? this.prepared.get(geometry) : undefined
+
     if (prepared && prepared.hierarchy === this.hierarchy) {
       // Charge the same logical preparation budget, using this invocation's deadline.
       this.tick(prepared.work)
       this.indices.set(geometry, prepared.index)
+
       return prepared.index
     }
+
     const before = this.work
     const index = buildMeshIndex(
       geometry,
@@ -128,49 +159,69 @@ export class OriginalMeshQuery {
       this.hierarchy,
       this.checkpoint
     )
-    if (immutable)
+
+    if (immutable) {
       this.prepared.set(geometry, {
         index,
         work: this.work - before,
         hierarchy: this.hierarchy
       })
-    if (immutable) this.indices.set(geometry, index)
+    }
+
+    if (immutable) {
+      this.indices.set(geometry, index)
+    }
+
     return index
   }
+
   private traversalIndex(
     shape: ConvexShape,
     index?: MeshIndex
   ): MeshIndex | undefined {
-    if (!index || !this.hierarchy || shape.geometry.kind !== 'mesh')
+    if (!index || !this.hierarchy || shape.geometry.kind !== 'mesh') {
       return index
+    }
+
     const geometry = shape.geometry
     const immutable =
       Object.isFrozen(geometry) &&
       Object.isFrozen(geometry.positions) &&
       Object.isFrozen(geometry.indices)
     const retained = immutable ? this.refinedIndices.get(geometry) : undefined
-    if (retained) return retained
+
+    if (retained) {
+      return retained
+    }
+
     const prepared = immutable ? this.prepared.get(geometry) : undefined
     const compatible =
       prepared?.index === index && prepared.hierarchy === this.hierarchy
     const cached = compatible ? prepared.refinement : undefined
+
     if (cached) {
       this.tick(cached.work)
       this.refinedIndices.set(geometry, cached.index)
+
       return cached.index
     }
+
     const before = this.work
     const refined = refineMeshIndex(index, this.tick)
+
     if (immutable) {
       this.refinedIndices.set(geometry, refined)
-      if (compatible)
+      if (compatible) {
         this.prepared.set(geometry, {
           ...prepared,
           refinement: { index: refined, work: this.work - before }
         })
+      }
     }
+
     return refined
   }
+
   private projectGap(
     a: ConvexShape,
     b: ConvexShape,
@@ -179,17 +230,22 @@ export class OriginalMeshQuery {
     gap: number,
     threshold: number
   ): number {
-    if (gap > threshold || !ab || !bb) return gap
+    if (gap > threshold || !ab || !bb) {
+      return gap
+    }
+
     return Math.max(
       gap,
       projectedBoundsGap(ab, a.pose, bb, b.pose, threshold, this.tick)
     )
   }
+
   private witness(shape: ConvexShape, index?: MeshIndex): Vector<Interval> {
     return index
       ? worldPoint(shape.pose, index.representatives[0])
       : shape.pose.position
   }
+
   distance(
     a: ConvexShape,
     b: ConvexShape,
@@ -197,8 +253,10 @@ export class OriginalMeshQuery {
     tolerance: number,
     iterations: number
   ): DistanceEvidence {
-    if (a.geometry.kind !== 'mesh' && b.geometry.kind !== 'mesh')
+    if (a.geometry.kind !== 'mesh' && b.geometry.kind !== 'mesh') {
       return convexDistance(a, b, tolerance, iterations)
+    }
+
     this.tick()
     const ai = this.index(a),
       bi = this.index(b)
@@ -230,8 +288,13 @@ export class OriginalMeshQuery {
       boundsGap(boundsA, boundsB),
       threshold
     )
-    if (gap > threshold) return { ...result, lower: gap }
+
+    if (gap > threshold) {
+      return { ...result, lower: gap }
+    }
+
     let unknown = false
+
     for (const [from, fi, to, ti] of [
       [a, ai, b, bi],
       [b, bi, a, ai]
@@ -239,10 +302,12 @@ export class OriginalMeshQuery {
       const points = fi
         ? fi.representatives.map((point) => worldPoint(from.pose, point))
         : [from.pose.position]
+
       for (const point of points) {
         this.tick()
         const membership = shapeMembership(point, to, ti, this.tick)
-        if (membership === 'inside')
+
+        if (membership === 'inside') {
           return {
             ...result,
             upper: 0,
@@ -251,9 +316,12 @@ export class OriginalMeshQuery {
             witnessA: point,
             witnessB: point
           }
+        }
+
         unknown ||= membership === 'unknown'
       }
     }
+
     const traversalA = this.traversalIndex(a, ai),
       traversalB = this.traversalIndex(b, bi)
     const pending: [MeshNode | undefined, MeshNode | undefined][] = [
@@ -261,10 +329,15 @@ export class OriginalMeshQuery {
     ]
     let lower = Infinity
     let searchThreshold = result.upper < threshold ? 0 : threshold
+
     while (pending.length) {
       this.tick()
       const pair = pending.pop()
-      if (!pair) throw new Error('Missing pending mesh pair')
+
+      if (!pair) {
+        throw new Error('Missing pending mesh pair')
+      }
+
       const [an, bn] = pair
       const ab = an ? resolveA(an.bounds) : boundsA
       const bb = bn ? resolveB(bn.bounds) : boundsB
@@ -276,28 +349,40 @@ export class OriginalMeshQuery {
         boundsGap(ab, bb),
         searchThreshold
       )
+
       if (bound > searchThreshold) {
         lower = Math.min(lower, bound)
         continue
       }
+
       if (an?.children && splitLeft(an, bn, ab, bb)) {
-        for (const child of an.children) pending.push([child, bn])
+        for (const child of an.children) {
+          pending.push([child, bn])
+        }
+
         continue
       }
+
       if (bn?.children) {
-        for (const child of bn.children) pending.push([an, child])
+        for (const child of bn.children) {
+          pending.push([an, child])
+        }
+
         continue
       }
-      for (const at of an?.triangles ?? [undefined])
+
+      for (const at of an?.triangles ?? [undefined]) {
         for (const bt of bn?.triangles ?? [undefined]) {
           this.tick()
           const ab = at ? resolveA(at.bounds) : boundsA,
             bb = bt ? resolveB(bt.bounds) : boundsB
           const triangleGap = boundsGap(ab, bb)
+
           if (triangleGap > searchThreshold) {
             lower = Math.min(lower, triangleGap)
             continue
           }
+
           const sa: ConvexShape = at
             ? {
                 geometry: { kind: 'triangle', vertices: at.vertices },
@@ -311,19 +396,31 @@ export class OriginalMeshQuery {
               }
             : b
           const evidence = convexDistance(sa, sb, tolerance, iterations)
+
           lower = Math.min(lower, evidence.lower)
-          if (evidence.penetration || evidence.upper < result.upper)
+          if (evidence.penetration || evidence.upper < result.upper) {
             result = evidence
+          }
+
           // A warning witness settles the clearance question, not penetration.
           // Continue all possibly intersecting regions; positively separated
           // regions cannot change that remaining classification. Keep the
           // witnessed upper bound rather than recomputing an optional minimum.
-          if (result.upper < threshold) searchThreshold = 0
-          if (result.penetration) return { ...result, lower: 0 }
+          if (result.upper < threshold) {
+            searchThreshold = 0
+          }
+
+          if (result.penetration) {
+            return { ...result, lower: 0 }
+          }
         }
+      }
     }
-    if (lower > result.upper)
+
+    if (lower > result.upper) {
       throw new Error('Inconsistent original mesh distance certificates')
+    }
+
     return {
       ...result,
       lower: unknown ? 0 : lower,
@@ -348,8 +445,11 @@ export class OriginalMeshQuery {
       resolveB = createWorldBoundsResolver(b.pose),
       boundsA = shapeBounds(a, ai, resolveA),
       boundsB = shapeBounds(b, bi, resolveB)
-    if (!ai && !bi)
+
+    if (!ai && !bi) {
       throw new Error('Native interval queries use their analytical kernel')
+    }
+
     const overall = this.projectGap(
       a,
       b,
@@ -358,18 +458,30 @@ export class OriginalMeshQuery {
       boundsGap(boundsA, boundsB),
       threshold
     )
-    if (overall > threshold) return overall
-    if (witness.lower <= 0) return 0
+
+    if (overall > threshold) {
+      return overall
+    }
+
+    if (witness.lower <= 0) {
+      return 0
+    }
+
     const traversalA = this.traversalIndex(a, ai),
       traversalB = this.traversalIndex(b, bi)
     const pending: [MeshNode | undefined, MeshNode | undefined][] = [
       [traversalA?.root, traversalB?.root]
     ]
     let lower = Infinity
+
     while (pending.length) {
       this.tick()
       const pair = pending.pop()
-      if (!pair) throw new Error('Missing pending mesh pair')
+
+      if (!pair) {
+        throw new Error('Missing pending mesh pair')
+      }
+
       const [an, bn] = pair
       const ab = an ? resolveA(an.bounds) : boundsA
       const bb = bn ? resolveB(bn.bounds) : boundsB
@@ -381,24 +493,35 @@ export class OriginalMeshQuery {
         boundsGap(ab, bb),
         threshold
       )
+
       if (gap > threshold) {
         lower = Math.min(lower, gap)
         continue
       }
+
       if (an?.children && splitLeft(an, bn, ab, bb)) {
-        for (const child of an.children) pending.push([child, bn])
+        for (const child of an.children) {
+          pending.push([child, bn])
+        }
+
         continue
       }
+
       if (bn?.children) {
-        for (const child of bn.children) pending.push([an, child])
+        for (const child of bn.children) {
+          pending.push([an, child])
+        }
+
         continue
       }
-      for (const at of an?.triangles ?? [undefined])
+
+      for (const at of an?.triangles ?? [undefined]) {
         for (const bt of bn?.triangles ?? [undefined]) {
           this.tick()
           const ab = at ? resolveA(at.bounds) : boundsA,
             bb = bt ? resolveB(bt.bounds) : boundsB
           let gap = boundsGap(ab, bb)
+
           if (gap <= threshold) {
             // A box overlap is not a surface overlap. Search an axis, then use
             // the original triangle's outward support over the complete interval.
@@ -414,12 +537,18 @@ export class OriginalMeshQuery {
                   pose: b.pose
                 }
               : b
+
             gap = convexDistance(sa, sb, tolerance, iterations).lower
-            if (gap <= threshold) return 0
+            if (gap <= threshold) {
+              return 0
+            }
           }
+
           lower = Math.min(lower, gap)
         }
+      }
     }
+
     return lower
   }
 }

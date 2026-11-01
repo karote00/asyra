@@ -61,6 +61,7 @@ it('renders supported large historical evidence without argument overflow or eag
     createElement(AnalysisResultView, {
       run: { snapshot, result },
       stale: false,
+
       onReplay: () => undefined
     })
   )

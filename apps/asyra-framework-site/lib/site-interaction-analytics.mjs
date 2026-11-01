@@ -56,11 +56,19 @@ const linkAreas = [
   ['header', 'header'],
   ['footer', 'footer']
 ]
+
 const linkArea = (element) =>
   linkAreas.find(([selector]) => element.closest(selector))?.[1] ?? 'content'
+
 const queryLength = (length) => {
-  if (length <= 3) return '1_3'
-  if (length <= 8) return '4_8'
+  if (length <= 3) {
+    return '1_3'
+  }
+
+  if (length <= 8) {
+    return '4_8'
+  }
+
   return '9_plus'
 }
 
@@ -75,79 +83,130 @@ export function installSiteAnalytics(browser, { pagePaths, caseIds }) {
   let pendingInput
   let pendingPath
   let reportedQueries = new WeakMap()
+
   const pagePath = () =>
     paths.has(browser.location.pathname) ? browser.location.pathname : '(other)'
+
   const emit = (name, parameters = {}) => {
-    if (disposed) return
+    if (disposed) {
+      return
+    }
+
     try {
       browser.gtag?.('event', name, { page_path: pagePath(), ...parameters })
     } catch {
       // Analytics availability must never change navigation or product behavior.
     }
   }
+
   const cancelSearch = () => {
-    if (timer !== undefined) browser.clearTimeout(timer)
+    if (timer !== undefined) {
+      browser.clearTimeout(timer)
+    }
+
     timer = undefined
     pendingInput = undefined
     pendingPath = undefined
   }
+
   const flushSearch = () => {
     const input = pendingInput
     const path = pendingPath
+
     cancelSearch()
     const dialog = input?.closest('[data-site-search]')
+
     if (
       !input?.isConnected ||
       !dialog?.open ||
       path !== browser.location.pathname
-    )
+    ) {
       return
+    }
+
     const query = input.value.trim()
-    if (!query || reportedQueries.get(input) === query) return
-    const resultCount = Number(dialog.dataset.siteResultCount)
-    if (!Number.isInteger(resultCount) || resultCount < 0 || resultCount > 12)
+
+    if (!query || reportedQueries.get(input) === query) {
       return
+    }
+
+    const resultCount = Number(dialog.dataset.siteResultCount)
+
+    if (!Number.isInteger(resultCount) || resultCount < 0 || resultCount > 12) {
+      return
+    }
+
     reportedQueries.set(input, query)
     emit(SITE_EVENTS.search, {
       result_count: resultCount,
       query_length: queryLength(query.length)
     })
   }
+
   const onInput = (event) => {
     const input = event.target
+
     if (
       !(input instanceof browser.HTMLInputElement) ||
       !input.closest('[data-site-search]')
-    )
-      return
-    cancelSearch()
-    if (event.isComposing) return
-    if (!input.value.trim()) {
-      reportedQueries.delete(input)
+    ) {
       return
     }
+
+    cancelSearch()
+    if (event.isComposing) {
+      return
+    }
+
+    if (!input.value.trim()) {
+      reportedQueries.delete(input)
+
+      return
+    }
+
     pendingInput = input
     pendingPath = browser.location.pathname
     timer = browser.setTimeout(flushSearch, 500)
   }
+
   const onKeyDown = (event) => {
     if (
       event.key === 'Enter' &&
       event.target === pendingInput &&
       !event.isComposing
-    )
+    ) {
       flushSearch()
+    }
   }
+
   const onClick = (event) => {
-    if (event.type === 'auxclick' && event.button !== 1) return
-    if (event.type === 'click' && event.button !== 0) return
+    if (event.type === 'auxclick' && event.button !== 1) {
+      return
+    }
+
+    if (event.type === 'click' && event.button !== 0) {
+      return
+    }
+
     const target = event.target
-    if (!(target instanceof browser.Element)) return
+
+    if (!(target instanceof browser.Element)) {
+      return
+    }
+
     const control = target.closest('[data-site-action]')
+
     if (control) {
-      if (control.matches(':disabled, [aria-disabled="true"]')) return
+      if (control.matches(':disabled, [aria-disabled="true"]')) {
+        return
+      }
+
       const action = actionsById.get(control.dataset.siteAction)
-      if (!action) return
+
+      if (!action) {
+        return
+      }
+
       if (action.control_id) {
         emit(SITE_EVENTS.ui, {
           control_id: action.control_id,
@@ -157,47 +216,74 @@ export function installSiteAnalytics(browser, { pagePaths, caseIds }) {
         if (
           action.action === 'select_case' &&
           control.getAttribute('aria-pressed') === 'true'
-        )
+        ) {
           return
+        }
+
         const caseId = control.closest('[data-site-case]')?.dataset.siteCase
-        if (cases.has(caseId))
+
+        if (cases.has(caseId)) {
           emit(SITE_EVENTS.atlas, { action: action.action, case_id: caseId })
+        }
       }
+
       return
     }
+
     const link = target.closest('a[href]')
-    if (!link || link.hasAttribute('download')) return
+
+    if (!link || link.hasAttribute('download')) {
+      return
+    }
+
     let destination
+
     try {
       destination = new browser.URL(link.href, browser.location.href)
     } catch {
       return
     }
-    if (!['http:', 'https:'].includes(destination.protocol)) return
+
+    if (!['http:', 'https:'].includes(destination.protocol)) {
+      return
+    }
+
     const internal = destination.origin === browser.location.origin
+
     if (link.hasAttribute('data-site-cta')) {
       const key = internal
         ? destination.pathname
         : destination.origin + destination.pathname
       const cta = ctaDestinations.get(key)
+
       if (cta) {
         emit(SITE_EVENTS.cta, { cta_id: cta, link_area: linkArea(link) })
+
         return
       }
     }
-    if (!internal || !paths.has(destination.pathname)) return
+
+    if (!internal || !paths.has(destination.pathname)) {
+      return
+    }
+
     const results = link.closest('.search-results')
+
     if (results) {
       flushSearch()
       const position =
         Array.from(results.querySelectorAll('a[href]')).indexOf(link) + 1
-      if (position > 0 && position <= 12)
+
+      if (position > 0 && position <= 12) {
         emit(SITE_EVENTS.searchSelect, {
           target_path: destination.pathname,
           result_position: position
         })
+      }
+
       return
     }
+
     emit(SITE_EVENTS.navigation, {
       target_path: destination.pathname,
       link_area: linkArea(link),
@@ -207,26 +293,44 @@ export function installSiteAnalytics(browser, { pagePaths, caseIds }) {
           : 'page'
     })
   }
+
   const onClose = (event) => {
     const dialog = event.target
-    if (!(dialog instanceof browser.HTMLDialogElement)) return
+
+    if (!(dialog instanceof browser.HTMLDialogElement)) {
+      return
+    }
+
     if (dialog.hasAttribute('data-site-search')) {
       cancelSearch()
       reportedQueries = new WeakMap()
     }
+
     const control = dialogControls.get(dialog.getAttribute('aria-labelledby'))
-    if (control) emit(SITE_EVENTS.ui, { control_id: control, action: 'close' })
+
+    if (control) {
+      emit(SITE_EVENTS.ui, { control_id: control, action: 'close' })
+    }
   }
+
   const onCopy = () => {
     const selection = browser.getSelection()
-    if (!selection || selection.isCollapsed) return
+
+    if (!selection || selection.isCollapsed) {
+      return
+    }
+
     const anchor =
       selection.anchorNode instanceof browser.Element
         ? selection.anchorNode
         : selection.anchorNode?.parentElement
     const code = anchor?.closest('pre')
-    if (code && code.contains(selection.focusNode)) emit(SITE_EVENTS.codeCopy)
+
+    if (code && code.contains(selection.focusNode)) {
+      emit(SITE_EVENTS.codeCopy)
+    }
   }
+
   const listeners = [
     ['click', onClick],
     ['auxclick', onClick],
@@ -235,19 +339,27 @@ export function installSiteAnalytics(browser, { pagePaths, caseIds }) {
     ['close', onClose],
     ['copy', onCopy]
   ]
-  for (const [type, listener] of listeners)
+
+  for (const [type, listener] of listeners) {
     document.addEventListener(type, listener, true)
+  }
+
   return {
     pageChanged() {
       cancelSearch()
       reportedQueries = new WeakMap()
     },
+
     dispose() {
-      if (disposed) return
+      if (disposed) {
+        return
+      }
+
       disposed = true
       cancelSearch()
-      for (const [type, listener] of listeners)
+      for (const [type, listener] of listeners) {
         document.removeEventListener(type, listener, true)
+      }
     }
   }
 }

@@ -53,6 +53,7 @@ const model: Workcell = {
   robotRootId: 'base',
   bodies: [base, fixture]
 }
+
 const experiment = (): ExperimentDraft => ({
   version: 1,
   trajectory: { version: 1, keyframes: [{ time: 0, joints: {} }] },
@@ -79,7 +80,9 @@ const experiment = (): ExperimentDraft => ({
   rule: { version: 1, minimumClearance: 0.02 },
   budget: { maxIntervals: 2000, maxDurationMs: 15000 }
 })
+
 let features: ReturnType<typeof installEditingFeatures>
+
 beforeAll(() => {
   installModelComponents(core)
   features = installEditingFeatures(core)
@@ -97,6 +100,7 @@ describe('normal canonical editing and replay', () => {
       'Clearance study',
       experiment()
     )
+
     expect(core.getUndoHistoryDepth()).toBe(before + 1)
     expect(core.getElementData(experimentId)?.parentId).toBe(candidate)
     expect(readExperiment(core, experimentId).definition.revision).toBe(1)
@@ -125,16 +129,19 @@ describe('normal canonical editing and replay', () => {
       1,
       experiment()
     )
+
     expect(unchanged.revision).toBe(1)
     expect(core.getUndoHistoryDepth()).toBe(before)
 
     const changed = experiment()
+
     changed.rule.minimumClearance = 0.03
     const updated = await features.edit.updateExperiment(
       experimentId,
       1,
       changed
     )
+
     expect(updated.revision).toBe(2)
     expect(updated.rule.revision).toBe(2)
     expect(core.getUndoHistoryDepth()).toBe(before + 1)
@@ -154,9 +161,11 @@ describe('normal canonical editing and replay', () => {
       experiment()
     )
     const changed = experiment()
+
     changed.budget.maxIntervals = 3000
     await features.edit.updateExperiment(experimentId, 1, changed)
     const before = core.getUndoHistoryDepth()
+
     await expect(
       features.edit.updateExperiment(experimentId, 1, experiment())
     ).rejects.toThrow('revision')
@@ -175,6 +184,7 @@ describe('normal canonical editing and replay', () => {
     )
     const before = core.getUndoHistoryDepth(),
       draft = experiment()
+
     draft.rule.acceptance = {
       kind: 'all',
       conditions: [
@@ -183,6 +193,7 @@ describe('normal canonical editing and replay', () => {
       ]
     }
     const updated = await features.edit.updateExperiment(id, 1, draft)
+
     expect(updated.rule.revision).toBe(2)
     expect(updated.revision).toBe(2)
     expect(core.getUndoHistoryDepth()).toBe(before + 1)
@@ -200,6 +211,7 @@ describe('normal canonical editing and replay', () => {
       2,
       structuredClone(draft)
     )
+
     expect(stable.revision).toBe(2)
     expect(core.getUndoHistoryDepth()).toBe(before + 1)
     draft.budget.maxIntervals++
@@ -208,15 +220,19 @@ describe('normal canonical editing and replay', () => {
     ).toBe(2)
     const duplicate = await features.edit.duplicateCandidate(candidate, 'B')
     const copied = readExperiments(core, duplicate)[0]
+
     expect(copied.definition.rule).toEqual({ ...draft.rule, revision: 1 })
     const without = experiment()
+
     without.budget = draft.budget
     const removed = await features.edit.updateExperiment(id, 3, without)
+
     expect(removed.rule.revision).toBe(3)
     expect(
       readExperiments(core, duplicate)[0].definition.rule.acceptance
     ).toEqual(draft.rule.acceptance)
     const depth = core.getUndoHistoryDepth()
+
     Object.assign(without.rule, { acceptance: { kind: 'all', conditions: [] } })
     await expect(
       features.edit.updateExperiment(id, 4, without)
@@ -233,6 +249,7 @@ describe('normal canonical editing and replay', () => {
       experiment()
     )
     const saved = await core.save()
+
     core.load(empty)
     core.load(saved)
     expect(readExperiment(core, experimentId)).toMatchObject({
@@ -251,12 +268,17 @@ describe('normal canonical editing and replay', () => {
     )
     const saved = await core.save()
     const propertyId = core.getElementData(experimentId)?.props?.experiment
-    if (!propertyId) throw new Error('Missing experiment property')
+
+    if (!propertyId) {
+      throw new Error('Missing experiment property')
+    }
+
     ;(saved.props[propertyId] as Record<string, unknown>)[
       PropertyFields.EXPERIMENT
     ] = { invalid: true }
 
     const issues = loadCanonicalDocument(core, saved)
+
     expect(
       issues.some((issue) => issue.path.endsWith(PropertyFields.EXPERIMENT))
     ).toBe(true)
@@ -278,10 +300,13 @@ describe('normal canonical editing and replay', () => {
       pose: { ...fixture.pose, position: [4, 1, 0] }
     })
     const document = await captured
+
     await editing
     const depth = core.getUndoHistoryDepth()
+
     expect(depth).toBeGreaterThan(0)
     const issues = await features.edit.applyDocument(document, () => undefined)
+
     expect(issues).toEqual([])
     expect(
       readWorkcell(core, candidate).bodies.find((body) => body.id === 'fixture')
@@ -292,6 +317,7 @@ describe('normal canonical editing and replay', () => {
   })
   it('checks the accepted document guard inside the queue before any canonical apply', async () => {
     const candidate = await features.edit.createCandidate('Original', model)
+
     await expect(
       features.edit.applyDocument(empty, () => {
         throw new Error('New edit arrived')
@@ -303,6 +329,7 @@ describe('normal canonical editing and replay', () => {
     const candidate = await features.edit.createCandidate('Original', model)
     const saved = await features.edit.captureDocument()
     const broken = structuredClone(saved)
+
     broken.sceneTree.elements.base.parentId = 'missing-parent'
     await expect(
       features.edit.applyDocument(broken, () => undefined)
@@ -328,6 +355,7 @@ describe('normal canonical editing and replay', () => {
         { ...base, role: 'fixture', parentId: 'fixture' }
       ]
     }
+
     await features.edit.replace(candidate, reversed)
     expect(core.getElementData('base')?.parentId).toBe('fixture')
     expect(core.getElementData('fixture')?.parentId).toBe(candidate)
@@ -338,6 +366,7 @@ describe('normal canonical editing and replay', () => {
   it('does not add History for an unchanged body update', async () => {
     const candidate = await features.edit.createCandidate('A', model),
       before = core.getUndoHistoryDepth()
+
     await features.edit.upsert(candidate, fixture)
     expect(core.getUndoHistoryDepth()).toBe(before)
   })
@@ -345,10 +374,15 @@ describe('normal canonical editing and replay', () => {
     const candidate = await features.edit.createCandidate('A', model),
       saved = await core.save()
     const propertyId = core.getElementData('fixture')?.props?.body
-    if (!propertyId) throw new Error('Missing body property')
+
+    if (!propertyId) {
+      throw new Error('Missing body property')
+    }
+
     ;(saved.props[propertyId] as Record<string, unknown>)[PropertyFields.BODY] =
       { invalid: true }
     const diagnostics = loadCanonicalDocument(core, saved)
+
     expect(diagnostics.length).toBeGreaterThan(0)
     expect(
       readWorkcell(core, candidate).bodies.find((body) => body.id === 'fixture')
@@ -359,13 +393,19 @@ describe('normal canonical editing and replay', () => {
     const candidate = await features.edit.createCandidate('A', model),
       saved = await core.save()
     const propertyId = core.getElementData('fixture')?.props?.body
-    if (!propertyId) throw new Error('Missing body property')
+
+    if (!propertyId) {
+      throw new Error('Missing body property')
+    }
+
     const property = saved.props[propertyId] as Record<string, unknown>
+
     property[PropertyFields.BODY] = {
       ...(property[PropertyFields.BODY] as Record<string, unknown>),
       parentId: 'untrusted-parent'
     }
     const issues = loadCanonicalDocument(core, saved)
+
     expect(
       issues.some((issue) => issue.path.endsWith(PropertyFields.BODY))
     ).toBe(true)
@@ -384,6 +424,7 @@ describe('normal canonical editing and replay', () => {
         { ...fixture, pose: { ...IDENTITY_POSE, position: [4, 0, 0] } }
       ]
     }
+
     await features.edit.replace(candidate, replacement)
     expect(readWorkcell(core, candidate)).toEqual(replacement)
     expect(core.getUndoHistoryDepth()).toBe(depth + 1)
@@ -393,6 +434,7 @@ describe('normal canonical editing and replay', () => {
   it('creates the scene and property graph as one Undo action', async () => {
     const before = core.getUndoHistoryDepth()
     const candidate = await features.edit.createCandidate('A', model)
+
     expect(readWorkcell(core, candidate)).toEqual(model)
     expect(core.getElementData('base')?.parentId).toBe(candidate)
     expect(core.getUndoHistoryDepth()).toBe(before + 1)
@@ -412,6 +454,7 @@ describe('normal canonical editing and replay', () => {
       pose: { ...IDENTITY_POSE, position: [0, 2, 0] },
       visible: false
     }
+
     await features.edit.upsert(candidate, updated)
     expect(core.getUndoHistoryDepth()).toBe(before + 1)
     expect(core.getElementData('fixture')?.props).toEqual(propertyIds)
@@ -428,6 +471,7 @@ describe('normal canonical editing and replay', () => {
   it('rejects invalid intent and direct property writes without partial changes', async () => {
     const candidate = await features.edit.createCandidate('A', model),
       before = core.getUndoHistoryDepth()
+
     await expect(
       features.edit.upsert(candidate, {
         ...fixture,
@@ -449,6 +493,7 @@ describe('normal canonical editing and replay', () => {
     const first = await features.edit.createCandidate('A', model),
       count = core.getCanonicalElementCount(),
       depth = core.getUndoHistoryDepth()
+
     await expect(
       features.edit.createCandidate('Conflicting', model)
     ).rejects.toThrow('another candidate')
@@ -456,6 +501,7 @@ describe('normal canonical editing and replay', () => {
     expect(core.getUndoHistoryDepth()).toBe(depth)
     const update = { ...fixture, name: 'Detached' },
       pending = features.edit.upsert(first, update)
+
     update.name = 'Mutated after invocation'
     await pending
     expect(
@@ -465,13 +511,16 @@ describe('normal canonical editing and replay', () => {
   })
   it('restores a deleted subtree and roundtrips through Core save/load', async () => {
     const candidate = await features.edit.createCandidate('A', model)
+
     await features.edit.upsert(candidate, { ...fixture, parentId: 'base' })
     const before = readWorkcell(core, candidate)
+
     await features.edit.remove(candidate, 'base')
     expect(readWorkcell(core, candidate).bodies).toEqual([])
     await features.history.undo()
     expect(readWorkcell(core, candidate)).toEqual(before)
     const saved = await core.save()
+
     core.load(empty)
     core.load(saved)
     expect(core.getElementData(candidate)?.type).toBe(ComponentTypes.CANDIDATE)
@@ -497,6 +546,7 @@ it('persists erroneous trajectory and exclusion source independently, with canon
     'Editable source',
     draft as ExperimentDraft
   )
+
   expect(readExperiment(core, id).definition).toMatchObject(draft)
   expect(core.getUndoHistoryDepth()).toBe(before + 1)
   await features.edit.updateExperiment(id, 1, {
@@ -512,6 +562,7 @@ it('persists erroneous trajectory and exclusion source independently, with canon
     exclusionsInput: draft.exclusionsInput
   })
   const saved = await core.save()
+
   loadCanonicalDocument(core, saved)
   expect(readExperiment(core, id).definition).toMatchObject({
     ...draft,
@@ -549,8 +600,11 @@ it.each(['csv', 'json'] as const)(
     const fixtureId = copiedModel.bodies.find(
       (body) => body.name === 'Fixture'
     )?.id
-    if (!baseId || !fixtureId || !input.trajectoryInput)
+
+    if (!baseId || !fixtureId || !input.trajectoryInput) {
       throw new Error('Missing copied input')
+    }
+
     expect(copied.trajectoryInput?.mapping.joints).toEqual({
       [baseId]: { column: 'base', unit: 'rad' }
     })
@@ -578,6 +632,7 @@ it('persists finite interval endpoints independently of ordering and trajectory 
     experiment()
   )
   const depth = core.getUndoHistoryDepth()
+
   await features.edit.updateExperiment(id, 1, {
     ...experiment(),
     interval: [2, 0]
@@ -597,6 +652,7 @@ it('persists finite interval endpoints independently of ordering and trajectory 
   expect(readExperiment(core, id).definition.interval).toEqual([0, 0])
   await features.history.redo()
   const saved = await core.save()
+
   expect(loadCanonicalDocument(core, saved)).toEqual([])
   expect(readExperiment(core, id).definition.interval).toEqual([2, 0])
 })

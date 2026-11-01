@@ -4,6 +4,7 @@ import { UnsupportedRenderEngineCapabilityError } from '../errors.js'
 import { isSpatialQuery } from '../spatial.js'
 it('keeps spatial queries distinct and rejects them on the non-spatial recording engine', () => {
   const engine = new RecordingRenderEngine({ name: 'query-test' })
+
   engine.initialize({ host: {}, width: 100, height: 100 })
   expect(isSpatialQuery({ type: 'spatial-project', point: [0, 0, 0] })).toBe(
     true

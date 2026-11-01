@@ -12,8 +12,10 @@ describe('Core observer runtime reset', () => {
           failure = error
         }
       },
+
       observeSharedDataChannelBatch: vi.fn()
     })
+
     registry.register({
       name: 'observer',
       channel: 'channel',
@@ -26,13 +28,16 @@ describe('Core observer runtime reset', () => {
 
   it('preserves the handler bound at activation until explicit retirement', () => {
     let notify: (value: unknown) => void = () => undefined
+
     const first = vi.fn(),
       replacement = vi.fn()
     const registry = new DataChannelObserverRegistry({
       observeSharedDataChannel: (_channel, callback) => {
         notify = callback as (value: unknown) => void
+
         return () => undefined
       },
+
       observeSharedDataChannelBatch: vi.fn()
     })
     const registration = {
@@ -40,6 +45,7 @@ describe('Core observer runtime reset', () => {
       channel: 'channel',
       onChange: first
     }
+
     registry.register(registration)
     registry.init()
     registration.onChange = replacement
@@ -58,10 +64,13 @@ describe('Core observer runtime reset', () => {
     const registry = new DataChannelObserverRegistry({
       observeSharedDataChannel: (_channel, callback) => {
         handlers.push(callback as (value: unknown) => void)
+
         return cleanup
       },
+
       observeSharedDataChannelBatch: vi.fn()
     })
+
     registry.register({
       name: 'observer',
       channel: 'channel',
@@ -99,9 +108,11 @@ describe('Core observer runtime reset', () => {
         }),
       observeSharedDataChannelBatch: vi.fn()
     })
+
     for (const name of ['first', 'second', 'third']) {
       registry.register({ name, channel: 'channel', onChange: vi.fn() })
     }
+
     expect(() => registry.init()).toThrow('acquisition failed')
     expect(() => registry.resetRuntime()).toThrow(cause)
     expect(first).toHaveBeenCalledOnce()
@@ -121,10 +132,13 @@ describe('Core observer runtime reset', () => {
         } catch (error) {
           failure = error
         }
+
         return cleanup
       },
+
       observeSharedDataChannelBatch: vi.fn()
     })
+
     registry.register({
       name: 'observer',
       channel: 'channel',

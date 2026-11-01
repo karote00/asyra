@@ -58,27 +58,34 @@ export const createRenderResourceStyle = (
   Object.defineProperties(style, {
     __subscribeRenderResourceRelease: {
       enumerable: false,
+
       value: (listener: () => void) => {
         if (released) {
           listener()
+
           return () => undefined
         }
+
         listeners.add(listener)
+
         return () => listeners.delete(listener)
       }
     },
     __isRenderResourceReleased: {
       enumerable: false,
+
       value: () => released
     }
   })
 
   return {
     style,
+
     dispose: () => {
       if (released) {
         return
       }
+
       released = true
       listeners.forEach((listener) => listener())
       listeners.clear()
@@ -109,11 +116,14 @@ export class RenderMatrix {
 
   applyInverse(point: RenderEnginePoint): RenderEnginePoint {
     const determinant = this.a * this.d - this.b * this.c
+
     if (Math.abs(determinant) <= Number.EPSILON) {
       return { x: 0, y: 0 }
     }
+
     const x = point.x - this.tx
     const y = point.y - this.ty
+
     return {
       x: (this.d * x - this.c * y) / determinant,
       y: (-this.b * x + this.a * y) / determinant
@@ -149,11 +159,14 @@ const normalizePaint = (value: unknown): RenderEnginePaint => {
   if (typeof value === 'number' || typeof value === 'string') {
     return { color: value }
   }
+
   if (typeof value === 'object' && value !== null) {
     const style = value as { color?: unknown; alpha?: unknown; fill?: unknown }
+
     if (style.fill !== undefined) {
       return normalizePaint(style.fill)
     }
+
     return {
       color:
         typeof style.color === 'number' || typeof style.color === 'string'
@@ -162,6 +175,7 @@ const normalizePaint = (value: unknown): RenderEnginePaint => {
       alpha: typeof style.alpha === 'number' ? style.alpha : undefined
     }
   }
+
   return {}
 }
 
@@ -185,11 +199,14 @@ export class RenderObjectRuntime {
       RenderEngineCapabilities.LOCAL_CONTENT_BOUNDS
     ])
     let query = this.regionQueries.get(root)
-    if (!query || query.includes !== includes)
+
+    if (!query || query.includes !== includes) {
       this.regionQueries.set(
         root,
         (query = new SceneRegionQuery(root, includes))
       )
+    }
+
     return query.query(bounds)
   }
 
@@ -201,16 +218,21 @@ export class RenderObjectRuntime {
     RenderEngineObjectHandle,
     RenderNode
   >()
+
   private readonly dirtyGraphics = new Set<RenderGraphics>()
+
   private readonly localContentBounds = new WeakMap<RenderNode, RenderBounds>()
+
   private readonly resourceByStyle = new WeakMap<
     object,
     RenderRuntimeResourceRecord
   >()
+
   private readonly resourceStylesByGraphics = new Map<
     RenderGraphics,
     Set<object>
   >()
+
   private readonly resourceReleaseSubscriptions = new Set<() => void>()
 
   constructor(
@@ -229,11 +251,13 @@ export class RenderObjectRuntime {
     relatedNode?: RenderNode
   ): RenderEngineCommandResult {
     this.beforeExecute?.(command, node, relatedNode)
+
     return this.engine.execute(command)
   }
 
   attachRoot(node: RenderNode): void {
     const handle = this.attachNode(node)
+
     this.execute(
       {
         type: 'append-child',
@@ -246,6 +270,7 @@ export class RenderObjectRuntime {
 
   detachRoot(node: RenderNode): void {
     const handle = node.getEngineHandle()
+
     if (handle) {
       this.execute(
         {
@@ -260,9 +285,11 @@ export class RenderObjectRuntime {
 
   attachNode(node: RenderNode): RenderEngineObjectHandle {
     const existingHandle = node.getEngineHandle()
+
     if (existingHandle) {
       return existingHandle
     }
+
     this.localContentBounds.delete(node)
     const result = this.execute(
       {
@@ -273,13 +300,16 @@ export class RenderObjectRuntime {
       },
       node
     )
+
     if (!result.object) {
       throw new Error('Render engine did not return an object handle')
     }
+
     node.bindRuntime(this, result.object)
     this.objectByHandle.set(result.object, node)
     node.children.forEach((child) => {
       const childHandle = this.attachNode(child)
+
       this.execute(
         {
           type: 'append-child',
@@ -293,6 +323,7 @@ export class RenderObjectRuntime {
     if (node instanceof RenderGraphics) {
       this.dirtyGraphics.add(node)
     }
+
     return result.object
   }
 
@@ -300,10 +331,13 @@ export class RenderObjectRuntime {
     this.regionQueries.forEach((query) => query.membership(parent, child))
     this.invalidateContentBounds(parent)
     const parentHandle = parent.getEngineHandle()
+
     if (!parentHandle) {
       return
     }
+
     const childHandle = this.attachNode(child)
+
     this.execute(
       {
         type: 'append-child',
@@ -332,6 +366,7 @@ export class RenderObjectRuntime {
     this.invalidateContentBounds(parent)
     const parentHandle = parent.getEngineHandle()
     const childHandle = child.getEngineHandle()
+
     if (parentHandle && childHandle) {
       this.execute(
         {
@@ -349,6 +384,7 @@ export class RenderObjectRuntime {
     this.regionQueries.forEach((query) => query.reorder(parent, child))
     const parentHandle = parent.getEngineHandle()
     const childHandle = child.getEngineHandle()
+
     if (parentHandle && childHandle) {
       this.execute(
         {
@@ -371,13 +407,17 @@ export class RenderObjectRuntime {
       this.regionQueries.forEach((query) => query.change(node, true))
       this.invalidateContentBounds(node)
     }
+
     if (CONTENT_BOUNDS_PARENT_PROPERTY_KEYS.some((key) => key in properties)) {
       this.regionQueries.forEach((query) => query.change(node, true))
       this.invalidateContentBounds(node.parent)
     }
+
     const handle = node.getEngineHandle()
+
     if (handle) {
       const supportedProperties = this.getSupportedProperties(properties)
+
       if (Object.keys(supportedProperties).length > 0) {
         this.execute(
           {
@@ -399,14 +439,18 @@ export class RenderObjectRuntime {
         RenderEngineCapabilities.MESH_MATERIALS
       ])
     }
+
     if (
       !('transformGroup' in properties) ||
       this.engine.capabilities.has(RenderEngineCapabilities.TRANSFORM_GROUPS)
     ) {
       return properties
     }
+
     const supportedProperties = { ...properties }
+
     delete supportedProperties.transformGroup
+
     return supportedProperties
   }
 
@@ -415,9 +459,11 @@ export class RenderObjectRuntime {
     this.regionQueries.delete(node)
     this.regionQueries.forEach((query) => query.forget(node))
     const handle = node.getEngineHandle()
+
     if (!handle) {
       return
     }
+
     this.execute({ type: 'destroy-object', object: handle }, node)
     this.objectByHandle.delete(handle)
     node.unbindRuntime()
@@ -435,8 +481,10 @@ export class RenderObjectRuntime {
     if (this.dirtyGraphics.size === 0) {
       return false
     }
+
     for (const graphics of this.dirtyGraphics) {
       const handle = graphics.getEngineHandle()
+
       if (handle) {
         this.execute(
           {
@@ -449,7 +497,9 @@ export class RenderObjectRuntime {
         graphics.markDrawClean()
       }
     }
+
     this.dirtyGraphics.clear()
+
     return true
   }
 
@@ -458,16 +508,20 @@ export class RenderObjectRuntime {
       typeof style === 'object' && style !== null && 'fill' in style
         ? (style as { fill: unknown }).fill
         : style
+
     if (
       typeof resourceCandidate === 'object' &&
       resourceCandidate !== null &&
       '__renderResourceDescriptor' in resourceCandidate
     ) {
       const resourceStyle = resourceCandidate as RenderResourceStyle
+
       if (resourceStyle.__isRenderResourceReleased?.()) {
         throw new Error('Cannot use a disposed render resource style')
       }
+
       let record = this.resourceByStyle.get(resourceCandidate)
+
       if (!record) {
         const result = this.execute(
           {
@@ -477,13 +531,16 @@ export class RenderObjectRuntime {
           },
           owner
         )
+
         if (!result.resource) {
           throw new Error('Render engine did not return a resource handle')
         }
+
         const createdRecord: RenderRuntimeResourceRecord = {
           handle: result.resource,
           owners: new Set()
         }
+
         record = createdRecord
         this.resourceByStyle.set(resourceCandidate, createdRecord)
         const unsubscribe = resourceStyle.__subscribeRenderResourceRelease?.(
@@ -491,32 +548,41 @@ export class RenderObjectRuntime {
             this.destroyResourceRecord(resourceCandidate, createdRecord)
           }
         )
+
         if (unsubscribe) {
           createdRecord.unsubscribe = unsubscribe
           this.resourceReleaseSubscriptions.add(unsubscribe)
         }
       }
+
       if (owner) {
         record.owners.add(owner)
         const styles = this.resourceStylesByGraphics.get(owner) ?? new Set()
+
         styles.add(resourceCandidate)
         this.resourceStylesByGraphics.set(owner, styles)
       }
+
       return { resource: record.handle }
     }
+
     return normalizePaint(style)
   }
 
   releaseGraphicResources(graphics: RenderGraphics): void {
     const styles = this.resourceStylesByGraphics.get(graphics)
+
     if (!styles) {
       return
     }
+
     styles.forEach((style) => {
       const record = this.resourceByStyle.get(style)
+
       if (!record) {
         return
       }
+
       record.owners.delete(graphics)
       if (record.owners.size === 0) {
         this.destroyResourceRecord(style, record)
@@ -537,8 +603,10 @@ export class RenderObjectRuntime {
 
   resetResourceLifecycles(): void {
     const subscriptions = [...this.resourceReleaseSubscriptions]
+
     this.resourceReleaseSubscriptions.clear()
     const failures: unknown[] = []
+
     subscriptions.forEach((unsubscribe) => {
       try {
         unsubscribe()
@@ -546,7 +614,9 @@ export class RenderObjectRuntime {
         failures.push(error)
       }
     })
-    if (failures.length > 0) throw failures[0]
+    if (failures.length > 0) {
+      throw failures[0]
+    }
   }
 
   private destroyResourceRecord(
@@ -556,6 +626,7 @@ export class RenderObjectRuntime {
     if (this.resourceByStyle.get(style) !== record) {
       return
     }
+
     this.execute({
       type: 'destroy-resource',
       resource: record.handle
@@ -563,6 +634,7 @@ export class RenderObjectRuntime {
     this.resourceByStyle.delete(style)
     record.owners.forEach((owner) => {
       const styles = this.resourceStylesByGraphics.get(owner)
+
       styles?.delete(style)
       if (styles?.size === 0) {
         this.resourceStylesByGraphics.delete(owner)
@@ -577,8 +649,11 @@ export class RenderObjectRuntime {
 
   private invalidateContentBounds(node: RenderNode | null): void {
     const changedNode = node
-    if (changedNode)
+
+    if (changedNode) {
       this.regionQueries.forEach((query) => query.change(changedNode))
+    }
+
     while (node) {
       this.localContentBounds.delete(node)
       node = node.parent
@@ -590,19 +665,31 @@ export class RenderObjectRuntime {
     type: 'get-bounds' | 'get-local-content-bounds'
   ): RenderBounds | null {
     const handle = node.getEngineHandle()
-    if (!handle) return null
+
+    if (!handle) {
+      return null
+    }
+
     const local = type === 'get-local-content-bounds'
+
     if (
       local &&
       !this.engine.capabilities.has(
         RenderEngineCapabilities.LOCAL_CONTENT_BOUNDS
       )
-    )
+    ) {
       return null
+    }
+
     const cached = local ? this.localContentBounds.get(node) : undefined
-    if (cached) return { ...cached }
+
+    if (cached) {
+      return { ...cached }
+    }
+
     this.flushDraws()
     const result = this.engine.query({ type, object: handle })
+
     if (
       result.type !== 'bounds' ||
       ![
@@ -616,7 +703,11 @@ export class RenderObjectRuntime {
     ) {
       throw new Error('Invalid render content bounds')
     }
-    if (local) this.localContentBounds.set(node, { ...result.bounds })
+
+    if (local) {
+      this.localContentBounds.set(node, { ...result.bounds })
+    }
+
     return { ...result.bounds }
   }
 
@@ -626,54 +717,85 @@ export class RenderObjectRuntime {
     point: RenderEnginePoint
   ): RenderEnginePoint | null {
     const handle = node.getEngineHandle()
+
     if (!handle) {
       return null
     }
+
     const result: RenderEngineQueryResult = this.engine.query({
       type,
       object: handle,
       point
     })
+
     return result.type === 'point' ? result.point : null
   }
 }
 
 export class RenderNode {
   readonly children: RenderNode[] = []
+
   parent: RenderContainer | null = null
+
   hitArea: unknown = null
+
   readonly context = { batchMode: 'auto' }
+
   readonly geometry = { clear: () => undefined }
+
   readonly _transform = { updateLocalTransform: () => undefined }
+
   private readonly listeners = new Map<string, Set<(event: unknown) => void>>()
+
   private _x = 0
+
   private _y = 0
+
   private _width = 0
+
   private _height = 0
+
   private _visible = true
+
   private _renderable = true
+
   private presentationSuspensions = 0
+
   private _label = ''
+
   private _projectionIdentity: Readonly<{
     visualId: string
     elementId?: string
   }> | null = null
+
   private _eventMode = 'auto'
+
   private _cursor = 'default'
+
   private _alpha = 1
+
   private _angle = 0
+
   private _rotation = 0
+
   private _zIndex = 0
+
   private _batched = false
+
   private _transformGroup = false
+
   private sourceSpaceOrigin: RenderEnginePoint = { x: 0, y: 0 }
+
   private handle: RenderEngineObjectHandle | null = null
+
   protected runtime: RenderObjectRuntime | null = null
+
   readonly position = new RenderPoint((x, y) => {
     this._x = x
     this._y = y
     this.updateEngineProperties({ x, y })
   })
+
   readonly scale = new RenderPoint(
     (scaleX, scaleY) => {
       this.updateEngineProperties({
@@ -684,6 +806,7 @@ export class RenderNode {
     1,
     1
   )
+
   readonly skew = new RenderPoint((skewX, skewY) => {
     this.updateEngineProperties({ skewX, skewY })
   })
@@ -694,6 +817,7 @@ export class RenderNode {
     if (!Number.isFinite(origin.x) || !Number.isFinite(origin.y)) {
       throw new Error('Render source-space origin must be finite')
     }
+
     this.sourceSpaceOrigin = { x: origin.x, y: origin.y }
   }
 
@@ -775,8 +899,12 @@ export class RenderNode {
       visible: this.visible
     })
     let resumed = false
+
     return () => {
-      if (resumed) return
+      if (resumed) {
+        return
+      }
+
       resumed = true
       this.presentationSuspensions--
       this.updateEngineProperties({
@@ -811,15 +939,20 @@ export class RenderNode {
   ) {
     if (value === null) {
       this._projectionIdentity = null
+
       return
     }
+
     const { visualId, elementId } = value
+
     if (
       typeof visualId !== 'string' ||
       !visualId ||
       (elementId !== undefined && (typeof elementId !== 'string' || !elementId))
-    )
+    ) {
       throw new Error('Invalid projection identity')
+    }
+
     this._projectionIdentity = Object.freeze({ visualId, elementId })
   }
 
@@ -917,6 +1050,7 @@ export class RenderNode {
     const rotationMinusSkewX = this.rotation - this.skew.x
     const scaleX = this.scale.x * this.getDimensionScaleX()
     const scaleY = this.scale.y * this.getDimensionScaleY()
+
     return new RenderMatrix(
       Math.cos(rotationPlusSkewY) * scaleX,
       Math.sin(rotationPlusSkewY) * scaleX,
@@ -963,6 +1097,7 @@ export class RenderNode {
         __geometryLocalBounds?: RenderBounds | null
       }
     ).__geometryLocalBounds
+
     return geometryBounds &&
       geometryBounds.width > 0 &&
       Number.isFinite(geometryBounds.width) &&
@@ -977,6 +1112,7 @@ export class RenderNode {
         __geometryLocalBounds?: RenderBounds | null
       }
     ).__geometryLocalBounds
+
     return geometryBounds &&
       geometryBounds.height > 0 &&
       Number.isFinite(geometryBounds.height) &&
@@ -1014,15 +1150,18 @@ export class RenderNode {
   addChildAt<T extends RenderNode>(child: T, index: number): T {
     if (child.parent === this) {
       this.setChildIndex(child, index)
+
       return child
     }
 
     const previousParent = child.parent
     const previousIndex = previousParent?.children.indexOf(child) ?? -1
     const boundedIndex = Math.max(0, Math.min(index, this.children.length))
+
     if (previousParent && previousIndex >= 0) {
       previousParent.runtime?.removeChild(previousParent, child)
     }
+
     try {
       this.runtime?.appendChild(this, child, boundedIndex)
     } catch (error) {
@@ -1032,6 +1171,7 @@ export class RenderNode {
         } catch {
           // The target append may have failed before attaching the child.
         }
+
         try {
           previousParent.runtime?.appendChild(
             previousParent,
@@ -1042,38 +1182,49 @@ export class RenderNode {
           // Preserve the target handoff failure after rollback effort.
         }
       }
+
       throw error
     }
+
     if (previousParent && previousIndex >= 0) {
       previousParent.children.splice(previousIndex, 1)
     }
+
     this.children.splice(boundedIndex, 0, child)
     child.parent = this as unknown as RenderContainer
+
     return child
   }
 
   removeChild<T extends RenderNode>(child: T): T {
     const index = this.children.indexOf(child)
+
     if (index >= 0) {
       this.runtime?.removeChild(this, child)
       this.children.splice(index, 1)
       child.parent = null
     }
+
     return child
   }
 
   removeChildren(): RenderNode[] {
     const removed = [...this.children]
+
     removed.forEach((child) => this.removeChild(child))
+
     return removed
   }
 
   setChildIndex(child: RenderNode, index: number): void {
     const currentIndex = this.children.indexOf(child)
+
     if (currentIndex < 0) {
       return
     }
+
     const boundedIndex = Math.max(0, Math.min(index, this.children.length - 1))
+
     this.runtime?.setChildIndex(this, child, boundedIndex)
     this.children.splice(currentIndex, 1)
     this.children.splice(boundedIndex, 0, child)
@@ -1091,6 +1242,7 @@ export class RenderNode {
     if (this.children.length === 0) {
       return { x: 0, y: 0, width: this._width, height: this._height }
     }
+
     const childBounds = this.children.map((child) =>
       child.projectLocalBounds(child.getLocalBounds())
     )
@@ -1102,6 +1254,7 @@ export class RenderNode {
     const maxY = Math.max(
       ...childBounds.map((bounds) => bounds.y + bounds.height)
     )
+
     return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
   }
 
@@ -1116,8 +1269,10 @@ export class RenderNode {
     bounds: RenderBounds,
     includes = includeAllRegionNodes
   ): RenderNode[] {
-    if (!this.runtime || !this.handle)
+    if (!this.runtime || !this.handle) {
       throw new Error('Workspace projection is unavailable')
+    }
+
     return this.runtime.queryRegion(this, bounds, includes)
   }
 
@@ -1128,11 +1283,16 @@ export class RenderNode {
   getBoundsRelativeTo(ancestor: RenderNode): RenderBounds {
     let transform = this === ancestor ? new RenderMatrix() : this.localTransform
     let parent = this === ancestor ? ancestor : this.parent
+
     while (parent && parent !== ancestor) {
       transform = multiplyMatrices(parent.localTransform, transform)
       parent = parent.parent
     }
-    if (!parent) throw new Error('Region target is outside the workspace')
+
+    if (!parent) {
+      throw new Error('Region target is outside the workspace')
+    }
+
     const local = this.getPresentationLocalBounds()
     const points = [
       { x: local.x, y: local.y },
@@ -1142,6 +1302,7 @@ export class RenderNode {
     ].map((point) => transform.apply(point))
     const x = Math.min(...points.map((point) => point.x))
     const y = Math.min(...points.map((point) => point.y))
+
     return {
       x,
       y,
@@ -1158,8 +1319,12 @@ export class RenderNode {
       )
     ) {
       const measured = this.runtime.queryBounds(this, 'get-bounds')
-      if (measured) return measured
+
+      if (measured) {
+        return measured
+      }
     }
+
     return this.projectLocalBounds(this.getPresentationLocalBounds())
   }
 
@@ -1174,6 +1339,7 @@ export class RenderNode {
     const minY = Math.min(...corners.map((point) => point.y))
     const maxX = Math.max(...corners.map((point) => point.x))
     const maxY = Math.max(...corners.map((point) => point.y))
+
     return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
   }
 
@@ -1198,13 +1364,16 @@ export class RenderNode {
 
   on(type: string, listener: (event: unknown) => void): this {
     const listeners = this.listeners.get(type) ?? new Set()
+
     listeners.add(listener)
     this.listeners.set(type, listeners)
+
     return this
   }
 
   off(type: string, listener: (event: unknown) => void): this {
     this.listeners.get(type)?.delete(listener)
+
     return this
   }
 
@@ -1220,6 +1389,7 @@ export class RenderNode {
     if (options?.children !== false) {
       ;[...this.children].reverse().forEach((child) => child.destroy(options))
     }
+
     this.parent?.removeChild(this)
     this.runtime?.destroyObject(this)
     this.removeAllListeners()
@@ -1238,9 +1408,18 @@ export class RenderContainer extends RenderNode {
     objectType: RenderEngineObjectType = 'container'
   ) {
     super(objectType)
-    if (typeof properties.label === 'string') this.label = properties.label
-    if (typeof properties.x === 'number') this.x = properties.x
-    if (typeof properties.y === 'number') this.y = properties.y
+    if (typeof properties.label === 'string') {
+      this.label = properties.label
+    }
+
+    if (typeof properties.x === 'number') {
+      this.x = properties.x
+    }
+
+    if (typeof properties.y === 'number') {
+      this.y = properties.y
+    }
+
     if (typeof properties.transformGroup === 'boolean') {
       this.transformGroup = properties.transformGroup
     }
@@ -1249,9 +1428,13 @@ export class RenderContainer extends RenderNode {
 
 export class RenderGraphics extends RenderContainer {
   private drawOperations: RenderEngineDrawOperation[] = []
+
   private paintStyles = new Map<number, unknown>()
+
   private drawDirty = false
+
   private bounds: RenderBounds = { x: 0, y: 0, width: 0, height: 0 }
+
   private lineStyleValue: {
     width: number
     color: number | string
@@ -1267,12 +1450,14 @@ export class RenderGraphics extends RenderContainer {
     this.drawOperations = [{ type: 'clear' }]
     this.paintStyles.clear()
     this.bounds = { x: 0, y: 0, width: 0, height: 0 }
+
     return this.markDrawDirty()
   }
 
   rect(x: number, y: number, width: number, height: number): this {
     this.drawOperations.push({ type: 'rect', x, y, width, height })
     this.includeBounds(x, y, width, height)
+
     return this.markDrawDirty()
   }
 
@@ -1281,6 +1466,7 @@ export class RenderGraphics extends RenderContainer {
     fill: unknown
   ): this {
     const operationIndex = this.drawOperations.length
+
     this.drawOperations.push({
       ...value,
       type: 'text',
@@ -1288,6 +1474,7 @@ export class RenderGraphics extends RenderContainer {
     })
     this.paintStyles.set(operationIndex, fill)
     this.includeBounds(value.x, value.y, value.width, value.height)
+
     return this.markDrawDirty()
   }
 
@@ -1296,37 +1483,44 @@ export class RenderGraphics extends RenderContainer {
     if (this.lineStyleValue) {
       this.stroke(this.lineStyleValue)
     }
+
     return this
   }
 
   ellipse(x: number, y: number, radiusX: number, radiusY: number): this {
     this.drawOperations.push({ type: 'ellipse', x, y, radiusX, radiusY })
     this.includeBounds(x - radiusX, y - radiusY, radiusX * 2, radiusY * 2)
+
     return this.markDrawDirty()
   }
 
   circle(x: number, y: number, radius: number): this {
     this.drawOperations.push({ type: 'circle', x, y, radius })
     this.includeBounds(x - radius, y - radius, radius * 2, radius * 2)
+
     return this.markDrawDirty()
   }
 
   poly(points: readonly RenderEnginePoint[], close = false): this {
     const ownedPoints = points.map(({ x, y }) => ({ x, y }))
+
     this.drawOperations.push({ type: 'poly', points: ownedPoints, close })
     ownedPoints.forEach(({ x, y }) => this.includePoint(x, y))
+
     return this.markDrawDirty()
   }
 
   moveTo(x: number, y: number): this {
     this.drawOperations.push({ type: 'move-to', x, y })
     this.includePoint(x, y)
+
     return this.markDrawDirty()
   }
 
   lineTo(x: number, y: number): this {
     this.drawOperations.push({ type: 'line-to', x, y })
     this.includePoint(x, y)
+
     return this.markDrawDirty()
   }
 
@@ -1347,21 +1541,25 @@ export class RenderGraphics extends RenderContainer {
     this.includePoint(controlPoint1X, controlPoint1Y)
     this.includePoint(controlPoint2X, controlPoint2Y)
     this.includePoint(destinationX, destinationY)
+
     return this.markDrawDirty()
   }
 
   closePath(): this {
     this.drawOperations.push({ type: 'close-path' })
+
     return this.markDrawDirty()
   }
 
   fill(style: unknown): this {
     const operationIndex = this.drawOperations.length
+
     this.drawOperations.push({
       type: 'fill',
       paint: normalizePaint(style)
     })
     this.paintStyles.set(operationIndex, style)
+
     return this.markDrawDirty()
   }
 
@@ -1372,17 +1570,20 @@ export class RenderGraphics extends RenderContainer {
         : {}
     const width = typeof value.width === 'number' ? value.width : 1
     const operationIndex = this.drawOperations.length
+
     this.drawOperations.push({
       type: 'stroke',
       paint: normalizePaint(value),
       width
     })
     this.paintStyles.set(operationIndex, value)
+
     return this.markDrawDirty()
   }
 
   lineStyle(width: number, color: number | string, alpha = 1): this {
     this.lineStyleValue = { width, color, alpha }
+
     return this
   }
 
@@ -1395,9 +1596,11 @@ export class RenderGraphics extends RenderContainer {
       if (!this.paintStyles.has(index)) {
         return operation
       }
+
       const style = this.paintStyles.get(index)
       const paint =
         this.runtime?.createPaint(style, this) ?? normalizePaint(style)
+
       if (
         operation.type === 'fill' ||
         operation.type === 'stroke' ||
@@ -1405,6 +1608,7 @@ export class RenderGraphics extends RenderContainer {
       ) {
         return { ...operation, paint }
       }
+
       return operation
     })
   }
@@ -1425,6 +1629,7 @@ export class RenderGraphics extends RenderContainer {
   private markDrawDirty(): this {
     this.drawDirty = true
     this.runtime?.markDrawDirty(this)
+
     return this
   }
 
@@ -1440,12 +1645,15 @@ export class RenderGraphics extends RenderContainer {
   ): void {
     if (this.bounds.width === 0 && this.bounds.height === 0) {
       this.bounds = { x, y, width, height }
+
       return
     }
+
     const minX = Math.min(this.bounds.x, x)
     const minY = Math.min(this.bounds.y, y)
     const maxX = Math.max(this.bounds.x + this.bounds.width, x + width)
     const maxY = Math.max(this.bounds.y + this.bounds.height, y + height)
+
     this.bounds = { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
   }
 }

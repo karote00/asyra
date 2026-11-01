@@ -8,7 +8,9 @@ const repoRoot = path.resolve(__dirname, '../../../..')
 
 const step = (id) => {
   const value = data.steps.find((item) => item.id === id)
+
   assert.ok(value, `Missing Inspector step: ${id}`)
+
   return value
 }
 
@@ -36,11 +38,7 @@ test('dedicated migration Inspector and product authority resolve', () => {
   )
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.specPath)))
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.inspectorPath)))
-  assert.ok(
-    fs.existsSync(
-      path.resolve(__dirname, '../app-level-migration-flow-inspector.html')
-    )
-  )
+  require('./assert-react-catalog.cjs')(data)
   assert.ok(
     step('receive-raw-document').implementationBoundary.includes(
       'packages/persistence/src/providers/index.ts'
@@ -86,21 +84,24 @@ test('every step has exact execution fields and all routes and artifacts resolve
 
   data.routes.forEach((route) => {
     assert.ok(stepIds.has(route.from), `${route.id} from`)
-    if (route.to) assert.ok(stepIds.has(route.to), `${route.id} to`)
+    if (route.to) {assert.ok(stepIds.has(route.to), `${route.id} to`)}
+
     route.producedArtifacts.forEach((id) => {
       const artifact = data.artifacts.find((item) => item.id === id)
+
       assert.ok(artifact, `${route.id} artifact ${id}`)
       assert.equal(artifact.ownerStepId, route.from, `${route.id} owner ${id}`)
       if (route.to)
-        assert.ok(
+        {assert.ok(
           artifact.consumerStepIds.includes(route.to),
           `${route.id} consumer ${id}`
-        )
+        )}
     })
   })
 
   data.artifacts.forEach((artifact) => {
     const owner = step(artifact.ownerStepId)
+
     assert.ok(
       owner.outputs.includes(artifact.id),
       `${artifact.id} owner output`
@@ -112,10 +113,10 @@ test('every step has exact execution fields and all routes and artifacts resolve
       )
     )
     if (!artifact.terminal)
-      assert.ok(
+      {assert.ok(
         artifact.consumerStepIds.length > 0,
         `${artifact.id} consumer required`
-      )
+      )}
   })
 })
 
@@ -126,6 +127,7 @@ test('each package validator owns an explicit terminal failure route and artifac
     ['validate-system-data', 'artifact:system-validation-failure']
   ].forEach(([stepId, artifactId]) => {
     const owner = step(stepId)
+
     assert.ok(owner.outputs.includes(artifactId), `${stepId} failure output`)
 
     const failureRoute = data.routes.find(
@@ -134,11 +136,13 @@ test('each package validator owns an explicit terminal failure route and artifac
         route.kind === 'terminal' &&
         route.producedArtifacts.includes(artifactId)
     )
+
     assert.ok(failureRoute, `${stepId} terminal failure route`)
     assert.equal(failureRoute.to, undefined)
     assert.match(failureRoute.predicate, /validator throws/i)
 
     const artifact = data.artifacts.find((item) => item.id === artifactId)
+
     assert.ok(artifact, `${artifactId} resolves`)
     assert.equal(artifact.ownerStepId, stepId)
     assert.equal(artifact.terminal, true)
@@ -161,18 +165,15 @@ test('package validators share only the domain-neutral diagnostic contract', () 
   })
 })
 
-test('viewer preserves frozen data and exposes steps, routes, and artifacts', () => {
-  const viewer = fs.readFileSync(
-    path.resolve(__dirname, '../app-level-migration-flow-inspector.html'),
-    'utf8'
-  )
+test('React catalog preserves frozen steps, routes, and artifacts', () => {
+  const entry = require('./assert-react-catalog.cjs')(data)
 
-  assert.match(viewer, /\[\.\.\.data\.lanes\]\s*\.sort/)
-  assert.match(viewer, /data\.steps/)
-  assert.match(viewer, /data\.routes/)
-  assert.match(viewer, /data\.artifacts/)
-  assert.match(viewer, />Routes</)
-  assert.match(viewer, />Artifacts</)
+  assert.ok(Object.isFrozen(data))
+  assert.ok(data.steps.every(Object.isFrozen))
+  assert.equal(entry.kind, 'flow-v2')
+  assert.equal(entry.data.steps.length, data.steps.length)
+  assert.equal(entry.data.routes.length, data.routes.length)
+  assert.equal(entry.data.artifacts.length, data.artifacts.length)
 })
 
 test('raw direct and provider loads share one pre-validation migration route', () => {
@@ -180,6 +181,7 @@ test('raw direct and provider loads share one pre-validation migration route', (
   const input = contractText(inputStep)
   const migrationStep = step('orchestrate-load-hooks')
   const migration = contractText(migrationStep)
+
   assert.match(input, /direct core\.load.*persistence-provider/i)
   assert.match(
     input,
@@ -209,6 +211,7 @@ test('raw direct and provider loads share one pre-validation migration route', (
   const providerNoDocument = data.routes.find(
     (route) => route.id === 'provider-no-document'
   )
+
   assert.ok(directNoDocument)
   assert.ok(providerNoDocument)
   assert.ok(providerInput)
@@ -237,6 +240,7 @@ test('raw direct and provider loads share one pre-validation migration route', (
 test('app owns one connected registry and conditional version dispatch', () => {
   const ownerStep = step('own-versioned-migrations')
   const owner = contractText(ownerStep)
+
   assert.match(owner, /one connected linear chain.*one head and one tail/i)
   assert.match(owner, /Version ids are opaque.*non-contiguous/i)
   assert.match(owner, /Duplicate source or target.*cycle fails registration/i)
@@ -261,6 +265,7 @@ test('app owns one connected registry and conditional version dispatch', () => {
   const registrationRoute = data.routes.find(
     (route) => route.id === 'register-app-migrations'
   )
+
   assert.ok(registrationRoute)
   assert.match(registrationRoute.predicate, /non-empty.*connected linear/i)
   assert.deepEqual(registrationRoute.producedArtifacts, [
@@ -270,6 +275,7 @@ test('app owns one connected registry and conditional version dispatch', () => {
   const emptyBatchRoute = data.routes.find(
     (route) => route.id === 'empty-app-migration-batch'
   )
+
   assert.ok(emptyBatchRoute)
   assert.equal(emptyBatchRoute.to, 'orchestrate-load-hooks')
   assert.match(emptyBatchRoute.predicate, /empty batch.*no dispatcher/i)
@@ -285,6 +291,7 @@ test('app owns one connected registry and conditional version dispatch', () => {
   const registrationFailure = data.routes.find(
     (route) => route.id === 'migration-registration-failure'
   )
+
   assert.ok(registrationFailure)
   assert.equal(registrationFailure.kind, 'terminal')
   assert.match(
@@ -298,6 +305,7 @@ test('app owns one connected registry and conditional version dispatch', () => {
   const executionFailure = data.routes.find(
     (route) => route.id === 'app-migration-execution-failure'
   )
+
   assert.ok(executionFailure)
   assert.equal(executionFailure.kind, 'terminal')
   assert.match(
@@ -311,12 +319,14 @@ test('app owns one connected registry and conditional version dispatch', () => {
     (artifact) =>
       artifact.id === 'artifact:app-migration-execution-failure'
   )
+
   assert.ok(executionFailureArtifact)
   assert.equal(executionFailureArtifact.ownerStepId, 'own-versioned-migrations')
   assert.equal(executionFailureArtifact.terminal, true)
 
   const additionalHooks = step('own-additional-load-hooks')
   const additionalHookContract = contractText(additionalHooks)
+
   assert.match(additionalHookContract, /optional non-migration app load hooks/i)
   assert.match(additionalHookContract, /throw.*same error instance/i)
   assert.match(additionalHookContract, /not migration authority/i)
@@ -330,6 +340,7 @@ test('app owns one connected registry and conditional version dispatch', () => {
   const additionalHookFailure = data.routes.find(
     (route) => route.id === 'additional-app-load-hook-throw'
   )
+
   assert.ok(additionalHookFailure)
   assert.equal(additionalHookFailure.kind, 'terminal')
   assert.match(additionalHookFailure.predicate, /synchronous throw.*unchanged/i)
@@ -339,6 +350,7 @@ test('app owns one connected registry and conditional version dispatch', () => {
   const additionalHookFailureArtifact = data.artifacts.find(
     (artifact) => artifact.id === 'artifact:app-load-hook-throw'
   )
+
   assert.ok(additionalHookFailureArtifact)
   assert.equal(
     additionalHookFailureArtifact.ownerStepId,
@@ -349,6 +361,7 @@ test('app owns one connected registry and conditional version dispatch', () => {
   const coreFailureRoute = data.routes.find(
     (route) => route.id === 'migration-failure-terminal'
   )
+
   assert.ok(coreFailureRoute)
   assert.match(coreFailureRoute.predicate, /crossing the Core boundary/i)
   assert.doesNotMatch(coreFailureRoute.predicate, /transform/i)
@@ -365,6 +378,7 @@ test('app owns one connected registry and conditional version dispatch', () => {
     ),
     'utf8'
   )
+
   assert.match(migrationRule, /one connected linear chain/i)
   assert.match(migrationRule, /no matching transition.*terminates migration/is)
   assert.match(migrationRule, /Promise.*app-owned asynchronous-result failure/is)
@@ -383,6 +397,7 @@ test('app owns one connected registry and conditional version dispatch', () => {
       path.resolve(repoRoot, relativePath),
       'utf8'
     )
+
     assert.match(
       crossDocumentContract,
       /connected (?:linear )?(?:migration |transition )?(?:chain|batch|registry)/i,
@@ -398,6 +413,7 @@ test('app owns one connected registry and conditional version dispatch', () => {
 
 test('all package validators finish before canonical apply', () => {
   const apply = step('apply-canonical-state')
+
   assert.deepEqual(apply.inputs, [
     'artifact:migrated-document',
     'artifact:validated-props',
@@ -418,17 +434,20 @@ test('validated package artifacts are owner-issued, instance-bound, and one-shot
     ['validate-system-data', 'artifact:validated-system']
   ].forEach(([stepId, artifactId]) => {
     const ownerContract = contractText(step(stepId))
+
     assert.match(ownerContract, /owner-issued/i)
     assert.match(ownerContract, /instance-bound/i)
     assert.match(ownerContract, /one-shot/i)
     assert.match(ownerContract, /fabricated.*foreign.*reused/i)
 
     const artifact = data.artifacts.find((item) => item.id === artifactId)
+
     assert.ok(artifact, `${artifactId} resolves`)
     assert.match(artifact.channel, /owner-issued.*instance-bound/i)
   })
 
   const apply = contractText(step('apply-canonical-state'))
+
   assert.match(apply, /complete owner-issued artifacts/i)
   assert.match(apply, /does not rerun package validators/i)
   assert.match(apply, /plain.*records/i)
@@ -436,6 +455,7 @@ test('validated package artifacts are owner-issued, instance-bound, and one-shot
 
 test('diagnostics are detached observational output only', () => {
   const diagnostics = contractText(step('observe-load-diagnostics'))
+
   assert.match(
     diagnostics,
     /detached diagnostics.*detached post-apply load evidence/i
@@ -457,6 +477,7 @@ test('diagnostics are detached observational output only', () => {
   const applyContext = data.artifacts.find(
     (artifact) => artifact.id === 'artifact:successful-apply-context'
   )
+
   assert.ok(applyContext)
   assert.match(applyContext.title, /post-apply diagnostics assembly context/i)
 
@@ -464,6 +485,7 @@ test('diagnostics are detached observational output only', () => {
     path.resolve(repoRoot, 'docs/ai/framework/API_SURFACES.md'),
     'utf8'
   )
+
   assert.match(apiSurfaces, /detached post-apply\s+load evidence/i)
   assert.match(apiSurfaces, /applied managed-system serialization/i)
   assert.match(
@@ -479,6 +501,7 @@ test('diagnostics are detached observational output only', () => {
     ),
     'utf8'
   )
+
   assert.match(publicTypeSurface, /applied managed-system serialization/i)
   assert.match(
     publicTypeSurface,
@@ -491,6 +514,7 @@ test('product contract names every required migration case and bounded DoD', () 
     path.resolve(repoRoot, data.authority.specPath),
     'utf8'
   )
+
   ;[
     /empty hook chain/i,
     /missing[- ]version/i,

@@ -63,6 +63,7 @@ function setup(execute?: MethodRegistration['execute']) {
     (message) => messages.push(structuredClone(message)),
     close
   )
+
   return {
     snapshot,
     messages,
@@ -75,12 +76,16 @@ function setup(execute?: MethodRegistration['execute']) {
 describe('shared method Worker protocol conformance', () => {
   it('executes the selected independent module with frozen inputs and rejects late emissions', async () => {
     let context: MethodContext | undefined
+
     const execute: MethodRegistration['execute'] = (input, current) => {
       context = current
       expect(Object.isFrozen(input.workcell.bodies[0])).toBe(true)
+
       return runStaticSphereMethod(input, current.checkpoint, current.emitPair)
     }
+
     const { host, request, messages, close } = setup(execute)
+
     await host.handle(request)
     expect(messages.at(-1)).toMatchObject({
       type: 'complete',
@@ -91,6 +96,7 @@ describe('shared method Worker protocol conformance', () => {
     expect(close).toHaveBeenCalledOnce()
     const count = messages.length,
       pair = runStaticSphereMethod(request.snapshot).pairs[0]
+
     expect(() => context?.emitPair(pair)).toThrow('settled')
     await host.handle(request)
     expect(messages).toHaveLength(count)
@@ -100,6 +106,7 @@ describe('shared method Worker protocol conformance', () => {
     const execute = vi.fn(),
       { host, request, messages, close } = setup(execute)
     const snapshot = structuredClone(request.snapshot)
+
     snapshot.method.version = 'unavailable'
     delete snapshot.methodDescriptor
     await host.handle({ ...request, snapshot })
@@ -118,16 +125,21 @@ describe('shared method Worker protocol conformance', () => {
       },
       (input) => {
         const evidence = structuredClone(runStaticSphereMethod(input))
+
         evidence.pairs = []
+
         return evidence
       },
       (input) => {
         const evidence = structuredClone(runStaticSphereMethod(input))
+
         evidence.pairs[0].evidence.coverage = 'partial'
+
         return evidence
       }
     ] satisfies MethodRegistration['execute'][]) {
       const { host, request, messages, close } = setup(execute)
+
       await host.handle(request)
       expect(messages.at(-1)?.type).toBe('error')
       expect(JSON.stringify(messages)).not.toContain('SECRET')
@@ -146,9 +158,11 @@ describe('shared method Worker protocol conformance', () => {
       await new Promise<void>((resolve) => {
         release = resolve
       })
+
       return runStaticSphereMethod(input)
     })
     const pending = host.handle(request)
+
     await host.handle({ type: 'cancel', runId: 'someone-else' })
     expect(signal?.aborted).toBe(false)
     await host.handle({ type: 'cancel', runId: request.runId })

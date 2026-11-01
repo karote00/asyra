@@ -119,7 +119,9 @@ export const createSceneTreeAPIs = (
         '[Core] Canonical batch-of-one requires exactly one ordered element id'
       )
     }
+
     const [elementId] = elementIds
+
     return elementId
   }
 
@@ -132,7 +134,9 @@ export const createSceneTreeAPIs = (
     if (data.length === 0) {
       return Object.freeze([])
     }
+
     const prepared = data.map(prepareElementData)
+
     return sceneTreeRequests.createElementsInParent(
       prepared,
       parentId,
@@ -150,10 +154,12 @@ export const createSceneTreeAPIs = (
     ) {
       const parentId =
         parent?.get('id') ?? sceneTreeRequests.getCurrentWorkspaceId()
+
       return requireSingleElementId(
         createElementsInParent([data], parentId, index, options)
       )
     },
+
     createElementInParent(
       data: CreateElementData,
       parentId: string,
@@ -164,7 +170,9 @@ export const createSceneTreeAPIs = (
         createElementsInParent([data], parentId, index, options)
       )
     },
+
     createElementsInParent,
+
     createElementsInParentFromCanonicalData(
       elements: readonly ElementRawData[],
       properties: readonly PropertyComponentRawData[],
@@ -178,8 +186,10 @@ export const createSceneTreeAPIs = (
             '[Core] Canonical element batch cannot contain orphan properties'
           )
         }
+
         return freezeOrderedElementIds([])
       }
+
       return freezeOrderedElementIds(
         sceneTreeRequests.createElementsInParentFromCanonicalData(
           elements,
@@ -190,6 +200,7 @@ export const createSceneTreeAPIs = (
         )
       )
     },
+
     getElementComputedData(elementId: string, fields?: readonly string[]) {
       if (
         fields !== undefined &&
@@ -206,25 +217,36 @@ export const createSceneTreeAPIs = (
           `Computed field selection requires at most ${ComputedFieldSelectionLimits.fields} nonempty field names of at most ${ComputedFieldSelectionLimits.fieldName} characters.`
         )
       }
+
       const data = sceneTreeRequests.getElementComputedData(elementId, fields)
-      if (!data) return
+
+      if (!data) {
+        return
+      }
+
       if (typeof globalThis.structuredClone === 'function') {
         return globalThis.structuredClone(data)
       }
+
       return JSON.parse(JSON.stringify(data)) as Record<string, unknown>
     },
+
     sceneTreeInit() {
       sceneTreeInit()
     },
+
     sceneTreeLoadData(data: SceneTreeRawData) {
       sceneTreeLoadData(data)
     },
+
     sceneTreeSaveData() {
       return sceneTreeRequests.sceneTreeSaveData()
     },
+
     moveElements(request: MoveHierarchyRequest, options?: EVENT_OPTIONS) {
       return sceneTreeRequests.moveElements(request, options)
     },
+
     applyHierarchyMoves(
       moves: readonly HierarchyMove[],
       options?: EVENT_OPTIONS
@@ -232,8 +254,10 @@ export const createSceneTreeAPIs = (
       if (moves.length === 0) {
         return false
       }
+
       return sceneTreeRequests.applyHierarchyMoves(moves, options)
     },
+
     applyElementDataChanges(
       changes: readonly UpdateElementDataChange[],
       options?: EVENT_OPTIONS
@@ -241,25 +265,33 @@ export const createSceneTreeAPIs = (
       if (changes.length === 0) {
         return freezeOrderedElementIds([])
       }
+
       return freezeOrderedElementIds(
         sceneTreeRequests.applyElementDataChanges(changes, options)
       )
     },
+
     removeSubtrees(elementIds: readonly string[], options?: EVENT_OPTIONS) {
-      if (elementIds.length === 0) return freezeOrderedElementIds([])
+      if (elementIds.length === 0) {
+        return freezeOrderedElementIds([])
+      }
+
       return freezeOrderedElementIds(
         sceneTreeRequests.removeSubtrees(elementIds, options)
       )
     },
+
     removeSubtree(elementId: string, options?: EVENT_OPTIONS) {
       return sceneTreeRequests.removeSubtree(elementId, options)
     },
+
     removeSubtreeFromCanonicalData(
       change: SubtreeChange,
       options?: EVENT_OPTIONS
     ) {
       return sceneTreeRequests.removeSubtreeFromCanonicalData(change, options)
     },
+
     removeElementsFromCanonicalData(
       removals: readonly CanonicalElementRemoval[],
       options?: EVENT_OPTIONS
@@ -267,10 +299,12 @@ export const createSceneTreeAPIs = (
       if (removals.length === 0) {
         return Object.freeze([])
       }
+
       return freezeOrderedElementIds(
         sceneTreeRequests.removeElementsFromCanonicalData(removals, options)
       )
     },
+
     preflightRestoreSubtree(
       snapshot: SceneTreeRestoreSnapshot,
       options?: SceneTreeRestorePreflightOptions
@@ -279,33 +313,42 @@ export const createSceneTreeAPIs = (
         ? sceneTreeRequests.preflightRestoreSubtree(snapshot)
         : sceneTreeRequests.preflightRestoreSubtree(snapshot, options)
     },
+
     applyRestoreSubtree(
       preparedRestore: PreparedSceneTreeRestore,
       options?: EVENT_OPTIONS
     ) {
       return sceneTreeRequests.applyRestoreSubtree(preparedRestore, options)
     },
+
     getAllElementsBounds() {
       return sceneTreeRequests.getAllElementsBounds()
     },
+
     updateLocalComputedData(updates: readonly LocalComputedDataUpdate[]) {
       if (updates.length === 0) {
         return
       }
+
       sceneTreeRequests.updateLocalComputedData(updates)
     },
+
     patchLocalComputedData(updates: readonly LocalComputedDataPatchUpdate[]) {
       if (updates.length === 0) {
         return
       }
+
       sceneTreeRequests.patchLocalComputedData(updates)
     },
+
     projectLocalComputedDataFromPropertyIds(propertyIds: readonly string[]) {
       if (propertyIds.length === 0) {
         return
       }
+
       sceneTreeRequests.projectLocalComputedDataFromPropertyIds(propertyIds)
     },
+
     isContainerType(type: string) {
       return sceneTreeRequests.isContainerType(type)
     }

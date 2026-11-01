@@ -13,15 +13,18 @@ import {
 
 export const registerStarterSharedDataChannels = (core: Core): (() => void) => {
   const ownedChannels: string[] = []
+
   ;[SharedDataChannelNames.SCENE_TREE, SharedDataChannelNames.PROPS].forEach(
     (name) => {
       if (core.hasSharedDataChannel(name)) {
         return
       }
+
       core.registerSharedDataChannel(name, core.createLocalSharedDataChannel())
       ownedChannels.push(name)
     }
   )
+
   return () => {
     ;[...ownedChannels].reverse().forEach((name) => {
       core.unregisterSharedDataChannel(name)
@@ -41,6 +44,7 @@ export const registerStarterSchema = (
     'offsetY',
     ...(itemField ? [itemField.key] : [])
   ]
+
   core.definePropertyComponent({
     type: ITEM_PROPERTY_TYPE,
     defaults: {

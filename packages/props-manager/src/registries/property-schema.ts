@@ -8,6 +8,7 @@ let scopedPropertySchemaResolver: PropertySchemaResolver | undefined
 
 class PropertySchemaRegistry {
   private registry = new MapRegistry<string, PropertySchema>()
+
   private registrationRevisions = new Map<string, number>()
 
   private bumpRegistrationRevision(type: string): void {
@@ -44,9 +45,11 @@ class PropertySchemaRegistry {
 
   unregister(type: string): boolean {
     const removed = this.registry.delete(type)
+
     if (removed) {
       this.bumpRegistrationRevision(type)
     }
+
     return removed
   }
 
@@ -57,6 +60,7 @@ class PropertySchemaRegistry {
 
   clear(): void {
     const clearedTypes = this.registry.keys()
+
     this.registry.clear()
     clearedTypes.forEach((type) => {
       this.bumpRegistrationRevision(type)
@@ -96,6 +100,7 @@ export const runWithPropertySchemaResolver = <T>(
   callback: () => T
 ): T => {
   const previousResolver = scopedPropertySchemaResolver
+
   scopedPropertySchemaResolver = resolver
   try {
     return callback()

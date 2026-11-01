@@ -61,6 +61,7 @@ const distancePointToLine = (
   const dx = p1.x - p0.x
   const dy = p1.y - p0.y
   const length = Math.hypot(dx, dy)
+
   if (length <= Number.EPSILON) {
     return Math.hypot(point.x - p0.x, point.y - p0.y)
   }
@@ -128,10 +129,12 @@ const collectBezierPolylinePoints = (
     isBezierFlatEnough(from, control1, control2, to)
   ) {
     points.push(to)
+
     return
   }
 
   const { left, right } = subdivideBezier(from, control1, control2, to)
+
   collectBezierPolylinePoints(
     left.from,
     left.control1,
@@ -157,6 +160,7 @@ export const sampleOverlayBezierPoints = (
   to: PositionData
 ): PositionData[] => {
   const points: PositionData[] = [from]
+
   collectBezierPolylinePoints(from, control1, control2, to, 0, points)
 
   return points
@@ -166,10 +170,12 @@ export const createOverlayLayerRegistration = (
   options: CreateOverlayLayerOptions
 ): RenderLayerRegistration => {
   const layer = new RenderContainer()
+
   layer.label = options.name
   layer.eventMode = 'none'
 
   const graphics = new RenderGraphics()
+
   graphics.label = `${options.name}-graphics`
   graphics.eventMode = 'none'
   layer.addChild(graphics)
@@ -178,6 +184,7 @@ export const createOverlayLayerRegistration = (
     clear: () => {
       graphics.clear()
     },
+
     line: (from, to, stroke) => {
       graphics.moveTo(from.x, from.y)
       graphics.lineTo(to.x, to.y)
@@ -190,14 +197,17 @@ export const createOverlayLayerRegistration = (
         })
       }
     },
+
     polyline: (points, stroke) => {
       if (points.length < 2) {
         return
       }
+
       graphics.moveTo(points[0].x, points[0].y)
       for (let i = 1; i < points.length; i += 1) {
         graphics.lineTo(points[i].x, points[i].y)
       }
+
       if ('stroke' in graphics && typeof graphics.stroke === 'function') {
         graphics.stroke({
           width: stroke.width,
@@ -207,10 +217,13 @@ export const createOverlayLayerRegistration = (
         })
       }
     },
+
     bezierCurve: (from, control1, control2, to, stroke) => {
       const points = sampleOverlayBezierPoints(from, control1, control2, to)
+
       canvas.polyline(points, stroke)
     },
+
     circle: (center, radius, fillColor, stroke) => {
       graphics.circle(center.x, center.y, radius)
       if (typeof fillColor === 'number') {
@@ -221,6 +234,7 @@ export const createOverlayLayerRegistration = (
           alpha: fillColor.alpha
         })
       }
+
       if (
         stroke &&
         'stroke' in graphics &&
@@ -234,6 +248,7 @@ export const createOverlayLayerRegistration = (
         })
       }
     },
+
     polygon: (points, fillColor, stroke) => {
       if (points.length < 3) {
         return
@@ -243,6 +258,7 @@ export const createOverlayLayerRegistration = (
       for (let i = 1; i < points.length; i += 1) {
         graphics.lineTo(points[i].x, points[i].y)
       }
+
       graphics.closePath()
       if (typeof fillColor === 'number') {
         graphics.fill(fillColor)
@@ -252,6 +268,7 @@ export const createOverlayLayerRegistration = (
           alpha: fillColor.alpha
         })
       }
+
       if (
         stroke &&
         'stroke' in graphics &&
@@ -271,6 +288,7 @@ export const createOverlayLayerRegistration = (
     name: options.name,
     layer,
     zIndex: options.zIndex,
+
     update: () => {
       return options.update(canvas)
     }

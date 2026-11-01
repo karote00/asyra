@@ -6,15 +6,19 @@ import { selectTestImpact, requiresTestParser } from '../test-impact.mjs'
 
 const root = process.cwd()
 const directory = 'apps/asyra-fieldscope'
+
 const select = (...inputs) => selectTestImpact(root, directory, inputs)
+
 test('UI inputs do not select numerical profiles', () => {
   const result = select(
     'apps/asyra-fieldscope/src/ui/walking-runtime-selector.tsx'
   )
+
   assert.equal(result.profiles.length, 0)
 })
 test('crop changes select source consumers but not pure trigonometry', () => {
   const result = select('apps/asyra-fieldscope/src/domain/crop-models.ts')
+
   assert.ok(
     result.profiles.some((f) =>
       f.endsWith('crop-models.source.profile.test.ts')
@@ -35,6 +39,7 @@ test('walking fixtures select their transitive profile consumers', () => {
   const result = select(
     'apps/asyra-fieldscope/src/simulation/__tests__/walking-motion-test-fixtures.ts'
   )
+
   assert.ok(
     result.profiles.some((f) =>
       f.endsWith('walking-motion-admission.profile.test.ts')
@@ -48,18 +53,21 @@ test('walking fixtures select their transitive profile consumers', () => {
 })
 test('upstream, unknown and deleted inputs retain the full inventory', () => {
   const full = select('packages/core/src/core.ts')
+
   assert.ok(full.profiles.length > 0)
   for (const input of [
     'apps/asyra-fieldscope/src/deleted.ts',
     'apps/asyra-fieldscope/vitest.config.ts'
-  ])
+  ]) {
     assert.deepEqual(select(input).profiles, full.profiles)
+  }
 })
 test('new tests and cyclic imports are discovered without a name list', (t) => {
   fs.mkdirSync(path.join(root, 'tmp/fieldscope-routing'), { recursive: true })
   const folder = fs.mkdtempSync(
     path.join(root, 'tmp/fieldscope-routing/graph-')
   )
+
   t.after(() => fs.rmSync(folder, { recursive: true, force: true }))
   fs.mkdirSync(path.join(folder, 'src/__tests__'), { recursive: true })
   fs.writeFileSync(path.join(folder, 'src/a.ts'), "export * from './b'")
@@ -70,6 +78,7 @@ test('new tests and cyclic imports are discovered without a name list', (t) => {
   )
   const dir = path.relative(root, folder)
   const selected = selectTestImpact(root, dir, [`${dir}/src/b.ts`])
+
   assert.deepEqual(selected.profiles, ['src/__tests__/new.profile.test.ts'])
   assert.equal(selected.work.parsedFiles, 3)
   assert.equal(selected.work.traversedFiles, 3)
@@ -77,6 +86,7 @@ test('new tests and cyclic imports are discovered without a name list', (t) => {
 
 test('resource edits and upstream dependencies retain profiles, E2E is separately owned', () => {
   const full = select('apps/asyra-fieldscope/src/domain/data.json')
+
   assert.ok(full.profiles.length > 0)
   assert.ok(full.ordinary.length > 0)
 })
@@ -86,6 +96,7 @@ test('unresolved imports conservatively select their consumers without losing cy
   const folder = fs.mkdtempSync(
     path.join(root, 'tmp/fieldscope-routing/unknown-')
   )
+
   t.after(() => fs.rmSync(folder, { recursive: true, force: true }))
   fs.mkdirSync(path.join(folder, 'src/__tests__'), { recursive: true })
   fs.writeFileSync(path.join(folder, 'src/change.ts'), 'export const x = 1')
@@ -99,6 +110,7 @@ test('unresolved imports conservatively select their consumers without losing cy
   )
   const dir = path.relative(root, folder)
   const selected = selectTestImpact(root, dir, [`${dir}/src/change.ts`])
+
   assert.deepEqual(selected.profiles, [
     'src/__tests__/consumer.profile.test.ts'
   ])
@@ -118,14 +130,17 @@ test('pre-install classification needs the parser only for registered source cha
     'docs/ai/plan.md',
     'apps/other/src/index.ts',
     'apps/asyra-fieldscope/e2e/panels.spec.ts'
-  ])
+  ]) {
     assert.equal(requiresTestParser([file], ['apps/asyra-fieldscope']), false)
+  }
 })
 
 test('proven upstream sources enter at package imports and preserve transitive owner consumers', (t) => {
   const parent = path.join(root, 'tmp/fieldscope-routing')
+
   fs.mkdirSync(parent, { recursive: true })
   const folder = fs.mkdtempSync(path.join(parent, 'upstream-'))
+
   t.after(() => fs.rmSync(folder, { recursive: true, force: true }))
   const files = {
     'package/package.json': JSON.stringify({
@@ -175,11 +190,14 @@ test('proven upstream sources enter at package imports and preserve transitive o
     'app/src/__tests__/math.profile.test.ts': "import '../pure'",
     'app/src/__tests__/unknown.test.ts': "import '../unknown'"
   }
+
   for (const [file, content] of Object.entries(files)) {
     const target = path.join(folder, file)
+
     fs.mkdirSync(path.dirname(target), { recursive: true })
     fs.writeFileSync(target, content)
   }
+
   const dir = path.relative(root, path.join(folder, 'app'))
   const input = path.relative(root, path.join(folder, 'package/src/paint.ts'))
   const upstream = {
@@ -188,6 +206,7 @@ test('proven upstream sources enter at package imports and preserve transitive o
       ['package', 'facade'].map((directory) => {
         const name =
           directory === 'package' ? '@example/renderer' : '@example/preset'
+
         return [
           name,
           { name, directory: path.relative(root, path.join(folder, directory)) }
@@ -196,6 +215,7 @@ test('proven upstream sources enter at package imports and preserve transitive o
     )
   }
   const selected = selectTestImpact(root, dir, [input], false, upstream)
+
   assert.deepEqual(selected.profiles, ['src/__tests__/render.profile.test.ts'])
   assert.deepEqual(selected.ordinary, [
     'src/__tests__/facade.test.ts',
@@ -209,6 +229,7 @@ test('proven upstream sources enter at package imports and preserve transitive o
     false,
     upstream
   )
+
   assert.deepEqual(mixed.profiles, [
     'src/__tests__/math.profile.test.ts',
     'src/__tests__/render.profile.test.ts'
@@ -240,6 +261,7 @@ test('proven upstream sources enter at package imports and preserve transitive o
   )
   fs.rmSync(path.resolve(root, input))
   const removed = selectTestImpact(root, dir, [input], false, upstream)
+
   assert.equal(removed.reason, 'source-graph-with-conservative-edges')
   assert.deepEqual(removed.profiles, [
     'src/__tests__/math.profile.test.ts',
@@ -272,10 +294,13 @@ test('pre-install parser admission includes discovered upstream workspace source
 
 test('named type-only imports do not execute upstream sources', (t) => {
   const parent = path.join(root, 'tmp/fieldscope-routing')
+
   fs.mkdirSync(parent, { recursive: true })
   const folder = fs.mkdtempSync(path.join(parent, 'named-type-'))
+
   t.after(() => fs.rmSync(folder, { recursive: true, force: true }))
   const dir = path.relative(root, folder)
+
   fs.mkdirSync(path.join(folder, 'src/__tests__'), { recursive: true })
   fs.writeFileSync(
     path.join(folder, 'src/value.ts'),
@@ -289,6 +314,7 @@ test('named type-only imports do not execute upstream sources', (t) => {
   const result = selectTestImpact(root, dir, [input], false, {
     sourcePaths: new Set([input])
   })
+
   assert.deepEqual(result.ordinary, [])
   assert.deepEqual(selectTestImpact(root, dir, [input]).ordinary, [
     'src/__tests__/type.test.ts'
@@ -307,16 +333,20 @@ test('named type-only imports do not execute upstream sources', (t) => {
 
 test('declared browser proof inputs retain dependencies without unrelated upstream work', (t) => {
   const parent = path.join(root, 'tmp/fieldscope-routing')
+
   fs.mkdirSync(parent, { recursive: true })
   const folder = fs.mkdtempSync(path.join(parent, 'proof-inputs-'))
+
   t.after(() => fs.rmSync(folder, { recursive: true, force: true }))
   const dir = path.relative(root, folder)
+
   fs.mkdirSync(path.join(folder, 'src'), { recursive: true })
   fs.writeFileSync(path.join(folder, 'src/math.ts'), 'export const x = 1')
   fs.writeFileSync(path.join(folder, 'src/render.ts'), 'export const y = 2')
   const options = {
     targets: [{ file: 'e2e/math.spec.ts', inputs: ['src/math.ts'] }]
   }
+
   assert.deepEqual(
     selectTestImpact(root, dir, [`${dir}/src/render.ts`], false, options)
       .ordinary,

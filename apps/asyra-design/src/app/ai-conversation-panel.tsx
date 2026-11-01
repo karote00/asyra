@@ -46,10 +46,13 @@ const ACCEPTED_IMAGE_TYPES = new Set<AiImageMediaType>([
 
 const ActiveDuration = ({ turn }: { readonly turn?: AiActiveTurn }) => {
   const [now, setNow] = useState(() => performance.now())
+
   useEffect(() => {
     const timer = setInterval(() => setNow(performance.now()), 1000)
+
     return () => clearInterval(timer)
   }, [])
+
   return (
     <span>
       {formatElapsedTime(
@@ -69,17 +72,21 @@ const readImageAttachment = (file: File): Promise<AiImageAttachment> =>
   new Promise((resolve, reject) => {
     const mediaType = file.type as AiImageMediaType
     const reader = new FileReader()
+
     reader.onerror = () => {
       reject(new Error('image-read-failed'))
     }
+
     reader.onload = () => {
       if (
         typeof reader.result !== 'string' ||
         !reader.result.startsWith(`data:${mediaType};base64,`)
       ) {
         reject(new Error('image-read-failed'))
+
         return
       }
+
       resolve(
         Object.freeze({
           dataUrl: reader.result,
@@ -89,6 +96,7 @@ const readImageAttachment = (file: File): Promise<AiImageAttachment> =>
         })
       )
     }
+
     reader.readAsDataURL(file)
   })
 
@@ -225,10 +233,12 @@ const AiConversationPanelLayout = ({
       if (conversation.getSnapshot().activeTurn) {
         return
       }
+
       const selectedFiles = Array.from(files)
       const acceptedFiles = selectedFiles.filter((file) =>
         ACCEPTED_IMAGE_TYPES.has(file.type as AiImageMediaType)
       )
+
       setAttachmentError(
         acceptedFiles.length === selectedFiles.length
           ? null
@@ -237,20 +247,25 @@ const AiConversationPanelLayout = ({
       if (acceptedFiles.length === 0) {
         return
       }
+
       const results = await Promise.allSettled(
         acceptedFiles.map(readImageAttachment)
       )
+
       if (conversation.getSnapshot().activeTurn) {
         return
       }
+
       const attachments = results.flatMap((result) =>
         result.status === 'fulfilled' ? [result.value] : []
       )
+
       if (attachments.length > 0) {
         setDraftAttachments((current) =>
           Object.freeze([...current, ...attachments])
         )
       }
+
       if (results.some((result) => result.status === 'rejected')) {
         setAttachmentError(
           'Could not read one or more images. Try adding them again.'
@@ -263,9 +278,11 @@ const AiConversationPanelLayout = ({
   const chooseImages = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       const files = event.currentTarget.files
+
       if (files) {
         void addImageFiles(files)
       }
+
       event.currentTarget.value = ''
     },
     [addImageFiles]
@@ -286,18 +303,22 @@ const AiConversationPanelLayout = ({
     (event: FormEvent) => {
       event.preventDefault()
       const intent = draft.trim()
+
       if (!intent || !aiAvailable || conversation.getSnapshot().activeTurn) {
         return
       }
+
       const settlement = conversation.submit({
         attachments: draftAttachments,
         intent
       })
+
       if (conversation.getSnapshot().activeTurn?.intent === intent) {
         setDraft('')
         setDraftAttachments([])
         setAttachmentError(null)
       }
+
       void settlement.catch(() => undefined)
     },
     [conversation, draft, draftAttachments, aiAvailable]
@@ -308,11 +329,16 @@ const AiConversationPanelLayout = ({
       text: draft,
       attachments: draftAttachments
     })
-    if (id === null) conversation.newConversation()
-    else conversation.selectConversation(id)
+    if (id === null) {
+      conversation.newConversation()
+    } else {
+      conversation.selectConversation(id)
+    }
+
     const restored = drafts.current.get(
       conversation.getSnapshot().conversationId
     )
+
     setDraft(restored?.text ?? '')
     setDraftAttachments(restored?.attachments ?? [])
     setAttachmentError(null)
@@ -530,6 +556,7 @@ const AiConversationFeed = ({
   )
   const [confirmationSnapshot, setConfirmationSnapshot] =
     useState<AiConfirmationSnapshot>(() => confirmation.getSnapshot())
+
   useEffect(
     () => conversation.subscribe(setConversationSnapshot),
     [conversation]
@@ -540,16 +567,23 @@ const AiConversationFeed = ({
   )
   const syncScrollPosition = useCallback(() => {
     const body = conversationBodyRef.current
-    if (!body) return
+
+    if (!body) {
+      return
+    }
+
     const atBottom = body.scrollHeight - body.scrollTop - body.clientHeight <= 1
+
     followLatestRef.current = atBottom
     setShowJump(!atBottom)
   }, [])
   const active = conversationSnapshot.activeTurn !== null
+
   // Follow before paint can emit scroll events for the newly grown content.
   // Otherwise those events can mistake layout growth for reading older messages.
   useLayoutEffect(() => {
     const body = conversationBodyRef.current
+
     if (body && followLatestRef.current) {
       body.scrollTop = body.scrollHeight
       setShowJump(false)
@@ -563,6 +597,7 @@ const AiConversationFeed = ({
       const snapshot = conversation.getSnapshot()
       const latestSettled =
         snapshot.settledTurns[snapshot.settledTurns.length - 1]
+
       if (
         snapshot.disposed ||
         snapshot.activeTurn ||
@@ -570,12 +605,14 @@ const AiConversationFeed = ({
       ) {
         return
       }
+
       try {
         const settlement = conversation.submit({
           intent: optionId === 'maximum' ? 'Maximum detail' : 'Balanced detail',
           detailOption: optionId,
           replyToTurnId: turnId
         })
+
         void settlement.catch(() => undefined)
       } catch {
         // The controller remains the authority for active/disposed rejection.
@@ -621,8 +658,15 @@ const AiConversationFeed = ({
             !active &&
             turns.at(-1)?.turnId === turn.turnId
           let questionStatus = 'Superseded'
-          if (answer) questionStatus = 'Answered'
-          if (canAnswer) questionStatus = 'Waiting for your answer'
+
+          if (answer) {
+            questionStatus = 'Answered'
+          }
+
+          if (canAnswer) {
+            questionStatus = 'Waiting for your answer'
+          }
+
           const latest = timeline.at(-1)?.turnId === turn.turnId
           const stopping = !settled && conversationSnapshot.activeTurn?.stopping
           const activity = conversation.getActivity(turn.turnId, {
@@ -632,6 +676,7 @@ const AiConversationFeed = ({
             stopping: Boolean(stopping),
             awaitingApproval: !settled && Boolean(pendingConfirmation)
           })
+
           return (
             <article
               className="flex min-w-0 flex-col gap-3"
@@ -663,10 +708,16 @@ const AiConversationFeed = ({
                 <details
                   onToggle={(event) => {
                     const open = event.currentTarget.open
+
                     setExpandedHistory((previous) => {
                       const next = new Set(previous)
-                      if (open) next.add(turn.turnId)
-                      else next.delete(turn.turnId)
+
+                      if (open) {
+                        next.add(turn.turnId)
+                      } else {
+                        next.delete(turn.turnId)
+                      }
+
                       return next
                     })
                   }}
@@ -699,6 +750,7 @@ const AiConversationFeed = ({
                             entry.message && entry.message !== entry.label
                               ? [entry.label, entry.message]
                               : [entry.label]
+
                           return lines.map((line, lineIndex) => (
                             <li
                               key={`${turn.turnId}:${index}:${lineIndex}`}
@@ -886,7 +938,10 @@ const AiConversationFeed = ({
             followLatestRef.current = true
             setShowJump(false)
             const body = conversationBodyRef.current
-            if (body) body.scrollTop = body.scrollHeight
+
+            if (body) {
+              body.scrollTop = body.scrollHeight
+            }
           }}
         >
           Jump to latest

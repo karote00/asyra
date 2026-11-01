@@ -30,6 +30,7 @@ const PROP_ALIAS: Record<AliasKeys, PropertyType> = {
 
 class Props implements IProps {
   elementId: string
+
   private propertyIds: Map<string, string> = new Map()
 
   constructor(
@@ -49,6 +50,7 @@ class Props implements IProps {
   get position() {
     return this.propertyIds.get(PropertyTypes.POSITION)
   }
+
   get dimension() {
     return this.propertyIds.get(PropertyTypes.DIMENSION)
   }
@@ -59,6 +61,7 @@ class Props implements IProps {
         `[SceneTree] Unknown canonical property binding "${name}"`
       )
     }
+
     this.propertyIds.set(name, id)
   }
 
@@ -75,12 +78,14 @@ class Props implements IProps {
       this.propsManagerOwner.createProperty({ type: propName })
     )
     const propIdsMap = this.propsManagerOwner.addProperty(propertyComponents)
+
     if (!propIdsMap) {
       return
     }
 
     PROP_NAMES.forEach((propName) => {
       const id = propIdsMap[propName]
+
       if (id) {
         this.propertyIds.set(propName, id)
       }
@@ -95,6 +100,7 @@ class Props implements IProps {
       const propComponent = propId
         ? this.propsManagerOwner.getPropertyById(propId)
         : null
+
       if (propComponent) {
         // Restore existing prop component
         return propComponent
@@ -103,16 +109,20 @@ class Props implements IProps {
         const created = this.propsManagerOwner.createProperty({
           type: propName
         })
+
         createdPropertyComponents.push(created)
+
         return created
       }
     })
+
     if (createdPropertyComponents.length > 0) {
       this.propsManagerOwner.addProperty(createdPropertyComponents)
     }
 
     PROP_NAMES.forEach((propName, index) => {
       const id = propertyComponents[index]?.get('id')
+
       if (id) {
         this.propertyIds.set(propName, id)
       }
@@ -121,9 +131,11 @@ class Props implements IProps {
 
   save(): PropsRawData {
     const data = {} as PropsRawData
+
     this.propertyIds.forEach((id, propName) => {
       ;(data as PropsRawData)[propName] = id
     })
+
     return data
   }
 
@@ -134,6 +146,7 @@ class Props implements IProps {
   ) {
     const propName = (PROP_ALIAS[key as AliasKeys] || key) as PropertyType
     const propComponentId = this.propertyIds.get(propName)
+
     if (!propComponentId) {
       return
     }
@@ -143,6 +156,7 @@ class Props implements IProps {
 
   cleanup(options?: EvnetOptions) {
     const removedPropertyIds: { id: string }[] = []
+
     this.propertyIds.forEach((id) => {
       removedPropertyIds.push({ id })
     })

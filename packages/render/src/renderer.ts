@@ -12,7 +12,9 @@ export class RenderAdapter implements IRenderer {
   readonly name: string = 'RenderAdapter'
 
   private container: HTMLElement | null = null
+
   private initializationPending = false
+
   private destroyRequested = false
 
   constructor(private readonly runtime: Render = render) {}
@@ -32,10 +34,12 @@ export class RenderAdapter implements IRenderer {
         options.backgroundColor || 0x000000,
         container
       )
+
       if (this.destroyRequested) {
         this.runtime.dispose()
         throw new Error('Render adapter was destroyed during initialization')
       }
+
       this.runtime.start()
 
       return {
@@ -49,15 +53,19 @@ export class RenderAdapter implements IRenderer {
 
   destroy(): void {
     const container = this.container
+
     if (!container) {
       return
     }
+
     this.container = null
     this.destroyRequested = true
     if (this.initializationPending) {
       container.innerHTML = ''
+
       return
     }
+
     try {
       this.runtime.dispose()
     } finally {
@@ -67,6 +75,7 @@ export class RenderAdapter implements IRenderer {
 
   getViewportPosition() {
     const position = this.runtime.getViewportPosition()
+
     return { x: position.x, y: position.y }
   }
 

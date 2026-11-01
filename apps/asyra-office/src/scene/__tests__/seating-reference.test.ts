@@ -3,11 +3,14 @@ import { composeOfficeSeating } from '../office-seating'
 import { placeParts, type AssetPart } from '../../assets/catalog'
 
 const instances = new Map<string, AssetPart[]>()
+
 beforeAll(() => {
   composeOfficeSeating({
     add(id, _asset, parts, position, rotation, scale) {
-      if (!position || rotation === undefined || !scale)
+      if (!position || rotation === undefined || !scale) {
         throw new Error(`Missing measured transform for ${id}`)
+      }
+
       instances.set(id, placeParts(parts, position, rotation, scale))
     }
   })
@@ -24,12 +27,18 @@ for (const [id, partId, sourceWidth] of [
   it(`retains the source-width anchor on actual ${id} geometry`, () => {
     const parts = instances.get(id)
     const mesh = parts?.find((p) => p.id === partId)?.mesh
-    if (!mesh || !parts) throw new Error(`Missing ${id}/${partId}`)
+
+    if (!mesh || !parts) {
+      throw new Error(`Missing ${id}/${partId}`)
+    }
+
     const xs = mesh.positions.filter((_, i) => i % 3 === 0)
+
     expect(Math.max(...xs) - Math.min(...xs)).toBeCloseTo(sourceWidth, 6)
     const zs = parts.flatMap((p) =>
       p.mesh.positions.filter((_, i) => i % 3 === 2)
     )
+
     expect(Math.min(...zs)).toBeCloseTo(0.38, 6)
   })
 }

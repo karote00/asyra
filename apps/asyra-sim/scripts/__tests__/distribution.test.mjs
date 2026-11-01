@@ -30,10 +30,14 @@ test('all current App documentation links and supplemental notice identities sur
       `docs/${file}`
     ])
   )
+
   targets.set('apps/asyra-sim/README.md', 'USER_GUIDE.md')
   targets.set(`${prefix}/release/LOCAL_CANDIDATE.md`, 'README.md')
   for (const [source] of targets) {
-    if (!source.endsWith('.md')) continue
+    if (!source.endsWith('.md')) {
+      continue
+    }
+
     const result = rewriteDistributionMarkdown(
       readFileSync(path.join(repository, source), 'utf8'),
       source,
@@ -41,9 +45,12 @@ test('all current App documentation links and supplemental notice identities sur
       repository,
       'a'.repeat(40)
     )
+
     assert.ok(result.length > 0)
   }
+
   const notices = path.join(repository, 'apps/asyra-sim/scripts/notices')
+
   for (const record of Object.values(
     JSON.parse(readFileSync(path.join(notices, 'sources.json'), 'utf8'))
   )) {
@@ -59,20 +66,27 @@ function fixture(t) {
   const parent = fileURLToPath(
     new URL('../../.artifacts/consumer-tests/', import.meta.url)
   )
+
   mkdirSync(parent, { recursive: true })
   const root = mkdtempSync(path.join(parent, 'distribution-'))
+
   t.after(() => rmSync(root, { recursive: true }))
+
   const write = (name, text = '') => {
     const file = path.join(root, name)
+
     mkdirSync(path.dirname(file), { recursive: true })
     writeFileSync(file, text)
+
     return file
   }
+
   return { root, write }
 }
 
 test('candidate checksums cover every file and reject modification, omission, additions and symlinks', (t) => {
   const { root, write } = fixture(t)
+
   write('site/index.html', '<html></html>')
   write('server.mjs', '// launcher')
   write('SHA256SUMS', checksumText(root))
@@ -96,6 +110,7 @@ test('candidate checksums cover every file and reject modification, omission, ad
 
 test('documentation stays local when shipped, labels source-only references, opens external links separately and rejects broken targets', (t) => {
   const { root, write } = fixture(t)
+
   write('app/README.md')
   write('docs/guide.md')
   write('source/api.ts')
@@ -104,8 +119,10 @@ test('documentation stays local when shipped, labels source-only references, ope
     ['docs/guide.md', 'docs/guide.md']
   ])
   const commit = 'a'.repeat(40)
+
   const rewrite = (text) =>
     rewriteDistributionMarkdown(text, 'app/README.md', targets, root, commit)
+
   assert.equal(
     rewrite('[guide](../docs/guide.md#start)'),
     '[guide](docs/guide.md#start)'
@@ -135,6 +152,7 @@ test('notices use actual bundled package identities and original texts, requirin
   const { root, write } = fixture(t)
   const consumer = path.join(root, 'app'),
     supplements = path.join(root, 'supplements')
+
   write(
     'app/node_modules/example/package.json',
     JSON.stringify({ name: 'example', version: '1.0.0', license: 'MIT' })
@@ -144,12 +162,14 @@ test('notices use actual bundled package identities and original texts, requirin
     'app/node_modules/example/LICENSE',
     'Original copyright and permission'
   )
+
   write(
     'app/.build-evidence/main.json',
     JSON.stringify(['node_modules/example/index.js'])
   )
   write('supplements/sources.json', '{}')
   const original = bundledNotices(consumer, supplements)
+
   assert.equal(original.length, 1)
   assert.equal(original[0].name, 'example')
   assert.equal(original[0].version, '1.0.0')
@@ -164,6 +184,7 @@ test('notices use actual bundled package identities and original texts, requirin
     'supplements/original.txt',
     'Preserved original license'
   )
+
   write(
     'supplements/sources.json',
     JSON.stringify({
@@ -195,11 +216,13 @@ test('the producer stages a complete versioned candidate without serving SDK dat
     consumer = path.join(root, 'app'),
     output = path.join(root, 'output')
   const docs = 'source/docs/ai/apps/asyra-sim'
+
   write(
     `${docs}/release/LOCAL_CANDIDATE.md`,
     '# Start\n[Guide](../../../../../apps/asyra-sim/README.md)\n[Recovery](../../../../../apps/asyra-sim/e2e/fixtures/missing-method-project.json)'
   )
   const recoveryFixture = '{"synthetic":"unavailable method"}'
+
   write('app/e2e/fixtures/missing-method-project.json', recoveryFixture)
   write(
     'source/apps/asyra-sim/e2e/fixtures/missing-method-project.json',
@@ -214,11 +237,15 @@ test('the producer stages a complete versioned candidate without serving SDK dat
     'run-e2e.mjs',
     'supervise-tests.py',
     '__tests__/supervise-tests.test.mjs'
-  ])
+  ]) {
     write(`source/apps/asyra-sim/scripts/${file}`, `// source ${file}`)
+  }
+
   write('source/apps/asyra-sim/scripts/notices/sources.json', '{}')
-  for (const folder of ['src', 'samples', 'e2e'])
+  for (const folder of ['src', 'samples', 'e2e']) {
     write(`app/${folder}/input.ts`, '// app input')
+  }
+
   for (const file of [
     'yarn.lock',
     '.yarnrc.yml',
@@ -232,8 +259,10 @@ test('the producer stages a complete versioned candidate without serving SDK dat
     'app-environment.mjs',
     'app-environment.d.mts',
     'consumer.vite.config.mjs'
-  ])
+  ]) {
     write(`app/${file}`, 'input')
+  }
+
   write(
     'app/package.json',
     JSON.stringify({
@@ -269,6 +298,7 @@ test('the producer stages a complete versioned candidate without serving SDK dat
     appVersion: '0.1.0-alpha.0'
   }
   const candidate = assembleDistribution({ snapshot, consumer, output, report })
+
   assert.match(candidate, /asyra-sim-0\.1\.0-alpha\.0-aaaaaaaaaaaa$/)
   verifyDistribution(candidate)
   assert.deepEqual(distributionFiles(path.join(candidate, 'site')), [
@@ -324,6 +354,7 @@ test('the producer stages a complete versioned candidate without serving SDK dat
   const sdkManifest = JSON.parse(
     readFileSync(path.join(candidate, 'sdk/app/package.json'), 'utf8')
   )
+
   assert.equal(
     sdkManifest.scripts['test:local'],
     'node --test scripts/__tests__/supervise-tests.test.mjs && python3 scripts/supervise-tests.py --'
@@ -331,8 +362,10 @@ test('the producer stages a complete versioned candidate without serving SDK dat
   for (const commandPath of [
     'scripts/supervise-tests.py',
     'scripts/__tests__/supervise-tests.test.mjs'
-  ])
+  ]) {
     assert.ok(distributionFiles(candidate).includes(`sdk/app/${commandPath}`))
+  }
+
   assert.match(
     readFileSync(path.join(candidate, 'THIRD_PARTY_NOTICES.txt'), 'utf8'),
     /Original permission/

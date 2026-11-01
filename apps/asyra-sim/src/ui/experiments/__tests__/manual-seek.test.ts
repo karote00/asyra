@@ -20,6 +20,7 @@ it.each(['clearance', 'collision'] as const)(
       for (const target of [3.65, 3.7, 3.75, 3.55]) {
         const previous = f.latest()
         const before = f.publish.mock.calls.length
+
         f.preview.sample(target, { discontinuity: true })
 
         expect(f.latest()).toMatchObject({
@@ -32,12 +33,14 @@ it.each(['clearance', 'collision'] as const)(
         )
         expect(f.latest().time).not.toBe(previous.time)
         const pendingView = f.publish.mock.calls[before][0]
+
         expect(pendingView.feedback?.checkedTime).toBe(
           previous.feedback?.checkedTime
         )
         expect(playbackHighlight(pendingView)?.colors).toEqual(colors)
 
         const pendingPublications = f.publish.mock.calls.length
+
         f.deliver(target, kind, true)
         expect(f.publish).toHaveBeenCalledTimes(pendingPublications)
         expect(f.latest().time).toBe(target)
@@ -132,11 +135,13 @@ it('uses exact cached results without a reset frame or a second input capture', 
 
     f.preview.sample(4, { discontinuity: true })
 
-    for (const [view] of f.publish.mock.calls.slice(before))
+    for (const [view] of f.publish.mock.calls.slice(before)) {
       expect(view).toMatchObject({
         time: 4,
         feedback: { kind: 'collision', checkedTime: 4 }
       })
+    }
+
     expect(f.create).toHaveBeenCalledOnce()
     expect(f.sample).toHaveBeenCalledTimes(3)
   } finally {

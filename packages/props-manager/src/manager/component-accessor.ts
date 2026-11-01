@@ -19,9 +19,13 @@ const noopAccessor: ComponentAccessor = {
   validateSharedWrite: () => {
     throw new Error('Shared property writes require an active Props owner')
   },
+
   getPropertyById: () => undefined,
+
   addToMap: () => undefined,
+
   createComponent: () => null,
+
   addChange: () => undefined
 }
 
@@ -39,6 +43,7 @@ export const runWithPropertyComponentAccessor = <T>(
   callback: () => T
 ): T => {
   const previousAccessor = scopedAccessor
+
   scopedAccessor = nextAccessor
   try {
     return callback()

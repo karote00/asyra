@@ -27,6 +27,7 @@ export interface SupportPosition {
 /** Canonical water-adjacent soil rows, shared by supports and crops. */
 export function createPlantingRows(config: FarmConfiguration) {
   const layout = createLayout(configurationSite(config), config.strips)
+
   return layout.strips
     .filter((strip) => strip.kind === 'drain')
     .flatMap((drain, row) =>
@@ -35,8 +36,15 @@ export function createPlantingRows(config: FarmConfiguration) {
           layout.strips[
             layout.strips.indexOf(drain) + (side === 'left' ? -1 : 1)
           ]
-        if (!adjacent || adjacent.bay !== drain.bay || adjacent.kind !== 'soil')
+
+        if (
+          !adjacent ||
+          adjacent.bay !== drain.bay ||
+          adjacent.kind !== 'soil'
+        ) {
           return []
+        }
+
         return [
           {
             bay: drain.bay,
@@ -59,6 +67,7 @@ export function createSupportPositions(
     (config.length - config.startInset - config.endInset) /
       SUPPORT_LAYOUT.spacing
   )
+
   return createPlantingRows(config).flatMap((row) =>
     Array.from({ length: intervalCount + 1 }, (_, index) => ({
       ...row,
@@ -77,8 +86,10 @@ export function createSupportTubes(
     height <= 0 ||
     !Number.isFinite(embedDepth) ||
     embedDepth <= 0
-  )
+  ) {
     throw new Error('Support height and embed depth must be positive metres')
+  }
+
   return createSupportPositions(config).map((position) => ({
     ...position,
     diameter: SUPPORT_LAYOUT.diameter,
@@ -114,6 +125,7 @@ export function createSupportAssembly(
   const rails = rows.map((row) => {
     const direction = row.side === 'left' ? -1 : 1
     const x = row.x + direction * SUPPORT_LAYOUT.diameter
+
     return {
       bay: row.bay,
       diameter: SUPPORT_LAYOUT.diameter,
@@ -132,8 +144,9 @@ export function createSupportAssembly(
     firstDiameter: SUPPORT_LAYOUT.diameter,
     secondDiameter: SUPPORT_LAYOUT.diameter
   }))
-  for (const rail of rails)
-    for (const z of memberStations(site.length, site.postSpacing))
+
+  for (const rail of rails) {
+    for (const z of memberStations(site.length, site.postSpacing)) {
       clips.push({
         bay: rail.bay,
         origin: [rail.points[0][0], railY, z],
@@ -143,6 +156,9 @@ export function createSupportAssembly(
         firstDiameter: SUPPORT_LAYOUT.diameter,
         secondDiameter: site.tubeDiameter
       })
+    }
+  }
+
   return { tubes, rails, clips }
 }
 
@@ -159,25 +175,31 @@ export function springClipWire(clip: SpringClip) {
   const separation = (clip.firstDiameter + clip.secondDiameter) / 2
   const reach = a + separation
   const hookAngle = (Math.PI * 4) / 9
+
   const hook = (side: number): Point3[] =>
     Array.from({ length: 7 }, (_, i) => {
       const angle = (hookAngle * i) / 6
+
       return [
         side * b * Math.cos(angle),
         reach,
         separation + b * Math.sin(angle)
       ]
     })
+
   const arm = (side: number): Point3[] => [
     [side * b, -reach, separation],
     ...Array.from({ length: 13 }, (_, i): Point3 => {
       const angle = Math.PI - (i * Math.PI) / 12
+
       return [side * b, a * Math.cos(angle), -a * Math.sin(angle)]
     }),
     [side * b, reach, separation]
   ]
+
   const saddle: Point3[] = Array.from({ length: 13 }, (_, i) => {
     const angle = (i * Math.PI) / 12
+
     return [b * Math.cos(angle), -reach, separation + b * Math.sin(angle)]
   })
   const local: Point3[] = [
@@ -187,6 +209,7 @@ export function springClipWire(clip: SpringClip) {
     ...arm(-1).slice(1),
     ...hook(-1).slice(1)
   ]
+
   return {
     diameter: SUPPORT_LAYOUT.wireDiameter,
     points: local.map(([u, v, w]): Point3 => [
@@ -212,6 +235,7 @@ export function supportJointTarget(
 ): Point3 {
   const site = configurationSite(config)
   const position = createSupportPositions(config)[0]
+
   return position
     ? [
         position.x - SUPPORT_LAYOUT.diameter / 2,

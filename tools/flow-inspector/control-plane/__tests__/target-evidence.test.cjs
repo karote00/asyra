@@ -28,6 +28,7 @@ let directory,
 
 test.before(async () => {
   const parent = path.join(root, 'tmp/flow-inspector/target-evidence-tests')
+
   fs.mkdirSync(parent, { recursive: true })
   directory = fs.mkdtempSync(path.join(parent, 'run-'))
   const initial = sourceOwner.captureSource(
@@ -35,8 +36,10 @@ test.before(async () => {
     path.join(directory, 'initial'),
     loadContract(root)
   )
+
   repository = path.join(directory, 'repository')
   fs.cpSync(initial.sourceRoot, repository, { recursive: true })
+
   async function produce(label, expectedStatus = 'passed') {
     const contract = loadContract(repository)
     const id = randomUUID()
@@ -75,6 +78,7 @@ test.before(async () => {
       'baseline',
       sourceAdmission
     )
+
     assert.equal(
       evidence.status,
       expectedStatus,
@@ -89,7 +93,9 @@ test.before(async () => {
       flowIds,
       scenario: 'baseline'
     }
+
     evidenceOwner.validateStoredEvidence(contract, record, sourceAdmission)
+
     return {
       contract,
       request: {
@@ -102,15 +108,19 @@ test.before(async () => {
       }
     }
   }
+
   const accepted = await produce('accepted')
+
   acceptedContract = accepted.contract
   acceptedProof = accepted.request
   const config = path.join(repository, acceptedContract.configFile)
+
   fs.chmodSync(config, 0o600)
   fs.appendFileSync(config, '\n// Reviewed configuration variant\n')
   sameContractProof = (await produce('same-contract-configuration')).request
   const sameAssertions = path.join(repository, acceptedContract.testFile)
   const sameOriginal = fs.readFileSync(sameAssertions, 'utf8')
+
   fs.chmodSync(sameAssertions, 0o600)
   fs.writeFileSync(
     sameAssertions,
@@ -124,10 +134,12 @@ test.before(async () => {
   fs.writeFileSync(sameAssertions, sameOriginal)
   const manifest = path.join(repository, acceptedContract.manifestPath)
   const definition = JSON.parse(fs.readFileSync(manifest, 'utf8'))
+
   definition.flows[0].title += ' - Developing'
   fs.chmodSync(manifest, 0o600)
   fs.writeFileSync(manifest, JSON.stringify(definition))
   const target = await produce('target')
+
   targetContract = target.contract
   targetProof = target.request
   const assertions = path.join(repository, targetContract.testFile)
@@ -136,6 +148,7 @@ test.before(async () => {
     'expect(deferred.history).toBe(1)',
     'expect(deferred.history).toBe(2)'
   )
+
   assert.notEqual(changed, original)
   fs.chmodSync(assertions, 0o600)
   fs.writeFileSync(assertions, changed)
@@ -151,6 +164,7 @@ test.before(async () => {
     'expect(cancelled.history).toBe(0)',
     'expect(cancelled.history).toBe(1)'
   )
+
   assert.notEqual(otherFlowFailure, original)
   fs.writeFileSync(assertions, otherFlowFailure)
   targetOtherFlowFailure = (
@@ -178,7 +192,9 @@ test.before(async () => {
   )
 })
 test.after(() => {
-  if (directory) fs.rmSync(directory, { recursive: true, force: true })
+  if (directory) {
+    fs.rmSync(directory, { recursive: true, force: true })
+  }
 })
 
 function input({
@@ -201,22 +217,31 @@ function input({
     allowedFiles: ['packages/factory/src/data-transact.ts'],
     prerequisites: []
   }))
-  if (prerequisites && works.length > 1)
+
+  if (prerequisites && works.length > 1) {
     works[1].prerequisites.push({
       workId: works[0].id,
       handoff: 'Use the admitted journal handoff'
     })
+  }
+
   const targetDirectory = path.join(repository, '.targets', randomUUID())
+
   fs.mkdirSync(targetDirectory, { recursive: true })
   const owner = createTargetOwner({
     repositoryRoot: repository,
     directory: targetDirectory,
+
     getContracts: () => [contract],
+
     getBaseline: () => baseline,
+
     getTask: () => null,
+
     getReview: () => null
   })
   const id = randomUUID()
+
   owner.decide(
     {
       action: 'create',
@@ -233,6 +258,7 @@ function input({
     'test owner'
   )
   const sourceAdmission = proof.sourceAdmission
+
   return {
     format: 2,
     target: owner.get(id),
@@ -257,6 +283,7 @@ function input({
     }
   }
 }
+
 const clone = (value) => structuredClone(value)
 
 test(
@@ -267,6 +294,7 @@ test(
       root,
       path.join(root, 'tmp/flow-inspector/full-runtime-evidence-tests')
     )
+
     try {
       const proofPair = async (ref, label) => ({
         accepted: await fixture.produce({
@@ -280,6 +308,7 @@ test(
           label: label + '-target'
         })
       })
+
       const factory = await proofPair(fixture.refs.factory, 'factory')
       const collaboration = await proofPair(
         fixture.refs.collaboration,
@@ -311,6 +340,7 @@ test(
       })
       const acceptedContract = integrated.accepted.contract
       const targetContract = integrated.target.contract
+
       assert.equal(
         acceptedContract.runtimeScope.digest,
         targetContract.runtimeScope.digest
@@ -337,6 +367,7 @@ test(
           prerequisites: []
         }
       ]
+
       works[1].prerequisites.push({
         workId: works[0].id,
         handoff: 'Consume the exact Factory contribution'
@@ -346,16 +377,22 @@ test(
         '.targets',
         randomUUID()
       )
+
       fs.mkdirSync(targetDirectory, { recursive: true })
       const owner = createTargetOwner({
         repositoryRoot: fixture.repository,
         directory: targetDirectory,
+
         getContracts: () => [targetContract],
+
         getBaseline: () => baseline,
+
         getTask: () => null,
+
         getReview: () => null
       })
       const targetId = randomUUID()
+
       owner.decide(
         {
           action: 'create',
@@ -385,6 +422,7 @@ test(
           }
         ]
       }
+
       owner.decide(
         {
           action: 'revise',
@@ -399,11 +437,13 @@ test(
         'test owner'
       )
       const target = owner.get(targetId)
+
       assert.equal(target.targetRevision, targetContract.digest)
       assert.equal(target.history.length, 2)
 
       const assess = (pair, allocationRevision) => {
         const sourceAdmission = pair.target.sourceAdmission
+
         return assessTargetSource({
           format: 2,
           target,
@@ -430,17 +470,20 @@ test(
       }
 
       const factoryPartial = assess(factory, 1)
+
       assert.equal(factoryPartial.works[0].own.status, 'passed')
       assert.equal(factoryPartial.works[0].status, 'passed')
       assert.equal(factoryPartial.integration.status, 'failed')
       assert.equal(factoryPartial.eligible, false)
 
       const missingPrerequisite = assess(collaboration, 1)
+
       assert.equal(missingPrerequisite.works[1].own.status, 'passed')
       assert.equal(missingPrerequisite.works[1].prerequisites.status, 'failed')
       assert.equal(missingPrerequisite.works[1].status, 'failed')
 
       const twoOwnerPartial = assess(firstTwo, 1)
+
       assert.deepEqual(
         twoOwnerPartial.works.map((work) => work.status),
         ['passed', 'passed']
@@ -448,6 +491,7 @@ test(
       assert.equal(twoOwnerPartial.eligible, false)
 
       const explicitlyPending = assess(integrated, 1)
+
       assert.equal(explicitlyPending.integration.status, 'pending')
       assert.deepEqual(explicitlyPending.integration.pending, [
         'runtime.ui-context',
@@ -455,11 +499,13 @@ test(
       ])
 
       const preservationFailure = assess(acceptedRegression, 1)
+
       assert.equal(preservationFailure.works[0].own.status, 'passed')
       assert.equal(preservationFailure.accepted.status, 'failed')
       assert.equal(preservationFailure.works[0].status, 'failed')
 
       const integrationFailure = assess(integrationRegression, 2)
+
       assert.equal(integrationFailure.targetContract.cases[0].status, 'passed')
       assert.equal(integrationFailure.targetContract.cases[1].status, 'passed')
       assert.equal(integrationFailure.targetContract.cases[2].status, 'passed')
@@ -472,9 +518,11 @@ test(
         ),
         ['failed', 'failed']
       )
+
       const status = (pair, caseId) =>
         pair.target.record.evidence.cases.find((item) => item.id === caseId)
           ?.status
+
       assert.equal(
         status(disconnectedCollaboration, 'runtime.collaboration'),
         'failed'
@@ -493,6 +541,7 @@ test(
       )
 
       const complete = assess(integrated, 2)
+
       assert.equal(complete.accepted.status, 'passed')
       assert.equal(complete.targetContract.status, 'passed')
       assert.deepEqual(
@@ -510,6 +559,7 @@ test(
         integrated.target.sourceAdmission.runtimeSource.digest
       )
       const revertedResult = assess(reverted, 2)
+
       assert.equal(revertedResult.integration.status, 'failed')
       assert.equal(revertedResult.eligible, false)
       assert.equal(complete.integration.status, 'passed')
@@ -537,6 +587,7 @@ test(
           source: complete.source
         }
       })
+
       assert.notEqual(mixed.targetContract.status, 'passed')
       assert.equal(mixed.eligible, false)
 
@@ -550,6 +601,7 @@ test(
           runtimeSourceDigest: advanced.sourceAdmission.runtimeSource.digest
         }
       })
+
       assert.equal(stale.current, false)
       assert.equal(stale.eligible, false)
       assert.deepEqual(stale.accepted, complete.accepted)
@@ -557,6 +609,7 @@ test(
       assert.deepEqual(stale.integration, complete.integration)
 
       const wrongRevision = structuredClone(target)
+
       wrongRevision.targetRevision = acceptedContract.digest
       assert.throws(
         () =>
@@ -594,6 +647,7 @@ test('real distinct-contract producers prove exact accepted preservation, bounde
   const value = input()
   const before = JSON.stringify(value)
   const result = assessTargetSource(value)
+
   assert.equal(result.format, 2)
   assert.equal(result.targetContract.status, 'passed')
   assert.deepEqual(
@@ -628,10 +682,12 @@ test('real distinct-contract producers prove exact accepted preservation, bounde
 
 test('a non-target candidate flow failure preserves target eligibility but denies complete candidate-contract authority', () => {
   const value = clone(input())
+
   value.proofRequests[1] = targetOtherFlowFailure
   value.targetVerificationSourceDigest =
     targetOtherFlowFailure.verificationSourceDigest
   const result = assessTargetSource(value)
+
   assert.equal(result.accepted.status, 'passed')
   assert.equal(result.integration.status, 'passed')
   assert.equal(result.eligible, true)
@@ -646,12 +702,15 @@ test('a non-target candidate flow failure preserves target eligibility but denie
 
 test('format 1 remains readable without complete candidate-contract acceptance authority', () => {
   const value = input()
+
   value.format = 1
   const result = assessTargetSource(value)
+
   assert.equal(result.format, 1)
   assert.equal(Object.hasOwn(result, 'targetContract'), false)
   for (const format of [undefined, 0, 99]) {
     const invalid = input()
+
     invalid.format = format
     assert.throws(() => assessTargetSource(invalid), /format/)
   }
@@ -659,6 +718,7 @@ test('format 1 remains readable without complete candidate-contract acceptance a
 
 test('explicit pending allocation keeps integration pending while a source-proven independent promise passes', () => {
   const result = assessTargetSource(input({ partial: true }))
+
   assert.equal(result.works[0].status, 'passed')
   assert.equal(result.integration.status, 'pending')
   assert.equal(result.integration.pending.length, 2)
@@ -671,8 +731,10 @@ test('one producer can serve identical accepted and target contracts without bec
 
 test('unrequested work is pending but requested missing, running and error producers are unknown', () => {
   const value = input()
+
   value.proofRequests = [acceptedProof]
   const unrequested = assessTargetSource(value)
+
   assert.equal(unrequested.works[0].own.status, 'pending')
   assert.ok(unrequested.works.every((work) => work.status === 'pending'))
   assert.ok(
@@ -689,18 +751,22 @@ test('unrequested work is pending but requested missing, running and error produ
       }
     ]
     const result = assessTargetSource(value)
+
     assert.equal(result.works[0].own.status, 'unknown')
     assert.equal(result.eligible, false)
   }
+
   value.proofRequests = []
   assert.equal(assessTargetSource(value).accepted.status, 'unknown')
 })
 
 test('an unrelated unassigned target failure does not replace a bounded work result with aggregate failure', () => {
   const value = clone(input({ partial: true }))
+
   value.proofRequests[1] = targetFailure
   value.targetVerificationSourceDigest = targetFailure.verificationSourceDigest
   const result = assessTargetSource(value)
+
   assert.equal(result.works[0].status, 'passed')
   assert.equal(result.integration.status, 'failed')
   assert.equal(result.eligible, false)
@@ -708,9 +774,11 @@ test('an unrelated unassigned target failure does not replace a bounded work res
 
 test('accepted regression blocks otherwise passing work and survives duplicate evidence', () => {
   const value = clone(input())
+
   value.proofRequests[0].record.evidence.cases[0].status = 'failed'
   value.proofRequests[0].record.evidence.status = 'failed'
   let result = assessTargetSource(value)
+
   assert.equal(result.accepted.status, 'failed')
   assert.equal(result.works[0].own.status, 'passed')
   assert.notEqual(result.works[0].status, 'passed')
@@ -751,10 +819,13 @@ test('duplicate producers, missing observations and mixed source or contract ide
       v.proofRequests[1].record.evidence.issues.push('Unsettled producer')
     }
   ]
+
   for (const corrupt of cases) {
     const value = clone(input())
+
     corrupt(value)
     const result = assessTargetSource(value)
+
     assert.equal(result.eligible, false)
     assert.notEqual(result.integration.status, 'passed')
   }
@@ -781,10 +852,13 @@ test('handoffs require admitted route evidence and prerequisite promises, includ
       v.proofRequests[1].record.evidence.cases[0].status = 'failed'
     }
   ]
+
   for (const mutate of mutations) {
     const value = clone(input())
+
     mutate(value)
     const result = assessTargetSource(value)
+
     assert.notEqual(result.works[1].prerequisites.status, 'passed')
     assert.notEqual(result.works[1].status, 'passed')
     assert.equal(result.eligible, false)
@@ -804,8 +878,10 @@ test('current source, allocation and accepted-base changes stale eligibility wit
     }
   ]) {
     const value = clone(input())
+
     mutate(value)
     const result = assessTargetSource(value)
+
     assert.equal(result.integration.status, 'passed')
     assert.equal(result.current, false)
     assert.equal(result.eligible, false)
@@ -815,9 +891,11 @@ test('current source, allocation and accepted-base changes stale eligibility wit
 
 test('assessment consumes completed owner artifacts without file reads, source validation, evidence revalidation or raw reassessment', (t) => {
   const value = input()
+
   const forbidden = () => {
     throw new Error('Repeated upstream work')
   }
+
   const reads = t.mock.method(fs, 'readFileSync', forbidden)
   const source = t.mock.method(sourceOwner, 'validateRuntimeSource', forbidden)
   const combined = t.mock.method(
@@ -831,17 +909,21 @@ test('assessment consumes completed owner artifacts without file reads, source v
     'validateStoredEvidence',
     forbidden
   )
+
   assert.equal(assessTargetSource(value).eligible, true)
-  for (const method of [reads, source, combined, raw, retained])
+  for (const method of [reads, source, combined, raw, retained]) {
     assert.equal(method.mock.callCount(), 0)
+  }
 })
 
 test('a real admitted bypass requires and consumes its current proving case', () => {
   const result = assessTargetSource(input({ flowIndex: 1 }))
+
   assert.equal(result.eligible, true)
   const bypass = result.works
     .flatMap((work) => work.prerequisites.routes)
     .find((route) => route.decision === 'bypassed')
+
   assert.ok(bypass.reason)
   assert.equal(bypass.proof.status, 'passed')
 })
@@ -859,8 +941,10 @@ test('cyclic or overlapping commitments cannot become completed work', () => {
       )
   ]) {
     const value = clone(input())
+
     corrupt(value)
     const result = assessTargetSource(value)
+
     assert.equal(result.eligible, false)
     assert.notEqual(result.works[1].status, 'passed')
   }
@@ -869,10 +953,12 @@ test('cyclic or overlapping commitments cannot become completed work', () => {
 test('integration failure cannot be replaced by individual green history and later recovery does not rewrite it', () => {
   const value = clone(input())
   const previous = assessTargetSource(value)
+
   value.proofRequests[1] = targetFailure
   value.targetVerificationSourceDigest = targetFailure.verificationSourceDigest
   const failed = assessTargetSource(value)
   const retained = JSON.stringify(failed)
+
   assert.equal(failed.integration.status, 'failed')
   assert.equal(failed.works[0].own.status, 'passed')
   assert.equal(failed.eligible, false)
@@ -883,8 +969,10 @@ test('integration failure cannot be replaced by individual green history and lat
 
 test('unavailable prerequisite identifies its work while leaving the consumer own promise distinct', () => {
   const value = clone(input())
+
   value.proofRequests[1].record.evidence.cases[0].status = 'unknown'
   const result = assessTargetSource(value)
+
   assert.equal(result.works[1].own.status, 'passed')
   assert.notEqual(result.works[1].prerequisites.status, 'passed')
   assert.ok(
@@ -896,6 +984,7 @@ test('unavailable prerequisite identifies its work while leaving the consumer ow
 
 test('missing frozen allocation coverage and ambiguous selection cannot grant eligibility', () => {
   const value = clone(input())
+
   value.target.history[0].state.works.pop()
   assert.equal(assessTargetSource(value).eligible, false)
   value.allocationRevision = 99
@@ -904,6 +993,7 @@ test('missing frozen allocation coverage and ambiguous selection cannot grant el
 
 test('currentness compares identity values independently of object insertion order', () => {
   const value = input()
+
   value.current.source = {
     runtimeSourceDigest: value.current.source.runtimeSourceDigest,
     head: value.current.source.head,
@@ -919,6 +1009,7 @@ test('currentness compares identity values independently of object insertion ord
 test('same-contract distinct admitted verification bytes preserve separate accepted and target proof roles', () => {
   for (const proof of [sameContractProof, sameContractFailure]) {
     const value = input({ sameContract: true })
+
     assert.equal(proof.contractDigest, acceptedProof.contractDigest)
     assert.notEqual(
       proof.verificationSourceDigest,
@@ -931,6 +1022,7 @@ test('same-contract distinct admitted verification bytes preserve separate accep
     value.targetVerificationSourceDigest = proof.verificationSourceDigest
     value.proofRequests = [acceptedProof, proof]
     const result = assessTargetSource(value)
+
     assert.equal(result.accepted.status, 'passed')
     assert.equal(
       result.integration.status,
@@ -954,12 +1046,14 @@ test('verification identity absence and forged descriptor or configuration bindi
     (v) => delete v.targetVerificationSourceDigest
   ]) {
     const value = clone(input())
+
     mutate(value)
     assert.throws(
       () => assessTargetSource(value),
       /invalid selected owner artifacts/
     )
   }
+
   for (const mutate of [
     (v) => delete v.proofRequests[1].verificationSourceDigest,
     (v) => delete v.proofRequests[1].sourceAdmission.verificationSource,
@@ -976,6 +1070,7 @@ test('verification identity absence and forged descriptor or configuration bindi
     (v) => (v.proofRequests[1].sourceAdmission.architectureVersion = 'other')
   ]) {
     const value = clone(input())
+
     mutate(value)
     assert.equal(assessTargetSource(value).eligible, false)
   }
@@ -985,24 +1080,33 @@ test('currentness projection reuses historical verdict objects with zero nested 
   const value = input()
   const original = assessTargetSource(value)
   let nestedReads = 0
+
   const watch = (object, allowed = []) =>
     new Proxy(object, {
       get(target, key, receiver) {
-        if (!allowed.includes(key)) nestedReads++
+        if (!allowed.includes(key)) {
+          nestedReads++
+        }
+
         return Reflect.get(target, key, receiver)
       },
+
       ownKeys(target) {
         nestedReads++
+
         return Reflect.ownKeys(target)
       }
     })
+
   const accepted = watch(original.accepted)
   const works = watch(original.works)
   const integration = watch(original.integration, ['status'])
   const retained = Object.freeze({ ...original, accepted, works, integration })
+
   const forbidden = () => {
     throw new Error('Repeated upstream work')
   }
+
   const spies = [
     t.mock.method(fs, 'readFileSync', forbidden),
     t.mock.method(sourceOwner, 'validateSourceSnapshot', forbidden),
@@ -1012,10 +1116,12 @@ test('currentness projection reuses historical verdict objects with zero nested 
     ...value.current,
     allocationRevision: 2
   })
+
   assert.equal(stale.current, false)
   assert.equal(stale.eligible, false)
   assert.deepEqual(stale.staleReasons, ['Target allocation changed'])
   const restored = projectTargetAssessmentCurrentness(stale, value.current)
+
   for (const projection of [stale, restored]) {
     assert.equal(projection.accepted, accepted)
     assert.equal(projection.works, works)
@@ -1026,11 +1132,14 @@ test('currentness projection reuses historical verdict objects with zero nested 
     assert.equal(Object.isFrozen(projection), true)
     assert.equal(Object.isFrozen(projection.staleReasons), true)
   }
+
   assert.equal(restored.current, true)
   assert.equal(restored.eligible, true)
   assert.equal(original.current, true)
   assert.equal(nestedReads, 0)
-  for (const spy of spies) assert.equal(spy.mock.callCount(), 0)
+  for (const spy of spies) {
+    assert.equal(spy.mock.callCount(), 0)
+  }
 })
 
 test('registered source identity selects equivalent real evidence without repeating admission or granting missing proof authority', (t) => {
@@ -1042,6 +1151,7 @@ test('registered source identity selects equivalent real evidence without repeat
     runtimeSourceDigest: value.sourceAdmission.runtimeSource.digest
   }
   const selected = { ...value, sourceIdentity }
+
   delete selected.sourceAdmission
   const reads = t.mock.method(fs, 'readFileSync')
   const hashes = t.mock.method(sourceOwner, 'sha256')
@@ -1049,23 +1159,28 @@ test('registered source identity selects equivalent real evidence without repeat
   const runtime = t.mock.method(sourceOwner, 'validateRuntimeSource')
   const evidence = t.mock.method(evidenceOwner, 'validateStoredEvidence')
   const actual = assessTargetSource(selected)
+
   assert.deepEqual(actual, expected)
   assert.notStrictEqual(actual.source, sourceIdentity)
   assert.equal(Object.isFrozen(sourceIdentity), false)
   const missing = assessTargetSource({ ...selected, proofRequests: [] })
+
   assert.equal(missing.eligible, false)
   assert.notEqual(missing.integration.status, 'passed')
   const unadmitted = clone(selected)
+
   delete unadmitted.proofRequests[1].sourceAdmission
   assert.notEqual(assessTargetSource(unadmitted).integration.status, 'passed')
   const wrong = assessTargetSource({
     ...selected,
     sourceIdentity: { ...sourceIdentity, runtimeSourceDigest: '0'.repeat(64) }
   })
+
   assert.equal(wrong.eligible, false)
   assert.notEqual(wrong.accepted.status, 'passed')
-  for (const spy of [reads, hashes, source, runtime, evidence])
+  for (const spy of [reads, hashes, source, runtime, evidence]) {
     assert.equal(spy.mock.callCount(), 0)
+  }
 })
 
 test('selected source inputs require exact own presence and complete identity instead of null or double-input fallback', () => {
@@ -1076,6 +1191,7 @@ test('selected source inputs require exact own presence and complete identity in
     runtimeSourceDigest: value.sourceAdmission.runtimeSource.digest
   }
   const selected = { ...value, sourceIdentity }
+
   delete selected.sourceAdmission
   for (const invalid of [
     { ...value, sourceIdentity },
@@ -1099,24 +1215,30 @@ test('selected source inputs require exact own presence and complete identity in
       ...selected,
       sourceIdentity: { ...sourceIdentity, runtimeSourceDigest: 'bad' }
     }
-  ])
+  ]) {
     assert.throws(() => assessTargetSource(invalid), /selected owner|source/i)
+  }
+
   const missing = { ...value }
+
   delete missing.sourceAdmission
   assert.throws(() => assessTargetSource(missing), /selected owner|source/i)
   const withoutHead = assessTargetSource({
     ...selected,
     sourceIdentity: { ...sourceIdentity, head: null }
   })
+
   assert.equal(withoutHead.eligible, false)
 })
 
 test('current contract verification needs only its own verifier after a contract change', () => {
   const request = input()
+
   request.format = 3
   delete request.acceptedVerificationSourceDigest
   request.proofRequests = [targetProof]
   const result = assessTargetSource(request)
+
   assert.equal(result.eligible, true)
   assert.equal(result.targetContract.status, 'passed')
   assert.equal(Object.hasOwn(result, 'accepted'), false)
@@ -1126,12 +1248,16 @@ test('current contract verification needs only its own verifier after a contract
 test('current contract missing or failing tests cannot pass with historical green evidence', () => {
   for (const proof of [null, targetFailure, targetOtherFlowFailure]) {
     const request = input()
+
     request.format = 3
     delete request.acceptedVerificationSourceDigest
     request.proofRequests = proof ? [proof] : []
-    if (proof)
+    if (proof) {
       request.targetVerificationSourceDigest = proof.verificationSourceDigest
+    }
+
     const result = assessTargetSource(request)
+
     assert.equal(result.eligible, false)
     assert.equal(result.targetContract.status, proof ? 'failed' : 'unknown')
     assert.notEqual(result.integration.status, 'passed')
@@ -1140,9 +1266,11 @@ test('current contract missing or failing tests cannot pass with historical gree
 
 test('current contract rejects a historical producer in its selected inventory', () => {
   const request = input()
+
   request.format = 3
   delete request.acceptedVerificationSourceDigest
   const result = assessTargetSource(request)
+
   assert.equal(result.eligible, false)
   assert.ok(
     result.targetContract.blockers.includes(

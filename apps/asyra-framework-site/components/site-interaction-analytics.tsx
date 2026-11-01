@@ -16,7 +16,9 @@ export function SiteInteractionAnalytics({
 
   useEffect(() => {
     const current = installSiteAnalytics(window, { pagePaths, caseIds })
+
     tracker.current = current
+
     return () => {
       current.dispose()
       tracker.current = null

@@ -19,6 +19,7 @@ export function Icon({ name, size = 20 }: { name: string; size?: number }) {
     plus: 'M12 5v14M5 12h14',
     minus: 'M5 12h14'
   }
+
   return (
     <svg
       width={size}

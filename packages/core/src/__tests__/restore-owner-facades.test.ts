@@ -35,17 +35,24 @@ describe('remote restore owner facades', () => {
         workspaceList: [],
         elements: {}
       }),
+
       getElementComputedData: () => undefined,
+
       moveElements: () => ({ elementIds: [], moves: [] }),
+
       removeSubtree: () => ({
         elementId: 'group-1',
         removed: [],
         rootParentChildrenAfter: []
       }),
+
       preflightRestoreSubtree: firstPreflight,
       applyRestoreSubtree: firstApply,
+
       refreshComputedDataFromProperty: () => undefined,
+
       getAllElementsBounds: () => null,
+
       isContainerType: () => false
     }
     const first = createSceneTreeAPIs(requests as never) as unknown as {
@@ -54,6 +61,7 @@ describe('remote restore owner facades', () => {
       ) => PreparedSceneTreeRestore
       applyRestoreSubtree: (input: PreparedSceneTreeRestore) => unknown
     }
+
     createSceneTreeAPIs({
       ...requests,
       preflightRestoreSubtree: secondPreflight
@@ -83,7 +91,9 @@ describe('remote restore owner facades', () => {
     const secondPreflight = vi.fn()
     const requests = {
       propsLoadData: () => undefined,
+
       propsSaveData: () => ({}),
+
       preflightRestoreProperties: firstPreflight,
       applyRestoreProperties: firstApply
     }
@@ -94,6 +104,7 @@ describe('remote restore owner facades', () => {
       ) => PreparedPropsRestore
       applyRestoreProperties: (input: PreparedPropsRestore) => readonly string[]
     }
+
     createPropsAPIs({
       ...requests,
       preflightRestoreProperties: secondPreflight

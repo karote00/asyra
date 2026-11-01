@@ -3,8 +3,10 @@ function validRepositoryScriptSelection(selection, registeredTests) {
     !selection ||
     selection.command !== 'test:scripts' ||
     !Array.isArray(selection.inputs)
-  )
+  ) {
     return false
+  }
+
   if (selection.mode === 'files') {
     return (
       Array.isArray(selection.tests) &&
@@ -20,6 +22,7 @@ function validRepositoryScriptSelection(selection, registeredTests) {
       )
     )
   }
+
   return (
     ['full', 'not-selected'].includes(selection.mode) &&
     selection.tests === undefined

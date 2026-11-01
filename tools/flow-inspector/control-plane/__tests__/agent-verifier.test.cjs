@@ -13,8 +13,11 @@ const { loadContract } = require('../contracts.cjs')
 const { captureSource } = require('../snapshot.cjs')
 const root = path.resolve(__dirname, '../../../..')
 const parent = path.join(root, 'tmp/flow-inspector/agent-verifier-tests')
+
 fs.mkdirSync(parent, { recursive: true })
+
 const make = () => fs.mkdtempSync(path.join(parent, 'run-'))
+
 test('unsupported containment is explicitly unavailable', () => {
   assert.equal(containmentAvailable('linux'), false)
   assert.equal(containmentAvailable('win32'), false)
@@ -25,6 +28,7 @@ test(
   async () => {
     const directory = make()
     const forbidden = path.join(parent, 'forbidden-' + path.basename(directory))
+
     fs.writeFileSync(forbidden, 'test-only secret')
     const payload = `
     const fs = require('node:fs'), cp = require('node:child_process');
@@ -49,6 +53,7 @@ test(
       },
       { repositoryRoot: root, readRoots: [], writeRoot: directory }
     )
+
     assert.equal(result.code, 0, result.output)
     assert.equal(result.output.trim(), '5')
     assert.equal(fs.readFileSync(forbidden, 'utf8'), 'test-only secret')
@@ -62,6 +67,7 @@ test(
     const contract = loadContract(root)
     const snapshot = captureSource(root, directory, contract)
     const candidateRoot = path.join(directory, 'candidate')
+
     fs.cpSync(snapshot.sourceRoot, candidateRoot, { recursive: true })
     const sourceFile = 'packages/factory/src/data-transact.ts'
     const input = {
@@ -78,6 +84,7 @@ test(
       'validateSourceSnapshot'
     )
     const baseline = await verifyCandidate({ ...input, attemptId: 'baseline' })
+
     assert.equal(
       admission.mock.callCount(),
       1,
@@ -110,12 +117,15 @@ test(
       verificationSource: baseline.verificationSource,
       runtimeAuthority: baseline.runtimeAuthority
     })
+
     assert.deepEqual(baseline.executionSource, generated.executionSource)
-    for (const file of generated.files)
+    for (const file of generated.files) {
       assert.equal(
         fs.readFileSync(path.join(frozenRoot, file.path), 'utf8'),
         file.content
       )
+    }
+
     assert.equal(baseline.evidence.cases.length, contract.cases.length)
     assert.equal(
       baseline.evidence.runtimeSourceDigest,
@@ -127,12 +137,14 @@ test(
     )
     const file = path.join(candidateRoot, sourceFile)
     const original = fs.readFileSync(file, 'utf8')
+
     fs.chmodSync(file, 0o600)
     fs.writeFileSync(file, original + '\n')
     const changed = await verifyCandidate({
       ...input,
       attemptId: 'changed-runtime'
     })
+
     assert.equal(
       changed.evidence.status,
       'passed',
@@ -151,11 +163,13 @@ test(
     const mutation = contract.definition.scenarios.find(
       (value) => value.id === 'inverse-regression'
     ).mutation
+
     fs.writeFileSync(
       file,
       fs.readFileSync(file, 'utf8').replace(mutation.from, mutation.to)
     )
     const negative = await verifyCandidate({ ...input, attemptId: 'negative' })
+
     assert.equal(
       negative.evidence.status,
       'failed',
@@ -188,6 +202,7 @@ test(
       fs.readFileSync(file, 'utf8').replace(mutation.to, mutation.from)
     )
     const recovery = await verifyCandidate({ ...input, attemptId: 'recovery' })
+
     assert.equal(recovery.evidence.status, 'passed')
     assert.equal(
       recovery.evidence.runtimeSourceDigest,
@@ -211,6 +226,7 @@ test(
       },
       { repositoryRoot: root, readRoots: [], writeRoot: directory }
     )
+
     assert.equal(result.code, 0, JSON.stringify(result))
     assert.equal(result.output.trim(), 'runtime-started')
   }
@@ -222,8 +238,10 @@ test(
   async () => {
     const directory = make()
     const source = path.join(directory, 'source')
+
     fs.mkdirSync(source)
     const assertion = path.join(source, 'assertion.txt')
+
     fs.writeFileSync(assertion, 'required assertion')
     const result = await containedProcess(
       {
@@ -238,6 +256,7 @@ test(
       },
       { repositoryRoot: root, readRoots: [source], writeRoot: directory }
     )
+
     assert.equal(result.code, 0)
     assert.equal(fs.readFileSync(assertion, 'utf8'), 'required assertion')
   }
@@ -261,6 +280,7 @@ test(
       },
       { repositoryRoot: root, readRoots: [], writeRoot: directory }
     )
+
     assert.equal(result.code, 0)
     assert.match(result.output, /EPERM|EACCES/)
   }
@@ -271,10 +291,12 @@ test(
   { skip: process.platform !== 'darwin', timeout: 30000 },
   async (t) => {
     const directory = make()
+
     t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
     const contract = loadContract(root)
     const snapshot = captureSource(root, directory, contract)
     let spawned = 0
+
     for (const key of [
       'digest',
       'contractDigest',
@@ -292,12 +314,15 @@ test(
             allowedFiles: [],
             attemptId: 'bad-' + key,
             timeoutMs: 15000,
+
             onSpawn: () => spawned++
           }),
         /Baseline.*identity/
       )
     }
+
     const changedAuthority = structuredClone(snapshot)
+
     changedAuthority.runtimeAuthority.digest = '0'.repeat(64)
     await assert.rejects(
       () =>
@@ -310,6 +335,7 @@ test(
           allowedFiles: [],
           attemptId: 'bad-runtime-authority',
           timeoutMs: 15000,
+
           onSpawn: () => spawned++
         }),
       /runtime authority/i
@@ -323,10 +349,12 @@ test(
   { skip: process.platform !== 'darwin', timeout: 30000 },
   async (t) => {
     const directory = make()
+
     t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
     const contract = loadContract(root)
     const snapshot = captureSource(root, directory, contract)
     const legacy = structuredClone(snapshot)
+
     delete legacy.verificationSource
     const original = structuredClone(legacy)
     const input = {
@@ -342,11 +370,13 @@ test(
       ...input,
       snapshot: legacy,
       attemptId: 'legacy-new-proof',
+
       onSpawn: (pid) => {
         assert.ok(pid > 0)
         spawned++
       }
     })
+
     assert.equal(
       proof.evidence.status,
       'passed',
@@ -357,6 +387,7 @@ test(
     assert.deepEqual(legacy, original)
     assert.notEqual(proof.configurationDigest, legacy.configurationDigest)
     const historical = structuredClone(snapshot)
+
     delete historical.runtimeAuthority
     delete historical.verificationSource
     const historicalProof = await verifyCandidate({
@@ -364,6 +395,7 @@ test(
       snapshot: historical,
       attemptId: 'historical-legacy'
     })
+
     assert.equal(Object.hasOwn(historicalProof, 'runtimeAuthority'), false)
     assert.equal(historicalProof.executionSource.format, 1)
     assert.equal(
@@ -380,12 +412,14 @@ test(
       /verification|derived/i
     )
     const stale = structuredClone(snapshot)
+
     stale.verificationSource.digest = '0'.repeat(64)
     const invalid = await verifyCandidate({
       ...input,
       snapshot: stale,
       attemptId: 'stale-bundle'
     })
+
     assert.notEqual(invalid.evidence.status, 'passed')
     assert.ok(
       invalid.evidence.issues.includes('Runtime source provenance mismatch')
@@ -398,6 +432,7 @@ test(
   { skip: process.platform !== 'darwin', timeout: 30000 },
   async (t) => {
     const directory = make()
+
     t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
     const contract = loadContract(root)
     const snapshot = captureSource(root, directory, contract)
@@ -425,6 +460,7 @@ test(
       timeoutMs: 15000
     })
     const proof = produced.verdict
+
     assert.equal(produced.source, null)
     injected.mock.restore()
     assert.equal(proof.runner.code, 0)
@@ -443,6 +479,7 @@ test(
   { skip: process.platform !== 'darwin', timeout: 30000 },
   async (t) => {
     const directory = make()
+
     t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
     const contract = loadContract(root)
     const snapshot = captureSource(root, directory, contract)
@@ -458,10 +495,14 @@ test(
       directory,
       'verification/count-generated/source'
     )
+
     t.mock.method(fs, 'readFileSync', (file, ...args) => {
       const value = originalRead(file, ...args)
-      if (String(file).startsWith(sourceRoot + path.sep))
+
+      if (String(file).startsWith(sourceRoot + path.sep)) {
         actualReads.push({ file: String(file), value })
+      }
+
       return value
     })
     const hash = t.mock.method(source, 'sha256')
@@ -473,6 +514,7 @@ test(
       'assessSourceEvidence',
       (...args) => {
         assessed = originalAssess(...args)
+
         return assessed
       }
     )
@@ -481,8 +523,10 @@ test(
     const contained = t.mock.method(runnerOwner, 'runContainedVerification')
     const modulePath = require.resolve('../agent-verifier.cjs'),
       saved = require.cache[modulePath]
+
     Reflect.deleteProperty(require.cache, modulePath)
     const counted = require('../agent-verifier.cjs')
+
     require.cache[modulePath] = saved
     const produced = await counted.produceCandidateProof({
       repositoryRoot: root,
@@ -495,6 +539,7 @@ test(
       timeoutMs: 15000
     })
     const proof = produced.verdict
+
     assert.equal(contained.mock.callCount(), 1)
     assert.strictEqual(contained.mock.calls[0].arguments[0].contract, contract)
     assert.deepEqual(
@@ -534,6 +579,7 @@ test(
       const matches = actualReads.filter(
         (read) => read.file === path.join(sourceRoot, entry.path)
       )
+
       assert.equal(matches.length, 1, entry.path)
       assert.ok(Buffer.isBuffer(matches[0].value))
       assert.equal(
@@ -543,6 +589,7 @@ test(
         entry.path
       )
     }
+
     for (const file of generated.files) {
       assert.equal(
         hash.mock.calls.filter(
@@ -562,10 +609,12 @@ test(
   { skip: process.platform !== 'darwin', timeout: 30000 },
   async (t) => {
     const directory = make()
+
     t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
     const contract = loadContract(root)
     const snapshot = captureSource(root, directory, contract)
     const candidateRoot = path.join(directory, 'candidate')
+
     fs.cpSync(snapshot.sourceRoot, candidateRoot, { recursive: true })
     const mutation = contract.definition.scenarios.find(
       (item) => item.id === 'inverse-regression'
@@ -583,6 +632,7 @@ test(
       ...input,
       attemptId: 'source-passed'
     })
+
     assert.equal(passed.verdict.evidence.status, 'passed')
     assert.ok(passed.source)
     assert.equal(passed.source.sourceDigest, passed.verdict.sourceDigest)
@@ -592,6 +642,7 @@ test(
     )
     assert.ok(Object.isFrozen(passed.source))
     const file = path.join(candidateRoot, mutation.file)
+
     fs.chmodSync(file, 0o644)
     fs.writeFileSync(
       file,
@@ -601,6 +652,7 @@ test(
       ...input,
       attemptId: 'source-failed'
     })
+
     assert.equal(failed.verdict.evidence.status, 'failed')
     assert.ok(failed.source)
     assert.equal(failed.verdict.runner.code, 1)
@@ -616,12 +668,14 @@ test(
       passed.source.runtimeSource.digest
     )
     const stale = structuredClone(snapshot)
+
     stale.verificationSource.digest = '0'.repeat(64)
     const invalid = await produceCandidateProof({
       ...input,
       snapshot: stale,
       attemptId: 'source-invalid'
     })
+
     assert.equal(invalid.source, null)
     assert.notEqual(invalid.verdict.evidence.status, 'passed')
     for (const [id, value] of [
@@ -635,13 +689,16 @@ test(
           'utf8'
         )
       )
+
       assert.deepEqual(saved, JSON.parse(JSON.stringify(value.verdict)))
       assert.equal(Object.hasOwn(saved, 'source'), false)
     }
+
     const legacy = await verifyCandidate({
       ...input,
       attemptId: 'legacy-wrapper'
     })
+
     assert.equal(legacy.evidence.status, 'failed')
     assert.equal(Object.hasOwn(legacy, 'verdict'), false)
     assert.equal(Object.hasOwn(legacy, 'source'), false)

@@ -74,6 +74,7 @@ describe('preset property type redefinition integration', () => {
           field.key === 'opacity'
             ? {
                 ...field,
+
                 validate: (value) =>
                   typeof value === 'number' && value >= 0 && value <= 2
               }
@@ -98,8 +99,10 @@ describe('preset property type redefinition integration', () => {
             key: 'customAxis',
             kind: 'number',
             defaultValue: 0,
+
             validate: (value) =>
               typeof value === 'number' && Number.isFinite(value),
+
             persist: true,
             project: true,
             unit: false

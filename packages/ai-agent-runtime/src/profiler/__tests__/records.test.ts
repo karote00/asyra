@@ -12,7 +12,9 @@ import { evaluateExecution } from '../evaluation.js'
 
 const workspace = async () => {
   const root = join(process.cwd(), 'tmp')
+
   await mkdir(root, { recursive: true })
+
   return mkdtemp(join(root, 'execution-record-test-'))
 }
 
@@ -40,10 +42,12 @@ it.each([
       {
         sink: {
           write: (record) => records.push(record),
+
           flush: async () => ({ status: 'saved', path: null })
         }
       }
     )
+
     usage.trace('tool_started', {
       tool: 'read',
       callId: 'large',
@@ -74,12 +78,14 @@ it.each([
       records.map((record) => JSON.stringify(record)).join('\n')
     )
     const report = evaluateExecution(run)
+
     expect(report.toolCalls[0].execution.status).toBe(expected)
     expect(
       report.findings.some((finding) => finding.kind === 'unavailable-result')
     ).toBe(['partial', 'rejected', 'failed'].includes(expected))
-    if ('settlement' in outcome)
+    if ('settlement' in outcome) {
       expect(report.toolCalls[0].execution.settlement).toBe(outcome.settlement)
+    }
   }
 )
 
@@ -87,6 +93,7 @@ describe('local execution records', () => {
   it('retains ordered workflow part correlation on the existing owner spans', () => {
     const records: Record<string, unknown>[] = []
     const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+
     try {
       const usage = createAiExecutionProfiler(
         { intent: 'private', context: {}, actions: [], attempt: 1 },
@@ -94,12 +101,15 @@ describe('local execution records', () => {
         {
           sink: {
             write: (record) => records.push(record),
+
             flush: async () => ({ status: 'saved', path: null })
           }
         }
       )
+
       for (const index of [0, 1]) {
         const part = { key: `part-${index}`, index, secret: 'PRIVATE_VALUE' }
+
         usage.trace('action_started', {
           tool: 'prepare_design',
           callId: `part-${index}`,
@@ -114,9 +124,11 @@ describe('local execution records', () => {
           result: { available: true }
         })
       }
+
       const actions = records.filter((entry) =>
         String(entry.stage).startsWith('action_')
       )
+
       expect(actions).toHaveLength(4)
       expect(
         actions.map((entry) => (entry.evidence as Record<string, unknown>).part)
@@ -134,6 +146,7 @@ describe('local execution records', () => {
   it('retains bounded batched query selectors and discovery counts without geometry', () => {
     const retained: Record<string, unknown>[] = []
     const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+
     try {
       const usage = createAiExecutionProfiler(
         { intent: 'private', context: {}, actions: [], attempt: 1 },
@@ -141,10 +154,12 @@ describe('local execution records', () => {
         {
           sink: {
             write: (record) => retained.push(record),
+
             flush: async () => ({ status: 'saved', path: null })
           }
         }
       )
+
       usage.trace('tool_started', {
         tool: 'execute_design_batch',
         callId: 'batch',
@@ -199,6 +214,7 @@ describe('local execution records', () => {
   })
   it('takes diagnostic purpose from the recorder owner rather than user request metadata', () => {
     const retained: unknown[] = []
+
     createAiExecutionProfiler(
       {
         intent: 'private',
@@ -214,6 +230,7 @@ describe('local execution records', () => {
       {
         sink: {
           write: (record) => retained.push(record),
+
           flush: async () => ({ status: 'saved', path: null })
         }
       }
@@ -226,18 +243,27 @@ describe('local execution records', () => {
   it('persists ordered isolated requests and drains the terminal outcome', async () => {
     const directory = await workspace()
     const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+
     try {
       const sinks = [
         createExecutionRecordSink(directory),
         createExecutionRecordSink(directory)
       ]
+
       for (const [index, sink] of sinks.entries()) {
         let time = 0
         const usage = createAiExecutionProfiler(
           { actions: [], context: {}, intent: 'private prompt', attempt: 1 },
           'gpt-6-astra',
-          { sink, now: () => time, sourceRevision: 'abc123' }
+          {
+            sink,
+
+            now: () => time,
+
+            sourceRevision: 'abc123'
+          }
         )
+
         time = 10
         usage.trace('tool_started', {
           tool: 'describe_design_apis',
@@ -258,6 +284,7 @@ describe('local execution records', () => {
         time = 30
         usage.finish(index === 0 ? 'completed' : 'cancelled')
       }
+
       expect(await Promise.all(sinks.map((sink) => sink.flush()))).toEqual([
         expect.objectContaining({ status: 'saved' }),
         expect.objectContaining({ status: 'saved' })
@@ -265,17 +292,21 @@ describe('local execution records', () => {
       const files = (await readdir(directory)).filter((name) =>
         name.endsWith('.jsonl')
       )
+
       expect(files).toHaveLength(2)
       const runs = await Promise.all(
         files.map(async (file) => {
           const content = await readFile(join(directory, file), 'utf8')
+
           expect(content).not.toContain('private prompt')
           expect(content).not.toContain('private secret')
           expect(content).not.toContain('user:password')
           expect(content).not.toContain('token=secret')
+
           return parseExecutionRecord(content)
         })
       )
+
       expect(runs.map((run) => run.outcome).sort()).toEqual([
         'cancelled',
         'completed'
@@ -310,11 +341,13 @@ describe('local execution records', () => {
   it('contains write failure without changing drawing settlement', async () => {
     const directory = await workspace()
     const errors: string[] = []
+
     try {
       const sink = createExecutionRecordSink(
         join(directory, 'missing', '..', 'blocked'),
         (code) => errors.push(code)
       )
+
       // A real filesystem error, not a successful mocked writer.
       await mkdir(join(directory, 'blocked', 'request.jsonl'), {
         recursive: true
@@ -350,6 +383,7 @@ describe('local execution records', () => {
         '{interrupted'
       ].join('\n')
     )
+
     expect(record.outcome).toBe('incomplete')
     expect(record.steps[0]).toMatchObject({
       status: 'incomplete',
@@ -380,6 +414,7 @@ describe('local execution records', () => {
         .map((entry) => JSON.stringify(entry))
         .join('\n')
     )
+
     expect(record.complete).toBe(false)
     expect(record.issues).toContain('Missing sequence before line 2')
   })
@@ -400,6 +435,7 @@ describe('local execution records', () => {
       elapsedMs,
       tool: 'prepare_design'
     })
+
     const record = parseExecutionRecord(
       [
         event(1, 'tool_started', 'a', 10),
@@ -420,6 +456,7 @@ describe('local execution records', () => {
         .map((entry) => JSON.stringify(entry))
         .join('\n')
     )
+
     expect(record.timing).toMatchObject({
       durationMs: 100,
       observedToolAndResearchMs: 40,
@@ -438,6 +475,7 @@ describe('local execution records', () => {
 it('retains bounded source-fact provenance and invalidation evidence', () => {
   const records: unknown[] = []
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+
   try {
     const usage = createAiExecutionProfiler(
       { intent: 'private', context: {}, actions: [], attempt: 1 },
@@ -445,10 +483,12 @@ it('retains bounded source-fact provenance and invalidation evidence', () => {
       {
         sink: {
           write: (record) => records.push(record),
+
           flush: async () => ({ status: 'saved', path: null })
         }
       }
     )
+
     usage.trace('tool_completed', {
       tool: 'record_design_review',
       result: {
@@ -476,6 +516,7 @@ it('retains bounded source-fact provenance and invalidation evidence', () => {
       }
     })
     const serialized = JSON.stringify(records)
+
     for (const expected of [
       'Source axis retained',
       'Checked original source',
@@ -483,8 +524,10 @@ it('retains bounded source-fact provenance and invalidation evidence', () => {
       'Corrected source',
       'dependencies',
       'invalidatedBy'
-    ])
+    ]) {
       expect(serialized).toContain(expected)
+    }
+
     expect(serialized).not.toContain('PRIVATE_DOCUMENT')
   } finally {
     log.mockRestore()
@@ -495,18 +538,22 @@ it('joins call inputs, rejection feedback, output utility and exclusive observed
   const records: unknown[] = []
   let now = 0
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+
   try {
     const usage = createAiExecutionProfiler(
       { intent: 'private', context: {}, actions: [], attempt: 1 },
       'test',
       {
         now: () => now,
+
         sink: {
           write: (r) => records.push(r),
+
           flush: async () => ({ status: 'saved', path: null })
         }
       }
     )
+
     usage.trace('provider_item_started', { callId: 'r', kind: 'reasoning' })
     now = 10
     usage.trace('tool_started', {
@@ -539,6 +586,7 @@ it('joins call inputs, rejection feedback, output utility and exclusive observed
     const serialized = records.map((r) => JSON.stringify(r)).join('\n')
     const report = parseExecutionRecord(serialized)
     const call = report.steps.find((s) => s.callId === 'a')
+
     expect(call).toMatchObject({
       diagnostics: {
         input: { shape: 'object', summary: { draft: { type: 'group' } } },
@@ -594,6 +642,7 @@ it.each([
   (result, expected) => {
     const records: unknown[] = []
     const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+
     try {
       const usage = createAiExecutionProfiler(
         { intent: '', context: {}, actions: [], attempt: 1 },
@@ -601,10 +650,12 @@ it.each([
         {
           sink: {
             write: (r) => records.push(r),
+
             flush: async () => ({ status: 'saved', path: null })
           }
         }
       )
+
       usage.trace('tool_started', {
         callId: 'call',
         tool: 'test',
@@ -628,6 +679,7 @@ it.each([
 it('retains detached complete tool payloads locally with explicit redactions and no console payloads', async () => {
   const directory = await workspace()
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+
   try {
     const sink = createExecutionRecordSink(directory)
     const usage = createAiExecutionProfiler(
@@ -636,6 +688,7 @@ it('retains detached complete tool payloads locally with explicit redactions and
       { sink }
     )
     const points = Array.from({ length: 30 }, (_, x) => ({ x, y: x * 2 }))
+
     usage.trace('tool_started', {
       callId: 'a',
       tool: 'prepare_design',
@@ -657,13 +710,18 @@ it('retains detached complete tool payloads locally with explicit redactions and
     })
     usage.finish('completed')
     const saved = await sink.flush()
+
     expect(saved.status).toBe('saved')
-    if (!saved.path) throw new Error('Missing saved record')
+    if (!saved.path) {
+      throw new Error('Missing saved record')
+    }
+
     const report = parseExecutionRecord(await readFile(saved.path, 'utf8'))
     const diagnostic = report.steps[0].diagnostics as {
       input: { payload: { path: string } }
       output: { payload: { path: string } }
     }
+
     expect(diagnostic.input.payload).toMatchObject({
       status: 'queued',
       redactions: ['$.apiKey', '$.image']
@@ -671,11 +729,13 @@ it('retains detached complete tool payloads locally with explicit redactions and
     const input = JSON.parse(
       await readFile(join(directory, diagnostic.input.payload.path), 'utf8')
     )
+
     expect(input.draft.rings).toHaveLength(30)
     expect(input.draft.rings[0]).toEqual({ x: 0, y: 0 })
     const output = JSON.parse(
       await readFile(join(directory, diagnostic.output.payload.path), 'utf8')
     )
+
     expect(output.customFeedback).toEqual({
       attempt: 1,
       detail: 'FULL_FEEDBACK_ONLY'
@@ -732,6 +792,7 @@ it('partitions overlap and incomplete native/tool spans without inventing comput
     }
   ]
   const result = partitionExecutionTime(spans, 40)
+
   expect(result).toMatchObject({
     toolExecutionMs: 15,
     toolQueueMs: 10,
@@ -801,6 +862,7 @@ it('reports named App-call gaps and exclusive native orchestration coverage', ()
   const report = parseExecutionRecord(
     records.map((entry) => JSON.stringify(entry)).join('\n')
   )
+
   expect(report.timing.breakdown).toMatchObject({
     providerOrchestrationEventMs: 30,
     toolExecutionMs: 5,
@@ -848,6 +910,7 @@ it('merges concurrent App intervals and does not invent a start for native outpu
       evidence: [{ kind: 'functionCallOutput' }]
     }
   ]
+
   expect(
     summarizeAppCallGaps(steps, 50).map(
       ({ startMs, endMs, beforeTool, afterTool }) => ({
@@ -871,6 +934,7 @@ it('merges concurrent App intervals and does not invent a start for native outpu
 it('retains action attribution and separates negative judgment from usable review execution', () => {
   const records: unknown[] = []
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+
   try {
     const usage = createAiExecutionProfiler(
       { intent: '', context: {}, actions: [], attempt: 1 },
@@ -878,10 +942,12 @@ it('retains action attribution and separates negative judgment from usable revie
       {
         sink: {
           write: (record) => records.push(record),
+
           flush: async () => ({ status: 'saved', path: null })
         }
       }
     )
+
     usage.trace('action_started', {
       callId: 'action:a',
       tool: 'review',
@@ -907,6 +973,7 @@ it('retains action attribution and separates negative judgment from usable revie
     const run = parseExecutionRecord(
       records.map((record) => JSON.stringify(record)).join('\n')
     )
+
     expect(run.steps).toHaveLength(1)
     expect(run.steps[0]).toMatchObject({
       kind: 'action',
@@ -955,6 +1022,7 @@ it.each([
   (result, expected) => {
     const records: unknown[] = []
     const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+
     try {
       const usage = createAiExecutionProfiler(
         { intent: '', context: {}, actions: [], attempt: 1 },
@@ -962,10 +1030,12 @@ it.each([
         {
           sink: {
             write: (record) => records.push(record),
+
             flush: async () => ({ status: 'saved', path: null })
           }
         }
       )
+
       usage.trace('tool_started', { callId: 'c', tool: 'review' })
       usage.trace('tool_completed', { callId: 'c', tool: 'review', result })
       usage.finish('completed')
@@ -987,6 +1057,7 @@ it('retains independent visual evidence identifiers without recording provider p
     path: 'visual-input.json'
   }))
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+
   try {
     const usage = createAiExecutionProfiler(
       { intent: 'private', context: {}, actions: [], attempt: 1 },
@@ -994,11 +1065,14 @@ it('retains independent visual evidence identifiers without recording provider p
       {
         sink: {
           write: (record) => records.push(record),
+
           writePayload,
+
           flush: async () => ({ status: 'saved', path: null })
         }
       }
     )
+
     usage.trace('visual_assessment_context', {
       callId: 'visual',
       arguments: {
@@ -1021,25 +1095,31 @@ it('records continuous ownership and attributes a nested AI wait outside tool ow
   const records: unknown[] = []
   let now = 0
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+
   try {
     const usage = createAiExecutionProfiler(
       { intent: 'private', context: {}, actions: [], attempt: 1 },
       'gpt-6-astra',
       {
         lifecycle: true,
+
         now: () => now,
+
         sink: {
           write: (record) => records.push(record),
+
           flush: async () => ({ status: 'saved', path: null })
         }
       }
     )
+
     now = 10
     const provider = usage.span({
       callId: 'turn-wait',
       owner: 'provider',
       purpose: 'Await delegated turn'
     })
+
     now = 30
     usage.trace('tool_started', {
       callId: 'review',
@@ -1053,6 +1133,7 @@ it('records continuous ownership and attributes a nested AI wait outside tool ow
       owner: 'provider',
       purpose: 'Await visual assessment'
     })
+
     now = 65
     child()
     now = 70
@@ -1064,6 +1145,7 @@ it('records continuous ownership and attributes a nested AI wait outside tool ow
     const run = parseExecutionRecord(
       records.map((entry) => JSON.stringify(entry)).join('\n')
     )
+
     expect(run.complete).toBe(true)
     expect(run.timing.breakdown).toMatchObject({
       appOrchestrationMs: 20,
@@ -1118,6 +1200,7 @@ it('reports missing lifecycle completion as a recording defect rather than succe
   const run = parseExecutionRecord(
     entries.map((entry) => JSON.stringify(entry)).join('\n')
   )
+
   expect(run.complete).toBe(false)
   expect(run.issues.join(' ')).toContain('lifecycle')
 })
@@ -1126,18 +1209,22 @@ it('attributes internal server handoffs to tool work instead of browser exchange
   const records: unknown[] = []
   let now = 0
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+
   try {
     const usage = createAiExecutionProfiler(
       { intent: '', context: {}, actions: [], attempt: 1 },
       'test',
       {
         now: () => now,
+
         sink: {
           write: (entry) => records.push(entry),
+
           flush: async () => ({ status: 'saved', path: null })
         }
       }
     )
+
     usage.trace('action_started', {
       callId: 'internal',
       tool: 'prepare_design',
@@ -1155,6 +1242,7 @@ it('attributes internal server handoffs to tool work instead of browser exchange
     const run = parseExecutionRecord(
       records.map((entry) => JSON.stringify(entry)).join('\n')
     )
+
     expect(partitionExecutionTime(run.steps, 10)).toMatchObject({
       toolExecutionMs: 10,
       appExchangeMs: 0
@@ -1171,7 +1259,9 @@ function createAiExecutionProfiler(
     provider: 'local-codex',
     effort: 'medium',
     purpose: 'drawing',
+
     log: (line) => console.info(line),
+
     ...options
   })
 }
@@ -1179,6 +1269,7 @@ function createAiExecutionProfiler(
 it('keeps failure classification observers from replacing the original batch error', async () => {
   const { observeActionBatch } = await import('../../node/index.js')
   const failure = new Error('execution failed')
+
   await expect(
     observeActionBatch(
       { batchId: 'batch', actions: [] },
@@ -1203,10 +1294,12 @@ it('keeps diagnostic byte counts separate from protocol bytes', () => {
     {
       sink: {
         write: (event) => records.push(event),
+
         flush: async () => ({ status: 'saved', path: null })
       }
     }
   )
+
   profiler.recordTransport('received', 10)
   profiler.recordTransport('received', 50, 'diagnostic')
   profiler.finish('completed')
@@ -1230,10 +1323,12 @@ it('retains source fingerprint and explicit unavailable upstream payload provena
       sourceIdentityStatus: 'captured',
       sink: {
         write: (record) => records.push(record),
+
         flush: async () => ({ status: 'saved', path: null })
       }
     }
   )
+
   usage.trace('research_started', { callId: 'search-1' })
   usage.trace('research_completed', { callId: 'search-1' })
   expect(records[0]).toMatchObject({
@@ -1272,13 +1367,16 @@ it('distinguishes redacted resource variants and measures local recording work',
   const b = serializeToolPayload({
     url: 'https://example.com/photo?w=600&token=secret'
   })
+
   expect(a.serialized).not.toContain('secret')
   expect(a.resourceIdentities[0].sha256).not.toBe(
     b.resourceIdentities[0].sha256
   )
   const directory = await workspace()
+
   try {
     const sink = createExecutionRecordSink(directory)
+
     sink.write({
       event: 'started',
       schemaVersion: 1,
@@ -1288,22 +1386,29 @@ it('distinguishes redacted resource variants and measures local recording work',
     const receipt = sink.writePayload?.('record-cost', 'call-a', 'input', {
       positions: [1, 2, 3]
     })
+
     expect(receipt?.serializationMs).toBeGreaterThanOrEqual(0)
     const bytes = new Uint8Array([1, 2, 3, 4])
     const first = sink.writeAsset?.('record-cost', bytes, 'image/png')
     const repeat = sink.writeAsset?.('record-cost', bytes, 'image/png')
+
     expect(first?.path).toBeTruthy()
     expect(repeat).toMatchObject({ path: first?.path, reused: true })
     bytes[0] = 99
     const result = await sink.flush()
+
     expect(result.status).toBe('saved')
-    if (!first?.path) throw new Error('Missing saved asset path')
+    if (!first?.path) {
+      throw new Error('Missing saved asset path')
+    }
+
     expect([...(await readFile(join(directory, first.path)))]).toEqual([
       1, 2, 3, 4
     ])
     const costs = JSON.parse(
       await readFile(join(directory, 'record-cost.recording.json'), 'utf8')
     )
+
     expect(costs.payloads[0]).toMatchObject({
       callId: 'call-a',
       phase: 'input',
@@ -1319,6 +1424,7 @@ it('distinguishes redacted resource variants and measures local recording work',
 it('retains owner phase correlation, source work and definition delivery scope without geometry', () => {
   const records: Record<string, unknown>[] = []
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+
   try {
     const usage = createProfiler(
       { intent: 'private', context: {}, actions: [], attempt: 1 },
@@ -1326,10 +1432,12 @@ it('retains owner phase correlation, source work and definition delivery scope w
       {
         sink: {
           write: (record) => records.push(record),
+
           flush: async () => ({ status: 'saved', path: null })
         }
       }
     )
+
     usage.trace('provider_notification', {
       method: 'app/activity',
       activity: {
@@ -1366,6 +1474,7 @@ it('retains owner phase correlation, source work and definition delivery scope w
     })
     const result = records.find((entry) => entry.stage === 'tool_completed')
       ?.evidence as Record<string, unknown>
+
     expect(result).toMatchObject({
       revision: 2,
       recipeStep: { name: 'facade', revision: 3, id: 'windows', iteration: 2 }
@@ -1403,18 +1512,25 @@ it.each(
       {
         sink: {
           write: (record) => records.push(record),
+
           writePayload: (_requestId, _callId, _phase, value) => {
-            if (mode === 'throws') throw new Error('storage unavailable')
+            if (mode === 'throws') {
+              throw new Error('storage unavailable')
+            }
+
             payloads.push(serializeToolPayload(value))
+
             return {
               status: mode === 'failed' ? 'failed' : 'queued',
               path: mode === 'failed' ? null : 'native.json'
             }
           },
+
           flush: async () => ({ status: 'saved', path: null })
         }
       }
     )
+
     usage.trace(stage, {
       callId: 'item:one',
       nativeOutput: {
@@ -1443,6 +1559,7 @@ it.each(
       expect(payloads[0].serialized).toContain('additionalProperties')
       expect(payloads[0].serialized).not.toContain('private-key')
     }
+
     usage.finish('cancelled')
     expect(records[records.length - 1]?.event).toBe('ai_request_usage')
   }

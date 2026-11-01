@@ -68,7 +68,10 @@ export const ContextMenu = ({
 
   useLayoutEffect(() => {
     const menu = menuRef.current
-    if (!menu) return
+
+    if (!menu) {
+      return
+    }
 
     const bounds = menu.getBoundingClientRect()
     const nextPlacement = {
@@ -101,8 +104,10 @@ export const ContextMenu = ({
 
   useLayoutEffect(() => {
     const firstEnabledIndex = enabledIndices[0]
+
     if (firstEnabledIndex === undefined) {
       menuRef.current?.focus()
+
       return
     }
 
@@ -123,6 +128,7 @@ export const ContextMenu = ({
     }
 
     document.addEventListener('pointerdown', handlePointerDown, true)
+
     return () =>
       document.removeEventListener('pointerdown', handlePointerDown, true)
   }, [onDismiss])
@@ -136,16 +142,20 @@ export const ContextMenu = ({
       event.preventDefault()
       event.stopPropagation()
       onDismiss('escape')
+
       return
     }
 
     if (event.key === 'Tab') {
       event.stopPropagation()
       onDismiss('tab')
+
       return
     }
 
-    if (enabledIndices.length === 0) return
+    if (enabledIndices.length === 0) {
+      return
+    }
 
     const activeIndex = itemRefs.current.findIndex(
       (item) => item === document.activeElement
@@ -157,13 +167,17 @@ export const ContextMenu = ({
       event.stopPropagation()
       const direction = event.key === 'ArrowDown' ? 1 : -1
       let startPosition = enabledPosition
+
       if (enabledPosition === -1) {
         startPosition = direction === 1 ? -1 : 0
       }
+
       const nextPosition =
         (startPosition + direction + enabledIndices.length) %
         enabledIndices.length
+
       focusItem(enabledIndices[nextPosition] as number)
+
       return
     }
 
@@ -174,7 +188,9 @@ export const ContextMenu = ({
         event.key === 'Home'
           ? enabledIndices[0]
           : enabledIndices[enabledIndices.length - 1]
+
       focusItem(targetIndex as number)
+
       return
     }
 
@@ -185,7 +201,10 @@ export const ContextMenu = ({
       event.preventDefault()
       event.stopPropagation()
       const item = items[activeIndex]
-      if (item) onActivate(item.id)
+
+      if (item) {
+        onActivate(item.id)
+      }
     }
   }
 
@@ -215,7 +234,9 @@ export const ContextMenu = ({
               : 'cursor-default text-text-disabled'
           }`}
           onClick={() => {
-            if (item.enabled) onActivate(item.id)
+            if (item.enabled) {
+              onActivate(item.id)
+            }
           }}
         >
           <span data-context-menu-label>{item.label}</span>

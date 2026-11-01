@@ -35,6 +35,7 @@ function snapshot(
     ...obstacles.map((x, i) => body(`o${i}`, x))
   ]
   const workcell: Workcell = { version: 1, robotRootId: null, bodies }
+
   return {
     version: 1,
     snapshotId: 'snapshot-1',
@@ -89,6 +90,7 @@ describe('M3 official clearance method aggregation', () => {
 
   it('preserves established contact separately from complete scope coverage', () => {
     const evidence = runOfficialClearanceMethod(snapshot([0]))
+
     expect(evidence.snapshotId).toBe('snapshot-1')
     expect(evidence.pairs).toHaveLength(1)
     expect(
@@ -99,6 +101,7 @@ describe('M3 official clearance method aggregation', () => {
 
   it('proves static clearance when bounds support the selected threshold', () => {
     const evidence = runOfficialClearanceMethod(snapshot([1]))
+
     expect(evidence.coverage).toBe('complete')
     expect(
       evidence.pairs[0]?.evidence.leaves.every((leaf) => leaf.state === 'clear')
@@ -108,6 +111,7 @@ describe('M3 official clearance method aggregation', () => {
 
   it('marks every unprocessed pair unresolved after the shared budget is exhausted', () => {
     const evidence = runOfficialClearanceMethod(snapshot([1, 2], 1))
+
     expect(evidence.pairs).toHaveLength(2)
     expect(evidence.pairs[1]?.evidence).toMatchObject({
       coverage: 'partial',
@@ -122,10 +126,13 @@ describe('M3 official clearance method aggregation', () => {
 
   it('checks cancellation between pair and interval work', () => {
     let checks = 0
+
     expect(() =>
       runOfficialClearanceMethod(snapshot([1]), () => {
         checks++
-        if (checks > 1) throw new Error('cancelled')
+        if (checks > 1) {
+          throw new Error('cancelled')
+        }
       })
     ).toThrow('cancelled')
   })
@@ -137,6 +144,7 @@ describe('M3 official clearance method aggregation', () => {
       () => undefined,
       (pair) => progress.push(pair.pairId)
     )
+
     expect(progress).toEqual(evidence.pairs.map((pair) => pair.pairId))
   })
 })

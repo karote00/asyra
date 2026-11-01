@@ -22,9 +22,12 @@ const testCaptureDisposers = new Map<string, () => void>()
 
 export const testRuntimeState = Object.freeze({
   delete: (key: string): boolean => testState.delete(key),
+
   get: <T>(key: string): T | undefined => testState.get(key) as T | undefined,
+
   set: <T>(key: string, value: T): T => {
     testState.set(key, value)
+
     return value
   }
 })
@@ -35,9 +38,13 @@ const startCapture = (
 ): void => {
   testCaptureDisposers.get(key)?.()
   const values: unknown[] = []
+
   testState.set(key, values)
   const dispose = subscribe((value) => values.push(value))
-  if (dispose) testCaptureDisposers.set(key, dispose)
+
+  if (dispose) {
+    testCaptureDisposers.set(key, dispose)
+  }
 }
 
 export const startSharedPublicationCapture = (key: string): void =>
@@ -60,10 +67,13 @@ export const startSharedChannelCapture = (key: string, channel: string): void =>
 
 export const clearTestCapture = (key: string): void => {
   const values = testRuntimeState.get<unknown[]>(key)
+
   if (Array.isArray(values)) {
     values.length = 0
+
     return
   }
+
   testState.set(key, [])
 }
 
@@ -93,10 +103,12 @@ export const readDocumentPublicationDecodeFailures = (
         { publicationId: publication.publicationId, message: publication.error }
       ]
     }
+
     try {
       readDocumentPublicationSlices(
         publication as Parameters<typeof readDocumentPublicationSlices>[0]
       )
+
       return []
     } catch (error) {
       const publicationId =
@@ -106,6 +118,7 @@ export const readDocumentPublicationDecodeFailures = (
         typeof publication.publicationId === 'string'
           ? publication.publicationId
           : 'unknown'
+
       return [
         {
           publicationId,
@@ -130,10 +143,12 @@ export const startSystemPropertyWriteCapture = (
 ): void => {
   stopTestCapture(key)
   const writes: (readonly [string, unknown])[] = []
+
   testState.set(key, writes)
   const original = core.setSystemProperty
   const wrapper = ((...args: Parameters<typeof original>) => {
     const propertyName = String(args[0])
+
     if (
       (!options.propertyName || propertyName === options.propertyName) &&
       (!options.whileMouseDragging ||
@@ -141,8 +156,10 @@ export const startSystemPropertyWriteCapture = (
     ) {
       writes.push([propertyName, args[1]])
     }
+
     return original.apply(core, args)
   }) as typeof original
+
   core.setSystemProperty = wrapper
   testCaptureDisposers.set(key, () => {
     if (core.setSystemProperty === wrapper) {

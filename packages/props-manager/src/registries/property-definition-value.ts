@@ -9,6 +9,7 @@ export const clonePropertyDefinitionValue = (value: unknown): unknown => {
     return Object.entries(value).reduce<Record<string, unknown>>(
       (cloned, [key, item]) => {
         cloned[key] = clonePropertyDefinitionValue(item)
+
         return cloned
       },
       {}

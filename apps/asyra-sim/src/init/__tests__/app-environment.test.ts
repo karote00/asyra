@@ -46,6 +46,7 @@ describe('Vite configuration origin ownership', () => {
   async function loadAppConfig(environment: ConfigEnv) {
     const { default: config }: { default: UserConfigExport } =
       await import('../../../vite.config')
+
     return typeof config === 'function' ? config(environment) : config
   }
 
@@ -58,6 +59,7 @@ describe('Vite configuration origin ownership', () => {
         command: 'build',
         mode: 'production'
       })
+
       expect(config.base).toBe('./')
       expect(config.build?.target).toBe('es2022')
       expect(config.worker?.format).toBe('es')
@@ -88,6 +90,7 @@ describe('Vite configuration origin ownership', () => {
       vi.stubEnv('APP_URL', 'http://127.0.0.1:3020')
       const config = await loadAppConfig({ command: 'serve', ...environment })
       const server = { host: '127.0.0.1', port: 3020, strictPort: true }
+
       expect(config.server).toEqual(server)
       expect(config.preview).toEqual(server)
     })

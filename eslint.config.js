@@ -2,6 +2,7 @@ import { includeIgnoreFile } from '@eslint/compat'
 import tseslint from 'typescript-eslint'
 import js from '@eslint/js'
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
+import readability from './scripts/eslint-readability.mjs'
 import { fileURLToPath } from 'url'
 import path from 'path'
 const __filename = fileURLToPath(import.meta.url)
@@ -21,6 +22,7 @@ export default tseslint.config(
   },
   {
     ignores: [
+      'create-app/*/template/**',
       '.claude/**/*',
       'docs/**/*',
       'tools/flow-inspector/workspace/generated/**/*',
@@ -34,8 +36,10 @@ export default tseslint.config(
   tseslint.configs.strict,
   tseslint.configs.stylistic,
   eslintPluginPrettierRecommended,
+  readability,
   {
     rules: {
+      curly: ['error', 'all'],
       'no-nested-ternary': 'error',
       'no-unassigned-vars': 'off',
       'no-useless-assignment': 'off',
@@ -77,9 +81,38 @@ export default tseslint.config(
     }
   },
   {
+    files: ['tools/flow-inspector/src/**/*.jsx'],
+    languageOptions: {
+      parserOptions: { ecmaFeatures: { jsx: true } },
+      globals: {
+        fetch: 'readonly',
+        window: 'readonly',
+        crypto: 'readonly',
+        AbortController: 'readonly',
+        TextEncoder: 'readonly',
+        URLSearchParams: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly'
+      }
+    }
+  },
+  {
     files: ['**/enum.ts'],
     rules: {
       'no-unused-vars': 'off'
+    }
+  },
+  {
+    // Manifest-pinned historical evidence must retain its original bytes.
+    files: [
+      'apps/asyra-fieldscope/src/domain/__tests__/fixtures/pre-p5b-source/**/*.ts'
+    ],
+    rules: {
+      curly: 'off',
+      '@stylistic/padding-line-between-statements': 'off',
+      '@stylistic/lines-between-class-members': 'off',
+      'readability/object-function-spacing': 'off',
+      'prettier/prettier': 'off'
     }
   },
   {

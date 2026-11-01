@@ -3,6 +3,7 @@
 const reject = () => {
   throw new Error('Headless read attempted process or server execution')
 }
+
 for (const key of [
   'spawn',
   'spawnSync',
@@ -11,7 +12,9 @@ for (const key of [
   'execFile',
   'execFileSync',
   'fork'
-])
+]) {
   require('node:child_process')[key] = reject
+}
+
 require('node:http').createServer = reject
 require('node:https').createServer = reject

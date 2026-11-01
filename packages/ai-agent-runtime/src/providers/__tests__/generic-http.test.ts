@@ -68,6 +68,7 @@ describe('generic HTTP AI provider', () => {
       fetch,
       headers
     })
+
     headers['X-App-Mode'] = 'mutated'
     const controller = new AbortController()
 
@@ -79,6 +80,7 @@ describe('generic HTTP AI provider', () => {
 
     expect(fetch).toHaveBeenCalledOnce()
     const [url, init] = vi.mocked(fetch).mock.calls[0]
+
     expect(url).toBe('https://agent.example.test/v1/action-batch')
     expect(init).toMatchObject({
       method: 'POST',
@@ -98,6 +100,7 @@ describe('generic HTTP AI provider', () => {
       actions: []
     }
     const fetch: AiFetch = vi.fn(async () => response(output))
+
     vi.stubGlobal('fetch', fetch)
     const provider = createGenericHttpAiProvider({
       endpoint: '/api/ai/action-batch'
@@ -119,6 +122,7 @@ describe('generic HTTP AI provider', () => {
         actions: []
       })
     )
+
     vi.stubGlobal('location', {
       origin: 'http://localhost:4173'
     })
@@ -167,6 +171,7 @@ describe('generic HTTP AI provider', () => {
       fetch
     })
     const controller = new AbortController()
+
     controller.abort('do not leak this reason')
 
     await expectProviderError(
@@ -279,8 +284,10 @@ describe('generic HTTP AI provider', () => {
       const provider = createGenericHttpAiProvider({
         endpoint: '/api/ai/action-batch',
         timeoutMs: null,
+
         fetch: async (_url, init) => {
           transport = init.signal
+
           return new Promise<AiFetchResponse>(() => undefined)
         }
       })
@@ -291,10 +298,15 @@ describe('generic HTTP AI provider', () => {
         pending,
         mode === 'abort' ? 'AI_PROVIDER_ABORTED' : 'AI_PROVIDER_DISPOSED'
       )
+
       await vi.advanceTimersByTimeAsync(60 * 60 * 1000)
       expect(transport?.aborted).toBe(false)
-      if (mode === 'abort') controller.abort()
-      else provider.dispose()
+      if (mode === 'abort') {
+        controller.abort()
+      } else {
+        provider.dispose()
+      }
+
       await checked
       expect(transport?.aborted).toBe(true)
       expect(vi.getTimerCount()).toBe(0)
@@ -341,6 +353,7 @@ describe('generic HTTP AI provider', () => {
     const fetch: AiFetch = vi.fn(async () => ({
       ok: true,
       status: 200,
+
       json: async () => new Promise<unknown>(() => undefined)
     }))
     const provider = createGenericHttpAiProvider({
@@ -363,6 +376,7 @@ describe('generic HTTP AI provider', () => {
     const fetch: AiFetch = vi.fn(
       async (_url: string, init: AiFetchRequestInit) => {
         requestSignal = init.signal
+
         return new Promise<AiFetchResponse>((_resolve, reject) => {
           init.signal.addEventListener(
             'abort',

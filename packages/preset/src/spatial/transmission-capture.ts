@@ -13,7 +13,9 @@ interface CaptureBinding {
 /** Ordered screen-space transmission using Three's native physical shader math. */
 export class TransmissionCapture {
   private readonly opaqueFrame = new OpaqueFrame()
+
   private readonly bindings = new WeakMap<THREE.Material, CaptureBinding>()
+
   private readonly backFaces = new Map<
     THREE.MeshPhysicalMaterial,
     {
@@ -22,23 +24,32 @@ export class TransmissionCapture {
       release: () => void
     }
   >()
+
   private readonly targets = new Map<number, THREE.WebGLRenderTarget>()
 
   apply(material: THREE.MeshPhysicalMaterial, layer: number | undefined): void {
     const previous = this.bindings.get(material)
+
     if (layer === undefined) {
-      if (!previous) return
+      if (!previous) {
+        return
+      }
+
       material.onBeforeCompile = previous.compile
       material.customProgramCacheKey = previous.key
       this.bindings.delete(material)
       this.backFaces.get(material)?.release()
       material.needsUpdate = true
+
       return
     }
+
     if (previous) {
       previous.layer = layer
+
       return
     }
+
     const binding: CaptureBinding = {
       layer,
       enabled: { value: true },
@@ -47,6 +58,7 @@ export class TransmissionCapture {
       compile: material.onBeforeCompile,
       key: material.customProgramCacheKey
     }
+
     this.bindings.set(material, binding)
     material.onBeforeCompile = (shader, renderer) => {
       binding.compile.call(material, shader, renderer)
@@ -67,11 +79,13 @@ export class TransmissionCapture {
         uniform sampler2D spatialTransmissionMap;
         uniform vec2 spatialTransmissionSize;
       `
+
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <transmission_pars_fragment>',
         uniforms + chunk
       )
     }
+
     material.customProgramCacheKey = () =>
       binding.key.call(material) + ':spatial-ordered-transmission-v2'
     material.needsUpdate = true
@@ -92,26 +106,36 @@ export class TransmissionCapture {
       order: number
       binding: CaptureBinding
     }[] = []
+
     scene.traverseVisible((object) => {
-      if (!(object instanceof THREE.Mesh) || Array.isArray(object.material))
+      if (!(object instanceof THREE.Mesh) || Array.isArray(object.material)) {
         return
+      }
+
       const binding = this.bindings.get(object.material)
+
       if (
         binding &&
         (object.material as THREE.MeshPhysicalMaterial).transmission > 0
-      )
+      ) {
         objects.push({
           mesh: object,
           material: object.material as THREE.MeshPhysicalMaterial,
           order: object.renderOrder,
           binding
         })
+      }
     })
     const active = new Set(objects.map(({ material }) => material))
+
     for (const [source, entry] of this.backFaces) {
-      if (!active.has(source)) entry.release()
+      if (!active.has(source)) {
+        entry.release()
+      }
     }
+
     const sceneLayers = new Set(objects.map(({ binding }) => binding.layer))
+
     scene.updateMatrixWorld()
     camera.updateMatrixWorld()
     const frustum = new THREE.Frustum().setFromProjectionMatrix(
@@ -132,24 +156,34 @@ export class TransmissionCapture {
           .map(({ binding }) => binding.layer)
       )
     ].sort((a, b) => a - b)
+
     for (const [layer, target] of this.targets) {
-      if (sceneLayers.has(layer)) continue
+      if (sceneLayers.has(layer)) {
+        continue
+      }
+
       target.dispose()
       this.targets.delete(layer)
     }
+
     if (!layers.length) {
       finish?.()
+
       return
     }
+
     if (
       typeof renderer.getRenderTarget !== 'function' ||
       typeof renderer.setRenderTarget !== 'function'
-    )
+    ) {
       throw new Error(
         'Ordered spatial transmission requires render-target support'
       )
+    }
+
     for (const layer of layers) {
       let target = this.targets.get(layer)
+
       if (!target) {
         target = new THREE.WebGLRenderTarget(width, height, {
           type: THREE.HalfFloatType,
@@ -159,13 +193,18 @@ export class TransmissionCapture {
         })
         this.targets.set(layer, target)
       }
+
       target.setSize(width, height)
       for (const { binding } of objects) {
-        if (binding.layer !== layer) continue
+        if (binding.layer !== layer) {
+          continue
+        }
+
         binding.texture.value = target.texture
         binding.size.value.set(width, height)
       }
     }
+
     const consume = () => {
       const firstOrder = Math.min(0, ...objects.map(({ order }) => order)) - 1
       const previous = {
@@ -176,6 +215,7 @@ export class TransmissionCapture {
         clear: renderer.autoClear,
         xr: renderer.xr.enabled
       }
+
       try {
         renderer.xr.enabled = false
         renderer.autoClear = true
@@ -189,8 +229,13 @@ export class TransmissionCapture {
             mesh.renderOrder =
               binding.layer > layer ? firstOrder - binding.layer : order
           }
+
           const target = this.targets.get(layer)
-          if (!target) throw new Error('Missing optical capture target')
+
+          if (!target) {
+            throw new Error('Missing optical capture target')
+          }
+
           renderer.setRenderTarget(target)
           draw(scene, camera)
         }
@@ -201,14 +246,17 @@ export class TransmissionCapture {
           mesh.material = material
           mesh.renderOrder = order
         }
+
         renderer.toneMapping = previous.tone
         renderer.autoClear = previous.clear
         renderer.xr.enabled = previous.xr
         renderer.setRenderTarget(previous.target, previous.face, previous.mip)
       }
+
       finish?.()
     }
-    if (layers.length > 1 && finish)
+
+    if (layers.length > 1 && finish) {
       this.opaqueFrame.render(
         renderer,
         scene,
@@ -218,25 +266,32 @@ export class TransmissionCapture {
         draw,
         consume
       )
-    else consume()
+    } else {
+      consume()
+    }
   }
 
   private backFace(
     source: THREE.MeshPhysicalMaterial
   ): THREE.MeshPhysicalMaterial {
     let entry = this.backFaces.get(source)
+
     if (!entry) {
       const material = source.clone()
+
       const release = () => {
         source.removeEventListener('dispose', release)
         material.dispose()
         this.backFaces.delete(source)
       }
+
       entry = { material, version: source.version, release }
       this.backFaces.set(source, entry)
       source.addEventListener('dispose', release)
     }
+
     const material = entry.material
+
     material.copy(source)
     material.onBeforeCompile = source.onBeforeCompile
     material.customProgramCacheKey = source.customProgramCacheKey
@@ -246,13 +301,20 @@ export class TransmissionCapture {
       material.needsUpdate = true
       entry.version = source.version
     }
+
     return material
   }
 
   dispose(): void {
     this.opaqueFrame.dispose()
-    for (const entry of [...this.backFaces.values()]) entry.release()
-    for (const target of this.targets.values()) target.dispose()
+    for (const entry of [...this.backFaces.values()]) {
+      entry.release()
+    }
+
+    for (const target of this.targets.values()) {
+      target.dispose()
+    }
+
     this.targets.clear()
   }
 }

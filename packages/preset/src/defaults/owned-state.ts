@@ -10,18 +10,23 @@ const unregisterRegistration = (
   switch (ref.kind) {
     case 'component':
       core.unregisterComponent(ref.key)
+
       return
     case 'feature':
       core.unregisterFeature(ref.key)
+
       return
     case 'property':
       core.unregisterPropertyType(ref.key)
+
       return
     case 'render-strategy':
       core.unregisterRenderStrategy(ref.key)
+
       return
     case 'ui-property':
       core.unregisterUIProperty(ref.key)
+
       return
     default:
       throw new Error(
@@ -55,10 +60,13 @@ export const createOwnedStateCleanup = (core: PresetCoreAPIs): (() => void) => {
     )
 
     const failures: unknown[] = []
+
     for (let index = pendingRegistrations.length - 1; index >= 0; index--) {
       const ref = pendingRegistrations[index]
+
       try {
         const registration = core.getRegistration(ref)
+
         if (
           registration &&
           registration.owner.packageName ===
@@ -67,17 +75,21 @@ export const createOwnedStateCleanup = (core: PresetCoreAPIs): (() => void) => {
         ) {
           unregisterRegistration(core, ref)
         }
+
         pendingRegistrations.splice(index, 1)
       } catch (error) {
         failures.push(error)
       }
     }
+
     for (let index = pendingSystemProperties.length - 1; index >= 0; index--) {
       const key = pendingSystemProperties[index]
+
       try {
         if (core.hasSystemProperty(key)) {
           core.unregisterSystemProperty(key)
         }
+
         pendingSystemProperties.splice(index, 1)
       } catch (error) {
         failures.push(error)

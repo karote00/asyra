@@ -8,9 +8,11 @@ it.each([
   { ...DEFAULT_ROBOT, width: 2, length: 3, height: 3 }
 ])('keeps the concept within the admitted stowed envelope %j', (definition) => {
   const parts = createRobotModel(definition)
+
   expect(new Set(parts.map((p) => p.id)).size).toBe(parts.length)
   for (const part of parts) {
     const { positions, indices } = part.shape
+
     expect(indices.every((i) => i >= 0 && i < positions.length / 3)).toBe(true)
     for (let i = 0; i < positions.length; i += 3) {
       expect(Math.abs(positions[i])).toBeLessThanOrEqual(
@@ -26,10 +28,12 @@ it.each([
 })
 it('provides an open retained crate, separate camera lenses and crop-specific pads', () => {
   const parts = createRobotModel(DEFAULT_ROBOT)
+
   expect(parts.some((p) => p.id === 'crate-top')).toBe(false)
   expect(parts.filter((p) => p.id.startsWith('crate-latch'))).toHaveLength(2)
   expect(parts.filter((p) => p.id.startsWith('camera-lens'))).toHaveLength(2)
   const tomato = createRobotModel({ ...DEFAULT_ROBOT, tool: 'tomato' })
+
   expect(tomato.find((p) => p.id === 'pad-1')?.shape).not.toEqual(
     parts.find((p) => p.id === 'pad-1')?.shape
   )

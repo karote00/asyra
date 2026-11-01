@@ -37,19 +37,29 @@ export type SpatialDescriptor =
 // Preset owns all numeric admission, detached products and immutable receipts.
 const projectedShapes = new WeakSet<object>()
 const projectedDescriptors = new WeakSet<object>()
+
 const record = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
 function shapeInput(value: unknown): unknown {
-  if (!record(value)) return value
-  if (projectedShapes.has(value)) return value
+  if (!record(value)) {
+    return value
+  }
+
+  if (projectedShapes.has(value)) {
+    return value
+  }
+
   const snapshot = { ...value }
-  if (snapshot.kind === 'triangles')
+
+  if (snapshot.kind === 'triangles') {
     return {
       kind: snapshot.kind,
       positions: snapshot.positions,
       indices: snapshot.indices
     }
+  }
+
   return snapshot
 }
 
@@ -59,17 +69,27 @@ export function isSpatialShape(value: unknown): value is SpatialShape {
 
 export function readSpatialShape(value: unknown): SpatialShape {
   const accepted = admitShape(shapeInput(value))
+
   projectedShapes.add(accepted)
+
   return accepted
 }
 
 export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
-  if (record(value) && projectedDescriptors.has(value))
+  if (record(value) && projectedDescriptors.has(value)) {
     return admitDescriptor(value) as SpatialDescriptor
-  if (!record(value)) return admitDescriptor(value) as SpatialDescriptor
+  }
+
+  if (!record(value)) {
+    return admitDescriptor(value) as SpatialDescriptor
+  }
+
   const snapshot = { ...value }
-  if (snapshot.kind === 'mesh' && snapshot.scale !== undefined)
+
+  if (snapshot.kind === 'mesh' && snapshot.scale !== undefined) {
     throw new Error('Sim requires rigid poses')
+  }
+
   const input =
     snapshot.kind === 'mesh'
       ? {
@@ -89,6 +109,8 @@ export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
         }
       : snapshot
   const accepted = admitDescriptor(input)
+
   projectedDescriptors.add(accepted)
+
   return accepted as SpatialDescriptor
 }

@@ -25,11 +25,16 @@ export function readSourcePatches(
   indexCount: number
 ): readonly SourcePatch[] {
   const admittedRegions = readSourceRegions(regions, indexCount)
-  if (!Array.isArray(input)) throw new Error('Invalid source patches')
+
+  if (!Array.isArray(input)) {
+    throw new Error('Invalid source patches')
+  }
+
   const identities = new Set<string>()
   let reusable = admittedRegions === regions && Object.isFrozen(input)
   const admitted = Array.from(input, (patch: SourcePatch) => {
     const regionIndex = regions.indexOf(patch?.region)
+
     if (
       !patch ||
       typeof patch.id !== 'string' ||
@@ -38,12 +43,15 @@ export function readSourcePatches(
       regionIndex < 0 ||
       !Array.isArray(patch.ranges) ||
       patch.ranges.length === 0
-    )
+    ) {
       throw new Error('Invalid source patch')
+    }
+
     identities.add(patch.id)
     const region = admittedRegions[regionIndex]
     const regionEnd = region.indexStart + region.indexCount
     let end = region.indexStart
+
     for (const range of patch.ranges) {
       if (
         !range ||
@@ -56,16 +64,23 @@ export function readSourcePatches(
         !Number.isSafeInteger(range.indexStart + range.indexCount) ||
         range.indexStart + range.indexCount > regionEnd ||
         range.indexStart + range.indexCount > indexCount
-      )
+      ) {
         throw new Error('Invalid source patch range')
+      }
+
       end = range.indexStart + range.indexCount
     }
+
     const frozen =
       Object.isFrozen(patch) &&
       Object.isFrozen(patch.ranges) &&
       patch.ranges.every(Object.isFrozen)
+
     reusable &&= frozen
-    if (frozen && patch.region === region) return patch
+    if (frozen && patch.region === region) {
+      return patch
+    }
+
     return Object.freeze({
       id: patch.id,
       region,
@@ -76,7 +91,11 @@ export function readSourcePatches(
       )
     })
   })
-  if (reusable) return input
+
+  if (reusable) {
+    return input
+  }
+
   return Object.freeze(admitted)
 }
 
@@ -90,10 +109,13 @@ export function readSourceRegions(
     !Number.isSafeInteger(indexCount) ||
     indexCount < 0 ||
     indexCount % 3
-  )
+  ) {
     throw new Error('Invalid source region coverage')
+  }
+
   let end = 0
   const identities = new Set<string>()
+
   for (const region of input) {
     if (
       !region ||
@@ -105,13 +127,22 @@ export function readSourceRegions(
       !Number.isSafeInteger(region.indexCount) ||
       region.indexCount <= 0 ||
       region.indexCount % 3
-    )
+    ) {
       throw new Error('Invalid source region')
+    }
+
     end += region.indexCount
     identities.add(region.id)
   }
-  if (end !== indexCount) throw new Error('Incomplete source region coverage')
-  if (Object.isFrozen(input) && input.every(Object.isFrozen)) return input
+
+  if (end !== indexCount) {
+    throw new Error('Incomplete source region coverage')
+  }
+
+  if (Object.isFrozen(input) && input.every(Object.isFrozen)) {
+    return input
+  }
+
   return Object.freeze(
     input.map(({ id, kind, indexStart, indexCount }) =>
       Object.freeze({ id, kind, indexStart, indexCount })

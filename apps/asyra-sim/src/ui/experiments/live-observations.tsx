@@ -15,7 +15,9 @@ export function LiveObservations({ identity }: { identity: string }) {
     api.getDiagnostics(identity)
   )
 
-  if (!records.length && !diagnostics.length) return null
+  if (!records.length && !diagnostics.length) {
+    return null
+  }
 
   return (
     <details
@@ -44,7 +46,9 @@ export function LiveObservations({ identity }: { identity: string }) {
             ? 'No issue in checked scope'
             : 'Unknown'
 
-          if (findings.length) outcome = `${findings.length} issue pairs`
+          if (findings.length) {
+            outcome = `${findings.length} issue pairs`
+          }
 
           return (
             <li

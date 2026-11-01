@@ -16,7 +16,9 @@ const createCoreForTest = (requestRender = vi.fn()) =>
     props: {} as never,
     render: {
       getViewportPosition: () => ({ x: 0, y: 0 }),
+
       getViewportScale: () => 1,
+
       requestRender
     } as never,
     sceneTree: {} as never,
@@ -28,6 +30,7 @@ describe('Core system-property lifecycle facade', () => {
   it('requests one render after a successful managed property update', () => {
     const requestRender = vi.fn()
     const core = createCoreForTest(requestRender)
+
     try {
       core.defineSystemProperty(PROPERTY_KEY, 1)
 
@@ -41,6 +44,7 @@ describe('Core system-property lifecycle facade', () => {
 
   it('reports and unregisters a managed property while composition is open', () => {
     const core = createCoreForTest()
+
     try {
       expect(core.hasSystemProperty(PROPERTY_KEY)).toBe(false)
       core.defineSystemProperty(PROPERTY_KEY, 1)
@@ -55,17 +59,23 @@ describe('Core system-property lifecycle facade', () => {
 
   it('rejects unregister after startup closes composition', async () => {
     const core = createCoreForTest()
+
     core.defineSystemProperty(PROPERTY_KEY, 1)
     core.setRenderer({
       name: 'system-property-test-renderer',
       init: vi.fn(async () => ({ canvas: null, instance: null })),
       destroy: vi.fn(),
+
       getViewportPosition: () => ({ x: 0, y: 0 }),
+
       getViewportScale: () => 1,
+
       setViewportPosition: vi.fn(),
       setViewportScale: vi.fn(),
       resize: vi.fn(),
+
       getCanvas: () => null,
+
       getInstance: () => null
     })
     try {

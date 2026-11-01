@@ -13,8 +13,10 @@ it('decodes detached original triangles, bounds and source identity through the 
   const bytes = encodeGlb(json, binary)
   const hash = createHash('sha256').update(bytes).digest('hex')
   const pending = decodeRestrictedGlb(bytes)
+
   bytes.fill(0)
   const asset = await pending
+
   expect(asset.source.sha256).toBe(hash)
   expect(asset.format).toBe('restricted-glb-v0')
   expect(asset.meshes[0].positions).toEqual([0, 0, 0, 1, 0, 0, 0, 1, 0])
@@ -26,6 +28,7 @@ it.each(['uri', 'textures', 'animations', 'skins', 'extensions'])(
   'retains rejection of unsupported %s',
   async (key) => {
     const { json, binary } = triangleFixture()
+
     await expect(
       decodeRestrictedGlb(encodeGlb({ ...json, [key]: [] }, binary))
     ).rejects.toThrow(/Unsupported/)
@@ -35,10 +38,12 @@ it.each(['uri', 'textures', 'animations', 'skins', 'extensions'])(
 it('rejects byte limits and cancellation before allocating a worker', async () => {
   const create = vi.fn()
   const owner = new RestrictedGlbPreviewWorker(create)
+
   await expect(
     owner.decode(new Uint8Array(GLB_LIMITS.bytes + 1))
   ).rejects.toThrow(/limit/)
   const abort = new AbortController()
+
   abort.abort()
   await expect(
     owner.decode(new Uint8Array([1]), abort.signal)

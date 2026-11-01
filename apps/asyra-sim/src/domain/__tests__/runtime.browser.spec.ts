@@ -2,21 +2,28 @@ import { expect, test } from '@playwright/test'
 
 function exactPositive(value: number): readonly [bigint, number] {
   const view = new DataView(new ArrayBuffer(8))
+
   view.setFloat64(0, value)
   const bits = view.getBigUint64(0),
     exponent = Number((bits >> 52n) & 2047n),
     fraction = bits & ((1n << 52n) - 1n)
+
   return exponent === 0
     ? [fraction, -1074]
     : [(1n << 52n) + fraction, exponent - 1075]
 }
+
 function compareExactSquare(root: number, value: number): number {
   const [r, re] = exactPositive(root),
     [v, ve] = exactPositive(value),
     shift = 2 * re - ve
   const left = shift >= 0 ? (r * r) << BigInt(shift) : r * r,
     right = shift >= 0 ? v : v << BigInt(-shift)
-  if (left < right) return -1
+
+  if (left < right) {
+    return -1
+  }
+
   return left > right ? 1 : 0
 }
 
@@ -32,6 +39,7 @@ test('Chromium preserves binary64 subnormals and certified interval operations',
     const residual = m.iadd(m.imul(thirds, m.interval(3)), m.interval(-1))
     const underflow = m.imul(m.interval(1e-200), m.interval(1e-150))
     const trig = m.isinCos(m.interval(0))
+
     return {
       userAgent: navigator.userAgent,
       min: Number.MIN_VALUE,
@@ -46,6 +54,7 @@ test('Chromium preserves binary64 subnormals and certified interval operations',
       )
     }
   })
+
   expect(proof.min).toBe(5e-324)
   expect(proof.nextZero).toBe(proof.min)
   expect(proof.beforeMin).toBe(0)
@@ -61,6 +70,7 @@ test('Chromium preserves binary64 subnormals and certified interval operations',
     expect(compareExactSquare(bounds[0], value)).toBeLessThanOrEqual(0)
     expect(compareExactSquare(bounds[1], value)).toBeGreaterThanOrEqual(0)
   }
+
   await testInfo.attach('numerical-runtime', {
     contentType: 'application/json',
     body: JSON.stringify(proof)
@@ -80,8 +90,10 @@ test('Chromium uses the same stable joint direction algebra for preview and inte
     const formal = m
       .poseOperations(m.intervalAlgebra)
       .direction([Number.MAX_VALUE, 0, 0])
+
     return { ordinary, formal }
   })
+
   expect(proof.ordinary).toEqual([1, 0, 0])
   for (const [index, value] of [1, 0, 0].entries()) {
     expect(proof.formal[index][0]).toBeLessThanOrEqual(value)

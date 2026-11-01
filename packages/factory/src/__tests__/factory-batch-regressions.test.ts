@@ -42,6 +42,7 @@ const payloadId = (value: unknown): string | undefined =>
 describe('Factory batch regression contracts', () => {
   it('bounds immediate publication windows when canonical ordered IDs are absent', async () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
@@ -51,9 +52,11 @@ describe('Factory batch regression contracts', () => {
       () => true
     )
     const publications: SharedPublication[] = []
+
     factory.subscribeToSharedPublication((publication) =>
       publications.push(publication)
     )
+
     const immediateBatch = (start: number, count: number) =>
       Array.from({ length: count }, (_, index) => ({
         ...createUpdateEvent(`element-${start + index}`),
@@ -62,6 +65,7 @@ describe('Factory batch regression contracts', () => {
           sharedDelivery: 'immediate' as const
         }
       }))
+
     const publicationDeliveryCounts = () =>
       publications.map((publication) =>
         publication.slices.reduce(
@@ -96,6 +100,7 @@ describe('Factory batch regression contracts', () => {
 
   it('bounds default immediate publication windows before one render slice can monopolize a peer', async () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
@@ -105,14 +110,17 @@ describe('Factory batch regression contracts', () => {
       () => true
     )
     const publications: SharedPublication[] = []
+
     factory.subscribeToSharedPublication((publication) =>
       publications.push(publication)
     )
+
     const createImmediateOwnerBatch = (start: number) => {
       const orderedIds = Array.from(
         { length: 32 },
         (_, index) => `element-${start + index}`
       )
+
       return {
         ...createUpdateEvent(
           `owner-batch-${start}`,
@@ -129,6 +137,7 @@ describe('Factory batch regression contracts', () => {
         }
       }
     }
+
     const publicationWorkItemCounts = () =>
       publications.map(
         ({ slices }) =>
@@ -146,12 +155,14 @@ describe('Factory batch regression contracts', () => {
       factory.updateTransactionBatch([createImmediateOwnerBatch(start)])
       await Promise.resolve()
     }
+
     factory.endTransaction()
 
     expect(publicationWorkItemCounts()).toEqual([512, 512, 256])
 
     publications.length = 0
     let renderYieldCount = 0
+
     factory.startTransaction()
     await factory.getTransactionOwner().undoProgressively(async () => {
       renderYieldCount += 1
@@ -165,11 +176,13 @@ describe('Factory batch regression contracts', () => {
 
   it('keeps the render item budget independent from publication windows', async () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
     )
     const replayedIds: string[] = []
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       (event) => {
@@ -178,6 +191,7 @@ describe('Factory batch regression contracts', () => {
             payload: { id: string; before: number; after: number }
           }
         ).payload
+
         replayedIds.push(payload.id)
         factory.updateTransaction({
           type: TransactionEventTypes.UPDATE_TRANSACTION,
@@ -185,13 +199,16 @@ describe('Factory batch regression contracts', () => {
           payload,
           options: { shared: SharedDataChannelNames.SCENE_TREE }
         })
+
         return true
       }
     )
     const publications: SharedPublication[] = []
+
     factory.subscribeToSharedPublication((publication) =>
       publications.push(publication)
     )
+
     const immediateBatch = (ids: readonly string[]) =>
       ids.map((id) => ({
         ...createUpdateEvent(
@@ -223,6 +240,7 @@ describe('Factory batch regression contracts', () => {
       publicationCount: number
       replayedIds: string[]
     }[] = []
+
     factory.startTransaction()
     await factory.getTransactionOwner().undoProgressively(
       async () => {
@@ -257,11 +275,13 @@ describe('Factory batch regression contracts', () => {
 
   it('cooperatively yields after each recorded progressive Undo and Redo slice', async () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
     )
     const replayedIds: string[] = []
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       (event) => {
@@ -270,6 +290,7 @@ describe('Factory batch regression contracts', () => {
             payload: { id: string; before: number; after: number }
           }
         ).payload
+
         replayedIds.push(payload.id)
         factory.updateTransaction({
           type: TransactionEventTypes.UPDATE_TRANSACTION,
@@ -277,10 +298,12 @@ describe('Factory batch regression contracts', () => {
           payload,
           options: { shared: SharedDataChannelNames.SCENE_TREE }
         })
+
         return true
       }
     )
     const publications: SharedPublication[] = []
+
     factory.subscribeToSharedPublication((publication) =>
       publications.push(publication)
     )
@@ -299,6 +322,7 @@ describe('Factory batch regression contracts', () => {
         )
       }))
     )
+
     handle?.setDeliverySequence({
       mode: 'progressive',
       slices: [
@@ -388,6 +412,7 @@ describe('Factory batch regression contracts', () => {
 
   it('delivers duplicate cross-channel canonical ids in slice-major order', () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.PROPS,
       new LocalSharedDataChannel()
@@ -397,6 +422,7 @@ describe('Factory batch regression contracts', () => {
       new LocalSharedDataChannel()
     )
     const projected: string[] = []
+
     factory.observeSharedDataChannelBatch(
       SharedDataChannelNames.PROPS,
       (changes) =>
@@ -412,6 +438,7 @@ describe('Factory batch regression contracts', () => {
         )
     )
     const publications: SharedPublication[] = []
+
     factory.subscribeToSharedPublication((publication) =>
       publications.push(publication)
     )
@@ -437,6 +464,7 @@ describe('Factory batch regression contracts', () => {
         }
       )
     ])
+
     handle?.setDeliverySequence({
       mode: 'progressive',
       slices: [
@@ -472,6 +500,7 @@ describe('Factory batch regression contracts', () => {
     const publicationBatches = publications.flatMap(({ slices }) =>
       slices.flatMap(({ batches }) => batches)
     )
+
     expect(new Set(publicationBatches.map(({ batchId }) => batchId)).size).toBe(
       publicationBatches.length
     )
@@ -481,15 +510,20 @@ describe('Factory batch regression contracts', () => {
   it('links history replay only to records that were actually delivered', () => {
     const factory = new Factory()
     const channel = new LocalSharedDataChannel()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       channel
     )
     let firstProjection = true
+
     factory.observeSharedDataChannelBatch(
       SharedDataChannelNames.SCENE_TREE,
       () => {
-        if (!firstProjection) return
+        if (!firstProjection) {
+          return
+        }
+
         firstProjection = false
         factory.unregisterSharedDataChannel(SharedDataChannelNames.SCENE_TREE)
       }
@@ -503,12 +537,16 @@ describe('Factory batch regression contracts', () => {
           payload: (event as AllEvent & { payload: unknown }).payload,
           options: { shared: SharedDataChannelNames.SCENE_TREE }
         })
+
         return true
       }
     )
     const actionPublications: SharedPublication[] = []
+
     factory.subscribeToSharedPublication((publication) => {
-      if (publication.origin === 'action') actionPublications.push(publication)
+      if (publication.origin === 'action') {
+        actionPublications.push(publication)
+      }
     })
 
     factory.startTransaction()
@@ -523,6 +561,7 @@ describe('Factory batch regression contracts', () => {
         }
       )
     ])
+
     handle?.setDeliverySequence({
       mode: 'progressive',
       slices: [
@@ -548,13 +587,17 @@ describe('Factory batch regression contracts', () => {
       new LocalSharedDataChannel()
     )
     const undoProjected: unknown[] = []
+
     factory.observeSharedDataChannelBatch(
       SharedDataChannelNames.SCENE_TREE,
       (changes) => undoProjected.push(...changes)
     )
     const undoPublications: SharedPublication[] = []
+
     factory.subscribeToSharedPublication((publication) => {
-      if (publication.origin === 'undo') undoPublications.push(publication)
+      if (publication.origin === 'undo') {
+        undoPublications.push(publication)
+      }
     })
 
     factory.undo()
@@ -573,6 +616,7 @@ describe('Factory batch regression contracts', () => {
 
   it('reuses Group and children batch evidence once when canonical replay handlers decompose the write', () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.PROPS,
       new LocalSharedDataChannel()
@@ -589,6 +633,7 @@ describe('Factory batch regression contracts', () => {
             payload: { id: string; before: number; after: number }
           }
         ).payload
+
         if (payload.id === 'local-only') {
           factory.updateTransaction({
             type: TransactionEventTypes.UPDATE_TRANSACTION,
@@ -613,8 +658,10 @@ describe('Factory batch regression contracts', () => {
             },
             options: { shared: SharedDataChannelNames.SCENE_TREE }
           })
+
           return true
         }
+
         const isSceneChange = payload.id.startsWith('scene-')
 
         if (isSceneChange) {
@@ -649,10 +696,12 @@ describe('Factory batch regression contracts', () => {
             })
           })
         }
+
         return true
       }
     )
     const publications: SharedPublication[] = []
+
     factory.subscribeToSharedPublication((publication) =>
       publications.push(publication)
     )
@@ -712,6 +761,7 @@ describe('Factory batch regression contracts', () => {
         }))
       )
     })
+
     const expectAtomicBatchIntegrity = (
       publication: SharedPublication | undefined
     ) => {
@@ -819,11 +869,13 @@ describe('Factory batch regression contracts', () => {
     'rejects endTransaction from a shared %s observer without closing the outer action',
     (observerKind) => {
       const factory = new Factory()
+
       factory.registerSharedDataChannel(
         SharedDataChannelNames.SCENE_TREE,
         new LocalSharedDataChannel()
       )
       const attempts: string[] = []
+
       const attemptEnd = () => {
         try {
           factory.endTransaction()
@@ -832,6 +884,7 @@ describe('Factory batch regression contracts', () => {
           attempts.push(error instanceof Error ? error.message : String(error))
         }
       }
+
       if (observerKind === 'channel') {
         factory.observeSharedDataChannelBatch(
           SharedDataChannelNames.SCENE_TREE,
@@ -840,6 +893,7 @@ describe('Factory batch regression contracts', () => {
       } else {
         factory.subscribeToSharedPublication(attemptEnd)
       }
+
       factory.startTransaction()
       const handle = factory.updateTransactionBatch([
         createUpdateEvent(
@@ -849,6 +903,7 @@ describe('Factory batch regression contracts', () => {
           { orderedIds: [`observer-${observerKind}`] }
         )
       ])
+
       handle?.setDeliverySequence({
         mode: 'progressive',
         slices: [
@@ -870,15 +925,18 @@ describe('Factory batch regression contracts', () => {
 
   it('maps each custom inverter output to its matching shared record output exactly once', () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
     )
+
     const inverseEvents = () =>
       ['inverse-x', 'inverse-y'].map((id): AllEvent => ({
         type: EventTypes.UPDATE_PROPERTY,
         payload: { id, before: 1, after: 0 }
       }))
+
     factory.registerTransactionInverter('custom.multi-output', inverseEvents)
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
@@ -889,6 +947,7 @@ describe('Factory batch regression contracts', () => {
           payload: (event as AllEvent & { payload: unknown }).payload,
           options: { shared: SharedDataChannelNames.SCENE_TREE }
         })
+
         return true
       }
     )
@@ -899,9 +958,11 @@ describe('Factory batch regression contracts', () => {
         payload: (event as AllEvent & { payload: unknown }).payload,
         options: { shared: SharedDataChannelNames.SCENE_TREE }
       })
+
       return true
     })
     const projected: unknown[] = []
+
     factory.observeSharedDataChannelBatch(
       SharedDataChannelNames.SCENE_TREE,
       (changes) => projected.push(...changes)
@@ -932,6 +993,7 @@ describe('Factory batch regression contracts', () => {
 
   it('fails closed when custom canonical and shared record inverse counts differ', () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
@@ -944,6 +1006,7 @@ describe('Factory batch regression contracts', () => {
           id === 'canonical-mismatch'
             ? ['inverse-x', 'inverse-y']
             : ['inverse-x']
+
         return outputIds.map((outputId): AllEvent => ({
           type: EventTypes.UPDATE_PROPERTY,
           payload: { id: outputId, before: 1, after: 0 }
@@ -983,11 +1046,13 @@ describe('Factory batch regression contracts', () => {
       phaseNames.push(name)
     )
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
     )
     const publications: SharedPublication[] = []
+
     factory.subscribeToSharedPublication((publication) =>
       publications.push(publication)
     )
@@ -1008,6 +1073,7 @@ describe('Factory batch regression contracts', () => {
         }
       )
     ])
+
     handle?.setDeliverySequence({
       mode: 'progressive',
       slices: orderedIds.map((id, index) => ({
@@ -1020,11 +1086,15 @@ describe('Factory batch regression contracts', () => {
     }
     const activeSequence = transact.activeDeliverySequence
     let fullSequenceFilterCalls = 0
+
     transact.activeDeliverySequence = {
       ...activeSequence,
       slices: new Proxy(activeSequence.slices, {
         get(target, property, receiver) {
-          if (property === 'filter') fullSequenceFilterCalls += 1
+          if (property === 'filter') {
+            fullSequenceFilterCalls += 1
+          }
+
           return Reflect.get(target, property, receiver)
         }
       })
@@ -1057,11 +1127,13 @@ describe('Factory batch regression contracts', () => {
 
   it('preserves per-slice publication settlement when batching is disabled', () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
     )
     const publications: SharedPublication[] = []
+
     factory.subscribeToSharedPublication((publication) =>
       publications.push(publication)
     )
@@ -1079,6 +1151,7 @@ describe('Factory batch regression contracts', () => {
         }
       )
     ])
+
     handle?.setDeliverySequence({
       mode: 'progressive',
       batchPublications: false,
@@ -1099,12 +1172,14 @@ describe('Factory batch regression contracts', () => {
 
   it('delivers 7112 canonical records through one ordered batch callback', () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
     )
     const deliveryBatches: SharedDeliveryBatch[] = []
     const publications: SharedPublication[] = []
+
     factory.subscribeToSharedDeliveryBatch((batch) =>
       deliveryBatches.push(batch)
     )
@@ -1140,6 +1215,7 @@ describe('Factory batch regression contracts', () => {
       publications[0]?.slices.flatMap(({ batches }) =>
         batches.flatMap(({ deliveries }) => deliveries)
       ) ?? []
+
     expect(publicationDeliveries).toHaveLength(7_112)
     expect(
       publicationDeliveries.map(({ payload }) => payloadId(payload))
@@ -1153,6 +1229,7 @@ describe('Factory batch regression contracts', () => {
     ['custom prototype', Object.create({ id: 'element-a' })]
   ])('rejects an explicit shared record %s payload', (_name, payload) => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
@@ -1177,6 +1254,7 @@ describe('Factory batch regression contracts', () => {
 
   it('accepts an explicit shared record payload with a null prototype', () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
@@ -1206,11 +1284,13 @@ describe('Factory batch regression contracts', () => {
 
   it('reuses nested geometry from an issued canonical owner batch', () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
     )
     const publications: SharedPublication[] = []
+
     factory.subscribeToSharedPublication((publication) =>
       publications.push(publication)
     )
@@ -1222,8 +1302,10 @@ describe('Factory batch regression contracts', () => {
     const geometry = Object.freeze(
       Object.defineProperty({}, 'points', {
         enumerable: true,
+
         get: () => {
           nestedGeometryReads += 1
+
           return points
         }
       })
@@ -1255,6 +1337,7 @@ describe('Factory batch regression contracts', () => {
     const deliveredPayload = publications[0]?.slices[0]?.batches[0]
       ?.deliveries[0]?.payload as
       { readonly geometry?: typeof geometry } | undefined
+
     expect(deliveredPayload?.geometry).toBe(geometry)
     expect(factory.getUndoHistoryDepth()).toBe(1)
     expect(nestedGeometryReads).toBe(0)
@@ -1262,11 +1345,13 @@ describe('Factory batch regression contracts', () => {
 
   it('isolates a shallow-frozen external batch before the journal handoff', () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
     )
     const publications: SharedPublication[] = []
+
     factory.subscribeToSharedPublication((publication) =>
       publications.push(publication)
     )

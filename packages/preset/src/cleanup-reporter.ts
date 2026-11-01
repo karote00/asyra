@@ -18,6 +18,7 @@ export const createCleanupReporter = (
       onCleanupReady(dispose)
       reported = true
     },
+
     hasReported: () => reported
   }
 }

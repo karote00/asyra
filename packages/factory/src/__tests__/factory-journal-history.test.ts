@@ -92,6 +92,7 @@ const createOwnerIssuedReplaceLatestBatch = (
     events: [event],
     eventKeys: [String(payload.id)]
   }
+
   return [{ ...event, historyCandidate }]
 }
 
@@ -118,6 +119,7 @@ const createOwnerKeyedReplaceLatestBatch = (
     events: candidateEvents,
     eventKeys: values.map(({ eventKey }) => eventKey)
   }
+
   return candidateEvents.map((event, index) =>
     index === 0 ? { ...event, historyCandidate } : event
   )
@@ -129,6 +131,7 @@ describe('Factory journal-backed action history', () => {
   ) => {
     const factory = new Factory()
     const publications: SharedPublication[] = []
+
     factory.subscribeToSharedPublication((publication) =>
       publications.push(publication)
     )
@@ -136,10 +139,12 @@ describe('Factory journal-backed action history', () => {
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
     )
+
     const publicationDeliveries = (publication: SharedPublication) =>
       publication.slices.flatMap(({ batches }) =>
         batches.flatMap(({ deliveries }) => deliveries)
       )
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SELECTION,
       new LocalSharedDataChannel()
@@ -148,6 +153,7 @@ describe('Factory journal-backed action history', () => {
       ['document', 1],
       ['selection', 0]
     ])
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       (event) => {
@@ -156,8 +162,13 @@ describe('Factory journal-backed action history', () => {
             payload: { id: string; after: number }
           }
         ).payload
-        if (values.get(id) === after) return false
+
+        if (values.get(id) === after) {
+          return false
+        }
+
         values.set(id, after)
+
         return true
       }
     )
@@ -179,18 +190,26 @@ describe('Factory journal-backed action history', () => {
     factory.endTransaction()
     expect(factory.getUndoHistoryDepth()).toBe(1)
     publications.length = 0
+
     const replay = async (direction: 'undo' | 'redo') => {
-      if (mode === 'synchronous') factory[direction]()
-      else {
+      if (mode === 'synchronous') {
+        factory[direction]()
+      } else {
         factory.startTransaction()
         const owner = factory.getTransactionOwner()
-        if (direction === 'undo')
+
+        if (direction === 'undo') {
           await owner.undoProgressively(async () => undefined)
-        else await owner.redoProgressively(async () => undefined)
+        } else {
+          await owner.redoProgressively(async () => undefined)
+        }
+
         factory.endTransaction()
       }
+
       await Promise.resolve()
     }
+
     await replay('undo')
     expect(values.get('document')).toBe(0)
     expect(
@@ -222,11 +241,13 @@ describe('Factory journal-backed action history', () => {
 
   it('restores only changed owners after a no-op sibling and failed shared replay, then retries', async () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
     )
     const publications: SharedPublication[] = []
+
     factory.subscribeToSharedPublication((publication) =>
       publications.push(publication)
     )
@@ -237,28 +258,38 @@ describe('Factory journal-backed action history', () => {
     ])
     const applied: string[] = []
     let fail = true
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       (event, mode) => {
         const { id, after } = (
           event as AllEvent & { payload: { id: string; after: number } }
         ).payload
-        if (fail && mode === 'undo' && id === 'first')
+
+        if (fail && mode === 'undo' && id === 'first') {
           throw new Error('Owner refused replay')
-        if (values.get(id) === after) return false
+        }
+
+        if (values.get(id) === after) {
+          return false
+        }
+
         values.set(id, after)
         applied.push(`${mode}:${id}:${after}`)
+
         return true
       }
     )
     factory.startTransaction()
-    for (const id of ['first', 'second', 'unchanged'])
+    for (const id of ['first', 'second', 'unchanged']) {
       factory.updateTransaction(
         createUpdateEvent(id, {
           shared: SharedDataChannelNames.SCENE_TREE,
           sharedDelivery: 'immediate'
         })
       )
+    }
+
     await Promise.resolve()
     factory.endTransaction()
     publications.length = 0
@@ -286,10 +317,12 @@ describe('Factory journal-backed action history', () => {
   it('records one owner batch as one Undo action and replays the whole action', () => {
     const factory = new Factory()
     const replayed: AllEvent[] = []
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       (event) => {
         replayed.push(event)
+
         return true
       }
     )
@@ -323,11 +356,13 @@ describe('Factory journal-backed action history', () => {
 
   it('keeps progressive delivery on a delivery-only handle and one history action', () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
     )
     const publications: SharedPublication[] = []
+
     factory.subscribeToSharedPublication((publication) =>
       publications.push(publication)
     )
@@ -364,6 +399,7 @@ describe('Factory journal-backed action history', () => {
 
   it('creates no history action for an empty or rolled-back transaction', () => {
     const factory = new Factory()
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       () => true
@@ -384,6 +420,7 @@ describe('Factory journal-backed action history', () => {
 
     factory.startTransaction()
     const handle = factory.updateTransaction(createUpdateEvent('element-a'))
+
     factory.endTransaction()
 
     expect(() =>
@@ -413,10 +450,12 @@ describe('Factory journal-backed action history', () => {
   it('replaces one staged gesture History bundle and replays only its first-before/latest-after values', () => {
     const factory = new Factory()
     const replayed: AllEvent[] = []
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       (event) => {
         replayed.push(event)
+
         return true
       }
     )
@@ -473,10 +512,12 @@ describe('Factory journal-backed action history', () => {
   it('trusts changing owner payload metadata in a replace-latest candidate', () => {
     const factory = new Factory()
     const replayed: AllEvent[] = []
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       (event) => {
         replayed.push(event)
+
         return true
       }
     )
@@ -514,10 +555,12 @@ describe('Factory journal-backed action history', () => {
   it('keeps replace-latest options without an owner candidate as ordinary History', () => {
     const factory = new Factory()
     const replayed: AllEvent[] = []
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       (event) => {
         replayed.push(event)
+
         return true
       }
     )
@@ -552,10 +595,12 @@ describe('Factory journal-backed action history', () => {
   it('keeps earlier option-only owner events before later candidate staging', () => {
     const factory = new Factory()
     const replayed: AllEvent[] = []
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       (event) => {
         replayed.push(event)
+
         return true
       }
     )
@@ -599,10 +644,12 @@ describe('Factory journal-backed action history', () => {
   it('retains the latest owner event per key when later candidate bundles omit unchanged fields', () => {
     const factory = new Factory()
     const replayed: AllEvent[] = []
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       (event) => {
         replayed.push(event)
+
         return true
       }
     )
@@ -643,10 +690,12 @@ describe('Factory journal-backed action history', () => {
   it('keeps ordinary History append-only when replace-latest is absent', () => {
     const factory = new Factory()
     const replayed: AllEvent[] = []
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       (event) => {
         replayed.push(event)
+
         return true
       }
     )
@@ -679,10 +728,12 @@ describe('Factory journal-backed action history', () => {
   it('keeps an ordinary final normalization ordered after one staged gesture bundle', () => {
     const factory = new Factory()
     const replayed: AllEvent[] = []
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       (event) => {
         replayed.push(event)
+
         return true
       }
     )
@@ -725,10 +776,12 @@ describe('Factory journal-backed action history', () => {
   it('rolls back every applied staged sample without creating History', () => {
     const factory = new Factory()
     const replayed: AllEvent[] = []
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       (event) => {
         replayed.push(event)
+
         return true
       }
     )
@@ -764,6 +817,7 @@ describe('Factory journal-backed action history', () => {
 
   it('keeps staging metadata local and publishes one final-to-initial shared Undo bundle', async () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.PROPS,
       new LocalSharedDataChannel()
@@ -773,6 +827,7 @@ describe('Factory journal-backed action history', () => {
       () => true
     )
     const publications: SharedPublication[] = []
+
     factory.subscribeToSharedPublication((publication) =>
       publications.push(publication)
     )

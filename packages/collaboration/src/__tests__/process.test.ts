@@ -100,12 +100,14 @@ describe('Collaboration ownership, processing, and disposal', () => {
         factory: {
           subscribeToSharedPublication: vi.fn((next) => {
             subscriber = next
+
             return () => undefined
           })
         }
       })
     )
     const outcomes: unknown[] = []
+
     instance.observePublicationOutcomes((outcome) => outcomes.push(outcome))
     await instance.start()
     const secondPublication = createSharedPublicationFixture({
@@ -172,12 +174,14 @@ describe('Collaboration ownership, processing, and disposal', () => {
         factory: {
           subscribeToSharedPublication: vi.fn((next) => {
             subscriber = next
+
             return () => undefined
           })
         }
       })
     )
     const outcomes: unknown[] = []
+
     instance.observePublicationOutcomes((outcome) => outcomes.push(outcome))
     await instance.start()
     await instance.disconnect()
@@ -219,12 +223,14 @@ describe('Collaboration ownership, processing, and disposal', () => {
         factory: {
           subscribeToSharedPublication: vi.fn((next) => {
             subscriber = next
+
             return () => undefined
           })
         }
       })
     )
     const outcomes: unknown[] = []
+
     instance.observePublicationOutcomes((outcome) => outcomes.push(outcome))
     await instance.start()
     const secondPublication: SharedPublication = {
@@ -275,6 +281,7 @@ describe('Collaboration ownership, processing, and disposal', () => {
         subscriber = next as unknown as (
           publication: SharedPublication
         ) => Promise<void>
+
         return () => undefined
       })
     })
@@ -284,6 +291,7 @@ describe('Collaboration ownership, processing, and disposal', () => {
         if (nextPublication.publicationId === 'publication-a') {
           await firstSettled
         }
+
         timeline.push(`finish:${nextPublication.publicationId}`)
       }
     )
@@ -291,12 +299,14 @@ describe('Collaboration ownership, processing, and disposal', () => {
       input({ provider, processRemotePublication })
     )
     const outcomes: unknown[] = []
+
     instance.observePublicationOutcomes((outcome) => outcomes.push(outcome))
     await instance.start()
 
     expect(provider.onPublication).toHaveBeenCalledOnce()
     const firstCompletion = subscriber?.(publication)
     let firstCallbackSettled = false
+
     void Promise.resolve(firstCompletion).then(() => {
       firstCallbackSettled = true
     })
@@ -313,6 +323,7 @@ describe('Collaboration ownership, processing, and disposal', () => {
     await firstCompletion
 
     const secondCompletion = subscriber?.(secondPublication)
+
     expect(secondCompletion).toBeInstanceOf(Promise)
     await secondCompletion
 
@@ -345,6 +356,7 @@ describe('Collaboration ownership, processing, and disposal', () => {
         subscriber = next as unknown as (
           publication: SharedPublication
         ) => Promise<void>
+
         return () => undefined
       })
     })
@@ -355,10 +367,12 @@ describe('Collaboration ownership, processing, and disposal', () => {
       input({ provider, processRemotePublication })
     )
     const outcomes: unknown[] = []
+
     instance.observePublicationOutcomes((outcome) => outcomes.push(outcome))
     await instance.start()
 
     const completion = subscriber?.(publication)
+
     expect(completion).toBeInstanceOf(Promise)
     await expect(completion).rejects.toBe(failure)
     await instance.whenIdle()
@@ -387,12 +401,14 @@ describe('Collaboration ownership, processing, and disposal', () => {
         factory: {
           subscribeToSharedPublication: vi.fn((next) => {
             subscriber = next
+
             return () => undefined
           })
         }
       })
     )
     const outcomes: unknown[] = []
+
     instance.observePublicationOutcomes((outcome) => outcomes.push(outcome))
     await instance.start()
 
@@ -419,6 +435,7 @@ describe('Collaboration ownership, processing, and disposal', () => {
       onPublication: vi.fn(() => detachProviderPublication)
     })
     const disposeAwareness = vi.fn()
+
     awareness.dispose = disposeAwareness
     const instance = createCollaboration(
       input({
@@ -461,6 +478,7 @@ describe('Collaboration ownership, processing, and disposal', () => {
       input({ provider, resourceOwnership: { provider: 'owned' } })
     )
     const startPromise = instance.start().catch((error) => error)
+
     await Promise.resolve()
 
     const disposePromise = instance.dispose()
@@ -481,11 +499,13 @@ describe('Collaboration ownership, processing, and disposal', () => {
         factory: {
           subscribeToSharedPublication: vi.fn((next) => {
             subscriber = next
+
             return () => undefined
           })
         }
       })
     )
+
     await instance.start()
 
     subscriber?.(publication)
@@ -498,6 +518,7 @@ describe('Collaboration ownership, processing, and disposal', () => {
     const providerFailure = new Error('provider destroy failed')
     const awarenessFailure = new Error('awareness dispose failed')
     const awareness = new Awareness()
+
     awareness.dispose = vi.fn(() => {
       throw awarenessFailure
     })

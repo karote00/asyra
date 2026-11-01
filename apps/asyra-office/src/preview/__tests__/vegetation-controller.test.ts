@@ -13,6 +13,7 @@ it('retains the actual asset and bounds through all inspection views and appeara
     build
   )
   const source = submit.mock.calls[0][0].meshes
+
   for (const view of [
     'Front',
     'Right',
@@ -20,14 +21,17 @@ it('retains the actual asset and bounds through all inspection views and appeara
     'Top',
     'Three-quarter',
     'Cap detail'
-  ] as const)
+  ] as const) {
     control.setView(view)
+  }
+
   control.resize(600, 2, 800)
   expect(build).toHaveBeenCalledOnce()
   expect(submit).toHaveBeenCalledOnce()
   expect(submitCamera).toHaveBeenCalledTimes(7)
   control.setNeutral(true)
   const grey = submit.mock.calls[1][0].meshes
+
   expect(
     grey.map((m: { descriptor: { shape: unknown } }) => m.descriptor.shape)
   ).toEqual(
@@ -49,14 +53,17 @@ it('fits depth planes to the asset so submillimetre shells do not z-fight at the
       height: 700
     }
   )
+
   for (const view of [
     'Front',
     'Right',
     'Back',
     'Top',
     'Three-quarter'
-  ] as const)
+  ] as const) {
     control.setView(view)
+  }
+
   for (const [camera] of submitCamera.mock.calls) {
     const distance = Math.hypot(
       ...camera.position.map((n: number, i: number) => n - camera.target[i])
@@ -64,8 +71,10 @@ it('fits depth planes to the asset so submillimetre shells do not z-fight at the
     const depthResolution =
       (distance * distance * (camera.far - camera.near)) /
       (camera.far * camera.near * 2 ** 24)
+
     expect(depthResolution).toBeLessThan(0.00001)
   }
+
   control.dispose()
 })
 
@@ -76,6 +85,7 @@ it('reviews the actual catalog door rather than silently constructing a differen
     'entry-door-set',
     { width: 1000, height: 700 }
   )
+
   expect(controller.getSnapshot().triangles).toBe(
     catalogAsset('entry-door-set').reduce(
       (sum, p) => sum + p.mesh.indices.length / 3,
@@ -94,6 +104,7 @@ it('uses the production porcelain surface in asset review and retains it across 
     { width: 1200, height: 1000 }
   )
   const meshes = submit.mock.calls[0][0].meshes
+
   expect(
     meshes.some(
       (m: { descriptor: { surface?: unknown } }) => m.descriptor.surface
@@ -113,6 +124,7 @@ it('keeps production iced Americano geometry and optical materials across micros
     { width: 1000, height: 900 }
   )
   const source = submit.mock.calls[0][0].meshes
+
   expect(
     source.filter(
       (m: { descriptor: { optics?: { captureLayer?: number } } }) =>
@@ -125,8 +137,10 @@ it('keeps production iced Americano geometry and optical materials across micros
         m.descriptor.optics?.ior === 1.33
     )
   ).toBe(true)
-  for (const view of ['Front', 'Right', 'Top', 'Cap detail'] as const)
+  for (const view of ['Front', 'Right', 'Top', 'Cap detail'] as const) {
     control.setView(view)
+  }
+
   expect(submit).toHaveBeenCalledOnce()
   expect(submitCamera).toHaveBeenCalledTimes(4)
   control.dispose()

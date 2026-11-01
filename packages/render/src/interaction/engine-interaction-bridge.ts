@@ -19,12 +19,14 @@ export class RenderEngineInteractionBridge {
     }
 
     const targetId = this.resolveTarget(event.target)
+
     if (!targetId) {
       return
     }
 
     if (event.type === 'pointerover') {
       ElementInteractionHandlers.handlePointerHover(targetId)
+
       return
     }
 

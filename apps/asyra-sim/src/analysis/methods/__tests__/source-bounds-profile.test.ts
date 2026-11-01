@@ -24,6 +24,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
   'source-bounds-profile.test',
   () => {
     const ops = poseOperations(intervalAlgebra)
+
     afterEach(() => vi.restoreAllMocks())
 
     it.each(
@@ -46,6 +47,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                 [4, 6],
                 [6, 8]
               ]
+
         return ranges.map(([start, end]) => ({ target, start, end }))
       })
     )(
@@ -56,7 +58,11 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           (pair) =>
             pair.a.bodyId === 'example:joint-2' && pair.b.bodyId === target
         )
-        if (!pair) throw new Error('Missing measured representative pair')
+
+        if (!pair) {
+          throw new Error('Missing measured representative pair')
+        }
+
         const prepared = new WeakMap<MeshGeometry, Bounds>()
         const counts = {
           calls: 0,
@@ -73,23 +79,32 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
         }
         let measuringCurrent = false
         const build = meshIndex.buildMeshIndex
+
         vi.spyOn(meshIndex, 'buildMeshIndex').mockImplementation(
           (g, checkpoint, hierarchy, checkExecution) =>
             build(
               g,
               () => {
-                if (measuringCurrent) counts.currentPreparationWork++
+                if (measuringCurrent) {
+                  counts.currentPreparationWork++
+                }
+
                 checkpoint()
               },
               hierarchy,
               checkExecution
             )
         )
+
         function bounds(shape: ConvexShape): Bounds {
           const g = shape.geometry
-          if (g.kind !== 'mesh')
+
+          if (g.kind !== 'mesh') {
             throw new Error('Expected complete original geometry')
+          }
+
           let result = prepared.get(g)
+
           if (!result) {
             counts.preparationBuilds++
             result = buildMeshIndex(g, () => {
@@ -97,8 +112,10 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             }).root.bounds
             prepared.set(g, result)
           }
+
           return result
         }
+
         function probe(
           a: ConvexShape,
           b: ConvexShape,
@@ -108,15 +125,19 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           counts.calls++
           const ab = bounds(a),
             bb = bounds(b)
+
           if (
             boundsGap(worldBounds(ab, a.pose), worldBounds(bb, b.pose)) >
             threshold
           ) {
             counts.worldRejects++
+
             return false
           }
+
           const started = performance.now()
-          for (const shape of [a, b])
+
+          for (const shape of [a, b]) {
             for (const axis of [
               [1, 0, 0],
               [0, 1, 0],
@@ -126,7 +147,11 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                 .rotate(shape.pose.rotation, ops.vector(axis))
                 .map(imid) as unknown as Vec3
               const norm = ops.norm(ops.vector(direction))
-              if (norm[0] <= 0) continue
+
+              if (norm[0] <= 0) {
+                continue
+              }
+
               counts.projectionAxes++
               const pa = projection(ab, a.pose, direction),
                 pb = projection(bb, b.pose, direction)
@@ -135,29 +160,41 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                 idiv(isub(interval(pb[0]), interval(pa[1])), norm)[0],
                 idiv(isub(interval(pa[0]), interval(pb[1])), norm)[0]
               )
+
               if (gap > threshold) {
-                if (temporal) counts.addedIntervalRejects++
-                else counts.addedStaticRejects++
+                if (temporal) {
+                  counts.addedIntervalRejects++
+                } else {
+                  counts.addedStaticRejects++
+                }
+
                 counts.projectionMs += performance.now() - started
+
                 return true
               }
             }
+          }
+
           counts.projectionMs += performance.now() - started
+
           return false
         }
+
         const distance = OriginalMeshQuery.prototype.distance,
           lower = OriginalMeshQuery.prototype.lowerOver
+
         vi.spyOn(OriginalMeshQuery.prototype, 'distance').mockImplementation(
           function (this: OriginalMeshQuery, ...args) {
             const rejected = probe(args[0], args[1], args[2], false)
             const before = this.work,
               prep = counts.currentPreparationWork
+
             measuringCurrent = true
             try {
               return distance.apply(this, args)
             } finally {
               measuringCurrent = false
-              if (rejected)
+              if (rejected) {
                 counts.avoidableStaticWork += Math.max(
                   0,
                   this.work -
@@ -165,6 +202,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                     (counts.currentPreparationWork - prep) -
                     1
                 )
+              }
             }
           }
         )
@@ -173,12 +211,13 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             const rejected = probe(args[0], args[1], args[2], true)
             const before = this.work,
               prep = counts.currentPreparationWork
+
             measuringCurrent = true
             try {
               return lower.apply(this, args)
             } finally {
               measuringCurrent = false
-              if (rejected)
+              if (rejected) {
                 counts.avoidableIntervalWork += Math.max(
                   0,
                   this.work -
@@ -186,6 +225,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
                     (counts.currentPreparationWork - prep) -
                     1
                 )
+              }
             }
           }
         )
@@ -207,6 +247,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           () => undefined,
           context
         )
+
         // eslint-disable-next-line no-console -- permanent bounded certificate-feasibility profile
         console.info(
           JSON.stringify({

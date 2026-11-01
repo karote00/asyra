@@ -12,6 +12,7 @@ import {
 // with real queries; this is not a second solver or a geometry oracle.
 vi.mock('../../contracts', async (load) => {
   const actual = await load<typeof import('../../contracts')>()
+
   return {
     ...actual,
     EXPERIMENT_RESOURCE_PROFILE: {
@@ -34,6 +35,7 @@ it('reserves an unresolved evidence slot for every remaining pair when earlier p
     acknowledgedWarningCodes: []
   })
   const evidence = runOfficialClearanceMethod(input)
+
   expect(input.pairs.length).toBeLessThan(64)
   expect(evidence.pairs).toHaveLength(input.pairs.length)
   expect(
@@ -47,6 +49,7 @@ it('reserves an unresolved evidence slot for every remaining pair when earlier p
     expect(pair.evidence.leaves[0].start).toBe(input.interval[0])
     expect(pair.evidence.leaves.at(-1)?.end).toBe(input.interval[1])
   }
+
   expect(
     evidence.pairs.some((pair) =>
       pair.evidence.leaves.some((leaf) =>

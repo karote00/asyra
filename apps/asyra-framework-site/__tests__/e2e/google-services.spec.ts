@@ -6,10 +6,13 @@ test('Google services respect the deployment configuration and survive navigatio
   const configured = process.env.GOOGLE_SERVICES_TEST_ENABLED === '1'
   const measurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
   const verification = process.env.GOOGLE_SITE_VERIFICATION
+
   if (configured) {
     expect(measurementId).toMatch(/^G-[A-Z0-9]+$/)
   }
+
   let libraryRequests = 0
+
   // Test the site's bootstrap and CSP without sending test data to Google.
   await page.route('https://www.googletagmanager.com/**', async (route) => {
     libraryRequests += 1
@@ -29,22 +32,30 @@ test('Google services respect the deployment configuration and survive navigatio
   )
 
   const response = await page.goto('/docs')
+
   expect(response?.status()).toBe(200)
   const meta = page.locator('head meta[name="google-site-verification"]')
+
   if (configured) {
-    if (verification)
+    if (verification) {
       await expect(meta).toHaveAttribute('content', verification)
-    else await expect(meta).toHaveCount(0)
+    } else {
+      await expect(meta).toHaveCount(0)
+    }
+
     await expect.poll(() => libraryRequests).toBe(1)
+
     const readConfig = () =>
       page.evaluate(() => {
         const analytics = window as typeof window & {
           dataLayer?: ArrayLike<unknown>[]
         }
+
         return (analytics.dataLayer ?? [])
           .map((entry) => Array.from(entry))
           .filter(([type]) => type === 'config')
       })
+
     await expect.poll(readConfig).toEqual([
       [
         'config',

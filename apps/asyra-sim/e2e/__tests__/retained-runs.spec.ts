@@ -3,14 +3,25 @@ import { expect, test, type Download, type Page } from '@playwright/test'
 
 async function downloadText(download: Download): Promise<string> {
   const stream = await download.createReadStream()
-  if (!stream) throw new Error('Download stream unavailable')
+
+  if (!stream) {
+    throw new Error('Download stream unavailable')
+  }
+
   const chunks: Buffer[] = []
-  for await (const chunk of stream) chunks.push(Buffer.from(chunk))
+
+  for await (const chunk of stream) {
+    chunks.push(Buffer.from(chunk))
+  }
+
   return Buffer.concat(chunks).toString('utf8')
 }
+
 async function download(page: Page, name: string) {
   const pending = page.waitForEvent('download')
+
   await page.getByRole('button', { name, exact: true }).click()
+
   return downloadText(await pending)
 }
 
@@ -19,6 +30,7 @@ test('retains runs with Undo, compares evidence, exports reports, and reopens po
 }, info) => {
   test.setTimeout(60000)
   const errors: string[] = []
+
   page.on('pageerror', (error) => errors.push(error.message))
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
@@ -40,6 +52,7 @@ test('retains runs with Undo, compares evidence, exports reports, and reopens po
       (await page.getByTestId('history-depth').innerText()).match(/\d+/)?.[0]
     )
     const before = `Undo steps: ${retainedDepth - 1}`
+
     await expect(page.locator('.retention-actions')).toContainText(
       'Saved to this project'
     )
@@ -53,10 +66,12 @@ test('retains runs with Undo, compares evidence, exports reports, and reopens po
       page.getByRole('button', { name: 'Retry retention', exact: true })
     ).toHaveCount(0)
   }
+
   await page
     .getByRole('button', { name: 'Runs & compare', exact: true })
     .click()
   const library = page.getByRole('dialog', { name: 'Runs and comparison' })
+
   await page.setViewportSize({ width: 576, height: 690 })
   await library.locator('.run-history article button').last().click()
   await expect(
@@ -76,6 +91,7 @@ test('retains runs with Undo, compares evidence, exports reports, and reopens po
         .first()
         .boundingBox()
       const dialog = await library.boundingBox()
+
       return heading && dialog ? heading.y - dialog.y : Number.POSITIVE_INFINITY
     })
     .toBeLessThan(80)
@@ -83,6 +99,7 @@ test('retains runs with Undo, compares evidence, exports reports, and reopens po
   await library.locator('.run-history article button').first().click()
   await page.setViewportSize({ width: 1440, height: 960 })
   const checkboxes = library.getByRole('checkbox')
+
   await expect(checkboxes).toHaveCount(2)
   await checkboxes.nth(0).check()
   await checkboxes.nth(1).check()
@@ -90,11 +107,13 @@ test('retains runs with Undo, compares evidence, exports reports, and reopens po
     .getByRole('button', { name: 'Compare selected runs (2/3)' })
     .click()
   const comparison = library.getByRole('region', { name: 'Run comparison' })
+
   await expect(comparison).toContainText('Not directly comparable')
   await expect(comparison).toContainText('Decision rules differ')
   await comparison.scrollIntoViewIfNeeded()
   await page.screenshot({ path: info.outputPath('retained-comparison.png') })
   const report = JSON.parse(await download(page, 'Export JSON'))
+
   expect(report.format).toBe('sim-run-report')
   expect(report.run.snapshot.rule.minimumClearance).toBe(0.035)
   expect(report.run.environment.appVersion).toBe('0.1.0-alpha.0')
@@ -110,6 +129,7 @@ test('retains runs with Undo, compares evidence, exports reports, and reopens po
     'Saved locally - Traceable experiment'
   )
   const payload = await download(page, 'Export project')
+
   expect(JSON.parse(payload).runs).toHaveLength(2)
   await page
     .getByLabel('Portable project file', { exact: true })
@@ -162,6 +182,7 @@ test('retains runs with Undo, compares evidence, exports reports, and reopens po
     .click()
   await expect(library.getByRole('checkbox')).toHaveCount(2)
   const reopened = JSON.parse(await download(page, 'Export JSON'))
+
   expect(reopened.run).toEqual(report.run)
   await expect(
     library.getByRole('button', { name: 'Retry retention' })

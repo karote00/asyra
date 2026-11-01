@@ -549,8 +549,10 @@
     if (!value || typeof value !== 'object' || Object.isFrozen(value)) {
       return value
     }
+
     Object.freeze(value)
     Object.values(value).forEach(freeze)
+
     return value
   }
 

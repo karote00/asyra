@@ -8,6 +8,7 @@ export type WorkbenchState = ReturnType<typeof useWorkbenchController>
 /** One current read projection per workbench lifetime, with body-owned channels. */
 export class WorkbenchView extends ViewSource<WorkbenchState> {
   readonly workcell: ViewSource<Workcell | null>
+
   experiment: ViewSource<ExperimentInputs> | null
 
   private readonly bodies = new Map<string, ViewSource<Body>>()
@@ -29,7 +30,9 @@ export class WorkbenchView extends ViewSource<WorkbenchState> {
   body(id: string): ViewSource<Body> {
     const source = this.bodies.get(id)
 
-    if (!source) throw new Error(`Missing projected body: ${id}`)
+    if (!source) {
+      throw new Error(`Missing projected body: ${id}`)
+    }
 
     return source
   }
@@ -41,14 +44,17 @@ export class WorkbenchView extends ViewSource<WorkbenchState> {
 
     const experiment = experimentInputs(next)
 
-    if (!experiment) this.experiment = null
-    else if (
+    if (!experiment) {
+      this.experiment = null
+    } else if (
       !this.experiment ||
       previous.runtime !== next.runtime ||
       previous.candidateId !== next.candidateId
     ) {
       this.experiment = new ViewSource(experiment)
-    } else notify.push(this.experiment.stage(experiment))
+    } else {
+      notify.push(this.experiment.stage(experiment))
+    }
 
     if (
       previous.runtime !== next.runtime ||
@@ -65,12 +71,17 @@ export class WorkbenchView extends ViewSource<WorkbenchState> {
 
         const source = this.bodies.get(body.id)
 
-        if (source) notify.push(source.stage(body))
-        else this.bodies.set(body.id, new ViewSource(body))
+        if (source) {
+          notify.push(source.stage(body))
+        } else {
+          this.bodies.set(body.id, new ViewSource(body))
+        }
       }
 
       for (const id of this.bodies.keys()) {
-        if (!ids.has(id)) this.bodies.delete(id)
+        if (!ids.has(id)) {
+          this.bodies.delete(id)
+        }
       }
 
       notify.push(this.workcell.stage(next.workcell))
@@ -78,13 +89,16 @@ export class WorkbenchView extends ViewSource<WorkbenchState> {
 
     notify.push(this.stage(next))
 
-    for (const flush of notify) flush()
+    for (const flush of notify) {
+      flush()
+    }
   }
 }
 
 function experimentInputs(state: WorkbenchState): ExperimentInputs | null {
-  if (!state.ready || !state.runtime || !state.candidateId || !state.workcell)
+  if (!state.ready || !state.runtime || !state.candidateId || !state.workcell) {
     return null
+  }
 
   return {
     runtime: state.runtime,

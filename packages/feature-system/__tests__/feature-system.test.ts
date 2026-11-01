@@ -17,6 +17,7 @@ describe('Feature System', () => {
     const feature = defineFeature('test-feature', undefined, {
       api: {
         hello: () => 'hello world',
+
         add: (a: number, b: number) => a + b
       }
     })
@@ -34,6 +35,7 @@ describe('Feature System', () => {
     })
 
     const api = getFeature('import-test')
+
     expect(api.value).toBe(42)
   })
 
@@ -45,6 +47,7 @@ describe('Feature System', () => {
 
   it('should get feature registry', () => {
     const registry = getFeatureRegistry()
+
     expect(registry).toBeDefined()
     expect(registry.size()).toBeGreaterThan(0)
   })
@@ -57,6 +60,7 @@ describe('Feature System', () => {
 
   it('should get session manager', () => {
     const manager = getSessionManager()
+
     expect(manager).toBeDefined()
   })
 

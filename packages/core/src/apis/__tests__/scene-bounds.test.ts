@@ -41,10 +41,12 @@ const createCoreWithElements = (elements: TestElement[]): Core => {
       data.id,
       {
         get: (key: keyof TestElement) => data[key],
+
         computed: {
           get: (key: 'x' | 'y' | 'width' | 'height' | 'rotation') =>
             data.bounds?.[key]
         },
+
         getAllComputedData: () => data.bounds ?? {}
       }
     ])
@@ -61,14 +63,19 @@ const createCoreWithElements = (elements: TestElement[]): Core => {
     props: {} as never,
     render: {
       init: vi.fn(async () => ({ canvas: null, instance: null })),
+
       getViewportPosition: () => ({ x: 0, y: 0 }),
+
       getViewportScale: () => 1,
+
       registerLayer: vi.fn(),
       unregisterLayer: vi.fn(() => true)
     } as never,
     sceneTree: {
       workspace: WORKSPACE_ID,
+
       getAllElements: () => instances,
+
       getElementById: (id: string) => instances.get(id)
     } as never,
     selection: {} as never,
@@ -349,12 +356,15 @@ it('uses analytic rotated oval extents through canonical nested Group world posi
   const cx = 10 + 5 / Math.sqrt(2),
     cy = 20 + 15 / Math.sqrt(2),
     r = Math.sqrt(62.5)
+
   expect(direct?.minX).toBeCloseTo(cx - r, 10)
   expect(direct?.maxX).toBeCloseTo(cx + r, 10)
   expect(direct?.minY).toBeCloseTo(cy - r, 10)
   expect(direct?.maxY).toBeCloseTo(cy + r, 10)
-  for (const key of ['minX', 'maxX', 'minY', 'maxY'] as const)
+  for (const key of ['minX', 'maxX', 'minY', 'maxY'] as const) {
     expect(nested?.[key]).toBeCloseTo(Number(direct?.[key]), 10)
+  }
+
   expect(
     getBounds([
       workspace(),

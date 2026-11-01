@@ -83,6 +83,7 @@ export const registerAiAgentFeature = (runtime: AiAgentFeatureRuntime) => {
             }
           : request
       const normalizedIntent = normalizedRequest.intent.trim()
+
       if (!normalizedIntent) {
         return Promise.resolve(AI_INVALID_INTENT_RESULT)
       }
@@ -105,6 +106,7 @@ export const registerAiAgentFeature = (runtime: AiAgentFeatureRuntime) => {
         executeOptions
       )
     },
+
     cancel: (reason) => cancelFeatureTask(FeatureNames.AI_AGENT, reason)
   }
 
@@ -117,10 +119,12 @@ export const registerAiAgentFeature = (runtime: AiAgentFeatureRuntime) => {
     priority: AI_AGENT_FEATURE_PRIORITY,
     exclusive: true,
     api,
+
     task: ({ intent, metadata, progressObserver }, { signal }) => {
       if (signal.aborted) {
         return AI_ABORTED_RESULT
       }
+
       return runtime.run({
         intent,
         ...(metadata === undefined ? {} : { metadata }),

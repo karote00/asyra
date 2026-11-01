@@ -21,8 +21,10 @@ const freeze = (value) => {
   if (!value || typeof value !== 'object' || Object.isFrozen(value)) {
     return value
   }
+
   Object.freeze(value)
   Object.values(value).forEach(freeze)
+
   return value
 }
 
@@ -30,6 +32,7 @@ const resolveProjectTemporaryChild = ({ repositoryRoot, target, label }) => {
   const resolvedRoot = path.resolve(repositoryRoot)
   const temporaryRoot = path.join(resolvedRoot, 'tmp')
   const resolvedTarget = path.resolve(resolvedRoot, target)
+
   if (
     path.dirname(resolvedTarget) !== temporaryRoot ||
     path.basename(resolvedTarget).length === 0
@@ -38,6 +41,7 @@ const resolveProjectTemporaryChild = ({ repositoryRoot, target, label }) => {
       `${label} must be a direct child of project tmp: ${resolvedTarget}`
     )
   }
+
   return resolvedTarget
 }
 
@@ -69,6 +73,7 @@ const assertFrameworkPackageSet = ({
 }) => {
   const declared = [...declaredPackages].sort()
   const expected = [...expectedPackages].sort()
+
   if (
     declared.length !== expected.length ||
     declared.some((name, index) => name !== expected[index])
@@ -100,6 +105,7 @@ export const createCleanConsumerPackageManifest = ({
   const validatedPackages = validated.packages.map(
     (record) => record.packageName
   )
+
   assertFrameworkPackageSet({
     declaredPackages,
     expectedPackages: validatedPackages,
@@ -108,12 +114,14 @@ export const createCleanConsumerPackageManifest = ({
 
   const dependencies = { ...fixtureManifest.dependencies }
   const resolutions = { ...(fixtureManifest.resolutions ?? {}) }
+
   for (const record of validated.packages) {
     const relativeTarball = path
       .relative(resolvedConsumerDirectory, record.tarballPath)
       .split(path.sep)
       .join('/')
     const tarballSpecifier = `file:${relativeTarball}`
+
     dependencies[record.packageName] = tarballSpecifier
     resolutions[record.packageName] = tarballSpecifier
   }
@@ -136,6 +144,7 @@ export const createRegistryConsumerPackageManifest = ({ repositoryRoot }) => {
     fixtureManifest.dependencies ?? {}
   ).filter((name) => name.startsWith('@asyra/'))
   const expectedPackages = releaseSource.packages.map(({ name }) => name)
+
   assertFrameworkPackageSet({
     declaredPackages,
     expectedPackages,
@@ -143,6 +152,7 @@ export const createRegistryConsumerPackageManifest = ({ repositoryRoot }) => {
   })
 
   const dependencies = { ...fixtureManifest.dependencies }
+
   for (const { name, version } of releaseSource.packages) {
     dependencies[name] = version
   }
@@ -238,6 +248,7 @@ const runCommandDefault = (command, args, options) => {
   } catch (error) {
     const stdout = summarizeFailureOutput(error.stdout)
     const stderr = summarizeFailureOutput(error.stderr)
+
     throw new Error(
       [
         `${command} ${args.join(' ')} failed`,
@@ -253,6 +264,7 @@ const runCommandDefault = (command, args, options) => {
 
 const assertSupportedRuntime = ({ allowUnsupportedNode }) => {
   const major = Number.parseInt(process.versions.node.split('.')[0], 10)
+
   if (major !== 24 && !allowUnsupportedNode) {
     throw new Error(
       `Framework release verification requires Node 24.x; current runtime is ${process.version}`
@@ -272,16 +284,20 @@ const verifyInstalledPackages = ({
       'node_modules',
       ...packageName.split('/')
     )
+
     if (!fs.existsSync(packageDirectory)) {
       throw new Error(`${packageName} is missing from the clean consumer`)
     }
+
     if (fs.lstatSync(packageDirectory).isSymbolicLink()) {
       throw new Error(`${packageName} resolved through a symlink`)
     }
+
     const manifest = JSON.parse(
       fs.readFileSync(path.join(packageDirectory, 'package.json'), 'utf8')
     )
     const expectedVersion = expectedVersions.get(packageName)
+
     if (
       !expectedVersion ||
       manifest.name !== packageName ||
@@ -289,9 +305,11 @@ const verifyInstalledPackages = ({
     ) {
       throw new Error(`${packageName} installed identity is invalid`)
     }
+
     if (/workspace:|(?:link|portal|patch):/.test(JSON.stringify(manifest))) {
       throw new Error(`${packageName} retained a workspace-only dependency`)
     }
+
     const registryEvidence = registryLockfile
       ? readRegistryLockEvidence({
           lockfile: registryLockfile,
@@ -299,12 +317,14 @@ const verifyInstalledPackages = ({
           expectedVersion
         })
       : {}
+
     return {
       name: packageName,
       version: manifest.version,
       ...registryEvidence
     }
   })
+
   return freeze(packages)
 }
 
@@ -315,24 +335,30 @@ const readRegistryLockEvidence = ({
 }) => {
   const header = `"${packageName}@npm:${expectedVersion}":`
   const start = lockfile.indexOf(header)
+
   if (start === -1) {
     throw new Error(
       `${packageName}@${expectedVersion} is missing from the public registry lockfile`
     )
   }
+
   const end = lockfile.indexOf('\n\n', start)
   const block = lockfile.slice(start, end === -1 ? lockfile.length : end)
+
   if (!block.includes(`resolution: "${packageName}@npm:${expectedVersion}"`)) {
     throw new Error(
       `${packageName}@${expectedVersion} does not resolve through npm in the lockfile`
     )
   }
+
   const checksum = block.match(/\n {2}checksum: ([^\n]+)/u)?.[1]?.trim()
+
   if (!checksum) {
     throw new Error(
       `${packageName}@${expectedVersion} is missing a registry integrity checksum`
     )
   }
+
   return {
     resolution: 'npm',
     checksum
@@ -355,6 +381,7 @@ export const verifyCleanConsumer = ({
   runCommand = runCommandDefault
 }) => {
   const resolvedRoot = path.resolve(repositoryRoot)
+
   assertSupportedRuntime({ allowUnsupportedNode })
   const releaseSource = readFrameworkReleaseSource({
     repositoryRoot: resolvedRoot
@@ -382,11 +409,13 @@ export const verifyCleanConsumer = ({
     target: evidenceDirectory,
     label: 'Release evidence directory'
   })
+
   try {
     const completedPhases = consumerPhases.map(([name, command, args]) => {
       runCommand(command, args, {
         cwd: prepared.consumerDirectory
       })
+
       return name
     })
     const packageNames = Object.keys(prepared.manifest.dependencies)
@@ -407,11 +436,13 @@ export const verifyCleanConsumer = ({
       packages: installedPackages,
       phases: completedPhases
     })
+
     fs.mkdirSync(resolvedEvidenceDirectory, { recursive: true })
     fs.writeFileSync(
       path.join(resolvedEvidenceDirectory, 'clean-consumer.json'),
       `${JSON.stringify(evidence, null, 2)}\n`
     )
+
     return evidence
   } finally {
     fs.rmSync(prepared.consumerDirectory, {
@@ -429,6 +460,7 @@ export const verifyRegistryConsumer = ({
   runCommand = runCommandDefault
 }) => {
   const resolvedRoot = path.resolve(repositoryRoot)
+
   assertSupportedRuntime({ allowUnsupportedNode })
   const releaseSource = readFrameworkReleaseSource({
     repositoryRoot: resolvedRoot
@@ -451,6 +483,7 @@ export const verifyRegistryConsumer = ({
       runCommand(command, args, {
         cwd: prepared.consumerDirectory
       })
+
       return name
     })
     const packageNames = Object.keys(prepared.manifest.dependencies)
@@ -476,11 +509,13 @@ export const verifyRegistryConsumer = ({
       packages: installedPackages,
       phases: completedPhases
     })
+
     fs.mkdirSync(resolvedEvidenceDirectory, { recursive: true })
     fs.writeFileSync(
       path.join(resolvedEvidenceDirectory, 'registry-only-consumer.json'),
       `${JSON.stringify(evidence, null, 2)}\n`
     )
+
     return evidence
   } finally {
     fs.rmSync(prepared.consumerDirectory, {
@@ -501,11 +536,17 @@ if (isDirectInvocation) {
   )
   let allowUnsupportedNode = false
   let registryOnly = false
+
   for (const arg of process.argv.slice(2)) {
-    if (arg === '--allow-unsupported-node') allowUnsupportedNode = true
-    else if (arg === '--registry') registryOnly = true
-    else throw new Error(`Unknown argument: ${arg}`)
+    if (arg === '--allow-unsupported-node') {
+      allowUnsupportedNode = true
+    } else if (arg === '--registry') {
+      registryOnly = true
+    } else {
+      throw new Error(`Unknown argument: ${arg}`)
+    }
   }
+
   const evidence = registryOnly
     ? verifyRegistryConsumer({
         repositoryRoot,
@@ -515,6 +556,7 @@ if (isDirectInvocation) {
         repositoryRoot,
         allowUnsupportedNode
       })
+
   process.stdout.write(
     `${registryOnly ? 'Registry-only' : 'Clean'} consumer ${evidence.status}: ${evidence.packages.length} packages, ${evidence.phases.length} phases\n`
   )

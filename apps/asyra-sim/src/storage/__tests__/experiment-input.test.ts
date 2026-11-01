@@ -20,8 +20,10 @@ it('shares parsing and conversion across typing, review, acknowledgements and ex
   const reader = new ExperimentInputReader()
   const parse = vi.spyOn(importer, 'prepareTrajectoryCsv')
   const convert = vi.spyOn(importer, 'previewTrajectoryCsv')
+
   try {
     const result = reader.previewTrajectory(input, example.workcell)
+
     expect(result.value).not.toBeNull()
     const definition = {
       ...createDefaultExperimentDraft(example.workcell),
@@ -30,6 +32,7 @@ it('shares parsing and conversion across typing, review, acknowledgements and ex
       trajectoryInput: structuredClone(input)
     }
     const resolved = reader.resolve(definition, example.workcell)
+
     expect(resolved.trajectory).toBe(result.value?.trajectory)
     expect(
       reader.previewTrajectory(
@@ -40,13 +43,18 @@ it('shares parsing and conversion across typing, review, acknowledgements and ex
     expect(parse).toHaveBeenCalledOnce()
     expect(convert).toHaveBeenCalledOnce()
     const next = structuredClone(input)
+
     next.mapping.time.unit = 'ms'
     reader.previewTrajectory(next, example.workcell)
     expect(parse).toHaveBeenCalledOnce()
     expect(convert).toHaveBeenCalledTimes(2)
     const changed = structuredClone(example.workcell)
     const joint = changed.bodies.find((body) => body.joint.kind !== 'fixed')
-    if (!joint) throw new Error('Missing actuated joint')
+
+    if (!joint) {
+      throw new Error('Missing actuated joint')
+    }
+
     joint.joint.max = 0.1
     expect(reader.previewTrajectory(next, changed).value).toBeNull()
     expect(convert).toHaveBeenCalledTimes(3)
@@ -74,6 +82,7 @@ it('keeps authored exclusion errors separate from other persisted settings and r
     exclusionsInput: 'unfinished'
   }
   const reader = new ExperimentInputReader()
+
   expect(() => reader.resolve(definition, example.workcell)).toThrow(
     'Invalid exclusion'
   )
@@ -81,6 +90,7 @@ it('keeps authored exclusion errors separate from other persisted settings and r
     { ...definition, exclusionsInput: '' },
     example.workcell
   )
+
   expect(resolved).not.toHaveProperty('exclusionsInput')
   expect(resolved.scope.excludedPairs).toEqual([])
 })

@@ -190,18 +190,22 @@ const exclusionFields = ['version', 'a', 'b', 'reason'] as const
 
 const positiveRevision = (value: unknown): value is number =>
   Number.isInteger(value) && (value as number) >= 1
+
 const finiteIn = (value: unknown, min: number, max: number): value is number =>
   typeof value === 'number' &&
   Number.isFinite(value) &&
   value >= min &&
   value <= max
+
 const integerIn = (value: unknown, min: number, max: number): value is number =>
   typeof value === 'number' &&
   Number.isInteger(value) &&
   value >= min &&
   value <= max
+
 const validText = (value: unknown, max: number): value is string =>
   typeof value === 'string' && value.trim().length > 0 && value.length <= max
+
 const uniqueIds = (value: unknown): value is readonly string[] =>
   Array.isArray(value) &&
   value.length <= 64 &&
@@ -209,14 +213,18 @@ const uniqueIds = (value: unknown): value is readonly string[] =>
   new Set(value).size === value.length
 
 function validTrajectoryShape(input: unknown): input is Trajectory {
-  if (!hasExactOwnKeys(input, trajectoryFields) || input.version !== 1)
+  if (!hasExactOwnKeys(input, trajectoryFields) || input.version !== 1) {
     return false
+  }
+
   if (
     !Array.isArray(input.keyframes) ||
     input.keyframes.length < 1 ||
     input.keyframes.length > 2000
-  )
+  ) {
     return false
+  }
+
   return input.keyframes.every(
     (frame) =>
       hasExactOwnKeys(frame, keyframeFields) &&
@@ -230,9 +238,18 @@ function validTrajectoryShape(input: unknown): input is Trajectory {
 }
 
 function validSourceUnits(input: unknown): input is TrajectorySourceUnits {
-  if (!hasExactOwnKeys(input, sourceUnitFields)) return false
-  if (input.time !== 'ms' && input.time !== 's') return false
-  if (!isPlainRecord(input.joints)) return false
+  if (!hasExactOwnKeys(input, sourceUnitFields)) {
+    return false
+  }
+
+  if (input.time !== 'ms' && input.time !== 's') {
+    return false
+  }
+
+  if (!isPlainRecord(input.joints)) {
+    return false
+  }
+
   return Object.values(input.joints).every((unit) =>
     ['deg', 'rad', 'mm', 'm'].includes(unit as TrajectoryJointUnit)
   )
@@ -257,10 +274,12 @@ export function validateExperimentDefinition(
     !positiveRevision(input.revision) ||
     !validTrajectoryShape(input.trajectory) ||
     !validSourceUnits(input.sourceUnits)
-  )
+  ) {
     throw new Error('Invalid experiment definition')
+  }
 
   const scope = input.scope
+
   if (
     !hasExactOwnKeys(scope, scopeFields) ||
     !uniqueIds(scope.primaryBodyIds) ||
@@ -271,9 +290,11 @@ export function validateExperimentDefinition(
     scope.excludedPairs.length > 4096 ||
     !uniqueIds(scope.acknowledgedExcludedVisibleBodyIds) ||
     !validText(scope.backgroundNote, 2000)
-  )
+  ) {
     throw new Error('Invalid experiment scope')
-  for (const pair of scope.excludedPairs)
+  }
+
+  for (const pair of scope.excludedPairs) {
     if (
       !hasExactOwnKeys(pair, exclusionFields) ||
       pair.version !== 1 ||
@@ -281,8 +302,10 @@ export function validateExperimentDefinition(
       !validIdentifier(pair.b) ||
       pair.a === pair.b ||
       !validText(pair.reason, 500)
-    )
+    ) {
       throw new Error('Invalid experiment exclusion')
+    }
+  }
 
   if (
     !Array.isArray(input.interval) ||
@@ -290,10 +313,12 @@ export function validateExperimentDefinition(
     !input.interval.every(Number.isFinite) ||
     input.interval[0] < 0 ||
     input.interval[1] < 0
-  )
+  ) {
     throw new Error('Invalid experiment interval')
+  }
 
   const method = input.method
+
   if (
     !hasExactOwnKeys(method, methodFields) ||
     !validIdentifier(method.id) ||
@@ -308,10 +333,13 @@ export function validateExperimentDefinition(
     !finiteIn(method.settings.distanceTolerance, 0.000000001, 1) ||
     !finiteIn(method.settings.timeTolerance, 0.000000001, 1) ||
     !integerIn(method.settings.maxIterations, 1, 256)
-  )
+  ) {
     throw new Error('Invalid experiment method')
+  }
+
   if (Object.hasOwn(method.settings, 'parameters')) {
     const parameters = method.settings.parameters
+
     if (
       !isPlainRecord(parameters) ||
       Object.keys(parameters).length > METHOD_CATALOG_LIMITS.parameters ||
@@ -329,11 +357,13 @@ export function validateExperimentDefinition(
                   character.charCodeAt(0) !== 127
               )))
       )
-    )
+    ) {
       throw new Error('Invalid experiment method parameters')
+    }
   }
 
   const rule = input.rule
+
   if (
     !hasExactOwnKeys(rule, [
       ...ruleFields,
@@ -344,12 +374,16 @@ export function validateExperimentDefinition(
     rule.version !== 1 ||
     !positiveRevision(rule.revision) ||
     !finiteIn(rule.minimumClearance, 0, 20)
-  )
+  ) {
     throw new Error('Invalid experiment rule')
-  if (Object.hasOwn(rule, 'acceptance'))
+  }
+
+  if (Object.hasOwn(rule, 'acceptance')) {
     validateAcceptanceExpression(rule.acceptance)
+  }
 
   const budget = input.budget
+
   if (
     !hasExactOwnKeys(budget, budgetFields) ||
     !integerIn(
@@ -362,8 +396,9 @@ export function validateExperimentDefinition(
       EXPERIMENT_RESOURCE_PROFILE.minDurationMs,
       EXPERIMENT_RESOURCE_PROFILE.maxDurationMs
     )
-  )
+  ) {
     throw new Error('Invalid experiment budget')
+  }
 }
 
 export function validExperimentDefinition(
@@ -371,6 +406,7 @@ export function validExperimentDefinition(
 ): input is ExperimentDefinition {
   try {
     validateExperimentDefinition(input)
+
     return true
   } catch {
     return false

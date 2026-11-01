@@ -23,6 +23,7 @@ const Strokes = () => {
     }
 
     const strokeId = strokes[index]?.ids[0]
+
     if (ownerElementId && strokeId) {
       strokeApis.removeStroke(ownerElementId, strokeId)
     }

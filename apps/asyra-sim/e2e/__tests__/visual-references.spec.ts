@@ -9,6 +9,7 @@ import {
 } from '../../src/engine/glb/__tests__/fixtures'
 
 const fixture = new MechanicalMesh()
+
 fixture.block(0xeeeeee, [0, 0, 0], [0.1, 0.1, 0.1])
 const bytes = Buffer.from(fixture.toGlb('closed-original-part'))
 const digest = createHash('sha256').update(bytes).digest('hex')
@@ -18,11 +19,13 @@ test('a large valid GLB requires an explicit resource acknowledgement without ma
 }, info) => {
   const source = triangleFixture(),
     padded = new Uint8Array(9 * 1024 * 1024)
+
   padded.set(source.binary)
   source.json.buffers[0].byteLength = padded.byteLength
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
   const depth = await page.getByTestId('history-depth').textContent()
+
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
   await page.locator('.glb-preview > summary').click()
   await page.getByLabel('Choose original part GLB').setInputFiles({
@@ -33,6 +36,7 @@ test('a large valid GLB requires an explicit resource acknowledgement without ma
   await expect(page.getByLabel('Original part source review')).toBeFocused()
   await expect(page.getByLabel('Original part source review')).toBeInViewport()
   const acknowledge = page.getByLabel('Visual memory warning acknowledgement')
+
   await expect(acknowledge).toBeVisible()
   await expect(
     page.getByRole('button', { name: 'Preview placement in 3D', exact: true })
@@ -69,6 +73,7 @@ test('a large valid GLB requires an explicit resource acknowledgement without ma
     })
   })
 })
+
 async function chooseVisual(page: Page) {
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
   await page.locator('.glb-preview > summary').click()
@@ -97,6 +102,7 @@ test('keeps an open source visible but blocks formal solid analysis without allo
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
   await page.locator('.glb-preview > summary').click()
   const source = triangleFixture()
+
   await page.getByLabel('Choose original part GLB').setInputFiles({
     name: 'open.glb',
     mimeType: 'model/gltf-binary',
@@ -112,6 +118,7 @@ test('keeps an open source visible but blocks formal solid analysis without allo
     .getByRole('button', { name: 'Accept original part', exact: true })
     .click()
   const workers: string[] = []
+
   page.on('worker', (worker) => workers.push(worker.url()))
   await page.getByRole('button', { name: 'Run analysis', exact: true }).click()
   await expect(page.getByTestId('preflight-report')).toContainText(
@@ -125,18 +132,29 @@ test('keeps an open source visible but blocks formal solid analysis without allo
     .click()
   await expect(page.getByLabel('Choose original part GLB')).toBeFocused()
 })
+
 async function exportProject(page: Page) {
   await page.getByRole('button', { name: 'Projects', exact: true }).click()
   const pending = page.waitForEvent('download')
+
   await page
     .getByRole('button', { name: 'Export project', exact: true })
     .click()
   const stream = await (await pending).createReadStream()
-  if (!stream) throw new Error('Missing portable download')
+
+  if (!stream) {
+    throw new Error('Missing portable download')
+  }
+
   const chunks: Buffer[] = []
-  for await (const chunk of stream) chunks.push(Buffer.from(chunk))
+
+  for await (const chunk of stream) {
+    chunks.push(Buffer.from(chunk))
+  }
+
   return JSON.parse(Buffer.concat(chunks).toString('utf8'))
 }
+
 async function importProject(page: Page, payload: unknown) {
   await page
     .getByLabel('Portable project file', { exact: true })
@@ -157,20 +175,24 @@ test('previews, accepts, edits, undoes and reopens complete original part geomet
 }, info) => {
   const errors: string[] = [],
     external: string[] = []
+
   page.on('pageerror', (error) => errors.push(error.message))
   page.on('request', (request) => {
     if (
       /^https?:/.test(request.url()) &&
       new URL(request.url()).origin !==
         new URL(String(info.project.use.baseURL)).origin
-    )
+    ) {
       external.push(request.url())
+    }
   })
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
   const depth = await page.getByTestId('history-depth').textContent()
+
   await chooseVisual(page)
   const initialDepth = await readHistoryDepth(page)
+
   await expect(page.getByTestId('history-depth')).toHaveText(depth ?? '')
   await page.locator('.glb-preview').scrollIntoViewIfNeeded()
   await page.screenshot({ path: info.outputPath('visual-preview.png') })
@@ -195,6 +217,7 @@ test('previews, accepts, edits, undoes and reopens complete original part geomet
     accepted = await canvas.screenshot({
       path: info.outputPath('accepted-original-part.png')
     })
+
   await page.getByLabel('Wireframe', { exact: true }).check()
   expect((await canvas.screenshot()).equals(accepted)).toBe(false)
   await page.getByLabel('Wireframe', { exact: true }).uncheck()
@@ -220,10 +243,13 @@ test('previews, accepts, edits, undoes and reopens complete original part geomet
     name: 'Original part 2',
     exact: true
   })
-  for (const axis of ['X', 'Y', 'Z'])
+
+  for (const axis of ['X', 'Y', 'Z']) {
     await expect(
       reference.getByLabel(`Visual scale ${axis}`, { exact: true })
     ).toHaveValue('1')
+  }
+
   await reference.getByLabel('Visual scale X', { exact: true }).fill('0.5')
   await reference.getByLabel('Visual scale X', { exact: true }).press('Enter')
   await expect(
@@ -235,16 +261,19 @@ test('previews, accepts, edits, undoes and reopens complete original part geomet
   await reference.scrollIntoViewIfNeeded()
   await page.screenshot({ path: info.outputPath('visual-binding.png') })
   const payload = await exportProject(page)
+
   expect(payload.visualSources).toHaveLength(12)
   const sourceIndex = payload.visualSources.findIndex(
     (source: { assetId: string }) => source.assetId === digest
   )
+
   expect(sourceIndex).toBeGreaterThanOrEqual(0)
   expect(
     Buffer.from(payload.visualSources[sourceIndex].base64, 'base64')
   ).toEqual(bytes)
   const damaged = structuredClone(payload),
     invalid = Buffer.from(bytes)
+
   invalid[0] = 0
   damaged.visualSources[sourceIndex].base64 = invalid.toString('base64')
   await importProject(page, damaged)
@@ -299,6 +328,7 @@ test('keeps a historical-only visual source available for replay after portable 
   page
 }, info) => {
   const errors: string[] = []
+
   page.on('pageerror', (error) => errors.push(error.message))
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
@@ -322,6 +352,7 @@ test('keeps a historical-only visual source available for replay after portable 
     .getByRole('button', { name: 'Remove original part 2', exact: true })
     .click()
   const payload = await exportProject(page)
+
   expect(
     payload.visualSources.some(
       (source: { assetId: string }) => source.assetId === digest
@@ -340,6 +371,7 @@ test('keeps a historical-only visual source available for replay after portable 
     .getByRole('button', { name: 'Runs & compare', exact: true })
     .click()
   const library = page.getByRole('dialog', { name: 'Runs and comparison' })
+
   await library.locator('.evidence-pair > summary').first().click()
   await library
     .getByRole('button', { name: 'Replay pair', exact: true })
@@ -373,13 +405,16 @@ test('shared transform preview rotates and scales an original part without histo
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
   const depth = await readHistoryDepth(page)
+
   await chooseVisual(page)
   const preview = page.locator('.glb-preview')
   const scale = preview.getByLabel('Visual scale X', { exact: true })
+
   await scale.fill('2')
   await scale.press('Enter')
   await preview.getByText('Visual rotation', { exact: true }).click()
   const angle = preview.getByLabel('Visual rotation (deg)', { exact: true })
+
   await angle.fill('45')
   await angle.press('Enter')
   await preview
@@ -399,6 +434,7 @@ test('shared transform preview rotates and scales an original part without histo
   const source = payload.visualSources.find(
     (item: { assetId: string }) => item.assetId === digest
   )
+
   expect(Buffer.from(source.base64, 'base64')).toEqual(bytes)
   await page
     .getByRole('button', { name: 'Close projects', exact: true })
@@ -420,6 +456,7 @@ test('shared transform preview rotates and scales an original part without histo
     name: 'Original part 2',
     exact: true
   })
+
   await expect(
     binding.getByLabel('Visual scale X', { exact: true })
   ).toHaveValue('2')
@@ -431,6 +468,7 @@ test('shared transform preview rotates and scales an original part without histo
     path: info.outputPath('rotated-scaled-reopened.png')
   })
   const surface = page.getByTestId('workcell-canvas').locator('canvas')
+
   await surface.hover({ position: { x: 240, y: 440 } })
   await page.mouse.wheel(0, -450)
   await page.evaluate(

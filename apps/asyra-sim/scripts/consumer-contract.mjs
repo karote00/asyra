@@ -7,24 +7,35 @@ export const consumerPortableFiles = [
 ]
 
 export function consumerManifest(app, root, packages) {
-  if (app.engines?.node !== '24.x' || app.packageManager !== 'yarn@4.3.1')
+  if (app.engines?.node !== '24.x' || app.packageManager !== 'yarn@4.3.1') {
     throw new Error(
       'The consumer requires the declared Node 24 / Yarn 4.3.1 toolchain.'
     )
+  }
+
   const packed = new Map(packages.map((item) => [item.packageName, item]))
+
   const convert = (dependencies = {}) =>
     Object.fromEntries(
       Object.entries(dependencies).map(([name, version]) => {
         if (name.startsWith('@asyra/')) {
           const item = packed.get(name)
-          if (!item) throw new Error(`Missing packed dependency: ${name}`)
+
+          if (!item) {
+            throw new Error(`Missing packed dependency: ${name}`)
+          }
+
           return [name, `file:../framework/${path.basename(item.tarballPath)}`]
         }
-        if (/workspace:|file:|link:|portal:|patch:/.test(version))
+
+        if (/workspace:|file:|link:|portal:|patch:/.test(version)) {
           throw new Error(`Unsupported external dependency source: ${name}`)
+        }
+
         return [name, version]
       })
     )
+
   return {
     name: app.name,
     version: app.version,
@@ -60,6 +71,7 @@ const builtinCompatibilityLocator =
 
 function registryRecords(lockfile, rejectPrivate = false) {
   const result = new Map()
+
   for (const block of lockfile.split('\n\n')) {
     for (const [, resolution] of block.matchAll(
       /^ {2}resolution: "([^"]+)"$/gm
@@ -67,21 +79,23 @@ function registryRecords(lockfile, rejectPrivate = false) {
       if (
         registryLocator.test(resolution) ||
         builtinCompatibilityLocator.test(resolution)
-      )
+      ) {
         result.set(
           resolution,
           block.match(/^ {2}checksum: (.+)$/m)?.[1] ?? null
         )
-      else if (
+      } else if (
         rejectPrivate &&
         resolution !== '@asyra/asyra-sim@workspace:.' &&
         /@(?:workspace|link|portal|patch):/.test(resolution)
-      )
+      ) {
         throw new Error(
           'The consumer resolves another workspace or private source.'
         )
+      }
     }
   }
+
   return result
 }
 
@@ -89,29 +103,37 @@ function registryRecords(lockfile, rejectPrivate = false) {
 export function assertFrozenRegistryLock(source, consumer) {
   const original = registryRecords(source),
     actual = registryRecords(consumer, true)
-  if (!actual.size)
+
+  if (!actual.size) {
     throw new Error('The consumer has no registry dependency evidence.')
-  for (const [identity, checksum] of actual) {
-    if (!original.has(identity) || original.get(identity) !== checksum)
-      throw new Error(`Registry dependency or integrity drift: ${identity}`)
   }
+
+  for (const [identity, checksum] of actual) {
+    if (!original.has(identity) || original.get(identity) !== checksum) {
+      throw new Error(`Registry dependency or integrity drift: ${identity}`)
+    }
+  }
+
   return actual.size
 }
 
 export function assertOwnedPaths(directory, filenames) {
   const root = realpathSync(directory)
+
   for (const filename of filenames) {
     const absolute = realpathSync(filename)
     const relative = path.relative(root, absolute)
+
     if (
       !relative ||
       relative.startsWith(`..${path.sep}`) ||
       relative === '..' ||
       path.isAbsolute(relative)
-    )
+    ) {
       throw new Error(
         `Consumer dependency escaped its own directory: ${filename}`
       )
+    }
   }
 }
 
@@ -123,19 +145,29 @@ export function assertInstalledPackages(directory, packages) {
       item.packageName,
       'package.json'
     )
+
     // Only packages reachable by the consumer must be installed.
     try {
       readFileSync(filename)
     } catch (error) {
-      if (error.code === 'ENOENT') continue
+      if (error.code === 'ENOENT') {
+        continue
+      }
+
       throw error
     }
+
     assertOwnedPaths(directory, [filename])
     const manifest = JSON.parse(readFileSync(filename, 'utf8'))
-    if (manifest.name !== item.packageName || manifest.version !== item.version)
+
+    if (
+      manifest.name !== item.packageName ||
+      manifest.version !== item.version
+    ) {
       throw new Error(
         `Installed package identity mismatch: ${item.packageName}`
       )
+    }
   }
 }
 

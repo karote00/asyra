@@ -36,11 +36,15 @@ export const createTestDocumentIdentity = (
   const values = new URLSearchParams(
     search.startsWith('?') ? search.slice(1) : search
   )
+
   if (values.has('fileId')) {
     throw new Error('createTestDocumentIdentity owns the isolated fileId')
   }
+
   const fileId = `e2e-${randomUUID()}`
+
   values.set('fileId', fileId)
+
   return Object.freeze({
     fileId,
     url: `/?${values.toString()}`
@@ -52,14 +56,17 @@ export const createTestDocumentURL = (search = ''): string =>
 
 export const getCurrentDocumentFileId = (page: Page): string => {
   const fileId = new URL(page.url()).searchParams.get('fileId')?.trim()
+
   if (!fileId) {
     throw new Error('The current page does not have a fileId')
   }
+
   return fileId
 }
 
 export const captureBrowserErrors = (page: Page): void => {
   const browserErrors: string[] = []
+
   browserErrorsByPage.set(page, browserErrors)
 
   page.on('pageerror', (error) => {
@@ -81,6 +88,7 @@ export const startDocumentPublicationCapture = async (
 ): Promise<void> => {
   await page.evaluate(async (captureKey) => {
     const runtime = await import('../src/testing/runtime-access')
+
     runtime.startDocumentPublicationCapture(captureKey)
   }, key)
 }
@@ -91,6 +99,7 @@ export const stopDocumentPublicationCaptureAndReadDecodeFailures = async (
 ) =>
   page.evaluate(async (captureKey) => {
     const runtime = await import('../src/testing/runtime-access')
+
     try {
       return runtime.readDocumentPublicationDecodeFailures(captureKey)
     } finally {
@@ -110,6 +119,7 @@ export async function getCanvasPosition(
   relativeY = 0.5
 ): Promise<{ x: number; y: number }> {
   const viewportSize = page.viewportSize()
+
   if (!viewportSize) {
     throw new Error('Viewport size not available')
   }
@@ -135,6 +145,7 @@ export async function clickCanvas(
   relativeY = 0.5
 ) {
   const pos = await getCanvasPosition(page, relativeX, relativeY)
+
   await page.mouse.click(pos.x, pos.y)
 }
 
@@ -183,6 +194,7 @@ export async function resetCanvas(page: Page) {
     const elements = (
       await import('../src/testing/runtime-access')
     ).core?.deps?.sceneTree?.getAllElements?.()
+
     return (
       elements instanceof Map &&
       Array.from(elements.values()).every(
@@ -201,9 +213,11 @@ export async function resetCanvas(page: Page) {
     const elements = (
       await import('../src/testing/runtime-access')
     ).core?.deps?.sceneTree?.getAllElements?.()
+
     if (!(elements instanceof Map)) {
       return false
     }
+
     return Array.from(elements.values()).every(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (element: any) => element.get?.('type') === 'workspace'
@@ -217,8 +231,10 @@ export const getClientPersistenceEvidence = (page: Page) =>
       (await import('../src/testing/runtime-access'))
         .getActiveAiDrawingPerformanceProfile()
         ?.snapshot().phases ?? []
+
     const count = (name: string) =>
       phases.filter((phase) => phase.name === name).length
+
     return {
       captureCount: count('core:persistence-capture'),
       saveCount: count('core:persistence-save')
@@ -234,14 +250,22 @@ const sortDocumentValue = (value: unknown): unknown => {
   if (Array.isArray(value)) {
     return value.map(sortDocumentValue)
   }
+
   if (typeof value !== 'object' || value === null) {
     return value
   }
+
   return Object.fromEntries(
     Object.entries(value as Record<string, unknown>)
       .sort(([left], [right]) => {
-        if (left < right) return -1
-        if (left > right) return 1
+        if (left < right) {
+          return -1
+        }
+
+        if (left > right) {
+          return 1
+        }
+
         return 0
       })
       .map(([key, item]) => [key, sortDocumentValue(item)])
@@ -250,6 +274,7 @@ const sortDocumentValue = (value: unknown): unknown => {
 
 const createDocumentDigest = (documentState: unknown): DocumentDigest => {
   const serialized = JSON.stringify(sortDocumentValue(documentState))
+
   return {
     byteLength: Buffer.byteLength(serialized),
     sha256: createHash('sha256').update(serialized).digest('hex')
@@ -267,29 +292,46 @@ export async function getCoreDocumentDigest(
 ): Promise<DocumentDigest | null> {
   return page.evaluate(async (expectedElementCount) => {
     const { core } = await import('../src/testing/runtime-access')
+
     // A different count cannot match the full document. Avoid blocking remote
     // replay with save/clone/hash work while that cheap precondition is false.
     if (
       expectedElementCount !== undefined &&
       core.getCanonicalElementCount() !== expectedElementCount
-    )
+    ) {
       return null
+    }
+
     const data = await core.save()
+
     // Keep the browser oracle independent of the Node persistence digest.
     // Only the digest crosses the automation bridge, never the full document.
     const sortValue = (value: unknown): unknown => {
-      if (Array.isArray(value)) return value.map(sortValue)
-      if (typeof value !== 'object' || value === null) return value
+      if (Array.isArray(value)) {
+        return value.map(sortValue)
+      }
+
+      if (typeof value !== 'object' || value === null) {
+        return value
+      }
+
       return Object.fromEntries(
         Object.entries(value as Record<string, unknown>)
           .sort(([left], [right]) => {
-            if (left < right) return -1
-            if (left > right) return 1
+            if (left < right) {
+              return -1
+            }
+
+            if (left > right) {
+              return 1
+            }
+
             return 0
           })
           .map(([key, item]) => [key, sortValue(item)])
       )
     }
+
     const bytes = new TextEncoder().encode(
       JSON.stringify(
         sortValue({
@@ -300,6 +342,7 @@ export async function getCoreDocumentDigest(
       )
     )
     const hash = await crypto.subtle.digest('SHA-256', bytes)
+
     return {
       byteLength: bytes.byteLength,
       sha256: Array.from(new Uint8Array(hash), (value) =>
@@ -319,11 +362,13 @@ export async function getPersistedDocumentCheckpoint(
     ),
     { headers: { accept: 'application/json' } }
   )
+
   if (!response.ok) {
     throw new Error(
       `Document database load failed with status ${String(response.status)}`
     )
   }
+
   return (await response.json()) as PersistedDocumentCheckpoint
 }
 
@@ -331,14 +376,17 @@ export async function getPersistedDocumentDigest(
   fileId: string
 ): Promise<DocumentDigest | null> {
   const payload = await getPersistedDocumentCheckpoint(fileId)
+
   if (payload.checkpoint === undefined || payload.checkpoint === null) {
     return null
   }
+
   const documentState = {
     version: payload.checkpoint.version,
     sceneTree: payload.checkpoint.sceneTree,
     props: payload.checkpoint.props
   }
+
   return createDocumentDigest(documentState)
 }
 
@@ -352,6 +400,7 @@ export function parseStrokeDashAndGapInput(pattern: string): {
     .filter((entry) => entry.length > 0)
 
   const dash = entries[0] ?? '20'
+
   return {
     dash,
     gap: entries[1] ?? dash
@@ -426,6 +475,7 @@ export async function getSelectedElementRect(
   return page.evaluate(async () => {
     const core = (await import('../src/testing/runtime-access')).core
     const selectedId = core?.deps?.selection?.getElementSelectionIds?.()?.[0]
+
     if (!selectedId) {
       return null
     }
@@ -477,6 +527,7 @@ export async function getSelectedElementClientCenter(
   page: Page
 ): Promise<{ x: number; y: number } | null> {
   const rect = await getSelectedElementRect(page)
+
   if (!rect) {
     return null
   }
@@ -485,6 +536,7 @@ export async function getSelectedElementClientCenter(
     const render = (await import('../src/testing/runtime-access')).core?.deps
       ?.render
     const renderElement = render?.getElementById?.(id)
+
     if (!renderElement) {
       return null
     }
@@ -496,6 +548,7 @@ export async function getSelectedElementClientCenter(
     const canvasBounds = render.app?.canvas?.getBoundingClientRect?.()
     const x = center.x + (canvasBounds?.left ?? 0)
     const y = center.y + (canvasBounds?.top ?? 0)
+
     if (!Number.isFinite(x) || !Number.isFinite(y)) {
       return null
     }
@@ -514,6 +567,7 @@ export async function dragSelectedElementBy(
   steps = 20
 ) {
   const center = await getSelectedElementClientCenter(page)
+
   if (!center) {
     throw new Error('No selected element center available for drag')
   }
@@ -529,11 +583,13 @@ export const getUndoHistoryDepth = async (page: Page): Promise<number> =>
     const performanceProfile = (
       await import('../src/testing/runtime-access')
     ).getActiveAiDrawingPerformanceProfile()
+
     if (performanceProfile) {
       return performanceProfile.readHistoryDepth()
     }
 
     const core = (await import('../src/testing/runtime-access')).core
+
     return core?.deps?.factory?.transact?.undoStack?.length ?? 0
   })
 
@@ -542,6 +598,7 @@ export const getTransactionSnapshot = async (page: Page) =>
     const core = (await import('../src/testing/runtime-access')).core
     const transact = core?.deps?.factory?.transact
     const undoStack = transact?.undoStack ?? []
+
     return {
       undoCount: undoStack.length,
       isTransacting: transact?.isTransacting ?? 0
@@ -555,6 +612,7 @@ export const setSelectedGradient = async (
   await page.evaluate(async (nextGradient) => {
     const core = (await import('../src/testing/runtime-access')).core
     const selectedId = core?.deps?.selection?.getElementSelectionIds?.()?.[0]
+
     if (!selectedId) {
       return
     }
@@ -562,12 +620,15 @@ export const setSelectedGradient = async (
     const element = core?.deps?.sceneTree?.getElementById?.(selectedId)
     const computed = element?.getAllComputedData?.() ?? {}
     const fill = computed?.fills?.[0]
+
     if (!fill?.id || !nextGradient) {
       return
     }
+
     if (typeof core?.patchElementProperties !== 'function') {
       throw new Error('Typed element-property patch API is unavailable')
     }
+
     core.patchElementProperties(
       [
         {
@@ -598,6 +659,7 @@ export { undo, redo } from './execution-evidence'
 export async function hasSelectedElement(page: Page): Promise<boolean> {
   const propertiesPanel = getPropertiesPanel(page)
   const positionInput = propertiesPanel.getByTestId('prop-x')
+
   return await positionInput.isVisible()
 }
 
@@ -607,6 +669,7 @@ export async function hasSelectedElement(page: Page): Promise<boolean> {
 export async function getElementCount(page: Page): Promise<number> {
   const contentsPanel = getContentsPanel(page)
   const elements = contentsPanel.locator('[data-layer-element="true"]')
+
   return await elements.count()
 }
 
@@ -625,6 +688,7 @@ export async function pressGroupCommandShortcut(
     /mac/i.test(navigator.platform) ? 'Meta' : 'Control'
   )
   const shift = command === 'ungroup' ? 'Shift+' : ''
+
   await page.keyboard.press(`${primaryModifier}+${shift}G`)
 }
 
@@ -648,6 +712,7 @@ export function getToolbar(page: Page) {
 export async function getZoomLevel(page: Page): Promise<number> {
   const zoomDisplay = page.getByTestId('zoom-level')
   const valueStr = (await zoomDisplay.getAttribute('data-value')) ?? '1'
+
   return parseFloat(valueStr) * 100
 }
 
@@ -665,12 +730,15 @@ export async function getActiveTool(
   if ((await selectTool.getAttribute('data-active')) === 'true') {
     return 'select'
   }
+
   if ((await rectangleTool.getAttribute('data-active')) === 'true') {
     return 'rectangle'
   }
+
   if ((await ovalTool.getAttribute('data-active')) === 'true') {
     return 'oval'
   }
+
   if ((await penTool.getAttribute('data-active')) === 'true') {
     return 'pen'
   }
@@ -697,6 +765,7 @@ export async function createVectorPath(
   await page.waitForFunction(async () => {
     const core = (await import('../src/testing/runtime-access')).core
     const elements = core?.deps?.sceneTree?.getAllElements?.()
+
     if (!(elements instanceof Map)) {
       return false
     }

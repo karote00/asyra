@@ -25,11 +25,13 @@ export const resolveCooperativeRenderMaxItemsPerSlice = (
 ): number => {
   const maxItemsPerSlice =
     options.maxItemsPerSlice ?? DEFAULT_COOPERATIVE_RENDER_MAX_ITEMS_PER_SLICE
+
   if (!Number.isSafeInteger(maxItemsPerSlice) || maxItemsPerSlice <= 0) {
     throw new Error(
       'Cooperative render maxItemsPerSlice must be a positive safe integer.'
     )
   }
+
   return maxItemsPerSlice
 }
 
@@ -39,6 +41,7 @@ export const yieldToCooperativeHost = (): Promise<void> => {
       scheduler?: CooperativeTaskScheduler
     }
   ).scheduler
+
   if (typeof scheduler?.yield === 'function') {
     return scheduler.yield()
   }
@@ -46,11 +49,13 @@ export const yieldToCooperativeHost = (): Promise<void> => {
   if (typeof globalThis.MessageChannel === 'function') {
     return new Promise((resolve) => {
       const channel = new globalThis.MessageChannel()
+
       channel.port1.onmessage = () => {
         channel.port1.close()
         channel.port2.close()
         resolve()
       }
+
       channel.port2.postMessage(undefined)
     })
   }

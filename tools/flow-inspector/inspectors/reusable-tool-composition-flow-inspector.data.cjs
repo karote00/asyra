@@ -317,13 +317,15 @@
     invariants: [],
     acceptanceContracts: []
   }
+
   const freeze = (value) => {
     if (value && typeof value === 'object') {
       Object.values(value).forEach(freeze)
       Object.freeze(value)
     }
   }
+
   freeze(data)
   globalThis.FLOW_INSPECTOR_DATA = data
-  if (typeof module !== 'undefined') module.exports = data
+  if (typeof module !== 'undefined') {module.exports = data}
 })()

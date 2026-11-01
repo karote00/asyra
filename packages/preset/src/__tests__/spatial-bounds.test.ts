@@ -6,6 +6,7 @@ import {
   readSpatialDescriptor,
   type SpatialDescriptor
 } from '../spatial-contract.js'
+
 const mesh = (patch: Record<string, unknown> = {}) => {
   const value = readSpatialDescriptor({
     kind: 'mesh',
@@ -18,11 +19,17 @@ const mesh = (patch: Record<string, unknown> = {}) => {
     selectable: true,
     ...patch
   })
-  if (value.kind !== 'mesh') throw new Error('Expected mesh')
+
+  if (value.kind !== 'mesh') {
+    throw new Error('Expected mesh')
+  }
+
   return value
 }
+
 it('bounds primitives, empty scenes and current mesh/instance transforms using corner equivalence', () => {
   const owner = new SpatialBoundsOwner()
+
   expect(owner.measure([])).toBeNull()
   for (const angle of [0, 0.6, Math.PI / 2]) {
     const q = new Quaternion().setFromAxisAngle(
@@ -48,10 +55,11 @@ it('bounds primitives, empty scenes and current mesh/instance transforms using c
       ]
     })
     const expected = new Box3()
-    for (const instance of value.instances ?? [])
-      for (const x of [-1, 1])
-        for (const y of [-2, 2])
-          for (const z of [-3, 3])
+
+    for (const instance of value.instances ?? []) {
+      for (const x of [-1, 1]) {
+        for (const y of [-2, 2]) {
+          for (const z of [-3, 3]) {
             expected.expandByPoint(
               new Vector3(x, y, z)
                 .multiply(new Vector3(...(instance.scale ?? [1, 1, 1])))
@@ -61,8 +69,17 @@ it('bounds primitives, empty scenes and current mesh/instance transforms using c
                 .applyQuaternion(q)
                 .add(new Vector3(...value.position))
             )
+          }
+        }
+      }
+    }
+
     const result = owner.measure([value])
-    if (!result) throw new Error('Missing bounds')
+
+    if (!result) {
+      throw new Error('Missing bounds')
+    }
+
     result.min.forEach((n, i) =>
       expect(n).toBeCloseTo(expected.min.toArray()[i])
     )
@@ -70,6 +87,7 @@ it('bounds primitives, empty scenes and current mesh/instance transforms using c
       expect(n).toBeCloseTo(expected.max.toArray()[i])
     )
   }
+
   expect(
     owner.measure([mesh({ shape: { kind: 'sphere', radius: 2 } })])
   ).toEqual({ min: [-2, -2, -2], max: [2, 2, 2] })
@@ -98,12 +116,14 @@ it('scans admitted local vertices once, with bounded corner work for repeated pl
   })
   const owner = new SpatialBoundsOwner()
   const min = vi.spyOn(Math, 'min')
+
   try {
     owner.measure([value])
     expect(min.mock.calls.length).toBeGreaterThanOrEqual(positions.length)
     min.mockClear()
     const moved = mesh({ ...value, position: [4, 2, 1] })
     const actual = owner.measure([moved])
+
     expect(min.mock.calls.length).toBeLessThanOrEqual(48)
     min.mockRestore()
     expect(actual).toEqual(new SpatialBoundsOwner().measure([moved]))
@@ -111,6 +131,7 @@ it('scans admitted local vertices once, with bounded corner work for repeated pl
       ...moved,
       shape: { ...value.shape, positions: positions.map((n) => n * 2) }
     })
+
     expect(owner.measure([changed])).toEqual(
       new SpatialBoundsOwner().measure([changed])
     )
@@ -128,7 +149,11 @@ it('does not trust frozen caller identities, keeps results immutable and validat
   } as SpatialDescriptor & { kind: 'mesh' }
   const owner = new SpatialBoundsOwner()
   const before = owner.measure([value])
-  if (!before) throw new Error('Missing bounds')
+
+  if (!before) {
+    throw new Error('Missing bounds')
+  }
+
   expect(Object.isFrozen(before.min)).toBe(true)
   positions[3] = 8
   expect(owner.measure([value])?.max[0]).toBe(8)

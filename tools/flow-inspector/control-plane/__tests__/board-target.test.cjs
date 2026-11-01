@@ -10,16 +10,19 @@ const { startServer } = require('../server.cjs')
 test(
   'flow target work decomposition operates on desktop tablet and narrow board with retained audit',
   { timeout: 60000 },
-  async () => {
+  async (t) => {
     const { randomUUID } = require('node:crypto')
     const { LOCAL_ACTOR } = require('../service.cjs')
     const root = path.resolve(__dirname, '../../../..')
     const parent = path.join(root, 'tmp/flow-inspector/visual-review')
+
     fs.mkdirSync(parent, { recursive: true })
     const artifacts = fs.mkdtempSync(path.join(parent, 'targets-')),
       temporary = path.join(artifacts, 'browser-tmp')
+
     fs.mkdirSync(temporary)
     const previous = process.env.TMPDIR
+
     process.env.TMPDIR = process.env.RUNNER_TEMP || temporary
     let browser
     let fixturePR = 0
@@ -30,12 +33,15 @@ test(
         deliveryAdapter: {
           repository: 'offline/fixture',
           base: 'main',
+
           inspect: async () => ({
             baseSha: 'a'.repeat(40),
             baseTree: 'b'.repeat(40)
           }),
+
           deliver: async (preview, checkpoint) => {
             await checkpoint('create-pr', { expectedHead: 'c'.repeat(40) })
+
             return {
               number: ++fixturePR,
               url: 'https://github.com/offline/fixture/pull/' + fixturePR,
@@ -44,6 +50,7 @@ test(
               draft: false
             }
           },
+
           observe: async () => ({
             state: 'merged',
             headSha: 'c'.repeat(40),
@@ -53,6 +60,7 @@ test(
         }
       }
     })
+
     try {
       browser = await chromium.launch({
         channel: process.env.FLOW_PROOF_BROWSER_CHANNEL || undefined,
@@ -61,8 +69,17 @@ test(
       const page = await browser.newPage({
         viewport: { width: 1600, height: 1100 }
       })
+
+      page.on('response', async (response) => {
+        if (response.status() >= 400) {
+          t.diagnostic(
+            `${response.status()} ${response.url()}: ${await response.text()}`
+          )
+        }
+      })
       await page.goto(server.origin + '/transaction-atomicity')
-      const frame = page.frameLocator('iframe')
+      const frame = page
+
       await frame.locator('[data-step-id="finalize-transaction-state"]').click()
       await frame.locator('#proof-controls > summary').click()
       await frame.locator('#target-controls > summary').click()
@@ -111,13 +128,16 @@ test(
         },
         LOCAL_ACTOR
       )
+
       await server.service.waitTask(taskId)
+
       const prepareReview = async (taskId) => {
         const preview = await server.service.reviewTask(
           taskId,
           { action: 'prepare' },
           LOCAL_ACTOR
         )
+
         await server.service.reviewTask(
           taskId,
           {
@@ -128,6 +148,7 @@ test(
           LOCAL_ACTOR
         )
       }
+
       if (process.platform === 'darwin') {
         assert.equal(
           server.service.getTask(taskId).verificationStatus,
@@ -135,6 +156,7 @@ test(
         )
         await prepareReview(taskId)
       }
+
       await frame.locator('#refresh').click()
       await frame.getByText('Connect an admitted task', { exact: true }).click()
       await frame.locator('#target-link-task').selectOption(taskId)
@@ -177,9 +199,14 @@ test(
         },
         LOCAL_ACTOR
       )
+
       await server.service.waitTask(secondTask)
-      if (process.platform === 'darwin') await prepareReview(secondTask)
+      if (process.platform === 'darwin') {
+        await prepareReview(secondTask)
+      }
+
       const prepareButton = frame.locator('#target-items button').first()
+
       await prepareButton.focus()
       await frame.locator('#refresh').evaluate((el) => el.click())
       await expect(
@@ -204,16 +231,19 @@ test(
           'https://github.com/offline/fixture/pull/2'
         )
       }
+
       for (const [name, width, height] of [
         ['desktop', 1600, 1100],
         ['tablet', 820, 1180],
         ['narrow', 390, 844]
       ]) {
         await page.setViewportSize({ width, height })
-        if (width <= 900 && (await page.locator('.sidebar').isVisible()))
+        if (width <= 900 && (await page.locator('.sidebar').isVisible())) {
           await page
             .getByRole('button', { name: 'Close Inspector catalog' })
             .click()
+        }
+
         await frame.locator('#target-controls').scrollIntoViewIfNeeded()
         assert.ok(
           await frame
@@ -224,12 +254,15 @@ test(
           .locator('#target-items')
           .screenshot({ path: path.join(artifacts, name + '-work.png') })
         const observations = frame.locator('#target-observations > article')
+
         for (let index = 0; index < (await observations.count()); index++) {
           const observation = observations.nth(index)
+
           await observation.scrollIntoViewIfNeeded()
           const top = await observation.evaluate(
             (el) => el.getBoundingClientRect().top
           )
+
           await frame.locator('#detail').evaluate((el, delta) => {
             el.scrollTop += delta
           }, top - 64)
@@ -238,17 +271,20 @@ test(
             path: path.join(artifacts, name + '-observation-' + index + '.png')
           })
         }
+
         await frame.locator('#target-result').scrollIntoViewIfNeeded()
         await page.screenshot({ path: path.join(artifacts, name + '.png') })
         await expect(frame.locator('.step-card')).toHaveCount(7)
         await expect(frame.locator('[data-route-id]')).toHaveCount(10)
       }
+
       const viewport = frame.locator('.flow-viewport')
       const position = await viewport.evaluate((el) => [
         el.scrollLeft,
         el.scrollTop,
         el.dataset.zoomScale
       ])
+
       await frame.getByRole('button', { name: 'Close step details' }).click()
       await expect(viewport).toBeVisible()
       assert.deepEqual(
@@ -267,6 +303,7 @@ test(
       await expect(frame.locator('#target-result')).toContainText('Revision 5')
       const current = server.service.getTarget(id)
       const allocation = structuredClone(current.history.at(-1).state)
+
       allocation.works.forEach((w) => {
         delete w.taskIds
       })
@@ -287,6 +324,7 @@ test(
           response.request().method() === 'GET' &&
           response.ok()
       )
+
       await frame.locator('#refresh').click()
       await refreshed
       // Observe the fetched record; refreshing must not replace the local draft.
@@ -302,12 +340,14 @@ test(
           request.url().endsWith('/api/targets/decide') &&
           request.method() === 'POST'
       )
+
       await frame.locator('#target-save').click()
       assert.equal((await rejectedSave).postDataJSON().expectedRevision, 5)
       await expect(frame.locator('#target-notice')).toContainText('stale')
       const api = await fetch(server.origin + '/api/targets/' + id).then((r) =>
         r.json()
       )
+
       assert.deepEqual(
         api,
         JSON.parse(JSON.stringify(server.service.getTarget(id)))
@@ -330,8 +370,11 @@ test(
     } finally {
       await browser?.close()
       await server.close()
-      if (previous === undefined) delete process.env.TMPDIR
-      else process.env.TMPDIR = previous
+      if (previous === undefined) {
+        delete process.env.TMPDIR
+      } else {
+        process.env.TMPDIR = previous
+      }
     }
   }
 )

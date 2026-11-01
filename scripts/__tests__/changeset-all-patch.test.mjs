@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
+import { execFileSync } from 'node:child_process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import { FRAMEWORK_RELEASE_PACKAGE_NAMES } from '../framework-release-packages.js'
@@ -55,8 +56,10 @@ test('Changesets never versions or tags private workspaces', () => {
 test('release type is required and accepts only Changesets semver types', async (t) => {
   if (!hasImportSafeContract) {
     t.skip('implementation is not import-safe yet')
+
     return
   }
+
   const moduleUrl = `${pathToFileURL(scriptPath).href}?test=parse-type`
   const { parseReleaseType } = await import(moduleUrl)
 
@@ -75,9 +78,12 @@ test('release type is required and accepts only Changesets semver types', async 
 test('minor plan contains exactly the fixed 19 Framework packages and performs no write', async (t) => {
   if (!hasImportSafeContract) {
     t.skip('implementation is not import-safe yet')
+
     return
   }
+
   const originalReaddirSync = fs.readdirSync
+
   t.mock.method(fs, 'readdirSync', (directoryPath, options) => {
     if (
       path.resolve(directoryPath.toString()) ===
@@ -85,6 +91,7 @@ test('minor plan contains exactly the fixed 19 Framework packages and performs n
     ) {
       return ['README.md']
     }
+
     return originalReaddirSync(directoryPath, options)
   })
   const moduleUrl = `${pathToFileURL(scriptPath).href}?test=minor-plan`
@@ -106,6 +113,7 @@ test('minor plan contains exactly the fixed 19 Framework packages and performs n
   for (const packageName of FRAMEWORK_RELEASE_PACKAGE_NAMES) {
     assert.match(plan.content, new RegExp(`"${packageName}": minor`))
   }
+
   assert.doesNotMatch(plan.content, /"asyra":/)
   assert.doesNotMatch(plan.content, /"@asyra\/asyra-design":/)
   assert.doesNotMatch(plan.content, /"create-asyra-design-app":/)
@@ -115,9 +123,12 @@ test('minor plan contains exactly the fixed 19 Framework packages and performs n
 test('exceptional generator rejects a pending Changeset before planning', async (t) => {
   if (!hasImportSafeContract) {
     t.skip('implementation is not import-safe yet')
+
     return
   }
+
   const originalReaddirSync = fs.readdirSync
+
   t.mock.method(fs, 'readdirSync', (directoryPath, options) => {
     if (
       path.resolve(directoryPath.toString()) ===
@@ -125,6 +136,7 @@ test('exceptional generator rejects a pending Changeset before planning', async 
     ) {
       return ['README.md', 'pending-release.md']
     }
+
     return originalReaddirSync(directoryPath, options)
   })
   const moduleUrl = `${pathToFileURL(scriptPath).href}?test=pending-changeset`
@@ -138,4 +150,59 @@ test('exceptional generator rejects a pending Changeset before planning', async 
       }),
     /requires an empty pending Changeset set; found pending-release\.md/
   )
+})
+
+test('version preparation updates manifests without creating a parallel changelog', (t) => {
+  const parent = path.join(repositoryRoot, 'tmp')
+
+  fs.mkdirSync(parent, { recursive: true })
+  const root = fs.mkdtempSync(path.join(parent, 'changeset-version-'))
+
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }))
+  fs.mkdirSync(path.join(root, '.changeset'))
+  fs.mkdirSync(path.join(root, 'packages/core'), { recursive: true })
+  fs.writeFileSync(
+    path.join(root, 'package.json'),
+    JSON.stringify({
+      name: 'release-fixture',
+      private: true,
+      workspaces: ['packages/*']
+    })
+  )
+  fs.writeFileSync(
+    path.join(root, 'packages/core/package.json'),
+    JSON.stringify({
+      name: '@asyra/core',
+      version: '1.0.0'
+    })
+  )
+  fs.writeFileSync(
+    path.join(root, '.changeset/config.json'),
+    JSON.stringify(changesetConfig)
+  )
+  fs.writeFileSync(
+    path.join(root, '.changeset/version.md'),
+    '---\n"@asyra/core": patch\n---\n\nPrepare the next package version.\n'
+  )
+  execFileSync('git', ['init', '-q'], { cwd: root })
+  execFileSync(
+    process.execPath,
+    [
+      fs.realpathSync(path.join(repositoryRoot, 'node_modules/.bin/changeset')),
+      'version'
+    ],
+    { cwd: root, stdio: 'pipe', timeout: 30000 }
+  )
+
+  assert.equal(
+    JSON.parse(
+      fs.readFileSync(path.join(root, 'packages/core/package.json'), 'utf8')
+    ).version,
+    '1.0.1'
+  )
+  assert.equal(
+    fs.existsSync(path.join(root, 'packages/core/CHANGELOG.md')),
+    false
+  )
+  assert.equal(fs.existsSync(path.join(root, '.changeset/version.md')), false)
 })

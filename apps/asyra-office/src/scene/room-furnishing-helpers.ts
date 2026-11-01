@@ -8,13 +8,17 @@ export function meshBounds(parts: readonly AssetPart[]) {
     [Infinity, -Infinity],
     [Infinity, -Infinity]
   ]
-  for (const p of parts)
+
+  for (const p of parts) {
     for (let i = 0; i < p.mesh.positions.length; i++) {
       const axis = i % 3,
         value = p.mesh.positions[i]
+
       bounds[axis][0] = Math.min(bounds[axis][0], value)
       bounds[axis][1] = Math.max(bounds[axis][1], value)
     }
+  }
+
   return bounds
 }
 
@@ -48,6 +52,7 @@ export function addPrint(
   const [w, h] = size,
     border = 0.018,
     parts: AssetPart[] = []
+
   for (const side of [-1, 1]) {
     parts.push(
       ...placeParts(
@@ -76,8 +81,10 @@ export function addPrint(
       )
     )
   }
+
   c.add(id, 'framed-print', parts, position, rotation)
   const yaw = (rotation * Math.PI) / 180
+
   c.label(
     text,
     w - border * 2,

@@ -41,6 +41,7 @@ export function StoryChapter({
   children: ReactNode
 }) {
   const chapter = chapters[index]
+
   return (
     <div
       id={chapter.id}

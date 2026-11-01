@@ -13,7 +13,9 @@ const empty: WorkbenchSnapshot = {
   loadIssues: [],
   historyDepth: 0
 }
+
 const noSubscription = () => undefined
+
 const identity = (snapshot: WorkbenchSnapshot) => snapshot
 
 /** Core UI Context owns the values and their canonical invalidation. */
@@ -31,10 +33,13 @@ export function useWorkbenchData(
     [runtime]
   )
   const snapshot = useSyncExternalStore(subscribe, getSnapshot)
+
   useLayoutEffect(() => {
     runtime?.views.selectCandidate(candidateId)
   }, [runtime, candidateId])
-  if (snapshot.candidateId !== candidateId)
+  if (snapshot.candidateId !== candidateId) {
     return { ...snapshot, workcell: null, experiments: [] }
+  }
+
   return snapshot
 }

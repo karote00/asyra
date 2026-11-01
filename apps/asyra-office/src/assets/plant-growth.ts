@@ -14,15 +14,21 @@ export function createPlantGrowth(
   scaffold: readonly LeafScaffold[],
   config = requiredSpecValue(spec.modules[0].growth, 'plant growth recipe')
 ) {
-  if (!Number.isInteger(seed) || seed < 0 || seed > 0xffffffff)
+  if (!Number.isInteger(seed) || seed < 0 || seed > 0xffffffff) {
     throw new Error('Plant seed must be an unsigned 32-bit integer')
+  }
+
   let state = seed >>> 0
+
   const next = () => {
     state = (Math.imul(1664525, state) + 1013904223) >>> 0
+
     return (state + 0.5) / 2 ** 32
   }
+
   const sample = (range: readonly number[]) =>
     range[0] + next() * (range[1] - range[0])
+
   const count =
     config.leafCount[0] +
     Math.floor(next() * (config.leafCount[1] - config.leafCount[0] + 1))
@@ -37,15 +43,19 @@ export function createPlantGrowth(
         scaffold[i + 1].attachZ) /
       2
   }))
+
   return Array.from({ length: count }, (_, i) => {
     const age = (i + sample(config.stratumJitter)) / count
     const lo = Math.min(1, Math.floor(age * 2)),
       f = age * 2 - lo
+
     const blend = (key: keyof (typeof pairs)[number]) =>
       pairs[lo][key] * (1 - f) + pairs[lo + 1][key] * f
+
     const attachZ =
       config.attachmentHeight[0] +
       age * (config.attachmentHeight[1] - config.attachmentHeight[0])
+
     return {
       attachZ,
       azimuthDegrees:
@@ -71,8 +81,10 @@ export function createShrubSprigs(
     'plant variants'
   ).shrub
   const crown = variant.crown
+
   const fraction = (value: number, range: readonly number[]) =>
     (value - range[0]) / (range[1] - range[0])
+
   const branches = Array.from({ length: crown.sprigCount }, (_, index) => {
     const sample = samples[index]
     const angle =
@@ -89,6 +101,7 @@ export function createShrubSprigs(
       crown.sprigTipHeight[0] +
       fraction(sample.archScale, variant.growth.archScale) *
         (crown.sprigTipHeight[1] - crown.sprigTipHeight[0])
+
     return [
       [0, 0, crown.sprigBaseZ],
       [
@@ -113,10 +126,12 @@ export function createShrubSprigs(
       phase * (crown.leafFraction[1] - crown.leafFraction[0])
     const segment = t < 0.55 ? 0 : 1
     const local = segment === 0 ? t / 0.55 : (t - 0.55) / 0.45
+
     return branches[branch][segment].map(
       (value, axis) =>
         value + (branches[branch][segment + 1][axis] - value) * local
     )
   })
+
   return { branches, origins }
 }

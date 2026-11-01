@@ -26,22 +26,35 @@ self.addEventListener('message', (event: MessageEvent<RuntimeCommand>) => {
   void (async () => {
     try {
       if (event.data.type === 'initialize') {
-        if (activeRun) await disposeAtlasRun(activeRun)
+        if (activeRun) {
+          await disposeAtlasRun(activeRun)
+        }
+
         activeRun = await createAtlasRun(event.data.caseId)
         self.postMessage({
           type: 'snapshot',
           snapshot: getAtlasRunSnapshot(activeRun)
         })
+
         return
       }
+
       if (event.data.type === 'dispose') {
-        if (activeRun) await disposeAtlasRun(activeRun)
+        if (activeRun) {
+          await disposeAtlasRun(activeRun)
+        }
+
         activeRun = undefined
         self.postMessage({ type: 'disposed' })
         self.close()
+
         return
       }
-      if (!activeRun) throw new Error('Runtime Atlas worker is not initialized')
+
+      if (!activeRun) {
+        throw new Error('Runtime Atlas worker is not initialized')
+      }
+
       self.postMessage({
         type: 'snapshot',
         snapshot: await advanceAtlasRun(activeRun)

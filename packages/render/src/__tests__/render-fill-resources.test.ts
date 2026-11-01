@@ -14,6 +14,7 @@ class TestOffscreenCanvas {
     createImageData: (width: number, height: number) => ({
       data: new Uint8ClampedArray(width * height * 4)
     }),
+
     putImageData: () => undefined
   }
 
@@ -69,6 +70,7 @@ describe('render fill resources', () => {
       const runtime = new RenderObjectRuntime(engine, initialized.root)
       const first = new RenderGraphics()
       const second = new RenderGraphics()
+
       if (owner === 'text') {
         first.text(
           {
@@ -87,7 +89,10 @@ describe('render fill resources', () => {
           },
           style
         )
-      } else first.rect(0, 0, 1, 1).fill(style)
+      } else {
+        first.rect(0, 0, 1, 1).fill(style)
+      }
+
       second.rect(1, 1, 1, 1).fill(style)
       runtime.attachRoot(first)
       runtime.attachRoot(second)
@@ -148,6 +153,7 @@ describe('render fill resources', () => {
     const initialized = engine.initialize({ host: {}, width: 2, height: 2 })
     const runtime = new RenderObjectRuntime(engine, initialized.root)
     const graphic = new RenderGraphics()
+
     runtime.attachRoot(graphic)
     graphic.rect(0, 0, 2, 2).fill(result?.style)
     runtime.flushDraws()

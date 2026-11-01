@@ -88,6 +88,7 @@ describe('starter item domain admission', () => {
   it('admits legacy missing offsets and rejects invalid present offsets', () => {
     expect(() => assertStarterDomainData(coreDocument())).not.toThrow()
     const schema = createItemPropertySchema()
+
     expect(
       schema.fields.find((field) => field.key === 'offsetX')?.validate?.(12)
     ).toBe(true)

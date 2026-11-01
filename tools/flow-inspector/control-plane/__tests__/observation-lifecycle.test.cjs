@@ -8,6 +8,7 @@ const {
   executionIdentity,
   matchesExecution
 } = require('../observation-lifecycle.cjs')
+
 function pair() {
   const item = {
     file: 'case.test.ts',
@@ -45,14 +46,18 @@ function pair() {
       reason: 'Correct selector'
     }
   }
+
   return { previous, next }
 }
+
 test('discovery recovery is distinct from assertion recovery and rejects uncertain successors', () => {
   for (const status of ['passed', 'failed']) {
     const { previous, next } = pair()
+
     next.cases[0].status = status
     assert.equal(canSupersede(previous, next), true)
   }
+
   for (const mutate of [
     (p, n) => {
       n.cases = []
@@ -113,12 +118,14 @@ test('discovery recovery is distinct from assertion recovery and rejects uncerta
     }
   ]) {
     const { previous, next } = pair()
+
     mutate(previous, next)
     assert.equal(canSupersede(previous, next), false, mutate.toString())
   }
 })
 test('CI identity is explicit and cannot enter local current evidence', () => {
   const { next } = pair()
+
   assert.equal(matchesExecution(next), true)
   next.command = {
     environment: {
@@ -131,6 +138,7 @@ test('CI identity is explicit and cannot enter local current evidence', () => {
     }
   }
   const identity = executionIdentity(next)
+
   assert.equal(matchesExecution(next), false)
   assert.equal(matchesExecution(next, identity), true)
   assert.equal(
@@ -141,6 +149,7 @@ test('CI identity is explicit and cannot enter local current evidence', () => {
 test('post-hoc correction cannot narrow the successor declared execution intent', () => {
   const { previous, next } = pair()
   const relationIntent = structuredClone(next.intent)
+
   next.intent = {
     version: 1,
     cases: [

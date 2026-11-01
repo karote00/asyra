@@ -171,16 +171,19 @@ export const PLACES = [
     target: [4.2, -2.4, 0.6] as Vec
   }
 ] as const
+
 export type ReferenceScene = Pick<
   ReturnType<typeof createReferenceScene>,
   'assemblies' | 'parts' | 'labels'
 >
+
 export function createReferenceScene(
   stage: InteriorStage = INTERIOR_REVIEW_STAGE
 ) {
   const assemblies: SceneAssembly[] = [],
     all: AssetPart[] = [],
     labels: Label[] = []
+
   const add = (
     id: string,
     asset: string,
@@ -192,6 +195,7 @@ export function createReferenceScene(
     assemblies.push({ id, asset, position, parts: parts.map((p) => p.id) })
     all.push(...placeParts(parts, position, rotation, scale))
   }
+
   const block = (
     id: string,
     size: Vec,
@@ -206,6 +210,7 @@ export function createReferenceScene(
       [part('body', box(size, radius, 2), color, material)],
       pos
     )
+
   const asset = (
     id: string,
     key: string,
@@ -213,6 +218,7 @@ export function createReferenceScene(
     rotation = 0,
     scale: Vec = [1, 1, 1]
   ) => add(id, key, catalogAsset(key), pos, rotation, scale)
+
   const plant = (
     id: string,
     pos: Vec,
@@ -224,8 +230,11 @@ export function createReferenceScene(
   ) => {
     // Stable layout identity, not traversal order or frame time, selects growth.
     let seed = 2166136261
-    for (const character of id)
+
+    for (const character of id) {
       seed = Math.imul(seed ^ character.charCodeAt(0), 16777619) >>> 0
+    }
+
     add(
       id,
       'planter',
@@ -233,6 +242,7 @@ export function createReferenceScene(
       pos
     )
   }
+
   const label = (
     text: string,
     width: number,
@@ -243,6 +253,7 @@ export function createReferenceScene(
     rotation = 0
   ) =>
     labels.push({ text, width, height, position, color, background, rotation })
+
   // A bounded neighborhood assembled around the approved four-room cutaway.
   block('neighborhood-ground', [28, 26, 0.2], [0, 0, -0.55], 0xada899, 'stone')
   add(
@@ -260,6 +271,7 @@ export function createReferenceScene(
   )
   // Owner-authorized rear neighborhood translation; front and side streets stay fixed.
   const rearOffset = 2
+
   block(
     'street-rear',
     [25, 2, 0.12],
@@ -275,8 +287,8 @@ export function createReferenceScene(
     0xb5aa94,
     'stone'
   )
-  for (let i = -7; i < 11; i++)
-    for (let j = -6; j < 6 + rearOffset / 0.5; j++)
+  for (let i = -7; i < 11; i++) {
+    for (let j = -6; j < 6 + rearOffset / 0.5; j++) {
       block(
         `paving-${i}-${j}`,
         [0.49, 0.49, 0.07],
@@ -285,7 +297,10 @@ export function createReferenceScene(
         'stone',
         0.012
       )
-  for (let i = 0; i < 7; i++)
+    }
+  }
+
+  for (let i = 0; i < 7; i++) {
     block(
       `crossing-${i}`,
       [0.3, 1.7, 0.003],
@@ -294,7 +309,9 @@ export function createReferenceScene(
       'plain',
       0
     )
-  for (let x = -10; x < 11; x += 2)
+  }
+
+  for (let x = -10; x < 11; x += 2) {
     block(
       `road-line-${x}`,
       [0.8, 0.06, 0.003],
@@ -303,10 +320,12 @@ export function createReferenceScene(
       'plain',
       0
     )
+  }
+
   add('manhole', 'road-drain-cover-round', manhole(), [-0.3, -4.15, -0.11])
   // Canal, masonry bank and a small landscaped sitting terrace.
   block('canal', [3.8, 16, 0.13], [7.1, -2, -0.38], 0x668c89, 'water')
-  for (let i = 0; i < 20; i++)
+  for (let i = 0; i < 20; i++) {
     block(
       `water-ripple-${i}`,
       [0.3 + (i % 4) * 0.12, 0.018, 0.004],
@@ -315,9 +334,11 @@ export function createReferenceScene(
       'water',
       0
     )
+  }
+
   block('park-base', [2.7, 3.3, 0.35], [4.22, -1.95, -0.02], 0xc0b39a, 'stone')
-  for (let z = 0; z < 3; z++)
-    for (let j = 0; j < 7; j++)
+  for (let z = 0; z < 3; z++) {
+    for (let j = 0; j < 7; j++) {
       block(
         `bank-${z}-${j}`,
         [0.24, 0.46, 0.16],
@@ -326,18 +347,25 @@ export function createReferenceScene(
         'stone',
         0.018
       )
+    }
+  }
+
   const interiorStart = assemblies.length
   const interiorLabelStart = labels.length
+
   composeOfficeInterior({ add, block, asset, plant, label, labels })
   const tableTops =
     stage !== 'structure'
       ? composeOfficeSeating({ add })
       : new Map<string, number>()
-  if (stage === 'room-furnishings')
+
+  if (stage === 'room-furnishings') {
     composeRoomFurnishings(
       { add, block, asset, plant, label, labels },
       tableTops
     )
+  }
+
   const interiorLabels = new Set(labels.slice(interiorLabelStart))
   const interiorAssemblyIds = new Set(
     assemblies
@@ -345,6 +373,7 @@ export function createReferenceScene(
       .filter((a) => !a.id.startsWith('entrance-step'))
       .map((a) => a.id)
   )
+
   // Layered planters frame room edges, clear of the walking paths and work surfaces.
   for (const [i, pos] of (
     [
@@ -356,13 +385,22 @@ export function createReferenceScene(
       [4.9, -0.6, 0.2],
       [3.45, -0.85, 0.2]
     ] as Vec[]
-  ).entries())
-    if (i < 4) continue
-    else if (i === 2) {
+  ).entries()) {
+    if (i < 4) {
+      continue
+    } else if (i === 2) {
       const fitted = indoorPlant('room-edge-plant-2')
+
       add('room-edge-plant-2', 'planter', fitted.parts, fitted.position)
-    } else plant(`room-edge-plant-${i}`, pos, 2.3 + (i % 3) * 0.35)
-  for (let i = 0; i < 4; i++) interiorAssemblyIds.add(`room-edge-plant-${i}`)
+    } else {
+      plant(`room-edge-plant-${i}`, pos, 2.3 + (i % 3) * 0.35)
+    }
+  }
+
+  for (let i = 0; i < 4; i++) {
+    interiorAssemblyIds.add(`room-edge-plant-${i}`)
+  }
+
   // Loose plants and entry chalkboard.
   for (const [i, pos] of (
     [
@@ -373,8 +411,10 @@ export function createReferenceScene(
       [2.3, -2.5, 0.1],
       [2.9, -2.4, 0.1]
     ] as Vec[]
-  ).entries())
+  ).entries()) {
     plant(`entry-pot-${i}`, pos, 1.65 + (i % 3) * 0.25)
+  }
+
   add(
     'entry-chalkboard',
     'entry-chalkboard',
@@ -417,6 +457,7 @@ export function createReferenceScene(
   add('park-coffee', 'ceramic-mug', mug(undefined, true), [3.43, -2.33, 0.5])
   for (let i = 0; i < 11; i++) {
     const y = -3.5 + i * 0.28
+
     block(
       `railing-post-${i}`,
       [0.035, 0.035, 0.62],
@@ -432,7 +473,8 @@ export function createReferenceScene(
       [5.45, y, 0.81]
     )
   }
-  for (const z of [0.5, 0.75])
+
+  for (const z of [0.5, 0.75]) {
     block(
       `railing-bar-${z}`,
       [0.035, 3.1, 0.025],
@@ -440,8 +482,12 @@ export function createReferenceScene(
       0x3d433b,
       'metal'
     )
-  for (let i = 0; i < 6; i++)
+  }
+
+  for (let i = 0; i < 6; i++) {
     plant(`park-pot-${i}`, [5.18, -3.3 + i * 0.53, 0.2], 2.05 + (i % 3) * 0.25)
+  }
+
   for (const [i, pos] of (
     [
       [-3.65, -2.5, 0.1],
@@ -449,7 +495,7 @@ export function createReferenceScene(
       [-3.65, 2.8 + rearOffset, 0.1],
       [4.3, 2.7 + rearOffset, 0.1]
     ] as Vec[]
-  ).entries())
+  ).entries()) {
     add(
       `lantern-${i}`,
       'streetlight-vintage-lantern',
@@ -458,10 +504,13 @@ export function createReferenceScene(
       0,
       [0.8, 0.8, 0.8]
     )
+  }
+
   // Stable individual growth and explicit whole-tree sizes; invariant leaves are shared.
   const treeSeeds = [606, 1607, 2608, 3609, 4610, 5611],
     treeSizes = [0.68, 1.12, 0.82, 1.28, 0.95, 0.73],
     treeParts = createTreeVariants(treeSeeds)
+
   for (const [i, pos] of (
     [
       [-3.6, 1.9, 0.1],
@@ -471,15 +520,18 @@ export function createReferenceScene(
       [2.3, 5.5 + rearOffset, 0.1],
       [6.5, 5.4 + rearOffset, 0.1]
     ] as Vec[]
-  ).entries())
+  ).entries()) {
     add(`tree-${i}`, 'street-tree-leafy', treeParts[i], pos, i * 11, [
       treeSizes[i],
       treeSizes[i],
       treeSizes[i]
     ])
+  }
+
   // Background stores frame the neighborhood, never replace the central building.
   for (const [i, x] of [-5.8, -2.7, 0.7, 4.3, 7.4].entries()) {
     const height = 3.5 + (i % 2) * 0.6
+
     block(
       `shop-${i}`,
       [2.8, 2.3, height],
@@ -528,7 +580,7 @@ export function createReferenceScene(
       'plain',
       0.003
     )
-    for (const z of [1.0, 2.7])
+    for (const z of [1.0, 2.7]) {
       for (const dx of [-0.7, 0.7]) {
         asset(
           `shop-window-${i}-${z}-${dx}`,
@@ -538,6 +590,8 @@ export function createReferenceScene(
           [0.77 / 1.82, 0.7, 0.95 / 1.28]
         )
       }
+    }
+
     block(
       `shop-sign-${i}`,
       [1.8, 0.06, 0.37],
@@ -560,11 +614,19 @@ export function createReferenceScene(
       [x, 5.78 + rearOffset, 1.42]
     )
   }
+
   // Static modular actors are explicitly synthetic; no provider work is inferred.
   for (const actor of ACTORS) {
     const indoors = ['mina', 'leo', 'sage'].includes(actor.id)
-    if (indoors) interiorAssemblyIds.add(`actor-${actor.id}`)
-    if (indoors) continue
+
+    if (indoors) {
+      interiorAssemblyIds.add(`actor-${actor.id}`)
+    }
+
+    if (indoors) {
+      continue
+    }
+
     add(
       `actor-${actor.id}`,
       'modular-puppet',
@@ -578,6 +640,7 @@ export function createReferenceScene(
       actor.rotation
     )
   }
+
   label('Maple St', 0.44, 0.14, [4.94, -0.937, 1.39], '#eee7d8', '#42483f')
   label('Riverside', 0.44, 0.14, [4.94, -0.937, 1.16], '#eee7d8', '#42483f')
   block(
@@ -593,7 +656,7 @@ export function createReferenceScene(
     [part('finial', ellipsoid([0.03, 0.03, 0.03], 16, 10), 0x383a38, 'metal')],
     [4.68, -0.9, 1.62]
   )
-  for (const z of [1.39, 1.16])
+  for (const z of [1.39, 1.16]) {
     block(
       `street-sign-board-${z}`,
       [0.48, 0.018, 0.18],
@@ -601,6 +664,8 @@ export function createReferenceScene(
       0x383a38,
       'metal'
     )
+  }
+
   return { assemblies, parts: all, labels, interiorAssemblyIds, interiorLabels }
 }
 
@@ -614,6 +679,7 @@ export function buildSpatialMeshes(
       { mesh: Mesh; part: AssetPart; distant?: Mesh; maxError: number }
     >(),
     instanced: SpatialFrame['meshes'][number][] = []
+
   for (const [index, p] of scene.parts.entries()) {
     if (p.instances) {
       const placement = p.placement ?? {
@@ -651,10 +717,15 @@ export function buildSpatialMeshes(
             }
           : {})
       })
-      if (descriptor.kind !== 'mesh') throw new Error('Expected instanced mesh')
+
+      if (descriptor.kind !== 'mesh') {
+        throw new Error('Expected instanced mesh')
+      }
+
       instanced.push({ id: `instances-${index}`, descriptor, visible: true })
       continue
     }
+
     // Transparent objects need independent sorting; opaque parts retain material batching.
     const opaqueKey = `${p.material}-${p.color}-${p.roughness}-${p.metalness ?? (p.material === 'metal' ? 0.35 : 0)}-${p.emissive ?? 0}-${p.emissiveIntensity ?? 0}-${p.environmentIntensity ?? 0}`
     const key =
@@ -662,18 +733,25 @@ export function buildSpatialMeshes(
         ? `${opaqueKey}-alpha-${p.opacity}-${index}`
         : opaqueKey
     let group = groups.get(key)
+
     if (!group) {
       group = { mesh: emptyMesh(), part: p, maxError: 0 }
       groups.set(key, group)
     }
+
     if (p.distant && !group.distant) {
       group.distant = emptyMesh()
       append(group.distant, group.mesh)
     }
-    if (group.distant) append(group.distant, p.distant?.mesh ?? p.mesh)
+
+    if (group.distant) {
+      append(group.distant, p.distant?.mesh ?? p.mesh)
+    }
+
     group.maxError = Math.max(group.maxError, p.distant?.maxError ?? 0)
     append(group.mesh, p.mesh)
   }
+
   return batchStaticColors([
     ...instanced,
     ...[...groups.entries()].map(
@@ -714,7 +792,11 @@ export function buildSpatialMeshes(
             : {}),
           ...(surfaces[p.material] ? { surface: surfaces[p.material] } : {})
         })
-        if (descriptor.kind !== 'mesh') throw new Error('Expected mesh')
+
+        if (descriptor.kind !== 'mesh') {
+          throw new Error('Expected mesh')
+        }
+
         return { id, descriptor, visible: true }
       }
     )

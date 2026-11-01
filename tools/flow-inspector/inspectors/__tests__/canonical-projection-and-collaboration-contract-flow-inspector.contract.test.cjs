@@ -56,7 +56,9 @@ const requiredStepIds = [
 
 const step = (id) => {
   const value = data.steps.find((item) => item.id === id)
+
   assert.ok(value, `Missing Inspector step: ${id}`)
+
   return value
 }
 
@@ -82,9 +84,13 @@ const anchorForHeading = (heading) =>
     .replace(/-+/g, '-')
 
 const read = (filePath) => fs.readFileSync(filePath, 'utf8')
+
 const plan = () => read(path.resolve(repoRoot, data.authority.specPath))
+
 const feature = () => read(featurePath)
+
 const appApiSurface = () => read(appApiSurfacePath)
+
 const stateContracts = () => read(stateContractsPath)
 
 test('canonical Inspector uses the current plan and retains historical references', () => {
@@ -106,15 +112,7 @@ test('canonical Inspector uses the current plan and retains historical reference
   )
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.specPath)))
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.inspectorPath)))
-  assert.ok(
-    fs.existsSync(
-      path.resolve(
-        __dirname,
-        '..',
-        'canonical-projection-and-collaboration-contract-flow-inspector.html'
-      )
-    )
-  )
+  require('./assert-react-catalog.cjs')(data)
   assert.ok(Object.isFrozen(data))
   assert.ok(data.steps.every(Object.isFrozen))
 
@@ -182,6 +180,7 @@ test('Inspector exposes twelve exact single-owner runtime steps', () => {
   assert.match(plan(), /### Contract admission - canonical shared-property layers/)
   assert.match(plan(), /### History, concurrency, publication and failure recovery/)
   const preparation = step('prepare-document-publication')
+
   assert.deepEqual(preparation.inputs, ['artifact:shared-publication'])
   assert.deepEqual(preparation.outputs, ['artifact:document-publication', 'artifact:document-preparation-failure'])
   assert.match(contractText(preparation), /required App callback/)
@@ -196,6 +195,7 @@ test('Inspector exposes twelve exact single-owner runtime steps', () => {
   const computedBoundary = step(
     'derive-local-computed-projection'
   ).implementationBoundary
+
   ;[
     'packages/scene-tree/src/sceneTree.ts',
     'packages/scene-tree/src/components/element.ts',
@@ -271,6 +271,7 @@ test('Inspector exposes twelve exact single-owner runtime steps', () => {
 
 test('runtime contract names prepared evidence without calling it a plan', () => {
   const runtimePlanPattern = /\bplan(?:s|ned|ning)?\b|Plan\b/
+
   const semanticStepText = (item) =>
     [
       item.id,
@@ -338,6 +339,7 @@ test('Inspector paths, anchors, routes, and artifacts resolve', () => {
       const plannedFileParentExists =
         path.extname(boundary) !== '' &&
         fs.existsSync(path.dirname(resolvedBoundary))
+
       assert.ok(
         fs.existsSync(resolvedBoundary) || plannedFileParentExists,
         `${item.id} missing implementation root ${boundary}`
@@ -374,6 +376,7 @@ test('Inspector paths, anchors, routes, and artifacts resolve', () => {
       .filter((input) => input.startsWith('artifact:'))
       .forEach((artifactId) => {
         const artifact = artifacts.get(artifactId)
+
         assert.ok(artifact, `${consumer.id} unregistered input ${artifactId}`)
         assert.ok(
           artifact.consumerStepIds.includes(consumer.id),
@@ -384,9 +387,11 @@ test('Inspector paths, anchors, routes, and artifacts resolve', () => {
 
   data.routes.forEach((route) => {
     assert.ok(stepIds.has(route.from), `${route.id} from`)
-    if (route.to) assert.ok(stepIds.has(route.to), `${route.id} to`)
+    if (route.to) {assert.ok(stepIds.has(route.to), `${route.id} to`)}
+
     route.producedArtifacts.forEach((artifactId) => {
       const artifact = artifacts.get(artifactId)
+
       assert.ok(artifact, `${route.id} artifact ${artifactId}`)
       assert.equal(artifact.ownerStepId, route.from, `${route.id} owner`)
       if (route.to) {
@@ -1028,6 +1033,7 @@ test('shared-property editing is admitted at canonical owners with current durab
   const props = contractText(step('prepare-and-apply-property-batch'))
   const scene = contractText(step('prepare-and-apply-scene-mutation'))
   const persist = contractText(step('persist-local-commit'))
+
   assert.match(props, /PropertyInheritance/)
   assert.match(props, /override presence.*field.*deltas/i)
   assert.match(props, /childBindings.*identity/i)
@@ -1039,6 +1045,7 @@ test('shared-property editing is admitted at canonical owners with current durab
 
 test('local property intent cannot collapse distinct owners into one shared-source write', () => {
   const scene = contractText(step('prepare-and-apply-scene-mutation'))
+
   assert.match(scene, /owner-local.*distinct.*element.*root.*binding/i)
   assert.match(scene, /UPDATE_ELEMENT_PROPERTY_BINDINGS.*per-root.*before.*after/i)
   assert.match(scene, /Props resolves registered child paths/i)

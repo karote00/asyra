@@ -34,13 +34,17 @@ const resolveSpacePoint = (
   positions: InteractionTargetPositions
 ) => {
   const space: RenderInteractionTargetSpace = target.space ?? 'canvas'
+
   return space === 'workspace' ? positions.workspace : positions.canvas
 }
 
 class InteractionTargetRegistry {
   private targets = new MapRegistry<string, StoredTarget>()
+
   private order = 0
+
   private sortedTargets: StoredTarget[] = []
+
   private dirty = false
 
   register(
@@ -76,10 +80,12 @@ class InteractionTargetRegistry {
       | ((current: RenderInteractionTarget) => Partial<RenderInteractionTarget>)
   ): void {
     const current = this.targets.get(targetId)
+
     if (!current) {
       console.warn(
         `[render] Render interaction target "${targetId}" not found for update.`
       )
+
       return
     }
 
@@ -97,9 +103,11 @@ class InteractionTargetRegistry {
 
   unregister(targetId: string): boolean {
     const removed = this.targets.delete(targetId)
+
     if (removed) {
       this.dirty = true
     }
+
     return removed
   }
 
@@ -111,16 +119,20 @@ class InteractionTargetRegistry {
 
   get(targetId: string): RenderInteractionTarget | undefined {
     const target = this.targets.get(targetId)
+
     if (!target) {
       return
     }
+
     const { __order, ...rest } = target
+
     return { ...rest }
   }
 
   getAll(): RenderInteractionTarget[] {
     return this.getSortedTargets().map((target) => {
       const { __order, ...rest } = target
+
       return { ...rest }
     })
   }
@@ -132,12 +144,15 @@ class InteractionTargetRegistry {
 
     this.sortedTargets = this.targets.values().sort((a, b) => {
       const zIndexDiff = (b.zIndex ?? 0) - (a.zIndex ?? 0)
+
       if (zIndexDiff !== 0) {
         return zIndexDiff
       }
+
       return b.__order - a.__order
     })
     this.dirty = false
+
     return this.sortedTargets
   }
 
@@ -145,17 +160,23 @@ class InteractionTargetRegistry {
     positions: InteractionTargetPositions
   ): RenderInteractionTarget | null {
     const targets = this.getSortedTargets()
+
     for (const target of targets) {
       const point = resolveSpacePoint(target, positions)
+
       if (target.bounds && !isPointWithinBounds(point, target.bounds)) {
         continue
       }
+
       if (target.hitTest && !target.hitTest(point)) {
         continue
       }
+
       const { __order, ...rest } = target
+
       return { ...rest }
     }
+
     return null
   }
 
@@ -165,13 +186,17 @@ class InteractionTargetRegistry {
 
     for (const target of targets) {
       const point = resolveSpacePoint(target, positions)
+
       if (target.bounds && !isPointWithinBounds(point, target.bounds)) {
         continue
       }
+
       if (target.hitTest && !target.hitTest(point)) {
         continue
       }
+
       const { __order, ...rest } = target
+
       hits.push({ ...rest })
     }
 
@@ -180,4 +205,5 @@ class InteractionTargetRegistry {
 }
 
 export const interactionTargetRegistry = new InteractionTargetRegistry()
+
 export default interactionTargetRegistry

@@ -16,7 +16,10 @@ export const initUIProperties = (
   core.defineUIProperty(UIProperties.canvasWidth, { defaultValue: 800 })
   const selectedListeners = new Map<string, Set<() => void>>()
   const unsubscribe = projection.subscribeChanges(({ membershipChanged }) => {
-    if (!membershipChanged) return
+    if (!membershipChanged) {
+      return
+    }
+
     core.setUIProperty(
       UIProperties.itemIds,
       projection.getSnapshot().map((item) => item.id)
@@ -24,30 +27,46 @@ export const initUIProperties = (
     const selectedId = core.getUIProperty<string | null>(
       UIProperties.selectedId
     )
-    if (selectedId && !projection.getItem(selectedId))
+
+    if (selectedId && !projection.getItem(selectedId)) {
       core.setUIProperty(UIProperties.selectedId, null)
+    }
   })
   let previous: string | null = null
   const unselect = core.onUIPropertyChange<string | null>(
     UIProperties.selectedId,
     (id) => {
-      if (id === previous) return
-      if (previous)
+      if (id === previous) {
+        return
+      }
+
+      if (previous) {
         selectedListeners.get(previous)?.forEach((notify) => notify())
-      if (id) selectedListeners.get(id)?.forEach((notify) => notify())
+      }
+
+      if (id) {
+        selectedListeners.get(id)?.forEach((notify) => notify())
+      }
+
       previous = id
     }
   )
+
   return {
     subscribeSelected(id: string, notify: () => void): () => void {
       const listeners = selectedListeners.get(id) ?? new Set<() => void>()
+
       selectedListeners.set(id, listeners)
       listeners.add(notify)
+
       return () => {
         listeners.delete(notify)
-        if (!listeners.size) selectedListeners.delete(id)
+        if (!listeners.size) {
+          selectedListeners.delete(id)
+        }
       }
     },
+
     dispose(): void {
       unsubscribe()
       unselect()

@@ -6,6 +6,7 @@ import { representativeSnapshot } from './representative-fixture'
 import { supervisedTestProgress } from './heavy-test-progress'
 
 const progress = supervisedTestProgress()
+
 afterEach(() => {
   progress?.endQuery()
   vi.restoreAllMocks()
@@ -21,7 +22,11 @@ it.each(['segment71', 'window2', 'window4', 'commonPrefix'] as const)(
       (pair) =>
         pair.a.bodyId === 'example:joint-2' && pair.b.bodyId === 'obstacle-11'
     )
-    if (!pair) throw new Error('Missing original source pair')
+
+    if (!pair) {
+      throw new Error('Missing original source pair')
+    }
+
     const windows: Record<typeof mode, readonly [number, number]> = {
       segment71: [
         snapshot.trajectory.keyframes[71].time,
@@ -47,6 +52,7 @@ it.each(['segment71', 'window2', 'window4', 'commonPrefix'] as const)(
       ...snapshot.method.settings,
       maxIntervals: snapshot.budget.maxIntervals
     }
+
     const execute = () => {
       const context: OriginalMeshQuery = new OriginalMeshQuery(
         progress?.query(mode, () => context.work)
@@ -70,8 +76,10 @@ it.each(['segment71', 'window2', 'window4', 'commonPrefix'] as const)(
         source = context.chargeSourceWitness.bind(context),
         handoff = context.chargeEvidenceHandoff.bind(context),
         derivation = context.chargeEvidenceDerivation.bind(context)
+
       const count = <T>(kind: keyof typeof charges, operation: () => T): T => {
         const before = context.work
+
         calls[kind]++
         try {
           return operation()
@@ -79,6 +87,7 @@ it.each(['segment71', 'window2', 'window4', 'commonPrefix'] as const)(
           charges[kind] += context.work - before
         }
       }
+
       context.distance = (...args) => count('static', () => distance(...args))
       context.lowerOver = (...args) => count('interval', () => lower(...args))
       context.chargeSourceWitness = () => count('source', source)
@@ -91,10 +100,12 @@ it.each(['segment71', 'window2', 'window4', 'commonPrefix'] as const)(
         () => undefined,
         context
       )
+
       progress?.endQuery()
       expect(Object.values(charges).reduce((a, b) => a + b, 0)).toBe(
         context.work
       )
+
       return {
         evidence,
         charges,
@@ -103,6 +114,7 @@ it.each(['segment71', 'window2', 'window4', 'commonPrefix'] as const)(
         milliseconds: performance.now() - start
       }
     }
+
     const run = continuous.queryContinuousPair
     const route = vi
       .spyOn(continuous, 'queryContinuousPair')
@@ -115,14 +127,17 @@ it.each(['segment71', 'window2', 'window4', 'commonPrefix'] as const)(
         )
       )
     const control = execute()
+
     route.mockRestore()
     const candidate = execute()
+
     expect(control.evidence.coverage).toBe('complete')
     expect(candidate.evidence).toEqual(control.evidence)
     if (mode === 'commonPrefix') {
       expect(candidate.evidence.leaves).toHaveLength(90)
       expect(candidate.evidence.evaluations).toBe(control.evidence.evaluations)
     }
+
     expect(candidate.calls.static).toBe(control.calls.static)
     expect(candidate.charges.static).toBe(control.charges.static)
     expect(control.charges.source).toBe(control.calls.source)

@@ -57,10 +57,13 @@ class Element<T extends ElementAttrs = ElementAttrs>
     ])
 
   _idType: string = ''
+
   _nameType: string = ''
+
   protected computedPropertyNames: string[] = ['position', 'dimension', 'fills']
 
   props!: IProps
+
   computed!: Computed<ComputedAttrs>
 
   constructor(
@@ -103,23 +106,30 @@ class Element<T extends ElementAttrs = ElementAttrs>
         switch (propName) {
           case 'id': {
             const id = data.id
+
             if (id) {
               this.data.id = id
               loadId(id, this._idType)
             }
+
             break
           }
+
           case 'name': {
             const name = data.name
+
             if (name) {
               this.data.name = name
               loadName(name, this._nameType)
             }
+
             break
           }
+
           default: {
             const key = propName as keyof ElementAttrs
             const newValue = data[key] as T[keyof T]
+
             if (newValue !== undefined) {
               this.data[propName as keyof T] = newValue
             }
@@ -131,6 +141,7 @@ class Element<T extends ElementAttrs = ElementAttrs>
 
   save(): ElementRawData {
     const data = {} as ElementRawData
+
     data.id = this.get('id')
     data.type = this.get('type')
     data.name = this.get('name')
@@ -159,9 +170,11 @@ class Element<T extends ElementAttrs = ElementAttrs>
     if (values.name !== undefined) {
       this.data.name = values.name as T['name']
     }
+
     if (values.visible !== undefined) {
       this.data.visible = values.visible as T['visible']
     }
+
     if (values.lock !== undefined) {
       this.data.lock = values.lock as T['lock']
     }
@@ -172,6 +185,7 @@ class Element<T extends ElementAttrs = ElementAttrs>
     initialOwnerValues?: Readonly<Record<string, unknown>>
   ) {
     const elementId = this.get('id') as string
+
     if (this.data.type !== EntityTypes.WORKSPACE) {
       if (propsData) {
         this.props = new Props(elementId, propsData, this.propsManagerOwner)

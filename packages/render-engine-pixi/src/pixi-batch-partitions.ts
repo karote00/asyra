@@ -8,12 +8,18 @@ const PARTITION_CHILD_LIMIT = 128
  */
 export class PixiBatchPartitions {
   private readonly partitions = new Map<Container, Container[]>()
+
   private readonly partitionParents = new WeakMap<Container, Container>()
 
   append(parent: Container, child: Container): void {
     const previous = this.parentOf(child)
-    if (previous) this.remove(previous, child)
+
+    if (previous) {
+      this.remove(previous, child)
+    }
+
     let blocks = this.partitions.get(parent)
+
     if (!blocks) {
       if (
         parent instanceof Graphics ||
@@ -21,39 +27,55 @@ export class PixiBatchPartitions {
         parent.children.length < PARTITION_CHILD_LIMIT
       ) {
         parent.addChild(child)
+
         return
       }
+
       const existing = [...parent.children]
+
       blocks = []
       this.partitions.set(parent, blocks)
       const block = this.createBlock(parent, blocks, 0)
+
       existing.forEach((node) => block.addChild(node))
     }
+
     let tail = blocks[blocks.length - 1]
+
     if (!tail || tail.children.length >= PARTITION_CHILD_LIMIT) {
       tail = this.createBlock(parent, blocks, blocks.length)
     }
+
     tail.addChild(child)
   }
 
   remove(parent: Container, child: Container): void {
     const blocks = this.partitions.get(parent)
     const block = child.parent
+
     if (!blocks || !block || this.partitionParents.get(block) !== parent) {
       parent.removeChild(child)
+
       return
     }
+
     block.removeChild(child)
-    if (block.children.length === 0) this.removeBlock(parent, blocks, block)
+    if (block.children.length === 0) {
+      this.removeBlock(parent, blocks, block)
+    }
   }
 
   setIndex(parent: Container, child: Container, index: number): void {
     const blocks = this.partitions.get(parent)
+
     if (!blocks) {
       parent.setChildIndex(child, index)
+
       return
     }
+
     const count = blocks.reduce((sum, block) => sum + block.children.length, 0)
+
     if (
       !Number.isInteger(index) ||
       index < 0 ||
@@ -62,18 +84,26 @@ export class PixiBatchPartitions {
     ) {
       throw new Error('Invalid render child index or parent')
     }
+
     let current = 0
+
     for (const block of blocks) {
       if (block === child.parent) {
         current += block.getChildIndex(child)
         break
       }
+
       current += block.children.length
     }
-    if (current === index) return
+
+    if (current === index) {
+      return
+    }
+
     this.remove(parent, child)
     let offset = index
     let blockIndex = 0
+
     while (
       blockIndex < blocks.length &&
       offset > blocks[blockIndex].children.length
@@ -81,7 +111,9 @@ export class PixiBatchPartitions {
       offset -= blocks[blockIndex].children.length
       blockIndex++
     }
+
     let block = blocks[blockIndex]
+
     if (!block) {
       block = this.createBlock(parent, blocks, blocks.length)
       offset = 0
@@ -90,6 +122,7 @@ export class PixiBatchPartitions {
       // Split without moving any later partition or changing its GPU buffers.
       const split = Math.max(1, Math.min(block.children.length - 1, offset))
       const suffix = block.children.slice(split)
+
       block.removeChildren(split)
       suffix.forEach((node) => right.addChild(node))
       if (offset >= split) {
@@ -97,21 +130,28 @@ export class PixiBatchPartitions {
         offset -= split
       }
     }
+
     block.addChildAt(child, offset)
   }
 
   parentOf(child: Container): Container | null {
     const parent = child.parent
+
     return parent ? (this.partitionParents.get(parent) ?? parent) : null
   }
 
   dispose(parent: Container): void {
     const blocks = this.partitions.get(parent)
-    if (!blocks) return
+
+    if (!blocks) {
+      return
+    }
+
     for (const block of [...blocks]) {
       block.removeChildren()
       this.removeBlock(parent, blocks, block)
     }
+
     this.partitions.delete(parent)
   }
 
@@ -121,9 +161,11 @@ export class PixiBatchPartitions {
     index: number
   ): Container {
     const block = new Container({ isRenderGroup: true, eventMode: 'passive' })
+
     this.partitionParents.set(block, parent)
     blocks.splice(index, 0, block)
     parent.addChildAt(block, index)
+
     return block
   }
 

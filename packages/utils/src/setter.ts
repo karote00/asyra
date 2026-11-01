@@ -25,8 +25,11 @@ type InstanceDataType =
 
 export class Setter<T extends InstanceDataType> {
   data!: T
+
   private addChangeCallback: (data: SetterChangeRecord) => void
+
   private onCanonicalWrite?: () => void
+
   private listeners = new Set<(data: SetterChangeRecord) => void>()
 
   constructor(
@@ -39,6 +42,7 @@ export class Setter<T extends InstanceDataType> {
 
   on(listener: (data: SetterChangeRecord) => void): () => void {
     this.listeners.add(listener)
+
     return () => {
       this.listeners.delete(listener)
     }
@@ -52,12 +56,14 @@ export class Setter<T extends InstanceDataType> {
     if (key in this.data) {
       return this.data[key]
     }
+
     throw new Error('Not allow to get value which is not in entity data.')
   }
 
   set<K extends keyof T>(key: K, value: T[K], options?: EvnetOptions): void {
     if (key in this.data) {
       const before = cloneDeep(this.data[key])
+
       this.data[key] = value
       const after = cloneDeep(value)
 
@@ -70,6 +76,7 @@ export class Setter<T extends InstanceDataType> {
           after: after as DataTypes,
           options
         }
+
         this.addChangeCallback(change)
         this.listeners.forEach((listener) => listener(change))
       }

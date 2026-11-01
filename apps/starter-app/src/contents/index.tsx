@@ -16,6 +16,7 @@ export const CanvasContents = () => {
   const ready = useReady()
   const width = useCanvasWidth()
   const height = getStarterRenderHeight(ids.length, width)
+
   return (
     <div className="canvas-surface">
       <span className="canvas-ruler">WORKSPACE - 01</span>
@@ -54,7 +55,11 @@ const ItemRow = ({
   const item = useItem(id)
   const selected = useIsSelected(id)
   const { controller } = useApp()
-  if (!item) return null
+
+  if (!item) {
+    return null
+  }
+
   return (
     <button
       type="button"
@@ -72,6 +77,7 @@ const ItemRow = ({
 
 export const ItemList = () => {
   const ids = useItemIds()
+
   return (
     <div className="item-list">
       <div className="list-heading">

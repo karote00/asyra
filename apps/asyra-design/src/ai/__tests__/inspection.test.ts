@@ -5,6 +5,7 @@ const core = vi.hoisted(() => ({
   getElementComputedData: vi.fn(),
   captureElementSnapshot: vi.fn()
 }))
+
 vi.mock('../../contexts', () => ({ default: core }))
 import { inspectionApis } from '../../common-apis/inspection'
 import { beforeEach, expect, it, vi } from 'vitest'
@@ -35,6 +36,7 @@ it('returns fresh rendered evidence for every inspection without caching or writ
     })
   const action = createAiInspectionAction(inspect)
   const context = { signal: new AbortController().signal } as never
+
   expect(await action.execute({ elementId: 'drawing' }, context)).toMatchObject(
     { available: true, image: { dataUrl: 'first' } }
   )
@@ -52,6 +54,7 @@ it('does not capture after cancellation and preserves explicit unavailable resul
   }))
   const action = createAiInspectionAction(inspect)
   const controller = new AbortController()
+
   controller.abort()
   await expect(
     action.execute({ elementId: 'drawing' }, {
@@ -86,6 +89,7 @@ it('captures fresh images without querying unrelated subtree metadata', () => {
     .mockReturnValueOnce({ dataUrl: 'first' })
     .mockReturnValueOnce({ dataUrl: 'second' })
   const first = inspectionApis.inspect('group')
+
   expect(first).toMatchObject({
     available: true,
     imageScope: 'overview',
@@ -113,6 +117,7 @@ it('captures fresh images without querying unrelated subtree metadata', () => {
 it('forwards an explicit native region without describing it as the whole drawing', async () => {
   const region = { x: 0, y: 0, width: 80, height: 60 }
   const inspect = vi.fn(() => ({ available: true, partial: true }))
+
   await createAiInspectionAction(inspect).execute(
     { elementId: 'group', region },
     { signal: new AbortController().signal } as never
@@ -153,6 +158,7 @@ it('keeps overview and native detail capture separate without mutating source ge
     { nativeResolution: false }
   )
   const inspect = vi.fn(() => ({ available: true }))
+
   await createAiInspectionAction(inspect).execute(
     { elementId: 'window', view: 'detail' },
     { signal: new AbortController().signal } as never
@@ -168,10 +174,13 @@ it('binds action output to canonical evidence and validates it without another s
   const { createInspectionEvidence } =
     await import('../../common-apis/inspection-evidence')
   const { createInspectionValidationAction } = await import('../inspection')
+
   let changed: () => void = () => undefined
+
   const stop = vi.fn()
   const evidence = createInspectionEvidence((listener) => {
     changed = listener
+
     return stop
   })
   const inspect = vi.fn(() => ({ available: true, image: { dataUrl: 'png' } }))
@@ -181,6 +190,7 @@ it('binds action output to canonical evidence and validates it without another s
   const result = (await action.execute({ elementId: 'drawing' }, context)) as {
     evidence: { sessionId: string; revision: number }
   }
+
   expect(
     await validate.execute({ evidence: result.evidence }, context)
   ).toEqual({

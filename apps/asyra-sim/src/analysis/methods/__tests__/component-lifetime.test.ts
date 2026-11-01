@@ -12,20 +12,24 @@ import { MeshWorkLimit, OriginalMeshQuery } from '../original-mesh-query'
 const meshIndex = currentMeshIndex as typeof currentMeshIndex & {
   refineMeshIndex: (index: MeshIndex, checkpoint: () => void) => MeshIndex
 }
+
 type CandidatePreparedIndex = PreparedMeshIndex & {
   refinement?: { index: MeshIndex; work: number }
 }
 const ops = poseOperations(intervalAlgebra)
 const positions: number[] = [],
   indices: number[] = []
+
 for (let i = 0; i < 16; i++) {
   const x = i / 4,
     n = positions.length / 3
+
   positions.push(x, 0, 0, x + 1 / 32, 0, 0, x, 1 / 32, 0, x, 0, 1 / 32)
   indices.push(
     ...[0, 2, 1, 0, 1, 3, 0, 3, 2, 1, 2, 3].map((value) => value + n)
   )
 }
+
 const geometry: MeshGeometry = Object.freeze({
   kind: 'mesh',
   version: 1,
@@ -33,16 +37,20 @@ const geometry: MeshGeometry = Object.freeze({
   positions: Object.freeze(positions),
   indices: Object.freeze(indices)
 })
+
 const shape = (x: number, y = 0) => ({
   geometry,
   pose: ops.fromPose({ position: [x, y, 0], rotation: [0, 0, 0, 1] })
 })
+
 const query = (context: OriginalMeshQuery, a = shape(0), b = shape(1 / 8)) =>
   context.distance(a, b, 1 / 64, 1e-6, 48)
+
 afterEach(() => vi.restoreAllMocks())
 
 it('does not refine root-separated, membership-resolved or exhaustive queries', () => {
   const refine = vi.spyOn(meshIndex, 'refineMeshIndex')
+
   expect(
     query(new OriginalMeshQuery(), shape(0), shape(0, 10)).lower
   ).toBeGreaterThan(1 / 64)
@@ -53,6 +61,7 @@ it('does not refine root-separated, membership-resolved or exhaustive queries', 
       rotation: [0, 0, 0, 1]
     })
   }
+
   expect(
     new OriginalMeshQuery().distance(shape(0), inner, 1 / 64, 1e-6, 48)
       .penetration
@@ -66,10 +75,12 @@ it('refines one shared geometry for two poses only after admission and charges c
   const refine = vi.spyOn(meshIndex, 'refineMeshIndex')
   const cold = new OriginalMeshQuery(undefined, 500000, true, prepared)
   const result = query(cold)
+
   expect(refine).toHaveBeenCalledTimes(1)
   expect(result.penetration).toBe(false)
   expect(result.lower).toBeGreaterThan(1 / 64)
   const warm = new OriginalMeshQuery(undefined, 500000, true, prepared)
+
   expect(query(warm)).toEqual(result)
   expect(warm.work).toBe(cold.work)
   expect(refine).toHaveBeenCalledTimes(1)
@@ -77,9 +88,11 @@ it('refines one shared geometry for two poses only after admission and charges c
 
 it('does not charge an unused retained refinement on a root-separated invocation', () => {
   const prepared = new WeakMap<MeshGeometry, CandidatePreparedIndex>()
+
   query(new OriginalMeshQuery(undefined, 500000, true, prepared))
   const warm = new OriginalMeshQuery(undefined, 500000, true, prepared)
   const cold = new OriginalMeshQuery()
+
   expect(query(warm, shape(0), shape(0, 10))).toEqual(
     query(cold, shape(0), shape(0, 10))
   )
@@ -95,12 +108,14 @@ it('does not retain interrupted refinement and retries the complete source const
       checkpoint()
       throw new MeshWorkLimit('Interrupted refinement')
     })
+
   expect(() =>
     query(new OriginalMeshQuery(undefined, 500000, true, prepared))
   ).toThrow('Interrupted refinement')
   expect(prepared.get(geometry)?.refinement).toBeUndefined()
   refine.mockImplementation(original)
   const retry = new OriginalMeshQuery(undefined, 500000, true, prepared)
+
   expect(query(retry)).toEqual(query(new OriginalMeshQuery()))
   expect(prepared.get(geometry)?.refinement).toBeDefined()
 })
@@ -108,19 +123,24 @@ it('does not retain interrupted refinement and retries the complete source const
 it('uses completed refined roots in the current distance and interval traversal', () => {
   const original = meshIndex.refineMeshIndex
   let completed: MeshIndex | undefined
+
   vi.spyOn(meshIndex, 'refineMeshIndex').mockImplementation(
     (index, checkpoint) => {
       completed = original(index, checkpoint)
+
       return completed
     }
   )
   const resolverFactory = meshIndex.createWorldBoundsResolver
   const resolvedBounds: object[] = []
+
   vi.spyOn(meshIndex, 'createWorldBoundsResolver').mockImplementation(
     (pose) => {
       const resolve = resolverFactory(pose)
+
       return (bounds) => {
         resolvedBounds.push(bounds)
+
         return resolve(bounds)
       }
     }
@@ -129,6 +149,7 @@ it('uses completed refined roots in the current distance and interval traversal'
     a = shape(0),
     b = shape(1 / 8)
   const witness = context.distance(a, b, 1 / 64, 1e-6, 48)
+
   expect(completed).toBeDefined()
   expect(resolvedBounds).toContain(completed?.root.bounds)
   resolvedBounds.length = 0
@@ -144,6 +165,7 @@ it.each([false, true])(
     const cold = new OriginalMeshQuery(undefined, 500000, true, prepared),
       warm = new OriginalMeshQuery(undefined, 500000, true, prepared)
     const result = query(cold, a, b)
+
     expect(query(warm, a, b)).toEqual(result)
     expect(warm.work).toBe(cold.work)
     expect(prepared.get(geometry)?.refinement).toBeDefined()
@@ -153,10 +175,12 @@ it.each([false, true])(
 it('does not reuse preparation for replaced or mutable source geometry', () => {
   const prepared = new WeakMap<MeshGeometry, CandidatePreparedIndex>()
   const refine = vi.spyOn(meshIndex, 'refineMeshIndex')
+
   query(new OriginalMeshQuery(undefined, 500000, true, prepared))
   const replaced = Object.freeze({ ...geometry })
   const a = { ...shape(0), geometry: replaced },
     b = { ...shape(1 / 8), geometry: replaced }
+
   query(new OriginalMeshQuery(undefined, 500000, true, prepared), a, b)
   expect(refine).toHaveBeenCalledTimes(2)
   const mutable = {
@@ -164,6 +188,7 @@ it('does not reuse preparation for replaced or mutable source geometry', () => {
     positions: [...geometry.positions],
     indices: [...geometry.indices]
   }
+
   query(
     new OriginalMeshQuery(undefined, 500000, true, prepared),
     { ...a, geometry: mutable },
@@ -177,7 +202,11 @@ it('rejects an unpaid warm refinement before traversal without discarding comple
   const cold = new OriginalMeshQuery(undefined, 500000, true, prepared)
   const result = query(cold)
   const artifact = prepared.get(geometry)
-  if (!artifact?.refinement) throw new Error('Missing completed refinement')
+
+  if (!artifact?.refinement) {
+    throw new Error('Missing completed refinement')
+  }
+
   const world = vi.spyOn(meshIndex, 'worldBounds')
   const limited = new OriginalMeshQuery(
     undefined,
@@ -185,6 +214,7 @@ it('rejects an unpaid warm refinement before traversal without discarding comple
     true,
     prepared
   )
+
   expect(() => query(limited)).toThrow(MeshWorkLimit)
   expect(
     world.mock.calls.some(
@@ -193,6 +223,7 @@ it('rejects an unpaid warm refinement before traversal without discarding comple
   ).toBe(false)
   expect(prepared.get(geometry)).toBe(artifact)
   const retry = new OriginalMeshQuery(undefined, 500000, true, prepared)
+
   expect(query(retry)).toEqual(result)
   expect(retry.work).toBe(cold.work)
 })

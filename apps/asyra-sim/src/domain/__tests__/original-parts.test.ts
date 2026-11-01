@@ -18,6 +18,7 @@ export const tetrahedron = {
 describe('original part geometry schema', () => {
   it('rejects mesh body data without its canonical source binding', () => {
     const body = createSyntheticExample().workcell.bodies[0]
+
     expect(
       validBodyParameters({
         ...body,
@@ -46,6 +47,7 @@ describe('complete original source resolution', () => {
         source: { sha256: 'a'.repeat(64) },
         meshes: [{ positions: new Array(600000).fill(0), indices: [0, 1, 2] }]
       }
+
     example.workcell.bodies[0].visuals = Array.from({ length: 3 }, (_, i) => ({
       version: 1,
       id: `part-${i}`,
@@ -73,6 +75,7 @@ describe('complete original source resolution', () => {
       meshes: [tetrahedron, tetrahedron]
     }
     const collider = resolvePart(binding, source)
+
     expect(collider.pose).toEqual(binding.pose)
     expect(collider.geometry).toMatchObject({
       positions: [...tetrahedron.positions, ...tetrahedron.positions].map(
@@ -92,12 +95,20 @@ describe('complete original source resolution', () => {
       part = createMechanicalVisuals().find(
         (item) => item.body === 'fixture-table'
       )
-    if (!part) throw new Error('Missing sample table source')
+
+    if (!part) {
+      throw new Error('Missing sample table source')
+    }
+
     const asset = await decodeRestrictedGlb(part.bytes)
     const body = sample.workcell.bodies.find(
       (body) => body.id === 'example:fixture-table'
     )
-    if (!body) throw new Error('Missing sample table body')
+
+    if (!body) {
+      throw new Error('Missing sample table body')
+    }
+
     const workcell = {
       ...sample.workcell,
       bodies: sample.workcell.bodies.map((item) =>
@@ -123,11 +134,17 @@ describe('complete original source resolution', () => {
       new Map([[asset.source.sha256, asset]])
     )
     const table = resolved.bodies.find((item) => item.id === body.id)
-    if (!table) throw new Error('Missing resolved table')
+
+    if (!table) {
+      throw new Error('Missing resolved table')
+    }
+
     expect(table.colliders).toHaveLength(1)
     expect(table.colliders[0].geometry.kind).toBe('mesh')
-    if (table.colliders[0].geometry.kind !== 'mesh')
+    if (table.colliders[0].geometry.kind !== 'mesh') {
       throw new Error('Missing original mesh')
+    }
+
     expect(
       Math.min(
         ...table.colliders[0].geometry.positions.filter((_, i) => i % 3 === 1)
@@ -163,7 +180,11 @@ describe('complete original source resolution', () => {
         },
         asset
       )
-      if (collider.geometry.kind !== 'mesh') throw new Error('Missing mesh')
+
+      if (collider.geometry.kind !== 'mesh') {
+        throw new Error('Missing mesh')
+      }
+
       expect(inspectMeshTopology(collider.geometry).issue, part.body).toBeNull()
     }
   })

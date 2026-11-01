@@ -54,9 +54,18 @@ const createHarness = () => {
   const sequence: string[] = []
   const parent = {
     get: vi.fn((key: string) => {
-      if (key === 'id') return 'workspace-1'
-      if (key === 'type') return EntityTypes.WORKSPACE
-      if (key === 'children') return []
+      if (key === 'id') {
+        return 'workspace-1'
+      }
+
+      if (key === 'type') {
+        return EntityTypes.WORKSPACE
+      }
+
+      if (key === 'children') {
+        return []
+      }
+
       return undefined
     })
   }
@@ -73,6 +82,7 @@ const createHarness = () => {
         _options: unknown
       ) => {
         sequence.push('scene-combined-apply')
+
         return Object.freeze(
           data.map(({ id }: { readonly id?: string }) => id ?? '')
         )
@@ -80,6 +90,7 @@ const createHarness = () => {
     ),
     prepareElementInsertion: vi.fn(() => {
       sequence.push('scene-prepare')
+
       return Object.freeze({
         kind: 'prepared-element-insertion',
         orderedElementIds: Object.freeze(['ordinary-element']),
@@ -88,6 +99,7 @@ const createHarness = () => {
     }),
     prepareCanonicalElementInsertion: vi.fn(() => {
       sequence.push('scene-prepare')
+
       return Object.freeze({
         kind: 'prepared-canonical-element-insertion',
         orderedElementIds: Object.freeze(['canonical-element']),
@@ -104,6 +116,7 @@ const createHarness = () => {
     }),
     prepareSubtreeRemoval: vi.fn(() => {
       sequence.push('scene-prepare')
+
       return Object.freeze({
         kind: 'prepared-subtree-removal',
         orderedElementIds: Object.freeze(['subtree-child', 'subtree-root']),
@@ -124,6 +137,7 @@ const createHarness = () => {
     }),
     prepareCanonicalSubtreeRemoval: vi.fn((change: SubtreeChange) => {
       sequence.push('scene-prepare')
+
       return Object.freeze({
         kind: 'prepared-subtree-removal',
         orderedElementIds: Object.freeze(
@@ -138,6 +152,7 @@ const createHarness = () => {
     prepareCanonicalElementDataMutation: vi.fn(
       (changes: readonly UpdateElementDataChange[]) => {
         sequence.push('scene-prepare')
+
         return Object.freeze({
           kind: 'prepared-element-data-mutation',
           orderedElementIds: Object.freeze(changes.map(({ id }) => id)),
@@ -147,10 +162,12 @@ const createHarness = () => {
     ),
     applyHierarchyMoves: vi.fn((moves: readonly HierarchyMove[]) => {
       sequence.push('scene-apply')
+
       return moves.length > 0
     }),
     preflightRestoreSubtree: vi.fn((snapshot) => {
       sequence.push('scene-prepare')
+
       return Object.freeze({
         kind: 'prepared-scene-tree-restore',
         elementId: snapshot.elementId,
@@ -160,6 +177,7 @@ const createHarness = () => {
     }),
     applyRestoreSubtree: vi.fn((prepared) => {
       sequence.push('scene-apply')
+
       return Object.freeze({
         elementId: prepared.elementId,
         removed: Object.freeze([]),
@@ -169,6 +187,7 @@ const createHarness = () => {
     prepareCanonicalElementRemoval: vi.fn(
       (removals: readonly CanonicalElementRemoval[]) => {
         sequence.push('scene-prepare')
+
         return Object.freeze({
           kind: 'prepared-canonical-element-removal',
           orderedElementIds: Object.freeze(removals.map(({ data }) => data.id)),
@@ -181,6 +200,7 @@ const createHarness = () => {
     ),
     applyPreparedElementMutation: vi.fn((prepared) => {
       sequence.push('scene-apply')
+
       return Object.freeze({
         orderedElementIds: prepared.orderedElementIds,
         evidence: prepared.evidence
@@ -205,6 +225,7 @@ const createHarness = () => {
       }) => {
         sequence.push('props-prepare')
         const operation = request.operations[0]
+
         if (operation?.kind === 'create-owner-properties') {
           return preparedProperties(
             Object.freeze([
@@ -217,6 +238,7 @@ const createHarness = () => {
             ])
           )
         }
+
         if (operation?.kind === 'values') {
           return preparedProperties(
             [],
@@ -225,20 +247,29 @@ const createHarness = () => {
             )
           )
         }
+
         if (operation?.kind === 'create-exact-property-records') {
           const ids = request.operations.flatMap((mutation) => {
-            if (mutation.kind === 'create-exact-property-records')
+            if (mutation.kind === 'create-exact-property-records') {
               return mutation.components.map(({ id }) => id)
-            if (mutation.kind === 'values') return [mutation.propertyId]
+            }
+
+            if (mutation.kind === 'values') {
+              return [mutation.propertyId]
+            }
+
             return []
           })
+
           return preparedProperties([], [...new Set(ids)])
         }
+
         return preparedProperties()
       }
     ),
     applyPreparedPropertyMutationBatch: vi.fn((prepared) => {
       sequence.push('props-apply')
+
       return Object.freeze({
         ...emptyPropertyResult(prepared.ownerRelations),
         orderedPropertyIds: prepared.orderedPropertyIds
@@ -246,6 +277,7 @@ const createHarness = () => {
     }),
     preflightRestoreProperties: vi.fn((_snapshot, ownerRelations) => {
       sequence.push('props-prepare')
+
       return Object.freeze({
         kind: 'prepared-props-restore',
         entries: Object.freeze([]),
@@ -254,6 +286,7 @@ const createHarness = () => {
     }),
     applyRestoreProperties: vi.fn(() => {
       sequence.push('props-apply')
+
       return Object.freeze([])
     }),
     save: vi.fn(() => ({})),
@@ -263,6 +296,7 @@ const createHarness = () => {
     sceneTree as never,
     {
       getViewportPosition: () => ({ x: 0, y: 0 }),
+
       getViewportScale: () => 1
     } as never,
     { get: vi.fn() } as never,
@@ -272,6 +306,7 @@ const createHarness = () => {
       registerTransactionReplayHandler: vi.fn()
     } as never
   )
+
   return { apis, parent, props, sceneTree, sequence }
 }
 
@@ -322,6 +357,7 @@ describe('Core canonical owner coordination', () => {
       forwardedIndex,
       forwardedOptions
     ] = sceneTree.addNewElements.mock.calls[0] ?? []
+
     expect(forwardedDescriptors).toEqual([
       {
         ...descriptors[0],
@@ -389,9 +425,11 @@ describe('Core canonical owner coordination', () => {
 
     const preparedSceneMutation =
       sceneTree.prepareCanonicalElementInsertion.mock.results[0]?.value
+
     if (!preparedSceneMutation) {
       throw new Error('Expected one canonical Scene insertion prepared')
     }
+
     expect(props.preparePropertyMutationBatch).toHaveBeenCalledWith({
       operations: [
         {
@@ -404,13 +442,16 @@ describe('Core canonical owner coordination', () => {
     })
     const propertyOperation =
       props.preparePropertyMutationBatch.mock.calls[0]?.[0].operations[0]
+
     if (propertyOperation?.kind !== 'create-exact-property-graph') {
       throw new Error('Expected one exact canonical property operation')
     }
+
     const exactOperation = propertyOperation as Extract<
       PropertyMutation,
       { kind: 'create-exact-property-graph' }
     >
+
     expect(exactOperation.ownerRelations).toBe(
       preparedSceneMutation.ownerRelations
     )
@@ -671,6 +712,7 @@ describe('Core canonical owner coordination', () => {
   it('creates exact property records before applying updates in one owner batch', () => {
     const { apis, props } = createHarness()
     const creations = [{ id: 'point-b', type: PROPERTY_TYPE, value: 20 }]
+
     apis.applyCanonicalChanges([
       {
         kind: 'property-components',

@@ -52,6 +52,7 @@ describe('app hierarchy common APIs', () => {
       elementIds: ['first', 'last'],
       removed: true
     }
+
     mocks.groupElements.mockReturnValue(grouped)
     mocks.ungroupElement.mockReturnValue(ungrouped)
 
@@ -85,6 +86,7 @@ describe('app hierarchy common APIs', () => {
         parentId: 'group-1'
       }
     }
+
     mocks.core.getUIProperty.mockImplementation((key: string) =>
       key === 'flattenedElementIds' ? flattenedIds : elementDataMap
     )
@@ -175,6 +177,7 @@ describe('app hierarchy common APIs', () => {
       ]
     }
     const options = { undoable: true }
+
     mocks.moveElementsWithGroupGeometry.mockReturnValue(result)
 
     expect(hierarchyApis.moveElements(request, options)).toBe(result)
@@ -195,6 +198,7 @@ describe('app hierarchy common APIs', () => {
       elementIds: ['first', 'second'],
       moves: []
     }
+
     mocks.moveElementsWithGroupGeometry.mockReturnValueOnce(noOpResult)
 
     expect(hierarchyApis.moveElements(noOpRequest)).toBe(noOpResult)
@@ -211,6 +215,7 @@ describe('app hierarchy common APIs', () => {
       targetIndex: 0
     }
     const rejection = new Error('canonical self-parent rejection')
+
     mocks.moveElementsWithGroupGeometry.mockImplementationOnce(() => {
       throw rejection
     })
@@ -233,6 +238,7 @@ describe('app hierarchy common APIs', () => {
       elements: {}
     }
     const options = { undoable: true }
+
     mocks.core.removeSubtree.mockReturnValue(result)
 
     expect(hierarchyApis.removeSubtree('group-1', options)).toBe(result)

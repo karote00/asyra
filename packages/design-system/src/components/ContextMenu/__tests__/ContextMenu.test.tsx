@@ -45,6 +45,7 @@ describe('ContextMenu', () => {
 
     expect(screen.getByRole('menu', { name: 'Canvas commands' })).toBeTruthy()
     const rows = screen.getAllByRole('menuitem')
+
     expect(rows.map((row) => row.textContent)).toEqual(['Group⌘G', 'Ungroup'])
     expect(rows[0]?.getAttribute('aria-disabled')).toBe('false')
     expect(rows[1]?.getAttribute('aria-disabled')).toBe('true')
@@ -91,6 +92,7 @@ describe('ContextMenu', () => {
 
     const menu = screen.getByRole('menu')
     const rows = screen.getAllByRole('menuitem')
+
     expect(document.activeElement).toBe(rows[0])
 
     fireEvent.keyDown(menu, { key: 'ArrowDown' })
@@ -130,6 +132,7 @@ describe('ContextMenu', () => {
     )
 
     const menu = screen.getByRole('menu')
+
     fireEvent.keyDown(menu, { key: 'Escape' })
     fireEvent.keyDown(menu, { key: 'Tab' })
     fireEvent(
@@ -153,6 +156,7 @@ describe('ContextMenu', () => {
     const windowKeyDown = vi.fn()
     const outsidePointerDown = vi.fn()
     const outside = document.createElement('button')
+
     document.body.append(outside)
     window.addEventListener('keydown', windowKeyDown)
     outside.addEventListener('pointerdown', outsidePointerDown)
@@ -174,6 +178,7 @@ describe('ContextMenu', () => {
       cancelable: true,
       key: 'Escape'
     })
+
     menu.dispatchEvent(escape)
     expect(windowKeyDown).not.toHaveBeenCalled()
 
@@ -182,6 +187,7 @@ describe('ContextMenu', () => {
       cancelable: true,
       key: 'Tab'
     })
+
     menu.dispatchEvent(tab)
     expect(tab.defaultPrevented).toBe(false)
     expect(windowKeyDown).not.toHaveBeenCalled()
@@ -191,6 +197,7 @@ describe('ContextMenu', () => {
       cancelable: true,
       button: 0
     })
+
     outside.dispatchEvent(outsidePress)
     expect(outsidePress.defaultPrevented).toBe(true)
     expect(outsidePointerDown).not.toHaveBeenCalled()
@@ -238,6 +245,7 @@ describe('ContextMenu', () => {
       bottom: 80,
       width: 180,
       height: 80,
+
       toJSON: () => ({})
     })
 
@@ -253,6 +261,7 @@ describe('ContextMenu', () => {
     )
 
     const menu = screen.getByRole('menu')
+
     expect(menu.style.left).toBe('130px')
     expect(menu.style.top).toBe('140px')
   })
@@ -270,6 +279,7 @@ describe('ContextMenu', () => {
     )
 
     const menu = screen.getByRole('menu')
+
     expect(menu.tabIndex).toBe(0)
     expect(document.activeElement).toBe(menu)
   })

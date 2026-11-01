@@ -8,6 +8,7 @@ import architecture from '../../../../assets/asyra-office/models/architecture/ar
 
 export const WALL_ASSET_ID = 'wall-segment'
 export const WALL_REGION_IDS = ['body', 'top-cap'] as const
+
 export type WallRegion = (typeof WALL_REGION_IDS)[number]
 export interface MaterialOverride {
   color?: number
@@ -35,8 +36,11 @@ const specification = (() => {
   const value = architecture.modules.find(
     (item) => item.moduleId === WALL_ASSET_ID
   )
-  if (!value || !value.overallSizeMetres)
+
+  if (!value || !value.overallSizeMetres) {
     throw new Error('Missing approved wall specification')
+  }
+
   return { ...value, overallSizeMetres: value.overallSizeMetres }
 })()
 export const WALL_DEFAULT_SIZE: SpatialVector = Object.freeze([
@@ -55,8 +59,10 @@ function readScale(size: SpatialVector): SpatialVector {
     !Array.isArray(size) ||
     size.length !== 3 ||
     !size.every((n) => Number.isFinite(n) && n > 0)
-  )
+  ) {
     throw new Error('Wall extents must be three positive finite metres')
+  }
+
   return [
     size[0] / WALL_DEFAULT_SIZE[0],
     size[1] / WALL_DEFAULT_SIZE[1],
@@ -77,16 +83,20 @@ function buildPart(
     [-depth / 2, 0],
     [depth / 2, 0]
   ]
+
   if (rounded) {
     for (let i = 0; i <= WALL_EDGE_SEGMENTS; i++) {
       const angle = ((Math.PI / 2) * i) / WALL_EDGE_SEGMENTS
+
       profile.push([
         depth / 2 - radius + radius * Math.cos(angle),
         height - radius + radius * Math.sin(angle)
       ])
     }
+
     for (let i = 0; i <= WALL_EDGE_SEGMENTS; i++) {
       const angle = Math.PI / 2 + ((Math.PI / 2) * i) / WALL_EDGE_SEGMENTS
+
       profile.push([
         -depth / 2 + radius + radius * Math.cos(angle),
         height - radius + radius * Math.sin(angle)
@@ -95,14 +105,17 @@ function buildPart(
   } else {
     profile.push([depth / 2, height], [-depth / 2, height])
   }
+
   const positions: number[] = [],
     indices: number[] = [],
     uvs: number[] = []
+
   const point = (x: number, yz: [number, number]): SpatialVector => [
     x * scale[0],
     yz[0] * scale[1],
     (yz[1] - height / 2) * scale[2]
   ]
+
   const triangle = (
     a: SpatialVector,
     b: SpatialVector,
@@ -115,6 +128,7 @@ function buildPart(
       uvs.push(p[uvAxes[0]], p[uvAxes[1]])
     }
   }
+
   for (let i = 0; i < profile.length; i++) {
     const j = (i + 1) % profile.length
     const left = point(-width / 2, profile[i]),
@@ -126,11 +140,13 @@ function buildPart(
       Math.abs(profile[j][1] - profile[i][1])
         ? [0, 1]
         : [0, 2]
+
     triangle(left, nextLeft, nextRight, axes)
     triangle(left, nextRight, right, axes)
     triangle(point(-width / 2, [0, height / 2]), nextLeft, left, [1, 2])
     triangle(point(width / 2, [0, height / 2]), right, nextRight, [1, 2])
   }
+
   return { kind: 'triangles' as const, positions, indices, uvs }
 }
 
@@ -138,19 +154,26 @@ export function createWall(options: WallOptions = {}): readonly WallPart[] {
   const scale = readScale(options.size ?? WALL_DEFAULT_SIZE)
   const totalHeight = (options.size ?? WALL_DEFAULT_SIZE)[2]
   const capHeight = options.capHeight
+
   if (
     capHeight !== undefined &&
     (!Number.isFinite(capHeight) ||
       capHeight <= WALL_EDGE_RADIUS * scale[2] ||
       totalHeight - capHeight <= WALL_EDGE_RADIUS * scale[2])
-  )
+  ) {
     throw new Error('Wall cap must leave positive beveled body and cap regions')
+  }
+
   return Object.freeze(
     WALL_REGION_IDS.map((id) => {
       const component = specification.components.find(
         (part) => part.partId === id
       )
-      if (!component) throw new Error('Missing wall region')
+
+      if (!component) {
+        throw new Error('Missing wall region')
+      }
+
       const defaults =
         architecture.materials[component.material as 'plaster' | 'cream-cap']
       const region = options.regions?.[id]
@@ -166,11 +189,14 @@ export function createWall(options: WallOptions = {}): readonly WallPart[] {
           ? sourceHeight
           : (id === 'top-cap' ? capHeight : totalHeight - capHeight) / scale[2]
       const centre = component.centreMetres.map((n, i) => n * scale[i])
-      if (capHeight !== undefined)
+
+      if (capHeight !== undefined) {
         centre[2] =
           id === 'top-cap'
             ? totalHeight - capHeight / 2
             : (totalHeight - capHeight) / 2
+      }
+
       const descriptor = readSpatialDescriptor({
         kind: 'mesh',
         instances: [
@@ -194,7 +220,11 @@ export function createWall(options: WallOptions = {}): readonly WallPart[] {
         castShadow: true,
         receiveShadow: true
       })
-      if (descriptor.kind !== 'mesh') throw new Error('Expected wall mesh')
+
+      if (descriptor.kind !== 'mesh') {
+        throw new Error('Expected wall mesh')
+      }
+
       return Object.freeze({ id, descriptor })
     })
   )
@@ -207,21 +237,27 @@ export function wallAsset(
 ): import('./catalog').AssetPart[] {
   return createWall({ size, capHeight }).map(({ id, descriptor }) => {
     const convert = (shape: typeof descriptor.shape) => {
-      if (shape.kind !== 'triangles')
+      if (shape.kind !== 'triangles') {
         throw new Error('Expected authored wall triangles')
+      }
+
       const positions: number[] = []
-      for (let i = 0; i < shape.positions.length; i += 3)
+
+      for (let i = 0; i < shape.positions.length; i += 3) {
         positions.push(
           shape.positions[i] + descriptor.position[0],
           -shape.positions[i + 2] - descriptor.position[2],
           shape.positions[i + 1] + descriptor.position[1]
         )
+      }
+
       return {
         positions,
         indices: [...shape.indices],
         uvs: [...(shape.uvs ?? [])]
       }
     }
+
     return {
       id,
       mesh: convert(descriptor.shape),

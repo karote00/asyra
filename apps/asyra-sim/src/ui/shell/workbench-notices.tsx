@@ -52,7 +52,9 @@ export function WorkbenchNotices() {
                 try {
                   const snapshot = resources?.controller.getRecovery()
 
-                  if (snapshot) downloadRecovery(snapshot)
+                  if (snapshot) {
+                    downloadRecovery(snapshot)
+                  }
                 } catch (reason) {
                   setError(String(reason))
                 }

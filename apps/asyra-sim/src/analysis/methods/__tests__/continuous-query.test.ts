@@ -52,14 +52,17 @@ const fixed: Body = {
   role: 'fixture',
   colliders: [sphere]
 }
+
 function input(bodies: Body[], trajectory: Trajectory): PairQuery {
   const workcell: Workcell = {
     version: 1,
     robotRootId: 'base',
     bodies: [body, ...bodies]
   }
+
   validateWorkcell(workcell)
   validateTrajectory(workcell, trajectory)
+
   return {
     workcell,
     trajectory,
@@ -71,6 +74,7 @@ function input(bodies: Body[], trajectory: Trajectory): PairQuery {
     ]
   }
 }
+
 const path = (a: number, b: number, duration = 1): Trajectory => ({
   version: 1,
   keyframes: [
@@ -105,10 +109,13 @@ describe('complete-time pair evidence', () => {
         {
           distance: (a, b) =>
             ++calls > 1 ? null : convexDistance(a, b, 1e-6, 64),
+
           lower: () => null,
+
           exhaustionReason: 'Declared geometry work exhausted'
         }
       )
+
       expect(result.coverage).toBe('partial')
       expect(result.evaluations).toBe(1)
       expect(result.leaves).toHaveLength(2)
@@ -119,8 +126,12 @@ describe('complete-time pair evidence', () => {
       // Traversal order is not the product contract; preservation and the
       // complete sorted partition are. The motion here is stationary.
       const retained = result.leaves.find((leaf) => leaf.witnessTime !== null)
+
       expect(retained).toBeDefined()
-      if (!retained) throw new Error('The established witness was discarded')
+      if (!retained) {
+        throw new Error('The established witness was discarded')
+      }
+
       expect(retained).toMatchObject({
         state,
         penetration,
@@ -148,6 +159,7 @@ describe('complete-time pair evidence', () => {
         keyframes: [{ time: 0, joints: { moving: 0 } }]
       }
     )
+
     expect(
       queryContinuousPair(query, { ...settings, maxIntervals: 1000000 })
         .coverage
@@ -167,6 +179,7 @@ describe('complete-time pair evidence', () => {
     )
     const constrained = { ...settings, threshold: 1e-6, maxEvidenceLeaves: 1 }
     const result = queryContinuousPair(query, constrained)
+
     expect(result.coverage).toBe('partial')
     expect(result.leaves).toHaveLength(1)
     expect(result.leaves[0]).toMatchObject({
@@ -190,6 +203,7 @@ describe('complete-time pair evidence', () => {
     })
     const constrained = { ...settings, maxEvidenceLeaves: 1 }
     const result = queryContinuousPair(query, constrained)
+
     expect(result.leaves).toHaveLength(1)
     expect(result.leaves[0]).toMatchObject({
       start: 0,
@@ -208,6 +222,7 @@ describe('complete-time pair evidence', () => {
       input([moving, obstacle], path(-10, 10)),
       settings
     )
+
     expect(
       result.leaves.some((leaf) => leaf.penetration),
       JSON.stringify({
@@ -223,6 +238,7 @@ describe('complete-time pair evidence', () => {
       input([moving, fixed], path(-10, 10, 0.001)),
       settings
     )
+
     expect(result.leaves.some((leaf) => leaf.penetration)).toBe(true)
     expect(result.upper).toBe(0)
     expect(result.leaves.find((leaf) => leaf.penetration)?.witnessTime).toBe(
@@ -246,6 +262,7 @@ describe('complete-time pair evidence', () => {
       input([rotating, obstacle], path(0, Math.PI)),
       settings
     )
+
     expect(result.leaves.some((leaf) => leaf.penetration)).toBe(true)
     expect(result.upper).toBe(0)
   })
@@ -258,6 +275,7 @@ describe('complete-time pair evidence', () => {
       ...settings,
       threshold: 1
     })
+
     expect(result.coverage).toBe('complete')
     expect(result.leaves.every((leaf) => leaf.state === 'clear')).toBe(true)
     expect(result.lower).toBeGreaterThan(1)
@@ -275,6 +293,7 @@ describe('complete-time pair evidence', () => {
       maxIntervals: 1,
       threshold: 1e-6
     })
+
     expect(result.coverage).toBe('partial')
     expect(result.leaves.some((leaf) => leaf.state === 'unresolved')).toBe(true)
     expect(result.leaves[0].start).toBe(0)
@@ -301,6 +320,7 @@ describe('complete-time pair evidence', () => {
       { ...query, interval: [0.2, 0.7] },
       settings
     )
+
     expect(result.coverage).toBe('complete')
     expect(result.leaves.map((leaf) => [leaf.start, leaf.end])).toEqual([
       [0.2, 0.4],
@@ -316,6 +336,7 @@ describe('complete-time pair evidence', () => {
       version: 1,
       keyframes: [{ time: 0, joints: { moving: 0 } }]
     })
+
     expect(queryContinuousPair(query, settings).coverage).toBe('partial')
     expect(() =>
       queryContinuousPair({ ...query, interval: [0, 1] }, settings)
@@ -338,6 +359,7 @@ it.each([0, 3599])(
   (origin) => {
     const duration = 1 / 1024
     const radius = 1 / 8
+
     for (const offset of [0, 1 / 2]) {
       const primitive = {
         ...sphere,
@@ -362,6 +384,7 @@ it.each([0, 3599])(
       )
       const result = queryOriginalPartPair(query, settings)
       let cursor = origin
+
       for (const leaf of result.leaves) {
         expect(leaf.start).toBe(cursor)
         expect(leaf.end).toBeGreaterThanOrEqual(leaf.start)
@@ -371,22 +394,27 @@ it.each([0, 3599])(
         const nearest =
           x0 <= 0 && x1 >= 0 ? 0 : Math.min(Math.abs(x0), Math.abs(x1))
         const minimum = Math.max(0, Math.hypot(nearest, offset) - 2 * radius)
+
         expect(leaf.lower).toBeLessThanOrEqual(minimum)
-        if (leaf.upper !== null)
+        if (leaf.upper !== null) {
           expect(leaf.upper).toBeGreaterThanOrEqual(minimum)
+        }
+
         if (leaf.penetration) {
           expect(leaf.witnessTime).not.toBeNull()
           const time = leaf.witnessTime as number
+
           // Exact strict contact window from |x(t)| < 1/4.
           expect(time).toBeGreaterThan(origin + (duration * 31) / 64)
           expect(time).toBeLessThan(origin + (duration * 33) / 64)
           expect(offset).toBe(0)
         }
       }
+
       expect(cursor).toBe(origin + duration)
-      if (offset === 0)
+      if (offset === 0) {
         expect(result.leaves.some((leaf) => leaf.penetration)).toBe(true)
-      else {
+      } else {
         expect(result.coverage).toBe('complete')
         expect(result.lower).toBeLessThanOrEqual(1 / 4)
         expect(result.upper).toBeGreaterThanOrEqual(1 / 4)

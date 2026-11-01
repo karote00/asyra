@@ -22,7 +22,11 @@ export function walkingObservationWorkspaceFixture(
     walkingObservationScene(kind)
   let observationSpace:
     ReturnType<typeof prepareSceneObservationSpace> | undefined
-  if (!demand.route) throw new Error('Missing route')
+
+  if (!demand.route) {
+    throw new Error('Missing route')
+  }
+
   const operating = new WalkingOperatingOwner(
     () => demand,
     (value) => value === demand
@@ -30,27 +34,40 @@ export function walkingObservationWorkspaceFixture(
   const report = operating.apply(createWalkingRuntimeSelection(definition))
   const workspace = createWalkingObservationWorkspace({
     prepareObservationSpace: (value) => {
-      if (value !== demand) throw new Error('Foreign demand')
+      if (value !== demand) {
+        throw new Error('Foreign demand')
+      }
+
       return (observationSpace ??= prepareSceneObservationSpace(
         demand,
         sourceOwner
       ))
     },
+
     isCurrentObservationSpace: (value) => value === observationSpace,
+
     getSourceWork: () => sourceOwner.work,
+
     getOperating: () => operating.read(),
+
     isCurrentOperating: (value) => operating.isCurrent(value),
+
     getDemand: () => demand,
+
     isCurrentDemand: (value) => value === demand,
+
     getScene: () => scene,
+
     isCurrentScene,
     screen: operating.transitScreen
   })
   const volume = demand.route.volume
   const x = (volume.min[0] + volume.max[0]) / 2
   const y = (volume.max[1] - volume.min[1]) / 24
+
   const z = (fraction: number) =>
     volume.min[2] + (volume.max[2] - volume.min[2]) * fraction
+
   const config: WalkingObservationScenario = {
     format: 'walking-observation-scenario/1',
     id: 'workspace-camera',
@@ -114,6 +131,7 @@ export function walkingObservationWorkspaceFixture(
       }
     ]
   }
+
   return {
     workspace,
     operating,

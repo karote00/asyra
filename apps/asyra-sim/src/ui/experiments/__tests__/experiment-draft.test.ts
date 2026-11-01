@@ -128,6 +128,7 @@ describe('experiment UI draft helpers', () => {
 
 it('never infers external source units from canonical headers or in-limit numbers', () => {
   const mapping = guessCsvMapping(['time', 'joint'], workcell)
+
   expect(
     previewTrajectoryCsv('time,joint\n0,0.5\n1,1', workcell, mapping).value
   ).toBeNull()

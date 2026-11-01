@@ -56,6 +56,7 @@ describe('Factory', () => {
 
   it('exposes the canonical batch handoff on the owning transaction owner', () => {
     const updateBatch = vi.fn()
+
     factory.transact.updateBatch = updateBatch
     const owner = factory.getTransactionOwner()
     const events: readonly UpdateTransactionEvent[] = [
@@ -88,6 +89,7 @@ describe('Factory', () => {
       status: string
       rollbackableChangeCount: number
     }[] = []
+
     factory.subscribeToTransactionStatus((status) => statuses.push(status))
 
     factory.runRemoteTransaction(() => {
@@ -119,6 +121,7 @@ describe('Factory', () => {
     const publications = vi.fn()
     const captures = vi.fn()
     const statuses: TransactionStatusPayload[] = []
+
     factory.subscribeToSharedPublication(publications)
     factory.subscribeToCommitCapture(captures)
     factory.subscribeToTransactionStatus((status) => statuses.push(status))
@@ -134,6 +137,7 @@ describe('Factory', () => {
       const owner = getTransactionOwner() as ReturnType<
         Factory['getTransactionOwner']
       > | null
+
       expect(typeof owner?.updateTransactionBatch).toBe('function')
       owner?.updateTransactionBatch(events)
     })
@@ -157,6 +161,7 @@ describe('Factory', () => {
     const statuses: unknown[] = []
     const propsChannel = new LocalSharedDataChannel()
     const sceneChannel = new LocalSharedDataChannel()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.PROPS,
       propsChannel
@@ -170,6 +175,7 @@ describe('Factory', () => {
     factory.subscribeToSharedPublication((value) => publications.push(value))
     factory.subscribeToTransactionStatus((value) => statuses.push(value))
     const replay = vi.fn(() => true)
+
     factory.registerTransactionReplayHandler(EventTypes.REMOVE_PROPERTY, replay)
     factory.registerTransactionReplayHandler(EventTypes.CHANGE_SUBTREE, replay)
 
@@ -245,6 +251,7 @@ describe('Factory', () => {
     const publications: unknown[] = []
     const propsChannel = new LocalSharedDataChannel()
     const sceneChannel = new LocalSharedDataChannel()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.PROPS,
       propsChannel
@@ -262,6 +269,7 @@ describe('Factory', () => {
         expect(mode).toBe('rollback')
         propsActive = false
         rollbackOrder.push('props')
+
         return true
       }
     )
@@ -276,6 +284,7 @@ describe('Factory', () => {
         )
         sceneActive = false
         rollbackOrder.push('scene')
+
         return true
       }
     )
@@ -346,14 +355,17 @@ describe('Factory', () => {
       )
       await Promise.resolve()
     })
+
     factory.registerTransactionReplayHandler(EventTypes.REMOVE_PROPERTY, () => {
       propsActive = false
       rollbackOrder.push('props')
+
       return true
     })
     factory.registerTransactionReplayHandler(EventTypes.CHANGE_SUBTREE, () => {
       sceneActive = false
       rollbackOrder.push('scene')
+
       return true
     })
 
@@ -420,6 +432,7 @@ describe('Factory', () => {
     const statuses: TransactionStatusPayload[] = []
     const publications: unknown[] = []
     const settleAfterSlice = vi.fn(async () => Promise.resolve())
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
@@ -460,12 +473,14 @@ describe('Factory', () => {
   it('publishes the remote transaction end after shared projections settle', () => {
     const projection = new LocalSharedDataChannel()
     const order: string[] = []
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       projection
     )
     const disposeProjection = projection.observe(() => order.push('projection'))
     const endSubscription = subscribeToEndTransaction(() => order.push('end'))
+
     order.length = 0
 
     try {
@@ -502,6 +517,7 @@ describe('Factory', () => {
     const applied = factory.runRemoteTransaction(() =>
       factory.applyRemoteEvent(event, (forwardEvent) => {
         appliedEvents.push(forwardEvent)
+
         return true
       })
     )
@@ -574,6 +590,7 @@ describe('Factory', () => {
 
   it('isolates commit-capture subscribers and runs them before public status observers', () => {
     const order: string[] = []
+
     factory.subscribeToCommitCapture((payload) => {
       order.push('capture-failed-observer')
       ;(
@@ -584,7 +601,9 @@ describe('Factory', () => {
       order.push(`capture-later-observer-${transactionId}`)
     })
     factory.subscribeToTransactionStatus(({ status }) => {
-      if (status === 'committed') order.push('public-status')
+      if (status === 'committed') {
+        order.push('public-status')
+      }
     })
 
     factory.startTransaction()
@@ -604,6 +623,7 @@ describe('Factory', () => {
 
   it('isolates transaction status listener failures from canonical commit', () => {
     const laterStatus = vi.fn()
+
     factory.subscribeToTransactionStatus(() => {
       throw new Error('diagnostic listener failed')
     })
@@ -651,6 +671,7 @@ describe('Factory', () => {
 
   it('hands action, undo, and redo commits to capture subscribers', () => {
     const origins: string[] = []
+
     factory.subscribeToCommitCapture(({ origin }) => origins.push(origin))
 
     factory.startTransaction()
@@ -668,6 +689,7 @@ describe('Factory', () => {
 
   it('does not hand remote commits to client persistence capture subscribers', () => {
     const capture = vi.fn()
+
     factory.subscribeToCommitCapture(capture)
 
     factory.runRemoteTransaction(() => {
@@ -685,6 +707,7 @@ describe('Factory', () => {
     const customFactory = new Factory()
     const subscriber = vi.fn()
     const subscription = subscribeToUserActionCompleted(subscriber)
+
     subscriber.mockClear()
 
     customFactory.startTransaction()
@@ -814,6 +837,7 @@ describe('Factory', () => {
         after: sequence,
         evidence: { sequence }
       }
+
       factory.updateTransaction({
         type: TransactionEventTypes.UPDATE_TRANSACTION,
         eventName: EventTypes.UPDATE_PROPERTY,
@@ -838,6 +862,7 @@ describe('Factory', () => {
         evidence: { sequence }
       })
     )
+
     expect(firstObserverChanges).toEqual(expectedChanges)
     expect(secondObserverChanges).toEqual(expectedChanges)
 
@@ -903,6 +928,7 @@ describe('Factory', () => {
   it('isolates shared channel observer failures from later observers', () => {
     const channel = new LocalSharedDataChannel()
     const laterObserver = vi.fn()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       channel
@@ -937,6 +963,7 @@ describe('Factory', () => {
   it('compensates an immediate append when a local projection observer throws', () => {
     const channel = new LocalSharedDataChannel()
     const changes: unknown[] = []
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       channel

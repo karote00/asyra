@@ -14,14 +14,19 @@ import type { PreparedDrawingArtifact } from '../../src/ai/prepared-drawing-arti
 // Heterogeneous tool results have independent semantic assertions below.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Result = any
+
 const assert = (ok: unknown, message: string) => {
-  if (!ok) throw new Error(message)
+  if (!ok) {
+    throw new Error(message)
+  }
 }
+
 const equal = (actual: unknown, expected: unknown) =>
   assert(
     JSON.stringify(actual) === JSON.stringify(expected),
     `Expected ${JSON.stringify(expected)}, received ${JSON.stringify(actual)}`
   )
+
 interface Usage {
   input: Result
   check(result: Result): void | Promise<void>
@@ -30,6 +35,7 @@ interface Usage {
 export const isActionFixtureReady = () => {
   const id = core.getCurrentWorkspaceId()
   const session = getActiveCollaborationHandle()?.getSessionState()
+
   return (
     !!id &&
     !!core.getElementMetadata(id) &&
@@ -46,13 +52,17 @@ export const runActionUsageCase = async (
   additional: PreparedDesign
 ) => {
   const deadline = performance.now() + 10000
+
   while (!isActionFixtureReady()) {
-    if (performance.now() > deadline)
+    if (performance.now() > deadline) {
       throw new Error(
         'The document session did not become ready for fixture creation'
       )
+    }
+
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
   }
+
   const runtime = createAiRuntimeInput({
     permissionRules: {},
     provider: {
@@ -66,17 +76,23 @@ export const runActionUsageCase = async (
   )
   const runner = createAiTransactionRunner()
   const signal = new AbortController().signal
+
   const invoke = async (
     tool: string,
     input: unknown,
     invocationSignal = signal
   ): Promise<Result> => {
     const action = definitions.get(tool)
-    if (!action) throw new Error(`Missing registered tool: ${tool}`)
+
+    if (!action) {
+      throw new Error(`Missing registered tool: ${tool}`)
+    }
+
     return runner.run(tool, (runMutation) =>
       action.execute(input, { signal: invocationSignal, runMutation })
     )
   }
+
   try {
     const created = await invoke('apply_prepared_design', {
       design: deliverPreparedDesign(design),
@@ -86,10 +102,14 @@ export const runActionUsageCase = async (
     })
     const root = created.compositionId
     const [a, b] = [created.keyToId.a, created.keyToId.b]
+
     assert(root && a && b, 'Preparation did not publish usable identities')
+
     const meta = (id: string): Result => core.getElementMetadata(id)
+
     const props = (id: string): Result =>
       core.getElementComputedData(id, ['x', 'y', 'fills', 'visible'])
+
     const snapshot = await invoke('read_design_context', {
       scope: 'ids',
       elementIds: [a, b],
@@ -109,10 +129,12 @@ export const runActionUsageCase = async (
       name === 'download_document_export' || name === 'release_document_export'
         ? (await invoke('export_document', {})).artifact
         : undefined
+
     const assertExportUnchanged = async () => {
       equal(JSON.stringify(await core.save()), exportSource)
       equal(core.getUndoHistoryDepth(), exportHistoryDepth)
     }
+
     const gradient = {
       gradientType: 'linear',
       gradientHandles: [
@@ -130,6 +152,7 @@ export const runActionUsageCase = async (
           rootId: root,
           updates: [{ elementId: a, gradient, color: '#102030' }]
         },
+
         check: async (r) => {
           equal(r.acceptedIds, [a])
           equal(r.unavailableIds, [])
@@ -138,12 +161,14 @@ export const runActionUsageCase = async (
           equal(props(a).fills[0].gradient, gradient)
           equal(props(b).fills[0].color, '#445566')
           const noOp = await invoke(name, cases[name].input)
+
           equal(noOp.changed, false)
           equal(noOp.acceptedIds, [a])
         }
       },
       export_document: {
         input: {},
+
         check: async (r) => {
           equal(r.status, 'no-change')
           equal(r.artifact.available, true)
@@ -153,12 +178,14 @@ export const runActionUsageCase = async (
             getActiveCollaborationHandle()?.identity.documentId
           )
           const bytes = new TextEncoder().encode(exportSource)
+
           equal(r.artifact.bytes, bytes.byteLength)
           const digest = Array.from(
             new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))
           )
             .map((byte) => byte.toString(16).padStart(2, '0'))
             .join('')
+
           equal(r.artifact.sha256, digest)
           assert(
             !('document' in r) && !('data' in r.artifact),
@@ -177,6 +204,7 @@ export const runActionUsageCase = async (
       },
       download_document_export: {
         input: { artifactId: retainedExport?.artifactId },
+
         check: async (r) => {
           equal(r.status, 'no-change')
           equal(r.delivery, 'download-requested')
@@ -194,6 +222,7 @@ export const runActionUsageCase = async (
       },
       release_document_export: {
         input: { artifactId: retainedExport?.artifactId },
+
         check: async (r) => {
           equal(r.status, 'no-change')
           equal(r.released, true)
@@ -206,12 +235,14 @@ export const runActionUsageCase = async (
             false
           )
           let unavailable = false
+
           try {
             await invoke('download_document_export', {
               artifactId: retainedExport.artifactId
             })
           } catch (error) {
             let cause: unknown = error
+
             while (cause instanceof Error) {
               unavailable ||= cause.message.includes(
                 'The document export is unavailable'
@@ -219,6 +250,7 @@ export const runActionUsageCase = async (
               cause = cause.cause
             }
           }
+
           assert(unavailable, 'Released export remained downloadable')
           await assertExportUnchanged()
         }
@@ -239,6 +271,7 @@ export const runActionUsageCase = async (
             }
           ]
         },
+
         check: (r) => {
           equal(r.appliedElementIds, [a])
           equal(props(a).x, 20)
@@ -247,6 +280,7 @@ export const runActionUsageCase = async (
       },
       apply_prepared_design: {
         input: { design: deliverPreparedDesign(additional) },
+
         check: (r) => {
           assert(
             r.status === 'complete' && meta(r.compositionId),
@@ -260,6 +294,7 @@ export const runActionUsageCase = async (
       },
       review_design: {
         input: { elementId: root },
+
         check: (r) => {
           assert(r.complete && !r.truncated, 'Mechanical check is incomplete')
           equal(r.verification.status, 'pass')
@@ -273,6 +308,7 @@ export const runActionUsageCase = async (
           alignment: 'start',
           elementIds: [a, b]
         },
+
         check: () => equal(props(a).y, props(b).y)
       },
       organize_design: {
@@ -281,6 +317,7 @@ export const runActionUsageCase = async (
           elementIds: [a, b],
           name: 'Paired surfaces'
         },
+
         check: () => {
           assert(meta(a).parentId !== root, 'Grouping did not change hierarchy')
           equal(meta(a).parentId, meta(b).parentId)
@@ -288,6 +325,7 @@ export const runActionUsageCase = async (
       },
       update_design_element: {
         input: { elementId: a, name: 'Revised surface' },
+
         check: () => equal(meta(a).name, 'Revised surface')
       },
       read_design_context: {
@@ -296,6 +334,7 @@ export const runActionUsageCase = async (
           snapshotId: snapshot.snapshotId,
           delivery: 'page'
         },
+
         check: (r) => {
           equal(r.total, 2)
           equal(
@@ -310,6 +349,7 @@ export const runActionUsageCase = async (
           bounds: { x: 0, y: 0, width: 300, height: 300 },
           filter: { parentId: root }
         },
+
         check: (r) => {
           equal(r.elementIds.sort(), [a, b].sort())
           assert(!r.snapshotId, 'Transient query retained a snapshot')
@@ -317,6 +357,7 @@ export const runActionUsageCase = async (
       },
       read_design_attachment: {
         input: { parentId: root },
+
         check: (r) => {
           equal(r.parentId, root)
           equal(r.workspaceId, core.getCurrentWorkspaceId())
@@ -325,9 +366,11 @@ export const runActionUsageCase = async (
       },
       release_design_context: {
         input: { snapshotId: snapshot.snapshotId },
+
         check: async (r) => {
           equal(r.released, true)
           let failed = false
+
           try {
             await invoke('read_design_context', {
               scope: 'snapshot',
@@ -336,6 +379,7 @@ export const runActionUsageCase = async (
           } catch {
             failed = true
           }
+
           assert(failed, 'Released snapshot remained usable')
         }
       },
@@ -356,6 +400,7 @@ export const runActionUsageCase = async (
             }
           ]
         },
+
         check: () => {
           equal(props(a).fills[0].color.toLowerCase(), '#ff0000')
           equal(props(b).fills[0].color.toLowerCase(), '#0000ff')
@@ -363,6 +408,7 @@ export const runActionUsageCase = async (
       },
       inspect_drawing: {
         input: { elementId: root },
+
         check: async (r) => {
           assert(
             r.available && r.image.dataUrl.startsWith('data:image/'),
@@ -371,15 +417,18 @@ export const runActionUsageCase = async (
           const validity = await invoke('validate_inspection_evidence', {
             evidence: r.evidence
           })
+
           equal(validity.current, true)
         }
       },
       validate_inspection_evidence: {
         input: { evidence: attachment.evidence },
+
         check: (r) => equal(r.current, true)
       },
       report_outcome: {
         input: { outcome: 'completed', message: 'Editable surfaces completed' },
+
         check: (r) => {
           equal(r.outcome, 'completed')
           assert(
@@ -390,6 +439,7 @@ export const runActionUsageCase = async (
       },
       request_clarification: {
         input: { question: 'Which material should the surface use?' },
+
         check: (r) =>
           equal(
             r.clarification.question,
@@ -398,6 +448,7 @@ export const runActionUsageCase = async (
       },
       request_drawing_detail_choice: {
         input: {},
+
         check: (r) => {
           equal(r.clarification.kind, 'drawing-detail')
           equal(r.clarification.optionIds.length, 2)
@@ -405,11 +456,13 @@ export const runActionUsageCase = async (
       },
       insert_vector_composition: {
         input: drawing,
+
         check: (r) =>
           assert(meta(r.compositionId), 'Inserted vector group is missing')
       },
       replace_vector_composition: {
         input: { compositionId: root, drawing },
+
         check: (r) => {
           assert(!meta(root), 'Replaced composition remained')
           assert(meta(r.compositionId), 'Replacement missing')
@@ -417,6 +470,7 @@ export const runActionUsageCase = async (
       },
       remove_ai_composition: {
         input: { compositionId: root },
+
         check: () => {
           assert(
             !meta(root) && !meta(a) && !meta(b),
@@ -426,63 +480,84 @@ export const runActionUsageCase = async (
       },
       set_element_visibility: {
         input: { elementId: a, visible: false },
+
         check: () => equal(core.getElementData(a)?.visible, false)
       },
       select_elements: {
         input: { elementIds: [a, b] },
+
         check: () =>
           equal(core.getSelectedElementIds().slice().sort(), [a, b].sort())
       },
       update_composition_elements: {
         input: { updates: [{ elementId: a, style: { fillColor: '#00FF00' } }] },
+
         check: () => equal(props(a).fills[0].color, '#00FF00')
       }
     }
     const basics = new Set(basicApiContracts.map((item) => item.name))
+
     equal(
       [...definitions.keys()].filter((key) => !basics.has(key)).sort(),
       Object.keys(cases).sort()
     )
     const selected = cases[name]
-    if (!selected) throw new Error(`No semantic usage case: ${name}`)
+
+    if (!selected) {
+      throw new Error(`No semantic usage case: ${name}`)
+    }
+
     const definition = definitions.get(name)
-    if (!definition) throw new Error('Unregistered case')
+
+    if (!definition) {
+      throw new Error('Unregistered case')
+    }
+
     const before = JSON.stringify(await core.save())
     const selection = [...core.getSelectedElementIds()]
+
     for (const [input, abort] of [
       [null, false],
       [selected.input, true]
     ] as const) {
       let rejected = false
+
       try {
         await invoke(name, input, abort ? AbortSignal.abort() : signal)
       } catch {
         rejected = true
       }
+
       assert(rejected, `${name} accepted invalid/cancelled input`)
       equal(JSON.stringify(await core.save()), before)
       equal(core.getSelectedElementIds(), selection)
     }
+
     if (name === 'select_elements') {
       await invoke(name, { elementIds: [b] })
       const saved = JSON.stringify(await core.save())
       const undoDepth = core.getUndoHistoryDepth()
+
       for (const ids of [
         ['missing-selection-target'],
         [a, 'missing-selection-target'],
         ['missing-selection-target', a]
       ]) {
         let failure: unknown
+
         try {
           await invoke(name, { elementIds: ids })
         } catch (error) {
           failure = error
         }
+
         const messages: string[] = []
+
         while (failure instanceof Error) {
           messages.push(failure.message)
           failure = failure.cause
         }
+
         assert(
           messages.some(
             (message) =>
@@ -495,7 +570,9 @@ export const runActionUsageCase = async (
         equal(core.getUndoHistoryDepth(), undoDepth)
         equal(JSON.stringify(await core.save()), saved)
       }
+
       const recovered = await invoke(name, { elementIds: [a, b] })
+
       equal(recovered.selectedCount, core.getSelectedElementIds().length)
       equal(core.getSelectedElementIds(), [a, b])
       await historyApis.undo()
@@ -504,6 +581,7 @@ export const runActionUsageCase = async (
       equal(core.getSelectedElementIds(), [a, b])
       core.selectElements(selection, { undoable: false })
     }
+
     const missing = 'missing-tool-usage-target'
     const failures: Record<
       string,
@@ -512,6 +590,7 @@ export const runActionUsageCase = async (
       download_document_export: { input: { artifactId: missing } },
       release_document_export: {
         input: { artifactId: missing },
+
         check: (r) => equal(r.released, false)
       },
       apply_prescribed_positions: {
@@ -552,6 +631,7 @@ export const runActionUsageCase = async (
       },
       review_design: {
         input: { elementId: missing },
+
         check: (r) =>
           assert(
             !r.complete || r.available === false,
@@ -581,6 +661,7 @@ export const runActionUsageCase = async (
       read_design_attachment: { input: { parentId: missing } },
       release_design_context: {
         input: { snapshotId: missing },
+
         check: (r) => equal(r.released, false)
       },
       map_retained_fills: {
@@ -595,10 +676,12 @@ export const runActionUsageCase = async (
       },
       inspect_drawing: {
         input: { elementId: missing },
+
         check: (r) => equal(r.available, false)
       },
       validate_inspection_evidence: {
         input: { evidence: { ...attachment.evidence, sessionId: missing } },
+
         check: (r) => equal(r.current, false)
       },
       insert_vector_composition: {
@@ -609,10 +692,12 @@ export const runActionUsageCase = async (
       },
       replace_vector_composition: {
         input: { compositionId: missing, drawing },
+
         check: (r) => equal(r.appliedElementIds, [])
       },
       remove_ai_composition: {
         input: { compositionId: missing },
+
         check: (r) => {
           equal(r.status, 'no-change')
           equal(r.appliedElementIds, [])
@@ -620,10 +705,12 @@ export const runActionUsageCase = async (
       },
       set_element_visibility: {
         input: { elementId: missing, visible: false },
+
         check: (r) => equal(r.changed, false)
       },
       select_elements: {
         input: { elementIds: [missing] },
+
         check: (r) =>
           equal(
             r.selectedCount,
@@ -634,6 +721,7 @@ export const runActionUsageCase = async (
         input: {
           updates: [{ elementId: missing, style: { fillColor: '#00FF00' } }]
         },
+
         check: (r) => {
           equal(r.status, 'failed')
           equal(r.appliedElementIds, [])
@@ -641,27 +729,32 @@ export const runActionUsageCase = async (
       }
     }
     const failure = failures[name]
+
     if (failure) {
       const failureIssue = operationInputIssue(
         failure.input,
         definition.inputSchema
       )
+
       assert(
         !failureIssue,
         `${name} domain failure must pass structural admission: ${failureIssue}`
       )
       let thrown = false
       let failedResult: Result
+
       try {
         failedResult = await invoke(name, failure.input)
       } catch (error) {
         thrown = true
         const causes: Error[] = []
         let cause: unknown = error
+
         while (cause instanceof Error && !causes.includes(cause)) {
           causes.push(cause)
           cause = cause.cause
         }
+
         assert(
           causes.length > 0 &&
             causes.every(
@@ -693,11 +786,13 @@ export const runActionUsageCase = async (
           select_elements: /Selection target does not exist/
         }
         const expected = expectedRejections[name]
+
         assert(
           expected && causes.some((item) => expected.test(item.message)),
           `${name} unexpected rejection: ${causes.map((item) => item.message).join(' -> ')}`
         )
       }
+
       if (!thrown) {
         assert(
           failure.check,
@@ -705,20 +800,27 @@ export const runActionUsageCase = async (
         )
         failure.check?.(failedResult)
       }
+
       equal(JSON.stringify(await core.save()), before)
       equal(core.getSelectedElementIds(), selection)
     }
+
     const issue = operationInputIssue(selected.input, definition.inputSchema)
+
     assert(!issue, `${name} input: ${issue}`)
     const result = await invoke(name, selected.input)
+
     equal(result.toolOutcome.status, 'success')
     const { actionObservation: _observation, ...receipt } = result
     const outputIssue = operationInputIssue(receipt, definition.outputSchema)
+
     assert(!outputIssue, `${name} output: ${outputIssue}`)
     await selected.check(result)
+
     return { name, status: result.toolOutcome.status }
   } finally {
-    for (const resource of runtime.ownedResources ?? [])
+    for (const resource of runtime.ownedResources ?? []) {
       await resource.dispose()
+    }
   }
 }

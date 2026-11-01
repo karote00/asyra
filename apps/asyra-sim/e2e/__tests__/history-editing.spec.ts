@@ -11,9 +11,11 @@ test('direct toolbar replay updates completed trajectory and experiment fields',
   )
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
   const source = page.getByLabel('Trajectory source data')
+
   await page.locator('.trajectory-import > summary').click()
   const initial = await source.inputValue()
   const changed = initial.replace('\n8,', '\n9,')
+
   await source.fill(changed)
   await page.getByRole('button', { name: 'Undo', exact: true }).click()
   // Keep the same panel open; do not remount it as part of the assertion.
@@ -22,6 +24,7 @@ test('direct toolbar replay updates completed trajectory and experiment fields',
   await expect(source).toHaveValue(changed)
   const clearance = page.getByLabel('Minimum clearance (mm)', { exact: true })
   const before = await clearance.inputValue()
+
   await clearance.fill('25')
   await page.getByRole('button', { name: 'Undo', exact: true }).click()
   await expect(clearance).toHaveValue(before)
@@ -31,6 +34,7 @@ test('direct toolbar replay updates completed trajectory and experiment fields',
     .getByRole('treeitem', { name: '◇ fixture post', exact: true })
     .click()
   const name = page.getByLabel('Object name', { exact: true })
+
   await name.fill('History check')
   await page.getByRole('button', { name: 'Undo', exact: true }).click()
   await expect(name).toHaveValue('fixture post')
@@ -38,8 +42,10 @@ test('direct toolbar replay updates completed trajectory and experiment fields',
   await expect(name).toHaveValue('History check')
   const mount = page.getByRole('spinbutton', { name: /^Mount position.* X$/ })
   const position = await mount.inputValue()
+
   await mount.fill('')
   const error = mount.locator('..').getByRole('alert')
+
   await expect(error).toContainText('finite number')
   expect(
     Number.parseFloat(
@@ -62,6 +68,7 @@ test('erroneous authored inputs persist independently, replay and reload, with i
   page
 }) => {
   const errors: string[] = []
+
   page.on('pageerror', (error) => errors.push(error.message))
   await page.goto('/')
   await expect(page.getByTestId('persistence-status')).toContainText(
@@ -77,6 +84,7 @@ test('erroneous authored inputs persist independently, replay and reload, with i
   const source = page.getByLabel('Trajectory source data')
   const initial = await source.inputValue()
   const invalid = initial.replace(/,0$/, ',100')
+
   await source.fill(invalid)
   await expect(page.locator('.trajectory-import')).toContainText(
     'out-of-limit joint'
@@ -86,6 +94,7 @@ test('erroneous authored inputs persist independently, replay and reload, with i
     name: 'Run analysis',
     exact: true
   })
+
   await expectAnalysisBlocked(page)
   await expectAnalysisBlocked(page)
   await source.press('Tab')
@@ -98,6 +107,7 @@ test('erroneous authored inputs persist independently, replay and reload, with i
   await expect(source).toHaveValue(invalid)
   const clearance = page.getByLabel('Minimum clearance (mm)', { exact: true })
   const before = await clearance.inputValue()
+
   await clearance.fill('25')
   await clearance.press('Enter')
   await expect.poll(() => readHistoryDepth(page)).toBe(2)
@@ -108,6 +118,7 @@ test('erroneous authored inputs persist independently, replay and reload, with i
   await expect(clearance).toHaveValue('25')
   await page.locator('summary').filter({ hasText: 'Analysis scope' }).click()
   const exclusions = page.getByLabel('Excluded pairs', { exact: true })
+
   await exclusions.fill('unfinished exclusion')
   await expect(exclusions).toHaveAttribute('aria-invalid', 'true')
   await expect(exclusions.locator('..').getByRole('alert')).toContainText(
@@ -169,6 +180,7 @@ test('undeclared units are undoable authored data and survive reopening without 
   const unit = page.getByLabel('Time unit', { exact: true })
   const source = page.getByLabel('Trajectory source data')
   const text = await source.inputValue()
+
   await unit.selectOption('')
   await expect(source).toHaveAttribute('aria-invalid', 'true')
   await unit.press('Tab')
@@ -207,6 +219,7 @@ test('finite interval edits persist independently while timing errors are immedi
   const start = page.getByLabel('Start time (s)', { exact: true })
   const end = page.getByLabel('End time (s)', { exact: true })
   const depth = await readHistoryDepth(page)
+
   await start.fill('9')
   await expect(start.locator('..').getByRole('alert')).toContainText(
     'Start time'
@@ -215,6 +228,7 @@ test('finite interval edits persist independently while timing errors are immedi
   await expect.poll(() => readHistoryDepth(page)).toBe(depth + 1)
   await expectAnalysisBlocked(page)
   const clearance = page.getByLabel('Minimum clearance (mm)', { exact: true })
+
   await clearance.fill('25')
   await clearance.press('Enter')
   await expect.poll(() => readHistoryDepth(page)).toBe(depth + 2)
@@ -230,6 +244,7 @@ test('finite interval edits persist independently while timing errors are immedi
   await page.locator('.trajectory-import > summary').click()
   const source = page.getByLabel('Trajectory source data')
   const original = await source.inputValue()
+
   await source.fill(original.replace('\n8,', '\n11,'))
   await source.press('Tab')
   await expect(start).toHaveValue('9')

@@ -24,6 +24,7 @@ it('runs one detached experiment with a Feature-owned signal and supports cancel
     dispose: vi.fn(async () => undefined)
   }
   const api = installAnalysisFeature(core, service)
+
   expect(api.getProgress()).toBeNull()
   expect(service.getProgress).toHaveBeenCalledOnce()
   const external = new AbortController()
@@ -31,6 +32,7 @@ it('runs one detached experiment with a Feature-owned signal and supports cancel
     snapshotId: 'original-snapshot'
   } as ExperimentSnapshot
   const pending = api.run(snapshot, { signal: external.signal })
+
   snapshot.snapshotId = 'mutated-after-call'
   await vi.waitFor(() => expect(captured).toBeDefined())
   expect(captured?.snapshot.snapshotId).toBe('original-snapshot')

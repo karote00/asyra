@@ -12,9 +12,12 @@ const mocks = vi.hoisted(() => {
     resizeRenderer: vi.fn(),
     resetRuntime: vi.fn()
   }
+
   owner.resetRuntime.mockResolvedValue(owner)
+
   return { owner, preset: vi.fn() }
 })
+
 vi.mock('@asyra/core', () => ({ default: mocks.owner }))
 vi.mock('@asyra/preset', () => ({
   applyPreset: mocks.preset,
@@ -30,19 +33,23 @@ describe('asset preview session lifetime', () => {
   it('releases once, ignores a retired resize callback and allows a successor', async () => {
     const callbacks: (() => void)[] = []
     const disconnect = vi.fn()
+
     vi.stubGlobal(
       'ResizeObserver',
       class {
         constructor(callback: () => void) {
           callbacks.push(callback)
         }
+
         observe() {
           /* The test controls delivery explicitly. */
         }
+
         disconnect = disconnect
       }
     )
     const preview = await startAssetPreview(document.createElement('div'))
+
     await expect(
       startAssetPreview(document.createElement('div'))
     ).rejects.toThrow('already active')
@@ -53,6 +60,7 @@ describe('asset preview session lifetime', () => {
     expect(mocks.owner.unregisterRenderLayer).toHaveBeenCalledOnce()
     expect(mocks.owner.resetRuntime).toHaveBeenCalledOnce()
     const successor = await startAssetPreview(document.createElement('div'))
+
     mocks.owner.resizeRenderer.mockClear()
     callbacks[0]()
     expect(mocks.owner.resizeRenderer).not.toHaveBeenCalled()
@@ -76,12 +84,14 @@ describe('asset preview session lifetime', () => {
         observe() {
           /* No resize delivery is needed in this startup case. */
         }
+
         disconnect() {
           /* Cleanup work is asserted at the Core owner boundary. */
         }
       }
     )
     const next = await startAssetPreview(document.createElement('div'))
+
     await next.dispose()
     expect(mocks.owner.resetRuntime).toHaveBeenCalledTimes(2)
   })

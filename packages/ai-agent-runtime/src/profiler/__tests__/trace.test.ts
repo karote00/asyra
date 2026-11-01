@@ -10,9 +10,11 @@ it('exports portable causal timelines without inventing hidden provider activity
     'inventory-model',
     {
       now: () => now,
+
       lifecycle: true,
       sink: {
         write: (event) => records.push(event),
+
         flush: async () => ({ status: 'saved', path: null })
       }
     }
@@ -22,6 +24,7 @@ it('exports portable causal timelines without inventing hidden provider activity
     owner: 'provider',
     purpose: 'Run inventory request'
   })
+
   now = 10
   profile.recordTransport('received', 45)
   now = 20
@@ -46,6 +49,7 @@ it('exports portable causal timelines without inventing hidden provider activity
     records.map((record) => JSON.stringify(record)).join('\n')
   )
   const trace = runtime.exportExecutionTrace(parsed)
+
   expect(trace.traceEvents).toEqual(
     expect.arrayContaining([
       expect.objectContaining({
@@ -86,6 +90,7 @@ it('reports failed recording and unfinished calls separately from ownership acco
       )
       .join('\n')
   )
+
   expect(run.issues).toEqual(
     expect.arrayContaining([
       'Recording failed for 2 events',
@@ -104,16 +109,20 @@ it('captures each payload once and reuses retained records across report project
     {
       sink: {
         write: (event) => records.push(event),
+
         writePayload: (_requestId, _callId, phase, value) => {
           captured.push({ phase, value })
+
           return { status: 'queued', path: `${phase}.json` }
         },
+
         flush: async () => ({ status: 'saved', path: null })
       }
     }
   )
   const input = { quantity: 3 }
   const output = { available: true, quantity: 3 }
+
   profiler.trace('tool_started', {
     callId: 'read',
     tool: 'inventory',
@@ -128,6 +137,7 @@ it('captures each payload once and reuses retained records across report project
   const parsed = runtime.parseExecutionRecord(
     records.map((record) => JSON.stringify(record)).join('\n')
   )
+
   runtime.evaluateExecution(parsed)
   runtime.exportExecutionTrace(parsed)
   runtime.evaluateExecution(parsed)

@@ -5,6 +5,7 @@ test('ordinary experiment controls run, replay frozen evidence, preserve edits, 
   page
 }, info) => {
   const errors: string[] = []
+
   page.on('pageerror', (error) => errors.push(error.message))
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
@@ -13,10 +14,12 @@ test('ordinary experiment controls run, replay frozen evidence, preserve edits, 
     .getByLabel('Experiment', { exact: true })
     .locator('option')
     .count()
+
   await expect(
     page.getByRole('button', { name: 'Save experiment', exact: true })
   ).toHaveCount(0)
   const depth = await page.getByTestId('history-depth').textContent()
+
   await page.getByRole('tab', { name: 'Preview', exact: true }).click()
   await page.getByLabel('Sampled trajectory preview time').press('End')
   await expect(page.locator('.viewport-summary')).toContainText(
@@ -30,6 +33,7 @@ test('ordinary experiment controls run, replay frozen evidence, preserve edits, 
 
   await viewResults(page)
   const result = page.getByTestId('analysis-result')
+
   await expect(result).toBeVisible({ timeout: 20000 })
   await expect(result).toContainText('Execution')
   await expect(result).toContainText('Coverage')
@@ -96,6 +100,7 @@ test('invalid trajectory input persists without changing geometry and empty scop
   const validSource = await page
     .getByLabel('Trajectory source data')
     .inputValue()
+
   await page.getByLabel('Trajectory source data').fill('time,wrong\n0,abc')
   await page
     .getByRole('button', { name: 'Preview trajectory', exact: true })

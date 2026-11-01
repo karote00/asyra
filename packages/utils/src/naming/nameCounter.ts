@@ -28,6 +28,7 @@ class NameCounter {
     }
 
     const currentName = this.current(type)
+
     if (!currentName) {
       return ''
     }
@@ -55,6 +56,7 @@ class NameCounter {
     }
 
     const currentName = this.counter[type]
+
     if (!currentName) {
       return ''
     }
@@ -65,6 +67,7 @@ class NameCounter {
 
     const prefix = splits.slice(0, -1).join(CODE_SPLIT)
     const newName = `${prefix}${CODE_SPLIT}${next}`
+
     this.update(type, newName)
 
     return newName
@@ -81,7 +84,11 @@ class NameCounter {
       : capitalizeFirstLetter(type)
 
     const splits = name.split(CODE_SPLIT)
-    if (splits.length !== 2) return false
+
+    if (splits.length !== 2) {
+      return false
+    }
+
     if (splits[0] === expectedPrefix) {
       return isNumber(splits[1])
     }
@@ -140,7 +147,9 @@ class NameCounter {
     }
 
     const { [type]: _removed, ...nextCounter } = this.counter
+
     this.counter = nextCounter
+
     return true
   }
 

@@ -14,9 +14,11 @@ let appName
 let frameworkPrebuilt = false
 
 for (const arg of args) {
-  if (arg.startsWith('--prod=')) appName = arg.split('=')[1]
-  else if (arg === '--prebuilt') frameworkPrebuilt = true
-  else {
+  if (arg.startsWith('--prod=')) {
+    appName = arg.split('=')[1]
+  } else if (arg === '--prebuilt') {
+    frameworkPrebuilt = true
+  } else {
     console.error(`Unknown argument: ${arg}`)
     process.exit(1)
   }
@@ -32,6 +34,7 @@ const releaseConfigPath = path.join(
   'release-configs',
   `${appName}.json`
 )
+
 if (!existsSync(releaseConfigPath)) {
   console.error(`Release config not found: ${releaseConfigPath}`)
   process.exit(1)
@@ -51,6 +54,7 @@ if (!existsSync(path.join(templateRoot, 'package.json'))) {
   console.error(`Generated template not found: ${templateRoot}`)
   process.exit(1)
 }
+
 if (!existsSync(sourceConfigPath)) {
   console.error(`Canonical app config not found: ${sourceConfigPath}`)
   process.exit(1)

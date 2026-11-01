@@ -18,8 +18,9 @@ export function ExperimentInspector() {
 
   const hasWorkcell = useWorkbenchValue((state) => !!state.workcell)
 
-  if (!ready || !runtime || !candidateId || !hasWorkcell || !view.experiment)
+  if (!ready || !runtime || !candidateId || !hasWorkcell || !view.experiment) {
     return null
+  }
 
   return (
     <ExperimentPanel

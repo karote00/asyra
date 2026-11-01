@@ -18,6 +18,7 @@ it('enforces the published aggregate raw-byte cap independently of encoded strin
     byteLength,
     base64
   }))
+
   expect(validateVisualSources(sources)).toHaveLength(4)
   expect(() =>
     validateVisualSources([

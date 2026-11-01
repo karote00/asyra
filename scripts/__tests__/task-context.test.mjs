@@ -28,9 +28,12 @@ const context = {
 function fixture(t) {
   mkdirSync(path.join(root, 'tmp'), { recursive: true })
   const cwd = mkdtempSync(path.join(root, 'tmp/task-context-'))
+
   t.after(() => rmSync(cwd, { recursive: true, force: true }))
+
   const git = (...args) =>
     execFileSync('git', args, { cwd, encoding: 'utf8' }).trim()
+
   git('init', '-q', '-b', 'feature/task')
   git('config', 'user.name', 'Task Context Test')
   git('config', 'user.email', 'task-context@example.test')
@@ -42,7 +45,9 @@ function fixture(t) {
   git('add', '.')
   git('commit', '-qm', 'plan contract')
   const input = structuredClone(context)
+
   input.base.sha = git('rev-parse', 'HEAD')
+
   return { cwd, git, input }
 }
 
@@ -66,6 +71,7 @@ test('standalone is explicit and cannot retain a hidden plan', () => {
     /Standalone/
   )
   const standalone = { ...context }
+
   delete standalone.plan
   assert.equal(
     validateContext({ ...standalone, mode: 'standalone' }).mode,
@@ -83,6 +89,7 @@ test('child carries plan identity, owner and prerequisites but selects its own s
     objective: 'Second task',
     section: '## Task 2'
   })
+
   assert.equal(child.mode, 'plan-task')
   assert.deepEqual(child.plan, { ...context.plan, section: '## Task 2' })
   assert.deepEqual(child.prerequisites, parent.prerequisites)
@@ -92,8 +99,9 @@ test('child carries plan identity, owner and prerequisites but selects its own s
     { objective: 'Drop plan', section: '## Task 2', mode: 'standalone' },
     { objective: 'Change plan', section: '## Task 2', plan: {} },
     { objective: 'Missing selection' }
-  ])
+  ]) {
     assert.throws(() => inheritContext(parent, selection))
+  }
 })
 
 test('plan paths, sections, owners and base SHAs reject incomplete or unsafe values', () => {
@@ -107,6 +115,7 @@ test('plan paths, sections, owners and base SHAs reject incomplete or unsafe val
       validateContext({ ...context, plan: { ...context.plan, path: value } })
     )
   }
+
   assert.throws(() =>
     validateContext({ ...context, base: { ref: 'main', sha: 'HEAD' } })
   )
@@ -126,6 +135,7 @@ test('plan paths, sections, owners and base SHAs reject incomplete or unsafe val
 
 test('preflight requires feature branch, selected base and integrated prerequisites', (t) => {
   const { cwd, git, input } = fixture(t)
+
   assert.deepEqual(preflight(input, cwd), input)
   assert.throws(
     () => preflight({ ...input, prerequisites: ['f'.repeat(40)] }, cwd),
@@ -137,6 +147,7 @@ test('preflight requires feature branch, selected base and integrated prerequisi
 
 test('plan must exist in base and selected task must remain present in checkout', (t) => {
   const { cwd, input } = fixture(t)
+
   writeFileSync(path.join(cwd, planPath), '# Plan\n## Wrong task\n')
   assert.throws(() => preflight(input, cwd), /exactly once/)
   assert.throws(
@@ -154,6 +165,7 @@ test('plan must exist in base and selected task must remain present in checkout'
 
 test('CLI generates a child handoff without dispatching an agent or writing task state', (t) => {
   const { cwd, input } = fixture(t)
+
   writeFileSync(path.join(cwd, 'parent.json'), JSON.stringify(input))
   writeFileSync(
     path.join(cwd, 'selection.json'),
@@ -169,12 +181,14 @@ test('CLI generates a child handoff without dispatching an agent or writing task
     ],
     { cwd, encoding: 'utf8' }
   )
+
   assert.equal(result.status, 0, result.stderr)
   assert.equal(parseContext(result.stdout).plan.section, '## Task 2')
 })
 
 test('independent knowledge plans retain their own task owner', () => {
   const input = structuredClone(context)
+
   input.plan.path =
     'docs/ai/knowledge/plans/composable-domain-knowledge-v1-plan.md'
   assert.deepEqual(validateContext(input), input)

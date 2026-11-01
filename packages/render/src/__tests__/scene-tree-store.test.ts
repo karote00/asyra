@@ -28,9 +28,11 @@ const createElement = (
     if (key === 'id') {
       return id
     }
+
     if (key === 'type') {
       return raw.type
     }
+
     return raw[key]
   }),
   save: vi.fn(() => ({ ...raw, id })),
@@ -44,7 +46,9 @@ const seedStore = (
   store.addElementById(elementId)
   const snapshot = renderMock.addElement.mock.calls.slice(-1)[0]?.[0] as
     Record<string, unknown> | undefined
+
   renderMock.addElement.mockClear()
+
   return snapshot
 }
 
@@ -64,6 +68,7 @@ describe('RenderSceneTree computed data mirror', () => {
     vi.spyOn(render, 'registerTeardownCleanup').mockImplementation(
       (cleanup) => {
         pendingRenderTeardownCleanup = cleanup
+
         return () => {
           if (pendingRenderTeardownCleanup === cleanup) {
             pendingRenderTeardownCleanup = null
@@ -84,8 +89,10 @@ describe('RenderSceneTree computed data mirror', () => {
   const flushScheduledFrame = async () => {
     if (pendingRenderLayer?.shouldUpdate?.()) {
       pendingRenderLayer.update?.()
+
       return
     }
+
     await Promise.resolve()
   }
 
@@ -101,8 +108,10 @@ describe('RenderSceneTree computed data mirror', () => {
       },
       { fills: [] }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     const before = seedStore(store, 'vector-1')
+
     element.save.mockClear()
     element.getAllComputedData.mockClear()
     sceneTreeMock.getElementById.mockClear()
@@ -144,6 +153,7 @@ describe('RenderSceneTree computed data mirror', () => {
       },
       { fills: [] }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
     element.save.mockReturnValue({
@@ -156,6 +166,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { key: 'strokes', before: 'stroke', after: 'bad-prefix' },
       { key: 'fills', before: 'stale', after: 'bad-target' }
     ])
+
     expect(result.status).toBe('resynced')
     expect(renderMock.addElement.mock.calls.at(-1)?.[0]).toMatchObject({
       props: { fills: 'accepted', strokes: 'stroke' }
@@ -178,6 +189,7 @@ describe('RenderSceneTree computed data mirror', () => {
         networks: {}
       }
     )
+
     currentWorkspace = {
       save: () => ({
         id: 'workspace-1',
@@ -224,6 +236,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { points: {} }
     )
+
     currentWorkspace = {
       save: () => ({ id: 'workspace-1', type: EntityTypes.WORKSPACE })
     }
@@ -263,6 +276,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { points: {}, segments: {}, networks: {} }
     )
+
     currentWorkspace = {
       save: () => ({ id: 'workspace-1', type: EntityTypes.WORKSPACE })
     }
@@ -307,6 +321,7 @@ describe('RenderSceneTree computed data mirror', () => {
       ['root-b', rootB],
       ['root-a', rootA]
     ])
+
     currentWorkspace = {
       save: () => ({
         id: 'workspace-1',
@@ -341,16 +356,20 @@ describe('RenderSceneTree computed data mirror', () => {
       parentId: 'workspace-1'
     }
     const leaf = createElement('leaf-1', leafRaw, {})
+
     leaf.get.mockImplementation((key: string) => {
       if (key === 'id') {
         return 'leaf-1'
       }
+
       if (key in leafRaw) {
         return leafRaw[key as keyof typeof leafRaw]
       }
+
       throw new Error(`Unknown leaf field: ${key}`)
     })
     const elements = new Map([['leaf-1', leaf]])
+
     currentWorkspace = {
       save: () => ({
         id: 'workspace-1',
@@ -404,6 +423,7 @@ describe('RenderSceneTree computed data mirror', () => {
       ['child-b', childB],
       ['child-a', childA]
     ])
+
     currentWorkspace = {
       save: () => ({
         id: 'workspace-1',
@@ -464,6 +484,7 @@ describe('RenderSceneTree computed data mirror', () => {
       ['child', createElement('child', childRaw, {})],
       ['sibling', createElement('sibling', siblingRaw, {})]
     ])
+
     currentWorkspace = { save: () => ({ ...workspaceRaw }) }
     sceneTreeMock.getAllElements.mockReturnValue(elements as never)
     sceneTreeMock.getElementById.mockImplementation(
@@ -522,6 +543,7 @@ describe('RenderSceneTree computed data mirror', () => {
       ['first', createElement('first', firstRaw, {})],
       ['second', createElement('second', secondRaw, {})]
     ])
+
     currentWorkspace = { save: () => ({ ...workspaceRaw }) }
     sceneTreeMock.getAllElements.mockReturnValue(elements as never)
     sceneTreeMock.getElementById.mockImplementation(
@@ -584,6 +606,7 @@ describe('RenderSceneTree computed data mirror', () => {
       ['group', group],
       ['child', child]
     ])
+
     currentWorkspace = { save: () => ({ ...workspaceRaw }) }
     sceneTreeMock.getAllElements.mockReturnValue(elements as never)
     sceneTreeMock.getElementById.mockImplementation(
@@ -607,6 +630,7 @@ describe('RenderSceneTree computed data mirror', () => {
         data: { ...groupRaw }
       }
     ]
+
     elements.delete('group')
     elements.delete('child')
     workspaceRaw.children = []
@@ -669,6 +693,7 @@ describe('RenderSceneTree computed data mirror', () => {
       },
       { width: 20, height: 20 }
     )
+
     sceneTreeMock.getElementById.mockImplementation((elementId: string) =>
       elementId === 'group-1' ? parent : child
     )
@@ -754,6 +779,7 @@ describe('RenderSceneTree computed data mirror', () => {
         )
       ]
     ])
+
     sceneTreeMock.getElementById.mockImplementation((elementId: string) =>
       elements.get(elementId)
     )
@@ -816,6 +842,7 @@ describe('RenderSceneTree computed data mirror', () => {
           ] as const
       )
     ])
+
     sceneTreeMock.getElementById.mockImplementation((elementId: string) =>
       elements.get(elementId)
     )
@@ -829,6 +856,7 @@ describe('RenderSceneTree computed data mirror', () => {
       parentRaw.children = [...childIds]
       const ownKeys = vi.spyOn(Reflect, 'ownKeys')
       let ownKeyEnumerationCount = 0
+
       try {
         expect(
           store.addElements(
@@ -870,6 +898,7 @@ describe('RenderSceneTree computed data mirror', () => {
       } finally {
         ownKeys.mockRestore()
       }
+
       expect(ownKeyEnumerationCount).toBe(0)
       await flushScheduledFrame()
     } finally {
@@ -915,6 +944,7 @@ describe('RenderSceneTree computed data mirror', () => {
       ['group-1', group],
       ['child-a', child]
     ])
+
     sceneTreeMock.getElementById.mockImplementation((elementId: string) =>
       elements.get(elementId)
     )
@@ -1000,6 +1030,7 @@ describe('RenderSceneTree computed data mirror', () => {
           ] as const
       )
     ])
+
     sceneTreeMock.getElementById.mockImplementation((elementId: string) =>
       elements.get(elementId)
     )
@@ -1048,6 +1079,7 @@ describe('RenderSceneTree computed data mirror', () => {
       missingParentChildRaw,
       { height: 10, width: 10 }
     )
+
     sceneTreeMock.getElementById.mockImplementation((elementId: string) =>
       elementId === 'missing-parent-child' ? missingParentChild : undefined
     )
@@ -1078,6 +1110,7 @@ describe('RenderSceneTree computed data mirror', () => {
     }
     const group = createElement('group-1', groupRaw, {})
     const child = createElement('child-a', childRaw, { height: 10, width: 10 })
+
     sceneTreeMock.getElementById.mockImplementation((elementId: string) =>
       new Map([
         ['group-1', group],
@@ -1147,6 +1180,7 @@ describe('RenderSceneTree computed data mirror', () => {
           ] as const
       )
     ])
+
     sceneTreeMock.getElementById.mockImplementation((elementId: string) =>
       elements.get(elementId)
     )
@@ -1168,6 +1202,7 @@ describe('RenderSceneTree computed data mirror', () => {
 
     groupRaw.children = []
     const releaseFailure = new Error('batch visual release failed')
+
     renderMock.removeElement
       .mockImplementationOnce(() => undefined)
       .mockImplementationOnce(() => {
@@ -1204,9 +1239,11 @@ describe('RenderSceneTree computed data mirror', () => {
             if (key === 'id') {
               return 'vector-1'
             }
+
             if (key === 'type') {
               return 'vector'
             }
+
             return
           }),
           save: vi.fn(() => ({ id: 'other-vector', type: 'vector' })),
@@ -1242,6 +1279,7 @@ describe('RenderSceneTree computed data mirror', () => {
   it('should run: return failed when explicit add composition throws', async () => {
     const { RenderSceneTree } = await import('../stores/scene-tree.js')
     const store = new RenderSceneTree()
+
     sceneTreeMock.getElementById.mockReturnValue({
       save: vi.fn(() => {
         throw new Error('composition failed')
@@ -1266,6 +1304,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { points: {} }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
     store.updateElement(
@@ -1298,6 +1337,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { points: { p1: { x: 1, y: 1 } } }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
 
     const outcome = store.updateElement(
@@ -1308,6 +1348,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { p1: { x: 1, y: 1 } },
       { undoable: false }
     )
+
     await flushScheduledFrame()
 
     expect(outcome).toEqual({ status: 'resynced', elementId: 'vector-1' })
@@ -1326,6 +1367,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { points: { p1: { x: 1, y: 1 } } }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     renderMock.getElementById.mockReturnValue(undefined)
 
@@ -1337,6 +1379,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { p1: { x: 1, y: 1 } },
       { undoable: false }
     )
+
     await flushScheduledFrame()
 
     expect(outcome).toEqual({ status: 'resynced', elementId: 'vector-1' })
@@ -1357,6 +1400,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { points: { p1: { x: 0, y: 0 } } }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
     element.getAllComputedData.mockReturnValue({
@@ -1394,8 +1438,10 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { points: { p1: { x: 0, y: 0 } } }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     const publishedSnapshot = seedStore(store, 'vector-1')
+
     element.getAllComputedData.mockReturnValue({
       points: { p1: { x: 10, y: 12 } }
     })
@@ -1408,6 +1454,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { p1: { x: 10, y: 12 } },
       { undoable: false }
     )
+
     await flushScheduledFrame()
 
     expect(publishedSnapshot).toEqual(
@@ -1427,6 +1474,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'generic', visible: true },
       { samples: Array(1) }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'generic-1')
     element.getAllComputedData.mockReturnValue({ samples: [456] })
@@ -1452,6 +1500,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'generic', visible: true },
       { samples: Array(1) }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'generic-1')
     element.getAllComputedData.mockReturnValue({ samples: [456] })
@@ -1483,6 +1532,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'generic', visible: true },
       { samples: cachedSamples }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'generic-1')
     element.getAllComputedData.mockReturnValue({
@@ -1509,16 +1559,20 @@ describe('RenderSceneTree computed data mirror', () => {
     const { RenderSceneTree } = await import('../stores/scene-tree.js')
     const store = new RenderSceneTree()
     const source = Symbol('sample-source')
+
     const createSamples = (value: number, metadata: string) => {
       const samples = [value]
+
       Object.defineProperty(samples, source, {
         configurable: true,
         enumerable: true,
         value: metadata,
         writable: true
       })
+
       return samples
     }
+
     const cachedSamples = createSamples(123, 'cached')
     const suppliedBefore = createSamples(123, 'stale')
     const canonicalSamples = createSamples(456, 'canonical')
@@ -1527,6 +1581,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'generic', visible: true },
       { samples: cachedSamples }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'generic-1')
     element.getAllComputedData.mockReturnValue({
@@ -1557,6 +1612,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { points: { p1: { x: 0, y: 0 } } }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
     element.getAllComputedData.mockReturnValue({
@@ -1571,6 +1627,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { p1: { x: 10, y: 12 } },
       { undoable: false }
     )
+
     await flushScheduledFrame()
 
     expect(outcome).toEqual({ status: 'resynced', elementId: 'vector-1' })
@@ -1588,8 +1645,10 @@ describe('RenderSceneTree computed data mirror', () => {
         segments: {}
       }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     const publishedSnapshot = seedStore(store, 'vector-1')
+
     element.getAllComputedData.mockReturnValue({
       points: { p1: { x: 10, y: 12 } },
       segments: { s1: { startId: 'p1' } }
@@ -1613,6 +1672,7 @@ describe('RenderSceneTree computed data mirror', () => {
       ],
       { undoable: false }
     )
+
     await flushScheduledFrame()
 
     expect(publishedSnapshot).toEqual(
@@ -1638,8 +1698,10 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { points: {}, segments: {} }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     const publishedSnapshot = seedStore(store, 'vector-1')
+
     element.getAllComputedData.mockReturnValue({
       points: { p1: { x: 1, y: 1 } },
       segments: { s1: { startId: 'p1' } }
@@ -1663,6 +1725,7 @@ describe('RenderSceneTree computed data mirror', () => {
       ],
       { undoable: false }
     )
+
     await flushScheduledFrame()
 
     expect(outcome).toEqual({ status: 'resynced', elementId: 'vector-1' })
@@ -1679,6 +1742,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { points: {} }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
     element.getAllComputedData.mockReturnValue({
@@ -1698,6 +1762,7 @@ describe('RenderSceneTree computed data mirror', () => {
       },
       { undoable: false }
     )
+
     await flushScheduledFrame()
 
     expect(outcome).toEqual({ status: 'resynced', elementId: 'vector-1' })
@@ -1715,9 +1780,11 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { points: {} }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
     const canonicalComputed: Record<string, unknown> = { points: {} }
+
     Object.defineProperty(canonicalComputed, '__proto__', {
       value: { child: 'canonical' },
       enumerable: true,
@@ -1726,6 +1793,7 @@ describe('RenderSceneTree computed data mirror', () => {
     })
     element.getAllComputedData.mockReturnValue(canonicalComputed)
     const records: Record<string, unknown> = {}
+
     Object.defineProperty(records, '__proto__', {
       value: { set: { child: { after: 'delta' } } },
       enumerable: true,
@@ -1738,10 +1806,12 @@ describe('RenderSceneTree computed data mirror', () => {
       { records },
       { undoable: false }
     )
+
     await flushScheduledFrame()
 
     const snapshot = renderMock.addElement.mock.calls.slice(-1)[0]?.[0] as
       Record<string, unknown> | undefined
+
     expect(outcome).toEqual({ status: 'resynced', elementId: 'vector-1' })
     expect(
       Object.prototype.hasOwnProperty.call(snapshot ?? {}, '__proto__')
@@ -1757,8 +1827,10 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { segments: {}, networks: {} }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     const publishedSnapshot = seedStore(store, 'vector-1')
+
     element.getAllComputedData.mockReturnValue({
       points: { p1: { id: 'p1', x: 0, y: 0 } },
       segments: {},
@@ -1778,6 +1850,7 @@ describe('RenderSceneTree computed data mirror', () => {
       },
       { undoable: false }
     )
+
     await flushScheduledFrame()
 
     expect(publishedSnapshot).not.toHaveProperty('points')
@@ -1799,6 +1872,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { points: { A: initialPoint } }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
     element.getAllComputedData.mockReturnValue({
@@ -1823,6 +1897,7 @@ describe('RenderSceneTree computed data mirror', () => {
       },
       { undoable: false }
     )
+
     await flushScheduledFrame()
 
     expect(outcome).toEqual({ status: 'resynced', elementId: 'vector-1' })
@@ -1836,16 +1911,20 @@ describe('RenderSceneTree computed data mirror', () => {
     const { RenderSceneTree } = await import('../stores/scene-tree.js')
     const store = new RenderSceneTree()
     const cachedBefore: Record<string, unknown> = { label: 'before' }
+
     cachedBefore.self = cachedBefore
     const suppliedBefore: Record<string, unknown> = { label: 'before' }
+
     suppliedBefore.self = suppliedBefore
     const after: Record<string, unknown> = { label: 'after' }
+
     after.self = after
     const element = createElement(
       'vector-1',
       { type: 'vector', visible: true },
       { metadata: cachedBefore }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
 
@@ -1857,6 +1936,7 @@ describe('RenderSceneTree computed data mirror', () => {
       after,
       { undoable: false }
     )
+
     await flushScheduledFrame()
 
     expect(outcome).toEqual({ status: 'applied', elementId: 'vector-1' })
@@ -1873,18 +1953,22 @@ describe('RenderSceneTree computed data mirror', () => {
     const { RenderSceneTree } = await import('../stores/scene-tree.js')
     const store = new RenderSceneTree()
     const cachedBefore: Record<string, unknown> = { label: 'before' }
+
     cachedBefore.next = cachedBefore
     const suppliedBefore: Record<string, unknown> = { label: 'before' }
     const suppliedPeer: Record<string, unknown> = { label: 'before' }
+
     suppliedBefore.next = suppliedPeer
     suppliedPeer.next = suppliedBefore
     const canonicalAfter: Record<string, unknown> = { label: 'after' }
+
     canonicalAfter.next = canonicalAfter
     const element = createElement(
       'vector-1',
       { type: 'vector', visible: true },
       { metadata: cachedBefore }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
     element.getAllComputedData.mockReturnValue({ metadata: canonicalAfter })
@@ -1897,6 +1981,7 @@ describe('RenderSceneTree computed data mirror', () => {
       canonicalAfter,
       { undoable: false }
     )
+
     await flushScheduledFrame()
 
     expect(outcome).toEqual({ status: 'resynced', elementId: 'vector-1' })
@@ -1911,10 +1996,12 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { points: {} }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
     const after = { id: '__proto__', x: 10, y: 20 }
     const set = Object.create(null) as Record<string, { after: typeof after }>
+
     Object.defineProperty(set, '__proto__', {
       enumerable: true,
       value: { after }
@@ -1925,10 +2012,12 @@ describe('RenderSceneTree computed data mirror', () => {
       { records: { points: { set } } },
       { undoable: false }
     )
+
     await flushScheduledFrame()
 
     const snapshot = renderMock.updateElement.mock.calls.slice(-1)[0]?.[4] as
       { points?: Record<string, unknown> } | undefined
+
     expect(outcome).toEqual({ status: 'applied', elementId: 'vector-1' })
     expect(Object.getPrototypeOf(snapshot?.points)).toBe(Object.prototype)
     expect(
@@ -1945,6 +2034,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { points: {} }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
     sceneTreeMock.getElementById.mockReturnValue(null)
@@ -1957,6 +2047,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { p1: { x: 1, y: 1 } },
       { undoable: false }
     )
+
     await flushScheduledFrame()
 
     expect(outcome).toEqual({ status: 'removed', elementId: 'vector-1' })
@@ -1972,6 +2063,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { points: {} }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
     element.getAllComputedData.mockImplementation(() => {
@@ -1986,6 +2078,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { p1: { x: 1, y: 1 } },
       { undoable: false }
     )
+
     await flushScheduledFrame()
 
     expect(outcome).toEqual({ status: 'failed', elementId: 'vector-1' })
@@ -2001,6 +2094,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { id: 'vector-1', points: {} }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
     element.getAllComputedData.mockReturnValue({
@@ -2031,6 +2125,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { points: {} }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
     element.save.mockReturnValue({
@@ -2066,6 +2161,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { type: 'vector', points: {} }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
     element.getAllComputedData.mockReturnValue({
@@ -2100,6 +2196,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { points: { p1: { x: 0, y: 0 } } }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     const publishedSnapshot = seedStore(store, 'vector-1')
 
@@ -2111,9 +2208,11 @@ describe('RenderSceneTree computed data mirror', () => {
       { p1: { x: 10, y: 12 } },
       { undoable: false }
     )
+
     await flushScheduledFrame()
 
     const nextSnapshot = renderMock.updateElement.mock.calls[0]?.[4]
+
     expect(outcome).toEqual({ status: 'applied', elementId: 'vector-1' })
     expect(nextSnapshot).not.toBe(publishedSnapshot)
     expect(publishedSnapshot).toEqual(
@@ -2140,6 +2239,7 @@ describe('RenderSceneTree computed data mirror', () => {
         networks: {}
       }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
 
@@ -2199,6 +2299,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { points: {} }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
 
@@ -2244,6 +2345,7 @@ describe('RenderSceneTree computed data mirror', () => {
         { type: 'vector', visible: true },
         { points: {} }
       )
+
       sceneTreeMock.getElementById.mockReturnValue(element)
       seedStore(store, 'vector-1')
 
@@ -2288,6 +2390,7 @@ describe('RenderSceneTree computed data mirror', () => {
         networks: {}
       }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
 
@@ -2345,6 +2448,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'rectangle', visible: true },
       { x: 0, y: 0, points: {} }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'rectangle-1')
 
@@ -2400,6 +2504,7 @@ describe('RenderSceneTree computed data mirror', () => {
     const strategy = Object.assign(vi.fn(), {
       directPropertyKeys: Object.freeze(['width', 'height'])
     }) as RenderStrategy & { readonly directPropertyKeys: readonly string[] }
+
     renderStrategyRegistry.register('transform-only-vector', strategy)
 
     try {
@@ -2419,6 +2524,7 @@ describe('RenderSceneTree computed data mirror', () => {
           )
         }
       )
+
       sceneTreeMock.getElementById.mockReturnValue(element)
       seedStore(store, 'vector-1')
       element.getAllComputedData.mockClear()
@@ -2476,6 +2582,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { x: 0, points: {} }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
 
@@ -2520,6 +2627,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { points: initialPoints }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
 
@@ -2571,6 +2679,7 @@ describe('RenderSceneTree computed data mirror', () => {
         networks: {}
       }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
 
@@ -2633,6 +2742,7 @@ describe('RenderSceneTree computed data mirror', () => {
         networks: {}
       }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     const publishedSnapshot = seedStore(store, 'vector-1')
 
@@ -2685,6 +2795,7 @@ describe('RenderSceneTree computed data mirror', () => {
         networks: {}
       }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
 
@@ -2744,10 +2855,12 @@ describe('RenderSceneTree computed data mirror', () => {
         networks: {}
       }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
 
     const handoffFailure = new Error('hierarchy handoff failed')
+
     renderMock.updateElement.mockImplementationOnce(() => {
       throw handoffFailure
     })
@@ -2794,6 +2907,7 @@ describe('RenderSceneTree computed data mirror', () => {
         points: { p1: { x: 0, y: 0 } }
       }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
 
@@ -2848,6 +2962,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true, name: 'Before' },
       { points: {} }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
 
@@ -2888,6 +3003,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { visible: true, width: 100, points: {} }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
 
@@ -2922,6 +3038,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { visible: false, points: {} }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
     renderMock.updateElement.mockClear()
@@ -2947,6 +3064,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { visible: true, width: 100, points: {} }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
 
@@ -2983,6 +3101,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { points: {} }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
 
@@ -3058,6 +3177,7 @@ describe('RenderSceneTree computed data mirror', () => {
         strokes: initialStrokes
       }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
 
@@ -3099,6 +3219,7 @@ describe('RenderSceneTree computed data mirror', () => {
         width: 120
       }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
 
@@ -3137,6 +3258,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true, name: 'Vector' },
       computedState
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
 
@@ -3147,6 +3269,7 @@ describe('RenderSceneTree computed data mirror', () => {
         ...element.save(),
         ...element.getAllComputedData()
       }
+
       expect(strategyData).toEqual(freshSnapshot)
       renderMock.updateElement.mockClear()
     }
@@ -3189,6 +3312,7 @@ describe('RenderSceneTree computed data mirror', () => {
       },
       { points: {} }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
 
@@ -3236,6 +3360,7 @@ describe('RenderSceneTree computed data mirror', () => {
       ['vector-1', first],
       ['vector-2', second]
     ])
+
     currentWorkspace = {
       save: () => ({ id: 'workspace-1', type: EntityTypes.WORKSPACE })
     }
@@ -3243,6 +3368,7 @@ describe('RenderSceneTree computed data mirror', () => {
     sceneTreeMock.getElementById.mockImplementation((elementId: string) =>
       liveElements.get(elementId)
     )
+
     const expectStableProjectionBound = () => {
       expect(store.getProjectionSnapshotCount()).toBeLessThanOrEqual(
         liveElements.size
@@ -3271,6 +3397,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { stale: true },
       { B: { id: 'B', x: 20, y: 20 } }
     )
+
     expect(outcome).toEqual({ status: 'resynced', elementId: 'vector-2' })
     expect(store.getProjectionSnapshotCount()).toBe(2)
     await flushScheduledFrame()
@@ -3299,6 +3426,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { points: {} }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
     store.updateElement(
@@ -3330,6 +3458,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { points: {} }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
     renderMock.removeElement.mockClear()
@@ -3368,12 +3497,14 @@ describe('RenderSceneTree computed data mirror', () => {
         )
       ]
     ])
+
     sceneTreeMock.getElementById.mockImplementation((id: string) =>
       elements.get(id)
     )
     seedStore(store, 'vector-failed')
     seedStore(store, 'vector-released')
     const releaseFailure = new Error('engine release failed')
+
     renderMock.removeElement.mockImplementationOnce(() => {
       throw releaseFailure
     })
@@ -3407,9 +3538,11 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { points: {} }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'remove-retry')
     const releaseFailure = new Error('single remove release failed')
+
     renderMock.removeElement.mockImplementationOnce(() => {
       throw releaseFailure
     })
@@ -3436,9 +3569,11 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { points: {} }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     renderMock.addElement.mockReturnValueOnce(undefined)
     const releaseFailure = new Error('add cleanup release failed')
+
     renderMock.removeElement.mockImplementationOnce(() => {
       throw releaseFailure
     })
@@ -3462,12 +3597,14 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { points: {} }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'resync-retry')
     element.getAllComputedData.mockImplementationOnce(() => {
       throw new Error('resync seed failed')
     })
     const releaseFailure = new Error('resync cleanup release failed')
+
     renderMock.removeElement.mockImplementationOnce(() => {
       throw releaseFailure
     })
@@ -3499,6 +3636,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { points: {} }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     seedStore(store, 'vector-1')
     store.updateElement(
@@ -3533,6 +3671,7 @@ describe('RenderSceneTree computed data mirror', () => {
       { type: 'vector', visible: true },
       { points: {} }
     )
+
     sceneTreeMock.getElementById.mockReturnValue(element)
     currentWorkspace = {
       save: () => ({

@@ -20,6 +20,7 @@ const DEFAULT_HANDLER_TIMEOUT_MS = 5000
 
 export class FeatureHandlerTimeoutError extends Error {
   readonly label: string
+
   readonly timeoutMs: number
 
   constructor(label: string, timeoutMs: number) {
@@ -50,10 +51,15 @@ const setActiveSessionManager = (manager: SessionManager | undefined): void => {
 
 export class SessionManager {
   private readonly enqueue = interactionQueue.createRunner()
+
   private readonly runImmediately = interactionQueue.createImmediateRunner()
+
   private activeSessions = new Map<string, ActiveSession>()
+
   private sessionHandlers = new Map<string, SessionParticipant[]>()
+
   private startingFeatureCounts = new Map<string, number>()
+
   private handlerTimeoutMs = DEFAULT_HANDLER_TIMEOUT_MS
 
   private withDetail(
@@ -84,12 +90,14 @@ export class SessionManager {
     }
 
     const invocation = Promise.resolve().then(handler)
+
     pendingHandlers.set(invocation, abortController)
     void invocation.then(
       () => pendingHandlers.delete(invocation),
       () => pendingHandlers.delete(invocation)
     )
     let timeoutId: ReturnType<typeof setTimeout> | undefined
+
     try {
       return (await Promise.race([
         invocation,
@@ -131,6 +139,7 @@ export class SessionManager {
 
     for (const participant of participants) {
       const state = states.get(participant.featureName)
+
       if (state === undefined) {
         continue
       }
@@ -140,6 +149,7 @@ export class SessionManager {
           !forcedRollback &&
           participant.cancelPolicy === SessionCancelPolicies.COMMIT_CURRENT
         let requestedOutcome: SessionCancelOutcome | undefined
+
         if (shouldFinalizeCurrent) {
           await this.runWithTimeout(
             () => participant.handler.onEnd?.(snapshot, state),
@@ -161,6 +171,7 @@ export class SessionManager {
         }
 
         let participantOutcome: SessionCancelOutcome
+
         if (
           participant.cancelPolicy === SessionCancelPolicies.FEATURE_DEFINED
         ) {
@@ -172,6 +183,7 @@ export class SessionManager {
               `Feature ${participant.featureName} onCancel must return rollback or commit-current`
             )
           }
+
           participantOutcome = requestedOutcome
         } else {
           participantOutcome = participant.cancelPolicy
@@ -185,6 +197,7 @@ export class SessionManager {
           failed = true
           firstError = error
         }
+
         outcome = SessionCancelPolicies.ROLLBACK
       }
     }
@@ -202,6 +215,7 @@ export class SessionManager {
     forcedRollback = false
   ): Promise<CapturedFailure> {
     const session = this.activeSessions.get(sessionName)
+
     if (!session) {
       return forcedFailure ?? { failed: false, error: undefined }
     }
@@ -223,6 +237,7 @@ export class SessionManager {
       session.abortController,
       forcedRollback || forcedFailure?.failed === true
     )
+
     this.activeSessions.delete(sessionName)
     this.releaseRuntimeOwnershipIfIdle()
 
@@ -231,6 +246,7 @@ export class SessionManager {
       forcedRollback ||
       failure.failed ||
       cleanup.outcome === SessionCancelPolicies.ROLLBACK
+
     endTransaction(
       shouldRollback
         ? {
@@ -279,9 +295,11 @@ export class SessionManager {
       typeof cancelPolicyOrHandler === 'string'
         ? explicitHandler
         : cancelPolicyOrHandler
+
     if (!handler) {
       throw new Error(`Feature ${featureName} must provide a session handler`)
     }
+
     if (
       cancelPolicy === SessionCancelPolicies.FEATURE_DEFINED &&
       !handler.onCancel
@@ -301,6 +319,7 @@ export class SessionManager {
     }
 
     const handlers = this.sessionHandlers.get(sessionName) ?? []
+
     handlers.push(participant)
     handlers.sort((left, right) => right.priority - left.priority)
     this.sessionHandlers.set(sessionName, handlers)
@@ -314,12 +333,14 @@ export class SessionManager {
       if (!this.sessionHandlers.has(sessionName)) {
         return false
       }
+
       await this.cancelRuntimeActiveSessionsNow(
         this.withDetail(snapshot, {
           cancelled: true,
           cancelledBy: `${sessionName}.start`
         }) as SystemContextSnapshotWithDetail
       )
+
       return this.handleStartNow(sessionName, snapshot)
     })
   }
@@ -332,6 +353,7 @@ export class SessionManager {
   ): Promise<boolean | undefined> {
     return this.enqueue(async () => {
       const snapshot = getSnapshot()
+
       if (phase === 'start') {
         await this.cancelRuntimeActiveSessionsNow({
           ...snapshot,
@@ -341,13 +363,18 @@ export class SessionManager {
             cancelledBy
           }
         })
+
         return this.handleStartNow(sessionName, snapshot)
       }
+
       if (phase === 'update') {
         await this.handleUpdateNow(sessionName, snapshot)
+
         return
       }
+
       await this.handleEndNow(sessionName, snapshot)
+
       return
     })
   }
@@ -380,12 +407,17 @@ export class SessionManager {
   ): Promise<T | undefined> {
     return this.runImmediately((assertOpen) => {
       const snapshot = getSnapshot()
-      if (!activeSessionManager) return operation(snapshot)
+
+      if (!activeSessionManager) {
+        return operation(snapshot)
+      }
+
       return this.cancelRuntimeActiveSessionsNow({
         ...snapshot,
         detail: { ...snapshot.detail, cancelled: true, cancelledBy }
       }).then(() => {
         assertOpen()
+
         return operation(snapshot)
       })
     })
@@ -398,6 +430,7 @@ export class SessionManager {
   ): Promise<T> {
     return this.enqueue(async () => {
       const snapshot = getSnapshot()
+
       await this.cancelRuntimeActiveSessionsNow({
         ...snapshot,
         detail: {
@@ -406,6 +439,7 @@ export class SessionManager {
           cancelledBy
         }
       })
+
       return operation(snapshot)
     })
   }
@@ -415,6 +449,7 @@ export class SessionManager {
     snapshot: SystemContextSnapshot
   ): Promise<boolean> {
     const handlers = this.sessionHandlers.get(sessionName)
+
     if (!handlers || handlers.length === 0) {
       return false
     }
@@ -434,6 +469,7 @@ export class SessionManager {
       if (exclusiveFound) {
         break
       }
+
       if (!this.sessionHandlers.get(sessionName)?.includes(participant)) {
         continue
       }
@@ -445,6 +481,7 @@ export class SessionManager {
           `${participant.featureName}.onStart`,
           abortController
         )
+
         if (state === null || state === undefined) {
           continue
         }
@@ -482,6 +519,7 @@ export class SessionManager {
 
     if (participants.length === 0) {
       endTransaction()
+
       return false
     }
 
@@ -493,6 +531,7 @@ export class SessionManager {
       abortController
     })
     setActiveSessionManager(this)
+
     return true
   }
 
@@ -501,6 +540,7 @@ export class SessionManager {
     snapshot: SystemContextSnapshot
   ): Promise<void> {
     const session = this.activeSessions.get(sessionName)
+
     if (!session) {
       return
     }
@@ -513,6 +553,7 @@ export class SessionManager {
 
     for (const participant of session.participants) {
       const state = session.states.get(participant.featureName)
+
       if (state === undefined) {
         continue
       }
@@ -546,6 +587,7 @@ export class SessionManager {
     snapshot: SystemContextSnapshot
   ): Promise<void> {
     const session = this.activeSessions.get(sessionName)
+
     if (!session) {
       return
     }
@@ -560,6 +602,7 @@ export class SessionManager {
 
     for (const participant of session.participants) {
       const state = session.states.get(participant.featureName)
+
       if (state === undefined) {
         continue
       }
@@ -583,6 +626,7 @@ export class SessionManager {
     if (failed) {
       session.abortController?.abort()
     }
+
     endTransaction(
       failed
         ? {
@@ -601,13 +645,16 @@ export class SessionManager {
   ): Promise<void> {
     let failed = false
     let firstError: unknown
+
     for (const sessionName of [...this.activeSessions.keys()]) {
       const failure = await this.cancelSession(sessionName, snapshot)
+
       if (failure.failed && !failed) {
         failed = true
         firstError = failure.error
       }
     }
+
     if (failed) {
       throw firstError
     }
@@ -617,9 +664,11 @@ export class SessionManager {
     snapshot: SystemContextSnapshotWithDetail
   ): Promise<void> {
     const manager = activeSessionManager
+
     if (!manager) {
       return
     }
+
     await manager.cancelActiveSessionsNow(snapshot)
   }
 
@@ -631,7 +680,10 @@ export class SessionManager {
 
   /** Lifecycle owner only: admission must close before this synchronous abort. */
   static abortRuntime(): void {
-    for (const controller of pendingHandlers.values()) controller?.abort()
+    for (const controller of pendingHandlers.values()) {
+      controller?.abort()
+    }
+
     for (const session of activeSessionManager?.activeSessions.values() ?? []) {
       session.abortController?.abort()
     }
@@ -643,10 +695,12 @@ export class SessionManager {
   ): Promise<void> {
     try {
       const manager = activeSessionManager
+
       if (manager) {
         const snapshot = getSnapshot()
         let failed = false
         let firstError: unknown
+
         for (const sessionName of [...manager.activeSessions.keys()]) {
           const result = await manager.cancelSession(
             sessionName,
@@ -657,12 +711,16 @@ export class SessionManager {
             undefined,
             true
           )
+
           if (result.failed && !failed) {
             failed = true
             firstError = result.error
           }
         }
-        if (failed) throw firstError
+
+        if (failed) {
+          throw firstError
+        }
       }
     } finally {
       // Cleanup itself can time out. Do not signal quiescence until its actual
@@ -687,6 +745,7 @@ export class SessionManager {
     if ((this.startingFeatureCounts.get(featureName) ?? 0) > 0) {
       return true
     }
+
     for (const session of this.activeSessions.values()) {
       if (
         session.participants.some(
@@ -696,6 +755,7 @@ export class SessionManager {
         return true
       }
     }
+
     return false
   }
 
@@ -708,10 +768,13 @@ export class SessionManager {
 
   private markFeatureStartComplete(featureName: string): void {
     const count = this.startingFeatureCounts.get(featureName) ?? 0
+
     if (count <= 1) {
       this.startingFeatureCounts.delete(featureName)
+
       return
     }
+
     this.startingFeatureCounts.set(featureName, count - 1)
   }
 
@@ -722,6 +785,7 @@ export class SessionManager {
       const nextHandlers = handlers.filter(
         (participant) => participant.featureName !== featureName
       )
+
       if (nextHandlers.length === handlers.length) {
         continue
       }
@@ -749,6 +813,7 @@ export class SessionManager {
 
   unregisterSession(sessionName: string, featureName: string): boolean {
     const handlers = this.sessionHandlers.get(sessionName)
+
     if (!handlers) {
       return false
     }
@@ -756,6 +821,7 @@ export class SessionManager {
     const index = handlers.findIndex(
       (handler) => handler.featureName === featureName
     )
+
     if (index === -1) {
       return false
     }
@@ -764,6 +830,7 @@ export class SessionManager {
     if (handlers.length === 0) {
       this.sessionHandlers.delete(sessionName)
     }
+
     return true
   }
 }

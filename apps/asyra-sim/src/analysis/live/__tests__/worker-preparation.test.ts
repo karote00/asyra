@@ -23,14 +23,20 @@ it('reuses complete original preparation through the installed live Worker and i
   try {
     await host.handle({ type: LiveMessages.OPEN, snapshot })
     let firstBuilds = 0
+
     for (const [i, time] of [3.8, 3.9, 4, 4.1, 4.2].entries()) {
       const start = performance.now()
+
       await host.handle({ type: LiveMessages.SAMPLE, id: i + 1, time })
       durations.push(performance.now() - start)
       expect(messages.at(-1)?.type).toBe(LiveMessages.RESULT)
-      if (!i) firstBuilds = build.mock.calls.length
+      if (!i) {
+        firstBuilds = build.mock.calls.length
+      }
+
       expect(build).toHaveBeenCalledTimes(firstBuilds)
     }
+
     expect(firstBuilds).toBeGreaterThan(0)
     // eslint-disable-next-line no-console -- permanent bounded normal Worker host profile
     console.info(
@@ -46,6 +52,7 @@ it('reuses complete original preparation through the installed live Worker and i
       () => undefined,
       () => 0
     )
+
     await successor.handle({ type: LiveMessages.OPEN, snapshot })
     await successor.handle({ type: LiveMessages.SAMPLE, id: 1, time: 4 })
     expect(build).toHaveBeenCalledTimes(firstBuilds * 2)
@@ -54,10 +61,11 @@ it('reuses complete original preparation through the installed live Worker and i
   }
 
   for (const message of messages) {
-    if (message.type === LiveMessages.RESULT)
+    if (message.type === LiveMessages.RESULT) {
       expect(message.evidence).toEqual(
         runOriginalPartMethod(sampleSnapshot(snapshot, message.time))
       )
+    }
   }
 }, 20000)
 

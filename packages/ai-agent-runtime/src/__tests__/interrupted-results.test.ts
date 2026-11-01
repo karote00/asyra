@@ -22,6 +22,7 @@ it.each(['callback', 'cancel-committed', 'cancel-rolled-back'] as const)(
               { id: 'draw', name: 'draw', arguments: {}, summary: 'Draw' }
             ]
           })
+
           return { batchId: 'report', actions: [] }
         }
       },
@@ -39,9 +40,13 @@ it.each(['callback', 'cancel-committed', 'cancel-rolled-back'] as const)(
             retry: 'never',
             output: 'value'
           },
+
           execute: async () => {
             writes++
-            if (mode !== 'callback') controller.abort()
+            if (mode !== 'callback') {
+              controller.abort()
+            }
+
             throw new AiActionExecutionError('Drawing interrupted.', {
               settlement: 'partial',
               result: {
@@ -60,9 +65,12 @@ it.each(['callback', 'cancel-committed', 'cancel-rolled-back'] as const)(
         run: async (_label, execute) => {
           const mutate: AiMutationExecutor = async (work, settled) => {
             const value = work()
+
             settled?.(value)
+
             return value
           }
+
           try {
             return await execute(mutate)
           } catch (error) {
@@ -78,6 +86,7 @@ it.each(['callback', 'cancel-committed', 'cancel-rolled-back'] as const)(
       intent: 'Draw',
       signal: controller.signal
     })
+
     expect(writes).toBe(1)
     if (mode === 'callback') {
       expect(receipt).toMatchObject({
@@ -96,13 +105,15 @@ it.each(['callback', 'cancel-committed', 'cancel-rolled-back'] as const)(
           status: mode === 'cancel-rolled-back' ? 'rolled-back' : 'committed'
         }
       })
-      if (mode === 'cancel-rolled-back')
+      if (mode === 'cancel-rolled-back') {
         expect(result).not.toHaveProperty('actionResults')
-      else
+      } else {
         expect(result).toMatchObject({
           actionResults: [{ result: { appliedElementCount: 1 } }]
         })
+      }
     }
+
     await runtime.dispose()
   }
 )
@@ -130,8 +141,10 @@ it('retains a returned action result when cancellation arrives at the delivery b
           retry: 'never',
           output: 'value'
         },
+
         execute: async () => {
           controller.abort()
+
           return { status: 'complete', appliedElementCount: 2 }
         }
       }
@@ -153,6 +166,7 @@ it('retains a returned action result when cancellation arrives at the delivery b
     intent: 'Draw',
     signal: controller.signal
   })
+
   expect(result).toMatchObject({
     status: 'cancelled',
     transaction: { status: 'committed' },

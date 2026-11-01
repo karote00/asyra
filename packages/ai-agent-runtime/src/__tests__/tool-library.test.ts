@@ -3,6 +3,7 @@ import { createAiActionRegistry } from '../action-registry.js'
 import { createAiToolLibrary } from '../tool-library.js'
 
 const scalar = { type: 'number' }
+
 const proposal = () => ({
   format: 1,
   name: 'reusable',
@@ -20,8 +21,10 @@ const proposal = () => ({
   ],
   output: { kind: 'step', step: 'apply', path: '' }
 })
+
 const setup = () => {
   const registry = createAiActionRegistry()
+
   registry.register({
     name: 'set',
     description: 'Set a current value.',
@@ -32,6 +35,7 @@ const setup = () => {
     resources: ['value'],
     lifecycle: { cancellation: 'cooperative', retry: 'never', output: 'value' },
     composition: 'allowed',
+
     execute: async (input) => input
   })
   const execute = vi.fn(async (input) => input)
@@ -39,10 +43,13 @@ const setup = () => {
   const library = createAiToolLibrary({
     registry,
     createExecutor,
+
     validate: () => undefined,
+
     limits: { steps: 8, bindingDepth: 8, bindings: 50, bytes: 8000, issues: 8 },
     capacity: 8
   })
+
   return { registry, library, execute, createExecutor }
 }
 
@@ -55,6 +62,7 @@ describe('tool candidate registration', () => {
       proposal: proposal()
     }
     const first = library.submit(request)
+
     expect(first.ok).toBe(true)
     expect(library.submit(request)).toBe(first)
     expect(
@@ -71,6 +79,7 @@ describe('tool candidate registration', () => {
 
   it('revalidates corrected proposals and keeps previously admitted revisions immutable', () => {
     const { library, registry } = setup()
+
     expect(
       library.submit({
         requestId: 'author',
@@ -89,6 +98,7 @@ describe('tool candidate registration', () => {
       }).ok
     ).toBe(true)
     const first = registry.get('reusable', { requestId: 'author' })
+
     expect(
       library.submit({
         requestId: 'author',
@@ -112,7 +122,8 @@ describe('tool candidate registration', () => {
 
   it('bounds retained submissions without evicting a live candidate', () => {
     const { library, registry } = setup()
-    for (let i = 0; i < 8; i++)
+
+    for (let i = 0; i < 8; i++) {
       expect(
         library.submit({
           requestId: 'author',
@@ -120,6 +131,8 @@ describe('tool candidate registration', () => {
           proposal: { ...proposal(), name: `tool-${i}` }
         }).ok
       ).toBe(true)
+    }
+
     expect(
       library.submit({
         requestId: 'author',
@@ -135,6 +148,7 @@ describe('tool candidate registration', () => {
   it('keeps invalid retries inert and reports no progress within the request budget', () => {
     const { library } = setup()
     const request = { requestId: 'author', submissionId: 'bad', proposal: {} }
+
     expect(library.submit(request)).toMatchObject({
       ok: false,
       code: 'admission'
@@ -157,6 +171,7 @@ it('rejects nested expansion before registration and cannot compose an unknown c
     })),
     output: { kind: 'step', step: 's7', path: '' }
   }
+
   expect(
     library.submit({
       requestId: 'author',
@@ -169,6 +184,7 @@ it('rejects nested expansion before registration and cannot compose an unknown c
     name: 'nested',
     steps: [{ ...base.steps[0], tool: 'reusable' }]
   }
+
   expect(
     library.submit({
       requestId: 'author',
@@ -181,6 +197,7 @@ it('rejects nested expansion before registration and cannot compose an unknown c
 
 it('releases an explicitly removed composition without deleting a primitive', () => {
   const { library, registry } = setup()
+
   library.submit({
     requestId: 'author',
     submissionId: 'one',
@@ -202,6 +219,7 @@ it('releases an explicitly removed composition without deleting a primitive', ()
 
 it('counts nested repair dependencies before publishing a bounded candidate', () => {
   const host = setup()
+
   expect(
     host.library.submit({
       requestId: 'author',
@@ -210,7 +228,11 @@ it('counts nested repair dependencies before publishing a bounded candidate', ()
     }).ok
   ).toBe(true)
   const primitive = host.registry.get('set')
-  if (!primitive) throw new Error('Missing scalar primitive')
+
+  if (!primitive) {
+    throw new Error('Missing scalar primitive')
+  }
+
   host.registry.register({
     ...primitive,
     name: 'verify',
@@ -255,6 +277,7 @@ it('counts nested repair dependencies before publishing a bounded candidate', ()
     },
     output: { kind: 'step', step: 'verified', path: '/state' }
   }
+
   // Surface count is eight; actual expansion is eleven including nested leaves.
   expect(
     host.library.submit({

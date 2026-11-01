@@ -185,6 +185,7 @@ export const registerTrackedRenderLayer = (
   install: (register: (registration: RenderLayerRegistration) => void) => void
 ): (() => void) => {
   const registeredNames: string[] = []
+
   const dispose = (): void => {
     for (let index = registeredNames.length - 1; index >= 0; index--) {
       context.core.unregisterRenderLayer(registeredNames[index])
@@ -201,5 +202,6 @@ export const registerTrackedRenderLayer = (
     dispose()
     throw error
   }
+
   return dispose
 }

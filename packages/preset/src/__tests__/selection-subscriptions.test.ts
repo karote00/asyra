@@ -36,6 +36,7 @@ import {
 } from '../selection/channels.js'
 
 const projectionOwner = Symbol('test Scene Tree projection')
+
 const projectSceneChanges = (
   changes: readonly unknown[],
   owner = projectionOwner
@@ -52,8 +53,10 @@ const deliverObserverChanges = (
 ): void => {
   if (observer?.onBatch) {
     observer.onBatch(changes)
+
     return
   }
+
   changes.forEach((change) => observer?.onChange?.(change))
 }
 
@@ -61,12 +64,16 @@ const createDeps = (owner = projectionOwner): PresetDependencies =>
   ({
     sceneTree: {
       projectionOwner: owner,
+
       getElementById: () => undefined,
+
       getAllElements: () => new Map(),
+
       currentWorkspace: undefined
     },
     systemContext: {
       getManagedProperty: () => undefined,
+
       getSystemContextSnapshot: () => ({
         primaryTool: 'select',
         mousePosition: { x: 0, y: 0 }
@@ -74,10 +81,15 @@ const createDeps = (owner = projectionOwner): PresetDependencies =>
     },
     render: {
       getElementById: () => undefined,
+
       getViewportPosition: () => ({ x: 0, y: 0 }),
+
       getViewportScale: () => 1,
+
       getMousePosInWorkspace: () => ({ x: 0, y: 0 }),
+
       zoomTo: () => undefined,
+
       panTo: () => undefined
     }
   }) as unknown as PresetDependencies
@@ -89,9 +101,11 @@ describe('Preset Selection Subscriptions', () => {
     const observers = new Map<string, TestDataChannelObserver>()
     const core = {
       getSelection: () => undefined,
+
       registerDataChannelObserver: (
         registration: TestDataChannelObserver & { name: string }
       ) => observers.set(registration.name, registration),
+
       unregisterDataChannelObserver: (name: string) => observers.delete(name)
     } as unknown as PresetCoreAPIs
     const projectLocalComputedDataFromPropertyIds = vi.fn()
@@ -161,6 +175,7 @@ describe('Preset Selection Subscriptions', () => {
     const scalar = vi.spyOn(renderSceneTreeStore, 'updateElement')
     const batch = vi.spyOn(renderSceneTreeStore, 'updateElementBatch')
     const patch = vi.spyOn(renderSceneTreeStore, 'updateElementPatch')
+
     scalar.mockReturnValue({ status: 'applied', elementId: 'vector-1' })
     batch.mockReturnValue({ status: 'applied', elementId: 'vector-1' })
     patch.mockReturnValue({ status: 'applied', elementId: 'vector-1' })
@@ -285,9 +300,11 @@ describe('Preset Selection Subscriptions', () => {
     const observers = new Map<string, TestDataChannelObserver>()
     const core = {
       getSelection: () => undefined,
+
       registerDataChannelObserver: (
         registration: TestDataChannelObserver & { name: string }
       ) => observers.set(registration.name, registration),
+
       unregisterDataChannelObserver: (name: string) => observers.delete(name)
     } as unknown as PresetCoreAPIs
     const renderBatch = vi
@@ -299,6 +316,7 @@ describe('Preset Selection Subscriptions', () => {
     const reload = vi
       .spyOn(renderSceneTreeStore, 'reload')
       .mockImplementation(() => undefined)
+
     propertyRegistry.register('flattenedElementIds', { defaultValue: [] })
     propertyRegistry.register('elementDataMap', { defaultValue: {} })
     uiContext.set('flattenedElementIds', ['vector-1', 'vector-2'])
@@ -354,7 +372,9 @@ describe('Preset Selection Subscriptions', () => {
         }
       }
     ] as const
+
     let disposeRender = () => undefined
+
     let disposeUIContext = () => undefined
 
     try {
@@ -404,6 +424,7 @@ describe('Preset Selection Subscriptions', () => {
       const sharedComputedChanges = ordinaryComputedEvents.map(
         ({ payload }) => payload
       )
+
       deliverObserverChanges(
         observers.get('preset.render.sceneTree'),
         sharedComputedChanges
@@ -436,6 +457,7 @@ describe('Preset Selection Subscriptions', () => {
   it('projects local root binding changes to Render and one UI row without hierarchy work', () => {
     const core = {
       getSelection: () => undefined,
+
       registerDataChannelObserver: vi.fn(),
       unregisterDataChannelObserver: vi.fn()
     } as unknown as PresetCoreAPIs
@@ -448,6 +470,7 @@ describe('Preset Selection Subscriptions', () => {
     const reload = vi
       .spyOn(renderSceneTreeStore, 'reload')
       .mockImplementation(() => undefined)
+
     propertyRegistry.register('flattenedElementIds', { defaultValue: [] })
     propertyRegistry.register('elementDataMap', { defaultValue: {} })
     uiContext.set('flattenedElementIds', ['a', 'b'])
@@ -459,16 +482,19 @@ describe('Preset Selection Subscriptions', () => {
       },
       b: { id: 'b', type: VECTOR_TYPE, props: { fills: 'shared' } }
     }
+
     uiContext.set('elementDataMap', original)
     const dispose = registerDefaultDataChannelObservers(core, deps, undefined, {
       renderScene: true,
       uiContext: true
     })
     const set = vi.spyOn(uiContext, 'set')
+
     scan.mockClear()
     lookup.mockClear()
     try {
       const changes = [{ key: 'fills', before: 'shared', after: 'local' }]
+
       projectSceneChanges([
         {
           action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_PROPERTY_BINDINGS,
@@ -479,6 +505,7 @@ describe('Preset Selection Subscriptions', () => {
       ])
       expect(binding).toHaveBeenCalledExactlyOnceWith('a', changes)
       const current = uiContext.get('elementDataMap') as typeof original
+
       expect(current.a.props).toEqual({ fills: 'local', strokes: 'stroke' })
       expect(current.b).toBe(original.b)
       expect(original.a.props.fills).toBe('shared')
@@ -511,12 +538,14 @@ describe('Preset Selection Subscriptions', () => {
   it('registers the applied projection before rebuild and retires it on disposal', () => {
     const core = {
       getSelection: () => undefined,
+
       registerDataChannelObserver: vi.fn(),
       unregisterDataChannelObserver: vi.fn()
     } as unknown as PresetCoreAPIs
     const move = vi
       .spyOn(renderSceneTreeStore, 'moveElements')
       .mockReturnValue({ status: 'applied' })
+
     const publish = () =>
       projectSceneChanges([
         {
@@ -525,10 +554,13 @@ describe('Preset Selection Subscriptions', () => {
           moves: []
         }
       ])
+
     const reload = vi
       .spyOn(renderSceneTreeStore, 'reload')
       .mockImplementation(publish)
+
     let dispose: () => void = () => undefined
+
     try {
       dispose = registerDefaultDataChannelObservers(
         core,
@@ -562,6 +594,7 @@ describe('Preset Selection Subscriptions', () => {
     (type) => {
       const core = {
         getSelection: () => undefined,
+
         registerDataChannelObserver: vi.fn(),
         unregisterDataChannelObserver: vi.fn()
       } as unknown as PresetCoreAPIs
@@ -581,6 +614,7 @@ describe('Preset Selection Subscriptions', () => {
           data.id,
           {
             get: (key: string) => data[key as keyof typeof data],
+
             save: vi.fn(() => data)
           }
         ])
@@ -590,10 +624,13 @@ describe('Preset Selection Subscriptions', () => {
         sceneTree: {
           ...createDeps().sceneTree,
           currentWorkspace: elements.get('workspace'),
+
           getElementById: (id: string) => elements.get(id),
+
           getAllElements: () => elements
         }
       } as unknown as PresetDependencies
+
       propertyRegistry.register('flattenedElementIds', { defaultValue: [] })
       propertyRegistry.register('elementDataMap', { defaultValue: {} })
       const dispose = registerDefaultDataChannelObservers(
@@ -602,6 +639,7 @@ describe('Preset Selection Subscriptions', () => {
         undefined,
         { uiContext: true }
       )
+
       try {
         // The event subject may replay the preceding load at registration.
         elements.forEach((element) => element.save.mockClear())
@@ -620,8 +658,10 @@ describe('Preset Selection Subscriptions', () => {
         // Each owner traverses once; pointer movement never rebuilds this index.
         expect(elements.get('leaf')?.save).toHaveBeenCalledTimes(2)
         rows[0].children = []
-        for (const id of ['outer', 'nested', 'leaf', 'sibling'])
+        for (const id of ['outer', 'nested', 'leaf', 'sibling']) {
           elements.delete(id)
+        }
+
         publishEventsToObservers([{ type: EventTypes.FILE_LOAD_COMPLETE }])
         expect(uiContext.get('flattenedElementIds')).toEqual([])
         expect(uiContext.get('elementDataMap')).toEqual({})
@@ -637,10 +677,12 @@ describe('Preset Selection Subscriptions', () => {
     const observers = new Map<string, { onChange: (change: unknown) => void }>()
     const core = {
       getSelection: () => undefined,
+
       registerDataChannelObserver: (registration: {
         name: string
         onChange: (change: unknown) => void
       }) => observers.set(registration.name, registration),
+
       unregisterDataChannelObserver: (name: string) => observers.delete(name)
     } as unknown as PresetCoreAPIs
     const reloadFailure = new Error('file-load Render rebuild failed')
@@ -673,10 +715,12 @@ describe('Preset Selection Subscriptions', () => {
     const observers = new Map<string, { onChange: (change: unknown) => void }>()
     const core = {
       getSelection: () => undefined,
+
       registerDataChannelObserver: (registration: {
         name: string
         onChange: (change: unknown) => void
       }) => observers.set(registration.name, registration),
+
       unregisterDataChannelObserver: (name: string) => observers.delete(name)
     } as unknown as PresetCoreAPIs
     const projectionStore =
@@ -697,6 +741,7 @@ describe('Preset Selection Subscriptions', () => {
         undefined,
         { renderScene: true }
       )
+
       disposeRender()
       disposeRender()
       expect(clearProjection).toHaveBeenCalledTimes(1)
@@ -707,6 +752,7 @@ describe('Preset Selection Subscriptions', () => {
         undefined,
         { selection: true }
       )
+
       disposeSelection()
       expect(clearProjection).toHaveBeenCalledTimes(1)
     } finally {
@@ -719,10 +765,12 @@ describe('Preset Selection Subscriptions', () => {
     const observers = new Map<string, { onChange: (change: unknown) => void }>()
     const core = {
       getSelection: () => undefined,
+
       registerDataChannelObserver: (registration: {
         name: string
         onChange: (change: unknown) => void
       }) => observers.set(registration.name, registration),
+
       unregisterDataChannelObserver: (name: string) => observers.delete(name)
     } as unknown as PresetCoreAPIs
     const projectionStore =
@@ -756,10 +804,12 @@ describe('Preset Selection Subscriptions', () => {
     const observers = new Map<string, { onChange: (change: unknown) => void }>()
     const core = {
       getSelection: () => undefined,
+
       registerDataChannelObserver: (registration: {
         name: string
         onChange: (change: unknown) => void
       }) => observers.set(registration.name, registration),
+
       unregisterDataChannelObserver: (name: string) => observers.delete(name)
     } as unknown as PresetCoreAPIs
     const dependencies = createDeps()
@@ -773,6 +823,7 @@ describe('Preset Selection Subscriptions', () => {
     const reload = vi
       .spyOn(renderSceneTreeStore, 'reload')
       .mockImplementation(() => undefined)
+
     add.mockReturnValue([{ status: 'applied', elementId: 'vector-1' }])
     remove.mockReturnValue([{ status: 'removed', elementId: 'vector-1' }])
     scalar.mockReturnValue({ status: 'resynced', elementId: 'vector-1' })
@@ -821,6 +872,7 @@ describe('Preset Selection Subscriptions', () => {
         action: SCENE_TREE_ACTIONS.RESTORE_SUBTREE,
         undoAction: SCENE_TREE_ACTIONS.REMOVE_SUBTREE
       }
+
       projectSceneChanges([
         {
           action: SCENE_TREE_ACTIONS.ADD_ELEMENT,
@@ -957,10 +1009,12 @@ describe('Preset Selection Subscriptions', () => {
     const observers = new Map<string, { onChange: (change: unknown) => void }>()
     const core = {
       getSelection: () => undefined,
+
       registerDataChannelObserver: (registration: {
         name: string
         onChange: (change: unknown) => void
       }) => observers.set(registration.name, registration),
+
       unregisterDataChannelObserver: (name: string) => observers.delete(name)
     } as unknown as PresetCoreAPIs
     const addSingle = vi.spyOn(renderSceneTreeStore, 'addElementById')
@@ -1032,15 +1086,18 @@ describe('Preset Selection Subscriptions', () => {
     const observers = new Map<string, Observer>()
     const core = {
       getSelection: () => undefined,
+
       registerDataChannelObserver: (
         registration: Observer & { name: string }
       ) => observers.set(registration.name, registration),
+
       unregisterDataChannelObserver: (name: string) => observers.delete(name)
     } as unknown as PresetCoreAPIs
     const dependencies = createDeps()
     const getAllElements = vi.fn(() => {
       throw new Error('formal batch projection must not scan canonical state')
     })
+
     dependencies.sceneTree.getAllElements = getAllElements
     const addBatch = vi
       .spyOn(renderSceneTreeStore, 'addElements')
@@ -1061,6 +1118,7 @@ describe('Preset Selection Subscriptions', () => {
     const reload = vi
       .spyOn(renderSceneTreeStore, 'reload')
       .mockImplementation(() => undefined)
+
     propertyRegistry.register('flattenedElementIds', { defaultValue: [] })
     propertyRegistry.register('elementDataMap', { defaultValue: {} })
     uiContext.set('flattenedElementIds', [])
@@ -1194,6 +1252,7 @@ describe('Preset Selection Subscriptions', () => {
       const beforePropertyHierarchy = uiContext.get<string[]>(
         'flattenedElementIds'
       )
+
       uiSet.mockClear()
       projectSceneChanges([
         {
@@ -1215,6 +1274,7 @@ describe('Preset Selection Subscriptions', () => {
         uiContext.get<Record<string, Record<string, unknown>>>(
           'elementDataMap'
         ) ?? {}
+
       expect(uiSet.mock.calls.map(([property]) => property)).toEqual([])
       expect(uiContext.get('flattenedElementIds')).toBe(beforePropertyHierarchy)
       expect(afterPropertyMap['group-1']).toBe(beforePropertyMap['group-1'])
@@ -1316,9 +1376,11 @@ describe('Preset Selection Subscriptions', () => {
   it('matches complete derivation for nested tail additions and interior or malformed boundaries', () => {
     const core = {
       getSelection: () => undefined,
+
       registerDataChannelObserver: vi.fn(),
       unregisterDataChannelObserver: vi.fn()
     } as unknown as PresetCoreAPIs
+
     propertyRegistry.register('flattenedElementIds', { defaultValue: [] })
     propertyRegistry.register('elementDataMap', { defaultValue: {} })
     const dispose = registerDefaultDataChannelObservers(
@@ -1327,16 +1389,19 @@ describe('Preset Selection Subscriptions', () => {
       undefined,
       { uiContext: true }
     )
+
     const entry = (
       id: string,
       parentId: string,
       index: number,
       type = 'custom-container'
     ) => ({ data: { id, parentId, type }, parentId, index })
+
     const add = (...entries: ReturnType<typeof entry>[]) => ({
       action: SCENE_TREE_ACTIONS.ADD_ELEMENTS,
       entries
     })
+
     const sequence = [
       add(entry('a', 'workspace', 0), entry('b', 'workspace', 1)),
       add(
@@ -1390,10 +1455,12 @@ describe('Preset Selection Subscriptions', () => {
       }),
       add(entry('future-child', 'future-parent', 0))
     ]
+
     const run = (cold: boolean) => {
       uiContext.set('elementDataMap', {})
       uiContext.set('flattenedElementIds', [])
       const snapshots: { ids: unknown; rows: unknown; json: string }[] = []
+
       for (const change of sequence) {
         if (cold) {
           uiContext.getSubject('elementDataMap')?.next({
@@ -1403,18 +1470,23 @@ describe('Preset Selection Subscriptions', () => {
             .getSubject('flattenedElementIds')
             ?.next([...(uiContext.get<string[]>('flattenedElementIds') ?? [])])
         }
+
         projectSceneChanges(Array.isArray(change) ? change : [change])
         snapshots.forEach(({ ids, rows, json }) =>
           expect(JSON.stringify({ ids, rows })).toBe(json)
         )
         const ids = uiContext.get('flattenedElementIds')
         const rows = uiContext.get('elementDataMap')
+
         snapshots.push({ ids, rows, json: JSON.stringify({ ids, rows }) })
       }
+
       return snapshots
     }
+
     try {
       const warm = run(false)
+
       expect(warm[1].ids).toEqual(['a', 'b', 'c', 'd', 'e'])
       expect(warm[3].ids).toEqual(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'])
       expect(warm.map(({ json }) => json)).toEqual(
@@ -1430,9 +1502,11 @@ describe('Preset Selection Subscriptions', () => {
   it('invalidates tail preparation after failed input and reentrant publication', () => {
     const core = {
       getSelection: () => undefined,
+
       registerDataChannelObserver: vi.fn(),
       unregisterDataChannelObserver: vi.fn()
     } as unknown as PresetCoreAPIs
+
     propertyRegistry.register('flattenedElementIds', { defaultValue: [] })
     propertyRegistry.register('elementDataMap', { defaultValue: {} })
     uiContext.set('flattenedElementIds', [])
@@ -1443,6 +1517,7 @@ describe('Preset Selection Subscriptions', () => {
       undefined,
       { uiContext: true }
     )
+
     const add = (id: string, index: number) =>
       projectSceneChanges([
         {
@@ -1452,6 +1527,7 @@ describe('Preset Selection Subscriptions', () => {
           index
         }
       ])
+
     const counters = new Map<string, number>()
     const stop = subscribeToDiagnosticCounters((name, value) =>
       counters.set(name, (counters.get(name) ?? 0) + value)
@@ -1460,10 +1536,14 @@ describe('Preset Selection Subscriptions', () => {
     const subject =
       uiContext.getSubject<Record<string, unknown>>('elementDataMap')
     const subscription = subject?.subscribe((value) => {
-      if (!reseed) return
+      if (!reseed) {
+        return
+      }
+
       reseed = false
       subject.next({ ...value })
     })
+
     try {
       add('a', 0)
       reseed = true
@@ -1481,8 +1561,10 @@ describe('Preset Selection Subscriptions', () => {
         get id(): string {
           return readIdentity()
         },
+
         parentId: 'workspace'
       }
+
       // Observer failure is isolated by the event bus after canonical apply.
       projectSceneChanges([
         {
@@ -1512,9 +1594,11 @@ describe('Preset Selection Subscriptions', () => {
     (count) => {
       const core = {
         getSelection: () => undefined,
+
         registerDataChannelObserver: vi.fn(),
         unregisterDataChannelObserver: vi.fn()
       } as unknown as PresetCoreAPIs
+
       propertyRegistry.register('flattenedElementIds', { defaultValue: [] })
       propertyRegistry.register('elementDataMap', { defaultValue: {} })
       uiContext.set('flattenedElementIds', [])
@@ -1527,15 +1611,18 @@ describe('Preset Selection Subscriptions', () => {
           uiContext: true
         }
       )
+
       const entry = (id: string, parentId: string, index: number) => ({
         data: { id, parentId },
         parentId,
         index
       })
+
       const existing = Array.from(
         { length: count },
         (_, index) => `unrelated-${index}`
       )
+
       try {
         projectSceneChanges([
           {
@@ -1559,10 +1646,13 @@ describe('Preset Selection Subscriptions', () => {
             observing &&
             typeof key === 'string' &&
             key.startsWith('unrelated-')
-          )
+          ) {
             unrelatedVisits++
+          }
+
           return originalGet.call(this, key)
         })
+
         try {
           for (let batch = 0; batch < 3; batch++) {
             projectSceneChanges([
@@ -1575,6 +1665,7 @@ describe('Preset Selection Subscriptions', () => {
             observing = false
             const ids = uiContext.get<string[]>('flattenedElementIds') ?? []
             const rows = uiContext.get('elementDataMap')
+
             expect(ids).toEqual([
               'background',
               ...existing,
@@ -1592,6 +1683,7 @@ describe('Preset Selection Subscriptions', () => {
         } finally {
           get.mockRestore()
         }
+
         expect(unrelatedVisits).toBe(0)
       } finally {
         dispose()
@@ -1607,9 +1699,11 @@ describe('Preset Selection Subscriptions', () => {
       const observers = new Map<string, TestDataChannelObserver>()
       const core = {
         getSelection: () => undefined,
+
         registerDataChannelObserver: (
           registration: TestDataChannelObserver & { name: string }
         ) => observers.set(registration.name, registration),
+
         unregisterDataChannelObserver: (name: string) => observers.delete(name)
       } as unknown as PresetCoreAPIs
       let parentReads = 0
@@ -1623,13 +1717,16 @@ describe('Preset Selection Subscriptions', () => {
           id,
           {
             id,
+
             get parentId() {
               parentReads++
+
               return 'group'
             }
           }
         ])
       ])
+
       propertyRegistry.register('flattenedElementIds', { defaultValue: [] })
       propertyRegistry.register('elementDataMap', { defaultValue: {} })
       uiContext.set('flattenedElementIds', ['group', ...ids])
@@ -1640,6 +1737,7 @@ describe('Preset Selection Subscriptions', () => {
         undefined,
         { uiContext: true }
       )
+
       const append = (id: string, index: number) =>
         projectSceneChanges([
           {
@@ -1649,6 +1747,7 @@ describe('Preset Selection Subscriptions', () => {
             index
           }
         ])
+
       try {
         append('first', count)
         expect(parentReads).toBeGreaterThanOrEqual(count)
@@ -1656,6 +1755,7 @@ describe('Preset Selection Subscriptions', () => {
           uiContext.get<Record<string, { children?: string[] }>>(
             'elementDataMap'
           )
+
         parentReads = 0
         append('second', count + 1)
         expect(uiContext.get('flattenedElementIds')).toEqual([
@@ -1680,6 +1780,7 @@ describe('Preset Selection Subscriptions', () => {
     (owner) => {
       const core = {
         getSelection: () => undefined,
+
         registerDataChannelObserver: vi.fn(),
         unregisterDataChannelObserver: vi.fn()
       } as unknown as PresetCoreAPIs
@@ -1687,19 +1788,24 @@ describe('Preset Selection Subscriptions', () => {
       const unsubscribe = subscribeToDiagnosticCounters((name, value) => {
         counters.set(name, (counters.get(name) ?? 0) + value)
       })
+
       propertyRegistry.register('flattenedElementIds', { defaultValue: [] })
       propertyRegistry.register('elementDataMap', { defaultValue: {} })
+
       const register = () =>
         registerDefaultDataChannelObservers(core, createDeps(), undefined, {
           uiContext: true
         })
+
       let dispose = register()
+
       const add = (id: string, parentId: string, index: number) => ({
         action: SCENE_TREE_ACTIONS.ADD_ELEMENT,
         data: { id, parentId },
         parentId,
         index
       })
+
       const sequence = [
         [add('a', 'workspace', 0), add('b', 'workspace', 1)],
         [add('x', 'a', 0), add('y', 'a', 1)],
@@ -1755,6 +1861,7 @@ describe('Preset Selection Subscriptions', () => {
         ['a', 'y', 'x', 'b'],
         ['a', 'x', 'y', 'b']
       ]
+
       const run = (cold: boolean) => {
         uiContext.set('elementDataMap', {})
         uiContext.set('flattenedElementIds', [])
@@ -1770,6 +1877,7 @@ describe('Preset Selection Subscriptions', () => {
                 ...(uiContext.get<string[]>('flattenedElementIds') ?? [])
               ])
           }
+
           changes.forEach((change) => {
             if ('changes' in change && owner === 'computed') {
               publishEvent({
@@ -1795,21 +1903,27 @@ describe('Preset Selection Subscriptions', () => {
             }
           })
           const ids = uiContext.get<string[]>('flattenedElementIds') ?? []
+
           expect(ids).toEqual(expected[index])
+
           return JSON.stringify({
             ids,
             rows: uiContext.get('elementDataMap')
           })
         })
+
         return {
           snapshots,
           preparations: counters.get('ui-context-membership-prepare')
         }
       }
+
       try {
         const warm = run(false)
+
         expect(warm.preparations).toBe(1)
         const cold = run(true)
+
         expect(cold.preparations).toBe(sequence.length - 1)
         expect(warm.snapshots).toEqual(cold.snapshots)
         // Replacing either published identity invalidates the current preparation.
@@ -1893,15 +2007,18 @@ describe('Preset Selection Subscriptions', () => {
     const observers = new Map<string, TestDataChannelObserver>()
     const core = {
       getSelection: () => undefined,
+
       registerDataChannelObserver: (
         registration: TestDataChannelObserver & { name: string }
       ) => observers.set(registration.name, registration),
+
       unregisterDataChannelObserver: (name: string) => observers.delete(name)
     } as unknown as PresetCoreAPIs
     const counters = new Map<string, number>()
     const unsubscribe = subscribeToDiagnosticCounters((name, value) => {
       counters.set(name, (counters.get(name) ?? 0) + value)
     })
+
     propertyRegistry.register('flattenedElementIds', { defaultValue: [] })
     propertyRegistry.register('elementDataMap', { defaultValue: {} })
     uiContext.set('flattenedElementIds', [])
@@ -1975,9 +2092,11 @@ describe('Preset Selection Subscriptions', () => {
     const observers = new Map<string, TestDataChannelObserver>()
     const core = {
       getSelection: () => undefined,
+
       registerDataChannelObserver: (
         registration: TestDataChannelObserver & { name: string }
       ) => observers.set(registration.name, registration),
+
       unregisterDataChannelObserver: (name: string) => observers.delete(name)
     } as unknown as PresetCoreAPIs
     const existingElement = {
@@ -1991,6 +2110,7 @@ describe('Preset Selection Subscriptions', () => {
       {
         ownKeys: (target) => {
           enumerationCount += 1
+
           return Reflect.ownKeys(target)
         }
       }
@@ -2026,6 +2146,7 @@ describe('Preset Selection Subscriptions', () => {
         uiContext.get<Record<string, Record<string, unknown>>>(
           'elementDataMap'
         ) ?? {}
+
       expect(enumerationCount).toBe(0)
       expect(projected.existing).toBe(existingElement)
       expect(projected.added).toEqual({
@@ -2048,15 +2169,18 @@ describe('Preset Selection Subscriptions', () => {
     const observers = new Map<string, TestDataChannelObserver>()
     const core = {
       getSelection: () => undefined,
+
       registerDataChannelObserver: (
         registration: TestDataChannelObserver & { name: string }
       ) => observers.set(registration.name, registration),
+
       unregisterDataChannelObserver: (name: string) => observers.delete(name)
     } as unknown as PresetCoreAPIs
     const dependencies = createDeps()
     const getAllElements = vi.fn(() => {
       throw new Error('plural UI projection must not scan canonical state')
     })
+
     dependencies.sceneTree.getAllElements = getAllElements
     const counters = new Map<string, number>()
     const unsubscribe = subscribeToDiagnosticCounters((name, value) => {
@@ -2079,6 +2203,7 @@ describe('Preset Selection Subscriptions', () => {
       visible: index % 2 === 0
     }))
     const vectorIds = vectors.map(({ id }) => id)
+
     propertyRegistry.register('flattenedElementIds', { defaultValue: [] })
     propertyRegistry.register('elementDataMap', { defaultValue: {} })
     uiContext.set('flattenedElementIds', ['group-1'])
@@ -2111,6 +2236,7 @@ describe('Preset Selection Subscriptions', () => {
         uiContext.get<Record<string, Record<string, unknown>>>(
           'elementDataMap'
         ) ?? {}
+
       expect(Object.keys(projectedMap)).toEqual(['group-1', ...vectorIds])
       expect(vectors.map(({ id }) => projectedMap[id])).toEqual(vectors)
       expect(projectedMap['group-1']).toEqual({
@@ -2143,10 +2269,12 @@ describe('Preset Selection Subscriptions', () => {
     const observers = new Map<string, { onChange: (change: unknown) => void }>()
     const core = {
       getSelection: () => undefined,
+
       registerDataChannelObserver: (registration: {
         name: string
         onChange: (change: unknown) => void
       }) => observers.set(registration.name, registration),
+
       unregisterDataChannelObserver: (name: string) => observers.delete(name)
     } as unknown as PresetCoreAPIs
     const addSingle = vi.spyOn(renderSceneTreeStore, 'addElementById')
@@ -2196,9 +2324,11 @@ describe('Preset Selection Subscriptions', () => {
   it('keeps UI unchanged inside a batch and publishes the final ordered hierarchy once', () => {
     const core = {
       getSelection: () => undefined,
+
       registerDataChannelObserver: vi.fn(),
       unregisterDataChannelObserver: vi.fn()
     } as unknown as PresetCoreAPIs
+
     propertyRegistry.register('flattenedElementIds', { defaultValue: [] })
     propertyRegistry.register('elementDataMap', { defaultValue: {} })
     uiContext.set('flattenedElementIds', [])
@@ -2210,6 +2340,7 @@ describe('Preset Selection Subscriptions', () => {
       { uiContext: true }
     )
     const uiSet = vi.spyOn(uiContext, 'set')
+
     try {
       runTransaction(() => {
         projectSceneChanges([
@@ -2258,11 +2389,13 @@ describe('Preset Selection Subscriptions', () => {
       const observers = new Map<string, TestDataChannelObserver>()
       const core = {
         getSelection: () => undefined,
+
         registerDataChannelObserver: (
           registration: TestDataChannelObserver & { name: string }
         ) => {
           observers.set(registration.name, registration)
         },
+
         unregisterDataChannelObserver: (name: string) => observers.delete(name)
       } as unknown as PresetCoreAPIs
 
@@ -2275,6 +2408,7 @@ describe('Preset Selection Subscriptions', () => {
     const secondDependencies = createDeps(Symbol('second projection'))
     const firstGetAllElements = vi.fn(() => new Map())
     const secondGetAllElements = vi.fn(() => new Map())
+
     firstDependencies.sceneTree.getAllElements = firstGetAllElements
     secondDependencies.sceneTree.getAllElements = secondGetAllElements
     propertyRegistry.register('flattenedElementIds', { defaultValue: [] })
@@ -2351,11 +2485,13 @@ describe('Preset Selection Subscriptions', () => {
     const observers = new Map<string, TestDataChannelObserver>()
     const core = {
       getSelection: () => undefined,
+
       registerDataChannelObserver: (
         registration: TestDataChannelObserver & { name: string }
       ) => {
         observers.set(registration.name, registration)
       },
+
       unregisterDataChannelObserver: (name: string) => observers.delete(name)
     } as unknown as PresetCoreAPIs
     const dependencies = createDeps()
@@ -2368,12 +2504,14 @@ describe('Preset Selection Subscriptions', () => {
     >()
     const workspaceChildren: string[] = []
     const getAllElements = vi.fn(() => elements)
+
     dependencies.sceneTree.getElementById = (elementId: string) =>
       elements.get(elementId)
     dependencies.sceneTree.getAllElements = getAllElements
     dependencies.sceneTree.currentWorkspace = {
       get: (key: string) =>
         key === 'type' ? EntityTypes.WORKSPACE : undefined,
+
       save: () => ({
         id: 'workspace-1',
         type: EntityTypes.WORKSPACE,
@@ -2397,11 +2535,14 @@ describe('Preset Selection Subscriptions', () => {
         type: EntityTypes.RECTANGLE,
         parentId: 'workspace-1'
       }
+
       elements.set(elementId, {
         get: (key: string) => saved[key as keyof typeof saved],
+
         save: () => ({ ...saved })
       })
       workspaceChildren.push(elementId)
+
       return {
         action: SCENE_TREE_ACTIONS.ADD_ELEMENT,
         data: saved,
@@ -2678,9 +2819,11 @@ describe('Preset Selection Subscriptions', () => {
       const observers = new Map<string, TestDataChannelObserver>()
       const core = {
         getSelection: () => undefined,
+
         registerDataChannelObserver: (
           registration: TestDataChannelObserver & { name: string }
         ) => observers.set(registration.name, registration),
+
         unregisterDataChannelObserver: (name: string) => observers.delete(name)
       } as unknown as PresetCoreAPIs
       const elementRecords = Object.entries(elements).map(
@@ -2688,6 +2831,7 @@ describe('Preset Selection Subscriptions', () => {
           elementId,
           {
             get: (key: string) => data[key as keyof typeof data],
+
             save: () => ({
               ...data,
               ...('children' in data
@@ -2702,11 +2846,15 @@ describe('Preset Selection Subscriptions', () => {
         ...createDeps(),
         sceneTree: {
           projectionOwner,
+
           getElementById: (elementId: string) => elementMap.get(elementId),
+
           getAllElements: () => elementMap,
+
           currentWorkspace: {
             get: (key: string) =>
               key === 'type' ? EntityTypes.WORKSPACE : undefined,
+
             save: () => ({
               id: 'workspace-1',
               type: EntityTypes.WORKSPACE,
@@ -2747,13 +2895,17 @@ describe('Preset Selection Subscriptions', () => {
       defineSelection: (type: string, selection: BaseSelection) => {
         selections.set(type, selection)
       },
+
       unregisterSelection: (type: string) => selections.delete(type),
+
       getSelection: (type: string) => selections.get(type),
+
       registerDataChannelObserver: (
         registration: TestDataChannelObserver & { name: string }
       ) => {
         observers.set(registration.name, registration)
       },
+
       unregisterDataChannelObserver: (name: string) => observers.delete(name)
     } as unknown as PresetCoreAPIs
     const dependencies = createDeps()
@@ -2767,6 +2919,7 @@ describe('Preset Selection Subscriptions', () => {
     )
 
     const selectionRuntimeObserver = observers.get('preset.selection.runtime')
+
     expect(selectionRuntimeObserver).toBeDefined()
     selectionRuntimeObserver?.onChange({
       selectionType: SelectionChannels.ELEMENT,
@@ -2810,12 +2963,15 @@ describe('Preset Selection Subscriptions', () => {
       )
     ).toEqual(['segment-1'])
     const elementSelection = selections.get(SelectionChannels.ELEMENT)
+
     if (!elementSelection) {
       throw new Error('Expected the element selection runtime')
     }
+
     const selectSpy = vi.spyOn(elementSelection, 'select')
     const cleanChangesSpy = vi.spyOn(elementSelection, 'cleanChanges')
     const renderSelectionSpy = vi.spyOn(renderSelectionStore, 'updateSelection')
+
     projectSceneChanges([
       {
         action: SCENE_TREE_ACTIONS.REMOVE_ELEMENTS,
@@ -2896,22 +3052,32 @@ describe('Preset Selection Subscriptions', () => {
     const groupSet = vi.fn()
     const group = {
       get: (key: string) => {
-        if (key === 'type') return EntityTypes.GROUP
-        if (key === 'children') return childIds
+        if (key === 'type') {
+          return EntityTypes.GROUP
+        }
+
+        if (key === 'children') {
+          return childIds
+        }
+
         return undefined
       },
+
       set: groupSet,
+
       save: () => ({
         id: 'group-1',
         type: EntityTypes.GROUP,
         children: childIds
       }),
+
       computed: {
         get: (key: string) =>
           ({ x: 100, y: 50, width: 20, height: 20 })[
             key as 'x' | 'y' | 'width' | 'height'
           ]
       },
+
       getAllComputedData: () => ({
         id: 'group-1',
         type: EntityTypes.GROUP,
@@ -2928,14 +3094,17 @@ describe('Preset Selection Subscriptions', () => {
         {
           get: (key: string) =>
             key === 'type' ? EntityTypes.RECTANGLE : undefined,
+
           computed: {
             get: (key: string) =>
               ({ x: index, y: 0, width: 1, height: 1 })[
                 key as 'x' | 'y' | 'width' | 'height'
               ]
           },
+
           getAllComputedData: () => {
             childCompleteDataReads += 1
+
             return { x: index, y: 0, width: 1, height: 1 }
           }
         }
@@ -2949,22 +3118,28 @@ describe('Preset Selection Subscriptions', () => {
       defineSelection: (type: string, selection: BaseSelection) => {
         selections.set(type, selection)
       },
+
       unregisterSelection: (type: string) => selections.delete(type),
+
       getSelection: (type: string) => selections.get(type),
+
       registerDataChannelObserver: (
         registration: TestDataChannelObserver & { name: string }
       ) => observers.set(registration.name, registration),
+
       unregisterDataChannelObserver: (name: string) => observers.delete(name)
     } as unknown as PresetCoreAPIs
     const dependencies = {
       ...createDeps(),
       sceneTree: {
         ...createDeps().sceneTree,
+
         getElementById: (elementId: string) => elements.get(elementId)
       }
     } as unknown as PresetDependencies
     const disposeSelections = registerSelections(core)
     const selection = selections.get(SelectionChannels.ELEMENT)
+
     expect(selection).toBeDefined()
     selection?.select(['group-1'])
     const recompute = vi.spyOn(uiContext, 'recomputeSelectionProperties')
@@ -3012,16 +3187,21 @@ describe('Preset Selection Subscriptions', () => {
       defineSelection: (type: string, selection: BaseSelection) => {
         selections.set(type, selection)
       },
+
       unregisterSelection: (type: string) => selections.delete(type),
+
       getSelection: (type: string) => selections.get(type),
+
       registerDataChannelObserver: (registration: {
         name: string
         onChange: (change: unknown) => void
       }) => {
         observers.set(registration.name, registration)
       },
+
       unregisterDataChannelObserver: (name: string) => observers.delete(name)
     } as unknown as PresetCoreAPIs
+
     propertyRegistry.register('vectorPointSelection', {
       defaultValue: new Set<string>()
     })
@@ -3050,6 +3230,7 @@ describe('Preset Selection Subscriptions', () => {
       const vectorEditingObserver = observers.get(
         'preset.vectorEditing.selection'
       )
+
       expect(runtimeObserver).toBeDefined()
       expect(vectorEditingObserver).toBeDefined()
 
@@ -3060,6 +3241,7 @@ describe('Preset Selection Subscriptions', () => {
         before: [],
         after: ['point-1']
       } satisfies SelectionChange
+
       runtimeObserver?.onChange(pointChange)
       vectorEditingObserver?.onChange(pointChange)
 
@@ -3070,6 +3252,7 @@ describe('Preset Selection Subscriptions', () => {
         before: [],
         after: ['segment-1']
       } satisfies SelectionChange
+
       runtimeObserver?.onChange(segmentChange)
       vectorEditingObserver?.onChange(segmentChange)
 
@@ -3115,18 +3298,23 @@ describe('Preset Selection Subscriptions', () => {
       defineSelection: (type: string, selection: BaseSelection) => {
         selections.set(type, selection)
       },
+
       unregisterSelection: (type: string) => selections.delete(type),
+
       getSelection: (type: string) => selections.get(type),
+
       registerDataChannelObserver: (registration: {
         name: string
         onChange: (change: unknown) => void
       }) => {
         observers.set(registration.name, registration)
       },
+
       unregisterDataChannelObserver: (name: string) => observers.delete(name)
     } as unknown as PresetCoreAPIs
     const appPointSelection = new Set(['app-point'])
     const appSegmentSelection = new Set(['app-segment'])
+
     propertyRegistry.register('vectorPointSelection', {
       defaultValue: appPointSelection
     })
@@ -3137,6 +3325,7 @@ describe('Preset Selection Subscriptions', () => {
       SelectionChannels.VECTOR_POINT,
       SelectionChannels.VECTOR_SEGMENT
     ])
+
     selections
       .get(SelectionChannels.VECTOR_POINT)
       ?.select(['preset-owned-point'])
@@ -3152,6 +3341,7 @@ describe('Preset Selection Subscriptions', () => {
 
     try {
       const uiContextObserver = observers.get('preset.uiContext.selection')
+
       expect(uiContextObserver).toBeDefined()
       uiContextObserver?.onChange({
         selectionType: SelectionChannels.VECTOR_POINT,

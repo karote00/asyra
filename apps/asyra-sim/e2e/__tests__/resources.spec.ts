@@ -6,6 +6,7 @@ test('a rejected trajectory selection invalidates the old preview without changi
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
   const depth = await page.getByTestId('history-depth').textContent()
+
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
   await page.locator('.trajectory-import > summary').click()
   await page
@@ -18,6 +19,7 @@ test('a rejected trajectory selection invalidates the old preview without changi
     buffer: Buffer.alloc(8 * 1024 * 1024 + 1)
   })
   const panel = page.locator('.trajectory-import')
+
   await expect(panel).toContainText('CSV exceeds the 8 MiB import limit')
   await expect(page.getByLabel('Trajectory conversion preview')).toHaveCount(0)
   await expect(page.getByTestId('history-depth')).toHaveText(depth ?? '')
@@ -45,6 +47,7 @@ test('an oversized GLB is rejected visibly without changing the canonical workce
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
   const depth = await page.getByTestId('history-depth').textContent()
+
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
   await page.locator('summary').filter({ hasText: 'GLB original part' }).click()
   await page.getByLabel('Choose original part GLB').setInputFiles({
@@ -53,6 +56,7 @@ test('an oversized GLB is rejected visibly without changing the canonical workce
     buffer: Buffer.alloc(16 * 1024 * 1024 + 1)
   })
   const preview = page.locator('.glb-preview')
+
   await expect(preview).toContainText('no larger than 16 MiB')
   await expect(page.getByLabel('Choose original part GLB')).toBeEnabled()
   await expect(page.getByRole('treeitem')).toHaveCount(11)

@@ -78,6 +78,7 @@ export type ExtensionOperationResult =
 
 export class ExtensionContractError extends Error {
   readonly result: ExtensionOperationFailure
+
   readonly code: ExtensionErrorCode
 
   constructor(result: ExtensionOperationFailure) {
@@ -153,10 +154,12 @@ const failure = (
 
 const disposeCleanups = (cleanups: AppliedCleanup[]): unknown[] => {
   const errors: unknown[] = []
+
   for (let index = cleanups.length - 1; index >= 0; index -= 1) {
     if (cleanups[index].disposed) {
       continue
     }
+
     try {
       cleanups[index].dispose()
       cleanups[index].disposed = true
@@ -164,12 +167,15 @@ const disposeCleanups = (cleanups: AppliedCleanup[]): unknown[] => {
       errors.push(error)
     }
   }
+
   return errors
 }
 
 export class ExtensionRegistryApplication<Context> {
   readonly results: readonly ExtensionOperationSuccess[]
+
   private readonly registry: ExtensionRegistry<Context>
+
   private readonly appliedTargets: AppliedTarget[]
 
   constructor(
@@ -204,6 +210,7 @@ export class ExtensionRegistryApplication<Context> {
     }
 
     const index = this.appliedTargets.findIndex((target) => target.key === key)
+
     if (index < 0) {
       return failure(
         'TARGET_NOT_APPLIED',
@@ -215,6 +222,7 @@ export class ExtensionRegistryApplication<Context> {
 
     const target = this.appliedTargets[index]
     const cleanupErrors = disposeCleanups(target.cleanups)
+
     if (cleanupErrors.length > 0) {
       return failure(
         'CLEANUP_FAILED',
@@ -240,8 +248,10 @@ export class ExtensionRegistryApplication<Context> {
 
     for (let index = this.appliedTargets.length - 1; index >= 0; index -= 1) {
       const target = this.appliedTargets[index]
+
       appliedKeys.push(...target.cleanups.map((item) => item.key))
       const targetCleanupErrors = disposeCleanups(target.cleanups)
+
       cleanupErrors.push(...targetCleanupErrors)
       if (targetCleanupErrors.length === 0) {
         this.appliedTargets.splice(index, 1)
@@ -267,11 +277,14 @@ export class ExtensionRegistryApplication<Context> {
 
 export class ExtensionRegistry<Context> {
   private readonly targets = new MapRegistry<string, TargetRecord<Context>>()
+
   private readonly targetOrder: string[] = []
+
   private readonly extensions = new MapRegistry<
     string,
     ExtensionRecord<Context>
   >()
+
   private readonly extensionOrder: string[] = []
 
   registerTarget(
@@ -305,6 +318,7 @@ export class ExtensionRegistry<Context> {
       supportedStrategies: [...new Set(definition.supportedStrategies)],
       install: definition.install
     }
+
     this.targets.register(target.key, target)
     this.targetOrder.push(target.key)
 
@@ -319,6 +333,7 @@ export class ExtensionRegistry<Context> {
     registration: ExtensionRegistration<Context>
   ): ExtensionOperationSuccess {
     const target = this.targets.get(registration.targetKey)
+
     if (!target) {
       return failure(
         'TARGET_NOT_FOUND',
@@ -330,6 +345,7 @@ export class ExtensionRegistry<Context> {
         }
       )
     }
+
     if (!isExtensionStrategy(registration.strategy)) {
       return failure(
         'INVALID_STRATEGY',
@@ -341,6 +357,7 @@ export class ExtensionRegistry<Context> {
         }
       )
     }
+
     if (!target.supportedStrategies.includes(registration.strategy)) {
       return failure(
         'UNSUPPORTED_STRATEGY',
@@ -352,6 +369,7 @@ export class ExtensionRegistry<Context> {
         }
       )
     }
+
     if (this.extensions.has(registration.key)) {
       return failure(
         'DUPLICATE_EXTENSION',
@@ -363,6 +381,7 @@ export class ExtensionRegistry<Context> {
         }
       )
     }
+
     const extension: ExtensionRecord<Context> = {
       key: registration.key,
       targetKey: registration.targetKey,
@@ -370,6 +389,7 @@ export class ExtensionRegistry<Context> {
       strategy: registration.strategy,
       install: registration.install
     }
+
     this.extensions.register(extension.key, extension)
     this.extensionOrder.push(extension.key)
 
@@ -387,24 +407,28 @@ export class ExtensionRegistry<Context> {
 
   getTarget(key: string): ExtensionTargetMetadata | undefined {
     const target = this.targets.get(key)
+
     return target ? cloneTargetMetadata(target) : undefined
   }
 
   getTargets(): ExtensionTargetMetadata[] {
     return this.targetOrder.flatMap((key) => {
       const target = this.targets.get(key)
+
       return target ? [cloneTargetMetadata(target)] : []
     })
   }
 
   getExtension(key: string): ExtensionMetadata | undefined {
     const extension = this.extensions.get(key)
+
     return extension ? cloneExtensionMetadata(extension) : undefined
   }
 
   getExtensions(): ExtensionMetadata[] {
     return this.extensionOrder.flatMap((key) => {
       const extension = this.extensions.get(key)
+
       return extension ? [cloneExtensionMetadata(extension)] : []
     })
   }
@@ -416,15 +440,19 @@ export class ExtensionRegistry<Context> {
     try {
       for (const key of this.targetOrder) {
         const target = this.targets.get(key)
+
         if (!target) {
           continue
         }
+
         const applied = this.applyTarget(target, context)
+
         appliedTargets.push(applied.target)
         results.push(applied.result)
       }
     } catch (error) {
       const cleanupErrors: unknown[] = []
+
       for (let index = appliedTargets.length - 1; index >= 0; index -= 1) {
         cleanupErrors.push(...disposeCleanups(appliedTargets[index].cleanups))
       }
@@ -435,6 +463,7 @@ export class ExtensionRegistry<Context> {
       ) {
         throw error
       }
+
       return failure(
         'APPLY_FAILED',
         'apply-target',
@@ -451,6 +480,7 @@ export class ExtensionRegistry<Context> {
   ): ExtensionRecord<Context>[] {
     return this.extensionOrder.flatMap((key) => {
       const extension = this.extensions.get(key)
+
       return extension?.targetKey === targetKey ? [extension] : []
     })
   }
@@ -473,15 +503,18 @@ export class ExtensionRegistry<Context> {
     try {
       for (const item of resolved) {
         const dispose = item.install(context)
+
         if (typeof dispose !== 'function') {
           throw new TypeError(
             `Extension installer "${item.key}" must return a cleanup function`
           )
         }
+
         cleanups.push({ key: item.key, dispose, disposed: false })
       }
     } catch (error) {
       const cleanupErrors = disposeCleanups(cleanups)
+
       return failure(
         'APPLY_FAILED',
         'apply-target',

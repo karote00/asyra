@@ -46,7 +46,9 @@ export function useObservationFiles(
 
     abort.current = null
 
-    if (receipt.current) discard(receipt.current)
+    if (receipt.current) {
+      discard(receipt.current)
+    }
 
     receipt.current = null
   }
@@ -74,14 +76,18 @@ export function useObservationFiles(
   const select = async (files: readonly File[], available: number) => {
     clear()
 
-    if (!files.length) return
+    if (!files.length) {
+      return
+    }
 
     const ticket = generation.current
 
     const active = () =>
       mounted.current && ticket === generation.current && current.current()
 
-    if (!active()) return
+    if (!active()) {
+      return
+    }
 
     const controller = new AbortController()
 
@@ -91,25 +97,28 @@ export function useObservationFiles(
       if (
         files.length >
         Math.min(available, OBSERVATION_LIMITS.attachmentsPerNote)
-      )
+      ) {
         throw new Error(
           'At most 4 attachments are allowed per observation, including existing files.'
         )
+      }
 
       for (const file of files) {
-        if (!observationMediaType(file.name))
+        if (!observationMediaType(file.name)) {
           throw new Error(
             'Choose a TXT, CSV, JSON, PNG, JPG, JPEG or PDF file with a valid basename.'
           )
+        }
 
         if (
           !Number.isSafeInteger(file.size) ||
           file.size < 1 ||
           file.size > OBSERVATION_LIMITS.fileBytes
-        )
+        ) {
           throw new Error(
             'Each observation file must contain 1 byte to 2 MiB. No files were read.'
           )
+        }
       }
 
       setBusy(true)
@@ -121,7 +130,9 @@ export function useObservationFiles(
         }))
       )
 
-      if (!active()) return
+      if (!active()) {
+        return
+      }
 
       const value = await api.prepare(inputs, { signal: controller.signal })
 
@@ -135,8 +146,9 @@ export function useObservationFiles(
 
       setPrepared(value)
     } catch (reason) {
-      if (active())
+      if (active()) {
         setError(reason instanceof Error ? reason.message : String(reason))
+      }
     } finally {
       if (active()) {
         setBusy(false)

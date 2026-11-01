@@ -43,9 +43,11 @@ export interface SyntheticDynamicSnapshot {
   readonly reasons: readonly string[]
   readonly work: Readonly<{ sourceActorVisits: number }>
 }
+
 const reject = (): never => {
   throw new Error('Invalid synthetic dynamic source')
 }
+
 function keys(value: object, expected: string[]) {
   if (
     !value ||
@@ -53,13 +55,16 @@ function keys(value: object, expected: string[]) {
     Array.isArray(value) ||
     Object.keys(value).length !== expected.length ||
     Object.keys(value).some((key) => !expected.includes(key))
-  )
+  ) {
     reject()
+  }
 }
+
 const point = (p: Point3) =>
   Array.isArray(p) &&
   p.length === 3 &&
   [0, 1, 2].every((axis) => Number.isFinite(p[axis]))
+
 function validBounds(b: SyntheticSourceBounds): boolean {
   return (
     !!b &&
@@ -68,33 +73,42 @@ function validBounds(b: SyntheticSourceBounds): boolean {
     b.min.every((v, axis) => v <= b.max[axis])
   )
 }
+
 const contains = (outer: SyntheticSourceBounds, inner: SyntheticSourceBounds) =>
   inner.min.every(
     (v, axis) => v >= outer.min[axis] && inner.max[axis] <= outer.max[axis]
   )
+
 const overlaps = (a: SyntheticSourceBounds, b: SyntheticSourceBounds) =>
   a.min.every((v, axis) => v <= b.max[axis] && a.max[axis] >= b.min[axis])
+
 function freeze<T>(value: T): T {
   if (value && typeof value === 'object') {
     Object.values(value).forEach(freeze)
     Object.freeze(value)
   }
+
   return value
 }
 
 /** Explicit finite simulator world. Its private sources are not observations. */
 export class SyntheticDynamicSceneOwner {
   private definition?: SyntheticDynamicDefinition
+
   private definitionIdentity: Readonly<object> = Object.freeze({})
+
   private revision = 0
+
   private tracks = new Map<
     string,
     { kind: SyntheticActorDefinition['kind']; identity: Readonly<object> }
   >()
+
   private issued = new WeakSet<SyntheticDynamicSnapshot>()
 
   prepare(raw: SyntheticDynamicDefinition): void {
     const value = structuredClone(raw)
+
     keys(value, [
       'format',
       'assumption',
@@ -114,11 +128,14 @@ export class SyntheticDynamicSceneOwner {
       value.validUntil <= value.validFrom ||
       !Array.isArray(value.actors) ||
       value.actors.length > 4096
-    )
+    ) {
       reject()
+    }
+
     keys(value.domain, ['min', 'max'])
     const seen = new Set<string>()
     const additions: SyntheticActorDefinition[] = []
+
     for (const actor of value.actors) {
       keys(actor, ['trackId', 'kind', 'states'])
       if (
@@ -128,13 +145,23 @@ export class SyntheticDynamicSceneOwner {
         !['person', 'moving-object'].includes(actor.kind) ||
         !Array.isArray(actor.states) ||
         actor.states.length > 4096
-      )
+      ) {
         reject()
+      }
+
       seen.add(actor.trackId)
       const previous = this.tracks.get(actor.trackId)
-      if (previous && previous.kind !== actor.kind) reject()
-      if (!previous) additions.push(actor)
+
+      if (previous && previous.kind !== actor.kind) {
+        reject()
+      }
+
+      if (!previous) {
+        additions.push(actor)
+      }
+
       let until = value.validFrom
+
       for (const state of actor.states) {
         keys(state, ['from', 'until', 'motion', 'bounds'])
         if (
@@ -146,17 +173,22 @@ export class SyntheticDynamicSceneOwner {
           !['moving', 'stationary'].includes(state.motion) ||
           !validBounds(state.bounds) ||
           !contains(value.domain, state.bounds)
-        )
+        ) {
           reject()
+        }
+
         keys(state.bounds, ['min', 'max'])
         until = state.until
       }
     }
-    for (const actor of additions)
+
+    for (const actor of additions) {
       this.tracks.set(actor.trackId, {
         kind: actor.kind,
         identity: Object.freeze({})
       })
+    }
+
     this.definition = freeze(value)
     this.definitionIdentity = Object.freeze({})
     this.revision++
@@ -181,32 +213,52 @@ export class SyntheticDynamicSceneOwner {
       !validBounds(volume) ||
       !Number.isSafeInteger(maxActors) ||
       maxActors < 0
-    )
+    ) {
       reject()
+    }
+
     const definition = this.definition
     const candidates: SyntheticActorSource[] = []
     const reasons: string[] = []
     let visits = 0
-    if (!definition) reasons.push('missing-synthetic-world')
-    else {
-      if (time < definition.validFrom || time >= definition.validUntil)
+
+    if (!definition) {
+      reasons.push('missing-synthetic-world')
+    } else {
+      if (time < definition.validFrom || time >= definition.validUntil) {
         reasons.push('outside-source-time')
-      if (!contains(definition.domain, volume))
+      }
+
+      if (!contains(definition.domain, volume)) {
         reasons.push('outside-dynamic-domain')
+      }
+
       if (!reasons.length) {
         for (const actor of definition.actors) {
-          if (visits >= maxActors) break
+          if (visits >= maxActors) {
+            break
+          }
+
           visits++
           const state = actor.states.find(
             (s) => s.from <= time && time < s.until
           )
+
           if (!state) {
             reasons.push('actor-timeline-gap')
             continue
           }
-          if (!overlaps(state.bounds, volume)) continue
+
+          if (!overlaps(state.bounds, volume)) {
+            continue
+          }
+
           const track = this.tracks.get(actor.trackId)
-          if (!track) return reject()
+
+          if (!track) {
+            return reject()
+          }
+
           candidates.push(
             Object.freeze({
               identity: track.identity,
@@ -219,8 +271,13 @@ export class SyntheticDynamicSceneOwner {
         }
       }
     }
+
     const unvisited = (definition?.actors.length ?? 0) - visits
-    if (unvisited) reasons.push('unvisited-actor-source')
+
+    if (unvisited) {
+      reasons.push('unvisited-actor-source')
+    }
+
     const result: SyntheticDynamicSnapshot = Object.freeze({
       identity: Object.freeze({}),
       revision: this.revision,
@@ -234,7 +291,9 @@ export class SyntheticDynamicSceneOwner {
       reasons: Object.freeze(reasons),
       work: Object.freeze({ sourceActorVisits: visits })
     })
+
     this.issued.add(result)
+
     return result
   }
 }

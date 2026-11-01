@@ -13,9 +13,11 @@ const base: EnergyBudget = {
   returnPathAdmitted: true,
   dockAvailable: true
 }
+
 describe('M1 battery and charging return budget', () => {
   it('uses derated capacity and SOC uncertainty before admitting work', () => {
     const result = assessHarvestEnergy(base)
+
     expect(result.availableWh).toBeCloseTo(440)
     expect(result.returnRequiredWh).toBe(200)
     expect(result.missionRequiredWh).toBe(400)
@@ -38,6 +40,7 @@ describe('M1 battery and charging return budget', () => {
   })
   it('does not hide a battery too small for the mission', () => {
     const result = assessHarvestEnergy({ ...base, nextWorkWh: 900 })
+
     expect(result.undersized).toBe(true)
     expect(result.minimumDispatchSoc).toBeGreaterThan(1)
   })

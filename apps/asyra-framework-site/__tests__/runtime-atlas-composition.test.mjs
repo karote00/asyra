@@ -22,6 +22,7 @@ const runIsolatedCase = async (caseId) => {
     '--eval',
     script
   ])
+
   return JSON.parse(stdout)
 }
 

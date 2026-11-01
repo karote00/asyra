@@ -9,25 +9,31 @@ import { UIProperties } from '../../config/ui-properties.js'
 ;(
   globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
 ).IS_REACT_ACT_ENVIRONMENT = true
+
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 async function fixture() {
   const values = new Map<string, string>()
   const storage = {
     getItem: (key: string) => values.get(key) ?? null,
+
     setItem: vi.fn((key: string, value: string) => {
       values.set(key, value)
     })
   }
   const app = initApp({ storage })
+
   await app.start(document.createElement('div'))
   const first = app.itemActions.addItem({ title: 'First' })
   const second = app.itemActions.addItem({ title: 'Second' })
+
   await settle()
   app.controller.selectItem(first)
   const host = document.createElement('div')
+
   document.body.appendChild(host)
   const root = createRoot(host)
+
   await act(async () => {
     root.render(
       <AppContext.Provider value={app}>
@@ -35,10 +41,12 @@ async function fixture() {
       </AppContext.Provider>
     )
   })
+
   const input = () =>
     host.querySelector<HTMLInputElement>(
       '[aria-label="Title"]'
     ) as HTMLInputElement
+
   const type = async (value: string) => {
     await act(async () => {
       Object.getOwnPropertyDescriptor(
@@ -48,6 +56,7 @@ async function fixture() {
       input().dispatchEvent(new Event('input', { bubbles: true }))
     })
   }
+
   return {
     app,
     storage,
@@ -56,6 +65,7 @@ async function fixture() {
     second,
     input,
     type,
+
     async close() {
       await act(async () => {
         root.unmount()
@@ -80,8 +90,10 @@ describe('draft admission before product actions', () => {
       const fullReads = vi.spyOn(f.app.core, 'getAllElementData')
       const changed = vi.fn()
       const unsubscribe = f.app.projection.subscribeChanges(changed)
+
       try {
         const depth = f.app.core.getUndoHistoryDepth()
+
         await f.type('輸入中的草稿')
         await act(async () => {
           f.input().dispatchEvent(
@@ -122,6 +134,7 @@ describe('draft admission before product actions', () => {
 
   it('reports accepted edits as operations, including no-ops after Save', async () => {
     const f = await fixture()
+
     try {
       await act(async () => {
         await f.app.controller.save()
@@ -172,9 +185,11 @@ describe('draft admission before product actions', () => {
 
   it('preserves a rejected draft and blocks Save, selection, creation, history, reload and movement', async () => {
     const f = await fixture()
+
     try {
       await f.type('   ')
       const depth = f.app.core.getUndoHistoryDepth()
+
       await act(async () => {
         await f.app.controller.save()
       })
@@ -204,6 +219,7 @@ describe('draft admission before product actions', () => {
 
   it('saves a corrected focused draft once and supports immediate single-step Undo/Redo', async () => {
     const f = await fixture()
+
     try {
       await f.type('   ')
       await act(async () => {
@@ -211,6 +227,7 @@ describe('draft admission before product actions', () => {
       })
       await f.type(' Revised ')
       const depth = f.app.core.getUndoHistoryDepth()
+
       await act(async () => {
         await f.app.controller.save()
         await settle()
@@ -236,12 +253,14 @@ describe('draft admission before product actions', () => {
 
   it('explicitly cancels invalid input without a history entry before selection', async () => {
     const f = await fixture()
+
     try {
       await f.type(' ')
       const depth = f.app.core.getUndoHistoryDepth()
       const cancel = [...f.host.querySelectorAll('button')].find(
         (button) => button.textContent === 'Cancel edit'
       )
+
       expect(cancel).toBeDefined()
       await act(async () => {
         cancel?.click()
@@ -255,6 +274,7 @@ describe('draft admission before product actions', () => {
   })
   it('keeps a draft across unrelated publications and commits only its field', async () => {
     const f = await fixture()
+
     try {
       await f.type('Draft')
       await act(async () => {
@@ -276,6 +296,7 @@ describe('draft admission before product actions', () => {
 
   it('preserves the accepted title when persistence fails and allows a retry', async () => {
     const f = await fixture()
+
     try {
       f.storage.setItem.mockImplementationOnce(() => {
         throw new Error('Storage unavailable')
@@ -290,6 +311,7 @@ describe('draft admission before product actions', () => {
         tone: 'error'
       })
       const depth = f.app.core.getUndoHistoryDepth()
+
       await act(async () => {
         await f.app.controller.save()
         await settle()
@@ -303,11 +325,13 @@ describe('draft admission before product actions', () => {
 
   it('does not let retired registrations remove the current participant', async () => {
     const f = await fixture()
+
     try {
       const old = vi.fn(() => true)
       const current = vi.fn(() => false)
       const retireOld = f.app.controller.registerDraft(old)
       const retireCurrent = f.app.controller.registerDraft(current)
+
       retireOld()
       expect(f.app.controller.prepareAction()).toBe(false)
       expect(old).not.toHaveBeenCalled()
@@ -317,6 +341,7 @@ describe('draft admission before product actions', () => {
     } finally {
       await f.close()
     }
+
     expect(f.app.controller.prepareAction()).toBe(false)
   })
   it('locks editing and action admission for the complete async save lifetime', async () => {
@@ -326,18 +351,23 @@ describe('draft admission before product actions', () => {
     const gate = new Promise<void>((resolve) => {
       release = resolve
     })
+
     f.app.core.save = async () => {
       await gate
+
       return originalSave()
     }
+
     try {
       await f.type('Before pending')
       let saving: Promise<void> | undefined
+
       await act(async () => {
         saving = f.app.controller.save()
       })
       expect(f.input().disabled).toBe(true)
       const depth = f.app.core.getUndoHistoryDepth()
+
       await act(async () => {
         f.app.controller.selectItem(f.second)
         f.app.controller.addItem()
@@ -365,12 +395,16 @@ describe('draft admission before product actions', () => {
     const gate = new Promise<void>((resolve) => {
       release = resolve
     })
+
     f.app.core.save = async () => {
       await gate
+
       return originalSave()
     }
+
     try {
       let saving: Promise<void> | undefined
+
       await act(async () => {
         f.app.controller.addItem()
         saving = f.app.controller.save()
@@ -379,6 +413,7 @@ describe('draft admission before product actions', () => {
       const created = f.app.projection
         .getSnapshot()
         .find((item) => item.title === 'Item 3')
+
       expect(created).toBeDefined()
       expect(f.app.core.getUIProperty(UIProperties.selectedId)).toBe(
         created?.id
@@ -394,6 +429,7 @@ describe('draft admission before product actions', () => {
   })
   it('compares a submitted title at the canonical owner before projection publication', async () => {
     const f = await fixture()
+
     try {
       await f.type('Unfinished')
       await f.type('First')
@@ -413,12 +449,14 @@ describe('draft admission before product actions', () => {
   })
   it('clears rejected feedback when the corrected draft equals the canonical title without history', async () => {
     const f = await fixture()
+
     try {
       await f.type(' ')
       await act(async () => {
         f.app.controller.prepareAction()
       })
       const depth = f.app.core.getUndoHistoryDepth()
+
       await f.type('First')
       await act(async () => {
         expect(f.app.controller.prepareAction()).toBe(true)
@@ -437,6 +475,7 @@ describe('draft admission before product actions', () => {
     const fullReads = vi.spyOn(f.app.core, 'getAllElementData')
     const notified = vi.fn()
     const unsubscribe = f.app.projection.subscribeItem(f.second, notified)
+
     try {
       await f.type('A')
       await f.type('A draft')

@@ -64,6 +64,7 @@ const validateHierarchyProjection = (
   for (const elementId of flattenedIds) {
     const element = elementDataMap[elementId]
     const parentId = element?.parentId
+
     if (
       element?.id !== elementId ||
       element.type === EntityTypes.WORKSPACE ||
@@ -80,6 +81,7 @@ const validateHierarchyProjection = (
 
     const parentIndex = flattenedIndexes.get(parentId)
     const elementIndex = flattenedIndexes.get(elementId)
+
     if (
       parentIndex === undefined ||
       elementIndex === undefined ||
@@ -97,6 +99,7 @@ const validateHierarchyProjection = (
   }
 
   const workspaceId = [...rootParentIds][0]
+
   if (hasExpectedWorkspace && workspaceId !== expectedWorkspaceId) {
     return null
   }
@@ -109,15 +112,19 @@ const validateHierarchyProjection = (
       if (visited.has(currentId)) {
         return null
       }
+
       visited.add(currentId)
 
       const parentId = elementDataMap[currentId]?.parentId
+
       if (typeof parentId !== 'string' || parentId.length === 0) {
         return null
       }
+
       if (parentId !== workspaceId && !flattenedIdSet.has(parentId)) {
         return null
       }
+
       currentId = parentId
     }
   }
@@ -140,6 +147,7 @@ export const resolveCanvasHierarchyTarget = ({
   }
 
   const projection = validateHierarchyProjection(flattenedIds, elementDataMap)
+
   if (!projection?.flattenedIdSet.has(hitElementId)) {
     return null
   }
@@ -151,11 +159,13 @@ export const resolveCanvasHierarchyTarget = ({
   }
 
   const selectedIdSet = new Set(selectedElementIds)
+
   if (selectedIdSet.size !== selectedElementIds.length) {
     return null
   }
 
   const referenceParentIds = new Set<string>()
+
   if (selectedElementIds.length === 0) {
     referenceParentIds.add(projection.workspaceId)
   } else {
@@ -165,22 +175,28 @@ export const resolveCanvasHierarchyTarget = ({
       }
 
       const parentId = elementDataMap[selectedElementId]?.parentId
+
       if (typeof parentId !== 'string' || parentId.length === 0) {
         return null
       }
+
       referenceParentIds.add(parentId)
     }
   }
 
   let currentId = hitElementId
+
   while (projection.flattenedIdSet.has(currentId)) {
     const parentId = elementDataMap[currentId]?.parentId
+
     if (typeof parentId !== 'string' || parentId.length === 0) {
       return null
     }
+
     if (referenceParentIds.has(parentId)) {
       return currentId
     }
+
     currentId = parentId
   }
 
@@ -199,27 +215,45 @@ export const resolveContainerChildTarget = ({
   containerId: string
 }): string | null => {
   const projection = validateHierarchyProjection(flattenedIds, elementDataMap)
+
   if (
     !hitElementId ||
     hitElementId === containerId ||
     !projection?.flattenedIdSet.has(hitElementId) ||
     !projection.flattenedIdSet.has(containerId)
-  )
+  ) {
     return null
+  }
 
   const container = elementDataMap[containerId]
-  if (container.lock || container.visible === false) return null
+
+  if (container.lock || container.visible === false) {
+    return null
+  }
 
   let currentId = hitElementId
+
   while (projection.flattenedIdSet.has(currentId)) {
     const element = elementDataMap[currentId]
-    if (element.lock || element.visible === false) return null
-    if (element.parentId === containerId) return currentId
+
+    if (element.lock || element.visible === false) {
+      return null
+    }
+
+    if (element.parentId === containerId) {
+      return currentId
+    }
+
     // Projection validation already proved parent existence and acyclicity.
     const parentId = element.parentId
-    if (typeof parentId !== 'string') return null
+
+    if (typeof parentId !== 'string') {
+      return null
+    }
+
     currentId = parentId
   }
+
   return null
 }
 
@@ -243,6 +277,7 @@ export const resolveCreateElementParent = ({
     targetInput.elementDataMap,
     workspaceId
   )
+
   if (!projection) {
     return null
   }
@@ -252,16 +287,19 @@ export const resolveCreateElementParent = ({
   }
 
   const targetId = resolveCanvasHierarchyTarget(targetInput)
+
   if (!targetId) {
     return null
   }
 
   const target = targetInput.elementDataMap[targetId]
+
   if (target?.type === EntityTypes.GROUP) {
     return targetId
   }
 
   const parentId = target?.parentId
+
   if (parentId === projection.workspaceId) {
     return projection.workspaceId
   }
@@ -296,6 +334,7 @@ export const resolveCreateElementParentAtClientPos = (
   snapshot: Pick<SystemContextSnapshot, 'mousePosition' | 'keyMeta' | 'keyCtrl'>
 ): string | null => {
   const workspaceId = hierarchyApis.getWorkspaceId()
+
   if (!workspaceId) {
     return null
   }

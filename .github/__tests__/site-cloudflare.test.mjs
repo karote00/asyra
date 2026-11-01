@@ -14,6 +14,7 @@ import test from 'node:test'
 import { URL } from 'node:url'
 
 const temporaryRoot = path.resolve(import.meta.dirname, '../../tmp')
+
 mkdirSync(temporaryRoot, { recursive: true })
 const require = createRequire(import.meta.url)
 const { load } = require('js-yaml')
@@ -25,6 +26,7 @@ const workflow = load(source)
 
 test('deployment tooling resolves its own npm root instead of the Yarn repository', () => {
   const root = mkdtempSync(path.join(temporaryRoot, 'cloudflare-cli-test-'))
+
   try {
     writeFileSync(path.join(root, 'package.json'), '{"private":true}')
     mkdirSync(path.join(root, 'bin'))
@@ -34,6 +36,7 @@ test('deployment tooling resolves its own npm root instead of the Yarn repositor
     const prepare = workflow.jobs.publish.steps.find(
       (step) => step.id === 'current'
     )
+
     execFileSync('bash', ['-c', prepare.run], {
       cwd: root,
       env: {
@@ -49,6 +52,7 @@ test('deployment tooling resolves its own npm root instead of the Yarn repositor
       (step) => step.id === 'deploy'
     )
     const toolRoot = path.join(root, deploy.with.workingDirectory)
+
     assert.equal(
       execFileSync('npm', ['prefix'], {
         cwd: toolRoot,
@@ -67,6 +71,7 @@ test('a clean runner builds workspace dependencies before runtime tests', () => 
     step.run?.includes('build:static')
   )
   const testIndex = steps.findIndex((step) => step.run?.includes('test:local'))
+
   assert.ok(buildIndex >= 0)
   assert.ok(testIndex > buildIndex)
 })
@@ -74,12 +79,14 @@ test('a clean runner builds workspace dependencies before runtime tests', () => 
 test('production admission allows only explicit manual dispatch on upstream main', () => {
   const evaluate = (github) =>
     Function('github', `return (${workflow.jobs.build.if})`)(github)
+
   const valid = {
     repository_id: '893098287',
     ref: 'refs/heads/main',
     event_name: 'workflow_dispatch',
     event: {}
   }
+
   assert.equal(evaluate(valid), true)
   assert.equal(evaluate({ ...valid, event_name: 'workflow_dispatch' }), true)
   assert.equal(evaluate({ ...valid, repository_id: '1' }), false)
@@ -91,8 +98,10 @@ test('production admission allows only explicit manual dispatch on upstream main
     'pull_request_target',
     'workflow_run',
     'repository_dispatch'
-  ])
+  ]) {
     assert.equal(evaluate({ ...valid, event_name }), false)
+  }
+
   assert.deepEqual(Object.keys(workflow.on), ['workflow_dispatch'])
   assert.equal(workflow.env.SOURCE_SHA, '${{ github.sha }}')
 })
@@ -110,6 +119,7 @@ test('only the verified same-run artifact reaches the credential-bearing job', (
   const download = workflow.jobs.publish.steps.find((step) =>
     step.uses?.startsWith('actions/download-artifact@')
   )
+
   assert.equal(upload.with.name, download.with.name)
   assert.equal(upload.with.path, 'apps/asyra-framework-site/out/')
   assert.equal(download.with['run-id'], undefined)
@@ -117,6 +127,7 @@ test('only the verified same-run artifact reaches the credential-bearing job', (
   const deploy = workflow.jobs.publish.steps.find(
     (step) => step.id === 'deploy'
   )
+
   assert.equal(deploy.if, "steps.current.outputs.publish == 'true'")
   assert.equal(deploy.with.apiToken, '${{ secrets.CLOUDFLARE_API_TOKEN }}')
   assert.match(deploy.with.command, /--branch=main --commit-hash=/)
@@ -128,7 +139,10 @@ test('only the verified same-run artifact reaches the credential-bearing job', (
   )
   for (const job of Object.values(workflow.jobs)) {
     for (const step of job.steps) {
-      if (step.uses) assert.match(step.uses, /@[a-f0-9]{40}$/)
+      if (step.uses) {
+        assert.match(step.uses, /@[a-f0-9]{40}$/)
+      }
+
       if (step.uses?.startsWith('actions/checkout@')) {
         assert.equal(step.with.ref, '${{ env.SOURCE_SHA }}')
         assert.equal(step.with['persist-credentials'], false)
@@ -141,8 +155,10 @@ test('publication waits for its own successful validation and keeps dependency a
   assert.equal(workflow.jobs.publish.needs, 'build')
   assert.equal(workflow.jobs.publish.if, undefined)
   assert.equal(workflow.jobs.build['continue-on-error'], undefined)
-  for (const step of workflow.jobs.build.steps)
+  for (const step of workflow.jobs.build.steps) {
     assert.equal(step['continue-on-error'], undefined)
+  }
+
   assert.ok(
     workflow.jobs.build.steps.some((step) =>
       step.run?.includes('yarn security:audit')
@@ -154,6 +170,7 @@ test('an obsolete source cannot enable upload or create a deployment tool direct
   const root = mkdtempSync(
     path.join(temporaryRoot, 'cloudflare-obsolete-test-')
   )
+
   try {
     mkdirSync(path.join(root, 'bin'))
     writeFileSync(path.join(root, 'bin/gh'), '#!/bin/sh\nprintf newer-main', {
@@ -162,6 +179,7 @@ test('an obsolete source cannot enable upload or create a deployment tool direct
     const prepare = workflow.jobs.publish.steps.find(
       (step) => step.id === 'current'
     )
+
     execFileSync('bash', ['-c', prepare.run], {
       cwd: root,
       env: {
@@ -201,6 +219,7 @@ test('release guidance binds the downloaded candidate before Cloudflare mutation
     step.run?.includes('cloudflare-release-guidance.mjs check')
   )
   const deploy = steps.findIndex((step) => step.id === 'deploy')
+
   assert.ok(
     download >= 0 &&
       prepare > download &&
@@ -211,6 +230,7 @@ test('release guidance binds the downloaded candidate before Cloudflare mutation
   const result = steps.find((step) =>
     step.run?.includes('cloudflare-release-guidance.mjs record')
   )
+
   assert.ok(result.if.startsWith('always()'))
   assert.equal(result.env.VERIFY_OUTCOME, '${{ steps.verify.outcome }}')
   assert.ok(
@@ -237,6 +257,7 @@ test('Cloudflare retries restore a frozen candidate and retain it before mutatio
   const mutation = steps.findIndex(
     (step) => step.run?.includes('ensure-project') || step.id === 'deploy'
   )
+
   assert.ok(
     restore >= 0 &&
       prepare > restore &&

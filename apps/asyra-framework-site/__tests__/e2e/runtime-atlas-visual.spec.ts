@@ -20,6 +20,7 @@ const assertNoHorizontalOverflow = async (page: Page) => {
     client: document.documentElement.clientWidth,
     scroll: document.documentElement.scrollWidth
   }))
+
   expect(widths.scroll).toBeLessThanOrEqual(widths.client + 1)
 }
 
@@ -28,6 +29,7 @@ const assertAtlasHeroKeepsTheRuntimeInView = async (
   maximum: number
 ) => {
   const box = await page.locator('.atlas-hero').boundingBox()
+
   expect
     .soft(box, 'Runtime Atlas hero must have a measurable box')
     .not.toBeNull()
@@ -48,6 +50,7 @@ test('Runtime Atlas executes, resets, pauses, rejects, and compares real runs', 
     })
   ).toBeVisible()
   const skipLink = page.locator('.skip-link')
+
   await expect(skipLink).toHaveCSS('clip-path', 'inset(50%)')
   await page.keyboard.press('Tab')
   await expect(skipLink).toBeFocused()
@@ -85,6 +88,7 @@ test('Runtime Atlas executes, resets, pauses, rejects, and compares real runs', 
   await expect(page.locator('.atlas-controls')).toContainText('Status: running')
   await page.getByRole('button', { name: 'Pause' }).click()
   const pausedProgress = await page.locator('.atlas-controls').textContent()
+
   await page.waitForTimeout(650)
   await expect(page.locator('.atlas-controls')).toHaveText(pausedProgress ?? '')
 
@@ -118,28 +122,35 @@ test('Runtime Atlas case changes ease the studio to its new height', async ({
   const shell = page.locator('.atlas-shell')
   const studioFrame = page.locator('.atlas-studio-frame')
   const initialHeight = (await shell.boundingBox())?.height ?? 0
+
   expect(initialHeight).toBeGreaterThan(0)
   const transitionContract = await studioFrame.evaluate((frame) => {
     const style = getComputedStyle(frame)
+
     document.body.dataset.atlasHeightTransition = ''
+
     const record = (phase: string) => (event: Event) => {
       if (event instanceof TransitionEvent && event.propertyName === 'height') {
         document.body.dataset.atlasHeightTransition += `${phase} `
       }
     }
+
     frame.addEventListener('transitionrun', record('run'), { once: true })
     frame.addEventListener('transitionend', record('end'), { once: true })
+
     return {
       duration: Number.parseFloat(style.transitionDuration),
       property: style.transitionProperty
     }
   })
+
   expect(transitionContract.property).toContain('height')
   expect(transitionContract.duration).toBeGreaterThanOrEqual(0.3)
 
   const target = page.getByRole('button', {
     name: /Failure is evidence too\./
   })
+
   await target.evaluate((button: HTMLButtonElement) => button.click())
   await expect(target).toHaveAttribute('aria-pressed', 'true')
   await waitForReady(page)
@@ -155,6 +166,7 @@ test('Runtime Atlas case changes ease the studio to its new height', async ({
     .toContain('end')
 
   const finalHeight = (await shell.boundingBox())?.height ?? 0
+
   expect(Math.abs(initialHeight - finalHeight)).toBeGreaterThan(115)
   await shell.screenshot({
     animations: 'disabled',
@@ -169,6 +181,7 @@ test('Runtime Atlas case changes ease the studio to its new height', async ({
     .evaluate((element) =>
       Number.parseFloat(getComputedStyle(element).transitionDuration)
     )
+
   expect(reducedDuration).toBeLessThanOrEqual(0.001)
 })
 
@@ -182,6 +195,7 @@ test('Runtime Atlas hero starts both columns together', async ({
   const aside = await page
     .locator('.atlas-hero .page-hero__aside')
     .boundingBox()
+
   expect(copy).not.toBeNull()
   expect(aside).not.toBeNull()
   expect(Math.abs((copy?.y ?? 0) - (aside?.y ?? 0))).toBeLessThanOrEqual(4)
@@ -207,11 +221,14 @@ test('Runtime Atlas closing block uses the hero gutters at every width', async (
     const gutters = await page.evaluate(() => {
       const hero = document.querySelector('.atlas-hero')
       const boundary = document.querySelector('.atlas-boundary')
+
       if (!hero || !boundary) {
         throw new Error('Missing Runtime Atlas hero or closing block')
       }
+
       const heroStyle = getComputedStyle(hero)
       const boundaryStyle = getComputedStyle(boundary)
+
       return {
         boundaryLeft: boundaryStyle.paddingLeft,
         boundaryRight: boundaryStyle.paddingRight,
@@ -248,6 +265,7 @@ test('Runtime Atlas wide layout bookends the focused studio', async ({
       const hero = document.querySelector('.atlas-hero')
       const shell = document.querySelector('.atlas-shell')
       const boundary = document.querySelector('.atlas-boundary')
+
       if (!hero || !shell || !boundary) {
         throw new Error('Missing Runtime Atlas layout region')
       }
@@ -276,6 +294,7 @@ test('Runtime Atlas distinguishes package facts from guide actions', async ({
 
   const packages = page.locator('.atlas-case-footer__packages')
   const guides = page.locator('.atlas-case-footer__guides')
+
   await expect(packages.getByRole('link')).toHaveCount(0)
   await expect(guides.getByRole('link')).not.toHaveCount(0)
 
@@ -284,6 +303,7 @@ test('Runtime Atlas distinguishes package facts from guide actions', async ({
     .first()
     .evaluate((element) => {
       const style = getComputedStyle(element)
+
       return {
         background: style.backgroundColor,
         border: style.borderColor,
@@ -295,12 +315,14 @@ test('Runtime Atlas distinguishes package facts from guide actions', async ({
     .first()
     .evaluate((element) => {
       const style = getComputedStyle(element)
+
       return {
         background: style.backgroundColor,
         border: style.borderColor,
         cursor: style.cursor
       }
     })
+
   expect(packageItem).not.toEqual(guideLink)
   expect(packageItem.cursor).not.toBe('pointer')
   expect(guideLink.cursor).toBe('pointer')
@@ -343,6 +365,7 @@ test('Runtime Atlas guide links use public titles and resolve to their guide', a
   const guide = page.getByRole('link', {
     name: 'Build a transaction-safe Feature session'
   })
+
   await expect(guide).toHaveAttribute('href', '/docs/build/feature-session')
   await guide.click()
 
@@ -368,10 +391,13 @@ test('Runtime Atlas remains readable and operable at compact mobile widths', asy
     const mobileRhythm = await page.evaluate(() => {
       const metrics = (selector: string) => {
         const element = document.querySelector<HTMLElement>(selector)
+
         if (!element) {
           throw new Error(`Missing mobile rhythm target: ${selector}`)
         }
+
         const style = getComputedStyle(element)
+
         return {
           fontSize: Number.parseFloat(style.fontSize),
           height: element.getBoundingClientRect().height,
@@ -426,6 +452,7 @@ test('Runtime Atlas remains readable and operable at compact mobile widths', asy
       .getByRole('link')
       .first()
       .evaluate((link) => Number.parseFloat(getComputedStyle(link).fontSize))
+
     expect(mobileNavigationFontSize).toBeGreaterThanOrEqual(16)
     expect(mobileNavigationFontSize).toBeLessThanOrEqual(21)
     await page.getByRole('button', { name: 'Close navigation' }).click()
@@ -448,6 +475,7 @@ test('Runtime Atlas keeps all six explanations readable without JavaScript', asy
 }) => {
   const context = await browser.newContext({ javaScriptEnabled: false })
   const page = await context.newPage()
+
   await page.goto('/atlas')
   await expect(page.locator('.atlas-case-picker__list button')).toHaveCount(6)
   await expect(

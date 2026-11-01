@@ -21,8 +21,10 @@ const publicRoutes = [
 
 for (const route of [...new Set(publicRoutes)]) {
   const response = await fetch(new URL(route, baseUrl))
+
   assert.equal(response.status, 200, route)
   const body = await response.text()
+
   assert.ok(body.length > 0, `${route} returned an empty surface`)
   if (route !== '/robots.txt') {
     assert.ok(body.length > 80, `${route} returned an incomplete surface`)
@@ -31,6 +33,7 @@ for (const route of [...new Set(publicRoutes)]) {
 
 const llmsResponse = await fetch(new URL('/llms.txt', baseUrl))
 const llms = await llmsResponse.text()
+
 assert.match(llms, /^# Asyra Framework/m)
 assert.match(llms, /Public, source-mapped documentation/)
 assert.doesNotMatch(llms, /docs\/ai\//)
@@ -38,6 +41,7 @@ assert.doesNotMatch(llms, /docs\/ai\//)
 const homeResponse = await fetch(new URL('/', baseUrl))
 const home = await homeResponse.text()
 const homeText = home.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ')
+
 for (const copy of [
   'An idea worth building.',
   'Change the rule. Keep the work.',
@@ -48,6 +52,7 @@ for (const copy of [
     new RegExp(copy.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
   )
 }
+
 assert.doesNotMatch(homeText, /2025|2026|MIT License|Open source/i)
 assert.doesNotMatch(home, /2025|Open source|Asyra Systems?|Inc\.|Company/i)
 
@@ -62,20 +67,24 @@ for (const [route, copy] of [
   const text = (await response.text())
     .replace(/<[^>]+>/g, ' ')
     .replace(/\s+/g, ' ')
+
   assert.match(text, new RegExp(copy.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
 }
 
 const missingResponse = await fetch(
   new URL('/this-route-does-not-exist', baseUrl)
 )
+
 assert.equal(missingResponse.status, 404)
 assert.match(await missingResponse.text(), /Nothing is built here\./)
 
 const robotsResponse = await fetch(new URL('/robots.txt', baseUrl))
+
 assert.match(await robotsResponse.text(), /(?:Allow|Disallow): \/$/m)
 
 const sitemapResponse = await fetch(new URL('/sitemap.xml', baseUrl))
 const sitemap = await sitemapResponse.text()
+
 assert.equal((sitemap.match(/<url>/g) ?? []).length, 46)
 
 process.stdout.write(

@@ -28,11 +28,15 @@ let printPlan = false
 let preserveWorkspace = false
 
 for (const arg of args) {
-  if (arg.startsWith('--prod=')) appName = arg.split('=')[1]
-  else if (arg === '--framework') frameworkOnly = true
-  else if (arg === '--preserve') preserveWorkspace = true
-  else if (arg === '--plan') printPlan = true
-  else {
+  if (arg.startsWith('--prod=')) {
+    appName = arg.split('=')[1]
+  } else if (arg === '--framework') {
+    frameworkOnly = true
+  } else if (arg === '--preserve') {
+    preserveWorkspace = true
+  } else if (arg === '--plan') {
+    printPlan = true
+  } else {
     console.error(`Unknown argument: ${arg}`)
     process.exit(1)
   }
@@ -59,13 +63,14 @@ const commands = [
   'yarn gen:turbo:check',
   'yarn clean',
   'yarn react:build',
-  'yarn lint:workspaces:ci',
+  'yarn lint',
   'yarn test:workspaces:ci',
   'yarn deps:validate',
   ...(!frameworkOnly
     ? [
         'yarn workspace @asyra/asyra-design test:e2e:collaboration',
         `yarn release:app:check --prod=${appName}`,
+        ...(appName === 'asyra-design' ? ['yarn test:release-artifacts'] : []),
         `yarn release:app:build --prod=${appName} --prebuilt`
       ]
     : [])
@@ -81,28 +86,39 @@ if (printPlan) {
 const findAvailablePort = () =>
   new Promise((resolve, reject) => {
     const server = net.createServer()
+
     server.unref()
     server.once('error', reject)
     server.listen(0, '127.0.0.1', () => {
       const address = server.address()
+
       if (!address || typeof address === 'string') {
         server.close()
         reject(new Error('Unable to allocate release validation port'))
+
         return
       }
 
       const { port } = address
+
       server.close((error) => {
-        if (error) reject(error)
-        else resolve(port)
+        if (error) {
+          reject(error)
+        } else {
+          resolve(port)
+        }
       })
     })
   })
 
 let validationRoot
 let keepValidationWorkspace = false
+
 const cleanup = () => {
-  if (!validationRoot || keepValidationWorkspace) return
+  if (!validationRoot || keepValidationWorkspace) {
+    return
+  }
+
   removeReleaseValidationWorkspace(validationRoot, validationParent)
   validationRoot = undefined
 }
@@ -124,6 +140,7 @@ try {
     FRAMEWORK_VALIDATION_POINTER
   )
   let sourceCommitSha
+
   if (preserveWorkspace) {
     const sourceChanges = execSync(
       'git status --porcelain --untracked-files=all',
@@ -132,21 +149,25 @@ try {
         encoding: 'utf8'
       }
     ).trim()
+
     if (sourceChanges) {
       throw new Error(
         'Preserved Framework validation requires a clean source checkout'
       )
     }
+
     if (fs.existsSync(validationPointerPath)) {
       throw new Error(
         `Framework validation handoff already exists: ${FRAMEWORK_VALIDATION_POINTER}`
       )
     }
+
     sourceCommitSha = execSync('git rev-parse HEAD', {
       cwd: repositoryRoot,
       encoding: 'utf8'
     }).trim()
   }
+
   validationRoot = createReleaseValidationWorkspace({
     sourceRoot: repositoryRoot,
     validationParent

@@ -5,11 +5,13 @@ test('commits each completed field immediately with independent undo and redo', 
 }) => {
   test.setTimeout(60_000)
   const errors: string[] = []
+
   page.on('pageerror', (error) => errors.push(error.message))
   await page.goto('/')
   await expect(page.getByText('空間模型已就緒')).toBeVisible()
   const length = page.getByLabel('溫室縱向深度', { exact: true })
   const width = page.getByLabel('單棟寬度', { exact: true })
+
   await length.fill('12.7')
   await length.press('Enter')
   await expect(
@@ -33,6 +35,7 @@ test('commits each completed field immediately with independent undo and redo', 
   await page.getByRole('button', { name: '復原 ⌘Z', exact: true }).click()
   await expect(page.getByLabel('第 1 項種類')).toHaveValue('soil')
   const bottom = page.getByLabel('拉網最低位置', { exact: true })
+
   await bottom.fill('4')
   await bottom.press('Enter')
   await expect(page.getByRole('alert')).toContainText('底部高度')

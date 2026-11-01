@@ -13,20 +13,24 @@ test('soil-width edits stay responsive in the fully planted scene', async ({
   await expect(page.getByText('空間模型已就緒')).toBeVisible()
   const input = page.getByLabel('第 1 項寬度', { exact: true })
   const timings: number[] = []
+
   for (const value of ['1.0', '1.1', '0.9']) {
     await input.fill(value)
     timings.push(
       await input.evaluate(async (element) => {
         const start = performance.now()
+
         element.blur()
         await new Promise<void>((resolve) =>
           requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
         )
+
         return performance.now() - start
       })
     )
     await expect(input).toHaveValue(String(Number(value)))
   }
+
   await writeFile(
     testInfo.outputPath('soil-edit-response.json'),
     JSON.stringify({ timingsMs: timings, viewport: [1440, 1100], plants: 5952 })

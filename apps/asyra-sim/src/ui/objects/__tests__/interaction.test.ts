@@ -44,7 +44,9 @@ it('canonical replay discards superseded input text even when Redo returns to it
       'value'
     )?.set
 
-    if (!input || !setValue) throw new Error('Missing numeric input')
+    if (!input || !setValue) {
+      throw new Error('Missing numeric input')
+    }
 
     await act(() => {
       input.focus()
@@ -94,7 +96,9 @@ it('Escape abandons a numeric draft without emitting a property edit', async () 
     'value'
   )?.set
 
-  if (!input || !setValue) throw new Error('Missing numeric input')
+  if (!input || !setValue) {
+    throw new Error('Missing numeric input')
+  }
 
   await act(() => {
     input.focus()
@@ -131,6 +135,7 @@ it('removing the active canonical model removes its old visible projection', asy
   const runtime = {
     setFrame,
     setCamera: vi.fn(),
+
     getVisualAssets: () => new Map()
   } as unknown as SimRuntime
 
@@ -220,7 +225,9 @@ it('ignores retained pointer, wheel and reset-view input from a retired document
         camera: DEFAULT_CAMERA,
         onCamera,
         onSelect,
+
         isCurrent: () => current,
+
         getFitMeshes: () => []
       })
     )

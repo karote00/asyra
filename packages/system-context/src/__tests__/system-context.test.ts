@@ -112,6 +112,7 @@ describe('SystemContext', () => {
 
   it('should initialize with the correct default state', () => {
     const snapshot = systemContext.getSystemContextSnapshot()
+
     expect(snapshot.keyShift).toEqual(DefaultKeySnapshot.shift)
     expect(snapshot.keyCtrl).toEqual(DefaultKeySnapshot.ctrl)
     expect(snapshot.keyAlt).toEqual(DefaultKeySnapshot.alt)
@@ -134,6 +135,7 @@ describe('SystemContext', () => {
       dragging: true,
       dragStart: { x: 99, y: 199 }
     }
+
     systemContext.setManagedProperty(
       'mouseDragStart',
       newMouseSnapshot.dragStart
@@ -170,6 +172,7 @@ describe('SystemContext', () => {
 
   it('should update key state correctly via managed properties', () => {
     const newKeySnapshot = { ...DefaultKeySnapshot, shift: true }
+
     systemContext.setManagedProperty('keyShift', newKeySnapshot.shift)
     systemContext.setManagedProperty('keyCtrl', newKeySnapshot.ctrl)
     systemContext.setManagedProperty('keyAlt', newKeySnapshot.alt)
@@ -247,10 +250,13 @@ describe('SystemContext', () => {
 
   it('does not rerun managed-property validators while applying validated data', () => {
     let validationCalls = 0
+
     systemContext.registerProperty('zoom', 100, {
       runtime: false,
+
       validate: (value): value is number => {
         validationCalls += 1
+
         return validationCalls === 1 && typeof value === 'number'
       }
     })
@@ -273,6 +279,7 @@ describe('SystemContext', () => {
     const foreignContext = new SystemContext({
       managedPropertyState: foreignState
     })
+
     foreignContext.registerProperty('zoom', 100, { runtime: false })
     const forged = {
       data: { zoom: 'invalid' },
@@ -336,6 +343,7 @@ describe('SystemContext', () => {
   it('unregisters only the target managed property and completes its observable', () => {
     const state = systemContext.registerProperty('temporary-property', 1)
     let completed = false
+
     state.subscribe({ complete: () => (completed = true) })
 
     expect(systemContext.hasManagedProperty('temporary-property')).toBe(true)

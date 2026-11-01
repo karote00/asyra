@@ -89,8 +89,10 @@ const DEDUPE_DISTANCE_EPSILON_SQUARED = 1e-12
 
 const normalizePolygon = (polygon: GeometryPoint[]) => {
   const deduped: GeometryPoint[] = []
+
   polygon.forEach((point) => {
     const previous = deduped[deduped.length - 1]
+
     if (
       !previous ||
       getPointDistanceSquared(previous, point) > DEDUPE_DISTANCE_EPSILON_SQUARED
@@ -122,20 +124,25 @@ const isConvexPolygon = (polygon: GeometryPoint[]) => {
   }
 
   let sign = 0
+
   for (let index = 0; index < polygon.length; index += 1) {
     const cross = getCrossProduct(
       polygon[index],
       polygon[(index + 1) % polygon.length],
       polygon[(index + 2) % polygon.length]
     )
+
     if (Math.abs(cross) <= 1e-8) {
       continue
     }
+
     const currentSign = Math.sign(cross)
+
     if (sign === 0) {
       sign = currentSign
       continue
     }
+
     if (sign !== currentSign) {
       return false
     }
@@ -161,6 +168,7 @@ const triangulatePolygon = (
   indices: number[]
 ) => {
   const normalizedPolygon = normalizePolygon(polygon)
+
   if (normalizedPolygon.length < 3) {
     return
   }
@@ -170,15 +178,18 @@ const triangulatePolygon = (
       vertices.push(point.x, point.y)
     })
     appendConvexFanTriangulation(normalizedPolygon, vertexOffset, indices)
+
     return
   }
 
   const flatPolygon: number[] = []
+
   normalizedPolygon.forEach((point) => {
     flatPolygon.push(point.x, point.y)
   })
 
   const polygonIndices = earcut(flatPolygon)
+
   if (polygonIndices.length < 3) {
     return
   }
@@ -197,6 +208,7 @@ export const buildProjectionMeshData = (
 
   model.polygons.forEach((polygon) => {
     const vertexOffset = vertices.length / 2
+
     triangulatePolygon(polygon, vertexOffset, vertices, indices)
   })
 
@@ -243,6 +255,7 @@ export const createMeshProjection = (
           uvs: new Float32Array(0)
         }
   })
+
   root.addChild(mesh)
 
   const applyPaint = (paint: MeshProjectionPaint) => {
@@ -255,9 +268,11 @@ export const createMeshProjection = (
 
   const update = (next: CreateMeshProjectionOptions) => {
     const geometry = buildProjectionMeshData(next.model)
+
     if (!geometry) {
       root.visible = false
       applyPaint(next.paint)
+
       return
     }
 
@@ -283,15 +298,19 @@ export const createMeshProjection = (
 
       return true
     },
+
     update,
     updatePaint: applyPaint,
+
     setVisible: (visible: boolean) => {
       root.visible = visible
     },
+
     dispose: () => {
       if (root.parent) {
         root.parent.removeChild(root)
       }
+
       root.visible = false
       root.destroy()
     }

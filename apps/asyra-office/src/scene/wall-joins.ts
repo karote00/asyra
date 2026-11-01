@@ -25,6 +25,7 @@ export function wallAboveOpening(
       i % 3 === 2 ? Math.max(height, value) : value
     )
     const uvs = [...mesh.uvs]
+
     for (let i = 0; i < mesh.indices.length; i += 3) {
       const triangle = mesh.indices.slice(i, i + 3)
       const horizontal = triangle.every(
@@ -33,14 +34,19 @@ export function wallAboveOpening(
             mesh.positions[index * 3 + 2] - mesh.positions[triangle[0] * 3 + 2]
           ) < 1e-8
       )
+
       // Wall vertical and end faces use Z for V; horizontal faces use XY.
-      if (!horizontal)
-        for (const index of triangle)
+      if (!horizontal) {
+        for (const index of triangle) {
           uvs[index * 2 + 1] +=
             positions[index * 3 + 2] - mesh.positions[index * 3 + 2]
+        }
+      }
     }
+
     return { ...mesh, positions, uvs }
   }
+
   return parts.map((part) => ({
     ...part,
     mesh: cut(part.mesh),
@@ -56,23 +62,35 @@ export function joinWallEnds(
   length: number,
   ends: WallEndPlanes
 ): AssetPart[] {
-  if (ends.start === undefined && ends.end === undefined) return parts
+  if (ends.start === undefined && ends.end === undefined) {
+    return parts
+  }
+
   const cut = (mesh: Mesh, cap: boolean): Mesh => {
     const positions = [...mesh.positions],
       uvs = [...mesh.uvs]
+
     for (let i = 0; i < positions.length; i += 3) {
       const x = positions[i]
       let plane: WallEndPlane | undefined
-      if (Math.abs(x + length / 2) < 1e-8) plane = ends.start
-      else if (Math.abs(x - length / 2) < 1e-8) plane = ends.end
+
+      if (Math.abs(x + length / 2) < 1e-8) {
+        plane = ends.start
+      } else if (Math.abs(x - length / 2) < 1e-8) {
+        plane = ends.end
+      }
+
       if (plane) {
         const offset = (cap ? plane.capOffset : undefined) ?? plane.offset ?? 0
+
         positions[i] += offset + (plane.slope ?? 0) * positions[i + 1]
       }
     }
+
     // Preserve longitudinal surface density; end-face UVs remain YZ based.
     for (let i = 0; i < mesh.indices.length; i += 3) {
       const triangle = mesh.indices.slice(i, i + 3)
+
       if (
         triangle.every(
           (index) =>
@@ -80,13 +98,18 @@ export function joinWallEnds(
               mesh.positions[index * 3] - mesh.positions[triangle[0] * 3]
             ) < 1e-8
         )
-      )
+      ) {
         continue
-      for (const index of triangle)
+      }
+
+      for (const index of triangle) {
         uvs[index * 2] += positions[index * 3] - mesh.positions[index * 3]
+      }
     }
+
     return { ...mesh, positions, uvs }
   }
+
   return parts.map((part) => ({
     ...part,
     mesh: cut(part.mesh, part.id === 'top-cap'),
@@ -111,15 +134,21 @@ export function fitWallTopProfile(
   startHeight: number,
   endHeight: number
 ): AssetPart[] {
-  if (startHeight === endHeight) return parts
+  if (startHeight === endHeight) {
+    return parts
+  }
+
   const transform = (mesh: Mesh): Mesh => {
     const positions = [...mesh.positions]
     const uvs = [...mesh.uvs]
+
     for (let i = 0; i < positions.length; i += 3) {
       const t = positions[i] / length + 0.5
+
       positions[i + 2] *=
         (startHeight + t * (endHeight - startHeight)) / startHeight
     }
+
     for (let i = 0; i < mesh.indices.length; i += 3) {
       const triangle = mesh.indices.slice(i, i + 3)
       const horizontal = triangle.every(
@@ -128,17 +157,23 @@ export function fitWallTopProfile(
             mesh.positions[index * 3 + 2] - mesh.positions[triangle[0] * 3 + 2]
           ) < 1e-8
       )
-      if (!horizontal)
-        for (const index of triangle)
+
+      if (!horizontal) {
+        for (const index of triangle) {
           uvs[index * 2 + 1] +=
             positions[index * 3 + 2] - mesh.positions[index * 3 + 2]
+        }
+      }
     }
+
     return { ...mesh, positions, uvs }
   }
+
   // Bound the height scaling and longitudinal shear for the distant mesh.
   const errorScale =
     Math.max(1, endHeight / startHeight) +
     Math.abs(endHeight - startHeight) / length
+
   return parts.map((part) => ({
     ...part,
     mesh: transform(part.mesh),

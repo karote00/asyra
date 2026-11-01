@@ -80,8 +80,11 @@ export interface PropertyTypeDefinitionFailure {
 
 export class PropertyTypeDefinitionError extends Error {
   readonly code: PropertyTypeDefinitionErrorCode
+
   readonly type: string
+
   readonly result: PropertyTypeDefinitionFailure
+
   readonly cause?: unknown
 
   constructor(result: PropertyTypeDefinitionFailure, cause?: unknown) {
@@ -107,7 +110,10 @@ const failDefinition = (
 }
 
 const valuesEqual = (left: unknown, right: unknown): boolean => {
-  if (Object.is(left, right)) return true
+  if (Object.is(left, right)) {
+    return true
+  }
+
   if (Array.isArray(left) || Array.isArray(right)) {
     return (
       Array.isArray(left) &&
@@ -116,10 +122,14 @@ const valuesEqual = (left: unknown, right: unknown): boolean => {
       left.every((item, index) => valuesEqual(item, right[index]))
     )
   }
-  if (!isRecord(left) || !isRecord(right)) return false
+
+  if (!isRecord(left) || !isRecord(right)) {
+    return false
+  }
 
   const leftKeys = Object.keys(left)
   const rightKeys = Object.keys(right)
+
   return (
     leftKeys.length === rightKeys.length &&
     leftKeys.every(
@@ -170,6 +180,7 @@ const validateDefault = (
 
   if (field.validate) {
     let valid = false
+
     try {
       valid = field.validate(field.defaultValue)
     } catch (error) {
@@ -180,6 +191,7 @@ const validateDefault = (
         error
       )
     }
+
     if (!valid) {
       failDefinition(
         code,
@@ -202,6 +214,7 @@ const normalizeDefinition = <TFields extends object>(
       `Property definition identity must remain "${expectedType}"`
     )
   }
+
   if (
     typeof definition.allowDynamicKeys !== 'boolean' ||
     !Array.isArray(definition.dynamicReservedKeys) ||
@@ -216,6 +229,7 @@ const normalizeDefinition = <TFields extends object>(
       'Property definition has invalid dynamic-key policy'
     )
   }
+
   if (!Array.isArray(definition.fields)) {
     failDefinition(
       code,
@@ -233,6 +247,7 @@ const normalizeDefinition = <TFields extends object>(
         'Property field must be an object'
       )
     }
+
     if (
       typeof field.key !== 'string' ||
       field.key.length === 0 ||
@@ -245,6 +260,7 @@ const normalizeDefinition = <TFields extends object>(
         `Property field key "${String(field.key)}" is duplicate or reserved`
       )
     }
+
     seenKeys.add(field.key)
 
     if (!VALUE_KINDS.has(field.kind as PropertyValueKind)) {
@@ -254,6 +270,7 @@ const normalizeDefinition = <TFields extends object>(
         `Property field "${field.key}" has an invalid kind`
       )
     }
+
     if (
       !Object.prototype.hasOwnProperty.call(field, 'defaultValue') ||
       field.defaultValue === undefined
@@ -264,6 +281,7 @@ const normalizeDefinition = <TFields extends object>(
         `Property field "${field.key}" requires a default value`
       )
     }
+
     if (
       typeof field.persist !== 'boolean' ||
       typeof field.project !== 'boolean' ||
@@ -276,6 +294,7 @@ const normalizeDefinition = <TFields extends object>(
         `Property field "${field.key}" has contradictory projection flags`
       )
     }
+
     if (field.validate !== undefined && typeof field.validate !== 'function') {
       return failDefinition(
         code,
@@ -283,6 +302,7 @@ const normalizeDefinition = <TFields extends object>(
         `Property field "${field.key}" has an invalid validator`
       )
     }
+
     if (
       field.allowedUnits !== undefined &&
       (!Array.isArray(field.allowedUnits) ||
@@ -312,7 +332,9 @@ const normalizeDefinition = <TFields extends object>(
       project: field.project,
       unit: field.unit
     }
+
     validateDefault(expectedType, normalizedField, code)
+
     return normalizedField
   })
 
@@ -325,6 +347,7 @@ const normalizeDefinition = <TFields extends object>(
 }
 
 const uniqueKeys = (keys: readonly string[]) => [...new Set(keys)]
+
 const isString = (value: unknown): value is string => typeof value === 'string'
 
 const assertCanonicalRelationshipDefault = (
@@ -335,10 +358,13 @@ const assertCanonicalRelationshipDefault = (
   code: PropertyTypeDefinitionErrorCode
 ): void => {
   const relation = config.children
+
   if (!relation) {
     return
   }
+
   const value = defaults[relation.key]
+
   if (
     !Object.prototype.hasOwnProperty.call(defaults, relation.key) ||
     !persistKeys.includes(relation.key) ||
@@ -366,8 +392,10 @@ const projectRegisteredDefinition = <TFields extends object>(
   const schemaKeys = schema.fields.map((field) => field.key)
   const defaultKeys = Object.keys(defaults)
   const knownKeys = new Set(schemaKeys)
+
   const drift = (message: string): never =>
     failDefinition('PROPERTY_TYPE_DEFINITION_DRIFT', type, message)
+
   assertCanonicalRelationshipDefault(
     type,
     config,
@@ -444,7 +472,10 @@ export const getDeclarativePropertyTypeDefinition = <
   const component = getPropertyComponent(type)
   const config = getPropertyComponentConfigDefinition(type)
 
-  if (!schema && !component && !config) return
+  if (!schema && !component && !config) {
+    return
+  }
+
   if (component && !config) {
     return failDefinition(
       'PROPERTY_TYPE_NOT_DECLARATIVE',
@@ -452,6 +483,7 @@ export const getDeclarativePropertyTypeDefinition = <
       `Property type "${type}" uses constructor mode and cannot be redefined declaratively`
     )
   }
+
   if (!schema || !component || !config) {
     return failDefinition(
       'PROPERTY_TYPE_DEFINITION_DRIFT',
@@ -484,6 +516,7 @@ const toConfigRegistration = <TFields extends object>(
   defaults: definition.fields.reduce<Record<string, unknown>>(
     (defaults, field) => {
       defaults[field.key] = clonePropertyDefinitionValue(field.defaultValue)
+
       return defaults
     },
     {}
@@ -510,7 +543,11 @@ export const createPropertyComponentFromConfig = (
   const allowDynamicKeys = config.allowDynamicKeys === true
   const children = config.children
   const fixedKeys = new Set(Object.keys(defaults))
-  if (children) fixedKeys.add(children.key)
+
+  if (children) {
+    fixedKeys.add(children.key)
+  }
+
   const reservedDynamicKeys = new Set(
     uniqueKeys([
       'id',
@@ -521,9 +558,12 @@ export const createPropertyComponentFromConfig = (
       ...(config.dynamicReservedKeys ?? [])
     ])
   )
+
   const isAllowedDynamicKey = (key: string) => !reservedDynamicKeys.has(key)
+
   const { persistKeys, valueKeys, unitKeys } =
     resolvePropertyComponentConfigRoles(config)
+
   assertCanonicalRelationshipDefault(
     config.type,
     config,
@@ -536,34 +576,55 @@ export const createPropertyComponentFromConfig = (
     value: unknown,
     accessor: PropertyComponentAccessor
   ): string[] | null => {
-    if (!children || !Array.isArray(value)) return null
+    if (!children || !Array.isArray(value)) {
+      return null
+    }
+
     const mode = children.mode ?? 'ids'
-    if (mode === 'ids') return value.every(isString) ? value : null
+
+    if (mode === 'ids') {
+      return value.every(isString) ? value : null
+    }
 
     const childIds: string[] = []
+
     value.forEach((item) => {
       if (isString(item)) {
         childIds.push(item)
+
         return
       }
-      if (!isRecord(item)) return
+
+      if (!isRecord(item)) {
+        return
+      }
 
       const mapped = children.toChildData ? children.toChildData(item) : item
-      if (!isRecord(mapped)) return
+
+      if (!isRecord(mapped)) {
+        return
+      }
+
       const childData: Record<string, unknown> = {
         ...mapped,
         type: children.childType
       }
       let childId = ''
+
       if (isString(item.id)) {
         childId = item.id
       }
+
       if (isString(childData.id)) {
         childId = childData.id
       }
-      if (!childId && 'id' in childData) delete childData.id
+
+      if (!childId && 'id' in childData) {
+        delete childData.id
+      }
 
       const existing = childId ? accessor.getPropertyById(childId) : undefined
+
       if (
         existing &&
         typeof existing.get === 'function' &&
@@ -571,7 +632,10 @@ export const createPropertyComponentFromConfig = (
         typeof existing.set === 'function'
       ) {
         Object.entries(childData).forEach(([key, childValue]) => {
-          if (key === 'id' || key === 'type') return
+          if (key === 'id' || key === 'type') {
+            return
+          }
+
           ;(
             existing as unknown as {
               set: (field: string, value: unknown) => void
@@ -579,18 +643,30 @@ export const createPropertyComponentFromConfig = (
           ).set(key, childValue)
         })
         const existingId = existing.get('id')
-        if (isString(existingId)) childIds.push(existingId)
+
+        if (isString(existingId)) {
+          childIds.push(existingId)
+        }
+
         return
       }
 
       const created = accessor.createComponent(
         childId ? { id: childId, ...childData } : childData
       )
-      if (!created) return
+
+      if (!created) {
+        return
+      }
+
       accessor.addToMap(created)
       const createdId = created.get('id')
-      if (isString(createdId)) childIds.push(createdId)
+
+      if (isString(createdId)) {
+        childIds.push(createdId)
+      }
     })
+
     return childIds
   }
 
@@ -598,12 +674,19 @@ export const createPropertyComponentFromConfig = (
     value: unknown,
     accessor: PropertyComponentAccessor
   ): unknown => {
-    if (!children?.toValue || !Array.isArray(value)) return value
+    if (!children?.toValue || !Array.isArray(value)) {
+      return value
+    }
+
     return value
       .filter(isString)
       .map((childId) => {
         const child = accessor.getPropertyById(childId)
-        if (!child || typeof child.get !== 'function') return null
+
+        if (!child || typeof child.get !== 'function') {
+          return null
+        }
+
         return children.toValue?.(
           child as unknown as { get: (key: string) => unknown },
           childId
@@ -630,14 +713,17 @@ export const createPropertyComponentFromConfig = (
       const inheritance = readPropertyInheritance(
         data as unknown as Record<string, unknown>
       )
+
       if (inheritance) {
         this.data = {
           id: data.id,
           type: config.type,
           inheritance: clonePropertyDefinitionValue(inheritance)
         } as PropertyComponentInstanceDataTypes
+
         return
       }
+
       if (this.data.inheritance) {
         this.data = {
           id: data.id,
@@ -645,32 +731,50 @@ export const createPropertyComponentFromConfig = (
           ...clonePropertyDefinitionRecord(defaults)
         } as PropertyComponentInstanceDataTypes
       }
-      if (data.sharedSource === true) this.data.sharedSource = true
-      else delete this.data.sharedSource
+
+      if (data.sharedSource === true) {
+        this.data.sharedSource = true
+      } else {
+        delete this.data.sharedSource
+      }
+
       this.data.id = typeof data.id === 'string' ? data.id : this.data.id
       const rawData: Record<string, unknown> = isRecord(data) ? data : {}
+
       persistKeys.forEach((key) => {
         if (children && key === children.key) {
           const normalized = normalizeChildrenValue(
             rawData[key],
             this.propertyComponentAccessor
           )
+
           if (normalized) {
             this.data[key as keyof PropertyComponentInstanceDataTypes] =
               normalized as never
           }
+
           return
         }
-        if (!(key in rawData)) return
+
+        if (!(key in rawData)) {
+          return
+        }
+
         this.assignLoadedValue(
           key as keyof PropertyComponentInstanceDataTypes,
           rawData[key]
         )
       })
 
-      if (!allowDynamicKeys) return
+      if (!allowDynamicKeys) {
+        return
+      }
+
       Object.entries(rawData).forEach(([key, value]) => {
-        if (!isAllowedDynamicKey(key) || value === undefined) return
+        if (!isAllowedDynamicKey(key) || value === undefined) {
+          return
+        }
+
         ;(this.data as unknown as Record<string, unknown>)[key] =
           clonePropertyDefinitionValue(value)
       })
@@ -680,60 +784,82 @@ export const createPropertyComponentFromConfig = (
       key: K
     ): PropertyComponentInstanceDataTypes[K] {
       const inheritance = this.data.inheritance
+
       if (
         !inheritance ||
         key === 'id' ||
         key === 'type' ||
         String(key) === 'inheritance' ||
         String(key) === 'sharedSource'
-      )
+      ) {
         return super.get(key)
+      }
+
       const field = String(key)
-      if (!persistKeys.includes(field))
+
+      if (!persistKeys.includes(field)) {
         throw new Error(
           `Property inheritance cannot read unknown field "${field}"`
         )
+      }
+
       const source = this.propertyComponentAccessor.getPropertyById(
         inheritance.sourceId
       )
+
       if (
         !source ||
         source.get('type') !== config.type ||
         'inheritance' in
           (source as unknown as { data: Record<string, unknown> }).data
-      )
+      ) {
         throw new Error('Property inheritance source is unavailable or invalid')
+      }
+
       const current = Object.prototype.hasOwnProperty.call(
         inheritance.overrides,
         field
       )
         ? inheritance.overrides[field]
         : source.get(key)
+
       if (children && field === children.key && Array.isArray(current)) {
         return current.map(
           (childId) => inheritance.childBindings[childId] ?? childId
         ) as unknown as PropertyComponentInstanceDataTypes[K]
       }
+
       return current as PropertyComponentInstanceDataTypes[K]
     }
 
     save(): PropertyComponentRawData {
-      if (this.data.inheritance)
+      if (this.data.inheritance) {
         return {
           id: this.data.id,
           type: this.data.type,
           inheritance: clonePropertyDefinitionValue(this.data.inheritance)
         } as PropertyComponentRawData
+      }
+
       const saved = super.save() as Record<string, unknown>
-      if (this.data.sharedSource) saved.sharedSource = true
+
+      if (this.data.sharedSource) {
+        saved.sharedSource = true
+      }
+
       const data = this.data as unknown as Record<string, unknown>
       const dynamicPersistKeys = allowDynamicKeys
         ? Object.keys(data).filter(isAllowedDynamicKey)
         : []
+
       uniqueKeys([...persistKeys, ...dynamicPersistKeys]).forEach((key) => {
         const current = data[key]
-        if (current !== undefined) saved[key] = current
+
+        if (current !== undefined) {
+          saved[key] = current
+        }
       })
+
       return saved as PropertyComponentRawData
     }
 
@@ -743,10 +869,12 @@ export const createPropertyComponentFromConfig = (
       const dynamicValueKeys = allowDynamicKeys
         ? Object.keys(data).filter(isAllowedDynamicKey)
         : []
+
       uniqueKeys([...valueKeys, ...dynamicValueKeys]).forEach((key) => {
         const current = this.get(
           key as keyof PropertyComponentInstanceDataTypes
         )
+
         if (current !== undefined) {
           value[key] = toChildrenValue(
             current,
@@ -754,17 +882,23 @@ export const createPropertyComponentFromConfig = (
           ) as DataTypes
         }
       })
+
       return value
     }
 
     getUnit(): Record<string, Unit> {
       const units: Record<string, Unit> = {}
+
       unitKeys.forEach((key) => {
         const current = this.get(
           key as keyof PropertyComponentInstanceDataTypes
         )
-        if (current !== undefined) units[key] = current as Unit
+
+        if (current !== undefined) {
+          units[key] = current as Unit
+        }
       })
+
       return units
     }
 
@@ -782,25 +916,34 @@ export const createPropertyComponentFromConfig = (
           'Canonical property layers require an explicit prepared layer mutation'
         )
       }
-      if (this.data.sharedSource)
+
+      if (this.data.sharedSource) {
         this.propertyComponentAccessor.validateSharedWrite(
           this.data.id,
           String(key),
           value
         )
+      }
+
       if (children && key === (children.key as K)) {
         const normalized = normalizeChildrenValue(
           value,
           this.propertyComponentAccessor
         )
-        if (!normalized) return
+
+        if (!normalized) {
+          return
+        }
+
         super.set(
           key,
           normalized as unknown as PropertyComponentInstanceDataTypes[K],
           options
         )
+
         return
       }
+
       if (
         allowDynamicKeys &&
         typeof key === 'string' &&
@@ -809,10 +952,16 @@ export const createPropertyComponentFromConfig = (
         if (!(key in this.data)) {
           ;(this.data as unknown as Record<string, unknown>)[key] = value
         }
+
         super.set(key, value, options)
+
         return
       }
-      if (!(key in this.data)) return
+
+      if (!(key in this.data)) {
+        return
+      }
+
       super.set(key, value, options)
     }
   }
@@ -821,6 +970,7 @@ export const createPropertyComponentFromConfig = (
     ConfiguredPropertyComponent as PropertyComponentConstructor,
     children
   )
+
   return ConfiguredPropertyComponent as PropertyComponentConstructor
 }
 
@@ -839,7 +989,10 @@ const assertPropertyTypeUnused = (
   manager: PropsManager
 ): void => {
   const propertyIds = manager.getPropertyIdsByType(type)
-  if (propertyIds.length === 0) return
+
+  if (propertyIds.length === 0) {
+    return
+  }
 
   throw new PropertyRegistrationError({
     ok: false,
@@ -859,6 +1012,7 @@ export const commitDeclarativePropertyTypeDefinition = <
   manager: PropsManager = propsManager
 ): Readonly<PropertyTypeDefinition<TFields>> => {
   const current = getDeclarativePropertyTypeDefinition<TFields>(type)
+
   if (!current) {
     return failDefinition(
       'PROPERTY_TYPE_DEFINITION_DRIFT',
@@ -872,6 +1026,7 @@ export const commitDeclarativePropertyTypeDefinition = <
   const currentSchema = getPropertySchema(type)
   const currentComponent = getPropertyComponent(type)
   const currentConfig = getPropertyComponentConfigDefinition(type)
+
   if (!currentSchema || !currentComponent || !currentConfig) {
     return failDefinition(
       'PROPERTY_TYPE_DEFINITION_DRIFT',
@@ -896,6 +1051,7 @@ export const commitDeclarativePropertyTypeDefinition = <
     registerPropertyComponent(type, nextComponent, undefined, nextConfig)
   } catch (error) {
     restoreRegistrations(type, currentSchema, currentComponent, currentConfig)
+
     return failDefinition(
       'PROPERTY_TYPE_DEFINITION_COMMIT_FAILED',
       type,
@@ -903,5 +1059,6 @@ export const commitDeclarativePropertyTypeDefinition = <
       error
     )
   }
+
   return normalized
 }

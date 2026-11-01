@@ -29,7 +29,9 @@ interface LiveIntervalIndexNode {
 function buildIntervalIndex(
   intervals: readonly LiveIntervalRecord[]
 ): LiveIntervalIndexNode | null {
-  if (!intervals.length) return null
+  if (!intervals.length) {
+    return null
+  }
 
   const centers = intervals
     .map((interval) => (interval.start + interval.end) / 2)
@@ -40,9 +42,13 @@ function buildIntervalIndex(
   const after: LiveIntervalRecord[] = []
 
   for (const interval of intervals) {
-    if (interval.end < center) before.push(interval)
-    else if (interval.start > center) after.push(interval)
-    else crossing.push(interval)
+    if (interval.end < center) {
+      before.push(interval)
+    } else if (interval.start > center) {
+      after.push(interval)
+    } else {
+      crossing.push(interval)
+    }
   }
 
   return {
@@ -60,21 +66,33 @@ function forEachIntervalAt(
   visit: (interval: LiveIntervalRecord) => void
 ) {
   let node = root
+
   while (node) {
     if (time < node.center) {
       for (const interval of node.byStart) {
-        if (interval.start > time) break
+        if (interval.start > time) {
+          break
+        }
+
         visit(interval)
       }
+
       node = node.left
     } else if (time > node.center) {
       for (const interval of node.byEnd) {
-        if (interval.end < time) break
+        if (interval.end < time) {
+          break
+        }
+
         visit(interval)
       }
+
       node = node.right
     } else {
-      for (const interval of node.byStart) visit(interval)
+      for (const interval of node.byStart) {
+        visit(interval)
+      }
+
       break
     }
   }
@@ -87,15 +105,21 @@ function proofLeafAt(
   const leaves = pair.evidence.leaves
   let low = 0
   let high = leaves.length
+
   while (low < high) {
     const middle = (low + high) >>> 1
-    if (leaves[middle].start <= time) low = middle + 1
-    else high = middle
+
+    if (leaves[middle].start <= time) {
+      low = middle + 1
+    } else {
+      high = middle
+    }
   }
 
   const current = low > 0 ? leaves[low - 1] : undefined
   const previous =
     current?.start === time && low > 1 ? leaves[low - 2] : undefined
+
   for (const leaf of [current, previous]) {
     if (
       leaf &&
@@ -103,9 +127,11 @@ function proofLeafAt(
       time <= leaf.end &&
       (leaf.state === 'clear' ||
         (leaf.state === 'finding' && leaf.witnessTime === time))
-    )
+    ) {
       return leaf
+    }
   }
+
   return undefined
 }
 
@@ -124,6 +150,7 @@ function assertPairEvidenceAgreement(
     const newLeaf = newLeaves[newIndex]
     const start = Math.max(overlap[0], oldLeaf.start, newLeaf.start)
     const end = Math.min(overlap[1], oldLeaf.end, newLeaf.end)
+
     if (start <= end) {
       const oldFinding = oldLeaf.state === 'finding' ? oldLeaf : null
       const newFinding = newLeaf.state === 'finding' ? newLeaf : null
@@ -142,14 +169,21 @@ function assertPairEvidenceAgreement(
           newFinding !== null &&
           oldFinding.witnessTime === newFinding.witnessTime &&
           oldFinding.penetration !== newFinding.penetration)
-      if (conflict)
+
+      if (conflict) {
         throw new Error(
           'Conflicting live interval evidence in overlapping coverage'
         )
+      }
     }
 
-    if (oldLeaf.end <= newLeaf.end) oldIndex++
-    if (newLeaf.end <= oldLeaf.end) newIndex++
+    if (oldLeaf.end <= newLeaf.end) {
+      oldIndex++
+    }
+
+    if (newLeaf.end <= oldLeaf.end) {
+      newIndex++
+    }
   }
 }
 
@@ -161,9 +195,14 @@ function sameMethodPairs(
     left.length === right.length &&
     left.every((pair, index) => {
       const other = right[index]
-      if (!other || pair.pairId !== other.pairId) return false
+
+      if (!other || pair.pairId !== other.pairId) {
+        return false
+      }
+
       const a = pair.evidence
       const b = other.evidence
+
       return (
         a.lower === b.lower &&
         a.upper === b.upper &&
@@ -172,6 +211,7 @@ function sameMethodPairs(
         a.leaves.length === b.leaves.length &&
         a.leaves.every((leaf, leafIndex) => {
           const candidate = b.leaves[leafIndex]
+
           return (
             candidate !== undefined &&
             leaf.start === candidate.start &&
@@ -205,21 +245,37 @@ function provenStateAt(
   time: number
 ) {
   const pair = pairs.find((item) => item.pairId === pairId)
-  if (!pair) return null
+
+  if (!pair) {
+    return null
+  }
 
   const states = new Set<string>()
+
   for (const leaf of pair.evidence.leaves) {
-    if (leaf.start > time || time > leaf.end) continue
-    if (leaf.state === 'clear') states.add('clear')
-    if (leaf.state === 'finding' && leaf.witnessTime === time)
+    if (leaf.start > time || time > leaf.end) {
+      continue
+    }
+
+    if (leaf.state === 'clear') {
+      states.add('clear')
+    }
+
+    if (leaf.state === 'finding' && leaf.witnessTime === time) {
       states.add(`finding:${leaf.penetration}`)
+    }
   }
-  if (states.size > 1) return 'conflict'
+
+  if (states.size > 1) {
+    return 'conflict'
+  }
+
   return states.values().next().value ?? null
 }
 
 function hasProof(pair: MethodPairEvidence, time: number) {
   const state = provenStateAt([pair], pair.pairId, time)
+
   return state !== null && state !== 'conflict'
 }
 
@@ -232,45 +288,63 @@ function assertBoundaryAgreement(
     ...accepted.map((pair) => pair.pairId),
     ...incoming.map((pair) => pair.pairId)
   ])
+
   for (const pairId of ids) {
     const oldState = provenStateAt(accepted, pairId, time)
     const newState = provenStateAt(incoming, pairId, time)
+
     if (
       oldState === 'conflict' ||
       newState === 'conflict' ||
       (oldState !== null && newState !== null && oldState !== newState)
-    )
+    ) {
       throw new Error(
         'Conflicting live interval evidence at an adjacent boundary'
       )
+    }
   }
 }
 
 /** Analysis-owned, bounded observations for one exact admitted input lifetime. */
 export class LiveEvidenceRecords {
   private input: ExperimentSnapshot | null = null
+
   private key: string | null = null
+
   private readonly samples = new Map<
     number,
     { sample: LiveSample; bytes: number }
   >()
+
   private readonly intervals = new Map<string, LiveIntervalRecord>()
+
   private intervalIndex: LiveIntervalIndexNode | null = null
+
   private pairIndexes = new Map<string, number>()
+
   private evidenceByPair: (MethodPairEvidence | undefined)[] = []
+
   private readonly evidencePairIndexes: number[] = []
+
   private projectedPairByIndex: (MethodPairEvidence | undefined)[] = []
+
   private readonly projectedPairIndexes: number[] = []
+
   private bytes = 0
+
   private intervalBytes = 0
+
   private intervalLeaves = 0
+
   private evidenceRevision = 0
+
   private projection: {
     time: number
     revision: number
     exact: LiveSample | undefined
     sample: LiveSample
   } | null = null
+
   private values: readonly LiveSample[] = EMPTY_RECORDS
 
   getAll = (key?: string) =>
@@ -315,41 +389,74 @@ export class LiveEvidenceRecords {
 
   getAt(time: number): LiveSample | undefined {
     const exact = this.get(time)
+
     if (
       this.projection?.time === time &&
       this.projection.revision === this.evidenceRevision &&
       this.projection.exact === exact
-    )
+    ) {
       return this.projection.sample
+    }
+
     const intervalPairs = this.evidenceAt(time)
-    if (!this.input || (!exact && !intervalPairs.length)) return exact
+
+    if (!this.input || (!exact && !intervalPairs.length)) {
+      return exact
+    }
 
     const pairsByIndex = this.projectedPairByIndex
     const touched = this.projectedPairIndexes
+
     for (const pair of exact?.pairs ?? []) {
       const index = this.pairIndexes.get(pair.pairId)
+
       if (index !== undefined) {
-        if (pairsByIndex[index] === undefined) touched.push(index)
+        if (pairsByIndex[index] === undefined) {
+          touched.push(index)
+        }
+
         pairsByIndex[index] = pair
       }
     }
+
     let usedIntervalEvidence = false
+
     for (const pair of intervalPairs) {
       const index = this.pairIndexes.get(pair.pairId)
-      if (index === undefined) continue
+
+      if (index === undefined) {
+        continue
+      }
+
       const existing = pairsByIndex[index]
-      if (existing && hasProof(existing, time)) continue
-      if (existing === undefined) touched.push(index)
+
+      if (existing && hasProof(existing, time)) {
+        continue
+      }
+
+      if (existing === undefined) {
+        touched.push(index)
+      }
+
       pairsByIndex[index] = pair
       usedIntervalEvidence = true
     }
+
     const pairs: MethodPairEvidence[] = []
     let complete = true
+
     for (let index = 0; index < this.input.pairs.length; index++) {
       const pair = pairsByIndex[index]
-      if (pair) pairs.push(pair)
-      else complete = false
-      if (pair && !hasProof(pair, time)) complete = false
+
+      if (pair) {
+        pairs.push(pair)
+      } else {
+        complete = false
+      }
+
+      if (pair && !hasProof(pair, time)) {
+        complete = false
+      }
     }
 
     if (
@@ -358,8 +465,12 @@ export class LiveEvidenceRecords {
       pairs.every((pair, index) => pair === exact.pairs[index]) &&
       complete === exact.complete
     ) {
-      for (const index of touched) pairsByIndex[index] = undefined
+      for (const index of touched) {
+        pairsByIndex[index] = undefined
+      }
+
       touched.length = 0
+
       return exact
     }
 
@@ -373,24 +484,35 @@ export class LiveEvidenceRecords {
         ? null
         : (exact?.error ?? 'Uncertified pairs remain unknown.')
     })
+
     this.projection = {
       time,
       revision: this.evidenceRevision,
       exact,
       sample
     }
-    for (const index of touched) pairsByIndex[index] = undefined
+    for (const index of touched) {
+      pairsByIndex[index] = undefined
+    }
+
     touched.length = 0
+
     return sample
   }
 
   getReusablePairsAt(time: number): readonly MethodPairEvidence[] {
     const sample = this.getAt(time)
-    if (!sample) return []
+
+    if (!sample) {
+      return []
+    }
 
     return sample.pairs.flatMap((pair) => {
       const leaf = proofLeafAt(pair, time)
-      if (!leaf || pair.evidence.coverage !== 'complete') return []
+
+      if (!leaf || pair.evidence.coverage !== 'complete') {
+        return []
+      }
 
       return [
         {
@@ -421,9 +543,16 @@ export class LiveEvidenceRecords {
     forEachIntervalAt(this.intervalIndex, time, (interval) => {
       for (const pair of interval.pairs) {
         const pairIndex = this.pairIndexes.get(pair.pairId)
-        if (pairIndex === undefined || selected[pairIndex]) continue
+
+        if (pairIndex === undefined || selected[pairIndex]) {
+          continue
+        }
+
         const leaf = proofLeafAt(pair, time)
-        if (!leaf) continue
+
+        if (!leaf) {
+          continue
+        }
 
         selected[pairIndex] = {
           pairId: pair.pairId,
@@ -440,12 +569,19 @@ export class LiveEvidenceRecords {
     })
 
     const result: MethodPairEvidence[] = []
+
     for (const pairIndex of touched) {
       const pair = selected[pairIndex]
-      if (pair) result.push(pair)
+
+      if (pair) {
+        result.push(pair)
+      }
+
       selected[pairIndex] = undefined
     }
+
     touched.length = 0
+
     return result
   }
 
@@ -454,9 +590,12 @@ export class LiveEvidenceRecords {
     range: readonly [number, number],
     evidence: MethodEvidence
   ) {
-    if (!this.owns(input))
+    if (!this.owns(input)) {
       throw new Error('Retired live input cannot record interval evidence')
+    }
+
     const [start, end] = range
+
     if (
       !Number.isFinite(start) ||
       !Number.isFinite(end) ||
@@ -466,14 +605,18 @@ export class LiveEvidenceRecords {
       evidence.snapshotId !== input.snapshotId ||
       evidence.method.id !== input.method.id ||
       evidence.method.version !== input.method.version
-    )
+    ) {
       throw new Error('Interval evidence does not match its admitted input')
+    }
 
     const key = `${start}:${end}`
     const previous = this.intervals.get(key)
+
     if (previous) {
-      if (!sameMethodPairs(previous.pairs, evidence.pairs))
+      if (!sameMethodPairs(previous.pairs, evidence.pairs)) {
         throw new Error('Conflicting live interval evidence for the same gap')
+      }
+
       return false
     }
 
@@ -483,9 +626,12 @@ export class LiveEvidenceRecords {
       const boundaries = new Set(
         pair.evidence.leaves.flatMap((leaf) => [leaf.start, leaf.end])
       )
-      for (const time of boundaries)
-        if (provenStateAt([pair], pair.pairId, time) === 'conflict')
+
+      for (const time of boundaries) {
+        if (provenStateAt([pair], pair.pairId, time) === 'conflict') {
           throw new Error('Conflicting live interval evidence within a pair')
+        }
+      }
     }
 
     for (const interval of this.intervals.values()) {
@@ -497,33 +643,43 @@ export class LiveEvidenceRecords {
         const acceptedById = new Map(
           interval.pairs.map((pair) => [pair.pairId, pair])
         )
+
         for (const pair of evidence.pairs) {
           const accepted = acceptedById.get(pair.pairId)
-          if (accepted) assertPairEvidenceAgreement(accepted, pair, overlap)
+
+          if (accepted) {
+            assertPairEvidenceAgreement(accepted, pair, overlap)
+          }
         }
       }
-      if (interval.end === start)
+
+      if (interval.end === start) {
         assertBoundaryAgreement(interval.pairs, evidence.pairs, start)
-      else if (interval.start === end)
+      } else if (interval.start === end) {
         assertBoundaryAgreement(interval.pairs, evidence.pairs, end)
+      }
     }
 
-    for (const [time, point] of this.samples)
-      if (start <= time && time <= end)
+    for (const [time, point] of this.samples) {
+      if (start <= time && time <= end) {
         assertBoundaryAgreement(point.sample.pairs, evidence.pairs, time)
+      }
+    }
 
     const leaves = evidence.pairs.reduce(
       (total, pair) => total + pair.evidence.leaves.length,
       0
     )
+
     if (
       this.intervals.size >= LIVE_LIMITS.maxBackgroundIntervals ||
       this.bytes + this.intervalBytes + bytes >
         EXPERIMENT_RESOURCE_PROFILE.maxEvidenceBytes ||
       this.intervalLeaves + leaves >
         EXPERIMENT_RESOURCE_PROFILE.maxEvidenceLeaves
-    )
+    ) {
       return false
+    }
 
     const intervalRecord = {
       start,
@@ -531,12 +687,14 @@ export class LiveEvidenceRecords {
       pairs: evidence.pairs,
       bytes
     }
+
     this.intervals.set(key, intervalRecord)
     this.intervalIndex = buildIntervalIndex([...this.intervals.values()])
     this.intervalBytes += bytes
     this.intervalLeaves += leaves
     this.evidenceRevision++
     this.projection = null
+
     return true
   }
 
@@ -545,8 +703,9 @@ export class LiveEvidenceRecords {
   }
 
   record(input: ExperimentSnapshot, sample: LiveSample) {
-    if (!this.owns(input))
+    if (!this.owns(input)) {
       throw new Error('Retired live input cannot record evidence')
+    }
 
     const previous = this.samples.get(sample.time)
 
@@ -563,10 +722,23 @@ export class LiveEvidenceRecords {
       const pairs = input.pairs.flatMap(({ id }) => {
         const incoming = incomingById.get(id)
         const retained = previousById.get(id)
-        if (!incoming) return retained ? [retained] : []
-        if (!retained) return [incoming]
-        if (hasProof(incoming, sample.time)) return [incoming]
-        if (hasProof(retained, sample.time)) return [retained]
+
+        if (!incoming) {
+          return retained ? [retained] : []
+        }
+
+        if (!retained) {
+          return [incoming]
+        }
+
+        if (hasProof(incoming, sample.time)) {
+          return [incoming]
+        }
+
+        if (hasProof(retained, sample.time)) {
+          return [retained]
+        }
+
         return [incoming]
       })
       const complete =
@@ -575,6 +747,7 @@ export class LiveEvidenceRecords {
           (pair) =>
             pair.evidence.coverage === 'complete' && hasProof(pair, sample.time)
         )
+
       accepted = Object.freeze({
         ...sample,
         pairs,
@@ -587,7 +760,9 @@ export class LiveEvidenceRecords {
       assertBoundaryAgreement(interval.pairs, accepted.pairs, sample.time)
     )
 
-    if (previous && sameLiveSample(previous.sample, accepted)) return false
+    if (previous && sameLiveSample(previous.sample, accepted)) {
+      return false
+    }
 
     const bytes = measureWorkerPayload(accepted)
 
@@ -603,7 +778,9 @@ export class LiveEvidenceRecords {
     ) {
       const first = this.samples.entries().next().value
 
-      if (!first) throw new Error('Live sample exceeds the recording budget')
+      if (!first) {
+        throw new Error('Live sample exceeds the recording budget')
+      }
 
       this.samples.delete(first[0])
       this.bytes -= first[1].bytes

@@ -16,6 +16,7 @@ export const assertRenderDeltaContracts = (summary, sampleFrames) => {
   ]) {
     assert.equal(phase.count, sampleFrames)
   }
+
   assert.equal(summary.strategyGeometrySteadyState.count, sampleFrames - 1)
 
   return summary

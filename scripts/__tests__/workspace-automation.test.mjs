@@ -6,7 +6,47 @@ import path from 'node:path'
 import test from 'node:test'
 import { runInNewContext } from 'node:vm'
 import yaml from 'js-yaml'
-import { fileURLToPath } from 'node:url'
+import ts from 'typescript'
+import { ESLint } from 'eslint'
+import { getFileInfo } from 'prettier'
+import { fileURLToPath, URL } from 'node:url'
+
+test('frozen source formatting exemption preserves current-source lint and semantic checks', async () => {
+  const cwd = fileURLToPath(new URL('../../', import.meta.url))
+  const eslint = new ESLint({ cwd })
+  const frozen =
+    'apps/asyra-fieldscope/src/domain/__tests__/fixtures/pre-p5b-source/crop-models.ts'
+  const current = 'apps/asyra-fieldscope/src/domain/crop-models.ts'
+  const otherFixture =
+    'apps/asyra-fieldscope/src/domain/__tests__/fixtures/current-example.ts'
+
+  for (const filePath of [frozen, current, otherFixture]) {
+    assert.equal(await eslint.isPathIgnored(filePath), false)
+    const [result] = await eslint.lintText(
+      'export function example(value: boolean) { if (value) return 1; return 0 }',
+      { filePath }
+    )
+
+    assert.equal(
+      result.messages.some((message) => message.ruleId === 'curly'),
+      filePath !== frozen
+    )
+    const [semantic] = await eslint.lintText('export const value: any = 1\n', {
+      filePath
+    })
+
+    assert.ok(
+      semantic.messages.some(
+        (message) => message.ruleId === '@typescript-eslint/no-explicit-any'
+      )
+    )
+    const info = await getFileInfo(path.join(cwd, filePath), {
+      ignorePath: path.join(cwd, '.prettierignore')
+    })
+
+    assert.equal(info.ignored, filePath === frozen)
+  }
+})
 
 import {
   createWorkspaceVersionPlan,
@@ -30,6 +70,7 @@ const readText = (relativePath) =>
 
 test('the local naming command runs the same formal gate retained in CI', () => {
   const scripts = readJSON('package.json').scripts
+
   assert.equal(
     scripts['lint:naming'],
     'node --test scripts/__tests__/brand-neutral-code.test.mjs scripts/__tests__/display-name-separators.test.mjs'
@@ -51,17 +92,23 @@ test('scope parser install executes with pinned Yarn and skips lifecycle builds'
   const step = workflow.jobs.scope.steps.find(
     (entry) => entry.name === 'Install declared parser dependencies'
   )
+
   assert.ok(step)
   const command = step.run.match(/(?:^|&&\s*)yarn (install\b[^\n]*)$/)
+
   assert.ok(command, 'Expected the actual scope Yarn install command')
   const args = command[1].trim().split(/\s+/)
+
   assert.ok(args.includes('--immutable'))
   const fixtureRoot = path.join(repositoryRoot, 'tmp/workflow-install')
+
   fs.mkdirSync(fixtureRoot, { recursive: true })
   const fixture = fs.mkdtempSync(path.join(fixtureRoot, 'parser-'))
+
   t.after(() => fs.rmSync(fixture, { recursive: true, force: true }))
   fs.writeFileSync(path.join(fixture, 'yarn.lock'), '')
   const packageManager = readJSON('package.json').packageManager
+
   fs.writeFileSync(
     path.join(fixture, 'package.json'),
     JSON.stringify({
@@ -77,6 +124,7 @@ test('scope parser install executes with pinned Yarn and skips lifecycle builds'
     path.join(fixture, '.yarnrc.yml'),
     'nodeLinker: node-modules\n'
   )
+
   const execute = (argv) =>
     spawnSync('yarn', argv, {
       cwd: fixture,
@@ -94,14 +142,18 @@ test('scope parser install executes with pinned Yarn and skips lifecycle builds'
         YARN_CACHE_FOLDER: path.join(fixture, 'cache')
       }
     })
+
   const version = execute(['--version'])
+
   assert.equal(version.status, 0, version.stderr)
   assert.equal(`yarn@${version.stdout.trim()}`, packageManager)
   // Prepare a lockfile without linking or running the fixture's lifecycle script.
   const prepare = execute(['install', '--mode=update-lockfile'])
+
   assert.equal(prepare.status, 0, prepare.stdout + prepare.stderr)
   const lockfile = fs.readFileSync(path.join(fixture, 'yarn.lock'), 'utf8')
   const install = execute(args)
+
   assert.equal(install.status, 0, install.stdout + install.stderr)
   assert.equal(
     fs.readFileSync(path.join(fixture, 'yarn.lock'), 'utf8'),
@@ -109,6 +161,7 @@ test('scope parser install executes with pinned Yarn and skips lifecycle builds'
   )
   assert.equal(fs.existsSync(path.join(fixture, 'build-ran')), false)
   const ordinary = execute(['install', '--immutable'])
+
   assert.equal(ordinary.status, 0, ordinary.stdout + ordinary.stderr)
   assert.equal(fs.readFileSync(path.join(fixture, 'build-ran'), 'utf8'), 'yes')
 })
@@ -117,6 +170,7 @@ test('the committed lockfile retains canonical descriptor order after workspace 
   const descriptors = Object.keys(yaml.load(readText('yarn.lock'))).filter(
     (descriptor) => descriptor !== '__metadata'
   )
+
   for (let index = 1; index < descriptors.length; index++) {
     assert.ok(
       descriptors[index - 1] < descriptors[index],
@@ -130,17 +184,28 @@ test('workspace test:ci contracts cannot turn test failures into successful skip
     for (const entry of fs.readdirSync(path.join(repositoryRoot, root), {
       withFileTypes: true
     })) {
-      if (!entry.isDirectory()) continue
+      if (!entry.isDirectory()) {
+        continue
+      }
+
       const manifestPath = path.join(
         repositoryRoot,
         root,
         entry.name,
         'package.json'
       )
-      if (!fs.existsSync(manifestPath)) continue
+
+      if (!fs.existsSync(manifestPath)) {
+        continue
+      }
+
       const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
       const task = manifest.scripts?.['test:ci']
-      if (!task) continue
+
+      if (!task) {
+        continue
+      }
+
       assert.doesNotMatch(
         task,
         /\|\|\s*echo\s+['"]No test files found/u,
@@ -153,6 +218,7 @@ test('workspace test:ci contracts cannot turn test failures into successful skip
 test('Asyra FieldScope E2E CI command supplies its portable local app URL', () => {
   const manifest = readJSON('apps/asyra-fieldscope/package.json')
   const example = readText('apps/asyra-fieldscope/.env.example')
+
   assert.match(
     manifest.scripts['test:e2e:ci'],
     /^APP_URL=http:\/\/127\.0\.0\.1:5178 node scripts\/run-e2e-ci\.mjs$/u
@@ -162,6 +228,7 @@ test('Asyra FieldScope E2E CI command supplies its portable local app URL', () =
 
 test('root E2E commands name the app and separate local from CI runners', () => {
   const root = readJSON('package.json')
+
   for (const app of [
     'asyra-design',
     'asyra-framework-site',
@@ -170,23 +237,26 @@ test('root E2E commands name the app and separate local from CI runners', () => 
     'starter-app'
   ]) {
     const manifest = readJSON(`apps/${app}/package.json`)
+
     assert.equal(
       root.scripts[`test:e2e:${app}`],
       `yarn workspace @asyra/${app} test:e2e`,
       `${app} local E2E command`
     )
-    if (manifest.scripts['test:e2e:ci'])
+    if (manifest.scripts['test:e2e:ci']) {
       assert.equal(
         root.scripts[`test:e2e:${app}:ci`],
         `yarn workspace @asyra/${app} test:e2e:ci`,
         `${app} CI E2E command`
       )
+    }
   }
 })
 
 test('root lint ignores App consumer artifacts without excluding maintained source or tests', async () => {
   const { ESLint } = await import('eslint')
   const eslint = new ESLint({ cwd: repositoryRoot })
+
   for (const relativePath of [
     'apps/asyra-sim/.artifacts/consumers/example/app/src/main.tsx',
     'apps/asyra-sim/distribution/example/sdk/app/src/main.tsx'
@@ -197,6 +267,7 @@ test('root lint ignores App consumer artifacts without excluding maintained sour
       relativePath
     )
   }
+
   for (const relativePath of [
     'apps/asyra-sim/src/main.tsx',
     'apps/asyra-sim/src/storage/__tests__/project-format.test.ts'
@@ -212,6 +283,7 @@ test('root lint ignores App consumer artifacts without excluding maintained sour
 const retainedEvidence = readJSON(
   'scripts/__tests__/fixtures/retained-app-update-evidence.json'
 )
+
 const isRetainedEvidence = (file, bytes) =>
   /^fixtures\/app-update-text-(consumer|subsequent|cross-version)\/evidence\//.test(
     file
@@ -222,6 +294,7 @@ test('historical path exceptions require exact retained evidence bytes', () => {
   for (const [file, digest] of Object.entries(retainedEvidence)) {
     assert.match(digest, /^[a-f0-9]{64}$/)
     const bytes = fs.readFileSync(path.join(repositoryRoot, file))
+
     assert.equal(isRetainedEvidence(file, bytes), true, file)
     assert.equal(
       isRetainedEvidence(file, Buffer.concat([bytes, Buffer.from('changed')])),
@@ -265,6 +338,7 @@ test('tracked authored files reject absolute home paths while original evidence 
           fs.readFileSync(path.join(repositoryRoot, file))
         )
     )
+
   assert.deepEqual(violations, [])
 })
 
@@ -276,6 +350,7 @@ test('GitHub Actions use least privilege and immutable action revisions', () => 
 
   for (const workflowPath of workflowPaths) {
     const workflow = readText(workflowPath)
+
     assert.match(workflow, /^permissions:\n {2}contents: read$/m, workflowPath)
     for (const line of workflow.match(/^\s*-?\s*uses:\s*\S+$/gm) ?? []) {
       if (
@@ -293,6 +368,7 @@ test('GitHub Actions use least privilege and immutable action revisions', () => 
   }
 
   const dependabot = readText('.github/dependabot.yml')
+
   assert.match(dependabot, /package-ecosystem: ['"]github-actions['"]/)
   assert.match(dependabot, /directory: ['"]\/['"]/)
   assert.match(dependabot, /interval: ['"]weekly['"]/)
@@ -308,11 +384,14 @@ test('PR workflows skip Draft jobs and run when the PR becomes ready', () => {
       workflowPath === '.github/workflows/e2e.yml'
         ? readText('.github/workflows/main.yml')
         : workflow
+
     if (workflowPath === '.github/workflows/e2e.yml') {
       assert.match(workflow, /^ {2}workflow_call:/m)
       assert.doesNotMatch(workflow, /^ {2}pull_request:/m)
     }
+
     const events = eventOwner.match(/pull_request:\n\s+types: \[([^\]]+)\]/)[1]
+
     for (const event of [
       'opened',
       'synchronize',
@@ -321,7 +400,9 @@ test('PR workflows skip Draft jobs and run when the PR becomes ready', () => {
     ]) {
       assert.ok(events.split(', ').includes(event), `${workflowPath}: ${event}`)
     }
+
     const jobs = workflow.split('\njobs:\n')[1].split(/(?=^ {2}[\w-]+:\n)/m)
+
     for (const job of jobs.filter((block) => block.trim())) {
       assert.match(
         job,
@@ -335,6 +416,7 @@ test('PR workflows skip Draft jobs and run when the PR becomes ready', () => {
 test('Draft filtering preserves explicit full triggers without rerunning unrelated label changes', () => {
   const ci = readText('.github/workflows/main.yml')
   const e2e = readText('.github/workflows/e2e.yml')
+
   assert.match(ci, /push:\n {4}branches:\n {6}- main/)
   assert.doesNotMatch(ci, /types: \[[^\]]*labeled/)
   assert.match(e2e, /^ {2}workflow_dispatch:/m)
@@ -345,19 +427,24 @@ test('CI schedules discovered workspaces through one bounded build-then-test mat
   const workflow = readText('.github/workflows/main.yml')
   const scripts = readJSON('package.json').scripts
 
-  assert.match(workflow, /node scripts\/run-ci-checks\.mjs/)
+  assert.match(workflow, /node scripts\/validation-checks\.mjs --check shared/)
   assert.match(
     workflow,
     /workspace: \$\{\{ fromJson\(needs\.scope\.outputs\.workspace_matrix\) \}\}/
   )
-  assert.match(workflow, /run: node scripts\/run-workspace-checks\.mjs/)
+  assert.match(
+    workflow,
+    /run: node scripts\/validation-checks\.mjs --check "\$VALIDATION_WORKSPACE"/
+  )
   assert.doesNotMatch(workflow, /yarn turbo run test:ci react:build/)
   const jobs = workflow.split('\njobs:\n')[1].split(/(?=^ {2}[\w-]+:\n)/m)
   const workspaceJob = jobs.find((block) =>
     block.startsWith('  workspace-validation:')
   )
+
   assert.ok(workspaceJob)
   const jobName = workspaceJob.match(/^ {4}name: (.+)$/m)?.[1]
+
   assert.equal(jobName, '${{ matrix.workspace.directory }}')
   assert.doesNotMatch(
     jobName,
@@ -387,13 +474,14 @@ test('CI schedules discovered workspaces through one bounded build-then-test mat
   assert.match(workspaceJob, /name: Build then test the selected workspace/)
   assert.match(
     workspaceJob,
-    /id: workspace-checks[\s\S]*?run: node scripts\/run-workspace-checks\.mjs/
+    /id: workspace-checks[\s\S]*?run: node scripts\/validation-checks\.mjs --check "\$VALIDATION_WORKSPACE"/
   )
   const diagnosticsStep = workspaceJob
     .split(/(?=^ {6}- name: )/m)
     .find((block) =>
       block.includes('name: Upload failed workspace E2E diagnostics')
     )
+
   assert.ok(diagnosticsStep)
   assert.match(
     diagnosticsStep,
@@ -419,14 +507,56 @@ test('CI schedules discovered workspaces through one bounded build-then-test mat
 
 test('standard manifest E2E owners use the runner Chrome in CI and locally', () => {
   const workflow = readText('.github/workflows/main.yml')
+
   assert.doesNotMatch(workflow, /playwright install --with-deps chromium/)
   const workspaceRunner = readText('scripts/run-workspace-checks.mjs')
+
   assert.match(workspaceRunner, /PLAYWRIGHT_JSON_OUTPUT_FILE: reportPath/)
   assert.match(workspaceRunner, /reportReadSuccessfully = false/)
-  assert.match(
+  const source = ts.createSourceFile(
+    'run-workspace-checks.mjs',
     workspaceRunner,
-    /if \(reportReadSuccessfully\) fs\.rmSync\(reportPath, \{ force: true \}\)/
+    ts.ScriptTarget.Latest,
+    true
   )
+  const cleanupBlocks = []
+
+  const visit = (node) => {
+    if (
+      ts.isTryStatement(node) &&
+      node.finallyBlock?.getText(source).includes('reportReadSuccessfully')
+    ) {
+      cleanupBlocks.push(node.finallyBlock.getText(source))
+    }
+
+    ts.forEachChild(node, visit)
+  }
+
+  visit(source)
+  assert.equal(cleanupBlocks.length, 1)
+  for (const reportReadSuccessfully of [true, false]) {
+    const removed = []
+    const diagnostics = []
+
+    runInNewContext(cleanupBlocks[0], {
+      reportReadSuccessfully,
+      reportPath: 'report.json',
+      fs: { rmSync: (file, options) => removed.push([file, options.force]) },
+      console: { error: (message) => diagnostics.push(message) }
+    })
+
+    assert.deepEqual(
+      removed,
+      reportReadSuccessfully ? [['report.json', true]] : []
+    )
+    assert.deepEqual(
+      diagnostics,
+      reportReadSuccessfully
+        ? []
+        : ['Preserving failed Playwright report: report.json']
+    )
+  }
+
   assert.match(workspaceRunner, /Preserving failed Playwright report/)
   assert.doesNotMatch(workspaceRunner, /PLAYWRIGHT_JSON_OUTPUT_NAME/)
   const workspaces = [
@@ -435,9 +565,11 @@ test('standard manifest E2E owners use the runner Chrome in CI and locally', () 
     ['apps/asyra-fieldscope', 'test:e2e:ci'],
     ['apps/starter-app', 'test:e2e:ci']
   ]
+
   for (const [directory, task] of workspaces) {
     const manifest = readJSON(`${directory}/package.json`)
     const config = readText(`${directory}/playwright.config.ts`)
+
     assert.ok(manifest.scripts[task], `${directory} must expose ${task}`)
     assert.match(config, /channel:\s*'chrome'/, directory)
   }
@@ -509,6 +641,7 @@ test('workspace manifests omit confirmed unused dependencies', () => {
   ]) {
     assert.equal(designSystem.devDependencies?.[dependency], undefined)
   }
+
   assert.equal(preset.devDependencies?.['@types/bezier-js'], undefined)
   assert.equal(preset.dependencies?.['bezier-js'], undefined)
 })
@@ -518,7 +651,9 @@ const getBuildTask = (manifest) => {
   const task = [packageBuildTask, 'react:build', 'build'].find(
     (candidate) => manifest.scripts?.[candidate]
   )
+
   assert.ok(task, `${manifest.name} must declare a canonical build task`)
+
   return task
 }
 
@@ -537,20 +672,34 @@ const getWorkspaceManifests = () => {
   const manifests = new Map()
 
   for (const pattern of rootManifest.workspaces) {
-    if (pattern === 'create-app/*') continue
+    if (pattern === 'create-app/*') {
+      continue
+    }
+
     if (!pattern.endsWith('/*')) {
       const manifest = readJSON(`${pattern}/package.json`)
+
       manifests.set(manifest.name, manifest)
       continue
     }
+
     const baseDirectory = path.join(repositoryRoot, pattern.replace('/*', ''))
+
     for (const entry of fs.readdirSync(baseDirectory, {
       withFileTypes: true
     })) {
-      if (!entry.isDirectory()) continue
+      if (!entry.isDirectory()) {
+        continue
+      }
+
       const manifestPath = path.join(baseDirectory, entry.name, 'package.json')
-      if (!fs.existsSync(manifestPath)) continue
+
+      if (!fs.existsSync(manifestPath)) {
+        continue
+      }
+
       const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
+
       manifests.set(manifest.name, manifest)
     }
   }
@@ -579,6 +728,7 @@ test('Turbo uses exact workspace task relationships generated from manifests', (
       )
       continue
     }
+
     const buildTask = getBuildTask(manifest)
     const taskName = `${packageName}#${buildTask}`
     const internalDependencies = Object.keys({
@@ -587,6 +737,7 @@ test('Turbo uses exact workspace task relationships generated from manifests', (
     }).filter((dependency) => manifests.has(dependency))
     const expectedDependencies = internalDependencies.flatMap((dependency) => {
       const dependencyManifest = manifests.get(dependency)
+
       return dependencyManifest.contentOnly
         ? []
         : [`${dependency}#${getBuildTask(dependencyManifest)}`]
@@ -630,6 +781,7 @@ test('root commands validate the committed Turbo graph without rewriting it', ()
   ]) {
     assert.equal(rootManifest.scripts[scriptName], undefined)
   }
+
   assert.doesNotMatch(
     rootManifest.scripts['test:scripts'],
     /example-inventory|example-package-inputs|examples-readiness/
@@ -642,6 +794,7 @@ test('Asyra Design keeps frontend startup, live transport, and local persistence
   const collaborationReference = readText(
     'docs/ai/apps/asyra-design/modules/collaboration-reference.md'
   )
+
   assert.equal(
     rootManifest.scripts['start:asyra-design'],
     'yarn workspace @asyra/asyra-design start'
@@ -673,12 +826,9 @@ test('CI, E2E, and release validation own their bounded integration gates', () =
   assert.equal(collaboration.scripts.clean, 'rm -rf dist')
   assert.match(designViteConfig, /outDir:\s*['"]dist\/frontend['"]/)
   assert.doesNotMatch(designViteConfig, /outDir:\s*['"]\.\.\/\.\.\/dist['"]/)
-  assert.match(ci, /yarn gen:turbo:check/)
-  assert.match(ci, /yarn deps:validate/)
-  assert.match(ci, /if: github\.event_name == 'pull_request'/)
-  assert.match(ci, /CHANGESET_BASE_SHA:.*pull_request\.base\.sha/)
-  assert.match(ci, /CHANGESET_HEAD_SHA:.*pull_request\.head\.sha/)
-  assert.match(ci, /yarn changeset:pr:check/)
+  assert.match(ci, /node scripts\/validation-checks\.mjs --check build-graph/)
+  assert.match(ci, /node scripts\/validation-checks\.mjs --check dependencies/)
+  assert.doesNotMatch(ci, /yarn changeset:pr:check/)
   assert.doesNotMatch(ci, /yarn release:app:check/)
   assert.match(e2e, /test:e2e:collaboration/)
   assert.match(releaseValidation, /yarn release:app:check --prod=\$\{appName\}/)
@@ -711,6 +861,7 @@ test('Vite builds rely on dedicated lint gates and static output configuration',
   for (const manifest of [designManifest, designSystemManifest]) {
     assert.equal(manifest.devDependencies?.['vite-plugin-eslint'], undefined)
   }
+
   assert.doesNotMatch(designViteConfig, /vite-plugin-eslint/)
   assert.doesNotMatch(designSystemViteConfig, /vite-plugin-eslint/)
 })
@@ -783,26 +934,18 @@ test('Tailwind 4 uses the dedicated Vite plugin in canonical and generated apps'
   )
 })
 
-test('CI validates the active Framework package release from packed artifacts on Node 24', () => {
+test('development CI does not execute publication readiness or release notes checks', () => {
   const ci = readText('.github/workflows/main.yml')
-  const releaseJob = ci.slice(ci.indexOf('framework-release-readiness:'))
 
-  assert.match(releaseJob, /node-version: 24/)
-  assert.doesNotMatch(releaseJob, /node-version: 20/)
-  assert.match(releaseJob, /yarn install --immutable/)
-  assert.match(releaseJob, /yarn react:build/)
-  assert.match(releaseJob, /yarn release:packages --prebuilt/)
-  assert.match(releaseJob, /yarn release:consumer/)
-  assert.doesNotMatch(releaseJob, /yarn release:template/)
-  assert.match(releaseJob, /yarn release:records/)
   assert.doesNotMatch(
-    releaseJob,
-    /--allow-unsupported-node|changeset publish|npm publish/
+    ci,
+    /yarn (?:release:packages|release:consumer|release:records|docs:updates:check)/
   )
+  assert.doesNotMatch(ci, /control-plane\/cli\.cjs (?:prove|candidate)/)
 })
-
 test('PR CI serializes revisions and cancels every obsolete job', () => {
   const workflow = yaml.load(readText('.github/workflows/main.yml'))
+
   assert.equal(
     workflow.concurrency.group,
     'ci-${{ github.event.pull_request.number || github.ref }}'
@@ -811,10 +954,13 @@ test('PR CI serializes revisions and cancels every obsolete job', () => {
     workflow.concurrency['cancel-in-progress'],
     "${{ github.event_name == 'pull_request' }}"
   )
+
   const visit = (workflowPath) => {
     const current = yaml.load(readText(workflowPath))
+
     for (const [name, job] of Object.entries(current.jobs)) {
       const condition = job.if ?? ''
+
       // Without an explicit status function GitHub applies success(), which
       // becomes false on cancellation. Explicit status gates must opt out too.
       if (/\b(?:always|success|failure|cancelled)\(/u.test(condition)) {
@@ -825,16 +971,19 @@ test('PR CI serializes revisions and cancels every obsolete job', () => {
         )
         assert.match(condition, /!cancelled\(\)/u, `${workflowPath}: ${name}`)
       }
+
       if (job.uses?.startsWith('./.github/workflows/')) {
         visit(job.uses.slice(2))
       }
     }
   }
+
   visit('.github/workflows/main.yml')
 })
 
 test('CI aggregates still report failed or skipped dependencies but stop on cancellation', () => {
   const workflow = yaml.load(readText('.github/workflows/main.yml'))
+
   for (const name of [
     'production-artifact-tests',
     'e2e-tests',
@@ -845,6 +994,7 @@ test('CI aggregates still report failed or skipped dependencies but stop on canc
       /^\$\{\{\s*|\s*\}\}$/gu,
       ''
     )
+
     for (const dependencyResult of ['success', 'failure', 'skipped']) {
       for (const cancelled of [false, true]) {
         const result = runInNewContext(expression, {
@@ -852,11 +1002,16 @@ test('CI aggregates still report failed or skipped dependencies but stop on canc
             event_name: 'pull_request',
             event: { pull_request: { draft: false } }
           },
+
           always: () => true,
+
           success: () => !cancelled && dependencyResult === 'success',
+
           failure: () => dependencyResult === 'failure',
+
           cancelled: () => cancelled
         })
+
         assert.equal(
           result,
           !cancelled,
@@ -1139,6 +1294,7 @@ test('root app commands are scoped by app and purpose', () => {
     ],
     'starter-app': ['@asyra/starter-app', 'dev', 'test:local', 'test:ci']
   }
+
   for (const [
     app,
     [workspace, startTask, localTestTask, ciTestTask]
@@ -1177,7 +1333,9 @@ test('root app commands are scoped by app and purpose', () => {
       )
     }
   }
+
   const simRunner = readText('apps/asyra-sim/scripts/run-e2e.mjs')
+
   assert.match(simRunner, /process\.argv\.length === 2/)
   assert.match(simRunner, /run-e2e-ci\.mjs/)
   assert.match(
@@ -1194,15 +1352,18 @@ test('root app commands are scoped by app and purpose', () => {
     'test:local',
     'test:ci',
     'test:e2e',
-    'lint',
     'lint:ci',
     'dev:all'
-  ])
+  ]) {
     assert.equal(
       rootScripts[script],
       undefined,
       `ambiguous root script remains: ${script}`
     )
+  }
+
+  assert.equal(rootScripts.lint, 'eslint .')
+  assert.equal(rootScripts['lint:workspaces:ci'], undefined)
 })
 
 test('workspace version planning materializes release ranges without changing files', () => {
@@ -1267,6 +1428,7 @@ test('Board, render contracts and functional E2E have independent required jobs'
     job.startsWith('  render-contracts:')
   )
   const functional = jobs.find((job) => job.startsWith('  e2e-tests:'))
+
   assert.ok(board, 'Board must report its own result')
   assert.match(board, /FLOW_PROOF_BROWSER_CHANNEL: chrome/)
   assert.ok(
@@ -1285,7 +1447,9 @@ test('Board, render contracts and functional E2E have independent required jobs'
     assert.doesNotMatch(job, /continue-on-error: true/)
     assert.doesNotMatch(job, /^ {4}needs:/m)
   }
+
   const main = readText('.github/workflows/main.yml')
+
   assert.match(main, /FLOW_E2E_RESULT: \$\{\{ needs\.design-e2e\.result \}\}/)
 })
 
@@ -1302,7 +1466,7 @@ test('Flow Inspector CI proof checkout includes the accepted verifier baseline',
   const workflow = readText('.github/workflows/main.yml')
   const flowJob = workflow
     .split('\n  flow-inspector-validation:\n')[1]
-    .split('\n  framework-release-readiness:\n')[0]
+    .split('\n  fieldscope-profile-')[0]
 
   assert.match(flowJob, /fetch-depth: 0/)
   assert.match(flowJob, /persist-credentials: false/)
@@ -1316,6 +1480,7 @@ test('Flow Inspector CI proof checkout includes the accepted verifier baseline',
   const contractsTest = flowJob.indexOf(
     'Test Flow Inspector control-plane contracts'
   )
+
   assert.ok(buildStep < contractsTest)
 })
 
@@ -1325,14 +1490,19 @@ test('shared CI builds Framework declarations before public documentation checks
     .split('\n  shared-validation:\n')[1]
     .split('\n  workspace-validation:\n')[0]
   const buildStep = sharedJob.indexOf('Build Framework declarations')
-  const scriptsTest = sharedJob.indexOf('node scripts/run-ci-checks.mjs')
+  const scriptsTest = sharedJob.indexOf(
+    'node scripts/validation-checks.mjs --check shared'
+  )
 
   assert.ok(buildStep >= 0 && buildStep < scriptsTest)
   assert.match(
     sharedJob,
-    /FRAMEWORK_DECLARATION_TASKS: \$\{\{ needs\.scope\.outputs\.framework_declaration_tasks \}\}/
+    /node scripts\/validation-checks\.mjs --check declarations/
   )
-  assert.match(sharedJob, /yarn turbo run "\$\{tasks\[@\]\}"/)
+  assert.ok(
+    sharedJob.indexOf('Download CI scope evidence for shared checks') <
+      buildStep
+  )
   assert.doesNotMatch(
     sharedJob,
     /build:(?:ai-agent-runtime|collaboration|core|factory)/
@@ -1345,6 +1515,7 @@ test('build execution counter includes nested local and CI task starts', () => {
   const nestedLocal = `@asyra/starter-app:react:build: ${outer}`
   const nestedCi =
     '@asyra/starter-app:react:build: ::group::@asyra/utils:build:utils'
+
   assert.equal(countUtilsBuildExecutions(`${outer}\n${nestedLocal}`), 2)
   assert.equal(countUtilsBuildExecutions(`${outer}\n${nestedCi}`), 2)
   assert.equal(countUtilsBuildExecutions(outer), 1)
@@ -1352,6 +1523,7 @@ test('build execution counter includes nested local and CI task starts', () => {
 
 test('a timed-out build command terminates its descendant process', async () => {
   let failure
+
   try {
     await runOwnedBuildCommand(
       'sh',
@@ -1361,24 +1533,33 @@ test('a timed-out build command terminates its descendant process', async () => 
   } catch (error) {
     failure = error
   }
+
   assert.match(failure?.message ?? '', /timed out/u)
   const descendantPid = Number(failure.output.match(/descendant=(\d+)/u)?.[1])
+
   assert.ok(Number.isInteger(descendantPid) && descendantPid > 0)
   let status = ''
+
   for (let attempt = 0; attempt < 20; attempt += 1) {
     status = spawnSync('ps', ['-o', 'stat=', '-p', String(descendantPid)], {
       encoding: 'utf8'
     }).stdout.trim()
-    if (status === '' || status.startsWith('Z')) break
+    if (status === '' || status.startsWith('Z')) {
+      break
+    }
+
     await new Promise((resolve) => setTimeout(resolve, 50))
   }
+
   assert.ok(status === '' || status.startsWith('Z'), status)
 })
 
 test('Asyra FieldScope selected profile groups are independent and each blocks validation', () => {
   const workflow = yaml.load(readText('.github/workflows/main.yml'))
+
   for (const group of ['heavy', 'source', 'remaining']) {
     const job = workflow.jobs[`fieldscope-profile-${group}`]
+
     assert.deepEqual(job.needs, ['scope'])
     assert.equal(job.with.group, group)
     assert.ok(job.with.files.includes(`.${group}`))
@@ -1390,20 +1571,25 @@ test('Asyra FieldScope selected profile groups are independent and each blocks v
       (step) =>
         step.name === `Require complete Asyra FieldScope ${group} profiles`
     )
-    for (const files of ['[]', '["src/example.profile.test.ts"]'])
+
+    for (const files of ['[]', '["src/example.profile.test.ts"]']) {
       for (const result of ['success', 'failure', 'cancelled', 'skipped', '']) {
         const run = spawnSync('bash', ['-c', gate.run], {
           env: { ...process.env, PROFILE_FILES: files, PROFILE_RESULT: result }
         })
+
         assert.equal(
           run.status === 0,
           files === '[]' ? result === 'skipped' : result === 'success'
         )
       }
+    }
   }
+
   const profile = yaml.load(
     readText('.github/workflows/fieldscope-profile.yml')
   )
+
   assert.match(
     readText('apps/asyra-fieldscope/scripts/supervise-tests.py'),
     /DEFAULT_HARD_STOP_MS = 20 \* 60 \* 1000/u
@@ -1430,6 +1616,7 @@ test('Asyra FieldScope selected profile groups are independent and each blocks v
   const run = profile.jobs.profile.steps.find(
     (step) => step.name === 'Run selected profile group'
   )
+
   assert.equal(run.env.PROFILE_FILES, '${{ inputs.files }}')
   assert.equal(run.env.PROFILE_GROUP, '${{ inputs.group }}')
 })
@@ -1441,6 +1628,7 @@ test('Asyra FieldScope profile failures retain complete bounded supervision arti
   const upload = profile.jobs.profile.steps.find((step) =>
     step.uses?.startsWith('actions/upload-artifact@')
   )
+
   assert.ok(upload, 'profile diagnostics must survive the ephemeral runner')
   assert.equal(upload.if, 'always()')
   assert.equal(
@@ -1460,6 +1648,7 @@ test('shared CI downloads the scope plan instead of putting large JSON in the en
   ]
   const runIndex = job.steps.findIndex((step) => step.id === 'selected_checks')
   const step = job.steps[runIndex]
+
   assert.equal(step.env.CI_EXECUTION_PLAN, undefined)
   assert.equal(
     step.env.CI_SCOPE_EVIDENCE_FILE,
@@ -1470,6 +1659,7 @@ test('shared CI downloads the scope plan instead of putting large JSON in the en
       entry.uses?.startsWith('actions/download-artifact@') &&
       entry.with?.name === 'ci-scope-evidence'
   )
+
   assert.ok(downloadIndex >= 0 && downloadIndex < runIndex)
   assert.notEqual(job.steps[downloadIndex]['continue-on-error'], true)
   assert.equal(
@@ -1484,6 +1674,7 @@ test('shared CI downloads the scope plan instead of putting large JSON in the en
     ['check-ignore', '--no-index', step.env.CI_SCOPE_EVIDENCE_FILE],
     { cwd: repositoryRoot, encoding: 'utf8' }
   )
+
   assert.equal(
     ignored.status,
     0,
@@ -1495,6 +1686,7 @@ test('heavy profile files run in bounded independent jobs without cancelling sib
   const profile = yaml.load(
     readText('.github/workflows/fieldscope-profile.yml')
   )
+
   assert.deepEqual(profile.jobs.profile.strategy, {
     'fail-fast': false,
     'max-parallel': 2,
@@ -1505,8 +1697,10 @@ test('heavy profile files run in bounded independent jobs without cancelling sib
   const run = profile.jobs.profile.steps.find(
     (step) => step.name === 'Run selected profile group'
   )
+
   assert.equal(run.env.PROFILE_FILE, '${{ matrix.file }}')
   const script = run.run.split("python3 - <<'PYTHON'\n")[1].split('\nPYTHON')[0]
+
   for (const selected of [
     '',
     'src/first.profile.test.ts',
@@ -1533,10 +1727,12 @@ test('heavy profile files run in bounded independent jobs without cancelling sib
         }
       }
     )
+
     if (selected.includes('unselected')) {
       assert.notEqual(result.status, 0)
       continue
     }
+
     assert.equal(result.status, 0, result.stderr)
     assert.deepEqual(JSON.parse(result.stdout), [
       'python3',

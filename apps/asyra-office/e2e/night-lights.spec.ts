@@ -14,8 +14,10 @@ test('retains both lights and exports five views of the framed light from one ge
     'Requires hardware WebGL.'
   )
   const errors: string[] = []
+
   page.on('pageerror', (error) => errors.push(error.message))
   const images: { title: string; data: string }[] = []
+
   for (const asset of ['pantry-night-light', 'frame-night-light']) {
     await page.goto(`/?review=${asset}`)
     await page
@@ -27,6 +29,7 @@ test('retains both lights and exports five views of the framed light from one ge
       asset === 'frame-night-light'
         ? ['Front', 'Right', 'Back', 'Top', 'Three-quarter']
         : ['Three-quarter']
+
     for (const view of views) {
       await page.getByRole('button', { name: view, exact: true }).click()
       await page.evaluate(
@@ -36,7 +39,11 @@ test('retains both lights and exports five views of the framed light from one ge
           )
       )
       const bounds = await viewport.boundingBox()
-      if (!bounds) throw new Error('Missing asset viewport')
+
+      if (!bounds) {
+        throw new Error('Missing asset viewport')
+      }
+
       // Omit the surrounding UI's rounded corners; retain the camera's 40 px asset margin.
       const bytes = await page.screenshot({
         clip: {
@@ -47,11 +54,15 @@ test('retains both lights and exports five views of the framed light from one ge
         },
         path: info.outputPath(`${asset}-${view.toLowerCase()}.png`)
       })
-      if (asset === 'frame-night-light')
+
+      if (asset === 'frame-night-light') {
         images.push({ title: view, data: bytes.toString('base64') })
+      }
     }
+
     await expect(page.getByRole('alert')).toHaveCount(0)
   }
+
   // A contact sheet of actual app views, not separately generated designs.
   await page.setViewportSize({ width: 2200, height: 850 })
   await page.setContent(`<!doctype html><html lang="en"><head><style>

@@ -16,7 +16,9 @@ function OriginalPart({
 }: Props & { id: string; index: number }) {
   const binding = useOriginalBinding(source, id)
 
-  if (!binding) return null
+  if (!binding) {
+    return null
+  }
 
   return (
     <fieldset aria-label={`Original part ${index + 1}`}>

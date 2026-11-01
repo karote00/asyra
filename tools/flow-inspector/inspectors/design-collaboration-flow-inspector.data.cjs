@@ -309,4 +309,4 @@ const data = {
 }
 
 globalThis.FLOW_INSPECTOR_DATA = data
-if (typeof module !== 'undefined') module.exports = data
+if (typeof module !== 'undefined') {module.exports = data}

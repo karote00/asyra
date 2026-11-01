@@ -24,16 +24,22 @@ import { ORIGINAL_PART_METHOD } from '../../analysis/methods/original-part-metho
 it('rejects frozen triangles changed under an unchanged original source identity before project replacement', async () => {
   const archive = new VisualAssetArchive({
     decode: decodeRestrictedGlb,
+
     dispose: () => undefined
   })
   const table = createMechanicalVisuals().find(
     (part) => part.body === 'fixture-table'
   )
-  if (!table) throw new Error('Missing sample table source')
+
+  if (!table) {
+    throw new Error('Missing sample table source')
+  }
+
   const prepared = await archive.prepare(table.bytes, 'table.glb')
   const source = archive.accept(prepared),
     example = createSyntheticExample(),
     draft = createSyntheticExperimentDraft(example)
+
   example.workcell.bodies[0].visuals = [binding(source.assetId)]
   const snapshot = createExperimentSnapshot({
     snapshotId: 'original-input',
@@ -77,14 +83,21 @@ it('rejects frozen triangles changed under an unchanged original source identity
   const input = { ...project(source), runs: [run] }
   const accepted = await prepareProjectVisuals(input, {
     decode: decodeRestrictedGlb,
+
     dispose: () => undefined
   })
+
   accepted.dispose()
   const changed = structuredClone(input),
     geometry = changed.runs[0].snapshot.workcell.bodies[0].colliders[0].geometry
-  if (geometry.kind !== 'mesh') throw new Error('Missing original source')
+
+  if (geometry.kind !== 'mesh') {
+    throw new Error('Missing original source')
+  }
+
   geometry.positions = geometry.positions.map((n) => n * 0.5)
   const decoder = { decode: decodeRestrictedGlb, dispose: vi.fn() }
+
   await expect(prepareProjectVisuals(changed, decoder)).rejects.toThrow(
     /original part source/i
   )
@@ -95,16 +108,20 @@ it('rejects frozen triangles changed under an unchanged original source identity
 async function retainedSource(): Promise<VisualSourceRecord> {
   const archive = new VisualAssetArchive({
     decode: decodeRestrictedGlb,
+
     dispose: () => undefined
   })
+
   try {
     const { json, binary } = triangleFixture()
+
     return (await archive.prepare(encodeGlb(json, binary), 'reference.glb'))
       .source
   } finally {
     archive.dispose()
   }
 }
+
 const binding = (assetId: string) => ({
   version: 1 as const,
   id: 'reference',
@@ -112,6 +129,7 @@ const binding = (assetId: string) => ({
   pose: IDENTITY_POSE,
   scale: [1, 1, 1] as const
 })
+
 function project(source: VisualSourceRecord) {
   return {
     document: {
@@ -143,14 +161,17 @@ function project(source: VisualSourceRecord) {
 it('roundtrips original source records and deduplicates current reference identities', async () => {
   const source = await retainedSource(),
     input = project(source)
+
   expect(projectVisualAssetIds(input)).toEqual([source.assetId])
   const decoded = decodeProject(encodeProject(input))
+
   expect(decoded).toEqual(input)
   expect(decoded.visualSources).not.toBe(input.visualSources)
 })
 
 it('rejects missing or malformed visual sources at both native encode and decode boundaries', async () => {
   const input = project(await retainedSource())
+
   for (const invalid of [
     { ...input, visualSources: undefined },
     { ...input, visualSources: [] },
@@ -175,6 +196,7 @@ it('rejects missing or malformed visual sources at both native encode and decode
 it('requires visual sources used only by immutable historical runs', async () => {
   const source = await retainedSource(),
     example = createSyntheticExample()
+
   example.workcell.bodies[0].visuals = [binding(source.assetId)]
   const draft = createSyntheticExperimentDraft(example)
   const snapshot = historicalProxyFixture({
@@ -214,6 +236,7 @@ it('requires visual sources used only by immutable historical runs', async () =>
     runs: [run],
     visualSources: [source]
   }
+
   expect(projectVisualAssetIds(input)).toEqual([source.assetId])
   expect(decodeProject(encodeProject(input)).visualSources).toEqual([source])
   expect(() => encodeProject({ ...input, visualSources: [] })).toThrow(
@@ -221,11 +244,14 @@ it('requires visual sources used only by immutable historical runs', async () =>
   )
   const prepared = await prepareProjectVisuals(input, {
     decode: decodeRestrictedGlb,
+
     dispose: () => undefined
   })
+
   expect(prepared.get(source.assetId)).toBeDefined()
   prepared.dispose()
   const rejected = { decode: decodeRestrictedGlb, dispose: vi.fn() }
+
   await expect(
     prepareProjectVisuals({ ...input, visualSources: [] }, rejected)
   ).rejects.toThrow('Missing visual source')

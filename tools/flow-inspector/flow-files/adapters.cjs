@@ -7,36 +7,55 @@ const { admitProject } = require('./schema.cjs')
 const { digest, nodeBinding, criterionBinding } = require('./policy.cjs')
 const { dataPath } = require('./project.cjs')
 const { fingerprintPaths } = require('../control-plane/localization.cjs')
+
 function selector(root, value) {
-  if (!value || !['vitest', 'playwright'].includes(value.producer)) return null
+  if (!value || !['vitest', 'playwright'].includes(value.producer)) {
+    return null
+  }
+
   let parsed
+
   try {
     parsed = JSON.parse(value.identity)
   } catch {
     throw new Error('Invalid portable selector JSON')
   }
-  if (Array.isArray(parsed)) return null // Explicit Asyra architecture projection adapter owns arrays.
+
+  if (Array.isArray(parsed)) {
+    return null
+  } // Explicit Asyra architecture projection adapter owns arrays.
+
   if (
     !parsed ||
     Object.keys(parsed).sort().join(',') !== 'config,cwd,file,project,title' ||
     typeof parsed.title !== 'string' ||
     !parsed.title ||
     typeof parsed.project !== 'string'
-  )
+  ) {
     throw new Error('Expected exact portable selector fields')
+  }
+
   dataPath(root, parsed.file)
   dataPath(root, parsed.config)
-  if (parsed.cwd !== '.') dataPath(root, parsed.cwd)
+  if (parsed.cwd !== '.') {
+    dataPath(root, parsed.cwd)
+  }
+
   return { ...parsed, producer: value.producer }
 }
+
 function selection(project, filter = {}) {
   const store = openProject(project.directory),
     snapshot = store.snapshot()
-  if (snapshot.evaluation.projectId !== project.projectId)
+
+  if (snapshot.evaluation.projectId !== project.projectId) {
     throw new Error('Wrong project identity')
+  }
+
   const admitted = admitProject(snapshot.documents),
     cases = [],
     identities = new Set()
+
   for (const doc of snapshot.documents) {
     for (const node of [
       ...doc.definition.nodes,
@@ -44,9 +63,17 @@ function selection(project, filter = {}) {
     ]) {
       for (const criterion of node.criteria) {
         const selected = selector(project.root, criterion.selector)
-        if (!selected) continue
+
+        if (!selected) {
+          continue
+        }
+
         const key = digest(selected)
-        if (identities.has(key)) throw new Error('Ambiguous portable selector')
+
+        if (identities.has(key)) {
+          throw new Error('Ambiguous portable selector')
+        }
+
         identities.add(key)
         if (
           Object.entries(filter).some(([k, v]) =>
@@ -66,8 +93,10 @@ function selection(project, filter = {}) {
                   ...selected
                 }[k] !== v
           )
-        )
+        ) {
           continue
+        }
+
         const inputs = [
           ...new Set([
             selected.file,
@@ -77,6 +106,7 @@ function selection(project, filter = {}) {
               .flatMap((a) => a.inputs)
           ])
         ].sort()
+
         inputs.forEach((input) => dataPath(project.root, input))
         cases.push({
           flowId: doc.flowId,
@@ -96,20 +126,27 @@ function selection(project, filter = {}) {
       }
     }
   }
+
   return { cases, snapshot, store }
 }
+
 function capture(project, filter = {}, executionScope) {
   let { cases } = selection(project, filter)
+
   // Native execution can include files without mapped criteria. Retain its
   // declared runner scope only to place unmapped failures at integration.
   if (!cases.length && executionScope) {
     filter = executionScope
     cases = selection(project, filter).cases
   }
-  if (!cases.length)
+
+  if (!cases.length) {
     throw new Error('No portable criteria match the requested scope')
+  }
+
   // One fingerprint for the declared execution scope, not one recursive scan per case.
   const inputs = [...new Set(cases.flatMap((c) => c.inputs))].sort()
+
   return {
     schemaVersion: 1,
     projectId: project.projectId,
@@ -120,6 +157,7 @@ function capture(project, filter = {}, executionScope) {
     fingerprint: fingerprintPaths(project.root, inputs).digest
   }
 }
+
 function publish(project, receipt, records, diagnostic = '', options = {}) {
   if (
     !receipt ||
@@ -127,15 +165,20 @@ function publish(project, receipt, records, diagnostic = '', options = {}) {
     receipt.projectId !== project.projectId ||
     typeof receipt.executionId !== 'string' ||
     !Array.isArray(records)
-  )
+  ) {
     throw new Error('Invalid execution receipt')
+  }
+
   const { cases, snapshot, store } = selection(project, receipt.filter)
+
   if (
     digest(cases) !== digest(receipt.cases) ||
     digest([...new Set(cases.flatMap((c) => c.inputs))].sort()) !==
       digest(receipt.inputs)
-  )
+  ) {
     throw new Error('Stale execution receipt or changed scope')
+  }
+
   const changed =
     fingerprintPaths(project.root, receipt.inputs).digest !==
     receipt.fingerprint
@@ -145,8 +188,12 @@ function publish(project, receipt, records, diagnostic = '', options = {}) {
   const unknown = records.filter(
     (r) => !known.has(digest(r.selector)) && r.status === 'failed'
   )
+
   for (const doc of snapshot.documents) {
-    if (!cases.some((c) => c.flowId === doc.flowId)) continue
+    if (!cases.some((c) => c.flowId === doc.flowId)) {
+      continue
+    }
+
     const own = cases.filter(
       (c) =>
         c.flowId === doc.flowId &&
@@ -159,9 +206,14 @@ function publish(project, receipt, records, diagnostic = '', options = {}) {
               ['passed', 'failed'].includes(r.status)
           ))
     )
-    if (!own.length && !unknown.length) continue
+
+    if (!own.length && !unknown.length) {
+      continue
+    }
+
     const values = [],
       warnings = []
+
     for (const c of own) {
       const matching = records.filter((r) => digest(r.selector) === c.identity)
       const complete =
@@ -169,14 +221,18 @@ function publish(project, receipt, records, diagnostic = '', options = {}) {
         matching.length === 1 &&
         ['passed', 'failed'].includes(matching[0].status) &&
         (!diagnostic || matching[0].status === 'failed')
+
       if (complete) {
         const record = matching[0],
           details = record.details ?? []
+
         if (
           !Array.isArray(details) ||
           details.some((d) => typeof d !== 'string')
-        )
+        ) {
           throw new Error('Invalid execution diagnostics')
+        }
+
         values.push({
           nodeId: c.nodeId,
           criterionId: c.criterionId,
@@ -214,7 +270,8 @@ function publish(project, receipt, records, diagnostic = '', options = {}) {
         })
       }
     }
-    if (unknown.length)
+
+    if (unknown.length) {
       warnings.push({
         id: 'unmapped-' + digest(receipt.filter).slice(0, 24),
         nodeId: 'integration',
@@ -226,6 +283,8 @@ function publish(project, receipt, records, diagnostic = '', options = {}) {
         executionId: receipt.executionId,
         binding: nodeBinding(admitted, doc.flowId, 'integration')
       })
+    }
+
     const resolvedWarnings = doc.current.warnings
       .filter(
         (w) =>
@@ -236,6 +295,7 @@ function publish(project, receipt, records, diagnostic = '', options = {}) {
           )
       )
       .map((w) => w.id)
+
     results.push(
       store.update(doc.flowId, {
         expectedRevision: doc.revision,
@@ -246,8 +306,10 @@ function publish(project, receipt, records, diagnostic = '', options = {}) {
       })
     )
   }
+
   return results
 }
+
 function relativeFile(project, file, cwd) {
   const absolute = path.isAbsolute(file)
     ? file
@@ -256,19 +318,27 @@ function relativeFile(project, file, cwd) {
     .relative(project.root, absolute)
     .split(path.sep)
     .join('/')
+
   dataPath(project.root, relative)
+
   return relative
 }
+
 function normalize(project, report, scope) {
   const { producer, config, cwd } = scope
   const records = []
+
   if (producer === 'vitest') {
-    if (!report || !Array.isArray(report.testResults))
+    if (!report || !Array.isArray(report.testResults)) {
       throw new Error('Invalid Vitest JSON report')
+    }
+
     for (const file of report.testResults) {
-      if (!Array.isArray(file.assertionResults))
+      if (!Array.isArray(file.assertionResults)) {
         throw new Error('Invalid Vitest file result')
-      for (const result of file.assertionResults)
+      }
+
+      for (const result of file.assertionResults) {
         records.push({
           selector: {
             producer,
@@ -281,14 +351,18 @@ function normalize(project, report, scope) {
           status: result.status,
           details: result.failureMessages ?? []
         })
+      }
     }
   } else if (producer === 'playwright') {
-    if (!report || !Array.isArray(report.suites) || !report.config?.rootDir)
+    if (!report || !Array.isArray(report.suites) || !report.config?.rootDir) {
       throw new Error('Invalid Playwright JSON report')
+    }
+
     const walk = (suite, titles) => {
-      for (const spec of suite.specs ?? [])
+      for (const spec of suite.specs ?? []) {
         for (const test of spec.tests ?? []) {
           const results = test.results ?? []
+
           records.push({
             selector: {
               producer,
@@ -312,15 +386,25 @@ function normalize(project, report, scope) {
             )
           })
         }
-      for (const child of suite.suites ?? [])
+      }
+
+      for (const child of suite.suites ?? []) {
         walk(child, [...titles, child.title])
+      }
     }
-    for (const suite of report.suites) walk(suite, [])
-  } else throw new Error('Unsupported runner')
+
+    for (const suite of report.suites) {
+      walk(suite, [])
+    }
+  } else {
+    throw new Error('Unsupported runner')
+  }
+
   return records
 }
+
 function reportDiagnostic(report, records) {
-  if (report.errors?.length)
+  if (report.errors?.length) {
     return (
       'Runner reported execution errors: ' +
       report.errors
@@ -328,14 +412,19 @@ function reportDiagnostic(report, records) {
         .join('\n')
         .slice(0, 1000)
     )
+  }
+
   if (
     report.numFailedTestSuites >
       records.filter((r) => r.status === 'failed').length ||
     (report.success === false && !records.some((r) => r.status === 'failed'))
-  )
+  ) {
     return 'Runner reported an incomplete or failed suite outside completed assertions'
+  }
+
   return ''
 }
+
 module.exports = {
   selector,
   selection,

@@ -8,6 +8,7 @@ const { loadContract } = require('../contracts.cjs')
 const { admitTask, TASK_POLICY } = require('../agent-contract.cjs')
 const root = path.resolve(__dirname, '../../../..')
 const contract = loadContract(root)
+
 const request = () => ({
   requestId: randomUUID(),
   stepId: 'finalize-transaction-state',
@@ -22,8 +23,10 @@ const request = () => ({
 
 test('workspace task admission binds actual App source inputs without granting dependency writes', (t) => {
   const parent = path.join(root, 'tmp/flow-inspector/app-task-admission')
+
   fs.mkdirSync(parent, { recursive: true })
   const directory = fs.mkdtempSync(path.join(parent, 'case-'))
+
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
   const { appRuntimeFixture } = require('./app-runtime-fixture.cjs')
   const selected = appRuntimeFixture(root, directory)
@@ -40,6 +43,7 @@ test('workspace task admission binds actual App source inputs without granting d
     selected
   )
   const { admitTaskSource } = require('../agent-contract.cjs')
+
   assert.doesNotThrow(() => admitTaskSource(task, snapshot))
   for (const file of [
     'packages/utils/src/propsManager/fills.ts',
@@ -53,8 +57,10 @@ test('workspace task admission binds actual App source inputs without granting d
       allowedFiles: [file],
       step: { ...task.step, implementationBoundary: [file] }
     }
+
     assert.throws(() => admitTaskSource(forged, snapshot), /source|owner/i)
   }
+
   assert.throws(
     () => admitTaskSource(task, { ...snapshot, runtimeAuthority: undefined }),
     /authority/i
@@ -63,6 +69,7 @@ test('workspace task admission binds actual App source inputs without granting d
 test('admission binds the exact concrete owner, adjacent contracts and retained obligations', () => {
   const input = request()
   const task = admitTask(input, contract, 1, 'local-developer')
+
   assert.equal(task.step.id, input.stepId)
   assert.equal(task.obligations.length, contract.cases.length)
   assert.equal(task.flowIds.length, contract.flows.length)
@@ -94,10 +101,11 @@ test('admission refuses missing, stale, unmeasurable and out-of-owner requests b
     { budgets: { elapsedMs: Infinity, toolCalls: 20, attempts: 3 } },
     { command: 'git merge main' },
     { scenario: 'unknown' }
-  ])
+  ]) {
     assert.throws(() =>
       admitTask({ ...request(), ...change }, contract, 1, 'local-developer')
     )
+  }
 })
 
 test('task file authority follows the selected step primary package and exact boundary', () => {
@@ -117,8 +125,10 @@ test('task file authority follows the selected step primary package and exact bo
       'packages/scene-tree/src/index.ts'
     ]
   ]
+
   for (const [step, allowed, dependency] of cases) {
     const scopedContract = structuredClone(contract)
+
     scopedContract.flows[0].steps[0] = step
     const input = {
       ...request(),
@@ -126,6 +136,7 @@ test('task file authority follows the selected step primary package and exact bo
       allowedFiles: [allowed],
       contractDigest: scopedContract.digest
     }
+
     assert.equal(
       admitTask(input, scopedContract, 1, 'local-developer').step.ownerPackage,
       step.ownerPackage
@@ -177,8 +188,10 @@ test('real provider admission binds trusted authorization without accepting call
     scenario: 'task',
     providerAuthorizationId: authorization.id
   }
+
   assert.throws(() => admitTask(input, contract, 1, 'local-developer'))
   const task = admitTask(input, contract, 1, 'local-developer', authorization)
+
   assert.deepEqual(task.provider, authorization)
   assert.equal(task.obligations.length, contract.cases.length)
   authorization.model = 'changed'
@@ -192,13 +205,15 @@ test('real provider admission binds trusted authorization without accepting call
     { maxRequests: Infinity },
     { credential: 'must-never-enter-task' },
     { endpoint: 'https://untrusted.invalid' }
-  ])
+  ]) {
     assert.throws(() =>
       admitTask(input, contract, 1, 'local-developer', {
         ...task.provider,
         ...change
       })
     )
+  }
+
   assert.throws(() =>
     admitTask(
       { ...input, model: 'changed' },
@@ -218,6 +233,7 @@ test('work binding is a detached exact identity, never caller authority or an op
   }
   const input = { ...request(), workBinding }
   const value = admitTask(input, contract, 1, 'local-developer')
+
   assert.deepEqual(value.workBinding, workBinding)
   assert.ok(Object.isFrozen(value.workBinding))
   for (const invalid of [
@@ -225,7 +241,7 @@ test('work binding is a detached exact identity, never caller authority or an op
     {},
     { ...workBinding, admissionId: 'unknown' },
     { ...workBinding, passed: true }
-  ])
+  ]) {
     assert.throws(
       () =>
         admitTask(
@@ -236,4 +252,5 @@ test('work binding is a detached exact identity, never caller authority or an op
         ),
       /binding/i
     )
+  }
 })

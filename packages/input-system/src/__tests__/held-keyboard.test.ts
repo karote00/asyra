@@ -3,15 +3,19 @@ import { InputType, type RawInputEvent } from '@asyra/utils'
 import { InputSystem } from '../input-system'
 
 const systems: InputSystem[] = []
+
 afterEach(() => {
   systems.splice(0).forEach((s) => s.dispose())
   vi.useRealTimers()
   document.body.replaceChildren()
 })
+
 function setup() {
   const system = new InputSystem()
+
   systems.push(system)
   const receive = vi.fn()
+
   system.registry.registerKeyCombinations({
     movement: [
       {
@@ -23,8 +27,10 @@ function setup() {
     ]
   })
   system.attachBrowserHost(window)
+
   return { system, receive }
 }
+
 function key(
   type: string,
   code: string,
@@ -37,12 +43,16 @@ function key(
     cancelable: true,
     ...options
   })
+
   target.dispatchEvent(e)
+
   return e
 }
+
 it('delivers complete held alternatives through the combination registry without repeat expiry', () => {
   vi.useFakeTimers()
   const { receive } = setup()
+
   key('keydown', 'KeyW')
   key('keydown', 'KeyD', { shiftKey: true })
   expect(receive).toHaveBeenLastCalledWith(
@@ -68,6 +78,7 @@ it('delivers complete held alternatives through the combination registry without
 it('releases before an editor stops propagation, while rejected input preserves browser defaults', () => {
   const { receive } = setup()
   const editor = document.createElement('input')
+
   document.body.append(editor)
   key('keydown', 'KeyW')
   editor.addEventListener('keyup', (e) => e.stopPropagation())
@@ -80,6 +91,7 @@ it('releases before an editor stops propagation, while rejected input preserves 
 })
 it('cancels held state on blur, focus, composition and hidden document and removes host listeners', () => {
   const { system, receive } = setup()
+
   for (const event of ['blur', 'focusin', 'compositionstart']) {
     key('keydown', 'KeyW')
     window.dispatchEvent(new Event(event))
@@ -90,8 +102,10 @@ it('cancels held state on blur, focus, composition and hidden document and remov
       })
     )
   }
+
   key('keydown', 'KeyW')
   const hidden = vi.spyOn(document, 'hidden', 'get').mockReturnValue(true)
+
   document.dispatchEvent(new Event('visibilitychange'))
   expect(receive).toHaveBeenLastCalledWith(
     expect.objectContaining({ keys: [] })
@@ -106,6 +120,7 @@ it('keeps ordinary exact chords and callback rejection semantics', () => {
   const { system } = setup()
   const chord = vi.fn(),
     dispatched = vi.fn()
+
   system.registry.register('chord', [
     { type: InputType.KEYBOARD, keys: ['A'], callback: chord }
   ])
@@ -120,9 +135,12 @@ it('keeps ordinary exact chords and callback rejection semantics', () => {
 })
 it('finishes runtime cleanup when a held cancellation callback throws', () => {
   const { system, receive } = setup()
+
   key('keydown', 'KeyW')
   receive.mockImplementation((raw: RawInputEvent) => {
-    if (raw.keyboard?.phase === 'cancel') throw new Error('Cancellation failed')
+    if (raw.keyboard?.phase === 'cancel') {
+      throw new Error('Cancellation failed')
+    }
   })
   expect(() => system.resetRuntime()).toThrow('Cancellation failed')
   expect(system.registry.getEventNames()).toEqual([])

@@ -23,6 +23,7 @@ export const installVectorEditingDefault = (
     registerTrackedRenderLayer(context, (register) => {
       registerVectorPathEditingRenderLayer(register, {
         getSelection: (type) => context.core.getSelection(type),
+
         render: context.dependencies.render,
         sceneTree: context.dependencies.sceneTree,
         systemContext: context.dependencies.systemContext

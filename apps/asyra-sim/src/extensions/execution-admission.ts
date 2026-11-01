@@ -7,16 +7,22 @@ import type { MethodCatalog } from './catalog'
 
 /** Inputs have passed the bounded descriptor schema; object-key order is not semantic. */
 function sameDeclaration(a: unknown, b: unknown): boolean {
-  if (a === b) return true
+  if (a === b) {
+    return true
+  }
+
   if (
     !a ||
     !b ||
     typeof a !== 'object' ||
     typeof b !== 'object' ||
     Array.isArray(a) !== Array.isArray(b)
-  )
+  ) {
     return false
+  }
+
   const keys = Object.keys(a)
+
   return (
     keys.length === Object.keys(b).length &&
     keys.every(
@@ -34,13 +40,16 @@ export function admitSnapshotExecution(
 ): ExperimentSnapshot {
   const snapshot = validateHistoricalSnapshot(input),
     installed = catalog.resolve(snapshot.method.id, snapshot.method.version)
+
   if (
     snapshot.methodDescriptor &&
     !sameDeclaration(snapshot.methodDescriptor, installed.descriptor)
-  )
+  ) {
     throw new Error(
       'Installed method declaration differs from the frozen snapshot; create a new experiment snapshot'
     )
+  }
+
   return createExperimentSnapshot({
     snapshotId: snapshot.snapshotId,
     candidateId: snapshot.source.candidateId,

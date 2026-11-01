@@ -36,9 +36,13 @@ export function createSceneDemandWorkspace(
     sourceOwner
   )
   const listeners = new Set<() => void>()
+
   const assertLive = () => {
-    if (closed) throw new Error('Scene demand workspace is closed')
+    if (closed) {
+      throw new Error('Scene demand workspace is closed')
+    }
   }
+
   core.definePropertyComponent({
     type: SceneDemandIds.COMPONENT,
     defaults: { settings: DEFAULT_SCENE_DEMAND_CONFIGURATION }
@@ -54,20 +58,26 @@ export function createSceneDemandWorkspace(
         defaultValue: DEFAULT_SCENE_DEMAND_CONFIGURATION
       }
     ],
+
     renderStrategy: () => undefined
   })
+
   const read = () => {
     const propertyId = core.getElementData(elementId)?.props?.settings
     const property = propertyId
       ? getPropertyComponentAccessor().getPropertyById(propertyId)
       : undefined
-    if (!property)
+
+    if (!property) {
       throw new Error('Missing canonical scene demand configuration')
+    }
+
     return validateSceneDemandConfiguration(
       (property.save() as unknown as { settings: SceneDemandConfiguration })
         .settings
     )
   }
+
   const publish = (
     nextConfiguration: SceneDemandConfiguration,
     farm: FarmConfiguration,
@@ -83,17 +93,22 @@ export function createSceneDemandWorkspace(
     observation = undefined
     listeners.forEach((listener) => listener())
   }
+
   const refresh = (farm: FarmConfiguration, scene: PreparedScene) => {
     assertLive()
     const next = read()
+
     if (
       farm === snapshot.farm &&
       scene === snapshot.scene &&
       JSON.stringify(next) === JSON.stringify(configuration)
-    )
+    ) {
       return
+    }
+
     publish(next, farm, scene)
   }
+
   const feature = core.defineFeature(SceneDemandIds.CHANGE, undefined, {
     priority: 100,
     exclusive: true,
@@ -101,19 +116,25 @@ export function createSceneDemandWorkspace(
       apply: (draft: SceneDemandConfiguration) => {
         assertLive()
         const next = validateSceneDemandConfiguration(draft)
+
         return getSessionManager().runAfterCancellingActiveSessions(
           () => core.getSystemContextSnapshot(),
           () => {
             assertLive()
             const farm = getFarm()
+
             assertCurrentSceneDemandRoute(next, farm)
-            if (JSON.stringify(next) === JSON.stringify(configuration)) return
+            if (JSON.stringify(next) === JSON.stringify(configuration)) {
+              return
+            }
+
             const prepared = sceneDemand.prepareSceneDemand(
               farm,
               getScene(),
               next,
               sourceOwner
             )
+
             runTransaction(() =>
               core.updateElementProperties([
                 { elementId, values: { settings: next } }
@@ -129,6 +150,7 @@ export function createSceneDemandWorkspace(
       }
     }
   })
+
   return {
     initialize: () => {
       assertLive()
@@ -147,51 +169,67 @@ export function createSceneDemandWorkspace(
         )
       })
     },
+
     getConfiguration: () => {
       assertLive()
+
       return configuration
     },
+
     get: () => {
       assertLive()
+
       return snapshot
     },
+
     isCurrent: (product: sceneDemand.SceneDemand) =>
       !closed &&
       product === snapshot &&
       getFarm() === snapshot.farm &&
       getScene() === snapshot.scene,
+
     prepareObservationSpace: () => {
       assertLive()
-      if (getFarm() !== snapshot.farm || getScene() !== snapshot.scene)
+      if (getFarm() !== snapshot.farm || getScene() !== snapshot.scene) {
         throw new Error('Stale scene demand observation request')
+      }
+
       observation ??= sceneDemand.prepareSceneObservationSpace(
         snapshot,
         sourceOwner
       )
+
       return observation
     },
+
     isCurrentObservationSpace: (product: sceneDemand.SceneObservationSpace) =>
       !closed &&
       product === observation &&
       getFarm() === snapshot.farm &&
       getScene() === snapshot.scene &&
       sceneDemand.isSceneObservationSpace(snapshot, product),
+
     getSourceWork: () => sourceOwner.work,
+
     subscribe: (listener: () => void) => {
       assertLive()
       listeners.add(listener)
+
       return () => {
         listeners.delete(listener)
       }
     },
+
     setConfiguration: feature.api.apply,
     refresh,
+
     close: () => {
       closed = true
       observation = undefined
       sourceOwner.close()
       listeners.clear()
     },
+
     unregister: () => {
       core.unregisterComponent(SceneDemandIds.COMPONENT)
       unregisterPropertyComponent(SceneDemandIds.COMPONENT)

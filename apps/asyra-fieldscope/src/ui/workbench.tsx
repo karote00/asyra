@@ -24,6 +24,7 @@ const CAMERA_MODES: CameraMode[] = [
 
 function Brand() {
   const { t } = useTranslation()
+
   return (
     <div className="flex items-center gap-3">
       <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#254e3d] text-[#d9e9aa]">
@@ -56,6 +57,7 @@ function Brand() {
 export function Workbench() {
   const { t } = useTranslation()
   const [runtime, setRuntime] = useState<FarmRuntime | null>(null)
+
   return (
     <ConfigurationRuntime.Provider value={runtime}>
       <div className="min-h-screen">
@@ -105,9 +107,11 @@ export function Workbench() {
     </ConfigurationRuntime.Provider>
   )
 }
+
 function FarmMetrics() {
   const { t, locale } = useTranslation()
   const config = useFarmConfiguration()
+
   return (
     <>
       <Metric
@@ -124,8 +128,10 @@ function FarmMetrics() {
     </>
   )
 }
+
 function SceneDimensions() {
   const config = useFarmConfiguration()
+
   return (
     <>
       {(config.width * 4).toFixed(1)} × {config.length.toFixed(1)} ×{' '}
@@ -133,6 +139,7 @@ function SceneDimensions() {
     </>
   )
 }
+
 function Metric({
   value,
   unit,
@@ -164,48 +171,75 @@ function SceneWorkspace({
   const [error, setError] = useState<unknown>(null)
   const [leftOpen, setLeftOpen] = useState(() => window.innerWidth >= 1100)
   const [rightOpen, setRightOpen] = useState(() => window.innerWidth >= 1100)
+
   useEffect(() => {
     const narrow = window.matchMedia('(max-width: 1099px)')
+
     const closePanels = () => {
       if (narrow.matches) {
         setLeftOpen(false)
         setRightOpen(false)
       }
     }
+
     narrow.addEventListener('change', closePanels)
+
     return () => narrow.removeEventListener('change', closePanels)
   }, [])
   useEffect(() => {
-    if (!host.current) return
+    if (!host.current) {
+      return
+    }
+
     let retired = false
     let current: FarmRuntime | undefined
+
     void bootstrap(host.current)
       .then((value) => {
         current = value
         if (retired) {
           void value.dispose()
+
           return
         }
+
         setRuntime(value)
         onReady(value)
       })
       .catch((e) => {
-        if (!retired) setError(e)
+        if (!retired) {
+          setError(e)
+        }
       })
+
     return () => {
       retired = true
-      if (current) void current.dispose()
+      if (current) {
+        void current.dispose()
+      }
     }
   }, [onReady])
   useEffect(() => {
     const target = host.current
-    if (!target || !runtime) return
+
+    if (!target || !runtime) {
+      return
+    }
+
     const wheel = (event: WheelEvent) => {
       event.preventDefault()
       let unit = 1
-      if (event.deltaMode === 1) unit = 16
-      if (event.deltaMode === 2) unit = target.clientHeight
+
+      if (event.deltaMode === 1) {
+        unit = 16
+      }
+
+      if (event.deltaMode === 2) {
+        unit = target.clientHeight
+      }
+
       const delta = event.deltaY * unit
+
       if (previous.current?.button === 2) {
         runtime.setMovementSpeed(
           Math.max(
@@ -213,21 +247,30 @@ function SceneWorkspace({
             Math.min(60, runtime.getMovementSpeed() * Math.exp(-delta * 0.002))
           )
         )
-      } else if (event.altKey) runtime.zoom(delta)
-      else runtime.dolly(delta * (event.shiftKey ? 4 : 1))
+      } else if (event.altKey) {
+        runtime.zoom(delta)
+      } else {
+        runtime.dolly(delta * (event.shiftKey ? 4 : 1))
+      }
     }
+
     target.addEventListener('wheel', wheel, { passive: false })
+
     return () => {
       target.removeEventListener('wheel', wheel)
     }
   }, [runtime])
   useEffect(() => {
-    if (!runtime) return
+    if (!runtime) {
+      return
+    }
+
     return core.registerInputKeyCombinations(
       createWorkbenchInputKeyCombinations({
         history: (redo) => {
           void (redo ? runtime.redo() : runtime.undo()).catch(setError)
         },
+
         fit: runtime.fit,
         actualSize: runtime.actualSize
       })
@@ -241,21 +284,28 @@ function SceneWorkspace({
     button: number
   } | null>(null)
   const touches = useRef(new Map<number, { x: number; y: number }>())
+
   useEffect(() => {
     const clear = () => {
       touches.current.clear()
       previous.current = null
     }
+
     window.addEventListener('blur', clear)
+
     return () => {
       window.removeEventListener('blur', clear)
       clear()
     }
   }, [])
+
   const releasePointer = (event: { pointerId: number }) => {
     touches.current.delete(event.pointerId)
-    if (previous.current?.id === event.pointerId) previous.current = null
+    if (previous.current?.id === event.pointerId) {
+      previous.current = null
+    }
   }
+
   return (
     <div
       className="scene-workspace"
@@ -268,7 +318,9 @@ function SceneWorkspace({
           open={leftOpen}
           onClick={() => {
             setLeftOpen(!leftOpen)
-            if (window.innerWidth < 1100) setRightOpen(false)
+            if (window.innerWidth < 1100) {
+              setRightOpen(false)
+            }
           }}
         />
         <div
@@ -284,7 +336,9 @@ function SceneWorkspace({
           open={rightOpen}
           onClick={() => {
             setRightOpen(!rightOpen)
-            if (window.innerWidth < 1100) setLeftOpen(false)
+            if (window.innerWidth < 1100) {
+              setLeftOpen(false)
+            }
           }}
         />
       </div>
@@ -319,22 +373,35 @@ function SceneWorkspace({
           tabIndex={0}
           className="h-[440px] outline-offset-[-3px] sm:h-[540px] xl:h-[610px]"
           onKeyDown={(event) => {
-            if (!runtime) return
+            if (!runtime) {
+              return
+            }
+
             const keys: Record<string, [number, number]> = {
               ArrowLeft: [-15, 0],
               ArrowRight: [15, 0],
               ArrowUp: [0, -15],
               ArrowDown: [0, 15]
             }
+
             if (keys[event.key]) {
               event.preventDefault()
               runtime.look(...keys[event.key])
             }
-            if (event.key === '+' || event.key === '=') runtime.zoom(-100)
-            if (event.key === '-') runtime.zoom(100)
+
+            if (event.key === '+' || event.key === '=') {
+              runtime.zoom(-100)
+            }
+
+            if (event.key === '-') {
+              runtime.zoom(100)
+            }
           }}
           onPointerDown={(event) => {
-            if (event.button !== 0 && event.button !== 2) return
+            if (event.button !== 0 && event.button !== 2) {
+              return
+            }
+
             event.preventDefault()
             event.currentTarget.focus({ preventScroll: true })
             event.currentTarget.setPointerCapture(event.pointerId)
@@ -344,9 +411,14 @@ function SceneWorkspace({
                 x: event.clientX,
                 y: event.clientY
               })
+
               return
             }
-            if (touches.current.size) return
+
+            if (touches.current.size) {
+              return
+            }
+
             previous.current = {
               x: event.clientX,
               y: event.clientY,
@@ -358,37 +430,59 @@ function SceneWorkspace({
             if (event.pointerType === 'touch') {
               const points = touches.current
               const old = points.get(event.pointerId)
-              if (!old) return
+
+              if (!old) {
+                return
+              }
+
               const before = [...points.values()]
+
               points.set(event.pointerId, {
                 x: event.clientX,
                 y: event.clientY
               })
-              if (!runtime) return
+              if (!runtime) {
+                return
+              }
+
               if (points.size === 1) {
                 runtime.look(event.clientX - old.x, event.clientY - old.y)
               } else if (points.size === 2) {
                 const after = [...points.values()]
+
                 runtime.pan(
                   (event.clientX - old.x) / 2,
                   (event.clientY - old.y) / 2
                 )
+
                 const distance = (pair: { x: number; y: number }[]) =>
                   Math.hypot(pair[1].x - pair[0].x, pair[1].y - pair[0].y)
+
                 const from = distance(before)
                 const to = distance(after)
-                if (from > 1 && to > 1 && from !== to)
+
+                if (from > 1 && to > 1 && from !== to) {
                   runtime.dolly(-1000 * Math.log(to / from))
+                }
               }
+
               return
             }
+
             const p = previous.current
-            if (!p || p.id !== event.pointerId || !runtime) return
-            if (p.button === 2)
+
+            if (!p || p.id !== event.pointerId || !runtime) {
+              return
+            }
+
+            if (p.button === 2) {
               runtime.look(event.clientX - p.x, event.clientY - p.y)
-            else if (event.shiftKey)
+            } else if (event.shiftKey) {
               runtime.pan(event.clientX - p.x, event.clientY - p.y)
-            else runtime.look(event.clientX - p.x, event.clientY - p.y)
+            } else {
+              runtime.look(event.clientX - p.x, event.clientY - p.y)
+            }
+
             previous.current = { ...p, x: event.clientX, y: event.clientY }
           }}
           onContextMenu={(event) => event.preventDefault()}
@@ -435,6 +529,7 @@ function SceneWorkspace({
     </div>
   )
 }
+
 function PanelToggle({
   side,
   open,
@@ -450,6 +545,7 @@ function PanelToggle({
     left: open ? 'm16 9-3 3 3 3' : 'm13 9 3 3-3 3',
     right: open ? 'm8 9 3 3-3 3' : 'm11 9-3 3 3 3'
   }
+
   return (
     <button
       type="button"
@@ -476,6 +572,7 @@ function PanelToggle({
     </button>
   )
 }
+
 function CameraToolbar({
   runtime,
   onError
@@ -485,6 +582,7 @@ function CameraToolbar({
 }) {
   const { t } = useTranslation()
   const view = useSyncExternalStore(runtime.subscribe, runtime.getView)
+
   return (
     <div className="flex flex-wrap items-center justify-center gap-1 rounded-lg bg-[#edf1e8] p-1">
       {CAMERA_MODES.map((mode) => (
@@ -500,12 +598,14 @@ function CameraToolbar({
     </div>
   )
 }
+
 function MovementSpeedControl({ runtime }: { runtime: FarmRuntime }) {
   const { t } = useTranslation()
   const speed = useSyncExternalStore(
     runtime.subscribeMovementSpeed,
     runtime.getMovementSpeed
   )
+
   return (
     <label
       className="flex flex-wrap items-center justify-center gap-2 rounded-lg px-2 py-2 text-xs text-[#527048]"
@@ -532,9 +632,11 @@ function MovementSpeedControl({ runtime }: { runtime: FarmRuntime }) {
     </label>
   )
 }
+
 function ZoomControls({ runtime }: { runtime: FarmRuntime }) {
   const { t } = useTranslation()
   const percent = useSyncExternalStore(runtime.subscribeZoom, runtime.getZoom)
+
   return (
     <div className="flex flex-wrap justify-center gap-1 rounded-lg border border-[#d9dfd2] bg-white p-1 text-xs text-[#527048]">
       <button
@@ -566,9 +668,11 @@ function Controls({
 }) {
   const { t } = useTranslation()
   const view = useSyncExternalStore(runtime.subscribe, runtime.getView)
+
   const handle = (promise: Promise<unknown>) => {
     void promise.catch((e) => onError(e))
   }
+
   return (
     <aside className="border-t border-[#dce2d5] lg:border-l lg:border-t-0">
       <div className="border-b border-[#e0e5d9] px-5 py-4">
@@ -621,6 +725,7 @@ function Controls({
     </aside>
   )
 }
+
 export function CrossSection() {
   const { t } = useTranslation()
   const config = useFarmConfiguration()
@@ -634,6 +739,7 @@ export function CrossSection() {
       .filter((strip) => strip.kind === 'drain')
       .map((strip) => createDrainProfile(strip.width).depth)
   )
+
   return (
     <section className="rounded-2xl border border-[#dde3d8] bg-[#fafbf7] p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -665,6 +771,7 @@ export function CrossSection() {
           const curve = profile?.points
             .map(([x, y], index) => `${index ? 'L' : 'M'}${strip.x + x},${-y}`)
             .join(' ')
+
           return (
             <g key={i}>
               {profile ? (
@@ -746,6 +853,7 @@ function PlantingSummary() {
   const { t } = useTranslation()
   const config = useFarmConfiguration()
   const site = configurationSite(config)
+
   return (
     <>
       {t('references.plantingDetails', {
@@ -760,6 +868,7 @@ function PlantingSummary() {
 function ReferenceLibrary() {
   const { t } = useTranslation()
   const dialog = useRef<HTMLDialogElement>(null)
+
   return (
     <>
       <button

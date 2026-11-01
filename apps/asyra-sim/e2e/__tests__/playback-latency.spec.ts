@@ -19,6 +19,7 @@ test('first-pass Play presents original-part collision feedback without a report
     .click()
   const feedback = page.getByTestId('playback-feedback')
   const first = await collision()
+
   expect(first.text).toContain('Collision detected')
   const ageSeconds = first.playhead - first.checked
 

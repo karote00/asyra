@@ -15,17 +15,27 @@ describe('canonical Scene Tree projection boundary', () => {
     sceneTree.init()
     sceneTree.cleanChanges()
     const workspace = sceneTree.currentWorkspace
-    if (!workspace) throw new Error('Missing workspace')
+
+    if (!workspace) {
+      throw new Error('Missing workspace')
+    }
+
     const id = workspace.get('id')
     const applied: unknown[] = []
     const committed: unknown[] = []
     const immediate = subscribeToAppliedEventBatches((events) => {
-      for (const event of events)
-        if (event.type === EventTypes.SCENE_TREE_CHANGED) applied.push(event)
+      for (const event of events) {
+        if (event.type === EventTypes.SCENE_TREE_CHANGED) {
+          applied.push(event)
+        }
+      }
     })
     const deferred = subscribeToEventBatches((events) => {
-      for (const event of events)
-        if (event.type === EventTypes.SCENE_TREE_CHANGED) committed.push(event)
+      for (const event of events) {
+        if (event.type === EventTypes.SCENE_TREE_CHANGED) {
+          committed.push(event)
+        }
+      }
     })
     const owner = {
       startTransaction: vi.fn(),
@@ -34,12 +44,14 @@ describe('canonical Scene Tree projection boundary', () => {
       undo: vi.fn(),
       redo: vi.fn()
     }
+
     const rename = (name: string) =>
       sceneTree.applyPreparedElementMutation(
         sceneTree.prepareElementDataMutation([
           { elementId: id, values: { name } }
         ])
       )
+
     try {
       runWithTransactionOwner(owner, () =>
         runTransaction(() => {
@@ -68,7 +80,11 @@ describe('canonical Scene Tree projection boundary', () => {
     sceneTree.init()
     sceneTree.cleanChanges()
     const workspace = sceneTree.currentWorkspace
-    if (!workspace) throw new Error('Missing workspace')
+
+    if (!workspace) {
+      throw new Error('Missing workspace')
+    }
+
     const seen: unknown[] = []
     const subscription = subscribeToEventBatches((events) => {
       seen.push(
@@ -84,6 +100,7 @@ describe('canonical Scene Tree projection boundary', () => {
       undo: vi.fn(),
       redo: vi.fn()
     }
+
     try {
       runWithTransactionOwner(owner, () =>
         runTransaction(() => {
@@ -108,12 +125,19 @@ describe('canonical Scene Tree projection boundary', () => {
     sceneTree.init()
     sceneTree.cleanChanges()
     const workspace = sceneTree.currentWorkspace
-    if (!workspace) throw new Error('Missing workspace')
+
+    if (!workspace) {
+      throw new Error('Missing workspace')
+    }
+
     const originalName = workspace.get('name')
     const applied: unknown[] = []
     const subscription = subscribeToAppliedEventBatches((events) => {
-      for (const event of events)
-        if (event.type === EventTypes.SCENE_TREE_CHANGED) applied.push(event)
+      for (const event of events) {
+        if (event.type === EventTypes.SCENE_TREE_CHANGED) {
+          applied.push(event)
+        }
+      }
     })
     const owner = {
       startTransaction: vi.fn(),
@@ -124,12 +148,14 @@ describe('canonical Scene Tree projection boundary', () => {
         throw new Error('Rejected before admission')
       })
     }
+
     const rename = () =>
       sceneTree.applyPreparedElementMutation(
         sceneTree.prepareElementDataMutation([
           { elementId: workspace.get('id'), values: { name: 'Accepted' } }
         ])
       )
+
     try {
       expect(() =>
         runWithTransactionOwner(owner, () => runTransaction(rename))

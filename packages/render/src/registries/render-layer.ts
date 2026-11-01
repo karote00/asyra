@@ -3,6 +3,7 @@ import type { RenderLayerRegistration } from '../types/render-layer.js'
 
 export class RenderLayerRegistry {
   private layers = new MapRegistry<string, RenderLayerRegistration>()
+
   private sortedLayers: RenderLayerRegistration[] | null = null
 
   register(
@@ -10,6 +11,7 @@ export class RenderLayerRegistry {
     _options: { override?: boolean } = {}
   ): void {
     const { name } = registration
+
     this.layers.register(name, registration, {
       duplicateErrorMessage: `Render layer "${name}" is already registered`
     })
@@ -19,13 +21,16 @@ export class RenderLayerRegistry {
   unregister(name: string): boolean {
     if (!this.layers.has(name)) {
       console.warn(`Render layer "${name}" not found.`)
+
       return false
     }
 
     const didDelete = this.layers.delete(name)
+
     if (didDelete) {
       this.sortedLayers = null
     }
+
     return didDelete
   }
 
@@ -43,6 +48,7 @@ export class RenderLayerRegistry {
         .values()
         .sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0))
     }
+
     return this.sortedLayers
   }
 

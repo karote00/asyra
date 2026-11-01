@@ -44,6 +44,7 @@ describe('RegistrationGraph', () => {
 
   it('returns stable sorted node/relation metadata with default app ownership', () => {
     const graph = new RegistrationGraph()
+
     graph.registerNode(node('property', 'z'))
     graph.registerNode(
       node('component', 'rect', {
@@ -105,6 +106,7 @@ describe('RegistrationGraph', () => {
     const graph = new RegistrationGraph()
     const source = ref('component', 'shape')
     const target = ref('property', 'style')
+
     graph.registerNode(
       node('component', 'shape', {
         handlers: {
@@ -116,7 +118,11 @@ describe('RegistrationGraph', () => {
       node('property', 'style', {
         owner: { packageName: '@asyra/preset', name: 'default-style' },
         resources: [
-          { key: 'style-runtime', dispose: () => events.push('dispose:style') }
+          {
+            key: 'style-runtime',
+
+            dispose: () => events.push('dispose:style')
+          }
         ]
       })
     )
@@ -148,11 +154,13 @@ describe('RegistrationGraph', () => {
       isCompositionOpen: () => compositionOpen
     })
     const target = ref('property', 'style')
+
     graph.registerNode(
       node('property', 'style', {
         resources: [
           {
             key: 'style-runtime',
+
             dispose: () => {
               throw new Error('cleanup failed')
             }
@@ -192,6 +200,7 @@ describe('RegistrationGraph', () => {
 
   it('fails fast for missing registrations, targets, duplicate relations, and missing relations', () => {
     const graph = new RegistrationGraph()
+
     graph.registerNode(node('component', 'rect'))
     graph.registerNode(node('property', 'fills'))
 
@@ -236,6 +245,7 @@ describe('RegistrationGraph', () => {
 
   it('removes one relation while preserving both registrations', () => {
     const graph = new RegistrationGraph()
+
     graph.registerNode(node('component', 'rect'))
     graph.registerNode(node('property', 'fills'))
     graph.defineRelation(ref('component', 'rect'), {
@@ -261,11 +271,20 @@ describe('RegistrationGraph', () => {
   it('detaches structural sources and recursively unregisters hard sources deterministically', () => {
     const events: string[] = []
     const graph = new RegistrationGraph()
+
     graph.registerNode(
       node('property', 'fills', {
         resources: [
-          { key: 'fills.schema', dispose: () => events.push('fills.schema') },
-          { key: 'fills.runtime', dispose: () => events.push('fills.runtime') }
+          {
+            key: 'fills.schema',
+
+            dispose: () => events.push('fills.schema')
+          },
+          {
+            key: 'fills.runtime',
+
+            dispose: () => events.push('fills.runtime')
+          }
         ]
       })
     )
@@ -279,14 +298,22 @@ describe('RegistrationGraph', () => {
     graph.registerNode(
       node('render-strategy', 'oval', {
         resources: [
-          { key: 'render.oval', dispose: () => events.push('render.oval') }
+          {
+            key: 'render.oval',
+
+            dispose: () => events.push('render.oval')
+          }
         ]
       })
     )
     graph.registerNode(
       node('feature', 'fill-tool', {
         resources: [
-          { key: 'feature.fill-tool', dispose: () => events.push('feature') }
+          {
+            key: 'feature.fill-tool',
+
+            dispose: () => events.push('feature')
+          }
         ]
       })
     )
@@ -349,6 +376,7 @@ describe('RegistrationGraph', () => {
 
   it('does not infer ownership from outgoing targets', () => {
     const graph = new RegistrationGraph()
+
     graph.registerNode(node('property', 'parent'))
     graph.registerNode(node('property', 'child'))
     graph.defineRelation(ref('property', 'parent'), {
@@ -367,18 +395,30 @@ describe('RegistrationGraph', () => {
     const events: string[] = []
     let fail = true
     const graph = new RegistrationGraph()
+
     graph.registerNode(
       node('property', 'fills', {
         resources: [
-          { key: 'first', dispose: () => events.push('first') },
+          {
+            key: 'first',
+
+            dispose: () => events.push('first')
+          },
           {
             key: 'second',
+
             dispose: () => {
               events.push('second')
-              if (fail) throw new Error('still active')
+              if (fail) {
+                throw new Error('still active')
+              }
             }
           },
-          { key: 'third', dispose: () => events.push('third') }
+          {
+            key: 'third',
+
+            dispose: () => events.push('third')
+          }
         ]
       })
     )
@@ -396,6 +436,7 @@ describe('RegistrationGraph', () => {
 
     fail = false
     const result = graph.unregister(ref('property', 'fills'))
+
     expect(events).toEqual(['third', 'second', 'first', 'second'])
     expect(result.removedOwnedRegistrations).toEqual([
       'third',
@@ -409,6 +450,7 @@ describe('RegistrationGraph', () => {
     const events: string[] = []
     let failSecondDetach = true
     const graph = new RegistrationGraph()
+
     graph.registerNode(node('property', 'fills'))
     graph.registerNode(
       node('component', 'a', {
@@ -422,7 +464,9 @@ describe('RegistrationGraph', () => {
         handlers: {
           detachRelation: () => {
             events.push('detach:b')
-            if (failSecondDetach) throw new Error('detach failed')
+            if (failSecondDetach) {
+              throw new Error('detach failed')
+            }
           }
         }
       })
@@ -457,6 +501,7 @@ describe('RegistrationGraph', () => {
   it('reconciles a pending detach with current adjacency before retrying owner cleanup', () => {
     let detachAttempts = 0
     const graph = new RegistrationGraph()
+
     graph.registerNode(node('property', 'fills'))
     graph.registerNode(node('property', 'strokes'))
     graph.registerNode(
@@ -464,7 +509,9 @@ describe('RegistrationGraph', () => {
         handlers: {
           detachRelation: () => {
             detachAttempts += 1
-            if (detachAttempts === 1) throw new Error('detach failed')
+            if (detachAttempts === 1) {
+              throw new Error('detach failed')
+            }
           }
         }
       })
@@ -504,6 +551,7 @@ describe('RegistrationGraph', () => {
   it('rejects mutations after composition closes', () => {
     let open = true
     const graph = new RegistrationGraph({ isCompositionOpen: () => open })
+
     graph.registerNode(node('component', 'rect'))
     graph.registerNode(node('property', 'fills'))
     open = false
@@ -526,6 +574,7 @@ describe('RegistrationGraph', () => {
   it('reports dangling owner registrations before runtime side effects', () => {
     const isPresent = vi.fn(() => false)
     const graph = new RegistrationGraph()
+
     graph.registerNode(node('component', 'rect'))
     graph.registerNode(node('property', 'fills', { handlers: { isPresent } }))
     graph.defineRelation(ref('component', 'rect'), {

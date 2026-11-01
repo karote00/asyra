@@ -45,6 +45,7 @@ export interface ExecutionRecordDeliveryOptions {
   ) => Promise<ExecutionRecordAcknowledgement>
   readonly onIssue?: (issue: ExecutionRecordDeliveryIssue) => void
 }
+
 /** Bounded diagnostic text without URLs, credentials or stacks. */
 export const recordDeliveryReason = (error: unknown): string =>
   (error instanceof Error
@@ -79,6 +80,7 @@ export const deliverRecordOutbox = async (
 }> => {
   try {
     const gap = await options.outbox.gap(requestId)
+
     if (gap) {
       reportRecordDeliveryIssue(options, {
         requestId,
@@ -88,6 +90,7 @@ export const deliverRecordOutbox = async (
         fromSequence: gap.fromSequence,
         throughSequence: gap.throughSequence
       })
+
       return { complete: false, nextSequence: fromSequence, interrupted: true }
     }
   } catch (error) {
@@ -96,11 +99,15 @@ export const deliverRecordOutbox = async (
       stage: 'storage',
       reason: recordDeliveryReason(error)
     })
+
     return { complete: false, nextSequence: fromSequence, interrupted: true }
   }
+
   let nextSequence = fromSequence
+
   for (;;) {
     let batch: readonly ExecutionRecord[]
+
     try {
       batch = await options.outbox.read(requestId, nextSequence, 32)
     } catch (error) {
@@ -110,10 +117,16 @@ export const deliverRecordOutbox = async (
         reason: recordDeliveryReason(error),
         fromSequence: nextSequence
       })
+
       return { complete: false, nextSequence, interrupted: true }
     }
+
     const last = batch[batch.length - 1]
-    if (!last) return { complete: false, nextSequence, interrupted: false }
+
+    if (!last) {
+      return { complete: false, nextSequence, interrupted: false }
+    }
+
     if (
       batch.some(
         (item, index) =>
@@ -126,15 +139,18 @@ export const deliverRecordOutbox = async (
         reason: 'Noncontiguous outbox sequence',
         fromSequence: nextSequence
       })
+
       return { complete: false, nextSequence, interrupted: true }
     }
+
     let receipt: ExecutionRecordAcknowledgement | undefined
+
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
         receipt = await options.send(batch)
         break
       } catch (error) {
-        if (attempt === 1)
+        if (attempt === 1) {
           reportRecordDeliveryIssue(options, {
             requestId,
             stage: 'transport',
@@ -142,9 +158,14 @@ export const deliverRecordOutbox = async (
             fromSequence: nextSequence,
             throughSequence: last.sequence
           })
+        }
       }
     }
-    if (!receipt) return { complete: false, nextSequence, interrupted: true }
+
+    if (!receipt) {
+      return { complete: false, nextSequence, interrupted: true }
+    }
+
     if (
       receipt.requestId !== requestId ||
       receipt.acknowledgedSequence !== last.sequence ||
@@ -159,12 +180,15 @@ export const deliverRecordOutbox = async (
         fromSequence: nextSequence,
         throughSequence: last.sequence
       })
+
       return { complete: false, nextSequence, interrupted: true }
     }
+
     nextSequence = last.sequence + 1
     if (last.event === 'ai_request_usage') {
       try {
         await options.outbox.remove(requestId)
+
         return { complete: true, nextSequence, interrupted: false }
       } catch (error) {
         reportRecordDeliveryIssue(options, {
@@ -173,6 +197,7 @@ export const deliverRecordOutbox = async (
           reason: recordDeliveryReason(error),
           throughSequence: last.sequence
         })
+
         return {
           complete: false,
           nextSequence: fromSequence,

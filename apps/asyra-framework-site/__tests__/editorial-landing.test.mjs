@@ -16,7 +16,10 @@ const listFiles = async (directory) => {
       .filter((entry) => /\.[^.]+$/.test(entry))
       .sort()
   } catch (error) {
-    if (error && error.code === 'ENOENT') return []
+    if (error && error.code === 'ENOENT') {
+      return []
+    }
+
     throw error
   }
 }
@@ -39,6 +42,7 @@ test('the website preserves the accepted landing owner beside the supporting pla
   ]) {
     assert.ok(appFiles.includes(ownerFile), ownerFile)
   }
+
   assert.ok(appFiles.includes('atlas/page.tsx'))
   assert.ok(appFiles.includes('docs/page.tsx'))
   assert.ok(appFiles.includes('releases/page.tsx'))
@@ -141,8 +145,10 @@ test('the public llms discovery surface mirrors the generated documentation inve
   const entries = (source) => [
     ...source.matchAll(/^- \[([^\]]+)\]\(([^)]+)\): (.+)$/gm)
   ]
+
   const repositoryEntries = entries(generatedLlms)
   const websiteEntries = entries(websiteLlms)
+
   assert.equal(websiteEntries.length, repositoryEntries.length)
   for (const [
     index,
@@ -150,6 +156,7 @@ test('the public llms discovery surface mirrors the generated documentation inve
   ] of websiteEntries.entries()) {
     const [, repositoryTitle, repositoryHref, repositoryDescription] =
       repositoryEntries[index]
+
     assert.equal(title, repositoryTitle)
     assert.equal(description, repositoryDescription)
     assert.equal(
@@ -159,6 +166,7 @@ test('the public llms discovery surface mirrors the generated documentation inve
         : `/docs/${repositoryHref.slice(0, -3)}`
     )
   }
+
   assert.match(websiteLlms, /^# Asyra Framework/m)
   assert.doesNotMatch(websiteLlms, /docs\/ai\//)
 })
@@ -210,6 +218,7 @@ test('One Source shortens and centers its three view labels before responsive ex
       )
     )
   }
+
   assert.match(builder, /def replace_one_source_labels\(/)
   assert.match(builder, /assert_changes_within_regions\(/)
   assert.match(
@@ -250,6 +259,7 @@ test('Domain Rail keeps every card from the immutable supplied master', async ()
     const asset = await readFile(
       path.join(siteRoot, 'public', 'illustrations', filename)
     )
+
     assert.equal(
       createHash('sha256').update(asset).digest('hex'),
       expectedHash,
@@ -267,6 +277,7 @@ localArtworkTest(
     )
 
     const v04Assets = assets.filter((asset) => asset.includes('-v04-'))
+
     assert.deepEqual(v04Assets, [
       'closing-core-v04-1440.webp',
       'closing-core-v04-480.webp',
@@ -291,6 +302,7 @@ localArtworkTest(
       'visible-change-v04-720.webp'
     ])
     const v05Assets = assets.filter((asset) => asset.includes('-v05-'))
+
     assert.deepEqual(v05Assets, [
       'closing-core-v05-1440.webp',
       'closing-core-v05-480.webp',
@@ -315,6 +327,7 @@ localArtworkTest(
       'visible-change-v05-720.webp'
     ])
     const v06Assets = assets.filter((asset) => asset.includes('-v06-'))
+
     assert.deepEqual(v06Assets, [
       'closing-core-v06-1254.webp',
       'closing-core-v06-480.webp',
@@ -341,6 +354,7 @@ localArtworkTest(
     const v07ClosingAssets = assets.filter((asset) =>
       asset.startsWith('closing-core-v07-')
     )
+
     assert.deepEqual(v07ClosingAssets, [
       'closing-core-v07-1440.webp',
       'closing-core-v07-2880.webp',
@@ -349,6 +363,7 @@ localArtworkTest(
     const v08ClosingAssets = assets.filter((asset) =>
       asset.startsWith('closing-core-v08-')
     )
+
     assert.deepEqual(v08ClosingAssets, [
       'closing-core-v08-1440.webp',
       'closing-core-v08-2400.webp',
@@ -358,12 +373,14 @@ localArtworkTest(
       (asset) =>
         asset.startsWith('closing-core-v09-') && !asset.includes('-photoroom-')
     )
+
     assert.deepEqual(v09ClosingAssets, [
       'closing-core-v09-1280.webp',
       'closing-core-v09-1536.webp',
       'closing-core-v09-960.webp'
     ])
     const v12Assets = assets.filter((asset) => asset.includes('-v12-'))
+
     assert.deepEqual(v12Assets, [
       'closing-core-v12-1280.webp',
       'closing-core-v12-1536.webp',
@@ -397,6 +414,7 @@ localArtworkTest(
     ]) {
       assert.match(page, new RegExp(`name=["']${name}["']`))
     }
+
     assert.doesNotMatch(page, /desktopName=/)
     assert.match(page, /srcSet=/)
     assert.doesNotMatch(page, /domainNames|domain-names/)
@@ -457,6 +475,7 @@ localArtworkTest(
     )
     for (const [filename, expectedHash] of Object.entries(expectedHashes)) {
       const master = await readFile(path.join(artworkRoot, filename))
+
       assert.equal(
         createHash('sha256').update(master).digest('hex'),
         expectedHash
@@ -467,6 +486,7 @@ localArtworkTest(
       path.join(siteRoot, 'scripts', 'build-photoroom-assets.py'),
       'utf8'
     )
+
     assert.match(builder, /def premultiplied_resize/)
     assert.match(builder, /def assert_true_alpha/)
     assert.match(builder, /domain-rail-v08-desktop-master-Photoroom\.png/)
@@ -508,6 +528,7 @@ test('V12 uses deterministic GrabCut masks while preserving source-authored deta
   ]) {
     assert.match(builder, new RegExp(`["']${name}["']`))
   }
+
   assert.match(builder, /maximum_difference\s*!=\s*0/)
   assert.match(builder, /decoded_alpha\[foreground\]\.min\(\)\)\s*<\s*250/)
   assert.match(builder, /max\(corner_alpha\)\s*>\s*2/)
@@ -570,6 +591,7 @@ localArtworkTest(
     )
     for (const [filename, expectedHash] of Object.entries(expectedHashes)) {
       const master = await readFile(path.join(artworkRoot, filename))
+
       assert.equal(
         createHash('sha256').update(master).digest('hex'),
         expectedHash
@@ -580,6 +602,7 @@ localArtworkTest(
       path.join(siteRoot, 'scripts', 'build-v06-assets.py'),
       'utf8'
     )
+
     assert.match(builder, /artwork.*v06/is)
     assert.match(builder, /build_domain_rail/)
     assert.match(builder, /domain-rail-background-master\.png/)
@@ -666,11 +689,13 @@ localArtworkTest(
       expectedMasterHashes
     )) {
       const master = await readFile(path.join(artworkRoot, filename))
+
       assert.equal(
         createHash('sha256').update(master).digest('hex'),
         expectedHash
       )
     }
+
     assert.doesNotMatch(
       css,
       /@media\s*\(min-width:\s*1101px\)[\s\S]*closing-grid-v07-desktop-2400\.webp/
@@ -680,6 +705,7 @@ localArtworkTest(
       path.join(siteRoot, 'scripts', 'build-v07-desktop-assets.py'),
       'utf8'
     )
+
     for (const contract of [
       'compose_raised_blue_fastener',
       'draw_eight_direction_face',
@@ -691,6 +717,7 @@ localArtworkTest(
     ]) {
       assert.match(builder, new RegExp(`def ${contract}\\(`))
     }
+
     assert.match(builder, /DOMAIN_LABEL_FONT_SIZE\s*=\s*36/)
     assert.match(builder, /V07_DESKTOP_WIDTHS/)
     assert.doesNotMatch(
@@ -742,17 +769,20 @@ localArtworkTest(
       expectedMasterHashes
     )) {
       const master = await readFile(path.join(artworkRoot, filename))
+
       assert.equal(
         createHash('sha256').update(master).digest('hex'),
         expectedHash
       )
     }
+
     assert.doesNotMatch(page, /desktopName=/)
 
     const builder = await readFile(
       path.join(siteRoot, 'scripts', 'build-v08-desktop-assets.py'),
       'utf8'
     )
+
     for (const contract of [
       'build_hero',
       'draw_reference_domain_icons',
@@ -768,6 +798,7 @@ localArtworkTest(
     ]) {
       assert.match(builder, new RegExp(`def ${contract}\\(`))
     }
+
     assert.match(builder, /V08_DESKTOP_WIDTHS/)
     assert.match(builder, /V05_ARTWORK = SITE_ROOT \/ "artwork" \/ "v05"/)
     assert.match(builder, /def compose_hero\([\s\S]*V05_ARTWORK/)
@@ -841,6 +872,7 @@ localArtworkTest(
         'b6f721df220ace093a7ecb709a42211d1ae7f72dd5b0c95762444f00d1dcd365'
     })) {
       const artifact = await readFile(path.join(artworkRoot, filename))
+
       assert.equal(
         createHash('sha256').update(artifact).digest('hex'),
         expectedHash
@@ -851,6 +883,7 @@ localArtworkTest(
       path.join(siteRoot, 'scripts', 'build-v09-grow-desktop.py'),
       'utf8'
     )
+
     assert.match(builder, /grow-v04-1920\.webp/)
     assert.match(builder, /grow-master\.png/)
     for (const contract of [
@@ -863,6 +896,7 @@ localArtworkTest(
     ]) {
       assert.match(builder, new RegExp(`def ${contract}\\(`))
     }
+
     assert.match(builder, /REFERENCE_TRACE/)
     assert.doesNotMatch(builder, /imagegen|generated_images|grow-v05/i)
   }
@@ -889,6 +923,7 @@ localArtworkTest(
         'ae7c7c87e40747e1246576e03e4545a1ce437c71b7d52ba1886e31d79ce4ee51'
     })) {
       const artifact = await readFile(path.join(artworkRoot, filename))
+
       assert.equal(
         createHash('sha256').update(artifact).digest('hex'),
         expectedHash
@@ -899,6 +934,7 @@ localArtworkTest(
       path.join(siteRoot, 'scripts', 'build-v10-grow-desktop.py'),
       'utf8'
     )
+
     assert.match(builder, /grow-v04-1920\.webp/)
     assert.match(builder, /grow-master\.png/)
     assert.match(builder, /REFERENCE_LAYERS/)
@@ -913,6 +949,7 @@ localArtworkTest(
     ]) {
       assert.match(builder, new RegExp(`["']${layer}["']`))
     }
+
     for (const contract of [
       'measure_reference_layers',
       'sample_reference_band',
@@ -925,6 +962,7 @@ localArtworkTest(
     ]) {
       assert.match(builder, new RegExp(`def ${contract}\\(`))
     }
+
     assert.match(builder, /SINGLE_CENTER_TUBE_Y\s*=\s*117/)
     assert.match(builder, /SINGLE_CENTER_TUBE_HEIGHT\s*=\s*4/)
     assert.doesNotMatch(builder, /imagegen|generated_images|grow-v05/i)
@@ -952,6 +990,7 @@ localArtworkTest(
       path.join(siteRoot, 'scripts', 'build-v11-grow-desktop.py'),
       'utf8'
     )
+
     assert.match(builder, /grow-v04-1920\.webp/)
     assert.match(builder, /grow-master\.png/)
     for (const contract of [
@@ -966,6 +1005,7 @@ localArtworkTest(
     ]) {
       assert.match(builder, new RegExp(`def ${contract}\\(`))
     }
+
     assert.doesNotMatch(
       builder,
       /ImageDraw|render_(?:gradient|profile|reference_layer)|hardcoded.*color/i
@@ -978,6 +1018,7 @@ localArtworkTest(
         'utf8'
       )
     )
+
     assert.equal(manifest.mode, 'source-pixel-pyramid')
     assert.equal(
       manifest.sourceAssetSha256,
@@ -1033,6 +1074,7 @@ localArtworkTest(
     ]) {
       assert.match(builder, new RegExp(`def ${contract}\\(`))
     }
+
     assert.doesNotMatch(builder, /master\.paste\(blank_paper/)
   }
 )
@@ -1125,8 +1167,10 @@ test('the responsive layout keeps balanced proof spacing without section rules',
   const proofRule = css.match(/\.proof\s*\{([^}]+)\}/s)?.[1] ?? ''
   const sharedHeaderRule =
     css.match(/\.site-header,\s*\.site-frame-header\s*\{([^}]+)\}/s)?.[1] ?? ''
+
   const baseRule = (selector) => {
     const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
     return css.match(new RegExp(`${escaped}\\s*\\{([^}]+)\\}`, 's'))?.[1] ?? ''
   }
 
@@ -1145,9 +1189,11 @@ test('the responsive layout keeps balanced proof spacing without section rules',
     '.site-footer'
   ]) {
     const rule = baseRule(selector)
+
     assert.match(rule, /max-width:\s*var\(--page-max-width\)/, selector)
     assert.match(rule, /var\(--page-padding-x\)/, selector)
   }
+
   assert.match(baseRule('.domains__heading'), /margin:\s*0\s+auto/)
   assert.match(baseRule('.domains__heading'), /width:\s*min\(100%,\s*720px\)/)
   assert.match(
@@ -1204,12 +1250,15 @@ test('the typography uses a modern system sans stack without legacy display seri
     css.match(/\.proof h2\s*\{([^}]+)\}/s)?.[1] ?? '',
     css.match(/\.closing h2\s*\{([^}]+)\}/s)?.[1] ?? ''
   ]
+
   for (const rule of headingRules) {
     const weight = Number(rule.match(/font-weight:\s*(\d+)/)?.[1])
+
     assert.ok(
       weight <= 500,
       `Display weight must stay at 500 or below: ${weight}`
     )
   }
+
   assert.doesNotMatch(css, /letter-spacing:\s*-(?:0\.0[6-9]|0\.[1-9])em/)
 })

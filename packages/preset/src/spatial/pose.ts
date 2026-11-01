@@ -4,10 +4,12 @@ export interface SpatialPose {
   readonly rotation: SpatialQuaternion
   readonly scale?: SpatialVector
 }
+
 export function readSpatialPose(value: SpatialPose): SpatialPose {
   const position = [...value.position],
     rotation = [...value.rotation],
     scale = [...(value.scale ?? [1, 1, 1])]
+
   if (
     position.length !== 3 ||
     rotation.length !== 4 ||
@@ -15,33 +17,42 @@ export function readSpatialPose(value: SpatialPose): SpatialPose {
     ![...position, ...rotation, ...scale].every(Number.isFinite) ||
     scale.some((n) => n <= 0) ||
     Math.abs(Math.hypot(...rotation) - 1) > 1e-8
-  )
+  ) {
     throw new Error('Invalid spatial pose')
+  }
+
   return Object.freeze({
     position: Object.freeze(position) as unknown as SpatialVector,
     rotation: Object.freeze(rotation) as unknown as SpatialQuaternion,
     scale: Object.freeze(scale) as unknown as SpatialVector
   })
 }
+
 /** One target, no clock or canonical state. The caller supplies explicit progress. */
 export class SpatialPosePresentation {
   private target: SpatialPose | null = null
+
   private disposed = false
+
   get active() {
     return this.target !== null
   }
+
   retarget(target: SpatialPose): void {
     this.assertLive()
     this.target = readSpatialPose(target)
   }
+
   cancel(): void {
     this.assertLive()
     this.target = null
   }
+
   dispose(): void {
     this.target = null
     this.disposed = true
   }
+
   advance(
     current: SpatialPose,
     fraction: number,
@@ -49,6 +60,7 @@ export class SpatialPosePresentation {
   ): SpatialPose {
     this.assertLive()
     const from = readSpatialPose(current)
+
     if (
       !Number.isFinite(fraction) ||
       fraction < 0 ||
@@ -56,16 +68,23 @@ export class SpatialPosePresentation {
       !Number.isFinite(policy.tolerance) ||
       policy.tolerance < 0 ||
       typeof policy.reducedMotion !== 'boolean'
-    )
+    ) {
       throw new Error('Invalid pose interpolation')
+    }
+
     const target = this.target
-    if (!target) return current
+
+    if (!target) {
+      return current
+    }
+
     const t = policy.reducedMotion ? 1 : fraction
     let dot = from.rotation.reduce(
       (sum, n, i) => sum + n * target.rotation[i],
       0
     )
     const end = target.rotation.map((n) => (dot < 0 ? -n : n))
+
     dot = Math.min(1, Math.abs(dot))
     const angle = Math.acos(dot),
       sin = Math.sin(angle)
@@ -97,10 +116,17 @@ export class SpatialPosePresentation {
           next.rotation.reduce((sum, n, i) => sum + n * target.rotation[i], 0)
         ) >
         policy.tolerance
-    if (!remaining) this.target = null
+
+    if (!remaining) {
+      this.target = null
+    }
+
     return next
   }
+
   private assertLive() {
-    if (this.disposed) throw new Error('Pose presentation is disposed')
+    if (this.disposed) {
+      throw new Error('Pose presentation is disposed')
+    }
   }
 }

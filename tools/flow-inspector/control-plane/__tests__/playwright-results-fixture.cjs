@@ -12,29 +12,46 @@ const {
   sourceManifestPaths
 } = require('../playwright-results.cjs')
 const root = path.resolve(__dirname, '../../../..')
+
 async function freePort() {
   const server = net.createServer()
+
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
   const port = server.address().port
+
   await new Promise((resolve) => server.close(resolve))
+
   return port
 }
+
 async function settleFixtureProcesses(entries) {
-  for (const entry of entries) entry.controller.abort()
+  for (const entry of entries) {
+    entry.controller.abort()
+  }
+
   const results = await Promise.allSettled(
     entries.map((entry) => entry.promise)
   )
   const failures = results.flatMap((result) => {
-    if (result.status === 'rejected') return [result.reason]
-    if (result.value.error) return [new Error(result.value.error)]
+    if (result.status === 'rejected') {
+      return [result.reason]
+    }
+
+    if (result.value.error) {
+      return [new Error(result.value.error)]
+    }
+
     return []
   })
-  if (failures.length)
+
+  if (failures.length) {
     throw new AggregateError(
       failures,
       'Fixture process cleanup failed: ' + failures.map(String).join('; ')
     )
+  }
 }
+
 async function playwrightFixture(t, options = {}) {
   fs.mkdirSync(path.join(root, 'tmp/flow-inspector'), { recursive: true })
   const repository = fs.mkdtempSync(
@@ -42,12 +59,16 @@ async function playwrightFixture(t, options = {}) {
   )
   const app = path.join(repository, 'apps/asyra-design')
   const contract = loadContract(root, undefined, manifestPath)
+
   fs.mkdirSync(app, { recursive: true })
+
   const copy = (file) => {
     const destination = path.join(repository, file)
+
     fs.mkdirSync(path.dirname(destination), { recursive: true })
     fs.cpSync(path.join(root, file), destination, { recursive: true })
   }
+
   for (const file of [
     'package.json',
     'yarn.lock',
@@ -71,12 +92,15 @@ async function playwrightFixture(t, options = {}) {
     'apps/asyra-design/e2e/document-database-middleware.mjs',
     contract.testFile,
     'apps/asyra-design/e2e/test-utils.ts'
-  ])
+  ]) {
     copy(file)
+  }
+
   const observationSource = options.source ?? 'functional'
   const admitted = sourceManifestPaths(observationSource).map((manifest) =>
     loadContract(root, undefined, manifest)
   )
+
   for (const file of new Set(
     admitted.flatMap((selected) => [
       selected.manifestPath,
@@ -89,8 +113,10 @@ async function playwrightFixture(t, options = {}) {
         (step) => step.implementationBoundary
       )
     ])
-  ))
+  )) {
     copy(file)
+  }
+
   copy('apps/asyra-design/e2e')
   if (observationSource === 'status') {
     copy('.yarnrc.yml')
@@ -106,21 +132,33 @@ async function playwrightFixture(t, options = {}) {
       'dir'
     )
   }
+
   if (options.isolateWorkspaces) {
     const copied = new Set()
+
     const copyWorkspace = (name) => {
-      if (copied.has(name)) return
+      if (copied.has(name)) {
+        return
+      }
+
       copied.add(name)
       const workspace = fs.realpathSync(path.join(root, 'node_modules', name))
-      if (!workspace.startsWith(root + path.sep))
+
+      if (!workspace.startsWith(root + path.sep)) {
         throw new Error('Workspace escapes repository')
+      }
+
       const relativeWorkspace = path.relative(root, workspace)
       const metadata = JSON.parse(
         fs.readFileSync(path.join(workspace, 'package.json'), 'utf8')
       )
-      for (const entry of ['package.json', 'src', 'dist'])
+
+      for (const entry of ['package.json', 'src', 'dist']) {
         copy(relativeWorkspace + '/' + entry)
+      }
+
       const link = path.join(repository, 'node_modules', name)
+
       fs.mkdirSync(path.dirname(link), { recursive: true })
       fs.symlinkSync(
         path.relative(
@@ -132,15 +170,24 @@ async function playwrightFixture(t, options = {}) {
       )
       for (const [dependency, version] of Object.entries(
         metadata.dependencies ?? {}
-      ))
-        if (version.startsWith('workspace:')) copyWorkspace(dependency)
+      )) {
+        if (version.startsWith('workspace:')) {
+          copyWorkspace(dependency)
+        }
+      }
     }
+
     const metadata = JSON.parse(
       fs.readFileSync(path.join(app, 'package.json'), 'utf8')
     )
-    for (const [name, version] of Object.entries(metadata.dependencies))
-      if (version.startsWith('workspace:')) copyWorkspace(name)
+
+    for (const [name, version] of Object.entries(metadata.dependencies)) {
+      if (version.startsWith('workspace:')) {
+        copyWorkspace(name)
+      }
+    }
   }
+
   const allCases = admitted.flatMap((selected) =>
     selected.cases.map((item) => ({
       ...item,
@@ -153,6 +200,7 @@ async function playwrightFixture(t, options = {}) {
     backendPort = await freePort(),
     collaborationPort = await freePort()
   const temporary = path.join(repository, 'browser')
+
   fs.mkdirSync(temporary)
   const env = {
     PATH: process.env.PATH,
@@ -174,12 +222,15 @@ async function playwrightFixture(t, options = {}) {
       'ws://127.0.0.1:' + collaborationPort + '/collaboration'
   }
   const running = []
+
   t.after(async () => {
     await settleFixtureProcesses(running)
   })
+
   async function start(args, url, label) {
     const controller = new AbortController()
     const entry = { controller, done: false, pid: null }
+
     entry.promise = runProcess({
       executable: process.execPath,
       args,
@@ -188,6 +239,7 @@ async function playwrightFixture(t, options = {}) {
       signal: controller.signal,
       timeoutMs: 240000,
       maxOutputBytes: 512 * 1024,
+
       onSpawn: (pid) => {
         entry.pid = pid
       }
@@ -195,22 +247,31 @@ async function playwrightFixture(t, options = {}) {
       entry.done = true
       entry.result = result
       fs.writeFileSync(path.join(repository, label + '.log'), result.output)
+
       return result
     })
     running.push(entry)
     const deadline = Date.now() + 45000
+
     while (Date.now() < deadline) {
-      if (entry.done)
+      if (entry.done) {
         throw new Error(label + ' stopped: ' + entry.result.output.slice(-6000))
+      }
+
       try {
-        if ((await fetch(url)).ok) return entry
+        if ((await fetch(url)).ok) {
+          return entry
+        }
       } catch {
         /* Startup is bounded by the owning deadline. */
       }
+
       await new Promise((resolve) => setTimeout(resolve, 250))
     }
+
     throw new Error(label + ' did not become ready; PID ' + entry.pid)
   }
+
   await start(
     [
       path.join(
@@ -246,10 +307,12 @@ async function playwrightFixture(t, options = {}) {
   const sourceFile = path.join(app, 'src/features/delete-element/index.ts')
   const source = fs.readFileSync(sourceFile, 'utf8')
   let sequence = 0
+
   return {
     repository,
     sourceFile,
     cases: allCases,
+
     faultOperation(caseId, file, operation) {
       const ts = require('typescript')
       const original = fs.readFileSync(path.join(repository, file), 'utf8')
@@ -260,6 +323,7 @@ async function playwrightFixture(t, options = {}) {
         true
       )
       const matches = []
+
       const walk = (node) => {
         if (
           ts.isFunctionLike(node) &&
@@ -270,6 +334,7 @@ async function playwrightFixture(t, options = {}) {
             ts.isFunctionDeclaration(node))
         ) {
           const names = []
+
           for (
             let current = node;
             current && current !== source;
@@ -281,17 +346,23 @@ async function playwrightFixture(t, options = {}) {
                 ts.isMethodDeclaration(current) ||
                 ts.isFunctionDeclaration(current)) &&
               current.name
-            )
+            ) {
               names.unshift(
                 current.name.getText(source).replace(/^['"]|['"]$/g, '')
               )
+            }
           }
-          if (names.join('.').endsWith(operation)) matches.push(node)
+
+          if (names.join('.').endsWith(operation)) {
+            matches.push(node)
+          }
         }
+
         ts.forEachChild(node, walk)
       }
+
       walk(source)
-      if (matches.length !== 1)
+      if (matches.length !== 1) {
         throw new Error(
           'Select one canonical operation: ' +
             file +
@@ -300,52 +371,74 @@ async function playwrightFixture(t, options = {}) {
             ' - ' +
             matches.length
         )
+      }
+
       const body = matches[0].body
       const from = original.slice(body.getStart(source), body.end)
       const statement = "throw new Error('Isolated responsibility fault');"
       const to = ts.isBlock(body)
         ? '{' + statement + from.slice(1)
         : '(() => { ' + statement + ' })()'
+
       this.faultCase(caseId, { file, from, to, transpile: true })
     },
+
     faultCase(caseId, mutation) {
       const item = allCases.find((candidate) => candidate.id === caseId)
       const step = item?.contract.architectureDefinition.steps.find(
         (step) => step.id === item.stepId
       )
-      if (!step?.implementationBoundary.includes(mutation.file))
+
+      if (!step?.implementationBoundary.includes(mutation.file)) {
         throw new Error('Fault is outside the declared case owner')
+      }
+
       const apply = (relative, from, to) => {
         const file = path.join(repository, relative)
         const value = fs.readFileSync(file, 'utf8')
-        if (!from || value.split(from).length !== 2 || from === to)
+
+        if (!from || value.split(from).length !== 2 || from === to) {
           throw new Error(
             'Fault must select one exact canonical operation: ' + relative
           )
-        if (!changedFiles.has(file)) changedFiles.set(file, value)
+        }
+
+        if (!changedFiles.has(file)) {
+          changedFiles.set(file, value)
+        }
+
         fs.writeFileSync(file, value.replace(from, to))
       }
-      if (mutation.file.startsWith('packages/') && !options.isolateWorkspaces)
+
+      if (mutation.file.startsWith('packages/') && !options.isolateWorkspaces) {
         throw new Error(
           'Framework fault requires an isolated workspace closure'
         )
+      }
+
       apply(mutation.file, mutation.from, mutation.to)
       if (mutation.file.startsWith('packages/')) {
-        if (!options.isolateWorkspaces)
+        if (!options.isolateWorkspaces) {
           throw new Error(
             'Framework fault requires an isolated workspace closure'
           )
+        }
+
         const output = mutation.file
           .replace('/src/', '/dist/')
           .replace(/\.tsx?$/, '.js')
+
         if (mutation.transpile) {
           const ts = require('typescript')
           const configFile = ts.findConfigFile(
             path.dirname(path.join(root, mutation.file)),
             ts.sys.fileExists
           )
-          if (!configFile)
+
+          if (!configFile) {
             throw new Error('Missing workspace compiler configuration')
+          }
+
           const config = ts.readConfigFile(configFile, ts.sys.readFile)
           const parsed = ts.parseJsonConfigFileContent(
             config.config,
@@ -353,8 +446,11 @@ async function playwrightFixture(t, options = {}) {
             path.dirname(configFile)
           )
           const outputFile = path.join(repository, output)
-          if (!changedFiles.has(outputFile))
+
+          if (!changedFiles.has(outputFile)) {
             changedFiles.set(outputFile, fs.readFileSync(outputFile, 'utf8'))
+          }
+
           const compiled = ts.transpileModule(
             fs.readFileSync(path.join(repository, mutation.file), 'utf8'),
             {
@@ -363,24 +459,31 @@ async function playwrightFixture(t, options = {}) {
               reportDiagnostics: true
             }
           )
+
           if (
             compiled.diagnostics?.some(
               (item) => item.category === ts.DiagnosticCategory.Error
             )
-          )
+          ) {
             throw new Error('Invalid isolated workspace mutation')
+          }
+
           fs.writeFileSync(outputFile, compiled.outputText)
-        } else
+        } else {
           apply(
             output,
             mutation.compiledFrom ?? mutation.from,
             mutation.compiledTo ?? mutation.to
           )
+        }
       }
     },
+
     fault(kind = 'deletion') {
-      if (!['deletion', 'path-mode'].includes(kind))
+      if (!['deletion', 'path-mode'].includes(kind)) {
         throw new Error('Unknown isolated deletion fault')
+      }
+
       fs.writeFileSync(
         sourceFile,
         kind === 'deletion'
@@ -394,28 +497,41 @@ async function playwrightFixture(t, options = {}) {
             )
       )
     },
+
     restore() {
       fs.writeFileSync(sourceFile, source)
-      for (const [file, value] of changedFiles) fs.writeFileSync(file, value)
+      for (const [file, value] of changedFiles) {
+        fs.writeFileSync(file, value)
+      }
+
       changedFiles.clear()
     },
+
     async run(caseIds = ['design.delete']) {
-      if (!caseIds.length || new Set(caseIds).size !== caseIds.length)
+      if (!caseIds.length || new Set(caseIds).size !== caseIds.length) {
         throw new Error('Select distinct admitted Playwright cases')
+      }
+
       const selected = caseIds.map((id) => {
         const item = allCases.find((candidate) => candidate.id === id)
-        if (!item) throw new Error('Unknown Playwright case: ' + id)
+
+        if (!item) {
+          throw new Error('Unknown Playwright case: ' + id)
+        }
+
         return item
       })
       const names = selected.map((item) =>
         item.testName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
       )
+
       // Each isolated source version gets a fresh module graph. HMR between
       // fault and recovery versions is not part of the product owner proof.
       if (vite && sequence > 0 && options.isolateWorkspaces) {
         await settleFixtureProcesses([vite])
         vite = await start(viteArgs, env.APP_URL, 'vite-' + sequence)
       }
+
       const reportPath = 'tmp/report-' + ++sequence + '.json'
       const args = [
         path.join(root, 'node_modules/playwright/cli.js'),
@@ -462,6 +578,7 @@ async function playwrightFixture(t, options = {}) {
         timeoutMs: 75000,
         maxOutputBytes: 512 * 1024
       })
+
       fs.writeFileSync(
         path.join(repository, 'run-' + sequence + '.result.json'),
         JSON.stringify({
@@ -475,8 +592,10 @@ async function playwrightFixture(t, options = {}) {
         path.join(repository, 'run-' + sequence + '.log'),
         result.output
       )
+
       return { context, result, record: complete(repository, reportPath) }
     }
   }
 }
+
 module.exports = { playwrightFixture, settleFixtureProcesses }

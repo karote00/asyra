@@ -30,6 +30,7 @@ export const isRuntimePropertyFieldValueValid = (
   if (!matchesPropertyValueKind(field.kind, value)) {
     return false
   }
+
   if (
     field.allowedUnits &&
     field.allowedUnits.length > 0 &&
@@ -38,9 +39,11 @@ export const isRuntimePropertyFieldValueValid = (
   ) {
     return false
   }
+
   if (!field.validate) {
     return true
   }
+
   try {
     return field.validate(value as never)
   } catch {

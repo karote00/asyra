@@ -8,7 +8,9 @@ const repoRoot = path.resolve(__dirname, '../../../..')
 
 const step = (id) => {
   const value = data.steps.find((item) => item.id === id)
+
   assert.ok(value, `Missing Inspector step: ${id}`)
+
   return value
 }
 
@@ -53,15 +55,7 @@ test('dedicated transport Inspector and product authorities resolve', () => {
   )
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.specPath)))
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.inspectorPath)))
-  assert.ok(
-    fs.existsSync(
-      path.resolve(
-        __dirname,
-        '..',
-        'network-collaboration-transport-flow-inspector.html'
-      )
-    )
-  )
+  require('./assert-react-catalog.cjs')(data)
 })
 
 test('every step has exact execution fields and every route and artifact resolves', () => {
@@ -113,9 +107,11 @@ test('every step has exact execution fields and every route and artifact resolve
 
   data.routes.forEach((route) => {
     assert.ok(stepIds.has(route.from), `${route.id} from`)
-    if (route.to) assert.ok(stepIds.has(route.to), `${route.id} to`)
+    if (route.to) {assert.ok(stepIds.has(route.to), `${route.id} to`)}
+
     route.producedArtifacts.forEach((id) => {
       const artifact = data.artifacts.find((item) => item.id === id)
+
       assert.ok(artifact, `${route.id} artifact ${id}`)
       assert.equal(artifact.ownerStepId, route.from, `${route.id} owner ${id}`)
       if (route.to) {
@@ -153,6 +149,7 @@ test('every implementation boundary resolves to an existing project target', () 
       const target = (
         wildcardIndex === -1 ? boundary : boundary.slice(0, wildcardIndex)
       ).replace(/\/$/, '')
+
       assert.ok(
         target && fs.existsSync(path.resolve(repoRoot, target)),
         `${item.id} missing implementation boundary ${boundary}`
@@ -167,6 +164,7 @@ test('all local specification anchors resolve', () => {
     'utf8'
   )
   const anchors = anchorsIn(markdown)
+
   ;[
     ...data.steps.flatMap((item) => item.specRefs),
     ...data.acceptanceContracts.flatMap((item) => item.specRefs)
@@ -192,6 +190,7 @@ test('framework transport has no semantic history or policy owner', () => {
   assert.match(inbound, /framework dedupe, permission, ordering, or conflict/i)
 
   const forbiddenOwnerTerms = /operation registry|permission policy|conflict policy|Yjs/i
+
   ;[
     step('handoff-local-publication').ownerPackage,
     step('transport-live-publication').ownerPackage,

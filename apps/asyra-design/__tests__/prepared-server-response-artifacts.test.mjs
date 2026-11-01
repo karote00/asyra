@@ -136,6 +136,7 @@ test('defines one fixed file-scoped artifact for every supported response size',
       publicPath: `/__endpoint-test__/server-responses/server-response-${itemCount}.json.gzip`
     })
   }
+
   assert.throws(
     () => getPreparedServerResponseVariant(17),
     /Unsupported prepared server response item count/
@@ -148,8 +149,10 @@ test('creates deterministic gzip-6 records and a complete bounded manifest', asy
   )
   const sourceActionBatch = Buffer.from('{"batchId":"sample"}')
   const calls = []
+
   const createRecord = async (fileId, itemCount) => {
     calls.push({ fileId, itemCount })
+
     return createSmallRecord(fileId, itemCount)
   }
 
@@ -203,6 +206,7 @@ test('creates deterministic gzip-6 records and a complete bounded manifest', asy
 
 test('loads the formal record factory through the existing Vite SSR loader without materializing a response', async () => {
   const loaded = await loadServerResponseRecordFactory()
+
   try {
     assert.equal(typeof loaded.createRecord, 'function')
   } finally {
@@ -241,6 +245,7 @@ test('copies production output into one atomic current overlay without changing 
     })
 
     const firstCurrentStat = await lstat(firstSummary.currentPath)
+
     assert.equal(firstCurrentStat.isSymbolicLink(), true)
     assert.equal(await readlink(firstSummary.currentPath), 'staging-4242')
 
@@ -253,6 +258,7 @@ test('copies production output into one atomic current overlay without changing 
     })
 
     const currentStat = await lstat(summary.currentPath)
+
     assert.equal(currentStat.isSymbolicLink(), true)
     assert.equal(await readlink(summary.currentPath), 'staging-4243')
     assert.deepEqual(summary.manifest, firstSummary.manifest)
@@ -274,6 +280,7 @@ test('copies production output into one atomic current overlay without changing 
       productionDistPath,
       sourceActionBatchPath
     })
+
     assert.equal(attestation.currentPath, summary.currentPath)
     assert.deepEqual(attestation.manifest, summary.manifest)
     assert.equal(attestation.productionIndexSha256, sha256(productionIndex))
@@ -286,6 +293,7 @@ test('copies production output into one atomic current overlay without changing 
           variant.gzipFilename
         )
       )
+
       assert.equal(
         JSON.parse(gunzipSync(compressed).toString('utf8')).fileId,
         variant.fileId
@@ -307,6 +315,7 @@ test('copies production output into one atomic current overlay without changing 
       PREPARED_SERVER_RESPONSE_VARIANTS[0].gzipFilename
     )
     const firstVariantGzip = await readFile(firstVariantPath)
+
     await writeFile(
       firstVariantPath,
       Buffer.concat([firstVariantGzip, Buffer.from([0])])
@@ -329,6 +338,7 @@ test('copies production output into one atomic current overlay without changing 
       ...summary.manifest,
       productionIndexSha256: '0'.repeat(64)
     }
+
     await writeFile(manifestPath, JSON.stringify(invalidManifest))
     await assert.rejects(
       attestPreparedServerResponsePreview({

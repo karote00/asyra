@@ -89,8 +89,10 @@ const freeze = (value) => {
   if (!value || typeof value !== 'object' || Object.isFrozen(value)) {
     return value
   }
+
   Object.freeze(value)
   Object.values(value).forEach(freeze)
+
   return value
 }
 
@@ -117,6 +119,7 @@ const readFrameworkDecisionHistory = (repositoryRoot) => {
     )
     .map((entry) => entry.name)
     .sort()
+
   return ['unreleased.md', ...archives].map((name) => ({
     path: `${relativeRoot}/${name}`,
     text: fs.readFileSync(path.join(releasesRoot, name), 'utf8')
@@ -143,19 +146,23 @@ const verifyPrerequisites = (repositoryRoot) => {
       path.join(repositoryRoot, prerequisite.planPath),
       'utf8'
     )
+
     if (!prerequisite.completedPattern.test(plan)) {
       throw new Error(
         `Framework Release Gate ${prerequisite.gate} lacks completed-plan evidence`
       )
     }
+
     if (!/Inspector/i.test(plan)) {
       throw new Error(
         `Framework Release Gate ${prerequisite.gate} lacks retained Inspector authority`
       )
     }
+
     const decisionPaths = decisionHistory
       .filter((record) => prerequisite.decisionPattern.test(record.text))
       .map((record) => record.path)
+
     if (decisionPaths.length === 0) {
       throw new Error(
         `Framework Release Gate ${prerequisite.gate} lacks decision history`
@@ -180,9 +187,17 @@ export const readFrameworkReleaseSource = ({ repositoryRoot }) => {
     .filter((entry) => entry.isDirectory())
     .flatMap((entry) => {
       const manifestPath = path.join(packagesRoot, entry.name, 'package.json')
-      if (!fs.existsSync(manifestPath)) return []
+
+      if (!fs.existsSync(manifestPath)) {
+        return []
+      }
+
       const manifest = readJson(manifestPath)
-      if (manifest.private === true) return []
+
+      if (manifest.private === true) {
+        return []
+      }
+
       return [
         {
           directory: entry.name,
@@ -213,6 +228,7 @@ export const readFrameworkReleaseSource = ({ repositoryRoot }) => {
   const packages = FRAMEWORK_RELEASE_PACKAGE_NAMES.map((name) => {
     const record = packagesByName.get(name)
     const expectedDirectory = name.slice('@asyra/'.length)
+
     if (record.directory !== expectedDirectory) {
       throw new Error(
         `${name} must be owned by packages/${expectedDirectory}, found packages/${record.directory}`
@@ -220,6 +236,7 @@ export const readFrameworkReleaseSource = ({ repositoryRoot }) => {
     }
 
     const manifest = record.manifest
+
     return {
       name,
       directory: record.directory,
@@ -238,6 +255,7 @@ export const readFrameworkReleaseSource = ({ repositoryRoot }) => {
   })
 
   const baseline = readGitBaseline(resolvedRoot)
+
   baseline.packageCount = packages.length
 
   return freeze({

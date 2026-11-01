@@ -37,10 +37,12 @@ test('documentation TypeScript blocks use semantic syntax colors at every layout
       const block = page
         .locator('.markdown-code')
         .filter({ hasText: example.needle })
+
       await expect(block).toBeVisible()
       for (const expected of example.expected) {
         await expect(block.locator('code')).toContainText(expected)
       }
+
       if (example.unexpected) {
         await expect(block.locator('code')).not.toContainText(
           example.unexpected
@@ -54,12 +56,14 @@ test('documentation TypeScript blocks use semantic syntax colors at every layout
             ...new Set(tokens.map((token) => getComputedStyle(token).color))
           ].filter((color) => color !== 'rgba(0, 0, 0, 0)')
         )
+
       expect(tokenColors.length).toBeGreaterThanOrEqual(4)
 
       const pageWidths = await page.evaluate(() => ({
         client: document.documentElement.clientWidth,
         scroll: document.documentElement.scrollWidth
       }))
+
       expect(pageWidths.scroll).toBeLessThanOrEqual(pageWidths.client + 1)
 
       await block.screenshot({

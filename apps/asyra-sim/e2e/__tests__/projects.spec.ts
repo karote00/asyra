@@ -5,6 +5,7 @@ async function ready(page: Page) {
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
 }
+
 async function save(page: Page, name: string, copy = false) {
   await page.getByRole('button', { name: 'Projects', exact: true }).click()
   if (copy) {
@@ -15,6 +16,7 @@ async function save(page: Page, name: string, copy = false) {
       ' - Copy'
     )
   }
+
   await page.getByLabel('Project name', { exact: true }).fill(name)
   await page.getByLabel('Project name', { exact: true }).press('Enter')
   await expect(page.getByTestId('persistence-status')).toHaveText(
@@ -24,11 +26,13 @@ async function save(page: Page, name: string, copy = false) {
     .getByRole('button', { name: 'Close projects', exact: true })
     .click()
 }
+
 async function open(page: Page, name: string, accept = true) {
   await page.getByRole('button', { name: 'Projects', exact: true }).click()
   page.once('dialog', (dialog) => (accept ? dialog.accept() : dialog.dismiss()))
   await page.getByRole('button', { name: `Open ${name}`, exact: true }).click()
 }
+
 async function renameFixture(page: Page, current: string, name: string) {
   await page
     .getByRole('treeitem', { name: `◇ ${current}`, exact: true })
@@ -60,15 +64,20 @@ test('reopens the existing database and migrates a legacy full model before resa
       indexedDB,
       EXISTING_APP_DATABASE
     )
+
     try {
       const { projects } = await repository.list()
       const project = projects.find(
         (item: { name: string }) => item.name === 'Legacy project'
       )
-      if (!project)
+
+      if (!project) {
         throw new Error('The App did not retain its existing database identity')
+      }
+
       const stored = await repository.read(project.id)
       const snapshot = decodeProject(stored.payload)
+
       await repository.write(
         {
           ...stored,
@@ -77,11 +86,13 @@ test('reopens the existing database and migrates a legacy full model before resa
         },
         stored.revision
       )
+
       return { id: stored.id, sources: snapshot.visualSources }
     } finally {
       repository.close()
     }
   })
+
   await page.reload()
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
   await open(page, 'Legacy project')
@@ -103,12 +114,14 @@ test('reopens the existing database and migrates a legacy full model before resa
       indexedDB,
       EXISTING_APP_DATABASE
     )
+
     try {
       return JSON.parse((await repository.read(id)).payload)
     } finally {
       repository.close()
     }
   }, new URL(page.url()).searchParams.get('projectId'))
+
   expect(persisted.format).toBe('sim-project')
   expect(persisted.visualSources).toEqual(original.sources)
 })
@@ -117,15 +130,21 @@ test('local project A/B/A replacement resets history and view without duplicatin
   page
 }, info) => {
   const errors: string[] = []
+
   page.on('pageerror', (error) => errors.push(error.message))
   await ready(page)
   const canvas = page.getByTestId('workcell-canvas').locator('canvas')
   const initialView = await canvas.screenshot()
+
   await save(page, 'Project A')
   await save(page, 'Project B', true)
   await renameFixture(page, 'fixture post', 'B fixture')
   const bounds = await canvas.boundingBox()
-  if (!bounds) throw new Error('Missing canvas')
+
+  if (!bounds) {
+    throw new Error('Missing canvas')
+  }
+
   await page.mouse.move(bounds.x + 100, bounds.y + 100)
   await page.mouse.down()
   await page.mouse.move(bounds.x + 260, bounds.y + 180, { steps: 5 })
@@ -204,6 +223,7 @@ test('cancel and invalid target preserve the editable current document', async (
     .click()
   await expect(page.getByLabel('Object name')).toHaveValue('Unsaved fixture')
   const depth = await page.getByTestId('history-depth').textContent()
+
   await page.evaluate(async () => {
     const path = '/src/storage/indexed-db.ts'
     const { IndexedProjectRepository } = await import(path)
@@ -222,7 +242,11 @@ test('cancel and invalid target preserve the editable current document', async (
       payload = JSON.parse(stored.payload)
     const elements = payload.document.sceneTree.elements
     const id = Object.keys(elements).find((key) => elements[key].parentId)
-    if (!id) throw new Error('Missing parented canonical element')
+
+    if (!id) {
+      throw new Error('Missing parented canonical element')
+    }
+
     elements[id].parentId = 'missing-parent'
     await repository.write(
       {
@@ -296,16 +320,27 @@ test('failed successor startup exposes recovery and never presents A as editable
     page.getByTestId('workcell-canvas').locator('canvas')
   ).toHaveCount(0)
   const download = page.waitForEvent('download')
+
   await page
     .getByRole('button', { name: 'Download recovery', exact: true })
     .click()
   const file = await download
+
   await file.saveAs(info.outputPath('recovered-project.json'))
   const stream = await file.createReadStream()
-  if (!stream) throw new Error('Missing recovery download')
+
+  if (!stream) {
+    throw new Error('Missing recovery download')
+  }
+
   let content = ''
-  for await (const chunk of stream) content += String(chunk)
+
+  for await (const chunk of stream) {
+    content += String(chunk)
+  }
+
   const recovered = JSON.parse(content)
+
   expect(recovered.format).toBe('sim-project')
   expect(JSON.stringify(recovered.document)).toContain(
     'Unsaved recovery fixture'
@@ -332,6 +367,7 @@ test('retained load diagnostics stay visible and survive saving a copy', async (
     const { projects } = await repository.list(),
       stored = await repository.read(projects[0].id)
     const payload = JSON.parse(stored.payload)
+
     payload.loadIssues = [
       {
         path: 'imported-source',
@@ -374,10 +410,12 @@ test('a blank workcell survives an App reload and explicit reopen without an ext
 }) => {
   await ready(page)
   const initialDepth = await readHistoryDepth(page)
+
   for (let remaining = initialDepth - 1; remaining >= 0; remaining--) {
     await page.getByRole('button', { name: 'Undo', exact: true }).click()
     await expect.poll(() => readHistoryDepth(page)).toBe(remaining)
   }
+
   await expect(page.getByRole('treeitem')).toHaveCount(0)
   await page.getByRole('button', { name: 'New workcell', exact: true }).click()
   await page.getByRole('button', { name: 'Add fixture', exact: true }).click()

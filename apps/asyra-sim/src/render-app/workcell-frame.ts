@@ -46,14 +46,18 @@ export function prepareWorkcellProjection(
   const model = structuredClone(workcell),
     sources = structuredClone(visualAssets)
   const shapes = new Map<string, SpatialShape>()
+
   const shapeFor = (id: string, create: () => SpatialShape) => {
     let shape = shapes.get(id)
+
     if (!shape) {
       shape = readSpatialShape(create())
       shapes.set(id, shape)
     }
+
     return shape
   }
+
   return (view: WorkcellView): SpatialFrame =>
     projectWorkcellFrame(model, view, sources, shapeFor)
 }
@@ -67,26 +71,40 @@ function projectWorkcellFrame(
   const poses = forwardKinematics(workcell, view.joints),
     meshes: SpatialFrame['meshes'][number][] = []
   const bodies = new Map(workcell.bodies.map((body) => [body.id, body]))
+
   const colorFor = (body: Body, original: number) => {
     const color = view.highlight?.colors.get(body.id)
 
-    if (color !== undefined) return color
+    if (color !== undefined) {
+      return color
+    }
 
     return body.id === view.selectedId ? 0x62e6c1 : original
   }
-  for (const body of workcell.bodies)
-    for (const binding of body.visuals ?? [])
-      if (!visualAssets.has(binding.assetId))
+
+  for (const body of workcell.bodies) {
+    for (const binding of body.visuals ?? []) {
+      if (!visualAssets.has(binding.assetId)) {
         throw new Error(`Missing visual source ${binding.assetId}`)
+      }
+    }
+  }
+
   const visible = (body: Body): boolean => {
     let current: Body | undefined = body
+
     while (current) {
-      if (!current.visible) return false
+      if (!current.visible) {
+        return false
+      }
+
       current =
         current.parentId === null ? undefined : bodies.get(current.parentId)
     }
+
     return true
   }
+
   if (view.grid) {
     const decoration = (
       id: string,
@@ -109,6 +127,7 @@ function projectWorkcellFrame(
         }
       })
     }
+
     decoration('workspace:floor', [0, -0.018, 0], [6, 0.02, 6], 0x1b2b37)
     for (let index = -6; index <= 6; index++) {
       decoration(
@@ -125,9 +144,14 @@ function projectWorkcellFrame(
       )
     }
   }
+
   for (const body of workcell.bodies) {
     const bodyPose = poses.get(body.id)
-    if (!bodyPose) throw new Error('Missing domain pose for projection')
+
+    if (!bodyPose) {
+      throw new Error('Missing domain pose for projection')
+    }
+
     for (const collider of body.visuals?.length || view.proxies === false
       ? []
       : body.colliders) {
@@ -150,6 +174,7 @@ function projectWorkcellFrame(
         wireframe: view.wireframe ?? false,
         selectable: true
       }
+
       meshes.push({
         id: `${body.id}/${collider.id}`,
         elementId: body.id,
@@ -157,11 +182,20 @@ function projectWorkcellFrame(
         visible: visible(body)
       })
     }
-    if (view.visuals === false) continue
+
+    if (view.visuals === false) {
+      continue
+    }
+
     for (const binding of body.visuals ?? []) {
       const asset = visualAssets.get(binding.assetId)
-      if (!asset) throw new Error(`Missing visual source ${binding.assetId}`)
+
+      if (!asset) {
+        throw new Error(`Missing visual source ${binding.assetId}`)
+      }
+
       const pose = compose(bodyPose, binding.pose)
+
       asset.meshes.forEach((mesh, index) => {
         meshes.push({
           id: `${body.id}/visual/${binding.id}/${index}`,
@@ -185,5 +219,6 @@ function projectWorkcellFrame(
       })
     }
   }
+
   return { camera: structuredClone(view.camera), meshes }
 }

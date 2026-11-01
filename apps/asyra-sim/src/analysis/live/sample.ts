@@ -18,8 +18,9 @@ export function sampleSnapshot(
     !Number.isFinite(time) ||
     time < input.interval[0] ||
     time > input.interval[1]
-  )
+  ) {
     throw new Error('Live sample time is outside the experiment interval')
+  }
 
   return Object.freeze({
     ...input,

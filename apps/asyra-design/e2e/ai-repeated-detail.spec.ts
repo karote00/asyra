@@ -18,6 +18,7 @@ import {
 } from './test-utils'
 
 test.use({ trace: 'retain-on-failure' })
+
 const connected = (page: Page) =>
   expect
     .poll(() =>
@@ -41,27 +42,39 @@ async function runtime(page: Page) {
         }
       }
     })
+
     testRuntimeState.set('repeat-runtime', input)
+
     return JSON.parse(JSON.stringify(input.actionDefinitions))
   })
+
   const execute = async (batch: AiActionBatch) =>
     (await page.evaluate(async (batch) => {
       const { testRuntimeState } = await import('../src/testing/runtime-access')
+
       type Input = ReturnType<
         typeof import('../src/ai/runtime-input').createAiRuntimeInput
       >
       const input = testRuntimeState.get<Input>('repeat-runtime')
-      if (!input?.transactionRunner)
+
+      if (!input?.transactionRunner) {
         throw new Error('Missing transaction owner')
+      }
+
       return input.transactionRunner.run(
         'Repeated detail',
         async (runMutation) => {
           const actionResults = []
+
           for (const item of batch.actions) {
             const action = input.actionDefinitions.find(
               (a) => a.name === item.name
             )
-            if (!action) throw new Error('Unknown action')
+
+            if (!action) {
+              throw new Error('Unknown action')
+            }
+
             actionResults.push({
               actionId: item.id,
               actionName: item.name,
@@ -71,16 +84,20 @@ async function runtime(page: Page) {
               })
             })
           }
+
           return { context: {}, actionResults }
         }
       )
     }, batch)) as never
+
   const signal = new AbortController().signal
   const designs = createLocalDesignTools(actions)
   const operations = createLocalOperationTools(actions, designs, execute)
   const workflow = createLocalDesignWorkflow(designs, operations)
+
   const invoke = async (name: string, args: unknown) =>
     JSON.parse(await operations.call(name, args, signal))
+
   return { actions, designs, operations, workflow, execute, signal, invoke }
 }
 
@@ -90,6 +107,7 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
 }) => {
   test.setTimeout(180000)
   const document = createTestDocumentIdentity()
+
   await page.goto(document.url)
   await waitForAppReady(page)
   await connected(page)
@@ -98,6 +116,7 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
   const prepared = JSON.parse(
     await designs.call('prepare_design', { draft: compact }, signal)
   )
+
   expect(prepared).toMatchObject({
     available: true,
     applicable: true,
@@ -114,11 +133,13 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
       }
     ]
   })
+
   await execute(batch)
   const ids = designs.resolveTargets({
     artifactId: prepared.artifactId,
     keys: correspondence.map((c) => c.compact)
   })
+
   expect(ids).toHaveLength(352)
   const targetReceipt = JSON.parse(
     await designs.call(
@@ -136,8 +157,10 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
     targetSetId: targetReceipt.targets[0].targetSetId
   }
   const localIds = designs.resolveTargets(target)
+
   expect(localIds).toEqual(ids.slice(88, 132))
   const peer = await context.newPage()
+
   try {
     await invoke('define_design_criteria', {
       phase: 'plan',
@@ -159,6 +182,7 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
         }
       }
     })
+
     const bind = async (id: string, unitId: string) => {
       const capture = await invoke('inspect_drawing', {
         arguments: { elementId: id, view: 'detail' }
@@ -166,7 +190,9 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
       const image = capture.actionResults.find(
         (r: { result: { inspectionId?: string } }) => r.result.inspectionId
       )?.result
+
       expect(image).toMatchObject({ available: true })
+
       return (
         await invoke('review_drawing', {
           phase: 'visual',
@@ -180,6 +206,7 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
         })
       ).next.arguments
     }
+
     // Controlled observations prove evidence handoff, never visual/model quality.
     const record = (binding: { checks: object[] }) =>
       invoke('review_drawing', {
@@ -191,10 +218,12 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
           evidence: 'Controlled current-region observation.'
         }))
       })
+
     const old = await bind(localIds[0], 'changed')
     const first = await record(old),
       sibling = await record(await bind(ids[0], 'unrelated'))
     const checkIds = [first.recordedChecks[0].id, sibling.recordedChecks[0].id]
+
     const checks = async () =>
       (
         await invoke('read_design_checks', {
@@ -202,10 +231,12 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
           includePassed: true
         })
       ).items
+
     const unchanged = (await checks()).find(
       (c: { id: string }) => c.id === checkIds[1]
     )
     const created = await getCoreDocumentDigest(page)
+
     await expect
       .poll(() => getPersistedDocumentDigest(document.fileId))
       .toEqual(created)
@@ -213,14 +244,18 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
     await waitForAppReady(peer)
     await connected(peer)
     await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(created)
+
     const fills = () =>
       page.evaluate(async (ids) => {
         const { core } = await import('../src/testing/runtime-access')
+
         return ids.map(
           (id) => core.getElementComputedData(id, ['fills'])?.fills
         )
       }, ids)
+
     const beforeFills = await fills()
+
     const edit = () =>
       invoke('execute_design_batch', {
         inspection: 'defer',
@@ -232,12 +267,16 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
           }
         ]
       })
+
     expect(localToolOutcome(await edit()).status).toBe('success')
     const afterFills = await fills()
+
     ids.forEach((id, i) => {
-      if (localIds.includes(id))
+      if (localIds.includes(id)) {
         expect(afterFills[i]).not.toEqual(beforeFills[i])
-      else expect(afterFills[i]).toEqual(beforeFills[i])
+      } else {
+        expect(afterFills[i]).toEqual(beforeFills[i])
+      }
     })
     expect(
       (await checks()).find((c: { id: string }) => c.id === checkIds[0]).status
@@ -254,6 +293,7 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
       (await checks()).every((c: { status: string }) => c.status === 'pass')
     ).toBe(true)
     let edited = await getCoreDocumentDigest(page)
+
     await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(edited)
     await expect
       .poll(() => getPersistedDocumentDigest(document.fileId))
@@ -273,14 +313,17 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
       .poll(() => getPersistedDocumentDigest(document.fileId))
       .toEqual(edited)
     const renewed = await bind(localIds[0], 'changed')
+
     await record(renewed)
     await peer.evaluate(async (id) => {
       const { fillApis, transactionApis } = await import('../src/common-apis')
+
       transactionApis.runTransaction(() =>
         fillApis.updateFillsAtIndex([id], 0, { opacity: 0.65 })
       )
     }, localIds[0])
     const remoteEdit = await getCoreDocumentDigest(peer)
+
     expect(remoteEdit).not.toEqual(edited)
     await expect.poll(() => getCoreDocumentDigest(page)).toEqual(remoteEdit)
     expect(
@@ -302,6 +345,7 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
     const whole = wholeCapture.actionResults.find(
       (r: { result: { inspectionId?: string } }) => r.result.inspectionId
     )?.result
+
     expect(whole).toMatchObject({ available: true })
     const wholeBinding = await invoke('review_drawing', {
       phase: 'visual',
@@ -309,6 +353,7 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
         { criterionId: 'overall', inspectionIds: [whole.inspectionId] }
       ]
     })
+
     expect(
       await invoke('review_drawing', {
         ...wholeBinding.next.arguments,
@@ -342,11 +387,13 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
     expect(await getCoreDocumentDigest(page)).toEqual(edited)
     await page.evaluate(async (id) => {
       const { fillApis, transactionApis } = await import('../src/common-apis')
+
       transactionApis.runTransaction(() =>
         fillApis.updateFillsAtIndex([id], 0, { opacity: 0.8 })
       )
     }, ids[0])
     const subsequent = await getCoreDocumentDigest(page)
+
     expect(subsequent).not.toEqual(edited)
     await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(subsequent)
     await expect
@@ -365,12 +412,15 @@ test('ordered multi-face preparation preserves an acknowledged prefix and retrie
   page
 }, testInfo) => {
   const document = createTestDocumentIdentity()
+
   await page.goto(document.url)
   await waitForAppReady(page)
   await connected(page)
   const { workflow, signal, designs } = await runtime(page)
+
   await page.evaluate(async () => {
     const runtime = await import('../src/testing/runtime-access')
+
     runtime.testRuntimeState.set(
       'ordered-prefix-initial',
       await runtime.core.save()
@@ -380,16 +430,21 @@ test('ordered multi-face preparation preserves an acknowledged prefix and retrie
   const example = designPreparationExamples.find(
     (e) => e.draft.name === 'Repeated visible detail'
   )
+
   if (
     !example ||
     !('linearFields' in example.draft) ||
     !('reflection' in example.draft.linearFields)
-  )
+  ) {
     throw new Error('Missing multi-face example')
+  }
+
   const invalid = structuredClone(example.draft)
+
   invalid.linearFields.reflection.end = {
     ...invalid.linearFields.reflection.start
   }
+
   const call = async (parts: unknown[]) =>
     JSON.parse(
       await workflow.call(
@@ -398,10 +453,12 @@ test('ordered multi-face preparation preserves an acknowledged prefix and retrie
         signal
       )
     )
+
   const result = await call([
     { key: 'first', draft: example.draft },
     { key: 'second', draft: invalid }
   ])
+
   expect(result.status).toBe('partial')
   expect(result.parts[0]).toMatchObject({ available: true, applicable: true })
   expect(result.parts[1].failedStep).toBe('prepare_design')
@@ -410,10 +467,12 @@ test('ordered multi-face preparation preserves an acknowledged prefix and retrie
     keyPrefix: 'panes-'
   })
   const prefix = await getCoreDocumentDigest(page)
+
   await expect
     .poll(() => getPersistedDocumentDigest(document.fileId))
     .toEqual(prefix)
   const cancelled = new AbortController()
+
   cancelled.abort()
   await expect(
     workflow.call(
@@ -430,12 +489,14 @@ test('ordered multi-face preparation preserves an acknowledged prefix and retrie
   ).toEqual(firstIds)
   expect(await getCoreDocumentDigest(page)).toEqual(prefix)
   const retry = await call([{ key: 'second', draft: example.draft }])
+
   expect(retry.status).toBe('complete')
   expect(retry.parts).toHaveLength(1)
   const secondIds = designs.resolveTargets({
     artifactId: retry.parts[0].artifactId,
     keyPrefix: 'panes-'
   })
+
   expect(secondIds.some((id) => firstIds.includes(id))).toBe(false)
   expect(
     designs.resolveTargets({
@@ -444,6 +505,7 @@ test('ordered multi-face preparation preserves an acknowledged prefix and retrie
     })
   ).toEqual(firstIds)
   const complete = await getCoreDocumentDigest(page)
+
   expect(complete).not.toEqual(prefix)
   await undo(page)
   await expect.poll(() => getCoreDocumentDigest(page)).toEqual(prefix)
@@ -454,6 +516,7 @@ test('ordered multi-face preparation preserves an acknowledged prefix and retrie
     body: JSON.stringify(
       await page.evaluate(async () => {
         const runtime = await import('../src/testing/runtime-access')
+
         return {
           initial: runtime.testRuntimeState.get('ordered-prefix-initial'),
           publications: runtime.readTestCapture('ordered-prefix-publications'),
@@ -476,6 +539,7 @@ test('actual provider receipt ownership preserves a recorded prefix through repa
 }, testInfo) => {
   test.setTimeout(120000)
   const document = createTestDocumentIdentity()
+
   await page.goto(document.url)
   await waitForAppReady(page)
   await connected(page)
@@ -494,12 +558,17 @@ test('actual provider receipt ownership preserves a recorded prefix through repa
       executable: resolve('e2e/fixtures/receipt-provider.mjs'),
       recordDirectory: testInfo.outputPath('provider-records'),
       toolLibraryDirectory: testInfo.outputPath('tool-library'),
+
       executeBatch: async (batch) => {
         const receipt = await execute(batch)
+
         if (batch.actions.some((a) => a.name === 'apply_prepared_design')) {
           mutations++
-          if (mutations === 2) prefix = await getCoreDocumentDigest(page)
+          if (mutations === 2) {
+            prefix = await getCoreDocumentDigest(page)
+          }
         }
+
         return receipt
       }
     }
@@ -507,6 +576,7 @@ test('actual provider receipt ownership preserves a recorded prefix through repa
   const report = JSON.parse(
     (result.actions[0].arguments as { message: string }).message
   )
+
   expect(report.failure.success).toBe(false)
   expect(report.failure.value).toMatchObject({
     status: 'partial',
@@ -523,16 +593,20 @@ test('actual provider receipt ownership preserves a recorded prefix through repa
   const crown = report.failure.value.parts[0].actionResults.find(
     (r: { actionName: string }) => r.actionName === 'apply_prepared_design'
   ).result.compositionId
+
   const entries = (reply: { value: { items: { id: string }[] } }) =>
     reply.value.items
+
   const original = entries(report.before).find(
     (c) => c.id === `measurement:${crown}`
   )
+
   expect(original).toMatchObject({ status: 'pass' })
   expect(
     entries(report.after).find((c) => c.id === `measurement:${crown}`)
   ).toEqual(original)
   const complete = await getCoreDocumentDigest(page)
+
   expect(complete).not.toEqual(prefix)
   await undo(page)
   await expect.poll(() => getCoreDocumentDigest(page)).toEqual(prefix)
@@ -549,12 +623,17 @@ test('actual provider receipt ownership preserves a recorded prefix through repa
     const { fillApis, transactionApis } = await import('../src/common-apis')
     const core = (await import('../src/contexts')).default
     const children = core.getElementChildren(id, 0, 1).elementIds
-    if (!children[0]) throw new Error('Missing crown child after reload')
+
+    if (!children[0]) {
+      throw new Error('Missing crown child after reload')
+    }
+
     transactionApis.runTransaction(() =>
       fillApis.updateFillsAtIndex([children[0]], 0, { opacity: 0.75 })
     )
   }, crown)
   const next = await getCoreDocumentDigest(page)
+
   expect(next).not.toEqual(complete)
   await expect
     .poll(() => getPersistedDocumentDigest(document.fileId))

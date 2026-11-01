@@ -65,10 +65,12 @@ describe('InteractionTargetRegistry', () => {
       canvas: { x: 5, y: 5 },
       workspace: { x: 5, y: 5 }
     })
+
     expect(hit?.id).toBe('target-update')
 
     interactionTargetRegistry.update('target-update', {
       bounds: { minX: 100, minY: 100, maxX: 110, maxY: 110 },
+
       hitTest: () => false
     })
 

@@ -35,21 +35,25 @@ export const createPropsAPIs = (requests: PropsRequests) => ({
   propsLoadData(data: unknown) {
     requests.propsLoadData(data)
   },
+
   propsSaveData() {
     return requests.propsSaveData()
   },
+
   preflightRestoreProperties(
     snapshot: PropsRestoreSnapshot,
     ownerRelations: readonly ElementPropertyRelation[]
   ) {
     return requests.preflightRestoreProperties(snapshot, ownerRelations)
   },
+
   applyRestoreProperties(
     preparedRestore: PreparedPropsRestore,
     options?: EVENT_OPTIONS
   ) {
     return requests.applyRestoreProperties(preparedRestore, options)
   },
+
   updatePropertyComponents(
     updates: readonly PropertyComponentValuesUpdate[],
     options?: EVENT_OPTIONS
@@ -57,6 +61,7 @@ export const createPropsAPIs = (requests: PropsRequests) => ({
     if (updates.length === 0) {
       return Object.freeze({ acceptedIds: Object.freeze([]), changed: false })
     }
+
     const preparedBatch = requests.preparePropertyMutationBatch({
       operations: updates.map(({ propertyId, values }) => ({
         kind: 'values',
@@ -66,6 +71,7 @@ export const createPropsAPIs = (requests: PropsRequests) => ({
       options
     })
     const result = requests.applyPreparedPropertyMutationBatch(preparedBatch)
+
     return Object.freeze({
       acceptedIds: Object.freeze([...result.orderedPropertyIds]),
       changed: result.evidence.length > 0

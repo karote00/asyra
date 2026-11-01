@@ -23,12 +23,14 @@ const snapshot = () => ({
 describe('local project envelope', () => {
   it('reports unavailable native storage rather than substituting memory', async () => {
     const repository = new IndexedProjectRepository()
+
     await expect(repository.list()).rejects.toThrow('IndexedDB is unavailable')
     repository.close()
   })
   it('roundtrips detached document data and retained load repair diagnostics', () => {
     const original = snapshot(),
       decoded = decodeProject(encodeProject(original))
+
     expect(decoded).toEqual(original)
     expect(decoded.document).not.toBe(original.document)
     original.loadIssues[0].message = 'changed'
@@ -37,13 +39,14 @@ describe('local project envelope', () => {
     )
   })
   it('rejects nonfinite data rather than serializing it as null', () => {
-    for (const value of [NaN, Infinity, -Infinity])
+    for (const value of [NaN, Infinity, -Infinity]) {
       expect(() =>
         encodeProject({
           ...snapshot(),
           document: { ...snapshot().document, props: { value } }
         })
       ).toThrow('Nonfinite')
+    }
   })
   it('rejects malformed and unsupported envelopes before canonical application', () => {
     for (const text of [
@@ -63,8 +66,9 @@ describe('local project envelope', () => {
         ...snapshot(),
         loadIssues: 'lost'
       })
-    ])
+    ]) {
       expect(() => decodeProject(text)).toThrow()
+    }
   })
   it('rejects missing or invalid metadata without fabricating a project', () => {
     expect(() => validateSummary(null)).toThrow()

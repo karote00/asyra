@@ -86,6 +86,7 @@ const isNormalizedVectorRenderDataInput = (
   if (!isRecord(data)) {
     return false
   }
+
   if (
     typeof data.id !== 'string' ||
     typeof data.x !== 'number' ||
@@ -106,6 +107,7 @@ const isNormalizedVectorRenderDataInput = (
   const points = data.points
   const segments = data.segments
   const networks = data.networks
+
   return (
     data.pointCoordinateSpace === 'workspace' &&
     isRecord(points) &&
@@ -117,8 +119,10 @@ const isNormalizedVectorRenderDataInput = (
 const normalizeVectorRenderData = (data: unknown): VectorComputedData => {
   if (isNormalizedVectorRenderDataInput(data)) {
     emitVectorRenderCounter('vector-render-normalize-fast-path-hit')
+
     const finiteOr = (value: unknown, fallback: number) =>
       typeof value === 'number' && Number.isFinite(value) ? value : fallback
+
     return {
       ...data,
       rotation: finiteOr(data.rotation, 0),
@@ -133,6 +137,7 @@ const normalizeVectorRenderData = (data: unknown): VectorComputedData => {
       strokes: Array.isArray(data.strokes) ? data.strokes : []
     }
   }
+
   throw new Error('[Preset Vector] Render data must contain Vector geometry')
 }
 
@@ -152,6 +157,7 @@ export const getVectorRenderLocalPoint = (
   workspacePoint: PositionData
 ): PositionData | null => {
   const projection = vectorRenderGeometryProjectionCache.get(renderElement)
+
   return projection
     ? {
         x: workspacePoint.x - projection.workspaceOrigin.x,
@@ -165,6 +171,7 @@ export const getVectorRenderWorkspacePoint = (
   localPoint: PositionData
 ): PositionData | null => {
   const projection = vectorRenderGeometryProjectionCache.get(renderElement)
+
   return projection
     ? {
         x: localPoint.x + projection.workspaceOrigin.x,
@@ -182,6 +189,7 @@ const getAnchorNode = (
   }
 
   const point = points[pointId]
+
   if (!isAnchorNode(point)) {
     return null
   }
@@ -198,6 +206,7 @@ const getControlNode = (
   }
 
   const point = points[pointId]
+
   if (!point || point.kind !== VECTOR_TOKENS.POINT.KIND.CONTROL) {
     return null
   }
@@ -235,19 +244,25 @@ const getCubicDerivativeRoots = (
   const a = -start + 3 * control1 - 3 * control2 + end
   const b = 2 * (start - 2 * control1 + control2)
   const c = control1 - start
+
   if (Math.abs(a) <= Number.EPSILON) {
     if (Math.abs(b) <= Number.EPSILON) {
       return []
     }
+
     const root = -c / b
+
     return root > 0 && root < 1 ? [root] : []
   }
 
   const discriminant = b * b - 4 * a * c
+
   if (discriminant < 0) {
     return []
   }
+
   const squareRoot = Math.sqrt(discriminant)
+
   return [(-b + squareRoot) / (2 * a), (-b - squareRoot) / (2 * a)].filter(
     (root) => root > 0 && root < 1
   )
@@ -260,6 +275,7 @@ const calculateVectorLocalBounds = (
 ) => {
   const anchorIds = new Set<string>()
   const segmentIds = new Set<string>()
+
   networks.forEach((network) => {
     network.pointIds.forEach((pointId) => anchorIds.add(pointId))
     network.segmentIds.forEach((segmentId) => segmentIds.add(segmentId))
@@ -267,6 +283,7 @@ const calculateVectorLocalBounds = (
   const anchors = [...anchorIds]
     .map((pointId) => points[pointId])
     .filter(isAnchorNode)
+
   if (anchors.length === 0) {
     return {
       x: 0,
@@ -282,30 +299,37 @@ const calculateVectorLocalBounds = (
     maxX: anchors[0].x,
     maxY: anchors[0].y
   }
+
   const include = (point: Vec2) => {
     bounds.minX = Math.min(bounds.minX, point.x)
     bounds.minY = Math.min(bounds.minY, point.y)
     bounds.maxX = Math.max(bounds.maxX, point.x)
     bounds.maxY = Math.max(bounds.maxY, point.y)
   }
+
   anchors.forEach(include)
 
   segmentIds.forEach((segmentId) => {
     const segment = segments[segmentId]
+
     if (!segment) {
       return
     }
+
     const start = getAnchorNode(points, segment.startId)
     const end = getAnchorNode(points, segment.endId)
+
     if (!start || !end) {
       return
     }
+
     const outControl = getControlNode(points, segment.outControlId) ?? start
     const inControl = getControlNode(points, segment.inControlId) ?? end
     const roots = new Set([
       ...getCubicDerivativeRoots(start.x, outControl.x, inControl.x, end.x),
       ...getCubicDerivativeRoots(start.y, outControl.y, inControl.y, end.y)
     ])
+
     roots.forEach((root) =>
       include(cubicBezierPoint(start, outControl, inControl, end, root))
     )
@@ -326,16 +350,20 @@ const buildEvenOddShape = (
   pointOffset: PositionData
 ): EvenOddShape => {
   const shape: EvenOddShape = { paths: [] }
+
   orderedNetworks.forEach((network) => {
     const segmentsList: EvenOddSegment[] = []
+
     network.segmentIds.forEach((segmentId) => {
       const segment = segments[segmentId]
+
       if (!segment) {
         return
       }
 
       const start = getAnchorNode(points, segment.startId)
       const end = getAnchorNode(points, segment.endId)
+
       if (!start || !end) {
         return
       }
@@ -386,6 +414,7 @@ const drawVectorNetworkPath = (
   pointOffset: PositionData
 ) => {
   const first = getAnchorNode(points, network.pointIds[0])
+
   if (!first) {
     return
   }
@@ -394,22 +423,30 @@ const drawVectorNetworkPath = (
     { x: first.x - pointOffset.x, y: first.y - pointOffset.y }
   ]
   let isLinear = true
+
   network.segmentIds.forEach((segmentId) => {
     const segment = segments[segmentId]
+
     if (!segment) {
       return
     }
+
     const start = getAnchorNode(points, segment.startId)
     const end = getAnchorNode(points, segment.endId)
+
     if (!start || !end) {
       return
     }
+
     const outControl = getControlNode(points, segment.outControlId)
     const inControl = getControlNode(points, segment.inControlId)
+
     if (outControl || inControl) {
       isLinear = false
+
       return
     }
+
     linearPoints.push({
       x: end.x - pointOffset.x,
       y: end.y - pointOffset.y
@@ -417,6 +454,7 @@ const drawVectorNetworkPath = (
   })
   if (isLinear && linearPoints.length > 1) {
     graphic.poly(linearPoints, network.closed)
+
     return
   }
 
@@ -424,12 +462,14 @@ const drawVectorNetworkPath = (
 
   network.segmentIds.forEach((segmentId) => {
     const segment = segments[segmentId]
+
     if (!segment) {
       return
     }
 
     const start = getAnchorNode(points, segment.startId)
     const end = getAnchorNode(points, segment.endId)
+
     if (!start || !end) {
       return
     }
@@ -439,6 +479,7 @@ const drawVectorNetworkPath = (
 
     if (!outControl && !inControl) {
       graphic.lineTo(end.x - pointOffset.x, end.y - pointOffset.y)
+
       return
     }
 
@@ -480,17 +521,20 @@ const applyBaseVectorStroke = (
     }
 
     const width = stroke.width
+
     if (typeof width !== 'number' || !Number.isFinite(width) || width <= 0) {
       continue
     }
 
     const fill = getRenderableFill([stroke.fill])
+
     if (!fill || fill.kind !== 'solid') {
       continue
     }
 
     replayPath()
     graphic.stroke({ color: fill.color, alpha: fill.alpha, width })
+
     return
   }
 }
@@ -547,6 +591,7 @@ const renderVectorGraphic = (
     polygons: coverage.faces,
     bounds: { minX: 0, minY: 0, maxX: bounds.width, maxY: bounds.height }
   }
+
   if (!state) {
     state = {
       points,
@@ -563,8 +608,12 @@ const renderVectorGraphic = (
     state.projection.attach(graphic)
     vectorFillProjections.set(graphic, state)
   } else {
-    if (geometryChanged) state.projection.update({ model, paint })
-    else if (state.paint !== paint) state.projection.updatePaint(paint)
+    if (geometryChanged) {
+      state.projection.update({ model, paint })
+    } else if (state.paint !== paint) {
+      state.projection.updatePaint(paint)
+    }
+
     Object.assign(state, {
       points,
       segments,
@@ -577,6 +626,7 @@ const renderVectorGraphic = (
       paint
     })
   }
+
   graphic.clear()
   graphic.batched = true
   graphic.hitArea = hasPaint ? { contains: coverage.contains } : null
@@ -600,23 +650,29 @@ const renderVectorGraphic = (
   // Unfilled paths keep their ordinary graphics path. A filled path's stroke
   // is a later child, above its mesh; material changes cannot reverse order.
   const hasFill = hasPaint && coverage.faces.length > 0
-  if (!hasFill)
+
+  if (!hasFill) {
     applyBaseVectorStroke(graphic, renderData.strokes ?? [], () =>
       drawVectorPath(graphic, orderedNetworks, points, segments, pointOffset)
     )
+  }
+
   if (hasFill && renderData.strokes?.length && !state.stroke) {
     state.stroke = new RenderGraphics()
     graphic.addChild(state.stroke)
   }
+
   if (state.stroke) {
     const stroke = state.stroke
+
     stroke.clear()
     stroke.visible =
       hasFill && orderedNetworks.length > 0 && !!renderData.strokes?.length
-    if (stroke.visible)
+    if (stroke.visible) {
       applyBaseVectorStroke(stroke, renderData.strokes ?? [], () =>
         drawVectorPath(stroke, orderedNetworks, points, segments, pointOffset)
       )
+    }
   }
 }
 

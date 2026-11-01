@@ -2,6 +2,7 @@ import { expect, it, vi } from 'vitest'
 const measure = vi.hoisted(() =>
   vi.fn(() => ({ width: 43.2, height: 36, lines: ['first', 'second'] }))
 )
+
 vi.mock('pixi.js', () => ({
   TextStyle: vi.fn(function (this: object, value: object) {
     Object.assign(this, value)
@@ -18,8 +19,10 @@ const layout = {
   lineHeight: 20,
   letterSpacing: 0
 } as const
+
 it('uses native metrics once for unwrapped content and explicit line height', () => {
   const result = measureTextLayout(layout)
+
   expect(result).toEqual({
     type: 'text-measurement',
     width: 44,

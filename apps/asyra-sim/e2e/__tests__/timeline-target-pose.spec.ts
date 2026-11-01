@@ -9,6 +9,7 @@ test('timeline dragging keeps last checked feedback until valid target evidence 
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
   const history = await page.getByTestId('history-depth').textContent()
   const workers: string[] = []
+
   page.on('worker', (worker) => workers.push(worker.url()))
 
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
@@ -21,12 +22,16 @@ test('timeline dragging keeps last checked feedback until valid target evidence 
   const feedback = page.getByTestId('playback-feedback')
   const bounds = await time.boundingBox()
 
-  if (!bounds) throw new Error('Missing Sim Preview timeline control')
+  if (!bounds) {
+    throw new Error('Missing Sim Preview timeline control')
+  }
 
   const drag = async (target: number) => {
     const previous = Number(await time.inputValue())
+
     const x = (value: number) =>
       bounds.x + 8 + ((bounds.width - 16) * value) / 8
+
     const y = bounds.y + bounds.height / 2
 
     await page.mouse.move(x(previous), y)
@@ -37,10 +42,12 @@ test('timeline dragging keeps last checked feedback until valid target evidence 
     await expect
       .poll(async () => Number(await time.inputValue()))
       .not.toBe(previous)
+
     return Number(await time.inputValue())
   }
 
   const first = await drag(3.888)
+
   await expect(feedback).toContainText(`Checked ${first.toFixed(4)} s`, {
     timeout: 15_000
   })
@@ -48,8 +55,9 @@ test('timeline dragging keeps last checked feedback until valid target evidence 
   await expect(feedback).toHaveAttribute('data-pose-matches', 'true')
 
   await page.evaluate(() => {
-    if (!document.querySelector('[data-testid="playback-feedback"]'))
+    if (!document.querySelector('[data-testid="playback-feedback"]')) {
       throw new Error('Missing playback feedback')
+    }
 
     const frames: {
       kind: string | null
@@ -58,10 +66,14 @@ test('timeline dragging keeps last checked feedback until valid target evidence 
       height: number
       text: string
     }[] = []
+
     const capture = () => {
       const notice = document.querySelector('[data-testid="playback-feedback"]')
 
-      if (!notice) return
+      if (!notice) {
+        return
+      }
+
       frames.push({
         kind: notice.getAttribute('data-kind'),
         matches: notice.getAttribute('data-pose-matches'),
@@ -70,6 +82,7 @@ test('timeline dragging keeps last checked feedback until valid target evidence 
         text: notice.textContent ?? ''
       })
     }
+
     const observer = new MutationObserver(capture)
 
     observer.observe(document.body, {
@@ -102,8 +115,10 @@ test('timeline dragging keeps last checked feedback until valid target evidence 
     }
 
     trace.observer.disconnect()
+
     return trace.frames
   })
+
   expect(frames.length).toBeGreaterThan(0)
   expect(frames.every((frame) => frame.kind !== 'checking')).toBe(true)
   expect(
@@ -115,6 +130,7 @@ test('timeline dragging keeps last checked feedback until valid target evidence 
     )
   ).toBe(true)
   const heights = frames.map((frame) => frame.height)
+
   expect(
     Math.max(...heights) - Math.min(...heights),
     `Feedback card heights: ${heights.join(', ')}`

@@ -24,15 +24,20 @@ test('real greenhouse route exposes the structure, section, inner aisle and resp
     contentType: 'application/json'
   })
   const errors: string[] = []
+
   page.on('pageerror', (error) => errors.push(error.message))
   await page.goto('/')
   await expect(page.getByText('空間模型已就緒')).toBeVisible()
   await expect(page.locator('canvas')).toHaveCount(1)
   const graphics = await page.locator('canvas').evaluate((canvas) => {
     const gl = (canvas as HTMLCanvasElement).getContext('webgl2')
-    if (!gl || gl.isContextLost())
+
+    if (!gl || gl.isContextLost()) {
       throw new Error('Missing live WebGL2 context')
+    }
+
     const info = gl.getExtension('WEBGL_debug_renderer_info')
+
     return {
       version: gl.getParameter(gl.VERSION),
       renderer: info
@@ -43,6 +48,7 @@ test('real greenhouse route exposes the structure, section, inner aisle and resp
       deviceScaleFactor: devicePixelRatio
     }
   })
+
   expect(graphics.version).toContain('WebGL 2')
   expect(graphics.width).toBeGreaterThan(0)
   expect(graphics.height).toBeGreaterThan(0)
@@ -116,6 +122,7 @@ test('real greenhouse route exposes the structure, section, inner aisle and resp
     animations: 'disabled'
   })
   const scene = page.getByTestId('scene')
+
   await scene.focus()
   await page.keyboard.press('ArrowRight')
   await page.keyboard.press('+')
@@ -151,6 +158,7 @@ test('film is visible by default and Shift drag, Command 1 and Command 0 operate
   await expect(page.getByLabel('覆膜不透明度', { exact: true })).toHaveValue(
     '60'
   )
+
   const settle = () =>
     page.evaluate(
       () =>
@@ -158,18 +166,25 @@ test('film is visible by default and Shift drag, Command 1 and Command 0 operate
           requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
         )
     )
+
   await settle()
   const canvas = page.locator('canvas')
   const covered = await canvas.screenshot()
+
   await page.getByLabel('塑膠覆膜', { exact: true }).uncheck()
   await settle()
   expect((await canvas.screenshot()).equals(covered)).toBe(false)
   await page.getByLabel('塑膠覆膜', { exact: true }).check()
   const scene = page.getByTestId('scene')
   const bounds = await scene.boundingBox()
-  if (!bounds) throw new Error('Missing canvas bounds')
+
+  if (!bounds) {
+    throw new Error('Missing canvas bounds')
+  }
+
   await settle()
   const beforePan = await canvas.screenshot()
+
   await page.mouse.move(
     bounds.x + bounds.width / 2,
     bounds.y + bounds.height / 2
@@ -201,6 +216,7 @@ test('film is visible by default and Shift drag, Command 1 and Command 0 operate
   })
   // The fit shortcut must match its button route, including after a displaced view.
   const fitted = await canvas.screenshot()
+
   await page.keyboard.down('Alt')
   await page.mouse.wheel(0, -300)
   await page.keyboard.up('Alt')
@@ -218,24 +234,39 @@ test('film is visible by default and Shift drag, Command 1 and Command 0 operate
           await (await fetch(`data:image/png;base64,${data}`)).blob()
         )
         const buffer = document.createElement('canvas')
+
         buffer.width = image.width
         buffer.height = image.height
         const context = buffer.getContext('2d')
-        if (!context) throw new Error('Missing comparison canvas')
+
+        if (!context) {
+          throw new Error('Missing comparison canvas')
+        }
+
         context.drawImage(image, 0, 0)
         image.close()
+
         return context.getImageData(0, 0, buffer.width, buffer.height).data
       }
+
       const a = await pixels(first),
         b = await pixels(second)
-      if (a.length !== b.length)
+
+      if (a.length !== b.length) {
         throw new Error('Screenshot dimensions changed')
+      }
+
       let delta = 0
-      for (let i = 0; i < a.length; i++) delta += Math.abs(a[i] - b[i])
+
+      for (let i = 0; i < a.length; i++) {
+        delta += Math.abs(a[i] - b[i])
+      }
+
       return delta / a.length
     },
     { first: fitted.toString('base64'), second: refitted.toString('base64') }
   )
+
   expect(difference).toBeLessThan(0.1)
   await page.keyboard.press('Meta+0')
   await expect(page.getByTestId('zoom-percent')).toHaveText('100%')
@@ -251,6 +282,7 @@ test('spring clips are inspectable at the real upright connection', async ({
   await expect(
     page.getByRole('button', { name: '夾具近看', exact: true })
   ).toHaveAttribute('aria-pressed', 'true')
+
   const settle = () =>
     page.evaluate(
       () =>
@@ -258,6 +290,7 @@ test('spring clips are inspectable at the real upright connection', async ({
           requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
         )
     )
+
   await settle()
   await page.screenshot({
     path: testInfo.outputPath('joint.png'),
@@ -285,6 +318,7 @@ test('spring clips are inspectable at the real upright connection', async ({
   await expect(page.getByLabel('跨接彈簧夾', { exact: true })).toBeVisible()
   await settle()
   const withClip = await page.locator('canvas').screenshot()
+
   await page.getByLabel('跨接彈簧夾', { exact: true }).uncheck()
   await settle()
   expect((await page.locator('canvas').screenshot()).equals(withClip)).toBe(
@@ -321,10 +355,12 @@ test('trellis net and top cable ties are visible and independently controlled', 
   await page.getByLabel('塑膠覆膜', { exact: true }).uncheck()
   await page.getByRole('button', { name: '夾具近看', exact: true }).click()
   const canvas = page.locator('canvas')
+
   await canvas.hover()
   await page.keyboard.down('Alt')
   await page.mouse.wheel(0, 900)
   await page.keyboard.up('Alt')
+
   const settle = () =>
     page.evaluate(
       () =>
@@ -332,8 +368,10 @@ test('trellis net and top cable ties are visible and independently controlled', 
           requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
         )
     )
+
   await settle()
   const withNet = await canvas.screenshot()
+
   await page.screenshot({
     path: testInfo.outputPath('net-top.png'),
     fullPage: true
@@ -343,6 +381,7 @@ test('trellis net and top cable ties are visible and independently controlled', 
   expect((await canvas.screenshot()).equals(withNet)).toBe(false)
   await page.getByLabel('攀爬拉網', { exact: true }).check()
   const withTies = await canvas.screenshot()
+
   await page.getByLabel('網頂束帶', { exact: true }).uncheck()
   await settle()
   expect((await canvas.screenshot()).equals(withTies)).toBe(false)
@@ -374,6 +413,7 @@ test('joint inspection reaches 10000 percent and restores the baseline', async (
   await expect(page.getByText('空間模型已就緒')).toBeVisible()
   await page.getByRole('button', { name: '夾具近看', exact: true }).click()
   const scene = page.getByTestId('scene')
+
   await scene.hover()
   await page.keyboard.down('Alt')
   await page.mouse.wheel(0, -Math.log(10) * 1000)

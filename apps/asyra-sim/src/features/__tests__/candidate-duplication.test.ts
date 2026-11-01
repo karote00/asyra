@@ -21,6 +21,7 @@ const empty = {
   props: {}
 }
 let features: ReturnType<typeof installEditingFeatures>
+
 beforeAll(() => {
   installModelComponents(core)
   features = installEditingFeatures(core)
@@ -32,6 +33,7 @@ it('duplicates a complete workcell and experiment as one independent Undo action
     draft = createSyntheticExperimentDraft(example)
   const a = await features.edit.createCandidate('A', example.workcell)
   const aStudy = await features.edit.createExperiment(a, 'Study', draft)
+
   attachRunReference(core, {
     runId: 'historical-a',
     snapshotId: 'snapshot-a',
@@ -42,10 +44,12 @@ it('duplicates a complete workcell and experiment as one independent Undo action
   const before = core.getUndoHistoryDepth(),
     original = await features.edit.captureDocument()
   const b = await features.edit.duplicateCandidate(a, 'B')
+
   expect(core.getUndoHistoryDepth()).toBe(before + 1)
   const bCell = readWorkcell(core, b),
     bStudy = readExperiments(core, b)[0],
     lineage = readCandidateLineage(core, b)
+
   expect(readWorkcell(core, a)).toEqual(example.workcell)
   expect(bStudy.id).not.toBe(aStudy)
   expect(
@@ -61,6 +65,7 @@ it('duplicates a complete workcell and experiment as one independent Undo action
     validateTrajectory(bCell, bStudy.definition.trajectory)
   ).not.toThrow()
   const ids = new Set(bCell.bodies.map((body) => body.id))
+
   expect(ids.has(bCell.robotRootId ?? '')).toBe(true)
   expect(
     bCell.bodies.every(
@@ -68,6 +73,7 @@ it('duplicates a complete workcell and experiment as one independent Undo action
     )
   ).toBe(true)
   const scope = bStudy.definition.scope
+
   expect(
     [
       ...scope.primaryBodyIds,
@@ -91,16 +97,19 @@ it('duplicates a complete workcell and experiment as one independent Undo action
   expect(readWorkcell(core, b)).toEqual(bCell)
   expect(readCandidateLineage(core, b)).toEqual(lineage)
   const changed = structuredClone(bCell.bodies[0])
+
   changed.name = 'Only B changed'
   await features.edit.upsert(b, changed)
   expect(readWorkcell(core, a)).toEqual(example.workcell)
   const c = await features.edit.duplicateCandidate(b, 'C')
+
   expect(
     Object.values(readCandidateLineage(core, c)?.bodyOrigins ?? {}).every(
       (origin) => origin.candidateId === a
     )
   ).toBe(true)
   const saved = await features.edit.captureDocument()
+
   core.load(empty)
   await features.edit.applyDocument(saved, () => undefined)
   expect(readCandidateLineage(core, b)).toEqual(lineage)
@@ -111,10 +120,12 @@ it('rejects invalid copied references before any partial candidate or Undo commi
   const example = createSyntheticExample(),
     draft = createSyntheticExperimentDraft(example)
   const a = await features.edit.createCandidate('A', example.workcell)
+
   draft.scope.primaryBodyIds = ['missing-body']
   await features.edit.createExperiment(a, 'Unresolved study', draft)
   const before = await features.edit.captureDocument(),
     depth = core.getUndoHistoryDepth()
+
   await expect(features.edit.duplicateCandidate(a, 'B')).rejects.toThrow(
     'reference'
   )
@@ -128,6 +139,7 @@ it('preserves lineage while changing robot roots and validates its registered pr
   const b = await features.edit.duplicateCandidate(a, 'B'),
     before = readCandidateLineage(core, b)
   const model = readWorkcell(core, b)
+
   await features.edit.replace(b, {
     ...model,
     robotRootId: null,
@@ -144,6 +156,7 @@ it('preserves lineage while changing robot roots and validates its registered pr
     props = core.getCanonicalOwnerSnapshot().props
   const property = props[candidate?.props?.[PropertyNames.CANDIDATE] ?? ''] as
     Record<string, unknown> | undefined
+
   expect(property?.[PropertyFields.CANDIDATE]).toEqual({
     robotRootId: null,
     lineage: before
@@ -171,7 +184,11 @@ it('retains original correspondence for copies of copies and assigns independent
   const fixture = structuredClone(
     example.workcell.bodies.find((body) => body.role === 'fixture')
   )
-  if (!fixture) throw new Error('Missing fixture')
+
+  if (!fixture) {
+    throw new Error('Missing fixture')
+  }
+
   fixture.id = 'new-fixture'
   await features.edit.upsert(b, fixture)
   expect(readCandidateLineage(core, b)?.bodyOrigins['new-fixture']).toEqual({
@@ -182,6 +199,7 @@ it('retains original correspondence for copies of copies and assigns independent
   const origins = Object.values(
     readCandidateLineage(core, c)?.bodyOrigins ?? {}
   )
+
   expect(origins.filter((origin) => origin.candidateId === a)).toHaveLength(
     example.workcell.bodies.length
   )

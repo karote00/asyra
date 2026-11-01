@@ -7,12 +7,14 @@ const bind = (input: InputSystem) =>
   input.registry.register('command', [
     { type: InputType.KEYBOARD, keys: [keyMap.keys.KeyA], modifiers: [] }
   ])
+
 const keyboardEvent = () =>
   ({
     code: 'KeyA',
     target: document.createElement('div'),
     preventDefault: vi.fn()
   }) as unknown as KeyboardEvent
+
 const host = () => ({
   document: { addEventListener: vi.fn(), removeEventListener: vi.fn() },
   addEventListener: vi.fn(),
@@ -26,16 +28,19 @@ describe('Input full runtime reset', () => {
     const input = new InputSystem(),
       browser = host()
     let accept = false
+
     input.registry.register('command', [
       {
         type: InputType.KEYBOARD,
         keys: [keyMap.keys.KeyA],
         modifiers: [],
+
         callback: () => (accept ? undefined : false)
       }
     ])
     const receive = vi.fn(),
       other = vi.fn()
+
     input.on('command', receive)
     input.registry.register('other', [
       { type: InputType.KEYBOARD, keys: [keyMap.keys.KeyA], modifiers: [] }
@@ -45,6 +50,7 @@ describe('Input full runtime reset', () => {
     const keydown = browser.addEventListener.mock.calls.find(
       ([name]) => name === 'keydown'
     )?.[1] as EventListener
+
     try {
       keydown(keyboardEvent())
       expect(receive).not.toHaveBeenCalled()
@@ -63,6 +69,7 @@ describe('Input full runtime reset', () => {
     const input = new InputSystem(),
       browser = host(),
       target = host()
+
     input.attachBrowserHost(
       browser as unknown as Window,
       target as unknown as HTMLElement
@@ -71,6 +78,7 @@ describe('Input full runtime reset', () => {
     const callback = browser.addEventListener.mock.calls.find(
       ([name]) => name === 'keydown'
     )?.[1] as EventListener
+
     callback(keyboardEvent())
     expect(vi.getTimerCount()).toBe(1)
     input.resetRuntime()
@@ -87,13 +95,16 @@ describe('Input full runtime reset', () => {
     vi.useFakeTimers()
     const input = new InputSystem(),
       browser = host()
+
     input.attachBrowserHost(browser as unknown as Window)
     const old = browser.addEventListener.mock.calls.find(
       ([name]) => name === 'keydown'
     )?.[1] as EventListener
+
     input.resetRuntime()
     bind(input)
     const receive = vi.fn()
+
     input.on('command', receive)
     input.attachBrowserHost(browser as unknown as Window)
     old(keyboardEvent())
@@ -102,6 +113,7 @@ describe('Input full runtime reset', () => {
     const current = browser.addEventListener.mock.calls
       .filter(([name]) => name === 'keydown')
       .at(-1)?.[1] as EventListener
+
     current(keyboardEvent())
     expect(receive).toHaveBeenCalledOnce()
     input.resetRuntime()
@@ -111,6 +123,7 @@ describe('Input full runtime reset', () => {
     const input = new InputSystem(),
       browser = host(),
       target = host()
+
     input.attachBrowserHost(
       browser as unknown as Window,
       target as unknown as HTMLElement
@@ -128,6 +141,7 @@ describe('Input full runtime reset', () => {
   it('does not clear another instance mappings', () => {
     const input = new InputSystem(),
       other = new InputSystem()
+
     bind(other)
     input.resetRuntime()
     expect(other.registry.hasEvent('command')).toBe(true)

@@ -28,6 +28,7 @@ test('bounded CI groups cover each configured Sim browser spec exactly once', ()
   const resourceGroups = CI_E2E_GROUPS.filter((group) =>
     group.name.startsWith('representative-resource-candidate-')
   )
+
   assert.equal(resourceGroups.length, 3)
   assert.ok(resourceGroups.every((group) => group.files.length === 1))
   assert.deepEqual(
@@ -40,6 +41,7 @@ test('bounded CI groups cover each configured Sim browser spec exactly once', ()
   const cancellationGroup = CI_E2E_GROUPS.find(
     (group) => group.name === 'analysis-cancellation'
   )
+
   assert.deepEqual(cancellationGroup?.files, [
     'e2e/__tests__/analysis-cancellation.spec.ts'
   ])
@@ -128,8 +130,10 @@ test('merged reports preserve every outcome and bind each run command to identit
 
 test('exact browser selection preserves process groups and rejects invalid inputs', async () => {
   const { selectBrowserGroups } = await import('../e2e-ci-groups.mjs')
+
   assert.equal(typeof selectBrowserGroups, 'function')
   const file = 'e2e/__tests__/viewport-navigation.spec.ts'
+
   assert.deepEqual(selectBrowserGroups([`apps/asyra-sim/${file}`]), [
     { name: 'browser-navigation', files: [file] }
   ])
@@ -140,6 +144,7 @@ test('exact browser selection preserves process groups and rejects invalid input
     path.join(appRoot, 'scripts/run-e2e-ci.mjs'),
     'utf8'
   )
+
   assert.match(source, /selectBrowserGroups\(process\.argv\.slice\(2\)\)/)
 })
 
@@ -148,6 +153,7 @@ test('incomplete-group accounting uses only the selected browser inventory', () 
     path.join(appRoot, 'scripts/run-e2e-ci.mjs'),
     'utf8'
   )
+
   assert.match(source, /groupRuns\.length < selectedGroups\.length/)
   assert.match(source, /selectedGroups\.slice\(groupRuns\.length\)/)
 })

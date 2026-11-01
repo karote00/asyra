@@ -8,6 +8,7 @@ export function encodeGlb(
     binLength = Math.ceil(binary.length / 4) * 4
   const bytes = new Uint8Array(28 + jsonLength + binLength),
     view = new DataView(bytes.buffer)
+
   view.setUint32(0, 0x46546c67, true)
   view.setUint32(4, 2, true)
   view.setUint32(8, bytes.length, true)
@@ -18,11 +19,14 @@ export function encodeGlb(
   view.setUint32(20 + jsonLength, binLength, true)
   view.setUint32(24 + jsonLength, 0x004e4942, true)
   bytes.set(binary, 28 + jsonLength)
+
   return bytes
 }
+
 export function triangleFixture() {
   const binary = new Uint8Array(36),
     view = new DataView(binary.buffer)
+
   ;[0, 0, 0, 1, 0, 0, 0, 1, 0].forEach((v, index) =>
     view.setFloat32(index * 4, v, true)
   )
@@ -45,5 +49,6 @@ export function triangleFixture() {
     scenes: [{ nodes: [0] }],
     scene: 0
   }
+
   return { json, binary }
 }

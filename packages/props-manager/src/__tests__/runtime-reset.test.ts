@@ -22,6 +22,7 @@ class ResetProperty extends PositionComponent {
     return
   }
 }
+
 const create = (manager: PropsManager, id: string) => {
   const component = manager.createProperty({
     type: PropertyTypes.POSITION,
@@ -29,8 +30,10 @@ const create = (manager: PropsManager, id: string) => {
     x: 0,
     y: 0
   }) as ResetProperty
+
   manager.addToMap(component)
   manager.cleanChanges()
+
   return component
 }
 
@@ -47,11 +50,13 @@ describe('Props Manager full runtime reset', () => {
     const manager = new PropsManager(),
       live = create(manager, 'live'),
       deleted = create(manager, 'deleted')
+
     live.dispose = vi.fn()
     deleted.dispose = vi.fn()
     manager.removeFromMap('deleted')
     const observer = vi.fn(),
       subscription = subscribeToEvents(observer)
+
     observer.mockClear()
     manager.resetRuntime()
     expect(manager.getPropertyById('live')).toBeUndefined()
@@ -68,8 +73,10 @@ describe('Props Manager full runtime reset', () => {
   it('invalidates old validated loads while retaining type definitions', () => {
     const manager = new PropsManager()
     const old = manager.validateLoadData({})
+
     manager.resetRuntime()
     const next = create(manager, 'next')
+
     expect(() => manager.applyValidatedLoad(old)).toThrow(
       'owner-issued one-shot'
     )
@@ -80,14 +87,17 @@ describe('Props Manager full runtime reset', () => {
 
   it('invalidates prepared canonical mutation even when the old IDs return', () => {
     const manager = new PropsManager()
+
     create(manager, 'shared-id')
     const old = manager.preparePropertyMutationBatch({
       operations: [
         { kind: 'values', propertyId: 'shared-id', values: { x: 5 } }
       ]
     })
+
     manager.resetRuntime()
     const next = create(manager, 'shared-id')
+
     expect(() => manager.applyPreparedPropertyMutationBatch(old)).toThrow(
       'owner-issued one-shot'
     )
@@ -99,9 +109,11 @@ describe('Props Manager full runtime reset', () => {
     const manager = new PropsManager(),
       first = create(manager, 'first'),
       second = create(manager, 'second')
+
     first.dispose = () => {
       throw new Error('property cleanup failed')
     }
+
     second.dispose = vi.fn()
     expect(() => manager.resetRuntime()).toThrow('property cleanup failed')
     expect(second.dispose).toHaveBeenCalledOnce()
@@ -114,17 +126,21 @@ describe('Props Manager full runtime reset', () => {
       component = create(manager, 'active')
     let rejection: unknown
     const load = component.load.bind(component)
+
     component.load = (data) => {
       try {
         manager.resetRuntime()
       } catch (error) {
         rejection = error
       }
+
       load(data)
     }
+
     const prepared = manager.preparePropertyMutationBatch({
       operations: [{ kind: 'values', propertyId: 'active', values: { x: 12 } }]
     })
+
     manager.applyPreparedPropertyMutationBatch(prepared)
     expect(rejection).toEqual(
       expect.objectContaining({
@@ -140,8 +156,10 @@ describe('Props Manager full runtime reset', () => {
   it('leaves another manager intact', () => {
     const manager = new PropsManager(),
       other = new PropsManager()
+
     create(manager, 'old')
     const retained = create(other, 'retained')
+
     manager.resetRuntime()
     expect(other.getPropertyById('retained')).toBe(retained)
     expect(create(manager, 'new').get('id')).toBe('new')

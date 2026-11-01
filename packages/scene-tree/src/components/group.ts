@@ -41,10 +41,12 @@ class Group<T extends GroupAttrs = GroupAttrs>
       ids: [] as string[],
       snapshot: undefined as string[] | undefined
     }
+
     memberships.set(this, membership)
     Object.defineProperty(this.data, 'children', {
       enumerable: true,
       configurable: true,
+
       get: () => {
         if (!membership.snapshot) {
           membership.snapshot = [...membership.ids]
@@ -53,8 +55,10 @@ class Group<T extends GroupAttrs = GroupAttrs>
             membership.ids.length
           )
         }
+
         return membership.snapshot
       },
+
       set: (children: string[]) => {
         membership.ids = [...children]
         membership.snapshot = undefined
@@ -77,8 +81,11 @@ class Group<T extends GroupAttrs = GroupAttrs>
 
   private canonicalMembership() {
     const membership = memberships.get(this)
-    if (!membership)
+
+    if (!membership) {
       throw new Error('[Group] Canonical membership is not initialized')
+    }
+
     return membership
   }
 
@@ -91,6 +98,7 @@ class Group<T extends GroupAttrs = GroupAttrs>
     ids: readonly string[]
   ): void {
     const membership = this.canonicalMembership()
+
     if (
       !Number.isInteger(index) ||
       index < 0 ||
@@ -98,15 +106,19 @@ class Group<T extends GroupAttrs = GroupAttrs>
     ) {
       throw new Error('[Group] Invalid canonical insertion index')
     }
+
     const previousLength = membership.ids.length
+
     // Move a middle insertion's suffix once, without argument-count limits.
     membership.ids.length += ids.length
     for (let cursor = previousLength - 1; cursor >= index; cursor--) {
       membership.ids[cursor + ids.length] = membership.ids[cursor]
     }
+
     for (let offset = 0; offset < ids.length; offset++) {
       membership.ids[index + offset] = ids[offset]
     }
+
     membership.snapshot = undefined
     emitDiagnosticCounter('scene-tree:membership:inserted-items', ids.length)
     emitDiagnosticCounter(
@@ -118,6 +130,7 @@ class Group<T extends GroupAttrs = GroupAttrs>
   removeChildrenFromCanonicalBatch(ids: readonly string[]): void {
     const membership = this.canonicalMembership()
     const removed = new Set(ids)
+
     membership.ids = membership.ids.filter((id) => !removed.has(id))
     membership.snapshot = undefined
     emitDiagnosticCounter('scene-tree:membership:recovery-items', ids.length)
@@ -125,7 +138,9 @@ class Group<T extends GroupAttrs = GroupAttrs>
 
   save(): GroupRawData {
     const data = super.save() as GroupRawData
+
     data.children = this.data.children
+
     return data
   }
 
@@ -136,6 +151,7 @@ class Group<T extends GroupAttrs = GroupAttrs>
 
     const children = [...this.get('children')]
     const idx = index > -1 ? index : children.length
+
     children.splice(idx, 0, element.get('id'))
     this.set('children', children)
     element.set('parentId', this.get('id'), { undoable: false })
@@ -148,6 +164,7 @@ class Group<T extends GroupAttrs = GroupAttrs>
 
     const children = [...this.get('children')]
     const index = children.indexOf(element.get('id'))
+
     if (index < 0) {
       return
     }

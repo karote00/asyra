@@ -12,6 +12,7 @@ it('delegates named spatial facades without converting coordinates or changing c
   const core = new Core({ render } as never)
   const point = { x: 300, y: 200 },
     ray = { origin: [0, 0, 5], direction: [0, 0, -1] } as const
+
   core.pickSpatialAtClientPoint(point)
   expect(render.pickSpatialAtClientPoint).toHaveBeenCalledWith(point)
   core.getSpatialRayAtClientPoint(point)

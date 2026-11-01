@@ -69,23 +69,32 @@ class RemoteAsyncHandlerError extends Error {
 
 class Factory {
   private readonly sharedDataChannels = new SharedDataChannelRegistry()
+
   private readonly bridgeToReactiveEvents: boolean
+
   private readonly transactionOwner: FactoryTransactionOwner
+
   private readonly transactionStatusSubscribers = new Set<
     (payload: TransactionStatusPayload) => void
   >()
+
   private readonly commitCaptureSubscribers = new Set<
     (payload: TransactionStatusPayload) => void
   >()
+
   private readonly sharedDeliveryBatchSubscribers =
     new Set<SharedDeliveryBatchSubscriber>()
+
   private readonly sharedPublicationSubscribers =
     new Set<SharedPublicationSubscriber>()
+
   private readonly transactionReplayHandlers = new Map<
     string,
     TransactionReplayHandler
   >()
+
   transact: DataTransact
+
   private resettingRuntime = false
 
   constructor(options: FactoryOptions = {}) {
@@ -93,24 +102,36 @@ class Factory {
     this.transact = new DataTransact(this.sharedDataChannels, {
       canReplayEventBatch: (eventType) =>
         !this.transactionReplayHandlers.has(eventType),
+
       onCommitCapture: (payload) => this.emitCommitCapture(payload),
+
       onStatus: (payload) => this.emitTransactionStatus(payload),
+
       onUserActionCompleted: this.bridgeToReactiveEvents
         ? userActionCompleted
         : undefined,
+
       onReplayEvent: (event, mode) => this.handleReplayEvent(event, mode),
+
       onSharedDeliveryBatch: (batch) => this.emitSharedDeliveryBatch(batch),
+
       onSharedPublication: (publication) =>
         this.emitSharedPublication(publication)
     })
     this.transactionOwner = {
       startTransaction: () => this.startTransaction(),
+
       updateTransactionBatch: (events) => this.updateTransactionBatch(events),
+
       endTransaction: (endOptions) => this.endTransaction(endOptions),
+
       undo: () => this.undo(),
+
       redo: () => this.redo(),
+
       undoProgressively: (yieldAfterSlice, progressiveOptions) =>
         this.transact.undoProgressively(yieldAfterSlice, progressiveOptions),
+
       redoProgressively: (yieldAfterSlice, progressiveOptions) =>
         this.transact.redoProgressively(yieldAfterSlice, progressiveOptions)
     }
@@ -140,6 +161,7 @@ class Factory {
     return measureBrowserDragPhase('factory:notify-shared-publication', () => {
       const subscribers = [...this.sharedPublicationSubscribers]
       let handedOff = false
+
       subscribers.forEach((subscriber) => {
         try {
           subscriber(publication)
@@ -148,6 +170,7 @@ class Factory {
           // Collaboration observers cannot alter local canonical settlement.
         }
       })
+
       return handedOff
     })
   }
@@ -186,6 +209,7 @@ class Factory {
       runWithTransactionOwner(this.transactionOwner, () =>
         runTransaction(() => {
           const result = mutate()
+
           if (
             result &&
             (typeof result === 'object' || typeof result === 'function') &&
@@ -195,6 +219,7 @@ class Factory {
             void Promise.resolve(result).catch(() => undefined)
             throw new Error('History group member must be synchronous')
           }
+
           return result
         })
       )
@@ -230,7 +255,9 @@ class Factory {
         () => {
           try {
             const result = this.runSynchronousRemoteMutation(mutate)
+
             this.transact.end()
+
             return result
           } catch (error) {
             this.rollbackRemoteTransaction(error)
@@ -246,7 +273,9 @@ class Factory {
     mutateSlices: readonly (() => void)[],
     settleAfterSlice: (completedSliceIndex: number) => Promise<void>
   ): Promise<void> {
-    if (mutateSlices.length === 0) return
+    if (mutateSlices.length === 0) {
+      return
+    }
 
     this.transact.start('remote')
     const reactiveBoundaryOwner = this.createRemoteReactiveBoundaryOwner()
@@ -258,7 +287,11 @@ class Factory {
         completedSliceIndex += 1
       ) {
         const mutate = mutateSlices[completedSliceIndex]
-        if (!mutate) continue
+
+        if (!mutate) {
+          continue
+        }
+
         runWithTransactionOwner(reactiveBoundaryOwner, () =>
           runTransaction(() => this.runSynchronousRemoteMutation(mutate), {
             failureKind: 'handler-error'
@@ -268,6 +301,7 @@ class Factory {
           await settleAfterSlice(completedSliceIndex)
         }
       }
+
       this.transact.end()
     } catch (error) {
       this.rollbackRemoteTransaction(error)
@@ -278,12 +312,18 @@ class Factory {
   private createRemoteReactiveBoundaryOwner(): FactoryTransactionOwner {
     return {
       startTransaction: () => undefined,
+
       updateTransactionBatch: (events) => this.updateTransactionBatch(events),
+
       endTransaction: () => undefined,
+
       undo: () => this.undo(),
+
       redo: () => this.redo(),
+
       undoProgressively: (yieldAfterSlice, progressiveOptions) =>
         this.transact.undoProgressively(yieldAfterSlice, progressiveOptions),
+
       redoProgressively: (yieldAfterSlice, progressiveOptions) =>
         this.transact.redoProgressively(yieldAfterSlice, progressiveOptions)
     }
@@ -291,6 +331,7 @@ class Factory {
 
   private runSynchronousRemoteMutation<T>(mutate: () => T): T {
     const result = mutate()
+
     if (
       result !== null &&
       (typeof result === 'object' || typeof result === 'function') &&
@@ -299,6 +340,7 @@ class Factory {
       void Promise.resolve(result).catch(() => undefined)
       throw new RemoteAsyncHandlerError()
     }
+
     return result
   }
 
@@ -347,8 +389,10 @@ class Factory {
 
   /** Lifecycle owner only, after external work has quiesced. Never canonical load. */
   resetRuntime(): void {
-    if (this.resettingRuntime)
+    if (this.resettingRuntime) {
       throw new Error('Factory runtime reset is already active')
+    }
+
     // The transaction owner rejects before any Factory registration is changed.
     this.sharedDataChannels.assertRuntimeResetAllowed()
     this.transact.resetRuntime()
@@ -385,7 +429,9 @@ class Factory {
         `Transaction replay handler is already registered for ${eventName}`
       )
     }
+
     this.transactionReplayHandlers.set(eventName, handler)
+
     return () => {
       if (this.transactionReplayHandlers.get(eventName) === handler) {
         this.transactionReplayHandlers.delete(eventName)
@@ -398,10 +444,13 @@ class Factory {
     mode: TransactionReplayMode
   ): { handled: boolean; applied: boolean } {
     const handler = this.transactionReplayHandlers.get(event.type)
+
     if (!handler) {
       return { handled: false, applied: false }
     }
+
     const result = handler(event, mode)
+
     return { handled: true, applied: result !== false }
   }
 
@@ -413,6 +462,7 @@ class Factory {
     subscriber: (payload: TransactionStatusPayload) => void
   ): () => void {
     this.transactionStatusSubscribers.add(subscriber)
+
     return () => {
       this.transactionStatusSubscribers.delete(subscriber)
     }
@@ -422,6 +472,7 @@ class Factory {
     subscriber: (payload: TransactionStatusPayload) => void
   ): () => void {
     this.commitCaptureSubscribers.add(subscriber)
+
     return () => {
       this.commitCaptureSubscribers.delete(subscriber)
     }
@@ -441,6 +492,7 @@ class Factory {
       error: _sourceError,
       ...base
     } = source
+
     this.emitTransactionStatus({
       ...base,
       status,
@@ -497,6 +549,7 @@ class Factory {
     subscriber: SharedDeliveryBatchSubscriber
   ): () => void {
     this.sharedDeliveryBatchSubscribers.add(subscriber)
+
     return () => {
       this.sharedDeliveryBatchSubscribers.delete(subscriber)
     }
@@ -506,6 +559,7 @@ class Factory {
     subscriber: SharedPublicationSubscriber
   ): () => void {
     this.sharedPublicationSubscribers.add(subscriber)
+
     return () => {
       this.sharedPublicationSubscribers.delete(subscriber)
     }
@@ -513,6 +567,7 @@ class Factory {
 }
 
 const factory = new Factory({ bridgeToReactiveEvents: true })
+
 export default factory
 
 export { Factory }

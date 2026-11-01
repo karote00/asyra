@@ -26,9 +26,11 @@ describe('@asyra/render-engine contract', () => {
 
     const report = await runRenderEngineContract({
       createEngine: () => engine,
+
       emitInteraction: (targetEngine, event) => {
         targetEngine.emitInteraction(event)
       },
+
       getOperationTypes: (targetEngine) =>
         targetEngine.getOperations().map((operation) => operation.type)
     })
@@ -65,19 +67,28 @@ describe('@asyra/render-engine contract', () => {
     const facade: RenderEngine = {
       name: recording.name,
       capabilities: recording.capabilities,
+
       initialize: (options) => recording.initialize(options),
+
       execute: (command) => recording.execute(command),
+
       query: (query) => recording.query(query),
+
       subscribeToInteraction: (listener) =>
         recording.subscribeToInteraction(listener),
+
       requestFrame: (callback) => recording.requestFrame(callback),
+
       cancelFrame: () => recording.cancelFrame(),
+
       destroy: () => recording.destroy()
     }
 
     const report = await runRenderEngineContract({
       createEngine: () => facade,
+
       emitInteraction: (_engine, event) => recording.emitInteraction(event),
+
       getOperationTypes: () =>
         recording.getOperations().map((operation) => operation.type)
     })
@@ -88,6 +99,7 @@ describe('@asyra/render-engine contract', () => {
 
   it('delivers one requested frame at most once and cancels pending work', () => {
     const engine = new RecordingRenderEngine({ name: 'frame-scheduling' })
+
     engine.initialize({ host: {}, width: 100, height: 100 })
     const callback = vi.fn()
 
@@ -118,6 +130,7 @@ describe('@asyra/render-engine contract', () => {
       objectType: 'graphics',
       properties: { label: 'first-object' }
     }
+
     first.execute(command)
 
     expect(first.getOwnedObjectCount()).toBe(1)
@@ -174,5 +187,6 @@ describe('@asyra/render-engine contract', () => {
 
 it('does not advertise actual content measurement from the recording engine', () => {
   const engine = new RecordingRenderEngine({ name: 'content-contract' })
+
   expect(engine.capabilities.has('local-content-bounds')).toBe(false)
 })

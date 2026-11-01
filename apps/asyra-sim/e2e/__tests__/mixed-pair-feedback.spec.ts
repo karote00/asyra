@@ -17,6 +17,7 @@ test('full-workcell manual preview changes clearance to collision at a penetrati
   await page.getByRole('tab', { name: 'Preview', exact: true }).click()
   const slider = page.getByLabel('Sampled trajectory preview time')
   const feedback = page.getByTestId('playback-feedback')
+
   const pair = (name: string) =>
     feedback.locator('[data-pair-id]').filter({ hasText: name }).first()
 
@@ -178,9 +179,10 @@ test('200 mm live playback resolves the first table collision with traceable sam
     poseMatches: string | null
     text: string
   }[] = []
+
   for (const time of [3.904, 3.92, 4]) {
     await slider.fill(String(time))
-    if (time === 4)
+    if (time === 4) {
       await expect
         .poll(
           async () => ({
@@ -190,7 +192,7 @@ test('200 mm live playback resolves the first table collision with traceable sam
           { timeout: 15_000 }
         )
         .toEqual({ kind: 'collision', poseMatches: 'true' })
-    else
+    } else {
       await expect
         .poll(
           async () => {
@@ -202,6 +204,8 @@ test('200 mm live playback resolves the first table collision with traceable sam
           { timeout: 15_000 }
         )
         .toBe(true)
+    }
+
     samples.push({
       time,
       kind: await feedback.getAttribute('data-kind'),
@@ -213,6 +217,7 @@ test('200 mm live playback resolves the first table collision with traceable sam
   const liveWorkers = workers.filter((url) =>
     url.includes('/analysis/live/playback.worker.ts')
   )
+
   await info.attach('live-4s-collision-render', {
     contentType: 'image/png',
     body: await page.screenshot()
@@ -226,7 +231,10 @@ test('200 mm live playback resolves the first table collision with traceable sam
     const observationsOpen = await observations.evaluate(
       (element) => (element as HTMLDetailsElement).open
     )
-    if (!observationsOpen) await observations.locator('summary').first().click()
+
+    if (!observationsOpen) {
+      await observations.locator('summary').first().click()
+    }
   }
 
   if (await observations.locator('details').count()) {
@@ -250,6 +258,7 @@ test('200 mm live playback resolves the first table collision with traceable sam
       stopCause: string
     }
   }[]
+
   expect
     .soft(
       diagnostics.some(
@@ -281,6 +290,7 @@ test('cold 200 mm live preview resolves a direct first seek to the table collisi
 
   const slider = page.getByLabel('Sampled trajectory preview time')
   const feedback = page.getByTestId('playback-feedback')
+
   await slider.fill('4')
   await expect
     .poll(

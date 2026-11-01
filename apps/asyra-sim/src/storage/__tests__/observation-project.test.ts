@@ -17,6 +17,7 @@ async function fixture() {
       bytes: new TextEncoder().encode('<script>Untrusted observation</script>')
     }
   ])
+
   archive.accept(receipt)
   const note = {
     version: 1 as const,
@@ -32,13 +33,16 @@ async function fixture() {
     [note],
     archive.capture(receipt.attachments.map((reference) => reference.sourceId))
   )
+
   return { archive, note, input }
 }
 
 it('roundtrips separate annotations and verified attachments without changing historical run exports', async () => {
   const { archive, note, input } = await fixture()
+
   try {
     const before = exportRunJson(input.runs[0])
+
     expect(projectObservationAttachments(input)).toEqual(note.attachments)
     expect(decodeProject(encodeProject(input))).toEqual(input)
     expect(await verifyProjectObservations(input)).toEqual(
@@ -47,6 +51,7 @@ it('roundtrips separate annotations and verified attachments without changing hi
     const bundle = JSON.parse(
       exportObservationBundle(input.runs[0], [note], archive)
     )
+
     expect(bundle).toEqual({
       format: 'sim-observations',
       version: 1,
@@ -60,6 +65,7 @@ it('roundtrips separate annotations and verified attachments without changing hi
     expect(exportRunJson(input.runs[0])).toBe(before)
     expect(bundle).not.toHaveProperty('result')
     const withoutNotes = observationProject([], [])
+
     expect(projectObservationAttachments(withoutNotes)).toEqual([])
     expect(
       decodeProject(encodeProject(withoutNotes)).observationSources
@@ -74,6 +80,7 @@ it('roundtrips separate annotations and verified attachments without changing hi
 
 it('rejects dangling, mismatched or corrupt source data before it can be used by replacement or startup', async () => {
   const { archive, input, note } = await fixture()
+
   try {
     for (const invalid of [
       { ...input, observationSources: undefined },
@@ -101,6 +108,7 @@ it('rejects dangling, mismatched or corrupt source data before it can be used by
         verifyProjectObservations(invalid as typeof input)
       ).rejects.toThrow()
     }
+
     const source = input.observationSources[0]
     const corrupt = {
       ...input,
@@ -111,6 +119,7 @@ it('rejects dangling, mismatched or corrupt source data before it can be used by
         }
       ]
     }
+
     await expect(verifyProjectObservations(corrupt)).rejects.toThrow('digest')
   } finally {
     archive.dispose()

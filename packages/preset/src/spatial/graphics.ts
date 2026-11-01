@@ -6,12 +6,16 @@ import type {
 
 export function disposeObject(object: THREE.Object3D): void {
   object.traverse((child) => {
-    if (child instanceof THREE.InstancedMesh) child.dispose()
+    if (child instanceof THREE.InstancedMesh) {
+      child.dispose()
+    }
+
     if (child instanceof THREE.Mesh || child instanceof THREE.Line) {
       child.geometry.dispose()
       const materials = Array.isArray(child.material)
         ? child.material
         : [child.material]
+
       materials.forEach((material) => material.dispose())
     }
   })
@@ -29,6 +33,7 @@ export function drawGraphics(
 ): THREE.Group {
   const group = new THREE.Group()
   let path = new THREE.ShapePath()
+
   try {
     for (const op of operations) {
       switch (op.type) {
@@ -41,16 +46,22 @@ export function drawGraphics(
           path.lineTo(op.x + op.width, op.y)
           path.lineTo(op.x + op.width, op.y + op.height)
           path.lineTo(op.x, op.y + op.height)
-          if (!path.currentPath)
+          if (!path.currentPath) {
             throw new Error('Rectangle path was not created')
+          }
+
           path.currentPath.closePath()
           break
         case 'circle':
         case 'ellipse': {
           const radiusX = op.type === 'circle' ? op.radius : op.radiusX
           const radiusY = op.type === 'circle' ? op.radius : op.radiusY
+
           path.moveTo(op.x + radiusX, op.y)
-          if (!path.currentPath) throw new Error('Ellipse path was not created')
+          if (!path.currentPath) {
+            throw new Error('Ellipse path was not created')
+          }
+
           path.currentPath.absellipse(
             op.x,
             op.y,
@@ -63,6 +74,7 @@ export function drawGraphics(
           )
           break
         }
+
         case 'move-to':
           path.moveTo(op.x, op.y)
           break
@@ -84,15 +96,22 @@ export function drawGraphics(
           break
         case 'poly':
           op.points.forEach((point, i) => {
-            if (i === 0) path.moveTo(point.x, point.y)
-            else path.lineTo(point.x, point.y)
+            if (i === 0) {
+              path.moveTo(point.x, point.y)
+            } else {
+              path.lineTo(point.x, point.y)
+            }
           })
-          if (op.close) path.currentPath?.closePath()
+          if (op.close) {
+            path.currentPath?.closePath()
+          }
+
           break
         case 'fill': {
           const paint = resolvePaint(op.paint)
           const shapes = path.toShapes()
-          if (shapes.length)
+
+          if (shapes.length) {
             group.add(
               new THREE.Mesh(
                 new THREE.ShapeGeometry(shapes),
@@ -105,19 +124,26 @@ export function drawGraphics(
                 })
               )
             )
+          }
+
           break
         }
+
         case 'stroke': {
-          if (op.width !== 1)
+          if (op.width !== 1) {
             throw new Error(
               'The CUSTOM screen bridge supports only a one device pixel stroke'
             )
+          }
+
           const paint = resolvePaint(op.paint)
+
           for (const sub of path.subPaths) {
             const points = sub
               .getPoints(32)
               .map((p) => new THREE.Vector3(p.x, p.y, 0))
-            if (points.length > 1)
+
+            if (points.length > 1) {
               group.add(
                 new THREE.Line(
                   new THREE.BufferGeometry().setFromPoints(points),
@@ -130,11 +156,14 @@ export function drawGraphics(
                   })
                 )
               )
+            }
           }
+
           break
         }
       }
     }
+
     return group
   } catch (error) {
     disposeObject(group)

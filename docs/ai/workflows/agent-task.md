@@ -1,9 +1,7 @@
 # Repository Agent Task
 
-Follow [Release Update Guidance](../framework/rules/release-update-guidance.md)
-for pending impact notes, necessary integration guides and preservation checks.
-The document check covers development declarations; publisher enforcement remains
-a separate release integration.
+Use this workflow's checks for its own outputs. Project release updates follow
+[Release Update Guidance](../framework/rules/release-update-guidance.md).
 
 Use this entry for implementation, bug fixes, refactors, and documentation work
 without requiring the user to name a slash command. Read-only questions retain

@@ -22,12 +22,17 @@ const input = (): SpatialDescriptor => ({
   wireframe: false,
   selectable: true
 })
+
 it('admits isolated immutable geometry once and reuses it through pose and appearance updates', () => {
   const source = input()
   const accepted = readSpatialDescriptor(source)
-  if (accepted.kind !== 'mesh' || accepted.shape.kind !== 'triangles')
+
+  if (accepted.kind !== 'mesh' || accepted.shape.kind !== 'triangles') {
     throw new Error('Expected triangles')
+  }
+
   const before = structuredClone(accepted)
+
   expect(Object.isFrozen(accepted)).toBe(true)
   expect(Object.isFrozen(accepted.shape.positions)).toBe(true)
   for (let i = 0; i < 60; i++) {
@@ -36,17 +41,22 @@ it('admits isolated immutable geometry once and reuses it through pose and appea
       position: [i, 0, 0],
       color: i
     })
+
     expect(next.kind === 'mesh' && next.shape).toBe(accepted.shape)
     expect(next.position).toEqual([i, 0, 0])
   }
+
   expect(readSpatialDescriptor(accepted)).toBe(accepted)
   expect(accepted).toEqual(before)
-  if (source.kind === 'mesh' && source.shape.kind === 'triangles')
-    (source.shape.positions as number[])[0] = 999
+  if (source.kind === 'mesh' && source.shape.kind === 'triangles') {
+    ;(source.shape.positions as number[])[0] = 999
+  }
+
   expect(accepted.shape.positions[0]).toBe(0)
 })
 it('does not trust caller freezing and still rejects invalid geometry and changed poses', () => {
   const source = input()
+
   expect(() =>
     readSpatialDescriptor(
       Object.freeze({
@@ -60,6 +70,7 @@ it('does not trust caller freezing and still rejects invalid geometry and change
     )
   ).toThrow()
   const accepted = readSpatialDescriptor(source)
+
   expect(() =>
     readSpatialDescriptor({ ...accepted, position: [NaN, 0, 0] })
   ).toThrow()
@@ -71,6 +82,7 @@ it('validates the detached values it will retain rather than earlier accessor re
   const shape = {
     kind: 'triangles',
     indices: [0, 1, 2],
+
     get positions() {
       return ++reads === 1
         ? [0, 0, 0, 1, 0, 0, 0, 1, 0]
@@ -78,6 +90,7 @@ it('validates the detached values it will retain rather than earlier accessor re
     }
   }
   const accepted = readSpatialDescriptor({ ...input(), shape })
+
   expect(
     accepted.kind === 'mesh' &&
       accepted.shape.kind === 'triangles' &&
@@ -95,11 +108,16 @@ it('detaches instance transforms and reuses accepted transforms across presentat
     }
   ]
   const accepted = readSpatialDescriptor({ ...input(), instances })
-  if (accepted.kind !== 'mesh') throw new Error('Expected mesh')
+
+  if (accepted.kind !== 'mesh') {
+    throw new Error('Expected mesh')
+  }
+
   instances[0].position[0] = 99
   expect(accepted.instances?.[0].position).toEqual([1, 0, 2])
   expect(Object.isFrozen(accepted.instances?.[0].position)).toBe(true)
   const next = readSpatialDescriptor({ ...accepted, color: 0 })
+
   expect(next.kind === 'mesh' && next.instances).toBe(accepted.instances)
   for (const invalid of [
     [],
@@ -117,40 +135,48 @@ it('detaches instance transforms and reuses accepted transforms across presentat
         id: 'instance-3'
       }
     ]
-  ])
+  ]) {
     expect(() =>
       readSpatialDescriptor({ ...input(), instances: invalid })
     ).toThrow()
+  }
 })
 
 it('validates and detaches per-vertex surface colors', () => {
   const source = input()
-  if (source.kind !== 'mesh' || source.shape.kind !== 'triangles')
+
+  if (source.kind !== 'mesh' || source.shape.kind !== 'triangles') {
     throw new Error('Expected triangles')
+  }
+
   const colors = [0.2, 0.1, 0.05, 0.3, 0.1, 0.04, 0.4, 0.2, 0.03]
   const accepted = readSpatialDescriptor({
     ...source,
     shape: { ...source.shape, colors }
   })
+
   colors[0] = 99
   expect(
     accepted.kind === 'mesh' &&
       accepted.shape.kind === 'triangles' &&
       accepted.shape.colors?.[0]
   ).toBe(0.2)
-  for (const invalid of [[1, 0, 0], colors, Array(9).fill(NaN)])
+  for (const invalid of [[1, 0, 0], colors, Array(9).fill(NaN)]) {
     expect(() =>
       readSpatialDescriptor({
         ...source,
         shape: { ...source.shape, colors: invalid }
       })
     ).toThrow()
+  }
 })
 
 it('admits flat triangle buffers without general object-graph cloning', () => {
   const clone = vi.spyOn(globalThis, 'structuredClone')
+
   try {
     const accepted = readSpatialDescriptor(input())
+
     expect(accepted.kind).toBe('mesh')
     expect(clone).not.toHaveBeenCalled()
   } finally {
@@ -165,9 +191,11 @@ vi.mock('three', () => {
 it('reuses admitted geometry without reading caller buffers again', () => {
   let reads = 0
   const positions = [0, 0, 0, 1, 0, 0, 0, 1, 0]
+
   Object.defineProperty(positions, 0, {
     get: () => {
       reads++
+
       return 0
     }
   })
@@ -175,13 +203,16 @@ it('reuses admitted geometry without reading caller buffers again', () => {
     ...input(),
     shape: { kind: 'triangles', positions, indices: [0, 1, 2] }
   })
+
   expect(reads).toBe(1)
   for (let i = 0; i < 60; i++) {
     const next = readSpatialDescriptor({ ...accepted, position: [i, 0, 0] })
+
     expect(next.kind === 'mesh' && next.shape).toBe(
       accepted.kind === 'mesh' && accepted.shape
     )
   }
+
   expect(reads).toBe(1)
 })
 
@@ -193,6 +224,7 @@ it('isolates surface bytes and validates caller-frozen input before issuing rece
     normals: Array(16).fill(128)
   }
   const accepted = readSpatialSurface(source)
+
   source.albedo[0] = 0
   expect(accepted.albedo[0]).toBe(200)
   expect(Object.isFrozen(accepted.albedo)).toBe(true)
@@ -201,8 +233,9 @@ it('isolates surface bytes and validates caller-frozen input before issuing rece
     { ...source, width: 513 },
     { ...source, albedo: [2] },
     { ...source, normals: Array(16).fill(NaN) }
-  ])
+  ]) {
     expect(() => readSpatialSurface(Object.freeze(invalid))).toThrow()
+  }
 })
 
 vi.mock('@asyra/core', () => {
@@ -227,6 +260,7 @@ it('preserves required stable instance identities and rejects duplicates atomica
     }
   ]
   const result = readSpatialInstances(input)
+
   expect(result[0]).toMatchObject({ id: 'a' })
   expect(() => readSpatialInstances([input[0], input[0]])).toThrow()
   expect(() => readSpatialInstances([{ ...input[0], id: '' }])).toThrow()
@@ -235,8 +269,10 @@ it('preserves required stable instance identities and rejects duplicates atomica
     { ...input[0], rotation: [0, 0, 0, 0] },
     { ...input[0], scale: [0, 1, 1] },
     { ...input[0], yaw: 0 }
-  ])
+  ]) {
     expect(() => readSpatialInstances([invalid])).toThrow()
+  }
+
   input[0].id = 'mutated'
   expect(result[0]).toMatchObject({ id: 'a' })
 })
@@ -248,6 +284,7 @@ it('admits complete mesh poses and independent shadow policy while rejecting inv
     castShadow: true,
     receiveShadow: false
   })
+
   expect(accepted).toMatchObject({
     scale: [2, 3, 4],
     castShadow: true,
@@ -257,8 +294,10 @@ it('admits complete mesh poses and independent shadow policy while rejecting inv
     [0, 1, 1],
     [-1, 1, 1],
     [Infinity, 1, 1]
-  ])
+  ]) {
     expect(() => readSpatialDescriptor({ ...input(), scale })).toThrow()
+  }
+
   expect(() =>
     readSpatialDescriptor({ ...input(), shear: [1, 0, 0] })
   ).toThrow()
@@ -270,6 +309,7 @@ it('admits explicit emission and defaults ordinary material emission to zero', (
     emissive: 0xffdba0,
     emissiveIntensity: 2.5
   })
+
   expect(luminous).toMatchObject({ emissive: 0xffdba0, emissiveIntensity: 2.5 })
   expect(readSpatialDescriptor(input())).toMatchObject({
     emissive: 0,
@@ -317,7 +357,11 @@ it('admits immutable physical optics and rejects invalid optical parameters', ()
     attenuationDistance: 0.08
   }
   const accepted = readSpatialDescriptor({ ...input(), optics })
-  if (accepted.kind !== 'mesh') throw new Error('Expected mesh')
+
+  if (accepted.kind !== 'mesh') {
+    throw new Error('Expected mesh')
+  }
+
   expect(accepted.optics).toEqual(optics)
   expect(Object.isFrozen(accepted.optics)).toBe(true)
   optics.thickness = 99
@@ -332,13 +376,15 @@ it('admits immutable physical optics and rejects invalid optical parameters', ()
     { attenuationColor: -1 },
     { attenuationDistance: 0 },
     { attenuationDistance: Infinity }
-  ])
+  ]) {
     expect(() =>
       readSpatialDescriptor({
         ...input(),
         optics: { ...accepted.optics, ...patch }
       })
     ).toThrow()
+  }
+
   expect(
     readSpatialDescriptor({ ...input(), opacity: 0.4, optics: accepted.optics })
   ).toMatchObject({ opacity: 0.4, optics: accepted.optics })
@@ -354,11 +400,13 @@ it('preserves ordered optical capture layers and rejects invalid ranks', () => {
     captureLayer: 2
   }
   const result = readSpatialDescriptor({ ...input(), optics })
+
   expect(result).toMatchObject({ optics: { captureLayer: 2 } })
-  for (const captureLayer of [-1, 0.5, NaN, Infinity, '2'])
+  for (const captureLayer of [-1, 0.5, NaN, Infinity, '2']) {
     expect(() =>
       readSpatialDescriptor({ ...input(), optics: { ...optics, captureLayer } })
     ).toThrow()
+  }
 })
 
 it('retains immutable authored unit normals and compares their geometry identity', () => {
@@ -370,6 +418,7 @@ it('retains immutable authored unit normals and compares their geometry identity
     normals
   }
   const accepted = readSpatialShape(shape)
+
   expect(accepted).toHaveProperty('normals', normals)
   expect(
     Object.isFrozen(accepted.kind === 'triangles' && accepted.normals)
@@ -380,6 +429,7 @@ it('retains immutable authored unit normals and compares their geometry identity
     ...shape,
     normals: [0, 0, 1, 0, 0, 1, 0, 0, 1]
   })
+
   expect(sameSpatialShape(accepted, changed)).toBe(false)
   for (const invalid of [
     [1, 0, 0],
@@ -388,8 +438,9 @@ it('retains immutable authored unit normals and compares their geometry identity
     Array(9).fill(1),
     [0, 0, '1', 0, 0, 1, 0, 0, 1],
     [0, 0, true, 0, 0, 1, 0, 0, 1]
-  ])
+  ]) {
     expect(() => readSpatialShape({ ...shape, normals: invalid })).toThrow(
       'Invalid spatial shape'
     )
+  }
 })

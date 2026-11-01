@@ -16,6 +16,7 @@ describe('ordered native batch partitions', () => {
       (_, i) => new Container({ label: String(i), x: i, y: i })
     )
     const expected = [...children]
+
     children.forEach((child) => partitions.append(parent, child))
     expect(parent.children).toHaveLength(4)
     expect(ordered(parent).map((node) => node.label)).toEqual(
@@ -30,6 +31,7 @@ describe('ordered native batch partitions', () => {
       [3, 250]
     ]) {
       const child = expected[from]
+
       expected.splice(from, 1)
       expected.splice(to, 0, child)
       partitions.setIndex(parent, child, to)
@@ -40,9 +42,14 @@ describe('ordered native batch partitions', () => {
         parent.children.every((block) => block.children.length <= 128)
       ).toBe(true)
     }
+
     const untouchedTail = parent.children[parent.children.length - 1]
     const child = expected.shift()
-    if (!child) throw new Error('Missing first child')
+
+    if (!child) {
+      throw new Error('Missing first child')
+    }
+
     partitions.remove(parent, child)
     expect(ordered(parent).map((node) => node.label)).toEqual(
       expected.map((node) => node.label)
@@ -51,6 +58,7 @@ describe('ordered native batch partitions', () => {
       true
     )
     const other = new Container()
+
     partitions.append(other, expected[130])
     expected.splice(130, 1)
     expect(ordered(parent).map((node) => node.label)).toEqual(
@@ -71,7 +79,11 @@ describe('ordered native batch partitions', () => {
   it('keeps small and graphics-owned child hierarchies direct', () => {
     const partitions = new PixiBatchPartitions()
     const parent = new Graphics()
-    for (let i = 0; i < 150; i++) partitions.append(parent, new Container())
+
+    for (let i = 0; i < 150; i++) {
+      partitions.append(parent, new Container())
+    }
+
     expect(parent.children).toHaveLength(150)
     expect(parent.children.every((node) => !node.isRenderGroup)).toBe(true)
     partitions.dispose(parent)

@@ -7,6 +7,7 @@ it('validates only evidence, without cloning report source, method, rule or pair
   const input = liveFixture()
   const evidence = runOfficialClearanceMethod(sampleSnapshot(input, 4))
   const clone = vi.spyOn(globalThis, 'structuredClone')
+
   try {
     validateLiveEvidence(input, 4, evidence)
     expect(clone).toHaveBeenCalledTimes(evidence.pairs.length)
@@ -40,8 +41,9 @@ it('rejects wrong source, time and incomplete successful evidence', () => {
   const input = liveFixture()
   const evidence = runOfficialClearanceMethod(sampleSnapshot(input, 4))
 
-  for (const time of [-1, 9, NaN, Infinity])
+  for (const time of [-1, 9, NaN, Infinity]) {
     expect(() => sampleSnapshot(input, time)).toThrow()
+  }
 
   expect(() => validateLiveEvidence(input, 3, evidence)).toThrow()
   expect(() =>

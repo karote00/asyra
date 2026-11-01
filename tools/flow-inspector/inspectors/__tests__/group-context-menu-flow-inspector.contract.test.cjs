@@ -8,7 +8,9 @@ const repoRoot = path.resolve(__dirname, '../../../..')
 
 const step = (id) => {
   const value = data.steps.find((item) => item.id === id)
+
   assert.ok(value, `Missing Inspector step: ${id}`)
+
   return value
 }
 
@@ -45,11 +47,7 @@ test('Group Context Menu Inspector authorities resolve', () => {
   )
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.specPath)))
   assert.ok(fs.existsSync(path.resolve(repoRoot, data.authority.inspectorPath)))
-  assert.ok(
-    fs.existsSync(
-      path.resolve(__dirname, '../group-context-menu-flow-inspector.html')
-    )
-  )
+  require('./assert-react-catalog.cjs')(data)
   assert.ok(Object.isFrozen(data))
   assert.ok(data.steps.every(Object.isFrozen))
 })
@@ -89,6 +87,7 @@ test('Group Context Menu Inspector exposes the six required owner steps', () => 
 
   const laneIds = new Set(data.lanes.map((item) => item.id))
   const stepIds = new Set(requiredStepIds)
+
   data.steps.forEach((item) => {
     assert.deepEqual(Object.keys(item), requiredFields)
     assert.ok(laneIds.has(item.laneId), `${item.id} lane`)
@@ -131,9 +130,11 @@ test('every route and artifact has one resolvable owner-consumer handoff', () =>
 
   data.routes.forEach((route) => {
     assert.ok(stepIds.has(route.from), `${route.id} from`)
-    if (route.to) assert.ok(stepIds.has(route.to), `${route.id} to`)
+    if (route.to) {assert.ok(stepIds.has(route.to), `${route.id} to`)}
+
     route.producedArtifacts.forEach((id) => {
       const artifact = data.artifacts.find((item) => item.id === id)
+
       assert.ok(artifact, `${route.id} artifact ${id}`)
       assert.equal(artifact.ownerStepId, route.from, `${route.id} owner`)
       if (route.to) {
@@ -228,6 +229,7 @@ test('Group and Context Menu Gherkin contracts are registered and allowed', () =
     path.resolve(repoRoot, `${featureDirectory}/README.md`),
     'utf8'
   )
+
   featurePaths.forEach((featurePath) => {
     assert.match(readme, new RegExp(path.basename(featurePath)))
   })
@@ -236,6 +238,7 @@ test('Group and Context Menu Gherkin contracts are registered and allowed', () =
     path.resolve(repoRoot, featurePaths[0]),
     'utf8'
   )
+
   assert.match(groupFeature, /one intended undo commit/)
   assert.match(groupFeature, /Meta\+G/)
   assert.match(groupFeature, /Meta\+Shift\+G/)
@@ -246,6 +249,7 @@ test('Group and Context Menu Gherkin contracts are registered and allowed', () =
     path.resolve(repoRoot, featurePaths[1]),
     'utf8'
   )
+
   assert.match(menuFeature, /first command row should be "Group"/)
   assert.match(menuFeature, /second command row should be "Ungroup"/)
   assert.match(
@@ -393,6 +397,7 @@ test('acceptance contracts cover product cases, gates, and review stop', () => {
   const acceptedStepIds = new Set(
     data.acceptanceContracts.flatMap((contract) => contract.stepIds)
   )
+
   data.steps.forEach((item) =>
     assert.ok(acceptedStepIds.has(item.id), `${item.id} lacks acceptance`)
   )

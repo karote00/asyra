@@ -17,6 +17,7 @@ const toHandle = (value: unknown): { x: number; y: number } | null => {
   }
 
   const handle = value as { x?: unknown; y?: unknown }
+
   if (typeof handle.x !== 'number' || typeof handle.y !== 'number') {
     return null
   }
@@ -32,6 +33,7 @@ export const anchorPointsPropertyComponentDefinition: PropertyComponentDefinitio
       key: 'anchorPoints',
       childType: PropertyTypes.ANCHOR_POINT,
       mode: 'ids-or-objects',
+
       toChildData: (item) => ({
         id: typeof item.id === 'string' ? item.id : undefined,
         x: toNumberValue(item.x),
@@ -41,6 +43,7 @@ export const anchorPointsPropertyComponentDefinition: PropertyComponentDefinitio
         inHandle: toHandle(item.inHandle),
         outHandle: toHandle(item.outHandle)
       }),
+
       toValue: (child, childId) => ({
         id: childId,
         x: toNumberValue(child.get('x')),

@@ -52,11 +52,13 @@ export const createAiStartup = (
   let deliveryClosed = false
   const deliveryOptions = {
     outbox,
+
     onIssue: (issue: ExecutionRecordDeliveryIssue) => {
       console.warn(
         JSON.stringify({ event: 'ai_record_delivery_incomplete', ...issue })
       )
     },
+
     send: async (records: readonly ExecutionRecord[]) => {
       const response = await fetch(AI_EXECUTION_RECORD_ENDPOINT, {
         method: 'POST',
@@ -64,6 +66,7 @@ export const createAiStartup = (
         body: JSON.stringify(records),
         signal: AbortSignal.timeout(10_000)
       })
+
       if (!response.ok) {
         const failure = await response.json().catch(() => undefined)
         const code =
@@ -71,29 +74,43 @@ export const createAiStartup = (
           /^AI_RECORD_[A-Z_]+$/.test(failure.code)
             ? failure.code
             : 'AI_RECORD_DELIVERY_INCOMPLETE'
+
         throw new Error(`HTTP ${response.status} ${code}`)
       }
+
       const receipt = await response.json()
+
       if (
         typeof receipt?.complete !== 'boolean' ||
         typeof receipt?.requestId !== 'string' ||
         !Number.isSafeInteger(receipt?.acknowledgedSequence)
-      )
+      ) {
         throw new Error('Invalid execution record receipt')
+      }
+
       return receipt
     }
   }
   const deliveryHost = createRecordDeliveryHost(deliveryOptions)
   let recovery = Promise.resolve()
+
   const reconnect = () => {
-    if (deliveryClosed) return
+    if (deliveryClosed) {
+      return
+    }
+
     recovery = recovery.then(async () => {
-      if (!deliveryClosed) await deliveryHost.recover()
+      if (!deliveryClosed) {
+        await deliveryHost.recover()
+      }
     })
   }
+
   let runtime: AiAgentRuntime | undefined
+
   try {
     const provider = factories.createProvider()
+
     runtime = createAiAgentRuntime(
       createAiRuntimeInput({
         permissionRules: {
@@ -126,7 +143,9 @@ export const createAiStartup = (
           [AiActionNames.UPDATE_COMPOSITION_ELEMENTS]: 'allow'
         },
         provider,
+
         createRecordingSink: () => deliveryHost.createSink(),
+
         ownedResources: [
           {
             dispose: async () => {
@@ -141,6 +160,7 @@ export const createAiStartup = (
         requestConfirmation: confirmation.requestConfirmation,
         transactionRunner: createAiTransactionRunner({
           history,
+
           getMutationDeadline: () => browserEvaluationWindow()?.workDeadlineAt
         })
       })
@@ -148,6 +168,7 @@ export const createAiStartup = (
 
     globalThis.addEventListener?.('online', reconnect)
     reconnect()
+
     return Object.freeze({
       confirmation,
       history,

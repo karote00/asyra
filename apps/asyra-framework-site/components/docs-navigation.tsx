@@ -63,17 +63,25 @@ export function DocsNavigation({
 
   useLayoutEffect(() => {
     const savedPosition = window.sessionStorage.getItem(navigationScrollKey)
-    if (!savedPosition || !navigationRef.current) return
+
+    if (!savedPosition || !navigationRef.current) {
+      return
+    }
 
     const scrollTop = Number.parseFloat(savedPosition)
+
     if (Number.isFinite(scrollTop)) {
       navigationRef.current.scrollTop = scrollTop
     }
+
     window.sessionStorage.removeItem(navigationScrollKey)
   }, [currentId])
 
   const preserveNavigationPosition = () => {
-    if (!navigationRef.current) return
+    if (!navigationRef.current) {
+      return
+    }
+
     window.sessionStorage.setItem(
       navigationScrollKey,
       navigationRef.current.scrollTop.toString()

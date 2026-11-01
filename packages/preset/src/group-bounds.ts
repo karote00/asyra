@@ -23,19 +23,24 @@ export const deriveGroupBounds = (
 
   rectangles.forEach(({ x, y, width, height, type, rotation = 0 }) => {
     const values = [x, y, width, height, rotation]
+
     if (values.some((value) => !Number.isFinite(value))) {
       throw new Error(
         '[Preset] Group operation requires finite 2D geometry: direct-child rectangle is invalid'
       )
     }
+
     if (type === 'oval' && rotation !== 0) {
       const bounds = calculateEllipseBounds({ x, y, width, height, rotation })
+
       minX = Math.min(minX, bounds.x)
       maxX = Math.max(maxX, bounds.x + bounds.width)
       minY = Math.min(minY, bounds.y)
       maxY = Math.max(maxY, bounds.y + bounds.height)
+
       return
     }
+
     minX = Math.min(minX, x, x + width)
     minY = Math.min(minY, y, y + height)
     maxX = Math.max(maxX, x, x + width)

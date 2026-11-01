@@ -12,6 +12,7 @@ import type { ExperimentSnapshot } from '../contracts'
 function input() {
   const example = createSyntheticExample(),
     draft = createSyntheticExperimentDraft(example)
+
   return createExperimentSnapshot({
     snapshotId: 'original',
     candidateId: 'candidate',
@@ -25,8 +26,10 @@ function input() {
 
 it('validates detached historical inputs without installing or rerunning their method', () => {
   const original = structuredClone(input())
+
   original.method.id = 'private-unavailable'
   const restored = validateHistoricalSnapshot(original)
+
   expect(restored).toEqual(original)
   expect(restored).not.toBe(original)
   expect(Object.isFrozen(restored.workcell.bodies)).toBe(true)
@@ -40,6 +43,7 @@ it('validates detached historical inputs without installing or rerunning their m
     },
     []
   )
+
   expect(
     report.blockers.some((issue) => issue.code === 'method-unavailable')
   ).toBe(true)
@@ -47,6 +51,7 @@ it('validates detached historical inputs without installing or rerunning their m
 
 it('rejects omitted, repeated, forged, and additional snapshot inputs', () => {
   const source = input()
+
   for (const mutate of [
     (value: ExperimentSnapshot) => {
       value.pairs = value.pairs.slice(1)
@@ -71,6 +76,7 @@ it('rejects omitted, repeated, forged, and additional snapshot inputs', () => {
     }
   ]) {
     const malformed = structuredClone(source)
+
     mutate(malformed)
     expect(() => validateHistoricalSnapshot(malformed)).toThrow()
   }

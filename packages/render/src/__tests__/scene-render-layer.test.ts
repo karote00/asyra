@@ -13,10 +13,12 @@ afterEach(() => {
 describe('scene RenderLayer hierarchy projection', () => {
   it('places a nested element before invoking its render strategy', () => {
     const observedParentLabels: (string | null)[] = []
+
     renderStrategyRegistry.register(NESTED_TEST_TYPE, (graphic) => {
       observedParentLabels.push(graphic.parent?.label ?? null)
     })
     const layer = new RenderLayer()
+
     layer.switchWorkspace({ label: 'workspace', x: 0, y: 0 })
     layer.addElement({
       id: 'group-1',
@@ -59,8 +61,10 @@ describe('scene RenderLayer hierarchy projection', () => {
         height: 40
       })
     })
+
     renderStrategyRegistry.register(NESTED_TEST_TYPE, strategy)
     const layer = new RenderLayer()
+
     layer.switchWorkspace({ label: 'workspace', x: 0, y: 0 })
     const element = layer.addElement({
       id: 'vector-affine',
@@ -75,9 +79,11 @@ describe('scene RenderLayer hierarchy projection', () => {
       height: 40,
       rotation: 0
     } as unknown as RenderElementData)
+
     if (!element) {
       throw new Error('Expected affine Vector render element')
     }
+
     strategy.mockClear()
 
     layer.updateElementProperties(element, 'x', 20)

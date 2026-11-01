@@ -25,6 +25,7 @@ describe('Render engine adapter', () => {
     const render = new Render({ engine })
 
     const initialized = await render.init(640, 480, 0x112233, {})
+
     render.switchWorkspace({ label: 'workspace', x: 0, y: 0 })
     render.addElement({
       id: 'rect-1',
@@ -63,7 +64,9 @@ describe('Render engine adapter', () => {
       const engine = new RecordingRenderEngine({
         name: `provider-${engines.length + 1}`
       })
+
       engines.push(engine)
+
       return engine
     })
     const first = new Render({ engineProvider })
@@ -91,6 +94,7 @@ describe('Render engine adapter', () => {
     const render = new Render({ engineProvider: originalProvider })
 
     const cleanup = render.setEngineProvider(replacementProvider)
+
     expect(originalProvider).not.toHaveBeenCalled()
     expect(replacementProvider).not.toHaveBeenCalled()
 
@@ -110,6 +114,7 @@ describe('Render engine adapter', () => {
     const render = new Render()
 
     const cleanup = render.setEngineProvider(selectedProvider)
+
     cleanup()
 
     await expect(render.init(100, 100, 0, {})).rejects.toThrow(
@@ -130,6 +135,7 @@ describe('Render engine adapter', () => {
     const render = new Render({ engineProvider: originalProvider })
 
     const cleanupFirst = render.setEngineProvider(firstProvider)
+
     render.setEngineProvider(secondProvider)
     cleanupFirst()
     await render.init(100, 100, 0, {})
@@ -154,6 +160,7 @@ describe('Render engine adapter', () => {
 
     const cleanupFirst = render.setEngineProvider(firstProvider)
     const cleanupSecond = render.setEngineProvider(secondProvider)
+
     cleanupSecond()
     cleanupFirst()
     await render.init(100, 100, 0, {})
@@ -184,6 +191,7 @@ describe('Render engine adapter', () => {
     const second = new Render({ engineProvider: secondOriginalProvider })
 
     const cleanupFirst = first.setEngineProvider(firstReplacementProvider)
+
     second.setEngineProvider(secondReplacementProvider)
     cleanupFirst()
     await first.init(100, 100, 0, {})
@@ -204,7 +212,9 @@ describe('Render engine adapter', () => {
         const engine = new RecordingRenderEngine({
           name: `reinit-${engines.length + 1}`
         })
+
         engines.push(engine)
+
         return engine
       }
     })
@@ -286,6 +296,7 @@ describe('Render engine adapter', () => {
     })
 
     let received: unknown
+
     try {
       await render.init(100, 100, 0, {})
     } catch (error) {
@@ -313,6 +324,7 @@ describe('Render engine adapter', () => {
 
   it('destroys the selected engine when initialization fails', async () => {
     const engine = new RecordingRenderEngine({ name: 'initialization-failure' })
+
     engine.initialize = vi.fn(() => {
       throw new Error('surface unavailable')
     })
@@ -329,6 +341,7 @@ describe('Render engine adapter', () => {
   it('dispatches attached render property changes to the engine', async () => {
     const engine = new RecordingRenderEngine({ name: 'property-updates' })
     const render = new Render({ engine })
+
     await render.init(100, 100, 0, {})
     render.addElement({
       id: 'rotated-element',
@@ -345,6 +358,7 @@ describe('Render engine adapter', () => {
     const update = engine
       .getOperations()
       .findLast((operation) => operation.type === 'update-object')
+
     expect(update).toMatchObject({
       type: 'update-object',
       command: {
@@ -395,6 +409,7 @@ describe('Render engine adapter', () => {
       ).toEqual(['update-object', 'draw', 'flush'])
 
       const cleanFrameStartIndex = engine.getOperations().length
+
       render.flushFrame()
       expect(engine.getOperations()).toHaveLength(cleanFrameStartIndex)
     } finally {
@@ -418,6 +433,7 @@ describe('Render engine adapter', () => {
 
   it('rejects conflicting instance and callback providers', () => {
     const engine = new RecordingRenderEngine({ name: 'direct' })
+
     const engineProvider = (): RenderEngine =>
       new RecordingRenderEngine({ name: 'provider' })
 
@@ -432,9 +448,11 @@ it('resolves registered projection identity independently of display labels', as
     await import('../types/render-object.js')
   const engine = new RecordingRenderEngine({ name: 'projection-test' })
   const render = new Render({ engine })
+
   await render.init(640, 480, 0, {})
   const layer = new RenderContainer()
   const mesh = new RenderMesh()
+
   mesh.projectionIdentity = { visualId: 'visual-a', elementId: 'entity-a' }
   mesh.label = 'User display name'
   layer.addChild(mesh)

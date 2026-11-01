@@ -17,6 +17,7 @@ describe('transaction boundary publishing', () => {
     const endSubscriber = vi.fn()
     const startSubscription = subscribeToStartTransaction(startSubscriber)
     const endSubscription = subscribeToEndTransaction(endSubscriber)
+
     startSubscriber.mockClear()
     endSubscriber.mockClear()
 
@@ -39,6 +40,7 @@ describe('transaction boundary publishing', () => {
   it('treats standalone endTransaction as a no-op', () => {
     const endSubscriber = vi.fn()
     const subscription = subscribeToEndTransaction(endSubscriber)
+
     endSubscriber.mockClear()
 
     endTransaction()
@@ -51,6 +53,7 @@ describe('transaction boundary publishing', () => {
   it('latches a nested rollback until the outer transaction closes', () => {
     const endSubscriber = vi.fn()
     const subscription = subscribeToEndTransaction(endSubscriber)
+
     endSubscriber.mockClear()
 
     startTransaction()
@@ -80,6 +83,7 @@ describe('transaction boundary publishing', () => {
   it('latches a nested rollback even when no failure detail is supplied', () => {
     const endSubscriber = vi.fn()
     const subscription = subscribeToEndTransaction(endSubscriber)
+
     endSubscriber.mockClear()
 
     startTransaction()
@@ -99,6 +103,7 @@ describe('transaction boundary publishing', () => {
   it('commits a successful synchronous runTransaction', () => {
     const endSubscriber = vi.fn()
     const subscription = subscribeToEndTransaction(endSubscriber)
+
     endSubscriber.mockClear()
 
     const result = runTransaction(() => 'complete')
@@ -120,10 +125,12 @@ describe('transaction boundary publishing', () => {
     const callbackGate = new Promise<void>((resolve) => {
       releaseCallback = resolve
     })
+
     endSubscriber.mockClear()
 
     const result = runTransaction(async () => {
       await callbackGate
+
       return 'complete'
     })
 
@@ -144,6 +151,7 @@ describe('transaction boundary publishing', () => {
     const endSubscriber = vi.fn()
     const subscription = subscribeToEndTransaction(endSubscriber)
     const failure = new Error('sync failure')
+
     endSubscriber.mockClear()
 
     expect(() =>
@@ -172,6 +180,7 @@ describe('transaction boundary publishing', () => {
     const endSubscriber = vi.fn()
     const subscription = subscribeToEndTransaction(endSubscriber)
     const failure = new Error('async failure')
+
     endSubscriber.mockClear()
 
     await expect(
@@ -200,13 +209,16 @@ describe('transaction boundary publishing', () => {
     const finalizationFailure = new Error('validation failed')
     const endSubscriber = vi.fn()
     const endSubscription = subscribeToEndTransaction(endSubscriber)
+
     endSubscriber.mockClear()
     const disposeOwner = registerTransactionOwner({
       startTransaction: vi.fn(),
       updateTransactionBatch: vi.fn(),
+
       endTransaction: () => {
         throw finalizationFailure
       },
+
       undo: vi.fn(),
       redo: vi.fn()
     })
@@ -233,19 +245,23 @@ describe('transaction boundary publishing', () => {
   it('surfaces throw undefined from transaction owner finalization', () => {
     const endSubscriber = vi.fn()
     const endSubscription = subscribeToEndTransaction(endSubscriber)
+
     endSubscriber.mockClear()
     const disposeOwner = registerTransactionOwner({
       startTransaction: vi.fn(),
       updateTransactionBatch: vi.fn(),
+
       endTransaction: () => {
         throw undefined
       },
+
       undo: vi.fn(),
       redo: vi.fn()
     })
 
     let threw = false
     let thrownValue: unknown = 'not-captured'
+
     try {
       runTransaction(() => {
         updateTransaction({

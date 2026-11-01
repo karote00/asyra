@@ -36,7 +36,9 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
       .mockImplementation((...args) => {
         const started = performance.now()
         const result = measureScene(...args)
+
         measurementMs += performance.now() - started
+
         return result
       })
     const pan = vi.spyOn(navigation, 'panCamera')
@@ -53,73 +55,93 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
     }
     let pending: FrameRequestCallback | undefined
     const disconnect = vi.fn()
+
     vi.stubGlobal(
       'ResizeObserver',
       class {
         observe = vi.fn()
+
         disconnect = disconnect
       }
     )
     const host = document.createElement('div')
+
     host.getBoundingClientRect = () => new DOMRect(0, 0, 640, 480)
     const runtime = await bootstrap(
       host,
       () =>
         new ThreeEngine({
           createDriver: () => driver,
+
           requestFrame: (cb) => {
             pending = cb
+
             return 1
           },
+
           cancelFrame: () => {
             pending = undefined
           }
         })
     )
+
     const flush = () => {
       const callback = pending
+
       pending = undefined
       callback?.(0)
     }
+
     try {
       flush()
       const initialScene = runtime.getScene()
       const initialSceneDemand = runtime.getSceneDemand()
+
       expect(runtime.getSceneDemand()).toBe(initialSceneDemand)
       expect(runtime.isCurrentSceneDemand(initialSceneDemand)).toBe(true)
       const dockSource = runtime.getDockSource()
+
       expect(runtime.isCurrentDockSource(dockSource)).toBe(true)
       const robotSource = runtime.getRobotSource()
+
       expect(runtime.isCurrentRobotSource(robotSource)).toBe(true)
       for (let i = 0; i < 3; i++) {
         expect(runtime.getDockSource() === dockSource).toBe(true)
         expect(runtime.getRobotSource()).toBe(robotSource)
         runtime.evaluateRobotPose(robotSource, REST_JOINTS)
       }
+
       expect(robotBuild).toHaveBeenCalledTimes(1)
       const notify = vi.fn(),
         unsubscribe = runtime.subscribe(notify)
+
       if (mode === 'navigation') {
         await runtime.setCamera('joint')
         runtime.pan(20, 10)
         const firstPan = pan.mock.results.at(-1)?.value
         const firstInput = pan.mock.calls.at(-1)?.[0]
+
         runtime.zoom(-10000)
         expect.soft(runtime.getZoom()).toBe(10000)
         runtime.pan(20, 10)
         const secondPan = pan.mock.results.at(-1)?.value
         const secondInput = pan.mock.calls.at(-1)?.[0]
-        if (!firstInput || !secondInput)
+
+        if (!firstInput || !secondInput) {
           throw new Error('Missing camera commands')
+        }
+
         expect(secondInput.position).toEqual(firstPan.position)
         for (let axis = 0; axis < 3; axis++) {
           expect
             .soft(secondPan.target[axis] - secondInput.target[axis])
             .toBeCloseTo(firstPan.target[axis] - firstInput.target[axis], 8)
         }
+
         runtime.orbit(40, -12)
         runtime.pan(0, 0)
         const rotated = pan.mock.calls.at(-1)?.[0]
+
         expect(rotated?.target).toEqual(secondPan.target)
         expect(rotated?.position).not.toEqual(secondPan.position)
         runtime.actualSize()
@@ -127,10 +149,15 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
         await runtime.setCamera('overview')
         runtime.pan(0, 0)
         const beforeDolly = pan.mock.calls.at(-1)?.[0]
+
         runtime.dolly(-Math.log(2) * 1000)
         runtime.pan(0, 0)
         const afterDolly = pan.mock.calls.at(-1)?.[0]
-        if (!beforeDolly || !afterDolly) throw new Error('Missing dolly camera')
+
+        if (!beforeDolly || !afterDolly) {
+          throw new Error('Missing dolly camera')
+        }
+
         expect(runtime.getZoom()).toBe(200)
         expect(afterDolly.fov).toBe(beforeDolly.fov)
         expect(afterDolly.target).toEqual(beforeDolly.target)
@@ -142,20 +169,29 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
         runtime.dolly(-100000)
         expect(runtime.getZoom()).toBe(10000)
         runtime.actualSize()
+
         // World-space movement is independent of optical zoom and camera presets.
         const movementDistance = () => {
           runtime.pan(0, 0)
           const before = pan.mock.calls.at(-1)?.[0]
+
           runtime.move(0, 0, 1.5) // One second at the keyboard's base rate.
           runtime.pan(0, 0)
           const after = pan.mock.calls.at(-1)?.[0]
-          if (!before || !after) throw new Error('Missing movement camera')
+
+          if (!before || !after) {
+            throw new Error('Missing movement camera')
+          }
+
           expect(after.fov).toBe(before.fov)
+
           return Math.hypot(
             ...after.position.map((v, i) => v - before.position[i])
           )
         }
+
         const overviewSpeed = movementDistance()
+
         expect.soft(overviewSpeed).toBeCloseTo(6)
         runtime.zoom(-Math.log(4) / 0.001)
         expect.soft(movementDistance()).toBeCloseTo(overviewSpeed, 8)
@@ -163,20 +199,24 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
         runtime.zoom(-Math.log(15.21) / 0.001)
         expect(runtime.getZoom()).toBe(1521)
         const doorwaySpeed = movementDistance()
+
         expect.soft(doorwaySpeed).toBeGreaterThan(5)
         expect.soft(doorwaySpeed).toBeCloseTo(overviewSpeed, 8)
         runtime.zoom(-10000)
         const detailSpeed = movementDistance()
+
         expect.soft(detailSpeed).toBeCloseTo(overviewSpeed, 8)
         runtime.actualSize()
         expect.soft(movementDistance()).toBeCloseTo(overviewSpeed, 8)
         await runtime.setCamera('joint')
         const jointSpeed = movementDistance()
+
         expect.soft(jointSpeed).toBeCloseTo(overviewSpeed)
         runtime.zoom(-10000)
         expect.soft(movementDistance()).toBeCloseTo(jointSpeed, 8)
         const speedNotify = vi.fn()
         const stopSpeed = runtime.subscribeMovementSpeed(speedNotify)
+
         runtime.setMovementSpeed(0.1)
         expect(runtime.getMovementSpeed()).toBe(0.1)
         expect(movementDistance()).toBeCloseTo(0.1, 8)
@@ -192,6 +232,7 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
         notify.mockClear()
         const initial = runtime.getView()
         const presetCount = preset.mock.calls.length
+
         for (let i = 0; i < 20; i++) {
           runtime.move(0.01, -0.01, 0.02)
           runtime.dolly(1)
@@ -201,6 +242,7 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
           runtime.pan(4, -2)
           flush()
         }
+
         runtime.fit()
         flush()
         runtime.actualSize()
@@ -238,18 +280,25 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
             i === 0 ? { ...strip, width: 1.1 } : strip
           )
         }
+
         const gpuGeometries = () => {
           const result = new Set<BufferGeometry>()
           const scene = vi.mocked(driver.render).mock.calls[0]?.[0]
+
           scene?.traverse((object) => {
-            if (object instanceof InstancedMesh) result.add(object.geometry)
+            if (object instanceof InstancedMesh) {
+              result.add(object.geometry)
+            }
           })
+
           return result
         }
+
         const renderedInstances = () => {
           const result: string[] = []
+
           vi.mocked(driver.render).mock.calls[0]?.[0].traverse((object) => {
-            if (object instanceof InstancedMesh)
+            if (object instanceof InstancedMesh) {
               result.push(
                 JSON.stringify([
                   object.geometry.uuid,
@@ -261,23 +310,31 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
                   )
                 ])
               )
+            }
           })
+
           return result.sort().join('\n')
         }
+
         const originalRendered = renderedInstances()
         const originalGpu = gpuGeometries()
+
         expect(originalGpu.size).toBeGreaterThan(0)
         updates.mockClear()
         measurementMs = 0
         const started = performance.now()
+
         await runtime.setConfiguration(changed)
         const submitted = performance.now()
+
         flush()
         const flushed = performance.now()
+
         expect.soft(structure).toHaveBeenCalledTimes(1)
         const unchanged = previous.filter((mesh) =>
           ['steel', 'film', 'barriers', 'dimensions', 'base'].includes(mesh.id)
         )
+
         for (const mesh of unchanged) {
           expect
             .soft(
@@ -298,11 +355,14 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
             )
             .toBe(true)
         }
+
         const nextGpu = gpuGeometries()
+
         expect(nextGpu.size).toBe(originalGpu.size)
         expect([...nextGpu].every((shape) => originalGpu.has(shape))).toBe(true)
         const next = build.mock.results.at(-1)?.value as projection.SiteMesh[]
-        if (process.env.FIELDSCOPE_PROFILE === '1')
+
+        if (process.env.FIELDSCOPE_PROFILE === '1') {
           // eslint-disable-next-line no-console -- Opt-in permanent timing evidence accompanies deterministic work assertions.
           console.log(
             JSON.stringify({
@@ -312,6 +372,8 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
               cropBuilds: cropBuild.mock.calls.length
             })
           )
+        }
+
         expect.soft(cropBuild).toHaveBeenCalledTimes(1)
         const before = previous.find((mesh) =>
           mesh.id.startsWith('cucumber-1914')
@@ -321,13 +383,17 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
             mesh.id ===
             previous.find((item) => item.id.startsWith('cucumber-1914'))?.id
         )?.descriptor
-        if (!before || !after)
+
+        if (!before || !after) {
           throw new Error('Missing planted crop descriptors')
+        }
+
         expect.soft(after.shape === before.shape).toBe(true)
         expect(after.instances).not.toEqual(before.instances)
         for (const layer of ['supports', 'net', 'ties', 'clips']) {
           const originals = previous.filter((mesh) => mesh.layer === layer)
           const updates = next.filter((mesh) => mesh.layer === layer)
+
           expect
             .soft(updates.every((mesh) => !!mesh.descriptor.instances))
             .toBe(true)
@@ -342,6 +408,7 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
         }
 
         const changedRendered = renderedInstances()
+
         expect(changedRendered === originalRendered).toBe(false)
         await runtime.undo()
         flush()
@@ -374,8 +441,10 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
             { id: 'fixture-4', kind: 'soil' as const, width: 2 }
           ]
         }
+
         if (mode === 'history') {
           const configurationPresetCount = preset.mock.calls.length
+
           await runtime.setConfiguration(changedConfig)
           flush()
           expect(preset).toHaveBeenCalledTimes(configurationPresetCount + 1)
@@ -422,13 +491,16 @@ it.each(['navigation', 'history', 'redo-branch', 'soil-edit'] as const)(
           flush()
           expect(runtime.getConfiguration().length).toBe(20)
         }
+
         stopConfig()
       }
+
       expect(runtime.getRobotSource()).toBe(robotSource)
       expect(robotBuild).toHaveBeenCalledTimes(1)
       unsubscribe()
     } finally {
       const staleSceneDemand = runtime.getSceneDemand()
+
       await runtime.dispose()
       expect(driver.dispose).toHaveBeenCalledTimes(1)
       expect(disconnect).toHaveBeenCalledTimes(1)
@@ -470,34 +542,43 @@ it('selects one walking runtime through Core history and keeps W2 work out of W1
     dispose: vi.fn()
   }
   let pending: FrameRequestCallback | undefined
+
   vi.stubGlobal(
     'ResizeObserver',
     class {
       observe = vi.fn()
+
       disconnect = vi.fn()
     }
   )
   const host = document.createElement('div')
+
   host.getBoundingClientRect = () => new DOMRect(0, 0, 640, 480)
   const runtime = await bootstrap(
     host,
     () =>
       new ThreeEngine({
         createDriver: () => driver,
+
         requestFrame: (callback) => {
           pending = callback
+
           return 1
         },
+
         cancelFrame: () => {
           pending = undefined
         }
       })
   )
+
   const flush = () => {
     const callback = pending
+
     pending = undefined
     callback?.(0)
   }
+
   try {
     flush()
     expect(runtime.getWalkingRuntimeSelection()).toBe(
@@ -509,16 +590,21 @@ it('selects one walking runtime through Core history and keeps W2 work out of W1
         definitionId: 'bootstrap-walking-runtime'
       })
     )
+
     await runtime.setWalkingRuntimeSelection(selection)
     flush()
     const active = runtime.getWalkingOperatingReport()
+
     expect(active.status).not.toBe('legacy-view')
-    if (active.status === 'legacy-view' || !active.envelope)
+    if (active.status === 'legacy-view' || !active.envelope) {
       throw new Error('Missing active walking report')
+    }
+
     expect(active.selection).toEqual(selection)
     const source = active.source
     const envelope = active.envelope
     const demand = active.demand
+
     runtime.move(0.1, 0, 0)
     runtime.zoom(1)
     expect(runtime.getWalkingOperatingReport()).toBe(active)
@@ -529,14 +615,18 @@ it('selects one walking runtime through Core history and keeps W2 work out of W1
       )
     })
     const farmFrames = submissions.mock.calls.length
+
     await runtime.setConfiguration({
       ...runtime.getConfiguration(),
       length: runtime.getConfiguration().length + 0.1
     })
     expect(submissions).toHaveBeenCalledTimes(farmFrames + 1)
     const refreshed = runtime.getWalkingOperatingReport()
-    if (refreshed.status === 'legacy-view' || !refreshed.envelope)
+
+    if (refreshed.status === 'legacy-view' || !refreshed.envelope) {
       throw new Error('Missing refreshed walking report')
+    }
+
     expect(refreshed.source).toBe(source)
     expect(refreshed.envelope).toBe(envelope)
     expect(refreshed.demand).not.toBe(demand)
@@ -554,6 +644,7 @@ it('selects one walking runtime through Core history and keeps W2 work out of W1
     expect(runtime.getWalkingOperatingReport().status).not.toBe('legacy-view')
     const reportBeforeDemandOnlyRefresh = runtime.getWalkingOperatingReport()
     const demandOnlyFrames = submissions.mock.calls.length
+
     await runtime.setSceneDemandConfiguration({
       ...runtime.getSceneDemandConfiguration(),
       evidence: {
@@ -563,12 +654,14 @@ it('selects one walking runtime through Core history and keeps W2 work out of W1
       }
     })
     const reportAfterDemandOnlyRefresh = runtime.getWalkingOperatingReport()
+
     expect(reportAfterDemandOnlyRefresh).not.toBe(reportBeforeDemandOnlyRefresh)
     expect(
       runtime.isCurrentWalkingOperatingReport(reportAfterDemandOnlyRefresh)
     ).toBe(true)
     expect(submissions).toHaveBeenCalledTimes(demandOnlyFrames)
     const stale = runtime.getWalkingOperatingReport()
+
     await runtime.dispose()
     expect(runtime.isCurrentWalkingOperatingReport(stale)).toBe(false)
   } finally {

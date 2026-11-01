@@ -195,6 +195,7 @@ const computeFillsValue = ({
   const elementFills = elements.map((element) => {
     const fills = (element as unknown as Record<string, unknown> | undefined)
       ?.fills
+
     return isFillArray(fills) ? fills : []
   })
 
@@ -233,6 +234,7 @@ const computeStrokesValue = ({
   const elementStrokes = elements.map((element) => {
     const strokes = (element as unknown as Record<string, unknown> | undefined)
       ?.strokes
+
     return isStrokeArray(strokes) ? strokes : []
   })
 
@@ -271,6 +273,7 @@ const createDefineUIProperty = (core: PresetCoreAPIs) => {
     fills: [PropertyTypes.FILLS],
     strokes: [PropertyTypes.STROKES]
   }
+
   return <T extends PropertyValue>(
     key: string,
     config: PropertyRegistration<T>
@@ -388,6 +391,7 @@ export const registerViewportProperties = (core: PresetCoreAPIs): void => {
     PresetSystemPropertyKeys.ZOOM,
     1
   )
+
   defineUIProperty<number>(PresetSystemPropertyKeys.ZOOM, {
     defaultValue: 1,
     source$: zoomObservable
@@ -401,6 +405,7 @@ export const registerInputProperties = (core: PresetCoreAPIs): void => {
     PresetSystemPropertyKeys.PRIMARY_TOOL,
     DEFAULT_PRIMARY_TOOL
   )
+
   defineUIProperty<string>(PresetSystemPropertyKeys.PRIMARY_TOOL, {
     defaultValue: DEFAULT_PRIMARY_TOOL,
     source$: primaryToolObservable
@@ -492,6 +497,7 @@ export const registerVectorEditingProperties = (core: PresetCoreAPIs): void => {
     PresetSystemPropertyKeys.PATH_EDITING_VECTOR_ID,
     null
   )
+
   core.defineSystemProperty<boolean>(
     PresetSystemPropertyKeys.PATH_EDITING_MODE,
     false
@@ -506,6 +512,7 @@ export const registerVectorEditingProperties = (core: PresetCoreAPIs): void => {
       PresetSystemPropertyKeys.SELECTED_VECTOR_POINT,
       null
     )
+
   core.defineSystemProperty<SelectedVectorPointState | null>(
     PresetSystemPropertyKeys.HOVERED_VECTOR_POINT,
     null

@@ -28,47 +28,65 @@ export type NonlinearFraction = Readonly<{
   numerator: bigint
   denominator: bigint
 }>
+
 export const nonlinearGcd = (a: bigint, b: bigint): bigint =>
   (() => {
     if (b) {
       return nonlinearGcd(b, a % b)
     }
+
     if (a < 0n) {
       return -a
     }
+
     return a
   })()
+
 export function nonlinearFraction(n: bigint, d = 1n): NonlinearFraction {
   if (d < 0n) {
     n = -n
     d = -d
   }
+
   const g = nonlinearGcd(n, d)
+
   return { numerator: n / g, denominator: d / g }
 }
+
 export function nonlinearExact(value: number) {
   const v = dyadic(value)
+
   return v.exponent >= 0
     ? nonlinearFraction(v.significand << BigInt(v.exponent))
     : nonlinearFraction(v.significand, 1n << BigInt(-v.exponent))
 }
+
 export const nonlinearAdd = (a: NonlinearFraction, b: NonlinearFraction) =>
   nonlinearFraction(
     a.numerator * b.denominator + b.numerator * a.denominator,
     a.denominator * b.denominator
   )
+
 export const nonlinearNeg = (a: NonlinearFraction) =>
   nonlinearFraction(-a.numerator, a.denominator)
+
 export const nonlinearSub = (a: NonlinearFraction, b: NonlinearFraction) =>
   nonlinearAdd(a, nonlinearNeg(b))
+
 export const nonlinearMul = (a: NonlinearFraction, b: NonlinearFraction) =>
   nonlinearFraction(a.numerator * b.numerator, a.denominator * b.denominator)
+
 export const nonlinearDiv = (a: NonlinearFraction, b: NonlinearFraction) =>
   nonlinearFraction(a.numerator * b.denominator, a.denominator * b.numerator)
+
 export function nonlinearRequired<T>(v: T | undefined | null): T {
-  if (v == null) throw new Error('Missing current nonlinear fixture dependency')
+  if (v == null) {
+    throw new Error('Missing current nonlinear fixture dependency')
+  }
+
   return v
 }
+
 export function firstVisitedReason<
   T extends {
     kind: string
@@ -76,16 +94,28 @@ export function firstVisitedReason<
   }
 >(rows: readonly T[]) {
   const selected = new Map<string, { row: T; proof: T['proofs'][number] }>()
+
   for (const row of rows) {
-    if (row.kind !== 'unknown' && row.kind !== 'blocked') continue
+    if (row.kind !== 'unknown' && row.kind !== 'blocked') {
+      continue
+    }
+
     for (const proof of row.proofs) {
-      if (proof.kind !== 'unknown' && proof.kind !== 'blocked') continue
+      if (proof.kind !== 'unknown' && proof.kind !== 'blocked') {
+        continue
+      }
+
       const reason = proof.reason ?? 'reason-unavailable'
-      if (!selected.has(reason)) selected.set(reason, { row, proof })
+
+      if (!selected.has(reason)) {
+        selected.set(reason, { row, proof })
+      }
     }
   }
+
   return [...selected.values()]
 }
+
 export function nonlinearFixture(
   sourceProfile:
     'solid-articulation/1' | 'solid-articulation/2' = 'solid-articulation/2',
@@ -166,8 +196,11 @@ export function nonlinearFixture(
     4 * Math.max(...baseline.legs.map((l) => l.upper.length)) * alpha
   const length = zExtent + 2 * travel + xExtent
   const from = (farm.length - length) / 2
-  if (from < 0 || soil.width < xExtent)
+
+  if (from < 0 || soil.width < xExtent) {
     throw new Error('Current source route does not fit')
+  }
+
   const demand = prepareSceneDemand(
     farm,
     scene,
@@ -238,6 +271,7 @@ export function nonlinearFixture(
         (l) => l.side === chain.side && l.station === chain.station
       )
     ).upper.length
+
     origin[1] = nonlinearAdd(
       origin[1],
       nonlinearMul(
@@ -246,10 +280,12 @@ export function nonlinearFixture(
       )
     )
     const dz = nonlinearMul(nonlinearExact(upper), sigma)
+
     origin[2] = nonlinearAdd(
       origin[2],
       groups[0].includes(chain.id) ? nonlinearNeg(dz) : dz
     )
+
     return {
       chainId: chain.id,
       part: contact.part,
@@ -374,6 +410,7 @@ export function nonlinearFixture(
         nonlinearSub(nonlinearExact(maxZ), nonlinearExact(minZ))
       )
       const first = nonlinearSub(x, z).numerator >= 0n
+
       return {
         chainId,
         footPart: contact.part,
@@ -387,6 +424,7 @@ export function nonlinearFixture(
           : [nonlinearSub(nonlinearExact(1), z), x, nonlinearSub(z, x)]
       }
     })
+
     return { event: event.event, seeds }
   })
   const raw = {
@@ -445,11 +483,15 @@ export function nonlinearFixture(
   }
   const owner = new WalkingMotionOwner({
     getCurrentSceneDemand: () => demand,
+
     getCurrentWalkingRobotSource: () => source,
+
     getCurrentWalkingCycle: () => ({ owner: cycleOwner, cycle })
   })
+
   return { source, sourceOwner, demand, cycle, cycleOwner, owner, raw }
 }
+
 const evidence = (id: string) => ({
   kind: 'synthetic' as const,
   id,
@@ -470,6 +512,7 @@ export function mountedConsumerFixture(trayCentreY?: number) {
     retention: evidence('mounted-retention'),
     massIdentity: 'mounted-mass'
   })
+
   return {
     ...f,
     mountOwner,

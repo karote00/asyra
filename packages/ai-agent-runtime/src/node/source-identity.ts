@@ -15,6 +15,7 @@ export const captureAiSourceIdentity = async (options: {
 }> => {
   try {
     const execute = promisify(execFile)
+
     if (
       !options.paths.length ||
       options.paths.some(
@@ -24,8 +25,10 @@ export const captureAiSourceIdentity = async (options: {
           path.startsWith(':') ||
           path.split(/[\\/]/).includes('..')
       )
-    )
+    ) {
       return { sourceIdentityStatus: 'unavailable' }
+    }
+
     const git = async (directory: string, args: string[]) =>
       (
         await execute('git', args, {
@@ -36,6 +39,7 @@ export const captureAiSourceIdentity = async (options: {
           env: { ...process.env, GIT_OPTIONAL_LOCKS: '0' }
         })
       ).stdout
+
     const root = (
       await git(options.directory, ['rev-parse', '--show-toplevel'])
     ).trim()
@@ -61,8 +65,13 @@ export const captureAiSourceIdentity = async (options: {
     const paths = [
       ...new Set((names + committed).split('\0').filter(Boolean))
     ].sort()
-    if (!paths.length) return { sourceIdentityStatus: 'unavailable' }
+
+    if (!paths.length) {
+      return { sourceIdentityStatus: 'unavailable' }
+    }
+
     const hash = createHash('sha256').update(sourceRevision).update('\0')
+
     for (const path of paths) {
       hash.update(path).update('\0')
       try {
@@ -72,6 +81,7 @@ export const captureAiSourceIdentity = async (options: {
         const bytes = stat.isSymbolicLink()
           ? Buffer.from(await readlink(location))
           : await readFile(location)
+
         hash.update(stat.isSymbolicLink() ? 'link' : 'file').update('\0')
         hash
           .update(String(bytes.length))
@@ -79,10 +89,14 @@ export const captureAiSourceIdentity = async (options: {
           .update(bytes)
           .update('\0')
       } catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+          throw error
+        }
+
         hash.update('missing\0')
       }
     }
+
     return {
       sourceRevision,
       sourceFingerprint: hash.digest('hex'),

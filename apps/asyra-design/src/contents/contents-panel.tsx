@@ -86,9 +86,13 @@ const Contents: React.FC = () => {
   )
   const rowVirtualizer = useVirtualizer({
     count: visibleIds.length,
+
     getItemKey: (index) => visibleIds[index] ?? index,
+
     getScrollElement: () => scrollRef.current,
+
     estimateSize: () => (ROW_HEIGHT + 2) * 4, // padding is 2
+
     overscan: 5
   })
 
@@ -96,12 +100,15 @@ const Contents: React.FC = () => {
     if (!suppressNextClick.current) {
       return false
     }
+
     suppressNextClick.current = false
+
     return true
   }, [])
   const armImmediateClickSuppression = useCallback(() => {
     suppressNextClick.current = true
     const generation = clickSuppressionGeneration.current + 1
+
     clickSuppressionGeneration.current = generation
     window.setTimeout(() => {
       if (clickSuppressionGeneration.current === generation) {
@@ -113,6 +120,7 @@ const Contents: React.FC = () => {
     if (consumeSuppressedClick()) {
       return
     }
+
     clearSelection()
   }, [consumeSuppressedClick])
   const handleContentsPanelMouseLeave = useCallback(() => {
@@ -123,9 +131,11 @@ const Contents: React.FC = () => {
       if (consumeSuppressedClick()) {
         return
       }
+
       if (!event.shiftKey) {
         selectElements([elementId])
         lastSelectedId.current = elementId
+
         return
       }
 
@@ -136,6 +146,7 @@ const Contents: React.FC = () => {
         anchorId: lastSelectedId.current,
         clickedId: elementId
       })
+
       if (!rangeSelection) {
         return
       }
@@ -154,11 +165,13 @@ const Contents: React.FC = () => {
   const handleToggleGroup = useCallback((groupId: string) => {
     setCollapsedGroupIds((current) => {
       const next = new Set(current)
+
       if (next.has(groupId)) {
         next.delete(groupId)
       } else {
         next.add(groupId)
       }
+
       return next
     })
   }, [])
@@ -167,6 +180,7 @@ const Contents: React.FC = () => {
     activeLayerMove.current = null
     setDropIntent(null)
     const panel = panelRef.current
+
     if (
       panel &&
       pointerId !== undefined &&
@@ -207,6 +221,7 @@ const Contents: React.FC = () => {
         flattenedIds,
         elementDataMap
       })
+
       if (!sourceResult.ok) {
         return
       }
@@ -217,6 +232,7 @@ const Contents: React.FC = () => {
         clientX: event.clientX,
         clientY: event.clientY
       })
+
       activeLayerMove.current = {
         pointerSession,
         source: sourceResult.source
@@ -247,6 +263,7 @@ const Contents: React.FC = () => {
   const handleLayerPointerMove = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
       const active = activeLayerMove.current
+
       if (!active) {
         return
       }
@@ -258,6 +275,7 @@ const Contents: React.FC = () => {
         clientY: event.clientY,
         target: getPointerTarget(event.clientX, event.clientY)
       })
+
       if (!pointerSession) {
         return
       }
@@ -269,6 +287,7 @@ const Contents: React.FC = () => {
       ) {
         event.currentTarget.setPointerCapture(event.pointerId)
       }
+
       active.pointerSession = pointerSession
       const nextDropIntent =
         pointerSession.dragActive && pointerSession.target
@@ -280,6 +299,7 @@ const Contents: React.FC = () => {
               collapsedGroupIds
             })
           : null
+
       setDropIntent(nextDropIntent)
       void updateLayerHierarchyMoveSession(
         pointerSession,
@@ -304,6 +324,7 @@ const Contents: React.FC = () => {
   const handleLayerPointerUp = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
       const active = activeLayerMove.current
+
       if (!active) {
         return
       }
@@ -314,6 +335,7 @@ const Contents: React.FC = () => {
         clientY: event.clientY,
         target: getPointerTarget(event.clientX, event.clientY)
       })
+
       if (!pointerSession) {
         return
       }
@@ -328,13 +350,16 @@ const Contents: React.FC = () => {
               collapsedGroupIds
             })
           : null
+
       if (pointerSession.dragActive) {
         armImmediateClickSuppression()
       }
+
       clearLayerMovePresentation(event.pointerId)
 
       if (pointerSession.dragActive && !pointerSession.target) {
         void cancelLayerHierarchyMoveSession('outside').catch(() => undefined)
+
         return
       }
 
@@ -346,7 +371,9 @@ const Contents: React.FC = () => {
           ) {
             setCollapsedGroupIds((current) => {
               const next = new Set(current)
+
               next.delete(finalDropIntent.expandGroupId as string)
+
               return next
             })
           }
@@ -366,13 +393,17 @@ const Contents: React.FC = () => {
   const cancelActiveLayerMove = useCallback(
     (reason: LayerPointerCancellationReason) => {
       const active = activeLayerMove.current
+
       if (!active) {
         return
       }
+
       const cancelled = cancelLayerPointerSession(active.pointerSession, reason)
+
       if (!cancelled) {
         return
       }
+
       clearLayerMovePresentation(cancelled.pointerId)
       void cancelLayerHierarchyMoveSession(reason).catch(() => undefined)
     },
@@ -385,7 +416,9 @@ const Contents: React.FC = () => {
         cancelActiveLayerMove('escape')
       }
     }
+
     window.addEventListener('keydown', handleKeyDown)
+
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
       cancelActiveLayerMove('unmount')
@@ -397,18 +430,22 @@ const Contents: React.FC = () => {
       if (!dropIntent || dropIntent.targetElementId !== elementId) {
         return null
       }
+
       if (dropIntent.kind === 'invalid') {
         return 'invalid'
       }
+
       return dropIntent.zone === 'workspace' ? null : dropIntent.zone
     },
     [dropIntent]
   )
 
   let layerMoveState: 'idle' | 'valid' | 'invalid' = 'idle'
+
   if (dropIntent?.kind === 'valid') {
     layerMoveState = 'valid'
   }
+
   if (dropIntent?.kind === 'invalid') {
     layerMoveState = 'invalid'
   }
@@ -477,12 +514,15 @@ const Contents: React.FC = () => {
         >
           {rowVirtualizer.getVirtualItems().map((virtualRow) => {
             const elementId = visibleIds[virtualRow.index]
+
             if (!elementId) {
               return null
             }
+
             const row =
               visibleRows?.[virtualRow.index] ??
               projectExpandedLayerRow(elementId, elementDataMap)
+
             if (!row) {
               return null
             }

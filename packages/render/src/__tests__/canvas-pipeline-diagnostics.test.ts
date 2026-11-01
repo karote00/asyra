@@ -30,10 +30,12 @@ describe('Canvas pipeline diagnostics', () => {
   it('publishes every engine handoff before executing the same command', async () => {
     const engine = new RecordingRenderEngine({ name: 'pre-engine-evidence' })
     const render = new Render({ engine })
+
     await render.init(100, 100, 0)
 
     const evidenceCountByType = new Map<string, number>()
     const engineCountByType = new Map<string, number>()
+
     subscribeToCanvasPipelineEvidence(render, {
       onEvidence: (entry) => {
         if (entry.kind === 'engine-handoff') {
@@ -45,12 +47,15 @@ describe('Canvas pipeline diagnostics', () => {
       }
     })
     const execute = engine.execute.bind(engine)
+
     engine.execute = vi.fn((command) => {
       const engineCount = engineCountByType.get(command.type) ?? 0
+
       expect(evidenceCountByType.get(command.type) ?? 0).toBeGreaterThan(
         engineCount
       )
       engineCountByType.set(command.type, engineCount + 1)
+
       return execute(command)
     })
 
@@ -100,7 +105,9 @@ describe('Canvas pipeline diagnostics', () => {
       name: 'bypassed-layer',
       layer: {},
       zIndex: 9,
+
       shouldUpdate: () => false,
+
       update: vi.fn(() => true)
     })
     render.flushFrame()
@@ -183,16 +190,19 @@ describe('Canvas pipeline diagnostics', () => {
   it('excludes pipeline evidence only for explicitly owned diagnostic objects', async () => {
     const render = createRender('identity-owned-diagnostics')
     const evidence: CanvasPipelineEvidence[] = []
+
     await render.init(100, 100, 0)
     subscribeToCanvasPipelineEvidence(render, {
       onEvidence: (entry) => evidence.push(entry)
     })
     const ownedLayer = new RenderContainer({ label: 'identity-owned-layer' })
+
     markCanvasPipelineDebuggerOwned(ownedLayer)
 
     render.registerLayer({
       name: 'identity-owned-layer',
       layer: ownedLayer,
+
       update: () => true
     })
     render.flushFrame()
@@ -218,6 +228,7 @@ describe('Canvas pipeline diagnostics', () => {
   it('does not let product objects claim diagnostic exclusion through a public string', async () => {
     const render = createRender('unforgeable-diagnostic-ownership')
     const evidence: CanvasPipelineEvidence[] = []
+
     await render.init(100, 100, 0)
     subscribeToCanvasPipelineEvidence(render, {
       onEvidence: (entry) => evidence.push(entry)
@@ -229,6 +240,7 @@ describe('Canvas pipeline diagnostics', () => {
       productLayer,
       'setCanvasPipelineDiagnosticSource'
     )
+
     if (typeof legacySetter === 'function') {
       legacySetter.call(productLayer, 'canvas-pipeline-debugger')
     }
@@ -236,6 +248,7 @@ describe('Canvas pipeline diagnostics', () => {
     render.registerLayer({
       name: 'product-layer-with-debug-label',
       layer: productLayer,
+
       update: () => true
     })
     render.flushFrame()
@@ -294,6 +307,7 @@ describe('Canvas pipeline diagnostics', () => {
       label: 'canonical-container',
       x: 0,
       y: 0,
+
       get diagnosticOnly() {
         throw new Error('diagnostic normalization failed')
       }

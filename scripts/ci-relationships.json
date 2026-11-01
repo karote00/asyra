@@ -26,8 +26,10 @@
     "docs/ai/workflows/**"
   ],
   "lintFullInputPaths": [
+    "scripts/eslint-readability.mjs",
     "eslint.config.js",
     "eslint.config.mjs",
+    ".prettierignore",
     ".gitignore",
     "tsconfig.json"
   ],
@@ -141,19 +143,6 @@
       "workspaceDirectory": "apps/asyra-fieldscope"
     }
   ],
-  "frameworkReleaseReadinessPaths": [
-    "fixtures/framework-release-consumer/**",
-    "scripts/framework-release-artifacts.js",
-    "scripts/framework-release-packages.js",
-    "scripts/release-package-artifacts.js",
-    "scripts/release-packages.mjs",
-    "scripts/release-readiness.js",
-    "scripts/release-records.js",
-    "scripts/release-template-readiness.js",
-    "scripts/release-validate.js",
-    "scripts/release-validation-environment.js",
-    "scripts/release-validation-workspace.js"
-  ],
   "flowInspectorValidationWorkspaceDirectory": "tools/flow-inspector",
   "repositoryScriptGroups": {
     "appUpdateFixtures": {
@@ -206,7 +195,6 @@
         "scripts/__tests__/task-context.test.mjs",
         "scripts/__tests__/ci-scope.test.mjs",
         "scripts/__tests__/workspace-automation.test.mjs",
-        "scripts/__tests__/changeset-pr-check.test.mjs",
         "scripts/docs/__tests__/release-update-guidance.test.mjs"
       ],
       "requiresFrameworkDeclarations": false
@@ -274,6 +262,7 @@
         "scripts/run-collaboration-e2e.sh",
         "scripts/balanced-ai-correctness-scope.mjs",
         "scripts/local-validation*.mjs",
+        "scripts/validation-checks.mjs",
         "docs/ai/workflows/local-affected-validation.md",
         "scripts/test-impact.mjs",
         "scripts/test-impact-workspaces.mjs"
@@ -302,6 +291,8 @@
         "scripts/check-test-exists.js",
         ".github/**",
         "eslint.config.*",
+        "scripts/eslint-readability.mjs",
+        ".prettierignore",
         "apps/asyra-design/vite.config.ts",
         "apps/asyra-design/src/index.css",
         "apps/**/tsconfig*.json",
@@ -311,6 +302,7 @@
       ],
       "tests": [
         "scripts/__tests__/workspace-automation.test.mjs",
+        "scripts/__tests__/eslint-readability.test.mjs",
         "scripts/__tests__/deps-validate.test.mjs"
       ],
       "requiresFrameworkDeclarations": false
@@ -331,7 +323,10 @@
       "requiresFrameworkDeclarations": false
     },
     "release": {
+      "ownsInputs": true,
       "patterns": [
+        "fixtures/framework-release-consumer/**",
+        "scripts/__tests__/release-template-artifacts.test.mjs",
         "scripts/release-*",
         "scripts/framework-release-*",
         ".changeset/config.json",
@@ -377,10 +372,7 @@
     },
     "changesets": {
       "patterns": [".changeset/**", "scripts/changeset-*"],
-      "tests": [
-        "scripts/__tests__/changeset-all-patch.test.mjs",
-        "scripts/__tests__/changeset-pr-check.test.mjs"
-      ],
+      "tests": ["scripts/__tests__/changeset-all-patch.test.mjs"],
       "requiresFrameworkDeclarations": false
     },
     "agentAutomation": {
@@ -511,6 +503,7 @@
     ".github/workflows/production-artifacts.yml"
   ],
   "registeredScriptTests": [
+    "scripts/__tests__/eslint-readability.test.mjs",
     "scripts/__tests__/app-update-fixtures.test.mjs",
     "apps/asyra-sim/scripts/__tests__/e2e-ci-groups.test.mjs",
     "apps/asyra-fieldscope/scripts/__tests__/e2e-ci-groups.test.mjs",
@@ -519,7 +512,6 @@
     "scripts/__tests__/production-artifact-verification.test.mjs",
     "scripts/__tests__/brand-neutral-code.test.mjs",
     "scripts/__tests__/changeset-all-patch.test.mjs",
-    "scripts/__tests__/changeset-pr-check.test.mjs",
     "scripts/__tests__/ci-scope.test.mjs",
     "scripts/__tests__/create-app-cli.test.mjs",
     "scripts/__tests__/deps-validate.test.mjs",

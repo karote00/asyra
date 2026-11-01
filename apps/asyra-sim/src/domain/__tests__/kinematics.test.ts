@@ -22,6 +22,7 @@ const fixed = {
   min: 0,
   max: 0
 } as const
+
 const body = (id: string, parentId: string | null): Body => ({
   id,
   parentId,
@@ -33,6 +34,7 @@ const body = (id: string, parentId: string | null): Body => ({
   visible: true,
   color: 0x00aaff
 })
+
 const workcell = (): Workcell => ({
   version: 1,
   robotRootId: 'base',
@@ -53,13 +55,16 @@ const workcell = (): Workcell => ({
     }
   ]
 })
+
 describe('SIM-05 shared units and canonical pose evaluation', () => {
   it('matches an independent two-link planar formula', () => {
     const model = workcell()
+
     validateWorkcell(model)
-    for (const shoulder of [0, Math.PI / 2, Math.PI, -Math.PI / 3])
+    for (const shoulder of [0, Math.PI / 2, Math.PI, -Math.PI / 3]) {
       for (const elbow of [0, 0.2, -Math.PI / 4]) {
         const pose = forwardKinematics(model, { shoulder, elbow }).get('tool')
+
         expect(pose?.position[0]).toBeCloseTo(
           2 * Math.cos(shoulder) + Math.cos(shoulder + elbow),
           12
@@ -70,6 +75,7 @@ describe('SIM-05 shared units and canonical pose evaluation', () => {
         )
         expect(pose?.position[2]).toBeCloseTo(0, 12)
       }
+    }
   })
   it('preserves mm/m and deg/rad equivalence without using renderer math', () => {
     expect(lengthInMeters(1234, 'mm')).toBe(lengthInMeters(1.234, 'm'))
@@ -77,6 +83,7 @@ describe('SIM-05 shared units and canonical pose evaluation', () => {
       axisAngle([0, 1, 0], angleInRadians(90, 'deg')),
       [1, 0, 0]
     )
+
     expect(turned[0]).toBeCloseTo(0, 12)
     expect(turned[2]).toBeCloseTo(-1, 12)
   })
@@ -89,6 +96,7 @@ describe('SIM-05 shared units and canonical pose evaluation', () => {
           { time: 1, joints: { shoulder: Math.PI * 2, elbow: 0 } }
         ]
       }
+
     validateTrajectory(model, trajectory)
     expect(jointValuesAt(trajectory, 0.5).shoulder).toBe(Math.PI)
     expect(
@@ -119,6 +127,7 @@ describe('SIM-05 shared units and canonical pose evaluation', () => {
         }
       ]
     }
+
     validateWorkcell(model)
     expect(forwardKinematics(model).get('slide')?.position[0]).toBeCloseTo(
       1,
@@ -131,6 +140,7 @@ describe('SIM-05 shared units and canonical pose evaluation', () => {
   })
   it('rejects cyclic or branching mechanisms and invalid trajectory inputs', () => {
     const model = workcell()
+
     expect(() =>
       validateWorkcell({
         ...model,

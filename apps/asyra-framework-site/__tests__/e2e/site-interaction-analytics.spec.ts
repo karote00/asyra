@@ -9,8 +9,11 @@ const configured = process.env.GOOGLE_SERVICES_TEST_ENABLED === '1'
 
 async function capture(page: Page) {
   const events: RecordedEvent[] = []
+
   await page.exposeFunction('recordSiteAnalytics', (entry: RecordedEvent) => {
-    if (entry[0] === 'event') events.push(entry)
+    if (entry[0] === 'event') {
+      events.push(entry)
+    }
   })
   await page.addInitScript(() => {
     const target = window as typeof window & {
@@ -19,13 +22,17 @@ async function capture(page: Page) {
     }
     const queue: unknown[] = []
     const push = queue.push.bind(queue)
+
     queue.push = (...items: unknown[]) => {
       for (const item of items) {
         const entry = Array.from(item as ArrayLike<unknown>)
+
         void target.recordSiteAnalytics(entry)
       }
+
       return push(...items)
     }
+
     target.dataLayer = queue
   })
   await page.route('https://www.googletagmanager.com/**', (route) =>
@@ -37,6 +44,7 @@ async function capture(page: Page) {
   await page.route('https://*.analytics.google.com/**', (route) =>
     route.abort()
   )
+
   return events
 }
 
@@ -45,6 +53,7 @@ test('enabled analytics records CTA and SPA navigation once without query string
 }) => {
   test.skip(!configured, 'Production-configured build required')
   const events = await capture(page)
+
   await page.goto('/?email=private@example.com')
   await expect(page.locator('#asyra-ga-init')).toBeAttached()
   await page
@@ -78,10 +87,12 @@ test('documentation search records displayed results and selection without sendi
 }) => {
   test.skip(!configured, 'Production-configured build required')
   const events = await capture(page)
+
   await page.goto('/docs')
   await expect(page.locator('#asyra-ga-init')).toBeAttached()
   await page.locator('.docs-search-trigger').click()
   const input = page.getByRole('searchbox')
+
   await input.fill('private@example.com')
   await expect
     .poll(() => events.filter(([, name]) => name === SITE_EVENTS.search).length)
@@ -114,6 +125,7 @@ test('mobile menu and Atlas emit their own intent events without interfering wit
 }) => {
   test.skip(!configured, 'Production-configured build required')
   const events = await capture(page)
+
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/docs')
   await expect(page.locator('#asyra-ga-init')).toBeAttached()
@@ -136,6 +148,7 @@ test('mobile menu and Atlas emit their own intent events without interfering wit
   const step = page.locator(
     '[data-site-action="' + SITE_ACTIONS.atlasStep.id + '"]'
   )
+
   await expect(step).toBeEnabled()
   await step.click()
   await page
@@ -160,13 +173,17 @@ test('copy actions contain no snippet text, and returning through SPA navigation
 }) => {
   test.skip(!configured, 'Production-configured build required')
   const events = await capture(page)
+
   await page.goto('/docs/start/custom-composition')
   const code = page.locator('pre code').first()
+
   await code.scrollIntoViewIfNeeded()
   await code.evaluate((element) => {
     const range = document.createRange()
+
     range.selectNodeContents(element)
     const selection = window.getSelection()
+
     selection?.removeAllRanges()
     selection?.addRange(range)
   })
@@ -182,6 +199,7 @@ test('copy actions contain no snippet text, and returning through SPA navigation
   const navigation = page.getByRole('navigation', {
     name: 'Primary navigation'
   })
+
   await navigation.getByRole('link', { name: 'Runtime Atlas' }).click()
   await expect(page).toHaveURL(/\/atlas$/)
   await navigation.getByRole('link', { name: 'Docs', exact: true }).click()
@@ -198,6 +216,7 @@ test('unconfigured deployments have no interaction collector', async ({
 }) => {
   test.skip(configured, 'Disabled build required')
   const events = await capture(page)
+
   await page.goto('/docs')
   await page.locator('.docs-search-trigger').click()
   await page.getByRole('searchbox').fill('transaction')

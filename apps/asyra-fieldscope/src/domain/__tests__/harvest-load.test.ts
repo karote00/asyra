@@ -18,10 +18,12 @@ const base: CrateLoad = {
   lateralAcceleration: 0,
   uncertainty: 0.02
 }
+
 describe('M1 crate and lateral reserve', () => {
   it('computes weight and reserve without changing inventory', () => {
     const before = { ...base }
     const result = assessCrateLoad(base)
+
     expect(result.totalMass).toBe(62)
     expect(result.lateralReserve).toBeCloseTo(0.21 - 0.2 / 62 - 0.02)
     expect(result.action).toBe('continue-screening')
@@ -50,6 +52,7 @@ describe('M1 crate and lateral reserve', () => {
   it('reduces reserve as high offset load, roll and acceleration increase', () => {
     const empty = assessCrateLoad({ ...base, payload: 0, roll: 0.1 })
     const full = assessCrateLoad({ ...base, payload: 8, roll: 0.1 })
+
     expect(full.lateralReserve).toBeLessThan(empty.lateralReserve)
     expect(
       assessCrateLoad({ ...base, lateralAcceleration: -2 }).lateralReserve
@@ -64,6 +67,7 @@ describe('M1 crate and lateral reserve', () => {
       nextFruit: 8,
       payloadOffset: 2
     })
+
     expect(result.lateralReserve).toBeGreaterThan(0)
     expect(result.projectedReserve).toBeLessThan(0)
     expect(result.action).toBe('exchange')

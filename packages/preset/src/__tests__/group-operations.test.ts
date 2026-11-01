@@ -243,6 +243,7 @@ describe('official Preset Group geometry adapters', () => {
 
   it('projects an explicit Group geometry update through nested Group owners before canonical apply', () => {
     const snapshot = createSnapshot()
+
     snapshot.elements.outer.children = ['nested-group']
     snapshot.elements['nested-group'].children = ['nested-leaf', 'first']
     snapshot.elements.first.parentId = 'nested-group'
@@ -416,6 +417,7 @@ describe('official Preset Group geometry adapters', () => {
     }
     const core = {
       sceneTreeSaveData: () => structuredClone(snapshot),
+
       getElementComputedData: vi.fn(
         (elementId: keyof typeof normalComputed) => normalComputed[elementId]
       ),
@@ -468,6 +470,7 @@ describe('official Preset Group geometry adapters', () => {
     const snapshot = createSnapshot()
     const core = {
       sceneTreeSaveData: () => structuredClone(snapshot),
+
       getElementComputedData: vi.fn(() => ({
         x: Number.NaN,
         y: 0,
@@ -488,6 +491,7 @@ describe('official Preset Group geometry adapters', () => {
 
   it('rederives direct-child bounds through one rebasing path without a visible jump', () => {
     const snapshot = createSnapshot()
+
     snapshot.elements.workspace.children = ['standalone-group']
     snapshot.elements['standalone-group'] = {
       id: 'standalone-group',
@@ -507,6 +511,7 @@ describe('official Preset Group geometry adapters', () => {
     }
     const core = {
       sceneTreeSaveData: () => structuredClone(snapshot),
+
       getElementComputedData: vi.fn(
         (elementId: keyof typeof computed) => computed[elementId]
       ),
@@ -541,6 +546,7 @@ describe('official Preset Group geometry adapters', () => {
 
   it('rederives a changed Group itself before every ancestor Group', () => {
     const snapshot = createSnapshot()
+
     snapshot.elements.workspace.children = ['outer']
     snapshot.elements.outer = {
       id: 'outer',
@@ -568,6 +574,7 @@ describe('official Preset Group geometry adapters', () => {
     }
     const core = {
       sceneTreeSaveData: () => structuredClone(snapshot),
+
       getElementComputedData: vi.fn(
         (elementId: keyof typeof computed) => computed[elementId]
       ),
@@ -607,6 +614,7 @@ describe('official Preset Group geometry adapters', () => {
 
   it('rederives every nested ancestor after a leaf geometry change', () => {
     const snapshot = createSnapshot()
+
     snapshot.elements.workspace.children = ['outer']
     snapshot.elements.outer = {
       id: 'outer',
@@ -634,6 +642,7 @@ describe('official Preset Group geometry adapters', () => {
     }
     const core = {
       sceneTreeSaveData: () => structuredClone(snapshot),
+
       getElementComputedData: vi.fn(
         (elementId: keyof typeof computed) => computed[elementId]
       ),
@@ -673,6 +682,7 @@ describe('official Preset Group geometry adapters', () => {
 
   it('reparents through official Groups without changing child world positions', () => {
     const snapshot = createSnapshot()
+
     snapshot.elements.workspace.children = ['source', 'target']
     snapshot.elements.source = {
       id: 'source',
@@ -724,6 +734,7 @@ describe('official Preset Group geometry adapters', () => {
     }
     const core = {
       sceneTreeSaveData: () => structuredClone(snapshot),
+
       getElementComputedData: vi.fn((elementId: keyof typeof computed) =>
         structuredClone(computed[elementId])
       ),
@@ -732,6 +743,7 @@ describe('official Preset Group geometry adapters', () => {
         snapshot.elements.source.children = []
         snapshot.elements.target.children = ['last', 'first']
         snapshot.elements.first.parentId = 'target'
+
         return {
           elementIds: ['first'],
           moves: [

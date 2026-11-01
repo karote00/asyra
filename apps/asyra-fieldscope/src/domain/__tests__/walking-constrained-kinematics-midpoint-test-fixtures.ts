@@ -22,6 +22,7 @@ export function registerMidpointProfile(
     const owner = new WalkingConstrainedCycleOwner()
     const cycle = owner.prepare(source, raw)
     const point = owner.evaluate(cycle, phase, fraction(1n, 2n))
+
     expect(point.parts.map((entry) => entry.part)).toEqual(source.parts)
     // One positive common denominator uniformly scales the exact point scene.
     // This preserves every zero-margin SAT relation and uses the existing
@@ -32,13 +33,16 @@ export function registerMidpointProfile(
         (d, value) => (d / gcd(d, value.denominator)) * value.denominator,
         1n
       )
+
     expect(denominator.toString(2).length).toBeLessThanOrEqual(
       raw.budget.maxBits
     )
+
     const scalar = (value: Fraction) => ({
       significand: value.numerator * (denominator / value.denominator),
       exponent: 0
     })
+
     const evaluator = new WalkingSourceRelationEvaluator({
       maxRegionPairs: 2000000,
       maxExactPredicates: 20000000
@@ -50,6 +54,7 @@ export function registerMidpointProfile(
         n[0][0] * (n[1][1] * n[2][2] - n[1][2] * n[2][1]) -
         n[0][1] * (n[1][0] * n[2][2] - n[1][2] * n[2][0]) +
         n[0][2] * (n[1][0] * n[2][1] - n[1][1] * n[2][0])
+
       expect(determinant).not.toBe(0n)
       const transformed: QueryExactFrame = Object.freeze({
         matrix: m as unknown as QueryExactFrame['matrix'],
@@ -59,6 +64,7 @@ export function registerMidpointProfile(
         determinant: { significand: determinant, exponent: 0 }
       })
       const frames = Object.freeze([transformed])
+
       return part.regions.map((region) => ({
         part,
         original: region,
@@ -70,19 +76,25 @@ export function registerMidpointProfile(
       sameBody = 0,
       separated = 0,
       boundary = 0
-    for (let a = 0; a < entries.length; a++)
+
+    for (let a = 0; a < entries.length; a++) {
       for (let b = a + 1; b < entries.length; b++) {
         candidate++
         const first = entries[a],
           second = entries[b]
+
         if (first.part.bodyId === second.part.bodyId) {
           sameBody++
           continue
         }
+
         const relation = evaluator.relate(first.placement, second.placement, 0)
-        if (relation.kind === 'separated') separated++
-        else if (relation.kind === 'boundary') boundary++
-        else
+
+        if (relation.kind === 'separated') {
+          separated++
+        } else if (relation.kind === 'boundary') {
+          boundary++
+        } else {
           failures.push(
             first.part.id +
               ' - ' +
@@ -94,7 +106,10 @@ export function registerMidpointProfile(
               ' : ' +
               relation.kind
           )
+        }
       }
+    }
+
     expect(candidate).toBe((entries.length * (entries.length - 1)) / 2)
     expect(evaluator.work.regionPairs).toBe(candidate - sameBody)
     expect(evaluator.work.regionPreparations).toBe(entries.length)
@@ -112,6 +127,7 @@ export function registerMidpointProfile(
             'chassis - region-21 : left-middle-coxa - region-0 : volume-overlap'
           ]
         : []
+
     expect(failures, failures.slice(0, 8).join('\n')).toEqual(expected)
     expect(separated + boundary + failures.length).toBe(candidate - sameBody)
     console.info(

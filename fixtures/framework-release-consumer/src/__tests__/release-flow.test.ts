@@ -5,14 +5,23 @@ const SET_VALUE = 'release-consumer:set-value'
 
 const createNullRenderer = () => ({
   name: 'release-consumer-headless-renderer',
+
   init: async () => ({ canvas: null, instance: null }),
+
   destroy: () => undefined,
+
   getViewportPosition: () => ({ x: 0, y: 0 }),
+
   getViewportScale: () => 1,
+
   setViewportPosition: () => undefined,
+
   setViewportScale: () => undefined,
+
   resize: () => undefined,
+
   getCanvas: () => null,
+
   getInstance: () => null
 })
 
@@ -22,9 +31,11 @@ describe.sequential('packed framework public release flow', () => {
       .spyOn(globalThis, 'fetch')
       .mockRejectedValue(new Error('unexpected network request'))
     const intervalSpy = vi.spyOn(globalThis, 'setInterval')
+
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null)
     const OriginalWebSocket = globalThis.WebSocket
     const websocketConstructor = vi.fn()
+
     globalThis.WebSocket = vi.fn((...args: unknown[]) => {
       websocketConstructor(...args)
     }) as unknown as typeof WebSocket
@@ -54,12 +65,15 @@ describe.sequential('packed framework public release flow', () => {
         version: string
         [key: string]: unknown
       }
+
       migratedVersions.push(document.version)
+
       return document.version === '0.1.0'
         ? { ...document, version: '1.0.0' }
         : document
     })
     const applied = preset.applyPreset(core)
+
     expect(applied.profile).toBe(preset.PresetProfiles['2D'])
     expect(core.hasRenderEngineProvider()).toBe(true)
 
@@ -115,6 +129,7 @@ describe.sequential('packed framework public release flow', () => {
     ).toEqual([firstId, secondId])
 
     const ungrouped = preset.ungroupElement(core, grouped.groupId)
+
     expect(ungrouped).toMatchObject({
       groupId: grouped.groupId,
       elementIds: [firstId, secondId],
@@ -122,6 +137,7 @@ describe.sequential('packed framework public release flow', () => {
     })
 
     const saved = await core.save()
+
     core.load({ ...saved, version: '0.1.0' })
     expect(migratedVersions).toContain('0.1.0')
     expect(await core.save()).toMatchObject({
@@ -152,17 +168,20 @@ describe.sequential('packed framework public release flow', () => {
 
     const createPeer = async (actorId: string) => {
       const factory = new factoryModule.Factory()
+
       factory.registerSharedDataChannel(
         CHANNEL,
         new factoryModule.LocalSharedDataChannel()
       )
       const state = { value: 0 }
+
       factory.registerTransactionInverter(SET_VALUE, (event) => {
         const payload = (
           event as unknown as {
             payload: { before: number; after: number }
           }
         ).payload
+
         return {
           type: event.type,
           payload: {
@@ -176,8 +195,10 @@ describe.sequential('packed framework public release flow', () => {
         state.value = (
           event as unknown as { payload: { after: number } }
         ).payload.after
+
         return true
       })
+
       const recordAndApply = (after: number) => {
         factory.updateTransaction({
           type: reactiveEvents.EventTypes.UPDATE_TRANSACTION,
@@ -192,6 +213,7 @@ describe.sequential('packed framework public release flow', () => {
         })
         state.value = after
       }
+
       const provider = new collaborationModule.MemoryProvider(hub, {
         documentId: 'release-document',
         roomId: 'release-room',
@@ -203,6 +225,7 @@ describe.sequential('packed framework public release flow', () => {
         actorId,
         factory,
         provider,
+
         processRemotePublication: (publication) => {
           const deliveries = publication.slices.flatMap((slice) =>
             slice.batches.flatMap((batch) =>
@@ -212,23 +235,31 @@ describe.sequential('packed framework public release flow', () => {
               }))
             )
           )
+
           factory.runRemoteTransaction(() => {
             deliveries.forEach(({ channel, delivery }) => {
               if (channel !== CHANNEL || delivery.eventName !== SET_VALUE) {
                 throw new Error('Unexpected release consumer publication')
               }
+
               recordAndApply((delivery.payload as { after: number }).after)
             })
           })
         },
+
         resourceOwnership: { provider: 'owned' }
       })
+
       await collaboration.start()
+
       return {
         collaboration,
         factory,
+
         getValue: () => state.value,
+
         recordAndApply,
+
         setValue: (after: number) => {
           factory.startTransaction()
           recordAndApply(after)
@@ -239,6 +270,7 @@ describe.sequential('packed framework public release flow', () => {
 
     const first = await createPeer('release-peer-1')
     const second = await createPeer('release-peer-2')
+
     first.setValue(5)
     await first.collaboration.whenIdle()
     await second.collaboration.whenIdle()
@@ -282,8 +314,10 @@ describe.sequential('packed framework public release flow', () => {
             required: ['value'],
             properties: { value: { type: 'number' } }
           },
+
           execute: async ({ value }: { value: number }) => {
             first.recordAndApply(value)
+
             return { value }
           }
         }
@@ -301,7 +335,9 @@ describe.sequential('packed framework public release flow', () => {
         run: async (_label, execute) => {
           first.factory.startTransaction()
           const result = await execute()
+
           first.factory.endTransaction()
+
           return result
         }
       }
@@ -323,6 +359,7 @@ describe.sequential('packed framework public release flow', () => {
       priority: 100,
       exclusive: true,
       api,
+
       task: ({ intent }, { signal }) => runtime.run({ intent, signal })
     })
     const historyBeforeAi = first.factory.getUndoHistoryDepth()

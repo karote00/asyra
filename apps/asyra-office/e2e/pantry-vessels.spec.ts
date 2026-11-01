@@ -13,7 +13,7 @@ for (const id of [
   'plant-shrub',
   'plant-lanceolate',
   'sink-cabinet'
-])
+]) {
   test(`${id} - production vessel microscope`, async ({ page }, info) => {
     await page.goto(`/?review=${id}`)
     await page
@@ -32,6 +32,7 @@ for (const id of [
         path: info.outputPath(`${id}-${view.toLowerCase()}.png`)
       })
     }
+
     await expect(page.getByRole('alert')).toHaveCount(0)
     await info.attach('review-state', {
       body: JSON.stringify({
@@ -44,3 +45,4 @@ for (const id of [
       contentType: 'application/json'
     })
   })
+}

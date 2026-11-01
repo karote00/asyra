@@ -26,6 +26,7 @@ const artifacts = new Map<
   }
 >()
 let features: ReturnType<typeof installEditingFeatures>
+
 beforeAll(() => {
   installModelComponents(core)
   features = installEditingFeatures(core, {
@@ -43,6 +44,7 @@ it('accepts one validated archive reference as one Undo action and preserves it 
     robotRootId: null,
     bodies: []
   })
+
   artifacts.set('run-a', {
     runId: 'run-a',
     snapshotId: 'snapshot-a',
@@ -51,6 +53,7 @@ it('accepts one validated archive reference as one Undo action and preserves it 
     name: 'Study A'
   })
   const before = core.getUndoHistoryDepth()
+
   await features.edit.attachRun('run-a')
   expect(core.getUndoHistoryDepth()).toBe(before + 1)
   expect(readRunReferences(core)).toMatchObject([
@@ -63,6 +66,7 @@ it('accepts one validated archive reference as one Undo action and preserves it 
   expect(artifacts.has('run-a')).toBe(true)
   await features.history.redo()
   const saved = await features.edit.captureDocument()
+
   expect(readCapturedRunReferences(saved)).toEqual(readRunReferences(core))
   core.load(empty)
   core.load(saved)
@@ -88,6 +92,7 @@ it('rejects invalid runtime references and retains a review diagnostic after loa
     robotRootId: null,
     bodies: []
   })
+
   artifacts.set('run-a', {
     runId: 'run-a',
     snapshotId: 'snapshot-a',
@@ -96,6 +101,7 @@ it('rejects invalid runtime references and retains a review diagnostic after loa
     name: 'A'
   })
   const id = await features.edit.attachRun('run-a')
+
   expect(() =>
     core.updateElementProperties([
       {
@@ -107,11 +113,16 @@ it('rejects invalid runtime references and retains a review diagnostic after loa
   const saved = await features.edit.captureDocument()
   const propertyId =
     core.getElementData(id)?.props?.[PropertyNames.RUN_REFERENCE]
-  if (!propertyId) throw new Error('Missing reference property')
+
+  if (!propertyId) {
+    throw new Error('Missing reference property')
+  }
+
   ;(saved.props[propertyId] as Record<string, unknown>)[
     PropertyFields.RUN_REFERENCE
   ] = { version: 99 }
   const issues = loadCanonicalDocument(core, saved)
+
   expect(
     issues.some((issue) => issue.path.endsWith(PropertyFields.RUN_REFERENCE))
   ).toBe(true)

@@ -23,7 +23,11 @@ const inspectorPath = path.join(
 const discoverCandidates = (root) =>
   fs.readdirSync(root, { withFileTypes: true }).flatMap((entry) => {
     const entryPath = path.join(root, entry.name)
-    if (entry.isDirectory()) return discoverCandidates(entryPath)
+
+    if (entry.isDirectory()) {
+      return discoverCandidates(entryPath)
+    }
+
     return /-flow-inspector\.data\.(?:cjs|js)$/.test(entry.name)
       ? [entryPath]
       : []
@@ -37,7 +41,11 @@ const legacyPlanRoots = [
 const discoverLegacyInspectorArtifacts = (root) =>
   fs.readdirSync(root, { withFileTypes: true }).flatMap((entry) => {
     const entryPath = path.join(root, entry.name)
-    if (entry.isDirectory()) return discoverLegacyInspectorArtifacts(entryPath)
+
+    if (entry.isDirectory()) {
+      return discoverLegacyInspectorArtifacts(entryPath)
+    }
+
     return /(?:flow-inspector\.data\.(?:cjs|js)|flow-inspector\.html|flow-inspector\.contract\.test\.cjs)$/.test(
       entry.name
     )
@@ -67,6 +75,7 @@ test('Phase 0 authorities and catalog owners exist', () => {
 
 test('preview artifact is independently versioned and static-only', () => {
   const toolPackage = JSON.parse(fs.readFileSync(toolPackagePath, 'utf8'))
+
   assert.equal(toolPackage.name, '@asyra/flow-inspector')
   assert.equal(toolPackage.version, '0.2.0')
   assert.notEqual(toolPackage.private, true)
@@ -74,7 +83,7 @@ test('preview artifact is independently versioned and static-only', () => {
   assert.equal(toolPackage.publishConfig.access, 'public')
   assert.equal(
     toolPackage.scripts['test:contracts'],
-    'node --test __tests__/viewer-entry.test.cjs workspace/__tests__/catalog.contract.test.cjs workspace/__tests__/workspace.test.cjs __tests__/package.test.cjs'
+    'node --test __tests__/architecture-contract.test.cjs __tests__/react-delivery.test.cjs workspace/__tests__/catalog.contract.test.cjs workspace/__tests__/react-workspace.contract.test.cjs __tests__/package.test.cjs'
   )
   for (const scriptName of ['test', 'test:local', 'test:ci']) {
     assert.equal(
@@ -96,6 +105,7 @@ test('React workspace exposes one direct Vite development command', () => {
   assert.equal(fs.existsSync(devEntryPath), true)
 
   const devEntry = fs.readFileSync(devEntryPath, 'utf8')
+
   assert.match(devEntry, /src="\.\/workspace-bundle\.data\.js"/)
   assert.match(devEntry, /type="module" src="\.\.\/src\/main\.tsx"/)
   assert.doesNotMatch(devEntry, /generated\/flow-inspector-workspace\.js/)
@@ -103,6 +113,7 @@ test('React workspace exposes one direct Vite development command', () => {
 
 test('workspace Inspector resolves the exact static architecture contract', () => {
   const inspector = require(inspectorPath)
+
   assert.deepEqual(inspector.schema, { id: 'flow-inspector', version: 2 })
   assert.equal(inspector.target.id, 'flow-inspector-static-workspace')
   assert.deepEqual(
@@ -114,7 +125,7 @@ test('workspace Inspector resolves the exact static architecture contract', () =
       'route-workspace-selection',
       'isolate-selected-target',
       'render-selected-contract',
-      'preserve-standalone-entries',
+      'verify-react-delivery',
       'verify-static-preview'
     ]
   )
@@ -125,10 +136,12 @@ test('generated catalog classifies every fixed-root candidate exactly once', () 
   assert.equal(fs.existsSync(bundlePath), true)
   const catalog = require(catalogPath)
   const sandbox = { globalThis: {} }
+
   vm.runInNewContext(fs.readFileSync(bundlePath, 'utf8'), sandbox)
   const bundle = JSON.parse(
     JSON.stringify(sandbox.globalThis.FLOW_INSPECTOR_WORKSPACE_BUNDLE)
   )
+
   assert.deepEqual(bundle.schema, {
     id: 'flow-inspector-workspace-bundle',
     version: 1
@@ -153,18 +166,17 @@ test('generated catalog classifies every fixed-root candidate exactly once', () 
       path.relative(projectRoot, candidate).split(path.sep).join('/')
     )
     .sort()
+
   assert.deepEqual(bundle.generatedFrom.candidatePaths, currentCandidates)
   for (const entry of bundle.entries) {
     assert.equal(fs.existsSync(path.join(projectRoot, entry.sourcePath)), true)
-    if (entry.standalonePath) {
-      assert.equal(
-        fs.existsSync(path.join(projectRoot, entry.standalonePath)),
-        true
-      )
-    }
+    assert.equal(Object.hasOwn(entry, 'standalonePath'), false)
     const source = require(path.join(projectRoot, entry.sourcePath))
+
     assert.deepEqual(entry.data, JSON.parse(JSON.stringify(source)))
-    if (entry.kind === 'flow-v2') assert.equal(entry.id, entry.data.target.id)
+    if (entry.kind === 'flow-v2') {
+      assert.equal(entry.id, entry.data.target.id)
+    }
   }
 })
 
@@ -172,6 +184,7 @@ test('Inspector artifacts and contract tests are tool-owned, not plan-owned', ()
   const legacyArtifacts = legacyPlanRoots.flatMap((root) =>
     discoverLegacyInspectorArtifacts(root)
   )
+
   assert.deepEqual(
     legacyArtifacts.map((artifact) =>
       path.relative(projectRoot, artifact).split(path.sep).join('/')
@@ -182,8 +195,10 @@ test('Inspector artifacts and contract tests are tool-owned, not plan-owned', ()
 
 test('catalog owns unique stable short slugs without changing Inspector identities', () => {
   const sandbox = {}
+
   vm.runInNewContext(fs.readFileSync(bundlePath, 'utf8'), sandbox)
   const entries = sandbox.FLOW_INSPECTOR_WORKSPACE_BUNDLE.entries
+
   assert.equal(
     entries.find(
       (entry) =>
@@ -197,10 +212,14 @@ test('catalog owns unique stable short slugs without changing Inspector identiti
   )
   assert.equal(new Set(entries.map((entry) => entry.slug)).size, entries.length)
   const policy = require(catalogPath)
-  for (const entry of entries)
+
+  for (const entry of entries) {
     assert.equal(entry.slug, policy.routeSlugs[entry.id] ?? entry.id)
-  for (const entry of entries)
+  }
+
+  for (const entry of entries) {
     assert.match(entry.slug, /^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+  }
 })
 
 test('generator rejects colliding, reserved, malformed, and orphaned slug declarations before output', () => {
@@ -208,6 +227,7 @@ test('generator rejects colliding, reserved, malformed, and orphaned slug declar
   const localRequire = createRequire(generatorPath)
   const original = require(catalogPath)
   const source = fs.readFileSync(generatorPath, 'utf8')
+
   for (const overrides of [
     { 'transaction-atomicity': 'stroke' },
     { 'transaction-atomicity': 'api' },
@@ -223,20 +243,27 @@ test('generator rejects colliding, reserved, malformed, and orphaned slug declar
       ...original,
       routeSlugs: { ...original.routeSlugs, ...overrides }
     }
+
     assert.throws(
       () =>
         vm.runInNewContext(source, {
           __dirname: workspaceRoot,
           require: Object.assign(
             (name) => {
-              if (name === './catalog.cjs') return policy
-              if (name === 'node:fs')
+              if (name === './catalog.cjs') {
+                return policy
+              }
+
+              if (name === 'node:fs') {
                 return {
                   ...fs,
+
                   writeFileSync() {
                     writes++
                   }
                 }
+              }
+
               return localRequire(name)
             },
             { resolve: localRequire.resolve, cache: require.cache }

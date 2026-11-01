@@ -17,12 +17,18 @@ import { AnalysisWorkerHost } from '../worker-host'
 import { AnalysisWorkerMessages } from '../worker-protocol'
 
 let tableSourceId: string
+
 beforeAll(async () => {
   const source = createMechanicalVisuals().find(
     (part) => part.body === 'fixture-table'
   )
-  if (!source) throw new Error('Missing ordinary table source')
+
+  if (!source) {
+    throw new Error('Missing ordinary table source')
+  }
+
   const asset = await decodeRestrictedGlb(source.bytes)
+
   tableSourceId = asset.source.sha256
   // The imported table really has legs below the primitive tabletop's local extent.
   expect(
@@ -35,6 +41,7 @@ beforeAll(async () => {
 function input() {
   const example = createSyntheticExample()
   const draft = createSyntheticExperimentDraft(example)
+
   return {
     snapshotId: 'source-study',
     candidateId: 'candidate',
@@ -74,6 +81,7 @@ function withTableSource(
 
 function legacySnapshot() {
   const base = createExperimentSnapshot(input())
+
   // Permanent v1 historical fixture: the old format legitimately retained both representations.
   return { ...base, workcell: withTableSource(base.workcell) }
 }
@@ -89,6 +97,7 @@ describe('SIM-08 original-part execution admission', () => {
         base.definition,
         base.methods
       )
+
       expect(report.blockers).toContainEqual(
         expect.objectContaining({
           code: 'original-part-geometry-unsupported',
@@ -110,6 +119,7 @@ describe('SIM-08 original-part execution admission', () => {
 
   it('retains explicit background scope without treating visibility as analysis authority', () => {
     const base = input()
+
     base.definition.scope.influencingBodyIds = ['example:fixture-post']
     base.definition.scope.acknowledgedExcludedVisibleBodyIds = [
       'example:fixture-table'
@@ -119,6 +129,7 @@ describe('SIM-08 original-part execution admission', () => {
       base.definition,
       base.methods
     )
+
     expect(report.blockers).toEqual([])
     expect(
       report.pairs.every(
@@ -132,6 +143,7 @@ describe('SIM-08 original-part execution admission', () => {
   it('keeps historical geometry readable but never turns it into permission to rerun', () => {
     const old = legacySnapshot()
     const restored = validateHistoricalSnapshot(old)
+
     expect(restored).toEqual(old)
     expect(restored).not.toBe(old)
     expect(Object.isFrozen(restored.workcell.bodies)).toBe(true)
@@ -145,6 +157,7 @@ describe('SIM-08 original-part execution admission', () => {
       throw new Error('Unexpected worker allocation')
     })
     const runner = new AnalysisRunner(allocate)
+
     await expect(runner.run(legacySnapshot())).rejects.toThrow(
       /original part geometry/i
     )
@@ -169,6 +182,7 @@ describe('SIM-08 original-part execution admission', () => {
       post,
       close
     )
+
     await host.handle({
       type: AnalysisWorkerMessages.RUN,
       runId: 'blocked-run',

@@ -16,6 +16,7 @@ const createAdapter = (
   const render = new Render({
     engine: new RecordingRenderEngine({ name })
   })
+
   return {
     render,
     adapter: createCanvasPipelineDebuggerAdapter(render, options)
@@ -60,6 +61,7 @@ describe('CanvasPipelineDebuggerAdapter trace projection', () => {
     const { render, adapter } = createAdapter('bounded-debugger', {
       traceCapacity: 2
     })
+
     adapter.enableObservation()
 
     render.panTo(1, 2)
@@ -86,6 +88,7 @@ describe('CanvasPipelineDebuggerAdapter trace projection', () => {
       traceCapacity: 2,
       focusedElementIds: ['focused-element']
     })
+
     adapter.enableObservation()
     await render.init(100, 100, 0)
     render.addElement({
@@ -113,6 +116,7 @@ describe('CanvasPipelineDebuggerAdapter trace projection', () => {
 
   it('projects only observed focused geometry through the canonical viewport', async () => {
     const { render, adapter } = createAdapter('focused-debugger')
+
     adapter.setFocusedElementIds([
       'focused-element',
       'missing-element',
@@ -171,10 +175,12 @@ describe('CanvasPipelineDebuggerAdapter trace projection', () => {
 
   it('keeps detailed handoff payload only for focused elements', async () => {
     const { render, adapter } = createAdapter('focused-handoff-detail')
+
     adapter.setFocusedElementIds(['focused-element'])
     adapter.enableObservation()
 
     await render.init(320, 240, 0)
+
     const rectangle = (id: string, x: number) => ({
       id,
       type: 'rectangle',
@@ -187,6 +193,7 @@ describe('CanvasPipelineDebuggerAdapter trace projection', () => {
       height: 40,
       rotation: 0
     })
+
     render.addElement(rectangle('focused-element', 10) as never)
     render.addElement(rectangle('other-element', 60) as never)
     render.flushFrame()
@@ -213,18 +220,21 @@ describe('CanvasPipelineDebuggerAdapter trace projection', () => {
 
   it('reports only layers evaluated in the current frame', async () => {
     const { render, adapter } = createAdapter('current-frame-layers')
+
     adapter.enableObservation()
     await render.init(100, 100, 0)
     render.registerLayer({
       name: 'earlier-layer',
       layer: {},
       zIndex: 10,
+
       update: () => false
     })
     render.registerLayer({
       name: 'later-layer',
       layer: {},
       zIndex: 20,
+
       update: () => false
     })
 
@@ -244,18 +254,21 @@ describe('CanvasPipelineDebuggerAdapter trace projection', () => {
 
   it('preserves canonical evaluation order for layers with the same z-index', async () => {
     const { render, adapter } = createAdapter('same-z-index-layers')
+
     adapter.enableObservation()
     await render.init(100, 100, 0)
     render.registerLayer({
       name: 'registered-first',
       layer: {},
       zIndex: 10,
+
       update: () => false
     })
     render.registerLayer({
       name: 'alphabetically-first',
       layer: {},
       zIndex: 10,
+
       update: () => false
     })
 
@@ -269,6 +282,7 @@ describe('CanvasPipelineDebuggerAdapter trace projection', () => {
 
   it('keeps a removed focused element not-observed after teardown handoffs', async () => {
     const { render, adapter } = createAdapter('removed-focused-element')
+
     adapter.setFocusedElementIds(['focused-element'])
     adapter.enableObservation()
     await render.init(100, 100, 0)
@@ -304,6 +318,7 @@ describe('CanvasPipelineDebuggerAdapter trace projection', () => {
 
   it('does not treat an unfulfilled remove input as a completed handoff', async () => {
     const { render, adapter } = createAdapter('unfulfilled-remove-input')
+
     adapter.setFocusedElementIds(['focused-element'])
     adapter.enableObservation()
     await render.init(100, 100, 0)
@@ -344,10 +359,12 @@ describe('CanvasPipelineDebuggerAdapter trace projection', () => {
     const adapter = createCanvasPipelineDebuggerAdapter(render, {
       focusedElementIds: ['focused-element']
     })
+
     adapter.enableObservation()
     await render.init(100, 100, 0)
     const execute = engine.execute.bind(engine)
     let sawFocusedCreate = false
+
     engine.execute = vi.fn((command) => {
       if (
         command.type === 'create-object' &&
@@ -362,6 +379,7 @@ describe('CanvasPipelineDebuggerAdapter trace projection', () => {
           'observed'
         )
       }
+
       return execute(command)
     })
 
@@ -383,6 +401,7 @@ describe('CanvasPipelineDebuggerAdapter trace projection', () => {
 
   it('keeps a focused element observed when canonical reparenting detaches it temporarily', async () => {
     const { render, adapter } = createAdapter('reparented-focused-element')
+
     adapter.setFocusedElementIds(['focused-element'])
     adapter.enableObservation()
     await render.init(100, 100, 0)
@@ -422,6 +441,7 @@ describe('CanvasPipelineDebuggerAdapter trace projection', () => {
 
   it('reprojects focused geometry from observed viewport handoffs', async () => {
     const { render, adapter } = createAdapter('viewport-reprojection')
+
     adapter.setFocusedElementIds(['focused-element'])
     adapter.enableObservation()
     await render.init(320, 240, 0)
@@ -463,6 +483,7 @@ describe('CanvasPipelineDebuggerAdapter trace projection', () => {
 
   it('projects focused rotation from canonical Render transforms', async () => {
     const { render, adapter } = createAdapter('rotation-projection')
+
     adapter.setFocusedElementIds(['focused-element'])
     adapter.enableObservation()
     await render.init(320, 240, 0)
@@ -478,22 +499,27 @@ describe('CanvasPipelineDebuggerAdapter trace projection', () => {
       height: 40,
       rotation: 0
     } as never)
+
     if (!element) {
       throw new Error('Expected focused element to be created')
     }
+
     render.updateElementProperties(element, 'rotation', Math.PI / 2)
     render.flushFrame()
 
     const focused = adapter.getSnapshot().focusedElements[0]
+
     if (focused?.status !== 'observed' || !focused.projection) {
       throw new Error('Expected observed rotation projection')
     }
+
     const expectedCorners = [
       { x: 10, y: 20 },
       { x: 10, y: 50 },
       { x: -30, y: 50 },
       { x: -30, y: 20 }
     ]
+
     focused.projection.canvasCorners.forEach((point, index) => {
       expect(point.x).toBeCloseTo(expectedCorners[index].x)
       expect(point.y).toBeCloseTo(expectedCorners[index].y)
@@ -502,6 +528,7 @@ describe('CanvasPipelineDebuggerAdapter trace projection', () => {
 
   it('disposes observation and rejects later operations', () => {
     const { render, adapter } = createAdapter('disposed-debugger')
+
     adapter.enableObservation()
     render.panTo(1, 1)
 
@@ -535,6 +562,7 @@ describe('Canvas Pipeline Debugger overlay', () => {
 
   it('draws only observed expected geometry with engine-neutral graphics', async () => {
     const { render, adapter } = createAdapter('debugger-overlay')
+
     adapter.setFocusedElementIds(['focused-element', 'missing-element'])
     adapter.enableObservation()
     await render.init(320, 240, 0)
@@ -579,6 +607,7 @@ describe('Canvas Pipeline Debugger overlay', () => {
 
   it('excludes its layer and commands from product pipeline evidence', async () => {
     const { render, adapter } = createAdapter('self-excluded-overlay')
+
     adapter.enableObservation()
     await render.init(100, 100, 0)
     const overlay = createCanvasPipelineDebuggerOverlay(adapter)
@@ -587,6 +616,7 @@ describe('Canvas Pipeline Debugger overlay', () => {
     render.flushFrame()
 
     const trace = adapter.getTrace()
+
     expect(
       trace.some(
         (entry) =>
@@ -620,11 +650,13 @@ describe('Canvas Pipeline Debugger overlay', () => {
     const engine = new RecordingRenderEngine({ name: 'overlay-cleanup' })
     const render = new Render({ engine })
     const adapter = createCanvasPipelineDebuggerAdapter(render)
+
     await render.init(100, 100, 0)
     const overlay = createCanvasPipelineDebuggerOverlay(adapter)
 
     render.registerLayer(overlay.registration)
     const countWithOverlay = engine.getOwnedObjectCount()
+
     expect(render.unregisterLayer(overlay.registration.name)).toBe(true)
     overlay.destroy()
     overlay.destroy()
@@ -632,6 +664,7 @@ describe('Canvas Pipeline Debugger overlay', () => {
     expect(engine.getOwnedObjectCount()).toBeLessThan(countWithOverlay)
 
     const recreated = createCanvasPipelineDebuggerOverlay(adapter)
+
     expect(() => render.registerLayer(recreated.registration)).not.toThrow()
     render.unregisterLayer(recreated.registration.name)
     recreated.destroy()
@@ -642,6 +675,7 @@ describe('Canvas Pipeline Debugger overlay', () => {
     const overlay = createCanvasPipelineDebuggerOverlay(
       {
         isObserving: () => true,
+
         getSnapshot: () => {
           throw new Error('overlay projection failed')
         }

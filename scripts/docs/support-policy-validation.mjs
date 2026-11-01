@@ -31,6 +31,7 @@ export const validateCommunityPolicy = ({
       throw new Error(`${sourcePath} is missing ${label}`)
     }
   }
+
   if (
     /pull requests? (?:are )?welcome|open (?:an |a new )?issue|submit (?:an |a new )?issue/iu.test(
       source
@@ -38,6 +39,7 @@ export const validateCommunityPolicy = ({
   ) {
     throw new Error(`${sourcePath} invites unsupported Issues or pull requests`)
   }
+
   if (discussionsEnabled) {
     if (
       /Discussions is not enabled for this repository yet/u.test(source) ||
@@ -69,9 +71,11 @@ export const validateSupportPolicyCorpus = ({ repositoryRoot }) => {
     .filter((name) =>
       fs.existsSync(path.join(root, 'packages', name, 'README.md'))
     )
+
   for (const name of packageNames) {
     sources.push(`packages/${name}/README.md`)
   }
+
   for (const sourcePath of sources) {
     validateCommunityPolicy({
       discussionsEnabled: false,
@@ -79,9 +83,12 @@ export const validateSupportPolicyCorpus = ({ repositoryRoot }) => {
       sourcePath
     })
   }
+
   const security = fs.readFileSync(path.join(root, 'SECURITY.md'), 'utf8')
+
   if (!security.includes(PRIVATE_ADVISORY_URL)) {
     throw new Error('SECURITY.md is missing the private advisory route')
   }
+
   return sources.length
 }

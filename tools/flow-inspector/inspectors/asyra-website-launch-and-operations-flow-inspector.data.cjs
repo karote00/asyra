@@ -11,6 +11,7 @@ const step = (definition) =>
   Object.freeze({ cacheDimensions: [], ...definition })
 
 module.exports = Object.freeze({
+  lifecycle: 'historical',
   authority: Object.freeze({
     specPath:
       'docs/ai/framework/plans/completed/asyra-website-launch-and-operations-plan.md',
@@ -21,7 +22,7 @@ module.exports = Object.freeze({
     siteWorkspacePath: 'apps/asyra-framework-site',
     contentIndexPath: 'docs/public/generated/content-index.json',
     advancedGuidesRoot: 'docs/public',
-    rootHostingConfigPath: 'vercel.json',
+    currentHostingWorkflowPath: '.github/workflows/site-cloudflare.yml',
     atlasPlanPath: 'docs/ai/framework/plans/completed/asyra-runtime-atlas-plan.md'
   }),
   caseIds,

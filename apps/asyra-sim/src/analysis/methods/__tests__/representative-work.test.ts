@@ -8,6 +8,7 @@ import { representativeSnapshot } from './representative-fixture'
 import { supervisedTestProgress } from './heavy-test-progress'
 
 const progress = supervisedTestProgress()
+
 afterEach(() => {
   progress?.endQuery()
   vi.restoreAllMocks()
@@ -42,29 +43,41 @@ it(
       clearIntervalCertificates: 0
     }
     const observedContexts = new Set<OriginalMeshQuery>()
+
     let activeWork = () => 0
+
     let transformed = new WeakMap<object, WeakSet<object>>()
     const worldBounds = meshIndex.worldBounds
+
     vi.spyOn(meshIndex, 'worldBounds').mockImplementation((bounds, pose) => {
       counts.worldBoundsCalls++
       const poses = transformed.get(bounds) ?? new WeakSet<object>()
-      if (poses.has(pose)) counts.repeatedWorldBounds++
+
+      if (poses.has(pose)) {
+        counts.repeatedWorldBounds++
+      }
+
       poses.add(pose)
       transformed.set(bounds, poses)
+
       return worldBounds(bounds, pose)
     })
     const convexDistance = convex.convexDistance
+
     vi.spyOn(convex, 'convexDistance').mockImplementation((...args) => {
       counts.convexCalls++
+
       return convexDistance(...args)
     })
     const handoff = OriginalMeshQuery.prototype.chargeEvidenceHandoff
+
     vi.spyOn(
       OriginalMeshQuery.prototype,
       'chargeEvidenceHandoff'
     ).mockImplementation(function (this: OriginalMeshQuery) {
       observedContexts.add(this)
       const before = this.work
+
       counts.handoffCalls++
       try {
         return handoff.call(this)
@@ -74,12 +87,14 @@ it(
     })
     const distance = OriginalMeshQuery.prototype.distance
     const sourceWitness = OriginalMeshQuery.prototype.chargeSourceWitness
+
     vi.spyOn(
       OriginalMeshQuery.prototype,
       'chargeSourceWitness'
     ).mockImplementation(function (this: OriginalMeshQuery) {
       observedContexts.add(this)
       const before = this.work
+
       counts.sourceWitnessCalls++
       try {
         return sourceWitness.call(this)
@@ -88,12 +103,14 @@ it(
       }
     })
     const derivation = OriginalMeshQuery.prototype.chargeEvidenceDerivation
+
     vi.spyOn(
       OriginalMeshQuery.prototype,
       'chargeEvidenceDerivation'
     ).mockImplementation(function (this: OriginalMeshQuery) {
       observedContexts.add(this)
       const before = this.work
+
       counts.derivationCalls++
       try {
         return derivation.call(this)
@@ -102,12 +119,14 @@ it(
       }
     })
     const lower = OriginalMeshQuery.prototype.lowerOver
+
     vi.spyOn(OriginalMeshQuery.prototype, 'distance').mockImplementation(
       function (this: OriginalMeshQuery, ...args) {
         transformed = new WeakMap()
         activeWork = () => this.work
         observedContexts.add(this)
         const before = this.work
+
         counts.distanceCalls++
         try {
           return distance.apply(this, args)
@@ -121,10 +140,15 @@ it(
         transformed = new WeakMap()
         observedContexts.add(this)
         const before = this.work
+
         counts.lowerCalls++
         try {
           const result = lower.apply(this, args)
-          if (result > args[2]) counts.clearIntervalCertificates++
+
+          if (result > args[2]) {
+            counts.clearIntervalCertificates++
+          }
+
           return result
         } finally {
           counts.lowerWork += this.work - before
@@ -132,9 +156,11 @@ it(
       }
     )
     const build = meshIndex.buildMeshIndex
+
     vi.spyOn(meshIndex, 'buildMeshIndex').mockImplementation(
       (geometry, checkpoint, hierarchy, checkExecution) => {
         counts.indexBuilds++
+
         return build(
           geometry,
           () => {
@@ -147,9 +173,11 @@ it(
       }
     )
     const refine = meshIndex.refineMeshIndex
+
     vi.spyOn(meshIndex, 'refineMeshIndex').mockImplementation(
       (index, checkpoint) => {
         counts.refinementBuilds++
+
         return refine(index, () => {
           counts.refinementPreparationWork++
           checkpoint()
@@ -157,9 +185,11 @@ it(
       }
     )
     const contains = membership.shapeMembership
+
     vi.spyOn(membership, 'shapeMembership').mockImplementation(
       (point, shape, index, checkpoint) => {
         counts.membershipCalls++
+
         return contains(point, shape, index, () => {
           counts.membershipWork++
           checkpoint()
@@ -194,6 +224,7 @@ it(
         const sourceWitnessWork =
           counts.sourceWitnessWork - previousSourceWitness
         const derivationWork = counts.derivationWork - previousDerivation
+
         pairCosts.push({
           pairId: pair.pairId,
           work:
@@ -218,11 +249,13 @@ it(
         previousClear = counts.clearIntervalCertificates
       }
     )
+
     progress?.endQuery()
     progress?.stage('representative-assertions')
     const first = evidence.pairs.find(
       (pair) => pair.evidence.coverage === 'partial'
     )
+
     // eslint-disable-next-line no-console -- permanent bounded logical-work evidence
     console.info(
       JSON.stringify({

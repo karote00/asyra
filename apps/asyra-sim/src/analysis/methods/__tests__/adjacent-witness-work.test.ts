@@ -30,10 +30,12 @@ const geometry: MeshGeometry = Object.freeze({
     4, 7, 0, 7, 3, 1, 2, 6, 1, 6, 5
   ])
 })
+
 const shape = (x: number): ConvexShape => ({
   geometry,
   pose: ops.fromPose({ ...IDENTITY_POSE, position: [x, 0, 0] })
 })
+
 const evidence = (): DistanceEvidence => ({
   lower: 1 / 32,
   upper: 1 / 32,
@@ -52,9 +54,11 @@ const evidence = (): DistanceEvidence => ({
     [0, 0]
   ]
 })
+
 type BoundarySampler = StaticSampler & {
   publishBoundary?: (source: unknown) => unknown | null
 }
+
 const origin = (node: object, segment: number, capture = false) => ({
   node,
   segment,
@@ -64,6 +68,7 @@ const origin = (node: object, segment: number, capture = false) => ({
   capture,
   originalRoot: true
 })
+
 function owner() {
   let work = 0,
     stop = Infinity,
@@ -74,33 +79,43 @@ function owner() {
     1 / 16,
     () => {
       work++
-      if (work === stop) throw failure
+      if (work === stop) {
+        throw failure
+      }
     },
     (_a, _b, seed) => {
       calls++
       seeds.push(seed)
+
       return evidence()
     },
     (error) => error === failure
   )
+
   return {
     sample,
     seeds,
+
     get work() {
       return work
     },
+
     get calls() {
       return calls
     },
+
     stopAt(n: number) {
       stop = n
     }
   }
 }
+
 function publish(sample: BoundarySampler, source: unknown) {
   expect(sample.publishBoundary).toBeTypeOf('function')
+
   return sample.publishBoundary?.(source)
 }
+
 describe('adjacent source ownership', () => {
   it('shares paid capture and charges publication plus all reverse-time transport operations', () => {
     const o = owner(),
@@ -108,8 +123,10 @@ describe('adjacent source ownership', () => {
       b = shape(9 / 32),
       node = {}
     const source = o.sample(a, b, origin(node, 1, true))?.source
+
     expect(o.work).toBe(1)
     const boundary = publish(o.sample, source)
+
     expect(o.work).toBe(2)
     expect(boundary).toBeDefined()
     o.sample(a, b, origin({}, 0), boundary)
@@ -123,6 +140,7 @@ describe('adjacent source ownership', () => {
       a = shape(0),
       b = shape(9 / 32)
     const source = o.sample(a, b, origin({}, 1, true))?.source
+
     o.sample(a, b, origin({}, 0), source)
     expect(o.work).toBe(2)
     expect(o.seeds[1]).toBeUndefined()
@@ -145,6 +163,7 @@ describe('adjacent source ownership', () => {
         sourceOrigin
       )?.source
       const before = o.work
+
       expect(
         publish(o.sample, kind === 'fabricated' ? {} : source)
       ).toBeUndefined()
@@ -172,6 +191,7 @@ describe('adjacent source ownership', () => {
       }
       const consumer = kind === 'scope' ? other : o
       const before = consumer.work
+
       consumer.sample(
         kind === 'geometry'
           ? { ...a, geometry: Object.freeze({ ...geometry }) }
@@ -189,6 +209,7 @@ describe('adjacent source ownership', () => {
       a = shape(0),
       b = shape(9 / 32)
     const source = o.sample(a, b, origin({}, 1, true))?.source
+
     o.stopAt(2)
     expect(publish(o.sample, source)).toBeNull()
     expect(o.calls).toBe(1)
@@ -203,6 +224,7 @@ describe('adjacent source ownership', () => {
         o.sample,
         o.sample(a, b, origin({}, 1, true))?.source
       )
+
       o.stopAt(2 + step)
       expect(o.sample(a, b, origin({}, 0), boundary)).toBeNull()
       expect(o.work).toBe(2 + step)
@@ -252,6 +274,7 @@ const settings = {
   maxIntervals: 20,
   maxIterations: 20
 }
+
 describe('adjacent root scheduling', () => {
   function run(
     exhaust = false,
@@ -261,8 +284,10 @@ describe('adjacent root scheduling', () => {
   ) {
     const rows: { time: number; source: unknown }[] = [],
       publications: unknown[] = []
+
     const sample: BoundarySampler = (_a, _b, origin, source) => {
       rows.push({ time: origin.time, source })
+
       return {
         evidence: {
           ...evidence(),
@@ -271,25 +296,34 @@ describe('adjacent root scheduling', () => {
         source: origin.capture ? origin.time : undefined
       }
     }
+
     sample.publishBoundary = (source) => {
       publications.push(source)
+
       return exhaust ? null : { boundary: source }
     }
+
     const result = queryContinuousPair(
       { ...query, interval: clamp ? [0, 2.5] : query.interval },
       { ...settings, maxIntervals },
       () => undefined,
       {
         sample,
+
         distance: () => evidence(),
+
         lower: () => 0,
+
         exhaustionReason: 'owned budget'
       }
     )
+
     return { rows, publications, result }
   }
+
   it('publishes the first source only after all root samples and consumes it at the next root', () => {
     const r = run()
+
     expect(r.rows.map((row) => row.time)).toEqual([
       2, 2.5, 3, 1, 1.5, 2, 0, 0.5, 1
     ])
@@ -300,6 +334,7 @@ describe('adjacent root scheduling', () => {
   })
   it('does not publish when the temporal evaluation budget prevents the next root', () => {
     const r = run(false, false, false, 1)
+
     expect(r.rows).toHaveLength(3)
     expect(r.publications).toEqual([])
     expect(r.result.evaluations).toBe(1)
@@ -310,6 +345,7 @@ describe('adjacent root scheduling', () => {
   })
   it('keeps the completed source leaf when publication exhausts and stops before the next sample', () => {
     const r = run(true)
+
     expect(r.rows).toHaveLength(3)
     expect(r.result.leaves.find((leaf) => leaf.start === 2)).toMatchObject({
       state: 'finding',
@@ -324,6 +360,7 @@ describe('adjacent root scheduling', () => {
   it('never publishes a clamped or penetrating root source', () => {
     expect(run(false, true).publications).toEqual([1])
     const r = run(false, false, true)
+
     expect(r.publications).toEqual([1])
     expect(r.rows[3].source).toBeUndefined()
   })

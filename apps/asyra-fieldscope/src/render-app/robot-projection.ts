@@ -61,31 +61,46 @@ function project(
 /** One definition product per runtime; camera and UI never construct geometry. */
 export class RobotProjection {
   private definition = ''
+
   private source?: RobotSource
+
   private dockSource?: DockSource
+
   private localBounds: SceneBounds = { min: [0, 0, 0], max: [0, 0, 0] }
+
   private parts: SpatialFrame['meshes'] = []
+
   private readonly dock = project(createDockModel(), 0, 0, 'dock')
+
   update(report: RobotSnapshot): SpatialFrame['meshes'] {
     const s = report.settings
     const key = `${s.width}:${s.length}:${s.height}:${s.tool}`
+
     if (key !== this.definition) {
       const raw = createRobotModel(s)
+
       this.parts = project(raw, 0, 0, 'robot')
       const parts = Object.freeze(
         raw.map((part, index) => {
           const shape = this.parts[index].descriptor.shape
-          if (shape.kind !== 'triangles')
+
+          if (shape.kind !== 'triangles') {
             throw new Error('Expected robot triangle product')
+          }
+
           return Object.freeze({ ...part, shape })
         })
       )
       let rig: RobotRig | null = null
+
       try {
         rig = prepareRobotRig(s, parts)
       } catch (error) {
-        if (!(error instanceof UnsupportedRobotRigError)) throw error
+        if (!(error instanceof UnsupportedRobotRigError)) {
+          throw error
+        }
       }
+
       this.source = Object.freeze({
         revision: ++nextRevision,
         parts,
@@ -94,20 +109,28 @@ export class RobotProjection {
       })
       const min: [number, number, number] = [Infinity, Infinity, Infinity]
       const max: [number, number, number] = [-Infinity, -Infinity, -Infinity]
+
       for (const item of [...this.parts, ...this.dock]) {
         const shape = item.descriptor.shape
-        if (shape.kind !== 'triangles')
+
+        if (shape.kind !== 'triangles') {
           throw new Error('Expected robot triangle product')
+        }
+
         shape.positions.forEach((value, i) => {
           const axis = i % 3
+
           min[axis] = Math.min(min[axis], value)
           max[axis] = Math.max(max[axis], value)
         })
       }
+
       this.localBounds = { min, max }
       this.definition = key
     }
+
     const position = this.dockSource?.meshes[0].descriptor.position
+
     if (!position || position[0] !== s.dockX || position[2] !== s.dockZ) {
       this.dockSource = Object.freeze({
         revision: ++nextRevision,
@@ -124,6 +147,7 @@ export class RobotProjection {
         )
       })
     }
+
     const meshes = this.parts.map((item) => ({
       ...item,
       descriptor: readSpatialDescriptor({
@@ -131,9 +155,11 @@ export class RobotProjection {
         position: [s.dockX, 0, s.dockZ]
       }) as SpatialMesh
     }))
+
     meshes.push(...this.getDockSource().meshes)
     const lane = report.lane
-    if (lane)
+
+    if (lane) {
       meshes.push({
         id: 'robot.route',
         visible: true,
@@ -153,35 +179,56 @@ export class RobotProjection {
           selectable: false
         }) as SpatialMesh
       })
+    }
+
     return meshes
   }
+
   bounds(x: number, z: number): SceneBounds {
     const { min, max } = this.localBounds
+
     return {
       min: [min[0] + x, min[1], min[2] + z],
       max: [max[0] + x, max[1], max[2] + z]
     }
   }
+
   getDockSource(): DockSource {
-    if (!this.dockSource) throw new Error('Dock source is unavailable')
+    if (!this.dockSource) {
+      throw new Error('Dock source is unavailable')
+    }
+
     return this.dockSource
   }
+
   isCurrentDockSource(source: DockSource): boolean {
     return this.dockSource !== undefined && source === this.dockSource
   }
+
   getSource(): RobotSource {
-    if (!this.source) throw new Error('Robot source is unavailable')
+    if (!this.source) {
+      throw new Error('Robot source is unavailable')
+    }
+
     return this.source
   }
+
   isCurrentSource(source: RobotSource): boolean {
     return this.source !== undefined && source === this.source
   }
+
   evaluatePose(source: RobotSource, joints: RobotJoints) {
-    if (!this.isCurrentSource(source)) throw new Error('Retired robot source')
-    if (!source.rig)
+    if (!this.isCurrentSource(source)) {
+      throw new Error('Retired robot source')
+    }
+
+    if (!source.rig) {
       throw new UnsupportedRobotRigError('Unsupported lift stroke')
+    }
+
     return evaluateRobotPose(source.rig, joints)
   }
+
   clear() {
     this.source = undefined
     this.dockSource = undefined

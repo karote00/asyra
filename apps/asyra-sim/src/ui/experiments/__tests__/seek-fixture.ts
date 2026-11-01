@@ -20,7 +20,9 @@ export function seekFixture() {
   )
   const records = new Map<number, LiveSample>()
   let state: LiveState = { status: 'idle', sample: null, error: null }
+
   let notify: () => void = () => undefined
+
   const publish = vi.fn<(view: PlaybackView) => void>()
   const create = vi.fn(() => input)
   const sample = vi.fn((time: number) => {
@@ -39,8 +41,11 @@ export function seekFixture() {
         notify = () => undefined
       }
     },
+
     getState: () => state,
+
     sample,
+
     open: (_input: unknown, time: number, options: { signal: AbortSignal }) =>
       new Promise<void>((resolve) => {
         options.signal.addEventListener('abort', () => resolve(), {
@@ -57,17 +62,19 @@ export function seekFixture() {
     api,
     publish
   )
+
   const deliver = (
     time: number,
     kind: 'clear' | 'clearance' | 'collision',
     provisional = false
   ) => {
     const result = structuredClone(template)
+
     result.time = time
     result.complete = !provisional
 
-    for (const pair of result.pairs)
-      for (const leaf of pair.evidence.leaves)
+    for (const pair of result.pairs) {
+      for (const leaf of pair.evidence.leaves) {
         Object.assign(leaf, {
           start: time,
           end: time,
@@ -75,14 +82,19 @@ export function seekFixture() {
           state: 'clear',
           penetration: false
         })
+      }
+    }
 
-    if (kind !== 'clear')
+    if (kind !== 'clear') {
       Object.assign(result.pairs[0].evidence.leaves[0], {
         state: 'finding',
         penetration: kind === 'collision'
       })
+    }
 
-    if (!provisional) records.set(time, result)
+    if (!provisional) {
+      records.set(time, result)
+    }
 
     state = {
       status: provisional ? 'checking' : 'ready',
@@ -99,13 +111,17 @@ export function seekFixture() {
     sample,
     input,
     deliver,
+
     latest: () => {
       const view = publish.mock.lastCall?.[0]
 
-      if (!view) throw new Error('Preview has not published a frame')
+      if (!view) {
+        throw new Error('Preview has not published a frame')
+      }
 
       return view
     },
+
     fail: () => {
       state = { status: 'error', sample: null, error: 'Worker unavailable' }
       notify()

@@ -16,6 +16,7 @@ it.each(['overview', 'front', 'inside', 'joint', 'top'] as const)(
       .cross(new Vector3(0, 1, 0))
       .normalize()
     const up = right.clone().cross(forward)
+
     for (const [axis, vector] of [forward, right, up].entries()) {
       const moved = moveCamera(
         camera,
@@ -26,6 +27,7 @@ it.each(['overview', 'front', 'inside', 'joint', 'top'] as const)(
       const offset = new Vector3(...moved.position).sub(
         new Vector3(...camera.position)
       )
+
       expect(offset.distanceTo(vector.clone().multiplyScalar(2))).toBeLessThan(
         1e-10
       )
@@ -42,6 +44,7 @@ it.each(['overview', 'front', 'inside', 'joint', 'top'] as const)(
 it('looks around in place and then moves forward in the new direction', () => {
   const camera = cameraPreset('inside')
   const looked = lookCamera(camera, 120, -80)
+
   expect(looked.position).toEqual(camera.position)
   expect(looked.target).not.toEqual(camera.target)
   expect(cameraDistance(looked)).toBeCloseTo(cameraDistance(camera))
@@ -52,12 +55,14 @@ it('looks around in place and then moves forward in the new direction', () => {
   const forward = new Vector3(...looked.target)
     .sub(new Vector3(...looked.position))
     .normalize()
+
   expect(delta.distanceTo(forward)).toBeLessThan(1e-10)
   expect(lookCamera(camera, 0, 100000).target.every(Number.isFinite)).toBe(true)
 })
 
 it('starts at eye level inside the greenhouse', async () => {
   const { INITIAL_VIEW } = await import('../site-projection')
+
   expect(INITIAL_VIEW.camera).toBe('inside')
   expect(cameraPreset(INITIAL_VIEW.camera).position[1]).toBe(1.65)
 })

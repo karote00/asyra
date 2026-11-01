@@ -56,16 +56,19 @@ function createProtocol(child) {
   const closure = new Promise((resolve) => {
     resolveClose = resolve
   })
+
   const fail = () => {
     failed = true
     for (const entry of pending.values()) {
       clearTimeout(entry.timer)
       entry.reject(new Error('Provider protocol failed'))
     }
+
     pending.clear()
     events.emit('failure')
     child.kill('SIGKILL')
   }
+
   child.on('error', fail)
   child.on('close', () => {
     closed = true
@@ -73,64 +76,101 @@ function createProtocol(child) {
       clearTimeout(entry.timer)
       entry.reject(new Error('Provider protocol closed'))
     }
+
     pending.clear()
     events.emit('closed')
     resolveClose()
   })
   child.stderr.on('data', (chunk) => {
     bytes += chunk.length
-    if (bytes > TASK_POLICY.maxOutputBytes * 4) fail()
+    if (bytes > TASK_POLICY.maxOutputBytes * 4) {
+      fail()
+    }
   })
   child.stdout.on('data', (chunk) => {
-    if (failed || closed) return
+    if (failed || closed) {
+      return
+    }
+
     bytes += chunk.length
     buffer += decoder.write(chunk)
     if (
       bytes > TASK_POLICY.maxOutputBytes * 4 ||
       Buffer.byteLength(buffer) > TASK_POLICY.maxOutputBytes
-    )
+    ) {
       return fail()
+    }
+
     let index
+
     while ((index = buffer.indexOf('\n')) >= 0) {
       const line = buffer.slice(0, index)
+
       buffer = buffer.slice(index + 1)
       let value
+
       try {
         value = JSON.parse(line)
       } catch {
         return fail()
       }
-      if (!value || typeof value !== 'object') return fail()
-      if (value.method && value.id !== undefined) return fail()
+
+      if (!value || typeof value !== 'object') {
+        return fail()
+      }
+
+      if (value.method && value.id !== undefined) {
+        return fail()
+      }
+
       if (value.id !== undefined) {
         const entry = pending.get(value.id)
-        if (!entry) return fail()
+
+        if (!entry) {
+          return fail()
+        }
+
         pending.delete(value.id)
         clearTimeout(entry.timer)
-        if (value.error)
+        if (value.error) {
           entry.reject(new Error('Provider protocol request rejected'))
-        else entry.resolve(value.result)
-      } else if (value.method) events.emit('notification', value)
-      else return fail()
+        } else {
+          entry.resolve(value.result)
+        }
+      } else if (value.method) {
+        events.emit('notification', value)
+      } else {
+        return fail()
+      }
     }
   })
+
   return {
     events,
+
     request(method, params) {
-      if (closed || failed)
+      if (closed || failed) {
         return Promise.reject(new Error('Provider protocol unavailable'))
+      }
+
       return new Promise((resolve, reject) => {
         const id = ++sequence
         const timer = setTimeout(fail, 15000)
+
         pending.set(id, { resolve, reject, timer })
         child.stdin.write(JSON.stringify({ id, method, params }) + '\n')
       })
     },
+
     notify(method) {
       child.stdin.write(JSON.stringify({ method }) + '\n')
     },
+
     async close() {
-      if (!closed) child.kill('SIGKILL')
+      if (!closed) {
+        child.kill('SIGKILL')
+      }
+
       await closure
     }
   }
@@ -138,6 +178,7 @@ function createProtocol(child) {
 
 function providerProfile(directory, executable, credentialFile = null) {
   const literal = (value) => JSON.stringify(fs.realpathSync(value))
+
   return `(version 1)
 (deny default)
 (allow file-map-executable)
@@ -159,18 +200,23 @@ function openLocalTransport({
   credentialFile = null,
   onSpawn = () => undefined
 }) {
-  if (process.platform !== 'darwin')
+  if (process.platform !== 'darwin') {
     throw new Error('Provider containment unavailable')
+  }
+
   const local = safePath(
     repositoryRoot,
     path.relative(repositoryRoot, directory)
   )
+
   fs.mkdirSync(local, { recursive: true, mode: 0o700 })
-  if (credentialFile)
+  if (credentialFile) {
     fs.symlinkSync(
       fs.realpathSync(credentialFile),
       path.join(local, 'auth.json')
     )
+  }
+
   const args = [
     '-p',
     providerProfile(local, executable, credentialFile),
@@ -196,13 +242,19 @@ function openLocalTransport({
     },
     stdio: ['pipe', 'pipe', 'pipe']
   })
+
   child.once('spawn', () => onSpawn(child.pid))
+
   return createProtocol(child)
 }
 
 async function completeTurn(protocol, input, directory) {
   const { signal } = input
-  if (signal.aborted) return { terminal: false, usage: null }
+
+  if (signal.aborted) {
+    return { terminal: false, usage: null }
+  }
+
   await protocol.request('initialize', {
     clientInfo: { name: 'flow-inspector-adapter', version: '1' },
     capabilities: { experimentalApi: true }
@@ -211,18 +263,24 @@ async function completeTurn(protocol, input, directory) {
   const account = await protocol.request('account/read', {
     refreshToken: false
   })
-  if (account.account?.type !== 'chatgpt')
+
+  if (account.account?.type !== 'chatgpt') {
     throw new Error('Provider subscription authentication required')
+  }
+
   const thread = await protocol.request(
     'thread/start',
     threadRequest(directory, input.model)
   )
+
   if (
     thread.model !== input.model ||
     thread.instructionSources?.length !== 0 ||
     thread.runtimeWorkspaceRoots?.length !== 0
-  )
+  ) {
     throw new Error('Provider isolation or exact model unavailable')
+  }
+
   let turnId,
     text = '',
     usage = null,
@@ -232,12 +290,15 @@ async function completeTurn(protocol, input, directory) {
   const completion = new Promise((resolve) => {
     finish = resolve
   })
+
   const cancel = () => {
-    if (!interruptTimer)
+    if (!interruptTimer) {
       interruptTimer = setTimeout(
         () => finish({ terminal: false, usage }),
         1000
       )
+    }
+
     if (turnId && !interruptSent) {
       interruptSent = true
       protocol
@@ -245,26 +306,43 @@ async function completeTurn(protocol, input, directory) {
         .catch(() => finish({ terminal: false, usage }))
     }
   }
+
   const failed = () => finish({ terminal: false, usage })
+
   const observe = ({ method, params }) => {
-    if (params?.threadId !== thread.thread.id) return
-    if (params.turnId && turnId && params.turnId !== turnId) return
-    if (method === 'thread/tokenUsage/updated')
+    if (params?.threadId !== thread.thread.id) {
+      return
+    }
+
+    if (params.turnId && turnId && params.turnId !== turnId) {
+      return
+    }
+
+    if (method === 'thread/tokenUsage/updated') {
       usage = params.tokenUsage?.total ?? null
+    }
+
     if (method === 'item/completed') {
       if (params.item?.type === 'agentMessage') {
-        if (params.item.phase !== 'commentary') text += params.item.text ?? ''
+        if (params.item.phase !== 'commentary') {
+          text += params.item.text ?? ''
+        }
       } else if (
         !['userMessage', 'reasoning', 'plan'].includes(params.item?.type)
-      )
+      ) {
         return failed()
-      if (Buffer.byteLength(text) > TASK_POLICY.maxOutputBytes) return failed()
+      }
+
+      if (Buffer.byteLength(text) > TASK_POLICY.maxOutputBytes) {
+        return failed()
+      }
     }
+
     if (
       method === 'turn/completed' &&
       (!turnId || params.turn?.id === turnId)
     ) {
-      if (signal.aborted)
+      if (signal.aborted) {
         finish({
           terminal: false,
           usage,
@@ -272,24 +350,32 @@ async function completeTurn(protocol, input, directory) {
             ? { interruptionConfirmed: true }
             : {})
         })
-      else
+      } else {
         finish({ terminal: params.turn?.status === 'completed', text, usage })
+      }
     }
   }
+
   protocol.events.on('notification', observe)
   protocol.events.on('failure', failed)
   protocol.events.on('closed', failed)
   signal.addEventListener('abort', cancel, { once: true })
   try {
-    if (signal.aborted) return { terminal: false, usage: null }
+    if (signal.aborted) {
+      return { terminal: false, usage: null }
+    }
+
     const payload = JSON.stringify({
       contract: input.contract,
       observation: input.observation,
       history: input.history,
       previousVerification: input.previousVerification
     })
-    if (Buffer.byteLength(payload) > TASK_POLICY.maxOutputBytes)
+
+    if (Buffer.byteLength(payload) > TASK_POLICY.maxOutputBytes) {
       throw new Error('Provider context limit exceeded')
+    }
+
     const result = await protocol.request('turn/start', {
       threadId: thread.thread.id,
       model: input.model,
@@ -298,8 +384,12 @@ async function completeTurn(protocol, input, directory) {
       runtimeWorkspaceRoots: [],
       input: [{ type: 'text', text: payload, text_elements: [] }]
     })
+
     turnId = result.turn.id
-    if (signal.aborted) cancel()
+    if (signal.aborted) {
+      cancel()
+    }
+
     return await completion
   } finally {
     clearTimeout(interruptTimer)
@@ -312,12 +402,17 @@ async function completeTurn(protocol, input, directory) {
 
 function createProviderTransport(options) {
   let current = null
+
   const complete = async (input) => {
-    if (current) throw new Error('Provider request already active')
+    if (current) {
+      throw new Error('Provider request already active')
+    }
+
     const parent = safePath(
       options.repositoryRoot,
       path.relative(options.repositoryRoot, options.directory)
     )
+
     fs.mkdirSync(parent, { recursive: true, mode: 0o700 })
     const directory = fs.mkdtempSync(path.join(parent, 'request-'))
     const protocol = openLocalTransport({
@@ -326,6 +421,7 @@ function createProviderTransport(options) {
       onSpawn: input.onSpawn
     })
     const completion = completeTurn(protocol, input, directory)
+
     current = { protocol, completion }
     try {
       return await completion
@@ -333,14 +429,21 @@ function createProviderTransport(options) {
       await protocol.close()
       current = null
       // The credential is only a read-only reference, never a copied secret.
-      if (options.credentialFile)
+      if (options.credentialFile) {
         fs.unlinkSync(path.join(directory, 'auth.json'))
+      }
     }
   }
+
   complete.cancel = async () => {
     const active = current
-    if (!active) return
+
+    if (!active) {
+      return
+    }
+
     let timer
+
     try {
       await Promise.race([
         active.completion.catch(() => undefined),
@@ -353,8 +456,10 @@ function createProviderTransport(options) {
       await active.protocol.close()
     }
   }
+
   return complete
 }
+
 module.exports = {
   createProtocol,
   threadRequest,

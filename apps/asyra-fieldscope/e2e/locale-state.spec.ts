@@ -12,6 +12,7 @@ test('language changes preserve the canvas, camera, layers, configuration and hi
   ).toBeVisible()
   await page.screenshot({ path: testInfo.outputPath('brand-zh-TW.png') })
   const selector = page.getByRole('combobox', { name: '語言', exact: true })
+
   await expect(selector).toHaveValue('zh-TW')
   await expect(selector.locator('option')).toHaveCount(2)
   await page.getByLabel('第 1 項寬度', { exact: true }).fill('1.1')
@@ -23,6 +24,7 @@ test('language changes preserve the canvas, camera, layers, configuration and hi
   await page.keyboard.press('=')
   await expect(page.getByTestId('zoom-percent')).toHaveText('111%')
   const canvas = await page.locator('canvas').elementHandle()
+
   await selector.selectOption('en')
   await expect(page.getByText('Scene ready', { exact: true })).toBeVisible()
   await expect(page.locator('html')).toHaveAttribute('lang', 'en')
@@ -50,6 +52,7 @@ test('language changes preserve the canvas, camera, layers, configuration and hi
     '1.1'
   )
   const bottom = page.getByLabel('Net bottom height', { exact: true })
+
   await bottom.fill('4')
   await bottom.press('Enter')
   await expect(page.getByRole('alert')).toContainText(

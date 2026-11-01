@@ -6,6 +6,7 @@ test('every chapter inherits the exact outgoing composition and camera', () => {
   for (let chapter = 0; chapter < 5; chapter++) {
     const before = getStoryFrame(chapter, 1)
     const after = getStoryFrame(chapter + 1, 0)
+
     assert.deepEqual(
       after.layers,
       before.layers,

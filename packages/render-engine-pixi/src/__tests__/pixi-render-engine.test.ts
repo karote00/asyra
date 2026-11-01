@@ -114,16 +114,21 @@ const pixiState = vi.hoisted(() => ({
 
 vi.mock('pixi.js', async () => {
   const actual = await vi.importActual<typeof import('pixi.js')>('pixi.js')
+
   class MockContainer {
     isRenderGroup = false
+
     readonly children: MockContainer[] = []
+
     readonly listeners = new Map<string, Set<(event: unknown) => void>>()
+
     readonly position = {
       set: vi.fn((x: number, y: number) => {
         this.x = x
         this.y = y
       })
     }
+
     readonly scale = {
       x: 1,
       y: 1,
@@ -132,6 +137,7 @@ vi.mock('pixi.js', async () => {
         this.scale.y = y
       })
     }
+
     readonly skew = {
       x: 0,
       y: 0,
@@ -140,27 +146,45 @@ vi.mock('pixi.js', async () => {
         this.skew.y = y
       })
     }
+
     parent: MockContainer | null = null
+
     x = 0
+
     y = 0
+
     width = 0
+
     height = 0
+
     alpha = 1
+
     angle = 0
+
     rotation = 0
+
     zIndex = 0
+
     label = ''
+
     visible = true
+
     renderable = true
+
     eventMode = 'auto'
+
     cursor = 'default'
+
     batched = true
+
     destroyed = false
 
     effects: unknown[] = []
+
     addEffect(effect: unknown) {
       this.effects.push(effect)
     }
+
     removeEffect(effect: unknown) {
       this.effects = this.effects.filter((item) => item !== effect)
     }
@@ -169,15 +193,19 @@ vi.mock('pixi.js', async () => {
       child.parent = this
       this.children.push(child)
       pixiState.operationTypes.push('append-child')
+
       return child
     }
 
     removeChild(child: MockContainer) {
       const index = this.children.indexOf(child)
+
       if (index >= 0) {
         this.children.splice(index, 1)
       }
+
       child.parent = null
+
       return child
     }
 
@@ -189,13 +217,16 @@ vi.mock('pixi.js', async () => {
 
     on(type: string, listener: (event: unknown) => void) {
       const listeners = this.listeners.get(type) ?? new Set()
+
       listeners.add(listener)
       this.listeners.set(type, listeners)
+
       return this
     }
 
     off(type: string, listener: (event: unknown) => void) {
       this.listeners.get(type)?.delete(listener)
+
       return this
     }
 
@@ -204,22 +235,26 @@ vi.mock('pixi.js', async () => {
     }
 
     transformReads = 0
+
     getGlobalTransform() {
       this.transformReads++
       let a = this.scale.x,
         d = this.scale.y
       let parent = this.parent
+
       while (parent) {
         a *= parent.scale.x
         d *= parent.scale.y
         parent = parent.parent
       }
+
       return { a, b: 0, c: 0, d }
     }
 
     get localTransform() {
       return { a: this.scale.x, b: 0, c: 0, d: this.scale.y }
     }
+
     updateLocalTransform() {
       return this.localTransform
     }
@@ -249,6 +284,7 @@ vi.mock('pixi.js', async () => {
     readonly context = {
       batchMode: 'auto' as 'auto' | 'batch' | 'no-batch'
     }
+
     readonly drawOperations: { type: string; args: unknown[] }[] = []
 
     constructor() {
@@ -258,6 +294,7 @@ vi.mock('pixi.js', async () => {
 
     private record(type: string, ...args: unknown[]) {
       this.drawOperations.push({ type, args })
+
       return this
     }
 
@@ -301,6 +338,7 @@ vi.mock('pixi.js', async () => {
       ;(
         args[0] as { buildGradient?: () => void } | undefined
       )?.buildGradient?.()
+
       return this.record('fill', ...args)
     }
 
@@ -311,11 +349,17 @@ vi.mock('pixi.js', async () => {
 
   class MockMeshGeometry {
     positions: Float32Array
+
     indices: Uint32Array
+
     uvs: Float32Array
+
     readonly positionUpdate = vi.fn()
+
     readonly uvUpdate = vi.fn()
+
     readonly indexUpdate = vi.fn()
+
     readonly destroy = vi.fn()
 
     constructor(readonly options: Record<string, unknown>) {
@@ -337,14 +381,18 @@ vi.mock('pixi.js', async () => {
 
   class MockTexture {
     static readonly WHITE = new MockTexture('white')
+
     readonly destroy = vi.fn()
+
     readonly width: number
+
     readonly height: number
 
     constructor(readonly source: unknown) {
       const options = source as {
         source?: { options?: { width?: number; height?: number } }
       }
+
       this.width = options?.source?.options?.width ?? 256
       this.height = options?.source?.options?.height ?? 256
       pixiState.textures.push(this)
@@ -357,7 +405,9 @@ vi.mock('pixi.js', async () => {
 
   class MockMesh extends MockContainer {
     onViewUpdate = vi.fn()
+
     tint = 0xffffff
+
     readonly geometry: MockMeshGeometry
 
     constructor(readonly options: Record<string, unknown>) {
@@ -376,16 +426,19 @@ vi.mock('pixi.js', async () => {
 
     scale(...args: number[]) {
       this.operations.push({ type: 'scale', args })
+
       return this
     }
 
     rotate(...args: number[]) {
       this.operations.push({ type: 'rotate', args })
+
       return this
     }
 
     translate(...args: number[]) {
       this.operations.push({ type: 'translate', args })
+
       return this
     }
   }
@@ -396,7 +449,9 @@ vi.mock('pixi.js', async () => {
 
   class MockFillGradient {
     transform?: MockMatrix
+
     readonly buildGradient = vi.fn()
+
     readonly destroy = vi.fn()
 
     constructor(readonly options: Record<string, unknown>) {
@@ -406,7 +461,9 @@ vi.mock('pixi.js', async () => {
 
   class MockFillPattern {
     textureSpace = 'global'
+
     transform?: MockMatrix
+
     readonly setTransform = vi.fn((transform: MockMatrix) => {
       this.transform = transform
     })
@@ -421,10 +478,13 @@ vi.mock('pixi.js', async () => {
 
   class MockApplication {
     readonly stage = new MockContainer()
+
     readonly canvas = {
       parentNode: null,
+
       getBoundingClientRect: () => ({ left: 0, top: 0 })
     }
+
     readonly renderer = {
       resolution: 1,
       extract: {
@@ -446,32 +506,39 @@ vi.mock('pixi.js', async () => {
                 "Cannot read properties of null (reading 'eventMode')"
               )
             }
+
             return null
           })
         }
       }
     }
+
     readonly ticker = {
       add: vi.fn(),
       remove: vi.fn(),
       start: vi.fn(),
       stop: vi.fn()
     }
+
     readonly render = vi.fn(() => {
       pixiState.operationTypes.push('flush')
     })
+
     readonly destroy = vi.fn(() => {
       if (pixiState.nextDestroyError) {
         const error = pixiState.nextDestroyError
+
         pixiState.nextDestroyError = null
         throw error
       }
     })
+
     readonly init = vi.fn(async (options: { resolution?: number }) => {
       this.renderer.resolution = options.resolution ?? 1
       pixiState.operationTypes.push('initialize')
       if (pixiState.nextInitError) {
         const error = pixiState.nextInitError
+
         pixiState.nextInitError = null
         throw error
       }
@@ -484,10 +551,13 @@ vi.mock('pixi.js', async () => {
 
   class MockText extends MockContainer {
     resolutionWrites: number[] = []
+
     private textResolution = 1
+
     get resolution() {
       return this.textResolution
     }
+
     set resolution(value: number) {
       this.textResolution = value
       this.resolutionWrites.push(value)
@@ -530,15 +600,18 @@ import { Texture } from 'pixi.js'
 
 const getLastApplication = (): MockApplicationRecord => {
   const application = pixiState.applications.slice(-1)[0]
+
   if (!application) {
     throw new Error('Expected a Pixi application test instance')
   }
+
   return application
 }
 
 describe('PixiRenderEngine', () => {
   it('rejects spatial queries explicitly without changing legacy screen queries', async () => {
     const engine = new PixiRenderEngine()
+
     await engine.initialize({ host: {}, width: 100, height: 100 })
     expect(() =>
       engine.query({ type: 'spatial-project', point: [0, 0, 0] })
@@ -551,6 +624,7 @@ describe('PixiRenderEngine', () => {
 
   it('shares equivalent gradient resources only for the lifetime of their handles', async () => {
     const engine = new PixiRenderEngine()
+
     await engine.initialize({ host: {}, width: 100, height: 100 })
     const descriptor = {
       kind: 'gradient',
@@ -564,21 +638,29 @@ describe('PixiRenderEngine', () => {
         ]
       }
     }
+
     const create = (value = descriptor) => {
       const resource = engine.execute({
         type: 'create-resource',
         requestId: 'gradient',
         descriptor: value
       }).resource
-      if (!resource) throw new Error('Missing gradient handle')
+
+      if (!resource) {
+        throw new Error('Missing gradient handle')
+      }
+
       return resource
     }
+
     const first = create()
     const second = create(structuredClone(descriptor))
+
     expect(first).not.toBe(second)
     expect(pixiState.gradients).toHaveLength(1)
     descriptor.data.end.y = 1
     const changed = create()
+
     expect(pixiState.gradients).toHaveLength(2)
     engine.execute({ type: 'destroy-resource', resource: first })
     expect(pixiState.gradients[0].destroy).not.toHaveBeenCalled()
@@ -588,6 +670,7 @@ describe('PixiRenderEngine', () => {
     expect(pixiState.gradients[1].destroy).toHaveBeenCalledOnce()
     expect(changed).toBeDefined()
     const successor = new PixiRenderEngine()
+
     await successor.initialize({ host: {}, width: 100, height: 100 })
     successor.execute({ type: 'create-resource', requestId: 'new', descriptor })
     expect(pixiState.gradients).toHaveLength(3)
@@ -611,13 +694,19 @@ describe('PixiRenderEngine', () => {
       requestId: 'child',
       objectType: 'container'
     })
-    if (!object || !child) throw new Error('Missing transform handles')
+
+    if (!object || !child) {
+      throw new Error('Missing transform handles')
+    }
+
     engine.execute({ type: 'append-child', parent: root, child: object })
     engine.execute({ type: 'append-child', parent: object, child: child })
     const camera = getLastApplication().stage.children[0]
+
     expect(camera.isRenderGroup).toBe(true)
     expect(camera.children[0].isRenderGroup).toBe(false)
     const retainedChild = camera.children[0]
+
     engine.execute({
       type: 'update-object',
       object: object,
@@ -646,6 +735,7 @@ describe('PixiRenderEngine', () => {
       'requestAnimationFrame',
       vi.fn((callback: FrameRequestCallback) => {
         frameCallbacks.push(callback)
+
         return frameCallbacks.length
       })
     )
@@ -661,9 +751,11 @@ describe('PixiRenderEngine', () => {
 
   it('delivers demanded frames without comparing frame timestamps to request time', async () => {
     const engine = new PixiRenderEngine()
+
     await engine.initialize({ host: {}, width: 100, height: 100 })
     const now = vi.spyOn(performance, 'now')
     const callback = vi.fn()
+
     try {
       for (let index = 0; index < 6; index++) {
         now.mockReturnValue(20 + index * 16)
@@ -691,7 +783,11 @@ describe('PixiRenderEngine', () => {
       requestId: 'text-density',
       objectType: 'graphics'
     })
-    if (!root || !object) throw new Error('Missing handles')
+
+    if (!root || !object) {
+      throw new Error('Missing handles')
+    }
+
     engine.execute({ type: 'append-child', parent: root, child: object })
     engine.execute({
       type: 'draw',
@@ -717,6 +813,7 @@ describe('PixiRenderEngine', () => {
     })
     engine.execute({ type: 'flush' })
     const text = pixiState.texts[0]
+
     expect(text.resolution).toBe(2)
     engine.execute({
       type: 'set-viewport',
@@ -727,6 +824,7 @@ describe('PixiRenderEngine', () => {
     expect(text.resolution).toBe(3)
     const reads = text.transformReads,
       writes = text.resolutionWrites.length
+
     for (let i = 0; i < 5; i++) {
       engine.execute({
         type: 'set-viewport',
@@ -735,6 +833,7 @@ describe('PixiRenderEngine', () => {
       })
       engine.execute({ type: 'flush' })
     }
+
     expect(text.transformReads).toBe(reads)
     expect(text.resolutionWrites).toHaveLength(writes)
     engine.execute({
@@ -764,6 +863,7 @@ describe('PixiRenderEngine', () => {
       4 * 1024 * 1024
     )
     const beforeClear = text.transformReads
+
     engine.execute({ type: 'draw', object, operations: [{ type: 'clear' }] })
     engine.execute({
       type: 'set-viewport',
@@ -778,6 +878,7 @@ describe('PixiRenderEngine', () => {
 
   it('materializes literal text and releases only owned text on clear and destroy', async () => {
     const engine = new PixiRenderEngine()
+
     await engine.initialize({ host: {}, width: 800, height: 600 })
     const { object } = engine.execute({
       type: 'create-object',
@@ -789,7 +890,11 @@ describe('PixiRenderEngine', () => {
       requestId: 'child',
       objectType: 'graphics'
     })
-    if (!object || !child) throw new Error('Missing objects')
+
+    if (!object || !child) {
+      throw new Error('Missing objects')
+    }
+
     engine.execute({ type: 'append-child', parent: object, child })
     const operation = {
       type: 'text' as const,
@@ -807,6 +912,7 @@ describe('PixiRenderEngine', () => {
       letterSpacing: 1,
       paint: { color: '#123456', alpha: 0.4 }
     }
+
     engine.execute({ type: 'draw', object, operations: [operation] })
     expect(pixiState.texts).toHaveLength(1)
     expect(pixiState.texts[0]).toMatchObject({
@@ -839,6 +945,7 @@ describe('PixiRenderEngine', () => {
 
   it('uses native glyphs as a resource paint mask and releases both children on clear', async () => {
     const engine = new PixiRenderEngine()
+
     await engine.initialize({ host: {}, width: 800, height: 600 })
     const { object } = engine.execute({
       type: 'create-object',
@@ -851,7 +958,11 @@ describe('PixiRenderEngine', () => {
       requestId: 'text-paint',
       descriptor: { kind: 'paint', data: paintValue }
     })
-    if (!object || !resource) throw new Error('Missing handles')
+
+    if (!object || !resource) {
+      throw new Error('Missing handles')
+    }
+
     engine.execute({
       type: 'draw',
       object,
@@ -876,6 +987,7 @@ describe('PixiRenderEngine', () => {
     })
     const text = pixiState.texts[0]
     const paint = pixiState.graphics[1]
+
     expect(paint).toHaveProperty('effects', [
       expect.objectContaining({
         mask: text,
@@ -897,13 +1009,18 @@ describe('PixiRenderEngine', () => {
 
   it('aligns short text within its explicit layout box', async () => {
     const engine = new PixiRenderEngine()
+
     await engine.initialize({ host: {}, width: 800, height: 600 })
     const { object } = engine.execute({
       type: 'create-object',
       requestId: 'aligned-text',
       objectType: 'graphics'
     })
-    if (!object) throw new Error('Missing object')
+
+    if (!object) {
+      throw new Error('Missing object')
+    }
+
     for (const align of ['center', 'right'] as const) {
       engine.execute({
         type: 'draw',
@@ -928,6 +1045,7 @@ describe('PixiRenderEngine', () => {
         ]
       })
     }
+
     expect(pixiState.texts.map((text) => text.x)).toEqual([100, 190])
     engine.destroy()
   })
@@ -940,18 +1058,29 @@ describe('PixiRenderEngine', () => {
       height: 600,
       resolution: 2
     })
+
     const create = (parent: NonNullable<typeof root>, name: string) => {
       const { object } = engine.execute({
         type: 'create-object',
         requestId: name,
         objectType: 'graphics'
       })
-      if (!object) throw new Error('Missing object')
+
+      if (!object) {
+        throw new Error('Missing object')
+      }
+
       engine.execute({ type: 'append-child', parent, child: object })
+
       return object
     }
-    if (!root) throw new Error('Missing root')
+
+    if (!root) {
+      throw new Error('Missing root')
+    }
+
     const target = create(root, 'capture')
+
     engine.execute({
       type: 'update-object',
       object: target,
@@ -959,6 +1088,7 @@ describe('PixiRenderEngine', () => {
     })
     const nested = create(target, 'nested')
     const unrelated = create(root, 'unrelated')
+
     for (const object of [nested, unrelated]) {
       engine.execute({
         type: 'draw',
@@ -983,6 +1113,7 @@ describe('PixiRenderEngine', () => {
         ]
       })
     }
+
     engine.execute({
       type: 'update-object',
       object: nested,
@@ -999,12 +1130,18 @@ describe('PixiRenderEngine', () => {
       outsideWrites = outside.resolutionWrites.length
     const extract = pixiState.applications[0].renderer.extract.canvas
     const original = extract.getMockImplementation()
-    if (!original) throw new Error('Missing extractor')
+
+    if (!original) {
+      throw new Error('Missing extractor')
+    }
+
     const inspectCapture = (...args: unknown[]) => {
       expect(text.resolution).toBe(1.28)
       expect(outside.resolutionWrites).toHaveLength(outsideWrites)
+
       return original(...args)
     }
+
     extract.mockImplementationOnce(inspectCapture)
     engine.query({ type: 'snapshot', object: target, maxDimension: 1024 })
     expect(text.resolution).toBe(screen)
@@ -1021,13 +1158,18 @@ describe('PixiRenderEngine', () => {
 
   it('measures native local content without snapshot extraction or world coordinates', async () => {
     const engine = new PixiRenderEngine()
+
     await engine.initialize({ host: {}, width: 800, height: 600 })
     const { object } = engine.execute({
       type: 'create-object',
       requestId: 'content',
       objectType: 'graphics'
     })
-    if (!object) throw new Error('Missing object')
+
+    if (!object) {
+      throw new Error('Missing object')
+    }
+
     engine.execute({
       type: 'update-object',
       object,
@@ -1051,19 +1193,25 @@ describe('PixiRenderEngine', () => {
 
   it('preserves native pixels and captures explicit regions without downsampling', async () => {
     const engine = new PixiRenderEngine()
+
     await engine.initialize({ host: {}, width: 800, height: 600 })
     const { object } = engine.execute({
       type: 'create-object',
       requestId: 'native-snapshot',
       objectType: 'graphics'
     })
-    if (!object) throw new Error('Missing target')
+
+    if (!object) {
+      throw new Error('Missing target')
+    }
+
     engine.execute({
       type: 'update-object',
       object,
       properties: { width: 4000, height: 2000 }
     })
     const extract = pixiState.applications[0].renderer.extract.canvas
+
     expect(() =>
       engine.query({
         type: 'snapshot',
@@ -1074,9 +1222,11 @@ describe('PixiRenderEngine', () => {
     ).toThrow('Native-resolution snapshot exceeds')
     expect(extract).not.toHaveBeenCalled()
     const region = { x: 1200, y: 300, width: 800, height: 600 }
+
     extract.mockReturnValueOnce({
       width: 800,
       height: 600,
+
       toDataURL: () => 'data:image/png;base64,cG5n'
     })
     expect(
@@ -1108,6 +1258,7 @@ describe('PixiRenderEngine', () => {
 
   it('extracts the real target at bounded resolution and rejects empty captures', async () => {
     const engine = new PixiRenderEngine()
+
     await engine.initialize({ host: {}, width: 800, height: 600 })
     const created = engine.execute({
       type: 'create-object',
@@ -1115,7 +1266,11 @@ describe('PixiRenderEngine', () => {
       objectType: 'graphics'
     })
     const object = created.object
-    if (!object) throw new Error('Missing created object')
+
+    if (!object) {
+      throw new Error('Missing created object')
+    }
+
     engine.execute({
       type: 'update-object',
       object,
@@ -1126,6 +1281,7 @@ describe('PixiRenderEngine', () => {
       object,
       maxDimension: 1024
     })
+
     expect(result).toMatchObject({
       type: 'snapshot',
       width: 1024,
@@ -1133,6 +1289,7 @@ describe('PixiRenderEngine', () => {
       dataUrl: 'data:image/png;base64,cG5n'
     })
     const extract = pixiState.applications[0].renderer.extract.canvas
+
     expect(extract).toHaveBeenCalledOnce()
     expect(extract).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -1147,6 +1304,7 @@ describe('PixiRenderEngine', () => {
     extract.mockReturnValueOnce({
       width: 2048,
       height: 512,
+
       toDataURL: () => 'data:image/png;base64,cG5n'
     })
     expect(() =>
@@ -1173,13 +1331,18 @@ describe('PixiRenderEngine', () => {
     'captures fractional bounds %s x %s without truncating content',
     async (width, height, frameWidth, frameHeight) => {
       const engine = new PixiRenderEngine()
+
       await engine.initialize({ host: {}, width: 800, height: 600 })
       const { object } = engine.execute({
         type: 'create-object',
         requestId: 'fractional-snapshot',
         objectType: 'graphics'
       })
-      if (!object) throw new Error('Missing target')
+
+      if (!object) {
+        throw new Error('Missing target')
+      }
+
       Object.assign(pixiState.graphics[0], {
         getLocalBounds: () => ({ x: -0.25, y: 1.125, width, height })
       })
@@ -1188,6 +1351,7 @@ describe('PixiRenderEngine', () => {
         object,
         maxDimension: 1024
       })
+
       expect(
         pixiState.applications[0].renderer.extract.canvas
       ).toHaveBeenCalledWith(
@@ -1210,6 +1374,7 @@ describe('PixiRenderEngine', () => {
 
   it('preserves the current bounded device resolution and resize target', async () => {
     const runtimeWindow = { devicePixelRatio: 3 }
+
     vi.stubGlobal('window', runtimeWindow)
     const engine = new PixiRenderEngine()
 
@@ -1223,6 +1388,7 @@ describe('PixiRenderEngine', () => {
       })
     )
     const initializeOptions = getLastApplication().init.mock.calls[0]?.[0]
+
     expect(initializeOptions).not.toHaveProperty('backgroundColor')
     expect(initializeOptions).not.toHaveProperty('backgroundAlpha')
     await engine.destroy()
@@ -1233,6 +1399,7 @@ describe('PixiRenderEngine', () => {
 
     const report = await runRenderEngineContract({
       createEngine: () => engine,
+
       emitInteraction: (_targetEngine, event) => {
         getLastApplication().stage.emit(event.type, {
           ...event,
@@ -1240,6 +1407,7 @@ describe('PixiRenderEngine', () => {
           target: pixiState.graphics.slice(-1)[0]
         })
       },
+
       getOperationTypes: () => [...pixiState.operationTypes]
     })
 
@@ -1261,6 +1429,7 @@ describe('PixiRenderEngine', () => {
 
   it('hit-tests an empty stage before any pointer event without rendering', async () => {
     const engine = new PixiRenderEngine()
+
     await engine.initialize({ host: {}, width: 320, height: 240 })
     const app = getLastApplication()
     const point = { x: 10, y: 20 }
@@ -1292,14 +1461,21 @@ describe('PixiRenderEngine', () => {
       requestId: 'hit-target',
       objectType: 'graphics'
     })
-    if (!object) throw new Error('Missing graphics handle')
+
+    if (!object) {
+      throw new Error('Missing graphics handle')
+    }
+
     engine.execute({ type: 'append-child', parent: root, child: object })
     const boundary = app.renderer.events.rootBoundary
+
     boundary.hitTest.mockImplementation(() => {
       expect(boundary.rootTarget).toBe(app.stage)
+
       return pixiState.graphics[0]
     })
     const point = { x: 12, y: 34 }
+
     expect(engine.query({ type: 'hit-test', point })).toEqual({
       type: 'hit',
       target: object,
@@ -1357,6 +1533,7 @@ describe('PixiRenderEngine', () => {
     })
     const containerHandle = container.object
     const graphicsHandle = graphics.object
+
     if (!containerHandle || !graphicsHandle) {
       throw new Error('Expected Pixi object handles')
     }
@@ -1420,6 +1597,7 @@ describe('PixiRenderEngine', () => {
     await engine.execute({ type: 'flush' })
 
     const graphic = pixiState.graphics[0]
+
     expect(graphic.drawOperations.map((item) => item.type)).toEqual([
       'clear',
       'rect',
@@ -1444,9 +1622,11 @@ describe('PixiRenderEngine', () => {
       object: graphicsHandle,
       point: { x: 20, y: 30 }
     })
+
     expect(local).toEqual({ type: 'point', point: { x: 8, y: 6 } })
 
     const frame = vi.fn()
+
     engine.requestFrame(frame)
     expect(frameCallbacks).toHaveLength(1)
     expect(app.ticker.add).not.toHaveBeenCalled()
@@ -1476,12 +1656,14 @@ describe('PixiRenderEngine', () => {
 
   it('omits undefined optional paint fields while preserving explicit alpha', async () => {
     const engine = new PixiRenderEngine()
+
     await engine.initialize({ host: {}, width: 10, height: 10 })
     const graphics = await engine.execute({
       type: 'create-object',
       requestId: 'paint-graphics',
       objectType: 'graphics'
     })
+
     if (!graphics.object) {
       throw new Error('Expected Pixi graphics handle')
     }
@@ -1501,6 +1683,7 @@ describe('PixiRenderEngine', () => {
     })
 
     const operations = pixiState.graphics[0].drawOperations
+
     expect(operations[1].args[0]).toStrictEqual({ color: '#cccccc' })
     expect(operations[2].args[0]).toStrictEqual({
       color: '#000000',
@@ -1511,6 +1694,7 @@ describe('PixiRenderEngine', () => {
 
   it('maps the engine-neutral Graphics batching property to Pixi batch mode', async () => {
     const engine = new PixiRenderEngine()
+
     await engine.initialize({ host: {}, width: 10, height: 10 })
     const graphics = await engine.execute({
       type: 'create-object',
@@ -1518,6 +1702,7 @@ describe('PixiRenderEngine', () => {
       objectType: 'graphics',
       properties: { batched: false }
     })
+
     if (!graphics.object) {
       throw new Error('Expected Pixi graphics handle')
     }
@@ -1535,6 +1720,7 @@ describe('PixiRenderEngine', () => {
 
   it('normalizes Pixi pointer events to opaque handles', async () => {
     const engine = new PixiRenderEngine()
+
     await engine.initialize({ host: {}, width: 10, height: 10 })
     const graphics = await engine.execute({
       type: 'create-object',
@@ -1542,8 +1728,10 @@ describe('PixiRenderEngine', () => {
       objectType: 'graphics'
     })
     const events: RenderEngineInteractionEvent[] = []
+
     engine.subscribeToInteraction((event) => events.push(event))
     const graphicsHandle = graphics.object
+
     if (!graphicsHandle) {
       throw new Error('Expected a Pixi interaction object handle')
     }
@@ -1583,6 +1771,7 @@ describe('PixiRenderEngine', () => {
 
   it('translates abstract gradient and raster descriptors into Pixi fill resources', async () => {
     const engine = new PixiRenderEngine()
+
     await engine.initialize({ host: {}, width: 10, height: 10 })
     const graphics = await engine.execute({
       type: 'create-object',
@@ -1621,6 +1810,7 @@ describe('PixiRenderEngine', () => {
         }
       }
     })
+
     if (!graphics.object || !gradient.resource || !raster.resource) {
       throw new Error('Expected Pixi resource handles')
     }
@@ -1673,6 +1863,7 @@ describe('PixiRenderEngine', () => {
 
   it('updates Pixi mesh geometry and engine-facing object properties', async () => {
     const engine = new PixiRenderEngine()
+
     await engine.initialize({ host: {}, width: 10, height: 10 })
     const mesh = await engine.execute({
       type: 'create-object',
@@ -1686,9 +1877,11 @@ describe('PixiRenderEngine', () => {
         }
       }
     })
+
     if (!mesh.object) {
       throw new Error('Expected Pixi mesh handle')
     }
+
     const positions = new Float32Array([0, 0, 2, 0, 2, 2, 0, 2])
     const indices = new Uint32Array([0, 1, 2, 0, 2, 3])
     const uvs = new Float32Array([0, 0, 1, 0, 1, 1, 0, 1])
@@ -1706,6 +1899,7 @@ describe('PixiRenderEngine', () => {
     })
 
     const pixiMesh = pixiState.meshes[0]
+
     expect(pixiMesh.geometry.positions).toEqual(positions)
     expect(pixiMesh.geometry.indices).toEqual(indices)
     expect(pixiMesh.geometry.uvs).toEqual(uvs)
@@ -1722,7 +1916,9 @@ describe('PixiRenderEngine', () => {
 
   it('destroys engine-owned mesh geometry without destroying the shared texture', async () => {
     const engine = new PixiRenderEngine()
+
     await engine.initialize({ host: {}, width: 10, height: 10 })
+
     const createMesh = (requestId: string) =>
       engine.execute({
         type: 'create-object',
@@ -1736,8 +1932,10 @@ describe('PixiRenderEngine', () => {
           }
         }
       })
+
     const removed = await createMesh('removed-mesh')
     const retained = await createMesh('retained-mesh')
+
     if (!removed.object || !retained.object) {
       throw new Error('Expected Pixi mesh handles')
     }
@@ -1755,12 +1953,17 @@ describe('PixiRenderEngine', () => {
     class TestOffscreenCanvas {
       readonly context = {
         clearRect: () => undefined,
+
         fillRect: () => undefined,
+
         fillStyle: '',
+
         getImageData: () => ({ data: new Uint8ClampedArray([255, 0, 0, 255]) }),
+
         createImageData: (width: number, height: number) => ({
           data: new Uint8ClampedArray(width * height * 4)
         }),
+
         putImageData: () => undefined
       }
 
@@ -1775,6 +1978,7 @@ describe('PixiRenderEngine', () => {
     }
     vi.stubGlobal('OffscreenCanvas', TestOffscreenCanvas)
     const engine = new PixiRenderEngine()
+
     await engine.initialize({ host: {}, width: 10, height: 10 })
     const resources = []
 
@@ -1795,9 +1999,11 @@ describe('PixiRenderEngine', () => {
           }
         }
       })
+
       if (!resource.resource) {
         throw new Error(`Expected ${type} Pixi resource handle`)
       }
+
       resources.push(resource.resource)
     }
 
@@ -1817,6 +2023,7 @@ describe('PixiRenderEngine', () => {
   it('isolates instances and cleans partial initialization deterministically', async () => {
     const first = new PixiRenderEngine()
     const second = new PixiRenderEngine()
+
     await first.initialize({ host: {}, width: 10, height: 10 })
     await second.initialize({ host: {}, width: 20, height: 20 })
     await first.execute({
@@ -1852,10 +2059,12 @@ describe('PixiRenderEngine', () => {
     pixiState.nextInitError = new Error('pixi init failed')
     pixiState.nextDestroyError = new Error('partial Pixi cleanup failed')
     const partial = new PixiRenderEngine()
+
     await expect(
       partial.initialize({ host: {}, width: 30, height: 30 })
     ).rejects.toThrow('pixi init failed')
     const partialApp = getLastApplication()
+
     expect(partialApp.destroy).toHaveBeenCalledOnce()
     expect(await partial.destroy()).toEqual({
       destroyedObjects: 0,

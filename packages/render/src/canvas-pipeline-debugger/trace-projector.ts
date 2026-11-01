@@ -20,11 +20,14 @@ const DEFAULT_TRACE_CAPACITY = 256
 
 const stableUnique = (ids: readonly string[]): string[] => {
   const seen = new Set<string>()
+
   return ids.filter((id) => {
     if (seen.has(id)) {
       return false
     }
+
     seen.add(id)
+
     return true
   })
 }
@@ -34,11 +37,14 @@ const applyInverseMatrix = (
   point: { x: number; y: number }
 ): { x: number; y: number } | null => {
   const determinant = matrix.a * matrix.d - matrix.b * matrix.c
+
   if (Math.abs(determinant) <= Number.EPSILON) {
     return null
   }
+
   const x = point.x - matrix.tx
   const y = point.y - matrix.ty
+
   return {
     x: (matrix.d * x - matrix.c * y) / determinant,
     y: (-matrix.b * x + matrix.a * y) / determinant
@@ -65,9 +71,11 @@ const projectGeometry = (
   const workspaceCorners = observedCanvasCorners.map((point) =>
     applyInverseMatrix(viewportTransform, point)
   )
+
   if (workspaceCorners.some((point) => point === null)) {
     return
   }
+
   const resolvedWorkspaceCorners = workspaceCorners as {
     x: number
     y: number
@@ -75,6 +83,7 @@ const projectGeometry = (
   const canvasCorners = resolvedWorkspaceCorners.map((point) =>
     transformGeometryPoint(latestViewportTransform ?? viewportTransform, point)
   )
+
   return freezeDeep({
     localBounds: { ...localBounds },
     canvasCorners,
@@ -100,23 +109,36 @@ export class CanvasPipelineDebuggerDisposedError extends Error {
 
 class CanvasPipelineTraceAdapter implements CanvasPipelineDebuggerAdapter {
   private readonly traceCapacity: number
+
   private readonly onFault?: (error: Error) => void
+
   private trace: CanvasPipelineTraceEntry[] = []
+
   private focusedElementIds: string[]
+
   private readonly focusedState = new Map<string, FocusedState>()
+
   private readonly layers = new Map<
     string,
     CanvasPipelineTraceEntry & { kind: 'layer-evaluation' }
   >()
+
   private sequence = 0
+
   private droppedEntryCount = 0
+
   private lastFrame: (CanvasPipelineTraceEntry & { kind: 'frame' }) | null =
     null
+
   private lastViewport:
     (CanvasPipelineTraceEntry & { kind: 'viewport-input' }) | null = null
+
   private latestViewportTransform: CanvasPipelineMatrixSnapshot | null = null
+
   private fault: Error | null = null
+
   private unsubscribe: (() => void) | null = null
+
   private disposed = false
 
   constructor(
@@ -124,9 +146,11 @@ class CanvasPipelineTraceAdapter implements CanvasPipelineDebuggerAdapter {
     options: CanvasPipelineDebuggerAdapterOptions = {}
   ) {
     const capacity = options.traceCapacity ?? DEFAULT_TRACE_CAPACITY
+
     if (!Number.isInteger(capacity) || capacity <= 0) {
       throw new RangeError('traceCapacity must be a positive integer')
     }
+
     this.traceCapacity = capacity
     this.onFault = options.onFault
     this.focusedElementIds = stableUnique(options.focusedElementIds ?? [])
@@ -138,9 +162,11 @@ class CanvasPipelineTraceAdapter implements CanvasPipelineDebuggerAdapter {
     if (this.unsubscribe) {
       return
     }
+
     this.fault = null
     this.unsubscribe = subscribeToCanvasPipelineEvidence(this.render, {
       onEvidence: (evidence) => this.record(evidence),
+
       onError: (error) => {
         this.unsubscribe = null
         this.fault = error
@@ -161,6 +187,7 @@ class CanvasPipelineTraceAdapter implements CanvasPipelineDebuggerAdapter {
 
   isObserving(): boolean {
     this.assertUsable()
+
     return this.unsubscribe !== null
   }
 
@@ -177,6 +204,7 @@ class CanvasPipelineTraceAdapter implements CanvasPipelineDebuggerAdapter {
 
   getTrace(): readonly CanvasPipelineTraceEntry[] {
     this.assertUsable()
+
     return freezeDeep([...this.trace])
   }
 
@@ -191,6 +219,7 @@ class CanvasPipelineTraceAdapter implements CanvasPipelineDebuggerAdapter {
     const focusedElements = this.focusedElementIds.map((elementId) =>
       this.snapshotFocusedElement(elementId)
     )
+
     return freezeDeep({
       sequence: this.sequence,
       droppedEntryCount: this.droppedEntryCount,
@@ -224,6 +253,7 @@ class CanvasPipelineTraceAdapter implements CanvasPipelineDebuggerAdapter {
     if (this.disposed) {
       return
     }
+
     this.unsubscribe?.()
     this.unsubscribe = null
     this.trace = []
@@ -243,11 +273,13 @@ class CanvasPipelineTraceAdapter implements CanvasPipelineDebuggerAdapter {
       ...this.projectEvidence(evidence),
       sequence: this.sequence
     }) as CanvasPipelineTraceEntry
+
     this.trace.push(entry)
     if (this.trace.length > this.traceCapacity) {
       this.trace.shift()
       this.droppedEntryCount += 1
     }
+
     this.updateReadModel(entry)
   }
 
@@ -257,10 +289,13 @@ class CanvasPipelineTraceAdapter implements CanvasPipelineDebuggerAdapter {
     if (evidence.kind !== 'engine-handoff') {
       return evidence
     }
+
     const command = evidence.command
+
     if (!command.elementId || this.focusedState.has(command.elementId)) {
       return evidence
     }
+
     return {
       ...evidence,
       command: {
@@ -286,20 +321,26 @@ class CanvasPipelineTraceAdapter implements CanvasPipelineDebuggerAdapter {
         if (entry.phase === 'start') {
           this.layers.clear()
         }
+
         return
       case 'viewport-input':
         this.lastViewport = entry
+
         return
       case 'layer-evaluation':
         this.layers.set(entry.layerName, entry)
+
         return
       case 'element-input': {
         const state = this.focusedState.get(entry.elementId)
+
         if (state) {
           state.lastInput = entry
         }
+
         return
       }
+
       case 'engine-handoff': {
         if (
           entry.command.renderRole === 'viewport' &&
@@ -307,8 +348,10 @@ class CanvasPipelineTraceAdapter implements CanvasPipelineDebuggerAdapter {
         ) {
           this.latestViewportTransform = entry.command.projection.worldTransform
         }
+
         const elementId = entry.command.elementId
         const state = elementId ? this.focusedState.get(elementId) : undefined
+
         if (state) {
           this.updateFocusedHandoff(state, entry)
         }
@@ -319,13 +362,17 @@ class CanvasPipelineTraceAdapter implements CanvasPipelineDebuggerAdapter {
   private reconcileFocusedState(): void {
     const previousState = new Map(this.focusedState)
     const newlyFocusedIds = new Set<string>()
+
     this.focusedState.clear()
     this.focusedElementIds.forEach((elementId) => {
       const existingState = previousState.get(elementId)
+
       if (existingState) {
         this.focusedState.set(elementId, existingState)
+
         return
       }
+
       this.focusedState.set(elementId, { detached: true })
       newlyFocusedIds.add(elementId)
     })
@@ -344,17 +391,23 @@ class CanvasPipelineTraceAdapter implements CanvasPipelineDebuggerAdapter {
       if (targetElementIds && !targetElementIds.has(entry.elementId)) {
         return
       }
+
       const state = this.focusedState.get(entry.elementId)
+
       if (state) {
         state.lastInput = entry
       }
+
       return
     }
+
     if (entry.kind === 'engine-handoff' && entry.command.elementId) {
       if (targetElementIds && !targetElementIds.has(entry.command.elementId)) {
         return
       }
+
       const state = this.focusedState.get(entry.command.elementId)
+
       if (state) {
         this.updateFocusedHandoff(state, entry)
       }
@@ -371,16 +424,21 @@ class CanvasPipelineTraceAdapter implements CanvasPipelineDebuggerAdapter {
     ) {
       state.lastHandoff = undefined
       state.detached = true
+
       return
     }
+
     if (entry.command.type === 'append-child') {
       state.detached = false
       state.lastHandoff = entry
+
       return
     }
+
     if (state.detached) {
       return
     }
+
     state.lastHandoff = entry
   }
 
@@ -388,15 +446,18 @@ class CanvasPipelineTraceAdapter implements CanvasPipelineDebuggerAdapter {
     elementId: string
   ): CanvasPipelineFocusedElementSnapshot {
     const state = this.focusedState.get(elementId)
+
     if (!state || state.detached || (!state.lastInput && !state.lastHandoff)) {
       return freezeDeep({ elementId, status: 'not-observed' as const })
     }
+
     const projection = state.lastHandoff?.command.projection
       ? projectGeometry(
           state.lastHandoff.command.projection,
           this.latestViewportTransform ?? undefined
         )
       : undefined
+
     return freezeDeep({
       elementId,
       status: 'observed' as const,

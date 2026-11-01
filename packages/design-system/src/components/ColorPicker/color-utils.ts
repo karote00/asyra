@@ -29,6 +29,7 @@ export const rgbaToHsva = ({ r, g, b, a }: RGBAColor): HSVAColor => {
   const delta = max - min
 
   let h = 0
+
   if (delta !== 0) {
     if (max === r1) {
       h = ((g1 - b1) / delta) % 6
@@ -105,6 +106,7 @@ export const createHsvaColor = (color: string, opacity = 1): HSVAColor => {
   }
 
   const hsva = rgbaToHsva(parsed)
+
   return {
     ...hsva,
     a: clamp(opacity, 0, 1)
@@ -127,6 +129,7 @@ export interface HSLAColor {
 export const hsvaToHsla = ({ h, s, v, a }: HSVAColor): HSLAColor => {
   const l = v * (1 - s / 2)
   const sl = l === 0 || l === 1 ? 0 : (v - l) / Math.min(l, 1 - l)
+
   return {
     h,
     s: sl,
@@ -141,6 +144,7 @@ export const rgbaToHsla = (rgba: RGBAColor): HSLAColor =>
 export const hslaToHsva = ({ h, s, l, a }: HSLAColor): HSVAColor => {
   const v = l + s * Math.min(l, 1 - l)
   const sv = v === 0 ? 0 : 2 * (1 - l / v)
+
   return {
     h,
     s: sv,
@@ -166,6 +170,7 @@ export const hwbToHsva = (
   if (w + b >= 1) {
     return { h: h % 360, s: 0, v: w / (w + b), a }
   }
+
   return {
     h: h % 360,
     s: 1 - w / (1 - b),
@@ -199,10 +204,12 @@ export const oklchToHsva = (
 
 export const createPortalRoot = () => {
   const root = document.createElement('div')
+
   root.id = 'color-picker-root'
   root.style.position = 'relative'
   root.style.zIndex = '999'
   document.body.appendChild(root)
+
   return root
 }
 
@@ -212,15 +219,19 @@ export const formatColor = (
   format?: string
 ) => {
   const f = format?.toLowerCase()
+
   if (f === 'rgb') {
     return `rgb(${Math.round(rgba.r)} ${Math.round(rgba.g)} ${Math.round(rgba.b)})`
   }
+
   if (f === 'hsl') {
     return `hsl(${Math.round(hsla.h)} ${Math.round(hsla.s * 100)}% ${Math.round(hsla.l * 100)}%)`
   }
+
   if (f === 'css') {
     return rgbaToCssColor(rgba, 1)
   }
+
   // Default to HEX for all others (HEX, HSB, HWB, OKLCH)
   return rgbaToHex({ ...rgba, a: 1 })
 }

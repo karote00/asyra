@@ -7,9 +7,11 @@ import { CommittedInput } from '../fields'
 it('shows numeric validity while typing, keeps invalid text local, and commits a repaired value on Enter', async () => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   const host = document.createElement('div')
+
   document.body.append(host)
   const root = createRoot(host)
   const commit = vi.fn()
+
   try {
     await act(() =>
       root.render(
@@ -24,7 +26,11 @@ it('shows numeric validity while typing, keeps invalid text local, and commits a
       )
     )
     const field = host.querySelector('input')
-    if (!field) throw new Error('Missing input')
+
+    if (!field) {
+      throw new Error('Missing input')
+    }
+
     const fill = async (text: string) =>
       act(() => {
         Object.getOwnPropertyDescriptor(
@@ -33,6 +39,7 @@ it('shows numeric validity while typing, keeps invalid text local, and commits a
         )?.set?.call(field, text)
         field.dispatchEvent(new Event('input', { bubbles: true }))
       })
+
     await fill('-1')
     expect(field.getAttribute('aria-invalid')).toBe('true')
     expect(host.querySelector('[role="alert"]')?.textContent).toBeTruthy()
@@ -63,6 +70,7 @@ it('shows a cross-field diagnostic immediately without blocking a finite authore
   const host = document.createElement('div')
   const root = createRoot(host)
   const commit = vi.fn()
+
   try {
     await act(() =>
       root.render(
@@ -71,13 +79,18 @@ it('shows a cross-field diagnostic immediately without blocking a finite authore
           type: 'number',
           validateOnCommit: true,
           onCommit: commit,
+
           diagnose: (text: string) =>
             Number(text) > 8 ? 'Outside the trajectory interval.' : ''
         })
       )
     )
     const field = host.querySelector('input')
-    if (!field) throw new Error('Missing input')
+
+    if (!field) {
+      throw new Error('Missing input')
+    }
+
     await act(() => {
       Object.getOwnPropertyDescriptor(
         HTMLInputElement.prototype,

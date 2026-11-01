@@ -14,13 +14,18 @@ export const registerEvents = (
   let disposed = false
 
   const dispose = (): void => {
-    if (disposed) return
+    if (disposed) {
+      return
+    }
+
     for (let index = registeredEventNames.length - 1; index >= 0; index--) {
       core.unregisterEvent(registeredEventNames[index])
       registeredEventNames.splice(index, 1)
     }
+
     disposed = true
   }
+
   const cleanupReporter = createCleanupReporter(onCleanupReady, dispose)
 
   try {
@@ -30,7 +35,10 @@ export const registerEvents = (
       cleanupReporter.report()
     })
   } catch (error) {
-    if (!cleanupReporter.hasReported()) dispose()
+    if (!cleanupReporter.hasReported()) {
+      dispose()
+    }
+
     throw error
   }
 

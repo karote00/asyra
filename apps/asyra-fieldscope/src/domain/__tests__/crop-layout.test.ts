@@ -10,16 +10,20 @@ import {
 it('plants both cultivars at 20 cm spacing and 5 cm farther into soil than each pole row', () => {
   const plants = createCropPositions(DEFAULT_CONFIGURATION)
   const supports = createSupportPositions()
+
   expect(plants).toHaveLength(5952)
   for (const species of ['cucumber-1914', 'tomato-yu-nu']) {
     const selected = plants.filter((p) => p.species === species)
+
     expect(selected).toHaveLength(2976)
     expect(new Set(selected.map((p) => p.variant)).size).toBe(20)
   }
+
   for (const pole of supports.filter(
     (p) => p.z === DEFAULT_CONFIGURATION.startInset
   )) {
     const row = plants.filter((p) => p.row === pole.row && p.side === pole.side)
+
     expect(row).toHaveLength(248)
     row.forEach((plant, i) => {
       expect(plant.position[0]).toBeCloseTo(
@@ -33,6 +37,7 @@ it('plants both cultivars at 20 cm spacing and 5 cm farther into soil than each 
       )
     })
   }
+
   expect(createCropPositions(DEFAULT_CONFIGURATION)).toEqual(plants)
 })
 it('respects edited row types and end insets without phantom plants', () => {
@@ -47,6 +52,7 @@ it('respects edited row types and end insets without phantom plants', () => {
     ]
   })
   const plants = createCropPositions(config)
+
   expect(plants).toHaveLength(44)
   expect(
     plants.every(
@@ -82,10 +88,13 @@ it('caps actual delayed-harvest cucumber fruits across the entire farm', () => {
       model.fruits.filter((fruit) => fruit.maturity === 'overgrown').length
     ])
   )
-  for (const model of models)
+
+  for (const model of models) {
     expect(counts.get(model.variant)).toBe(
       CROP_LAYOUT.overgrownVariants.includes(model.variant) ? 1 : 0
     )
+  }
+
   for (const length of [1, 50, 200]) {
     const config = { ...DEFAULT_CONFIGURATION, length }
     const plants = createCropPositions(config)
@@ -94,9 +103,14 @@ it('caps actual delayed-harvest cucumber fruits across the entire farm', () => {
     )
     const total = cucumbers.reduce((sum, plant) => {
       const count = counts.get(plant.variant)
-      if (count === undefined) throw new Error('Missing planted cucumber model')
+
+      if (count === undefined) {
+        throw new Error('Missing planted cucumber model')
+      }
+
       return sum + count
     }, 0)
+
     expect(total, `Farm length ${length}`).toBeLessThanOrEqual(10)
     expect(total).toBe(Math.min(10, Math.floor(cucumbers.length / 500)))
     expect(createCropPositions(config)).toEqual(plants)
@@ -104,12 +118,17 @@ it('caps actual delayed-harvest cucumber fruits across the entire farm', () => {
       const stages = new Set(
         cucumbers.flatMap((plant) => {
           const model = models.find((model) => model.variant === plant.variant)
-          if (!model) throw new Error('Missing planted cucumber model')
+
+          if (!model) {
+            throw new Error('Missing planted cucumber model')
+          }
+
           return model.fruits
             .filter((fruit) => fruit.maturity === 'overgrown')
             .map((fruit) => fruit.growthStage)
         })
       )
+
       expect([...stages].sort()).toEqual([
         'overgrown-early',
         'overgrown-late',

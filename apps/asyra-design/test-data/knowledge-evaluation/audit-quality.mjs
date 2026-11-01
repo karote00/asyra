@@ -10,6 +10,7 @@ const here = path.dirname(fileURLToPath(import.meta.url))
 const cases = JSON.parse(fs.readFileSync(path.join(here, 'quality-cases.json')))
 const root = path.resolve(process.argv[2] ?? 'tmp/knowledge-evaluation')
 const results = []
+
 for (const directory of fs
   .readdirSync(root)
   .filter((name) => name.startsWith('knowledge-quality-'))) {
@@ -18,9 +19,15 @@ for (const directory of fs
   const scenario = [...cases.development, ...cases.transfer].find(
     (item) => item.id === run.caseId
   )
-  if (!scenario) continue
-  if (run.failure || !fs.existsSync(path.join(folder, 'analysis.json')))
+
+  if (!scenario) {
+    continue
+  }
+
+  if (run.failure || !fs.existsSync(path.join(folder, 'analysis.json'))) {
     throw new Error(`Incomplete quality capture: ${directory}`)
+  }
+
   const analysis = JSON.parse(
     fs.readFileSync(path.join(folder, 'analysis.json'))
   )
@@ -30,8 +37,11 @@ for (const directory of fs
     (match) => match[1]
   )
   const size = /(\d+) by (\d+) px/.exec(scenario.prompt)
-  if (!size || !text.length)
+
+  if (!size || !text.length) {
     throw new Error('Frozen brief lacks an exact content oracle')
+  }
+
   const content = verifyQualitySnapshot(snapshot, {
     width: Number(size[1]),
     height: Number(size[2]),
@@ -54,6 +64,7 @@ for (const directory of fs
   const persistence =
     receipt?.sequence === receipt?.durableSequence &&
     Number.isInteger(receipt?.sequence)
+
   results.push({
     id: run.id,
     caseId: run.caseId,
@@ -66,6 +77,7 @@ for (const directory of fs
     outcome: run.outcome
   })
 }
+
 console.log(JSON.stringify(results, null, 2))
 if (
   !results.length ||
@@ -78,5 +90,6 @@ if (
       !result.noBrowserErrors ||
       result.outcome !== 'success'
   )
-)
+) {
   process.exitCode = 1
+}

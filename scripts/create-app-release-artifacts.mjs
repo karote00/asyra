@@ -22,12 +22,14 @@ export function createAppReleasePaths(root, product) {
       'utf8'
     )
   )
+
   assert.equal(
     config.dest,
     `create-app/${product}/template`,
     'Unexpected template owner'
   )
   assert.match(config.src, /^apps\/[a-z0-9-]+$/, 'Invalid template source')
+
   return {
     directory,
     roots: [
@@ -55,6 +57,7 @@ export function prepareCreateAppRelease({
   const manifest = JSON.parse(
     fs.readFileSync(path.join(paths.directory, 'package.json'), 'utf8')
   )
+
   assert.ok(
     manifest.name?.startsWith('create-') && !manifest.private && manifest.bin,
     'Expected a public create-app CLI manifest'
@@ -79,6 +82,7 @@ export function prepareCreateAppRelease({
       { cwd: root }
     )
   )
+
   assert.equal(packed.name, manifest.name)
   assert.equal(packed.version, manifest.version)
   assert.equal(path.basename(packed.filename), packed.filename)
@@ -109,6 +113,7 @@ export function prepareCreateAppRelease({
     },
     [current]
   )
+
   return guidance
 }
 
@@ -120,6 +125,7 @@ if (
     .slice(2)
     .find((arg) => arg.startsWith('--prod='))
     ?.slice(7)
+
   prepareCreateAppRelease({
     root: path.resolve(import.meta.dirname, '..'),
     product

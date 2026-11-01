@@ -20,6 +20,7 @@ it('renders canonical oval rotation and retains analytic local selection and hit
     fills: [createDefaultFill({ color: '#123456' })],
     strokes: []
   }
+
   OVAL_RENDER_STRATEGY(graphic, data)
   expect(graphic.rotation).toBe(data.rotation)
   expect(graphic.x).toBe(data.x)

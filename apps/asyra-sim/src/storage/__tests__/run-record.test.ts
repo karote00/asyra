@@ -22,6 +22,7 @@ function record(id = 'run-a') {
     methods: [OFFICIAL_CLEARANCE_METHOD],
     acknowledgedWarningCodes: []
   })
+
   return {
     version: 1 as const,
     name: id,
@@ -45,8 +46,10 @@ function record(id = 'run-a') {
 describe('retained runs and portable reporting', () => {
   it('uses a hyphen for the report title suffix without normalizing retained user names', () => {
     const run = record()
+
     run.name = 'User · study / original'
     const original = structuredClone(run)
+
     expect(exportRunHtml(run)).toContain(
       '<title>User · study / original - Asyra Sim</title>'
     )
@@ -58,6 +61,7 @@ describe('retained runs and portable reporting', () => {
   it('preserves immutable evidence and refuses identity reuse with different content', () => {
     const archive = new RunArchive(),
       input = record()
+
     archive.add(input)
     input.name = 'Modified outside'
     expect(archive.get('run-a')?.name).toBe('run-a')
@@ -79,14 +83,18 @@ describe('retained runs and portable reporting', () => {
       loadIssues: [],
       runs: [run]
     }
+
     expect(decodeProject(encodeProject(snapshot))).toEqual(snapshot)
     const corrupt = structuredClone(snapshot)
+
     corrupt.runs[0].result.verdict = 'meets'
     expect(() => encodeProject(corrupt)).toThrow()
     const content = JSON.parse(encodeProject(snapshot))
+
     content.runs.push(content.runs[0])
     expect(() => decodeProject(JSON.stringify(content))).toThrow('Duplicate')
     const privateRun = structuredClone(run)
+
     privateRun.snapshot.method.id = 'missing-private-method'
     privateRun.result.method.id = 'missing-private-method'
     expect(validateRunRecord(privateRun).result.execution).toBe('cancelled')
@@ -96,11 +104,13 @@ describe('retained runs and portable reporting', () => {
     const a = record('a'),
       b = record('b'),
       c = record('c')
+
     b.snapshot = structuredClone(b.snapshot)
     b.result = structuredClone(b.result)
     b.snapshot.rule.minimumClearance = 0.05
     b.result.rule.minimumClearance = 0.05
     const comparison = compareRuns([a, b, c])
+
     expect(comparison.directlyComparable).toBe(false)
     expect(comparison.incompatibilities).toContain('Decision rules differ')
     expect(
@@ -114,12 +124,15 @@ describe('retained runs and portable reporting', () => {
 
   it('exports the same terminal states, missing evidence and source identities safely', () => {
     const run = record()
+
     run.name =
       '=HYPERLINK("https://invalid.example","<script>alert(1)</script>")'
     const json = JSON.parse(exportRunJson(run))
+
     expect(json.run).toEqual(run)
     const csv = exportRunCsv(run),
       html = exportRunHtml(run)
+
     expect(csv).toContain("'=HYPERLINK")
     expect(csv).toContain('no-retained-evidence')
     expect(csv).toContain('cannot-determine')
@@ -136,6 +149,7 @@ describe('retained runs and portable reporting', () => {
     const a = record('a'),
       b = record('b'),
       legacy = record('legacy')
+
     a.snapshot = structuredClone(a.snapshot)
     b.snapshot = structuredClone(b.snapshot)
     a.snapshot.methodDescriptor = structuredClone(
@@ -143,11 +157,14 @@ describe('retained runs and portable reporting', () => {
     )
     b.snapshot.methodDescriptor = structuredClone(a.snapshot.methodDescriptor)
     expect(compareRuns([a, b]).directlyComparable).toBe(true)
-    if (!b.snapshot.methodDescriptor.manifest)
+    if (!b.snapshot.methodDescriptor.manifest) {
       throw new Error('Missing test declaration')
+    }
+
     b.snapshot.methodDescriptor.manifest.validation.evidence =
       'Different private validation evidence'
     const changed = compareRuns([a, b])
+
     expect(changed.directlyComparable).toBe(false)
     expect(changed.incompatibilities).toContain(
       'Retained method declarations differ'
@@ -166,15 +183,19 @@ describe('retained runs and portable reporting', () => {
 
   it('exports retained declarations in every report without looking up installed code', () => {
     const run = record()
+
     run.snapshot = structuredClone(run.snapshot)
     run.snapshot.methodDescriptor = structuredClone(
       INSTALLED_METHOD_CATALOG.descriptors[0]
     )
-    if (!run.snapshot.methodDescriptor.manifest)
+    if (!run.snapshot.methodDescriptor.manifest) {
       throw new Error('Missing test declaration')
+    }
+
     run.snapshot.methodDescriptor.manifest.source =
       '<private source & evidence>'
     const csv = exportRunCsv(run)
+
     expect(csv.split('\r\n')[0]).toContain('"method_descriptor_json"')
     expect(csv).toContain('""source"":""<private source & evidence>""')
     expect(
@@ -187,6 +208,7 @@ describe('retained runs and portable reporting', () => {
 
   it('compares acceptance content and exports the exact retained evaluation in every format', () => {
     const runs = [record('a'), record('b'), record('c')]
+
     for (const [index, run] of runs.entries()) {
       run.snapshot = structuredClone(run.snapshot)
       run.snapshot.rule.acceptance = {
@@ -203,6 +225,7 @@ describe('retained runs and portable reporting', () => {
         error: 'Cancelled'
       })
     }
+
     expect(compareRuns(runs).incompatibilities).toContain(
       'Decision rules differ'
     )
@@ -213,6 +236,7 @@ describe('retained runs and portable reporting', () => {
     const run = runs[0],
       csv = exportRunCsv(run),
       html = exportRunHtml(run)
+
     expect(csv).toContain('"rule_json"')
     expect(csv).toContain('"rule_evaluation_json"')
     expect(csv).toContain('""acceptance""')

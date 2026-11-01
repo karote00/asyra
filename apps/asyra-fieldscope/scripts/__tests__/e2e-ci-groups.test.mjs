@@ -33,7 +33,11 @@ test('Asyra FieldScope CI groups cover every browser spec exactly once', () => {
 test('a browser spec with a custom time limit contains one Playwright case', () => {
   for (const file of collectBrowserSpecFiles(appRoot)) {
     const source = fs.readFileSync(path.join(appRoot, file), 'utf8')
-    if (!/test\.setTimeout\s*\(/u.test(source)) continue
+
+    if (!/test\.setTimeout\s*\(/u.test(source)) {
+      continue
+    }
+
     const cases = source.match(/^\s*test\s*\(/gmu) ?? []
 
     assert.equal(
@@ -119,6 +123,7 @@ test('merged CI report retains every group suite, failure and timing result', ()
 test('selected browser specs stay in their owned group and reject missing paths', async () => {
   const { selectBrowserGroups } = await import('../e2e-ci-groups.mjs')
   const selected = selectBrowserGroups(['e2e/camera-flight.spec.ts'])
+
   assert.deepEqual(selected, [
     { name: 'camera-interaction', files: ['e2e/camera-flight.spec.ts'] }
   ])
@@ -136,21 +141,28 @@ test('selected browser specs stay in their owned group and reject missing paths'
 test('CI browser temporary sockets fit the Linux path limit after the workspace rename', (t) => {
   const repositoryRoot = path.resolve(appRoot, '../..')
   const parent = path.join(repositoryRoot, 'tmp/browser-runner-tests')
+
   fs.mkdirSync(parent, { recursive: true })
   const fixture = fs.mkdtempSync(path.join(parent, 'runner-'))
+
   t.after(() => fs.rmSync(fixture, { recursive: true, force: true }))
   const app = path.join(fixture, 'apps/asyra-fieldscope')
+
   fs.mkdirSync(path.join(app, 'scripts'), { recursive: true })
-  for (const file of ['run-e2e-ci.mjs', 'e2e-ci-groups.mjs'])
+  for (const file of ['run-e2e-ci.mjs', 'e2e-ci-groups.mjs']) {
     fs.copyFileSync(
       path.join(appRoot, 'scripts', file),
       path.join(app, 'scripts', file)
     )
+  }
+
   for (const file of CI_E2E_GROUPS.flatMap((group) => group.files)) {
     fs.mkdirSync(path.dirname(path.join(app, file)), { recursive: true })
     fs.writeFileSync(path.join(app, file), '')
   }
+
   const mock = path.join(fixture, 'node_modules/@playwright/test')
+
   fs.mkdirSync(mock, { recursive: true })
   fs.writeFileSync(
     path.join(mock, 'package.json'),
@@ -183,18 +195,22 @@ test('CI browser temporary sockets fit the Linux path limit after the workspace 
       }
     }
   )
+
   assert.equal(result.status, 0, result.stdout + result.stderr)
   const environment = JSON.parse(fs.readFileSync(capture, 'utf8'))
+
   assert.equal(environment.temporary, environment.tmp)
   assert.equal(environment.temporary, environment.temp)
   assert.ok(fs.statSync(environment.temporary).isDirectory())
   const relative = path.relative(fixture, environment.temporary)
+
   assert.ok(!relative.startsWith('..') && !path.isAbsolute(relative))
   const socket = path.posix.join(
     '/ci/workspaces/project/repository',
     relative.split(path.sep).join('/'),
     'com.google.Chrome.XXXXXX/SingletonSocket'
   )
+
   assert.ok(
     Buffer.byteLength(socket) < 108,
     `Chrome socket exceeds Linux sun_path: ${socket}`

@@ -17,11 +17,15 @@ import { TransactionValidationError } from '../transaction.js'
 const registerFactoryAsOwner = (factory: Factory) =>
   registerTransactionOwner({
     startTransaction: () => factory.startTransaction(),
+
     updateTransactionBatch: (events) => {
       factory.updateTransactionBatch(events)
     },
+
     endTransaction: (options) => factory.endTransaction(options),
+
     undo: () => factory.undo(),
+
     redo: () => factory.redo()
   })
 
@@ -37,10 +41,12 @@ describe('Factory transaction owner integration', () => {
             event.type === EventTypes.UPDATE_TRANSACTION
         )
         .map(({ eventName }) => eventName)
+
       if (eventNames.length > 0) {
         canonicalObserverBatches.push(eventNames)
       }
     })
+
     factory.registerTransactionValidator('cross-store', () => ({
       valid: false,
       code: 'invalid-state',
@@ -73,12 +79,16 @@ describe('Factory transaction owner integration', () => {
     let issuedBatch: readonly UpdateTransactionEvent[] | undefined
     const disposeOwner = registerTransactionOwner({
       startTransaction: () => factory.startTransaction(),
+
       updateTransactionBatch: (events) => {
         issuedBatch = events
         factory.updateTransactionBatch(events)
       },
+
       endTransaction: (options) => factory.endTransaction(options),
+
       undo: () => factory.undo(),
+
       redo: () => factory.redo()
     })
 
@@ -112,6 +122,7 @@ describe('Factory transaction owner integration', () => {
       statuses.push(status)
     })
     const disposeOwner = registerFactoryAsOwner(factory)
+
     factory.registerTransactionValidator('cross-store', () => ({
       valid: false,
       code: 'invalid-state',
@@ -149,6 +160,7 @@ describe('Factory transaction owner integration', () => {
       statuses.push(status)
     })
     const disposeOwner = registerFactoryAsOwner(factory)
+
     factory.registerTransactionInverter('custom.broken', () => {
       throw new Error('inverse failed')
     })
@@ -177,6 +189,7 @@ describe('Factory transaction owner integration', () => {
   it('rejects the journal entry and closes its owned boundary when inverse capture fails', () => {
     const factory = new Factory()
     const disposeOwner = registerFactoryAsOwner(factory)
+
     factory.registerTransactionInverter('custom.broken-undo', () => {
       throw new Error('undo inverse failed')
     })

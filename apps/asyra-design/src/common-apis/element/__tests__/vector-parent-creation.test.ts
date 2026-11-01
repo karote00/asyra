@@ -66,18 +66,23 @@ vi.mock('../../../contexts', () => {
         }
       }
     }
+
   return {
     default: {
       createElementsInParent: mocks.createElementsInParent,
       elementSourceToWorkspace: mocks.elementSourceToWorkspace,
       getElementComputedData: getComputed,
+
       getElementData: (elementId: string) => ({
         id: elementId,
         type: 'vector'
       }),
+
       getSystemProperty: mocks.getSystemProperty,
+
       hasProjectedElement: (elementId: string) =>
         Boolean(mocks.getRenderElementById(elementId)),
+
       patchLocalComputedData: mocks.patchLocalComputedData,
       patchElementProperties: mocks.patchElementProperties,
       projectLocalComputedDataForElements: vi.fn(),
@@ -588,6 +593,7 @@ describe('Vector canonical property commit', () => {
       sharedDelivery: 'immediate',
       undoable: true
     } as const
+
     mocks.updateElementProperties.mockImplementation(
       (patches: readonly { elementId: string }[]) => ({
         acceptedIds: patches.map(({ elementId }) => elementId),
@@ -622,6 +628,7 @@ describe('Vector canonical property commit', () => {
     expect(mocks.updateElementProperties).toHaveBeenCalledOnce()
     const [patches, receivedOptions] =
       mocks.updateElementProperties.mock.calls[0]
+
     expect(receivedOptions).toBe(options)
     expect(
       patches.map((patch: { elementId: string }) => patch.elementId)
@@ -646,6 +653,7 @@ describe('Vector canonical property commit', () => {
     const points = Object.fromEntries(
       Array.from({ length: 7_001 }, (_, index) => {
         const pointId = `point-${index}`
+
         return [
           pointId,
           {
@@ -659,6 +667,7 @@ describe('Vector canonical property commit', () => {
         ]
       })
     )
+
     mocks.getVectorComputedData.mockReturnValue({
       x: 0,
       y: 0,
@@ -688,6 +697,7 @@ describe('Vector canonical property commit', () => {
 
     expect(mocks.updateElementProperties).toHaveBeenCalledOnce()
     const [patches] = mocks.updateElementProperties.mock.calls[0]
+
     expect(patches).toHaveLength(1)
     expect(patches[0].elementId).toBe('dense-vector')
     expect(patches[0].values).toEqual({
@@ -823,25 +833,31 @@ describe('Vector canonical property commit', () => {
     const vectorElements = Object.values(
       completeDocument.sceneTree.elements
     ).filter((element) => element.type === 'vector')
+
     const readProperty = (element: RawRecord, key: string): RawRecord => {
       const propertyId = (element.props as Record<string, string>)[key]
+
       return existingProps[propertyId]
     }
+
     const densestElement = vectorElements.reduce<RawRecord | null>(
       (current, element) => {
         if (!current) {
           return element
         }
+
         const currentCount = (
           readProperty(current, 'points').points as readonly string[]
         ).length
         const candidateCount = (
           readProperty(element, 'points').points as readonly string[]
         ).length
+
         return candidateCount > currentCount ? element : current
       },
       null
     )
+
     expect(Object.keys(completeDocument.sceneTree.elements)).toHaveLength(7_077)
     expect(vectorElements).toHaveLength(7_075)
     expect(densestElement).not.toBeNull()
@@ -859,6 +875,7 @@ describe('Vector canonical property commit', () => {
           existingProps[recordId]
         ])
       )
+
     const position = readProperty(densestElement, 'position')
     const dimension = readProperty(densestElement, 'dimension')
     const pointSpace = readProperty(densestElement, 'pointCoordinateSpace')
@@ -876,6 +893,7 @@ describe('Vector canonical property commit', () => {
       networks: readRecordMap(networksComponent, 'networks')
     }
     const pointCount = Object.keys(computed.points).length
+
     expect(pointCount).toBe(2_591)
     expect(pointCount).toBeGreaterThan(1_000)
     mocks.getVectorComputedData.mockImplementation((elementId: string) =>
@@ -914,6 +932,7 @@ describe('Vector canonical property commit', () => {
       undefined
     )
     const [updates] = mocks.updateElementProperties.mock.calls[0]
+
     expect(updates).toHaveLength(1)
     expect(updates[0]).toEqual({
       elementId: densestElement.id,

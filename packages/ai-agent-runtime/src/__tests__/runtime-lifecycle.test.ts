@@ -70,7 +70,9 @@ const transactionEvidence = (): TransactionEvidence => {
         run(label)
         try {
           const result = await execute()
+
           evidence.commits += 1
+
           return result
         } catch (error) {
           evidence.rollbacks += 1
@@ -79,6 +81,7 @@ const transactionEvidence = (): TransactionEvidence => {
       }
     }
   }
+
   return evidence
 }
 
@@ -133,6 +136,7 @@ describe('AI runtime invocation lifecycle', () => {
       intent: 'draw then refine',
       signal: new AbortController().signal
     })
+
     expect(result).toMatchObject({
       status: 'failed',
       transaction: { status: 'committed' },
@@ -162,6 +166,7 @@ describe('AI runtime invocation lifecycle', () => {
       intent: 'draw',
       signal: new AbortController().signal
     })
+
     expect(result).toMatchObject({
       status: 'failed',
       stage: 'provider',
@@ -184,13 +189,17 @@ describe('AI runtime invocation lifecycle', () => {
         },
         provider: {
           requestActionBatch: async (_request, options) => {
-            if (!options.executeBatch) throw new Error('Batch executor missing')
+            if (!options.executeBatch) {
+              throw new Error('Batch executor missing')
+            }
+
             await options.executeBatch(candidateActionBatch())
             throw new Error('provider failed')
           }
         }
       })
     )
+
     expect(
       await runtime.run({
         intent: 'draw',
@@ -214,12 +223,14 @@ describe('AI runtime invocation lifecycle', () => {
           visibilityAction(
             vi.fn(async () => {
               controller.abort()
+
               return { apiKey: 'test', changed: true }
             })
           )
         ]
       })
     )
+
     expect(
       await runtime.run({ intent: 'draw', signal: controller.signal })
     ).toMatchObject({
@@ -405,6 +416,7 @@ describe('AI runtime invocation lifecycle', () => {
         options: {
           retryPolicy: {
             maxAttempts: 2,
+
             shouldRetry: () => {
               throw new Error('Bearer raw-retry-policy-secret')
             }
@@ -465,8 +477,10 @@ describe('AI runtime invocation lifecycle', () => {
   it.each([
     {
       code: 'AI_EXECUTION_FAILED',
+
       createInput: (preview: { current?: unknown }) => {
         const transaction = transactionEvidence()
+
         return runtimeInput({
           actionDefinitions: [
             visibilityAction(
@@ -478,6 +492,7 @@ describe('AI runtime invocation lifecycle', () => {
           confirmationHandler: {
             confirm: vi.fn(async (value) => {
               preview.current = value
+
               return true
             })
           },
@@ -487,15 +502,18 @@ describe('AI runtime invocation lifecycle', () => {
           transactionRunner: transaction.runner
         })
       },
+
       stage: 'execution'
     },
     {
       code: 'AI_TRANSACTION_FAILED',
+
       createInput: (preview: { current?: unknown }) =>
         runtimeInput({
           confirmationHandler: {
             confirm: vi.fn(async (value) => {
               preview.current = value
+
               return true
             })
           },
@@ -509,6 +527,7 @@ describe('AI runtime invocation lifecycle', () => {
             })
           }
         }),
+
       stage: 'transaction'
     }
   ] as const)(
@@ -695,6 +714,7 @@ describe('AI runtime invocation lifecycle', () => {
       intent: 'hide the selected shape',
       signal: new AbortController().signal
     })
+
     await vi.waitFor(() => expect(providerStarted).toHaveBeenCalledOnce())
 
     await runtime.dispose()
@@ -729,7 +749,10 @@ it('preserves an explicitly public executor failure reason without exposing ordi
         actionDefinitions: [
           visibilityAction(
             vi.fn(async () => {
-              if (known) throw new AiActionExecutionError(message)
+              if (known) {
+                throw new AiActionExecutionError(message)
+              }
+
               throw new Error('private execution details')
             })
           )
@@ -740,6 +763,7 @@ it('preserves an explicitly public executor failure reason without exposing ordi
       intent: 'revise',
       signal: new AbortController().signal
     })
+
     expect(result).toMatchObject({
       status: 'failed',
       stage: 'execution',

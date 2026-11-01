@@ -122,12 +122,17 @@ test('clean consumer runner owns install, compile, build, test, and cleanup', ()
       consumerDirectory,
       evidenceDirectory,
       allowUnsupportedNode: true,
+
       runCommand: (command, args, options) => {
         commands.push({ command, args, cwd: options.cwd })
-        if (args[0] !== 'install') return
+        if (args[0] !== 'install') {
+          return
+        }
+
         const manifest = JSON.parse(
           fs.readFileSync(path.join(options.cwd, 'package.json'), 'utf8')
         )
+
         Object.keys(manifest.dependencies)
           .filter((name) => name.startsWith('@asyra/'))
           .forEach((name) => {
@@ -136,6 +141,7 @@ test('clean consumer runner owns install, compile, build, test, and cleanup', ()
               'node_modules',
               ...name.split('/')
             )
+
             fs.mkdirSync(packageDirectory, { recursive: true })
             fs.writeFileSync(
               path.join(packageDirectory, 'package.json'),
@@ -189,16 +195,22 @@ test('registry consumer proves npm resolution before running public gates', () =
       consumerDirectory,
       evidenceDirectory,
       allowUnsupportedNode: true,
+
       runCommand: (command, args, options) => {
         commands.push([command, ...args])
-        if (args[0] !== 'install') return
+        if (args[0] !== 'install') {
+          return
+        }
+
         const lockfileBlocks = []
+
         for (const [name, version] of Object.entries(packageVersions)) {
           const packageDirectory = path.join(
             options.cwd,
             'node_modules',
             ...name.split('/')
           )
+
           fs.mkdirSync(packageDirectory, { recursive: true })
           fs.writeFileSync(
             path.join(packageDirectory, 'package.json'),
@@ -208,6 +220,7 @@ test('registry consumer proves npm resolution before running public gates', () =
             `"${name}@npm:${version}":\n  resolution: "${name}@npm:${version}"\n  checksum: test/${name}\n`
           )
         }
+
         fs.writeFileSync(
           path.join(options.cwd, 'yarn.lock'),
           lockfileBlocks.join('\n')
@@ -255,6 +268,7 @@ test('clean consumer preparation never changes the durable fixture', () => {
       artifactDirectory,
       consumerDirectory
     })
+
     assert.equal(prepared.consumerDirectory, consumerDirectory)
     assert.equal(fs.existsSync(path.join(consumerDirectory, 'yarn.lock')), true)
     assert.equal(fs.readFileSync(fixtureManifestPath, 'utf8'), fixtureBefore)

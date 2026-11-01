@@ -19,15 +19,18 @@ describe('computed snapshot owner selection', () => {
       const source = Object.fromEntries(
         Array.from({ length: count }, (_, index) => [`unused-${index}`, index])
       )
+
       Object.defineProperties(source, {
         x: { enumerable: true, get: x },
         geometry: { enumerable: true, get: omitted }
       })
       const enumerate = vi.fn(Reflect.ownKeys)
+
       element.computed.data = new Proxy(source, {
         ownKeys: enumerate
       }) as typeof element.computed.data
       const snapshot = element.getAllComputedData(['x', 'x', 'absent'])
+
       expect(snapshot).toEqual({ x: 12 })
       expect(x).toHaveBeenCalledTimes(1)
       expect(omitted).not.toHaveBeenCalled()
@@ -38,6 +41,7 @@ describe('computed snapshot owner selection', () => {
   it('preserves own enumerable values, empty selection and safe special keys', () => {
     const element = new SnapshotElement()
     const source = Object.create({ inherited: 42 })
+
     Object.defineProperties(source, {
       x: { value: 3, enumerable: true },
       hidden: { value: 4, enumerable: false },
@@ -66,6 +70,7 @@ describe('computed snapshot owner selection', () => {
     )
     expect(element.getAllComputedData([])).toEqual({})
     const full = element.getAllComputedData()
+
     expect(full).toEqual(
       Object.fromEntries([
         ['x', 3],

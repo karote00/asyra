@@ -73,6 +73,7 @@ export function useTrajectoryImport({
   // Retire reads at that boundary, without serializing the workcell on renders.
   useLayoutEffect(() => {
     discard()
+
     return () => {
       generation.current++
     }
@@ -89,9 +90,16 @@ export function useTrajectoryImport({
       : null
 
   const inspect = () => {
-    if (reading) return null
-    if (preview) return preview
+    if (reading) {
+      return null
+    }
+
+    if (preview) {
+      return preview
+    }
+
     const result = current
+
     setReceipt({
       result,
       source,
@@ -99,6 +107,7 @@ export function useTrajectoryImport({
       workcell,
       generation: generation.current
     })
+
     return result
   }
 
@@ -108,8 +117,9 @@ export function useTrajectoryImport({
       input: TrajectoryInput
     ) => void
   ) => {
-    if (preview?.value && receipt?.generation === generation.current)
+    if (preview?.value && receipt?.generation === generation.current) {
       onAccept(preview.value, authored)
+    }
   }
 
   const complete = async (
@@ -118,16 +128,28 @@ export function useTrajectoryImport({
       result: TrajectoryImportPreview
     ) => Promise<boolean>
   ) => {
-    if (importPending || reading || !pendingEdit.current) return
+    if (importPending || reading || !pendingEdit.current) {
+      return
+    }
+
     const result = inspect()
-    if (!result) return
+
+    if (!result) {
+      return
+    }
+
     const token = generation.current
+
     pendingEdit.current = false
     try {
       const saved = await onEdit(authored, result)
+
       if (token === generation.current) {
-        if (saved === false) pendingEdit.current = true
-        else setSettled(true)
+        if (saved === false) {
+          pendingEdit.current = true
+        } else {
+          setSettled(true)
+        }
       }
     } catch (reason) {
       if (token === generation.current) {
@@ -142,20 +164,30 @@ export function useTrajectoryImport({
     setSettled(false)
     discard()
     const csv = source.kind === 'csv' ? reader.readCsv(text) : current
+
     setSource({ ...source, text })
     // Incomplete syntax cannot prove that a mapped column was removed.
     // Keep choices until parsing can establish the edited header.
     if (source.kind === 'csv' && csv.columns.length) {
       const suggested = guessCsvMapping(csv.columns, workcell)
       const next = { ...suggested, joints: { ...suggested.joints } }
-      if (csv.columns.includes(mapping.time.column))
+
+      if (csv.columns.includes(mapping.time.column)) {
         next.time = { ...mapping.time }
-      for (const body of workcell.bodies) {
-        if (body.joint.kind === 'fixed') continue
-        const entry = mapping.joints[body.id]
-        if (entry && csv.columns.includes(entry.column))
-          next.joints[body.id] = { ...entry }
       }
+
+      for (const body of workcell.bodies) {
+        if (body.joint.kind === 'fixed') {
+          continue
+        }
+
+        const entry = mapping.joints[body.id]
+
+        if (entry && csv.columns.includes(entry.column)) {
+          next.joints[body.id] = { ...entry }
+        }
+      }
+
       updateMapping(next)
     }
   }
@@ -193,27 +225,42 @@ export function useTrajectoryImport({
       nextKind === 'csv'
         ? TRAJECTORY_IMPORT_LIMITS.csvBytes
         : TRAJECTORY_IMPORT_LIMITS.jsonBytes
+
     if (file.size > limit) {
       setError(
         `Trajectory ${nextKind.toUpperCase()} exceeds the ${limit / 1024 / 1024} MiB import limit.`
       )
+
       return
     }
+
     setReading(true)
     let text: string
+
     try {
       text = await file.text()
     } catch (reason) {
-      if (token === generation.current) setError(String(reason))
+      if (token === generation.current) {
+        setError(String(reason))
+      }
+
       return
     } finally {
-      if (token === generation.current) setReading(false)
+      if (token === generation.current) {
+        setReading(false)
+      }
     }
-    if (token !== generation.current) return
+
+    if (token !== generation.current) {
+      return
+    }
+
     const csv = nextKind === 'csv' ? reader.readCsv(text) : current
+
     setSource({ kind: nextKind, text })
-    if (nextKind === 'csv')
+    if (nextKind === 'csv') {
       updateMapping(guessCsvMapping(csv.columns, workcell))
+    }
   }
 
   const setJointMapping = (

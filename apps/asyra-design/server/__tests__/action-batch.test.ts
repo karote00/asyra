@@ -27,6 +27,7 @@ const sampleInput = async (): Promise<AiProviderInput> => {
     readFile(new URL('reference-image.png', sampleRoot)),
     readFile(new URL('instruction.txt', sampleRoot), 'utf8')
   ])
+
   return {
     actions: [
       {
@@ -79,6 +80,7 @@ const postActionBatch = async (
         method: 'POST'
       }
     )
+
     return {
       body: await response.json(),
       status: response.status
@@ -246,6 +248,7 @@ describe('crdt-7076 action-batch backend sample', () => {
     const metadata = input.metadata as {
       imageAttachments: readonly Record<string, unknown>[]
     }
+
     await expect(
       resolveActionBatchRequest(
         {
@@ -326,17 +329,22 @@ it('streams a prepared operation and resumes only after its one-use same-origin 
   }
   const middleware = createActionBatchMiddleware({
     requestModelActionBatch: async (_input, options) => {
-      if (!options.executeBatch)
+      if (!options.executeBatch) {
         throw new Error('Missing batch execution transport')
+      }
+
       const receipt = await options.executeBatch(prepared)
+
       expect(receipt.context).toEqual({ actual: true })
       acknowledged = true
+
       return { ...prepared, batchId: 'final' }
     }
   })
   const server = createServer((request, response) => {
     void middleware(request, response, () => response.end())
   })
+
   try {
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
     const origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
@@ -356,15 +364,24 @@ it('streams a prepared operation and resumes only after its one-use same-origin 
         attempt: 1
       })
     })
-    if (!response.body) throw new Error('Missing stream')
+
+    if (!response.body) {
+      throw new Error('Missing stream')
+    }
+
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
     let text = ''
-    while (!text.includes('\n'))
+
+    while (!text.includes('\n')) {
       text += decoder.decode((await reader.read()).value)
+    }
+
     const frame = JSON.parse(text.trim())
+
     expect(frame.type).toBe('batch')
     expect(acknowledged).toBe(false)
+
     const send = (requestOrigin: string) =>
       fetch(endpoint, {
         method: 'POST',
@@ -375,6 +392,7 @@ it('streams a prepared operation and resumes only after its one-use same-origin 
         },
         body: JSON.stringify({ actionResults: [], context: { actual: true } })
       })
+
     expect((await send('https://foreign.example')).status).toBe(403)
     expect(acknowledged).toBe(false)
     expect((await send(origin)).status).toBe(200)
@@ -382,9 +400,14 @@ it('streams a prepared operation and resumes only after its one-use same-origin 
     text = ''
     while (true) {
       const part = await reader.read()
-      if (part.done) break
+
+      if (part.done) {
+        break
+      }
+
       text += decoder.decode(part.value)
     }
+
     expect(JSON.parse(text.trim()).batch.batchId).toBe('final')
     expect(acknowledged).toBe(true)
   } finally {
@@ -408,13 +431,17 @@ it('delivers a real browser failure through HTTP before closing the execution st
   }
   const middleware = createActionBatchMiddleware({
     requestModelActionBatch: async (_input, options) => {
-      if (!options.executeBatch) throw new Error('Missing execution transport')
+      if (!options.executeBatch) {
+        throw new Error('Missing execution transport')
+      }
+
       try {
         await options.executeBatch(prepared)
       } catch (error) {
         received = error
         throw error
       }
+
       throw new Error('Failed batch incorrectly succeeded')
     }
   })
@@ -422,9 +449,11 @@ it('delivers a real browser failure through HTTP before closing the execution st
     void middleware(request, response, () => response.end())
   })
   let provider: ReturnType<typeof createServerActionBatchProvider> | undefined
+
   try {
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
     const origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
+
     provider = createServerActionBatchProvider({
       fetch: (async (url, init) =>
         fetch(origin + String(url), {
@@ -434,11 +463,13 @@ it('delivers a real browser failure through HTTP before closing the execution st
     })
     const error = new AiActionExecutionError('Prepared design is invalid.')
     const controller = new AbortController()
+
     await expect(
       provider.requestActionBatch(
         { intent: 'Draw', context: {}, actions: [], attempt: 1 },
         {
           signal: controller.signal,
+
           executeBatch: async () => {
             recordActionFailure(error, 'apply_prepared_design', 17)
             throw error
@@ -515,14 +546,18 @@ it.each(['completed', 'partial', 'unknown'] as const)(
     }))
     const middleware = createActionBatchMiddleware({
       requestModelActionBatch: async (_input, options) => {
-        if (!options.executeBatch)
+        if (!options.executeBatch) {
           throw new Error('Missing execution transport')
+        }
+
         const receipt = await options.executeBatch(prepared)
+
         try {
           requireBatchSuccess(prepared, receipt, 1)
         } catch (error) {
           failure = error
         }
+
         return { batchId: 'recovered', actions: [] }
       }
     })
@@ -530,26 +565,37 @@ it.each(['completed', 'partial', 'unknown'] as const)(
       void middleware(request, response, () => response.end())
     })
     let provider: ReturnType<typeof createServerActionBatchProvider> | undefined
+
     try {
       await new Promise<void>((resolve) =>
         server.listen(0, '127.0.0.1', resolve)
       )
       const origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
+
       provider = createServerActionBatchProvider({
         fetch: (async (url, init) => {
           const identity = captureRequestIdentity(
             {
               url: () => origin + String(url),
+
               method: () => init.method,
+
               headers: () =>
                 Object.fromEntries(new Headers(init.headers).entries()),
+
               postDataJSON: () => JSON.parse(String(init.body))
             },
             origin
           )
-          if (identity) capturedIdentities.push(identity)
-          if ((init.headers as Record<string, string>)['x-ai-batch-receipt'])
+
+          if (identity) {
+            capturedIdentities.push(identity)
+          }
+
+          if ((init.headers as Record<string, string>)['x-ai-batch-receipt']) {
             postedBytes = Buffer.byteLength(String(init.body))
+          }
+
           return fetch(origin + String(url), {
             ...init,
             headers: { ...init.headers, origin }
@@ -557,6 +603,7 @@ it.each(['completed', 'partial', 'unknown'] as const)(
         }) as never
       })
       const controller = new AbortController()
+
       await expect(
         provider.requestActionBatch(
           {
@@ -588,7 +635,7 @@ it.each(['completed', 'partial', 'unknown'] as const)(
           }
         }
       })
-      if (settlement !== 'completed')
+      if (settlement !== 'completed') {
         expect(failure).toMatchObject({
           receipt: {
             failure: {
@@ -598,6 +645,7 @@ it.each(['completed', 'partial', 'unknown'] as const)(
             }
           }
         })
+      }
     } finally {
       provider?.dispose()
       server.closeAllConnections()
@@ -625,7 +673,10 @@ it('preserves activity provenance and order through the HTTP progress handoff', 
   ]
   const middleware = createActionBatchMiddleware({
     requestModelActionBatch: async (_input, options) => {
-      for (const event of events) options.onProgress?.(event)
+      for (const event of events) {
+        options.onProgress?.(event)
+      }
+
       return { batchId: 'final', actions: [] }
     }
   })
@@ -633,9 +684,11 @@ it('preserves activity provenance and order through the HTTP progress handoff', 
     void middleware(request, response, () => response.end())
   })
   let provider: ReturnType<typeof createServerActionBatchProvider> | undefined
+
   try {
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
     const origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
+
     provider = createServerActionBatchProvider({
       fetch: (async (url, init) =>
         fetch(origin + String(url), {
@@ -644,10 +697,12 @@ it('preserves activity provenance and order through the HTTP progress handoff', 
         })) as never
     })
     const received: unknown[] = []
+
     await provider.requestActionBatch(
       { intent: 'Draw', context: {}, actions: [], attempt: 1 },
       {
         signal: new AbortController().signal,
+
         onProgress: (event) => {
           received.push(event)
         }
@@ -669,11 +724,14 @@ it('accepts independently addressed final request records and preserves idempote
   const requestModelActionBatch = vi.fn()
   const middleware = createActionBatchMiddleware({
     requestModelActionBatch,
+
     createRecordingSink: () => ({
       checkpoint: async () => ({ status: 'saved', path: null }),
+
       write: (record) => {
         records.push(record)
       },
+
       flush
     })
   })
@@ -683,9 +741,11 @@ it('accepts independently addressed final request records and preserves idempote
       response.end()
     })
   })
+
   try {
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
     const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}${AI_EXECUTION_RECORD_ENDPOINT}`
+
     const send = async (body: unknown, origin?: string) =>
       fetch(url, {
         method: 'POST',
@@ -695,6 +755,7 @@ it('accepts independently addressed final request records and preserves idempote
         },
         body: JSON.stringify(body)
       })
+
     const start = {
       event: 'ai_request_started',
       schemaVersion: 2,
@@ -707,6 +768,7 @@ it('accepts independently addressed final request records and preserves idempote
       requestId: 'root',
       sequence: 1
     }
+
     expect(await (await send([start])).json()).toEqual({
       complete: false,
       requestId: 'root',

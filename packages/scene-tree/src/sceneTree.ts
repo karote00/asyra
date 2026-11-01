@@ -123,6 +123,7 @@ const getOverlappingPatchKey = (
   patch: ComputedDataPatch
 ): string | undefined => {
   const recordKeys = new Set(Object.keys(patch.records ?? {}))
+
   return Object.keys(patch.values ?? {}).find((key) => recordKeys.has(key))
 }
 
@@ -140,9 +141,11 @@ const getComputedSnapshot = (
   element: ElementInstanceTypes
 ): Record<string, DataTypes> => {
   const snapshot = element.getAllComputedData()
+
   if (!isRecord(snapshot)) {
     throw new Error('Computed data snapshot must be a record')
   }
+
   return snapshot as Record<string, DataTypes>
 }
 
@@ -164,6 +167,7 @@ const validateComputedDataRecordPatches = (
     const overlappingRecordId = Object.keys(recordPatch.set ?? {}).find(
       (recordId) => removedIds.has(recordId)
     )
+
     if (overlappingRecordId !== undefined) {
       throw new Error(
         `Computed data patch record "${key}.${overlappingRecordId}" cannot be both set and removed`
@@ -190,6 +194,7 @@ const validateComputedDataPatch = (
   computedSnapshot: Record<string, DataTypes>
 ): void => {
   const overlappingKey = getOverlappingPatchKey(patch)
+
   if (overlappingKey !== undefined) {
     throw new Error(
       `Computed data patch key "${overlappingKey}" cannot be both value and record`
@@ -376,9 +381,11 @@ const deepFreezeSceneValue = <T>(value: T, seen = new WeakSet<object>()): T => {
   }
 
   const objectValue = value as object
+
   if (seen.has(objectValue)) {
     return value
   }
+
   seen.add(objectValue)
   Reflect.ownKeys(objectValue).forEach((key) => {
     deepFreezeSceneValue(
@@ -386,6 +393,7 @@ const deepFreezeSceneValue = <T>(value: T, seen = new WeakSet<object>()): T => {
       seen
     )
   })
+
   return Object.freeze(value)
 }
 
@@ -414,8 +422,14 @@ const createElementBatchSharedRecords = (
   )
 
 const compareCanonicalString = (left: string, right: string): number => {
-  if (left < right) return -1
-  if (left > right) return 1
+  if (left < right) {
+    return -1
+  }
+
+  if (left > right) {
+    return 1
+  }
+
   return 0
 }
 
@@ -460,6 +474,7 @@ const collectElementPropertyRelations = (
   data: ElementRawData
 ): readonly ElementPropertyRelation[] => {
   const props = data.props ?? {}
+
   if (
     typeof data.id !== 'string' ||
     data.id.length === 0 ||
@@ -471,6 +486,7 @@ const collectElementPropertyRelations = (
       '[SceneTree] Cannot derive element-property relations from invalid Scene data'
     )
   }
+
   return freezeElementPropertyRelations(
     Object.entries(props).map(([ownerPropertyName, componentId]) => {
       if (
@@ -482,6 +498,7 @@ const collectElementPropertyRelations = (
           `[SceneTree] Element "${data.id}" has an invalid property relation`
         )
       }
+
       return {
         ownerElementId: data.id,
         ownerElementType: data.type,
@@ -500,12 +517,15 @@ const captureElementInsertionRelationDefinitions = (
   if (sourceDefinitions === undefined) {
     return
   }
+
   if (!Array.isArray(sourceDefinitions)) {
     throw new Error(
       `[SceneTree] Element insertion has an invalid ${owner} property owner registry for "${elementType}"`
     )
   }
+
   const definitionNames = new Set<string>()
+
   return Object.freeze(
     sourceDefinitions.map((definition) => {
       if (
@@ -520,7 +540,9 @@ const captureElementInsertionRelationDefinitions = (
           `[SceneTree] Element insertion has an invalid ${owner} property owner registry for "${elementType}"`
         )
       }
+
       definitionNames.add(definition.name)
+
       return Object.freeze({
         name: definition.name,
         type: definition.type
@@ -552,6 +574,7 @@ const captureElementInsertionRegistrationContract = (
     registrationDefinitions.length > 0
       ? registrationDefinitions
       : (constructorDefinitions ?? Object.freeze([]))
+
   return Object.freeze({
     registration,
     constructor: registration.constructor,
@@ -571,11 +594,13 @@ const isElementInsertionRegistrationContractCurrent = (
   ) {
     return false
   }
+
   try {
     const current = captureElementInsertionRegistrationContract(
       contract.registration,
       elementType
     )
+
     return (
       current.constructor === contract.constructor &&
       isEqual(
@@ -611,6 +636,7 @@ const wasCanonicalBatchHandoffAccepted = (
 
 const runWithDeferredReplayAcknowledgement = <T>(callback: () => T): T => {
   const replayMode = getTransactionReplayMode()
+
   if (replayMode === null) {
     return callback()
   }
@@ -622,9 +648,11 @@ const runWithDeferredReplayAcknowledgement = <T>(callback: () => T): T => {
       return { ok: false as const, error }
     }
   })
+
   if (!result.ok) {
     throw result.error
   }
+
   return result.value
 }
 
@@ -642,6 +670,7 @@ const reactivateElementComputed = (element: ElementInstanceTypes): void => {
   if (!element.computed) {
     return
   }
+
   try {
     element.getAllComputedData()
   } catch (error) {
@@ -664,11 +693,17 @@ const toStringArray = (value: unknown): string[] => {
 class SceneTree {
   /** Local projection identity; never persisted or included in shared data. */
   readonly projectionOwner = Symbol('SceneTree projection')
+
   _elements: Map<string, ElementInstanceTypes> = new Map()
+
   _deletedMap: Map<string, ElementInstanceTypes> = new Map()
+
   workspace: string = ''
+
   workspaceList: string[] = []
+
   changes: SceneTreeChange[] = []
+
   private validatedLoadArtifacts = new WeakMap<
     SceneTreeLoadValidationResult,
     {
@@ -678,6 +713,7 @@ class SceneTree {
       propertyContractError?: string
     }
   >()
+
   private validatedRestoreArtifacts = new WeakMap<
     PreparedSceneTreeRestore,
     {
@@ -685,14 +721,17 @@ class SceneTree {
       propertyContract: PreparedElementPropertyContract
     }
   >()
+
   private preparedElementMutationArtifacts = new WeakMap<
     PreparedElementMutation,
     PreparedElementMutationArtifact
   >()
+
   private elementPropertyRelationsByComponentId = new Map<
     string,
     readonly ElementPropertyRelation[]
   >()
+
   private elementPropertyRelationRevision = 0
 
   constructor(
@@ -713,10 +752,12 @@ class SceneTree {
   ): Map<string, readonly ElementPropertyRelation[]> {
     const relationsByComponentId = new Map<string, ElementPropertyRelation[]>()
     const componentIdByTuple = new Map<string, string>()
+
     for (const element of elements) {
       collectElementPropertyRelations(element.save()).forEach((relation) => {
         const tupleKey = getElementPropertyRelationTupleKey(relation)
         const existingComponentId = componentIdByTuple.get(tupleKey)
+
         if (
           existingComponentId !== undefined &&
           existingComponentId !== relation.componentId
@@ -725,8 +766,10 @@ class SceneTree {
             `[SceneTree] Element property relation "${relation.ownerElementId}.${relation.ownerPropertyName}" targets multiple components`
           )
         }
+
         componentIdByTuple.set(tupleKey, relation.componentId)
         const relations = relationsByComponentId.get(relation.componentId) ?? []
+
         if (
           relations.some(
             (existing) =>
@@ -737,10 +780,12 @@ class SceneTree {
             `[SceneTree] Element property relation "${relation.ownerElementId}.${relation.ownerPropertyName}" is duplicated`
           )
         }
+
         relations.push(relation)
         relationsByComponentId.set(relation.componentId, relations)
       })
     }
+
     return new Map(
       [...relationsByComponentId].map(([componentId, relations]) => [
         componentId,
@@ -763,26 +808,33 @@ class SceneTree {
     relations: readonly ElementPropertyRelation[]
   ): readonly ElementPropertyRelationIndexUpdate[] {
     const additionsByComponentId = new Map<string, ElementPropertyRelation[]>()
+
     relations.forEach((relation) => {
       const additions = additionsByComponentId.get(relation.componentId) ?? []
+
       additions.push(relation)
       additionsByComponentId.set(relation.componentId, additions)
     })
+
     return Object.freeze(
       [...additionsByComponentId].map(([componentId, additions]) => {
         const relationsBefore = this.getElementPropertyRelations(componentId)
         const tupleKeys = new Set(
           relationsBefore.map(getElementPropertyRelationTupleKey)
         )
+
         additions.forEach((relation) => {
           const tupleKey = getElementPropertyRelationTupleKey(relation)
+
           if (tupleKeys.has(tupleKey)) {
             throw new Error(
               `[SceneTree] Element property relation "${relation.ownerElementId}.${relation.ownerPropertyName}" is already active`
             )
           }
+
           tupleKeys.add(tupleKey)
         })
+
         return Object.freeze({
           componentId,
           relationsBefore,
@@ -809,11 +861,14 @@ class SceneTree {
     relations: readonly ElementPropertyRelation[]
   ): readonly ElementPropertyRelationIndexUpdate[] {
     const removalsByComponentId = new Map<string, ElementPropertyRelation[]>()
+
     relations.forEach((relation) => {
       const removals = removalsByComponentId.get(relation.componentId) ?? []
+
       removals.push(relation)
       removalsByComponentId.set(relation.componentId, removals)
     })
+
     return Object.freeze(
       [...removalsByComponentId].map(([componentId, removals]) => {
         const relationsBefore = this.getElementPropertyRelations(componentId)
@@ -826,16 +881,19 @@ class SceneTree {
         const removalTupleKeys = new Set(
           removals.map(getElementPropertyRelationTupleKey)
         )
+
         removals.forEach((relation) => {
           const current = relationByTupleKey.get(
             getElementPropertyRelationTupleKey(relation)
           )
+
           if (!current || !isEqual(current, relation)) {
             throw new Error(
               `[SceneTree] Element property relation "${relation.ownerElementId}.${relation.ownerPropertyName}" is not active`
             )
           }
         })
+
         return Object.freeze({
           componentId,
           relationsBefore,
@@ -861,6 +919,7 @@ class SceneTree {
         relationsAfter
       ])
     )
+
     return Object.freeze(
       [
         ...new Set([
@@ -885,9 +944,11 @@ class SceneTree {
     if (updates.length === 0) {
       return
     }
+
     updates.forEach(({ componentId, relationsBefore, relationsAfter }) => {
       const relations =
         direction === 'forward' ? relationsAfter : relationsBefore
+
       if (relations.length === 0) {
         this.elementPropertyRelationsByComponentId.delete(componentId)
       } else {
@@ -902,6 +963,7 @@ class SceneTree {
     preparedUpdates?: readonly ElementPropertyRelationIndexUpdate[]
   ): readonly ElementPropertyRelationIndexUpdate[] {
     const elementIds = elements.map((element) => element.get('id'))
+
     if (
       elementIds.some(
         (elementId) =>
@@ -915,12 +977,15 @@ class SceneTree {
         '[SceneTree] Canonical element map insertion requires unique inactive ids'
       )
     }
+
     const updates =
       preparedUpdates ?? this.prepareElementPropertyRelationInsertions(elements)
+
     elements.forEach((element) => {
       this._elements.set(element.get('id'), element)
     })
     this.applyElementPropertyRelationIndexUpdates(updates, 'forward')
+
     return updates
   }
 
@@ -929,6 +994,7 @@ class SceneTree {
     preparedUpdates?: readonly ElementPropertyRelationIndexUpdate[]
   ): readonly ElementPropertyRelationIndexUpdate[] {
     const elementIds = elements.map((element) => element.get('id'))
+
     if (
       elementIds.some(
         (elementId, index) =>
@@ -942,12 +1008,15 @@ class SceneTree {
         '[SceneTree] Canonical element map removal requires unique active instances'
       )
     }
+
     const updates =
       preparedUpdates ?? this.prepareElementPropertyRelationRemovals(elements)
+
     elements.forEach((element) => {
       this._elements.delete(element.get('id'))
     })
     this.applyElementPropertyRelationIndexUpdates(updates, 'forward')
+
     return updates
   }
 
@@ -978,6 +1047,7 @@ class SceneTree {
     const nextRelations =
       preparedRelations ??
       this.buildElementPropertyRelationIndex(elements.values())
+
     this._elements = new Map(elements)
     this.elementPropertyRelationsByComponentId = nextRelations
     this.elementPropertyRelationRevision += 1
@@ -986,6 +1056,7 @@ class SceneTree {
   _init(): void {
     if (!this.workspace && !this.workspaceList.length) {
       const initWorkspace = createWorkspace(this) as ElementInstanceTypes
+
       if (initWorkspace) {
         this.addToMap(initWorkspace)
         this.workspaceList = [initWorkspace.get('id')]
@@ -1005,6 +1076,7 @@ class SceneTree {
     const relations: ElementPropertyRelation[] = []
     const relationTupleKeys = new Set<string>()
     const requestedElementIds = new Set<string>()
+
     interface PropertyTargetAccumulator {
       readonly propertyId: string
       readonly values: Record<string, unknown>
@@ -1014,15 +1086,18 @@ class SceneTree {
       readonly removeRecordIdSet: Set<string>
     }
     const targetsByOwner = new Map<string, PropertyTargetAccumulator>()
+
     const getTarget = (
       relation: ElementPropertyRelation
     ): PropertyTargetAccumulator => {
       const propertyId = relation.componentId
       const ownerKey = getElementPropertyRelationTupleKey(relation)
       const existing = targetsByOwner.get(ownerKey)
+
       if (existing) {
         return existing
       }
+
       const target: PropertyTargetAccumulator = {
         propertyId,
         values: {},
@@ -1030,21 +1105,27 @@ class SceneTree {
         removeRecordIds: [],
         removeRecordIdSet: new Set()
       }
+
       targetsByOwner.set(ownerKey, target)
+
       return target
     }
+
     const addRelation = (relation: ElementPropertyRelation): void => {
       const tupleKey = getElementPropertyRelationTupleKey(relation)
+
       if (!relationTupleKeys.has(tupleKey)) {
         relationTupleKeys.add(tupleKey)
         relations.push(relation)
       }
     }
+
     const throwConflict = (propertyId: string, key: string): never => {
       throw new Error(
         `[SceneTree] Conflicting shared property target "${propertyId}.${key}"`
       )
     }
+
     const mergeValue = (
       target: PropertyTargetAccumulator,
       key: string,
@@ -1054,8 +1135,10 @@ class SceneTree {
         if (!isEqual(target.values[key], value)) {
           throwConflict(target.propertyId, key)
         }
+
         return
       }
+
       setOwnEnumerableValue(target.values, key, cloneSceneTreeValue(value))
     }
 
@@ -1071,20 +1154,24 @@ class SceneTree {
           '[SceneTree] Element-property target requests require unique active element ids'
         )
       }
+
       requestedElementIds.add(request.elementId)
       orderedElementIds.push(request.elementId)
 
       const element = this.getElementById(request.elementId)
+
       if (!element) {
         throw new Error(
           `[SceneTree] Cannot resolve property targets for missing element "${request.elementId}"`
         )
       }
+
       const elementType = element.get('type')
       const registration =
         typeof elementType === 'string'
           ? componentRegistry.get(elementType)
           : undefined
+
       if (!registration) {
         throw new Error(
           `[SceneTree] Cannot resolve property targets for unregistered element type "${String(elementType ?? '')}"`
@@ -1101,8 +1188,10 @@ class SceneTree {
           ? registration.properties
           : (constructorPropertyDefinitions ?? [])
       const definitionsByInputKey = new Map<string, PropertyDefinition>()
+
       definitions.forEach((definition) => {
         const keys = [definition.name, ...(definition.alias ?? [])]
+
         keys.forEach((key) => {
           if (
             typeof key !== 'string' ||
@@ -1113,6 +1202,7 @@ class SceneTree {
               `[SceneTree] Element type "${elementType}" has an ambiguous property alias "${String(key)}"`
             )
           }
+
           definitionsByInputKey.set(key, definition)
         })
       })
@@ -1125,15 +1215,18 @@ class SceneTree {
         relation: ElementPropertyRelation
       } => {
         const definition = definitionsByInputKey.get(requestedKey)
+
         if (!definition) {
           throw new Error(
             `[SceneTree] Element "${request.elementId}" has no property target for "${requestedKey}"`
           )
         }
+
         const propertyId = element.props.getPropId(definition.name)
         const property = propertyId
           ? this.propsManagerOwner.getPropertyById(propertyId)
           : undefined
+
         if (
           typeof propertyId !== 'string' ||
           propertyId.length === 0 ||
@@ -1145,6 +1238,7 @@ class SceneTree {
             `[SceneTree] Element "${request.elementId}" has an invalid property owner relation for "${definition.name}"`
           )
         }
+
         return {
           definition,
           propertyId,
@@ -1158,13 +1252,16 @@ class SceneTree {
       }
 
       const sourceValues = request.values ?? {}
+
       if (!isRecord(sourceValues)) {
         throw new Error(
           `[SceneTree] Element "${request.elementId}" property values must be a record`
         )
       }
+
       Object.entries(sourceValues).forEach(([key, value]) => {
         const { relation } = resolveTarget(key)
+
         addRelation(relation)
         mergeValue(getTarget(relation), key, value)
       })
@@ -1174,7 +1271,9 @@ class SceneTree {
             `[SceneTree] Element "${request.elementId}" record patches must be an array`
           )
         }
+
         const recordKeys = new Set<string>()
+
         request.records.forEach((recordPatch) => {
           if (
             !isRecord(recordPatch) ||
@@ -1186,12 +1285,14 @@ class SceneTree {
               `[SceneTree] Element "${request.elementId}" record patches require unique property keys`
             )
           }
+
           recordKeys.add(recordPatch.key)
           if (recordPatch.set !== undefined && !isRecord(recordPatch.set)) {
             throw new Error(
               `[SceneTree] Element "${request.elementId}" record set must be a record`
             )
           }
+
           if (
             recordPatch.remove !== undefined &&
             (!Array.isArray(recordPatch.remove) ||
@@ -1201,29 +1302,36 @@ class SceneTree {
               `[SceneTree] Element "${request.elementId}" record remove must contain ids`
             )
           }
+
           const { definition, propertyId, relation } = resolveTarget(
             recordPatch.key
           )
+
           addRelation(relation)
           const target = getTarget(relation)
+
           if (
             target.recordKey !== undefined &&
             target.recordKey !== definition.name
           ) {
             throwConflict(propertyId, definition.name)
           }
+
           target.recordKey = definition.name
           Object.entries(recordPatch.set ?? {}).forEach(
             ([recordId, recordValues]) => {
               if (target.removeRecordIdSet.has(recordId)) {
                 throwConflict(propertyId, recordId)
               }
+
               if (hasOwnRecordValue(target.setRecords, recordId)) {
                 if (!isEqual(target.setRecords[recordId], recordValues)) {
                   throwConflict(propertyId, recordId)
                 }
+
                 return
               }
+
               setOwnEnumerableValue(
                 target.setRecords,
                 recordId,
@@ -1235,6 +1343,7 @@ class SceneTree {
             if (hasOwnRecordValue(target.setRecords, recordId)) {
               throwConflict(propertyId, recordId)
             }
+
             if (!target.removeRecordIdSet.has(recordId)) {
               target.removeRecordIdSet.add(recordId)
               target.removeRecordIds.push(recordId)
@@ -1252,9 +1361,11 @@ class SceneTree {
           values: target.values
         }
       }
+
       if (hasOwnRecordValue(target.values, target.recordKey)) {
         throwConflict(target.propertyId, target.recordKey)
       }
+
       return {
         kind: 'records' as const,
         propertyId: target.propertyId,
@@ -1282,28 +1393,38 @@ class SceneTree {
   resolveElementPropertyBindings(
     requests: readonly ElementPropertyBindingRequest[]
   ): readonly ResolvedElementPropertyBinding[] {
-    if (!Array.isArray(requests))
+    if (!Array.isArray(requests)) {
       throw new Error('[SceneTree] Expected a root binding request batch')
+    }
+
     return cloneAndFreezeSceneValue(
       requests.map((request) => {
         if (
           !isRecord(request) ||
           typeof request.elementId !== 'string' ||
           typeof request.propertyName !== 'string'
-        )
+        ) {
           throw new Error('[SceneTree] Invalid root binding request')
+        }
+
         const element = this.getElementById(request.elementId)
         const registration =
           element && componentRegistry.get(element.get('type'))
-        if (!element || !registration)
+
+        if (!element || !registration) {
           throw new Error('[SceneTree] Missing registered element')
+        }
+
         const componentId = element.props.getPropId(request.propertyName)
+
         if (
           !componentId ||
           (request.expectedRootId !== undefined &&
             request.expectedRootId !== componentId)
-        )
+        ) {
           throw new Error('[SceneTree] Missing or stale element property root')
+        }
+
         const contract = captureElementInsertionRegistrationContract(
           registration,
           element.get('type')
@@ -1311,20 +1432,26 @@ class SceneTree {
         const definition = contract.effectiveDefinitions.find(
           (definition) => definition.name === request.propertyName
         )
+
         if (
           !definition ||
           this.propsManagerOwner.getPropertyById(componentId)?.get('type') !==
             definition.type
-        )
+        ) {
           throw new Error('[SceneTree] Invalid registered property binding')
+        }
+
         const relations = this.getElementPropertyRelations(componentId)
         const relation = relations.find(
           (relation) =>
             relation.ownerElementId === request.elementId &&
             relation.ownerPropertyName === request.propertyName
         )
-        if (!relation)
+
+        if (!relation) {
           throw new Error('[SceneTree] Missing canonical property relation')
+        }
+
         return { relation, shared: relations.length > 1 }
       })
     )
@@ -1338,6 +1465,7 @@ class SceneTree {
         '[SceneTree] Property binding mutation requires an exact target batch'
       )
     }
+
     const keys = new Set<string>()
     const entries: PreparedElementPropertyBindingArtifact['entries'][number][] =
       []
@@ -1350,16 +1478,21 @@ class SceneTree {
       readonly ElementPropertyRelation[]
     >()
     const relationsAfter = new Map<string, ElementPropertyRelation[]>()
+
     const mutableRelations = (id: string) => {
       let relations = relationsAfter.get(id)
+
       if (!relations) {
         const current = this.getElementPropertyRelations(id)
+
         relationsBefore.set(id, current)
         relations = [...current]
         relationsAfter.set(id, relations)
       }
+
       return relations
     }
+
     requests.forEach((request: ElementPropertyBindingMutationRequest) => {
       if (
         !isRecord(request) ||
@@ -1373,12 +1506,17 @@ class SceneTree {
       ) {
         throw new Error('[SceneTree] Invalid property binding target')
       }
+
       const tuple = JSON.stringify([request.elementId, request.propertyName])
-      if (keys.has(tuple))
+
+      if (keys.has(tuple)) {
         throw new Error('[SceneTree] Duplicate property binding target')
+      }
+
       keys.add(tuple)
       const element = this.getElementById(request.elementId)
       const registration = element && componentRegistry.get(element.get('type'))
+
       if (
         !element ||
         !registration ||
@@ -1388,6 +1526,7 @@ class SceneTree {
           `[SceneTree] Missing or stale property binding "${request.elementId}.${request.propertyName}"`
         )
       }
+
       const contract = captureElementInsertionRegistrationContract(
         registration,
         element.get('type')
@@ -1397,6 +1536,7 @@ class SceneTree {
       )
       const current = this.propsManagerOwner.getPropertyById(request.before)
       const next = this.propsManagerOwner.getPropertyById(request.after)
+
       if (
         !definition ||
         definition.type !== request.propertyType ||
@@ -1407,21 +1547,30 @@ class SceneTree {
           '[SceneTree] Property binding must match its registered root type'
         )
       }
-      if (request.before === request.after) return
+
+      if (request.before === request.after) {
+        return
+      }
+
       const beforeRelations = mutableRelations(request.before)
       const index = beforeRelations.findIndex(
         (relation) =>
           relation.ownerElementId === request.elementId &&
           relation.ownerPropertyName === request.propertyName
       )
-      if (index < 0)
+
+      if (index < 0) {
         throw new Error('[SceneTree] Missing canonical property relation')
+      }
+
       const [relation] = beforeRelations.splice(index, 1)
+
       mutableRelations(request.after).push({
         ...relation,
         componentId: request.after
       })
       const changes = changesByElement.get(request.elementId) ?? []
+
       changes.push({
         key: request.propertyName,
         before: request.before,
@@ -1462,19 +1611,23 @@ class SceneTree {
       orderedElementIds: [...changesByElement.keys()],
       evidence
     }) as PreparedElementPropertyBindingMutation
+
     this.preparedElementMutationArtifacts.set(prepared, {
       kind: 'element-property-binding-mutation',
       entries,
       relationIndexUpdates
     })
+
     return prepared
   }
 
   prepareCanonicalElementPropertyBindingMutation(
     changes: readonly UpdateElementPropertyBindingsChange[]
   ): PreparedElementPropertyBindingMutation {
-    if (!Array.isArray(changes))
+    if (!Array.isArray(changes)) {
       throw new Error('[SceneTree] Expected canonical binding evidence')
+    }
+
     return this.prepareElementPropertyBindingMutation(
       changes.flatMap((change: UpdateElementPropertyBindingsChange) => {
         if (
@@ -1485,8 +1638,10 @@ class SceneTree {
         ) {
           throw new Error('[SceneTree] Invalid canonical binding evidence')
         }
+
         return change.changes.map(({ key, before, after }) => {
           const current = this.propsManagerOwner.getPropertyById(before)
+
           return {
             elementId: change.id,
             propertyName: key,
@@ -1518,8 +1673,10 @@ class SceneTree {
           '[SceneTree] Element data mutations require unique active element ids and typed values'
         )
       }
+
       requestedIds.add(request.elementId)
       const element = this.getElementById(request.elementId)
+
       if (!element) {
         throw new Error(
           `[SceneTree] Cannot prepare element data for missing element "${request.elementId}"`
@@ -1530,11 +1687,13 @@ class SceneTree {
       const invalidKey = valueKeys.find(
         (key) => key !== 'name' && key !== 'visible' && key !== 'lock'
       )
+
       if (invalidKey) {
         throw new Error(
           `[SceneTree] Element data mutation cannot update "${invalidKey}"`
         )
       }
+
       if (
         (request.values.name !== undefined &&
           typeof request.values.name !== 'string') ||
@@ -1559,6 +1718,7 @@ class SceneTree {
         lock: request.values.lock ?? before.lock
       }
       const changes: UpdateElementDataChange['changes'][number][] = []
+
       if (before.name !== after.name) {
         changes.push({
           key: 'name',
@@ -1566,6 +1726,7 @@ class SceneTree {
           after: after.name
         })
       }
+
       if (before.visible !== after.visible) {
         changes.push({
           key: 'visible',
@@ -1573,6 +1734,7 @@ class SceneTree {
           after: after.visible
         })
       }
+
       if (before.lock !== after.lock) {
         changes.push({
           key: 'lock',
@@ -1580,6 +1742,7 @@ class SceneTree {
           after: after.lock
         })
       }
+
       if (changes.length === 0) {
         return
       }
@@ -1602,10 +1765,12 @@ class SceneTree {
       orderedElementIds: evidence.map(({ id }) => id),
       evidence
     }) as PreparedElementDataMutation
+
     this.preparedElementMutationArtifacts.set(preparedMutation, {
       kind: 'element-data-mutation',
       entries: Object.freeze(entries)
     })
+
     return preparedMutation
   }
 
@@ -1617,6 +1782,7 @@ class SceneTree {
         '[SceneTree] Canonical element data mutation requires an evidence batch'
       )
     }
+
     const requests = changes.map((change) => {
       if (
         !isRecord(change) ||
@@ -1631,12 +1797,14 @@ class SceneTree {
           '[SceneTree] Canonical element data mutation has invalid evidence'
         )
       }
+
       const values: {
         name?: string
         visible?: boolean
         lock?: boolean
       } = {}
       const keys = new Set<string>()
+
       change.changes.forEach((field) => {
         if (
           !isRecord(field) ||
@@ -1656,6 +1824,7 @@ class SceneTree {
             '[SceneTree] Canonical element data mutation has invalid field evidence'
           )
         }
+
         keys.add(field.key)
         if (field.key === 'name') {
           values.name = field.after as string
@@ -1665,6 +1834,7 @@ class SceneTree {
           values.lock = field.after as boolean
         }
       })
+
       return {
         elementId: change.id,
         values
@@ -1673,14 +1843,18 @@ class SceneTree {
     const preparedMutation = this.prepareElementDataMutation(requests)
     const semanticChanges = changes.map((change) => {
       const semanticChange = { ...change }
+
       delete semanticChange.options
+
       return semanticChange
     })
+
     if (!isEqual(preparedMutation.evidence, semanticChanges)) {
       throw new Error(
         '[SceneTree] Cannot prepare stale canonical element data evidence'
       )
     }
+
     return preparedMutation
   }
 
@@ -1700,6 +1874,7 @@ class SceneTree {
       sourceOwnerRelations !== undefined
         ? cloneSceneTreeValue(sourceOwnerRelations)
         : undefined
+
     if (
       kind === 'prepared-element-insertion' &&
       !Array.isArray(ordinaryOwnerRelations)
@@ -1708,10 +1883,12 @@ class SceneTree {
         '[SceneTree] Ordinary element insertion requires explicit owner relations'
       )
     }
+
     const relationByOwner = new Map<
       string,
       Map<string, ElementPropertyRelation>
     >()
+
     ;(ordinaryOwnerRelations ?? []).forEach((relation) => {
       if (
         !isRecord(relation) ||
@@ -1728,23 +1905,28 @@ class SceneTree {
           '[SceneTree] Ordinary element insertion has an invalid owner relation'
         )
       }
+
       const relationsForOwner =
         relationByOwner.get(relation.ownerElementId) ?? new Map()
+
       if (relationsForOwner.has(relation.ownerPropertyName)) {
         throw new Error(
           `[SceneTree] Ordinary element insertion has duplicate owner relation "${relation.ownerElementId}.${relation.ownerPropertyName}"`
         )
       }
+
       relationsForOwner.set(relation.ownerPropertyName, relation)
       relationByOwner.set(relation.ownerElementId, relationsForOwner)
     })
     const consumedOrdinaryRelations = new Set<ElementPropertyRelation>()
+
     if (sourceEntries.length === 0) {
       if ((ordinaryOwnerRelations?.length ?? 0) > 0) {
         throw new Error(
           '[SceneTree] Ordinary element insertion has owner relations outside the insertion batch'
         )
       }
+
       const preparedMutation = cloneAndFreezeSceneValue({
         kind,
         orderedElementIds: [],
@@ -1753,6 +1935,7 @@ class SceneTree {
           : {}),
         evidence: []
       }) as PreparedElementInsertion | PreparedCanonicalElementInsertion
+
       this.preparedElementMutationArtifacts.set(preparedMutation, {
         kind: artifactKind,
         entries: Object.freeze([]),
@@ -1761,6 +1944,7 @@ class SceneTree {
         parentChildrenAfter: new Map(),
         relationIndexUpdates: Object.freeze([])
       })
+
       return preparedMutation
     }
 
@@ -1792,18 +1976,22 @@ class SceneTree {
     } => {
       const existingParent = parents.get(parentId)
       const existingChildren = parentChildrenAfter.get(parentId)
+
       if (existingParent && existingChildren) {
         return {
           parent: existingParent,
           children: existingChildren
         }
       }
+
       const parent = this.getElementById(parentId)
+
       if (!parent || !isGroupEntity(parent.get('type'))) {
         throw new Error(
           `[SceneTree] Element insertion requires active parent "${parentId}"`
         )
       }
+
       const before = Object.freeze([
         ...this.getContainerChildren(
           parent as GroupInstanceTypes,
@@ -1811,9 +1999,11 @@ class SceneTree {
         )
       ])
       const after = [...before]
+
       parents.set(parentId, parent as GroupInstanceTypes)
       parentChildrenBefore.set(parentId, before)
       parentChildrenAfter.set(parentId, after)
+
       return {
         parent: parent as GroupInstanceTypes,
         children: after
@@ -1828,6 +2018,7 @@ class SceneTree {
         isRecord(source) && typeof source.id === 'string'
           ? this._deletedMap.get(source.id)
           : undefined
+
       if (
         !isRecord(source) ||
         typeof source.id !== 'string' ||
@@ -1853,17 +2044,21 @@ class SceneTree {
           '[SceneTree] Element insertion requires unique exact inactive Scene data'
         )
       }
+
       elementIds.add(source.id)
       tombstones.push(tombstone)
 
       let registrationContract = registrationContractByType.get(source.type)
+
       if (!registrationContract) {
         const registration = componentRegistry.get(source.type)
+
         if (!registration) {
           throw new Error(
             `[SceneTree] Element insertion has unregistered type "${source.type}"`
           )
         }
+
         registrationContract = captureElementInsertionRegistrationContract(
           registration,
           source.type
@@ -1876,13 +2071,16 @@ class SceneTree {
           )
         )
       }
+
       registrationContracts.push(registrationContract)
       const registration = registrationContract.registration
+
       if (tombstone) {
         const expectedTombstoneData = {
           ...source,
           parentId: ''
         }
+
         if (
           !(tombstone instanceof registration.constructor) ||
           tombstone.get('type') !== source.type ||
@@ -1898,6 +2096,7 @@ class SceneTree {
       const expectedPropertyNames = propertyNamesByType.get(source.type)
       const sourceProps = source.props as Record<string, unknown>
       const sourcePropertyNames = Object.keys(sourceProps)
+
       if (
         !expectedPropertyNames ||
         sourcePropertyNames.some(
@@ -1909,14 +2108,18 @@ class SceneTree {
           `[SceneTree] Element "${source.id}" requires exact property owner relations`
         )
       }
+
       const elementPropertyRelations = definitions.map((definition) => {
         const propertyId = sourceProps[definition.name]
+
         if (typeof propertyId !== 'string' || propertyId.length === 0) {
           throw new Error(
             `[SceneTree] Element "${source.id}" has an invalid property owner relation for "${definition.name}"`
           )
         }
+
         const existingPropertyType = propertyTypeByComponentId.get(propertyId)
+
         if (
           existingPropertyType !== undefined &&
           existingPropertyType !== definition.type
@@ -1925,15 +2128,19 @@ class SceneTree {
             `[SceneTree] Element insertion component "${propertyId}" has incompatible property types`
           )
         }
+
         propertyTypeByComponentId.set(propertyId, definition.type)
         let ownerRelation: ElementPropertyRelation
+
         if (kind === 'prepared-element-insertion') {
           const relation = relationByOwner.get(source.id)?.get(definition.name)
+
           if (!relation) {
             throw new Error(
               `[SceneTree] Element "${source.id}" requires exact owner relation coverage for "${definition.name}"`
             )
           }
+
           if (
             relation.ownerElementType !== source.type ||
             relation.componentId !== propertyId
@@ -1942,6 +2149,7 @@ class SceneTree {
               `[SceneTree] Element "${source.id}" has an invalid owner relation for "${definition.name}"`
             )
           }
+
           consumedOrdinaryRelations.add(relation)
           ownerRelation = relation
         } else {
@@ -1952,6 +2160,7 @@ class SceneTree {
             componentId: propertyId
           }
         }
+
         return {
           ownerElementId: ownerRelation.ownerElementId,
           ownerElementType: ownerRelation.ownerElementType,
@@ -1960,6 +2169,7 @@ class SceneTree {
           propertyType: definition.type
         }
       })
+
       propertyRelations.push(elementPropertyRelations)
       if (
         'children' in source &&
@@ -1983,26 +2193,32 @@ class SceneTree {
     }
 
     const entriesByParent = new Map<string, AddRemoveElementEntry[]>()
+
     sourceEntries.forEach((entry) => {
       const entries = entriesByParent.get(entry.parentId) ?? []
+
       entries.push(entry)
       entriesByParent.set(entry.parentId, entries)
     })
     entriesByParent.forEach((entries, parentId) => {
       const children = parentChildrenAfter.get(parentId)
+
       if (!children) {
         throw new Error(
           `[SceneTree] Element insertion lost parent "${parentId}"`
         )
       }
+
       const sortedEntries = [...entries].sort(
         (left, right) => left.index - right.index
       )
       const usedIndexes = new Set<number>()
+
       sortedEntries.forEach(({ data, index }) => {
         if (usedIndexes.has(index) || index < 0 || index > children.length) {
           throw new Error('[SceneTree] Element insertion has an invalid index')
         }
+
         usedIndexes.add(index)
         children.splice(index, 0, data.id)
       })
@@ -2047,6 +2263,7 @@ class SceneTree {
       this.prepareElementPropertyRelationInsertionsFromRelations(
         propertyRelations.flat()
       )
+
     this.preparedElementMutationArtifacts.set(preparedMutation, {
       kind: artifactKind,
       entries: Object.freeze(
@@ -2077,6 +2294,7 @@ class SceneTree {
       ),
       relationIndexUpdates
     })
+
     return preparedMutation
   }
 
@@ -2088,11 +2306,13 @@ class SceneTree {
         '[SceneTree] Ordinary element insertion requires one typed parent batch'
       )
     }
+
     if (!Array.isArray(request.ownerRelations)) {
       throw new Error(
         '[SceneTree] Ordinary element insertion requires explicit owner relations'
       )
     }
+
     if (request.elements.length === 0) {
       return this.prepareElementInsertionEntries(
         [],
@@ -2100,21 +2320,26 @@ class SceneTree {
         request.ownerRelations
       ) as PreparedElementInsertion
     }
+
     if (typeof request.parentId !== 'string' || request.parentId.length === 0) {
       throw new Error('[SceneTree] Element insertion requires a parent id')
     }
+
     const parent = this.getElementById(request.parentId)
+
     if (!parent || !isGroupEntity(parent.get('type'))) {
       throw new Error(
         `[SceneTree] Element insertion requires active parent "${request.parentId}"`
       )
     }
+
     const parentChildren = this.getContainerChildren(
       parent as GroupInstanceTypes,
       `Element insertion parent "${request.parentId}"`
     )
     const insertionIndex =
       request.index === undefined ? parentChildren.length : request.index
+
     if (
       !Number.isInteger(insertionIndex) ||
       insertionIndex < 0 ||
@@ -2122,6 +2347,7 @@ class SceneTree {
     ) {
       throw new Error('[SceneTree] Element insertion has an invalid index')
     }
+
     return this.prepareElementInsertionEntries(
       request.elements.map((data, offset) => ({
         data,
@@ -2141,6 +2367,7 @@ class SceneTree {
         '[SceneTree] Canonical element insertion requires exact ordered entries'
       )
     }
+
     return this.prepareElementInsertionEntries(
       request.entries,
       'prepared-canonical-element-insertion'
@@ -2153,6 +2380,7 @@ class SceneTree {
       PreparedElementRemoval['kind'] | PreparedCanonicalElementRemoval['kind']
   ): PreparedElementRemoval | PreparedCanonicalElementRemoval {
     const relationRevisionBefore = this.elementPropertyRelationRevision
+
     if (removals.length === 0) {
       const preparedMutation = cloneAndFreezeSceneValue({
         kind,
@@ -2163,6 +2391,7 @@ class SceneTree {
           this.collectRootPropertyIdsAfterRelationUpdates([]),
         evidence: []
       }) as PreparedElementRemoval | PreparedCanonicalElementRemoval
+
       this.preparedElementMutationArtifacts.set(preparedMutation, {
         kind:
           kind === 'prepared-element-removal'
@@ -2174,6 +2403,7 @@ class SceneTree {
         parentChildrenBefore: new Map(),
         parentChildrenAfter: new Map()
       })
+
       return preparedMutation
     }
 
@@ -2181,6 +2411,7 @@ class SceneTree {
     const candidates = removals.map((source) => {
       const expected = typeof source === 'string' ? undefined : source
       const elementId = typeof source === 'string' ? source : source.data.id
+
       if (
         typeof elementId !== 'string' ||
         elementId.length === 0 ||
@@ -2190,16 +2421,20 @@ class SceneTree {
           '[SceneTree] Element removal requires unique active element ids'
         )
       }
+
       removalIds.add(elementId)
       const element = this.getElementById(elementId)
+
       if (!element) {
         throw new Error(
           `[SceneTree] Cannot prepare removal for missing element "${elementId}"`
         )
       }
+
       if (element.get('type') === EntityTypes.WORKSPACE) {
         throw new Error('[SceneTree] Element removal cannot remove a workspace')
       }
+
       if (
         isGroupEntity(element.get('type')) &&
         this.getContainerChildren(
@@ -2211,8 +2446,10 @@ class SceneTree {
           `[SceneTree] Element removal requires subtree lifecycle for "${elementId}"`
         )
       }
+
       const parentId = element.get('parentId')
       const parent = this.getElementById(parentId)
+
       if (
         typeof parentId !== 'string' ||
         parentId.length === 0 ||
@@ -2223,6 +2460,7 @@ class SceneTree {
           `[SceneTree] Element "${elementId}" has no active parent`
         )
       }
+
       return {
         element,
         expected,
@@ -2236,14 +2474,19 @@ class SceneTree {
       string,
       ReadonlyMap<string, number>
     >()
+
     candidates.forEach(({ parentId, parent }) => {
-      if (parentChildrenBefore.has(parentId)) return
+      if (parentChildrenBefore.has(parentId)) {
+        return
+      }
+
       const children = Object.freeze([
         ...this.getContainerChildren(
           parent,
           `Element removal parent "${parentId}"`
         )
       ])
+
       parentChildrenBefore.set(parentId, children)
       parentIndexByElementId.set(
         parentId,
@@ -2256,6 +2499,7 @@ class SceneTree {
           .get(parentId)
           ?.get(element.get('id'))
         const data = element.save()
+
         if (
           index === undefined ||
           (expected !== undefined &&
@@ -2267,6 +2511,7 @@ class SceneTree {
             `[SceneTree] Element removal has stale canonical evidence for "${element.get('id')}"`
           )
         }
+
         return {
           data,
           parentId,
@@ -2291,6 +2536,7 @@ class SceneTree {
         const retainedTupleKeys = new Set(
           relationsAfter.map(getElementPropertyRelationTupleKey)
         )
+
         return {
           componentId,
           relationsBefore,
@@ -2326,6 +2572,7 @@ class SceneTree {
     const frozenEntries = (
       preparedMutation.evidence[0] as AddRemoveElementsChange
     ).entries
+
     this.preparedElementMutationArtifacts.set(preparedMutation, {
       kind:
         kind === 'prepared-element-removal'
@@ -2346,6 +2593,7 @@ class SceneTree {
       parentChildrenBefore,
       parentChildrenAfter
     })
+
     return preparedMutation
   }
 
@@ -2394,24 +2642,32 @@ class SceneTree {
         '[SceneTree] Subtree removal requires unique active element ids'
       )
     }
+
     this.validateCanonicalHierarchy()
     const selected = new Set(elementIds)
     const roots = elementIds
       .map((id) => {
         const element = this.getElementById(id)
+
         if (!element || element.get('type') === EntityTypes.WORKSPACE) {
           throw new Error(
             '[SceneTree] Subtree removal requires active non-Workspace elements'
           )
         }
+
         return element
       })
       .filter((element) => {
         let parentId = element.get('parentId')
+
         while (parentId) {
-          if (selected.has(parentId)) return false
+          if (selected.has(parentId)) {
+            return false
+          }
+
           parentId = this.getElementById(parentId)?.get('parentId') ?? ''
         }
+
         return true
       })
     const parentIndexes = new Map<string, ReadonlyMap<string, number>>()
@@ -2423,24 +2679,30 @@ class SceneTree {
     const removalIds = new Set(removed.map((entry) => entry.elementId))
     const elements = removed.map((entry) => {
       const element = this.getElementById(entry.elementId)
+
       if (!element || !isEqual(element.save(), entry.data)) {
         throw new Error(
           `[SceneTree] Cannot prepare stale subtree element "${entry.elementId}"`
         )
       }
+
       return element
     })
     const parentChildrenBefore = new Map<string, readonly string[]>()
+
     removed.forEach(({ parentId }) => {
       if (parentChildrenBefore.has(parentId)) {
         return
       }
+
       const parent = this.getElementById(parentId)
+
       if (!parent || !isGroupEntity(parent.get('type'))) {
         throw new Error(
           `[SceneTree] Subtree removal requires active parent "${parentId}"`
         )
       }
+
       parentChildrenBefore.set(
         parentId,
         Object.freeze([
@@ -2463,30 +2725,45 @@ class SceneTree {
     const currentChildren = new Map(
       [...parentChildrenBefore].map(([id, children]) => [id, [...children]])
     )
+
     const currentSiblings = (parentId: string): string[] => {
       const children = currentChildren.get(parentId)
-      if (!children)
+
+      if (!children) {
         throw new Error('[SceneTree] Missing prepared parent children')
+      }
+
       return children
     }
+
     let leaves: SubtreeRemovalEntry[] = []
+
     const flushLeaves = (): void => {
-      if (!leaves.length) return
+      if (!leaves.length) {
+        return
+      }
+
       const indexes = new Map<string, ReadonlyMap<string, number>>()
+
       leaves.forEach(({ parentId }) => {
-        if (!indexes.has(parentId))
+        if (!indexes.has(parentId)) {
           indexes.set(
             parentId,
             new Map(currentSiblings(parentId).map((id, index) => [id, index]))
           )
+        }
       })
       const entries = leaves.map(({ data, parentId, elementId }) => {
         const index = indexes.get(parentId)?.get(elementId)
-        if (index === undefined)
+
+        if (index === undefined) {
           throw new Error('[SceneTree] Missing prepared removal index')
+        }
+
         return { data, parentId, index }
       })
       const ids = new Set(leaves.map(({ elementId }) => elementId))
+
       new Set(leaves.map(({ parentId }) => parentId)).forEach((parentId) => {
         currentChildren.set(
           parentId,
@@ -2502,16 +2779,19 @@ class SceneTree {
       })
       leaves = []
     }
+
     for (const entries of subtrees) {
       if (batchLeaves && entries.length === 1) {
         leaves.push(entries[0])
         continue
       }
+
       flushLeaves()
       const root = entries[entries.length - 1]
       const siblings = currentSiblings(root.parentId)
       const index = siblings.indexOf(root.elementId)
       const after = siblings.filter((id) => id !== root.elementId)
+
       currentChildren.set(root.parentId, after)
       evidence.push({
         eventName: EventTypes.CHANGE_SUBTREE,
@@ -2522,6 +2802,7 @@ class SceneTree {
         undoAction: SCENE_TREE_ACTIONS.RESTORE_SUBTREE
       })
     }
+
     flushLeaves()
     const relationIndexUpdates =
       this.prepareElementPropertyRelationRemovalsFromRelations(
@@ -2532,6 +2813,7 @@ class SceneTree {
         const retainedTupleKeys = new Set(
           relationsAfter.map(getElementPropertyRelationTupleKey)
         )
+
         return {
           componentId,
           relationsBefore,
@@ -2559,6 +2841,7 @@ class SceneTree {
       evidence
     }) as PreparedSubtreeRemoval | PreparedSubtreesRemoval
     const frozenRemoved = cloneAndFreezeSceneValue(removed)
+
     this.preparedElementMutationArtifacts.set(preparedMutation, {
       kind: 'subtree-removal',
       entries: Object.freeze(
@@ -2576,6 +2859,7 @@ class SceneTree {
       parentChildrenBefore,
       parentChildrenAfter
     })
+
     return preparedMutation
   }
 
@@ -2594,12 +2878,15 @@ class SceneTree {
         '[SceneTree] Canonical subtree removal has invalid evidence'
       )
     }
+
     const preparedMutation = this.prepareSubtreeRemoval(change.elementId)
+
     if (!isEqual(preparedMutation.evidence[0], change)) {
       throw new Error(
         `[SceneTree] Cannot prepare stale canonical subtree removal for "${change.elementId}"`
       )
     }
+
     return preparedMutation
   }
 
@@ -2608,11 +2895,13 @@ class SceneTree {
     options?: EVENT_OPTIONS
   ): ElementMutationBatchResult {
     const artifact = this.preparedElementMutationArtifacts.get(preparedMutation)
+
     if (!artifact) {
       throw new Error(
         '[SceneTree] Expected an owner-issued one-shot prepared element mutation'
       )
     }
+
     this.preparedElementMutationArtifacts.delete(preparedMutation)
 
     if (preparedMutation.evidence.length === 0) {
@@ -2623,6 +2912,7 @@ class SceneTree {
     }
 
     const transactionOwner = getTransactionOwner()
+
     if (!transactionOwner) {
       throw new Error(
         '[SceneTree] Applying a prepared element mutation requires an active transaction owner'
@@ -2636,6 +2926,7 @@ class SceneTree {
     const events = Object.freeze(
       preparedMutation.evidence.map((payload) => {
         let orderedIds = preparedMutation.orderedElementIds
+
         if (
           preparedMutation.kind === 'prepared-element-data-mutation' ||
           preparedMutation.kind === 'prepared-element-property-binding-mutation'
@@ -2648,12 +2939,14 @@ class SceneTree {
             (payload as SubtreeChange).removed.map(({ elementId }) => elementId)
           )
         }
+
         const canonicalEvidence = Object.freeze({
           orderedIds,
           ...(isElementBatchChange(payload)
             ? { sharedRecords: createElementBatchSharedRecords(payload) }
             : {})
         })
+
         return Object.freeze({
           type: EventTypes.UPDATE_TRANSACTION,
           eventName: payload.eventName,
@@ -2695,6 +2988,7 @@ class SceneTree {
       const restorationEvents = getTransactionReplayMode()
         ? preparedMutation.evidence.map((change) => {
             const binding = change as UpdateElementPropertyBindingsChange
+
             return {
               type: EventTypes.UPDATE_ELEMENT_PROPERTY_BINDINGS,
               payload: {
@@ -2708,6 +3002,7 @@ class SceneTree {
             }
           })
         : undefined
+
       artifact.entries.forEach(({ element, request }) => {
         element.props.assignCanonicalPropertyBinding(
           request.propertyName,
@@ -2738,19 +3033,24 @@ class SceneTree {
             'reverse'
           )
         }
+
         throw error
       }
     }
 
     if (artifact.kind === 'element-property-binding-mutation') {
       const valuesByElement = new Map<string, Record<string, DataTypes>>()
+
       artifact.entries.forEach(({ request }) => {
         const values = valuesByElement.get(request.elementId) ?? {}
         const property = this.propsManagerOwner.getPropertyById(request.after)
-        if (!property)
+
+        if (!property) {
           throw new Error(
             '[SceneTree] Accepted binding lost its active property before projection'
           )
+        }
+
         Object.assign(values, property.getValue())
         valuesByElement.set(request.elementId, values)
       })
@@ -2779,6 +3079,7 @@ class SceneTree {
       const restorationEvents = getTransactionReplayMode()
         ? preparedMutation.evidence.map((change) => {
             const rawChange = change as UpdateElementDataChange
+
             return Object.freeze({
               type: EventTypes.UPDATE_ELEMENT_DATA,
               payload: Object.freeze({
@@ -2810,6 +3111,7 @@ class SceneTree {
             ;(element as Element).assignCanonicalElementData(before)
           })
         }
+
         throw error
       }
     }
@@ -2820,6 +3122,7 @@ class SceneTree {
     ) {
       artifact.parents.forEach((parent, parentId) => {
         const before = artifact.parentChildrenBefore.get(parentId)
+
         if (
           !before ||
           this.getElementById(parentId) !== parent ||
@@ -2864,6 +3167,7 @@ class SceneTree {
             }) => {
               const property =
                 this.propsManagerOwner.getPropertyById(componentId)
+
               if (
                 !property ||
                 property.get('id') !== componentId ||
@@ -2900,19 +3204,23 @@ class SceneTree {
       let elementMapChanged = false
       let relationIndexUpdates:
         readonly ElementPropertyRelationIndexUpdate[] | undefined
+
       try {
         artifact.entries.forEach(({ data, tombstone }) => {
           const element = tombstone ?? this.createElement(data, false)
+
           if (!element) {
             throw new Error(
               `[SceneTree] Element insertion could not materialize exact Scene data for "${data.id}"`
             )
           }
+
           elements.push(element)
           if (tombstone) {
             ;(element as Element).assignCanonicalParentId(data.parentId ?? '')
             reactivateElementComputed(element)
           }
+
           if (
             element.get('id') !== data.id ||
             element.get('type') !== data.type
@@ -2924,11 +3232,13 @@ class SceneTree {
         })
         elements.forEach((element, index) => {
           const parentId = artifact.entries[index].data.parentId
+
           if (!parentId || !artifact.parents.has(parentId)) {
             throw new Error(
               `[SceneTree] Element insertion lost parent for "${element.get('id')}"`
             )
           }
+
           ;(element as Element).assignCanonicalParentId(parentId)
         })
         elements.forEach((element) => {
@@ -2941,11 +3251,13 @@ class SceneTree {
         elementMapChanged = true
         artifact.parentChildrenAfter.forEach((children, parentId) => {
           const parent = artifact.parents.get(parentId)
+
           if (!parent) {
             throw new Error(
               `[SceneTree] Element insertion lost parent "${parentId}"`
             )
           }
+
           changedParentIds.push(parentId)
           ;(this.currentWorkspace as Workspace).replaceBatchParentChildren(
             parent,
@@ -2963,7 +3275,11 @@ class SceneTree {
           changedParentIds.reverse().forEach((parentId) => {
             const parent = artifact.parents.get(parentId)
             const before = artifact.parentChildrenBefore.get(parentId)
-            if (!parent || !before) return
+
+            if (!parent || !before) {
+              return
+            }
+
             try {
               ;(this.currentWorkspace as Workspace).replaceBatchParentChildren(
                 parent,
@@ -2980,18 +3296,22 @@ class SceneTree {
                 relationIndexUpdates
               )
             }
+
             elements.forEach((element, index) => {
               const tombstone = artifact.entries[index]?.tombstone
+
               try {
                 ;(element as Element).assignCanonicalParentId('')
               } catch {
                 // Keep attempting cleanup while preserving the primary failure.
               }
+
               try {
                 disposeElementComputed(element)
               } catch {
                 // Keep attempting cleanup while preserving the primary failure.
               }
+
               if (tombstone) {
                 this._deletedMap.set(element.get('id'), tombstone)
               } else {
@@ -3000,6 +3320,7 @@ class SceneTree {
             })
           }
         }
+
         throw error
       }
     }
@@ -3019,7 +3340,9 @@ class SceneTree {
           '[SceneTree] Element removal artifact does not match its owner-issued preparation'
         )
       }
+
       const removalElements = artifact.entries.map(({ element }) => element)
+
       if (
         this.elementPropertyRelationRevision !== artifact.relationRevisionBefore
       ) {
@@ -3027,9 +3350,12 @@ class SceneTree {
           '[SceneTree] Cannot apply stale element property relation set'
         )
       }
+
       const relationIndexUpdates = artifact.relationIndexUpdates
+
       artifact.parentChildrenBefore.forEach((children, parentId) => {
         const parent = this.getElementById(parentId)
+
         if (
           !parent ||
           !isGroupEntity(parent.get('type')) ||
@@ -3048,6 +3374,7 @@ class SceneTree {
       })
       artifact.entries.forEach(({ element, data, parentId, index }) => {
         const parentChildren = artifact.parentChildrenBefore.get(parentId)
+
         if (
           this.getElementById(data.id) !== element ||
           !isEqual(element.save(), data) ||
@@ -3063,14 +3390,17 @@ class SceneTree {
       let elementMapChanged = false
       const handoffState = createCanonicalBatchHandoffState()
       let disposalAttempted = false
+
       const disposeRemoved = (): void => {
         artifact.entries.forEach(({ element }) => {
           disposeElementComputed(element)
         })
       }
+
       try {
         artifact.parentChildrenAfter.forEach((children, parentId) => {
           const parent = this.getElementById(parentId) as GroupInstanceTypes
+
           changedParentIds.push(parentId)
           ;(this.currentWorkspace as Workspace).replaceBatchParentChildren(
             parent,
@@ -3115,16 +3445,23 @@ class SceneTree {
               ;(element as Element).assignCanonicalParentId(parentId)
             })
           }
+
           changedParentIds.reverse().forEach((parentId) => {
             const children = artifact.parentChildrenBefore.get(parentId)
-            if (!children) return
+
+            if (!children) {
+              return
+            }
+
             const parent = this.getElementById(parentId) as GroupInstanceTypes
+
             ;(this.currentWorkspace as Workspace).replaceBatchParentChildren(
               parent,
               children
             )
           })
         }
+
         throw error
       }
     }
@@ -3144,32 +3481,40 @@ class SceneTree {
     >()
     const propertyTypeByComponentId = new Map<string, string>()
     const relations: PreparedElementPropertyRelation[] = []
+
     for (const elementData of elements) {
       if (elementData.type === EntityTypes.WORKSPACE) {
         continue
       }
+
       let registrationContract = registrationContractByType.get(
         elementData.type
       )
+
       if (!registrationContract) {
         const registration = componentRegistry.get(elementData.type)
+
         if (!registration) {
           throw new Error(
             `[SceneTree] Element "${elementData.id}" has an unregistered type`
           )
         }
+
         registrationContract = captureElementInsertionRegistrationContract(
           registration,
           elementData.type
         )
         registrationContractByType.set(elementData.type, registrationContract)
       }
+
       const sourceProps = elementData.props ?? {}
+
       if (!isRecord(sourceProps)) {
         throw new Error(
           `[SceneTree] Element "${elementData.id}" has invalid property relations`
         )
       }
+
       const definitionByName = new Map(
         registrationContract.effectiveDefinitions.map((definition) => [
           definition.name,
@@ -3177,6 +3522,7 @@ class SceneTree {
         ])
       )
       const propertyNames = Object.keys(sourceProps)
+
       if (
         propertyNames.length !== definitionByName.size ||
         propertyNames.some(
@@ -3187,14 +3533,18 @@ class SceneTree {
           `[SceneTree] Element "${elementData.id}" requires exact registered property slots`
         )
       }
+
       registrationContract.effectiveDefinitions.forEach((definition) => {
         const componentId = sourceProps[definition.name]
+
         if (typeof componentId !== 'string' || componentId.length === 0) {
           throw new Error(
             `[SceneTree] Element "${elementData.id}" has an invalid property relation for "${definition.name}"`
           )
         }
+
         const existingPropertyType = propertyTypeByComponentId.get(componentId)
+
         if (
           existingPropertyType !== undefined &&
           existingPropertyType !== definition.type
@@ -3203,6 +3553,7 @@ class SceneTree {
             `[SceneTree] Property "${componentId}" has incompatible registered property slots`
           )
         }
+
         propertyTypeByComponentId.set(componentId, definition.type)
         relations.push(
           Object.freeze({
@@ -3215,6 +3566,7 @@ class SceneTree {
         )
       })
     }
+
     return Object.freeze({
       relations: Object.freeze(relations),
       registrationContracts: Object.freeze(
@@ -3236,6 +3588,7 @@ class SceneTree {
     contract.relations.forEach(
       ({ ownerElementId, ownerPropertyName, componentId, propertyType }) => {
         const property = this.propsManagerOwner.getPropertyById(componentId)
+
         if (
           !property ||
           property.get('id') !== componentId ||
@@ -3268,22 +3621,26 @@ class SceneTree {
     propsData: Readonly<PropsComponentRawData>
   ): void {
     const artifact = this.validatedLoadArtifacts.get(sceneValidation)
+
     if (!artifact) {
       throw new Error(
         '[SceneTree] Expected an owner-issued validated load artifact for property relation preflight'
       )
     }
+
     if (!artifact.valid) {
       throw new Error(
         '[SceneTree] Cannot preflight property relations for an invalid hierarchy'
       )
     }
+
     if (artifact.propertyContractError || !artifact.propertyContract) {
       throw new Error(
         artifact.propertyContractError ??
           '[SceneTree] Validated load is missing exact property relation evidence'
       )
     }
+
     if (!isRecord(propsData)) {
       throw new Error(
         '[SceneTree] Detached Props validated data must be an exact component map'
@@ -3296,6 +3653,7 @@ class SceneTree {
     artifact.propertyContract.relations.forEach(
       ({ ownerElementId, ownerPropertyName, componentId, propertyType }) => {
         const propertyData = propsData[componentId]
+
         if (
           !isRecord(propertyData) ||
           propertyData.id !== componentId ||
@@ -3317,6 +3675,7 @@ class SceneTree {
     const validatedSnapshot = cloneLoadData(data)
     let propertyContract: PreparedElementPropertyContract | undefined
     let propertyContractError: string | undefined
+
     try {
       propertyContract = this.captureElementPropertyContract(
         Object.values(validatedSnapshot.elements)
@@ -3325,17 +3684,20 @@ class SceneTree {
       propertyContractError =
         error instanceof Error ? error.message : String(error)
     }
+
     const result = {
       data: cloneLoadData(validatedSnapshot),
       diagnostics,
       valid
     }
+
     this.validatedLoadArtifacts.set(result, {
       data: validatedSnapshot,
       valid,
       propertyContract,
       propertyContractError
     })
+
     return result
   }
 
@@ -3344,10 +3706,12 @@ class SceneTree {
     diagnostics: SceneTreeLoadDiagnostic[]
   ): boolean {
     let valid = true
+
     const reject = (path: string, message: string): void => {
       diagnostics.push({ path, message })
       valid = false
     }
+
     const entries = Object.entries(data.elements)
     const workspaceIds = entries
       .filter(([, element]) => element.type === EntityTypes.WORKSPACE)
@@ -3363,6 +3727,7 @@ class SceneTree {
           'Hierarchy with elements requires an existing workspace root'
         )
       }
+
       if (data.workspace.length > 0 || data.workspaceList.length > 0) {
         reject(
           'sceneTree.workspace',
@@ -3376,12 +3741,14 @@ class SceneTree {
           'Active workspace must reference an existing workspace element'
         )
       }
+
       if (new Set(data.workspaceList).size !== data.workspaceList.length) {
         reject(
           'sceneTree.workspaceList',
           'Workspace list cannot contain duplicate roots'
         )
       }
+
       data.workspaceList.forEach((workspaceId, index) => {
         if (!workspaceIds.includes(workspaceId)) {
           reject(
@@ -3401,40 +3768,52 @@ class SceneTree {
     }
 
     const membership = new Map<string, string>()
+
     entries.forEach(([parentId, parent]) => {
       if (!isGroupEntity(parent.type)) {
         return
       }
+
       const children = (parent as GroupRawData).children
+
       if (!Array.isArray(children)) {
         reject(
           `sceneTree.elements.${parentId}.children`,
           'Registered containers require a children array'
         )
+
         return
       }
 
       const localChildren = new Set<string>()
+
       children.forEach((childId, index) => {
         const childPath = `sceneTree.elements.${parentId}.children.${index}`
+
         if (localChildren.has(childId) || membership.has(childId)) {
           reject(
             childPath,
             `Element "${childId}" has duplicate hierarchy membership`
           )
+
           return
         }
+
         localChildren.add(childId)
         membership.set(childId, parentId)
 
         const child = data.elements[childId]
+
         if (!child) {
           reject(childPath, `Hierarchy child "${childId}" is missing`)
+
           return
         }
+
         if (child.type === EntityTypes.WORKSPACE) {
           reject(childPath, 'Workspace roots cannot be hierarchy children')
         }
+
         if (child.parentId !== parentId) {
           reject(
             childPath,
@@ -3448,12 +3827,14 @@ class SceneTree {
       const element = data.elements[elementId]
       const parentId = element.parentId ?? ''
       const parent = data.elements[parentId]
+
       if (!parent || !isGroupEntity(parent.type)) {
         reject(
           `sceneTree.elements.${elementId}.parentId`,
           `Element "${elementId}" requires an existing registered container parent`
         )
       }
+
       if (membership.get(elementId) !== parentId) {
         reject(
           `sceneTree.elements.${elementId}.parentId`,
@@ -3463,6 +3844,7 @@ class SceneTree {
 
       const visited = new Set<string>([elementId])
       let ancestorId = parentId
+
       while (ancestorId) {
         if (visited.has(ancestorId)) {
           reject(
@@ -3471,11 +3853,14 @@ class SceneTree {
           )
           break
         }
+
         visited.add(ancestorId)
         const ancestor = data.elements[ancestorId]
+
         if (!ancestor || ancestor.type === EntityTypes.WORKSPACE) {
           break
         }
+
         ancestorId = ancestor.parentId ?? ''
       }
     })
@@ -3496,10 +3881,12 @@ class SceneTree {
         path: 'sceneTree',
         message: 'Expected object payload for scene tree load'
       })
+
       return this.createLoadValidationResult(fallback, diagnostics, false)
     }
 
     const workspace = typeof data.workspace === 'string' ? data.workspace : ''
+
     if (data.workspace !== undefined && typeof data.workspace !== 'string') {
       diagnostics.push({
         path: 'sceneTree.workspace',
@@ -3508,6 +3895,7 @@ class SceneTree {
     }
 
     const workspaceList = toStringArray(data.workspaceList)
+
     if (
       data.workspaceList !== undefined &&
       !Array.isArray(data.workspaceList)
@@ -3520,6 +3908,7 @@ class SceneTree {
 
     const elements: Record<string, ElementRawData | GroupRawData> = {}
     let hasDuplicateElementIds = false
+
     if (data.elements === undefined) {
       diagnostics.push({
         path: 'sceneTree.elements',
@@ -3537,15 +3926,18 @@ class SceneTree {
             path: `sceneTree.elements.${entryId}`,
             message: 'Skipped non-object element during load'
           })
+
           return
         }
 
         const rawType = rawElement.type
+
         if (typeof rawType !== 'string' || rawType.length === 0) {
           diagnostics.push({
             path: `sceneTree.elements.${entryId}.type`,
             message: 'Skipped element with invalid type during load'
           })
+
           return
         }
 
@@ -3557,6 +3949,7 @@ class SceneTree {
             path: `sceneTree.elements.${entryId}.type`,
             message: `Skipped unregistered element type "${rawType}" during load`
           })
+
           return
         }
 
@@ -3608,6 +4001,7 @@ class SceneTree {
             normalized.props = {}
           } else {
             const propsMap: Record<string, string> = {}
+
             Object.entries(rawElement.props).forEach(([key, value]) => {
               if (typeof value === 'string') {
                 propsMap[key] = value
@@ -3628,6 +4022,7 @@ class SceneTree {
             message: `Duplicate normalized element id "${normalizedId}"`
           })
           hasDuplicateElementIds = true
+
           return
         }
 
@@ -3645,6 +4040,7 @@ class SceneTree {
       normalizedData,
       diagnostics
     )
+
     return this.createLoadValidationResult(
       normalizedData,
       diagnostics,
@@ -3654,27 +4050,32 @@ class SceneTree {
 
   applyValidatedLoad(result: SceneTreeLoadValidationResult): void {
     const artifact = this.validatedLoadArtifacts.get(result)
+
     if (!artifact) {
       throw new Error(
         '[SceneTree] Expected an owner-issued one-shot validated load artifact'
       )
     }
+
     this.validatedLoadArtifacts.delete(result)
     if (!artifact.valid) {
       throw new Error(
         '[SceneTree] Cannot apply invalid hierarchy from validated load artifact'
       )
     }
+
     if (artifact.propertyContractError || !artifact.propertyContract) {
       throw new Error(
         artifact.propertyContractError ??
           '[SceneTree] Validated load is missing exact property relation evidence'
       )
     }
+
     this.assertElementPropertyContractActive(artifact.propertyContract)
     const validated = artifact.data
     const nextElements = new Map<string, ElementInstanceTypes>()
     let nextRelations: Map<string, readonly ElementPropertyRelation[]>
+
     try {
       for (const [elementId, elementData] of Object.entries(
         validated.elements
@@ -3683,11 +4084,13 @@ class SceneTree {
           elementData.type === EntityTypes.WORKSPACE
             ? createWorkspace(this, elementData)
             : createElement(elementData, this.propsManagerOwner)
+
         if (!element) {
           throw new Error(
             `[SceneTree] Validated hierarchy element "${elementId}" could not be constructed`
           )
         }
+
         nextElements.set(elementId, element as ElementInstanceTypes)
         if (!isEqual(element.save(), elementData)) {
           throw new Error(
@@ -3695,6 +4098,7 @@ class SceneTree {
           )
         }
       }
+
       nextRelations = this.buildElementPropertyRelationIndex(
         nextElements.values()
       )
@@ -3713,12 +4117,16 @@ class SceneTree {
       ...this._elements.values(),
       ...this._deletedMap.values()
     ]
+
     this.replaceCanonicalElementMap(nextElements, nextRelations)
     this._deletedMap.clear()
     this.changes = []
     this.workspaceList = [...validated.workspaceList]
     this.workspace = validated.workspace
-    if (nextElements.size === 0) this._init()
+    if (nextElements.size === 0) {
+      this._init()
+    }
+
     this.projectLocalComputedDataFromPropertyIds([...nextRelations.keys()])
     previousElements.forEach((element) => {
       try {
@@ -3731,6 +4139,7 @@ class SceneTree {
 
   load(data: SceneTreeDataType | unknown) {
     const result = this.validateLoadData(data)
+
     this.applyValidatedLoad(result)
   }
 
@@ -3774,6 +4183,7 @@ class SceneTree {
     }
 
     const children = (element as GroupInstanceTypes).get('children')
+
     if (
       !Array.isArray(children) ||
       children.some((childId) => typeof childId !== 'string')
@@ -3799,21 +4209,25 @@ class SceneTree {
         `Container "${parentId}"`
       )
       const localChildren = new Set<string>()
+
       children.forEach((childId) => {
         if (localChildren.has(childId) || membership.has(childId)) {
           throw new Error(
             `[SceneTree] Invalid canonical hierarchy: duplicate membership for "${childId}"`
           )
         }
+
         localChildren.add(childId)
         membership.set(childId, parentId)
 
         const child = this.getElementById(childId)
+
         if (!child) {
           throw new Error(
             `[SceneTree] Invalid canonical hierarchy: missing child "${childId}"`
           )
         }
+
         if (child.get('parentId') !== parentId) {
           throw new Error(
             `[SceneTree] Invalid canonical hierarchy: parent mismatch for "${childId}"`
@@ -3823,6 +4237,7 @@ class SceneTree {
     })
 
     const parentIds = new Map<string, string>()
+
     this._elements.forEach((element, elementId) => {
       if (element.get('type') === EntityTypes.WORKSPACE) {
         return
@@ -3830,11 +4245,13 @@ class SceneTree {
 
       const parentId = element.get('parentId')
       const parent = this.getElementById(parentId)
+
       if (!parent || !isGroupEntity(parent.get('type'))) {
         throw new Error(
           `[SceneTree] Invalid canonical hierarchy: missing container parent for "${elementId}"`
         )
       }
+
       if (membership.get(elementId) !== parentId) {
         throw new Error(
           `[SceneTree] Invalid canonical hierarchy: missing membership for "${elementId}"`
@@ -3847,10 +4264,15 @@ class SceneTree {
     // Each parent edge is walked once within this validation. No result survives
     // a subsequent mutation, so corrupt or changed hierarchies are still checked.
     const verified = new Set<string>()
+
     for (const elementId of parentIds.keys()) {
-      if (verified.has(elementId)) continue
+      if (verified.has(elementId)) {
+        continue
+      }
+
       const path = new Set<string>()
       let currentId: string | undefined = elementId
+
       while (
         currentId &&
         parentIds.has(currentId) &&
@@ -3861,9 +4283,11 @@ class SceneTree {
             `[SceneTree] Invalid canonical hierarchy: cycle at "${elementId}"`
           )
         }
+
         path.add(currentId)
         currentId = parentIds.get(currentId)
       }
+
       path.forEach((id) => verified.add(id))
     }
   }
@@ -3881,10 +4305,13 @@ class SceneTree {
           '[SceneTree] Invalid hierarchy request: self-parenting or descendant cycle'
         )
       }
+
       const ancestor = this.getElementById(ancestorId)
+
       if (!ancestor || ancestor.get('type') === EntityTypes.WORKSPACE) {
         return
       }
+
       ancestorId = ancestor.get('parentId')
     }
   }
@@ -3900,17 +4327,21 @@ class SceneTree {
     })
 
     const nextChildren = new Map<string, string[]>()
+
     affectedParentIds.forEach((parentId) => {
       const parent = this.getElementById(parentId)
+
       if (!parent) {
         throw new Error(
           `[SceneTree] Cannot apply hierarchy move: missing parent "${parentId}"`
         )
       }
+
       const children = this.getContainerChildren(
         parent,
         `Hierarchy parent "${parentId}"`
       )
+
       originalChildren.set(parentId, children)
       nextChildren.set(
         parentId,
@@ -3927,32 +4358,39 @@ class SceneTree {
       )
       .forEach(({ elementId, after }) => {
         const children = nextChildren.get(after.parentId)
+
         if (!children || after.index < 0 || after.index > children.length) {
           throw new Error(
             `[SceneTree] Cannot apply hierarchy move: invalid exact index for "${elementId}"`
           )
         }
+
         children.splice(after.index, 0, elementId)
       })
 
     const operationChangeStart = this.changes.length
+
     try {
       nextChildren.forEach((children, parentId) => {
         const parent = this.getElementById(parentId) as GroupInstanceTypes
+
         parent.set('children', children)
       })
       moves.forEach(({ elementId, after }) => {
         const element = this.getElementById(elementId)
+
         if (!element) {
           throw new Error(
             `[SceneTree] Cannot apply hierarchy move: missing element "${elementId}"`
           )
         }
+
         element.set('parentId', after.parentId, { undoable: false })
       })
     } catch (error) {
       originalChildren.forEach((children, parentId) => {
         const parent = this.getElementById(parentId) as GroupInstanceTypes
+
         parent.set('children', children, { undoable: false })
       })
       moves.forEach(({ elementId, before }) => {
@@ -3985,6 +4423,7 @@ class SceneTree {
     }
 
     const requestedIds = [...request.elementIds]
+
     if (new Set(requestedIds).size !== requestedIds.length) {
       throw new Error(
         '[SceneTree] Invalid hierarchy request: elementIds must be unique'
@@ -3993,20 +4432,24 @@ class SceneTree {
 
     const elements = requestedIds.map((elementId) => {
       const element = this.getElementById(elementId)
+
       if (!element) {
         throw new Error(
           `[SceneTree] Invalid hierarchy request: missing element "${elementId}"`
         )
       }
+
       if (element.get('type') === EntityTypes.WORKSPACE) {
         throw new Error(
           '[SceneTree] Invalid hierarchy request: workspace movement is forbidden'
         )
       }
+
       return element
     })
 
     const sourceParentId = elements[0].get('parentId')
+
     if (
       elements.some((element) => element.get('parentId') !== sourceParentId)
     ) {
@@ -4016,11 +4459,13 @@ class SceneTree {
     }
 
     const sourceParent = this.getElementById(sourceParentId)
+
     if (!sourceParent) {
       throw new Error(
         `[SceneTree] Invalid hierarchy request: missing source parent "${sourceParentId}"`
       )
     }
+
     const sourceChildren = this.getContainerChildren(
       sourceParent,
       `Source parent "${sourceParentId}"`
@@ -4029,6 +4474,7 @@ class SceneTree {
     const canonicalIds = sourceChildren.filter((childId) =>
       requestedIdSet.has(childId)
     )
+
     if (canonicalIds.length !== requestedIds.length) {
       throw new Error(
         '[SceneTree] Invalid hierarchy request: source membership is incomplete'
@@ -4036,11 +4482,13 @@ class SceneTree {
     }
 
     const targetParent = this.getElementById(request.targetParentId)
+
     if (!targetParent) {
       throw new Error(
         `[SceneTree] Invalid hierarchy request: missing target "${request.targetParentId}"`
       )
     }
+
     const targetChildren = this.getContainerChildren(
       targetParent,
       `Target "${request.targetParentId}"`
@@ -4048,6 +4496,7 @@ class SceneTree {
     const targetBase = targetChildren.filter(
       (childId) => !requestedIdSet.has(childId)
     )
+
     if (
       !Number.isInteger(request.targetIndex) ||
       request.targetIndex < 0 ||
@@ -4061,6 +4510,7 @@ class SceneTree {
     this.assertMoveDoesNotCreateCycle(canonicalIds, request.targetParentId)
 
     const nextTargetChildren = [...targetBase]
+
     nextTargetChildren.splice(request.targetIndex, 0, ...canonicalIds)
     if (
       sourceParentId === request.targetParentId &&
@@ -4082,6 +4532,7 @@ class SceneTree {
     }))
 
     const operationChangeStart = this.changes.length
+
     this.applyValidatedHierarchyMoves(moves)
     this.changes.splice(operationChangeStart)
     this.addChange({
@@ -4105,16 +4556,19 @@ class SceneTree {
     }
 
     const elementIds = moves.map(({ elementId }) => elementId)
+
     if (new Set(elementIds).size !== elementIds.length) {
       throw new Error(
         '[SceneTree] Cannot apply hierarchy move: duplicate element evidence'
       )
     }
+
     const sourceParentId = moves[0].before.parentId
     const targetParentId = moves[0].after.parentId
     const targetStartIndex = moves[0].after.index
     const sourceIndices = new Set<number>()
     const targetIndices = new Set<number>()
+
     for (const [index, { before, after }] of moves.entries()) {
       if (
         before.parentId !== sourceParentId ||
@@ -4131,12 +4585,14 @@ class SceneTree {
           '[SceneTree] Cannot apply hierarchy move: invalid canonical target batch'
         )
       }
+
       sourceIndices.add(before.index)
       targetIndices.add(after.index)
     }
 
     moves.forEach(({ elementId, before, after }) => {
       const element = this.getElementById(elementId)
+
       if (
         !element ||
         element.get('parentId') !== before.parentId ||
@@ -4149,6 +4605,7 @@ class SceneTree {
           `[SceneTree] Cannot apply hierarchy move: stale before image for "${elementId}"`
         )
       }
+
       if (!this.getElementById(after.parentId)) {
         throw new Error(
           `[SceneTree] Cannot apply hierarchy move: missing target "${after.parentId}"`
@@ -4162,6 +4619,7 @@ class SceneTree {
     this.assertMoveDoesNotCreateCycle(elementIds, targetParentId)
 
     const operationChangeStart = this.changes.length
+
     this.applyValidatedHierarchyMoves(moves)
     this.changes.splice(operationChangeStart)
     this.addChange({
@@ -4175,6 +4633,7 @@ class SceneTree {
     })
     acknowledgeTransactionReplayApplied()
     this.commitSceneTreeTransaction(options)
+
     return true
   }
 
@@ -4183,11 +4642,13 @@ class SceneTree {
     parentIndexes = new Map<string, ReadonlyMap<string, number>>()
   ): SubtreeRemovalEntry[] {
     const root = this.getElementById(elementId)
+
     if (!root) {
       throw new Error(
         `[SceneTree] Invalid subtree request: missing element "${elementId}"`
       )
     }
+
     if (root.get('type') === EntityTypes.WORKSPACE) {
       throw new Error(
         '[SceneTree] Invalid subtree request: workspace removal is forbidden'
@@ -4195,6 +4656,7 @@ class SceneTree {
     }
 
     const removed: SubtreeRemovalEntry[] = []
+
     const visit = (current: ElementInstanceTypes): void => {
       if (isGroupEntity(current.get('type'))) {
         this.getContainerChildren(
@@ -4202,11 +4664,13 @@ class SceneTree {
           `Subtree container "${current.get('id')}"`
         ).forEach((childId) => {
           const child = this.getElementById(childId)
+
           if (!child) {
             throw new Error(
               `[SceneTree] Invalid subtree request: missing child "${childId}"`
             )
           }
+
           visit(child)
         })
       }
@@ -4214,6 +4678,7 @@ class SceneTree {
       const currentId = current.get('id')
       const parentId = current.get('parentId')
       const parent = this.getElementById(parentId)
+
       if (parent && !parentIndexes.has(parentId)) {
         parentIndexes.set(
           parentId,
@@ -4225,12 +4690,15 @@ class SceneTree {
           )
         )
       }
+
       const index = parentIndexes.get(parentId)?.get(currentId) ?? -1
+
       if (index < 0) {
         throw new Error(
           `[SceneTree] Invalid subtree request: missing membership for "${currentId}"`
         )
       }
+
       removed.push({
         elementId: currentId,
         parentId,
@@ -4238,7 +4706,9 @@ class SceneTree {
         data: current.save()
       })
     }
+
     visit(root)
+
     return removed
   }
 
@@ -4248,7 +4718,9 @@ class SceneTree {
   ): RemoveSubtreeResult {
     const preparedMutation = this.prepareSubtreeRemoval(elementId)
     const change = preparedMutation.evidence[0]
+
     this.applyPreparedElementMutation(preparedMutation, options)
+
     return Object.freeze({
       elementId: change.elementId,
       removed: change.removed,
@@ -4266,6 +4738,7 @@ class SceneTree {
         '[SceneTree] Invalid subtree restore: snapshot must be a record'
       )
     }
+
     if (
       typeof snapshot.elementId !== 'string' ||
       snapshot.elementId.length === 0 ||
@@ -4285,6 +4758,7 @@ class SceneTree {
       snapshot as unknown as SceneTreeRestoreSnapshot
     )
     const rootParentChildrenAfter = [...validated.rootParentChildrenAfter]
+
     if (
       new Set(rootParentChildrenAfter).size !== rootParentChildrenAfter.length
     ) {
@@ -4295,6 +4769,7 @@ class SceneTree {
 
     const entries = validated.removed
     const entryIds = entries.map(({ elementId }) => elementId)
+
     if (
       entryIds.some((elementId) => typeof elementId !== 'string') ||
       new Set(entryIds).size !== entryIds.length
@@ -4303,12 +4778,14 @@ class SceneTree {
         '[SceneTree] Invalid subtree restore: duplicate or invalid element evidence'
       )
     }
+
     entries.forEach((entry) => {
       if (this.getElementById(entry.elementId)) {
         throw new Error(
           `[SceneTree] Invalid subtree restore: active element "${entry.elementId}" already exists`
         )
       }
+
       if (
         typeof entry.parentId !== 'string' ||
         !Number.isInteger(entry.index) ||
@@ -4322,11 +4799,13 @@ class SceneTree {
           `[SceneTree] Invalid subtree restore: malformed element evidence for "${entry.elementId}"`
         )
       }
+
       if (!componentRegistry.has(entry.data.type)) {
         throw new Error(
           `[SceneTree] Invalid subtree restore: unregistered element type "${entry.data.type}"`
         )
       }
+
       if (
         typeof entry.data.name !== 'string' ||
         typeof entry.data.visible !== 'boolean' ||
@@ -4347,26 +4826,32 @@ class SceneTree {
       entries.map((entry) => [entry.elementId, entry] as const)
     )
     const rootEntry = entries[entries.length - 1]
+
     if (rootEntry.elementId !== validated.elementId) {
       throw new Error(
         '[SceneTree] Invalid subtree restore: root evidence must be the final post-order entry'
       )
     }
+
     const rootParent = this.getElementById(rootEntry.parentId)
+
     if (!rootParent || !isGroupEntity(rootParent.get('type'))) {
       throw new Error(
         `[SceneTree] Invalid subtree restore: missing container parent "${rootEntry.parentId}"`
       )
     }
+
     const currentRootParentChildren = this.getContainerChildren(
       rootParent,
       `Restore root parent "${rootEntry.parentId}"`
     )
+
     if (!isEqual(currentRootParentChildren, rootParentChildrenAfter)) {
       throw new Error(
         '[SceneTree] Invalid subtree restore: stale post-delete root-parent order evidence'
       )
     }
+
     if (
       rootEntry.index > rootParentChildrenAfter.length ||
       rootParentChildrenAfter.includes(rootEntry.elementId)
@@ -4377,14 +4862,20 @@ class SceneTree {
     }
 
     const childrenByParent = new Map<string, SubtreeRemovalEntry[]>()
+
     entries.forEach((entry) => {
-      if (entry.elementId === rootEntry.elementId) return
+      if (entry.elementId === rootEntry.elementId) {
+        return
+      }
+
       if (!entryById.has(entry.parentId)) {
         throw new Error(
           `[SceneTree] Invalid subtree restore: missing snapshot parent "${entry.parentId}"`
         )
       }
+
       const children = childrenByParent.get(entry.parentId) ?? []
+
       children.push(entry)
       childrenByParent.set(entry.parentId, children)
     })
@@ -4396,14 +4887,17 @@ class SceneTree {
       const childEntries = (childrenByParent.get(entry.elementId) ?? []).sort(
         (left, right) => left.index - right.index
       )
+
       if (!isGroupEntity(entry.data.type)) {
         if (childEntries.length > 0 || declaredChildren !== undefined) {
           throw new Error(
             `[SceneTree] Invalid subtree restore: inconsistent child order for "${entry.elementId}"`
           )
         }
+
         return
       }
+
       if (
         !Array.isArray(declaredChildren) ||
         declaredChildren.some((childId) => typeof childId !== 'string') ||
@@ -4423,27 +4917,36 @@ class SceneTree {
     const postOrder: string[] = []
     const visiting = new Set<string>()
     const visited = new Set<string>()
+
     const visit = (elementId: string): void => {
       if (visiting.has(elementId)) {
         throw new Error(
           `[SceneTree] Invalid subtree restore: cycle at "${elementId}"`
         )
       }
-      if (visited.has(elementId)) return
+
+      if (visited.has(elementId)) {
+        return
+      }
+
       const entry = entryById.get(elementId)
+
       if (!entry) {
         throw new Error(
           `[SceneTree] Invalid subtree restore: inconsistent child order at "${elementId}"`
         )
       }
+
       visiting.add(elementId)
       if (isGroupEntity(entry.data.type)) {
         ;(entry.data as GroupRawData).children.forEach(visit)
       }
+
       visiting.delete(elementId)
       visited.add(elementId)
       postOrder.push(elementId)
     }
+
     visit(rootEntry.elementId)
     if (visited.size !== entries.length || !isEqual(postOrder, entryIds)) {
       throw new Error(
@@ -4454,19 +4957,24 @@ class SceneTree {
     const propertyContract = this.captureElementPropertyContract(
       entries.map(({ data }) => data)
     )
+
     if (options?.propertyState !== 'pending-restore') {
       this.assertElementPropertyContractActive(propertyContract)
     }
+
     const preparedEntries = entries.map((entry) => {
       const tombstone = this._deletedMap.get(entry.elementId)
       let strategy: SceneTreeRestoreStrategy = 'materialize'
+
       if (tombstone) {
         const tombstoneData = cloneSceneTreeValue(tombstone.save())
         const expectedTombstoneData = cloneSceneTreeValue(entry.data)
+
         expectedTombstoneData.parentId = ''
         if (isGroupEntity(entry.data.type)) {
           ;(expectedTombstoneData as GroupRawData).children = []
         }
+
         if (
           tombstone.get('type') !== entry.data.type ||
           !isEqual(tombstoneData, expectedTombstoneData)
@@ -4475,8 +4983,10 @@ class SceneTree {
             `[SceneTree] Invalid subtree restore: incompatible tombstone for "${entry.elementId}"`
           )
         }
+
         strategy = 'reuse'
       }
+
       return Object.freeze({ elementId: entry.elementId, strategy })
     })
     const propertyOwnerRelations = propertyContract.relations.map(
@@ -4494,10 +5004,12 @@ class SceneTree {
       entries: Object.freeze(preparedEntries),
       propertyOwnerRelations: Object.freeze(propertyOwnerRelations)
     })
+
     this.validatedRestoreArtifacts.set(preparedRestore, {
       snapshot: validated,
       propertyContract
     })
+
     return preparedRestore
   }
 
@@ -4506,17 +5018,20 @@ class SceneTree {
     options?: EVENT_OPTIONS
   ): RemoveSubtreeResult {
     const artifact = this.validatedRestoreArtifacts.get(preparedRestore)
+
     if (!artifact) {
       throw new Error(
         '[SceneTree] Expected an owner-issued one-shot prepared subtree restore'
       )
     }
+
     this.validatedRestoreArtifacts.delete(preparedRestore)
     this.assertElementPropertyContractActive(artifact.propertyContract)
 
     const revalidatedRestore = this.preflightRestoreSubtree(artifact.snapshot)
     const verificationArtifact =
       this.validatedRestoreArtifacts.get(revalidatedRestore)
+
     this.validatedRestoreArtifacts.delete(revalidatedRestore)
     if (
       !verificationArtifact ||
@@ -4530,6 +5045,7 @@ class SceneTree {
         '[SceneTree] Cannot apply subtree restore: prepared restore is stale'
       )
     }
+
     const snapshot = verificationArtifact.snapshot
     const strategyByElementId = new Map(
       preparedRestore.entries.map(({ elementId, strategy }) => [
@@ -4541,34 +5057,45 @@ class SceneTree {
       snapshot.removed.map((entry) => [entry.elementId, entry] as const)
     )
     const prepared = new Map<string, ElementInstanceTypes>()
+
     try {
       preparedRestore.entries.forEach(({ elementId, strategy }) => {
         const entry = entryById.get(elementId)
+
         if (!entry) {
           throw new Error(
             `[SceneTree] Cannot apply subtree restore: missing prepared evidence for "${elementId}"`
           )
         }
+
         if (strategy === 'reuse') {
           const tombstone = this._deletedMap.get(elementId)
+
           if (!tombstone) {
             throw new Error(
               `[SceneTree] Cannot apply subtree restore: stale tombstone "${elementId}"`
             )
           }
+
           prepared.set(elementId, tombstone)
+
           return
         }
+
         if (strategy !== 'materialize') {
           throw new Error(
             `[SceneTree] Cannot apply subtree restore: invalid strategy for "${elementId}"`
           )
         }
+
         const constructorData = cloneSceneTreeValue(entry.data)
+
         if (isGroupEntity(constructorData.type)) {
           ;(constructorData as GroupRawData).children = []
         }
+
         const element = createElement(constructorData, this.propsManagerOwner)
+
         if (!element || element.get('id') !== elementId) {
           if (element) {
             try {
@@ -4577,24 +5104,30 @@ class SceneTree {
               // Preserve the exact materialization failure.
             }
           }
+
           throw new Error(
             `[SceneTree] Cannot apply subtree restore: exact materialization failed for "${elementId}"`
           )
         }
+
         const expectedPreparedData = cloneSceneTreeValue(entry.data)
+
         if (isGroupEntity(expectedPreparedData.type)) {
           ;(expectedPreparedData as GroupRawData).children = []
         }
+
         if (!isEqual(element.save(), expectedPreparedData)) {
           try {
             disposeElementComputed(element)
           } catch {
             // Preserve the exact raw-data failure.
           }
+
           throw new Error(
             `[SceneTree] Cannot apply subtree restore: exact data changed for "${elementId}"`
           )
         }
+
         prepared.set(elementId, element)
       })
     } catch (error) {
@@ -4613,11 +5146,13 @@ class SceneTree {
     const restoreOrder = [...snapshot.removed].reverse()
     const restoredElements = restoreOrder.map(({ elementId }) => {
       const element = prepared.get(elementId)
+
       if (!element) {
         throw new Error(
           `[SceneTree] Cannot apply subtree restore: missing prepared hierarchy for "${elementId}"`
         )
       }
+
       return element
     })
     const relationIndexUpdates =
@@ -4631,15 +5166,18 @@ class SceneTree {
       `Restore root parent "${rootEntry.parentId}"`
     )
     const restoredRootParentChildren = [...rootParentChildrenBefore]
+
     restoredRootParentChildren.splice(rootEntry.index, 0, rootEntry.elementId)
     const operationChangeStart = this.changes.length
     let canonicalMapApplied = false
+
     try {
       restoredElements.forEach((element) => {
         reactivateElementComputed(element)
       })
       snapshot.removed.forEach(({ elementId, parentId }) => {
         const element = prepared.get(elementId) as ElementInstanceTypes
+
         ;(element as Element).assignCanonicalParentId(parentId)
         this._deletedMap.delete(elementId)
       })
@@ -4650,8 +5188,12 @@ class SceneTree {
         restoredRootParentChildren
       )
       snapshot.removed.forEach(({ elementId, data }) => {
-        if (!isGroupEntity(data.type)) return
+        if (!isGroupEntity(data.type)) {
+          return
+        }
+
         const group = prepared.get(elementId) as GroupInstanceTypes
+
         ;(this.currentWorkspace as Workspace).replaceBatchParentChildren(
           group,
           (data as GroupRawData).children
@@ -4675,9 +5217,14 @@ class SceneTree {
       } catch {
         // Preserve the primary apply failure and continue every rollback stage.
       }
+
       snapshot.removed.forEach(({ elementId, data }) => {
-        if (!isGroupEntity(data.type)) return
+        if (!isGroupEntity(data.type)) {
+          return
+        }
+
         const group = prepared.get(elementId) as GroupInstanceTypes
+
         try {
           ;(this.currentWorkspace as Workspace).replaceBatchParentChildren(
             group,
@@ -4697,14 +5244,17 @@ class SceneTree {
           // Preserve the primary apply failure and continue every rollback stage.
         }
       }
+
       restoredElements.forEach((element) => {
         const elementId = element.get('id')
         const strategy = strategyByElementId.get(elementId)
+
         try {
           ;(element as Element).assignCanonicalParentId('')
         } catch {
           // Preserve the primary apply failure and continue every rollback stage.
         }
+
         if (strategy === 'reuse') {
           try {
             this._deletedMap.set(elementId, element)
@@ -4718,6 +5268,7 @@ class SceneTree {
             // Preserve the primary apply failure and continue every rollback stage.
           }
         }
+
         try {
           disposeElementComputed(element)
         } catch {
@@ -4740,6 +5291,7 @@ class SceneTree {
     })
     acknowledgeTransactionReplayApplied()
     this.commitSceneTreeTransaction(options)
+
     return cloneSceneTreeValue(snapshot)
   }
 
@@ -4764,6 +5316,7 @@ class SceneTree {
       removed,
       rootParentChildrenAfter: cloneSceneTreeValue(rootParentChildrenAfter)
     }
+
     return this.applyRestoreSubtree(
       this.preflightRestoreSubtree(snapshot),
       options
@@ -4773,8 +5326,10 @@ class SceneTree {
   applySubtreeChange(change: SubtreeChange, options?: EVENT_OPTIONS): boolean {
     if (change.action === SCENE_TREE_ACTIONS.RESTORE_SUBTREE) {
       this.restoreSubtree(change.removed, options)
+
       return true
     }
+
     if (change.action !== SCENE_TREE_ACTIONS.REMOVE_SUBTREE) {
       throw new Error(
         `[SceneTree] Invalid subtree replay action "${change.action}"`
@@ -4782,12 +5337,15 @@ class SceneTree {
     }
 
     const preparedMutation = this.prepareCanonicalSubtreeRemoval(change)
+
     this.applyPreparedElementMutation(preparedMutation, options)
+
     return true
   }
 
   addToMap(element: ElementInstanceTypes) {
     const elId = element.get('id')
+
     if (!element || !elId) {
       return
     }
@@ -4801,6 +5359,7 @@ class SceneTree {
     parentId: string
   ): void {
     const parent = this._elements.get(parentId)
+
     if (!parent || !isGroupEntity(parent.get('type'))) {
       throw new Error(
         '[SceneTree] Canonical element registration requires an active container parent'
@@ -4808,6 +5367,7 @@ class SceneTree {
     }
 
     const elementIds = elements.map((element) => element.get('id'))
+
     if (
       elementIds.some(
         (elementId) =>
@@ -4825,11 +5385,13 @@ class SceneTree {
 
     const relationIndexUpdates =
       this.prepareElementPropertyRelationInsertions(elements)
+
     elements.forEach((element) => {
       ;(element as Element).assignCanonicalParentId(parentId)
     })
     elements.forEach((element, index) => {
       const elementId = elementIds[index]
+
       this._deletedMap.delete(elementId)
     })
     this.addElementsToCanonicalMap(elements, relationIndexUpdates)
@@ -4837,6 +5399,7 @@ class SceneTree {
 
   removeFromMap(element: ElementInstanceTypes) {
     const elId = element.get('id')
+
     if (!element || !elId) {
       return
     }
@@ -4852,9 +5415,11 @@ class SceneTree {
     const restoredElement = this._deletedMap.get(
       elementId
     ) as ElementInstanceTypes
+
     if (recordChange) {
       this.addChangeForAddElement(restoredElement)
     }
+
     return restoredElement
   }
 
@@ -4898,9 +5463,11 @@ class SceneTree {
       elementData,
       this.propsManagerOwner
     ) as ElementInstanceTypes
+
     if (recordChange) {
       this.addChangeForAddElement(newElement)
     }
+
     return newElement
   }
 
@@ -4928,9 +5495,11 @@ class SceneTree {
     parent?: GroupInstanceTypes
   ): GroupInstanceTypes | undefined {
     const workspace = this.currentWorkspace as Workspace
+
     if (!workspace) {
       return undefined
     }
+
     return (parent ?? workspace.firstFrame ?? workspace) as GroupInstanceTypes
   }
 
@@ -4940,6 +5509,7 @@ class SceneTree {
     index: number
   ): ElementBatchPreflight {
     const target = this.resolveElementBatchTarget(parent)
+
     if (
       !target ||
       this.getElementById(target.get('id')) !== target ||
@@ -4952,6 +5522,7 @@ class SceneTree {
 
     const childCount = (target as Group).getCanonicalChildCount()
     const insertionIndex = index > -1 ? index : childCount
+
     if (
       !Number.isInteger(index) ||
       index < -1 ||
@@ -4967,16 +5538,20 @@ class SceneTree {
       data: Readonly<Record<string, unknown>>
       propertyIds?: Readonly<Record<string, string>>
     }[] = []
+
     elementData.forEach((source) => {
       if (!isRecord(source)) {
         throw new Error('[SceneTree] Element batch has invalid data')
       }
+
       const sourceId = source.id
+
       if (typeof sourceId !== 'string' || sourceId.length === 0) {
         throw new Error(
           '[SceneTree] Element batch requires unique inactive ids'
         )
       }
+
       sourceIds.push(sourceId)
 
       const sourceType = source.type
@@ -4984,17 +5559,21 @@ class SceneTree {
         typeof sourceType === 'string'
           ? componentRegistry.get(sourceType)
           : undefined
+
       if (!registration) {
         throw new Error(
           `No component registered for type: ${String(sourceType ?? '')}`
         )
       }
+
       const propertyIds = source.props
+
       if (propertyIds !== undefined && !isRecord(propertyIds)) {
         throw new Error(
           `[SceneTree] Element "${sourceId}" has invalid property owners`
         )
       }
+
       const constructorPropertyDefinitions = (
         registration.constructor as typeof registration.constructor & {
           ordinaryPropertyDefinitions?: readonly PropertyDefinition[]
@@ -5004,6 +5583,7 @@ class SceneTree {
         registration.properties.length > 0
           ? registration.properties
           : (constructorPropertyDefinitions ?? [])
+
       ordinaryPropertyOwners.push({
         definitions,
         data: source,
@@ -5046,9 +5626,11 @@ class SceneTree {
     options?: EVENT_OPTIONS
   ): readonly string[] {
     const workspace = this.currentWorkspace as Workspace
+
     if (!workspace || elementData.length === 0) {
       return []
     }
+
     const preflight = this.preflightElementBatch(elementData, parent, index)
     const {
       target,
@@ -5063,6 +5645,7 @@ class SceneTree {
     let rollbackPreparedProperties: (() => void) | undefined
     let completePreparedProperties: (() => void) | undefined
     let parentMembershipMayHaveChanged = false
+
     const materializeElementBatch = () => {
       measureCanonicalSceneBatchPhase(
         'scene-tree:element-batch:materialize',
@@ -5072,11 +5655,13 @@ class SceneTree {
             const element = runWithSceneTreeInitialOwnerValues(source, () =>
               this.createElement(constructorData, false)
             )
+
             if (!element) {
               throw new Error(
                 '[SceneTree] Canonical batch element creation failed'
               )
             }
+
             elements.push(element)
           })
         }
@@ -5105,13 +5690,16 @@ class SceneTree {
         }
       )
     }
+
     try {
       let propsEvents: readonly PreparedPropsTransactionEvent[] = []
+
       runWithDeferredReplayAcknowledgement(() => {
         const propertyBatch = this.propsManagerOwner.runInPropertyCreationBatch(
           materializeElementBatch,
           preparedOrdinaryProperties
         )
+
         rollbackPreparedProperties = propertyBatch.rollback
         completePreparedProperties = propertyBatch.complete
 
@@ -5135,6 +5723,7 @@ class SceneTree {
         }
       )
       completePreparedProperties?.()
+
       return Object.freeze(elements.map((element) => element.get('id')))
     } catch (error) {
       if (wasCanonicalBatchHandoffAccepted(canonicalHandoffState)) {
@@ -5143,7 +5732,9 @@ class SceneTree {
         this.cleanChanges()
         throw error
       }
+
       const recoveryFailures: unknown[] = []
+
       const recover = (operation: () => void) => {
         try {
           operation()
@@ -5151,32 +5742,43 @@ class SceneTree {
           recoveryFailures.push(failure)
         }
       }
+
       recover(() => rollbackPreparedProperties?.())
       if (parentMembershipMayHaveChanged) {
         recover(() =>
           (target as Group).removeChildrenFromCanonicalBatch(sourceIds)
         )
       }
+
       const activeElements = elements.filter(
         (element) => this._elements.get(element.get('id')) === element
       )
-      if (activeElements.length > 0)
+
+      if (activeElements.length > 0) {
         recover(() => this.removeElementsFromCanonicalMap(activeElements))
+      }
+
       elements.forEach((element) =>
         recover(() => disposeElementComputed(element))
       )
       sourceIds.forEach((sourceId) =>
         recover(() => {
           const tombstone = tombstones.get(sourceId)
-          if (tombstone) this._deletedMap.set(sourceId, tombstone)
-          else this._deletedMap.delete(sourceId)
+
+          if (tombstone) {
+            this._deletedMap.set(sourceId, tombstone)
+          } else {
+            this._deletedMap.delete(sourceId)
+          }
         })
       )
       recover(() => {
         this.changes.splice(operationChangeStart)
       })
-      if (recoveryFailures.length)
+      if (recoveryFailures.length) {
         throw new MutationRecoveryError(error, recoveryFailures)
+      }
+
       throw error
     }
   }
@@ -5187,12 +5789,14 @@ class SceneTree {
     options?: EVENT_OPTIONS
   ): boolean {
     const workspace = this.currentWorkspace as Workspace
+
     if (!workspace) {
       return false
     }
 
     const elementId = data.id as string
     const element = this.getElementById(elementId)
+
     if (!element) {
       return false
     }
@@ -5205,6 +5809,7 @@ class SceneTree {
       ? (this.getElementById(resolvedParentId) as GroupInstanceTypes)
       : undefined
     const container = resolvedParent ?? workspace
+
     if (!isGroupEntity(container.get('type'))) {
       return false
     }
@@ -5213,6 +5818,7 @@ class SceneTree {
       container,
       `Remove parent "${resolvedParentId}"`
     )
+
     if (
       resolvedParentId !== element.get('parentId') ||
       !children.includes(elementId)
@@ -5228,6 +5834,7 @@ class SceneTree {
         index
       }
     ])
+
     return (
       this.applyPreparedElementMutation(preparedMutation, options)
         .orderedElementIds.length === 1
@@ -5248,29 +5855,37 @@ class SceneTree {
           '[SceneTree] Local computed values require unique active element batches'
         )
       }
+
       seenElementIds.add(update.elementId)
       const element = this.getElementById(update.elementId)
+
       if (!element || element.get('type') === EntityTypes.WORKSPACE) {
         throw new Error(
           `[SceneTree] Local computed values require active element "${update.elementId}"`
         )
       }
+
       const computedSnapshot = getComputedSnapshot(element)
       const invalidKey = Object.keys(update.values).find((key) =>
         LOCAL_COMPUTED_RESERVED_KEYS.has(key)
       )
+
       if (invalidKey) {
         throw new Error(
           `[SceneTree] Local computed values cannot update canonical key "${invalidKey}"`
         )
       }
+
       const changes: UpdateElementBatchChange['changes'][number][] = []
+
       Object.entries(update.values).forEach(([key, sourceAfter]) => {
         if (sourceAfter === undefined) {
           return
         }
+
         const before = computedSnapshot[key]
         const after = cloneSceneTreeValue(sourceAfter)
+
         if (!isEqual(before, after)) {
           changes.push({
             owner: 'computed',
@@ -5280,6 +5895,7 @@ class SceneTree {
           })
         }
       })
+
       return {
         element,
         elementId: update.elementId,
@@ -5315,6 +5931,7 @@ class SceneTree {
               ]
       )
     )
+
     if (events.length > 0) {
       publishLocalComputedDataEvents(events)
     }
@@ -5336,24 +5953,30 @@ class SceneTree {
           '[SceneTree] Local computed patches require unique active element batches'
         )
       }
+
       seenElementIds.add(update.elementId)
       const element = this.getElementById(update.elementId)
+
       if (!element || element.get('type') === EntityTypes.WORKSPACE) {
         throw new Error(
           `[SceneTree] Local computed patches require active element "${update.elementId}"`
         )
       }
+
       const patch = update.patch
       const invalidKey = [
         ...Object.keys(patch.values ?? {}),
         ...Object.keys(patch.records ?? {})
       ].find((key) => LOCAL_COMPUTED_RESERVED_KEYS.has(key))
+
       if (invalidKey) {
         throw new Error(
           `[SceneTree] Local computed patches cannot update canonical key "${invalidKey}"`
         )
       }
+
       const computedSnapshot = getComputedSnapshot(element)
+
       validateComputedDataPatch(patch, computedSnapshot)
       const patchChange: ComputedDataPatchChange = {}
       const assignments: {
@@ -5364,9 +5987,11 @@ class SceneTree {
       Object.entries(patch.values ?? {}).forEach(([key, sourceAfter]) => {
         const before = computedSnapshot[key]
         const after = cloneSceneTreeValue(sourceAfter)
+
         if (isEqual(before, after)) {
           return
         }
+
         assignments.push({ key, after })
         patchChange.values ??= {}
         setOwnEnumerableValue(patchChange.values, key, { before, after })
@@ -5386,9 +6011,11 @@ class SceneTree {
             const recordExists = hasOwnRecordValue(currentRecord, recordId)
             const before = currentRecord[recordId]
             const after = cloneSceneTreeValue(sourceAfter)
+
             if (recordExists && isEqual(before, after)) {
               return
             }
+
             setOwnEnumerableValue(nextRecord, recordId, after)
             nextRecordPatch.set ??= {}
             setOwnEnumerableValue(
@@ -5402,11 +6029,13 @@ class SceneTree {
           if (!hasOwnRecordValue(currentRecord, recordId)) {
             return
           }
+
           nextRecordPatch.remove ??= {}
           setOwnEnumerableValue(nextRecordPatch.remove, recordId, {
             before: currentRecord[recordId]
           })
           const { [recordId]: _removed, ...withoutRecord } = nextRecord
+
           nextRecord = withoutRecord
         })
 
@@ -5416,6 +6045,7 @@ class SceneTree {
         ) {
           return
         }
+
         assignments.push({
           key,
           after: nextRecord as unknown as DataTypes
@@ -5457,6 +6087,7 @@ class SceneTree {
             : []
       )
     )
+
     if (events.length > 0) {
       publishLocalComputedDataEvents(events)
     }
@@ -5466,6 +6097,7 @@ class SceneTree {
     sourcePropertyIds: readonly string[]
   ): void {
     const valuesByElementId = new Map<string, Record<string, DataTypes>>()
+
     this.propsManagerOwner
       .resolvePropertyAncestorIds(sourcePropertyIds)
       .forEach((sourcePropertyId) => {
@@ -5474,12 +6106,15 @@ class SceneTree {
             const property = this.propsManagerOwner.getPropertyById(
               relation.componentId
             )
+
             if (!property) {
               return
             }
+
             const values =
               valuesByElementId.get(relation.ownerElementId) ??
               ({} as Record<string, DataTypes>)
+
             Object.entries(property.getValue()).forEach(([key, value]) => {
               if (value !== undefined) {
                 setOwnEnumerableValue(values, key, cloneSceneTreeValue(value))
@@ -5507,6 +6142,7 @@ class SceneTree {
     const immediate = events.some(
       (event) => event.options?.sharedDelivery === 'immediate'
     )
+
     try {
       handoff()
     } catch (error) {
@@ -5515,8 +6151,10 @@ class SceneTree {
       if (reportsAcceptedCanonicalBatchHandoff(error)) {
         publishLocalSceneTreeChanges(changes, this.projectionOwner, immediate)
       }
+
       throw error
     }
+
     publishLocalSceneTreeChanges(changes, this.projectionOwner, immediate)
   }
 
@@ -5529,6 +6167,7 @@ class SceneTree {
         ...(changeOptions ?? {}),
         shared: changeOptions?.shared ?? SharedDataChannelNames.SCENE_TREE
       })
+
       return Object.freeze({
         type: EventTypes.UPDATE_TRANSACTION,
         eventName: change.eventName,
@@ -5543,20 +6182,24 @@ class SceneTree {
   ): readonly CanonicalPropertyDeliveryOwner[] {
     return elements.map((element) => {
       const elementType = element.get('type')
+
       if (!componentRegistry.get(elementType)) {
         throw new Error(
           `[SceneTree] Canonical delivery has unregistered type "${elementType}"`
         )
       }
+
       const props = element.props as typeof element.props & {
         getCanonicalRootPropertyIds?: () => readonly string[]
       }
       const rootPropertyIds = props.getCanonicalRootPropertyIds?.()
+
       if (!rootPropertyIds) {
         throw new Error(
           `[SceneTree] Canonical delivery is missing property owner evidence for "${element.get('id')}"`
         )
       }
+
       return Object.freeze({
         orderedId: element.get('id'),
         rootPropertyIds: Object.freeze([...rootPropertyIds])
@@ -5586,7 +6229,9 @@ class SceneTree {
             '[SceneTree] Canonical element batch requires additive Props evidence'
           )
         }
+
         const addPayload = payload as AddRemovePropertyChange
+
         Object.freeze(addPayload.data)
         const ownerPayload = Object.freeze({
           ...addPayload,
@@ -5598,6 +6243,7 @@ class SceneTree {
             ownerPayload,
             propertyOwners
           )
+
         sharedRecords.forEach((record) => {
           Object.freeze(record.orderedIds)
           Object.freeze(record.payload.data)
@@ -5605,6 +6251,7 @@ class SceneTree {
           Object.freeze(record)
         })
         Object.freeze(sharedRecords)
+
         return Object.freeze({
           type: EventTypes.UPDATE_TRANSACTION,
           eventName,
@@ -5618,19 +6265,23 @@ class SceneTree {
       }
     ) satisfies readonly UpdateTransactionEvent[]
     const preparedSceneEvents = this.prepareSceneTreeTransactionEvents(options)
+
     if (preparedSceneEvents.length !== canonical.elements.length) {
       throw new Error(
         '[SceneTree] Canonical element batch requires one ordered Scene evidence event per element'
       )
     }
+
     const sceneEvents = preparedSceneEvents.map((event) => {
       const change = event.payload as SceneTreeChange
       const elementId = 'data' in change ? change.data.id : undefined
+
       if (!elementId) {
         throw new Error(
           '[SceneTree] Canonical element batch requires exact Scene delivery evidence'
         )
       }
+
       return Object.freeze({
         ...event,
         canonicalEvidence: Object.freeze({
@@ -5655,6 +6306,7 @@ class SceneTree {
           markCanonicalBatchHandoffAccepted(handoffState)
           acknowledgeTransactionReplayApplied()
         }
+
         throw error
       }
     } else {
@@ -5674,10 +6326,12 @@ class SceneTree {
   ) {
     if (canonical) {
       this.commitCanonicalElementBatch(options, canonical)
+
       return
     }
 
     const events = this.prepareSceneTreeTransactionEvents(options)
+
     this.handoffSceneTreeChanges(events, () => updateTransactionBatch(events))
     this.cleanChanges()
   }
@@ -5688,12 +6342,14 @@ class SceneTree {
       ...this._elements.values(),
       ...this._deletedMap.values()
     ])
+
     this.dispose()
     this.validatedLoadArtifacts = new WeakMap()
     this.validatedRestoreArtifacts = new WeakMap()
     this.preparedElementMutationArtifacts = new WeakMap()
     let failed = false
     let firstError: unknown
+
     elements.forEach((element) => {
       try {
         disposeElementComputed(element)
@@ -5704,7 +6360,9 @@ class SceneTree {
         }
       }
     })
-    if (failed) throw firstError
+    if (failed) {
+      throw firstError
+    }
   }
 
   dispose() {
@@ -5725,4 +6383,5 @@ class SceneTree {
 export { SceneTree }
 
 const sceneTree = new SceneTree()
+
 export default sceneTree

@@ -43,9 +43,11 @@ export const FRAME_RENDER_STRATEGY: RenderStrategy = (graphic, data) => {
       height: data.height
     }
   )
+
   const replayPath = () => {
     graphic.rect(0, 0, data.width, data.height)
   }
+
   replayPath()
   applyRenderableFill(graphic, data.fills, { replayPath })
   graphic.x = data.x

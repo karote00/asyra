@@ -20,6 +20,7 @@ describe('native text projection', () => {
   it('preserves literal Unicode text and explicit layout bounds', () => {
     const graphic = new RenderGraphics()
     const input = text()
+
     graphic.text(input, { color: '#123456', alpha: 0.4 })
     expect(graphic.getDrawOperations()).toEqual([
       { type: 'text', ...input, paint: { color: '#123456', alpha: 0.4 } }
@@ -35,6 +36,7 @@ describe('native text projection', () => {
   it('owns its input snapshot and replaces prior content on clear', () => {
     const graphic = new RenderGraphics()
     const input = text()
+
     graphic.text(input, { color: '#123456', alpha: 0.4 })
     input.text = 'Changed externally'
     input.fontSize = 60

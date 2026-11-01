@@ -15,16 +15,20 @@ export interface SpatialFrame {
   }[]
 }
 export const SPATIAL_LAYER_NAME = 'farm.spatial-layer'
+
 export class SpatialLayer {
   private readonly shared: SharedSpatialLayer
+
   constructor(invalidate: () => void) {
     this.shared = new SharedSpatialLayer(invalidate, {
       name: SPATIAL_LAYER_NAME
     })
   }
+
   get registration() {
     return this.shared.registration
   }
+
   submit(frame: SpatialFrame): void {
     this.shared.submit({
       ...frame,
@@ -37,9 +41,11 @@ export class SpatialLayer {
       }))
     })
   }
+
   submitCamera(camera: SpatialCamera): void {
     this.shared.submitCamera(camera)
   }
+
   dispose(): void {
     this.shared.dispose()
   }

@@ -4,6 +4,7 @@ type SiteEnvironment = Readonly<Record<string, string | undefined>>
 
 const normalizeOrigin = (value: string, allowLocalHttp = false) => {
   let url: URL
+
   try {
     url = new URL(value)
   } catch {
@@ -14,6 +15,7 @@ const normalizeOrigin = (value: string, allowLocalHttp = false) => {
     allowLocalHttp &&
     url.protocol === 'http:' &&
     (url.hostname === '127.0.0.1' || url.hostname === 'localhost')
+
   if (
     (!localHttp && url.protocol !== 'https:') ||
     url.username ||
@@ -34,6 +36,7 @@ export const resolveSiteOrigin = (
   if (environment.NEXT_PUBLIC_SITE_URL) {
     return normalizeOrigin(environment.NEXT_PUBLIC_SITE_URL)
   }
+
   return normalizeOrigin('https://asyra-framework.pages.dev')
 }
 

@@ -6,7 +6,11 @@ async function clickExposedSlide(page: Page, side: Locator) {
   const point = await side.evaluate((element) => {
     const stage = element.parentElement
     const center = stage?.querySelector('[data-active="true"]')
-    if (!stage || !center) return null
+
+    if (!stage || !center) {
+      return null
+    }
+
     const stageBounds = stage.getBoundingClientRect()
     const sideBounds = element.getBoundingClientRect()
     const centerBounds = center.getBoundingClientRect()
@@ -26,17 +30,23 @@ async function clickExposedSlide(page: Page, side: Locator) {
       for (const horizontalPart of [0.25, 0.5, 0.75]) {
         const x = left + (right - left) * horizontalPart
         const y = top + (bottom - top) * verticalPart
+
         if (
           document.elementFromPoint(x, y)?.closest('[data-side-preview]') ===
           element
-        )
+        ) {
           return { x, y }
+        }
       }
     }
+
     return null
   })
+
   expect(point, 'side image has a visible, clickable area').not.toBeNull()
-  if (point) await page.mouse.click(point.x, point.y)
+  if (point) {
+    await page.mouse.click(point.x, point.y)
+  }
 }
 
 for (const width of [320, 390, 1024, 1440]) {
@@ -47,6 +57,7 @@ for (const width of [320, 390, 1024, 1440]) {
     await page.goto('/')
 
     const section = page.locator('#built-with-asyra')
+
     await section.scrollIntoViewIfNeeded()
     await expect(
       section.getByRole('heading', { name: 'Asyra FieldScope', level: 3 })
@@ -64,6 +75,7 @@ for (const width of [320, 390, 1024, 1440]) {
     const carousel = section.getByRole('region', {
       name: 'Asyra FieldScope image slider'
     })
+
     await expect(carousel).toBeVisible()
     expect(
       await carousel.locator('[data-testid="product-evidence-slide"]').count()
@@ -79,6 +91,7 @@ for (const width of [320, 390, 1024, 1440]) {
           const bounds = slide.getBoundingClientRect()
           const image = slide.querySelector('img')
           const imageBounds = image?.getBoundingClientRect()
+
           return {
             active: slide.getAttribute('data-active') === 'true',
             width: bounds.width,
@@ -99,14 +112,17 @@ for (const width of [320, 390, 1024, 1440]) {
       )
     const centerSlide = initialSlideGeometry.find((slide) => slide.active)
     const sideSlides = initialSlideGeometry.filter((slide) => !slide.active)
+
     expect(centerSlide).toBeDefined()
     expect(sideSlides).toHaveLength(2)
     expect(centerSlide?.imageRatio).toBeCloseTo(1440 / 1174, 2)
     expect(centerSlide?.imageShadow).not.toBe('none')
     expect(centerSlide?.frameShadow).toBe('none')
     const stageBox = await carousel.boundingBox()
+
     expect(stageBox).not.toBeNull()
     const expectedInset = width >= 1025 ? 12 : 8
+
     expect(
       Math.abs((centerSlide?.y ?? 0) - (stageBox?.y ?? 0) - expectedInset - 1)
     ).toBeLessThanOrEqual(1)
@@ -140,13 +156,16 @@ for (const width of [320, 390, 1024, 1440]) {
       ).toBeLessThanOrEqual(1)
       expect(side.transition).toContain('transform')
     }
+
     const inlineOverlapRatios = sideSlides.map((side) => {
       const overlap =
         side.x < (centerSlide?.x ?? 0)
           ? side.right - (centerSlide?.x ?? 0)
           : (centerSlide?.x ?? 0) + (centerSlide?.width ?? 0) - side.x
+
       return overlap / side.width
     })
+
     expect(
       inlineOverlapRatios.every((ratio) => Math.abs(ratio - 0.75) < 0.02)
     ).toBe(true)
@@ -158,12 +177,14 @@ for (const width of [320, 390, 1024, 1440]) {
       '/product-evidence/fieldscope-greenhouse-end-elevation.webp',
       '/product-evidence/fieldscope-greenhouse-internal-detail.webp'
     ]
+
     expect(
       await fieldScopeImages.evaluateAll((items) =>
         items.map((image) => image.getAttribute('src'))
       )
     ).toEqual(fieldScopeSources)
     const simShowcase = section.locator('[data-testid="asyra-sim-showcase"]')
+
     await expect(simShowcase).toHaveAttribute(
       'aria-label',
       'Asyra Sim image slider'
@@ -182,9 +203,14 @@ for (const width of [320, 390, 1024, 1440]) {
     )
     const simFrameGeometry = await simFrame.evaluate((frame) => {
       const image = frame.querySelector('img')
-      if (!image) return null
+
+      if (!image) {
+        return null
+      }
+
       const frameBounds = frame.getBoundingClientRect()
       const imageBounds = image.getBoundingClientRect()
+
       return {
         frameRatio: frameBounds.width / frameBounds.height,
         imageRatio: imageBounds.width / imageBounds.height,
@@ -192,6 +218,7 @@ for (const width of [320, 390, 1024, 1440]) {
         frameShadow: getComputedStyle(frame).boxShadow
       }
     })
+
     expect(simFrameGeometry?.frameRatio).toBeCloseTo(1440 / 1174, 2)
     expect(simFrameGeometry?.imageRatio).toBeCloseTo(1440 / 960, 2)
     expect(simFrameGeometry?.imageShadow).not.toBe('none')
@@ -204,6 +231,7 @@ for (const width of [320, 390, 1024, 1440]) {
         showcase.evaluate((element) => element.getBoundingClientRect().toJSON())
       )
     )
+
     expect(
       Math.abs(showcaseGeometry[0].width - showcaseGeometry[1].width)
     ).toBeLessThanOrEqual(1)
@@ -213,6 +241,7 @@ for (const width of [320, 390, 1024, 1440]) {
     const simSlide = await simShowcase
       .locator('[data-testid="product-evidence-slide"]')
       .boundingBox()
+
     expect(simSlide).not.toBeNull()
     expect(
       Math.abs((simSlide?.width ?? 0) - (centerSlide?.width ?? 0))
@@ -231,6 +260,7 @@ for (const width of [320, 390, 1024, 1440]) {
         '[data-testid="product-case-summary"]'
       )
       const simSummary = simCard.locator('[data-testid="product-case-summary"]')
+
       await expect(fieldScopeSummary).toBeVisible()
       await expect(simSummary).toBeVisible()
       const [
@@ -244,13 +274,16 @@ for (const width of [320, 390, 1024, 1440]) {
         fieldScopeCard.boundingBox(),
         simCard.boundingBox()
       ])
+
       if (
         !fieldScopeSummaryBox ||
         !simSummaryBox ||
         !fieldScopeCardBox ||
         !simCardBox
-      )
+      ) {
         throw new Error('Missing product card summary or geometry')
+      }
+
       expect(
         Math.abs(fieldScopeSummaryBox.width - fieldScopeCardBox.width)
       ).toBeLessThanOrEqual(1)
@@ -263,19 +296,28 @@ for (const width of [320, 390, 1024, 1440]) {
       const fieldScopeSummaryLines = await fieldScopeSummary.evaluate(
         (element) => {
           const range = document.createRange()
+
           range.selectNodeContents(element)
+
           return new Set(
             Array.from(range.getClientRects(), (rect) => Math.round(rect.y))
           ).size
         }
       )
-      if (width >= 1280) expect(fieldScopeSummaryLines).toBe(1)
+
+      if (width >= 1280) {
+        expect(fieldScopeSummaryLines).toBe(1)
+      }
+
       const [fieldScopeSliderBox, simSliderBox] = await Promise.all([
         carousel.boundingBox(),
         simShowcase.boundingBox()
       ])
-      if (!fieldScopeSliderBox || !simSliderBox)
+
+      if (!fieldScopeSliderBox || !simSliderBox) {
         throw new Error('Missing product slider geometry')
+      }
+
       expect(
         Math.abs(fieldScopeSliderBox.y - simSliderBox.y)
       ).toBeLessThanOrEqual(1)
@@ -283,6 +325,7 @@ for (const width of [320, 390, 1024, 1440]) {
         Math.abs(fieldScopeCardBox.height - simCardBox.height)
       ).toBeLessThanOrEqual(1)
     }
+
     await carousel.screenshot({
       path: testInfo.outputPath(
         `product-evidence-fieldscope-slider-${width}.png`
@@ -293,6 +336,7 @@ for (const width of [320, 390, 1024, 1440]) {
     })
 
     const firstSide = carousel.locator('[data-side-preview="true"]').nth(0)
+
     await clickExposedSlide(page, firstSide)
     await expect(carousel.locator('[data-active="true"] img')).toHaveAttribute(
       'src',
@@ -307,6 +351,7 @@ for (const width of [320, 390, 1024, 1440]) {
           bottom: number
           stageBottom: number
         }[] = []
+
         for (let frame = 0; frame < 8; frame += 1) {
           await new Promise<void>((resolve) =>
             requestAnimationFrame(() => resolve())
@@ -314,6 +359,7 @@ for (const width of [320, 390, 1024, 1440]) {
           const bounds = slide.getBoundingClientRect()
           const stageBottom =
             slide.parentElement?.getBoundingClientRect().bottom ?? 0
+
           samples.push({
             x: bounds.x,
             width: bounds.width,
@@ -321,12 +367,14 @@ for (const width of [320, 390, 1024, 1440]) {
             stageBottom
           })
         }
+
         return {
           samples,
           transition: getComputedStyle(slide).transitionProperty,
           transform: (slide as HTMLElement).style.transform
         }
       })
+
     expect(motionSamples.transition).toContain('transform')
     expect(motionSamples.transform).toContain('translateX(')
     expect(motionSamples.transform).not.toMatch(/translate(?:Y|3d)/u)
@@ -377,6 +425,7 @@ for (const width of [320, 390, 1024, 1440]) {
       )
     ).toBe(true)
     const secondSide = carousel.locator('[data-side-preview="true"]').nth(1)
+
     await clickExposedSlide(page, secondSide)
     await expect(carousel.locator('[data-active="true"] img')).toHaveAttribute(
       'src',
@@ -394,6 +443,7 @@ for (const width of [320, 390, 1024, 1440]) {
             .map((duration) => Number.parseFloat(duration))
         )
       )
+
     expect(reducedMotionDurations.every((duration) => duration <= 0.001)).toBe(
       true
     )
@@ -421,14 +471,17 @@ for (const width of [320, 390, 1024, 1440]) {
         ]
       ]
     ]
+
     for (const [name, imageGroup] of imageGroups) {
       const card = section
         .getByRole('heading', { name, level: 3 })
         .locator('xpath=..')
       const images = card.locator('[data-testid="product-evidence-slide"] img')
+
       expect(await images.count()).toBe(imageGroup.length)
       for (const [index, imageInfo] of imageGroup.entries()) {
         const image = images.nth(index)
+
         await expect(image).toHaveAttribute('src', imageInfo.src)
         await expect(image).toHaveAttribute('alt', imageInfo.alt)
         await image.scrollIntoViewIfNeeded()
@@ -441,6 +494,7 @@ for (const width of [320, 390, 1024, 1440]) {
             active: element.closest('[data-active="true"]') !== null
           })
         )
+
         expect(imageState.loaded, `${name} screenshot did not load`).toBe(true)
         expect(imageState.ratio).toBeGreaterThan(1.2)
         expect(imageState.objectFit).toBe('contain')
@@ -479,6 +533,7 @@ for (const width of [320, 390, 1024, 1440]) {
       ]
     ]) {
       const link = section.getByRole('link', { name })
+
       await expect(link).toHaveAttribute('href', href)
       await expect(link).toHaveAttribute('target', '_blank')
       await expect(link).toHaveAttribute('rel', 'noopener noreferrer')
@@ -490,7 +545,11 @@ for (const width of [320, 390, 1024, 1440]) {
           .getByRole('heading', { name, level: 3 })
           .locator('xpath=..')
         const box = await card.boundingBox()
-        if (!box) throw new Error(`Missing ${name} case card`)
+
+        if (!box) {
+          throw new Error(`Missing ${name} case card`)
+        }
+
         expect(box.x).toBeGreaterThanOrEqual(-1)
         expect(box.x + box.width).toBeLessThanOrEqual(width + 1)
         expect(
@@ -498,17 +557,20 @@ for (const width of [320, 390, 1024, 1440]) {
             (element) => element.scrollWidth <= element.clientWidth
           )
         ).toBe(true)
+
         return box
       })
     )
-    if (width >= 768)
+
+    if (width >= 768) {
       expect(fieldScopeBox.x + fieldScopeBox.width).toBeLessThanOrEqual(
         simBox.x + 1
       )
-    else
+    } else {
       expect(fieldScopeBox.y + fieldScopeBox.height).toBeLessThanOrEqual(
         simBox.y + 1
       )
+    }
 
     expect(
       await page.evaluate(
@@ -520,14 +582,20 @@ for (const width of [320, 390, 1024, 1440]) {
       ['Asyra Sim', 'asyra-sim']
     ]) {
       const heading = section.getByRole('heading', { name, level: 3 })
+
       await heading.evaluate((element) => {
         const bounds = element.getBoundingClientRect()
+
         window.scrollTo(0, window.scrollY + bounds.top - 150)
       })
       await expect(heading).toBeVisible()
       const card = heading.locator('xpath=..')
       const cardBox = await card.boundingBox()
-      if (!cardBox) throw new Error(`Missing ${name} case card`)
+
+      if (!cardBox) {
+        throw new Error(`Missing ${name} case card`)
+      }
+
       expect(cardBox.y).toBeGreaterThanOrEqual(80)
       const images = card.getByRole('img')
       const image = images.first()
@@ -549,8 +617,11 @@ for (const width of [320, 390, 1024, 1440]) {
       const lastImageBox = imageBoxes.at(-1)
       const textBox = await description.boundingBox()
       const linkBox = await link.boundingBox()
-      if (!imageBox || !lastImageBox || !textBox || !linkBox)
+
+      if (!imageBox || !lastImageBox || !textBox || !linkBox) {
         throw new Error(`Incomplete ${name} evidence card`)
+      }
+
       expect(lastImageBox.y + lastImageBox.height).toBeLessThanOrEqual(
         textBox.y
       )
@@ -565,6 +636,7 @@ for (const width of [320, 390, 1024, 1440]) {
         await locator.scrollIntoViewIfNeeded()
         await expect(locator).toBeInViewport()
       }
+
       await heading.scrollIntoViewIfNeeded()
       const headingHit = await heading.evaluate((element) => {
         const bounds = element.getBoundingClientRect()
@@ -572,12 +644,14 @@ for (const width of [320, 390, 1024, 1440]) {
           bounds.left + bounds.width / 2,
           bounds.top + bounds.height / 2
         )
+
         return {
           isUnoccluded: hit === element || element.contains(hit),
           hitElement: hit?.tagName.toLowerCase(),
           hitClass: typeof hit?.className === 'string' ? hit.className : ''
         }
       })
+
       expect(
         headingHit.isUnoccluded,
         `${name} heading center is covered by ${headingHit.hitElement}.${headingHit.hitClass}`
@@ -586,6 +660,7 @@ for (const width of [320, 390, 1024, 1440]) {
         path: testInfo.outputPath(`product-evidence-${file}-${width}.png`)
       })
     }
+
     await section.screenshot({
       path: testInfo.outputPath(`homepage-product-evidence-${width}.png`)
     })
@@ -600,6 +675,7 @@ test('desktop center image opens a layered, selectable preview and locks page sc
   const carousel = page.getByRole('region', {
     name: 'Asyra FieldScope image slider'
   })
+
   await carousel.scrollIntoViewIfNeeded()
   await carousel
     .getByRole('button', { name: /Open Asyra FieldScope image preview/u })
@@ -608,6 +684,7 @@ test('desktop center image opens a layered, selectable preview and locks page sc
   const dialog = page.getByRole('dialog', {
     name: /Asyra FieldScope image preview/u
   })
+
   await expect(dialog).toBeVisible()
   await expect(dialog.locator('[data-testid="preview-slide"]')).toHaveCount(3)
   await expect(dialog.locator('[data-testid="preview-thumbnail"]')).toHaveCount(
@@ -633,6 +710,7 @@ test('desktop center image opens a layered, selectable preview and locks page sc
     .evaluateAll((slides) =>
       slides.map((slide) => Number(slide.getAttribute('data-scale')))
     )
+
   expect(previewSideScales).toEqual([0.9, 0.9])
   const overlapRatios = await dialog
     .locator('[data-testid="preview-slide"]')
@@ -640,7 +718,11 @@ test('desktop center image opens a layered, selectable preview and locks page sc
       const center = slides
         .find((slide) => slide.getAttribute('data-active') === 'true')
         ?.getBoundingClientRect()
-      if (!center) return []
+
+      if (!center) {
+        return []
+      }
+
       return slides
         .filter((slide) => slide.getAttribute('data-depth') === '1')
         .map((slide) => {
@@ -649,9 +731,11 @@ test('desktop center image opens a layered, selectable preview and locks page sc
             side.left < center.left
               ? side.right - center.left
               : center.right - side.left
+
           return overlap / side.width
         })
     })
+
   expect(overlapRatios).toHaveLength(2)
   expect(overlapRatios.every((ratio) => Math.abs(ratio - 0.75) < 0.02)).toBe(
     true
@@ -669,12 +753,14 @@ test('desktop center image opens a layered, selectable preview and locks page sc
       slides.map((slide) => {
         const frame = slide.getBoundingClientRect()
         const image = slide.querySelector('img')?.getBoundingClientRect()
+
         return {
           frame: frame.width / frame.height,
           image: image ? image.width / image.height : 0
         }
       })
     )
+
   expect(
     previewFrameRatios.every(
       ({ frame }) => Math.abs(frame - 1440 / 1174) < 0.01
@@ -692,21 +778,25 @@ test('desktop center image opens a layered, selectable preview and locks page sc
   const movingSlide = dialog.getByRole('button', {
     name: /Show Asyra FieldScope image: Four-bay end elevation/u
   })
+
   await movingSlide.evaluate((element) => element.getBoundingClientRect().x)
   await dialog.locator('[data-testid="preview-thumbnail"]').nth(2).click()
   const motionSamples = await movingSlide.evaluate(async (element) => {
     const positions: number[] = []
+
     for (let frame = 0; frame < 12; frame += 1) {
       await new Promise<void>((resolve) =>
         requestAnimationFrame(() => resolve())
       )
       positions.push(element.getBoundingClientRect().x)
     }
+
     return {
       positions,
       transition: getComputedStyle(element).transitionProperty
     }
   })
+
   expect(motionSamples.transition).toContain('transform')
   expect(
     new Set(motionSamples.positions.map((position) => Math.round(position)))
@@ -731,6 +821,7 @@ test('preview animates the selected image for every adjacent and non-adjacent ju
   const carousel = page.getByRole('region', {
     name: 'Asyra FieldScope image slider'
   })
+
   await carousel.scrollIntoViewIfNeeded()
   await carousel
     .getByRole('button', { name: /Open Asyra FieldScope image preview/u })
@@ -738,6 +829,7 @@ test('preview animates the selected image for every adjacent and non-adjacent ju
   const dialog = page.getByRole('dialog', {
     name: /Asyra FieldScope image preview/u
   })
+
   await expect(dialog).toBeVisible()
 
   // Cover all directed pairs, including first-to-last and last-to-first.
@@ -746,28 +838,37 @@ test('preview animates the selected image for every adjacent and non-adjacent ju
       const slide = element.querySelector<HTMLElement>(
         `[data-testid="preview-slide"][data-slide-index="${index}"]`
       )
-      if (!slide) throw new Error(`Missing preview image ${index}`)
+
+      if (!slide) {
+        throw new Error(`Missing preview image ${index}`)
+      }
+
       const thumbnail = element.querySelectorAll<HTMLButtonElement>(
         '[data-testid="preview-thumbnail"]'
       )[index]
       const before = slide.getBoundingClientRect()
+
       thumbnail.click()
       const samples = []
+
       for (let frame = 0; frame < 12; frame += 1) {
         await new Promise<void>((resolve) =>
           requestAnimationFrame(() => resolve())
         )
         const box = slide.getBoundingClientRect()
+
         samples.push({
           x: box.x,
           width: box.width,
           centerY: box.y + box.height / 2
         })
       }
+
       await Promise.all(
         slide.getAnimations().map((animation) => animation.finished)
       )
       const after = slide.getBoundingClientRect()
+
       return {
         before: { x: before.x, width: before.width },
         after: { x: after.x, width: after.width },
@@ -779,6 +880,7 @@ test('preview animates the selected image for every adjacent and non-adjacent ju
           )
       }
     }, targetIndex)
+
     expect(motion.retained).toBe(true)
     expect(motion.after.width).toBeGreaterThan(motion.before.width + 10)
     expect(
@@ -800,6 +902,7 @@ test('preview animates the selected image for every adjacent and non-adjacent ju
       dialog.locator('[data-testid="preview-slide"][data-active="true"]')
     ).toHaveAttribute('data-slide-index', String(targetIndex))
   }
+
   await dialog.screenshot({
     path: testInfo.outputPath('preview-cross-image-selection.png')
   })
@@ -811,30 +914,41 @@ test('preview animates the selected image for every adjacent and non-adjacent ju
     const returningSlide = element.querySelector<HTMLElement>(
       '[data-testid="preview-slide"][data-slide-index="2"]'
     )
-    if (!returningSlide) throw new Error('Missing returning preview image')
+
+    if (!returningSlide) {
+      throw new Error('Missing returning preview image')
+    }
+
     thumbnails[0].click()
-    for (let frame = 0; frame < 4; frame += 1)
+    for (let frame = 0; frame < 4; frame += 1) {
       await new Promise<void>((resolve) =>
         requestAnimationFrame(() => resolve())
       )
+    }
+
     const before = returningSlide.getBoundingClientRect().width
+
     thumbnails[2].click()
     const widths = []
+
     for (let frame = 0; frame < 8; frame += 1) {
       await new Promise<void>((resolve) =>
         requestAnimationFrame(() => resolve())
       )
       widths.push(returningSlide.getBoundingClientRect().width)
     }
+
     await Promise.all(
       returningSlide.getAnimations().map((animation) => animation.finished)
     )
+
     return {
       before,
       widths,
       after: returningSlide.getBoundingClientRect().width
     }
   })
+
   expect(interrupted.before).toBeLessThan(interrupted.after - 1)
   expect(
     interrupted.widths.some(
@@ -850,11 +964,13 @@ test('preview animates the selected image for every adjacent and non-adjacent ju
   const selected = dialog.locator(
     '[data-testid="preview-slide"][data-active="true"]'
   )
+
   await expect(selected).toHaveAttribute('data-slide-index', '0')
   const reducedMotion = await selected.evaluate((element) => ({
     duration: Number.parseFloat(getComputedStyle(element).transitionDuration),
     animations: element.getAnimations().length
   }))
+
   expect(reducedMotion.duration).toBeLessThanOrEqual(0.001)
   expect(reducedMotion.animations).toBe(0)
   await dialog.getByRole('button', { name: /Close preview/u }).click()
@@ -869,6 +985,7 @@ test('tablet center image keeps the inline slider without opening a preview', as
   const carousel = page.getByRole('region', {
     name: 'Asyra FieldScope image slider'
   })
+
   await carousel.scrollIntoViewIfNeeded()
   await expect(carousel.getByRole('button')).toHaveCount(2)
   await expect(page.getByRole('dialog')).toHaveCount(0)
@@ -882,6 +999,7 @@ test('resizing an open preview to tablet closes it and restores page scrolling',
   const carousel = page.getByRole('region', {
     name: 'Asyra FieldScope image slider'
   })
+
   await carousel.scrollIntoViewIfNeeded()
   await carousel
     .getByRole('button', { name: /Open Asyra FieldScope image preview/u })
@@ -889,6 +1007,7 @@ test('resizing an open preview to tablet closes it and restores page scrolling',
   const dialog = page.getByRole('dialog', {
     name: /Asyra FieldScope image preview/u
   })
+
   await expect(dialog).toBeVisible()
   await page.setViewportSize({ width: 1024, height: 960 })
   await expect(dialog).toHaveCount(0)
@@ -903,13 +1022,16 @@ test('Asyra FieldScope keeps its first view readable without JavaScript', async 
     javaScriptEnabled: false,
     viewport: { width: 390, height: 844 }
   })
+
   try {
     const page = await context.newPage()
+
     await page.goto('/')
     const section = page.locator('#built-with-asyra')
     const carousel = section.getByRole('region', {
       name: 'Asyra FieldScope image slider'
     })
+
     await expect(carousel.locator('[data-active="true"] img')).toHaveAttribute(
       'src',
       '/product-evidence/fieldscope-greenhouse-overview.webp'

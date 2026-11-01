@@ -53,21 +53,15 @@ The development sequence is:
    feasibility. Establish the accepted behavior and regression obligations that
    must remain intact. Resolve blocking design findings and material uncertainty
    before handing off production work.
-3. **Prepare bounded work.** Use the supported contract, target and work admission
-   paths described in [Core Proof](CORE_PROOF.md#flow-targets-and-work-decomposition).
-   Preserve the reviewed revision, accepted baseline, complete obligations,
-   prerequisites and selected owner boundary in the handoff.
-4. **Implement and verify.** Implement the reviewed owner segments and retain
-   current source-bound evidence. Assess the selected work, its prerequisites,
-   whole-target integration and accepted-behavior preservation separately on the
-   same source. Passing one work item cannot stand for a passing whole flow.
-5. **Review necessary design changes.** When implementation evidence invalidates
-   an assumption, stop the affected segment and review the revised contract,
-   connected steps, integration and preservation obligations before resuming.
-   Synchronize the affected specification, Inspector, cases and proof mapping.
-6. **Complete the target.** Require all target obligations and handoffs to pass,
-   with accepted behavior preserved. Baseline acceptance remains a separate,
-   explicit action under the existing service contract.
+3. **Implement and test.** Use the current flow contract to select affected
+   behavior tests. Producers update that contract's current results.
+4. **Assess completion.** All required current contract criteria must pass.
+   Missing, failed or unexecuted results remain non-passing. Do not add
+   historical-baseline acceptance, compatibility history or a second candidate
+   proof as prerequisites for ordinary development.
+5. **Evolve with the app.** Update the current contract and tests together when
+   behavior changes. Prior records may remain historical but do not govern the
+   current app or require a compatibility path.
 
 The collaboration entry, worker handoff and PR responsibilities are defined in
 [Task Context and Plan Closeout](../../workflows/task-context.md#plan-to-flow-development-and-review-before-implementation).
@@ -89,10 +83,12 @@ plans, automatic dispatch, or verification of unregistered flows.
 
 ## Scope
 
-Flow Inspector includes a static, read-only architecture viewer and a React
-workspace at `tools/flow-inspector/workspace/`. The workspace provides one
-sidebar-driven surface for all current-project Inspectors while retaining
-direct-open standalone HTML compatibility. The bounded local
+Flow Inspector uses React for the architecture workspace, live dashboard and
+control-plane Board. The workspace at `tools/flow-inspector/workspace/` provides
+one sidebar-driven surface for all current-project Inspectors. Its shared HTML
+entrypoint mounts the React build and supports direct-open hash navigation;
+per-Inspector HTML, iframe composition and old renderer routes are removed.
+The bounded local
 [Core Proof](CORE_PROOF.md) at `tools/flow-inspector/control-plane/` adds real
 Factory flow verification, snapshot-bound evidence, explicit mapping review, and
 controlled actions on the existing canvas cards. The completed local Phase 4 extension adds
@@ -118,7 +114,7 @@ its own identity, outside the Framework bulk-release allowlist. Its archive
 contains static assets and source; dynamic execution still requires the Asyra
 checkout. See the package README for the supported distribution boundary.
 
-All Inspector data, standalone HTML, and Inspector contract tests are owned by
+All Inspector data and Inspector contract tests are owned by
 `tools/flow-inspector/inspectors/`. Framework and App documentation remains the
 semantic authority referenced by those artifacts; their `plans/` directories
 do not store Inspector implementation artifacts.

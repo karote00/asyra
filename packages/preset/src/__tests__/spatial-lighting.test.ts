@@ -40,14 +40,17 @@ describe('Neutral spatial presentation admission', () => {
   it('captures each field once and detaches caller arrays before deferred startup', () => {
     const source = lighting()
     const read = vi.fn(() => source.hemisphere)
+
     Object.defineProperty(source, 'hemisphere', { enumerable: true, get: read })
     // Retain the source array separately so the getter does not recurse.
     const original = [0xffffff, 0x777777, 1]
+
     read.mockImplementation(() => original)
     const result = readSpatialPresentationOptions({
       lighting: source,
       softwareShadowFallback: false
     })
+
     expect(read).toHaveBeenCalledOnce()
     original[2] = 99
     source.keyPosition[0] = 99
@@ -66,6 +69,7 @@ describe('Neutral spatial presentation admission', () => {
     const result = resolvePresetRequest(
       {
         isCompositionOpen: () => true,
+
         hasRenderEngineProvider: () => false
       },
       {
@@ -74,6 +78,7 @@ describe('Neutral spatial presentation admission', () => {
         spatial: { lighting: source }
       } as never
     )
+
     source.shadowFar = 500
     expect(result.spatial?.lighting?.shadowFar).toBe(50)
     expect(result.selectedDefaults).toEqual([])
@@ -85,6 +90,7 @@ describe('Neutral spatial presentation admission', () => {
 it('admits an isolated optional soft bloom policy without changing defaults', () => {
   const bloom = { strength: 0.65, radius: 8 }
   const accepted = readSpatialPresentationOptions({ bloom })
+
   expect(accepted).toMatchObject({ bloom: { strength: 0.65, radius: 8 } })
   bloom.strength = 5
   expect(accepted).toMatchObject({ bloom: { strength: 0.65 } })

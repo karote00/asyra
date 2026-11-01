@@ -53,8 +53,10 @@ export function planter(
   seed = requiredSpecValue(source.growth, 'plant growth recipe').defaultSeed,
   form: 'stemmed' | keyof NonNullable<typeof source.growthVariants> = 'stemmed'
 ): AssetPart[] {
-  if (!Number.isFinite(scale) || scale <= 0)
+  if (!Number.isFinite(scale) || scale <= 0) {
     throw new Error('Invalid plant scale')
+  }
+
   const variant: PlantVariant | undefined =
     form !== 'stemmed'
       ? requiredSpecValue(source.growthVariants, 'plant growth variants')[form]
@@ -170,7 +172,8 @@ export function planter(
       spec.materials.stem.roughness
     )
   ]
-  if (sprigs && crown)
+
+  if (sprigs && crown) {
     for (const [index, path] of sprigs.branches.entries()) {
       parts.push(
         part(
@@ -186,6 +189,8 @@ export function planter(
         )
       )
     }
+  }
+
   leaves.forEach((entry, index) => {
     const origin = sprigs?.origins[index] ?? [0, 0, entry.attachZ]
     const a = (entry.azimuthDegrees * Math.PI) / 180
@@ -207,8 +212,10 @@ export function planter(
     const longitudinal = crown?.longitudinalSteps ?? 24,
       lateral = crown?.lateralSteps ?? 8
     const rows: number[][][] = []
+
     for (const sign of [1, -1]) {
       const skin: number[][] = []
+
       for (let i = 0; i <= longitudinal; i++) {
         const t = i / longitudinal
         const r = crown
@@ -227,12 +234,15 @@ export function planter(
             Math.sin(Math.PI * t)
         const width = (entry.width / 2) * Math.sin(Math.PI * t) ** 0.85
         const row: number[] = []
+
         for (let j = 0; j <= lateral; j++) {
           if ((i === 0 || i === longitudinal) && j > 0) {
             row.push(row[0])
             continue
           }
+
           const q = j / (lateral / 2) - 1
+
           row.push(mesh.positions.length / 3)
           const bend =
             q * width * Math.sin(entry.roll) +
@@ -245,6 +255,7 @@ export function planter(
                 (variant?.bladeArchMetres ?? 0.008) *
                   entry.archScale *
                   Math.sin(Math.PI * t))
+
           mesh.positions.push(
             origin[0] +
               radius * er[0] +
@@ -260,19 +271,28 @@ export function planter(
           )
           mesh.uvs.push(t, (q + 1) / 2)
         }
+
         skin.push(row)
       }
+
       const tri = (a: number, b: number, c: number) => {
-        if (a === b || b === c || c === a) return
+        if (a === b || b === c || c === a) {
+          return
+        }
+
         mesh.indices.push(...(sign > 0 ? [a, b, c] : [a, c, b]))
       }
-      for (let i = 0; i < longitudinal; i++)
+
+      for (let i = 0; i < longitudinal; i++) {
         for (let j = 0; j < lateral; j++) {
           tri(skin[i][j], skin[i + 1][j], skin[i + 1][j + 1])
           tri(skin[i][j], skin[i + 1][j + 1], skin[i][j + 1])
         }
+      }
+
       rows.push(skin)
     }
+
     const boundary = [
       rows[0][0][0],
       ...rows[0].slice(1).map((r) => r[lateral]),
@@ -289,9 +309,11 @@ export function planter(
         .reverse()
         .map((r) => r[0])
     ]
+
     boundary.reverse()
     lower.reverse()
     const rim = mesh.positions.length / 3
+
     boundary.forEach((id, i) => {
       for (const [v, side] of [
         [id, 1],
@@ -304,13 +326,20 @@ export function planter(
     for (let i = 0; i < boundary.length; i++) {
       const a = rim + i * 2,
         b = rim + ((i + 1) % boundary.length) * 2
+
       mesh.indices.push(a, a + 1, b + 1, a, b + 1, b)
     }
+
     let leafColor = variant ? variant.leafColorSRGB : '#718752'
-    if (variant?.leafColorsSRGB)
+
+    if (variant?.leafColorsSRGB) {
       leafColor = variant.leafColorsSRGB[index % variant.leafColorsSRGB.length]
-    if (crown)
+    }
+
+    if (crown) {
       leafColor = crown.leafColorsSRGB[index % crown.leafColorsSRGB.length]
+    }
+
     parts.push(
       part(
         `leaf-${index}`,
@@ -355,5 +384,6 @@ export function planter(
             ])[0]
       )
     : parts
+
   return placeParts(shaped, [0, 0, 0], 0, [scale, scale, scale])
 }

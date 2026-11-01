@@ -1,5 +1,20 @@
 # Coding Standards (Framework)
 
+## Readability spacing
+
+The root ESLint configuration enforces blank lines before returns (except the
+first statement of a scope), after completed control-flow blocks, between
+declaration groups and implementation, around function declarations, between
+class members, and around function-valued object members. Consecutive ordinary
+declarations may remain grouped. Keep overload signatures adjacent to their
+implementation and comments attached to the declaration they describe.
+
+Use `yarn lint` to check and `yarn lint --fix` to apply layout fixes. Review the
+diff and run the affected verification gates after fixing. Generated app
+templates remain excluded; manifest-pinned historical source fixtures retain
+their exact bytes and are exempt from layout rules. Other maintained sources,
+including create-app implementation files outside templates, remain checked.
+
 ## Import Boundaries
 
 1. Cross-package imports

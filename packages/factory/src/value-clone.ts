@@ -10,6 +10,7 @@ export const cloneValue = <T>(
 
   const source = value as object
   const existing = seen.get(source)
+
   if (existing) {
     return existing as T
   }
@@ -17,17 +18,22 @@ export const cloneValue = <T>(
   const clone: object = Array.isArray(value)
     ? []
     : Object.create(Object.getPrototypeOf(value))
+
   seen.set(source, clone)
   Reflect.ownKeys(source).forEach((key) => {
     if (Array.isArray(source) && key === 'length') {
       return
     }
+
     const descriptor = Object.getOwnPropertyDescriptor(source, key)
+
     if (!descriptor) {
       return
     }
+
     const snapshot =
       'value' in descriptor ? descriptor.value : Reflect.get(source, key)
+
     Object.defineProperty(clone, key, {
       value: cloneValue(snapshot, seen),
       enumerable: descriptor.enumerable,
@@ -48,10 +54,13 @@ export const adoptDeeplyFrozenValue = <T>(value: T): T => {
   if (value === null || typeof value !== 'object') {
     return value
   }
+
   if (!Object.isFrozen(value)) {
     throw new Error('Factory can only adopt an already-frozen owner value')
   }
+
   deeplyFrozenValues.add(value as object)
+
   return value
 }
 
@@ -59,8 +68,10 @@ export const freezeTrustedValue = <T>(value: T): T => {
   if (value === null || typeof value !== 'object') {
     return value
   }
+
   Object.freeze(value)
   deeplyFrozenValues.add(value as object)
+
   return value
 }
 
@@ -79,15 +90,18 @@ export const deepFreezeValue = <T>(
   }
 
   const object = value as object
+
   if (deeplyFrozenValues.has(object) || seen.has(object)) {
     return value
   }
+
   seen.add(object)
   Reflect.ownKeys(object).forEach((key) => {
     deepFreezeValue(Reflect.get(object, key), seen)
   })
   Object.freeze(value)
   deeplyFrozenValues.add(object)
+
   return value
 }
 

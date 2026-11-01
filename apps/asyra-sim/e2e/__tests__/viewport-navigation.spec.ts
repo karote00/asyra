@@ -8,12 +8,17 @@ test('starting a left-button view gesture preserves normal Object field completi
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
   const initialDepth = await readHistoryDepth(page)
+
   await page
     .getByRole('treeitem', { name: '◇ fixture post', exact: true })
     .click()
   await page.getByLabel('Mount position (m) X', { exact: true }).fill('-1.25')
   const box = await page.getByTestId('workcell-canvas').boundingBox()
-  if (!box) throw new Error('Missing canvas')
+
+  if (!box) {
+    throw new Error('Missing canvas')
+  }
+
   await page.mouse.move(box.x + 60, box.y + 80)
   await page.mouse.down()
   await page.mouse.move(box.x + 90, box.y + 100, { steps: 4 })
@@ -39,8 +44,13 @@ for (const button of ['middle', 'left'] as const) {
       .click()
     const canvas = page.getByTestId('workcell-canvas').locator('canvas')
     const box = await canvas.boundingBox()
-    if (!box) throw new Error('Missing canvas')
+
+    if (!box) {
+      throw new Error('Missing canvas')
+    }
+
     const history = await page.getByTestId('history-depth').innerText()
+
     await canvas.screenshot({ path: info.outputPath('before-pan.png') })
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
     await page.keyboard.down('Shift')
@@ -71,10 +81,12 @@ for (const button of ['middle', 'left'] as const) {
       0.005,
       200
     )
+
     camera.position.copy(eye.add(offset))
     camera.lookAt(target.add(offset))
     camera.updateMatrixWorld()
     const point = new THREE.Vector3(-0.75, 0.65, 0.45).project(camera)
+
     await page.mouse.click(
       box.x + ((point.x + 1) * box.width) / 2,
       box.y + ((1 - point.y) * box.height) / 2
@@ -119,19 +131,24 @@ for (const [modifier, width] of [
       .getByRole('treeitem', { name: '◇ fixture post', exact: true })
       .click()
     await page.setViewportSize({ width, height: 960 })
+
     const restPointerAndFocus = async () => {
       await page.getByRole('button', { name: 'Undo', exact: true }).focus()
       await page.mouse.move(10, 10)
     }
+
     await restPointerAndFocus()
     const canvas = page.getByTestId('workcell-canvas').locator('canvas')
     const history = await page.getByTestId('history-depth').innerText()
     const initial = await canvas.screenshot()
+
     await page.keyboard.press(`${modifier}+1`)
     let fitted = initial
+
     await expect
       .poll(async () => {
         fitted = await canvas.screenshot()
+
         return fitted.equals(initial)
       })
       .toBe(false)

@@ -16,7 +16,9 @@ it('owns a non-mutating cancellable live task and detaches input before service 
         notifyRecords = records
       }
     ),
+
     capture: (input: ExperimentSnapshot) => structuredClone(input),
+
     open: vi.fn(
       (input: ExperimentSnapshot, _time: number, owned: AbortSignal) =>
         new Promise<void>((resolve) => {
@@ -36,6 +38,7 @@ it('owns a non-mutating cancellable live task and detaches input before service 
     core,
     service as unknown as LivePlaybackRunner
   )
+
   expect(api.getDiagnostics()).toEqual([])
   api.recordPreviewPublication(1, 4, 4, 'clear', [])
   expect(service.recordPreviewPublication).toHaveBeenCalledWith(
@@ -49,6 +52,7 @@ it('owns a non-mutating cancellable live task and detaches input before service 
   const recordsChanged = vi.fn()
   const stopState = api.subscribe(stateChanged)
   const stopRecords = api.subscribeRecords(recordsChanged)
+
   stateChanged.mockClear()
   recordsChanged.mockClear()
 

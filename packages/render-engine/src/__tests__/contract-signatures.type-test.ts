@@ -14,6 +14,7 @@ export type DestroyMustBeSynchronous = AssertNever<
 >
 
 const provider: RenderEngineProvider = () => ({}) as RenderEngine
+
 const providedEngine: RenderEngine = provider()
 
 void providedEngine

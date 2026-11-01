@@ -70,6 +70,7 @@ describe.sequential('AI agent Feature lifecycle', () => {
   it('passes normalized intent and the Feature-owned signal to the runtime', async () => {
     const externalController = new AbortController()
     const run = vi.fn(async () => executedResult)
+
     registerAiAgentFeature({ run })
 
     const api = getFeature(FeatureNames.AI_AGENT) as {
@@ -89,6 +90,7 @@ describe.sequential('AI agent Feature lifecycle', () => {
       signal: expect.any(AbortSignal)
     })
     const runtimeSignal = run.mock.calls[0]?.[0].signal
+
     expect(runtimeSignal).toBeInstanceOf(AbortSignal)
     expect(runtimeSignal).not.toBe(externalController.signal)
     expect(unregisterFeature(FeatureNames.AI_AGENT)).toBe(true)
@@ -97,6 +99,7 @@ describe.sequential('AI agent Feature lifecycle', () => {
   it('forwards detached turn metadata and progress while retaining Feature-owned cancellation', async () => {
     const progressObserver = vi.fn()
     const run = vi.fn(async () => executedResult)
+
     registerAiAgentFeature({ run })
 
     const api = getFeature(FeatureNames.AI_AGENT) as {
@@ -106,6 +109,7 @@ describe.sequential('AI agent Feature lifecycle', () => {
         progressObserver: typeof progressObserver
       }): Promise<AiAgentFeatureResult>
     }
+
     await api.execute({
       intent: '  draw a cat face  ',
       metadata: {
@@ -129,6 +133,7 @@ describe.sequential('AI agent Feature lifecycle', () => {
 
   it('rejects empty intent without starting a Feature task', async () => {
     const run = vi.fn(async () => executedResult)
+
     registerAiAgentFeature({ run })
 
     const api = getFeature(FeatureNames.AI_AGENT) as {
@@ -155,9 +160,11 @@ describe.sequential('AI agent Feature lifecycle', () => {
         await new Promise<void>((resolve) => {
           signal.addEventListener('abort', () => resolve(), { once: true })
         })
+
         return cancelledResult
       }
     )
+
     registerAiAgentFeature({ run })
 
     const api = getFeature(FeatureNames.AI_AGENT) as {
@@ -165,6 +172,7 @@ describe.sequential('AI agent Feature lifecycle', () => {
       cancel(reason?: unknown): boolean
     }
     const first = api.execute('first')
+
     await started
 
     await expect(api.execute('second')).rejects.toEqual(

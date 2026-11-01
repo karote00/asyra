@@ -141,25 +141,34 @@ export interface WalkingRobotDefinition {
 }
 
 const admitted = new WeakSet<object>()
+
 const invalid = (): never => {
   throw new Error('Invalid walking robot definition')
 }
+
 const record = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
+
 const exact = (value: Record<string, unknown>, keys: readonly string[]) => {
   const actual = Object.keys(value)
+
   return actual.length === keys.length && keys.every((key) => key in value)
 }
+
 const identity = (value: unknown) =>
   typeof value === 'string' && value.trim().length > 0
+
 const point = (value: unknown): value is Point3 =>
   Array.isArray(value) && value.length === 3 && value.every(Number.isFinite)
+
 const positive = (value: unknown) => Number.isFinite(value) && Number(value) > 0
+
 const range = (value: unknown): value is [number, number] =>
   Array.isArray(value) &&
   value.length === 2 &&
   value.every(Number.isFinite) &&
   value[0] < value[1]
+
 const quaternion = (
   value: unknown
 ): value is [number, number, number, number] => {
@@ -167,26 +176,39 @@ const quaternion = (
     !Array.isArray(value) ||
     value.length !== 4 ||
     !value.every(Number.isFinite)
-  )
+  ) {
     return false
+  }
+
   const norm = Math.hypot(...value)
+
   return norm > 0 && Math.abs(norm - 1) <= 1e-9
 }
+
 function deepFreeze<T>(value: T): T {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
-    for (const child of Object.values(value)) deepFreeze(child)
+    for (const child of Object.values(value)) {
+      deepFreeze(child)
+    }
+
     Object.freeze(value)
   }
+
   return value
 }
+
 function evidence(value: unknown) {
-  if (!record(value) || !identity(value.id)) return false
+  if (!record(value) || !identity(value.id)) {
+    return false
+  }
+
   return value.kind === 'measured'
     ? exact(value, ['kind', 'id'])
     : value.kind === 'synthetic' &&
         exact(value, ['kind', 'id', 'label']) &&
         identity(value.label)
 }
+
 function transform(value: unknown) {
   return (
     record(value) &&
@@ -195,6 +217,7 @@ function transform(value: unknown) {
     quaternion(value.rotation)
   )
 }
+
 function massGeometry(value: unknown) {
   return (
     record(value) &&
@@ -206,6 +229,7 @@ function massGeometry(value: unknown) {
     point(value.localCoM)
   )
 }
+
 function link(value: unknown) {
   return (
     record(value) &&
@@ -216,6 +240,7 @@ function link(value: unknown) {
     point(value.localCoM)
   )
 }
+
 function tool(value: unknown) {
   return (
     record(value) &&
@@ -227,6 +252,7 @@ function tool(value: unknown) {
     point(value.localCoM)
   )
 }
+
 function guard(value: unknown) {
   return (
     record(value) &&
@@ -237,22 +263,36 @@ function guard(value: unknown) {
     point(value.localCoM)
   )
 }
+
 function exactSet<T extends Record<string, unknown>>(
   values: unknown,
   keys: readonly string[],
   expected: readonly string[],
   validator: (value: T) => boolean
 ) {
-  if (!Array.isArray(values) || values.length !== expected.length) return false
+  if (!Array.isArray(values) || values.length !== expected.length) {
+    return false
+  }
+
   const actual = new Set<string>()
+
   for (const item of values) {
-    if (!record(item) || !validator(item as T)) return false
+    if (!record(item) || !validator(item as T)) {
+      return false
+    }
+
     const id = keys.map((key) => String(item[key])).join('-')
-    if (actual.has(id)) return false
+
+    if (actual.has(id)) {
+      return false
+    }
+
     actual.add(id)
   }
+
   return expected.every((id) => actual.has(id))
 }
+
 const armIds = ['left-support', 'left-cutter', 'right-support', 'right-cutter']
 const legIds = [
   'left-front',
@@ -262,8 +302,10 @@ const legIds = [
   'right-middle',
   'right-rear'
 ]
+
 function arm(value: Record<string, unknown>) {
   const ranges = value.jointRanges
+
   return (
     exact(value, [
       'side',
@@ -292,9 +334,11 @@ function arm(value: Record<string, unknown>) {
     range(ranges.wristPitch)
   )
 }
+
 function leg(value: Record<string, unknown>) {
   const ranges = value.jointRanges
   const foot = value.foot
+
   return (
     exact(value, [
       'side',
@@ -325,19 +369,25 @@ function leg(value: Record<string, unknown>) {
     range(ranges.knee)
   )
 }
+
 function jointState(value: unknown, definition: Record<string, unknown>) {
-  if (!record(value) || !exact(value, ['carriage', 'arms', 'legs']))
+  if (!record(value) || !exact(value, ['carriage', 'arms', 'legs'])) {
     return false
+  }
+
   const carriage = definition.carriage as Record<string, unknown>
   const arms = definition.arms as WalkingArmDefinition[]
   const legs = definition.legs as WalkingLegDefinition[]
   const lift = carriage.liftRange as [number, number]
+
   if (
     !Number.isFinite(value.carriage) ||
     Number(value.carriage) < lift[0] ||
     Number(value.carriage) > lift[1]
-  )
+  ) {
     return false
+  }
+
   const validArms = exactSet<Record<string, unknown>>(
     value.arms,
     ['side', 'role'],
@@ -352,11 +402,14 @@ function jointState(value: unknown, definition: Record<string, unknown>) {
           'elbowPitch',
           'wristPitch'
         ])
-      )
+      ) {
         return false
+      }
+
       const spec = arms.find(
         ({ side, role }) => side === item.side && role === item.role
       )
+
       return (
         !!spec &&
         (
@@ -364,6 +417,7 @@ function jointState(value: unknown, definition: Record<string, unknown>) {
         ).every((key) => {
           const n = item[key]
           const bounds = spec.jointRanges[key]
+
           return (
             Number.isFinite(n) &&
             Number(n) >= bounds[0] &&
@@ -378,16 +432,20 @@ function jointState(value: unknown, definition: Record<string, unknown>) {
     ['side', 'station'],
     legIds,
     (item) => {
-      if (!exact(item, ['side', 'station', 'abduction', 'hip', 'knee']))
+      if (!exact(item, ['side', 'station', 'abduction', 'hip', 'knee'])) {
         return false
+      }
+
       const spec = legs.find(
         ({ side, station }) => side === item.side && station === item.station
       )
+
       return (
         !!spec &&
         (['abduction', 'hip', 'knee'] as const).every((key) => {
           const n = item[key]
           const bounds = spec.jointRanges[key]
+
           return (
             Number.isFinite(n) &&
             Number(n) >= bounds[0] &&
@@ -397,6 +455,7 @@ function jointState(value: unknown, definition: Record<string, unknown>) {
       )
     }
   )
+
   return validArms && validLegs
 }
 
@@ -406,20 +465,27 @@ export function classifyWalkingRobotDefinition(
   if (record(raw) && raw.format === WALKING_ROBOT_FORMAT) {
     try {
       readWalkingRobotDefinition(raw)
+
       return 'walking-v2'
     } catch {
       return 'unsupported-version'
     }
   }
+
   if (record(raw) && raw.format === 'walking-robot-definition/1') {
     try {
       validateWalkingDefinition(raw, 'walking-robot-definition/1')
+
       return 'walking-v1'
     } catch {
       return 'unsupported-version'
     }
   }
-  if (!record(raw) || 'format' in raw) return 'unsupported-version'
+
+  if (!record(raw) || 'format' in raw) {
+    return 'unsupported-version'
+  }
+
   const numericKeys = [
     'width',
     'length',
@@ -442,6 +508,7 @@ export function classifyWalkingRobotDefinition(
     'dockX',
     'dockZ'
   ] as const
+
   if (
     !exact(raw, [...numericKeys, 'tool', 'scanSide', 'lane', 'survey']) ||
     !numericKeys.every((key) => Number.isFinite(raw[key])) ||
@@ -449,8 +516,10 @@ export function classifyWalkingRobotDefinition(
     !['left', 'right', 'both'].includes(String(raw.scanSide)) ||
     !record(raw.lane) ||
     !record(raw.survey)
-  )
+  ) {
     return 'unsupported-version'
+  }
+
   const positiveKeys = [
       'width',
       'length',
@@ -462,6 +531,7 @@ export function classifyWalkingRobotDefinition(
       'reserveWh'
     ] as const,
     fractionKeys = ['usableFraction', 'soc', 'socUncertainty'] as const
+
   if (
     numericKeys.some(
       (key) => key !== 'dockX' && key !== 'dockZ' && Number(raw[key]) < 0
@@ -475,9 +545,12 @@ export function classifyWalkingRobotDefinition(
     Number(raw.height) < 0.8 ||
     Number(raw.height) > 3 ||
     Number(raw.start) >= Number(raw.end)
-  )
+  ) {
     return 'unsupported-version'
+  }
+
   const lane = raw.lane
+
   if (
     (lane.kind === 'strip' &&
       (!exact(lane, ['kind', 'bay', 'stripId']) ||
@@ -493,8 +566,10 @@ export function classifyWalkingRobotDefinition(
         Number(lane.boundary) > 3 ||
         !['left', 'right'].includes(String(lane.side)))) ||
     !['strip', 'shared'].includes(String(lane.kind))
-  )
+  ) {
     return 'unsupported-version'
+  }
+
   const survey = raw.survey,
     surveyKeys = [
       'entranceWidth',
@@ -502,6 +577,7 @@ export function classifyWalkingRobotDefinition(
       'frontHeadland',
       'rearHeadland'
     ] as const
+
   if (
     !exact(survey, ['ground', ...surveyKeys]) ||
     !['unknown', 'prepared', 'soft'].includes(String(survey.ground)) ||
@@ -510,18 +586,22 @@ export function classifyWalkingRobotDefinition(
         survey[key] === null ||
         (Number.isFinite(survey[key]) && Number(survey[key]) >= 0)
     )
-  )
+  ) {
     return 'unsupported-version'
+  }
+
   return 'legacy-unversioned'
 }
 
 function validateWalkingDefinition(raw: unknown, format: string) {
   let value: unknown
+
   try {
     value = structuredClone(raw)
   } catch {
     return invalid()
   }
+
   if (
     !record(value) ||
     !exact(value, [
@@ -544,10 +624,13 @@ function validateWalkingDefinition(raw: unknown, format: string) {
     !evidence(value.geometryEvidence) ||
     !evidence(value.jointEvidence) ||
     !evidence(value.massEvidence)
-  )
+  ) {
     return invalid()
+  }
+
   const base = value.base
   const carriage = value.carriage
+
   if (
     !record(base) ||
     !exact(base, ['chassis', 'mast', 'emptyPayloadTray', 'inspectionHeads']) ||
@@ -571,8 +654,10 @@ function validateWalkingDefinition(raw: unknown, format: string) {
     !record(value.presets) ||
     !exact(value.presets, ['stowed', 'leftWorking', 'rightWorking']) ||
     !Object.values(value.presets).every((preset) => jointState(preset, value))
-  )
+  ) {
     return invalid()
+  }
+
   return value
 }
 
@@ -585,6 +670,7 @@ function validSourceModel(value: WalkingRobotDefinition) {
     'axialGapRatio',
     'linkSetbackRatio'
   ] as const
+
   if (
     !record(model) ||
     !exact(model, ['kind', 'evidence', ...keys]) ||
@@ -592,11 +678,14 @@ function validSourceModel(value: WalkingRobotDefinition) {
       model.kind !== 'solid-articulation/2') ||
     !evidence(model.evidence) ||
     !keys.every((key) => positive(model[key]))
-  )
+  ) {
     return false
+  }
+
   const [pin, inner, outer, gap, setback] = keys.map((key) =>
     Number(model[key])
   )
+
   if (!(
     pin < inner &&
     inner < outer &&
@@ -604,8 +693,10 @@ function validSourceModel(value: WalkingRobotDefinition) {
     outer <= 0.5 &&
     gap < 0.25 &&
     setback >= outer
-  ))
+  )) {
     return false
+  }
+
   const links = [
     ...value.arms.flatMap(({ upper, forearm, wrist }) => [
       upper,
@@ -614,8 +705,11 @@ function validSourceModel(value: WalkingRobotDefinition) {
     ]),
     ...value.legs.flatMap(({ coxa, upper, lower }) => [coxa, upper, lower])
   ]
-  if (!links.every(({ length, section }) => length > 2 * setback * section))
+
+  if (!links.every(({ length, section }) => length > 2 * setback * section)) {
     return false
+  }
+
   if (
     !value.legs.every(
       ({ coxa, upper }) =>
@@ -623,19 +717,25 @@ function validSourceModel(value: WalkingRobotDefinition) {
         coxa.section * setback +
           Math.max(coxa.section * setback, upper.section * (0.5 + gap))
     )
-  )
+  ) {
     return false
+  }
+
   const { mast, chassis } = value.base,
     carriage = value.carriage
   const railBottom = mast.centre[1] - mast.size[1] / 2
   const railTop = mast.centre[1] + mast.size[1] / 2
+
   if (
     railBottom >
       carriage.liftRange[0] + carriage.centre[1] - carriage.size[1] / 2 ||
     railTop < carriage.liftRange[1] + carriage.centre[1] + carriage.size[1] / 2
-  )
+  ) {
     return false
+  }
+
   const railOuter = carriage.size[2] / 2 + mast.size[2] / 2
+
   return (
     mast.centre[2] === carriage.centre[2] &&
     Math.abs(carriage.centre[2] - chassis.centre[2]) + railOuter <=
@@ -648,13 +748,20 @@ function validSourceModel(value: WalkingRobotDefinition) {
 export function readWalkingRobotDefinition(
   raw: unknown
 ): WalkingRobotDefinition {
-  if (record(raw) && admitted.has(raw))
+  if (record(raw) && admitted.has(raw)) {
     return raw as unknown as WalkingRobotDefinition
+  }
+
   const value = validateWalkingDefinition(raw, WALKING_ROBOT_FORMAT)
   const result = value as unknown as WalkingRobotDefinition
-  if (!validSourceModel(result)) return invalid()
+
+  if (!validSourceModel(result)) {
+    return invalid()
+  }
+
   deepFreeze(result)
   admitted.add(result)
+
   return result
 }
 
@@ -670,12 +777,14 @@ export function readActiveWalkingRobotDefinition(
 ): WalkingRobotDefinition {
   if (!record(raw) || raw.format !== WALKING_ROBOT_FORMAT) {
     const kind = classifyWalkingRobotDefinition(raw)
+
     throw new WalkingActionDefinitionError(
       kind === 'walking-v1' || kind === 'legacy-unversioned'
         ? 'legacy-topology'
         : 'unsupported-definition'
     )
   }
+
   const definition = readWalkingRobotDefinition(raw)
   const { chassis, mast, emptyPayloadTray, inspectionHeads } = definition.base
   const fixed = [
@@ -685,17 +794,22 @@ export function readActiveWalkingRobotDefinition(
     inspectionHeads.left,
     inspectionHeads.right
   ]
+
   const scalar = (value: number) => {
     const d = dyadic(value)
+
     return { n: d.significand, e: d.exponent }
   }
+
   const planes = fixed.flatMap((part) => {
     const centre = scalar(part.centre[0]),
       half = scalar(part.size[0])
+
     half.e--
     const e = Math.min(centre.e, half.e)
     const c = centre.n << BigInt(centre.e - e),
       h = half.n << BigInt(half.e - e)
+
     return [
       { n: c - h, e },
       { n: c + h, e }
@@ -706,8 +820,11 @@ export function readActiveWalkingRobotDefinition(
   const values = planes.map((p) => p.n << BigInt(p.e - exponent))
   const low = values.reduce((a, b) => (a < b ? a : b)),
     high = values.reduce((a, b) => (a > b ? a : b))
-  if (high - low > limit.n << BigInt(limit.e - exponent))
+
+  if (high - low > limit.n << BigInt(limit.e - exponent)) {
     throw new WalkingActionDefinitionError('body-width-exceeded')
+  }
+
   return definition
 }
 
@@ -716,13 +833,16 @@ const p = (x: number, y: number, z: number): [number, number, number] => [
   y,
   z
 ]
+
 const q = (): [number, number, number, number] => [0, 0, 0, 1]
+
 const massGeometryValue = (size: Point3, centre: Point3, massKg: number) => ({
   size,
   centre,
   massKg,
   localCoM: [...centre] as Point3
 })
+
 const linkValue = (
   length: number,
   section: number,
@@ -809,6 +929,7 @@ export function createSyntheticWalkingRobotDefinition({
       }
     }))
   )
+
   const armState = (working: WalkingSide | 'none') =>
     arms.map(({ side, role }) => ({
       side,
@@ -818,6 +939,7 @@ export function createSyntheticWalkingRobotDefinition({
       elbowPitch: side === working ? 0.75 : 0,
       wristPitch: side === working ? -0.35 : 0
     }))
+
   const legState = () =>
     legs.map(({ side, station }) => ({
       side,
@@ -826,6 +948,7 @@ export function createSyntheticWalkingRobotDefinition({
       hip: 0,
       knee: 0
     }))
+
   const definition = {
     format: WALKING_ROBOT_FORMAT,
     topology: WALKING_ROBOT_TOPOLOGY,
@@ -886,6 +1009,7 @@ export function createSyntheticWalkingRobotDefinition({
       rightWorking: { carriage: 1, arms: armState('right'), legs: legState() }
     }
   }
+
   if (sourceProfile === 'solid-articulation/2') {
     // The authored bearing support is checked against all completed child
     // material by the source owner. One exact sum chooses the least outward
@@ -906,8 +1030,10 @@ export function createSyntheticWalkingRobotDefinition({
       )
       const numerator = exponent >= 0 ? sum << BigInt(exponent) : sum
       const denominator = exponent < 0 ? 1n << BigInt(-exponent) : 1n
+
       leg.mount.position[0] = side * roundFraction(numerator, denominator, 'up')
     }
+
     definition.sourceModel.evidence.id = 'walking-solid-articulation-v2'
     definition.sourceModel.evidence.label =
       'External root clevis geometry - synthetic assumptions'
@@ -916,5 +1042,6 @@ export function createSyntheticWalkingRobotDefinition({
     definition.massEvidence.label =
       'External root component mass and CoM - synthetic assumptions'
   }
+
   return readWalkingRobotDefinition(definition)
 }

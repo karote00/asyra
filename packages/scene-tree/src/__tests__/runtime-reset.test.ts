@@ -10,6 +10,7 @@ const ResetElement = createDynamicComponent(
   [],
   {}
 )
+
 const element = (id: string) => new ResetElement({ id })
 
 describe('Scene Tree full runtime reset', () => {
@@ -23,6 +24,7 @@ describe('Scene Tree full runtime reset', () => {
       deleted = element('deleted')
     const liveCleanup = vi.fn(),
       deletedCleanup = vi.fn()
+
     live.computed.dispose = liveCleanup
     deleted.computed.dispose = deletedCleanup
     scene.addToMap(live)
@@ -32,6 +34,7 @@ describe('Scene Tree full runtime reset', () => {
     scene.workspaceList = ['previous']
     const observer = vi.fn()
     const subscription = subscribeToEventBatches(observer)
+
     observer.mockClear()
     scene.resetRuntime()
     expect(scene.getAllElements().size).toBe(0)
@@ -54,8 +57,10 @@ describe('Scene Tree full runtime reset', () => {
       workspaceList: [],
       elements: {}
     })
+
     scene.resetRuntime()
     const current = element('current')
+
     scene.addToMap(current)
     expect(() => scene.applyValidatedLoad(previous)).toThrow(
       'owner-issued one-shot'
@@ -69,9 +74,11 @@ describe('Scene Tree full runtime reset', () => {
       first = element('first'),
       second = element('second')
     const secondCleanup = vi.fn()
+
     first.computed.dispose = () => {
       throw new Error('computed cleanup failed')
     }
+
     second.computed.dispose = secondCleanup
     scene.addToMap(first)
     scene.addToMap(second)
@@ -84,10 +91,12 @@ describe('Scene Tree full runtime reset', () => {
     const scene = new SceneTree(),
       other = new SceneTree(),
       retained = element('retained')
+
     other.addToMap(retained)
     scene.addToMap(element('same-id'))
     scene.resetRuntime()
     const next = element('same-id')
+
     scene.addToMap(next)
     expect(scene.getElementById('same-id')).toBe(next)
     expect(other.getElementById('retained')).toBe(retained)

@@ -36,6 +36,7 @@ function run(candidateId: string, copied: boolean, offset = 4): RunRecord {
     }))
   }
   const definition = structuredClone(DEFAULT_EXPERIMENT_DEFINITION)
+
   definition.scope = {
     ...definition.scope,
     primaryBodyIds: [ids[0]],
@@ -51,6 +52,7 @@ function run(candidateId: string, copied: boolean, offset = 4): RunRecord {
     methods: [OFFICIAL_CLEARANCE_METHOD],
     acknowledgedWarningCodes: []
   })
+
   return {
     version: 1,
     name: candidateId,
@@ -87,9 +89,11 @@ it('compares explicit A/B/C correspondence while preserving actual geometry diff
     c = run('C', true, 5),
     before = JSON.stringify([a, b, c])
   const identical = compareRuns([a, b])
+
   expect(identical.directlyComparable).toBe(true)
   expect(identical.differences).toEqual([])
   const changed = compareRuns([a, b, c])
+
   expect(changed.directlyComparable).toBe(true)
   expect(
     changed.differences.some((difference) =>
@@ -105,16 +109,25 @@ it('compares explicit A/B/C correspondence while preserving actual geometry diff
 
 it('rejects incomplete or duplicate lineage instead of guessing and retains it in every report format', () => {
   const b = run('B', true)
+
   expect(validateRunRecord(b).lineage).toEqual(b.lineage)
   expect(Object.isFrozen(validateRunRecord(b).lineage?.bodyOrigins)).toBe(true)
   const incomplete = structuredClone(b)
-  if (!incomplete.lineage) throw new Error('Missing test lineage')
+
+  if (!incomplete.lineage) {
+    throw new Error('Missing test lineage')
+  }
+
   incomplete.lineage.bodyOrigins = {
     'B:left': { candidateId: 'A', bodyId: 'A:left' }
   }
   expect(() => validateRunRecord(incomplete)).toThrow('lineage')
   const duplicated = structuredClone(b)
-  if (!duplicated.lineage) throw new Error('Missing test lineage')
+
+  if (!duplicated.lineage) {
+    throw new Error('Missing test lineage')
+  }
+
   duplicated.lineage.bodyOrigins = {
     'B:left': { candidateId: 'A', bodyId: 'A:left' },
     'B:right': { candidateId: 'A', bodyId: 'A:left' }

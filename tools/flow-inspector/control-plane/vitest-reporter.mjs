@@ -55,29 +55,36 @@ export default class LocalizationReporter extends JsonReporter {
   }
 
   async onFinished(files = this.ctx.state.getFiles(), errors = [], coverage) {
-    if (this.executedFiles)
+    if (this.executedFiles) {
       files = files.filter((file) =>
         this.executedFiles.has(
           JSON.stringify([file.filepath, file.projectName ?? ''])
         )
       )
+    }
+
     this.projects = files.map((file) => file.projectName ?? '')
     this.errors = errors.map((error) =>
       String(error?.stack ?? error?.message ?? error)
     )
+
     const captureError = (error) =>
       Object.fromEntries(
         localization.FAILURE_DETAIL_FIELDS.filter(
           (key) => typeof error?.[key] === 'string'
         ).map((key) => [key, error[key]])
       )
+
     this.executionFailureDetails = errors.map(captureError)
     this.failureDetails = []
+
     const retainErrors = (suite, file, cases) => {
       if (suite.type === 'test') {
         cases.push((suite.result?.errors ?? []).map(captureError))
+
         return
       }
+
       for (const error of suite.result?.errors ?? []) {
         this.errors.push(
           file.filepath +
@@ -93,14 +100,20 @@ export default class LocalizationReporter extends JsonReporter {
           suiteName: suite.name
         })
       }
-      for (const child of suite.tasks ?? []) retainErrors(child, file, cases)
+
+      for (const child of suite.tasks ?? []) {
+        retainErrors(child, file, cases)
+      }
     }
+
     // Preserve file and depth-first test order used by JsonReporter. Names may collide.
     for (const file of files) {
       const cases = []
+
       retainErrors(file, file, cases)
       this.failureDetails.push(cases)
     }
+
     await super.onFinished(files, errors, coverage)
   }
 
@@ -116,6 +129,7 @@ export default class LocalizationReporter extends JsonReporter {
         executionFailureDetails: this.executionFailureDetails
       }
     )
+
     this.completed = true
     this.ctx.logger.log('Flow Inspector observation: ' + record.id)
     this.ctx.logger.log(

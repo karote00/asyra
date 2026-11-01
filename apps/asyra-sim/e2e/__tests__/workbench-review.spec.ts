@@ -12,6 +12,7 @@ for (const width of [1440, 960, 600]) {
       () =>
         new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
     )
+
     const bounds = () =>
       page.evaluate(() =>
         [
@@ -21,13 +22,20 @@ for (const width of [1440, 960, 600]) {
           'canvas'
         ].map((selector) => {
           const node = document.querySelector(selector)
-          if (!node) throw new Error(`Missing layout surface: ${selector}`)
+
+          if (!node) {
+            throw new Error(`Missing layout surface: ${selector}`)
+          }
+
           const { x, y, width, height } = node.getBoundingClientRect()
+
           return { selector, x, y, width, height }
         })
       )
+
     await expect(page.getByLabel('Object name')).toHaveValue('fixture post')
     const baseline = await bounds()
+
     await page.screenshot({ path: info.outputPath('object-panel.png') })
 
     await page.getByRole('button', { name: 'Experiments', exact: true }).click()
@@ -87,8 +95,10 @@ test('workbench controls fit desktop and narrow review panes without clipped tex
               '.topbar, .commandbar, .properties-panel'
             )
           ]
+
           return panels.every((panel) => {
             const rect = panel.getBoundingClientRect()
+
             return (
               rect.left >= 0 &&
               rect.right <= innerWidth &&
@@ -99,9 +109,14 @@ test('workbench controls fit desktop and narrow review panes without clipped tex
       )
       .toBe(true)
     const controls = page.locator('.commands button')
+
     for (const control of await controls.all()) {
-      if (!(await control.isVisible())) continue
+      if (!(await control.isVisible())) {
+        continue
+      }
+
       const text = await control.innerText()
+
       expect(text).not.toMatch(/[↶↷+]/)
       expect(
         await control.evaluate(
@@ -109,6 +124,7 @@ test('workbench controls fit desktop and narrow review panes without clipped tex
         )
       ).toBe(true)
     }
+
     await expect(page.locator('.trajectory-import')).not.toHaveAttribute(
       'open',
       ''
@@ -123,12 +139,14 @@ test('trajectory playback advances, pauses, restarts and stops when leaving expe
   await page.goto('/')
   await expect(page.getByRole('status')).toHaveText('Local runtime ready')
   const history = await page.getByTestId('history-depth').textContent()
+
   await page.getByRole('button', { name: 'Experiments', exact: true }).click()
   await page.getByRole('tab', { name: 'Preview', exact: true }).click()
   await page
     .getByRole('button', { name: 'Play trajectory', exact: true })
     .click()
   const time = page.getByLabel('Sampled trajectory preview time')
+
   await expect
     .poll(async () => Number(await time.inputValue()))
     .toBeGreaterThan(0.1)
@@ -136,6 +154,7 @@ test('trajectory playback advances, pauses, restarts and stops when leaving expe
     .getByRole('button', { name: 'Pause trajectory', exact: true })
     .click()
   const paused = await time.inputValue()
+
   await page.waitForTimeout(150)
   await expect(time).toHaveValue(paused)
   await page
@@ -174,6 +193,7 @@ for (const viewport of [
     const panel = page.locator('.experiment-panel')
     const run = page.getByRole('button', { name: 'Run analysis', exact: true })
     const heading = panel.locator('.panel-heading')
+
     await page.locator('.trajectory-import > summary').click()
     await panel.evaluate((node) => {
       node.scrollTop = 0
@@ -182,6 +202,7 @@ for (const viewport of [
       run: await run.boundingBox(),
       heading: await heading.boundingBox()
     }
+
     await expect
       .poll(() => panel.evaluate((node) => getComputedStyle(node).overflowY))
       .toMatch(/auto|scroll/)
@@ -193,10 +214,13 @@ for (const viewport of [
       run: await run.boundingBox(),
       heading: await heading.boundingBox()
     }
-    if (!before.run || !before.heading || !after.run || !after.heading)
+
+    if (!before.run || !before.heading || !after.run || !after.heading) {
       throw new Error(
         'Experiment context and Run must remain mounted while scrolling'
       )
+    }
+
     expect(after.run.y).toBeCloseTo(before.run.y - 160, 0)
     expect(after.heading.y).toBeCloseTo(before.heading.y - 160, 0)
     await page.locator('.trajectory-import textarea').scrollIntoViewIfNeeded()
@@ -205,6 +229,7 @@ for (const viewport of [
       await page.getByRole('tab', { name, exact: true }).click()
       await expect(page.getByRole('tabpanel')).toBeVisible()
     }
+
     expect(await page.locator('.viewport-panel').boundingBox()).toEqual(scene)
     await expect(page.getByTestId('history-depth')).toHaveText(history ?? '')
     await panel.evaluate((node) => {
@@ -226,22 +251,33 @@ for (const width of [576, 1440]) {
     const row = page.locator('.mapping-row').first()
     const target = page.getByLabel('J1 - Base yaw CSV column', { exact: true })
     const unit = page.getByLabel('J1 - Base yaw CSV unit', { exact: true })
+
     await target.scrollIntoViewIfNeeded()
     const label = await row.evaluate((node) => {
       const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT)
+
       while (walker.nextNode()) {
-        if (walker.currentNode.textContent?.trim() !== 'J1 - Base yaw') continue
+        if (walker.currentNode.textContent?.trim() !== 'J1 - Base yaw') {
+          continue
+        }
+
         const range = document.createRange()
+
         range.selectNodeContents(walker.currentNode)
+
         return range.getBoundingClientRect().toJSON()
       }
+
       throw new Error('Missing joint name')
     })
     const [column, sourceUnit] = await Promise.all(
       [target, unit].map((control) => control.boundingBox())
     )
-    if (!label || !column || !sourceUnit)
+
+    if (!label || !column || !sourceUnit) {
       throw new Error('Mapping controls must be rendered')
+    }
+
     expect(label.y + label.height / 2).toBeGreaterThanOrEqual(column.y)
     expect(label.y + label.height / 2).toBeLessThanOrEqual(
       column.y + column.height
@@ -262,13 +298,17 @@ for (const width of [576, 1440]) {
       .toBe(true)
     await page.screenshot({ path: info.outputPath('mapping-rows.png') })
     const clearance = page.getByLabel('Minimum clearance (mm)', { exact: true })
+
     await clearance.scrollIntoViewIfNeeded()
     const clearanceLabel = await page
       .getByText('Minimum clearance (mm)', { exact: true })
       .boundingBox()
     const clearanceInput = await clearance.boundingBox()
-    if (!clearanceLabel || !clearanceInput)
+
+    if (!clearanceLabel || !clearanceInput) {
       throw new Error('Clearance field must be rendered')
+    }
+
     expect(clearanceLabel.y + clearanceLabel.height / 2).toBeGreaterThanOrEqual(
       clearanceInput.y
     )

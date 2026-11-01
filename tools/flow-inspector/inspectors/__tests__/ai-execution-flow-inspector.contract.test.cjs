@@ -9,6 +9,7 @@ test('AI execution architecture resolves current authorities and boundaries', ()
   assert.equal(flow.schema.version, 2)
   assert.ok(Object.isFrozen(flow))
   const spec = fs.readFileSync(path.join(root, flow.authority.specPath), 'utf8')
+
   assert.ok(fs.existsSync(path.join(root, flow.authority.inspectorPath)))
   const headings = new Set(
     [...spec.matchAll(/^#{2,6} (.+)$/gm)].map(
@@ -20,6 +21,7 @@ test('AI execution architecture resolves current authorities and boundaries', ()
           .replaceAll(' ', '-')
     )
   )
+
   for (const step of flow.steps) {
     assert.equal(
       step.ownerPackage,
@@ -38,13 +40,17 @@ test('AI execution architecture resolves current authorities and boundaries', ()
     ]) {
       assert.ok(step[field].length, `${step.id}: ${field}`)
     }
+
     for (const file of step.implementationBoundary)
-      assert.ok(fs.existsSync(path.join(root, file)), file)
-    for (const ref of step.specRefs) assert.ok(headings.has(ref), ref)
+      {assert.ok(fs.existsSync(path.join(root, file)), file)}
+
+    for (const ref of step.specRefs) {assert.ok(headings.has(ref), ref)}
+
     if (step.id === 'compose' || step.id === 'prepare') {
       assert.ok(step.cacheDimensions.length > 0)
       for (const dimension of step.cacheDimensions)
-        assert.match(dimension, /request-local/)
+        {assert.match(dimension, /request-local/)}
+
       assert.match(step.cacheDimensions.join(' '), /refresh/)
     } else if (step.id === 'apply') {
       assert.equal(step.cacheDimensions.length, 2)
@@ -63,7 +69,7 @@ test('AI execution architecture resolves current authorities and boundaries', ()
       assert.match(step.cacheDimensions[1], /runtime-issued visual receipt/)
       assert.match(step.cacheDimensions[1], /canonical dependency IDs and regional membership/)
       assert.match(step.cacheDimensions[1], /request lifetime/)
-    } else assert.deepEqual(step.cacheDimensions, [])
+    } else {assert.deepEqual(step.cacheDimensions, [])}
   }
 })
 
@@ -72,13 +78,16 @@ test('AI execution routes preserve artifact ownership and declared consumers', (
   const artifacts = new Map(
     flow.artifacts.map((artifact) => [artifact.id, artifact])
   )
+
   assert.equal(steps.size, flow.steps.length)
   assert.equal(artifacts.size, flow.artifacts.length)
   for (const route of flow.routes) {
     assert.ok(steps.has(route.from), route.id)
-    if (route.to) assert.ok(steps.has(route.to), route.id)
+    if (route.to) {assert.ok(steps.has(route.to), route.id)}
+
     for (const id of route.producedArtifacts) {
       const artifact = artifacts.get(id)
+
       assert.equal(artifact?.ownerStepId, route.from, route.id)
       assert.ok(steps.get(route.from).outputs.includes(id), route.id)
       if (route.to) {
@@ -87,16 +96,17 @@ test('AI execution routes preserve artifact ownership and declared consumers', (
       }
     }
   }
+
   for (const artifact of artifacts.values()) {
     assert.equal(artifact.terminal, artifact.consumerStepIds.length === 0)
     for (const consumer of artifact.consumerStepIds)
-      assert.ok(
+      {assert.ok(
         flow.routes.some(
           (route) =>
             route.from === artifact.ownerStepId &&
             route.to === consumer &&
             route.producedArtifacts.includes(artifact.id)
         )
-      )
+      )}
   }
 })

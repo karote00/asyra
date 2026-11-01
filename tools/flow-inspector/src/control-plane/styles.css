@@ -1,0 +1,313 @@
+/* React service panels share the architecture theme and canvas geometry. */
+.proof-controls,
+.proof-unavailable,
+.proof-error {
+  margin: 14px 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  color: var(--text);
+  background: var(--panel);
+  font-size: 13px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.proof-controls summary {
+  cursor: pointer;
+  font-weight: 650;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.proof-controls > summary > span {
+  display: inline-block;
+  margin-left: 8px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 12px;
+}
+.proof-body {
+  padding-top: 16px;
+}
+.proof-body > details {
+  margin-top: 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 12px;
+  background: var(--bg);
+}
+.proof-body > details > summary {
+  padding: 12px 0;
+  color: var(--accent);
+}
+.proof-body > details[open] {
+  padding-bottom: 16px;
+}
+.proof-body > details[open] > summary {
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 16px;
+}
+.proof-body p {
+  margin: 12px 0;
+}
+.proof-body a:not([hidden]) {
+  display: block;
+  margin-top: 12px;
+  text-underline-offset: 3px;
+}
+.proof-body label {
+  display: block;
+  margin-block: 16px;
+  color: var(--muted);
+}
+.proof-body select,
+.proof-body input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin-top: 8px;
+}
+.proof-run-failure button,
+.proof-controls button,
+.proof-controls select,
+.proof-controls input,
+.proof-menu button {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 9px 10px;
+  color: var(--text);
+  background: var(--bg);
+  font: inherit;
+}
+.proof-run-failure button,
+.proof-controls button,
+.proof-menu button {
+  cursor: pointer;
+}
+.proof-run-failure button:focus-visible,
+.proof-controls button:focus-visible,
+.proof-menu button:focus-visible,
+.proof-controls select:focus-visible,
+.proof-controls input:focus-visible {
+  outline: 2px solid var(--accent);
+}
+.proof-controls button:disabled,
+.proof-menu button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.proof-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-block: 16px;
+}
+.proof-actions button {
+  flex: 1 1 140px;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.proof-controls dd {
+  margin: 4px 0 10px;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+}
+.proof-controls pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  line-height: 1.75;
+  margin: 16px 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+}
+.proof-controls pre:empty {
+  display: none;
+}
+#agent-recovery:not([hidden]) {
+  border-left: 3px solid #fbbf24;
+  background: #292315;
+}
+.proof-controls dt {
+  font-weight: 650;
+  margin-top: 16px;
+}
+.proof-controls p,
+.proof-mapping-change {
+  overflow-wrap: anywhere;
+}
+.proof-mapping-change {
+  margin-block: 10px;
+  border-left: 2px solid var(--line);
+  padding-left: 8px;
+}
+.proof-controls [data-status='passed'],
+.proof-badge[data-status='passed'] {
+  color: #86efac;
+}
+.proof-controls [data-status='failed'],
+.proof-badge[data-status='failed'],
+.proof-error {
+  color: #fca5a5;
+}
+.proof-controls [data-status='unknown'],
+.proof-badge[data-status='unknown'] {
+  color: var(--muted);
+}
+.proof-badge {
+  flex: none;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 2px 6px;
+  font-size: 10px;
+}
+.proof-menu {
+  position: fixed;
+  z-index: 100;
+  display: grid;
+  gap: 6px;
+  max-width: calc(100vw - 16px);
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 8px 30px #0008;
+}
+.proof-menu[hidden] {
+  display: none;
+}
+.proof-menu button {
+  text-align: left;
+}
+#history {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+#history [aria-pressed='true'] {
+  border-color: var(--accent);
+}
+
+.proof-run-failure:not([hidden]) {
+  border: 2px solid #f87171;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 10px;
+  background: #401c25;
+  color: #fecaca;
+}
+.step-card {
+  outline: none;
+}
+.step-card:focus-visible {
+  border-style: dashed;
+}
+.step-card.proof-failed {
+  border-color: #f87171;
+}
+
+.proof-body .proof-confirmation {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.proof-body .proof-confirmation input {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  margin-top: 3px;
+}
+
+.proof-body textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  margin-top: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 9px 10px;
+  color: var(--text);
+  background: var(--bg);
+  font: inherit;
+}
+.proof-body textarea:focus-visible {
+  outline: 2px solid var(--accent);
+}
+.proof-target-item {
+  border-top: 1px solid var(--line);
+  margin-top: 16px;
+  padding-top: 12px;
+  overflow-wrap: anywhere;
+}
+#target-controls fieldset {
+  min-width: 0;
+  border: 1px solid var(--line);
+}
+#target-controls details {
+  margin-top: 16px;
+}
+#target-controls h4 {
+  margin: 0;
+}
+
+#test-result-controls {
+  padding: 12px;
+  margin-bottom: 12px;
+}
+#test-result-controls pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 480px;
+  overflow: auto;
+}
+#test-result-controls select,
+#test-result-controls button {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+#test-result-failures > div {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+#test-result-notice {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.step-card.observation-failed {
+  border-color: #f87171;
+}
+
+#node-interactions {
+  border-top: 1px solid var(--border, #506070);
+  margin-top: 16px;
+  padding-top: 12px;
+}
+#node-interactions textarea {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 90px;
+  margin-block: 8px;
+}
+#node-interactions pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 260px;
+  overflow: auto;
+}
+#node-interactions article {
+  border-block-end: 1px solid var(--border, #506070);
+  margin-block: 8px;
+  padding-block: 8px;
+}
+#node-interactions button {
+  margin: 4px;
+}

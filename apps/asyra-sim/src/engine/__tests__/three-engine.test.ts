@@ -26,13 +26,20 @@ const box: SpatialDescriptor = {
   wireframe: false,
   selectable: true
 }
+
 const hit = (engine: ThreeEngine, x = 320, y = 240) => {
   const result = engine.query({ type: 'hit-test', point: { x, y } })
-  if (result.type !== 'hit') throw new Error('Expected a hit-query result')
+
+  if (result.type !== 'hit') {
+    throw new Error('Expected a hit-query result')
+  }
+
   return result.target
 }
+
 const setup = (driverOptions: Partial<GraphicsDriver> = {}) => {
   const canvas = document.createElement('canvas')
+
   canvas.getBoundingClientRect = () => ({
     x: 0,
     y: 0,
@@ -42,6 +49,7 @@ const setup = (driverOptions: Partial<GraphicsDriver> = {}) => {
     bottom: 480,
     width: 640,
     height: 480,
+
     toJSON: () => ({})
   })
   const driver: GraphicsDriver = {
@@ -59,10 +67,13 @@ const setup = (driverOptions: Partial<GraphicsDriver> = {}) => {
   let pending: FrameRequestCallback | undefined
   const engine = new ThreeEngine({
     createDriver: () => driver,
+
     requestFrame: (cb) => {
       pending = cb
+
       return 1
     },
+
     cancelFrame: () => {
       pending = undefined
     }
@@ -72,6 +83,7 @@ const setup = (driverOptions: Partial<GraphicsDriver> = {}) => {
     width: 640,
     height: 480
   }).root
+
   const add = (spatial: SpatialDescriptor) => {
     const handle = engine.execute({
       type: 'create-object',
@@ -79,18 +91,26 @@ const setup = (driverOptions: Partial<GraphicsDriver> = {}) => {
       objectType: spatial.kind === 'camera' ? 'container' : 'mesh',
       properties: { [SPATIAL_PROPERTY]: spatial }
     }).object
-    if (!handle) throw new Error('Expected an object handle')
+
+    if (!handle) {
+      throw new Error('Expected an object handle')
+    }
+
     engine.execute({ type: 'append-child', parent: root, child: handle })
+
     return handle
   }
+
   return {
     engine,
     driver,
     canvas,
     root,
     add,
+
     frame: () => {
       const cb = pending
+
       pending = undefined
       cb?.(1)
     }
@@ -101,12 +121,15 @@ describe('CUSTOM Three engine', () => {
   it('preserves Sim shadow policy with a software graphics driver after shared extraction', () => {
     const { engine, driver, add } = setup({
       shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap },
+
       getContext: () =>
         ({
           getExtension: () => ({ UNMASKED_RENDERER_WEBGL: 1 }),
+
           getParameter: () => 'SwiftShader'
         }) as unknown as WebGLRenderingContext
     })
+
     add(camera)
     add(box)
     engine.execute({ type: 'flush' })
@@ -114,6 +137,7 @@ describe('CUSTOM Three engine', () => {
     const key = scene.children.find(
       (value) => value instanceof THREE.DirectionalLight
     )
+
     expect(driver.shadowMap?.enabled).toBe(true)
     expect(key instanceof THREE.DirectionalLight && key.castShadow).toBe(true)
     engine.destroy()
@@ -121,6 +145,7 @@ describe('CUSTOM Three engine', () => {
 
   it('does not advertise or simulate unsupported subtree snapshots', () => {
     const { engine, driver, root } = setup()
+
     expect(engine.capabilities.has('snapshot')).toBe(false)
     expect(engine.capabilities.has('local-content-bounds')).toBe(false)
     expect(() =>
@@ -135,6 +160,7 @@ describe('CUSTOM Three engine', () => {
 
   it('bounds studio shadows, limits casters to solid selectable geometry and releases the light', () => {
     const { engine, driver, add } = setup()
+
     add(camera)
     add(box)
     engine.execute({ type: 'flush' })
@@ -142,22 +168,29 @@ describe('CUSTOM Three engine', () => {
     const key = scene.children.find(
       (value) => value instanceof THREE.DirectionalLight
     )
-    if (!(key instanceof THREE.DirectionalLight))
+
+    if (!(key instanceof THREE.DirectionalLight)) {
       throw new Error('Missing key light')
+    }
+
     expect(key.castShadow).toBe(true)
     expect(key.shadow.mapSize.toArray()).toEqual([1024, 1024])
     const mesh = scene.getObjectsByProperty('isMesh', true)[0]
+
     expect(mesh.castShadow).toBe(true)
     expect(mesh.receiveShadow).toBe(true)
     const dispose = vi.spyOn(key, 'dispose')
+
     engine.destroy()
     engine.destroy()
     expect(dispose).toHaveBeenCalledOnce()
   })
   it('retains live GPU resources for pose and appearance updates and replaces changed geometry', () => {
     const { engine, driver, add } = setup()
+
     add(camera)
     const handle = add(box)
+
     const renderedMesh = () => {
       engine.execute({ type: 'flush' })
       const scene = vi
@@ -168,16 +201,21 @@ describe('CUSTOM Three engine', () => {
           )
         )?.[0]
       const mesh = scene?.getObjectsByProperty('isMesh', true)[0]
-      if (!(mesh instanceof THREE.Mesh))
+
+      if (!(mesh instanceof THREE.Mesh)) {
         throw new Error('Missing rendered mesh')
+      }
+
       return mesh as THREE.Mesh<
         THREE.BufferGeometry,
         THREE.MeshStandardMaterial
       >
     }
+
     const original = renderedMesh()
     const disposeGeometry = vi.spyOn(original.geometry, 'dispose')
     const disposeMaterial = vi.spyOn(original.material, 'dispose')
+
     for (let frame = 1; frame <= 120; frame++) {
       engine.execute({
         type: 'update-object',
@@ -193,12 +231,14 @@ describe('CUSTOM Three engine', () => {
         }
       })
       const mesh = renderedMesh()
+
       expect(mesh.geometry).toBe(original.geometry)
       expect(mesh.material).toBe(original.material)
       expect(mesh.material.opacity).toBe(0.5)
       expect(mesh.material.depthWrite).toBe(false)
       expect(mesh.material.color.getHex()).toBe(0xffffff)
     }
+
     expect(disposeGeometry).not.toHaveBeenCalled()
     expect(disposeMaterial).not.toHaveBeenCalled()
     engine.execute({
@@ -215,6 +255,7 @@ describe('CUSTOM Three engine', () => {
   })
   it('rejects unsupported screen bridge properties and thick strokes instead of ignoring them', () => {
     const { engine, root } = setup()
+
     const create = (properties: Record<string, unknown> = {}) =>
       engine.execute({
         type: 'create-object',
@@ -222,13 +263,16 @@ describe('CUSTOM Three engine', () => {
         requestId: 'bridge',
         properties
       }).object
+
     for (const properties of [
       { skewX: 0.1 },
       { skewY: 0.1 },
       { alpha: 0.5 },
       { filters: [] }
-    ])
+    ]) {
       expect(() => create(properties)).toThrow('Unsupported screen')
+    }
+
     expect(() =>
       engine.execute({
         type: 'create-object',
@@ -238,7 +282,11 @@ describe('CUSTOM Three engine', () => {
       })
     ).toThrow('spatial descriptor')
     const object = create()
-    if (!object) throw new Error('Missing graphic')
+
+    if (!object) {
+      throw new Error('Missing graphic')
+    }
+
     engine.execute({ type: 'append-child', parent: root, child: object })
     engine.execute({
       type: 'draw',
@@ -265,9 +313,11 @@ describe('CUSTOM Three engine', () => {
   })
   it('uses perspective depth for selection and reflects complete pose updates', () => {
     const { engine, add } = setup()
+
     add(camera)
     const far = add({ ...box, position: [0, 0, -2] })
     const near = add(box)
+
     expect(hit(engine)).toBe(near)
     engine.execute({
       type: 'update-object',
@@ -283,13 +333,21 @@ describe('CUSTOM Three engine', () => {
     const view = add(camera)
     const object = add(box)
     const first = engine.query({ type: 'get-bounds', object })
+
     expect(first.type).toBe('bounds')
-    if (first.type !== 'bounds') throw new Error('Expected bounds')
+    if (first.type !== 'bounds') {
+      throw new Error('Expected bounds')
+    }
+
     expect(first.bounds.x).toBeLessThan(320)
     expect(first.bounds.x + first.bounds.width).toBeGreaterThan(320)
     engine.execute({ type: 'resize', width: 1280, height: 960 })
     const resized = engine.query({ type: 'get-bounds', object })
-    if (resized.type !== 'bounds') throw new Error('Expected bounds')
+
+    if (resized.type !== 'bounds') {
+      throw new Error('Expected bounds')
+    }
+
     expect(resized.bounds.width).toBeCloseTo(first.bounds.width * 2, 8)
     engine.execute({
       type: 'update-object',
@@ -297,15 +355,21 @@ describe('CUSTOM Three engine', () => {
       properties: { [SPATIAL_PROPERTY]: { ...camera, position: [0, 0, 10] } }
     })
     const distant = engine.query({ type: 'get-bounds', object })
-    if (distant.type !== 'bounds') throw new Error('Expected bounds')
+
+    if (distant.type !== 'bounds') {
+      throw new Error('Expected bounds')
+    }
+
     expect(distant.bounds.width).toBeLessThan(resized.bounds.width)
     engine.destroy()
   })
 
   it('rejects invalid updates atomically and never accepts foreign handles', () => {
     const { engine, add } = setup()
+
     add(camera)
     const object = add(box)
+
     expect(() =>
       engine.execute({
         type: 'update-object',
@@ -326,6 +390,7 @@ describe('CUSTOM Three engine', () => {
   it('has one-shot scheduling and renders only on explicit flush', () => {
     const { engine, driver, frame } = setup()
     const callback = vi.fn()
+
     engine.requestFrame(callback)
     frame()
     frame()
@@ -344,17 +409,24 @@ describe('CUSTOM Three engine', () => {
 
   it('preserves hierarchy on cycle errors and releases detached objects', () => {
     const { engine, root } = setup()
+
     const create = () => {
       const handle = engine.execute({
         type: 'create-object',
         objectType: 'container',
         requestId: 'group'
       }).object
-      if (!handle) throw new Error('Expected an object handle')
+
+      if (!handle) {
+        throw new Error('Expected an object handle')
+      }
+
       return handle
     }
+
     const parent = create(),
       child = create()
+
     engine.execute({ type: 'append-child', parent: root, child: parent })
     engine.execute({ type: 'append-child', parent, child })
     expect(() =>
@@ -372,7 +444,11 @@ describe('CUSTOM Three engine', () => {
       objectType: 'graphics',
       requestId: 'screen'
     }).object
-    if (!object) throw new Error('Expected an object handle')
+
+    if (!object) {
+      throw new Error('Expected an object handle')
+    }
+
     engine.execute({ type: 'append-child', parent: root, child: object })
     engine.execute({
       type: 'draw',
@@ -394,16 +470,21 @@ describe('CUSTOM Three engine', () => {
 
   it('suppresses stale callbacks even when a platform callback survives cancellation', () => {
     const fixture = setup()
+
     fixture.engine.destroy()
     const callbacks: FrameRequestCallback[] = []
     const engine = new ThreeEngine({
       createDriver: () => fixture.driver,
+
       requestFrame: (cb) => callbacks.push(cb),
+
       cancelFrame: () => undefined
     })
+
     engine.initialize({ host: {}, width: 10, height: 10 })
     const first = vi.fn(),
       second = vi.fn()
+
     engine.requestFrame(first)
     engine.requestFrame(second)
     callbacks[0](1)
@@ -415,15 +496,18 @@ describe('CUSTOM Three engine', () => {
 
   it('normalizes pointer coordinates and removes listeners on teardown', () => {
     const { engine, canvas, add } = setup()
+
     add(camera)
     const target = add(box)
     const listener = vi.fn()
+
     engine.subscribeToInteraction(listener)
     const event = new MouseEvent('pointerdown', {
       clientX: 320,
       clientY: 240,
       button: 0
     })
+
     canvas.dispatchEvent(event)
     expect(listener).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -449,6 +533,7 @@ describe('CUSTOM Three engine', () => {
     'rejects unsupported or invalid command $type',
     (command) => {
       const { engine } = setup()
+
       expect(() => engine.execute(command)).toThrow()
       engine.destroy()
     }

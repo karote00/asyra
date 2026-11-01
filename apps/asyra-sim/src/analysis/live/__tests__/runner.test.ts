@@ -8,10 +8,15 @@ import { liveFixture } from './fixtures'
 
 class WorkerStub {
   onmessage: ((event: MessageEvent) => void) | null = null
+
   onerror: (() => void) | null = null
+
   onmessageerror: (() => void) | null = null
+
   postMessage = vi.fn()
+
   terminate = vi.fn()
+
   emit(data: unknown) {
     this.onmessage?.(new MessageEvent('message', { data }))
   }
@@ -66,6 +71,7 @@ function partialWitnessInterval(
       const finding = index === 0
       const upper = finding ? 0 : null
       const state = finding ? ('finding' as const) : ('unresolved' as const)
+
       return {
         pairId: pair.id,
         evidence: {
@@ -137,6 +143,7 @@ it('retains a validated worker trace and its first Preview publication under the
   const snapshot = runner.prepare('experiment-input', () => input)
   const abort = new AbortController()
   const task = runner.open(snapshot, 4, abort.signal)
+
   worker.emit({ type: LiveMessages.READY })
   const diagnostic = {
     requestId: 1,
@@ -215,6 +222,7 @@ it('admits the latest pending pose within 50 ms when the previous check has comp
   )
   const abort = new AbortController()
   const task = runner.open(input, 0, abort.signal)
+
   worker.emit({ type: LiveMessages.READY })
   runner.sample(0.05)
   worker.emit({
@@ -252,6 +260,7 @@ it.each(['duplicate', 'wrong time', 'contradiction', 'deadline'])(
     )
     const task = runner.open(input, 4, new AbortController().signal)
     const rejected = expect(task).rejects.toThrow('Live check failed')
+
     worker.emit({ type: LiveMessages.READY })
     const evidence = runOfficialClearanceMethod(sampleSnapshot(input, 4))
     const progress = {
@@ -260,12 +269,20 @@ it.each(['duplicate', 'wrong time', 'contradiction', 'deadline'])(
       time: 4,
       pairs: [evidence.pairs[0]]
     }
+
     worker.emit(progress)
 
-    if (failure === 'duplicate') worker.emit(progress)
-    if (failure === 'wrong time') worker.emit({ ...progress, time: 3 })
+    if (failure === 'duplicate') {
+      worker.emit(progress)
+    }
+
+    if (failure === 'wrong time') {
+      worker.emit({ ...progress, time: 3 })
+    }
+
     if (failure === 'contradiction') {
       const changed = structuredClone(evidence)
+
       changed.pairs[0].evidence.leaves[0].reason =
         'Different retained observation'
       worker.emit({
@@ -275,7 +292,10 @@ it.each(['duplicate', 'wrong time', 'contradiction', 'deadline'])(
         evidence: changed
       })
     }
-    if (failure === 'deadline') await vi.advanceTimersByTimeAsync(1000)
+
+    if (failure === 'deadline') {
+      await vi.advanceTimersByTimeAsync(1000)
+    }
 
     await rejected
     expect(runner.getRecords()).toHaveLength(0)
@@ -291,9 +311,11 @@ it('fences provisional output after a seek but retains validated terminal eviden
   const runner = new LivePlaybackRunner(() => worker as unknown as Worker)
   const abort = new AbortController()
   const task = runner.open(input, 4, abort.signal)
+
   worker.emit({ type: LiveMessages.READY })
   runner.sample(1, true)
   const evidence = runOfficialClearanceMethod(sampleSnapshot(input, 4))
+
   worker.emit({
     type: LiveMessages.PROGRESS,
     id: 1,
@@ -318,12 +340,16 @@ it('publishes progress before completion without recording or freeing the in-fli
   const task = runner.open(input, 4, abort.signal)
   // Observe rejection even when the old protocol rejects progress in this red test.
   const settled = task.catch(() => undefined)
+
   worker.emit({ type: LiveMessages.READY })
   const evidence = runOfficialClearanceMethod(sampleSnapshot(input, 4))
   const pair = evidence.pairs.find((pair) =>
     pair.evidence.leaves.some((leaf) => leaf.state === 'finding')
   )
-  if (!pair) throw new Error('Missing collision fixture')
+
+  if (!pair) {
+    throw new Error('Missing collision fixture')
+  }
 
   try {
     worker.emit({ type: 'progress', id: 1, time: 4, pairs: [pair] })
@@ -353,6 +379,7 @@ it('does not repeat a geometry query for a checked sample in the same input life
     undefined,
     Date.now
   )
+
   runner.setNotificationPublishers(vi.fn(), publishRecordsRevision)
   const abort = new AbortController()
   const task = runner.open(input, 4, abort.signal)
@@ -395,11 +422,16 @@ it('rechecks an incomplete exact pose while retaining its accepted pair evidence
   const runner = new LivePlaybackRunner(() => worker as unknown as Worker)
   const abort = new AbortController()
   const task = runner.open(input, 4, abort.signal)
+
   worker.emit({ type: LiveMessages.READY })
 
   const complete = runOfficialClearanceMethod(sampleSnapshot(input, 4))
   const acceptedPair = complete.pairs[0]
-  if (!acceptedPair) throw new Error('Missing accepted pair fixture')
+
+  if (!acceptedPair) {
+    throw new Error('Missing accepted pair fixture')
+  }
+
   worker.emit({
     type: LiveMessages.ERROR,
     id: 1,
@@ -421,12 +453,17 @@ it('rechecks an incomplete exact pose while retaining its accepted pair evidence
     )
   ).toHaveLength(2)
   const retryRequest = worker.postMessage.mock.calls.at(-1)?.[0]
+
   expect(retryRequest.acceptedPairs).toMatchObject([
     { pairId: acceptedPair.pairId, evidence: { coverage: 'complete' } }
   ])
 
   const additionalPair = complete.pairs[1]
-  if (!additionalPair) throw new Error('Missing additional pair fixture')
+
+  if (!additionalPair) {
+    throw new Error('Missing additional pair fixture')
+  }
+
   worker.emit({
     type: LiveMessages.ERROR,
     id: 2,
@@ -454,11 +491,16 @@ it('continues an incomplete latest exact sample without another playback request
   )
   const abort = new AbortController()
   const task = runner.open(input, 4, abort.signal)
+
   worker.emit({ type: LiveMessages.READY })
 
   const evidence = runOfficialClearanceMethod(sampleSnapshot(input, 4))
   const acceptedPair = evidence.pairs[0]
-  if (!acceptedPair) throw new Error('Missing accepted pair fixture')
+
+  if (!acceptedPair) {
+    throw new Error('Missing accepted pair fixture')
+  }
+
   worker.emit({
     type: LiveMessages.ERROR,
     id: 1,
@@ -469,6 +511,7 @@ it('continues an incomplete latest exact sample without another playback request
   await vi.advanceTimersByTimeAsync(LIVE_LIMITS.samplePeriodMs)
 
   const retryRequest = worker.postMessage.mock.calls.at(-1)?.[0]
+
   expect(retryRequest).toMatchObject({
     type: LiveMessages.SAMPLE,
     id: 2,
@@ -498,10 +541,14 @@ it('stops automatic continuations when a retry adds no accepted evidence', async
   )
   const abort = new AbortController()
   const task = runner.open(input, 4, abort.signal)
+
   worker.emit({ type: LiveMessages.READY })
   const evidence = runOfficialClearanceMethod(sampleSnapshot(input, 4))
   const acceptedPair = evidence.pairs[0]
-  if (!acceptedPair) throw new Error('Missing accepted pair fixture')
+
+  if (!acceptedPair) {
+    throw new Error('Missing accepted pair fixture')
+  }
 
   worker.emit({
     type: LiveMessages.ERROR,
@@ -543,9 +590,11 @@ it('continues through more than three slices while each slice admits new pair ev
   )
   const abort = new AbortController()
   const task = runner.open(input, 4, abort.signal)
+
   worker.emit({ type: LiveMessages.READY })
 
   const evidence = runOfficialClearanceMethod(sampleSnapshot(input, 4))
+
   expect(evidence.pairs.length).toBeGreaterThan(4)
   for (const [index, pair] of evidence.pairs.slice(0, 4).entries()) {
     worker.emit({
@@ -583,10 +632,14 @@ it('stops automatic continuations when the aggregate evaluation budget is exhaus
   const runner = new LivePlaybackRunner(() => worker as unknown as Worker)
   const abort = new AbortController()
   const task = runner.open(input, 4, abort.signal)
+
   worker.emit({ type: LiveMessages.READY })
   const evidence = runOfficialClearanceMethod(sampleSnapshot(input, 4))
   const acceptedPair = evidence.pairs[0]
-  if (!acceptedPair) throw new Error('Missing accepted pair fixture')
+
+  if (!acceptedPair) {
+    throw new Error('Missing accepted pair fixture')
+  }
 
   worker.emit({
     type: LiveMessages.ERROR,
@@ -635,6 +688,7 @@ it('serves an exact cached target during unrelated work and retains valid stale 
 
   const secondAbort = new AbortController()
   const second = runner.open(retained, 0, secondAbort.signal)
+
   secondWorker.emit({ type: LiveMessages.READY })
   runner.sample(4, true)
 
@@ -681,6 +735,7 @@ it('publishes state and exact-record revisions separately from target changes an
   const publishStateRevision = vi.fn()
   const publishRecordsRevision = vi.fn()
   const runner = new LivePlaybackRunner(() => worker as unknown as Worker)
+
   runner.setNotificationPublishers(publishStateRevision, publishRecordsRevision)
   const abort = new AbortController()
   const task = runner.open(input, 0, abort.signal)
@@ -690,6 +745,7 @@ it('publishes state and exact-record revisions separately from target changes an
   publishRecordsRevision.mockClear()
 
   const evidence = runOfficialClearanceMethod(sampleSnapshot(input, 0))
+
   worker.emit({
     type: LiveMessages.PROGRESS,
     id: 1,
@@ -727,9 +783,11 @@ it('does not publish another state revision when a seek leaves live state materi
   const worker = new WorkerStub()
   const publishStateRevision = vi.fn()
   const runner = new LivePlaybackRunner(() => worker as unknown as Worker)
+
   runner.setNotificationPublishers(publishStateRevision, vi.fn())
   const abort = new AbortController()
   const task = runner.open(input, 0, abort.signal)
+
   worker.emit({ type: LiveMessages.READY })
   publishStateRevision.mockClear()
 
@@ -756,9 +814,11 @@ it('queues one adjacent interval certification only after its foreground samples
     Date.now
   )
   const publishRecordsRevision = vi.fn()
+
   runner.setNotificationPublishers(vi.fn(), publishRecordsRevision)
   const abort = new AbortController()
   const task = runner.open(input, 0, abort.signal)
+
   worker.emit({ type: LiveMessages.READY })
   worker.emit({
     type: LiveMessages.RESULT,
@@ -799,6 +859,7 @@ it('queues one adjacent interval certification only after its foreground samples
   const sampleRequests = worker.postMessage.mock.calls.filter(
     ([message]) => message.type === LiveMessages.SAMPLE
   )
+
   runner.sample(2, true)
   expect(
     worker.postMessage.mock.calls.filter(
@@ -820,7 +881,11 @@ it('shows an interval witness without treating missing pair coverage as a cached
   vi.useFakeTimers()
   const input = liveFixture()
   const witnessPairId = input.pairs[0]?.id
-  if (!witnessPairId) throw new Error('Missing witness pair fixture')
+
+  if (!witnessPairId) {
+    throw new Error('Missing witness pair fixture')
+  }
+
   const worker = new WorkerStub()
   const runner = new LivePlaybackRunner(
     () => worker as unknown as Worker,
@@ -829,6 +894,7 @@ it('shows an interval witness without treating missing pair coverage as a cached
   )
   const abort = new AbortController()
   const task = runner.open(input, 0, abort.signal)
+
   worker.emit({ type: LiveMessages.READY })
   worker.emit({
     type: LiveMessages.RESULT,
@@ -855,6 +921,7 @@ it('shows an interval witness without treating missing pair coverage as a cached
   await vi.advanceTimersByTimeAsync(LIVE_LIMITS.samplePeriodMs)
 
   const sampleRequest = worker.postMessage.mock.calls.at(-1)?.[0]
+
   expect(sampleRequest).toMatchObject({
     type: LiveMessages.SAMPLE,
     id: 4,
@@ -895,6 +962,7 @@ it('keeps the live lifetime when an exact sample refines an unresolved interval 
   )
   const abort = new AbortController()
   const task = runner.open(input, 0, abort.signal)
+
   worker.emit({ type: LiveMessages.READY })
   worker.emit({
     type: LiveMessages.RESULT,
@@ -955,7 +1023,9 @@ it('keeps the latest foreground sample pending until bounded interval work settl
   const runner = new LivePlaybackRunner(
     () => {
       const worker = new WorkerStub()
+
       workers.push(worker)
+
       return worker as unknown as Worker
     },
     undefined,
@@ -964,6 +1034,7 @@ it('keeps the latest foreground sample pending until bounded interval work settl
   const abort = new AbortController()
   const task = runner.open(input, 0, abort.signal)
   const backgroundWorker = workers[0]
+
   backgroundWorker.emit({ type: LiveMessages.READY })
   backgroundWorker.emit({
     type: LiveMessages.RESULT,
@@ -983,6 +1054,7 @@ it('keeps the latest foreground sample pending until bounded interval work settl
     expect.objectContaining({ type: LiveMessages.INTERVAL, id: 3 })
   )
   const lateIntervalDelivery = backgroundWorker.onmessage
+
   runner.sample(2, true)
 
   expect(backgroundWorker.terminate).not.toHaveBeenCalled()
@@ -1028,7 +1100,9 @@ it('treats background interval watchdog expiry as optional work failure', async 
   const runner = new LivePlaybackRunner(
     () => {
       const worker = new WorkerStub()
+
       workers.push(worker)
+
       return worker as unknown as Worker
     },
     undefined,
@@ -1040,6 +1114,7 @@ it('treats background interval watchdog expiry as optional work failure', async 
     settled = true
   })
   const backgroundWorker = workers[0]
+
   backgroundWorker.emit({ type: LiveMessages.READY })
   backgroundWorker.emit({
     type: LiveMessages.RESULT,
@@ -1083,7 +1158,9 @@ it('keeps the live lifetime when the optional background interval Worker fails',
   const runner = new LivePlaybackRunner(
     () => {
       const worker = new WorkerStub()
+
       workers.push(worker)
+
       return worker as unknown as Worker
     },
     undefined,
@@ -1092,6 +1169,7 @@ it('keeps the live lifetime when the optional background interval Worker fails',
   const abort = new AbortController()
   const task = runner.open(input, 0, abort.signal)
   const backgroundWorker = workers[0]
+
   backgroundWorker.emit({ type: LiveMessages.READY })
   backgroundWorker.emit({
     type: LiveMessages.RESULT,
@@ -1113,6 +1191,7 @@ it('keeps the live lifetime when the optional background interval Worker fails',
   expect(runner.getState()).toMatchObject({ status: 'ready', error: null })
   runner.sample(2, true)
   const foregroundWorker = workers[1]
+
   foregroundWorker.emit({ type: LiveMessages.READY })
   await vi.advanceTimersByTimeAsync(LIVE_LIMITS.samplePeriodMs)
   expect(foregroundWorker.postMessage.mock.calls.at(-1)?.[0]).toMatchObject({
@@ -1141,6 +1220,7 @@ it('preserves unknown coverage after an explicit optional interval error', async
   )
   const abort = new AbortController()
   const task = runner.open(input, 0, abort.signal)
+
   worker.emit({ type: LiveMessages.READY })
   worker.emit({
     type: LiveMessages.RESULT,
@@ -1228,6 +1308,7 @@ it('reuses owner-admitted samples across Play lifetimes with zero new Workers, t
   const factory = vi.fn(() => worker as unknown as Worker)
   const runner = new LivePlaybackRunner(factory)
   const publishRecordsRevision = vi.fn()
+
   runner.setNotificationPublishers(vi.fn(), publishRecordsRevision)
   const input = runner.prepare('revision-1', liveFixture)
   const abort = new AbortController()
@@ -1245,6 +1326,7 @@ it('reuses owner-admitted samples across Play lifetimes with zero new Workers, t
   await first
 
   const changedInput = structuredClone(liveFixture())
+
   changedInput.snapshotId = 'changed-threshold-revision'
   changedInput.rule.minimumClearance += 0.125
   const create = vi.fn(() => changedInput)
@@ -1265,6 +1347,7 @@ it('reuses owner-admitted samples across Play lifetimes with zero new Workers, t
   expect(runner.getRecords()).toHaveLength(0)
 
   const replacement = runner.prepare('revision-2', create)
+
   expect(replacement).not.toBe(input)
   expect(replacement.rule.minimumClearance).toBe(
     changedInput.rule.minimumClearance
@@ -1320,7 +1403,9 @@ it('sends geometry once, retains latest time and caches valid pre-seek output wi
 
   worker.emit({ type: LiveMessages.READY })
 
-  for (let i = 1; i <= 100; i++) runner.sample(i / 100)
+  for (let i = 1; i <= 100; i++) {
+    runner.sample(i / 100)
+  }
 
   expect(worker.postMessage).toHaveBeenCalledTimes(2)
 
@@ -1387,14 +1472,18 @@ it.each([
 
   worker.emit({ type: LiveMessages.READY })
 
-  if (failure === 'timeout') await vi.advanceTimersByTimeAsync(1000)
-  else if (failure === 'message error') worker.onmessageerror?.()
-  else {
+  if (failure === 'timeout') {
+    await vi.advanceTimersByTimeAsync(1000)
+  } else if (failure === 'message error') {
+    worker.onmessageerror?.()
+  } else {
     const evidence = structuredClone(
       runOfficialClearanceMethod(sampleSnapshot(input, 0))
     )
 
-    if (failure === 'wrong source') evidence.snapshotId = 'foreign'
+    if (failure === 'wrong source') {
+      evidence.snapshotId = 'foreign'
+    }
 
     worker.emit({
       type: LiveMessages.RESULT,

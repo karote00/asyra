@@ -20,6 +20,7 @@ describe('canonical nonlinear retained profile1 collision', () => {
     const { source, cycle, cycleOwner } = nonlinearFixture(
       'solid-articulation/1'
     )
+
     expect(source.definition.sourceModel.kind).toBe('solid-articulation/1')
     const parameter = nonlinearFraction(1n, 2n)
     const evaluated = cycleOwner.evaluate(cycle, 0, parameter)
@@ -33,10 +34,12 @@ describe('canonical nonlinear retained profile1 collision', () => {
       ...evaluated.bodies.map((b) => b.exact)
     ]
     const node = evaluator.prepareRationalNode(frames, 24000)
+
     const fromDyadic = (v: ReturnType<typeof dyadic>) =>
       v.exponent >= 0
         ? nonlinearFraction(v.significand << BigInt(v.exponent))
         : nonlinearFraction(v.significand, 1n << BigInt(-v.exponent))
+
     const scale = fromDyadic(node.scale)
     const inputs = [
       ['chassis', 'region-1'],
@@ -80,6 +83,7 @@ describe('canonical nonlinear retained profile1 collision', () => {
             scale
           )
         )
+
         return {
           index,
           coordinates,
@@ -94,6 +98,7 @@ describe('canonical nonlinear retained profile1 collision', () => {
         }
       })
       const prepared = evaluator.prepare(part.shape, region)
+
       return {
         part,
         region,
@@ -156,6 +161,7 @@ describe('canonical nonlinear retained profile1 collision', () => {
     const message = JSON.stringify(artifact, (_key, value) =>
       typeof value === 'bigint' ? value.toString() : value
     )
+
     expect(
       artifact.sourceCurrent &&
         artifact.pointSourceCurrent &&

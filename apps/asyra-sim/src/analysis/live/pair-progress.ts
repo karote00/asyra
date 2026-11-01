@@ -10,8 +10,11 @@ import type { LiveSample } from './protocol'
 /** One invocation's admitted progress; independent instances at both trust boundaries. */
 export class LivePairProgress {
   private readonly pairs = new Map<string, MethodPairEvidence>()
+
   private bytes = 2
+
   private leaves = 0
+
   private evaluations = 0
 
   constructor(private readonly snapshot: ExperimentSnapshot) {}
@@ -20,8 +23,9 @@ export class LivePairProgress {
     if (
       this.pairs.has(input?.pairId) ||
       this.pairs.size >= this.snapshot.pairs.length
-    )
+    ) {
       throw new Error('Invalid live pair delivery')
+    }
 
     const pair = validatePairProgress(this.snapshot, input)
     const bytes = measureWorkerPayload(pair) + (this.pairs.size ? 1 : 0)
@@ -32,8 +36,9 @@ export class LivePairProgress {
       this.bytes + bytes > EXPERIMENT_RESOURCE_PROFILE.maxEvidenceBytes ||
       this.leaves + leaves > EXPERIMENT_RESOURCE_PROFILE.maxEvidenceLeaves ||
       this.evaluations + evaluations > this.snapshot.budget.maxIntervals
-    )
+    ) {
       throw new Error('Live progress exceeds its global evidence budget')
+    }
 
     this.bytes += bytes
     this.leaves += leaves
@@ -63,8 +68,9 @@ export class LivePairProgress {
     for (const [id, previous] of this.pairs) {
       const current = terminal.get(id)
 
-      if (!current || !samePairEvidence(previous, current))
+      if (!current || !samePairEvidence(previous, current)) {
         throw new Error('Terminal evidence contradicts validated live progress')
+      }
     }
   }
 }

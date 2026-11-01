@@ -4,6 +4,7 @@ import test from 'node:test'
 import { URL } from 'node:url'
 
 const root = new URL('../', import.meta.url)
+
 const read = (file) => readFile(new URL(file, root), 'utf8')
 
 test('architecture emphasis adds no client execution or alternate runtime', async () => {
@@ -12,6 +13,7 @@ test('architecture emphasis adds no client execution or alternate runtime', asyn
     read('app/styles/architecture-story.css'),
     read('app/page.tsx')
   ])
+
   assert.doesNotMatch(
     component,
     /use client|useEffect|useState|setInterval|requestAnimationFrame|addEventListener|Observer|@asyra\//

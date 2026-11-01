@@ -10,6 +10,7 @@ export interface SpatialBounds {
   readonly min: SpatialVector
   readonly max: SpatialVector
 }
+
 const freeze = (min: number[], max: number[]): SpatialBounds =>
   Object.freeze({
     min: Object.freeze(min) as unknown as SpatialVector,
@@ -19,20 +20,34 @@ const freeze = (min: number[], max: number[]): SpatialBounds =>
 /** Lifetime-owned local extrema. World poses are recomputed on every query. */
 export class SpatialBoundsOwner {
   private local = new WeakMap<SpatialShape, SpatialBounds>()
+
   private disposed = false
 
   measure(values: readonly SpatialMesh[]): SpatialBounds | null {
-    if (this.disposed) throw new Error('Spatial bounds owner is disposed')
+    if (this.disposed) {
+      throw new Error('Spatial bounds owner is disposed')
+    }
+
     const descriptors = values.map((value) => {
       const admitted = readSpatialDescriptor(value)
-      if (admitted.kind !== 'mesh') throw new Error('Expected a spatial mesh')
+
+      if (admitted.kind !== 'mesh') {
+        throw new Error('Expected a spatial mesh')
+      }
+
       return admitted
     })
-    if (!descriptors.length) return null
+
+    if (!descriptors.length) {
+      return null
+    }
+
     const min = [Infinity, Infinity, Infinity],
       max = [-Infinity, -Infinity, -Infinity]
+
     for (const descriptor of descriptors) {
       const bounds = this.localBounds(descriptor.shape)
+
       const transform = (
         point: SpatialVector,
         position: SpatialVector,
@@ -44,24 +59,29 @@ export class SpatialBoundsOwner {
         const tx = 2 * (qy * z - qz * y),
           ty = 2 * (qz * x - qx * z),
           tz = 2 * (qx * y - qy * x)
+
         return [
           x + qw * tx + qy * tz - qz * ty + position[0],
           y + qw * ty + qz * tx - qx * tz + position[1],
           z + qw * tz + qx * ty - qy * tx + position[2]
         ]
       }
-      for (const instance of descriptor.instances ?? [null])
-        for (const x of [bounds.min[0], bounds.max[0]])
-          for (const y of [bounds.min[1], bounds.max[1]])
+
+      for (const instance of descriptor.instances ?? [null]) {
+        for (const x of [bounds.min[0], bounds.max[0]]) {
+          for (const y of [bounds.min[1], bounds.max[1]]) {
             for (const z of [bounds.min[2], bounds.max[2]]) {
               let point: SpatialVector = [x, y, z]
-              if (instance)
+
+              if (instance) {
                 point = transform(
                   point,
                   instance.position,
                   instance.rotation,
                   instance.scale
                 )
+              }
+
               point = transform(
                 point,
                 descriptor.position,
@@ -73,9 +93,15 @@ export class SpatialBoundsOwner {
                 max[axis] = Math.max(max[axis], point[axis])
               }
             }
+          }
+        }
+      }
     }
-    if (!min.every(Number.isFinite) || !max.every(Number.isFinite))
+
+    if (!min.every(Number.isFinite) || !max.every(Number.isFinite)) {
       throw new Error('Nonfinite spatial bounds')
+    }
+
     return freeze(min, max)
   }
 
@@ -86,16 +112,24 @@ export class SpatialBoundsOwner {
 
   private localBounds(shape: SpatialShape): SpatialBounds {
     const existing = this.local.get(shape)
-    if (existing) return existing
+
+    if (existing) {
+      return existing
+    }
+
     let result: SpatialBounds
+
     if (shape.kind === 'triangles') {
       const min = [Infinity, Infinity, Infinity],
         max = [-Infinity, -Infinity, -Infinity]
+
       for (let i = 0; i < shape.positions.length; i++) {
         const axis = i % 3
+
         min[axis] = Math.min(min[axis], shape.positions[i])
         max[axis] = Math.max(max[axis], shape.positions[i])
       }
+
       result = freeze(min, max)
     } else {
       const half =
@@ -106,12 +140,15 @@ export class SpatialBoundsOwner {
               shape.radius + (shape.kind === 'capsule' ? shape.length / 2 : 0),
               shape.radius
             ]
+
       result = freeze(
         half.map((n) => -n),
         half
       )
     }
+
     this.local.set(shape, result)
+
     return result
   }
 }

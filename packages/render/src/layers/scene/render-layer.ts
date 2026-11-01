@@ -15,6 +15,7 @@ import { RenderContainer, RenderGraphics } from '../../types/render-object.js'
 
 export class RenderLayer {
   private currentWorkspace: RenderContainer
+
   private _elements: Map<string, SceneElement> = new Map()
 
   constructor() {
@@ -33,9 +34,11 @@ export class RenderLayer {
 
   removeFromMap(elementId: string) {
     const instance = this.getElementById(elementId)
+
     if (!instance) {
       return
     }
+
     instance.eventMode = 'none'
     instance.removeAllListeners()
     ;[...instance.children].forEach((child) => {
@@ -44,6 +47,7 @@ export class RenderLayer {
     instance.parent?.removeChild(instance)
     instance.destroy({ children: false })
     this._elements.delete(elementId)
+
     return instance
   }
 
@@ -72,6 +76,7 @@ export class RenderLayer {
       if (element.parent) {
         element.parent.removeChild(element)
       }
+
       element.destroy({ children: true })
     })
     this._elements.clear()
@@ -98,11 +103,13 @@ export class RenderLayer {
       }
     ).__renderDataSnapshot = data
     const strategy = renderStrategyRegistry.get(data.type) || defaultStrategy
+
     try {
       measureBrowserDragPhase(`render-layer:strategy:${data.type}`, () =>
         strategy(graphic, data)
       )
       graphic.visible = data.visible !== false
+
       return true
     } catch (error) {
       console.error('[RenderLayer] Element render strategy failed', {
@@ -112,6 +119,7 @@ export class RenderLayer {
       })
       graphic.clear()
       graphic.visible = false
+
       return false
     }
   }
@@ -126,6 +134,7 @@ export class RenderLayer {
         ? this.getElementById(data.parentId)
         : undefined
     const targetParent = parent ?? this.currentWorkspace
+
     if (element.parent !== targetParent) {
       if (siblingIndex === undefined) {
         targetParent.addChild(element)
@@ -141,19 +150,25 @@ export class RenderLayer {
 
     const children = (data as RenderElementData & { children?: unknown })
       .children
+
     if (!Array.isArray(children)) {
       return
     }
+
     const desiredChildren: SceneElement[] = []
     const desiredChildSet = new Set<SceneElement>()
+
     children.forEach((childId: unknown) => {
       if (typeof childId !== 'string') {
         return
       }
+
       const child = this.getElementById(childId)
+
       if (!child || child === element || desiredChildSet.has(child)) {
         return
       }
+
       desiredChildren.push(child)
       desiredChildSet.add(child)
     })
@@ -165,6 +180,7 @@ export class RenderLayer {
     desiredChildren: readonly SceneElement[]
   ) {
     const desiredChildSet = new Set(desiredChildren)
+
     ;[...parent.children].forEach((child) => {
       if (!desiredChildSet.has(child)) {
         parent.removeChild(child)
@@ -173,8 +189,10 @@ export class RenderLayer {
     desiredChildren.forEach((child, index) => {
       if (child.parent !== parent) {
         parent.addChildAt(child, index)
+
         return
       }
+
       if (parent.children[index] !== child) {
         parent.setChildIndex(child, index)
       }
@@ -186,11 +204,13 @@ export class RenderLayer {
       parentId === this.currentWorkspace.label
         ? this.currentWorkspace
         : this.getElementById(parentId)
+
     if (!parent) {
       throw new Error(
         `[RenderLayer] Cannot project missing hierarchy parent "${parentId}"`
       )
     }
+
     if (
       !Array.isArray(childIds) ||
       new Set(childIds).size !== childIds.length
@@ -202,13 +222,16 @@ export class RenderLayer {
 
     const desiredChildren = childIds.map((childId) => {
       const child = this.getElementById(childId)
+
       if (!child || child === parent) {
         throw new Error(
           `[RenderLayer] Cannot project invalid hierarchy child "${childId}"`
         )
       }
+
       return child
     })
+
     this.synchronizeChildren(parent, desiredChildren)
   }
 
@@ -218,6 +241,7 @@ export class RenderLayer {
       x: containerData.x,
       y: containerData.y
     })
+
     this._elements.set(containerData.label, container)
     this.currentWorkspace.addChild(container)
 
@@ -231,6 +255,7 @@ export class RenderLayer {
 
     return measureBrowserDragPhase('render-layer:add-or-update-element', () => {
       const existingElement = this.getElementById(data.id)
+
       if (existingElement) {
         ;(
           existingElement as SceneElement & { __renderElementType?: string }
@@ -246,6 +271,7 @@ export class RenderLayer {
       }
 
       const graphic = new RenderGraphics()
+
       graphic.label = data.id
       ;(
         graphic as SceneElement & { __renderElementType?: string }
@@ -254,6 +280,7 @@ export class RenderLayer {
       this.addToMap(data.id, graphic)
       this.placeElement(graphic, data, siblingIndex)
       const didRender = this.renderGraphic(graphic, data)
+
       return didRender ? graphic : undefined
     })
   }
@@ -276,6 +303,7 @@ export class RenderLayer {
     data?: RenderElementData
   ) {
     const element = this.getElementById(elementId)
+
     if (!element) {
       return
     }
@@ -286,12 +314,15 @@ export class RenderLayer {
       const nextChildren = Array.isArray(after) ? after : []
       const oldList = new Set(previousChildren as string[])
       const deleteCount = 0
+
       // Add element
       nextChildren.forEach((childId, index) => {
         if (typeof childId !== 'string') {
           return
         }
+
         const child = this.getElementById(childId)
+
         if (!child) {
           return
         }
@@ -306,6 +337,7 @@ export class RenderLayer {
       // Remove element
       oldList.forEach((childId) => {
         const child = this.getElementById(childId)
+
         if (!child) {
           return
         }
@@ -316,10 +348,12 @@ export class RenderLayer {
       // Move element
       element.children.forEach((child, index) => {
         const newIndex = nextChildren.indexOf(child.label)
+
         if (newIndex !== index && newIndex !== -1) {
           element.setChildIndex(child, newIndex)
         }
       })
+
       return
     }
 
@@ -327,6 +361,7 @@ export class RenderLayer {
     const strategy = data
       ? renderStrategyRegistry.get(data.type) || defaultStrategy
       : null
+
     if (strategy && element instanceof RenderGraphics && data) {
       this.renderGraphic(element, data)
       this.placeElement(element, data)
@@ -346,21 +381,25 @@ export class RenderLayer {
           if (isFiniteNumber(after)) {
             element.x = after
           }
+
           break
         case 'y':
           if (isFiniteNumber(after)) {
             element.y = after
           }
+
           break
         case 'width':
           if (isFiniteNumber(after) && after >= 0) {
             element.width = after
           }
+
           break
         case 'height':
           if (isFiniteNumber(after) && after >= 0) {
             element.height = after
           }
+
           break
         case 'visible':
           element.visible = Boolean(after)
@@ -369,26 +408,31 @@ export class RenderLayer {
           if (isFiniteNumber(after)) {
             element.rotation = after
           }
+
           break
         case 'scaleX':
           if (isFiniteNumber(after)) {
             element.scale.set(after, element.scale.y)
           }
+
           break
         case 'scaleY':
           if (isFiniteNumber(after)) {
             element.scale.set(element.scale.x, after)
           }
+
           break
         case 'skewX':
           if (isFiniteNumber(after)) {
             element.skew.set(after, element.skew.y)
           }
+
           break
         case 'skewY':
           if (isFiniteNumber(after)) {
             element.skew.set(element.skew.x, after)
           }
+
           break
       }
     })
@@ -427,8 +471,10 @@ export class RenderLayer {
             y: localBounds.y + localBounds.height
           }
         ]
+
         for (const corner of corners) {
           const localCorner = workspace.toLocal(element.toGlobal(corner))
+
           bounds.minX = Math.min(bounds.minX, localCorner.x)
           bounds.minY = Math.min(bounds.minY, localCorner.y)
           bounds.maxX = Math.max(bounds.maxX, localCorner.x)

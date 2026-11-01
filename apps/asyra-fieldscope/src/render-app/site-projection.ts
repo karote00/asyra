@@ -51,6 +51,7 @@ export const INITIAL_LAYERS: Record<LayerId, boolean> = {
   dimensions: true,
   base: true
 }
+
 export type CameraMode = 'overview' | 'top' | 'front' | 'inside' | 'joint'
 export interface ViewState {
   layers: Record<LayerId, boolean>
@@ -115,6 +116,7 @@ export function buildSiteMeshes(
     config.startInset,
     config.endInset
   ]
+
   return [
     ...geometry.projection(
       'crops',
@@ -151,30 +153,40 @@ function buildEnvelopeMeshes(config: FarmConfiguration): SiteMesh[] {
     midDepth = depth / 2
   const doorHalf = Math.min(1, site.width / 4),
     doorHeight = Math.min(2.5, (site.eave * 5) / 6)
+
   const roof = (bay: number, fraction: number, z: number) =>
     roofPoint(bay, fraction, z, site)
+
   const builders = Object.fromEntries(
     Object.keys(INITIAL_LAYERS).map((key) => [key, new TriangleBuilder()])
   ) as Record<LayerId, TriangleBuilder>
   const { steel, barriers, film, dimensions } = builders
-  for (const member of createStructure(site)) steel.tube(member)
+
+  for (const member of createStructure(site)) {
+    steel.tube(member)
+  }
+
   for (const x of [
     site.barrierThickness / 2,
     totalWidth - site.barrierThickness / 2
-  ])
+  ]) {
     barriers.box(
       [x, site.barrierHeight / 2, midDepth],
       [site.barrierThickness, site.barrierHeight, depth]
     )
+  }
+
   // Shared overhead U-gutters; they are separate from ground drainage channels.
   for (const x of Array.from(
     { length: site.bays - 1 },
     (_, i) => (i + 1) * site.width
   )) {
     steel.box([x, site.eave + 0.02, midDepth], [0.22, 0.025, depth])
-    for (const dx of [-0.1, 0.1])
+    for (const dx of [-0.1, 0.1]) {
       steel.box([x + dx, site.eave + 0.07, midDepth], [0.02, 0.1, depth])
+    }
   }
+
   for (let bay = 0; bay < site.bays; bay++) {
     for (let i = 0; i < 64; i++) {
       film.quad(
@@ -186,12 +198,15 @@ function buildEnvelopeMeshes(config: FarmConfiguration): SiteMesh[] {
       for (const z of [0, depth]) {
         const a = roof(bay, i / 64, z),
           b = roof(bay, (i + 1) / 64, z)
+
         film.quad([a[0], site.eave, z], [b[0], site.eave, z], b, a)
       }
     }
+
     for (const z of [0, depth]) {
       const left = bay * site.width,
         center = left + site.width / 2
+
       film.quad(
         [left, 0, z],
         [center - doorHalf, 0, z],
@@ -212,19 +227,26 @@ function buildEnvelopeMeshes(config: FarmConfiguration): SiteMesh[] {
       )
     }
   }
-  for (const x of [0, totalWidth])
+
+  for (const x of [0, totalWidth]) {
     film.quad(
       [x, 0.35, 0],
       [x, 0.35, depth],
       [x, site.eave, depth],
       [x, site.eave, 0]
     )
+  }
+
   dimensions.box([middle, -0.332, -1.2], [totalWidth, 0.012, 0.035])
   dimensions.box([totalWidth + 1.2, -0.332, midDepth], [0.035, 0.012, depth])
-  for (let x = 0; x <= totalWidth; x += site.width)
+  for (let x = 0; x <= totalWidth; x += site.width) {
     dimensions.box([x, -0.326, -1.2], [0.04, 0.012, 0.55])
-  for (let z = 0; z <= depth; z += 5)
+  }
+
+  for (let z = 0; z <= depth; z += 5) {
     dimensions.box([totalWidth + 1.2, -0.326, z], [0.55, 0.012, 0.04])
+  }
+
   return [
     mesh('barriers', barriers, 0x182623),
     mesh('steel', steel, 0x8a9c9b),
@@ -261,20 +283,24 @@ function buildTerrainMeshes(
         [middle, -terrainDepth - 0.13, midDepth],
         [totalWidth + 6, 0.26, depth + 6]
       )
+
       return [mesh('base', base, 0xc8cebd)]
     }
   )
+
   for (const strip of strips) {
     const middle = strip.x + strip.width / 2
-    if (strip.kind === 'soil')
+
+    if (strip.kind === 'soil') {
       soil.box(
         [middle, -terrainDepth / 2, midDepth],
         [strip.width, terrainDepth, depth]
       )
-    else {
+    } else {
       const { points, lipRadius, waterLevel, waterPoints } = createDrainProfile(
         strip.width
       )
+
       drains.quad(
         [strip.x + lipRadius, waterLevel, 0],
         [strip.x + lipRadius, waterLevel, depth],
@@ -286,6 +312,7 @@ function buildTerrainMeshes(
           [bx, by] = waterPoints[i]
         const a = strip.x + ax,
           b = strip.x + bx
+
         drains.quad([a, ay, 0], [b, by, 0], [b, by, depth], [a, ay, depth])
         drains.triangle([middle, waterLevel, 0], [b, by, 0], [a, ay, 0])
         drains.triangle(
@@ -294,34 +321,41 @@ function buildTerrainMeshes(
           [b, by, depth]
         )
       }
+
       for (let i = 1; i < points.length; i++) {
         const [ax, ay] = points[i - 1],
           [bx, by] = points[i]
         const a = strip.x + ax,
           b = strip.x + bx
+
         soil.quad([a, ay, 0], [a, ay, depth], [b, by, depth], [b, by, 0])
         // Close the exposed ends below the curve without filling the channel opening.
-        for (const z of [0, depth])
+        for (const z of [0, depth]) {
           soil.quad(
             [a, ay, z],
             [b, by, z],
             [b, -terrainDepth, z],
             [a, -terrainDepth, z]
           )
+        }
       }
     }
   }
-  for (const p of passages)
+
+  for (const p of passages) {
     builders.passages.box(
       [p.x + p.width / 2, -terrainDepth / 2, midDepth],
       [p.width, terrainDepth, depth]
     )
+  }
+
   for (const x of [site.margin / 2, totalWidth - site.margin / 2]) {
     builders.passages.box(
       [x, -terrainDepth / 2, midDepth],
       [site.margin, terrainDepth, depth]
     )
   }
+
   return [
     ...ground,
     ...(soil.positions.length ? [mesh('soil', soil, 0x765437)] : []),
@@ -336,10 +370,15 @@ function buildCropMeshes(
 ): SiteMesh[] {
   const groups = geometry.cropInstances(config)
   const crops: SiteMesh[] = []
-  if (groups.size)
+
+  if (groups.size) {
     for (const model of geometry.cropModels(config)) {
       const instances = groups.get(`${model.species}-${model.variant}`)
-      if (!instances) continue
+
+      if (!instances) {
+        continue
+      }
+
       model.parts.forEach((part, index) =>
         crops.push({
           id: `${model.species}-${model.variant}-${index}`,
@@ -376,6 +415,8 @@ function buildCropMeshes(
         })
       )
     }
+  }
+
   return crops
 }
 
@@ -398,8 +439,10 @@ export function cameraPreset(
   config: FarmConfiguration = DEFAULT_CONFIGURATION
 ): SpatialCamera {
   const site = configurationSite(config)
+
   if (mode === 'joint') {
     const target = supportJointTarget(config)
+
     return {
       kind: 'camera',
       target,
@@ -409,6 +452,7 @@ export function cameraPreset(
       far: Math.max(400, site.length * 5, site.width * 20)
     }
   }
+
   const positions = {
     overview: [(site.width * 53) / 7, site.height * 7.2, -site.length * 0.58],
     top: [
@@ -431,6 +475,7 @@ export function cameraPreset(
           site.length * 0.8
         ] as const)
       : ([site.width * 2, 0, site.length / 2] as const)
+
   return {
     kind: 'camera',
     position: positions[mode],

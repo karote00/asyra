@@ -38,11 +38,13 @@ const readJson = (filePath) => JSON.parse(fs.readFileSync(filePath, 'utf8'))
 
 const rootManifest = readJson(path.join(repositoryRoot, 'package.json'))
 const repositoryBrand = rootManifest.name
+
 const toDisplayName = (value) =>
   value
     .split(/[-_]/u)
     .map((segment) => `${segment[0].toUpperCase()}${segment.slice(1)}`)
     .join(' ')
+
 const repositoryDisplayName = toDisplayName(repositoryBrand)
 const referenceAppManifest = readJson(
   path.join(repositoryRoot, 'apps/asyra-design/package.json')
@@ -71,6 +73,7 @@ const sourceFiles = execFileSync(
   .filter(Boolean)
   .filter((relativePath) => {
     const pathSegments = relativePath.split('/')
+
     if (
       pathSegments[0] === 'docs' ||
       pathSegments.some((segment) => ignoredDirectories.has(segment))
@@ -81,6 +84,7 @@ const sourceFiles = execFileSync(
     const fileName = path.basename(relativePath)
     const isEnvironmentFile =
       fileName === '.env' || fileName.startsWith('.env.')
+
     return sourceExtensions.has(path.extname(fileName)) || isEnvironmentFile
   })
   .map((relativePath) => path.join(repositoryRoot, relativePath))
@@ -102,6 +106,7 @@ const publicSlugs = new Set(
       ? name.slice(1).replace('/', '-')
       : name
     const packageSlug = name.startsWith('@') ? name.split('/')[1] : name
+
     return [name, unscopedName, packageSlug]
   })
 )
@@ -178,6 +183,7 @@ const pluginIdentityOwners = new Set([
 const isAllowedPublicIdentity = (token, line, filePath) => {
   const escapedToken = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const relativePath = path.relative(repositoryRoot, filePath)
+
   if (
     pluginIdentityOwners.has(relativePath) &&
     (token === 'asyra-skill' ||
@@ -205,6 +211,7 @@ const isAllowedPublicIdentity = (token, line, filePath) => {
   ) {
     return true
   }
+
   if (
     retainedWireIdentityOwnerPaths.has(relativePath) &&
     retainedWireIdentities.has(token) &&
@@ -212,20 +219,24 @@ const isAllowedPublicIdentity = (token, line, filePath) => {
   ) {
     return true
   }
+
   if (
     retainedHistoricalEvidenceSchemaOwners.has(relativePath) &&
     [...retainedHistoricalEvidenceSchemas].some((schema) => {
       const [schemaToken] = schema.split('/')
+
       return token === schemaToken && line.trim() === `"schema": "${schema}",`
     })
   ) {
     return true
   }
+
   if (
     brandOwnedCodePrefixes.some((prefix) => relativePath.startsWith(prefix))
   ) {
     return true
   }
+
   if (
     publicIdentityDataValues.has(token) &&
     new RegExp(`(['"])[^'"\\n]*${escapedToken}[^'"\\n]*\\1`, 'u').test(line)
@@ -258,6 +269,7 @@ const isAllowedPublicIdentity = (token, line, filePath) => {
     if (token === slug) {
       return true
     }
+
     if (
       token.startsWith(`${slug}-`) &&
       /^\d/u.test(token.slice(slug.length + 1))
@@ -272,6 +284,7 @@ const isAllowedPublicIdentity = (token, line, filePath) => {
 test('plugin distribution identities remain scoped to quoted owner data', () => {
   const token = `${repositoryBrand}-skill`
   const owner = path.join(repositoryRoot, 'scripts/developer-agent-bundle.mjs')
+
   assert.equal(
     isAllowedPublicIdentity(token, `const name = '${token}'`, owner),
     true
@@ -300,6 +313,7 @@ test('plugin distribution identities remain scoped to quoted owner data', () => 
 
 test('previous plugin identity is retained only for CI diff input classification', () => {
   const token = `${repositoryBrand}-developer`
+
   for (const relative of [
     'scripts/ci-relationships.json',
     'scripts/__tests__/ci-scope.test.mjs'
@@ -313,6 +327,7 @@ test('previous plugin identity is retained only for CI diff input classification
       true
     )
   }
+
   for (const relative of [
     'scripts/developer-agent-bundle.mjs',
     'apps/example.ts'
@@ -364,6 +379,7 @@ test('Official display names remain distinct from branded code identifiers', () 
     true
   )
   const brandedCamelCase = `${repositoryBrand}FrameworkDemo`
+
   assert.equal(
     isAllowedPublicIdentity(
       brandedCamelCase,
@@ -378,6 +394,7 @@ test('retained Sim wire identities are allowed only as exact load-migration data
   for (const relativePath of retainedWireIdentityOwnerPaths) {
     const filePath = path.join(repositoryRoot, relativePath)
     const token = `${repositoryBrand}-sim-project`
+
     assert.equal(
       isAllowedPublicIdentity(
         token,
@@ -538,6 +555,7 @@ test('Active docs do not replace the Asyra Design name with a generic label', ()
     )
     .filter((relativePath) => {
       const segments = relativePath.split('/')
+
       return !segments.some((segment) =>
         ['archive', 'archives', 'complete', 'completed', 'decisions'].includes(
           segment
@@ -549,6 +567,7 @@ test('Active docs do not replace the Asyra Design name with a generic label', ()
         path.join(repositoryRoot, relativePath),
         'utf8'
       )
+
       return source
         .split('\n')
         .flatMap((line, index) =>
@@ -585,6 +604,7 @@ test('Active entry docs position Asyra Design as one product use, not the Framew
       path.join(repositoryRoot, relativePath),
       'utf8'
     )
+
     assert.doesNotMatch(source, legacyPositioning, relativePath)
   }
 
@@ -607,6 +627,7 @@ test('Active product positioning does not claim generic VR support', () => {
       path.join(repositoryRoot, relativePath),
       'utf8'
     )
+
     assert.doesNotMatch(source, /\bVR\b/u, relativePath)
   }
 })
@@ -614,8 +635,10 @@ test('Active product positioning does not claim generic VR support', () => {
 test('Programmatic code and configuration use brand-neutral identifiers', () => {
   const violations = sourceFiles.flatMap((filePath) => {
     const source = fs.readFileSync(filePath, 'utf8')
+
     return source.split('\n').flatMap((line, index) => {
       const matches = line.match(brandedTokenPattern) ?? []
+
       return matches
         .filter((token) => !isAllowedPublicIdentity(token, line, filePath))
         .map((token) => ({
@@ -660,6 +683,7 @@ test('portable distribution identities remain limited to exact owners', () => {
       false
     )
   }
+
   assert.equal(
     isAllowedPublicIdentity(
       'asyra-skill',

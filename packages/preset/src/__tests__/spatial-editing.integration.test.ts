@@ -11,6 +11,7 @@ const target = (): SpatialEditTarget => ({
   allowScale: true,
   pose: { position: [0, 0, 0], rotation: [0, 0, 0, 1], scale: [1, 1, 1] }
 })
+
 const plane = {
   origin: [1, 2, 3] as const,
   u: [1, 0, 0] as const,
@@ -26,6 +27,7 @@ describe('Generic transform preview and canonical handoff', () => {
       delta: [0.76, 99, 3.24],
       plane
     })
+
     expect(next.pose.position).toEqual([1, 2, 3])
     expect(source.pose.position).toEqual([0, 0, 0])
     expect(Object.isFrozen(next.pose.position)).toBe(true)
@@ -38,6 +40,7 @@ describe('Generic transform preview and canonical handoff', () => {
       delta: [a * 0.5, a * 0.5, 9],
       plane: { origin: [0, 0, 0], u: [a, a, 0], v: [0, 0, 1], spacing: [1, 1] }
     })
+
     expect(next.pose.position[0]).toBeCloseTo(a)
     expect(next.pose.position[1]).toBeCloseTo(a)
     expect(next.pose.position[2]).toBe(9)
@@ -63,6 +66,7 @@ describe('Generic transform preview and canonical handoff', () => {
       radians: Math.PI / 2,
       space: 'world'
     })
+
     expect(local.pose.rotation[2]).toBeCloseTo(0.5)
     expect(world.pose.rotation[2]).toBeCloseTo(-0.5)
   })
@@ -72,6 +76,7 @@ describe('Generic transform preview and canonical handoff', () => {
       kind: 'scale',
       factors: [2, 3, 4]
     })
+
     expect(next.pose.scale).toEqual([2, 3, 4])
     expect(
       resolveSpatialEdit(next, { ...source, allowScale: false }, () => true)
@@ -117,14 +122,17 @@ describe('Generic transform preview and canonical handoff', () => {
       kind: 'translate',
       delta: [1, 0, 0]
     })
+
     for (const current of [
       null,
       { ...source, id: 'other' },
       { ...source, revision: 4 }
-    ])
+    ]) {
       expect(resolveSpatialEdit(next, current, validator).status).toBe(
         'rejected'
       )
+    }
+
     expect(validator).not.toHaveBeenCalled()
   })
   it('returns neutral rejected feedback for App constraints and no-op for equivalent quaternion signs', () => {
@@ -133,6 +141,7 @@ describe('Generic transform preview and canonical handoff', () => {
       kind: 'translate',
       delta: [1, 0, 0]
     })
+
     expect(resolveSpatialEdit(next, source, () => false)).toEqual({
       status: 'rejected',
       reason: 'constraint'
@@ -141,6 +150,7 @@ describe('Generic transform preview and canonical handoff', () => {
       kind: 'set',
       pose: { ...source.pose, rotation: [0, 0, 0, -1] }
     })
+
     expect(resolveSpatialEdit(unchanged, source, () => true).status).toBe(
       'unchanged'
     )
@@ -148,14 +158,18 @@ describe('Generic transform preview and canonical handoff', () => {
   it('owns no state or commit callback: repeated previews and discard perform no canonical work', () => {
     const source = target(),
       validate = vi.fn(() => true)
-    for (let i = 0; i < 30; i++)
+
+    for (let i = 0; i < 30; i++) {
       previewSpatialEdit(source, { kind: 'translate', delta: [i, 0, 0] })
+    }
+
     expect(validate).not.toHaveBeenCalled()
     expect(source.pose.position).toEqual([0, 0, 0])
     const next = previewSpatialEdit(source, {
       kind: 'translate',
       delta: [2, 0, 0]
     })
+
     resolveSpatialEdit(next, source, validate)
     expect(validate).toHaveBeenCalledOnce()
   })

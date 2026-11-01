@@ -1,5 +1,43 @@
 # Flow Inspector
 
+Flow Inspector is a React application built with Vite. The workspace, architecture
+canvas, live task dashboard and control-plane panels are React components. There
+is no iframe, standalone imperative renderer or alternate HTML UI implementation.
+
+## Develop the React project
+
+From this repository's root, using its existing Yarn installation:
+
+```sh
+yarn workspace @asyra/flow-inspector dev
+yarn workspace @asyra/flow-inspector typecheck
+yarn workspace @asyra/flow-inspector test:react
+yarn workspace @asyra/flow-inspector build
+yarn workspace @asyra/flow-inspector test:local
+```
+
+`dev` regenerates the catalog and starts Vite with React hot module replacement.
+`build` regenerates the catalog and produces both browser applications. The
+classic-script output intentionally preserves direct `file:` opening of
+`workspace/workspace.html`; it is compiled React, not a separate renderer.
+Entry documents contain only React mount roots and asset references.
+
+Frontend ownership lives under `src/`:
+
+- `App.tsx` and `main.tsx`: workspace navigation, catalog and React mounting.
+- `architecture/`: shared React cards, routes, contracts and viewport controls.
+- `control-plane/`: React verification, task, review and evidence panels.
+- `live/` and `live-main.tsx`: React flow-file dashboard and human actions.
+- `__tests__/`: component behavior and subscription lifecycle tests.
+
+Styles live with those source owners; TypeScript/JavaScript modules, CSS, data,
+tests and tool configuration use the format appropriate to their role. The
+existing `control-plane/` and `flow-files/` services retain their API, evaluation,
+authorization and CLI contracts. They are not parallel UI implementations.
+Designing a future backend dashboard is separate from this React project.
+
+## Use the existing flow-file service
+
 Flow Inspector reads project-owned JSON flow files, presents a human task board
 and evaluates the same current contracts in headless CI. It does not require Asyra,
 Git, a test runner, an AI provider or an always-running server. Tests, manual
@@ -201,7 +239,9 @@ Current-only flow documents do not require per-stage history. Hosted teams,
 authentication, Agent dispatch, automatic root-cause diagnosis and registry
 publication are not included in this stage.
 
-The archive also retains static viewer assets, Asyra architecture examples and
-legacy source control-plane modules. Those explicit Asyra adapters require their
+The archive includes the React workspace and live dashboard builds, Asyra
+architecture examples and the repository control-plane services. The Board
+composes the shared React architecture components with those services; it does
+not load a separate renderer or iframe. The explicit Asyra adapters require their
 own repository fixtures and dependencies; they are not the independent CLI's
 runtime. The package uses the repository's MIT license.

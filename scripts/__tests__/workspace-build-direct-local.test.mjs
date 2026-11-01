@@ -14,6 +14,7 @@ test(
       ['workspace', '@asyra/starter-app', 'build'],
       { githubActions: false, timeoutMs: 75_000 }
     )
+
     assert.equal(result.code, 0, result.output.slice(-4000))
     assert.equal(countUtilsBuildExecutions(result.output), 1)
   }

@@ -74,6 +74,7 @@ describe('children-map property component', () => {
   it('records the parent child-id reference update after resolving children', () => {
     const component = createVectorPointsComponent()
     const changes: SetterChangeRecord[] = []
+
     component.on((change) => changes.push(change))
 
     component.set('points', ['vector-point-a'])
@@ -91,6 +92,7 @@ describe('children-map property component', () => {
   it('projects child values from the issuing Props Manager', () => {
     const PropsManager = core.deps.props
       .constructor as new () => typeof core.deps.props
+
     const createChild = (value: number) =>
       ({
         data: {
@@ -102,21 +104,46 @@ describe('children-map property component', () => {
           anchorType: 'sharp',
           handleMode: 'none'
         },
+
         get: (key: string) => {
-          if (key === 'id') return 'shared-point'
-          if (key === 'type') return PropertyTypes.VECTOR_POINT
-          if (key === 'kind') return 'anchor'
-          if (key === 'x') return value
-          if (key === 'y') return 0
-          if (key === 'anchorType') return 'sharp'
-          if (key === 'handleMode') return 'none'
+          if (key === 'id') {
+            return 'shared-point'
+          }
+
+          if (key === 'type') {
+            return PropertyTypes.VECTOR_POINT
+          }
+
+          if (key === 'kind') {
+            return 'anchor'
+          }
+
+          if (key === 'x') {
+            return value
+          }
+
+          if (key === 'y') {
+            return 0
+          }
+
+          if (key === 'anchorType') {
+            return 'sharp'
+          }
+
+          if (key === 'handleMode') {
+            return 'none'
+          }
         },
+
         on: () => () => undefined
       }) as never
+
     const createComposition = (value: number) => {
       const manager = new PropsManager()
+
       manager.addToMap(createChild(value))
       const parent = createVectorPointsComponent()
+
       parent.load({
         id: 'vector-points-parent',
         type: PropertyTypes.VECTOR_POINTS,
@@ -124,8 +151,10 @@ describe('children-map property component', () => {
       })
       manager.addToMap(parent)
       manager.cleanChanges()
+
       return { manager, parent }
     }
+
     const first = createComposition(1)
     const second = createComposition(2)
 
@@ -151,15 +180,25 @@ describe('children-map property component', () => {
         anchorType: 'sharp',
         handleMode: 'none'
       },
+
       get: (key: string) => {
-        if (key === 'id') return 'active-child'
-        if (key === 'type') return PropertyTypes.VECTOR_POINT
+        if (key === 'id') {
+          return 'active-child'
+        }
+
+        if (key === 'type') {
+          return PropertyTypes.VECTOR_POINT
+        }
+
         return undefined
       },
+
       on: vi.fn(() => () => undefined)
     }
+
     manager.addToMap(child as never)
     const parent = createVectorPointsComponent()
+
     parent.load({
       id: 'vector-points-parent',
       type: PropertyTypes.VECTOR_POINTS,
@@ -188,6 +227,7 @@ describe('stroke child relationship projection', () => {
     const fillAdapter = fillsPropertyComponentDefinition.children?.toChildData
     const strokeAdapter =
       strokesPropertyComponentDefinition.children?.toChildData
+
     if (!fillAdapter || !strokeAdapter) {
       throw new Error('Fill and stroke relationships require child adapters')
     }
@@ -206,6 +246,7 @@ describe('stroke child relationship projection', () => {
 
   it('keeps Stroke updates sparse so width edits cannot reset color or style', () => {
     const adapter = strokesPropertyComponentDefinition.children?.toChildData
+
     expect(adapter?.({ width: 8 }, 'stroke-canonical')).toEqual({
       id: 'stroke-canonical',
       type: PropertyTypes.STROKE,
@@ -215,6 +256,7 @@ describe('stroke child relationship projection', () => {
 
   it('keeps fill record patches sparse so omitted fields retain canonical values', () => {
     const adapter = fillsPropertyComponentDefinition.children?.toChildData
+
     expect(adapter?.({ opacity: 0.35 }, 'fill-canonical')).toEqual({
       id: 'fill-canonical',
       type: PropertyTypes.FILL,
@@ -234,11 +276,15 @@ describe('stroke child relationship projection', () => {
     ) {
       throw new Error('Strokes property requires child value projection')
     }
+
     const fill = createDefaultFill({ id: '' })
     const projected = strokesPropertyComponentDefinition.children.toValue(
       {
         get: (key: string) => {
-          if (key === 'fill') return fill
+          if (key === 'fill') {
+            return fill
+          }
+
           return key
         }
       },

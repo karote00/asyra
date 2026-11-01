@@ -25,18 +25,23 @@ test('production artifact browser tests use runner Chrome in every environment',
 
 function capture(mode, apps) {
   const calls = []
+
   runVerification(mode, apps, (command, args) => {
     calls.push([command, ...args])
+
     return { status: 0 }
   })
+
   return calls
 }
 
 for (let mask = 1; mask < 8; mask++) {
   const selected = identities.filter((_, index) => mask & (1 << index))
+
   test(`verification scopes build and browser work to ${selected.join(', ')}`, () => {
     const input = JSON.stringify(selected)
     const builds = capture('build', input)
+
     assert.deepEqual(builds[0], ['yarn', 'gen:turbo:check'])
     assert.deepEqual(builds[1], [
       'yarn',
@@ -46,14 +51,17 @@ for (let mask = 1; mask < 8; mask++) {
       '--concurrency=2'
     ])
     assert.equal(builds.length, selected.includes('asyra-design') ? 3 : 2)
-    if (selected.includes('asyra-design'))
+    if (selected.includes('asyra-design')) {
       assert.deepEqual(builds[2], [
         'yarn',
         'workspace',
         '@asyra/asyra-design',
         'typecheck'
       ])
+    }
+
     const checks = capture('test', input)
+
     assert.equal(checks.length, 1)
     assert.equal(checks[0][0], process.execPath)
     const pattern = new RegExp(
@@ -67,11 +75,13 @@ for (let mask = 1; mask < 8; mask++) {
       Website: 'asyra-framework',
       'Asyra FieldScope': 'asyra-fieldscope'
     }
+
     assert.equal(titles.length, Object.keys(owners).length)
     for (const title of titles) {
       const owner = Object.entries(owners).find(([label]) =>
         title.startsWith(`${label} production `)
       )?.[1]
+
       assert.ok(
         owner,
         'Every browser case must have an explicit selection owner'
@@ -96,10 +106,13 @@ test('PR defaults retain all three artifact proofs', () => {
 
 test('invalid selections and modes fail before any work starts', () => {
   let calls = 0
+
   const execute = () => {
     calls++
+
     return { status: 0 }
   }
+
   for (const input of [
     '[]',
     'null',
@@ -111,12 +124,14 @@ test('invalid selections and modes fail before any work starts', () => {
   ]) {
     assert.throws(() => runVerification('build', input, execute))
   }
+
   assert.throws(() => runVerification('deploy', '', execute))
   assert.equal(calls, 0)
 })
 
 test('a failed build stops typecheck and any later command', () => {
   let calls = 0
+
   assert.throws(
     () =>
       runVerification('build', '["asyra-design"]', () => ({

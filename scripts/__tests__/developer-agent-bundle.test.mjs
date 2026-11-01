@@ -19,32 +19,43 @@ const PLUGIN = 'plugins/asyra-skill'
 const SKILL = 'skills/asyra-skill'
 const RECORD = `${PLUGIN}/${SKILL}/bundle.json`
 const scratch = path.join(ROOT, 'tmp/developer-agent-tests')
+
 fs.mkdirSync(scratch, { recursive: true })
+
 const read = (root, file) => fs.readFileSync(path.join(root, file), 'utf8')
+
 const write = (root, file, bytes) => {
   fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true })
   fs.writeFileSync(path.join(root, file), bytes)
 }
+
 const saveJson = (root, file, value) =>
   write(root, file, JSON.stringify(value, null, 2) + '\n')
+
 function fixture() {
   const root = fs.mkdtempSync(path.join(scratch, 'case-'))
+
   fs.cpSync(path.join(ROOT, PLUGIN), path.join(root, PLUGIN), {
     recursive: true
   })
   const { documents } = JSON.parse(read(ROOT, `${PLUGIN}/bundle.config.json`))
+
   for (const file of [
     ...documents,
     'docs/public/generated/package-reference.json',
     '.agents/plugins/marketplace.json',
     '.claude-plugin/marketplace.json'
-  ])
+  ]) {
     write(root, file, read(ROOT, file))
+  }
+
   return root
 }
+
 function changeVersion(root, version) {
   const file = `${PLUGIN}/bundle.config.json`
   const value = JSON.parse(read(root, file))
+
   value.identity.version = version
   saveJson(root, file, value)
 }
@@ -52,14 +63,20 @@ function changeVersion(root, version) {
 test('public Skill identity and contributor discovery metadata are consistent', () => {
   for (const directory of fs.readdirSync(path.join(ROOT, '.claude/skills'))) {
     const file = `.claude/skills/${directory}/SKILL.md`
-    if (!fs.existsSync(path.join(ROOT, file))) continue
+
+    if (!fs.existsSync(path.join(ROOT, file))) {
+      continue
+    }
+
     const frontmatter = read(ROOT, file).split('---')[1]
+
     assert.match(
       frontmatter,
       /metadata:\n(?: {2}[^\n]*\n)*? {2}internal: true\n/,
       file
     )
   }
+
   assert.equal(PLUGIN, 'plugins/asyra-skill')
   assert.equal(SKILL, 'skills/asyra-skill')
   assert.ok(
@@ -69,29 +86,37 @@ test('public Skill identity and contributor discovery metadata are consistent', 
 
 test('maintained plugin is current, self-contained and has valid local reference links', () => {
   const record = checkBundle(ROOT)
+
   assert.equal(
     record.referenceVersions['@asyra/core'],
     JSON.parse(read(ROOT, 'packages/core/package.json')).version
   )
   const destination = fs.mkdtempSync(path.join(scratch, 'standalone-'))
+
   fs.cpSync(path.join(ROOT, PLUGIN), path.join(destination, 'plugin'), {
     recursive: true
   })
   const plugin = path.join(destination, 'plugin')
+
   assert.deepEqual(inspectPlugin(plugin), record)
   for (const relative of Object.keys(record.files).filter((file) =>
     file.endsWith('.md')
   )) {
     const source = read(plugin, relative).replace(/```[\s\S]*?```/g, '')
+
     for (const [, href] of source.matchAll(
       /(?<!!)\[[^\]\n]+\]\(([^\s)]+)\)/g
     )) {
-      if (/^(https?:|#)/.test(href)) continue
+      if (/^(https?:|#)/.test(href)) {
+        continue
+      }
+
       const target = path.resolve(
         plugin,
         path.dirname(relative),
         href.split('#')[0]
       )
+
       assert.ok(
         target.startsWith(plugin + path.sep),
         `Escaping link: ${relative} -> ${href}`
@@ -104,25 +129,30 @@ test('maintained plugin is current, self-contained and has valid local reference
 test('standalone consumers receive the complete maintained Starter architecture', () => {
   const source = 'apps/starter-app/docs/ARCHITECTURE.md'
   const { documents } = JSON.parse(read(ROOT, `${PLUGIN}/bundle.config.json`))
+
   assert.ok(
     documents.includes(source),
     'Complete App architecture must be bundled'
   )
   const root = fixture()
+
   writeBundle(root)
   const directory = fs.mkdtempSync(path.join(scratch, 'relocated-'))
   const plugin = path.join(directory, 'custom-cache', 'developer', 'candidate')
+
   fs.cpSync(path.join(root, PLUGIN), plugin, { recursive: true })
   const record = inspectPlugin(plugin)
   const skillFile = path.join(plugin, SKILL, 'SKILL.md')
   const skill = fs.readFileSync(skillFile, 'utf8')
   const links = [...skill.matchAll(/\[[^\]\n]+\]\(([^\s)]+)\)/g)]
   const architecture = links.find(([, href]) => href.endsWith(source))
+
   assert.ok(
     architecture,
     'The loaded Skill must route to the architecture guide'
   )
   const resolved = path.resolve(path.dirname(skillFile), architecture[1])
+
   assert.equal(
     fs.readFileSync(resolved, 'utf8'),
     renderReference(source, read(ROOT, source), documents)
@@ -140,17 +170,24 @@ test('capability decisions retain their public contracts in a relocated standalo
     'docs/public/learn/runtime-boundaries-roadmap.md'
   ]
   const { documents } = JSON.parse(read(ROOT, `${PLUGIN}/bundle.config.json`))
-  for (const source of sources) assert.ok(documents.includes(source), source)
+
+  for (const source of sources) {
+    assert.ok(documents.includes(source), source)
+  }
+
   const root = fixture()
+
   writeBundle(root)
   exportSkill(root, 'consumer/asyra-skill')
   const destination = path.join(root, 'consumer/asyra-skill')
+
   fs.rmSync(path.join(root, PLUGIN), { recursive: true })
   const record = inspectSkill(destination)
   const guide = 'references/docs/public/start/extend-with-ai.md'
   const links = [
     ...read(destination, guide).matchAll(/\[[^\]\n]+\]\(([^\s)]+)\)/g)
   ]
+
   for (const source of sources) {
     const expected = path.join(destination, 'references', source)
     const localLink = links.some(
@@ -159,6 +196,7 @@ test('capability decisions retain their public contracts in a relocated standalo
         path.resolve(destination, path.dirname(guide), href.split('#')[0]) ===
           expected
     )
+
     assert.ok(localLink, `Decision guide must reach ${source} offline`)
     assert.ok(record.inputs[source])
     assert.equal(
@@ -172,6 +210,7 @@ test('the guide allowlist rejects unrelated private App documents', () => {
   const root = fixture()
   const file = `${PLUGIN}/bundle.config.json`
   const config = JSON.parse(read(root, file))
+
   config.documents.push('apps/starter-app/docs/private-notes.md')
   saveJson(root, file, config)
   assert.throws(() => createBundle(root), /Unapproved guide source/)
@@ -180,10 +219,12 @@ test('the guide allowlist rejects unrelated private App documents', () => {
 test('same inputs reproduce identical bytes; document changes require regeneration and a release bump', () => {
   const root = fixture()
   const baseline = checkBundle(root)
+
   assert.deepEqual(createBundle(root).record, baseline)
   writeBundle(root)
   assert.deepEqual(checkBundle(root), baseline)
   const guide = 'docs/public/learn/canonical-state.md'
+
   write(root, guide, read(root, guide) + '\nNew documented boundary.\n')
   assert.throws(() => checkBundle(root), /Stale bundle/)
   writeBundle(root)
@@ -191,10 +232,12 @@ test('same inputs reproduce identical bytes; document changes require regenerati
   const nextVersion = baseline.pluginVersion.replace(/\d+$/, (patch) =>
     String(Number(patch) + 1)
   )
+
   changeVersion(root, nextVersion)
   writeBundle(root)
   assert.equal(checkBundle(root, baseline).pluginVersion, nextVersion)
   const later = checkBundle(root)
+
   changeVersion(root, '0.1.0')
   writeBundle(root)
   assert.throws(() => checkBundle(root, later), /older/)
@@ -203,6 +246,7 @@ test('same inputs reproduce identical bytes; document changes require regenerati
 test('Skill changes are versioned and package reference changes invalidate the bundle', () => {
   const root = fixture()
   const baseline = checkBundle(root)
+
   write(
     root,
     `${PLUGIN}/${SKILL}/SKILL.md`,
@@ -214,6 +258,7 @@ test('Skill changes are versioned and package reference changes invalidate the b
   const inventory = JSON.parse(
     read(root, 'docs/public/generated/package-reference.json')
   )
+
   inventory.packages.find((item) => item.name === '@asyra/core').version =
     '99.0.0'
   saveJson(root, 'docs/public/generated/package-reference.json', inventory)
@@ -225,6 +270,7 @@ test('package metadata, formatting and ordering do not change the Skill identity
   const baseline = writeBundle(root)
   const file = 'docs/public/generated/package-reference.json'
   const inventory = JSON.parse(read(root, file))
+
   inventory.packages.reverse()
   inventory.packages[0].description = 'Updated public catalog description'
   write(root, file, JSON.stringify(inventory))
@@ -233,11 +279,14 @@ test('package metadata, formatting and ordering do not change the Skill identity
 
 test('export generates current guides and identity without rewriting the maintained plugin', () => {
   const root = fixture()
+
   writeBundle(root)
   const before = read(root, RECORD)
   const guide = 'docs/public/learn/canonical-state.md'
+
   write(root, guide, read(root, guide) + '\nNew canonical guidance.\n')
   const record = exportSkill(root, 'dist/skill')
+
   assert.notEqual(record.contentDigest, JSON.parse(before).contentDigest)
   assert.equal(read(root, RECORD), before)
   assert.deepEqual(inspectSkill(path.join(root, 'dist/skill')), record)
@@ -251,6 +300,7 @@ test('export generates current guides and identity without rewriting the maintai
 test('export ignores retained reference copies and excludes unrelated plugin files', () => {
   const root = fixture()
   const guide = 'docs/public/learn/canonical-state.md'
+
   write(
     root,
     `${PLUGIN}/${SKILL}/references/${guide}`,
@@ -258,6 +308,7 @@ test('export ignores retained reference copies and excludes unrelated plugin fil
   )
   write(root, `${PLUGIN}/${SKILL}/private.txt`, 'not distributable')
   const record = exportSkill(root, 'dist/skill')
+
   assert.deepEqual(inspectSkill(path.join(root, 'dist/skill')), record)
   assert.doesNotMatch(
     read(root, `dist/skill/references/${guide}`),
@@ -269,6 +320,7 @@ test('export ignores retained reference copies and excludes unrelated plugin fil
 test('missing inputs fail before any generated file is replaced', () => {
   const root = fixture()
   const before = read(root, RECORD)
+
   fs.unlinkSync(path.join(root, 'docs/public/build/ai-actions.md'))
   assert.throws(() => writeBundle(root), /ENOENT/)
   assert.equal(read(root, RECORD), before)
@@ -276,6 +328,7 @@ test('missing inputs fail before any generated file is replaced', () => {
 
 test('unlisted files and secrets never enter a deliverable', () => {
   const root = fixture()
+
   write(root, `${PLUGIN}/.env`, 'secret=fixture-only')
   assert.throws(() => checkBundle(root), /Unexpected plugin file/)
   assert.throws(() => writeBundle(root), /unexpected or modified file/)
@@ -284,6 +337,7 @@ test('unlisted files and secrets never enter a deliverable', () => {
 
 test('source traversal and symlinked destinations cannot escape the checkout', () => {
   const root = fixture()
+
   saveJson(root, `${PLUGIN}/bundle.config.json`, {
     ...JSON.parse(read(root, `${PLUGIN}/bundle.config.json`)),
     documents: ['docs/public/../../.env.md']
@@ -292,6 +346,7 @@ test('source traversal and symlinked destinations cannot escape the checkout', (
   const clean = fixture()
   const destination = path.join(clean, PLUGIN, SKILL, 'references')
   const saved = path.join(clean, 'saved-references')
+
   fs.renameSync(destination, saved)
   fs.symlinkSync(saved, destination, 'dir')
   assert.throws(() => writeBundle(clean), /Symlink bundle path/)
@@ -305,6 +360,7 @@ test('symlinked input files are rejected before writes', () => {
   const root = fixture()
   const source = path.join(root, 'docs/public/learn/canonical-state.md')
   const saved = path.join(root, 'saved-guide.md')
+
   fs.renameSync(source, saved)
   fs.symlinkSync(saved, source)
   assert.throws(() => writeBundle(root), /Symlink bundle path/)
@@ -314,6 +370,7 @@ test('removed allowlist entries remove only unchanged previously generated guide
   const root = fixture()
   const config = JSON.parse(read(root, `${PLUGIN}/bundle.config.json`))
   const removed = config.documents.pop()
+
   saveJson(root, `${PLUGIN}/bundle.config.json`, config)
   writeBundle(root)
   assert.equal(
@@ -322,6 +379,7 @@ test('removed allowlist entries remove only unchanged previously generated guide
   )
   checkBundle(root)
   const modified = fixture()
+
   saveJson(modified, `${PLUGIN}/bundle.config.json`, config)
   write(
     modified,
@@ -337,10 +395,12 @@ test('removed allowlist entries remove only unchanged previously generated guide
 
 test('invalid versions, record formats and marketplace paths reject', () => {
   const root = fixture()
+
   changeVersion(root, 'latest')
   assert.throws(() => writeBundle(root), /version/)
   changeVersion(root, '0.1.0')
   const record = JSON.parse(read(root, RECORD))
+
   record.schemaVersion = 99
   saveJson(root, RECORD, record)
   assert.throws(
@@ -349,6 +409,7 @@ test('invalid versions, record formats and marketplace paths reject', () => {
   )
   const clean = fixture()
   const market = JSON.parse(read(clean, '.agents/plugins/marketplace.json'))
+
   market.plugins[0].source.path = '../elsewhere'
   saveJson(clean, '.agents/plugins/marketplace.json', market)
   assert.throws(() => checkBundle(clean), /marketplace/)
@@ -361,6 +422,7 @@ test('reference conversion keeps code and bundled links, externalizes provenance
     'docs/public/a.md',
     'docs/public/b.md'
   ])
+
   assert.ok(rendered.includes('[local](b.md)'))
   assert.ok(rendered.includes('[code](missing.md)'))
   assert.ok(rendered.includes('target="_blank" rel="noopener noreferrer"'))
@@ -378,6 +440,7 @@ test('CLI rejects unsupported arguments without touching its bundle', () => {
     ['scripts/developer-agent-bundle.mjs', '--write', '--unknown'],
     { cwd: ROOT, encoding: 'utf8' }
   )
+
   assert.equal(result.status, 1)
   assert.match(result.stderr, /Usage:/)
   assert.equal(read(ROOT, RECORD), before)
@@ -386,9 +449,12 @@ test('CLI rejects unsupported arguments without touching its bundle', () => {
 test('release listing includes bounded text, starter prompts and the packaged square icon', () => {
   const manifest = JSON.parse(read(ROOT, `${PLUGIN}/.codex-plugin/plugin.json`))
   const listing = manifest.interface
+
   assert.ok(listing, 'Missing release listing')
-  for (const key of ['displayName', 'shortDescription'])
+  for (const key of ['displayName', 'shortDescription']) {
     assert.ok(listing[key]?.length > 0 && listing[key].length <= 30)
+  }
+
   assert.ok(
     listing.longDescription?.length > 0 &&
       listing.longDescription.length <= 4000
@@ -401,12 +467,17 @@ test('release listing includes bounded text, starter prompts and the packaged sq
   assert.ok(
     listing.defaultPrompt.length > 0 && listing.defaultPrompt.length <= 3
   )
-  for (const prompt of listing.defaultPrompt) assert.ok(prompt.length <= 128)
+  for (const prompt of listing.defaultPrompt) {
+    assert.ok(prompt.length <= 128)
+  }
+
   for (const key of ['logo', 'composerIcon']) {
     assert.equal(listing[key], './assets/icon.svg')
     const svg = read(ROOT, `${PLUGIN}/assets/icon.svg`)
+
     assert.match(svg, /viewBox="0 0 64 64"/)
     const record = JSON.parse(read(ROOT, RECORD))
+
     assert.ok(record.files['assets/icon.svg'])
   }
 })
@@ -415,6 +486,7 @@ test('Asyra Skill uses the unified plugin and Skill installation identity', () =
   const manifest = JSON.parse(read(ROOT, `${PLUGIN}/.codex-plugin/plugin.json`))
   const market = JSON.parse(read(ROOT, '.agents/plugins/marketplace.json'))
   const entry = market.plugins.find((item) => item.name === manifest.name)
+
   assert.equal(manifest.name, 'asyra-skill')
   assert.equal(manifest.interface.displayName, 'Asyra Skill')
   assert.equal(entry.source.path, `./${PLUGIN}`)
@@ -427,47 +499,60 @@ test('Asyra Skill uses the unified plugin and Skill installation identity', () =
     )
   )
   const record = inspectPlugin(path.join(ROOT, PLUGIN))
+
   assert.ok(record.files[`${SKILL}/SKILL.md`])
 })
 
 test('both host manifests are generated from one neutral release identity', () => {
   const root = fixture()
+
   changeVersion(root, '1.2.3')
   writeBundle(root)
   const identity = JSON.parse(
     read(root, `${PLUGIN}/bundle.config.json`)
   ).identity
+
   for (const host of ['codex', 'claude']) {
     const file = `${PLUGIN}/.${host}-plugin/plugin.json`
     const manifest = JSON.parse(read(root, file))
-    for (const [key, value] of Object.entries(identity))
+
+    for (const [key, value] of Object.entries(identity)) {
       assert.deepEqual(manifest[key], value)
+    }
+
     manifest.version = '1.2.2'
     saveJson(root, file, manifest)
     assert.throws(() => checkBundle(root), /identity|stale/)
     writeBundle(root)
   }
+
   assert.equal(checkBundle(root).pluginVersion, '1.2.3')
 })
 
 test('standalone Skill is byte-identical across documented host locations', () => {
   const root = fixture()
   const record = checkBundle(root)
+
   for (const location of ['.agents/skills', '.claude/skills', '.grok/skills']) {
     const relative = path.posix.join('consumer', location, 'asyra-skill')
+
     exportSkill(root, relative)
     const destination = path.join(root, relative)
+
     assert.deepEqual(inspectSkill(destination), record)
     for (const file of Object.keys(record.files).filter((file) =>
       file.startsWith(`${SKILL}/`)
-    ))
+    )) {
       assert.equal(
         read(root, `${relative}/${file.slice(SKILL.length + 1)}`),
         read(root, `${PLUGIN}/${file}`)
       )
+    }
+
     assert.equal(read(root, `${relative}/bundle.json`), read(root, RECORD))
     assert.ok(!fs.existsSync(path.join(destination, '.codex-plugin')))
   }
+
   // No source checkout or plugin manifest is needed to verify the relocated Skill.
   fs.rmSync(path.join(root, PLUGIN), { recursive: true })
   assert.deepEqual(
@@ -479,13 +564,23 @@ test('standalone Skill is byte-identical across documented host locations', () =
 test('standalone inspection rejects changed, missing, extra and symlinked resources', () => {
   for (const mutation of ['changed', 'missing', 'extra', 'symlink']) {
     const root = fixture()
+
     exportSkill(root, 'consumer/asyra-skill')
     const destination = path.join(root, 'consumer/asyra-skill')
     const resource = 'references/apps/starter-app/docs/ARCHITECTURE.md'
-    if (mutation === 'changed') write(destination, resource, 'changed')
-    if (mutation === 'missing') fs.unlinkSync(path.join(destination, resource))
-    if (mutation === 'extra')
+
+    if (mutation === 'changed') {
+      write(destination, resource, 'changed')
+    }
+
+    if (mutation === 'missing') {
+      fs.unlinkSync(path.join(destination, resource))
+    }
+
+    if (mutation === 'extra') {
       write(destination, 'private.txt', 'not distributable')
+    }
+
     if (mutation === 'symlink') {
       fs.renameSync(
         path.join(destination, resource),
@@ -496,6 +591,7 @@ test('standalone inspection rejects changed, missing, extra and symlinked resour
         path.join(destination, resource)
       )
     }
+
     assert.throws(
       () => inspectSkill(destination),
       /stale|ENOENT|Unexpected|Symlink/
@@ -505,14 +601,17 @@ test('standalone inspection rejects changed, missing, extra and symlinked resour
 
 test('Skill export refuses overwrites, traversal, symlinks and missing sources', () => {
   const root = fixture()
+
   write(root, 'existing/keep.txt', 'user data')
   for (const destination of [
     'existing',
     '../outside',
     '/outside',
     'consumer/../outside'
-  ])
+  ]) {
     assert.throws(() => exportSkill(root, destination), /must not exist|Unsafe/)
+  }
+
   assert.equal(read(root, 'existing/keep.txt'), 'user data')
   fs.symlinkSync(path.join(root, 'existing'), path.join(root, 'linked'), 'dir')
   assert.throws(() => exportSkill(root, 'linked/skill'), /Symlink/)
@@ -539,6 +638,7 @@ test(
     const root = fs.mkdtempSync(path.join(scratch, 'installers-'))
     const toolsRoot = path.join(ROOT, 'tmp/skill-installers/tools/node_modules')
     const preload = path.join(root, 'installer-home.cjs')
+
     write(
       root,
       'installer-home.cjs',
@@ -568,7 +668,9 @@ syncBuiltinESMExports()
       GIT_TERMINAL_PROMPT: '0',
       GIT_LFS_SKIP_SMUDGE: '1'
     }
+
     fs.mkdirSync(env.TMPDIR, { recursive: true })
+
     const run = (command, args, cwd, label) => {
       const result = spawnSync(command, args, {
         cwd,
@@ -577,34 +679,43 @@ syncBuiltinESMExports()
         timeout: 150_000,
         maxBuffer: 8 * 1024 * 1024
       })
+
       write(root, `${label}.log`, (result.stdout || '') + (result.stderr || ''))
       assert.equal(
         result.status,
         0,
         `${label}: ${result.error?.message || result.stderr?.slice(-1000) || result.stdout?.slice(-1000)}; logs: ${root}`
       )
+
       return result.stdout
     }
+
     const git = (args, cwd, label) => run('git', args, cwd, label)
+
     const verify = (directory, expectedDirectory) => {
       const record = JSON.parse(read(expectedDirectory, 'bundle.json'))
+
       assert.deepEqual(JSON.parse(read(directory, 'bundle.json')), record)
       const prefix = Object.keys(record.files)
         .find((entry) => entry.endsWith('/SKILL.md'))
         .slice(0, -9)
+
       for (const file of Object.keys(record.files).filter((file) =>
         file.startsWith(`${prefix}/`)
       )) {
         const relative = file.slice(prefix.length + 1)
+
         assert.deepEqual(
           fs.readFileSync(path.join(directory, relative)),
           fs.readFileSync(path.join(expectedDirectory, relative)),
           relative
         )
       }
+
       const markdown = fs
         .readdirSync(path.join(directory, 'references'), { recursive: true })
         .filter((file) => file.endsWith('.md'))
+
       for (const relative of [
         'SKILL.md',
         ...markdown.map((file) => `references/${file}`)
@@ -612,32 +723,40 @@ syncBuiltinESMExports()
         for (const [, href] of read(directory, relative)
           .replace(/```[\s\S]*?```/g, '')
           .matchAll(/(?<!!)\[[^\]\n]+\]\(([^\s)]+)\)/g)) {
-          if (/^(https?:|#)/.test(href)) continue
+          if (/^(https?:|#)/.test(href)) {
+            continue
+          }
+
           const target = path.resolve(
             directory,
             path.dirname(relative),
             href.split('#')[0]
           )
+
           assert.ok(target.startsWith(directory + path.sep), href)
           assert.ok(fs.existsSync(target), href)
         }
       }
+
       return {
         version: record.pluginVersion,
         digest: record.contentDigest,
         referenceCount: markdown.length
       }
     }
+
     const publicRepository = 'karote00/asyra'
     const legacyPlugin = 'plugins/asyra-agent'
     const legacySkill = 'skills/asyra-agent'
     const base = process.env.INSTALLER_BASE_REF
+
     assert.match(
       base || '',
       /^[a-f0-9]{40}$/,
       'Supply the reviewed baseline commit'
     )
     const baseline = path.join(root, 'public-baseline')
+
     fs.mkdirSync(baseline)
     const archive = spawnSync(
       'git',
@@ -647,6 +766,7 @@ syncBuiltinESMExports()
         maxBuffer: 8 * 1024 * 1024
       }
     )
+
     assert.equal(archive.status, 0)
     assert.equal(
       spawnSync('tar', ['-x', '-C', baseline], { input: archive.stdout })
@@ -656,10 +776,12 @@ syncBuiltinESMExports()
     const legacyDirectory = path.join(baseline, legacyPlugin, legacySkill)
     const candidateRecord = checkBundle(ROOT)
     const remote = 'https://github.com/karote00/asyra.git'
+
     const publicHead = () =>
       git(['ls-remote', remote, 'refs/heads/main'], ROOT, 'public-head')
         .trim()
         .split(/\s+/)[0]
+
     assert.equal(
       publicHead(),
       base,
@@ -672,12 +794,14 @@ syncBuiltinESMExports()
       for (const command of [
         `npx openskills@1.5.0 install ${publicRepository}/${PLUGIN}/${SKILL} --universal --yes`,
         'npx openskills@1.5.0 update asyra-skill'
-      ])
+      ]) {
         assert.ok(
           read(ROOT, document).includes(command),
           `Missing command in ${document}`
         )
+      }
     }
+
     const cases = [
       {
         name: 'openskills',
@@ -685,7 +809,9 @@ syncBuiltinESMExports()
         cli: 'openskills/dist/cli.js',
         directory: '.agent/skills',
         publicSource: `${publicRepository}/${legacyPlugin}/${legacySkill}`,
+
         install: (value) => ['install', value, '--universal', '--yes'],
+
         update: (name) => ['update', name]
       }
     ]
@@ -694,6 +820,7 @@ syncBuiltinESMExports()
       candidate: candidateRecord.pluginVersion,
       tools: []
     }
+
     const initialize = (source) => {
       git(['init', '-b', 'main'], source, 'source-init')
       git(['config', 'user.name', 'Installer Test'], source, 'source-name')
@@ -709,15 +836,20 @@ syncBuiltinESMExports()
         'source-baseline'
       )
     }
+
     for (const item of cases) {
       const cli = path.join(toolsRoot, item.cli)
+
       assert.equal(
         JSON.parse(read(toolsRoot, `${item.name}/package.json`)).version,
         item.version
       )
+
       const invoke = (args, cwd, suffix) =>
         run(process.execPath, [cli, ...args], cwd, `${item.name}-${suffix}`)
+
       const consumer = path.join(root, `${item.name}-public`)
+
       fs.mkdirSync(consumer)
       write(
         consumer,
@@ -727,6 +859,7 @@ syncBuiltinESMExports()
       invoke(item.install(item.publicSource), consumer, 'public-install')
       const legacyInstalled = path.join(consumer, item.directory, 'asyra-agent')
       const before = verify(legacyInstalled, legacyDirectory)
+
       invoke(item.update('asyra-agent'), consumer, 'public-update')
       assert.deepEqual(verify(legacyInstalled, legacyDirectory), before)
       assert.equal(
@@ -740,6 +873,7 @@ syncBuiltinESMExports()
 
       changeVersion(source, '0.1.11')
       const reference = 'docs/public/start/extend-with-ai.md'
+
       write(
         source,
         reference,
@@ -748,6 +882,7 @@ syncBuiltinESMExports()
       writeBundle(source)
       initialize(source)
       const controlled = path.join(root, `${item.name}-controlled`)
+
       fs.mkdirSync(controlled)
       write(controlled, 'keep.txt', 'Consumer data\n')
       write(
@@ -760,6 +895,7 @@ syncBuiltinESMExports()
       const previousCount = env.GIT_CONFIG_COUNT
       const previousKey = env.GIT_CONFIG_KEY_0
       const previousValue = env.GIT_CONFIG_VALUE_0
+
       env.GIT_CONFIG_COUNT = '1'
       env.GIT_CONFIG_KEY_0 = `url.file://${source}.insteadOf`
       env.GIT_CONFIG_VALUE_0 = remote.replace(/\.git$/, '')
@@ -769,6 +905,7 @@ syncBuiltinESMExports()
       const installed = path.join(controlled, item.directory, 'asyra-skill')
       const sourceSkill = path.join(source, PLUGIN, SKILL)
       const initial = verify(installed, sourceSkill)
+
       assert.deepEqual(fs.readdirSync(path.dirname(installed)), ['asyra-skill'])
 
       fs.rmSync(path.join(source, PLUGIN), { recursive: true })
@@ -783,31 +920,41 @@ syncBuiltinESMExports()
       )
       invoke(item.update('asyra-skill'), controlled, 'changed-update')
       const updated = verify(installed, path.join(ROOT, PLUGIN, SKILL))
+
       assert.notEqual(initial.digest, updated.digest)
       assert.notEqual(initial.version, updated.version)
       const snapshot = path.join(root, `${item.name}-snapshot`)
+
       fs.cpSync(installed, snapshot, { recursive: true, dereference: true })
-      if (fs.existsSync(path.join(snapshot, '.openskills.json')))
+      if (fs.existsSync(path.join(snapshot, '.openskills.json'))) {
         fs.unlinkSync(path.join(snapshot, '.openskills.json'))
+      }
+
       inspectSkill(snapshot)
       if (item.name === 'openskills') {
         invoke(['sync', '--yes'], controlled, 'sync')
         const synced = read(controlled, 'AGENTS.md')
+
         assert.ok(synced.includes('Preserve these instructions.'))
         assert.ok(synced.includes('asyra-skill'))
         invoke(['sync', '--yes'], controlled, 'sync-repeat')
         assert.equal(read(controlled, 'AGENTS.md'), synced)
         invoke(['read', 'asyra-skill'], controlled, 'read')
       }
+
       assert.equal(read(controlled, 'keep.txt'), 'Consumer data\n')
       for (const [key, value] of Object.entries({
         GIT_CONFIG_COUNT: previousCount,
         GIT_CONFIG_KEY_0: previousKey,
         GIT_CONFIG_VALUE_0: previousValue
       })) {
-        if (value === undefined) Reflect.deleteProperty(env, key)
-        else env[key] = value
+        if (value === undefined) {
+          Reflect.deleteProperty(env, key)
+        } else {
+          env[key] = value
+        }
       }
+
       report.tools.push({
         name: item.name,
         installerVersion: item.version,
@@ -820,6 +967,7 @@ syncBuiltinESMExports()
         controlled
       })
     }
+
     assert.equal(
       publicHead(),
       base,
@@ -834,10 +982,11 @@ test('public Skill distribution advertises only maintained installer routes', ()
   for (const file of [
     `${PLUGIN}/README.md`,
     `${PLUGIN}/${SKILL}/references/docs/public/start/extend-with-ai.md`
-  ])
+  ]) {
     assert.doesNotMatch(
       read(ROOT, file),
       /vercel|npx skills (?:add|update)/i,
       file
     )
+  }
 })

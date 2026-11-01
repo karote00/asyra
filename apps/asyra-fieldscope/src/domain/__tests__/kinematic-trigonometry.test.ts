@@ -8,8 +8,10 @@ import {
 } from '../kinematic-trigonometry'
 
 type Kind = 'sin' | 'cos'
+
 function rational(value: number): [bigint, bigint] {
   const view = new DataView(new ArrayBuffer(8))
+
   view.setFloat64(0, value)
   const bits = view.getBigUint64(0),
     e = Number((bits >> 52n) & 2047n)
@@ -17,13 +19,20 @@ function rational(value: number): [bigint, bigint] {
     ((bits & ((1n << 52n) - 1n)) | (e ? 1n << 52n : 0n)) *
     (bits >> 63n ? -1n : 1n)
   const shift = e ? e - 1075 : -1074
+
   return shift < 0 ? [n, 1n << BigInt(-shift)] : [n << BigInt(shift), 1n]
 }
+
 function factorial(n: number) {
   let value = 1n
-  for (let i = 2; i <= n; i++) value *= BigInt(i)
+
+  for (let i = 2; i <= n; i++) {
+    value *= BigInt(i)
+  }
+
   return value
 }
+
 // Independent direct sum of powers, not production Horner or its converter.
 function polynomial(
   kind: Kind,
@@ -32,6 +41,7 @@ function polynomial(
 ): [bigint, bigint] {
   return rationalPolynomial(kind, rational(x), degree)
 }
+
 function rationalPolynomial(
   kind: Kind,
   input: readonly [bigint, bigint],
@@ -40,37 +50,52 @@ function rationalPolynomial(
   const [a, b] = input,
     f = factorial(degree)
   let n = 0n
+
   for (
     let power = kind === 'sin' ? 1 : 0, term = 0;
     power <= degree;
     power += 2, term++
-  )
+  ) {
     n +=
       (term % 2 ? -1n : 1n) *
       (f / factorial(power)) *
       a ** BigInt(power) *
       b ** BigInt(degree - power)
+  }
+
   return [n, f * b ** BigInt(degree)]
 }
+
 function compare(a: readonly [bigint, bigint], b: readonly [bigint, bigint]) {
   return a[0] * b[1] - b[0] * a[1]
 }
+
 function adjacent(value: number, up: boolean) {
-  if (value === 0) return up ? Number.MIN_VALUE : -Number.MIN_VALUE
+  if (value === 0) {
+    return up ? Number.MIN_VALUE : -Number.MIN_VALUE
+  }
+
   const view = new DataView(new ArrayBuffer(8))
+
   view.setFloat64(0, value)
   view.setBigUint64(0, view.getBigUint64(0) + (value > 0 === up ? 1n : -1n))
+
   return view.getFloat64(0)
 }
+
 function distance(value: number, n: bigint, d: bigint) {
   const [a, b] = rational(value),
     delta = a * d - n * b
+
   return [delta < 0n ? -delta : delta, b * d] as const
 }
+
 function nearest(value: number, expected: readonly [bigint, bigint]) {
   const here = distance(value, ...expected)
-  for (const neighbor of [adjacent(value, false), adjacent(value, true)])
+
+  for (const neighbor of [adjacent(value, false), adjacent(value, true)]) {
     expect(compare(here, distance(neighbor, ...expected)) <= 0n).toBe(true)
+  }
 }
 
 it('publishes exact positive polynomial evidence even when its display rounds to zero', () => {
@@ -80,6 +105,7 @@ it('publishes exact positive polynomial evidence even when its display rounds to
     input.numerator,
     input.denominator
   ])
+
   expect(
     compare([result.value.numerator, result.value.denominator], expected)
   ).toBe(0n)
@@ -100,12 +126,14 @@ it('keeps exact rational zero, odd/even identities and independently summed valu
     [-2n, 7n],
     [7n, 8n]
   ] as const
-  for (const kind of ['sin', 'cos'] as const)
+
+  for (const kind of ['sin', 'cos'] as const) {
     for (const [numerator, denominator] of inputs) {
       const result = evaluateExactPolynomialTrig(kind, {
         numerator,
         denominator
       })
+
       expect(
         compare(
           [result.value.numerator, result.value.denominator],
@@ -116,6 +144,7 @@ it('keeps exact rational zero, odd/even identities and independently summed valu
         numerator: -numerator,
         denominator
       })
+
       expect(opposite.value).toEqual({
         ...result.value,
         numerator:
@@ -123,6 +152,8 @@ it('keeps exact rational zero, odd/even identities and independently summed valu
       })
       expect(result.input).toEqual({ numerator, denominator })
     }
+  }
+
   expect(
     evaluateExactPolynomialTrig('sin', { numerator: 0n, denominator: 1n }).value
   ).toEqual({ numerator: 0n, denominator: 1n })
@@ -132,6 +163,7 @@ it('keeps exact rational zero, odd/even identities and independently summed valu
 })
 it('certifies signs on the real open domain by fixed coefficient identities, not samples', () => {
   const proof = POLYNOMIAL_TRIG_SIGN_CERTIFICATE
+
   expect(proof.domain).toEqual({ low: -1, high: 1, open: true })
   expect(proof.factor).toBe(factorial(20))
   for (const [name, positive] of Object.entries(proof.positivePolynomials)) {
@@ -141,6 +173,7 @@ it('certifies signs on the real open domain by fixed coefficient identities, not
       { length: degree / 2 + 1 },
       (_, i) => (i % 2 ? -1n : 1n) * (factorial(20) / factorial(2 * i + offset))
     )
+
     expect(positive.coefficients).toEqual(expected)
     for (const pair of positive.pairs) {
       expect(pair.power % 2).toBe(0)
@@ -150,6 +183,7 @@ it('certifies signs on the real open domain by fixed coefficient identities, not
       expect(pair.lowerAtOne).toBe(pair.constant + pair.linear)
       expect(pair.lowerAtOne).toBeGreaterThan(0n)
     }
+
     expect(positive.pairs.length * 2 + (positive.tail ? 1 : 0)).toBe(
       expected.length
     )
@@ -158,8 +192,10 @@ it('certifies signs on the real open domain by fixed coefficient identities, not
       expect(positive.tail.coefficient).toBe(expected[positive.tail.power])
     }
   }
+
   const sine = proof.positivePolynomials.sineOverInput.coefficients
   const cosine = proof.positivePolynomials.cosine.coefficients
+
   expect(sine.map((v, i) => v * BigInt(2 * i + 1))).toEqual(
     proof.positivePolynomials.sineDerivative.coefficients
   )
@@ -174,7 +210,8 @@ it('certifies signs on the real open domain by fixed coefficient identities, not
 })
 it('separates exact extrema and zero loci from outward numeric enclosure', () => {
   const zero = { numerator: 0n, denominator: 1n }
-  for (const kind of ['sin', 'cos'] as const)
+
+  for (const kind of ['sin', 'cos'] as const) {
     for (const [l, h] of [
       [
         [-2n, 3n],
@@ -202,6 +239,7 @@ it('separates exact extrema and zero loci from outward numeric enclosure', () =>
       const exacts = candidates.map((v) =>
         rationalPolynomial(kind, [v.numerator, v.denominator])
       )
+
       for (const value of exacts) {
         expect(
           compare(
@@ -218,6 +256,7 @@ it('separates exact extrema and zero loci from outward numeric enclosure', () =>
         expect(compare(rational(result.outward.low), value) <= 0n).toBe(true)
         expect(compare(rational(result.outward.high), value) >= 0n).toBe(true)
       }
+
       expect(
         compare(
           [result.bounds.low.numerator, result.bounds.low.denominator],
@@ -242,6 +281,7 @@ it('separates exact extrema and zero loci from outward numeric enclosure', () =>
       expect(result.certificate).toBe(POLYNOMIAL_TRIG_SIGN_CERTIFICATE)
       expect(Object.isFrozen(result.input.low)).toBe(true)
     }
+  }
 })
 it('rejects malformed/noncanonical rationals before polynomial products and guards exact temporary growth', () => {
   const cases = [
@@ -254,8 +294,11 @@ it('rejects malformed/noncanonical rationals before polynomial products and guar
     { numerator: 1n, denominator: 1n },
     { numerator: 1n << 24001n, denominator: 3n }
   ]
-  for (const value of cases)
+
+  for (const value of cases) {
     expect(() => evaluateExactPolynomialTrig('sin', value)).toThrow()
+  }
+
   expect(() =>
     evaluateExactPolynomialTrig('sin', {
       numerator: 1n,
@@ -272,10 +315,13 @@ it('rejects malformed/noncanonical rationals before polynomial products and guar
   const input = {
     get numerator() {
       reads++
+
       return 1n
     },
+
     denominator: 3n
   }
+
   expect(evaluateExactPolynomialTrig('sin', input).input).toEqual({
     numerator: 1n,
     denominator: 3n
@@ -346,8 +392,10 @@ it('preserves the established number API bits and exact work snapshots', () => {
     }
   ]
   const view = new DataView(new ArrayBuffer(8))
+
   for (const row of expected) {
     const result = evaluatePolynomialTrig(row.kind as Kind, Number(row.input))
+
     view.setFloat64(0, result.value)
     expect(view.getBigUint64(0).toString(16)).toBe(row.bits)
     expect(result.work).toEqual(row.work)
@@ -355,7 +403,7 @@ it('preserves the established number API bits and exact work snapshots', () => {
 })
 
 it('rounds exact fixed polynomials with independent direct-sum evidence and signed zero', () => {
-  for (const kind of ['sin', 'cos'] as const)
+  for (const kind of ['sin', 'cos'] as const) {
     for (const x of [
       0,
       -0,
@@ -369,17 +417,20 @@ it('rounds exact fixed polynomials with independent direct-sum evidence and sign
       adjacent(1, false)
     ]) {
       const actual = evaluatePolynomialTrig(kind, x)
+
       nearest(actual.value, polynomial(kind, x))
       expect(actual.work.evaluations).toBe(1)
       expect(actual.work.maxBigIntBits).toBeLessThanOrEqual(24000)
       expect(Object.isFrozen(actual)).toBe(true)
     }
+  }
+
   expect(Object.is(evaluatePolynomialTrig('sin', -0).value, -0)).toBe(true)
   expect(evaluatePolynomialTrig('cos', -0).value).toBe(1)
 })
 
 it('bounds monotone polynomial extrema including a cosine interval crossing zero', () => {
-  for (const kind of ['sin', 'cos'] as const)
+  for (const kind of ['sin', 'cos'] as const) {
     for (const [low, high] of [
       [-0.7, -0.1],
       [-0.4, 0.6],
@@ -388,6 +439,7 @@ it('bounds monotone polynomial extrema including a cosine interval crossing zero
       [-Number.MIN_VALUE, Number.MIN_VALUE]
     ]) {
       const result = boundPolynomialTrig(kind, { low, high })
+
       for (const x of [
         low,
         high,
@@ -395,16 +447,21 @@ it('bounds monotone polynomial extrema including a cosine interval crossing zero
         ...(low <= 0 && high >= 0 ? [0] : [])
       ]) {
         const expected = polynomial(kind, x)
+
         expect(compare(rational(result.bounds.low), expected) <= 0n).toBe(true)
         expect(compare(rational(result.bounds.high), expected) >= 0n).toBe(true)
         const point = evaluatePolynomialTrig(kind, x).value
+
         expect(point >= result.bounds.low && point <= result.bounds.high).toBe(
           true
         )
       }
+
       expect(result.work.evaluations).toBeLessThanOrEqual(2)
       expect(Object.isFrozen(result.bounds)).toBe(true)
     }
+  }
+
   expect(boundPolynomialTrig('cos', { low: -0.3, high: 0.5 }).bounds.high).toBe(
     1
   )
@@ -419,6 +476,7 @@ it('separates analytic truncation from polynomial rounding using consecutive exa
     const [a, b] = rational(x)
     const sineRemainder = [a ** 21n, factorial(21) * b ** 21n] as const
     const cosineRemainder = [a ** 22n, factorial(22) * b ** 22n] as const
+
     expect(compare(sine, nextSine) < 0n).toBe(true)
     expect(compare(nextCosine, cosine) < 0n).toBe(true)
     expect(
@@ -440,28 +498,36 @@ it('separates analytic truncation from polynomial rounding using consecutive exa
 })
 
 it('rejects invalid numeric domains and validates exactly one detached interval snapshot', () => {
-  for (const x of [NaN, Infinity, -Infinity, -1, 1])
+  for (const x of [NaN, Infinity, -Infinity, -1, 1]) {
     expect(() => evaluatePolynomialTrig('sin', x)).toThrow()
+  }
+
   expect(() => evaluatePolynomialTrig('other' as Kind, 0)).toThrow()
   for (const input of [
     { low: 0, high: NaN },
     { low: 1, high: 0 },
     { low: -1, high: 0 },
     { low: 0, high: 1 }
-  ])
+  ]) {
     expect(() => boundPolynomialTrig('cos', input)).toThrow()
+  }
+
   let reads = 0
   const raw = {
     get low() {
       reads++
+
       return reads === 1 ? NaN : 0
     },
+
     high: 0.5
   }
+
   expect(() => boundPolynomialTrig('sin', raw)).toThrow()
   expect(reads).toBe(1)
   const valid = { low: -0.2, high: 0.3 },
     result = boundPolynomialTrig('sin', valid)
+
   valid.low = 0.9
   expect(result.bounds.low < 0).toBe(true)
   expect(Object.isFrozen(valid)).toBe(false)

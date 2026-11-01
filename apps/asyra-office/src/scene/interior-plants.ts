@@ -15,15 +15,18 @@ export function indoorPlant(id: IndoorPlantId) {
   ).map((part) => {
     const vessel = part.id === 'pot' || part.id === 'soil'
     const scale = vessel ? fit.potScale : fit.foliageScale
+
     const transform = (mesh: Mesh): Mesh => ({
       ...mesh,
       positions: mesh.positions.map((n, i) => {
         const axis = i % 3
+
         return !vessel && axis === 2
           ? (n - fit.soilPivot) * scale[2] + fit.soilPivot * fit.potScale[2]
           : n * scale[axis]
       })
     })
+
     return {
       ...part,
       mesh: transform(part.mesh),
@@ -37,5 +40,6 @@ export function indoorPlant(id: IndoorPlantId) {
         : {})
     }
   })
+
   return { parts, position: fit.position as Vec }
 }

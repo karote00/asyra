@@ -24,6 +24,7 @@ export const installSelectionDefault = (
         render: context.dependencies.render,
         sceneTree: context.dependencies.sceneTree,
         systemContext: context.dependencies.systemContext,
+
         getSelection: (type) => context.core.getSelection(type)
       })
     })

@@ -1,4 +1,15 @@
 module.exports = Object.freeze({
+  contractDocuments: Object.freeze([
+    'extendable-preset-flow-inspector.data.cjs',
+    'input-system-environment-neutrality-flow-inspector.data.cjs',
+    'preset-composition-flow-inspector.data.cjs',
+    'asyra-public-package-documentation-flow-inspector.data.cjs',
+    'asyra-public-readme-and-entrypoint-alignment-flow-inspector.data.cjs',
+    'asyra-runtime-atlas-flow-inspector.data.cjs',
+    'asyra-website-landing-flow-inspector.data.cjs',
+    'asyra-website-launch-and-operations-flow-inspector.data.cjs',
+    'asyra-website-platform-flow-inspector.data.cjs'
+  ]),
   discoveryRoots: Object.freeze(['tools/flow-inspector/inspectors']),
   exclusions: Object.freeze([
     Object.freeze({

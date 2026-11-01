@@ -30,7 +30,9 @@ function fixture(): Body {
 }
 
 function visualsOf(body: Body) {
-  if (!body.visuals) throw new Error('Missing test original-part bindings')
+  if (!body.visuals) {
+    throw new Error('Missing test original-part bindings')
+  }
 
   return body.visuals
 }

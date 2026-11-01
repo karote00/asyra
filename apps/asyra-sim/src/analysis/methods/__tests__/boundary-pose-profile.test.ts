@@ -16,7 +16,11 @@ it('distinguishes canonical shared joints from the two actual endpoint pose encl
     (value) =>
       value.a.bodyId === 'example:joint-2' && value.b.bodyId === 'obstacle-11'
   )
-  if (!pair) throw new Error('Missing admitted ordered pair')
+
+  if (!pair) {
+    throw new Error('Missing admitted ordered pair')
+  }
+
   const boundary = 114
   const frame = snapshot.trajectory.keyframes[boundary]
   const keys = Object.keys(frame.joints).sort()
@@ -44,6 +48,7 @@ it('distinguishes canonical shared joints from the two actual endpoint pose encl
     frame.time,
     numberAlgebra
   )
+
   expect(Object.keys(source).sort()).toEqual(keys)
   expect(Object.keys(target).sort()).toEqual(keys)
   for (const key of keys) {
@@ -52,6 +57,7 @@ it('distinguishes canonical shared joints from the two actual endpoint pose encl
       expect(values[key][1]).toBeGreaterThanOrEqual(frame.joints[key])
     }
   }
+
   const poses = <S>(
     values: Readonly<Record<string, S>>,
     algebra: Algebra<S>
@@ -64,6 +70,7 @@ it('distinguishes canonical shared joints from the two actual endpoint pose encl
       algebra
     )
     const ops = poseOperations(algebra)
+
     return [pair.a, pair.b].map((reference, side) => {
       const body = snapshot.workcell.bodies.find(
         (value) => value.id === reference.bodyId
@@ -71,19 +78,26 @@ it('distinguishes canonical shared joints from the two actual endpoint pose encl
       const collider = body?.colliders.find(
         (value) => value.id === reference.colliderId
       )
-      if (!collider) throw new Error('Missing original collider')
+
+      if (!collider) {
+        throw new Error('Missing original collider')
+      }
+
       return {
         geometry: collider.geometry,
         pose: ops.compose(bodyPoses[side], ops.fromPose(collider.pose))
       }
     })
   }
+
   const sourcePoses = poses(source, intervalAlgebra),
     targetPoses = poses(target, intervalAlgebra)
   const sourceNumberPoses = poses(sourceNumber, numberAlgebra),
     targetNumberPoses = poses(targetNumber, numberAlgebra)
+
   const identical = (a: Interval, b: Interval) =>
     Object.is(a[0], b[0]) && Object.is(a[1], b[1])
+
   const rows = sourcePoses.flatMap((shape, side) => {
     expect(shape.geometry).toBe(targetPoses[side].geometry)
     const a = [...shape.pose.position, ...shape.pose.rotation]
@@ -99,6 +113,7 @@ it('distinguishes canonical shared joints from the two actual endpoint pose encl
       ...targetNumberPoses[side].pose.position,
       ...targetNumberPoses[side].pose.rotation
     ]
+
     return a.map((value, component) => ({
       side,
       component,
@@ -113,8 +128,10 @@ it('distinguishes canonical shared joints from the two actual endpoint pose encl
       numberTarget: bn[component]
     }))
   })
+
   expect(rows).toHaveLength(14)
   const differences = rows.filter((row) => !row.identical)
+
   // eslint-disable-next-line no-console -- exact endpoint identity diagnostic; overlap is not a membership certificate
   console.info(
     JSON.stringify({

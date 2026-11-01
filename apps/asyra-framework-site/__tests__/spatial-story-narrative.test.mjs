@@ -12,12 +12,14 @@ test('the notebook stays present after its overlay registration throughout the w
   for (let i = 250; i <= 6000; i++) {
     const time = i / 1000
     const chapter = Math.min(5, Math.floor(time))
+
     assert.equal(getStoryFrame(chapter, time - chapter).layers.notebook[7], 1)
   }
 })
 test('the same notebook lifts to reveal its infrastructure with actual depth and tilt', () => {
   const paper = getStoryFrame(0, 1)
   const layers = getStoryFrame(1, 1)
+
   assert.ok(layers.camera[3] >= 30)
   assert.ok(layers.layers.notebook[2] > paper.layers.notebook[2])
   assert.ok(layers.layers.notebook[2] > layers.layers.feature[2])
@@ -37,10 +39,12 @@ test('replacing behavior leaves the state, transaction and saved notebook exactl
   const before = getStoryFrame(3, 0)
   const during = getStoryFrame(3, 0.3)
   const after = getStoryFrame(3, 1)
+
   for (const id of ['notebook', 'transaction', 'state']) {
     assert.deepEqual(before.layers[id], during.layers[id])
     assert.deepEqual(before.layers[id], after.layers[id])
   }
+
   assert.deepEqual(after.layers.replacement, before.layers.feature)
   assert.ok(during.layers.feature[0] < -500)
   assert.ok(during.layers.replacement[0] > 500)
@@ -51,6 +55,7 @@ test('growth adds two different capabilities sequentially and retains the create
   assert.equal(getStoryFrame(4, 0.23).layers.history[7], 1)
   assert.equal(getStoryFrame(4, 0.23).layers.collection[7], 0)
   const result = getStoryFrame(4, 1)
+
   assert.equal(result.layers.collection[7], 1)
   assert.equal(result.effects.saved, 1)
   assert.equal(result.effects.tower, 1)
@@ -58,8 +63,9 @@ test('growth adds two different capabilities sequentially and retains the create
 
 test('the projected saved result survives adaptation, growth and the ending', () => {
   for (let chapter = 3; chapter < 6; chapter++) {
-    for (const progress of [0, 0.5, 1])
+    for (const progress of [0, 0.5, 1]) {
       assert.equal(getStoryFrame(chapter, progress).effects.published, 1)
+    }
   }
 })
 

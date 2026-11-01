@@ -36,6 +36,7 @@ const cube: MeshGeometry = Object.freeze({
     4, 7, 0, 7, 3, 1, 2, 6, 1, 6, 5
   ])
 })
+
 function input(values = [9 / 32, 9 / 32]): PairQuery {
   const base: Body = {
     id: 'base',
@@ -49,6 +50,7 @@ function input(values = [9 / 32, 9 / 32]): PairQuery {
     colliders: []
   }
   const collider = { id: 'source', geometry: cube, pose: IDENTITY_POSE }
+
   return {
     workcell: {
       version: 1,
@@ -84,7 +86,9 @@ function input(values = [9 / 32, 9 / 32]): PairQuery {
     interval: [0, values.length - 1]
   }
 }
+
 type DerivingKernel = PairQueryKernel
+
 function evidence(upper: number, penetration = false): DistanceEvidence {
   return {
     lower: 0,
@@ -105,16 +109,20 @@ function evidence(upper: number, penetration = false): DistanceEvidence {
     ]
   }
 }
+
 function schedule(uppers: number[], derived: 0 | null = 0) {
   let sample = 0
   const lower = vi.fn(() => 0),
     deriveZeroLower = vi.fn(() => derived)
   const kernel: DerivingKernel = {
     certifyClearBeforeResampling: true,
+
     distance: () => {
       const upper = uppers[sample++]
+
       return evidence(upper, upper === 0)
     },
+
     lower,
     deriveZeroLower,
     exhaustionReason: 'owned derivation exhausted'
@@ -125,13 +133,16 @@ function schedule(uppers: number[], derived: 0 | null = 0) {
     () => undefined,
     kernel
   )
+
   return { result, lower, deriveZeroLower, samples: sample }
 }
+
 afterEach(() => vi.restoreAllMocks())
 
 describe('node-owned witnessed zero certificate', () => {
   it('derives only at final certification and retains later penetration', () => {
     const result = schedule([1 / 32, 0])
+
     expect(result.samples).toBe(2)
     expect(result.lower).not.toHaveBeenCalled()
     expect(result.deriveZeroLower).toHaveBeenCalledTimes(1)
@@ -145,6 +156,7 @@ describe('node-owned witnessed zero certificate', () => {
   })
   it('derives early equality without skipping remaining samples', () => {
     const result = schedule([1 / 16, 1 / 32, 1 / 32])
+
     expect(result.samples).toBe(3)
     expect(result.lower).not.toHaveBeenCalled()
     expect(result.deriveZeroLower).toHaveBeenCalledTimes(2)
@@ -158,7 +170,9 @@ describe('node-owned witnessed zero certificate', () => {
       deriveZeroLower = vi.fn(() => 0 as const)
     const kernel: DerivingKernel = {
       certifyClearBeforeResampling: true,
+
       distance: () => evidence(1 / 4),
+
       lower,
       deriveZeroLower,
       exhaustionReason: 'budget'
@@ -169,12 +183,14 @@ describe('node-owned witnessed zero certificate', () => {
       () => undefined,
       kernel
     )
+
     expect(result.leaves[0].state).toBe('clear')
     expect(lower).toHaveBeenCalledTimes(1)
     expect(deriveZeroLower).not.toHaveBeenCalled()
   })
   it('keeps established witnesses but does not publish a failed derivation', () => {
     const result = schedule([1 / 16, 1 / 32, 1 / 32], null)
+
     expect(result.samples).toBe(1)
     expect(result.lower).not.toHaveBeenCalled()
     expect(result.result.leaves[0]).toMatchObject({
@@ -191,16 +207,21 @@ describe('node-owned witnessed zero certificate', () => {
       deriveZeroLower = vi.fn(() => 0 as const)
     const kernel: DerivingKernel = {
       certifyClearBeforeResampling: true,
+
       distance: () => ({
         ...evidence(++sample === 1 ? 1 / 8 : 1 / 32),
         lower: 1 / 64
       }),
+
       lower,
       handoffEvidence,
+
       lowerUsesPositiveWitnessOnly: () => true,
+
       deriveZeroLower,
       exhaustionReason: 'budget'
     }
+
     continuous.queryContinuousPair(input(), settings, () => undefined, kernel)
     expect(sample).toBe(3)
     expect(lower).toHaveBeenCalledTimes(1)
@@ -211,7 +232,11 @@ describe('node-owned witnessed zero certificate', () => {
     'matches a raw full-source interval oracle and charges its derived work, reversed=%s',
     (reverse) => {
       const query = input()
-      if (reverse) [query.a, query.b] = [query.b, query.a]
+
+      if (reverse) {
+        ;[query.a, query.b] = [query.b, query.a]
+      }
+
       const run = continuous.queryContinuousPair
       const controlRoute = vi
         .spyOn(continuous, 'queryContinuousPair')
@@ -233,10 +258,12 @@ describe('node-owned witnessed zero certificate', () => {
         () => undefined,
         controlContext
       )
+
       expect(controlLower).toHaveBeenCalledTimes(1)
       expect(controlLower.mock.results[0].value).toBe(0)
       const lowerArgs = controlLower.mock.calls[0]
       const raw = new OriginalMeshQuery()
+
       expect(raw.lowerOver(...lowerArgs)).toBe(0)
       controlRoute.mockRestore()
       const context = new OriginalMeshQuery(),
@@ -245,8 +272,10 @@ describe('node-owned witnessed zero certificate', () => {
         distance = vi.spyOn(context, 'distance')
       let staticWork = 0
       const charge = context.chargeSourceWitness.bind(context)
+
       vi.spyOn(context, 'chargeSourceWitness').mockImplementation(() => {
         const before = context.work
+
         try {
           return charge()
         } finally {
@@ -256,7 +285,9 @@ describe('node-owned witnessed zero certificate', () => {
       distance.mockImplementation((...args) => {
         const before = context.work,
           result = originalDistance(...args)
+
         staticWork += context.work - before
+
         return result
       })
       const result = queryOriginalPartPair(
@@ -265,6 +296,7 @@ describe('node-owned witnessed zero certificate', () => {
         () => undefined,
         context
       )
+
       expect(result).toEqual(control)
       expect(result.leaves[0]).toMatchObject({
         state: 'finding',
@@ -285,6 +317,7 @@ describe('node-owned witnessed zero certificate', () => {
     const result = queryOriginalPartPair(query, settings)
     const clearQuery = { ...query, interval: [0, 1] as const }
     const fresh = queryOriginalPartPair(clearQuery, settings)
+
     expect(fresh.leaves[0].state).toBe('clear')
     expect(fresh.leaves[0].lower).toBeGreaterThan(settings.threshold)
     expect(result.leaves.filter((leaf) => leaf.end <= 1)).toEqual(fresh.leaves)
@@ -292,11 +325,16 @@ describe('node-owned witnessed zero certificate', () => {
   })
   it('preserves the positive native axis lower bound below the threshold', () => {
     const query = input()
-    for (const body of query.workcell.bodies)
-      for (const collider of body.colliders)
+
+    for (const body of query.workcell.bodies) {
+      for (const collider of body.colliders) {
         collider.geometry = { kind: 'sphere', radius: 1 / 8 }
+      }
+    }
+
     const lower = vi.spyOn(convex, 'separationLowerBound')
     const result = queryOriginalPartPair(query, settings)
+
     expect(lower).toHaveBeenCalledTimes(1)
     expect(result.leaves[0].state).toBe('finding')
     expect(result.leaves[0].lower).toBeGreaterThan(0)
@@ -304,18 +342,22 @@ describe('node-owned witnessed zero certificate', () => {
   })
   it('keeps point intervals static and refreshed source/settings independent', () => {
     const query = input()
+
     query.interval = [0, 0]
     const lower = vi.spyOn(OriginalMeshQuery.prototype, 'lowerOver')
     const result = queryOriginalPartPair(query, settings)
+
     expect(lower).not.toHaveBeenCalled()
     expect(result.leaves[0].lower).toBeGreaterThan(0)
     const clear = queryOriginalPartPair(input(), {
       ...settings,
       threshold: 1 / 64
     })
+
     expect(clear.leaves[0].state).toBe('clear')
     expect(clear.leaves[0].lower).toBeGreaterThan(1 / 64)
     const changed = input([1, 1])
+
     expect(queryOriginalPartPair(changed, settings).leaves[0].state).toBe(
       'clear'
     )
@@ -324,15 +366,20 @@ describe('node-owned witnessed zero certificate', () => {
     let staticWork = 0
     const probe = new OriginalMeshQuery(),
       rawDistance = probe.distance.bind(probe)
+
     vi.spyOn(probe, 'distance').mockImplementation((...args) => {
       const before = probe.work,
         result = rawDistance(...args)
+
       staticWork += probe.work - before
+
       return result
     })
     const charge = probe.chargeSourceWitness.bind(probe)
+
     vi.spyOn(probe, 'chargeSourceWitness').mockImplementation(() => {
       const before = probe.work
+
       try {
         return charge()
       } finally {
@@ -348,6 +395,7 @@ describe('node-owned witnessed zero certificate', () => {
       () => undefined,
       context
     )
+
     expect(context.work).toBe(staticWork + 1)
     expect(lower).not.toHaveBeenCalled()
     expect(exhausted.leaves[0]).toMatchObject({
@@ -357,12 +405,17 @@ describe('node-owned witnessed zero certificate', () => {
     })
     let calls = 0
     const cancelled = new OriginalMeshQuery(() => {
-      if (calls === 3) throw new Error('cancelled derivation')
+      if (calls === 3) {
+        throw new Error('cancelled derivation')
+      }
     })
     const raw = cancelled.distance.bind(cancelled)
+
     vi.spyOn(cancelled, 'distance').mockImplementation((...args) => {
       const result = raw(...args)
+
       calls++
+
       return result
     })
     expect(() =>

@@ -14,6 +14,7 @@ export const getChangedDefinedPatchEntries = <
     }
 
     const nextValue = patch[key]
+
     if (nextValue === undefined || isEqual(currentValue[key], nextValue)) {
       return []
     }

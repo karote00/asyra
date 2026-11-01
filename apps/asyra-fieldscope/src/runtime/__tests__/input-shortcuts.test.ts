@@ -6,7 +6,9 @@ import { createWorkbenchInputKeyCombinations } from '../input-shortcuts'
 it('declares history and camera shortcuts as normalized key combinations', () => {
   const combinations = createWorkbenchInputKeyCombinations({
     history: () => undefined,
+
     fit: () => undefined,
+
     actualSize: () => undefined
   })
 

@@ -65,8 +65,10 @@ const freeze = (value) => {
   if (!value || typeof value !== 'object' || Object.isFrozen(value)) {
     return value
   }
+
   Object.freeze(value)
   Object.values(value).forEach(freeze)
+
   return value
 }
 
@@ -81,12 +83,30 @@ const assertUniqueStrings = ({ label, values }) => {
 }
 
 const expectedSection = (id) => {
-  if (id === 'overview') return 'Overview'
-  if (START_PAGE_IDS.has(id)) return 'Start'
-  if (CONCEPT_PAGE_IDS.has(id)) return 'Concepts'
-  if (EXTEND_PAGE_IDS.has(id) || id.startsWith('updates/')) return 'Extend'
-  if (CUSTOMIZE_PAGE_IDS.has(id)) return 'Customize'
-  if (id.startsWith('reference/')) return 'Reference'
+  if (id === 'overview') {
+    return 'Overview'
+  }
+
+  if (START_PAGE_IDS.has(id)) {
+    return 'Start'
+  }
+
+  if (CONCEPT_PAGE_IDS.has(id)) {
+    return 'Concepts'
+  }
+
+  if (EXTEND_PAGE_IDS.has(id) || id.startsWith('updates/')) {
+    return 'Extend'
+  }
+
+  if (CUSTOMIZE_PAGE_IDS.has(id)) {
+    return 'Customize'
+  }
+
+  if (id.startsWith('reference/')) {
+    return 'Reference'
+  }
+
   throw new Error(`Unknown public documentation section for ${id}`)
 }
 
@@ -100,7 +120,9 @@ export const validatePublicContentManifest = ({
       'Public content manifest must use schemaVersion 1 and pages'
     )
   }
+
   const ids = manifest.pages.map(({ id }) => id)
+
   if (
     new Set(ids).size !== ids.length ||
     JSON.stringify(ids.filter((id) => inspector.pageIds.includes(id))) !==
@@ -125,6 +147,7 @@ export const validatePublicContentManifest = ({
     ) {
       throw new Error(`${page.id} must use the exact public page metadata keys`)
     }
+
     if (
       typeof page.title !== 'string' ||
       page.title.length === 0 ||
@@ -133,13 +156,17 @@ export const validatePublicContentManifest = ({
     ) {
       throw new Error(`${page.id} requires a title and description`)
     }
+
     const expectedPath = page.id === 'overview' ? 'index.md' : `${page.id}.md`
+
     if (page.path !== expectedPath || page.path.includes('..')) {
       throw new Error(`${page.id} must use its stable Markdown path`)
     }
+
     if (paths.has(page.path)) {
       throw new Error(`${page.path} is owned by more than one page`)
     }
+
     paths.add(page.path)
     if (page.section !== expectedSection(page.id)) {
       throw new Error(`${page.id} has an invalid section`)
@@ -150,23 +177,28 @@ export const validatePublicContentManifest = ({
     if (page.sources.length === 0) {
       throw new Error(`${page.id} requires at least one canonical source`)
     }
+
     for (const source of page.sources) {
       if (!isApprovedDocumentationSource(source)) {
         throw new Error(`${page.id} maps an unapproved source: ${source}`)
       }
+
       if (!fs.existsSync(path.join(repositoryRoot, source))) {
         throw new Error(`${page.id} maps a missing source: ${source}`)
       }
     }
+
     for (const name of page.packages) {
       if (!packageNames.has(name)) {
         throw new Error(`${page.id} maps an unknown package: ${name}`)
       }
     }
+
     if (page.id.startsWith('reference/packages/')) {
       const expectedPackage = `@asyra/${page.id.slice(
         'reference/packages/'.length
       )}`
+
       if (page.packages.length !== 1 || page.packages[0] !== expectedPackage) {
         throw new Error(`${page.id} must map exactly ${expectedPackage}`)
       }
@@ -179,19 +211,24 @@ export const validatePublicContentManifest = ({
 export const readPublicContentContract = async ({ repositoryRoot }) => {
   const root = path.resolve(repositoryRoot)
   const schemaPath = path.join(root, PUBLIC_CONTENT_SCHEMA_PATH)
+
   if (!fs.existsSync(schemaPath)) {
     throw new Error(
       `Public content schema is missing: ${PUBLIC_CONTENT_SCHEMA_PATH}`
     )
   }
+
   const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf8'))
+
   if (schema.$id !== 'https://asyra.dev/schemas/content-manifest.schema.json') {
     throw new Error('Public content schema requires its stable public id')
   }
+
   const manifest = JSON.parse(
     fs.readFileSync(path.join(root, PUBLIC_CONTENT_MANIFEST_PATH), 'utf8')
   )
   const inputs = await readApprovedDocumentationInputs({ repositoryRoot: root })
+
   return validatePublicContentManifest({
     inputs,
     manifest,

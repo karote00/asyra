@@ -15,7 +15,9 @@ const contract = loadContract(
   undefined,
   'apps/asyra-design/undo-redo-flow-contracts.json'
 )
+
 fs.mkdirSync(path.join(root, 'tmp/flow-inspector'), { recursive: true })
+
 const context = () => ({
   format: 1,
   id: require('node:crypto').randomUUID(),
@@ -26,6 +28,7 @@ const context = () => ({
   issues: [],
   command: { cwd: '.', argv: ['yarn', 'test'] }
 })
+
 const report = (cases, file = contract.testFile) => ({
   success: false,
   numFailedTests: cases.filter((c) => c.status === 'failed').length,
@@ -38,6 +41,7 @@ const report = (cases, file = contract.testFile) => ({
     }
   ]
 })
+
 const failure = (fullName = contract.cases[0].testName) => ({
   fullName,
   status: 'failed',
@@ -55,6 +59,7 @@ test('original failures locate App ownership, preserve same-node cases and unkno
     ]),
     {}
   )
+
   assert.equal(result.cases.length, 3)
   assert.deepEqual(
     result.cases.map((c) => c.resolution),
@@ -74,18 +79,21 @@ test('file, project and duplicate identity cannot be guessed; stale input never 
     [report([failure()]), { projects: ['other'] }, 'unmapped'],
     [report([failure(), failure()]), {}, 'ambiguous'],
     [report([failure()]), { stale: true }, 'stale']
-  ])
+  ]) {
     assert.equal(
       localizeReport(root, context(), input, options).cases[0].resolution,
       expected
     )
+  }
 })
 test('setup errors and missing reports retain execution failure without an invented node', () => {
   const input = report([])
+
   input.testResults[0].message = 'setup crashed'
   const result = localizeReport(root, context(), input, {
     errors: ['unhandled rejection']
   })
+
   assert.equal(result.cases.length, 0)
   assert.match(result.issues.join(' '), /setup crashed/)
   assert.match(result.issues.join(' '), /unhandled rejection/)
@@ -98,6 +106,7 @@ test('reader retains history and independent failures, and unchanged polling doe
   const dir = fs.mkdtempSync(
     path.join(root, 'tmp/flow-inspector/localization-')
   )
+
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
   const first = localizeReport(
     root,
@@ -105,23 +114,28 @@ test('reader retains history and independent failures, and unchanged polling doe
     report([failure(), failure('unknown')]),
     {}
   )
+
   saveObservation(dir, first)
   let reads = 0
   const reader = createObservationReader(dir, {
     readFile(file) {
       reads++
+
       return fs.readFileSync(file, 'utf8')
     }
   })
+
   assert.equal(reader.list().currentCases.length, 2)
   reader.list()
   reader.get(first.id)
   assert.equal(reads, 1)
   const compact = reader.caseContext(first.id, first.cases[0].id)
+
   assert.equal(compact.record.source.files, undefined)
   assert.equal(compact.record.originalReport, undefined)
   assert.equal(compact.item.runnerDetails, undefined)
   const identities = reader.list({ caseIdentityOnly: true }).currentCases
+
   assert.deepEqual(
     identities.map((c) => c.id),
     reader.list().currentCases.map((c) => c.id)
@@ -130,6 +144,7 @@ test('reader retains history and independent failures, and unchanged polling doe
   reader.caseContext(first.id, first.cases[0].id)
   assert.equal(reads, 1, 'summary reads reuse the admitted record')
   const next = context()
+
   next.startedAt = new Date(Date.now() + 1000).toISOString()
   saveObservation(
     dir,
@@ -141,6 +156,7 @@ test('reader retains history and independent failures, and unchanged polling doe
     )
   )
   const latest = reader.list()
+
   assert.equal(latest.runs.length, 2)
   assert.equal(
     latest.currentCases.filter((c) => c.status === 'failed').length,
@@ -153,9 +169,11 @@ test('reader retains history and independent failures, and unchanged polling doe
 test('malformed suite containers retain raw evidence without crashing localization', () => {
   const input = { success: false, testResults: {} }
   const result = localizeReport(root, context(), input)
+
   assert.deepEqual(result.report, input)
   assert.match(result.issues.join(' '), /malformed/i)
   const invalid = report([])
+
   invalid.testResults[0].assertionResults = [null]
   assert.match(
     localizeReport(root, context(), invalid).issues.join(' '),
@@ -167,6 +185,7 @@ test('observation output rejects symlinked directories before writing', () => {
   const { observationDirectory } = require('../localization.cjs')
   const dir = fs.mkdtempSync(path.join(root, 'tmp/flow-inspector/path-check-'))
   const destination = path.join(dir, 'destination')
+
   fs.mkdirSync(destination)
   fs.symlinkSync(destination, path.join(dir, 'tmp'))
   assert.throws(() => observationDirectory(dir), /Symlink/)
@@ -177,9 +196,11 @@ test('malformed retained cases are reported and never projected onto the Board',
     path.join(root, 'tmp/flow-inspector/invalid-record-')
   )
   const record = localizeReport(root, context(), report([failure()]))
+
   record.cases[0].locations = null
   saveObservation(dir, record)
   const results = createObservationReader(dir).list()
+
   assert.equal(results.currentCases.length, 0)
   assert.match(results.issues.join(' '), /Invalid observation/)
 })
@@ -190,18 +211,23 @@ test('skipped pending and unknown observations cannot retire an executed failure
       path.join(root, 'tmp/flow-inspector/not-executed-')
     )
     const first = context()
+
     first.startedAt = '2026-10-14T00:00:00.000Z'
     const failed = localizeReport(root, first, report([failure()]))
+
     saveObservation(dir, failed)
     const next = context()
+
     next.startedAt = '2026-10-14T00:00:01.000Z'
     const skipped = localizeReport(
       root,
       next,
       report([{ ...failure(), status, failureMessages: [] }])
     )
+
     saveObservation(dir, skipped)
     const reader = createObservationReader(dir)
+
     assert.equal(reader.list().currentCases[0].status, 'failed', status)
     assert.equal(reader.get(skipped.id).cases[0].status, status)
   }
@@ -212,12 +238,14 @@ test('a partially executed ambiguous group cannot clear its previous failures', 
     path.join(root, 'tmp/flow-inspector/partial-identity-')
   )
   const first = context()
+
   first.startedAt = '2026-10-14T00:00:00.000Z'
   saveObservation(
     dir,
     localizeReport(root, first, report([failure(), failure()]))
   )
   const next = context()
+
   next.startedAt = '2026-10-14T00:00:01.000Z'
   saveObservation(
     dir,
@@ -243,9 +271,11 @@ test('simultaneous runs do not use random UUID ordering to hide a failure', () =
     path.join(root, 'tmp/flow-inspector/concurrent-observations-')
   )
   const first = context()
+
   first.id = '10000000-0000-4000-8000-000000000000'
   first.startedAt = '2026-10-14T00:00:00.000Z'
   const second = context()
+
   second.id = '20000000-0000-4000-8000-000000000000'
   second.startedAt = first.startedAt
   saveObservation(dir, localizeReport(root, first, report([failure()])))
@@ -270,10 +300,13 @@ test('partial duplicate groups retain new failures until complete recovery', () 
     path.join(root, 'tmp/flow-inspector/mixed-identity-')
   )
   const first = context()
+
   first.startedAt = '2026-10-14T00:00:00.000Z'
   const oldFailure = localizeReport(root, first, report([failure()]))
+
   saveObservation(dir, oldFailure)
   const next = context()
+
   next.startedAt = '2026-10-14T00:00:01.000Z'
   const newFailure = localizeReport(
     root,
@@ -283,10 +316,13 @@ test('partial duplicate groups retain new failures until complete recovery', () 
       { ...failure(), status: 'skipped', failureMessages: [] }
     ])
   )
+
   saveObservation(dir, newFailure)
   const reader = createObservationReader(dir)
+
   const failures = () =>
     reader.list().currentCases.filter((item) => item.status === 'failed')
+
   assert.deepEqual(
     failures().map((item) => item.id),
     [oldFailure.cases[0].id, newFailure.cases[0].id]
@@ -300,6 +336,7 @@ test('partial duplicate groups retain new failures until complete recovery', () 
   )
   assert.equal(failures().length, 2)
   const recovered = context()
+
   recovered.startedAt = '2026-10-14T00:00:02.000Z'
   saveObservation(
     dir,
@@ -331,6 +368,7 @@ test('assertion details preserve exact values without changing raw evidence or h
   const result = localizeReport(root, context(), input, {
     failureDetails: [[details]]
   })
+
   assert.deepEqual(result.cases[0].failureDetails, details)
   assert.deepEqual(result.report, input)
   assert.deepEqual(
@@ -340,10 +378,12 @@ test('assertion details preserve exact values without changing raw evidence or h
   details[0].actual = 'changed later'
   assert.equal(result.cases[0].failureDetails[0].actual, '')
   const historical = localizeReport(root, context(), input)
+
   assert.equal(Object.hasOwn(historical.cases[0], 'failureDetails'), false)
   const dir = fs.mkdtempSync(
     path.join(root, 'tmp/flow-inspector/detail-admission-')
   )
+
   saveObservation(dir, historical)
   assert.deepEqual(createObservationReader(dir).get(historical.id), historical)
 })
@@ -361,9 +401,11 @@ test('malformed retained assertion details cannot reach read consumers', () => {
       path.join(root, 'tmp/flow-inspector/invalid-details-')
     )
     const record = localizeReport(root, context(), report([failure()]))
+
     record.cases[0].failureDetails = details
     saveObservation(dir, record)
     const reader = createObservationReader(dir)
+
     assert.deepEqual(reader.list().currentCases, [])
     assert.match(reader.list().issues.join(' '), /Invalid observation/)
   }
@@ -384,16 +426,20 @@ test('run-level assertion details retain context and reject malformed evidence',
   const result = localizeReport(root, context(), report([]), {
     executionFailureDetails: details
   })
+
   assert.deepEqual(result.executionFailureDetails, details)
   const dir = fs.mkdtempSync(
     path.join(root, 'tmp/flow-inspector/execution-details-')
   )
+
   saveObservation(dir, result)
   const reader = createObservationReader(dir)
+
   assert.deepEqual(reader.list().runs[0].executionFailureDetails, details)
   assert.deepEqual(reader.get(result.id).executionFailureDetails, details)
   for (const invalid of [null, [{ expected: false }], [{ file: {} }]]) {
     const record = localizeReport(root, context(), report([]))
+
     record.executionFailureDetails = invalid
     saveObservation(dir, record)
     assert.throws(() => reader.get(record.id), /Invalid observation/)
@@ -404,12 +450,16 @@ test('a source-stale passing observation cannot retire a recorded failure', (t) 
   const dir = fs.mkdtempSync(
     path.join(root, 'tmp/flow-inspector/localization-')
   )
+
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
   const firstContext = context()
+
   firstContext.startedAt = '2026-01-01T00:00:00.000Z'
   const first = localizeReport(root, firstContext, report([failure()]))
+
   saveObservation(dir, first)
   const next = context()
+
   next.startedAt = '2026-01-01T00:00:01.000Z'
   saveObservation(
     dir,
@@ -421,6 +471,7 @@ test('a source-stale passing observation cannot retire a recorded failure', (t) 
     )
   )
   const reader = createObservationReader(dir)
+
   assert.equal(
     reader.list().currentCases.filter((item) => item.status === 'failed')
       .length,
@@ -432,6 +483,7 @@ test('a source-stale passing observation cannot retire a recorded failure', (t) 
 test('exact per-case files select the recorded location rather than the manifest default', () => {
   const ctx = context()
   const selected = structuredClone(contract)
+
   selected.cases[0].testFile = 'apps/asyra-design/e2e/selection.spec.ts'
   ctx.contracts = [selected]
   const relocated = localizeReport(
@@ -439,20 +491,24 @@ test('exact per-case files select the recorded location rather than the manifest
     ctx,
     report([failure()], selected.cases[0].testFile)
   )
+
   assert.equal(relocated.cases[0].resolution, 'mapped')
   const wrongFile = localizeReport(root, ctx, report([failure()]))
+
   assert.equal(wrongFile.cases[0].resolution, 'unmapped')
 })
 
 test('source fingerprints include each exact case file once and preserve unmoved suite inputs', () => {
   const selected = structuredClone(contract)
   const extra = 'apps/asyra-design/e2e/selection.spec.ts'
+
   selected.cases.forEach((item) => {
     item.testFile = extra
   })
   const result = require('../localization.cjs').sourceFingerprint(root, [
     selected
   ])
+
   assert.equal(result.files.filter((file) => file.path === extra).length, 1)
   assert.equal(
     result.files.filter((file) => file.path === selected.testFile).length,
@@ -463,19 +519,27 @@ test('source fingerprints include each exact case file once and preserve unmoved
 test('a capture reads repeated per-case source inputs only once', () => {
   const selected = structuredClone(contract)
   const extra = 'apps/asyra-design/e2e/selection.spec.ts'
+
   selected.cases.forEach((item) => {
     item.testFile = extra
   })
   const lstat = fs.lstatSync
   let inspections = 0
+
   fs.lstatSync = (...args) => {
-    if (args[0] === path.join(root, extra)) inspections++
+    if (args[0] === path.join(root, extra)) {
+      inspections++
+    }
+
     return lstat(...args)
   }
+
   try {
     const { sourceFingerprint } = require('../localization.cjs')
+
     sourceFingerprint(root, [{ ...selected, cases: [selected.cases[0]] }])
     const singleInputWork = inspections
+
     assert.ok(singleInputWork > 0)
     inspections = 0
     sourceFingerprint(root, [selected, selected])
@@ -487,38 +551,52 @@ test('a capture reads repeated per-case source inputs only once', () => {
 
 test('warning scopes retire only after a later clean complete matching invocation', (t) => {
   const dir = fs.mkdtempSync(path.join(root, 'tmp/flow-inspector/warnings-'))
+
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
+
   const make = (second, options = {}, cases = [failure()]) => {
     const input = context()
+
     input.startedAt = new Date(1700000000000 + second * 1000).toISOString()
     const output = report(cases)
+
     output.success = true
     output.testResults[0].status = cases.some((c) => c.status === 'failed')
       ? 'failed'
       : 'passed'
     const value = localizeReport(root, input, output, options)
+
     value.finishedAt = new Date(
       1700000000000 + second * 1000 + 100
     ).toISOString()
+
     return value
   }
+
   const old = make(0, { errors: ['old runner warning'] })
+
   saveObservation(dir, old)
   const reader = createObservationReader(dir)
+
   assert.equal(reader.list().warningGroups.current[0].runId, old.id)
   const skipped = make(1, {}, [{ ...failure(), status: 'skipped' }])
+
   saveObservation(dir, skipped)
   const unrelated = make(2)
+
   unrelated.command.argv.push('--other-scope')
   saveObservation(dir, unrelated)
   const stale = make(3, { stale: true })
+
   saveObservation(dir, stale)
   assert.ok(reader.list().warningGroups.current.some((x) => x.runId === old.id))
   const clean = make(4, {}, [
     { ...failure(), status: 'passed', failureMessages: [] }
   ])
+
   saveObservation(dir, clean)
   const state = reader.list()
+
   assert.ok(
     state.warningGroups.history.some(
       (x) => x.runId === old.id && x.supersededBy === clean.id
@@ -533,6 +611,7 @@ test('warning scopes retire only after a later clean complete matching invocatio
       failureMessages: []
     }
   ])
+
   saveObservation(dir, laterSibling)
   assert.ok(
     reader.list().warningGroups.history.some((x) => x.runId === old.id),
@@ -547,11 +626,13 @@ test('warning scopes retire only after a later clean complete matching invocatio
 
 test('unknown and concurrent warning scope remains current, including unreadable evidence', (t) => {
   const dir = fs.mkdtempSync(path.join(root, 'tmp/flow-inspector/warnings-'))
+
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
   const old = localizeReport(root, context(), report([]), {
     errors: ['setup failed']
   })
   const output = report([{ ...failure(), status: 'passed' }])
+
   output.success = true
   output.testResults[0].status = 'passed'
   const clean = localizeReport(
@@ -560,6 +641,7 @@ test('unknown and concurrent warning scope remains current, including unreadable
     output,
     {}
   )
+
   saveObservation(dir, old)
   saveObservation(dir, clean)
   const unknown = {
@@ -567,10 +649,13 @@ test('unknown and concurrent warning scope remains current, including unreadable
     id: require('node:crypto').randomUUID(),
     command: null
   }
+
   saveObservation(dir, unknown)
   const reader = createObservationReader(dir)
+
   assert.equal(reader.list().warningGroups.current.length, 2)
   const corrupt = require('node:crypto').randomUUID() + '.json'
+
   fs.writeFileSync(path.join(dir, corrupt), 'broken')
   assert.equal(reader.list().issues.length, 1)
   assert.equal(reader.list().warningGroups.history.length, 0)
@@ -578,8 +663,10 @@ test('unknown and concurrent warning scope remains current, including unreadable
 
 test('corrected invocation retires discovery warning through persisted intended scope, not argv equality', (t) => {
   const dir = fs.mkdtempSync(path.join(root, 'tmp/flow-inspector/correction-'))
+
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
   const oldContext = context()
+
   oldContext.startedAt = '2026-01-01T00:00:00.000Z'
   const old = localizeReport(
     root,
@@ -595,9 +682,11 @@ test('corrected invocation retires discovery warning through persisted intended 
       }
     }
   )
+
   old.finishedAt = '2026-01-01T00:00:01.000Z'
   saveObservation(dir, old)
   const next = context()
+
   next.startedAt = '2026-01-01T00:00:02.000Z'
   next.command.argv.push('--corrected-filter')
   next.intent = {
@@ -620,8 +709,10 @@ test('corrected invocation retires discovery warning through persisted intended 
     reason: 'Correct the selector to the intended case'
   }
   const recovered = localizeReport(root, next, report([failure()]))
+
   saveObservation(dir, recovered)
   const reader = createObservationReader(dir)
+
   assert.equal(reader.list().warningGroups.current.length, 0)
   assert.equal(
     reader.list().warningGroups.history[0].supersededBy,

@@ -12,6 +12,7 @@ describe('Factory existing action history contract', () => {
     expect(factoryApi).not.toHaveProperty('getActiveStagedArtifactController')
 
     const factory = new Factory()
+
     factory.startTransaction()
     const deliveryHandle = factory.updateTransactionBatch([
       {

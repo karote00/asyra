@@ -18,41 +18,64 @@ const shellHeight = requiredSpecValue(
   'height' in shell ? shell.height : undefined,
   'tea chair crown'
 )
+
 const height = (theta: number) =>
   shellHeight.end +
   (shellHeight.rear - shellHeight.end) *
     (1 - Math.pow(Math.abs(theta) / a, shellHeight.exponent))
+
 function roundedBoxField(p: Vec, half: Vec, radius: number) {
   const q = p.map((v, i) => Math.abs(v) - half[i] + radius)
+
   return (
     Math.hypot(...q.map((v) => Math.max(v, 0))) +
     Math.min(Math.max(...q), 0) -
     radius
   )
 }
+
 function shellClearance([x, y, z]: Vec) {
   // Source-space inverse of the approved elliptical shell map.
   let lo = -0.002,
     hi = 0.052
+
   const ellipse = (v: number) =>
     (x / (0.17 + v)) ** 2 + (y / (0.18 + v)) ** 2 - 1
-  if (ellipse(lo) < 0) return 0.001
-  if (ellipse(hi) > 0) return 0.001
+
+  if (ellipse(lo) < 0) {
+    return 0.001
+  }
+
+  if (ellipse(hi) > 0) {
+    return 0.001
+  }
+
   for (let i = 0; i < 24; i++) {
     const m = (lo + hi) / 2
-    if (ellipse(m) > 0) lo = m
-    else hi = m
+
+    if (ellipse(m) > 0) {
+      lo = m
+    } else {
+      hi = m
+    }
   }
+
   const v = (lo + hi) / 2,
     theta = Math.atan2(x / (0.17 + v), y / (0.18 + v))
-  if (Math.abs(theta) > a + 0.002 / R) return 0.001
+
+  if (Math.abs(theta) > a + 0.002 / R) {
+    return 0.001
+  }
+
   const zs = bottom + ((z - bottom) * 0.415) / (height(theta) - bottom)
+
   return roundedBoxField(
     [R * theta, v - 0.025, zs - 0.4425],
     [R * a + 0.002, 0.027, 0.2095],
     0.014
   )
 }
+
 function seatField(
   p: Vec,
   width: number,
@@ -78,10 +101,16 @@ function seatField(
     Math.hypot(Math.max(dxy, 0), Math.max(dz, 0)) +
     Math.min(Math.max(dxy, dz), 0) -
     edge
-  if (!trim) return blank
+
+  if (!trim) {
+    return blank
+  }
+
   const rear = y >= 0 ? (Math.hypot(x / 0.19, y / 0.2) - 1) * 0.19 : -1
+
   return Math.max(blank, rear, -shellClearance(p))
 }
+
 export function teaChair(): AssetPart[] {
   const orange = parseInt(tea.materials.orange.baseColorSRGB.slice(1), 16),
     wood = parseInt(tea.materials['dark-wood'].baseColorSRGB.slice(1), 16)
@@ -89,17 +118,21 @@ export function teaChair(): AssetPart[] {
     { length: 121 },
     (_, i) => -R * a + (2 * R * a * i) / 120
   )
+
   samples.push((-R * Math.PI) / 2, (R * Math.PI) / 2, 0)
   const shell = box([2 * R * a, 0.05, 0.415], 0.012, 4, [samples])
+
   for (let i = 0; i < shell.positions.length; i += 3) {
     const theta = shell.positions[i] / R,
       v = shell.positions[i + 1] + 0.025,
       zs = shell.positions[i + 2] + 0.4425
+
     shell.positions[i] = (0.17 + v) * Math.sin(theta)
     shell.positions[i + 1] = (0.18 + v) * Math.cos(theta)
     shell.positions[i + 2] =
       bottom + ((zs - bottom) / 0.415) * (height(theta) - bottom)
   }
+
   const seat = (
     id: string,
     width: number,
@@ -119,6 +152,7 @@ export function teaChair(): AssetPart[] {
       (_, i) => z1 - edge + edge * Math.sin((i * Math.PI) / 8)
     )
     const heights = [...new Set([...lower, ...upper])].sort((a, b) => a - b)
+
     return part(
       id,
       radialSolid(
@@ -132,6 +166,7 @@ export function teaChair(): AssetPart[] {
       'fabric'
     )
   }
+
   const pieces = [
     part('shell', shell, orange, 'fabric'),
     seat('seat-base', 0.36, 0.35, 0.205, 0.255, -0.015, 0.008, false),
@@ -145,6 +180,7 @@ export function teaChair(): AssetPart[] {
     module.components.find((c) => c.partId === 'legs'),
     'tea legs'
   )
+
   requiredSpecValue(legs.endCentres, 'tea leg endpoints').forEach(
     ({ bottom, top }, i) =>
       pieces.push(
@@ -156,5 +192,6 @@ export function teaChair(): AssetPart[] {
         )
       )
   )
+
   return pieces
 }

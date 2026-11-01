@@ -24,11 +24,14 @@ export function WalkingRuntimeSelector({
 }) {
   const { t } = useTranslation()
   const [error, setError] = useState(false)
+
   const select = (next: WalkingRuntimeSelection) => {
     setError(false)
     void runtime.setWalkingRuntimeSelection(next).catch(() => setError(true))
   }
+
   const walking = selection.mode === 'walking-active'
+
   return (
     <fieldset className="space-y-2 rounded-lg border border-[#d9dfd2] bg-white p-3">
       <legend className="px-1 text-xs font-semibold text-[#50664f]">

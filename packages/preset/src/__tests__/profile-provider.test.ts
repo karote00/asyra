@@ -35,6 +35,7 @@ describe('Preset profile provider', () => {
       { setRenderEngineProvider } as never,
       PresetProfiles['3D']
     )
+
     expect(setRenderEngineProvider).toHaveBeenCalledOnce()
     expect(setRenderEngineProvider).toHaveBeenCalledWith(
       createSpatialRenderEngine
@@ -64,6 +65,7 @@ describe('Preset profile provider', () => {
     })
 
     let received: unknown
+
     try {
       bindPresetProfileProvider(
         { setRenderEngineProvider } as never,

@@ -30,6 +30,7 @@ for (const maxIntervals of [2000, DEFAULT_EXPERIMENT_BUDGET.maxIntervals]) {
       methods: [OFFICIAL_CLEARANCE_METHOD],
       acknowledgedWarningCodes: []
     })
+
     await page.goto('/')
     await expect(page.getByRole('status')).toHaveText('Local runtime ready')
     const measured = await page.evaluate(
@@ -42,12 +43,15 @@ for (const maxIntervals of [2000, DEFAULT_EXPERIMENT_BUDGET.maxIntervals]) {
           maxTickDelayMs = 0
         const timer = setInterval(() => {
           const now = performance.now()
+
           maxTickDelayMs = Math.max(maxTickDelayMs, now - previous - 50)
           previous = now
           ticks++
         }, 50)
+
         try {
           const result: AnalysisResult = await runner.run(snapshot)
+
           return {
             elapsedMs: performance.now() - started,
             ticks,
@@ -84,6 +88,7 @@ for (const maxIntervals of [2000, DEFAULT_EXPERIMENT_BUDGET.maxIntervals]) {
       keyframes: input.trajectory.keyframes.length,
       ...measured
     }
+
     await info.attach('budget-baseline.json', {
       contentType: 'application/json',
       body: JSON.stringify(evidence)
@@ -101,8 +106,13 @@ for (const maxIntervals of [2000, DEFAULT_EXPERIMENT_BUDGET.maxIntervals]) {
       expect(measured.receivedPairs).toBe(input.pairs.length)
       expect(measured.unresolvedPairs).toBe(0)
     }
-    if (measured.coverage === 'partial')
+
+    if (measured.coverage === 'partial') {
       expect(measured.verdict).not.toBe('meets')
-    if (measured.elapsedMs > 500) expect(measured.ticks).toBeGreaterThan(0)
+    }
+
+    if (measured.elapsedMs > 500) {
+      expect(measured.ticks).toBeGreaterThan(0)
+    }
   })
 }

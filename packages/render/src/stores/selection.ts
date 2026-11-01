@@ -2,8 +2,11 @@ import selectionManager, { SelectionManager } from '@asyra/selection'
 
 class RenderSelection {
   selectionManager: SelectionManager
+
   elementSelection: Set<string>
+
   vectorPointSelection: Set<string>
+
   vectorSegmentSelection: Set<string>
 
   constructor() {
@@ -15,6 +18,7 @@ class RenderSelection {
 
   getElementSelection() {
     const selection = this.selectionManager.get('element')
+
     return selection ? [...selection.getSelectedIds()] : []
   }
 
@@ -26,6 +30,7 @@ class RenderSelection {
 
   updateSelection(type: string) {
     const selection = this.selectionManager.get(type)
+
     if (!selection) {
       return
     }
@@ -37,6 +42,7 @@ class RenderSelection {
         this.elementSelection = new Set(selectedIds)
         break
       }
+
       case 'vectorPoint':
         this.vectorPointSelection = new Set(selectedIds)
         break
@@ -50,4 +56,5 @@ class RenderSelection {
 export { RenderSelection }
 
 const renderStore = new RenderSelection()
+
 export default renderStore

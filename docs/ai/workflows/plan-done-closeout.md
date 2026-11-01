@@ -25,16 +25,15 @@ completed record and appends the outcome fields defined by that workflow.
 
 ## Execution
 
-1. update plan index state with useful-only completion information
-2. move/record DONE plan under `plans/completed/` with completion summary
-3. append one decision-history entry linking the completed plan
-4. validate links/paths and remove stale active-plan references
-5. keep release iteration separate from closeout: do not create, inspect,
-   validate, or require a pending Changeset
-6. do not infer or materialize any Framework, root, private app, create-app
-   CLI, or generated-template version from the closeout record
-7. when a completed plan owns a release, summarize the already verified public
-   result without creating another version, tag, or publication side effect
+1. Review the completed implementation and record its source revision.
+2. Move the completed plan to the owner's `plans/completed/` directory.
+3. Append its outcome and completed-plan link to the owner's
+   `decisions/releases/unreleased.md`.
+4. Update the active plan index and validate the resulting links.
+
+For implementation already merged, perform closeout in a follow-up change using
+its reviewed revision. Version preparation and publication run through their own
+workflows. Closeout tooling validates this operation; CI runs the tooling's tests.
 
 ## Output
 

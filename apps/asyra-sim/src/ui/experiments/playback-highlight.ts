@@ -10,7 +10,9 @@ export function playbackHighlight(
     return feedback.highlight
   }
 
-  if (view?.historical) return view.historicalHighlight
+  if (view?.historical) {
+    return view.historicalHighlight
+  }
 
   return undefined
 }

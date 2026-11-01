@@ -53,9 +53,11 @@ const createUpdateEvent = (
 const createHarness = () => {
   const factory = new Factory()
   const channel = new LocalSharedDataChannel()
+
   factory.registerSharedDataChannel(SharedDataChannelNames.SCENE_TREE, channel)
   const projected: unknown[] = []
   const projectedBatches: (readonly unknown[])[] = []
+
   factory.observeSharedDataChannel(
     SharedDataChannelNames.SCENE_TREE,
     (change) => projected.push(change)
@@ -66,10 +68,12 @@ const createHarness = () => {
   )
   const publications: SharedPublication[] = []
   const deliveryBatches: SharedDeliveryBatch[] = []
+
   factory.subscribeToSharedDeliveryBatch((batch) => deliveryBatches.push(batch))
   factory.subscribeToSharedPublication((publication) =>
     publications.push(publication)
   )
+
   return {
     factory,
     projected,
@@ -87,9 +91,11 @@ const publicationDeliveries = (publication: SharedPublication) =>
 
 const requiredAt = <T>(values: readonly T[], index: number): T => {
   const value = values[index]
+
   if (value === undefined) {
     throw new Error(`Expected value at index ${index}`)
   }
+
   return value
 }
 
@@ -98,21 +104,25 @@ describe('Factory action-level shared publication', () => {
     'preserves dependent deferred-before-immediate writes through %s and replay',
     async (settlement) => {
       const { factory, publications, projected } = createHarness()
+
       factory.registerTransactionReplayHandler(
         EventTypes.UPDATE_PROPERTY,
         () => true
       )
+
       const values = () =>
         publications
           .splice(0)
           .flatMap(publicationDeliveries)
           .map(({ payload }) => (payload as { after: number }).after)
+
       factory.startTransaction()
       update(factory, 'same-element', 1)
       expect(projected).toEqual([])
       const handle = update(factory, 'same-element', 2, {
         sharedDelivery: 'immediate'
       })
+
       if (settlement === 'published-rollback') {
         handle?.setDeliverySequence({
           mode: 'atomic',
@@ -120,6 +130,7 @@ describe('Factory action-level shared publication', () => {
           slices: []
         })
       }
+
       expect(
         projected.map((value) => (value as { after: number }).after)
       ).toEqual([1, 2])
@@ -143,6 +154,7 @@ describe('Factory action-level shared publication', () => {
         factory.redo()
         expect(values()).toEqual([1, 2, 3, 4])
       }
+
       factory.startTransaction()
       update(factory, 'next-transaction', 1)
       factory.endTransaction()
@@ -154,15 +166,19 @@ describe('Factory action-level shared publication', () => {
     const { factory, projected, publications } = createHarness()
     const failure = new Error('Rejected immediate append')
     const failing = new LocalSharedDataChannel()
+
     failing.appendBatch = () => {
       throw failure
     }
+
     factory.registerSharedDataChannel(SharedDataChannelNames.PROPS, failing)
     const replayed: number[] = []
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       (event) => {
         replayed.push((event as { payload: { after: number } }).payload.after)
+
         return true
       }
     )
@@ -171,6 +187,7 @@ describe('Factory action-level shared publication', () => {
     const event = createUpdateEvent('immediate', 2, {
       sharedDelivery: 'immediate'
     })
+
     expect(() =>
       factory.updateTransaction({
         ...event,
@@ -198,11 +215,13 @@ describe('Factory action-level shared publication', () => {
   it('gives fresh runtime producers distinct publication IDs despite equal local counters', () => {
     const first = createHarness(),
       second = createHarness()
+
     for (const { factory } of [first, second]) {
       factory.startTransaction()
       update(factory, 'same-document-element', 1)
       factory.endTransaction()
     }
+
     expect(first.publications[0].transactionId).toBe(
       second.publications[0].transactionId
     )
@@ -212,22 +231,27 @@ describe('Factory action-level shared publication', () => {
     const accepted = new Map(
       first.publications.map((p) => [p.publicationId, p])
     )
+
     second.publications.forEach((p) => accepted.set(p.publicationId, p))
     expect(accepted.size).toBe(2)
   })
 
   it('allocates one namespace lazily per publishing producer and retains it across transactions', () => {
     const random = vi.spyOn(globalThis.crypto, 'getRandomValues')
+
     try {
       const { factory, publications } = createHarness()
+
       expect(random).not.toHaveBeenCalled()
       for (let i = 0; i < 3; i++) {
         factory.startTransaction()
         update(factory, 'a', i + 1)
         factory.endTransaction()
       }
+
       expect(random).toHaveBeenCalledTimes(1)
       const namespaces = publications.map((p) => p.publicationId.split(':')[0])
+
       expect(new Set(namespaces).size).toBe(1)
       expect(namespaces[0]).toMatch(/^[0-9a-f]{32}$/)
       expect(new Set(publications.map((p) => p.publicationId)).size).toBe(3)
@@ -263,9 +287,11 @@ describe('Factory action-level shared publication', () => {
       readonly slices: readonly TransportSlice[]
       readonly compensatesPublicationId?: string
     }
+
     const asTransportPublication = (
       publication: SharedPublication
     ): TransportPublication => publication as unknown as TransportPublication
+
     const exactOwnKeys = (
       label: string,
       value: object,
@@ -273,12 +299,14 @@ describe('Factory action-level shared publication', () => {
     ) => {
       expect(Object.keys(value).sort(), label).toEqual([...expected].sort())
     }
+
     const expectTransportShape = (
       publication: TransportPublication,
       kind: 'forward' | 'compensation',
       publicationIndex: number
     ) => {
       const isCompensation = kind === 'compensation'
+
       exactOwnKeys(
         `${kind} publication ${publicationIndex} must expose only the transport contract and an actual correlation`,
         publication,
@@ -322,6 +350,7 @@ describe('Factory action-level shared publication', () => {
     }
 
     const { factory, publications } = createHarness()
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       () => true
@@ -332,6 +361,7 @@ describe('Factory action-level shared publication', () => {
       createUpdateEvent('element-a', 1, {}, { orderedIds: ['element-a'] }),
       createUpdateEvent('element-b', 2, {}, { orderedIds: ['element-b'] })
     ])
+
     handle?.setDeliverySequence({
       mode: 'progressive',
       slices: [
@@ -343,6 +373,7 @@ describe('Factory action-level shared publication', () => {
     handle?.deliverSlice('slice-b')
 
     const forwardPublications = publications.slice().map(asTransportPublication)
+
     expect(forwardPublications).toHaveLength(1)
 
     factory.endTransaction({ outcome: 'rollback' })
@@ -350,6 +381,7 @@ describe('Factory action-level shared publication', () => {
     const compensationPublications = publications
       .slice(forwardPublications.length)
       .map(asTransportPublication)
+
     expect(compensationPublications).toHaveLength(1)
 
     forwardPublications.forEach((publication, publicationIndex) =>
@@ -536,6 +568,7 @@ describe('Factory action-level shared publication', () => {
         .length,
       publications: publications.length
     }
+
     expect({
       projected: projected.length,
       deliveryBatches: deliveryBatches.length,
@@ -554,6 +587,7 @@ describe('Factory action-level shared publication', () => {
       createUpdateEvent('element-b', 2, {}, { orderedIds: ['element-b'] }),
       createUpdateEvent('element-c', 3, {}, { orderedIds: ['element-c'] })
     ])
+
     handle?.setDeliverySequence({
       mode: 'progressive',
       slices: [
@@ -621,6 +655,7 @@ describe('Factory action-level shared publication', () => {
         }
       )
     ])
+
     handle?.setDeliverySequence({
       mode: 'progressive',
       slices: [
@@ -642,6 +677,7 @@ describe('Factory action-level shared publication', () => {
     ])
     expect(publications).toHaveLength(1)
     const transportDeliveries = publications.flatMap(publicationDeliveries)
+
     expect(
       transportDeliveries.map(({ orderedIds, payload }) => ({
         orderedIds,
@@ -668,6 +704,7 @@ describe('Factory action-level shared publication', () => {
 
   it('reuses explicit record inverses for one complete Undo and Redo action', () => {
     const { factory, publications } = createHarness()
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       (event) => {
@@ -677,6 +714,7 @@ describe('Factory action-level shared publication', () => {
           payload: (event as AllEvent & { payload: unknown }).payload,
           options: { shared: SharedDataChannelNames.SCENE_TREE }
         })
+
         return true
       }
     )
@@ -702,6 +740,7 @@ describe('Factory action-level shared publication', () => {
         }
       )
     ])
+
     handle?.setDeliverySequence({
       mode: 'progressive',
       slices: [
@@ -797,6 +836,7 @@ describe('Factory action-level shared publication', () => {
     'rejects invalid canonical event evidence when $name',
     ({ canonicalEvidence, expected }) => {
       const { factory } = createHarness()
+
       factory.startTransaction()
 
       expect(() =>
@@ -810,6 +850,7 @@ describe('Factory action-level shared publication', () => {
 
   it('rejects a shared record that spans two formal slices', () => {
     const { factory } = createHarness()
+
     factory.startTransaction()
     const handle = factory.updateTransactionBatch([
       createUpdateEvent(
@@ -827,6 +868,7 @@ describe('Factory action-level shared publication', () => {
         }
       )
     ])
+
     handle?.setDeliverySequence({
       mode: 'progressive',
       slices: [
@@ -885,6 +927,7 @@ describe('Factory action-level shared publication', () => {
     'rejects a progressive delivery sequence that $name',
     ({ slices, expected }) => {
       const { factory } = createHarness()
+
       factory.startTransaction()
       const handle = factory.updateTransactionBatch([
         createUpdateEvent(
@@ -910,7 +953,10 @@ describe('Factory action-level shared publication', () => {
       expect(() => {
         handle?.setDeliverySequence({ mode: 'progressive', slices })
         const firstSliceId = slices[0]?.sliceId
-        if (firstSliceId) handle?.deliverSlice(firstSliceId)
+
+        if (firstSliceId) {
+          handle?.deliverSlice(firstSliceId)
+        }
       }).toThrow(expected)
       factory.endTransaction({ outcome: 'rollback' })
     }
@@ -919,28 +965,34 @@ describe('Factory action-level shared publication', () => {
   it.each([
     {
       name: 'out of order',
+
       deliver: (
         handle: NonNullable<ReturnType<Factory['updateTransactionBatch']>>
       ) => handle.deliverSlice('slice-b'),
+
       expected: /sequence order: slice-a/
     },
     {
       name: 'more than once',
+
       deliver: (
         handle: NonNullable<ReturnType<Factory['updateTransactionBatch']>>
       ) => {
         handle.deliverSlice('slice-a')
         handle.deliverSlice('slice-a')
       },
+
       expected: /sequence order: slice-b/
     }
   ])('rejects delivery of one formal slice $name', ({ deliver, expected }) => {
     const { factory } = createHarness()
+
     factory.startTransaction()
     const handle = factory.updateTransactionBatch([
       createUpdateEvent('element-a', 1, {}, { orderedIds: ['element-a'] }),
       createUpdateEvent('element-b', 2, {}, { orderedIds: ['element-b'] })
     ])
+
     handle?.setDeliverySequence({
       mode: 'progressive',
       slices: [
@@ -950,7 +1002,9 @@ describe('Factory action-level shared publication', () => {
     })
 
     expect(() => {
-      if (handle) deliver(handle)
+      if (handle) {
+        deliver(handle)
+      }
     }).toThrow(expected)
     factory.endTransaction({ outcome: 'rollback' })
   })
@@ -990,14 +1044,19 @@ describe('Factory action-level shared publication', () => {
           }[]
         }
       ).journal[0]
+
       if (entry) {
         entry.orderedIds = new Proxy(entry.orderedIds, {
           get(target, property, receiver) {
-            if (property === 'forEach') canonicalOrderScans += 1
+            if (property === 'forEach') {
+              canonicalOrderScans += 1
+            }
+
             return Reflect.get(target, property, receiver)
           }
         })
       }
+
       handle?.setDeliverySequence({
         mode: 'progressive',
         slices: orderedIds.map((id, index) => ({
@@ -1029,6 +1088,7 @@ describe('Factory action-level shared publication', () => {
     const attempts: string[] = []
     let handle: ReturnType<Factory['updateTransactionBatch']> = null
     let attempted = false
+
     const attempt = (operation: () => void) => {
       try {
         operation()
@@ -1037,10 +1097,14 @@ describe('Factory action-level shared publication', () => {
         attempts.push(error instanceof Error ? error.message : String(error))
       }
     }
+
     factory.observeSharedDataChannelBatch(
       SharedDataChannelNames.SCENE_TREE,
       () => {
-        if (attempted) return
+        if (attempted) {
+          return
+        }
+
         attempted = true
         attempt(() => {
           factory.updateTransaction(createUpdateEvent('reentrant-single', 2))
@@ -1101,6 +1165,7 @@ describe('Factory action-level shared publication', () => {
   it('preserves reverse progressive slice semantics for rollback compensation', () => {
     const { factory, publications } = createHarness()
     const phaseNames: string[] = []
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       () => true
@@ -1111,6 +1176,7 @@ describe('Factory action-level shared publication', () => {
       createUpdateEvent('element-a', 1, {}, { orderedIds: ['element-a'] }),
       createUpdateEvent('element-b', 2, {}, { orderedIds: ['element-b'] })
     ])
+
     handle?.setDeliverySequence({
       mode: 'progressive',
       slices: [
@@ -1123,6 +1189,7 @@ describe('Factory action-level shared publication', () => {
     const unsubscribe = subscribeToBrowserDragPhases((name) =>
       phaseNames.push(name)
     )
+
     try {
       factory.endTransaction({ outcome: 'rollback' })
     } finally {
@@ -1134,6 +1201,7 @@ describe('Factory action-level shared publication', () => {
       'rollback-compensation'
     ])
     const compensations = publications.slice(1)
+
     expect(
       compensations.every((publication) => publication.mode === 'progressive')
     ).toBe(true)
@@ -1157,6 +1225,7 @@ describe('Factory action-level shared publication', () => {
 
   it('preserves one history action when ordinary immediate delivery follows progressive slices', async () => {
     const { factory, publications } = createHarness()
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       (event) => {
@@ -1166,6 +1235,7 @@ describe('Factory action-level shared publication', () => {
           payload: (event as AllEvent & { payload: unknown }).payload,
           options: { shared: SharedDataChannelNames.SCENE_TREE }
         })
+
         return true
       }
     )
@@ -1185,6 +1255,7 @@ describe('Factory action-level shared publication', () => {
         { orderedIds: ['composition-b'] }
       )
     ])
+
     handle?.setDeliverySequence({
       mode: 'progressive',
       slices: [
@@ -1208,6 +1279,7 @@ describe('Factory action-level shared publication', () => {
 
     publications.length = 0
     let undoFailure: TransactionRollbackError | undefined
+
     try {
       factory.undo()
     } catch (error) {
@@ -1217,6 +1289,7 @@ describe('Factory action-level shared publication', () => {
         throw error
       }
     }
+
     expect(undoFailure?.failures ?? []).toEqual([])
     expect(undoFailure).toBeUndefined()
     expect(
@@ -1245,6 +1318,7 @@ describe('Factory action-level shared publication', () => {
 
   it('compensates mixed progressive slices and later immediate delivery in reverse publication order', async () => {
     const { factory, publications, deliveryBatches } = createHarness()
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       () => true
@@ -1265,6 +1339,7 @@ describe('Factory action-level shared publication', () => {
         { orderedIds: ['composition-b'] }
       )
     ])
+
     handle?.setDeliverySequence({
       mode: 'progressive',
       slices: [
@@ -1302,9 +1377,11 @@ describe('Factory action-level shared publication', () => {
     ])
 
     const forwardPublicationCount = publications.length
+
     factory.endTransaction({ outcome: 'rollback' })
 
     const compensations = publications.slice(forwardPublicationCount)
+
     expect(compensations).toHaveLength(1)
     expect(
       compensations.every(
@@ -1335,6 +1412,7 @@ describe('Factory action-level shared publication', () => {
 
   it('rejects ordinary immediate delivery until every sequenced slice has been delivered', () => {
     const { factory, publications } = createHarness()
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       () => true
@@ -1355,6 +1433,7 @@ describe('Factory action-level shared publication', () => {
         { orderedIds: ['composition-b'] }
       )
     ])
+
     handle?.setDeliverySequence({
       mode: 'progressive',
       slices: [
@@ -1384,6 +1463,7 @@ describe('Factory action-level shared publication', () => {
 
   it('replays formal slices before a later immediate change when the replay handler records no journal entry', () => {
     const { factory, publications } = createHarness()
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       () => true
@@ -1404,6 +1484,7 @@ describe('Factory action-level shared publication', () => {
         { orderedIds: ['composition-b'] }
       )
     ])
+
     handle?.setDeliverySequence({
       mode: 'progressive',
       slices: [
@@ -1438,6 +1519,7 @@ describe('Factory action-level shared publication', () => {
 
   it('still rejects a later transaction-end mutation after progressive slice preparation', () => {
     const { factory } = createHarness()
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       () => true
@@ -1452,6 +1534,7 @@ describe('Factory action-level shared publication', () => {
         { orderedIds: ['composition-a'] }
       )
     ])
+
     handle?.setDeliverySequence({
       mode: 'progressive',
       slices: [{ sliceId: 'composition-a', orderedIds: ['composition-a'] }]
@@ -1466,6 +1549,7 @@ describe('Factory action-level shared publication', () => {
 
   it('rejects a late progressive sequence after immediate delivery and rolls the action back', () => {
     const { factory, projectedBatches, publications } = createHarness()
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       () => true
@@ -1480,6 +1564,7 @@ describe('Factory action-level shared publication', () => {
         { orderedIds: ['already-immediate'] }
       )
     ])
+
     expect(() =>
       handle?.setDeliverySequence({
         mode: 'progressive',
@@ -1499,15 +1584,21 @@ describe('Factory action-level shared publication', () => {
     const channel: SharedDataChannel = {
       appendBatch: (changes) => {
         appendCount += 1
-        if (appendCount === 2) throw deliveryFailure
+        if (appendCount === 2) {
+          throw deliveryFailure
+        }
+
         ;[...sourceHandlers].forEach((handler) => handler(changes))
       },
+
       observeBatch: (handler) => {
         sourceHandlers.add(handler)
+
         return () => sourceHandlers.delete(handler)
       }
     }
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       channel
@@ -1518,6 +1609,7 @@ describe('Factory action-level shared publication', () => {
     )
     const projectedBatches: (readonly unknown[])[] = []
     const publications: SharedPublication[] = []
+
     factory.observeSharedDataChannelBatch(
       SharedDataChannelNames.SCENE_TREE,
       (batch) => projectedBatches.push(batch)
@@ -1541,6 +1633,7 @@ describe('Factory action-level shared publication', () => {
         { orderedIds: ['slice-failure'] }
       )
     ])
+
     handle?.setDeliverySequence({
       mode: 'progressive',
       slices: [
@@ -1554,6 +1647,7 @@ describe('Factory action-level shared publication', () => {
       projectedBatches.map((batch) =>
         batch.map((change) => {
           const payload = change as { id: string; after: number }
+
           return `${payload.id}:${payload.after}`
         })
       )
@@ -1598,11 +1692,13 @@ describe('Factory action-level shared publication', () => {
 
   it('does not publish compensation for an immediate batch that never crossed the Factory publication boundary', async () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
     )
     const projectedBatches: (readonly unknown[])[] = []
+
     factory.observeSharedDataChannelBatch(
       SharedDataChannelNames.SCENE_TREE,
       (batch) => projectedBatches.push(batch)
@@ -1618,6 +1714,7 @@ describe('Factory action-level shared publication', () => {
 
     expect(projectedBatches).toHaveLength(1)
     const laterPublications: SharedPublication[] = []
+
     factory.subscribeToSharedPublication((publication) =>
       laterPublications.push(publication)
     )
@@ -1629,6 +1726,7 @@ describe('Factory action-level shared publication', () => {
 
   it('publishes an unacknowledged immediate batch as the committed remainder', async () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
@@ -1643,6 +1741,7 @@ describe('Factory action-level shared publication', () => {
     await Promise.resolve()
 
     const committedPublications: SharedPublication[] = []
+
     factory.subscribeToSharedPublication((publication) =>
       committedPublications.push(publication)
     )
@@ -1668,6 +1767,7 @@ describe('Factory action-level shared publication', () => {
 
   it('does not acknowledge an immediate publication when every subscriber rejects it', async () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
@@ -1686,6 +1786,7 @@ describe('Factory action-level shared publication', () => {
     unsubscribeRejecting()
 
     const rollbackPublications: SharedPublication[] = []
+
     factory.subscribeToSharedPublication((publication) =>
       rollbackPublications.push(publication)
     )
@@ -1696,13 +1797,17 @@ describe('Factory action-level shared publication', () => {
 
   it('keeps reserved compensation identities local and publishes only actual acknowledged correlations', async () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
     )
     const deliveredForwardBatches: SharedDeliveryBatch[] = []
+
     factory.subscribeToSharedDeliveryBatch((batch) => {
-      if (batch.kind === 'forward') deliveredForwardBatches.push(batch)
+      if (batch.kind === 'forward') {
+        deliveredForwardBatches.push(batch)
+      }
     })
     const acknowledgedPublications: SharedPublication[] = []
     const unsubscribeForward = factory.subscribeToSharedPublication(
@@ -1715,6 +1820,7 @@ describe('Factory action-level shared publication', () => {
         sharedDelivery: 'immediate'
       })
     ])
+
     handle?.setDeliverySequence({
       mode: 'atomic',
       batchPublications: false,
@@ -1726,6 +1832,7 @@ describe('Factory action-level shared publication', () => {
     const forwardPublication = requiredAt(acknowledgedPublications, 0)
     const forwardBatch = deliveredForwardBatches[0]
     const forwardDelivery = forwardBatch?.deliveries[0]
+
     expect
       .soft(Object.keys(forwardPublication))
       .not.toContain('compensationPublicationId')
@@ -1745,6 +1852,7 @@ describe('Factory action-level shared publication', () => {
     const unacknowledgedBatchId = deliveredForwardBatches[1]?.batchId
 
     const rollbackPublications: SharedPublication[] = []
+
     factory.subscribeToSharedPublication((publication) =>
       rollbackPublications.push(publication)
     )
@@ -1756,6 +1864,7 @@ describe('Factory action-level shared publication', () => {
       ? publicationBatches(compensationPublication)[0]
       : undefined
     const compensationDelivery = compensationBatch?.deliveries[0]
+
     expect
       .soft(compensationPublication?.publicationId)
       .toBe(`${forwardPublication.publicationId}:compensation`)
@@ -1781,6 +1890,7 @@ describe('Factory action-level shared publication', () => {
       .toBe(forwardDelivery?.deliveryId)
 
     const commitHarness = createHarness()
+
     commitHarness.factory.startTransaction()
     commitHarness.factory.updateTransactionBatch([
       createUpdateEvent('commit-once', 1, {
@@ -1800,6 +1910,7 @@ describe('Factory action-level shared publication', () => {
     const handle = update(factory, 'element-a', 1, {
       sharedDelivery: 'immediate'
     })
+
     handle?.setDeliverySequence({
       mode: 'atomic',
       batchPublications: false,
@@ -1814,6 +1925,7 @@ describe('Factory action-level shared publication', () => {
     const forwardBatchIds = publicationBatches(requiredAt(publications, 0)).map(
       (batch) => batch.batchId
     )
+
     factory.endTransaction({ outcome: 'rollback' })
 
     expect(publications).toHaveLength(2)
@@ -1848,6 +1960,7 @@ describe('Factory action-level shared publication', () => {
       createUpdateEvent('element-a', 1, { sharedDelivery: 'immediate' }),
       createUpdateEvent('element-b', 2, { sharedDelivery: 'immediate' })
     ])
+
     handle?.setDeliverySequence({
       mode: 'atomic',
       batchPublications: false,
@@ -1878,6 +1991,7 @@ describe('Factory action-level shared publication', () => {
       publicationBatches(requiredAt(publications, 1)),
       0
     )
+
     expect(compensationBatch?.batchId).not.toBe(forwardBatch?.batchId)
     expect(publications[1]).toMatchObject({
       mode: 'progressive',
@@ -1895,6 +2009,7 @@ describe('Factory action-level shared publication', () => {
   it('schedules one immediate publication task for one element batch', () => {
     const { factory } = createHarness()
     const scheduled: (() => void)[] = []
+
     vi.stubGlobal('queueMicrotask', (callback: () => void) => {
       scheduled.push(callback)
     })
@@ -1919,6 +2034,7 @@ describe('Factory action-level shared publication', () => {
     'keeps separate synchronous owner handoffs complete through history replay (grouped=%s)',
     async (grouped) => {
       const { factory, publications } = createHarness()
+
       factory.registerSharedDataChannel(
         SharedDataChannelNames.PROPS,
         new LocalSharedDataChannel()
@@ -1928,7 +2044,11 @@ describe('Factory action-level shared publication', () => {
         () => true
       )
       const group = grouped ? factory.startHistoryGroup() : undefined
-      if (!group) factory.startTransaction()
+
+      if (!group) {
+        factory.startTransaction()
+      }
+
       for (let turn = 0; turn < 2; turn++) {
         const write = () => {
           factory.updateTransactionBatch([
@@ -1942,15 +2062,27 @@ describe('Factory action-level shared publication', () => {
           ])
           update(factory, `scene-${turn}`, 2, { sharedDelivery: 'immediate' })
         }
-        if (group) factory.updateHistoryGroup(group, write)
-        else write()
+
+        if (group) {
+          factory.updateHistoryGroup(group, write)
+        } else {
+          write()
+        }
+
         await Promise.resolve()
       }
-      if (group) factory.endHistoryGroup(group)
-      else factory.endTransaction()
+
+      if (group) {
+        factory.endHistoryGroup(group)
+      } else {
+        factory.endTransaction()
+      }
+
       expect(factory.getUndoHistoryDepth()).toBe(1)
+
       const assertBoundaries = (direction: 'forward' | 'inverse') => {
         const slices = publications.flatMap(({ slices }) => slices)
+
         expect(slices).toHaveLength(2)
         expect(
           slices.map(({ batches }) => batches.map(({ channel }) => channel))
@@ -1973,6 +2105,7 @@ describe('Factory action-level shared publication', () => {
           )
         ).toHaveLength(4)
       }
+
       assertBoundaries('forward')
       publications.length = 0
       await factory.undo()
@@ -1986,6 +2119,7 @@ describe('Factory action-level shared publication', () => {
 
   it('keeps one immediate canonical owner handoff in one publication slice', async () => {
     const { factory, publications } = createHarness()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.PROPS,
       new LocalSharedDataChannel()
@@ -2037,6 +2171,7 @@ describe('Factory action-level shared publication', () => {
     const handle = update(factory, 'element-a', 1, {
       sharedDelivery: 'immediate'
     })
+
     handle?.setDeliverySequence({
       mode: 'atomic',
       batchPublications: false,
@@ -2099,6 +2234,7 @@ describe('Factory action-level shared publication', () => {
     expect(
       projected.map((change) => {
         const payload = change as { id: string; after: number }
+
         return `${payload.id}:${payload.after}`
       })
     ).toEqual(['element-a:1', 'element-b:2', 'element-b:1', 'element-a:0'])
@@ -2147,6 +2283,7 @@ describe('Factory action-level shared publication', () => {
 
   it('publishes one atomic batch for each multi-change action, undo, and redo transition', () => {
     const { factory, publications } = createHarness()
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       () => true
@@ -2219,6 +2356,7 @@ describe('Factory action-level shared publication', () => {
 
   it('publishes exact Props-before-Scene subtree restore evidence in one undo batch', () => {
     const { factory, publications } = createHarness()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.PROPS,
       new LocalSharedDataChannel()
@@ -2291,6 +2429,7 @@ describe('Factory action-level shared publication', () => {
     expect(publications).toHaveLength(1)
     expect(publications[0]).toEqual(expect.objectContaining({ origin: 'undo' }))
     const undoBatches = publicationBatches(requiredAt(publications, 0))
+
     expect(undoBatches.map(({ channel }) => channel)).toEqual([
       SharedDataChannelNames.PROPS,
       SharedDataChannelNames.SCENE_TREE
@@ -2322,6 +2461,7 @@ describe('Factory action-level shared publication', () => {
 
   it('replays immediate source batches through one bounded undo or redo publication', async () => {
     const { factory, publications } = createHarness()
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       () => true
@@ -2371,6 +2511,7 @@ describe('Factory action-level shared publication', () => {
 
   it('preserves immediate per-source publication settlement through undo and redo', async () => {
     const { factory, publications } = createHarness()
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       () => true
@@ -2380,6 +2521,7 @@ describe('Factory action-level shared publication', () => {
     const handle = update(factory, 'element-a', 1, {
       sharedDelivery: 'immediate'
     })
+
     handle?.setDeliverySequence({
       mode: 'atomic',
       batchPublications: false,
@@ -2395,9 +2537,11 @@ describe('Factory action-level shared publication', () => {
       publications.splice(0).map((publication) =>
         publicationDeliveries(publication).map(({ payload }) => {
           const value = payload as { id: string; after: number }
+
           return [value.id, value.after]
         })
       )
+
     expect(publications.every(({ origin }) => origin === 'action')).toBe(true)
     expect(effects()).toEqual([
       [['element-a', 1]],
@@ -2428,6 +2572,7 @@ describe('Factory action-level shared publication', () => {
 
   it('settles retained immediate replay evidence through its recorded source slice', async () => {
     const { factory, publications } = createHarness()
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       (event) => {
@@ -2440,6 +2585,7 @@ describe('Factory action-level shared publication', () => {
             sharedDelivery: 'immediate'
           }
         })
+
         return true
       }
     )
@@ -2448,6 +2594,7 @@ describe('Factory action-level shared publication', () => {
     const handle = update(factory, 'interactive-owner', 1, {
       sharedDelivery: 'immediate'
     })
+
     handle?.setDeliverySequence({
       mode: 'atomic',
       batchPublications: false,
@@ -2469,6 +2616,7 @@ describe('Factory action-level shared publication', () => {
 
   it('replays one immediate multi-channel owner batch as one publication', async () => {
     const { factory, publications } = createHarness()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.PROPS,
       new LocalSharedDataChannel()
@@ -2526,6 +2674,7 @@ describe('Factory action-level shared publication', () => {
 
   it('preserves replay order when undo crosses transaction-end and immediate deliveries', async () => {
     const { factory, publications, deliveryBatches } = createHarness()
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       () => true
@@ -2563,11 +2712,13 @@ describe('Factory action-level shared publication', () => {
     const { factory, publications } = createHarness()
     let failSecondReplay = true
     let replayCount = 0
+
     factory.registerTransactionReplayHandler(EventTypes.UPDATE_PROPERTY, () => {
       replayCount += 1
       if (failSecondReplay && replayCount === 2) {
         throw new Error('later progressive replay failed')
       }
+
       return true
     })
 
@@ -2599,42 +2750,59 @@ describe('Factory action-level shared publication', () => {
       ['unchanged', 0]
     ])
     const delivered = new Map<string, number>()
+
     factory.subscribeToSharedPublication((publication) => {
       for (const { payload } of publicationDeliveries(publication)) {
         const { id, after } = payload as { id: string; after: number }
+
         delivered.set(id, after)
       }
     })
     let fail = true
     const restored: string[] = []
+
     factory.registerTransactionReplayHandler(
       EventTypes.UPDATE_PROPERTY,
       (event, mode) => {
         const { id, after } = (
           event as AllEvent & { payload: { id: string; after: number } }
         ).payload
-        if (fail && mode === 'undo' && id === 'first')
+
+        if (fail && mode === 'undo' && id === 'first') {
           throw new Error('Later owner refused replay')
-        if (local.get(id) === after) return false
+        }
+
+        if (local.get(id) === after) {
+          return false
+        }
+
         local.set(id, after)
-        if (mode === 'rollback') restored.push(id)
+        if (mode === 'rollback') {
+          restored.push(id)
+        }
+
         return true
       }
     )
     factory.startTransaction()
     for (const id of ['first', 'second', 'unchanged']) {
       const handle = update(factory, id, 1, { sharedDelivery: 'immediate' })
-      if (id === 'first')
+
+      if (id === 'first') {
         handle?.setDeliverySequence({
           mode: 'atomic',
           batchPublications: false,
           slices: []
         })
+      }
+
       await Promise.resolve()
     }
+
     factory.endTransaction()
     const priorLocal = [...local]
     const priorDelivered = [...delivered]
+
     expect(delivered.get('unchanged')).toBe(1)
     publications.length = 0
 
@@ -2652,6 +2820,7 @@ describe('Factory action-level shared publication', () => {
     const compensations = publications.filter(
       ({ origin }) => origin === 'rollback-compensation'
     )
+
     expect(
       compensations.map(
         ({ compensatesPublicationId }) => compensatesPublicationId
@@ -2684,11 +2853,13 @@ describe('Factory action-level shared publication', () => {
 
   it('isolates publication subscribers from commit and from each other', () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
     )
     const later = vi.fn()
+
     factory.subscribeToSharedPublication(() => {
       throw new Error('observer failed')
     })
@@ -2703,6 +2874,7 @@ describe('Factory action-level shared publication', () => {
 
   it('isolates nested publication subscriber mutation from later publication and Undo', () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
@@ -2712,10 +2884,12 @@ describe('Factory action-level shared publication', () => {
       () => true
     )
     const laterPublications: SharedPublication[] = []
+
     factory.subscribeToSharedPublication((publication) => {
       const payload = publicationDeliveries(publication)[0]?.payload as {
         after: { value: number }
       }
+
       payload.after.value = 99
     })
     factory.subscribeToSharedPublication((publication) =>
@@ -2765,6 +2939,7 @@ describe('Factory action-level shared publication', () => {
 
   it('retains the outer publication when a completion observer commits reentrantly', () => {
     const factory = new Factory({ bridgeToReactiveEvents: true })
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
@@ -2774,6 +2949,7 @@ describe('Factory action-level shared publication', () => {
       transactionId: number
       changeCount: number
     }[] = []
+
     factory.subscribeToSharedPublication((publication) =>
       publications.push(publication)
     )
@@ -2790,15 +2966,23 @@ describe('Factory action-level shared publication', () => {
       ReturnType<Factory['updateTransaction']>
     >[] = []
     const completionSubscription = subscribeToUserActionCompleted(() => {
-      if (nested) return
+      if (nested) {
+        return
+      }
+
       nested = true
       factory.startTransaction()
       const nestedHandle = update(factory, 'element-nested', 2)
-      if (nestedHandle) nestedHandles.push(nestedHandle)
+
+      if (nestedHandle) {
+        nestedHandles.push(nestedHandle)
+      }
+
       factory.endTransaction()
     })
 
     let outerHandle: ReturnType<Factory['updateTransaction']> = null
+
     try {
       factory.startTransaction()
       outerHandle = update(factory, 'element-outer', 1)
@@ -2829,6 +3013,7 @@ describe('Factory action-level shared publication', () => {
 
   it('does not let a projection observer start a reentrant canonical transaction', () => {
     const factory = new Factory()
+
     factory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
       new LocalSharedDataChannel()
@@ -2836,10 +3021,14 @@ describe('Factory action-level shared publication', () => {
     const publications: SharedPublication[] = []
     const committedTransactionIds: number[] = []
     let nestedAttempted = false
+
     factory.observeSharedDataChannelBatch(
       SharedDataChannelNames.SCENE_TREE,
       () => {
-        if (nestedAttempted) return
+        if (nestedAttempted) {
+          return
+        }
+
         nestedAttempted = true
         factory.startTransaction()
         update(factory, 'element-nested', 2)
@@ -2850,7 +3039,9 @@ describe('Factory action-level shared publication', () => {
       publications.push(publication)
     )
     factory.subscribeToTransactionStatus(({ status, transactionId }) => {
-      if (status === 'committed') committedTransactionIds.push(transactionId)
+      if (status === 'committed') {
+        committedTransactionIds.push(transactionId)
+      }
     })
 
     factory.startTransaction()
@@ -2872,16 +3063,22 @@ describe('Factory action-level shared publication', () => {
   it('hands off each commit before a completion observer can commit reentrantly', () => {
     const factory = new Factory({ bridgeToReactiveEvents: true })
     const order: string[] = []
+
     factory.subscribeToCommitCapture(({ transactionId }) => {
       order.push(`capture-${transactionId}`)
     })
     factory.subscribeToTransactionStatus(({ status, transactionId }) => {
-      if (status === 'committed') order.push(`status-${transactionId}`)
+      if (status === 'committed') {
+        order.push(`status-${transactionId}`)
+      }
     })
     let nested = false
     const completionSubscription = subscribeToUserActionCompleted(() => {
       order.push('completion')
-      if (nested) return
+      if (nested) {
+        return
+      }
+
       nested = true
       factory.startTransaction()
       update(factory, 'element-nested', 2)

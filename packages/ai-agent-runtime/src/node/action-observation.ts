@@ -37,11 +37,14 @@ export const observeActionBatch = async (
       /* Diagnostics never alter canonical execution. */
     }
   }
+
   const definitionsByName = new Map(
     definitions.map((item) => [item.name, item])
   )
+
   for (const action of batch.actions) {
     const definition = definitionsByName.get(action.name)
+
     emit('action_started', {
       callId: `action:${batch.batchId}:${action.id}`,
       parentCallId: parentCallId ?? null,
@@ -58,15 +61,18 @@ export const observeActionBatch = async (
       arguments: action.arguments
     })
   }
+
   try {
     const receipt = await execute(batch)
     const resultsById = new Map(
       receipt.actionResults.map((item) => [item.actionId, item])
     )
+
     for (const action of batch.actions) {
       const candidate = resultsById.get(action.id)
       const result =
         candidate?.actionName === action.name ? candidate : undefined
+
       emit(receipt.failure && !result ? 'action_failed' : 'action_completed', {
         callId: `action:${batch.batchId}:${action.id}`,
         tool: action.name,
@@ -92,6 +98,7 @@ export const observeActionBatch = async (
               })
       })
     }
+
     // Keep diagnostics out of the model contract and compact acknowledgement path.
     if (
       !receipt.actionResults.some(
@@ -101,35 +108,44 @@ export const observeActionBatch = async (
           !Array.isArray(entry.result) &&
           'actionObservation' in entry.result
       )
-    )
+    ) {
       return receipt
+    }
+
     return {
       ...receipt,
       actionResults: receipt.actionResults.map((entry) => {
         const value = entry.result
+
         if (
           !value ||
           typeof value !== 'object' ||
           Array.isArray(value) ||
           !('actionObservation' in value)
-        )
+        ) {
           return entry
+        }
+
         const { actionObservation: _observation, ...result } = value
+
         return { ...entry, result }
       })
     }
   } catch (error) {
     let failure: AiObservedBatchFailure | undefined
+
     try {
       failure = failureFromError?.(error)
     } catch {
       /* Preserve the canonical error. */
     }
+
     const identified =
       failure &&
       batch.actions.filter((action) => action.name === failure.actionName)
         .length === 1
-    for (const action of batch.actions)
+
+    for (const action of batch.actions) {
       emit('action_failed', {
         callId: `action:${batch.batchId}:${action.id}`,
         tool: action.name,
@@ -160,6 +176,8 @@ export const observeActionBatch = async (
             }
           : {})
       })
+    }
+
     throw error
   }
 }

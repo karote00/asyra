@@ -31,8 +31,11 @@ export interface WalkingTerrainContactResult {
 }
 
 const addReason = (reasons: string[], reason: string) => {
-  if (!reasons.includes(reason)) reasons.push(reason)
+  if (!reasons.includes(reason)) {
+    reasons.push(reason)
+  }
 }
+
 const hasUnknownRelation = (assessment: WalkingContactAssessment) =>
   [
     assessment.geometry,
@@ -40,6 +43,7 @@ const hasUnknownRelation = (assessment: WalkingContactAssessment) =>
     assessment.bearing,
     assessment.sinkage
   ].some((relation) => 'kind' in relation && relation.kind === 'unknown')
+
 const hasBlockedRelation = (assessment: WalkingContactAssessment) =>
   [
     assessment.geometry,
@@ -57,6 +61,7 @@ function contactStatus(
 ) {
   if (region.classification === 'channel') {
     const binding = region.binding
+
     if (
       binding.kind === 'scene-channel' &&
       demand.channels.some(
@@ -64,11 +69,15 @@ function contactStatus(
       )
     ) {
       addReason(reasons, 'support-on-authored-channel')
+
       return 'blocked' as const
     }
+
     addReason(reasons, 'terrain-channel-authority-mismatch')
+
     return 'unknown' as const
   }
+
   if (
     region.classification !== 'soil' ||
     region.binding.kind !== 'route-soil' ||
@@ -77,27 +86,37 @@ function contactStatus(
     region.binding.stripId !== demand.route.stripId
   ) {
     addReason(reasons, 'support-region-not-admitted-soil')
+
     return 'unknown' as const
   }
+
   if (assessment.coverage !== 'complete') {
     addReason(reasons, 'contact-evidence-incomplete')
+
     return 'unknown' as const
   }
+
   if (hasBlockedRelation(assessment)) {
     addReason(reasons, 'contact-assessment-blocked')
+
     return 'blocked' as const
   }
+
   if (hasUnknownRelation(assessment)) {
     addReason(reasons, 'contact-evidence-incomplete')
+
     return 'unknown' as const
   }
+
   if (
     assessment.pathId !== request.path.id ||
     assessment.loadCaseId !== request.load.id
   ) {
     addReason(reasons, 'contact-identity-mismatch')
+
     return 'unknown' as const
   }
+
   return 'admitted' as const
 }
 
@@ -120,6 +139,7 @@ function supportContact(
     region = request.terrain.regions.find(
       ({ id }) => id === assessment?.terrainRegionId
     )
+
   if (
     !chain ||
     !patchReference ||
@@ -130,8 +150,10 @@ function supportContact(
     assessment.until < phase.until
   ) {
     addReason(reasons, 'contact-identity-mismatch')
+
     return null
   }
+
   return Object.freeze({
     chainId,
     patchReference,
@@ -153,24 +175,37 @@ export function evaluateWalkingTerrainContact(
 ): WalkingTerrainContactResult {
   const reasons: string[] = [],
     contacts: WalkingTerrainContact[] = []
-  if (request.terrain.sceneRevision !== demand.scene.revision)
+
+  if (request.terrain.sceneRevision !== demand.scene.revision) {
     addReason(reasons, 'terrain-scene-mismatch')
+  }
+
   if (
     !demand.route ||
     request.terrain.route.bay !== demand.route.bay ||
     request.terrain.route.stripId !== demand.route.stripId
-  )
+  ) {
     addReason(reasons, 'terrain-route-mismatch')
+  }
+
   for (const [name, observation] of Object.entries(
     request.terrain.observations
-  ))
-    if ('kind' in observation || observation.coverage !== 'complete')
+  )) {
+    if ('kind' in observation || observation.coverage !== 'complete') {
       addReason(reasons, `terrain-${name}-coverage-incomplete`)
+    }
+  }
+
   for (const phase of request.stance.phases) {
-    if (phase.legs.every(({ state }) => state.kind === 'swing'))
+    if (phase.legs.every(({ state }) => state.kind === 'swing')) {
       addReason(reasons, 'stance-contact-evidence-missing')
+    }
+
     for (const leg of phase.legs) {
-      if (leg.state.kind !== 'support') continue
+      if (leg.state.kind !== 'support') {
+        continue
+      }
+
       const contact = supportContact(
         demand,
         source,
@@ -180,9 +215,13 @@ export function evaluateWalkingTerrainContact(
         leg.state.contactAssessmentId,
         reasons
       )
-      if (contact) contacts.push(contact)
+
+      if (contact) {
+        contacts.push(contact)
+      }
     }
   }
+
   const incompatible = reasons.some((reason) =>
     [
       'terrain-scene-mismatch',
@@ -191,17 +230,22 @@ export function evaluateWalkingTerrainContact(
     ].includes(reason)
   )
   let status: 'clear' | 'blocked' | 'unknown' = 'clear'
+
   if (
     incompatible ||
     reasons.length > 0 ||
     contacts.some(({ status: value }) => value === 'unknown')
-  )
+  ) {
     status = 'unknown'
+  }
+
   if (
     !incompatible &&
     contacts.some(({ status: value }) => value === 'blocked')
-  )
+  ) {
     status = 'blocked'
+  }
+
   return Object.freeze({
     status,
     reasons: Object.freeze(reasons),

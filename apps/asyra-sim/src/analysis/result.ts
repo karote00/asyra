@@ -63,14 +63,21 @@ function validateTiming(timing: RunTiming): void {
     !finiteNonnegative(timing.startedAt) ||
     !finiteNonnegative(timing.endedAt) ||
     timing.endedAt < timing.startedAt
-  )
+  ) {
     throw new Error('Invalid analysis timing or run identity')
+  }
 }
 
 function deepFreeze<T>(input: T, seen = new WeakSet<object>()): T {
-  if (!input || typeof input !== 'object' || seen.has(input)) return input
+  if (!input || typeof input !== 'object' || seen.has(input)) {
+    return input
+  }
+
   seen.add(input)
-  for (const value of Object.values(input)) deepFreeze(value, seen)
+  for (const value of Object.values(input)) {
+    deepFreeze(value, seen)
+  }
+
   return Object.freeze(input)
 }
 
@@ -80,6 +87,7 @@ export function validatePairProgress(
 ): MethodPairEvidence {
   const expected = snapshot.pairs.find((item) => item.id === pair?.pairId),
     evidence = pair?.evidence
+
   if (
     !expected ||
     !hasExactOwnKeys(pair, ['pairId', 'evidence']) ||
@@ -91,8 +99,10 @@ export function validatePairProgress(
       'evaluations'
     ]) ||
     !Array.isArray(evidence.leaves)
-  )
+  ) {
     throw new Error('Invalid analysis pair identity')
+  }
+
   if (
     !Number.isInteger(evidence.evaluations) ||
     evidence.evaluations < 0 ||
@@ -101,10 +111,13 @@ export function validatePairProgress(
     !['complete', 'partial'].includes(evidence.coverage) ||
     evidence.leaves.length < 1 ||
     evidence.leaves.length > EXPERIMENT_RESOURCE_PROFILE.maxEvidenceLeaves
-  )
+  ) {
     throw new Error('Invalid analysis pair evidence')
+  }
+
   let cursor = snapshot.interval[0],
     unresolved = false
+
   for (const leaf of evidence.leaves) {
     if (
       !hasExactOwnKeys(leaf, [
@@ -135,29 +148,43 @@ export function validatePairProgress(
       typeof leaf.reason !== 'string' ||
       !leaf.reason ||
       leaf.reason.length > 4000
-    )
+    ) {
       throw new Error('Invalid analysis interval bound or coverage')
+    }
+
     if (
       leaf.state === 'finding' &&
       !leaf.penetration &&
       !(leaf.upper !== null && leaf.upper < snapshot.rule.minimumClearance)
-    )
+    ) {
       throw new Error('Finding is not supported by method evidence')
+    }
+
     if (
       leaf.penetration &&
       (leaf.state !== 'finding' || leaf.lower !== 0 || leaf.upper !== 0)
-    )
+    ) {
       throw new Error('Penetration is not supported by consistent zero bounds')
+    }
+
     if (
       leaf.state === 'clear' &&
       !(leaf.lower > snapshot.rule.minimumClearance)
-    )
+    ) {
       throw new Error('Clear state is not supported by method bounds')
-    if (leaf.state === 'unresolved') unresolved = true
+    }
+
+    if (leaf.state === 'unresolved') {
+      unresolved = true
+    }
+
     cursor = leaf.end
   }
-  if (cursor !== snapshot.interval[1])
+
+  if (cursor !== snapshot.interval[1]) {
     throw new Error('Incomplete analysis interval coverage')
+  }
+
   const expectedCoverage = unresolved ? 'partial' : 'complete',
     expectedLower = evidence.leaves.reduce(
       (minimum, leaf) => Math.min(minimum, leaf.lower),
@@ -172,12 +199,15 @@ export function validatePairProgress(
           Infinity
         )
       : null
+
   if (
     evidence.coverage !== expectedCoverage ||
     evidence.lower !== expectedLower ||
     evidence.upper !== expectedUpper
-  )
+  ) {
     throw new Error('Invalid aggregate analysis bounds or coverage')
+  }
+
   return deepFreeze(structuredClone(pair))
 }
 
@@ -197,25 +227,38 @@ function summarize(
       (pair) => pair.evidence.coverage === 'partial'
     ).length
   let summary: AnalysisSummary = 'cannot-determine'
-  if (findingPairCount) summary = 'issue-found'
-  else if (execution === 'completed' && coverage === 'complete')
+
+  if (findingPairCount) {
+    summary = 'issue-found'
+  } else if (execution === 'completed' && coverage === 'complete') {
     summary = 'no-issue-within-scope'
+  }
+
   let verdict: AnalysisVerdict = 'cannot-determine'
-  if (summary === 'issue-found') verdict = 'does-not-meet'
-  else if (summary === 'no-issue-within-scope') verdict = 'meets'
+
+  if (summary === 'issue-found') {
+    verdict = 'does-not-meet'
+  } else if (summary === 'no-issue-within-scope') {
+    verdict = 'meets'
+  }
+
   const decision = snapshot.rule.acceptance
     ? evaluateAcceptance(snapshot.rule.acceptance, snapshot.pairs.length, pairs)
     : undefined
+
   if (decision) {
     verdict = 'cannot-determine'
-    if (decision.value === 'false') verdict = 'does-not-meet'
-    else if (
+    if (decision.value === 'false') {
+      verdict = 'does-not-meet'
+    } else if (
       decision.value === 'true' &&
       execution === 'completed' &&
       coverage === 'complete'
-    )
+    ) {
       verdict = 'meets'
+    }
   }
+
   return deepFreeze({
     version: 1,
     runId: timing.runId,
@@ -256,17 +299,21 @@ export function validateMethodEvidence(
     !hasExactOwnKeys(evidence.method, ['id', 'version']) ||
     !Array.isArray(evidence.pairs) ||
     evidence.pairs.length > EXPERIMENT_RESOURCE_PROFILE.maxPairs
-  )
+  ) {
     throw new Error('Invalid method evidence envelope')
+  }
+
   if (
     evidence.version !== 1 ||
     evidence.snapshotId !== snapshot.snapshotId ||
     evidence.method.id !== snapshot.method.id ||
     evidence.method.version !== snapshot.method.version
-  )
+  ) {
     throw new Error(
       'Method evidence source identity does not match the snapshot'
     )
+  }
+
   if (
     evidence.pairs.length !== snapshot.pairs.length ||
     new Set(evidence.pairs.map((pair) => pair.pairId)).size !==
@@ -274,8 +321,10 @@ export function validateMethodEvidence(
     snapshot.pairs.some(
       (expected) => !evidence.pairs.some((pair) => pair.pairId === expected.id)
     )
-  )
+  ) {
     throw new Error('Method evidence does not provide complete pair coverage')
+  }
+
   const pairs = validatePartialMethodEvidence(snapshot, evidence.pairs),
     evaluations = pairs.reduce(
       (sum, pair) => sum + pair.evidence.evaluations,
@@ -284,8 +333,11 @@ export function validateMethodEvidence(
     coverage = pairs.some((pair) => pair.evidence.coverage === 'partial')
       ? 'partial'
       : 'complete'
-  if (evidence.evaluations !== evaluations || evidence.coverage !== coverage)
+
+  if (evidence.evaluations !== evaluations || evidence.coverage !== coverage) {
     throw new Error('Invalid aggregate method evidence')
+  }
+
   return pairs
 }
 
@@ -293,21 +345,26 @@ export function validatePartialMethodEvidence(
   snapshot: ExperimentSnapshot,
   evidence: readonly MethodPairEvidence[]
 ): readonly MethodPairEvidence[] {
-  if (!Array.isArray(evidence) || evidence.length > snapshot.pairs.length)
+  if (!Array.isArray(evidence) || evidence.length > snapshot.pairs.length) {
     throw new Error('Invalid retained pair evidence')
+  }
 
   const ids = evidence.map((pair) => pair?.pairId)
-  if (new Set(ids).size !== ids.length)
+
+  if (new Set(ids).size !== ids.length) {
     throw new Error('Duplicate retained pair evidence')
+  }
 
   const pairs = evidence.map((pair) => validatePairProgress(snapshot, pair))
+
   if (
     pairs.reduce((sum, pair) => sum + pair.evidence.evaluations, 0) >
       snapshot.budget.maxIntervals ||
     pairs.reduce((sum, pair) => sum + pair.evidence.leaves.length, 0) >
       EXPERIMENT_RESOURCE_PROFILE.maxEvidenceLeaves
-  )
+  ) {
     throw new Error('Analysis evidence exceeds its global budget')
+  }
 
   return Object.freeze(pairs)
 }
@@ -349,8 +406,10 @@ export function terminalAnalysisResult(
   evidence: readonly MethodPairEvidence[],
   terminal: TerminalRun
 ): AnalysisResult {
-  if (!terminal.error || terminal.error.length > 2000)
+  if (!terminal.error || terminal.error.length > 2000) {
     throw new Error('Terminal analysis requires a bounded error description')
+  }
+
   return summarize(
     snapshot,
     validatePartialMethodEvidence(snapshot, evidence),
@@ -397,17 +456,23 @@ export function validateHistoricalResult(
       (error) =>
         typeof error === 'string' && error.length > 0 && error.length <= 2000
     )
-  )
+  ) {
     throw new Error('Invalid historical result envelope')
+  }
+
   const result = input as unknown as AnalysisResult
-  if (snapshot.rule.acceptance)
+
+  if (snapshot.rule.acceptance) {
     validateRuleEvaluation(result.decision, snapshot.rule.acceptance)
+  }
+
   const timing = {
     runId: result.runId,
     startedAt: result.startedAt,
     endedAt: result.endedAt
   }
   let validated: AnalysisResult
+
   if (result.execution === 'completed') {
     validated = completeAnalysisResult(
       snapshot,
@@ -430,17 +495,26 @@ export function validateHistoricalResult(
       execution: result.execution,
       error: result.errors[0]
     })
-  } else throw new Error('Invalid historical execution state')
+  } else {
+    throw new Error('Invalid historical execution state')
+  }
+
   const stable = (value: unknown) =>
     JSON.stringify(value, (_key, item) => {
-      if (!item || typeof item !== 'object' || Array.isArray(item)) return item
+      if (!item || typeof item !== 'object' || Array.isArray(item)) {
+        return item
+      }
+
       return Object.fromEntries(
         Object.keys(item)
           .sort()
           .map((key) => [key, item[key]])
       )
     })
-  if (stable(validated) !== stable(result))
+
+  if (stable(validated) !== stable(result)) {
     throw new Error('Historical result disagrees with its source or evidence')
+  }
+
   return validated
 }

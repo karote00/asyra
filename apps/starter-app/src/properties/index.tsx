@@ -16,18 +16,30 @@ const SelectedItemEditor = ({ item }: { readonly item: ItemProjection }) => {
   const pending = usePending()
   const [draft, setDraft] = useState<string | null>(null)
   const draftRef = useRef<string | null>(null)
+
   const updateDraft = (value: string | null): void => {
     draftRef.current = value
     setDraft(value)
   }
+
   const commitTitle = (): boolean => {
     const title = draftRef.current
-    if (title === null) return true
-    if (!controller.editItem(item.id, { title }, 'Title accepted')) return false
+
+    if (title === null) {
+      return true
+    }
+
+    if (!controller.editItem(item.id, { title }, 'Title accepted')) {
+      return false
+    }
+
     updateDraft(null)
+
     return true
   }
+
   useLayoutEffect(() => controller.registerDraft(commitTitle))
+
   const cancelTitle = (): void => {
     updateDraft(null)
     controller.status({ tone: 'ok', message: 'Title edit cancelled' })
@@ -52,10 +64,17 @@ const SelectedItemEditor = ({ item }: { readonly item: ItemProjection }) => {
           if (
             event.nativeEvent.isComposing ||
             event.nativeEvent.keyCode === 229
-          )
+          ) {
             return
-          if (event.key === 'Enter') controller.prepareAction()
-          if (event.key === 'Escape') cancelTitle()
+          }
+
+          if (event.key === 'Enter') {
+            controller.prepareAction()
+          }
+
+          if (event.key === 'Escape') {
+            cancelTitle()
+          }
         }}
       />
       <p className="field-help">Press Enter to apply - Escape to cancel</p>
@@ -77,7 +96,10 @@ const SelectedItemEditor = ({ item }: { readonly item: ItemProjection }) => {
             aria-pressed={status === item.status}
             className={status === item.status ? 'active' : undefined}
             onClick={() => {
-              if (status === item.status) return
+              if (status === item.status) {
+                return
+              }
+
               controller.editItem(item.id, { status }, 'Status accepted')
             }}
           >
@@ -92,6 +114,7 @@ const SelectedItemEditor = ({ item }: { readonly item: ItemProjection }) => {
 export const ItemProperties = () => {
   const id = useSelectedId()
   const item = useItem(id)
+
   return item ? (
     <SelectedItemEditor key={item.id} item={item} />
   ) : (

@@ -18,17 +18,25 @@ const memoryStore = () => {
   let serial = 0
   const store: AiToolStore = {
     read: async (key) => entries.get(key),
+
     list: async (limit) => [...entries.values()].slice(0, limit),
+
     write: vi.fn(async ({ key, expectedVersion, record }) => {
-      if (entries.get(key)?.version !== expectedVersion)
+      if (entries.get(key)?.version !== expectedVersion) {
         throw new Error('Storage conflict')
+      }
+
       const entry = { key, version: String(++serial), record }
+
       entries.set(key, entry)
+
       return entry
     })
   }
+
   return { store, entries }
 }
+
 const setup = (
   store: AiToolStore,
   validate: AiRecipeInvokerOptions['validate'] = (value) =>
@@ -37,6 +45,7 @@ const setup = (
   const registry = createAiActionRegistry()
   const writes: unknown[] = []
   const scalar = { type: 'number' }
+
   registry.register({
     name: 'set',
     description: 'Set a fresh value.',
@@ -48,11 +57,14 @@ const setup = (
     resources: ['value'],
     composition: 'allowed',
     lifecycle: { cancellation: 'cooperative', retry: 'never', output: 'value' },
+
     execute: async (input) => input
   })
   const library = createAiToolLibrary({
     registry,
+
     validate: () => undefined,
+
     capacity: 32,
     limits: {
       steps: 16,
@@ -61,11 +73,13 @@ const setup = (
       bytes: 10000,
       issues: 8
     },
+
     createExecutor: () => async (input) => input
   })
   const observations: unknown[] = []
   const execute = vi.fn<AiRecipeInvokerOptions['execute']>(async (call) => {
     writes.push(call.input)
+
     return { status: 'success', settlement: 'completed', value: call.input }
   })
   const retain = vi.fn<AiRecipeInvokerOptions['leases']['retain']>(
@@ -75,6 +89,7 @@ const setup = (
     observe: (event) => {
       observations.push(event)
     },
+
     registry,
     recipe: library.recipe,
     validate,
@@ -82,7 +97,9 @@ const setup = (
     maxSteps: 16,
     leases: {
       open: async () => undefined,
+
       retain,
+
       release: async () => undefined
     }
   })
@@ -91,11 +108,13 @@ const setup = (
     library,
     store,
     capacity: 32,
+
     check: async () => ({
       ok: true,
       scope: 'Scalar mutation contract verified by this host.'
     })
   })
+
   const register = () =>
     library.submit({
       requestId: 'author',
@@ -118,6 +137,7 @@ const setup = (
         output: { kind: 'step', step: 'apply', path: '' }
       }
     })
+
   return {
     registry,
     library,
@@ -135,7 +155,11 @@ it('recipe proof rejects ineligible dependencies before registration', () => {
   const { store } = memoryStore()
   const host = setup(store)
   const primitive = host.registry.get('set')
-  if (!primitive) throw new Error('Missing primitive')
+
+  if (!primitive) {
+    throw new Error('Missing primitive')
+  }
+
   host.registry.register({
     ...primitive,
     name: 'manage',
@@ -162,6 +186,7 @@ it('recipe proof rejects ineligible dependencies before registration', () => {
       output: { kind: 'step', step: 'manage', path: '' }
     }
   })
+
   expect(result).toMatchObject({ ok: false, code: 'admission' })
   expect(host.registry.get('unsafe', { requestId: 'author' })).toBeUndefined()
   expect(host.writes).toEqual([])
@@ -171,6 +196,7 @@ it('recipe proof registers retry-safe scoped candidates in the canonical registr
   const { store } = memoryStore()
   const host = setup(store)
   const first = host.register()
+
   expect(first.ok).toBe(true)
   expect(host.register()).toBe(first)
   expect(host.registry.get('reusable')).toBeUndefined()
@@ -186,8 +212,10 @@ it('recipe proof registers retry-safe scoped candidates in the canonical registr
 it('recipe proof executes nested tools without scheduler deadlock or lost references', async () => {
   const { store } = memoryStore()
   const host = setup(store)
+
   host.register()
   const scalar = { type: 'number' }
+
   expect(
     host.library.submit({
       requestId: 'author',
@@ -222,6 +250,7 @@ it('recipe proof executes nested tools without scheduler deadlock or lost refere
     requestId: 'author',
     input: 8
   })
+
   expect(result).toMatchObject({
     status: 'success',
     settlement: 'completed',
@@ -254,6 +283,7 @@ it('recipe proof executes nested tools without scheduler deadlock or lost refere
     requestId: 'author',
     input: 8
   })
+
   expect(stopped).toMatchObject({
     status: 'failed',
     settlement: 'not-started',
@@ -274,6 +304,7 @@ it('recipe proof executes nested tools without scheduler deadlock or lost refere
 it('recipe proof saves without replay and validates durable reuse', async () => {
   const { store } = memoryStore()
   const first = setup(store)
+
   first.register()
   const receipt = await first.runner.invoke({
     name: 'reusable',
@@ -286,6 +317,7 @@ it('recipe proof saves without replay and validates durable reuse', async () => 
     requestId: 'author',
     receipt
   }
+
   expect(await first.persistence.save(request)).toMatchObject({
     status: 'saved',
     availability: 'eligible'
@@ -295,6 +327,7 @@ it('recipe proof saves without replay and validates durable reuse', async () => 
   })
   expect(first.writes).toEqual([3])
   const second = setup(store)
+
   expect(await second.persistence.load('next')).toMatchObject({
     loaded: ['reusable'],
     unavailable: [],
@@ -314,6 +347,7 @@ it('recipe proof saves without replay and validates durable reuse', async () => 
 it('recipe proof saves nested candidates dependency-first without replay', async () => {
   const { store, entries } = memoryStore()
   const host = setup(store)
+
   expect(host.register().ok).toBe(true)
   expect(
     host.library.submit({
@@ -343,6 +377,7 @@ it('recipe proof saves nested candidates dependency-first without replay', async
     requestId: 'author',
     input: 3
   })
+
   expect(receipt).toMatchObject({
     status: 'success',
     settlement: 'completed',
@@ -350,9 +385,12 @@ it('recipe proof saves nested candidates dependency-first without replay', async
   })
   const request = { name: 'nested', revision: 1, requestId: 'author', receipt }
   const write = store.write
+
   store.write = vi.fn(async (input) => {
-    if (input.key === JSON.stringify(['reusable', 1]))
+    if (input.key === JSON.stringify(['reusable', 1])) {
       throw new Error('Child store unavailable')
+    }
+
     return write(input)
   })
   expect(await host.persistence.save(request)).toMatchObject({
@@ -374,12 +412,14 @@ it('recipe proof saves nested candidates dependency-first without replay', async
     JSON.stringify(['nested', 1])
   ])
   const versions = [...entries.values()].map((entry) => entry.version)
+
   expect(await host.persistence.save(request)).toMatchObject({
     status: 'saved'
   })
   expect([...entries.values()].map((entry) => entry.version)).toEqual(versions)
   expect(host.writes).toEqual([3])
   const fresh = setup(store)
+
   expect(await fresh.persistence.load('fresh')).toMatchObject({
     loaded: ['reusable', 'nested'],
     unavailable: []
@@ -390,7 +430,11 @@ it('recipe proof saves nested candidates dependency-first without replay', async
   ).toMatchObject({ status: 'success', value: 12 })
   expect(fresh.writes).toEqual([12])
   const child = entries.get(JSON.stringify(['reusable', 1]))
-  if (!child) throw new Error('Missing saved child')
+
+  if (!child) {
+    throw new Error('Missing saved child')
+  }
+
   expect(
     await createAiToolStoreManagement({ store, capacity: 32 }).setState({
       name: 'reusable',
@@ -433,6 +477,7 @@ const boundedProposal = (host: ReturnType<typeof setup>) => {
       retry: 'read-only',
       output: 'value'
     },
+
     execute: async () => ({ status: 'pass', progress: 'current' })
   })
   const proposal = {
@@ -473,12 +518,14 @@ const boundedProposal = (host: ReturnType<typeof setup>) => {
     },
     output: { kind: 'step', step: 'verified', path: '/state' }
   }
+
   return proposal
 }
 
 it('recipe proof admits bounded state repair only from domain verification contracts', () => {
   const host = setup(memoryStore().store)
   const proposal = boundedProposal(host)
+
   expect(
     host.library.submit({
       requestId: 'author',
@@ -504,12 +551,16 @@ it('recipe proof admits bounded state repair only from domain verification contr
 const boundedHost = (store: AiToolStore) => {
   const host = setup(store, (value, schema) => {
     const type = (schema as { type: string }).type
-    if (type === 'number')
+
+    if (type === 'number') {
       return typeof value === 'number' && Number.isFinite(value)
         ? undefined
         : 'Expected number'
+    }
+
     const check = value as
       { status?: unknown; progress?: unknown; remaining?: unknown } | undefined
+
     return check &&
       ['pass', 'repairable', 'decision-required'].includes(
         String(check.status)
@@ -521,8 +572,9 @@ const boundedHost = (store: AiToolStore) => {
       : 'Invalid check receipt'
   })
   const proposal = boundedProposal(host)
+
   host.execute.mockImplementation(async (call) => {
-    if (call.name === 'verify')
+    if (call.name === 'verify') {
       return {
         status: 'success',
         settlement: 'completed',
@@ -532,15 +584,20 @@ const boundedHost = (store: AiToolStore) => {
           remaining: Number(call.input) - 1
         }
       }
+    }
+
     host.writes.push(call.input)
+
     return { status: 'success', settlement: 'completed', value: call.input }
   })
+
   return { ...host, proposal }
 }
 
 it('recipe proof repairs once per unresolved state and returns actual stopped progress', async () => {
   const store = memoryStore().store
   const first = boundedHost(store)
+
   expect(
     first.library.submit({
       requestId: 'author',
@@ -553,6 +610,7 @@ it('recipe proof repairs once per unresolved state and returns actual stopped pr
     requestId: 'author',
     input: 2
   })
+
   expect(receipt).toMatchObject({ status: 'success', value: 0, issues: [] })
   expect(first.writes).toEqual([2, 1, 0])
   expect(first.observations).toContainEqual(
@@ -570,6 +628,7 @@ it('recipe proof repairs once per unresolved state and returns actual stopped pr
     requestId: 'author',
     input: 5
   })
+
   expect(stopped.status).toBe('failed')
   expect(stopped.issues).toContain('Repair iteration budget exhausted')
   expect(stopped.recovery?.length).toBeGreaterThan(0)
@@ -598,6 +657,7 @@ it('recipe proof refuses nested repair expansion before publishing the candidate
     })),
     output: { kind: 'step', step: 'part5', path: '' }
   }
+
   expect(
     host.library.submit({
       requestId: 'author',
@@ -620,6 +680,7 @@ it('recipe proof refuses nested repair expansion before publishing the candidate
 it('recipe proof saves and reloads the complete bounded iteration without replay', async () => {
   const { store, entries } = memoryStore()
   const first = boundedHost(store)
+
   expect(
     first.library.submit({
       requestId: 'author',
@@ -633,6 +694,7 @@ it('recipe proof saves and reloads the complete bounded iteration without replay
     input: 2
   })
   const save = { name: 'bounded', revision: 1, requestId: 'author', receipt }
+
   vi.mocked(store.write).mockRejectedValueOnce(new Error('Storage offline'))
   expect(await first.persistence.save(save)).toMatchObject({
     status: 'unsaved'
@@ -645,6 +707,7 @@ it('recipe proof saves and reloads the complete bounded iteration without replay
   expect(first.writes).toEqual([2, 1, 0])
   expect(JSON.stringify([...entries.values()])).toContain('maxIterations')
   const next = boundedHost(store)
+
   expect(await next.persistence.load('next')).toMatchObject({
     loaded: ['bounded'],
     unavailable: []
@@ -659,6 +722,7 @@ it('recipe proof saves and reloads the complete bounded iteration without replay
     requestId: 'next',
     input: 5
   })
+
   expect(
     await next.persistence.save({
       ...save,
@@ -673,18 +737,24 @@ it('recipe proof saves and reloads the complete bounded iteration without replay
   })
   const changed = boundedHost(store)
   const verifier = changed.registry.get('verify')
-  if (!verifier) throw new Error('Missing verifier')
+
+  if (!verifier) {
+    throw new Error('Missing verifier')
+  }
+
   changed.registry.remove('verify', 1)
   changed.registry.register({
     ...verifier,
     description: 'Changed verification contract.'
   })
   const unavailable = await changed.persistence.load('changed')
+
   expect(unavailable.loaded).toEqual([])
   expect(unavailable.unavailable).toHaveLength(1)
   expect(changed.execute).not.toHaveBeenCalled()
   const saved = [...entries.values()][0]
   const corrupted = JSON.parse(JSON.stringify(saved.record))
+
   corrupted.body.iteration.maxIterations = 0
   await store.write({
     key: saved.key,
@@ -692,6 +762,7 @@ it('recipe proof saves and reloads the complete bounded iteration without replay
     record: corrupted
   })
   const corruptHost = boundedHost(store)
+
   expect((await corruptHost.persistence.load('corrupt')).loaded).toEqual([])
   expect(corruptHost.execute).not.toHaveBeenCalled()
 })
@@ -699,6 +770,7 @@ it('recipe proof saves and reloads the complete bounded iteration without replay
 it('resumes a bounded candidate privately without executing or losing its iteration', async () => {
   const { store } = memoryStore()
   const first = boundedHost(store)
+
   expect(
     first.library.submit({
       requestId: 'author',
@@ -716,6 +788,7 @@ it('resumes a bounded candidate privately without executing or losing its iterat
   const next = boundedHost(store)
   const input = { name: 'bounded', revision: 1, requestId: 'next' }
   const resumed = await next.persistence.resume(input)
+
   expect(resumed).toMatchObject({ ok: true })
   expect(await next.persistence.resume(input)).toEqual(resumed)
   expect(next.registry.get('bounded')).toBeUndefined()
@@ -732,6 +805,7 @@ it('recipe proof confirms durable authority after asynchronous preparation witho
     for (const availability of ['suspended', 'retired'] as const) {
       const { store } = memoryStore()
       const first = setup(store)
+
       expect(first.register().ok).toBe(true)
       const receipt =
         mode === 'resume'
@@ -741,6 +815,7 @@ it('recipe proof confirms durable authority after asynchronous preparation witho
               requestId: 'author',
               input: 4
             })
+
       expect(
         await first.persistence.save({
           name: 'reusable',
@@ -756,11 +831,19 @@ it('recipe proof confirms durable authority after asynchronous preparation witho
         capacity: 32
       })
       let changed = false
+
       const retireSnapshot = async () => {
-        if (changed) return
+        if (changed) {
+          return
+        }
+
         changed = true
         const entry = await management.read('reusable', 1)
-        if (!entry) throw new Error('Missing current durable revision')
+
+        if (!entry) {
+          throw new Error('Missing current durable revision')
+        }
+
         expect(
           await management.setState({
             name: 'reusable',
@@ -770,17 +853,29 @@ it('recipe proof confirms durable authority after asynchronous preparation witho
           })
         ).toMatchObject({ status: 'saved' })
       }
+
       store.read = async (key) => {
         const snapshot = await read(key)
-        if (mode !== 'load') await retireSnapshot()
+
+        if (mode !== 'load') {
+          await retireSnapshot()
+        }
+
         return snapshot
       }
+
       store.list = async (limit) => {
         const snapshot = await list(limit)
-        if (mode === 'load') await retireSnapshot()
+
+        if (mode === 'load') {
+          await retireSnapshot()
+        }
+
         return snapshot
       }
+
       const next = setup(store)
+
       if (mode === 'save') {
         expect(
           await first.persistence.save({
@@ -801,6 +896,7 @@ it('recipe proof confirms durable authority after asynchronous preparation witho
           })
         ).toMatchObject({ ok: false })
       }
+
       expect(changed).toBe(true)
       expect((await management.read('reusable', 1))?.availability).toBe(
         availability

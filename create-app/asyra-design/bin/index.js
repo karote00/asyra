@@ -18,15 +18,18 @@ function parseArguments(argv) {
 
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index]
+
     if (argument === '--package-manager') {
       packageManager = args[index + 1]
       index += 1
       continue
     }
+
     if (argument?.startsWith('--package-manager=')) {
       packageManager = argument.slice('--package-manager='.length)
       continue
     }
+
     if (!argument?.startsWith('-') && targetName === undefined) {
       targetName = argument
     }
@@ -58,12 +61,14 @@ async function main() {
         type: 'input',
         name: 'projectName',
         message: 'Project name:',
+
         validate: (input) =>
           isSafeTargetName(input)
             ? true
             : 'Project name must be one directory name'
       }
     ])
+
     targetName = answer.projectName
   }
 
@@ -71,6 +76,7 @@ async function main() {
     console.error('❌ Project name must be one directory name.')
     process.exit(1)
   }
+
   if (
     packageManager !== undefined &&
     !supportedPackageManagers.includes(packageManager)
@@ -105,6 +111,7 @@ async function main() {
         default: 'yarn'
       }
     ])
+
     packageManager = answer.packageManager
   }
 
@@ -185,6 +192,7 @@ yarn-error.log*
       'nodeLinker: node-modules\n'
     )
   }
+
   console.log('✓ Created project configuration files')
 
   // 4️⃣ Create empty lockfile based on package manager
@@ -213,6 +221,7 @@ yarn-error.log*
     npm: 'npm install',
     pnpm: 'pnpm install'
   }[packageManager]
+
   try {
     console.log('📦 Installing dependencies...')
     execFileSync(packageManager, installArguments[packageManager], {
@@ -233,6 +242,7 @@ yarn-error.log*
     npm: 'npm run start',
     pnpm: 'pnpm start'
   }[packageManager]
+
   console.log('Next steps:')
   console.log(`  cd ${targetName}`)
   console.log(`  ${startCommand}`)

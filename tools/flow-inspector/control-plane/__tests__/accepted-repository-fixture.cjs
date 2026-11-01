@@ -9,10 +9,12 @@ const { verifierFiles } = require('../ci-context.cjs')
 // A committed test baseline is independent of the contributor checkout's diff.
 function createAcceptedRepository(root, dir) {
   const snapshotDirectory = path.join(dir, 'baseline-source')
+
   fs.mkdirSync(snapshotDirectory)
   const contract = loadContract(root),
     snapshot = captureSource(root, snapshotDirectory, contract)
   const repository = path.join(dir, 'repository')
+
   fs.mkdirSync(repository)
   const files = new Set([
     ...snapshot.files.map((f) => f.path),
@@ -25,11 +27,14 @@ function createAcceptedRepository(root, dir) {
     '.github/workflows/main.yml',
     ...verifierFiles
   ])
+
   for (const file of files) {
     const target = path.join(repository, file)
+
     fs.mkdirSync(path.dirname(target), { recursive: true })
     fs.copyFileSync(path.join(root, file), target)
   }
+
   const git = (...args) =>
     execFileSync('git', args, {
       cwd: repository,
@@ -37,6 +42,7 @@ function createAcceptedRepository(root, dir) {
     })
       .toString()
       .trim()
+
   git('init')
   git('config', 'user.email', 'test@example.invalid')
   git('config', 'user.name', 'Flow test')
@@ -52,6 +58,8 @@ function createAcceptedRepository(root, dir) {
   )
   git('remote', 'add', 'origin', 'https://github.com/example/fixture.git')
   git('update-ref', 'refs/remotes/origin/main', 'HEAD')
+
   return repository
 }
+
 module.exports = { createAcceptedRepository }

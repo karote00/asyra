@@ -74,15 +74,19 @@ export const createRenderAPIs = (requests: RenderRequests) => {
     getElementIdsInBounds(bounds: import('@asyra/utils').Rect) {
       return requests.getElementIdsInBounds(bounds)
     },
+
     suspendElementPresentation(elementId: string) {
       return requests.suspendElementPresentation(elementId)
     },
+
     measureText(layout: import('@asyra/render-engine').RenderEngineTextLayout) {
       return requests.measureText(layout)
     },
+
     measureElementContentBounds(elementIds: readonly string[]) {
       return requests.measureElementContentBounds(elementIds)
     },
+
     captureElementSnapshot(
       elementId: string,
       maxDimension?: number,
@@ -93,36 +97,45 @@ export const createRenderAPIs = (requests: RenderRequests) => {
     ) {
       return requests.captureElementSnapshot(elementId, maxDimension, options)
     },
+
     renderIsReady() {
       renderIsReady()
     },
+
     async initRender(width: number, height: number, color: number) {
       return await requests.initRender(width, height, color)
     },
+
     registerRenderLayer(
       registration: RenderLayerRegistration,
       options?: RegisterRenderLayerOptions
     ) {
       requests.registerRenderLayer(registration, options)
     },
+
     unregisterRenderLayer(name: string) {
       return requests.unregisterRenderLayer(name)
     },
+
     createRenderGradientFillStyle(options: CreateRenderGradientFillOptions) {
       return requests.createRenderGradientFillStyle(options)
     },
+
     createEvenOddFillStyle(options: EvenOddFillOptions) {
       return requests.createEvenOddFillStyle(options)
     },
+
     createMeshProjection(options: CreateMeshProjectionOptions) {
       return requests.createMeshProjection(options)
     },
+
     registerRenderInteractionTargets(
       targets: RenderInteractionTarget | RenderInteractionTarget[],
       options?: { override?: boolean }
     ) {
       requests.registerRenderInteractionTargets(targets, options)
     },
+
     updateRenderInteractionTarget(
       targetId: string,
       patch:
@@ -133,18 +146,22 @@ export const createRenderAPIs = (requests: RenderRequests) => {
     ) {
       requests.updateRenderInteractionTarget(targetId, patch)
     },
+
     unregisterRenderInteractionTarget(targetId: string) {
       return requests.unregisterRenderInteractionTarget(targetId)
     },
+
     clearRenderInteractionTargets() {
       requests.clearRenderInteractionTargets()
     },
+
     registerRenderInteractionHandler(
       targetId: string | RegExp,
       registration: RenderInteractionHandlerRegistration
     ) {
       requests.registerRenderInteractionHandler(targetId, registration)
     },
+
     unregisterRenderInteractionHandler(
       targetId: string,
       eventType?: RenderInteractionEventType

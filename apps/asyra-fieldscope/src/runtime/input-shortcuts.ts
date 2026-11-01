@@ -17,11 +17,19 @@ function shortcut(
     type: InputType.KEYBOARD,
     keys: [key],
     modifiers: [modifier],
+
     callback: (raw: RawInputEvent) => {
       const otherPrimaryModifier =
         modifier === ModifierKey.META ? raw.modifiers.ctrl : raw.modifiers.meta
-      if (raw.modifiers.alt || otherPrimaryModifier) return
-      if (raw.modifiers.shift && !allowShift) return
+
+      if (raw.modifiers.alt || otherPrimaryModifier) {
+        return
+      }
+
+      if (raw.modifiers.shift && !allowShift) {
+        return
+      }
+
       action(raw)
     }
   }
@@ -29,6 +37,7 @@ function shortcut(
 
 export function createWorkbenchInputKeyCombinations(actions: ShortcutActions) {
   const primaryModifiers = [ModifierKey.META, ModifierKey.CTRL] as const
+
   return {
     'workspace.history': primaryModifiers.map((modifier) =>
       shortcut(keyMap.keys.KeyZ, modifier, true, (raw) =>

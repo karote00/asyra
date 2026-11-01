@@ -6,17 +6,23 @@ const test = require('node:test'),
   path = require('node:path')
 const { document, directory } = require('./fixtures.cjs')
 const { startFlowServer } = require('../server.cjs')
+
 test('offline authored files refresh through one shared read API; invalid, new and deleted files never retain stale success', async (t) => {
   const dir = directory(t),
     file = path.join(dir, 'checkout.flow.json')
+
   fs.writeFileSync(file, JSON.stringify(document()))
   const server = await startFlowServer(dir, {
     directory: dir,
     url: 'http://127.0.0.1:0'
   })
+
   t.after(() => server.close())
+
   const read = async (suffix) => (await fetch(server.origin + suffix)).json()
+
   const context = await read('/api/context?flow=checkout&node=review')
+
   assert.equal(context.nodeId, 'review')
   assert.equal(context.failureOwner, 'review')
   const request = {
@@ -37,6 +43,7 @@ test('offline authored files refresh through one shared read API; invalid, new a
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(request)
   })
+
   assert.equal(denied.status, 403)
   const session = await read('/api/session')
   const changed = await fetch(server.origin + '/api/update', {
@@ -47,6 +54,7 @@ test('offline authored files refresh through one shared read API; invalid, new a
     },
     body: JSON.stringify(request)
   })
+
   assert.equal(changed.status, 200)
   assert.equal(
     (await read('/api/evidence?flow=checkout&node=review')).notes.length,
@@ -55,6 +63,7 @@ test('offline authored files refresh through one shared read API; invalid, new a
   fs.writeFileSync(file, '{')
   assert.equal((await fetch(server.origin + '/api/flows')).status, 409)
   const replacement = file + '.replace'
+
   fs.writeFileSync(replacement, JSON.stringify(document()))
   fs.renameSync(replacement, file)
   assert.equal(
@@ -62,6 +71,7 @@ test('offline authored files refresh through one shared read API; invalid, new a
     'awaiting-manual'
   )
   const other = document()
+
   other.flowId = 'other'
   fs.writeFileSync(path.join(dir, 'other.flow.json'), JSON.stringify(other))
   assert.equal((await read('/api/flows')).evaluation.flows.length, 2)
@@ -73,6 +83,7 @@ test('offline authored files refresh through one shared read API; invalid, new a
 test('fragmented UTF-8 manual notes preserve the authored text', async (t) => {
   const http = require('node:http'),
     dir = directory(t)
+
   fs.writeFileSync(
     path.join(dir, 'checkout.flow.json'),
     JSON.stringify(document())
@@ -81,6 +92,7 @@ test('fragmented UTF-8 manual notes preserve the authored text', async (t) => {
     directory: dir,
     url: 'http://127.0.0.1:0'
   })
+
   t.after(() => server.close())
   const { capability } = await (
     await fetch(server.origin + '/api/session')
@@ -112,10 +124,12 @@ test('fragmented UTF-8 manual notes preserve the authored text', async (t) => {
         response.on('end', () => resolve(response.statusCode))
       }
     )
+
     request.on('error', reject)
     request.write(bytes.subarray(0, offset))
     setTimeout(() => request.end(bytes.subarray(offset)), 20)
   })
+
   assert.equal(status, 200)
   assert.equal(
     server.service.snapshot().documents[0].current.notes[0].text,

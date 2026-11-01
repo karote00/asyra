@@ -26,14 +26,18 @@ export interface SyntheticExample {
 export function createSyntheticExample(
   namespace = 'example'
 ): SyntheticExample {
-  if (!validIdentifier(namespace) || namespace.length > 60)
+  if (!validIdentifier(namespace) || namespace.length > 60) {
     throw new Error('Invalid example namespace')
+  }
+
   const id = (name: string) => `${namespace}:${name}`
+
   const box = (size: Vec3): Collider => ({
     id: 'shape',
     pose: IDENTITY_POSE,
     geometry: { kind: 'box', size }
   })
+
   const fixed = (
     name: string,
     role: Body['role'],
@@ -51,7 +55,9 @@ export function createSyntheticExample(
     visible: true,
     color: 0x78969c
   })
+
   const base = fixed('base', 'robot', [0, 0.12, 0], [box([0.46, 0.24, 0.46])])
+
   base.color = 0x243c4d
   const lengths = [0.5, 0.65, 0.5, 0.18, 0.14, 0.1],
     axes: Vec3[] = [
@@ -109,6 +115,7 @@ export function createSyntheticExample(
     ],
     links[5].id
   )
+
   tool.color = 0x3f7883
   const workpiece = fixed(
     'workpiece',
@@ -117,6 +124,7 @@ export function createSyntheticExample(
     [box([0.11, 0.075, 0.08])],
     tool.id
   )
+
   workpiece.color = 0x3bc3b1
   const table = fixed(
     'fixture-table',
@@ -130,6 +138,7 @@ export function createSyntheticExample(
     [-0.75, 0.65, 0.45],
     [box([0.14, 1.3, 0.14])]
   )
+
   post.color = 0xa8b5ba
   const workcell: Workcell = {
     version: 1,
@@ -165,9 +174,11 @@ export function createSyntheticExample(
       }
     ]
   }
+
   validateWorkcell(workcell)
   validateTrajectory(workcell, trajectory)
   const attached = [base, ...links, tool, workpiece]
+
   return {
     workcell,
     trajectory,

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ActivityProjection, type ActivityEvent } from '../agent-activity.js'
+
 const event = (
   sequence: number,
   update: Partial<ActivityEvent> = {}
@@ -16,6 +17,7 @@ const event = (
   summary: 'Checking the brief',
   ...update
 })
+
 const setup = () => {
   const append = vi.fn(async () => {
     /* Atomic in-memory test acknowledgement. */
@@ -24,25 +26,32 @@ const setup = () => {
   const projection = new ActivityProjection({ append }, (flush) =>
     flushes.push(flush)
   )
+
   projection.connect({
     id: 'sample',
     label: 'Synthetic example',
     fidelity: 'synthetic'
   })
+
   return {
     projection,
     append,
+
     flush: () => flushes.splice(0).forEach((flush) => flush())
   }
 }
+
 describe('Activity projection', () => {
   it('invokes the default browser microtask scheduler without a foreign receiver', async () => {
     const pending: VoidFunction[] = []
+
     vi.stubGlobal(
       'queueMicrotask',
       function (this: unknown, callback: VoidFunction) {
-        if (this !== undefined && this !== globalThis)
+        if (this !== undefined && this !== globalThis) {
           throw new TypeError('Illegal invocation')
+        }
+
         pending.push(callback)
       }
     )
@@ -50,8 +59,10 @@ describe('Activity projection', () => {
       // Acknowledge persistence before allowing projection publication.
     })
     const projection = new ActivityProjection({ append })
+
     projection.connect({ id: 'sample', label: 'Sample', fidelity: 'synthetic' })
     const changed = vi.fn()
+
     projection.subscribeAgent(projection.key('sample', 'a'), changed)
     try {
       await projection.ingest([event(1)])
@@ -77,17 +88,20 @@ describe('Activity projection', () => {
 
   it('retains every accepted event but coalesces entity updates without touching unrelated agents', async () => {
     const { projection, append, flush } = setup()
+
     await projection.ingest([event(1), event(2, { agentId: 'b' })])
     flush()
     const a = vi.fn(),
       b = vi.fn(),
       list = vi.fn()
+
     projection.subscribeAgent(projection.key('sample', 'a'), a)
     projection.subscribeAgent(projection.key('sample', 'b'), b)
     projection.subscribeAgents(list)
     const events = Array.from({ length: 500 }, (_, index) =>
       event(index + 3, { summary: `Step ${index}` })
     )
+
     await projection.ingest(events)
     expect(a).not.toHaveBeenCalled()
     flush()
@@ -102,6 +116,7 @@ describe('Activity projection', () => {
   })
   it('rejects an invalid batch without partial history or publication', async () => {
     const { projection, append } = setup()
+
     await expect(
       projection.ingest([event(1), event(2, { summary: '' })])
     ).rejects.toThrow('Invalid')
@@ -110,6 +125,7 @@ describe('Activity projection', () => {
   })
   it('deduplicates source replay and keeps a newer attempt when old completion arrives', async () => {
     const { projection, flush } = setup()
+
     await projection.ingest([
       event(1),
       event(2, { attempt: 2, taskId: 'task-2' }),
@@ -124,6 +140,7 @@ describe('Activity projection', () => {
   })
   it('retains the terminal result against late working events in the same attempt', async () => {
     const { projection, flush } = setup()
+
     await projection.ingest([event(1, { status: 'completed' }), event(2)])
     flush()
     expect(projection.getAgent(projection.key('sample', 'a'))?.status).toBe(
@@ -133,6 +150,7 @@ describe('Activity projection', () => {
   })
   it('uses connection fidelity rather than a caller claimed evidence label', async () => {
     const { projection, flush } = setup()
+
     projection.connect({
       id: 'mcp',
       label: 'Cooperative participant',
@@ -148,6 +166,7 @@ describe('Activity projection', () => {
   })
   it('does not acknowledge or project failed persistence and permits retry', async () => {
     const { projection, append, flush } = setup()
+
     append.mockRejectedValueOnce(new Error('Disk full'))
     await expect(projection.ingest([event(1)])).rejects.toThrow('Disk full')
     expect(projection.eventCount).toBe(0)
@@ -157,6 +176,7 @@ describe('Activity projection', () => {
   })
   it('rejects unknown sources and oversized batches atomically', async () => {
     const { projection, append } = setup()
+
     await expect(
       projection.ingest([event(1), event(2, { source: 'unknown' })])
     ).rejects.toThrow('Unknown')
@@ -169,14 +189,17 @@ describe('Activity projection', () => {
     let finish = () => {
       /* Replaced when the archive receives its batch. */
     }
+
     const projection = new ActivityProjection({
       append: () =>
         new Promise<void>((resolve) => {
           finish = resolve
         })
     })
+
     projection.connect({ id: 'sample', label: 'Sample', fidelity: 'synthetic' })
     const pending = projection.ingest([event(1)])
+
     await Promise.resolve()
     projection.dispose()
     finish()

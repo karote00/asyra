@@ -31,6 +31,7 @@ it('walking local action sweeps actual selected vertices with one whole interval
   const bounds = vi.spyOn(owner, 'boundSelectedChainMotion')
   const points = vi.spyOn(owner, 'evaluateSelectedChainMotion')
   const sweep = prepareWalkingSelectedActionSweep(owner, motion)
+
   expect(bounds).toHaveBeenCalledExactlyOnceWith(motion, {
     low: exact(0),
     high: exact(1)
@@ -45,14 +46,18 @@ it('walking local action sweeps actual selected vertices with one whole interval
   expect(sweep.work.otherBodyVisits).toBe(0)
   for (const parameter of [exact(0), fraction(1n, 2n), exact(1)]) {
     const point = owner.evaluateSelectedChainMotion(motion, parameter)
+
     for (const entry of point.parts) {
       const vertices = entry.part.shape.positions
+
       const outward = (value: { numerator: bigint; denominator: bigint }) => ({
         low: roundFraction(value.numerator, value.denominator, 'down'),
         high: roundFraction(value.numerator, value.denominator, 'up')
       })
+
       const matrix = entry.exact.matrix.map((row) => row.map(outward))
       const origin = entry.exact.origin.map(outward)
+
       for (let offset = 0; offset < vertices.length; offset += 3) {
         for (let axis = 0; axis < 3; axis++) {
           const value = matrix[axis].reduce(
@@ -60,12 +65,14 @@ it('walking local action sweeps actual selected vertices with one whole interval
               add(sum, multiply(coefficient, interval(vertices[offset + k]))),
             origin[axis]
           )
+
           expect(sweep.bounds.min[axis]).toBeLessThanOrEqual(value.low)
           expect(sweep.bounds.max[axis]).toBeGreaterThanOrEqual(value.high)
         }
       }
     }
   }
+
   owner.dispose()
   expect(() => prepareWalkingSelectedActionSweep(owner, motion)).toThrow()
 })

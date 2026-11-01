@@ -28,14 +28,9 @@ app templates.
   template inherits that app version through the official generator; the
   template is never edited, versioned, or selected in Changesets independently.
 
-Pure Markdown documentation PRs require no Changeset. This exemption checks
-all changed paths, including deletions and both rename paths: every path must
-end in `.md` and be outside `.changeset/`. Mixed changes and executable
-documentation such as `.mdx` retain the ordinary requirement.
-
-An empty Changeset may record a non-documentation PR that changes no versioned
-Framework package or public tool. Empty records satisfy closeout without assigning a release version to
-root, private, CLI, or generated-template owners.
+Development PRs and plan closeout require no Changeset. Create scoped version
+intent only when preparing a package release. Owner decision streams remain the
+project release-note source; generated package changelogs are disabled.
 
 ## Framework Iteration Contract
 
@@ -44,7 +39,7 @@ For a root release family `a.b.0`, Framework packages develop within the same
 post-baseline iterations and may differ between packages according to which
 packages changed.
 
-Normal Framework development uses ordinary scoped Changesets. A Changeset must
+Framework release preparation uses scoped Changesets. A Changeset must
 not contain root `asyra`, a private app, any `create-app/*` CLI package, a
 generated template, or any unrelated workspace. The independently versioned
 Flow Inspector tool may have its own scoped entry outside the Framework allowlist.

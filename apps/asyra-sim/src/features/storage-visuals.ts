@@ -41,8 +41,10 @@ export function installVisualStorageFeatures(
       if (
         !bytes.byteLength ||
         bytes.byteLength > VISUAL_SOURCE_PROFILE.maxBytes
-      )
+      ) {
         return Promise.reject(new Error('Visual source byte limit exceeded'))
+      }
+
       return invokeFeatureTask(
         FeatureNames.PREPARE_VISUAL,
         {
@@ -52,8 +54,11 @@ export function installVisualStorageFeatures(
         options
       )
     },
+
     cancel: () => cancelFeatureTask(FeatureNames.PREPARE_VISUAL),
+
     discard: (prepared) => archive.discard(prepared),
+
     retain: async (prepared, candidateId, bodyId, placement) => {
       const input = structuredClone(placement)
       const pose = transformSpatialPose(
@@ -61,28 +66,35 @@ export function installVisualStorageFeatures(
         { kind: 'set', pose: { ...input.pose, scale: input.scale } },
         true
       )
+
       input.pose = { position: pose.position, rotation: pose.rotation }
       input.scale = pose.scale ?? [1, 1, 1]
       const source = archive.accept(prepared)
+
       await upsertVisual(candidateId, bodyId, {
         ...input,
         assetId: source.assetId
       })
       archive.discard(prepared)
+
       return source.assetId
     }
   }
+
   core.defineFeature(FeatureNames.PREPARE_VISUAL, undefined, {
     priority: 90,
     exclusive: true,
     api: { prepare: api.prepare, cancel: api.cancel, discard: api.discard },
+
     task: (input: unknown, { signal }) => {
       if (
         !isPlainRecord(input) ||
         !(input.bytes instanceof Uint8Array) ||
         typeof input.filename !== 'string'
-      )
+      ) {
         throw new Error('Invalid visual preparation Feature input')
+      }
+
       return archive.prepare(input.bytes, input.filename, signal)
     }
   })
@@ -94,5 +106,6 @@ export function installVisualStorageFeatures(
   core.registerRuntimeCleanup(FeatureNames.PREPARE_VISUAL, () =>
     archive.dispose()
   )
+
   return api
 }

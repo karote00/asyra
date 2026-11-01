@@ -8,6 +8,7 @@ describe('RenderStrategyRegistry', () => {
   beforeEach(() => {
     // Clear registry before each test
     const types = ['test-type', 'another-type', 'star']
+
     types.forEach((type) => {
       renderStrategyRegistry.unregister(type)
     })
@@ -61,6 +62,7 @@ describe('RenderStrategyRegistry', () => {
 
   it('should return false when unregistering non-existent strategy', () => {
     const result = renderStrategyRegistry.unregister('non-existent')
+
     expect(result).toBe(false)
   })
 
@@ -97,6 +99,7 @@ describe('RenderStrategyRegistry', () => {
     renderStrategyRegistry.register('star', mockStrategy)
 
     const strategy = renderStrategyRegistry.get('star')
+
     expect(strategy).toBeDefined()
 
     if (strategy) {

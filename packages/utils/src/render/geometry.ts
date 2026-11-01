@@ -28,6 +28,7 @@ export const getPointDistanceSquared = (
 ): number => {
   const dx = to.x - from.x
   const dy = to.y - from.y
+
   return dx * dx + dy * dy
 }
 

@@ -18,6 +18,7 @@ const artworkRoot = '/illustrations/spatial-story/'
 
 function Illustration({ name }: { name: string }) {
   const art = storyArtwork[name]
+
   return (
     <img
       src={`${artworkRoot}${art.src}`}
@@ -33,6 +34,7 @@ function Illustration({ name }: { name: string }) {
 
 function DrawingOutput({ frame }: { frame: StoryFrame }) {
   const geometry = getBuildingGeometry(frame.effects.house, frame.effects.tower)
+
   return (
     <svg
       data-drawing-output
@@ -169,10 +171,12 @@ function StructurePlane({ name, frame }: { name: string; frame: StoryFrame }) {
   let code = buildingExample.original
   let surface = 'bg-[#dce5ce]'
   let effect = 'feature'
+
   if (replacement) {
     code = buildingExample.replacement
     surface = 'bg-[#b7cda6]'
   }
+
   if (name === 'transaction') {
     title = 'Transaction'
     subtitle = 'One bounded change'
@@ -180,6 +184,7 @@ function StructurePlane({ name, frame }: { name: string; frame: StoryFrame }) {
     surface = 'bg-[#eceddf]'
     effect = 'transaction'
   }
+
   if (name === 'state') {
     title = 'State'
     subtitle = 'Authoritative information'
@@ -187,6 +192,7 @@ function StructurePlane({ name, frame }: { name: string; frame: StoryFrame }) {
     surface = 'bg-[#becdb8]'
     effect = 'state'
   }
+
   return (
     <div
       className={`story-depth relative h-[150px] w-[460px] rounded-[4px] border border-[#183f35]/45 ${surface} text-[#183f35]`}
@@ -297,7 +303,11 @@ function StoryScene({
   shared?: boolean
 }) {
   let snapshot = 1
-  if (shared || chapter === 0) snapshot = 0
+
+  if (shared || chapter === 0) {
+    snapshot = 0
+  }
+
   const frame = getStoryFrame(chapter, snapshot)
   const caption = (
     <div
@@ -308,6 +318,7 @@ function StoryScene({
       <span>Powered by Asyra</span>
     </div>
   )
+
   if (!shared && chapter === 0) {
     return (
       <div
@@ -321,6 +332,7 @@ function StoryScene({
       </div>
     )
   }
+
   return (
     <div className="relative h-full">
       <div
@@ -394,6 +406,7 @@ function StoryScene({
 function StoryChapter({ index }: { index: number }) {
   const chapter = storyChapters[index]
   const Heading = index === 0 ? 'h1' : 'h2'
+
   return (
     <section
       id={chapter.id}
@@ -463,20 +476,30 @@ function applyFrame(
 ) {
   view.dataset.chapter = String(frame.chapter)
   view.dataset.progress = frame.progress.toFixed(4)
-  if (nodes.camera) nodes.camera.style.transform = cameraTransform(frame.camera)
+  if (nodes.camera) {
+    nodes.camera.style.transform = cameraTransform(frame.camera)
+  }
+
   for (const layer of nodes.layers) {
     const pose = frame.layers[layer.dataset.storyLayer || '']
+
     layer.style.transform = layerTransform(pose)
     layer.style.opacity = String(pose[7])
     layer.style.pointerEvents = pose[7] > 0.01 ? 'auto' : 'none'
   }
-  for (const node of nodes.effects)
+
+  for (const node of nodes.effects) {
     node.style.opacity = String(frame.effects[node.dataset.sceneEffect || ''])
-  for (const node of nodes.inverse)
+  }
+
+  for (const node of nodes.inverse) {
     node.style.opacity = String(
       1 - frame.effects[node.dataset.sceneInverse || '']
     )
+  }
+
   const building = getBuildingGeometry(frame.effects.house, frame.effects.tower)
+
   for (const drawing of nodes.drawings) {
     drawing.root.dataset.buildingHeight = String(building.height)
     for (let i = 0; i < building.parts.length; i++) {
@@ -487,11 +510,13 @@ function applyFrame(
       )
     }
   }
+
   if (nodes.ink) {
     nodes.ink.style.filter = `grayscale(${1 - frame.effects.ink})`
     nodes.ink.style.opacity = String(0.5 + frame.effects.ink * 0.5)
   }
 }
+
 function sceneNodes(view: HTMLElement) {
   return {
     drawings: [
@@ -518,11 +543,20 @@ export function SpatialStory({
   footer?: ReactNode
 }) {
   const rootRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
     const root = rootRef.current
-    if (!root) return
+
+    if (!root) {
+      return
+    }
+
     const view = root.querySelector<HTMLElement>('[data-shared-scene]')
-    if (!view) return
+
+    if (!view) {
+      return
+    }
+
     const nodes = sceneNodes(view)
     const sections = [
       ...root.querySelectorAll<HTMLElement>('[data-story-chapter]')
@@ -534,28 +568,42 @@ export function SpatialStory({
     let active = -1
     const driver = createScrollDriver({
       requestFrame: (callback) => window.requestAnimationFrame(callback),
+
       cancelFrame: (id) => window.cancelAnimationFrame(id),
+
       render: (frame) => {
         applyFrame(view, frame, nodes)
         if (frame.chapter !== active) {
           active = frame.chapter
           links.forEach((link, i) => {
-            if (i === active) link.setAttribute('aria-current', 'step')
-            else link.removeAttribute('aria-current')
+            if (i === active) {
+              link.setAttribute('aria-current', 'step')
+            } else {
+              link.removeAttribute('aria-current')
+            }
           })
         }
       }
     })
+
     const scroll = () => {
-      if (!animated || !measurements.length) return
+      if (!animated || !measurements.length) {
+        return
+      }
+
       const y = window.scrollY
       let chapter = 0
-      while (chapter < 5 && y >= measurements[chapter + 1].top) chapter++
+
+      while (chapter < 5 && y >= measurements[chapter + 1].top) {
+        chapter++
+      }
+
       driver.update(
         chapter,
         (y - measurements[chapter].top) / measurements[chapter].height
       )
     }
+
     const measure = () => {
       animated =
         !media.matches && window.innerWidth >= 1024 && window.innerHeight >= 760
@@ -569,7 +617,7 @@ export function SpatialStory({
       for (const viewport of root.querySelectorAll<HTMLElement>(
         '[data-scene-viewport]'
       )) {
-        if (viewport.clientWidth)
+        if (viewport.clientWidth) {
           viewport.style.setProperty(
             '--scene-scale',
             String(
@@ -580,13 +628,17 @@ export function SpatialStory({
               )
             )
           )
+        }
       }
+
       scroll()
     }
+
     measure()
     window.addEventListener('scroll', scroll, { passive: true })
     window.addEventListener('resize', measure)
     media.addEventListener('change', measure)
+
     return () => {
       driver.dispose()
       window.removeEventListener('scroll', scroll)
@@ -594,6 +646,7 @@ export function SpatialStory({
       media.removeEventListener('change', measure)
     }
   }, [])
+
   return (
     <div
       ref={rootRef}

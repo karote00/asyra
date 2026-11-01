@@ -46,22 +46,26 @@ const attemptLabel = (identity.attempt || '1')
 
 const discovered = collectBrowserSpecFiles(appRoot)
 const assigned = CI_E2E_GROUPS.flatMap(({ files }) => files).toSorted()
+
 if (
   assigned.length !== new Set(assigned).size ||
   JSON.stringify(assigned) !== JSON.stringify(discovered)
-)
+) {
   throw new Error('Sim CI browser groups must cover every configured spec once')
+}
 
 fs.mkdirSync(temporary, { recursive: true })
 fs.mkdirSync(resultDirectory, { recursive: true })
 
 let activeChild
 let receivedSignal = null
-for (const signal of ['SIGINT', 'SIGTERM'])
+
+for (const signal of ['SIGINT', 'SIGTERM']) {
   process.on(signal, () => {
     receivedSignal = signal
     activeChild?.kill(signal)
   })
+}
 
 function runPlaywright(command, environment) {
   return new Promise((resolve) => {
@@ -70,8 +74,10 @@ function runPlaywright(command, environment) {
       env: environment,
       stdio: 'inherit'
     })
+
     activeChild = child
     let spawnError = null
+
     child.on('error', (error) => {
       spawnError = error.message
     })
@@ -89,6 +95,7 @@ function runPlaywright(command, environment) {
 const selectedGroups = selectBrowserGroups(process.argv.slice(2))
 const groupRuns = []
 const groupFailures = []
+
 for (const group of selectedGroups) {
   const startedAt = new Date().toISOString()
   const outputDirectory = path.posix.join(
@@ -121,11 +128,13 @@ for (const group of selectedGroups) {
   const finishedAt = new Date().toISOString()
   let report = null
   let reportError = null
+
   try {
     report = JSON.parse(fs.readFileSync(reportPath, 'utf8'))
   } catch (error) {
     reportError = error.message
   }
+
   const run = {
     group: group.name,
     command: commandDescription,
@@ -140,6 +149,7 @@ for (const group of selectedGroups) {
     error: result.error ?? reportError,
     report
   }
+
   groupRuns.push(run)
   const groupReport = report
     ? {
@@ -156,8 +166,10 @@ for (const group of selectedGroups) {
         }
       }
     : null
-  if (groupReport)
+
+  if (groupReport) {
     fs.writeFileSync(reportPath, JSON.stringify(groupReport, null, 2))
+  }
 
   const noTests =
     !report?.stats ||
@@ -171,6 +183,7 @@ for (const group of selectedGroups) {
     noTests ||
     Boolean(report?.errors?.length) ||
     (report.stats?.unexpected ?? 0) > 0
+
   if (failed) {
     groupFailures.push(group.name)
     process.stderr.write(
@@ -179,6 +192,7 @@ for (const group of selectedGroups) {
   } else if (fs.existsSync(reportPath)) {
     fs.unlinkSync(reportPath)
   }
+
   if (receivedSignal) {
     groupFailures.push(`interrupted-${receivedSignal}`)
     break
@@ -193,6 +207,7 @@ if (groupRuns.length < selectedGroups.length) {
       `${runLabel}-${attemptLabel}`,
       group.name
     )
+
     groupRuns.push({
       group: group.name,
       command: [],
@@ -209,6 +224,7 @@ if (groupRuns.length < selectedGroups.length) {
 }
 
 const merged = mergePlaywrightReports(groupRuns, identity)
+
 fs.mkdirSync(path.dirname(aggregateReportPath), { recursive: true })
 fs.writeFileSync(aggregateReportPath, JSON.stringify(merged, null, 2))
 if (groupFailures.length) {

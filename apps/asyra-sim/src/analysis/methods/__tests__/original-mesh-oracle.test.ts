@@ -32,37 +32,62 @@ function cube(halfWidth: number): MeshGeometry {
 // decoded exactly; comparison never uses a rounded square root or epsilon.
 type Rational = readonly [bigint, bigint]
 const zero: Rational = [0n, 1n]
+
 function rational(value: number): Rational {
-  if (!Number.isFinite(value)) throw new Error('Nonfinite oracle input')
+  if (!Number.isFinite(value)) {
+    throw new Error('Nonfinite oracle input')
+  }
+
   const bits = new DataView(new ArrayBuffer(8))
+
   bits.setFloat64(0, value)
   const encoded = bits.getBigUint64(0)
   const exponent = Number((encoded >> 52n) & 2047n)
   let numerator = encoded & ((1n << 52n) - 1n)
-  if (exponent !== 0) numerator += 1n << 52n
-  if (encoded >> 63n) numerator = -numerator
+
+  if (exponent !== 0) {
+    numerator += 1n << 52n
+  }
+
+  if (encoded >> 63n) {
+    numerator = -numerator
+  }
+
   const power = exponent === 0 ? -1074 : exponent - 1075
-  if (power >= 0) return [numerator << BigInt(power), 1n]
+
+  if (power >= 0) {
+    return [numerator << BigInt(power), 1n]
+  }
+
   return [numerator, 1n << BigInt(-power)]
 }
+
 const add = (a: Rational, b: Rational): Rational => [
   a[0] * b[1] + b[0] * a[1],
   a[1] * b[1]
 ]
+
 const negate = (a: Rational): Rational => [-a[0], a[1]]
+
 const square = (a: Rational): Rational => [a[0] * a[0], a[1] * a[1]]
+
 const multiply = (a: Rational, b: Rational): Rational => [
   a[0] * b[0],
   a[1] * b[1]
 ]
+
 const divide = (a: Rational, b: Rational): Rational => [
   a[0] * b[1],
   a[1] * b[0]
 ]
+
 const compare = (a: Rational, b: Rational) => a[0] * b[1] - b[0] * a[1]
+
 const absolute = (a: Rational) => (a[0] < 0n ? negate(a) : a)
+
 const xAt = (time: number): Rational => {
   const t = rational(time)
+
   return add([-2n, 1n], [4n * t[0], t[1]])
 }
 
@@ -74,14 +99,20 @@ function minimumSquared(start: number, end: number, offset: number): Rational {
   const a = xAt(start),
     b = xAt(end)
   let nearest = zero
+
   if (a[0] > 0n || b[0] < 0n) {
     nearest = absolute(a)
-    if (compare(absolute(b), nearest) < 0n) nearest = absolute(b)
+    if (compare(absolute(b), nearest) < 0n) {
+      nearest = absolute(b)
+    }
   }
+
   const gap = (coordinate: Rational) => {
     const result = add(coordinate, [-3n, 16n])
+
     return result[0] > 0n ? result : zero
   }
+
   return add(square(gap(nearest)), square(gap(rational(offset))))
 }
 
@@ -112,6 +143,7 @@ function input(offset: number, reverse: boolean): PairQuery {
     pose: { ...IDENTITY_POSE, position: [0, offset, 0] },
     colliders: [{ id: 'part', pose: IDENTITY_POSE, geometry: cube(1 / 16) }]
   }
+
   return {
     workcell: {
       version: 1,
@@ -150,15 +182,18 @@ it.each([
       maxIntervals: 2048,
       maxIterations: 48
     })
+
     // Force both positive-distance leaves and crossing leaves, so the oracle
     // cannot pass by checking only the zero minimum of the whole trajectory.
     expect(result.leaves.length).toBeGreaterThanOrEqual(4)
     let cursor = 0
+
     for (const leaf of result.leaves) {
       expect(leaf.start).toBe(cursor)
       expect(leaf.end).toBeGreaterThan(leaf.start)
       cursor = leaf.end
       const exact = minimumSquared(leaf.start, leaf.end, offset)
+
       expect(leaf.lower).toBeGreaterThanOrEqual(0)
       expect(compare(square(rational(leaf.lower)), exact)).toBeLessThanOrEqual(
         0n
@@ -169,27 +204,34 @@ it.each([
           compare(square(rational(leaf.upper)), exact)
         ).toBeGreaterThanOrEqual(0n)
       }
-      if (leaf.state === 'clear')
+
+      if (leaf.state === 'clear') {
         expect(compare(exact, square(rational(threshold)))).toBeGreaterThan(0n)
+      }
+
       if (leaf.witnessTime !== null) {
         expect(leaf.witnessTime).toBeGreaterThanOrEqual(leaf.start)
         expect(leaf.witnessTime).toBeLessThanOrEqual(leaf.end)
       }
+
       if (leaf.penetration) {
         expect(offset).toBe(0)
         expect(leaf.witnessTime).not.toBeNull()
         const time = rational(leaf.witnessTime as number)
+
         expect(compare(time, [29n, 64n])).toBeGreaterThan(0n)
         expect(compare(time, [35n, 64n])).toBeLessThan(0n)
       }
     }
+
     expect(cursor).toBe(1)
-    if (offset === 0)
+    if (offset === 0) {
       expect(result.leaves.some((leaf) => leaf.penetration)).toBe(true)
-    else {
+    } else {
       expect(result.coverage).toBe('complete')
       expect(result.leaves.every((leaf) => leaf.state === 'clear')).toBe(true)
       const exact = square([5n, 16n])
+
       expect(
         compare(square(rational(result.lower)), exact)
       ).toBeLessThanOrEqual(0n)
@@ -218,8 +260,10 @@ function rotatedMinimumSquared(dx: number, dy: number): Rational {
     add(multiply(c, x), multiply(s, y)),
     add(negate(multiply(s, x)), multiply(c, y))
   ]
+
   return local.reduce<Rational>((sum, coordinate) => {
     const gap = add(absolute(coordinate), [-3n, 16n])
+
     return gap[0] > 0n ? add(sum, square(gap)) : sum
   }, zero)
 }
@@ -238,10 +282,14 @@ it.each([
       dy = 0.0616 * factor,
       rotation = [0, 0, 0.6, 0.8] as const
     const query = input(0, reverse)
+
     query.workcell = {
       ...query.workcell,
       bodies: query.workcell.bodies.map((body) => {
-        if (body.id === 'base') return body
+        if (body.id === 'base') {
+          return body
+        }
+
         return {
           ...body,
           pose: {
@@ -268,8 +316,10 @@ it.each([
       maxIterations: 48
     })
     const exact = rotatedMinimumSquared(dx, dy)
+
     expect(result.leaves).toHaveLength(1)
     const leaf = result.leaves[0]
+
     expect(leaf.lower).toBeGreaterThanOrEqual(0)
     expect(compare(square(rational(leaf.lower)), exact)).toBeLessThanOrEqual(0n)
     expect(leaf.upper).not.toBeNull()
@@ -286,6 +336,7 @@ it.each([
       expect(exact[0]).toBeGreaterThan(0n)
       expect(leaf.penetration).toBe(false)
       const separation = compare(exact, square(rational(threshold)))
+
       expect(separation).not.toBe(0n)
       expect(leaf.state).toBe(separation > 0n ? 'clear' : 'finding')
     }

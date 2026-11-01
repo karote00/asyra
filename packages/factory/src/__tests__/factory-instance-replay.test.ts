@@ -59,6 +59,7 @@ describe('Factory replay instance isolation', () => {
     const customFactory = new Factory()
     const channel = new LocalSharedDataChannel()
     const delivered: unknown[] = []
+
     channel.observe((change) => delivered.push(change))
     customFactory.registerSharedDataChannel(
       SharedDataChannelNames.SCENE_TREE,
@@ -70,6 +71,7 @@ describe('Factory replay instance isolation', () => {
         if (!customFactory.isInUndoRedo()) {
           return
         }
+
         customFactory.updateTransaction({
           type: TransactionEventTypes.UPDATE_TRANSACTION,
           eventName: EventTypes.UPDATE_PROPERTY,

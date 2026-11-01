@@ -18,6 +18,7 @@ interface Measurement {
   milliseconds: number
 }
 let control: Measurement | undefined
+
 afterEach(() => vi.restoreAllMocks())
 
 describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
@@ -32,7 +33,11 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           (p) =>
             p.a.bodyId === 'example:joint-2' && p.b.bodyId === 'obstacle-11'
         )
-        if (!pair) throw new Error('Missing original ordered pair')
+
+        if (!pair) {
+          throw new Error('Missing original ordered pair')
+        }
+
         const context = new OriginalMeshQuery()
         let depth = 0
         const costs = {
@@ -56,6 +61,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           membership: 0,
           omittedStaticProjection: 0
         }
+
         type Project = (
           a: ConvexShape,
           b: ConvexShape,
@@ -68,6 +74,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           projectGap: Project
         }
         const projectGap = owner.projectGap
+
         vi.spyOn(owner, 'projectGap').mockImplementation(function (
           this: OriginalMeshQuery,
           a,
@@ -85,13 +92,17 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             gap <= threshold
           ) {
             calls.omittedStaticProjection++
+
             return gap
           }
+
           return projectGap.call(this, a, b, ab, bb, gap, threshold)
         })
         const distance = context.distance.bind(context)
+
         context.distance = (...args) => {
           const before = context.work
+
           calls.distance++
           depth++
           try {
@@ -101,9 +112,12 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             costs.distance += context.work - before
           }
         }
+
         const lower = context.lowerOver.bind(context)
+
         context.lowerOver = (...args) => {
           const before = context.work
+
           calls.interval++
           try {
             return lower(...args)
@@ -111,14 +125,17 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             costs.interval += context.work - before
           }
         }
+
         for (const [method, key] of [
           ['chargeSourceWitness', 'source'],
           ['chargeEvidenceHandoff', 'handoff'],
           ['chargeEvidenceDerivation', 'derivation']
         ] as const) {
           const charge = context[method].bind(context)
+
           context[method] = () => {
             const before = context.work
+
             try {
               charge()
             } finally {
@@ -126,8 +143,10 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             }
           }
         }
+
         const build = mesh.buildMeshIndex,
           refine = mesh.refineMeshIndex
+
         vi.spyOn(mesh, 'buildMeshIndex').mockImplementation(
           (geometry, checkpoint, hierarchy, checkExecution) =>
             build(
@@ -148,9 +167,11 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             })
         )
         const projected = projections.projectedBoundsGap
+
         vi.spyOn(projections, 'projectedBoundsGap').mockImplementation(
           (a, ap, b, bp, threshold, checkpoint) => {
             const kind = depth > 0 ? 'staticAxes' : 'intervalAxes'
+
             return projected(a, ap, b, bp, threshold, () => {
               nested[kind]++
               checkpoint()
@@ -158,9 +179,11 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           }
         )
         const contains = membership.shapeMembership
+
         vi.spyOn(membership, 'shapeMembership').mockImplementation(
           (point, shape, index, checkpoint) => {
             calls.membership++
+
             return contains(point, shape, index, () => {
               nested.membership++
               checkpoint()
@@ -168,8 +191,10 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           }
         )
         const solve = convex.convexDistance
+
         vi.spyOn(convex, 'convexDistance').mockImplementation((...args) => {
           calls.convex++
+
           return solve(...args)
         })
         const started = performance.now()
@@ -200,6 +225,7 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
             import.meta.url
           )
         )
+
         mkdirSync(dirname(artifactPath), { recursive: true })
         writeFileSync(
           artifactPath,
@@ -243,10 +269,12 @@ describe.runIf(process.env.SIM_CAPACITY_DIAGNOSTICS === '1')(
           expect(context.work).toBe(197028)
           control = measurement
         } else {
-          if (!control)
+          if (!control) {
             throw new Error(
               'Run both fixed population strategies in declared order'
             )
+          }
+
           expect(nested.staticAxes).toBe(0)
           expect(calls.omittedStaticProjection).toBeGreaterThan(0)
           expect(result).toEqual(control.result)

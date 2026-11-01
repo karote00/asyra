@@ -11,6 +11,7 @@ interface PanAPI {
 const api: PanAPI = {
   pan: (deltaX: number, deltaY: number) => {
     const currentPosition = viewportApis.getPosition()
+
     viewportApis.panTo(currentPosition.x + deltaX, currentPosition.y + deltaY)
   }
 }
@@ -22,6 +23,7 @@ export const panFeature = defineFeature(
     priority: 4,
     exclusive: false,
     api,
+
     execution: (snapshot: SystemContextSnapshot) => {
       if (snapshot.keyMeta || snapshot.keyCtrl) {
         return null

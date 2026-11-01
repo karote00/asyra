@@ -86,6 +86,7 @@ describe('cooperative render policy', () => {
         yieldToHost: async () => {
           order.push('host')
         },
+
         waitForPaint: async () => {
           order.push('paint')
         }

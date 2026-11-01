@@ -10,6 +10,7 @@ const snapshot: ProjectSnapshot = {
   },
   loadIssues: []
 }
+
 const entry = (id: string) => ({
   version: 1 as const,
   publication: {
@@ -50,6 +51,7 @@ const entry = (id: string) => ({
 
 it('queues every publication immediately, preserves blocked-write order and never captures ordinary edits', async () => {
   let release: () => void = () => undefined
+
   const blocked = new Promise<void>((resolve) => {
     release = resolve
   })
@@ -67,6 +69,7 @@ it('queues every publication immediately, preserves blocked-write order and neve
     capture,
     apply: vi.fn(async () => [])
   })
+
   await session.start()
   session.markEdited(entry('first'))
   await vi.waitFor(() => expect(append).toHaveBeenCalledOnce())
@@ -97,8 +100,10 @@ it('creates a current checkpoint copy after a rejected append without overwritin
     capture,
     apply: vi.fn(async () => [])
   })
+
   await session.start()
   const original = session.getState().project
+
   session.markEdited(entry('pending'))
   await expect(session.flush()).rejects.toThrow('budget')
   await session.copy('Recovered copy')

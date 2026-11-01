@@ -5,9 +5,11 @@ import architecture from '../../../../../assets/asyra-office/models/architecture
 import { OFFICE_FIT, OFFICE_FLOORS, OFFICE_SHELL } from '../office-layout'
 
 const parts = new Map<string, AssetPart[]>()
+
 beforeAll(() => {
   const scene = createReferenceScene('structure')
   let offset = 0
+
   for (const assembly of scene.assemblies) {
     parts.set(
       assembly.id,
@@ -16,16 +18,21 @@ beforeAll(() => {
     offset += assembly.parts.length
   }
 })
+
 function bounds(id: string, region?: string) {
   const selected = parts
     .get(id)
     ?.filter((part) => !region || part.id === region)
-  if (!selected?.length)
+
+  if (!selected?.length) {
     throw new Error('Missing entrance component: ' + id + '/' + region)
+  }
+
   return [0, 1, 2].map((axis) => {
     const values = selected.flatMap((part) =>
       part.mesh.positions.filter((_, index) => index % 3 === axis)
     )
+
     return [Math.min(...values), Math.max(...values)]
   })
 }
@@ -35,10 +42,12 @@ it('continues the same wall cap across the complete approved entrance', () => {
     cap = bounds('entry-header', 'top-cap')
   const leftCap = bounds('front-facade-cap'),
     rightCap = bounds('entry-pier-cap')
+
   for (const axis of [1, 2]) {
     expect(cap[axis]).toEqual(leftCap[axis].map((v) => expect.closeTo(v, 8)))
     expect(cap[axis]).toEqual(rightCap[axis].map((v) => expect.closeTo(v, 8)))
   }
+
   expect(cap[0][0]).toBeCloseTo(leftCap[0][1], 8)
   expect(cap[0][1]).toBeCloseTo(rightCap[0][0], 8)
   expect(header[2][0]).toBeCloseTo(
@@ -55,41 +64,55 @@ it('continues the same wall cap across the complete approved entrance', () => {
 it('supports the entire front wall body and carries flooring to the slab edge', () => {
   const slab = bounds('office-slab'),
     facade = bounds('front-thin-wall')
+
   expect(slab[1][0]).toBeLessThanOrEqual(facade[1][0] + 1e-8)
   const floor = [...parts.keys()].filter((id) => id.startsWith('floor-'))
   const front = Math.min(...floor.map((id) => bounds(id)[1][0]))
+
   expect(front - slab[1][0]).toBeCloseTo(0.0015, 8)
   // Body contact, not cap overhang, defines the closed front-left corner.
   const west = bounds('left-wall')
+
   expect(west[1][0]).toBeLessThanOrEqual(facade[1][0])
   expect(facade[0][0]).toBeCloseTo(west[0][1], 8)
 })
 
 it('carries the terminal lounge wall to the rectangular shell outer face', () => {
   const east = bounds('office-slab')[0][1]
-  for (const id of ['lounge-right-wall', 'lounge-right-wall-cap'])
+
+  for (const id of ['lounge-right-wall', 'lounge-right-wall-cap']) {
     for (const detail of ['near', 'distant'] as const) {
       const item = parts.get(id)?.[0]
       const mesh = detail === 'near' ? item?.mesh : item?.distant?.mesh
-      if (!mesh) throw new Error('Missing terminal wall representation')
+
+      if (!mesh) {
+        throw new Error('Missing terminal wall representation')
+      }
+
       const end = Math.max(
         ...mesh.positions.filter((_, index) => index % 3 === 0)
       )
+
       expect(end, id + '/' + detail).toBeCloseTo(east, 8)
     }
+  }
 })
 
 it('installs the complete approved door and frame with its specified clear aperture and fitting gaps', () => {
   const spec = architecture.modules.find(
     (item) => item.moduleId === 'entry-door-set'
   )
+
   if (
     !spec?.mounting ||
     !spec.overallBoundsMetres ||
     !spec.openingClearSizeMetres
-  )
+  ) {
     throw new Error('Missing approved entry dimensions')
+  }
+
   const frame = parts.get('entrance-door')
+
   expect(
     frame
       ?.filter((p) => ['head', 'jamb-left', 'jamb-right'].includes(p.id))
@@ -103,6 +126,7 @@ it('installs the complete approved door and frame with its specified clear apert
   const left = bounds('entrance-door', 'jamb-left')
   const right = bounds('entrance-door', 'jamb-right')
   const head = bounds('entrance-door', 'head')
+
   expect(overall[0][1] - overall[0][0]).toBeCloseTo(
     (spec.overallBoundsMetres.max[0] - spec.overallBoundsMetres.min[0]) * sx,
     8

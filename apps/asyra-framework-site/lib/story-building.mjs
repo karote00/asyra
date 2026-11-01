@@ -9,11 +9,14 @@ export const buildingExample = Object.freeze({
   houseFloors: 2,
   towerFloors: 8
 })
+
 const clamp = (value) => Math.max(0, Math.min(1, value))
+
 const project = ([x, z, height]) => [
   150 + (x - z) * 0.85,
   199 + (x + z) * 0.38 - height
 ]
+
 const polygon = (points) =>
   points
     .map((point) =>
@@ -22,20 +25,25 @@ const polygon = (points) =>
         .join(',')
     )
     .join(' ')
+
 // Each storey has a local, reversible assembly sequence driven by the shared
 // scroll sample: unfold a thick slab, raise walls, then finish glazing.
 export function getBuildingGeometry(rise, tower) {
   rise = clamp(rise)
   tower = clamp(tower)
+
   const smooth = (value) => {
     const t = clamp(value)
+
     return t * t * (3 - 2 * t)
   }
+
   const floors = Array.from({ length: 8 }, (_, index) => {
     const progress =
       index < 2
         ? (rise / 0.86) * 2 - index
         : ((tower - 0.08) / 0.84) * 6 - (index - 2)
+
     return {
       slab: smooth(progress / 0.25),
       wall: smooth((progress - 0.25) / 0.5),
@@ -50,8 +58,10 @@ export function getBuildingGeometry(rise, tower) {
   const roof = smooth((rise - 0.86) / 0.14) * (1 - smooth(tower / 0.08))
   const crown = smooth((tower - 0.92) / 0.08)
   const parts = []
+
   const add = (id, points, fill, opacity = 1, stroke = '#244c40') =>
     parts.push({ id, points: polygon(points), fill, opacity, stroke })
+
   // Paint from the ground upwards. Each slab hides only the volume below it,
   // so its top remains exposed while the next storey's walls are rising.
   for (let floor = 0; floor < 8; floor++) {
@@ -60,6 +70,7 @@ export function getBuildingGeometry(rise, tower) {
     const top = base + 22 * phase.wall
     const edge = 68 * phase.slab
     const slabOpacity = clamp(phase.slab * 8)
+
     add(
       `slab-top-${floor}`,
       [
@@ -175,6 +186,7 @@ export function getBuildingGeometry(rise, tower) {
         'none'
       )
     }
+
     for (const [column, z] of [9, 41].entries()) {
       add(
         `side-window-${floor}-${column}`,
@@ -200,6 +212,7 @@ export function getBuildingGeometry(rise, tower) {
         'none'
       )
     }
+
     if (floor === 0) {
       add(
         'door',
@@ -226,7 +239,9 @@ export function getBuildingGeometry(rise, tower) {
       )
     }
   }
+
   const pitch = 22 * roof
+
   add(
     'roof-gable',
     [
@@ -347,5 +362,6 @@ export function getBuildingGeometry(rise, tower) {
     '#ebeedc',
     crown
   )
+
   return { height, tower, rise, floors, parts }
 }

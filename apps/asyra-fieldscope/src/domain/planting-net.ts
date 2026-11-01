@@ -13,7 +13,9 @@ export const NET_LAYOUT = Object.freeze({
   tieWidth: 0.004,
   tieThickness: 0.001
 })
+
 type Assembly = ReturnType<typeof createSupportAssembly>
+
 export function createPlantingNet(
   assembly: Assembly,
   config: FarmConfiguration = DEFAULT_CONFIGURATION
@@ -25,6 +27,7 @@ export function createPlantingNet(
   }[] = []
   const ties: { bay: number; center: Point3; radius: number }[] = []
   const rows = assembly.tubes.filter((tube) => tube.z === config.startInset)
+
   for (const row of rows) {
     const line = assembly.tubes.filter(
       (tube) => tube.row === row.row && tube.side === row.side
@@ -36,32 +39,41 @@ export function createPlantingNet(
     const x =
       row.x +
       (direction * (SUPPORT_LAYOUT.diameter + NET_LAYOUT.cordDiameter)) / 2
+
     const add = (a: Point3, b: Point3) =>
       strands.push({
         bay: row.bay,
         diameter: NET_LAYOUT.cordDiameter,
         points: [a, b]
       })
+
     const verticalIntervals = Math.ceil(
       (top - config.netBottom) / NET_LAYOUT.mesh - 1e-9
     )
     const longitudinalIntervals = Math.ceil(
       (last.z - row.z) / NET_LAYOUT.mesh - 1e-9
     )
+
     for (let i = 0; i <= verticalIntervals; i++) {
       const y = Math.min(top, config.netBottom + i * NET_LAYOUT.mesh)
+
       add([x, y, row.z], [x, y, last.z])
     }
+
     for (let i = 0; i <= longitudinalIntervals; i++) {
       const z = Math.min(last.z, row.z + i * NET_LAYOUT.mesh)
+
       add([x, config.netBottom, z], [x, top, z])
     }
-    for (const tube of line)
+
+    for (const tube of line) {
       ties.push({
         bay: row.bay,
         center: [tube.x, top - NET_LAYOUT.tieWidth / 2, tube.z],
         radius: SUPPORT_LAYOUT.diameter / 2 + NET_LAYOUT.cordDiameter
       })
+    }
   }
+
   return { strands, ties }
 }

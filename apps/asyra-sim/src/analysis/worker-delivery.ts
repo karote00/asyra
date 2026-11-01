@@ -12,9 +12,13 @@ import {
 /** Transport batching only. Method evidence and its numerical meaning are unchanged. */
 export class WorkerEvidenceDelivery {
   private pending: MethodPairEvidence[] = []
+
   private lastSent = -Infinity
+
   private totalBytes = 2
+
   private pairCount = 0
+
   private leafCount = 0
 
   constructor(
@@ -30,15 +34,18 @@ export class WorkerEvidenceDelivery {
 
   record(pair: MethodPairEvidence): void {
     const bytes = measureWorkerPayload(pair) + (this.pairCount ? 1 : 0)
+
     if (
       this.totalBytes + bytes > EXPERIMENT_RESOURCE_PROFILE.maxEvidenceBytes ||
       this.leafCount + pair.evidence.leaves.length >
         EXPERIMENT_RESOURCE_PROFILE.maxEvidenceLeaves ||
       this.pairCount + 1 > EXPERIMENT_RESOURCE_PROFILE.maxPairs
-    )
+    ) {
       throw new Error(
         'Analysis worker evidence exceeds its global payload or count budget'
       )
+    }
+
     this.totalBytes += bytes
     this.leafCount += pair.evidence.leaves.length
     this.pairCount++
@@ -48,11 +55,14 @@ export class WorkerEvidenceDelivery {
 
   flush(): void {
     const now = this.now()
+
     if (
       !this.pending.length ||
       now - this.lastSent < EXPERIMENT_RESOURCE_PROFILE.progressIntervalMs
-    )
+    ) {
       return
+    }
+
     this.send({
       type: AnalysisWorkerMessages.PROGRESS,
       runId: this.runId,
@@ -81,6 +91,7 @@ export class WorkerEvidenceDelivery {
       error,
       pairs: this.pending
     }
+
     try {
       measureWorkerPayload(message)
     } catch {
@@ -94,8 +105,10 @@ export class WorkerEvidenceDelivery {
           )
       })
       this.pending = []
+
       return
     }
+
     this.post(message)
     this.pending = []
   }

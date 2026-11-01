@@ -13,9 +13,11 @@ const storageFailureMessage = (error: unknown): string =>
 
 const unavailableStorage = (reason: string): StarterStorage => ({
   unavailableReason: reason,
+
   getItem() {
     throw new Error(reason)
   },
+
   setItem() {
     throw new Error(reason)
   }
@@ -36,19 +38,28 @@ export const createStorageApis = (
 ) => ({
   save: async (): Promise<SaveResult> =>
     saveCoreDocument(storage, await core.save()),
+
   reload: async (): Promise<LoadResult> => {
     try {
       const loaded = readSavedCoreDocument(storage, itemField)
-      if ('ok' in loaded) return loaded
+
+      if ('ok' in loaded) {
+        return loaded
+      }
+
       const diagnostics = core.preflightLoad(loaded.core)
-      if (diagnostics.length > 0)
+
+      if (diagnostics.length > 0) {
         return {
           ok: false,
           message: diagnostics
             .map((item) => `${item.scope}:${item.path} ${item.message}`)
             .join('; ')
         }
+      }
+
       core.load(loaded.core)
+
       return { ok: true, message: `Reloaded ${loaded.savedAt}` }
     } catch (error) {
       return {

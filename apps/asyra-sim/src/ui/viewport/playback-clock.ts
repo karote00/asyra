@@ -7,6 +7,7 @@ export interface FrameScheduler {
 /** Transient wall-clock playback; never owns geometry, analysis or history. */
 export class PlaybackClock {
   private handle: number | null = null
+
   private generation = 0
 
   constructor(private readonly scheduler: FrameScheduler) {}
@@ -14,7 +15,9 @@ export class PlaybackClock {
   pause() {
     this.generation++
 
-    if (this.handle !== null) this.scheduler.cancel(this.handle)
+    if (this.handle !== null) {
+      this.scheduler.cancel(this.handle)
+    }
 
     this.handle = null
   }
@@ -27,14 +30,18 @@ export class PlaybackClock {
   ) {
     this.pause()
 
-    if (!Number.isFinite(from) || !Number.isFinite(end) || from >= end) return
+    if (!Number.isFinite(from) || !Number.isFinite(end) || from >= end) {
+      return
+    }
 
     const generation = this.generation
 
     const start = this.scheduler.now()
 
     const tick = (now: number) => {
-      if (generation !== this.generation) return
+      if (generation !== this.generation) {
+        return
+      }
 
       this.handle = null
 
@@ -42,10 +49,15 @@ export class PlaybackClock {
 
       sample(time)
 
-      if (generation !== this.generation) return
+      if (generation !== this.generation) {
+        return
+      }
 
-      if (time === end) stopped()
-      else this.handle = this.scheduler.request(tick)
+      if (time === end) {
+        stopped()
+      } else {
+        this.handle = this.scheduler.request(tick)
+      }
     }
 
     this.handle = this.scheduler.request(tick)

@@ -43,6 +43,7 @@ describe('Setter - Change Tracking System', () => {
       // Demonstrates: Type safety and error handling
       const changeCallback = vi.fn()
       const setter = new Setter<MockElementData>(changeCallback)
+
       setter.data = {
         id: 'test',
         type: 'rect',
@@ -73,6 +74,7 @@ describe('Setter - Change Tracking System', () => {
         changeCallback,
         onCanonicalWrite
       )
+
       setter.data = {
         id: 'rect-1',
         type: 'rect',
@@ -148,6 +150,7 @@ describe('Setter - Change Tracking System', () => {
       }
 
       const newMetadata = { name: 'Updated Rectangle', visible: false }
+
       setter.set('metadata', newMetadata)
 
       expect(changeCallback).toHaveBeenCalledWith({

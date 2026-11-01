@@ -6,6 +6,7 @@ const readPolicy = async (environment, gaEnvironment) => {
   const originalEnvironment = process.env.NODE_ENV
   const originalSiteEnvironment = process.env.SITE_ENV
   const originalGa = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
+
   process.env.NODE_ENV = environment
   process.env.SITE_ENV = gaEnvironment ?? 'development'
   process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID = 'G-TEST123456'
@@ -26,11 +27,18 @@ const readPolicy = async (environment, gaEnvironment) => {
     } else {
       process.env.NODE_ENV = originalEnvironment
     }
-    if (originalSiteEnvironment === undefined) delete process.env.SITE_ENV
-    else process.env.SITE_ENV = originalSiteEnvironment
-    if (originalGa === undefined)
+
+    if (originalSiteEnvironment === undefined) {
+      delete process.env.SITE_ENV
+    } else {
+      process.env.SITE_ENV = originalSiteEnvironment
+    }
+
+    if (originalGa === undefined) {
       delete process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
-    else process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID = originalGa
+    } else {
+      process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID = originalGa
+    }
   }
 }
 
@@ -45,6 +53,7 @@ test('development CSP supports React debugging without weakening production', as
 test('GA4 network sources are allowed only for configured production', async () => {
   const preview = await readPolicy('production', 'preview')
   const production = await readPolicy('production', 'production')
+
   assert.doesNotMatch(preview, /google/)
   assert.match(
     production,

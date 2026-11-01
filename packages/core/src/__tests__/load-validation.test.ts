@@ -103,18 +103,21 @@ describe('Core load validation pipeline', () => {
       diagnosticHook = vi.fn(),
       migration = vi.fn((data) => data)
     const subscription = subscribeToFileLoadComplete(loaded)
+
     core.registerLoadHook(migration)
     core.registerLoadDiagnosticsHook(diagnosticHook)
     const propsDiagnostic = {
       path: 'props.bad',
       message: 'Invalid value recovered'
     }
+
     props.validateLoadData.mockReturnValueOnce({
       data: {},
       diagnostics: [propsDiagnostic]
     })
     const document = { version: 'test-version', props: {}, sceneTree: {} }
     const issues = core.preflightLoad(document)
+
     expect(migration).toHaveBeenCalledExactlyOnceWith(document)
     expect(issues).toEqual([{ scope: 'props-manager', ...propsDiagnostic }])
     expect(Object.isFrozen(issues)).toBe(true)
@@ -132,6 +135,7 @@ describe('Core load validation pipeline', () => {
 
   it('rejects invalid hierarchy during preflight before any package apply', () => {
     const { core, props, sceneTree, systemContext } = createCoreForTest()
+
     sceneTree.validateLoadData.mockReturnValueOnce({
       data: { workspace: '', workspaceList: [], elements: {} },
       diagnostics: [],
@@ -147,6 +151,7 @@ describe('Core load validation pipeline', () => {
 
   it('preserves null no-op semantics during preflight', () => {
     const { core, props } = createCoreForTest()
+
     expect(core.preflightLoad(null)).toEqual([])
     expect(props.validateLoadData).not.toHaveBeenCalled()
   })
@@ -204,6 +209,7 @@ describe('Core load validation pipeline', () => {
     const { core } = createCoreForTest()
     const observed: unknown[] = []
     const stopAfterObservation = new Error('stop after observing raw input')
+
     core.registerLoadHook((data) => {
       observed.push(data)
       throw stopAfterObservation
@@ -225,6 +231,7 @@ describe('Core load validation pipeline', () => {
       const stopAfterObservation = new Error(
         'stop after observing provider raw input'
       )
+
       core.registerLoadHook((data) => {
         observed.push(data)
         throw stopAfterObservation
@@ -293,6 +300,7 @@ describe('Core load validation pipeline', () => {
 
     core.registerLoadHook((data) => {
       const documentData = asCoreRawData(data)
+
       return {
         ...documentData,
         version: '2.0.0',
@@ -301,6 +309,7 @@ describe('Core load validation pipeline', () => {
     })
 
     const diagnosticsHook = vi.fn()
+
     core.registerLoadDiagnosticsHook(diagnosticsHook)
 
     const fileLoadEvents: number[] = []
@@ -356,6 +365,7 @@ describe('Core load validation pipeline', () => {
     ]
     const preflightOrder =
       sceneTree.preflightLoadPropertyRelations.mock.invocationCallOrder[0]
+
     expect(Math.max(...validationOrders)).toBeLessThan(preflightOrder)
     expect(preflightOrder).toBeLessThan(Math.min(...applyOrders))
     expect(fileLoadEvents).toHaveLength(fileLoadEventBaseline + 1)
@@ -381,6 +391,7 @@ describe('Core load validation pipeline', () => {
 
   it('rejects an invalid Scene Tree artifact before any package apply', () => {
     const { core, props, sceneTree, systemContext } = createCoreForTest()
+
     sceneTree.validateLoadData.mockReturnValue({
       data: { workspace: 'missing', workspaceList: [], elements: {} },
       diagnostics: [
@@ -424,6 +435,7 @@ describe('Core load validation pipeline', () => {
       valid: true
     }
     const failure = new Error('detached relation preflight failed')
+
     props.validateLoadData.mockReturnValue(propsValidation)
     sceneTree.validateLoadData.mockReturnValue(sceneValidation)
     sceneTree.preflightLoadPropertyRelations.mockImplementation(
@@ -434,6 +446,7 @@ describe('Core load validation pipeline', () => {
       }
     )
     const diagnosticsHook = vi.fn()
+
     core.registerLoadDiagnosticsHook(diagnosticsHook)
     const fileLoadEvents: number[] = []
     const subscription = subscribeToFileLoadComplete(() => {
@@ -485,6 +498,7 @@ describe('Core load validation pipeline', () => {
         sceneTree.applyValidatedLoad,
         systemContext.applyValidatedManagedProperties
       ] as const
+
       applyOwners.forEach((applyOwner, index) => {
         applyOwner.mockImplementation(() => {
           expect(core.version).toBe('1.0.0')
@@ -494,6 +508,7 @@ describe('Core load validation pipeline', () => {
         })
       })
       const diagnosticsHook = vi.fn()
+
       core.registerLoadDiagnosticsHook(diagnosticsHook)
       const fileLoadEvents: number[] = []
       const subscription = subscribeToFileLoadComplete(() => {
@@ -531,6 +546,7 @@ describe('Core load validation pipeline', () => {
         x: 10
       }
     }
+
     props.validateLoadData.mockReturnValue({
       data: validatedProps,
       diagnostics: [
@@ -550,6 +566,7 @@ describe('Core load validation pipeline', () => {
       throw new Error('diagnostics failed')
     })
     const secondHook = vi.fn()
+
     core.registerLoadDiagnosticsHook(firstHook)
     core.registerLoadDiagnosticsHook(secondHook)
 
@@ -586,6 +603,7 @@ describe('Core load validation pipeline', () => {
 
   it('does not assemble diagnostics evidence when no observer is registered', () => {
     const { core, props, sceneTree, systemContext } = createCoreForTest()
+
     props.validateLoadData.mockReturnValue({
       data: {},
       diagnostics: [
@@ -612,6 +630,7 @@ describe('Core load validation pipeline', () => {
 
   it('contains diagnostics evidence assembly failure after successful apply', () => {
     const { core, props, sceneTree, systemContext } = createCoreForTest()
+
     props.validateLoadData.mockReturnValue({
       data: {},
       diagnostics: [
@@ -623,6 +642,7 @@ describe('Core load validation pipeline', () => {
     })
     const diagnosticsHook = vi.fn()
     const fileLoadEvents: number[] = []
+
     core.registerLoadDiagnosticsHook(diagnosticsHook)
     const subscription = subscribeToFileLoadComplete(() => {
       fileLoadEvents.push(1)
@@ -630,6 +650,7 @@ describe('Core load validation pipeline', () => {
     const fileLoadEventBaseline = fileLoadEvents.length
 
     let failure: unknown
+
     try {
       core.load({
         version: 'v1',
@@ -655,6 +676,7 @@ describe('Core load validation pipeline', () => {
     const first = createCoreForTest()
     const second = createCoreForTest()
     const firstDiagnostics = vi.fn()
+
     first.core.registerLoadDiagnosticsHook(firstDiagnostics)
     ;[first, second].forEach(({ props }) => {
       props.validateLoadData.mockReturnValue({
@@ -687,6 +709,7 @@ describe('Core load validation pipeline', () => {
       if (typeof (data as Partial<CoreRawData>).version !== 'string') {
         throw missingVersion
       }
+
       return asCoreRawData(data)
     })
 
@@ -710,11 +733,13 @@ describe('Core load validation pipeline', () => {
       fileLoadEvents.push(1)
     })
     const fileLoadEventBaseline = fileLoadEvents.length
+
     core.registerLoadDiagnosticsHook(diagnosticsHook)
 
     core.registerLoadHook(() => null as unknown as CoreRawData)
 
     let failure: unknown
+
     try {
       core.load({
         version: 'v1',
@@ -724,6 +749,7 @@ describe('Core load validation pipeline', () => {
     } catch (error) {
       failure = error
     }
+
     subscription.unsubscribe()
     expect(failure).toBeInstanceOf(LoadHookExecutionError)
     expect(failure).toMatchObject({
@@ -748,6 +774,7 @@ describe('Core load validation pipeline', () => {
       fileLoadEvents.push(1)
     })
     const fileLoadEventBaseline = fileLoadEvents.length
+
     core.registerLoadDiagnosticsHook(diagnosticsHook)
 
     core.registerLoadHook((() =>
@@ -758,6 +785,7 @@ describe('Core load validation pipeline', () => {
       })) as unknown as (data: unknown) => CoreRawData)
 
     let failure: unknown
+
     try {
       core.load({
         version: 'v1',
@@ -767,6 +795,7 @@ describe('Core load validation pipeline', () => {
     } catch (error) {
       failure = error
     }
+
     subscription.unsubscribe()
     expect(failure).toBeInstanceOf(LoadHookExecutionError)
     expect(failure).toMatchObject({
@@ -794,6 +823,7 @@ describe('Core load validation pipeline', () => {
     )
 
     let failure: unknown
+
     try {
       core.load({
         version: 'v1',
@@ -805,6 +835,7 @@ describe('Core load validation pipeline', () => {
     }
 
     const containedByCore = catchSpy.mock.calls.length
+
     if (containedByCore === 0) {
       await rejectedResult.catch(() => undefined)
     }
@@ -827,12 +858,16 @@ describe('Core load validation pipeline', () => {
 
     core.registerLoadHook((data) => {
       const documentData = asCoreRawData(data)
+
       calls.push(`v1-to-v2:${documentData.version}`)
+
       return { ...documentData, version: 'v2' }
     })
     core.registerLoadHook((data) => {
       const documentData = asCoreRawData(data)
+
       calls.push(`v2-to-v3:${documentData.version}`)
+
       return { ...documentData, version: 'v3' }
     })
 
@@ -854,15 +889,19 @@ describe('Core load validation pipeline', () => {
 
     core.registerLoadHook((data) => {
       const documentData = asCoreRawData(data)
+
       calls.push(`initial:${documentData.version}`)
       if (!registeredDuringLoad) {
         registeredDuringLoad = true
         core.registerLoadHook((laterData) => {
           const laterDocument = asCoreRawData(laterData)
+
           calls.push(`registered-during-load:${laterDocument.version}`)
+
           return { ...laterDocument, version: 'v3' }
         })
       }
+
       return { ...documentData, version: 'v2' }
     })
 
@@ -871,6 +910,7 @@ describe('Core load validation pipeline', () => {
       sceneTree: { workspace: '', workspaceList: [], elements: {} },
       props: {}
     }
+
     core.load(input)
 
     expect(calls).toEqual(['initial:v1'])
@@ -891,6 +931,7 @@ describe('Core load validation pipeline', () => {
     const second = createCoreForTest()
     const firstHook = vi.fn((data: unknown) => {
       const documentData = asCoreRawData(data)
+
       return {
         ...documentData,
         version: 'first-migrated'
@@ -929,6 +970,7 @@ describe('Core load validation pipeline', () => {
         }
       ]
     }
+
     direct.systemContext.validateManagedProperties.mockReturnValue(
       systemValidation
     )
@@ -937,20 +979,27 @@ describe('Core load validation pipeline', () => {
     )
     const directDiagnostics = vi.fn()
     const providerDiagnostics = vi.fn()
+
     direct.core.registerLoadDiagnosticsHook(directDiagnostics)
     provider.core.registerLoadDiagnosticsHook(providerDiagnostics)
+
     const registerChain = (core: Core, calls: string[]) => {
       core.registerLoadHook((data) => {
         const documentData = asCoreRawData(data)
+
         calls.push(`v1-to-v2:${documentData.version}`)
+
         return { ...documentData, version: 'v2' }
       })
       core.registerLoadHook((data) => {
         const documentData = asCoreRawData(data)
+
         calls.push(`v2-to-v3:${documentData.version}`)
+
         return { ...documentData, version: 'v3' }
       })
     }
+
     registerChain(direct.core, directCalls)
     registerChain(provider.core, providerCalls)
 
@@ -1002,6 +1051,7 @@ describe('Core load validation pipeline', () => {
     }
     const directDiagnostics = vi.fn()
     const providerDiagnostics = vi.fn()
+
     direct.core.registerLoadDiagnosticsHook(directDiagnostics)
     provider.core.registerLoadDiagnosticsHook(providerDiagnostics)
     direct.core.registerLoadHook(() => {
@@ -1044,6 +1094,7 @@ describe('Core load validation pipeline', () => {
   it('bypasses migration and package load when the provider has no document', async () => {
     const { core, props, sceneTree, systemContext } = createCoreForTest()
     const hook = vi.fn((data: unknown) => asCoreRawData(data))
+
     core.registerLoadHook(hook)
     prepareCoreStart(core)
     core.setPersistence({
@@ -1068,6 +1119,7 @@ describe('Core load validation pipeline', () => {
     const { core, props, sceneTree, systemContext } = createCoreForTest()
     const loadHook = vi.fn()
     const diagnosticsHook = vi.fn()
+
     core.registerLoadHook(loadHook)
     core.registerLoadDiagnosticsHook(diagnosticsHook)
     prepareCoreStart(core)
@@ -1094,6 +1146,7 @@ describe('Core load validation pipeline', () => {
     const { core, props, sceneTree, systemContext } = createCoreForTest()
     const loadHook = vi.fn()
     const diagnosticsHook = vi.fn()
+
     core.registerLoadHook(loadHook)
     core.registerLoadDiagnosticsHook(diagnosticsHook)
 
@@ -1119,6 +1172,7 @@ describe('Core load validation pipeline', () => {
       fileLoadEvents.push(1)
     })
     const fileLoadEventBaseline = fileLoadEvents.length
+
     core.registerLoadDiagnosticsHook(diagnosticsHook)
 
     core.registerLoadHook(() => {
@@ -1152,6 +1206,7 @@ describe('Core load validation pipeline', () => {
       fileLoadEvents.push(1)
     })
     const fileLoadEventBaseline = fileLoadEvents.length
+
     core.registerLoadDiagnosticsHook(diagnosticsHook)
     systemContext.validateManagedProperties.mockImplementation(() => {
       throw failure
@@ -1204,6 +1259,7 @@ describe('Core load validation pipeline', () => {
     const secondHook = vi.fn()
 
     const disposeFirst = core.registerLoadDiagnosticsHook(firstHook)
+
     core.registerLoadDiagnosticsHook(secondHook)
 
     core.load('invalid-data' as unknown as CoreRawData)

@@ -29,7 +29,9 @@ const CHILD_TYPE = 'test-child-property'
 
 const validatePositive = (value: unknown) =>
   typeof value === 'number' && Number.isFinite(value) && value > 0
+
 const toChildData = (item: Record<string, unknown>) => item
+
 const toChildValue = (
   child: { get: (key: string) => unknown },
   childId: string
@@ -57,6 +59,7 @@ class InitialComponent extends BasePropertyComponent<PropertyComponentInstanceDa
 
   getValue(): Record<string, DataTypes> {
     const data = this.data as unknown as Record<string, DataTypes>
+
     return {
       config: data.config,
       amount: data.amount,
@@ -66,6 +69,7 @@ class InitialComponent extends BasePropertyComponent<PropertyComponentInstanceDa
 
   getUnit(): Record<string, Unit> {
     const data = this.data as unknown as Record<string, unknown>
+
     return { amountUnit: data.amountUnit as Unit }
   }
 }
@@ -89,6 +93,7 @@ class ChildComponent extends BasePropertyComponent<PropertyComponentInstanceData
 
   getValue(): Record<string, DataTypes> {
     const data = this.data as unknown as Record<string, DataTypes>
+
     return { value: data.value }
   }
 
@@ -220,6 +225,7 @@ describe('declarative property type definition owner', () => {
     registerDeclarativeType()
 
     const first = getDeclarativePropertyTypeDefinition(TYPE)
+
     expect(first).toEqual({
       type: TYPE,
       allowDynamicKeys: false,
@@ -272,6 +278,7 @@ describe('declarative property type definition owner', () => {
       dynamicReservedKeys: string[]
       fields: { defaultValue: { nested: number[] } }[]
     }
+
     mutable.dynamicReservedKeys.push('changed')
     mutable.fields[0].defaultValue.nested.push(99)
 
@@ -322,6 +329,7 @@ describe('declarative property type definition owner', () => {
 
   it('rejects relationship descriptor defaults as registered-state drift', () => {
     const descriptorDefault = [{ id: 'descriptor-child', value: 1 }]
+
     registerPropertySchema({
       ...schema,
       fields: schema.fields.map((field) =>
@@ -476,6 +484,7 @@ describe('declarative property type definition owner', () => {
         id: 'property-in-use',
         type: TYPE
       })
+
       if (replayRetained) {
         manager.addToDeletedMap(property)
       } else {
@@ -506,6 +515,7 @@ describe('declarative property type definition owner', () => {
         field.key === 'count'
           ? {
               ...field,
+
               validate: (value: unknown) => {
                 if (!introducedUsage) {
                   introducedUsage = true
@@ -516,6 +526,7 @@ describe('declarative property type definition owner', () => {
                     })
                   )
                 }
+
                 return validatePositive(value)
               }
             }
@@ -567,7 +578,11 @@ describe('declarative property type definition owner', () => {
     )
 
     const Component = getPropertyComponent(TYPE)
-    if (!Component) throw new Error('Expected committed property constructor')
+
+    if (!Component) {
+      throw new Error('Expected committed property constructor')
+    }
+
     const property = new Component({
       id: 'committed-property',
       type: TYPE,
@@ -611,6 +626,7 @@ describe('declarative property type definition owner', () => {
       dynamicReservedKeys: string[]
       fields: { key: string; defaultValue: unknown }[]
     }
+
     mutableRequested.dynamicReservedKeys.push('requested-mutation')
     mutableRequested.fields[0].defaultValue = { nested: [99] }
     mutableCommitted.dynamicReservedKeys.push('result-mutation')
@@ -628,6 +644,7 @@ describe('declarative property type definition owner', () => {
       id: 'parent-property',
       type: TYPE
     })
+
     manager.addProperty([parent])
     manager.cleanChanges()
 
@@ -667,7 +684,9 @@ describe('declarative property type definition owner', () => {
         type: TYPE,
         children: [{ id: 'batch-child-property', value: 7 }]
       })
+
       manager.addProperty([created])
+
       return created
     }).result
 
@@ -701,26 +720,31 @@ describe('declarative property type definition owner', () => {
       id: 'prepared-live-child',
       type: CHILD_TYPE
     })
+
     sourceManager.addProperty([sourceChild])
     const sourceParent = sourceManager.createProperty({
       id: 'prepared-live-parent',
       type: TYPE,
       children: ['prepared-live-child']
     })
+
     sourceManager.addProperty([sourceParent])
     const snapshots = [sourceChild.save(), sourceParent.save()]
+
     sourceManager.dispose()
 
     const manager = new PropsManager()
     const prepared = manager.preflightPropertyCreationBatch(snapshots, [
       'prepared-live-parent'
     ])
+
     manager.runInPropertyCreationBatch(() => {
       manager.applyPropertyCreationBatch(prepared)
     })
     const child = manager.getPropertyById('prepared-live-child')
     const parent = manager.getPropertyById('prepared-live-parent')
     const parentChanges: unknown[] = []
+
     parent?.on((change) => parentChanges.push(change))
 
     child?.set('value' as never, 9 as never)
@@ -746,6 +770,7 @@ describe('declarative property type definition owner', () => {
       type: CHILD_TYPE,
       value: 3
     })
+
     manager.addProperty([parent, child])
     manager.cleanChanges()
     const prepared = manager.preflightActivePropertyBatch(
@@ -760,6 +785,7 @@ describe('declarative property type definition owner', () => {
       'active-source-child': child.save()
     })
     const parentChanges: unknown[] = []
+
     parent.on((change) => parentChanges.push(change))
     child.set('value' as never, 9 as never)
 
@@ -779,6 +805,7 @@ describe('declarative property type definition owner', () => {
       type: CHILD_TYPE,
       value: 3
     })
+
     manager.addProperty([child])
     manager.cleanChanges()
 
@@ -788,7 +815,9 @@ describe('declarative property type definition owner', () => {
         type: TYPE,
         children: ['existing-batch-child']
       })
+
       manager.addProperty([created])
+
       return created
     }).result
 
@@ -822,6 +851,7 @@ describe('declarative property type definition owner', () => {
       type: CHILD_TYPE,
       value: 3
     })
+
     manager.addProperty([child])
     manager.cleanChanges()
 
@@ -831,7 +861,9 @@ describe('declarative property type definition owner', () => {
         type: TYPE,
         children: [{ id: 'existing-upsert-child', value: 7 }]
       })
+
       manager.addProperty([created])
+
       return created
     }).result
 
@@ -869,6 +901,7 @@ describe('declarative property type definition owner', () => {
       type: CHILD_TYPE,
       value: 3
     })
+
     manager.addProperty([child])
     manager.cleanChanges()
 
@@ -879,6 +912,7 @@ describe('declarative property type definition owner', () => {
           type: TYPE,
           children: [{ id: 'existing-rollback-child', value: 7 }]
         })
+
         manager.addProperty([parent])
         throw new Error('later canonical failure')
       })
@@ -897,16 +931,20 @@ describe('declarative property type definition owner', () => {
     commitDeclarativePropertyTypeDefinition(TYPE, nextDefinition())
     const firstManager = new PropsManager()
     const secondManager = new PropsManager()
+
     const createParent = (manager: PropsManager, childValue: number) => {
       const parent = manager.createProperty({
         id: 'shared-parent',
         type: TYPE,
         children: [{ id: 'shared-child', value: childValue }]
       })
+
       manager.addProperty([parent])
       manager.cleanChanges()
+
       return parent
     }
+
     const firstParent = createParent(firstManager, 1)
     const secondParent = createParent(secondManager, 2)
 
@@ -926,23 +964,32 @@ describe('declarative property type definition owner', () => {
         field.key === 'count'
           ? {
               ...field,
+
               validate: (value: unknown) => {
-                if (value === 13) throw new Error('validator failed')
+                if (value === 13) {
+                  throw new Error('validator failed')
+                }
+
                 return validatePositive(value)
               }
             }
           : field
       )
     }
+
     commitDeclarativePropertyTypeDefinition(TYPE, throwingDefinition)
     const Component = getPropertyComponent(TYPE)
-    if (!Component) throw new Error('Expected committed property constructor')
+
+    if (!Component) {
+      throw new Error('Expected committed property constructor')
+    }
 
     const loaded = new Component({
       id: 'validator-load',
       type: TYPE,
       count: 13
     })
+
     expect(loaded.get('count' as never)).toBe(10)
     expect(() => loaded.set('count' as never, 13 as never)).not.toThrow()
     expect(loaded.get('count' as never)).toBe(10)
@@ -952,7 +999,11 @@ describe('declarative property type definition owner', () => {
     registerDeclarativeType()
     commitDeclarativePropertyTypeDefinition(TYPE, nextDefinition())
     const Component = getPropertyComponent(TYPE)
-    if (!Component) throw new Error('Expected committed property constructor')
+
+    if (!Component) {
+      throw new Error('Expected committed property constructor')
+    }
+
     const property = new Component({
       id: 'object-runtime-kind',
       type: TYPE
@@ -967,7 +1018,10 @@ describe('declarative property type definition owner', () => {
     registerDeclarativeType()
     commitDeclarativePropertyTypeDefinition(TYPE, nextDefinition())
     const Component = getPropertyComponent(TYPE)
-    if (!Component) throw new Error('Expected committed property constructor')
+
+    if (!Component) {
+      throw new Error('Expected committed property constructor')
+    }
 
     const loaded = new Component({
       id: 'object-load-kind',
@@ -982,7 +1036,10 @@ describe('declarative property type definition owner', () => {
     registerDeclarativeType()
     commitDeclarativePropertyTypeDefinition(TYPE, nextDefinition())
     const Component = getPropertyComponent(TYPE)
-    if (!Component) throw new Error('Expected committed property constructor')
+
+    if (!Component) {
+      throw new Error('Expected committed property constructor')
+    }
 
     const first = new Component({
       id: 'mutable-fallback-first',
@@ -992,6 +1049,7 @@ describe('declarative property type definition owner', () => {
     const firstConfig = first.get('config' as never) as unknown as {
       nested: number[]
     }
+
     firstConfig.nested.push(99)
 
     expect(getDeclarativePropertyTypeDefinition(TYPE)).toEqual(nextDefinition())
@@ -1001,6 +1059,7 @@ describe('declarative property type definition owner', () => {
       type: TYPE,
       config: 'invalid'
     })
+
     expect(second.get('config' as never)).toEqual({ nested: [3, 4] })
     expect(second.get('config' as never)).not.toBe(firstConfig)
   })
@@ -1012,12 +1071,14 @@ describe('declarative property type definition owner', () => {
     const oldDefinition = getDeclarativePropertyTypeDefinition(TYPE)
     const originalRegister = propertyComponentRegistry.register
     let shouldFail = true
+
     propertyComponentRegistry.register = vi.fn(
       (...args: Parameters<typeof originalRegister>) => {
         if (shouldFail && args[0] === TYPE) {
           shouldFail = false
           throw new Error('runtime commit failed')
         }
+
         return originalRegister.call(
           propertyComponentRegistry,
           args[0],

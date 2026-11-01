@@ -58,14 +58,17 @@ const createActiveElementFixture = (
     visible: true,
     lock: false
   }) satisfies ElementRawData
+
   return {
     get: vi.fn((key: string) => {
       if (key === 'id') {
         return elementId
       }
+
       if (key === 'type') {
         return elementType
       }
+
       return undefined
     }),
     save: vi.fn(() => data)
@@ -98,6 +101,7 @@ describe('defineComponent', () => {
 
     // Check property registry
     const properties = elementPropertyRegistry.getPropertiesForComponent('star')
+
     expect(properties).toHaveLength(3)
     expect(properties.map((p) => p.name)).toEqual(['count', 'x', 'y'])
 
@@ -134,6 +138,7 @@ describe('defineComponent', () => {
     })
 
     const ComponentClass = componentRegistry.get('star')
+
     expect(ComponentClass).toBeDefined()
 
     // The component class should be created with the correct prefixes
@@ -154,6 +159,7 @@ describe('defineComponent', () => {
     })
 
     const properties = elementPropertyRegistry.getPropertiesForComponent('star')
+
     expect(properties).toHaveLength(4)
     expect(properties.map((p) => p.name)).toEqual([
       'count',
@@ -175,6 +181,7 @@ describe('defineComponent', () => {
     })
 
     const properties = elementPropertyRegistry.getPropertiesForComponent('star')
+
     expect(properties[0].type).toBe(PropertyTypes.CUSTOM)
     expect(properties[1].type).toBe(PropertyTypes.CUSTOM)
   })
@@ -189,12 +196,14 @@ describe('defineComponent', () => {
     })
 
     const registration = componentRegistry.get('container')
+
     expect(registration).toBeDefined()
     if (registration) {
       const ComponentClass = registration.constructor
       const instance = new ComponentClass() as unknown as {
         data: { children: string[] }
       }
+
       // Check if it has children array (Group characteristic)
       expect(instance.data.children).toBeDefined()
       expect(Array.isArray(instance.data.children)).toBe(true)
@@ -250,11 +259,13 @@ describe('unregisterComponent', () => {
     })
 
     const result = unregisterComponent('star')
+
     expect(result).toBe(true)
   })
 
   it('should return false when unregistering non-existent component', () => {
     const result = unregisterComponent('non-existent')
+
     expect(result).toBe(false)
   })
 
@@ -271,6 +282,7 @@ describe('unregisterComponent', () => {
     renderStrategyRegistry.unregister('star')
 
     const result = unregisterComponent('star')
+
     expect(result).toBe(true) // Should still return true if any registry had it
   })
 
@@ -307,6 +319,7 @@ describe('unregisterComponent', () => {
     })
 
     const activeElement = createActiveElementFixture('star-active', 'star')
+
     sceneTree.addToMap(activeElement)
 
     const result = unregisterComponent('star', { detailed: true })
@@ -331,6 +344,7 @@ describe('unregisterComponent', () => {
     })
 
     const activeElement = createActiveElementFixture('star-active', 'star')
+
     sceneTree.addToMap(activeElement)
 
     const result = unregisterComponent('star', { detailed: true, force: true })
@@ -352,6 +366,7 @@ describe('component property relations', () => {
 
   it('removes one slot while preserving the component, other slots, and property runtime', () => {
     const renderStrategy: RenderStrategy = vi.fn()
+
     defineComponent({
       type: 'relation-shape',
       idPrefix: 'relation-shape',
@@ -391,9 +406,14 @@ describe('component property relations', () => {
     ).toEqual(['position'])
 
     const registration = componentRegistry.get('relation-shape')
+
     expect(registration).toBeDefined()
-    if (!registration) throw new Error('Expected component registration')
+    if (!registration) {
+      throw new Error('Expected component registration')
+    }
+
     const instance = new registration.constructor()
+
     expect(instance.props.getPropId('position')).toBeDefined()
     expect(instance.props.getPropId('fills')).toBeUndefined()
     instance.cleanup()
@@ -431,9 +451,14 @@ describe('component property relations', () => {
     ).toEqual(['position', 'strokes'])
 
     const registration = componentRegistry.get('relation-shape')
+
     expect(registration).toBeDefined()
-    if (!registration) throw new Error('Expected component registration')
+    if (!registration) {
+      throw new Error('Expected component registration')
+    }
+
     const instance = new registration.constructor()
+
     expect(instance.props.getPropId('position')).toBeDefined()
     expect(instance.props.getPropId('fills')).toBeUndefined()
     expect(instance.props.getPropId('strokes')).toBeDefined()
@@ -471,9 +496,14 @@ describe('component property relations', () => {
     )
 
     const registration = componentRegistry.get('relation-shape')
+
     expect(registration).toBeDefined()
-    if (!registration) throw new Error('Expected component registration')
+    if (!registration) {
+      throw new Error('Expected component registration')
+    }
+
     const active = new registration.constructor()
+
     sceneTree.addToMap(active)
 
     expectRelationError(

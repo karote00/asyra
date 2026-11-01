@@ -16,9 +16,11 @@ const createCanvasContext = (
       if (key in target) {
         return target[key as string]
       }
+
       if (key === 'measureText') {
         return (text: string) => ({ width: text.length * 8 })
       }
+
       if (key === 'getImageData') {
         return () => ({
           data: new Uint8ClampedArray(4),
@@ -26,6 +28,7 @@ const createCanvasContext = (
           height: 1
         })
       }
+
       if (key === 'createImageData') {
         return () => ({
           data: new Uint8ClampedArray(4),
@@ -33,19 +36,25 @@ const createCanvasContext = (
           height: 1
         })
       }
+
       if (key === 'getTransform') {
         return () => new DOMMatrix()
       }
+
       if (key === 'createLinearGradient' || key === 'createRadialGradient') {
         return () => ({ addColorStop: () => undefined })
       }
+
       if (key === 'createPattern') {
         return () => null
       }
+
       return () => undefined
     },
+
     set(target, key, value) {
       target[key as string] = value
+
       return true
     }
   }) as unknown as CanvasRenderingContext2D
@@ -58,5 +67,6 @@ HTMLCanvasElement.prototype.getContext = function getContext(
   if (contextId === '2d') {
     return createCanvasContext(this)
   }
+
   return null
 } as HTMLCanvasElement['getContext']

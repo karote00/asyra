@@ -195,7 +195,9 @@ it('retires old callbacks, ignores disabled lifetimes and binds one current hand
 
   const old = add.mock.calls.find(([name]) => name === 'keydown')?.[1]
 
-  if (typeof old !== 'function') throw new Error('Missing keyboard binding')
+  if (typeof old !== 'function') {
+    throw new Error('Missing keyboard binding')
+  }
 
   await render(next)
 

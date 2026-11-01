@@ -4,6 +4,7 @@ import { MapRegistry } from '../map-registry.js'
 describe('MapRegistry.register', () => {
   it('throws when key already exists', () => {
     const registry = new MapRegistry<string, string>()
+
     registry.register('a', 'first')
 
     expect(() => registry.register('a', 'second')).toThrow(
@@ -14,6 +15,7 @@ describe('MapRegistry.register', () => {
 
   it('supports custom duplicate error messages', () => {
     const registry = new MapRegistry<string, string>()
+
     registry.register('a', 'first')
 
     expect(() =>
@@ -26,6 +28,7 @@ describe('MapRegistry.register', () => {
   it('calls onDuplicate when key already exists', () => {
     const registry = new MapRegistry<string, string>()
     const duplicates: string[] = []
+
     registry.register('a', 'first')
 
     expect(() =>

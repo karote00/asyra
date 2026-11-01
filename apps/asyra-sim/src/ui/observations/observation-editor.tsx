@@ -68,13 +68,17 @@ export function ObservationEditor({
             [&_textarea]:resize-y"
           onBlur={(event) => {
             // The explicit action submits these same fields with its attachments.
-            if (submit.current && event.relatedTarget === submit.current) return
+            if (submit.current && event.relatedTarget === submit.current) {
+              return
+            }
+
             if (
               (event.target instanceof HTMLInputElement &&
                 event.target.type !== 'file') ||
               event.target instanceof HTMLTextAreaElement
-            )
+            ) {
               void save({ ...draft, attachments: existing }, false)
+            }
           }}
         >
           <legend>
@@ -141,6 +145,7 @@ export function ObservationEditor({
                   const attachments = existing.filter(
                     (item) => item.sourceId !== reference.sourceId
                   )
+
                   setExisting(attachments)
                   void save({ ...draft, attachments }, false)
                 }}

@@ -17,13 +17,19 @@ import { preflightExperiment } from '../../preflight'
 export async function representativeSnapshot(candidate: number) {
   const example = createSyntheticExample()
   const sources = new Map<string, PartSource>()
+
   for (const source of createMechanicalVisuals()) {
     const asset = await decodeRestrictedGlb(source.bytes)
+
     sources.set(asset.source.sha256, asset)
     const body = example.workcell.bodies.find(
       (body) => body.id === `example:${source.body}`
     )
-    if (!body) throw new Error('Missing original part target')
+
+    if (!body) {
+      throw new Error('Missing original part target')
+    }
+
     body.visuals = [
       {
         version: 1,
@@ -35,13 +41,19 @@ export async function representativeSnapshot(candidate: number) {
     ]
     body.colliders = []
   }
+
   const post = example.workcell.bodies.find(
     (body) => body.name === 'fixture post'
   )
-  if (!post) throw new Error('Missing fixture post')
+
+  if (!post) {
+    throw new Error('Missing fixture post')
+  }
+
   // Keep both supplied fixtures and add 28 full original posts around the cell.
   for (let index = 0; index < 28; index++) {
     const fixture = structuredClone(post)
+
     fixture.id = `obstacle-${index}`
     fixture.name = `Obstacle ${index + 1}`
     fixture.pose.position = [
@@ -51,12 +63,15 @@ export async function representativeSnapshot(candidate: number) {
     ]
     example.workcell.bodies = [...example.workcell.bodies, fixture]
   }
+
   const original = example.trajectory.keyframes
+
   example.trajectory.keyframes = Array.from({ length: 200 }, (_, index) => {
     const time = (8 * index) / 199
     const first = time <= 4 ? original[0] : original[1]
     const last = time <= 4 ? original[1] : original[2]
     const ratio = (time - first.time) / (last.time - first.time)
+
     return {
       time,
       joints: Object.fromEntries(
@@ -85,6 +100,7 @@ export async function representativeSnapshot(candidate: number) {
     definition,
     INSTALLED_METHOD_CATALOG.descriptors
   )
+
   assert.deepEqual(admission.blockers, [])
   assert.equal(
     workcell.bodies.filter((body) => body.role === 'fixture').length,
@@ -95,6 +111,7 @@ export async function representativeSnapshot(candidate: number) {
     6
   )
   assert.equal(definition.trajectory.keyframes.length, 200)
+
   return createExperimentSnapshot({
     snapshotId: `representative-${candidate}`,
     candidateId: `candidate-${candidate}`,

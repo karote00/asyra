@@ -23,19 +23,26 @@ vi.mock('react/jsx-dev-runtime', async (importOriginal) => {
   const observe = (props: unknown) => {
     const id = (props as { 'data-object-id'?: string })?.['data-object-id']
 
-    if (id) rowRenders.set(id, (rowRenders.get(id) ?? 0) + 1)
+    if (id) {
+      rowRenders.set(id, (rowRenders.get(id) ?? 0) + 1)
+    }
 
-    if ((props as { className?: string })?.className?.startsWith('workbench '))
+    if (
+      (props as { className?: string })?.className?.startsWith('workbench ')
+    ) {
       shellRenders.count++
+    }
 
     if (
       (props as { className?: string })?.className?.startsWith('viewport-top ')
-    )
+    ) {
       viewportOptionsRenders.count++
+    }
   }
 
   return {
     ...actual,
+
     jsxDEV: (...args: Parameters<typeof actual.jsxDEV>) => {
       observe(args[1])
 
@@ -94,7 +101,9 @@ const publishRevision = () => {
     workcell,
     historyDepth: revision
   })
-  for (const listener of revisionListeners) listener()
+  for (const listener of revisionListeners) {
+    listener()
+  }
 }
 
 let playback: (view: PlaybackView | null) => void
@@ -111,12 +120,19 @@ const readers = {
 
 const runtime = {
   ...readers,
+
   get views() {
-    return { ...registered, selectCandidate: () => undefined }
+    return {
+      ...registered,
+
+      selectCandidate: () => undefined
+    }
   },
+
   getVisualAssets: vi.fn(() => new Map()),
   setFrame: vi.fn(),
   setCamera: vi.fn(),
+
   pick: () => null
 } as unknown as SimRuntime
 
@@ -163,7 +179,9 @@ beforeEach(async () => {
 
   const canvas = host.querySelector<HTMLDivElement>('.canvas-host')
 
-  if (!canvas) throw new Error('Missing viewport')
+  if (!canvas) {
+    throw new Error('Missing viewport')
+  }
 
   canvas.getBoundingClientRect = () => ({ width: 800, height: 600 }) as DOMRect
 
@@ -208,14 +226,17 @@ afterEach(async () => {
 it('camera gestures do not reread canonical workbench data', async () => {
   const canvas = host.querySelector('.canvas-host')
 
-  if (!canvas) throw new Error('Missing viewport')
+  if (!canvas) {
+    throw new Error('Missing viewport')
+  }
 
   const start = performance.now()
 
-  for (let i = 0; i < 30; i++)
+  for (let i = 0; i < 30; i++) {
     await act(() => {
       canvas.dispatchEvent(new WheelEvent('wheel', { deltaX: 2, deltaY: 1 }))
     })
+  }
 
   process.stdout.write(
     JSON.stringify({
@@ -240,7 +261,7 @@ it('playback and panel state reuse registered values, while dependent publicatio
 
   viewportOptionsRenders.count = 0
 
-  for (let i = 0; i < 30; i++)
+  for (let i = 0; i < 30; i++) {
     await act(() =>
       playback({
         workcell,
@@ -250,12 +271,15 @@ it('playback and panel state reuse registered values, while dependent publicatio
         bodyIds: []
       })
     )
+  }
 
   const button = [...host.querySelectorAll('button')].find(
     (value) => value.getAttribute('aria-label') === 'Experiments'
   )
 
-  if (!button) throw new Error('Missing experiment control')
+  if (!button) {
+    throw new Error('Missing experiment control')
+  }
 
   await act(() => button.click())
 

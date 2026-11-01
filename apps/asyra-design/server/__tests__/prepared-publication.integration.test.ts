@@ -24,6 +24,7 @@ it('replays prepared sibling creation, Undo and Redo into the exact durable prop
     await import('../../src/ai/design-actions')
   const { createAiTransactionRunner } = await import('../../src/ai/transaction')
   const { historyApis } = await import('../../src/common-apis/history')
+
   applyPreset(core, {
     profile: PresetProfiles.CUSTOM,
     defaults: [
@@ -52,19 +53,26 @@ it('replays prepared sibling creation, Undo and Redo into the exact durable prop
       }
     }
   })
+
   const save = async () =>
     JSON.parse(JSON.stringify(await core.save())) as AppDocumentData
+
   let durable = await save()
   const publications: SharedPublication[] = []
   const stop = core.subscribeToSharedPublication((publication) =>
     publications.push(publication)
   )
   let sequence = 0
+
   const replay = async () => {
     expect(publications.length).toBeGreaterThan(0)
     for (const publication of publications.splice(0)) {
       const prepared = prepareCollaborationPublication(publication)
-      if (!prepared) continue
+
+      if (!prepared) {
+        continue
+      }
+
       const wire = decodePublicationFramePublication(
         encodePublicationMessageFrames({
           type: CollaborationMessageTypes.PUBLICATION,
@@ -73,20 +81,28 @@ it('replays prepared sibling creation, Undo and Redo into the exact durable prop
           sequence: ++sequence
         })
       ).publication
+
       for (const changes of readDocumentPublicationSlices(wire)) {
         durable = applyCanonicalChangesToDocument(durable, changes)
       }
     }
+
     expect(durable).toEqual(await save())
   }
+
   try {
     const example = designPreparationExamples.find(
       (entry) => entry.draft.name === 'Repeated visible detail'
     )
-    if (!example) throw new Error('Missing current multi-face example')
+
+    if (!example) {
+      throw new Error('Missing current multi-face example')
+    }
+
     const action = createPreparedDesignAction()
     const runner = createAiTransactionRunner()
     const signal = new AbortController().signal
+
     for (const identity of ['first', 'second']) {
       await runner.run(identity, (runMutation) =>
         action.execute(
@@ -100,7 +116,9 @@ it('replays prepared sibling creation, Undo and Redo into the exact durable prop
       )
       await replay()
     }
+
     const complete = await save()
+
     await historyApis.undo()
     await replay()
     expect(await save()).not.toEqual(complete)
