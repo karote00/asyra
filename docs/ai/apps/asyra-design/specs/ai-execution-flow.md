@@ -85,6 +85,11 @@ constraints and acceptance criteria, not a complete geometry inventory. Ready
 coherent retained parts may be emitted in a shared coordinate system; keep unresolved detail pending
 without weakening the final acceptance contract.
 
+Always-present App instructions explain Knowledge value before tool names: domain
+principles, common failure modes and mappings to supported App capabilities can
+reduce repeated derivation and unsuitable representation choices, including for
+familiar tasks. Native namespace metadata exposes that purpose before deferred
+tool loading. This promises no quality improvement and introduces no lookup gate.
 Domain knowledge is optional reference material, not a default method or an
 additional acceptance standard. Global guidance does not prescribe representative
 sampling, construction order or refinement sequence. Exact tool contracts and
