@@ -32,6 +32,42 @@ accepted as non-blocking. See the [completed task record](completed/ai-conversat
 and [test report](completed/ai-conversation-improvements-2026-11-02-report.md).
 PR creation is authorized; the product parent remains active. No release or merge.
 
+## Inspection image delivery correction - 2026-11-02
+
+Implementation verified; live validation pending - follow-up to the accepted
+conversation task. Baseline is
+`50e153ff713da9f0748348e6bbd52464a6652b72` in the existing implementation worktree.
+The two post-integration Taipei 101 attempts exposed an inspection delivery
+regression; neither is a completed-run benchmark.
+
+Owner step: `compose` - declared model-result delivery. The inspection action
+owns required image metadata; generic projection and the native image validator
+remain consumers. Preserve PNG bytes, dimensions, result order, existing
+settlement and no-replay behavior. No cache or extra acquisition is introduced.
+Scope is the inspection output declaration, direct delivery tests, applicable
+flow/spec documentation. Remove the duplicated request-boundary path left by
+the prior integration so the existing Inspector gate can load. Exclude prompt changes,
+model continuation policy, generic projection changes, release workflows and
+unrelated main updates.
+
+Regression first: five formal projected-image cases fail on the original source
+with `Invalid drawing snapshot dimensions`; the zero-image case passes. Required
+checks: image delivery including native transport and actual host projection,
+inspection/model-boundary regressions, App AI/server tests, typecheck, scoped
+lint, naming, build and current Flow Inspector proof. After source is frozen,
+run the unchanged fixed-prompt Taipei 101 recorder once with its ten-minute guard.
+Report incomplete outcomes without a completed-run comparison.
+
+Validation: five regression cases failed before the fix and passed afterward.
+The server suite passed 3,089 cases with one incomplete capture mock failure;
+after correcting that mock, its 23-case batch suite passed. Two existing server
+cases remain skipped. AI passed 791 cases with one incomplete capture mock
+failure; its corrected 22-case runtime suite passed. All 11 image-delivery cases,
+including the pinned native executable, pass. Typecheck, App build and naming pass.
+Current-source Inspector candidate `0cbbf332-c864-4163-8f10-a81a31790278` passes
+85 cases; this is candidate source evidence, not acceptance of unrelated older
+contract revisions. No generic projector or provider stop policy changed.
+
 ## Product target
 
 The product objective is to understand and fulfill the user’s design intent, not
@@ -1269,6 +1305,7 @@ new UI, push or CI monitor. Existing dirty work is preserved. This is not a clai
 of arbitrary-design quality or inferred 3D reconstruction.
 
 Step Execution Card - request-backend-action-batch:
+
 - Authority: design-preparation.md semantic preparation and construction sections;
   Inspector request-backend-action-batch inputs, conditions, server boundary and
   failure owner. Contract update is part of this authorized construction change.
@@ -1384,7 +1421,6 @@ reference/prompt/download tests, Inspector, naming, types, lint, build, template
 Self-review: no fallback artwork, fixed-domain routing, forced drawing method,
 provider model change, or claims that prompt assertions prove live task quality.
 
-
 ### CI integration - 2026-09-25
 
 Rebased PR #223 onto main `2bc5db655`, preserving the current AI implementation.
@@ -1403,7 +1439,6 @@ dependency, template synchronization, Framework clean consumer (19 packages),
 and generated-template consumer (12 packages, six phases) pass. Browser evidence
 was rerun after Vite reloads from concurrent build/file changes invalidated the
 earlier runs. Exact-head changeset admission and remote CI remain delivery gates.
-
 
 ### CI follow-up - 2026-09-26
 

@@ -121,7 +121,7 @@ it('owns one shared inspection lifetime and disposes canonical subscriptions wit
   core.observeSharedDataChannel = vi.fn(() => stop)
   inspectionApis.inspect = vi.fn(() => ({
     available: true,
-    image: { dataUrl: 'png' }
+    image: { dataUrl: 'png', width: 1, height: 1 }
   })) as typeof originalInspect
   const customDispose = vi.fn()
   const input = createAiRuntimeInput({

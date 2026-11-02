@@ -229,7 +229,11 @@ it.each(['native', 'registered'])(
 it('delivers the operation-owned capture identity through the real host for reuse without recapture', async () => {
   const { createAiInspectionAction } = await import('../../src/ai/inspection')
   const action = createAiToolContract(createAiInspectionAction())
-  const image = { dataUrl: 'data:image/png;base64,aW1hZ2U=' }
+  const image = {
+    dataUrl: 'data:image/png;base64,aW1hZ2U=',
+    width: 1,
+    height: 1
+  }
   const dispatch = vi.fn(async (batch) => ({
     context: {},
     actionResults: batch.actions.map((entry: { id: string; name: string }) => ({

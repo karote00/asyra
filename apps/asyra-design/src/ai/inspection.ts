@@ -35,9 +35,14 @@ export const createAiInspectionAction = (
     AiActionNames.INSPECT_DRAWING,
     toolResultObject({
       available: { const: true },
-      image: toolResultObject({ dataUrl: toolResultString })
+      image: toolResultObject({
+        dataUrl: toolResultString,
+        width: { type: 'integer', minimum: 1, maximum: 1024 },
+        height: { type: 'integer', minimum: 1, maximum: 1024 }
+      })
     })
   ),
+  revision: 3,
   recoveryOutputSchema: inspectionFailureSchema,
   name: AiActionNames.INSPECT_DRAWING,
   description:

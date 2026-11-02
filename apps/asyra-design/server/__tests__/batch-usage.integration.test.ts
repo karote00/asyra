@@ -114,7 +114,7 @@ it('delivers selected batch usage independent of unrelated inventory and execute
     review,
     createAiInspectionAction(() => ({
       available: true,
-      image: { dataUrl: 'data:image/png;base64,eA==' }
+      image: { dataUrl: 'data:image/png;base64,eA==', width: 1, height: 1 }
     })),
     ...createBasicApiActions(undefined, undefined, queries),
     createDocumentContextAction(queries.read),
