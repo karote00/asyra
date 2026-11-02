@@ -34,8 +34,8 @@ PR creation is authorized; the product parent remains active. No release or merg
 
 ## Inspection image delivery correction - 2026-11-02
 
-Implementation verified; live validation pending - follow-up to the accepted
-conversation task. Baseline is
+Snapshot delivery repaired and live-verified; full benchmark remains incomplete.
+Follow-up to the accepted conversation task. Baseline is
 `50e153ff713da9f0748348e6bbd52464a6652b72` in the existing implementation worktree.
 The two post-integration Taipei 101 attempts exposed an inspection delivery
 regression; neither is a completed-run benchmark.
@@ -67,6 +67,19 @@ including the pinned native executable, pass. Typecheck, App build and naming pa
 Current-source Inspector candidate `0cbbf332-c864-4163-8f10-a81a31790278` passes
 85 cases; this is candidate source evidence, not acceptance of unrelated older
 contract revisions. No generic projector or provider stop policy changed.
+
+Live run `taipei-101-fixed-1793612223281` on `20b23a5e2` delivered 11 images
+without the original failure and produced a base-to-spire building. The agent
+recorded visual failures and did not complete before the deadline. Recorder
+cleanup cancelled the provider after its Stop lookup failed: the actual accessible
+name is Cancel request. Preserve the failed run; no completed-run comparison.
+
+The observed deadline failure requires a bounded recorder correction: share its
+stop helper with the existing real-browser streamed drawing cancellation/Undo
+case. The original selector fails there; the corrected selector passes and keeps
+applied content plus one Undo entry. Prompt, deadline, production cancellation
+policy and model continuation remain unchanged. No second live run is implied.
+See the [repair and live report](../reports/taipei-101-snapshot-delivery-fix-2026-11-02.md).
 
 ## Product target
 

@@ -1,3 +1,4 @@
+import { stopRecordedDrawing } from './stop-recorded-drawing.mjs'
 /* global document, window, requestAnimationFrame, AbortSignal, fetch, performance, console */
 /** Explicit live benchmark only. No request interception, references or extra prompts. */
 import fs from 'node:fs'
@@ -333,9 +334,7 @@ try {
 
   if (!meta.settlement) {
     meta.deadlineOutcome = 'stopped-before-hard-deadline'
-    await page
-      .getByRole('button', { name: 'Stop', exact: true })
-      .click({ timeout: 2000 })
+    await stopRecordedDrawing(page)
     await page.waitForFunction(
       async () =>
         (await import('/src/testing/runtime-access.ts'))
