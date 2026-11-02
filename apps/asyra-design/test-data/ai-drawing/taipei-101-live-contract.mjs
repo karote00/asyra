@@ -1,5 +1,6 @@
 /* global requestAnimationFrame */
 import { AI_BATCH_RECEIPT_HEADER } from '../../src/ai/action-batch-endpoint.ts'
+import { LIVE_TEST_LIMIT_MS } from './live-test-deadline.mjs'
 import { setTimeout } from 'node:timers'
 import { URL } from 'node:url'
 import { readFileSync } from 'node:fs'
@@ -8,6 +9,24 @@ import { createHash } from 'node:crypto'
 export const TAIPEI_101_PROMPT_SHA256 =
   '25b9ad1aeb523fdb590a39d090a37fdc65ed62ff081a27acfa92d946f9b2ff51'
 export const TAIPEI_101_DEADLINE_MS = 10 * 60 * 1000
+
+/** Explicit per-run override; the canonical baseline remains ten minutes. */
+export const readTaipei101Deadline = (args = []) => {
+  if (!args.length) {
+    return TAIPEI_101_DEADLINE_MS
+  }
+
+  const match = args.length === 1 && /^--minutes=([1-9]\d*)$/.exec(args[0])
+  const duration = match ? Number(match[1]) * 60000 : NaN
+
+  if (!Number.isSafeInteger(duration) || duration > LIVE_TEST_LIMIT_MS) {
+    throw new Error(
+      'Invalid test duration; use --minutes=1 through --minutes=15.'
+    )
+  }
+
+  return duration
+}
 
 export const readTaipei101Prompt = () => {
   const bytes = readFileSync(

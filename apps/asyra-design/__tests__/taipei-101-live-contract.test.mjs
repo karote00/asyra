@@ -4,6 +4,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import {
   readTaipei101Prompt,
+  readTaipei101Deadline,
   assertTaipei101Submission,
   TAIPEI_101_DEADLINE_MS
 } from '../test-data/ai-drawing/taipei-101-live-contract.mjs'
@@ -82,4 +83,20 @@ test('a connected socket cannot certify an empty or partially loaded drawing', a
     ),
     true
   )
+})
+
+test('explicit benchmark duration preserves the default and rejects unsafe or ambiguous overrides', () => {
+  assert.equal(readTaipei101Deadline([]), 600000)
+  assert.equal(readTaipei101Deadline(['--minutes=12']), 720000)
+  assert.equal(readTaipei101Deadline(['--minutes=15']), 900000)
+  for (const args of [
+    ['--minutes=0'],
+    ['--minutes=16'],
+    ['--minutes=1.5'],
+    ['--minutes=NaN'],
+    ['--minutes=12', '--minutes=10'],
+    ['--prompt=changed']
+  ]) {
+    assert.throws(() => readTaipei101Deadline(args), /duration/)
+  }
 })

@@ -17,7 +17,7 @@ import {
   readTaipei101Prompt,
   assertTaipei101Submission,
   waitForRecordedDocument,
-  TAIPEI_101_DEADLINE_MS
+  readTaipei101Deadline
 } from './taipei-101-live-contract.mjs'
 
 const app = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
@@ -36,6 +36,7 @@ if (!backendURL) {
 }
 
 const { prompt, sha256 } = readTaipei101Prompt()
+const deadlineMs = readTaipei101Deadline(process.argv.slice(2))
 const id = `taipei-101-fixed-${Date.now()}`
 const directory = path.join(root, 'tmp/conversation-improvements/live', id)
 
@@ -51,7 +52,7 @@ const meta = {
   }).trim(),
   startedAt: new Date().toISOString(),
   url: `${configured.appURL}/?fileId=${id}&aiPerformance=profile`,
-  deadlineMs: TAIPEI_101_DEADLINE_MS,
+  deadlineMs,
   viewport: { width: 1920, height: 1080 },
   services,
   errors: [],
@@ -285,7 +286,7 @@ try {
   })
   meta.sentAt = Date.now()
   deadline = createLiveTestDeadline({
-    deadlineAt: meta.sentAt + TAIPEI_101_DEADLINE_MS,
+    deadlineAt: meta.sentAt + deadlineMs,
     groups: [vite.pid],
     processes: [browserServer.process().pid],
     evidencePath: path.join(directory, 'deadline.json')
@@ -294,7 +295,7 @@ try {
   await page.getByRole('button', { name: 'Send', exact: true }).click()
   let lastStatus
 
-  while (Date.now() - meta.sentAt < TAIPEI_101_DEADLINE_MS - 15000) {
+  while (Date.now() - meta.sentAt < deadlineMs - 15000) {
     const state = await page.evaluate(async () => {
       const { getActiveAiDrawingPerformanceProfile } =
         await import('/src/testing/runtime-access.ts')
