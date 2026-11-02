@@ -53,7 +53,11 @@ The runner verifies fixture SHA-256
 the composer value and the actual submitted intent. It supplies no reference
 attachments, prior conversation or extra test instructions. A user-approved prompt
 change must explicitly update the fixture and its contract; no default adaptation.
-The test guard is ten minutes, independent of production task duration. It requests
+The default test guard is ten minutes, independent of production task duration.
+An explicit user-requested duration may be supplied as `--minutes=N` (integer
+1–15), for example `yarn workspace @asyra/asyra-design test:live:taipei-101 --minutes=12`.
+This changes only that run, records `deadlineMs`, preserves the fixed prompt, and
+keeps the existing 15-second soft-stop margin and 15-minute safety ceiling. It requests
 Stop before the hard deadline to retain evidence, with the existing worker-owned
 hard termination as backup. A timeout, failure or clarification is an outcome to
 report, not permission to rerun or coach the model.
