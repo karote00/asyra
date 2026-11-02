@@ -1,6 +1,6 @@
 ---
 {
-  "description": "Select only when local-coordinate conversion remains unresolved or a worked example is needed after choosing a material method. A known supported representation does not require this walkthrough. Direct selection includes method constraints; no parent read is required.",
+  "description": "Resolve local-coordinate conversion or select a supported material representation from worked examples. A known supported representation does not require this walkthrough. Direct selection includes material and contract constraints, not an optional sampling workflow.",
   "contexts": [
     "architectural-illustration"
   ],
@@ -8,7 +8,8 @@
     "Asyra Design advisory mapping reviewed against current public tool descriptions and schemas."
   ],
   "references": [
-    "design.architectural-illustration.materials.method"
+    "design.architectural-illustration.contracts",
+    "illustration.architecture.materials"
   ]
 }
 ---
@@ -39,11 +40,9 @@ shared Fill object is inappropriate when the required local handles differ.
 Single-axis `map_retained_fills` updates color/opacity only; it cannot perform this
 per-part gradient-handle transformation. Never invent such a parameter.
 
-The rendered material review described in the materials.review child checks the chosen domain and join as
-well as role contrast. A wrong common premise is corrected before its dependent
-expansion; missing detail and failed capture remain separate findings. Preserve
-existing criterion meanings and require current explicit replacement receipts when
-changing a review scope.
+For an unresolved visual choice, the optional materials.review topic explains
+evidence selection. Coordinate conversion does not require a representative sample.
+Preserve requested criteria; successful preparation does not certify appearance.
 
 This executable preparation example implements the axis-aligned domain conversion in the method guidance on two adjacent parts. Both paint domains reach parent y=0..80, meet at the
 same gradient parameter at y=40, and remain independently editable. The structural

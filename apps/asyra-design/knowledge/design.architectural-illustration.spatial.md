@@ -1,6 +1,6 @@
 ---
 {
-  "description": "Select reference uses and inspect spatial relationships using correctly scoped evidence.",
+  "description": "Resolve floating joins, coordinate-basis confusion or incorrect overlap: distinguish geometry from painter order and reference evidence before choosing a correction.",
   "contexts": [
     "architectural-illustration"
   ],
@@ -16,6 +16,14 @@
 ---
 
 ### Spatial relationships to evidence
+
+For connected geometry, keep one chosen projection and a common world basis.
+Use supplied world faces through preparation instead of calculating projected
+vertices by hand. A contact requires coincident geometry in that basis; changing
+painter order cannot close a physical gap. For valid overlapping geometry with
+wrong visibility, adjust order using current identities instead of rebuilding.
+Tools project declared geometry; they do not infer unknown attachments or remove
+hidden faces. Reference detail does not establish unseen dimensions.
 
 When reference-supported spatial choices are open, distinguish the requested
 subject from its surroundings and uncertain attachments. Put the chosen placement,

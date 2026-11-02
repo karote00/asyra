@@ -140,6 +140,45 @@ No live model run, release workflow, push or rebase was performed for this chang
 Logs: `tmp/conversation-improvements/prompt-*.log`. The bounded review found no
 remaining contradiction in changed method guidance or loss in tested handoffs.
 
+### Follow-up - actionable knowledge and selective delivery
+
+User-authorized implementation at source `170185b57665dd23bb7873e33989ec0772f6bdfb`.
+The [follow-up review](../reports/ai-prompt-ownership-review-2026-11-02.md#follow-up-review---reduce-task-time-derivation)
+owns findings. Step Execution Card - compose: current intent and registered
+knowledge metadata enter optional discovery; selected advice and necessary
+constraints reach the provider through existing delivery. Improve problem-oriented
+selection and decision-to-tool mappings, remove compulsory representative wording,
+and let direct parameter reads omit optional sampling-method dependencies.
+
+Allowlist: existing App architecture knowledge, local knowledge descriptions and
+revisions, direct tests, execution spec, compose Inspector contract and these
+plan/review records. Preserve shared domain content, exact operational authority,
+source identity, pagination, reuse, no-replay and acceptance semantics. No new
+schemas, tools, caches, runtime computation, dependencies or construction order.
+
+Design review: parameters already carry coordinate conversion and representation
+limits; shared materials supply domain meaning and contracts supply recovery.
+Neither depends on the optional sampling method. Direct reads can therefore keep
+those dependencies without pulling in that method. Existing preparation examples
+and handoff tests exercise the executable mapping. Negative cases retain local
+material restarts, no-knowledge edits and alternative construction sequences.
+
+Gates: failing direct-read/optional-repetition regression, knowledge and prompt
+suites, existing handoff/provider/information-delivery suites, naming, scoped lint,
+App typecheck/build and current execution-flow evidence. Review the bounded diff
+and direct consumers, correcting findings before the single user-authorized
+12-minute live run. Use the unchanged canonical prompt, retain failed evidence and
+write a detailed report; an interrupted run cannot certify complete quality or
+completed-task speed. No release work, push or rebase.
+
+Implementation and bounded review passed: 319 focused tests (six existing opt-in
+skips), 32 final knowledge tests, 15 naming, six contract and four recorder checks;
+typecheck/build pass, lint has no errors. Current-source Inspector candidate
+`f06c13c2-dc73-444f-8513-bd2ab164b926` passes. Parameter closure decreases from seven
+documents/two pages to five documents/one page, preserving material meaning and
+recovery. See the review report for exact metrics, iterations and limitations.
+The single requested live test remains pending; static tests do not prove speed.
+
 ## Product target
 
 The product objective is to understand and fulfill the user’s design intent, not

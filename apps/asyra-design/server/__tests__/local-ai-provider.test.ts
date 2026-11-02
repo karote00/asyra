@@ -6512,7 +6512,7 @@ it('discovers and retrieves both knowledge contexts through the normal provider 
 
     expect(method.description).toMatch(/without.*parameter walkthrough/i)
     expect(detail.description).toMatch(
-      /only when.*local-coordinate conversion.*worked example/i
+      /local-coordinate conversion.*worked example/i
     )
     expect(detail.description).toMatch(
       /known supported representation.*does not require/i

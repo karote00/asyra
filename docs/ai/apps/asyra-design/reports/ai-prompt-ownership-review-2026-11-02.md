@@ -210,3 +210,126 @@ provider/knowledge tests and current-source Inspector evidence pass; no live mod
 run has measured drawing speed or quality for the new instructions. The 101 user
 prompt and all prior benchmark evidence are unchanged. See the plan for exact
 counts, opt-in skips, warnings and candidate evidence identity.
+
+
+## Follow-up review - reduce task-time derivation
+
+Review baseline: `170185b57665dd23bb7873e33989ec0772f6bdfb`, in the existing
+conversation-improvements worktree. This follow-up audits the optional-guidance
+slice against the retained twelve-minute run; it does not change production
+contracts or certify an Inspector step. The deliverable is an actionable ownership
+proposal. Discovery is limited to that run report, App prompt, knowledge tool
+definitions and loader, architecture entry/spatial/projection/repetition/material
+method and parameter topics, and current preparation guidance. Excluded: model
+training, new runtime capabilities, release work, rebasing and benchmark changes.
+
+### Evidence and limits
+
+The [twelve-minute report](taipei-101-optional-guidance-12m-2026-11-02.md)
+records zero knowledge calls, nine API discovery calls (137,534 output bytes),
+five preparation/application calls and a late correction of detached crown bands.
+Knowledge content cannot explain time spent reading knowledge in this run because
+none was read. Neither absent calls nor provider-side duration proves that the
+model lacked relevant knowledge, was manually calculating throughout the interval,
+or would run faster after a particular rewrite. Provider waiting is not a measure
+of reasoning. The interrupted run is not a completed-quality performance baseline.
+
+### Concrete findings
+
+| Finding | Current evidence | Disposition |
+| --- | --- | --- |
+| The first knowledge entry explains access better than utility | `local-knowledge.ts` discovery description covers IDs, children, contexts and permissions; the App prompt offers generic advice for design decisions | Improve discoverability with a short statement of available problem-solving value, without forcing a lookup or injecting complete advice |
+| Useful execution mappings already exist | `design.architectural-illustration.repetition` maps repeated faces/grids to existing backend expansion; the parameter topic maps continuous materials to world fields | Reuse these owners; do not create another catalog or ask the model to calculate results already owned by preparation |
+| Selected topics mix design help and protocol recovery | Spatial/repetition/method bodies include receipt binding, leases, partial-write and save recovery alongside design decisions | Keep operational authority in selected tool contracts; retain only the minimum boundary needed to understand the advice |
+| A narrow parameter read brings broader method content | The parameter topic references the method; that method references the App entry, contracts and shared method | Review the actual dependency closure before reducing it; separate necessary meaning from optional workflow. Do not remove references blindly or duplicate their constraints |
+| Repetition still contains unconditional representative-review wording | The repetition body says to confirm representative material evidence separately despite the optional-method decision | Make this conditional on an unresolved material decision and the selected method; retain truthful user-linked review requirements |
+| Projection advice is not a geometry solver | Shared projection distinguishes bases and ordering; it does not establish unknown building geometry or automatically attach ornaments | Preserve this limit. A floated band is not evidence that the deterministic projection owner is wrong |
+| Current tool guidance already delegates computation | `design-preparation-examples.ts` maps world faces, grids, patterns and world materials to backend computation | Do not add another mandatory instruction saying the same thing. Determine from retained arguments whether an actual missed handoff exists before proposing tool changes |
+
+### Proposed bounded implementation
+
+1. Improve the existing knowledge entry and discovery descriptions so the model can
+   recognize a useful answer before reading: coordinate/visibility decisions,
+   repeated-component representation and continuous-material choices. Preserve
+   direct reads, optional use, and no lookup for already-known edits. The App prompt
+   should remain a short resource pointer, not acquire a topic catalog.
+2. Reorganize existing architecture topics around the unresolved decision, minimum
+   inputs, usable relationship or representation, existing tool handoff, and limits.
+   Keep the concrete coordinate example and supported field mapping. Put optional
+   sampling/review strategy behind its existing method topic. Correct the leftover
+   unconditional wording in repetition. Do not prescribe a construction sequence.
+3. Audit delivered dependency closures with the existing knowledge owner/tests.
+   Measure unique delivered documents and bytes for representative direct reads,
+   not just the selected Markdown file size. Preserve required source identity,
+   contextual constraints, reuse and pagination semantics. Only remove dependencies
+   whose required meaning remains available at its authoritative owner.
+4. Verify the composed provider instructions, topic selection and dependency
+   delivery with formal tests, plus existing preparation examples. Keep known-value
+   edits, no-knowledge drawing, different construction orders and intentional
+   material restarts valid. Record source/bytes separately from runtime latency.
+
+Production changes belong to the existing compose/knowledge/preparation owners;
+complete the matching flow-contract review before implementation. No new tool,
+geometry algorithm, schema, knowledge registry or runtime state is justified by
+this review. If retained arguments expose a concrete missing computation, handle
+that as a separately bounded owner correction with a failing regression first.
+
+### Evaluation and acceptance
+
+Static acceptance: useful selection descriptions, concrete supported handoffs,
+no compulsory method wording, preserved tool authority, and correct dependency
+closure/reuse. A string-size reduction alone does not establish usefulness.
+
+When another live test is explicitly requested, preserve the canonical prompt,
+model/effort, fresh context and recorder conditions. Report first paint,
+announcement-to-tool intervals, discovery rounds/bytes, knowledge selections and
+closure bytes, correction count, final visual acceptance and recorder completion.
+Do not force knowledge use to improve the metric. A complete result and equivalent
+quality are prerequisites for a completed-task speed comparison; one run cannot
+isolate causality. No live run was performed for this review.
+
+
+### Follow-up implementation and bounded review
+
+Implemented in the existing worktree: problem-oriented discovery and topic
+metadata, concrete spatial/representation handoffs, conditional repetition review,
+a shorter optional method, and a direct parameter dependency on shared material
+meaning plus current contract constraints instead of the sampling method. Existing
+topic identities and optional selection remain unchanged; changed content revisions
+advance. The always-present App prompt and user benchmark prompt are unchanged.
+
+| Complete selected read | Before bytes / pages | After bytes / pages |
+| --- | --- | --- |
+| Spatial | 14,852 / 1 | 14,804 / 1 |
+| Repetition | 16,587 / 1 | 16,099 / 1 |
+| Material method | 22,301 / 1 | 19,951 / 1 |
+| Material parameters | 33,831 / 2 | 18,221 / 1 |
+
+Bytes sum actual replies including dependencies and pagination, not isolated
+Markdown sizes or model tokens. Parameter delivery drops from seven unique
+documents to five (46.1% fewer bytes). The existing contracts dependency remains
+because exact recovery constraints are still needed. This is no speed claim.
+
+Formal regression failed before production edits on utility discovery, unwanted
+method dependencies and compulsory representative wording. Final focused tests:
+319 passed, six existing opt-in skips across eight provider/knowledge/handoff
+suites; final knowledge-only check after whitespace cleanup: 32 passed. Naming:
+15 passed. Inspector/domain contracts: six passed. Live-recorder contracts: four
+passed. Typecheck and App build pass; lint has no errors and two existing console
+warnings in direct test consumers. Build retains its existing chunk-size warning.
+
+Review corrections: update content revision expectations and selection-condition
+assertions at their actual consumers; preserve executable handoff assertions.
+The initial handoff invocation used jsdom and failed file-URL resolution; the
+project's Node environment passes, without a production workaround. The first
+Inspector candidate failed its old metadata wording assertion; the corrected proof
+also verifies direct parameter delivery without the optional method. Final
+current-source candidate `f06c13c2-dc73-444f-8513-bd2ab164b926` passes the execution
+baseline, source `3d18d745788db19367cdf384a77e04cfd2e70482fa3a096bd7137694775c9b93`.
+This is candidate evidence, not an unrelated accepted-baseline mutation.
+
+Bounded review covered the changed advice, dependency closure, source revisions,
+actual provider consumer and executable example handoffs. No tool/schema/runtime
+changes or lost recovery constraints were found in that scope. Live usefulness,
+latency and drawing quality remain to be measured separately. Evidence logs use
+`tmp/conversation-improvements/knowledge-*.log`.
