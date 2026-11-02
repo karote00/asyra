@@ -173,13 +173,12 @@ history behavior or increase assertion deadlines. The static-source rerun passed
 
 Template synchronization regenerates pre-existing drift as well as this task's
 source changes (349 generated paths); never hand-edit that output. Parity passes.
-The extra `release:template` probe failed on pre-existing root content package
-`@asyra/domain-knowledge: workspace:*`. Package-release-validation assigns that
-artifact-only clean-consumer to Framework Release Gate 5; no package publication
-is requested here. Record the standalone limitation, do not change release-set
-ownership or claim that probe passed. The applicable generated-template build
-uses the existing prebuilt local graph. The earlier scope question is withdrawn;
-no additional permission or scope expansion is needed for the remaining App work.
+The agent incorrectly ran release-only probes and proposed a scope expansion.
+User correction: a non-release task must not execute or handle release workflows.
+Those probes are excluded from this task's acceptance and remaining work; preserve
+their logs only as historical evidence. Do not rerun them or change the release
+package set. The earlier scope question is withdrawn. Local generated-template
+synchronization is recorded above; no publication readiness is claimed.
 
 ### Task 4 pre-live review
 
@@ -197,8 +196,8 @@ prompt/recording contract has a permanent Node gate and immutable fixture digest
 Bounded review rechecked request-owned history/evidence separation, draft lifetime,
 registered explicit image binding, generated-script exclusions and recorder cleanup.
 No production timing promise follows from mock results. No unresolved finding in
-the four implementation slices. Framework release clean-consumer remains a known,
-out-of-scope release limitation, not a passed or skipped App assertion. Preserve
+the four implementation slices. Release-only results are excluded from App
+acceptance and do not block completion. Preserve
 all failed pre-live attempts. Next: exactly one live run, visual inspection and
 actual evidence report; no code/build edits during that run.
 
@@ -231,15 +230,16 @@ illustration; high object count and model-accepted checks do not establish full
 architectural realism. Offline report freshness remains `current: false`, so no
 blanket current-review certification is claimed. Report, raw records and video are
 linked in the detailed report. Task-local implementation review is complete;
-artwork acceptance, future quality work and unrelated release limitations remain
-explicit. No push, merge or additional AI run.
+artwork acceptance and future quality work remain explicit. No push, merge or
+additional AI run.
 
 Final template check exposed local App `tmp/ai-executions` records as 30 candidate
 publication files. Within Task 4 template synchronization, add `tmp` to the existing
 App release exclusions; preserve the raw files. The focused release contracts failed
 before correction and pass afterward, including the locked-recorder exclusions.
 The full release suite has 32 passes and one existing standalone workspace-protocol
-failure, matching the documented Framework Gate 5 limitation. Template parity then
+failure. This unnecessary release run is historical evidence only, excluded from
+App acceptance by the user correction above. Template parity then
 passes without generating execution records. This is artifact hygiene, not a
 release-set change or a repair of the separate clean-consumer limitation.
 

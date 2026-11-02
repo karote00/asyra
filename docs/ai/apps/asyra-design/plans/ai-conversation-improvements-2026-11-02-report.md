@@ -23,7 +23,8 @@ before Feature execution; it does not silently truncate or summarize requirement
 
 Implementation commits: `52c5e4bd8`, `d7912966f`, `ba3f3d01c`, `ca8364763`.
 The live-tested source is **`ca83647639baa03906a467942cd9c0f20f8225d2`**.
-Subsequent changes affect recording verification and documentation only.
+Subsequent changes affect recording verification, local-record template exclusions
+and documentation only; the production conversation implementation is unchanged.
 
 ## Validation
 
@@ -46,16 +47,25 @@ Two early browser attempts were invalidated by concurrent manifest/package build
 and Vite reconnects. Their evidence is retained; the frozen-source rerun passed.
 No production history change was made to accommodate that harness disturbance.
 
-The required generator updated **349 generated template paths**, including existing
-drift. Output was generated, not edited manually. The additional standalone release
-clean-consumer probe failed on existing `@asyra/domain-knowledge: workspace:*`
-resolution outside the release set. That artifact-only check belongs to Framework
-Release Gate 5, which is not applicable to this non-publication App task. It is a
-known release limitation, not a passed check. Local template build/parity passed. Final parity exposed 30 local execution record
-files as candidate template content. A failing release contract test preceded
-adding `tmp` to the existing App release exclusions; the focused release contracts and parity
-then passed. The full release suite reports 32 passes and the one existing
-standalone workspace-protocol failure described above. Raw records remain preserved and are not published.
+Template synchronization updated **349 generated template paths**, including
+existing drift. Output was generated, not edited manually. Local template
+build/parity passed. The final parity check exposed local execution records as
+candidate template content; `tmp` was excluded and raw records were preserved.
+
+### Correction to validation scope
+
+The agent incorrectly ran release-only checks and asked to expand this development
+task to fix them. Asa explicitly rejected that expansion: when the task is not a
+release, release workflows and their checks are outside scope. No release check
+is a prerequisite, blocker or outstanding deliverable for these corrections.
+Do not rerun or repair release checks as part of this task.
+
+For historical accuracy only, the unnecessary standalone probe encountered
+`@asyra/domain-knowledge: workspace:*`; the unnecessary full release suite had
+32 passes and one related failure. Original logs remain intact. These results
+are excluded from App acceptance and do not create a release follow-up task.
+The release package set and domain-knowledge publication integration were not
+changed. The earlier scope-expansion question is withdrawn.
 
 ## Locked live test
 
@@ -216,6 +226,6 @@ close this report before the next scheduled interval.
 
 The four bounded corrections and single-run reporting task are complete. Review
 the generated artwork and implementation before choosing further work. Future
-quality improvements, conservative report freshness classification and standalone
-release consumer repair are separate follow-ups; none is silently included here.
+quality improvements and conservative report freshness classification require
+a separate bounded task. No release work is pending under this task.
 The parent Editable Design Agent plan remains open.
