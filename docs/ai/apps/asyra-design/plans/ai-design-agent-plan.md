@@ -177,7 +177,11 @@ typecheck/build pass, lint has no errors. Current-source Inspector candidate
 `f06c13c2-dc73-444f-8513-bd2ab164b926` passes. Parameter closure decreases from seven
 documents/two pages to five documents/one page, preserving material meaning and
 recovery. See the review report for exact metrics, iterations and limitations.
-The single requested live test remains pending; static tests do not prove speed.
+The single requested live test is recorded in the
+[twelve-minute report](../reports/taipei-101-actionable-knowledge-12m-2026-11-02.md).
+Recorder exit 0; exact source/checkpoint/reload equality; 705.480-second deadline
+cancellation. Knowledge was not read and final refinement was not visually
+accepted. Static delivery improvement is proven; live speed/quality benefit is not.
 
 ## Product target
 
