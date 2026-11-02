@@ -57,6 +57,11 @@ The test guard is ten minutes, independent of production task duration. It reque
 Stop before the hard deadline to retain evidence, with the existing worker-owned
 hard termination as backup. A timeout, failure or clarification is an outcome to
 report, not permission to rerun or coach the model.
+The deadline stop uses the Agent button's accessible name, `Cancel request`,
+through the same helper exercised by the streamed drawing cancellation/Undo
+browser case. Visible button text is not its accessible locator. A recorder
+cleanup failure remains a failed run; do not infer a final App settlement or
+successful reload from retained backend data alone.
 
 Evidence is retained under `tmp/conversation-improvements/live/<run-id>/`: exact
 request metadata, provider JSONL/payloads/assets, service logs and PIDs, recording,
