@@ -1,6 +1,6 @@
 ---
 {
-  "description": "Use for ordinary new-material representation and lighting-domain decisions, including supported continuous fields and their limits, without a parameter walkthrough. Select parameters only for unresolved coordinate conversion or a needed worked example.",
+  "description": "Optional advice for new-material representation and lighting-domain decisions, including supported continuous fields and their limits, without a parameter walkthrough. Select parameters only for unresolved coordinate conversion or a needed worked example.",
   "contexts": [
     "architectural-illustration"
   ],
@@ -18,7 +18,12 @@
 }
 ---
 
-### Chosen-method route: ready surface, evidence, then dependent repetition
+### Optional method: ready surface, evidence, then dependent repetition
+
+Choose this route when an uncertain repeated material warrants an early visual check.
+It can reduce rework but adds review time; known methods and independent parts need
+not wait. Its sequence is not a prerequisite for drawing or an extra acceptance
+standard. The following steps describe execution if this method is selected.
 
 1. Use the user's choices and supported reference regions to assign the visible
    parts to material roles. Record the role-to-part relation, continuous lighting

@@ -97,6 +97,10 @@ describe('Asyra Design configured AI model backend', () => {
       protocolVersion: 1
     })
     expect(body.systemPrompt).toMatch(/registered App actions and image tools/i)
+    expect(body.systemPrompt).toContain('optional reference material')
+    expect(body.systemPrompt).not.toMatch(
+      /default method reference|representative route before repeating/
+    )
     expect(body.imageTools).toEqual([
       {
         capabilities: ['retained-reference-validation'],

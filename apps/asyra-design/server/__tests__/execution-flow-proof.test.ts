@@ -4803,17 +4803,18 @@ it('execution proof preserves a rejected mechanical repair as not-started across
 it('execution proof connects tool-first guidance to native selection and Runtime decision recovery', async () => {
   const { AI_APP_PROMPT } = await import('../ai-domain-prompt')
 
-  expect.soft(AI_APP_PROMPT).toContain('First frame is optional')
-  expect.soft(AI_APP_PROMPT).toContain('not a deadline or completion gate')
-  expect.soft(AI_APP_PROMPT).toContain('research may come first')
+  expect.soft(AI_APP_PROMPT).toContain('optional reference material')
+  expect.soft(AI_APP_PROMPT).toContain('not an additional acceptance standard')
+  expect.soft(AI_APP_PROMPT).toContain('No particular construction order')
   expect
     .soft(AI_APP_PROMPT)
     .toContain('Preserve validation, references and final review')
-  expect.soft(AI_APP_PROMPT).not.toContain('Draw each coherent ready part')
-  expect.soft(AI_APP_PROMPT).toContain('mechanicalSelection')
-  expect.soft(AI_APP_PROMPT).toContain('verify_design_checks')
-  expect.soft(AI_APP_PROMPT).toContain('repair_design_checks')
-  expect.soft(AI_APP_PROMPT).toContain('returned requestId/checks')
+  expect
+    .soft(AI_APP_PROMPT)
+    .not.toMatch(
+      /default method reference|representative route before repeating/
+    )
+  expect.soft(AI_APP_PROMPT).toContain('fresh request-owned evidence')
   const checks = createDesignCheckResults()
   const revision = checks.record({
     id: 'unresolved',
@@ -8492,7 +8493,7 @@ it('execution proof delivers selected Knowledge decisions completely without opt
       (item: { id: string }) => item.id === method.children[0]
     )
 
-    expect(method.description).toMatch(/ordinary.*representation.*lighting/i)
+    expect(method.description).toMatch(/optional.*representation.*lighting/i)
     expect(method.description).toMatch(/without.*parameter walkthrough/i)
     expect(detail.description).toMatch(
       /only when.*local-coordinate conversion.*worked example/i

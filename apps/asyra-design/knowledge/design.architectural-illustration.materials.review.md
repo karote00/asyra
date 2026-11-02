@@ -1,6 +1,6 @@
 ---
 {
-  "description": "Declare representative material checks, capture appropriate evidence and preserve independent passes.",
+  "description": "Optional representative material review: capture appropriate evidence and preserve independent passes.",
   "contexts": [
     "architectural-illustration"
   ],
@@ -15,9 +15,12 @@
 }
 ---
 
-### Representative acceptance before repeating a material decision
+### Review a representative material when that method is chosen
 
-Declare sample material/join adequacy separately from complete-drawing coverage.
+If a representative check helps resolve an uncertain repeated material, declare
+sample material/join adequacy separately from complete-drawing coverage. Do not
+add sample obligations merely because this advice was read. Assess the requested
+finish, not optional polish.
 The following declaration is an executable example, not an additional obligation
 for every request. Use stable unit IDs for the actual representative scope. Declare
 these choices with the initial criteria; do not rewrite existing judged obligations.

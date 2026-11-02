@@ -81,6 +81,65 @@ applied content plus one Undo entry. Prompt, deadline, production cancellation
 policy and model continuation remain unchanged. No second live run is implied.
 See the [repair and live report](../reports/taipei-101-snapshot-delivery-fix-2026-11-02.md).
 
+## Optional design guidance - 2026-11-02
+
+Implemented and locally validated; live drawing performance is unmeasured.
+User-approved implementation of the
+[prompt ownership review](../reports/ai-prompt-ownership-review-2026-11-02.md),
+based on `d0075d16e0c01776211a8bd773c222a20e3d1422` in the existing worktree.
+
+Step Execution Card - compose: original intent, tool contracts and optional
+knowledge enter provider composition; output is model-visible guidance and the
+existing tool program. App prompt owns safety, user intent and truthful delivery;
+knowledge offers methods; selected tools own exact parameters and recovery.
+Remove default method adoption and mandatory representative sequencing. Do not
+replace these with a skeleton-first pipeline. Known-value edits and alternative
+methods remain valid without knowledge. Actual image bindings, no-replay recovery,
+current evidence, cancellation and persistence keep their existing owners.
+
+Allowlist: prompt/provider instruction text, existing shared/App knowledge topics,
+direct prompt/provider/knowledge tests, execution spec, compose Inspector contract,
+this plan and the review report. No runtime state, schemas, public identifiers,
+new tools, UI, package dependencies, release work, rebase or benchmark prompt edits.
+No live model tests in this implementation slice. Existing exports and tool names
+are reused; no persisted identity migration is needed.
+
+Verify a formal failure for compulsory method guidance before editing production
+text. Review actual native composed instructions, the systemPrompt consumer,
+selected tool guidance and knowledge dependency delivery. Run focused prompt,
+provider, knowledge and handoff regressions, naming, scoped lint/type checks and
+current-source Inspector evidence. Preserve existing safety and handoff tests;
+text-location assertions may move to their authoritative delivery owner. Review
+only the bounded diff and direct consumers, then record remaining limits without
+claiming measured speed or visual-quality improvement.
+
+Validation and self-review: the new global-method regression first failed on the
+old prompt. Final prompt/provider/knowledge/handoff group passes 299 tests with
+one existing skip. Five additional delivery/review suites pass 85 tests with five
+opt-in skips; the knowledge handoff cases are included in the final group above.
+The Inspector/domain contract checks pass six tests; naming passes 15. Typecheck,
+App build and scoped lint pass (two existing console warnings, normal bundle-size
+warning). Current-source Inspector candidate
+`704996b5-5cb7-4f2b-b179-3fda74af3e51` passes all 85 mapped cases; this is candidate
+evidence, not acceptance of unrelated prior baseline revisions.
+
+The native assembled base/developer/tool delivery and systemPrompt consumer are
+covered. No conflicting material-method mandate remains in native developer text,
+so it needed no production rewrite. Existing operation bootstrap remains for exact
+scope acquisition, current schemas, leases and recovery; moving it blindly to
+optional knowledge would hide necessary execution instructions. Selected knowledge
+and review/reference tools already supply the removed detailed procedures, checked
+through their definitions and actual handoffs. The knowledge loader advances only
+the four changed document revisions. No new authority or cache was added.
+
+AI_APP_PROMPT decreases from 21,180 to 7,413 UTF-8 bytes (65.0%); operation startup
+changes from 5,901 to 5,887 bytes. These are source-text measurements, not provider
+tokens, total-request cost or speed claims. The unchanged fixed Taipei 101 prompt
+still hashes to `25b9ad1aeb523fdb590a39d090a37fdc65ed62ff081a27acfa92d946f9b2ff51`.
+No live model run, release workflow, push or rebase was performed for this change.
+Logs: `tmp/conversation-improvements/prompt-*.log`. The bounded review found no
+remaining contradiction in changed method guidance or loss in tested handoffs.
+
 ## Product target
 
 The product objective is to understand and fulfill the user’s design intent, not

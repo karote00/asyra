@@ -38,12 +38,12 @@ reconstructing geometry or retrieving the entire catalog.
 
 ### Turn relevant methods into execution choices
 
-For open architectural decisions, use applicable shared advice as the default
+For open architectural decisions, consider applicable shared advice as an optional
 planning reference. The user controls style and values; advice never overrides
 permissions or the discovered tool contract. Do not look up advice for every
 known-value edit or block work when relevant advice is unavailable.
 
-When repeated surfaces have open material choices, select the applicable material-method child from discovery. Keep user-requested
+When repeated surfaces have open material choices, the material-method child offers one approach when useful. Keep user-requested
 quality in criteria; optional polish or a Knowledge recommendation is not a new
 completion demand. Do not add a call just to acknowledge reading advice.
 
