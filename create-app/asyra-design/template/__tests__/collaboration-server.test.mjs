@@ -66,18 +66,27 @@ before(async () => {
             durableSequence: 0
           })
         )
+
         return
       }
+
       if (
         request.method === 'POST' &&
         request.url?.endsWith('/persistence-batches')
       ) {
         const chunks = []
-        for await (const chunk of request) chunks.push(chunk)
+
+        for await (const chunk of request) {
+          chunks.push(chunk)
+        }
+
         const batch = JSON.parse(Buffer.concat(chunks).toString('utf8'))
+
         response.end(JSON.stringify({ durableSequence: batch.lastSequence }))
+
         return
       }
+
       response.statusCode = 404
       response.end(JSON.stringify({ error: 'not found' }))
     }
@@ -87,6 +96,7 @@ before(async () => {
     defaultPersistenceBackend.listen(0, '127.0.0.1', resolve)
   })
   const backendAddress = defaultPersistenceBackend.address()
+
   assert.ok(backendAddress && typeof backendAddress === 'object')
   defaultPersistenceBackendURL = `http://127.0.0.1:${backendAddress.port}`
 
@@ -104,6 +114,7 @@ before(async () => {
   } else {
     await execFileAsync('yarn', ['build:collaboration-server'], { cwd: appDir })
   }
+
   protocolTestRuntime = await createViteServer({
     appType: 'custom',
     configFile: false,
@@ -115,6 +126,7 @@ before(async () => {
   const protocol = await protocolTestRuntime.ssrLoadModule(
     '/src/collaboration/protocol.ts'
   )
+
   encodeProtocolPublicationFrames = protocol.encodePublicationMessageFrames
   inspectProtocolPublicationFrame = protocol.inspectPublicationFrameHeader
 })
@@ -194,15 +206,18 @@ test('reference server is a TypeScript build with an opaque uncompressed publica
 
 const getAvailablePort = async () => {
   const server = createServer()
+
   await new Promise((resolve, reject) => {
     server.once('error', reject)
     server.listen(0, '127.0.0.1', resolve)
   })
   const address = server.address()
+
   assert.ok(address && typeof address === 'object')
   await new Promise((resolve, reject) =>
     server.close((error) => (error ? reject(error) : resolve()))
   )
+
   return address.port
 }
 
@@ -213,11 +228,15 @@ const waitForServer = (child) =>
       () => reject(new Error(`collaboration server timeout: ${stderr}`)),
       10_000
     )
+
     child.stderr.on('data', (chunk) => {
       stderr += chunk.toString()
     })
     child.stdout.on('data', (chunk) => {
-      if (!chunk.toString().includes('[collaboration]')) return
+      if (!chunk.toString().includes('[collaboration]')) {
+        return
+      }
+
       clearTimeout(timeout)
       resolve()
     })
@@ -343,6 +362,7 @@ const createServerProbeImport = ({
       })
     }
   `
+
   return `data:text/javascript,${encodeURIComponent(source)}`
 }
 
@@ -364,6 +384,7 @@ const startServer = ({
     DOCUMENT_PERSISTENCE_BACKEND_URL:
       persistenceBackendURL ?? defaultPersistenceBackendURL
   }
+
   if (persistenceMaxPublicationCount !== undefined) {
     environment.DOCUMENT_PERSISTENCE_MAX_PUBLICATIONS = String(
       persistenceMaxPublicationCount
@@ -371,6 +392,7 @@ const startServer = ({
   } else {
     delete environment.DOCUMENT_PERSISTENCE_MAX_PUBLICATIONS
   }
+
   environment.DOCUMENT_PERSISTENCE_MAX_SERIALIZED_BYTES = String(
     persistenceMaxSerializedBytes
   )
@@ -381,16 +403,19 @@ const startServer = ({
   } else {
     delete environment.DOCUMENT_PERSISTENCE_RETRY_INTERVAL_MS
   }
+
   if (profile) {
     environment.COLLABORATION_PROFILE = '1'
   } else {
     delete environment.COLLABORATION_PROFILE
   }
+
   if (origin) {
     environment.APP_URL = origin
   } else {
     delete environment.APP_URL
   }
+
   const useProbe =
     holdPeerWriteCallbacks ||
     injectPeerWriteCallbackError ||
@@ -406,6 +431,7 @@ const startServer = ({
         compiledServerPath
       ]
     : [compiledServerPath]
+
   return spawn(process.execPath, nodeArguments, {
     cwd: appDir,
     env: environment,
@@ -420,16 +446,23 @@ const waitForStdoutLine = (child, prefix) =>
       () => reject(new Error(`${prefix} stdout timeout`)),
       5_000
     )
+
     const onData = (chunk) => {
       buffered += chunk.toString()
       const lines = buffered.split(/\r?\n/)
+
       buffered = lines.pop() ?? ''
       const line = lines.find((candidate) => candidate.startsWith(prefix))
-      if (!line) return
+
+      if (!line) {
+        return
+      }
+
       clearTimeout(timeout)
       child.stdout.off('data', onData)
       resolve(line)
     }
+
     child.stdout.on('data', onData)
   })
 
@@ -438,6 +471,7 @@ const releasePeerWriteCallback = async (child) => {
     child,
     'AI_COLLABORATION_SERVER_TEST_CALLBACK_RELEASED'
   )
+
   child.stdin.write('release\n')
   await released
 }
@@ -451,6 +485,7 @@ const holdPeerCloseCleanup = async (child, actorId) => {
     child,
     `AI_COLLABORATION_SERVER_TEST_CLOSE_HELD ${actorId}`
   )
+
   child.stdin.write(`hold-close:${actorId}\n`)
   await Promise.all([notOpen, closeHeld])
 }
@@ -460,12 +495,16 @@ const releasePeerCloseCleanup = async (child, actorId) => {
     child,
     `AI_COLLABORATION_SERVER_TEST_CLOSE_RELEASED ${actorId}`
   )
+
   child.stdin.write(`release-close:${actorId}\n`)
   await released
 }
 
 const stopServer = async (child) => {
-  if (child.exitCode !== null || child.signalCode !== null) return
+  if (child.exitCode !== null || child.signalCode !== null) {
+    return
+  }
+
   child.kill('SIGTERM')
   await new Promise((resolve) => child.once('exit', resolve))
 }
@@ -479,14 +518,23 @@ const waitForMessage = (socket, predicate, description) =>
       () => reject(new Error(`${description} timeout`)),
       5_000
     )
+
     const onMessage = (data, isBinary) => {
-      if (isBinary) return
+      if (isBinary) {
+        return
+      }
+
       const message = JSON.parse(rawDataToBuffer(data).toString('utf8'))
-      if (!predicate(message)) return
+
+      if (!predicate(message)) {
+        return
+      }
+
       clearTimeout(timeout)
       socket.off('message', onMessage)
       resolve(message)
     }
+
     socket.on('message', onMessage)
   })
 
@@ -496,12 +544,17 @@ const waitForBinaryMessage = (socket, description) =>
       () => reject(new Error(`${description} timeout`)),
       5_000
     )
+
     const onMessage = (data, isBinary) => {
-      if (!isBinary) return
+      if (!isBinary) {
+        return
+      }
+
       clearTimeout(timeout)
       socket.off('message', onMessage)
       resolve(rawDataToBuffer(data))
     }
+
     socket.on('message', onMessage)
   })
 
@@ -516,14 +569,22 @@ const waitForBinaryMessages = (socket, count, description) =>
         )
       )
     }, 5_000)
+
     const onMessage = (data, isBinary) => {
-      if (!isBinary) return
+      if (!isBinary) {
+        return
+      }
+
       messages.push(rawDataToBuffer(data))
-      if (messages.length !== count) return
+      if (messages.length !== count) {
+        return
+      }
+
       clearTimeout(timeout)
       socket.off('message', onMessage)
       resolve(messages)
     }
+
     socket.on('message', onMessage)
   })
 
@@ -533,12 +594,17 @@ const expectNoBinaryMessage = (socket, durationMs = 100) =>
       socket.off('message', onMessage)
       resolve()
     }, durationMs)
+
     const onMessage = (_data, isBinary) => {
-      if (!isBinary) return
+      if (!isBinary) {
+        return
+      }
+
       clearTimeout(timeout)
       socket.off('message', onMessage)
       reject(new Error('unexpected binary message'))
     }
+
     socket.on('message', onMessage)
   })
 
@@ -548,6 +614,7 @@ const noMessageBefore = async (promise, durationMs = 100) => {
     promise,
     new Promise((resolve) => setTimeout(() => resolve(marker), durationMs))
   ])
+
   assert.equal(result, marker)
 }
 
@@ -556,9 +623,13 @@ const requestPublicClient = async ({ port, origin, fileId, actorId }) => {
     origin
   })
   const bootstrapTypes = []
+
   const observeBootstrap = (data, isBinary) => {
-    if (!isBinary) bootstrapTypes.push(JSON.parse(data.toString()).type)
+    if (!isBinary) {
+      bootstrapTypes.push(JSON.parse(data.toString()).type)
+    }
   }
+
   socket.on('message', observeBootstrap)
   const ready = waitForMessage(
     socket,
@@ -566,6 +637,7 @@ const requestPublicClient = async ({ port, origin, fileId, actorId }) => {
       message.type === 'ready' || message.type === 'connection-error',
     `collaboration ready for ${actorId}`
   )
+
   await new Promise((resolve, reject) => {
     socket.once('open', resolve)
     socket.once('error', reject)
@@ -582,7 +654,9 @@ const requestPublicClient = async ({ port, origin, fileId, actorId }) => {
     })
   )
   const result = await ready
+
   socket.off('message', observeBootstrap)
+
   return { socket, result, bootstrapTypes }
 }
 
@@ -591,6 +665,7 @@ const connectPublicClient = async (
   { autoSettleSourcePublications = true } = {}
 ) => {
   const { socket, result } = await requestPublicClient(identity)
+
   assert.equal(result.type, 'ready')
   assert.ok(result.bootstrap)
   const requestId = `bootstrap-consumed:${identity.actorId}`
@@ -599,6 +674,7 @@ const connectPublicClient = async (
     (message) => message.type === 'response' && message.requestId === requestId,
     `bootstrap completion for ${identity.actorId}`
   )
+
   socket.send(
     JSON.stringify({
       type: 'bootstrap-consumed',
@@ -613,9 +689,16 @@ const connectPublicClient = async (
   })
   if (autoSettleSourcePublications) {
     socket.on('message', (data, isBinary) => {
-      if (isBinary) return
+      if (isBinary) {
+        return
+      }
+
       const message = JSON.parse(rawDataToBuffer(data).toString('utf8'))
-      if (message.type !== 'source-publication-proposed') return
+
+      if (message.type !== 'source-publication-proposed') {
+        return
+      }
+
       socket.send(
         JSON.stringify({
           type: 'source-publication-settlement',
@@ -625,6 +708,7 @@ const connectPublicClient = async (
       )
     })
   }
+
   return socket
 }
 
@@ -636,7 +720,9 @@ const closeSocket = async (socket) => {
   ) {
     return
   }
+
   const closed = new Promise((resolve) => socket.once('close', resolve))
+
   socket.close()
   await closed
 }
@@ -646,22 +732,32 @@ const publicationFrameFixedHeaderBytes = 52
 const encodeFrameString = (value) => {
   const utf8 = new TextEncoder().encode(value)
   const output = new Uint8Array(utf8.byteLength + 1)
+
   output[0] = 0
   output.set(utf8, 1)
+
   return output
 }
 
 const decodeFrameString = (bytes) => {
-  if (bytes.byteLength === 0) return ''
-  if (bytes[0] === 0) return new TextDecoder().decode(bytes.subarray(1))
+  if (bytes.byteLength === 0) {
+    return ''
+  }
+
+  if (bytes[0] === 0) {
+    return new TextDecoder().decode(bytes.subarray(1))
+  }
+
   assert.equal(bytes[0], 1)
   assert.equal((bytes.byteLength - 1) % 2, 0)
   let value = ''
+
   for (let offset = 1; offset < bytes.byteLength; offset += 2) {
     value += String.fromCharCode(
       (bytes[offset] ?? 0) | ((bytes[offset + 1] ?? 0) << 8)
     )
   }
+
   return value
 }
 
@@ -686,8 +782,10 @@ const createOpaquePublicationFrame = ({
   )
   const headerByteLength = canonicalView.getUint32(8, true)
   const bytes = new Uint8Array(headerByteLength + payload.byteLength)
+
   bytes.set(canonical.subarray(0, headerByteLength))
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+
   view.setUint32(12, payload.byteLength, true)
   bytes[7] = publicationCount === 1 ? 1 : 2
   view.setUint32(16, publicationIndex, true)
@@ -695,6 +793,7 @@ const createOpaquePublicationFrame = ({
   view.setUint32(24, chunkIndex, true)
   view.setUint32(28, chunkCount, true)
   bytes.set(payload, headerByteLength)
+
   return bytes
 }
 
@@ -732,15 +831,20 @@ const inspectOpaquePublicationFrame = (data) => {
     3: 'publication',
     4: 'publications'
   }[bytes[7]]
+
   assert.ok(messageType)
   let identityKind = 'anonymous'
+
   if (requestId) {
     identityKind = 'request'
   } else if (fromActorId) {
     identityKind = 'actor'
   }
+
   const identity = requestId || fromActorId
+
   const lengthPrefixed = (value) => `${String(value.length)}:${value}`
+
   return {
     kind: bytes[7],
     requestId,
@@ -767,6 +871,7 @@ const inspectOpaquePublicationFrame = (data) => {
 }
 
 let creditSequence = 0
+
 const sendFrameConsumed = (socket, frame, override = {}) => {
   socket.send(
     JSON.stringify({
@@ -834,6 +939,7 @@ const createCanonicalPublicationFrame = ({
     targetRelayedFrameByteLength === undefined
       ? undefined
       : Math.max(0, targetRelayedFrameByteLength - 512)
+
   for (let attempt = 0; attempt < 8; attempt += 1) {
     const frames = encodeProtocolPublicationFrames({
       type: 'send-publication',
@@ -843,9 +949,14 @@ const createCanonicalPublicationFrame = ({
         fillerLength === undefined ? value : 'x'.repeat(fillerLength)
       )
     })
+
     assert.equal(frames.length, 1)
     const frame = new Uint8Array(frames[0])
-    if (targetRelayedFrameByteLength === undefined) return frame
+
+    if (targetRelayedFrameByteLength === undefined) {
+      return frame
+    }
+
     assert.ok(fromActorId)
     const view = new DataView(frame.buffer, frame.byteOffset, frame.byteLength)
     const relayedFrameByteLength =
@@ -853,14 +964,20 @@ const createCanonicalPublicationFrame = ({
       view.getUint32(32, true) +
       encodeFrameString(fromActorId).byteLength
     const delta = targetRelayedFrameByteLength - relayedFrameByteLength
-    if (delta === 0) return frame
+
+    if (delta === 0) {
+      return frame
+    }
+
     fillerLength = Math.max(0, (fillerLength ?? 0) + delta)
   }
+
   throw new Error('Unable to construct exact relayed publication frame')
 }
 
 const expectedSourceFrameAdmission = (frame) => {
   const inspected = inspectOpaquePublicationFrame(frame)
+
   return {
     type: 'source-frame-admitted',
     requestId: inspected.requestId,
@@ -872,6 +989,7 @@ const expectedSourceFrameAdmission = (frame) => {
 
 const sourceFrameAdmissionFor = (socket, frame, description) => {
   const expected = expectedSourceFrameAdmission(frame)
+
   return waitForMessage(
     socket,
     (message) => message.type === expected.type,
@@ -885,9 +1003,12 @@ const sendPublicationFrameAndWaitForAdmission = async (
   description
 ) => {
   const admitted = sourceFrameAdmissionFor(socket, frame, description)
+
   socket.send(frame, { binary: true })
   const message = await admitted
+
   assert.deepEqual(message, expectedSourceFrameAdmission(frame))
+
   return message
 }
 
@@ -895,6 +1016,7 @@ test('public reference server accepts app-defined fileId without credentials and
   const port = await getAvailablePort()
   const child = startServer({ port, origin: 'http://localhost:4317' })
   let socket
+
   try {
     await waitForServer(child)
     socket = await connectPublicClient({
@@ -911,6 +1033,7 @@ test('public reference server accepts app-defined fileId without credentials and
 
   const envPort = await getAvailablePort()
   const envChild = startServer({ port: envPort })
+
   try {
     await waitForServer(envChild)
     assert.equal(envChild.exitCode, null)
@@ -924,6 +1047,7 @@ test('single-actor handshake returns the formal sequence-zero document bootstrap
   const origin = 'http://localhost:4316'
   const child = startServer({ port, origin })
   let socket
+
   try {
     await waitForServer(child)
     const requested = await requestPublicClient({
@@ -932,6 +1056,7 @@ test('single-actor handshake returns the formal sequence-zero document bootstrap
       fileId: 'initial-bootstrap-file',
       actorId: 'initial-bootstrap-actor'
     })
+
     socket = requested.socket
     assert.deepEqual(requested.bootstrapTypes, [
       'bootstrap-checkpoint-ready',
@@ -991,6 +1116,7 @@ test('a closed bootstrap reader cannot reserve the actor after checkpoint loadin
       })
     )
   })
+
   await new Promise((resolve) => backend.listen(0, '127.0.0.1', resolve))
   const port = await getAvailablePort()
   const origin = 'http://localhost:4346'
@@ -1000,11 +1126,13 @@ test('a closed bootstrap reader cannot reserve the actor after checkpoint loadin
     persistenceBackendURL: `http://127.0.0.1:${backend.address().port}`
   })
   const sockets = []
+
   try {
     await waitForServer(child)
     const socket = new WebSocket(`ws://127.0.0.1:${port}/collaboration`, {
       origin
     })
+
     sockets.push(socket)
     await new Promise((resolve) => socket.once('open', resolve))
     socket.send(
@@ -1020,6 +1148,7 @@ test('a closed bootstrap reader cannot reserve the actor after checkpoint loadin
     )
     await reading
     const closed = new Promise((resolve) => socket.once('close', resolve))
+
     socket.close()
     await closed
     releaseRead()
@@ -1030,6 +1159,7 @@ test('a closed bootstrap reader cannot reserve the actor after checkpoint loadin
       fileId: 'delayed-bootstrap',
       actorId: 'observer'
     })
+
     sockets.push(observer)
     const recovered = await requestPublicClient({
       port,
@@ -1037,6 +1167,7 @@ test('a closed bootstrap reader cannot reserve the actor after checkpoint loadin
       fileId: 'delayed-bootstrap',
       actorId: 'recovering-actor'
     })
+
     sockets.push(recovered.socket)
     assert.equal(
       recovered.result.type,
@@ -1049,7 +1180,10 @@ test('a closed bootstrap reader cannot reserve the actor after checkpoint loadin
     )
   } finally {
     releaseRead()
-    for (const socket of sockets) socket.terminate()
+    for (const socket of sockets) {
+      socket.terminate()
+    }
+
     await stopServer(child)
     await new Promise((resolve) => backend.close(resolve))
   }
@@ -1081,16 +1215,23 @@ for (const { existingRoom, timedOut } of [
         checkpoint: createTransportCheckpointDocument(),
         durableSequence: 0
       })
+
       response.setHeader('content-type', 'application/json')
       const partialBody = existingRoom && reads === heldRead
-      if (partialBody) response.write(body.slice(0, 1))
+
+      if (partialBody) {
+        response.write(body.slice(0, 1))
+      }
+
       if (reads === heldRead) {
         response.once('close', reportCancellation)
         reportRead()
         await released
       }
+
       response.end(partialBody ? body.slice(1) : body)
     })
+
     await new Promise((resolve) => backend.listen(0, '127.0.0.1', resolve))
     const port = await getAvailablePort()
     const origin = 'http://localhost:4347'
@@ -1100,6 +1241,7 @@ for (const { existingRoom, timedOut } of [
       persistenceBackendURL: `http://127.0.0.1:${backend.address().port}`
     })
     const sockets = []
+
     try {
       await waitForServer(child)
       const identity = {
@@ -1108,13 +1250,17 @@ for (const { existingRoom, timedOut } of [
         fileId: 'cancelled-bootstrap',
         actorId: 'replacement'
       }
-      if (existingRoom)
+
+      if (existingRoom) {
         sockets.push(
           await connectPublicClient({ ...identity, actorId: 'survivor' })
         )
+      }
+
       const abandoned = new WebSocket(`ws://127.0.0.1:${port}/collaboration`, {
         origin
       })
+
       sockets.push(abandoned)
       await new Promise((resolve, reject) => {
         abandoned.once('open', resolve)
@@ -1139,6 +1285,7 @@ for (const { existingRoom, timedOut } of [
               reject(new Error('Server did not close the stalled handshake')),
             6500
           )
+
           abandoned.once('close', (code) => {
             clearTimeout(deadline)
             try {
@@ -1149,7 +1296,10 @@ for (const { existingRoom, timedOut } of [
             }
           })
         })
-      } else await closeSocket(abandoned)
+      } else {
+        await closeSocket(abandoned)
+      }
+
       await Promise.race([
         cancelledRead,
         new Promise((_, reject) => {
@@ -1157,10 +1307,12 @@ for (const { existingRoom, timedOut } of [
             () => reject(new Error('Abandoned backend read remained open')),
             2000
           )
+
           void cancelledRead.then(() => clearTimeout(deadline))
         })
       ])
       const replacement = await connectPublicClient(identity)
+
       sockets.push(replacement)
       assert.equal(
         reads,
@@ -1168,12 +1320,16 @@ for (const { existingRoom, timedOut } of [
         'A cancelled read must not retain the next session'
       )
       const duplicate = await requestPublicClient(identity)
+
       sockets.push(duplicate.socket)
       assert.equal(duplicate.result.type, 'connection-error')
       assert.match(duplicate.result.message, /already connected/)
     } finally {
       releaseRead()
-      for (const socket of sockets) socket.terminate()
+      for (const socket of sockets) {
+        socket.terminate()
+      }
+
       await stopServer(child)
       await new Promise((resolve) => backend.close(resolve))
     }
@@ -1202,6 +1358,7 @@ test('keeps shared checkpoint initialization while another live waiter remains',
       })
     )
   })
+
   await new Promise((resolve) => backend.listen(0, '127.0.0.1', resolve))
   const port = await getAvailablePort()
   const origin = 'http://localhost:4348'
@@ -1211,10 +1368,12 @@ test('keeps shared checkpoint initialization while another live waiter remains',
     persistenceBackendURL: `http://127.0.0.1:${backend.address().port}`
   })
   const sockets = []
+
   const hello = async (actorId) => {
     const socket = new WebSocket(`ws://127.0.0.1:${port}/collaboration`, {
       origin
     })
+
     sockets.push(socket)
     await new Promise((resolve, reject) => {
       socket.once('open', resolve)
@@ -1231,11 +1390,14 @@ test('keeps shared checkpoint initialization while another live waiter remains',
         }
       })
     )
+
     return socket
   }
+
   try {
     await waitForServer(child)
     const cancelled = await hello('cancelled')
+
     await reading
     const survivor = await hello('survivor')
     const ready = waitForMessage(
@@ -1244,6 +1406,7 @@ test('keeps shared checkpoint initialization while another live waiter remains',
         message.type === 'ready' || message.type === 'connection-error',
       'shared survivor'
     )
+
     // A round trip fences the second HELLO without releasing the backend read.
     await new Promise((resolve) => {
       survivor.once('pong', resolve)
@@ -1259,7 +1422,10 @@ test('keeps shared checkpoint initialization while another live waiter remains',
     )
   } finally {
     releaseRead()
-    for (const socket of sockets) socket.terminate()
+    for (const socket of sockets) {
+      socket.terminate()
+    }
+
     await stopServer(child)
     await new Promise((resolve) => backend.close(resolve))
   }
@@ -1275,6 +1441,7 @@ test(
       fileURLToPath(new URL('./.cancellation-isolation-', import.meta.url))
     )
     const fileId = 'cancellation-write-isolation'
+
     const createDocumentFrame = ({ requestId, publicationId, after }) => {
       const publication = createCanonicalPropertyPublication(
         publicationId,
@@ -1283,6 +1450,7 @@ test(
       const slice = publication.slices[0]
       const batch = slice.batches[0]
       const delivery = batch.deliveries[0]
+
       slice.orderedIds = [delivery.deliveryId]
       batch.channel = 'document'
       delivery.eventName = 'applyCanonicalChanges'
@@ -1295,13 +1463,16 @@ test(
           }
         ]
       }
+
       return encodeProtocolPublicationFrames({
         type: 'send-publication',
         requestId,
         publication
       })[0]
     }
+
     const storedPath = `${directory}/${Buffer.from(fileId).toString('base64url')}.json`
+
     await writeFile(
       storedPath,
       JSON.stringify({
@@ -1341,19 +1512,30 @@ test(
     const proxy = createHttpBackendServer((request, response) => {
       void (async () => {
         const chunks = []
-        for await (const chunk of request) chunks.push(chunk)
+
+        for await (const chunk of request) {
+          chunks.push(chunk)
+        }
+
         if (request.method === 'GET' && ++reads === 3) {
           reportRead()
           await readReleased
         }
+
         if (request.method === 'POST' && ++writes === 1) {
           response.once('close', () => {
-            if (!response.writableEnded) writeClosedEarly = true
+            if (!response.writableEnded) {
+              writeClosedEarly = true
+            }
           })
           reportWrite()
           await writeReleased
         }
-        if (response.destroyed) return
+
+        if (response.destroyed) {
+          return
+        }
+
         const result = await globalThis.fetch(
           `http://127.0.0.1:${address.port}${request.url}`,
           {
@@ -1364,6 +1546,7 @@ test(
               : {})
           }
         )
+
         response.writeHead(result.status, {
           'content-type': 'application/json'
         })
@@ -1373,6 +1556,7 @@ test(
         response.destroy(error)
       })
     })
+
     await new Promise((resolve) => proxy.listen(0, '127.0.0.1', resolve))
     const port = await getAvailablePort()
     const origin = 'http://localhost:4349'
@@ -1384,6 +1568,7 @@ test(
     })
     const sockets = []
     const identity = { port, origin, fileId }
+
     try {
       await waitForServer(child)
       const writer = await connectPublicClient({
@@ -1394,8 +1579,10 @@ test(
         ...identity,
         actorId: 'survivor'
       })
+
       sockets.push(writer, survivor)
       const first = responseFor(writer, 'first-isolated')
+
       writer.send(
         createDocumentFrame({
           requestId: 'first-isolated',
@@ -1409,6 +1596,7 @@ test(
       const joining = new WebSocket(`ws://127.0.0.1:${port}/collaboration`, {
         origin
       })
+
       sockets.push(joining)
       await new Promise((resolve, reject) => {
         joining.once('open', resolve)
@@ -1427,6 +1615,7 @@ test(
       )
       await reading
       const second = responseFor(survivor, 'second-isolated')
+
       survivor.send(
         createDocumentFrame({
           requestId: 'second-isolated',
@@ -1445,6 +1634,7 @@ test(
       assert.equal(writer.readyState, WebSocket.OPEN)
       assert.equal(survivor.readyState, WebSocket.OPEN)
       const confirmation = responseFor(survivor, 'confirm-isolated')
+
       survivor.send(
         JSON.stringify({
           type: 'confirm-persistence',
@@ -1456,9 +1646,11 @@ test(
       await noMessageBefore(confirmation)
       releaseWrite()
       const confirmed = await confirmation
+
       assert.equal(confirmed.ok, true, JSON.stringify(confirmed))
       assert.equal(confirmed.persistence.durableSequence, 2)
       const retry = responseFor(writer, 'retry-isolated')
+
       writer.send(
         createDocumentFrame({
           requestId: 'retry-isolated',
@@ -1470,6 +1662,7 @@ test(
       assert.deepEqual((await retry).acceptedSequences, [1])
       assert.equal(writeClosedEarly, false)
       const persisted = JSON.parse(await readFile(storedPath, 'utf8')).record
+
       assert.equal(persisted.durableSequence, 2)
       assert.equal(persisted.document.props['position-a'].x, 2)
       await closeSocket(writer)
@@ -1478,6 +1671,7 @@ test(
         ...identity,
         actorId: 'writer'
       })
+
       sockets.push(reloaded.socket)
       assert.equal(reloaded.result.type, 'ready')
       assert.deepEqual(reloaded.result.bootstrap.checkpoint, persisted.document)
@@ -1492,7 +1686,10 @@ test(
     } finally {
       releaseRead()
       releaseWrite()
-      for (const socket of sockets) socket.terminate()
+      for (const socket of sockets) {
+        socket.terminate()
+      }
+
       await stopServer(child)
       await new Promise((resolve) => proxy.close(resolve))
       await backend.close()
@@ -1517,6 +1714,7 @@ test('retains one room while the last peer leaves during a replacement bootstrap
       reportRead()
       await released
     }
+
     response.setHeader('content-type', 'application/json')
     response.end(
       JSON.stringify({
@@ -1525,6 +1723,7 @@ test('retains one room while the last peer leaves during a replacement bootstrap
       })
     )
   })
+
   await new Promise((resolve) => backend.listen(0, '127.0.0.1', resolve))
   const port = await getAvailablePort()
   const origin = 'http://localhost:4346'
@@ -1534,6 +1733,7 @@ test('retains one room while the last peer leaves during a replacement bootstrap
     persistenceBackendURL: `http://127.0.0.1:${backend.address().port}`
   })
   const sockets = []
+
   try {
     await waitForServer(child)
     const identity = {
@@ -1543,17 +1743,21 @@ test('retains one room while the last peer leaves during a replacement bootstrap
       actorId: 'original'
     }
     const original = await connectPublicClient(identity)
+
     sockets.push(original)
     const joining = connectPublicClient({ ...identity, actorId: 'replacement' })
+
     await reading
     await closeSocket(original)
     releaseRead()
     const replacement = await joining
+
     sockets.push(replacement)
     const duplicate = await requestPublicClient({
       ...identity,
       actorId: 'replacement'
     })
+
     sockets.push(duplicate.socket)
     assert.equal(
       duplicate.result.type,
@@ -1571,6 +1775,7 @@ test('retains one room while the last peer leaves during a replacement bootstrap
       ...identity,
       actorId: 'replacement'
     })
+
     sockets.push(reopened)
     assert.equal(
       reads,
@@ -1579,7 +1784,10 @@ test('retains one room while the last peer leaves during a replacement bootstrap
     )
   } finally {
     releaseRead()
-    for (const socket of sockets) socket.terminate()
+    for (const socket of sockets) {
+      socket.terminate()
+    }
+
     await stopServer(child)
     await new Promise((resolve) => backend.close(resolve))
   }
@@ -1599,8 +1807,10 @@ test('document Reset discards the accepted room tail before the next bootstrap',
       response.end(
         JSON.stringify({ checkpoint, durableSequence, documentGeneration })
       )
+
       return
     }
+
     if (request.method === 'DELETE') {
       checkpoint = {
         version: '1.0.0',
@@ -1625,27 +1835,38 @@ test('document Reset discards the accepted room tail before the next bootstrap',
       documentGeneration += 1
       resetCount += 1
       response.end(JSON.stringify({ ok: true, documentGeneration }))
+
       return
     }
+
     if (
       request.method === 'POST' &&
       request.url?.endsWith('/persistence-batches')
     ) {
       const chunks = []
-      for await (const chunk of request) chunks.push(Buffer.from(chunk))
+
+      for await (const chunk of request) {
+        chunks.push(Buffer.from(chunk))
+      }
+
       const batch = JSON.parse(Buffer.concat(chunks).toString('utf8'))
+
       durableSequence = batch.lastSequence
       response.end(JSON.stringify({ durableSequence }))
+
       return
     }
+
     response.statusCode = 404
     response.end(JSON.stringify({ error: 'not found' }))
   })
+
   await new Promise((resolve, reject) => {
     backend.once('error', reject)
     backend.listen(0, '127.0.0.1', resolve)
   })
   const backendAddress = backend.address()
+
   assert.ok(backendAddress && typeof backendAddress === 'object')
 
   const port = await getAvailablePort()
@@ -1656,6 +1877,7 @@ test('document Reset discards the accepted room tail before the next bootstrap',
     persistenceBackendURL: `http://127.0.0.1:${backendAddress.port}`
   })
   const sockets = []
+
   try {
     await waitForServer(child)
     const source = await connectPublicClient({
@@ -1664,9 +1886,11 @@ test('document Reset discards the accepted room tail before the next bootstrap',
       fileId: 'reset-room-tail-file',
       actorId: 'reset-room-tail-source'
     })
+
     sockets.push(source)
 
     const accepted = responseFor(source, 'reset-room-tail-publication')
+
     source.send(
       createCanonicalPublicationFrame({
         requestId: 'reset-room-tail-publication',
@@ -1684,6 +1908,7 @@ test('document Reset discards the accepted room tail before the next bootstrap',
 
     const resetRequestId = 'reset-room-tail-document'
     const reset = responseFor(source, resetRequestId)
+
     source.send(
       JSON.stringify({
         type: 'reset-document',
@@ -1703,6 +1928,7 @@ test('document Reset discards the accepted room tail before the next bootstrap',
       fileId: 'reset-room-tail-file',
       actorId: 'reset-room-tail-observer'
     })
+
     sockets.push(reconnected.socket)
     assert.deepEqual(reconnected.result.bootstrap, {
       checkpoint,
@@ -1723,6 +1949,7 @@ test('bootstrap returns the gap-free pending tail and withholds post-cutoff live
   const origin = 'http://localhost:4315'
   const child = startServer({ port, origin })
   const sockets = []
+
   try {
     await waitForServer(child)
     const source = await connectPublicClient({
@@ -1731,6 +1958,7 @@ test('bootstrap returns the gap-free pending tail and withholds post-cutoff live
       fileId: 'bootstrap-cutoff-file',
       actorId: 'bootstrap-source'
     })
+
     sockets.push(source)
 
     const firstAccepted = responseFor(source, 'bootstrap-first-request')
@@ -1739,6 +1967,7 @@ test('bootstrap returns the gap-free pending tail and withholds post-cutoff live
       publicationId: 'bootstrap-first-publication',
       after: 1
     })
+
     await sendPublicationFrameAndWaitForAdmission(
       source,
       firstFrame,
@@ -1758,6 +1987,7 @@ test('bootstrap returns the gap-free pending tail and withholds post-cutoff live
       actorId: 'bootstrap-observer'
     })
     const observer = requested.socket
+
     sockets.push(observer)
     assert.equal(requested.result.type, 'ready')
     assert.deepEqual(
@@ -1793,6 +2023,7 @@ test('bootstrap returns the gap-free pending tail and withholds post-cutoff live
       publicationId: 'bootstrap-second-publication',
       after: 2
     })
+
     await sendPublicationFrameAndWaitForAdmission(
       source,
       secondFrame,
@@ -1812,6 +2043,7 @@ test('bootstrap returns the gap-free pending tail and withholds post-cutoff live
     )
     const completionRequestId = 'bootstrap-observer-consumed'
     const completion = responseFor(observer, completionRequestId)
+
     observer.send(
       JSON.stringify({
         type: 'bootstrap-consumed',
@@ -1825,6 +2057,7 @@ test('bootstrap returns the gap-free pending tail and withholds post-cutoff live
       ok: true
     })
     const deliveredHeader = inspectProtocolPublicationFrame(await delivered)
+
     assert.equal(deliveredHeader.publicationId, 'bootstrap-second-publication')
     assert.equal(deliveredHeader.sequence, 2)
 
@@ -1835,6 +2068,7 @@ test('bootstrap returns the gap-free pending tail and withholds post-cutoff live
       fileId: 'bootstrap-cutoff-file',
       actorId: 'bootstrap-observer'
     })
+
     sockets.push(reconnected.socket)
     assert.equal(reconnected.result.type, 'ready')
     assert.equal(reconnected.result.bootstrap.headSequence, 2)
@@ -1870,6 +2104,7 @@ test('a rejected duplicate cannot release another connection actor reservation',
   const origin = 'http://localhost:4319'
   const child = startServer({ port, origin })
   const sockets = []
+
   try {
     await waitForServer(child)
     const owner = await connectPublicClient({
@@ -1878,6 +2113,7 @@ test('a rejected duplicate cannot release another connection actor reservation',
       fileId: 'reserved-file',
       actorId: 'reserved-actor'
     })
+
     sockets.push(owner)
     const duplicate = await requestPublicClient({
       port,
@@ -1885,6 +2121,7 @@ test('a rejected duplicate cannot release another connection actor reservation',
       fileId: 'reserved-file',
       actorId: 'reserved-actor'
     })
+
     sockets.push(duplicate.socket)
     assert.deepEqual(duplicate.result, {
       type: 'connection-error',
@@ -1899,6 +2136,7 @@ test('a rejected duplicate cannot release another connection actor reservation',
       fileId: 'reserved-file',
       actorId: 'reserved-actor'
     })
+
     sockets.push(stillReserved.socket)
     assert.deepEqual(stillReserved.result, duplicate.result)
     await closeSocket(stillReserved.socket)
@@ -1910,6 +2148,7 @@ test('a rejected duplicate cannot release another connection actor reservation',
       fileId: 'reserved-file',
       actorId: 'reserved-actor'
     })
+
     sockets.push(replacement)
   } finally {
     await Promise.all(sockets.map((socket) => closeSocket(socket)))
@@ -1922,6 +2161,7 @@ test('public reference server routes JSON Awareness by fileId and reports peer d
   const origin = 'http://localhost:4318'
   const child = startServer({ port, origin })
   const sockets = []
+
   try {
     await waitForServer(child)
     const first = await connectPublicClient({
@@ -1942,6 +2182,7 @@ test('public reference server routes JSON Awareness by fileId and reports peer d
       fileId: 'isolated-file',
       actorId: 'actor-c'
     })
+
     sockets.push(first, peer, isolated)
 
     const awareness = waitForMessage(
@@ -1950,6 +2191,7 @@ test('public reference server routes JSON Awareness by fileId and reports peer d
       'same-file Awareness'
     )
     const response = responseFor(first, 'actor-a:1')
+
     first.send(
       JSON.stringify({
         type: 'send-awareness',
@@ -1980,6 +2222,7 @@ test('public reference server routes JSON Awareness by fileId and reports peer d
         message.actorId === 'actor-a',
       'same-file disconnect'
     )
+
     await closeSocket(first)
     assert.deepEqual(await disconnected, {
       type: 'awareness-disconnect',
@@ -1997,6 +2240,7 @@ test('peer-applied remains a distinct acknowledged server receipt', async () => 
   const origin = 'http://localhost:4329'
   const child = startServer({ port, origin, profile: true })
   const sockets = []
+
   try {
     await waitForServer(child)
     const source = await connectPublicClient({
@@ -2011,6 +2255,7 @@ test('peer-applied remains a distinct acknowledged server receipt', async () => 
       fileId: 'peer-applied-file',
       actorId: 'peer-applied-receiver'
     })
+
     sockets.push(source, receiver)
     const receiptEvidence = waitForStdoutLine(
       child,
@@ -2019,6 +2264,7 @@ test('peer-applied remains a distinct acknowledged server receipt', async () => 
     const responses = Array.from({ length: 8 }, (_, index) => {
       const requestId = `peer-applied-request-${index + 1}`
       const response = responseFor(receiver, requestId)
+
       receiver.send(
         JSON.stringify({
           type: 'peer-applied',
@@ -2027,6 +2273,7 @@ test('peer-applied remains a distinct acknowledged server receipt', async () => 
           fromActorId: 'peer-applied-source'
         })
       )
+
       return response
     })
 
@@ -2043,6 +2290,7 @@ test('peer-applied remains a distinct acknowledged server receipt', async () => 
         'AI_COLLABORATION_SERVER_PEER_APPLIED '.length
       )
     )
+
     assert.deepEqual(evidence, {
       requestId: 'peer-applied-request-8',
       publicationId: 'publication-8',
@@ -2061,6 +2309,7 @@ test('socket server assigns one room sequence, deduplicates publication retries,
   const origin = 'http://localhost:4338'
   const child = startServer({ port, origin })
   const sockets = []
+
   try {
     await waitForServer(child)
     const actorA = await connectPublicClient({
@@ -2081,6 +2330,7 @@ test('socket server assigns one room sequence, deduplicates publication retries,
       fileId: 'sequenced-file',
       actorId: 'sequenced-observer'
     })
+
     sockets.push(actorA, actorB, observer)
 
     const firstFrame = createCanonicalPublicationFrame({
@@ -2105,6 +2355,7 @@ test('socket server assigns one room sequence, deduplicates publication retries,
         message.type === 'connection-error',
       'first sequenced acceptance'
     )
+
     actorA.send(firstFrame, { binary: true })
 
     assert.deepEqual(await firstAccepted, {
@@ -2114,6 +2365,7 @@ test('socket server assigns one room sequence, deduplicates publication retries,
       acceptedSequences: [1]
     })
     const firstObservedFrame = await firstObserved
+
     await expectNoBinaryMessage(actorA)
     const secondObserved = waitForBinaryMessage(
       observer,
@@ -2127,6 +2379,7 @@ test('socket server assigns one room sequence, deduplicates publication retries,
         message.type === 'connection-error',
       'second sequenced acceptance'
     )
+
     actorB.send(secondFrame, { binary: true })
     assert.deepEqual(await secondAccepted, {
       type: 'response',
@@ -2137,6 +2390,7 @@ test('socket server assigns one room sequence, deduplicates publication retries,
     assert.deepEqual(
       [firstObservedFrame, await secondObserved].map((frame) => {
         const header = inspectProtocolPublicationFrame(frame)
+
         return {
           publicationId: header.publicationId,
           sequence: header.sequence
@@ -2149,6 +2403,7 @@ test('socket server assigns one room sequence, deduplicates publication retries,
     )
 
     const retryResponse = responseFor(actorA, 'sequenced-retry-a')
+
     actorA.send(
       createCanonicalPublicationFrame({
         requestId: 'sequenced-retry-a',
@@ -2175,6 +2430,7 @@ test('source recovery rejection abandons its tentative sequence before room admi
   const origin = 'http://localhost:4340'
   const child = startServer({ port, origin })
   const sockets = []
+
   try {
     await waitForServer(child)
     const source = await connectPublicClient(
@@ -2192,6 +2448,7 @@ test('source recovery rejection abandons its tentative sequence before room admi
       fileId: 'source-recovery-rejection-file',
       actorId: 'source-recovery-rejection-peer'
     })
+
     sockets.push(source, peer)
 
     const requestId = 'source-recovery-rejection-request'
@@ -2207,6 +2464,7 @@ test('source recovery rejection abandons its tentative sequence before room admi
       peer,
       'publication rejected by its source'
     )
+
     source.send(
       createCanonicalPublicationFrame({
         requestId,
@@ -2224,6 +2482,7 @@ test('source recovery rejection abandons its tentative sequence before room admi
     })
 
     const rejection = responseFor(source, requestId)
+
     source.send(
       JSON.stringify({
         type: 'source-publication-settlement',
@@ -2251,6 +2510,7 @@ test('source recovery rejection abandons its tentative sequence before room admi
       fileId: 'source-recovery-rejection-file',
       actorId: 'source-recovery-rejection-observer'
     })
+
     sockets.push(reconnect.socket)
     assert.equal(reconnect.result.type, 'ready')
     assert.equal(reconnect.result.bootstrap.headSequence, 0)
@@ -2266,6 +2526,7 @@ test('socket server assigns order without interpreting product channels or canon
   const origin = 'http://localhost:4339'
   const child = startServer({ port, origin })
   const sockets = []
+
   try {
     await waitForServer(child)
     const invalidSource = await connectPublicClient({
@@ -2286,18 +2547,21 @@ test('socket server assigns order without interpreting product channels or canon
       fileId: 'validated-channel-file',
       actorId: 'validated-channel-observer'
     })
+
     sockets.push(invalidSource, validSource, observer)
 
     const invalidPublication = createCanonicalPropertyPublication(
       'invalid-selection-publication',
       1
     )
+
     invalidPublication.slices[0].batches[0].channel = 'selection'
     const invalidFrames = encodeProtocolPublicationFrames({
       type: 'send-publication',
       requestId: 'invalid-selection-request',
       publication: invalidPublication
     })
+
     assert.equal(invalidFrames.length, 1)
     const firstAccepted = responseFor(
       invalidSource,
@@ -2307,6 +2571,7 @@ test('socket server assigns order without interpreting product channels or canon
       observer,
       'opaque unsupported channel relay'
     )
+
     invalidSource.send(invalidFrames[0], { binary: true })
 
     assert.deepEqual(await firstAccepted, {
@@ -2324,6 +2589,7 @@ test('socket server assigns order without interpreting product channels or canon
       'invalid-structural-publication',
       2
     )
+
     structurallyInvalidPublication.slices[0].batches[0].deliveries[0].payload.id =
       'missing-position'
     const structurallyInvalidFrames = encodeProtocolPublicationFrames({
@@ -2331,6 +2597,7 @@ test('socket server assigns order without interpreting product channels or canon
       requestId: 'invalid-structural-request',
       publication: structurallyInvalidPublication
     })
+
     assert.equal(structurallyInvalidFrames.length, 1)
     const secondAccepted = responseFor(
       invalidSource,
@@ -2340,6 +2607,7 @@ test('socket server assigns order without interpreting product channels or canon
       observer,
       'opaque product payload relay'
     )
+
     invalidSource.send(structurallyInvalidFrames[0], { binary: true })
 
     assert.deepEqual(await secondAccepted, {
@@ -2363,6 +2631,7 @@ test('socket server assigns order without interpreting product channels or canon
       observer,
       'valid publication after unsupported channel'
     )
+
     validSource.send(validFrame, { binary: true })
 
     assert.deepEqual(await accepted, {
@@ -2403,28 +2672,39 @@ test('socket server retries the exact ordered backend batch after a non-success 
           durableSequence: backendDurableSequence
         })
       )
+
       return
     }
+
     const chunks = []
-    for await (const chunk of request) chunks.push(Buffer.from(chunk))
+
+    for await (const chunk of request) {
+      chunks.push(Buffer.from(chunk))
+    }
+
     requestBodies.push(Buffer.concat(chunks).toString('utf8'))
     if (requestBodies.length === 1) {
       response.writeHead(503)
       response.end()
       resolveFirstFailure()
+
       return
     }
+
     const batch = JSON.parse(requestBodies[1])
+
     backendDurableSequence = batch.lastSequence
     response.writeHead(200, { 'content-type': 'application/json' })
     response.end(JSON.stringify({ durableSequence: batch.lastSequence }))
     resolveRetried()
   })
+
   await new Promise((resolve, reject) => {
     backend.once('error', reject)
     backend.listen(0, '127.0.0.1', resolve)
   })
   const backendAddress = backend.address()
+
   assert.ok(backendAddress && typeof backendAddress === 'object')
 
   const port = await getAvailablePort()
@@ -2437,6 +2717,7 @@ test('socket server retries the exact ordered backend batch after a non-success 
     persistenceRetryIntervalMs: 250
   })
   const sockets = []
+
   try {
     await waitForServer(child)
     const socket = await connectPublicClient({
@@ -2451,12 +2732,14 @@ test('socket server retries the exact ordered backend batch after a non-success 
       fileId: 'backend-retry-file',
       actorId: 'backend-blocked-source'
     })
+
     sockets.push(socket, blockedSource)
     const accepted = responseFor(socket, 'backend-retry-request')
     const backendRetryFrame = createCanonicalPublicationFrame({
       requestId: 'backend-retry-request',
       publicationId: 'backend-retry-publication'
     })
+
     socket.send(backendRetryFrame, { binary: true })
 
     assert.deepEqual(await accepted, {
@@ -2472,6 +2755,7 @@ test('socket server retries the exact ordered backend batch after a non-success 
       (message) => message.type === 'connection-error',
       'persistence failure editability block'
     )
+
     blockedSource.send(
       createCanonicalPublicationFrame({
         requestId: 'backend-blocked-request',
@@ -2491,6 +2775,7 @@ test('socket server retries the exact ordered backend batch after a non-success 
         () => reject(new Error('backend retry timeout')),
         5_000
       )
+
       void retried.then(() => {
         clearTimeout(timeout)
         resolve()
@@ -2524,8 +2809,10 @@ test('socket server retries the exact ordered backend batch after a non-success 
       fileId: 'backend-retry-file',
       actorId: 'backend-recovered-source'
     })
+
     sockets.push(recoveredSource)
     const recovered = responseFor(recoveredSource, 'backend-recovered-request')
+
     recoveredSource.send(
       createCanonicalPublicationFrame({
         requestId: 'backend-recovered-request',
@@ -2569,23 +2856,33 @@ test('socket server waits for durable persistence capacity without disconnecting
           durableSequence: 0
         })
       )
+
       return
     }
+
     const chunks = []
-    for await (const chunk of request) chunks.push(Buffer.from(chunk))
+
+    for await (const chunk of request) {
+      chunks.push(Buffer.from(chunk))
+    }
+
     const batch = JSON.parse(Buffer.concat(chunks).toString('utf8'))
+
     persistenceRequestCount += 1
     if (persistenceRequestCount === 1) {
       resolveFirstRequestStarted()
       await firstPersistenceReleased
     }
+
     response.end(JSON.stringify({ durableSequence: batch.lastSequence }))
   })
+
   await new Promise((resolve, reject) => {
     backend.once('error', reject)
     backend.listen(0, '127.0.0.1', resolve)
   })
   const backendAddress = backend.address()
+
   assert.ok(backendAddress && typeof backendAddress === 'object')
 
   const port = await getAvailablePort()
@@ -2597,6 +2894,7 @@ test('socket server waits for durable persistence capacity without disconnecting
     persistenceMaxPublicationCount: 1
   })
   const sockets = []
+
   try {
     await waitForServer(child)
     const source = await connectPublicClient({
@@ -2605,6 +2903,7 @@ test('socket server waits for durable persistence capacity without disconnecting
       fileId: 'durable-capacity-file',
       actorId: 'durable-capacity-source'
     })
+
     sockets.push(source)
 
     for (const suffix of ['a', 'b']) {
@@ -2615,6 +2914,7 @@ test('socket server waits for durable persistence capacity without disconnecting
         after: suffix === 'a' ? 2 : 3
       })
       const accepted = responseFor(source, requestId)
+
       await sendPublicationFrameAndWaitForAdmission(source, frame)
       assert.deepEqual(await accepted, {
         type: 'response',
@@ -2622,7 +2922,9 @@ test('socket server waits for durable persistence capacity without disconnecting
         ok: true,
         acceptedSequences: [suffix === 'a' ? 1 : 2]
       })
-      if (suffix === 'a') await firstRequestStarted
+      if (suffix === 'a') {
+        await firstRequestStarted
+      }
     }
 
     const waitingRequestId = 'durable-capacity-c'
@@ -2633,6 +2935,7 @@ test('socket server waits for durable persistence capacity without disconnecting
     })
     const waitingAdmission = sourceFrameAdmissionFor(source, waitingFrame)
     const waitingResponse = responseFor(source, waitingRequestId)
+
     source.send(waitingFrame, { binary: true })
 
     await noMessageBefore(waitingAdmission)
@@ -2664,6 +2967,7 @@ test('public reference server relays opaque publication bytes and bypasses a sta
   const origin = 'http://localhost:4320'
   const child = startServer({ port, origin })
   const sockets = []
+
   try {
     await waitForServer(child)
     const sender = await connectPublicClient({
@@ -2678,6 +2982,7 @@ test('public reference server relays opaque publication bytes and bypasses a sta
       fileId: 'opaque-file',
       actorId: 'opaque-actor-b'
     })
+
     sockets.push(sender, peer)
     assert.equal(sender.extensions, '')
     assert.equal(peer.extensions, '')
@@ -2691,8 +2996,10 @@ test('public reference server relays opaque publication bytes and bypasses a sta
       payload: sourcePayload
     })
     const expectedPayload = inspectOpaquePublicationFrame(opaqueFrame).payload
+
     await sendPublicationFrameAndWaitForAdmission(sender, opaqueFrame)
     const received = inspectOpaquePublicationFrame(await relayed)
+
     assert.equal(received.kind, 3)
     assert.equal(received.requestIdByteLength, 0)
     assert.equal(received.publicationId, 'opaque-publication')
@@ -2712,6 +3019,7 @@ test('public reference server relays opaque publication bytes and bypasses a sta
       publicationId: 'opaque-publication-2',
       payload: sourcePayload
     })
+
     await sendPublicationFrameAndWaitForAdmission(sender, secondOpaqueFrame)
     await secondAccepted
 
@@ -2721,6 +3029,7 @@ test('public reference server relays opaque publication bytes and bypasses a sta
       'Awareness bypass'
     )
     const awarenessResponse = responseFor(sender, 'opaque-awareness')
+
     sender.send(
       JSON.stringify({
         type: 'send-awareness',
@@ -2750,6 +3059,7 @@ test('public reference server rejects a single-publication frame kind with a mul
   const origin = 'http://localhost:4326'
   const child = startServer({ port, origin })
   const sockets = []
+
   try {
     await waitForServer(child)
     const sender = await connectPublicClient({
@@ -2764,6 +3074,7 @@ test('public reference server rejects a single-publication frame kind with a mul
       fileId: 'invalid-kind-file',
       actorId: 'invalid-kind-peer'
     })
+
     sockets.push(sender, peer)
     const noPeerBinary = expectNoBinaryMessage(peer)
     const connectionError = waitForMessage(
@@ -2777,6 +3088,7 @@ test('public reference server rejects a single-publication frame kind with a mul
       publicationCount: 2,
       payload: new Uint8Array([0x99])
     })
+
     invalid[7] = 1
     sender.send(invalid, { binary: true })
     assert.deepEqual(await connectionError, {
@@ -2801,6 +3113,7 @@ test('publication queue sends admitted frames before contiguous dual-gated retir
     holdPeerWriteCallbacks: true
   })
   const sockets = []
+
   try {
     await waitForServer(child)
     const sender = await connectPublicClient({
@@ -2815,6 +3128,7 @@ test('publication queue sends admitted frames before contiguous dual-gated retir
       fileId: 'dual-gate-file',
       actorId: 'dual-gate-peer'
     })
+
     sockets.push(sender, peer)
     const payload = new Uint8Array(600 * 1024)
     const frames = ['a', 'b', 'c'].map((suffix) =>
@@ -2824,6 +3138,7 @@ test('publication queue sends admitted frames before contiguous dual-gated retir
         payload
       })
     )
+
     frames.push(
       createOpaquePublicationFrame({
         requestId: 'dual-d',
@@ -2839,13 +3154,16 @@ test('publication queue sends admitted frames before contiguous dual-gated retir
       3,
       'dual-gate admitted window'
     )
+
     for (const frame of frames.slice(0, 3)) {
       await sendPublicationFrameAndWaitForAdmission(sender, frame)
     }
+
     await Promise.all(acknowledgements.slice(0, 3))
     const receivedWindow = (await admittedWindow).map(
       inspectOpaquePublicationFrame
     )
+
     assert.deepEqual(
       receivedWindow.map(({ publicationId }) => publicationId),
       ['dual-publication-a', 'dual-publication-b', 'dual-publication-c']
@@ -2857,6 +3175,7 @@ test('publication queue sends admitted frames before contiguous dual-gated retir
       'dual-gate fourth source admission'
     )
     const fourthInbound = waitForBinaryMessage(peer, 'dual-gate fourth frame')
+
     sender.send(frames[3], { binary: true })
     await noMessageBefore(fourthAdmission)
 
@@ -2887,6 +3206,7 @@ test('publication queue sends admitted frames before contiguous dual-gated retir
       acceptedSequences: [4]
     })
     const fourth = inspectOpaquePublicationFrame(await fourthInbound)
+
     assert.equal(fourth.publicationId, 'dual-publication-d')
   } finally {
     await Promise.all(sockets.map((socket) => closeSocket(socket)))
@@ -2899,6 +3219,7 @@ test('a second uncredited source frame fails closed and never reaches a peer', a
   const origin = 'http://localhost:4327'
   const child = startServer({ port, origin })
   const sockets = []
+
   try {
     await waitForServer(child)
     const sender = await connectPublicClient({
@@ -2913,6 +3234,7 @@ test('a second uncredited source frame fails closed and never reaches a peer', a
       fileId: 'source-credit-file',
       actorId: 'source-credit-peer'
     })
+
     sockets.push(sender, peer)
     const payload = new Uint8Array(600 * 1024)
     const frames = [1, 2, 3, 4, 5].map((index) =>
@@ -2923,8 +3245,12 @@ test('a second uncredited source frame fails closed and never reaches a peer', a
       })
     )
     const relayedPublicationIds = []
+
     peer.on('message', (data, isBinary) => {
-      if (!isBinary) return
+      if (!isBinary) {
+        return
+      }
+
       relayedPublicationIds.push(
         inspectOpaquePublicationFrame(rawDataToBuffer(data)).publicationId
       )
@@ -2934,17 +3260,21 @@ test('a second uncredited source frame fails closed and never reaches a peer', a
       3,
       'source-credit admitted window'
     )
+
     for (const frame of frames.slice(0, 3)) {
       const response = responseFor(
         sender,
         inspectOpaquePublicationFrame(frame).requestId
       )
+
       await sendPublicationFrameAndWaitForAdmission(sender, frame)
       await response
     }
+
     const receivedWindow = (await admittedWindow).map(
       inspectOpaquePublicationFrame
     )
+
     assert.deepEqual(
       receivedWindow.map(({ publicationId }) => publicationId),
       [
@@ -2959,6 +3289,7 @@ test('a second uncredited source frame fails closed and never reaches a peer', a
       frames[3],
       'blocked source frame admission'
     )
+
     sender.send(frames[3], { binary: true })
     await noMessageBefore(blockedAdmission)
     void blockedAdmission.catch(() => undefined)
@@ -2968,6 +3299,7 @@ test('a second uncredited source frame fails closed and never reaches a peer', a
       (message) => message.type === 'connection-error',
       'second uncredited source frame rejection'
     )
+
     sender.send(frames[4], { binary: true })
     assert.deepEqual(await connectionError, {
       type: 'connection-error',
@@ -2990,6 +3322,7 @@ test('bidirectional saturation keeps JSON frame-consumed credit readable without
   const origin = 'http://localhost:4328'
   const child = startServer({ port, origin })
   const sockets = []
+
   try {
     await waitForServer(child)
     const actorA = await connectPublicClient({
@@ -3004,6 +3337,7 @@ test('bidirectional saturation keeps JSON frame-consumed credit readable without
       fileId: 'bidirectional-credit-file',
       actorId: 'bidirectional-actor-b'
     })
+
     sockets.push(actorA, actorB)
 
     const payload = new Uint8Array(600 * 1024)
@@ -3035,14 +3369,17 @@ test('bidirectional saturation keeps JSON frame-consumed credit readable without
     for (let index = 0; index < 3; index += 1) {
       const responseA = responseFor(actorA, `bidirectional-a-${index + 1}`)
       const responseB = responseFor(actorB, `bidirectional-b-${index + 1}`)
+
       await Promise.all([
         sendPublicationFrameAndWaitForAdmission(actorA, actorAFrames[index]),
         sendPublicationFrameAndWaitForAdmission(actorB, actorBFrames[index])
       ])
       await Promise.all([responseA, responseB])
     }
+
     const receivedForA = (await admittedForA).map(inspectOpaquePublicationFrame)
     const receivedForB = (await admittedForB).map(inspectOpaquePublicationFrame)
+
     assert.deepEqual(
       receivedForA.map(({ publicationId }) => publicationId),
       [1, 2, 3].map((index) => `bidirectional-b-publication-${index}`)
@@ -3064,6 +3401,7 @@ test('bidirectional saturation keeps JSON frame-consumed credit readable without
       actorBFrames[3],
       'actor B fourth source admission'
     )
+
     actorA.send(actorAFrames[3], { binary: true })
     actorB.send(actorBFrames[3], { binary: true })
     await Promise.all([
@@ -3073,6 +3411,7 @@ test('bidirectional saturation keeps JSON frame-consumed credit readable without
 
     const fourthForA = waitForBinaryMessage(actorA, 'fourth frame for actor A')
     const fourthForB = waitForBinaryMessage(actorB, 'fourth frame for actor B')
+
     sendFrameConsumed(actorA, receivedForA[0])
     sendFrameConsumed(actorB, receivedForB[0])
 
@@ -3087,6 +3426,7 @@ test('bidirectional saturation keeps JSON frame-consumed credit readable without
     await Promise.all([fourthResponseA, fourthResponseB])
     const inboundForA = inspectOpaquePublicationFrame(await fourthForA)
     const inboundForB = inspectOpaquePublicationFrame(await fourthForB)
+
     assert.equal(inboundForA.publicationId, 'bidirectional-b-publication-4')
     assert.equal(inboundForB.publicationId, 'bidirectional-a-publication-4')
     receivedForA.slice(1).forEach((frame) => sendFrameConsumed(actorA, frame))
@@ -3104,6 +3444,7 @@ test('publication queue resumes at exact remaining 2 MiB capacity without hyster
   const origin = 'http://localhost:4322'
   const child = startServer({ port, origin })
   const sockets = []
+
   try {
     await waitForServer(child)
     const senderActorId = 'exact-capacity-sender'
@@ -3119,10 +3460,13 @@ test('publication queue resumes at exact remaining 2 MiB capacity without hyster
       fileId: 'exact-capacity-file',
       actorId: 'exact-capacity-peer'
     })
+
     sockets.push(sender, peer)
     const oneMiB = 1024 * 1024
+
     const createExactRelayedFrame = (suffix, targetByteLength) => {
       const publicationId = `exact-capacity-publication-${suffix}`
+
       return createCanonicalPublicationFrame({
         requestId: `exact-capacity-${suffix}`,
         publicationId,
@@ -3130,6 +3474,7 @@ test('publication queue resumes at exact remaining 2 MiB capacity without hyster
         fromActorId: senderActorId
       })
     }
+
     const frames = [
       createExactRelayedFrame('a', oneMiB),
       createExactRelayedFrame('b', oneMiB),
@@ -3144,13 +3489,16 @@ test('publication queue resumes at exact remaining 2 MiB capacity without hyster
       2,
       'exact-capacity admitted window'
     )
+
     for (const frame of frames.slice(0, 2)) {
       await sendPublicationFrameAndWaitForAdmission(sender, frame)
     }
+
     await Promise.all(responses.slice(0, 2))
     const receivedWindow = (await exactWindow).map(
       inspectOpaquePublicationFrame
     )
+
     assert.deepEqual(
       receivedWindow.map(({ frameByteLength }) => frameByteLength),
       [oneMiB, oneMiB]
@@ -3169,6 +3517,7 @@ test('publication queue resumes at exact remaining 2 MiB capacity without hyster
       'exact-fit source admission'
     )
     const thirdInbound = waitForBinaryMessage(peer, 'exact-fit frame')
+
     sender.send(frames[2], { binary: true })
     await noMessageBefore(thirdAdmission)
     sendFrameConsumed(peer, receivedWindow[0])
@@ -3178,6 +3527,7 @@ test('publication queue resumes at exact remaining 2 MiB capacity without hyster
     )
     await responses[2]
     const third = inspectOpaquePublicationFrame(await thirdInbound)
+
     assert.equal(third.frameByteLength, oneMiB)
 
     const fourthAdmission = sourceFrameAdmissionFor(
@@ -3185,6 +3535,7 @@ test('publication queue resumes at exact remaining 2 MiB capacity without hyster
       frames[3],
       'one-byte-over remaining-capacity source admission'
     )
+
     sender.send(frames[3], { binary: true })
     await noMessageBefore(fourthAdmission)
     await noMessageBefore(responses[3])
@@ -3196,6 +3547,7 @@ test('publication queue resumes at exact remaining 2 MiB capacity without hyster
       peer,
       'one-byte-over remaining-capacity frame'
     )
+
     sendFrameConsumed(peer, third)
     assert.deepEqual(
       await fourthAdmission,
@@ -3208,6 +3560,7 @@ test('publication queue resumes at exact remaining 2 MiB capacity without hyster
       acceptedSequences: [4]
     })
     const fourth = inspectOpaquePublicationFrame(await fourthInbound)
+
     assert.equal(fourth.frameByteLength, oneMiB + 1)
     sendFrameConsumed(peer, fourth)
   } finally {
@@ -3221,6 +3574,7 @@ test('publication queue allows one oversized frame only while the peer queue is 
   const origin = 'http://localhost:4323'
   const child = startServer({ port, origin })
   const sockets = []
+
   try {
     await waitForServer(child)
     const sender = await connectPublicClient({
@@ -3235,6 +3589,7 @@ test('publication queue allows one oversized frame only while the peer queue is 
       fileId: 'oversized-file',
       actorId: 'oversized-peer'
     })
+
     sockets.push(sender, peer)
     const normal = createOpaquePublicationFrame({
       requestId: 'oversized-normal',
@@ -3251,12 +3606,14 @@ test('publication queue allows one oversized frame only while the peer queue is 
       publicationId: 'oversized-tail-publication',
       payload: new Uint8Array([0x44])
     })
+
     assert.ok(oversized.byteLength > 2 * 1024 * 1024)
 
     const normalResponse = responseFor(sender, 'oversized-normal')
     const largeResponse = responseFor(sender, 'oversized-large')
     const tailResponse = responseFor(sender, 'oversized-tail')
     const normalInbound = waitForBinaryMessage(peer, 'normal frame')
+
     await sendPublicationFrameAndWaitForAdmission(sender, normal)
     await normalResponse
     const largeAdmission = sourceFrameAdmissionFor(
@@ -3264,12 +3621,14 @@ test('publication queue allows one oversized frame only while the peer queue is 
       oversized,
       'oversized source admission'
     )
+
     sender.send(oversized, { binary: true })
     await noMessageBefore(largeAdmission)
     await noMessageBefore(largeResponse)
     const receivedNormal = inspectOpaquePublicationFrame(await normalInbound)
 
     const largeInbound = waitForBinaryMessage(peer, 'oversized frame')
+
     sendFrameConsumed(peer, receivedNormal)
     assert.deepEqual(
       await largeAdmission,
@@ -3277,21 +3636,25 @@ test('publication queue allows one oversized frame only while the peer queue is 
     )
     await largeResponse
     const receivedLarge = inspectOpaquePublicationFrame(await largeInbound)
+
     assert.equal(receivedLarge.publicationId, 'oversized-large-publication')
     const tailAdmission = sourceFrameAdmissionFor(
       sender,
       tail,
       'post-oversized source admission'
     )
+
     sender.send(tail, { binary: true })
     await noMessageBefore(tailAdmission)
     await noMessageBefore(tailResponse)
 
     const tailInbound = waitForBinaryMessage(peer, 'post-oversized frame')
+
     sendFrameConsumed(peer, receivedLarge)
     assert.deepEqual(await tailAdmission, expectedSourceFrameAdmission(tail))
     await tailResponse
     const receivedTail = inspectOpaquePublicationFrame(await tailInbound)
+
     assert.equal(receivedTail.publicationId, 'oversized-tail-publication')
   } finally {
     await Promise.all(sockets.map((socket) => closeSocket(socket)))
@@ -3310,6 +3673,7 @@ test('a request-start peer socket outside OPEN is dropped without blocking sourc
   const sockets = []
   const peerActorId = 'closing-peer'
   let closeCleanupHeld = false
+
   try {
     await waitForServer(child)
     const sender = await connectPublicClient({
@@ -3324,6 +3688,7 @@ test('a request-start peer socket outside OPEN is dropped without blocking sourc
       fileId: 'closing-peer-file',
       actorId: peerActorId
     })
+
     sockets.push(sender, peer)
 
     await holdPeerCloseCleanup(child, peerActorId)
@@ -3352,6 +3717,7 @@ test('a request-start peer socket outside OPEN is dropped without blocking sourc
     if (closeCleanupHeld) {
       await releasePeerCloseCleanup(child, peerActorId)
     }
+
     await Promise.all(sockets.map((socket) => closeSocket(socket)))
     await stopServer(child)
   }
@@ -3362,6 +3728,7 @@ test('a request-start peer disconnect drops only that peer and releases healthy 
   const origin = 'http://localhost:4324'
   const child = startServer({ port, origin })
   const sockets = []
+
   try {
     await waitForServer(child)
     const sender = await connectPublicClient({
@@ -3382,6 +3749,7 @@ test('a request-start peer disconnect drops only that peer and releases healthy 
       fileId: 'slow-peer-file',
       actorId: 'slow-peer'
     })
+
     sockets.push(sender, fast, slow)
 
     const fastPublicationIds = []
@@ -3389,12 +3757,19 @@ test('a request-start peer disconnect drops only that peer and releases healthy 
     const fastComplete = new Promise((resolve) => {
       resolveFastComplete = resolve
     })
+
     fast.on('message', (data, isBinary) => {
-      if (!isBinary) return
+      if (!isBinary) {
+        return
+      }
+
       const frame = inspectOpaquePublicationFrame(rawDataToBuffer(data))
+
       fastPublicationIds.push(frame.publicationId)
       sendFrameConsumed(fast, frame)
-      if (fastPublicationIds.length === 5) resolveFastComplete()
+      if (fastPublicationIds.length === 5) {
+        resolveFastComplete()
+      }
     })
 
     const payload = new Uint8Array(600 * 1024)
@@ -3409,12 +3784,15 @@ test('a request-start peer disconnect drops only that peer and releases healthy 
       responseFor(sender, `slow-${index}`)
     )
     const slowFirst = waitForBinaryMessage(slow, 'slow peer first frame')
+
     for (const frame of frames.slice(0, 3)) {
       await sendPublicationFrameAndWaitForAdmission(sender, frame)
     }
+
     await Promise.all(responses.slice(0, 3))
     const fourthAdmission = sourceFrameAdmissionFor(sender, frames[3])
     const fourthResponse = responseFor(sender, 'slow-4')
+
     sender.send(frames[3], { binary: true })
     await slowFirst
     await noMessageBefore(fourthAdmission)
@@ -3438,6 +3816,7 @@ test('a request-start peer disconnect drops only that peer and releases healthy 
       payload: new Uint8Array([0x5a])
     })
     const recoveryResponse = responseFor(sender, 'slow-recovery')
+
     await sendPublicationFrameAndWaitForAdmission(sender, recoveryFrame)
     await recoveryResponse
     await fastComplete
@@ -3463,6 +3842,7 @@ test('a peer socket write callback failure removes that peer instead of fabricat
     injectPeerWriteCallbackError: true
   })
   const sockets = []
+
   try {
     await waitForServer(child)
     const sender = await connectPublicClient({
@@ -3477,6 +3857,7 @@ test('a peer socket write callback failure removes that peer instead of fabricat
       fileId: 'write-failure-file',
       actorId: 'write-failure-peer'
     })
+
     sockets.push(sender, peer)
     const closed = new Promise((resolve) => peer.once('close', resolve))
     const accepted = responseFor(sender, 'write-failure-request')
@@ -3485,6 +3866,7 @@ test('a peer socket write callback failure removes that peer instead of fabricat
       publicationId: 'write-failure-publication',
       payload: new Uint8Array([0xf1])
     })
+
     await sendPublicationFrameAndWaitForAdmission(sender, failingFrame)
     assert.deepEqual(await accepted, {
       type: 'response',
@@ -3500,6 +3882,7 @@ test('a peer socket write callback failure removes that peer instead of fabricat
       publicationId: 'after-write-failure-publication',
       payload: new Uint8Array([0xf2])
     })
+
     await sendPublicationFrameAndWaitForAdmission(sender, afterFailureFrame)
     assert.deepEqual(await afterFailure, {
       type: 'response',
@@ -3518,6 +3901,7 @@ test('persistence confirmation acknowledges a captured generation and does not b
   const origin = 'http://localhost:4317'
   const child = startServer({ port, origin })
   let socket
+
   try {
     await waitForServer(child)
     socket = await connectPublicClient({
@@ -3527,6 +3911,7 @@ test('persistence confirmation acknowledges a captured generation and does not b
       actorId: 'writer'
     })
     const first = responseFor(socket, 'first')
+
     socket.send(
       createCanonicalPublicationFrame({
         requestId: 'first',
@@ -3537,6 +3922,7 @@ test('persistence confirmation acknowledges a captured generation and does not b
     )
     assert.equal((await first).ok, true)
     const confirmation = responseFor(socket, 'confirm')
+
     socket.send(
       JSON.stringify({
         type: 'confirm-persistence',
@@ -3546,6 +3932,7 @@ test('persistence confirmation acknowledges a captured generation and does not b
       })
     )
     const second = responseFor(socket, 'second')
+
     socket.send(
       createCanonicalPublicationFrame({
         requestId: 'second',
@@ -3556,12 +3943,14 @@ test('persistence confirmation acknowledges a captured generation and does not b
     )
     assert.equal((await second).ok, true)
     const receipt = await confirmation
+
     assert.equal(receipt.ok, true)
     assert.equal(receipt.persistence.sequence, 1)
     assert.equal(receipt.persistence.documentGeneration, 0)
     assert.equal(receipt.persistence.documentId, 'durable-confirmation')
     assert.ok(receipt.persistence.durableSequence >= 1)
     const wrong = responseFor(socket, 'wrong-generation')
+
     socket.send(
       JSON.stringify({
         type: 'confirm-persistence',

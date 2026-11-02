@@ -41,20 +41,27 @@ export const withToolContractAssertions = <
 >(
   owner: T
 ): T => {
-  for (const definition of owner.definitions)
-    if (nativeNames.has(definition.name)) advertised.add(definition.name)
+  for (const definition of owner.definitions) {
+    if (nativeNames.has(definition.name)) {
+      advertised.add(definition.name)
+    }
+  }
+
   const call = (owner.callInternal ?? owner.call).bind(owner)
   const checked = new Set<string>()
+
   owner.call = async (name, input, signal) => {
     const definition = owner.definitions.find((tool) => tool.name === name)
     const admitted =
       definition && !operationInputIssue(input, definition.inputSchema)
+
     // Internal and deliberate guard probes still exercise the owner directly.
     if (!definition || !admitted || signal.aborted) {
       const text = await call(name, input, signal)
       const value = JSON.parse(text)
       const outcome =
         owner.resultOutcome?.(name, value) ?? localToolOutcome(value)
+
       if (definition && ['success', 'partial'].includes(outcome.status)) {
         expect(
           operationInputIssue(input, definition.inputSchema),
@@ -65,13 +72,16 @@ export const withToolContractAssertions = <
           value,
           { outcome, validate: operationContractIssue }
         )
+
         expect(
           inspected.status === 'invalid' ? inspected.issue : undefined,
           `${name} direct output`
         ).toBeUndefined()
       }
+
       return text
     }
+
     let calls = 0
     let original: string | undefined
     let originalError: unknown
@@ -79,10 +89,12 @@ export const withToolContractAssertions = <
     const boundaryOwner: LocalToolOwner = {
       ...owner,
       callInternal: undefined,
+
       call: async (...args) => {
         calls++
         try {
           original = await call(...args)
+
           return original
         } catch (error) {
           ownerFailed = true
@@ -91,6 +103,7 @@ export const withToolContractAssertions = <
         }
       }
     }
+
     if (!checked.has(name)) {
       const rejected = await invokeLocalTool(
         boundaryOwner,
@@ -98,6 +111,7 @@ export const withToolContractAssertions = <
         null,
         signal
       )
+
       expect(rejected.success, `${name} malformed input`).toBe(false)
       expect(JSON.parse(rejected.text).settlement).toBe('not-started')
       await expect(
@@ -109,10 +123,13 @@ export const withToolContractAssertions = <
         const failed = await invokeLocalTool(
           {
             ...boundaryOwner,
+
             call: async () => {
               failedCalls++
-              if (failure === 'exception')
+              if (failure === 'exception') {
                 throw new Error('Owner failed before returning a receipt')
+              }
+
               return 'null'
             }
           },
@@ -120,20 +137,24 @@ export const withToolContractAssertions = <
           input,
           signal
         )
+
         expect(failed.success, `${name} ${failure} cannot report success`).toBe(
           false
         )
         expect(failedCalls, `${name} ${failure} cannot replay`).toBe(1)
         expect(JSON.parse(failed.text).toolOutcome.status).not.toBe('success')
       }
+
       checked.add(name)
     }
+
     const reply = await invokeLocalTool(
       boundaryOwner,
       definition,
       input,
       signal
     )
+
     expect(calls, `${name} canonical dispatch count`).toBe(1)
     // Preserve direct-owner error semantics for existing domain guard assertions.
     if (ownerFailed) {
@@ -144,17 +165,23 @@ export const withToolContractAssertions = <
       ).toBe(true)
       throw originalError
     }
+
     expect(original, `${name} owner response`).toBeDefined()
-    if (original === undefined) throw new Error(`${name} omitted its response`)
+    if (original === undefined) {
+      throw new Error(`${name} omitted its response`)
+    }
+
     const value = JSON.parse(original)
     const outcome =
       owner.resultOutcome?.(name, value) ?? localToolOutcome(value)
+
     if (['success', 'partial', 'failed', 'unknown'].includes(outcome.status)) {
       const contract = createAiToolContract(definition)
       const inspected = inspectAiToolResult(contract, value, {
         outcome,
         validate: operationContractIssue
       })
+
       expect(
         inspected.status === 'invalid' ? inspected.issue : undefined,
         `${name} output`
@@ -162,62 +189,84 @@ export const withToolContractAssertions = <
       // Every actual owner field must be classified before model projection can
       // discard extensions. This includes declared failed owner recovery fixtures.
       const declaration = selectAiToolResultSchema(contract, outcome.status)
+
       if (declaration) {
         const internal = JSON.parse(JSON.stringify(declaration), (key, item) =>
           key === 'x-model-visibility' ? undefined : item
         )
         const projected = projectToolResultFields(value, internal)
         const missing: string[] = []
+
         const compare = (
           original: unknown,
           selected: unknown,
           path: string
         ) => {
-          if (!original || typeof original !== 'object') return
+          if (!original || typeof original !== 'object') {
+            return
+          }
+
           for (const [key, child] of Object.entries(original)) {
             const next = `${path}/${Array.isArray(original) ? '*' : key}`
+
             if (
               !selected ||
               typeof selected !== 'object' ||
               !Object.hasOwn(selected, key)
             ) {
-              if (!missing.includes(next)) missing.push(next)
-            } else
+              if (!missing.includes(next)) {
+                missing.push(next)
+              }
+            } else {
               compare(child, (selected as Record<string, unknown>)[key], next)
+            }
           }
         }
+
         compare(value, projected, '')
         expect(
           projected,
           `${name} undeclared result paths: ${missing.join(', ')}`
         ).toEqual(value)
       }
+
       expect(
         JSON.parse(reply.text).toolOutcome.status,
         `${name} public result`
       ).toBe(outcome.status)
-      if (outcome.status === 'success') exercised.add(name)
+      if (outcome.status === 'success') {
+        exercised.add(name)
+      }
     }
-    if (!owner.projectModelResult) return original
+
+    if (!owner.projectModelResult) {
+      return original
+    }
+
     const beforeProjection = JSON.stringify(value)
     const projected = owner.projectModelResult(name, input, value)
+
     expect(
       JSON.stringify(value),
       `${name} projection preserves owner receipt`
     ).toBe(beforeProjection)
     const deliveredOutcome =
       owner.resultOutcome?.(name, projected) ?? localToolOutcome(projected)
+
     expect(
       deliveredOutcome.settlement,
       `${name} delivery preserves mutation settlement`
     ).toBe(outcome.settlement)
-    if (outcome.status !== 'success')
+    if (outcome.status !== 'success') {
       expect(
         deliveredOutcome.status,
         `${name} delivery cannot promote incomplete owner work`
       ).not.toBe('success')
+    }
+
     return JSON.stringify(projected)
   }
+
   return owner
 }
 
@@ -227,7 +276,10 @@ export const recordAcquisitionCost = (
   text: string,
   pages: number[]
 ) => {
-  if (process.env.TOOL_DELIVERY_COST_REPORT !== '1') return
+  if (process.env.TOOL_DELIVERY_COST_REPORT !== '1') {
+    return
+  }
+
   const value = JSON.parse(text) as {
     apis?: Record<string, unknown>[]
     tools?: Record<string, unknown>[]
@@ -235,10 +287,12 @@ export const recordAcquisitionCost = (
   const entries = [...(value.apis ?? []), ...(value.tools ?? [])].map(
     (entry) => {
       const bytes = (value: unknown) => Buffer.byteLength(JSON.stringify(value))
+
       const sections = (value: Record<string, unknown>) =>
         Object.fromEntries(
           Object.entries(value).map(([key, child]) => [key, bytes(child)])
         )
+
       return {
         name: entry.registeredName ?? entry.name,
         bytes: bytes(entry),
@@ -255,8 +309,13 @@ export const recordAcquisitionCost = (
       }
     }
   )
-  if (!entries.length) return
+
+  if (!entries.length) {
+    return
+  }
+
   const directory = resolve('tmp')
+
   mkdirSync(directory, { recursive: true })
   appendFileSync(
     resolve(directory, 'tool-delivery-cost-attribution.jsonl'),
@@ -281,14 +340,18 @@ export const readCompleteInformation = async (
   let text = ''
   let offset = 0
   let revision: string | undefined
+
   for (let count = 0; count < 256; count++) {
     pages.push(Buffer.byteLength(raw))
     const page = JSON.parse(raw).contentDelivery
+
     if (!page) {
       expect(offset).toBe(0)
       recordAcquisitionCost(input, raw, pages)
+
       return raw
     }
+
     expect(Buffer.byteLength(raw)).toBeLessThanOrEqual(24000)
     expect(page.startByte).toBe(offset)
     revision ??= page.revision
@@ -301,10 +364,13 @@ export const readCompleteInformation = async (
       expect(page.next).toBeNull()
       JSON.parse(text)
       recordAcquisitionCost(input, text, pages)
+
       return text
     }
+
     raw = await call(page.next.arguments)
   }
+
   throw new Error('Information continuation did not terminate')
 }
 

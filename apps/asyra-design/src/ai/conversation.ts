@@ -16,7 +16,6 @@ import type {
 export type AiConversationOutcome =
   'cancelled' | 'failed' | 'no-change' | 'partial' | 'success'
 
-
 export interface AiTargetHints {
   readonly compositionId: string | null
   readonly roleToElementIds: Readonly<Record<string, readonly string[]>>
@@ -729,6 +728,7 @@ export const createAiConversationController = (
       if (submission?.detailOption && !replyTo) {
         throw new AiConversationError('AI_CONVERSATION_INVALID_REPLY')
       }
+
       let requestAttachments = attachments
 
       let requestIntent = intent
@@ -811,6 +811,7 @@ export const createAiConversationController = (
           requestIntent,
           attachments
         )
+
         requestAttachments = projection.attachments
         const metadata: AiJsonValue = {
           ...(settledTurns.length > 0

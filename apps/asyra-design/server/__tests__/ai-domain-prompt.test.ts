@@ -6,6 +6,7 @@ import { operationInputIssue } from '../operation-input-schema'
 import { describe, expect, it } from 'vitest'
 import {
   AI_APP_PROMPT,
+  AI_CONVERSATION_HISTORY_INSTRUCTIONS,
   AI_OPERATION_INSTRUCTIONS,
   AI_IMAGE_TOOL_CATALOG,
   AiImageToolIds
@@ -72,19 +73,24 @@ describe('stage-owned App guidance', () => {
     const review = requireTestValue(
       designEvidenceDefinitions.find((tool) => tool.name === 'review_drawing')
     )
+
     expect(review.description).toContain('exact inspectionIds')
     expect(review.description).toContain(
       'Neither capture nor binding records a judgment'
-
     )
   })
 
   it('consumes chronological conversation data with current intent precedence', () => {
-    expect(AI_APP_PROMPT).toContain('metadata.conversationContext')
-    expect(AI_APP_PROMPT).toContain('current input.intent overrides')
-    expect(AI_APP_PROMPT).toContain('attachmentIndexes')
-    expect(AI_APP_PROMPT).toContain('fresh target and evidence checks')
-
+    expect(AI_CONVERSATION_HISTORY_INSTRUCTIONS).toContain(
+      'metadata.conversationContext'
+    )
+    expect(AI_CONVERSATION_HISTORY_INSTRUCTIONS).toContain(
+      'current input.intent overrides'
+    )
+    expect(AI_CONVERSATION_HISTORY_INSTRUCTIONS).toContain('attachmentIndexes')
+    expect(AI_CONVERSATION_HISTORY_INSTRUCTIONS).toContain(
+      'fresh target and evidence checks'
+    )
   })
 
   it('uses existing activity fields for concrete work without extra reporting calls', () => {

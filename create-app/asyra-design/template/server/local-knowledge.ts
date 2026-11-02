@@ -38,6 +38,7 @@ const sharedIds = [
   'illustration.architecture.materials.method'
 ] as const
 const require = createRequire(import.meta.url)
+
 export interface KnowledgeFile {
   readonly id: string
   readonly revision: number
@@ -55,16 +56,28 @@ export const parseKnowledgeFile = (
   if (
     typeof file.markdown !== 'string' ||
     Buffer.byteLength(file.markdown) > 65536
-  )
+  ) {
     throw new Error('Knowledge file exceeds the admission limit')
+  }
+
   const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]+)$/.exec(file.markdown)
-  if (!match) throw new Error('Knowledge frontmatter is required')
+
+  if (!match) {
+    throw new Error('Knowledge frontmatter is required')
+  }
+
   const value: unknown = JSON.parse(match[1])
-  if (!value || typeof value !== 'object' || Array.isArray(value))
+
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new Error('Knowledge metadata must be an object')
+  }
+
   const fields = value as Record<string, unknown>
-  if ('id' in fields || 'revision' in fields)
+
+  if ('id' in fields || 'revision' in fields) {
     throw new Error('Knowledge identity belongs to the trusted file catalog')
+  }
+
   const keys = new Set([
     'description',
     'provenance',
@@ -74,9 +87,13 @@ export const parseKnowledgeFile = (
     'extends',
     'overrides'
   ])
-  if (Object.keys(fields).some((key) => !keys.has(key)))
+
+  if (Object.keys(fields).some((key) => !keys.has(key))) {
     throw new Error('Unsupported knowledge metadata')
+  }
+
   const rawOverrides = fields.overrides ?? []
+
   if (
     !Array.isArray(rawOverrides) ||
     rawOverrides.length > 32 ||
@@ -91,13 +108,16 @@ export const parseKnowledgeFile = (
         typeof item.text !== 'string' ||
         !item.text.length
     )
-  )
+  ) {
     throw new Error('Targeted override text is required')
+  }
+
   const overrides = Object.freeze(
     rawOverrides.map((item) =>
       Object.freeze({ target: item.target, text: item.text })
     )
   )
+
   return {
     metadata: {
       ...fields,
@@ -124,32 +144,47 @@ export const createDesignKnowledge = (
   const access = createAiKnowledgeAccess({
     tenantId: 'local-design-host',
     scopeId: 'design-advice',
+
     authorize: (operation, identity) =>
       ['register', 'update', 'unregister'].includes(operation)
         ? identity.principal === admin
         : identity.principal === reader,
+
     read: async (metadata) => {
       const content = contents.get(metadata.id)
-      if (!content) throw new Error('Knowledge content unavailable')
+
+      if (!content) {
+        throw new Error('Knowledge content unavailable')
+      }
+
       return content
     }
   })
   const session = access.openSession(reader, taskId, { retainResults })
+
   return Object.freeze({
     session,
+
     install(file: KnowledgeFile, expectedRevision?: number) {
       const { metadata, text, overrides } = parseKnowledgeFile(file)
-      if (expectedRevision === undefined) access.register(metadata, admin)
-      else access.update(metadata, expectedRevision, admin)
+
+      if (expectedRevision === undefined) {
+        access.register(metadata, admin)
+      } else {
+        access.update(metadata, expectedRevision, admin)
+      }
+
       contents.set(
         metadata.id,
         Object.freeze({ revision: metadata.revision, text, overrides })
       )
     },
+
     remove(id: string, revision: number) {
       access.unregister(id, revision, admin)
       contents.delete(id)
     },
+
     dispose() {
       access.dispose()
       contents.clear()
@@ -168,6 +203,7 @@ const loadFiles = async (): Promise<readonly KnowledgeFile[]> => {
       )
     }))
   )
+
   return [
     ...files,
     ...(await Promise.all(
@@ -184,15 +220,27 @@ const loadFiles = async (): Promise<readonly KnowledgeFile[]> => {
         '.repetition'
       ].map(async (suffix) => {
         let revision = 1
+
         if (
           ['.materials.method', '.materials.correction', '.contracts'].includes(
             suffix
           )
-        )
+        ) {
           revision = 2
-        if (suffix === '.materials.method') revision = 3
-        if (suffix === '.materials.method.parameters') revision = 2
-        if (!suffix) revision = 18
+        }
+
+        if (suffix === '.materials.method') {
+          revision = 3
+        }
+
+        if (suffix === '.materials.method.parameters') {
+          revision = 2
+        }
+
+        if (!suffix) {
+          revision = 18
+        }
+
         return {
           id: `design.architectural-illustration${suffix}`,
           revision,
@@ -232,6 +280,7 @@ const contextsSchema = {
   ...idsSchema,
   items: { enum: ['docs-page', 'landing-page', 'architectural-illustration'] }
 }
+
 const inputSchema = (read: boolean) => ({
   type: 'object',
   properties: {
@@ -259,23 +308,31 @@ const inputSchema = (read: boolean) => ({
 export const projectKnowledgeSources = (result: AiKnowledgeResult) => {
   const key = (source: AiKnowledgeSource) =>
     JSON.stringify([source.id, source.revision])
+
   const catalog = new Map<string, AiKnowledgeSource | undefined>()
+
   for (const source of result.sources) {
     const identity = key(source)
+
     catalog.set(identity, catalog.has(identity) ? undefined : source)
   }
+
   const project = (source: AiKnowledgeSource) => {
     const canonical = catalog.get(key(source))
+
     if (
       canonical &&
       canonical.provenance.length === source.provenance.length &&
       canonical.provenance.every(
         (value, index) => value === source.provenance[index]
       )
-    )
+    ) {
       return { id: source.id, revision: source.revision }
+    }
+
     return source
   }
+
   return {
     ...result,
     documents: result.documents.map((document) => ({
@@ -296,17 +353,28 @@ export const createLocalKnowledgeTools = (
   let disposed = false
   let owner: ReturnType<typeof createDesignKnowledge> | undefined
   let pending: Promise<AiKnowledgeSession> | undefined
+
   const initialize = () => {
-    if (disposed) throw new LocalToolInputError('Knowledge session is closed')
-    if (!pending)
+    if (disposed) {
+      throw new LocalToolInputError('Knowledge session is closed')
+    }
+
+    if (!pending) {
       pending = load()
         .then((files) => {
-          if (disposed)
+          if (disposed) {
             throw new LocalToolInputError('Knowledge session is closed')
+          }
+
           const candidate = createDesignKnowledge(taskId, true)
+
           try {
-            for (const file of files) candidate.install(file)
+            for (const file of files) {
+              candidate.install(file)
+            }
+
             owner = candidate
+
             return candidate.session
           } catch (error) {
             candidate.dispose()
@@ -317,8 +385,11 @@ export const createLocalKnowledgeTools = (
           pending = undefined
           throw error
         })
+    }
+
     return pending
   }
+
   const definitions: (LocalToolDefinition & {
     executionAccess: LocalToolAccess
   })[] = [
@@ -369,8 +440,10 @@ export const createLocalKnowledgeTools = (
       executionAccess: LocalToolAccess.INDEPENDENT
     }
   ]
+
   return {
     definitions,
+
     async call(
       name: string,
       args: unknown,
@@ -378,28 +451,46 @@ export const createLocalKnowledgeTools = (
     ): Promise<string> {
       signal.throwIfAborted()
       const definition = definitions.find((item) => item.name === name)
-      if (!definition)
+
+      if (!definition) {
         throw new LocalToolInputError('Unknown knowledge operation')
+      }
+
       const issue = operationInputIssue(args, definition.inputSchema)
-      if (issue) throw new LocalToolInputError(issue)
+
+      if (issue) {
+        throw new LocalToolInputError(issue)
+      }
+
       const input = args as { ids: string[]; contexts?: string[] }
       const session = await initialize()
+
       signal.throwIfAborted()
-      if (name === AiDesignToolIds.DISCOVER_KNOWLEDGE)
+      if (name === AiDesignToolIds.DISCOVER_KNOWLEDGE) {
         return JSON.stringify({
           trust: 'untrusted-advice',
           entries: session.discover(input.contexts, input.ids)
         })
+      }
+
       const query = args as Record<string, unknown>
-      if (query.contentPage && query.rehydrate)
+
+      if (query.contentPage && query.rehydrate) {
         throw new LocalToolInputError(
           'Continue without rehydrate; restart the read separately to reset context.'
         )
+      }
+
       try {
         const result = await session.retrieve(input, signal)
+
         signal.throwIfAborted()
         const deliveryQuery = { ...query }
-        if (query.rehydrate) delete deliveryQuery.reuseFrom
+
+        if (query.rehydrate) {
+          delete deliveryQuery.reuseFrom
+        }
+
         return deliverInformation(
           JSON.stringify(projectKnowledgeSources(result)),
           name,
@@ -410,18 +501,25 @@ export const createLocalKnowledgeTools = (
         if (
           error instanceof AiKnowledgeError &&
           error.code === 'KNOWLEDGE_REUSE_UNAVAILABLE'
-        )
+        ) {
           throw new LocalToolInputError(
             'Retained advice or selected targets are unavailable in this session. Repeat only this read as `read_knowledge({ ids, contexts })` without fromResult/reuseFrom; use rehydrate: true after context loss. Never replay completed writes or captures.',
             error.code
           )
+        }
+
         throw error
       }
     },
+
     invalidateContext() {
-      if (disposed) throw new LocalToolInputError('Knowledge session is closed')
+      if (disposed) {
+        throw new LocalToolInputError('Knowledge session is closed')
+      }
+
       owner?.session.invalidateContext()
     },
+
     dispose() {
       disposed = true
       owner?.dispose()

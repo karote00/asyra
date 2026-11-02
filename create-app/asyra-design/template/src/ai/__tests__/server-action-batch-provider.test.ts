@@ -36,9 +36,11 @@ describe('server action-batch provider', () => {
     const provider = createServerActionBatchProvider({
       fetch: async (_url, init) => {
         transport = init.signal
+
         return new Promise<never>(() => undefined)
       }
     })
+
     try {
       const pending = provider.requestActionBatch(input, {
         signal: controller.signal
@@ -46,6 +48,7 @@ describe('server action-batch provider', () => {
       const checked = expect(pending).rejects.toMatchObject({
         code: 'AI_PROVIDER_ABORTED'
       })
+
       await vi.advanceTimersByTimeAsync(60 * 60 * 1000)
       expect(transport?.aborted).toBe(false)
       controller.abort()
@@ -65,6 +68,7 @@ describe('server action-batch provider', () => {
     )
     const fetch = vi.fn(async () => ({
       json: async () => batch,
+
       ok: true,
       status: 200
     }))
@@ -128,6 +132,7 @@ it.each([
           })
       ) as never
     })
+
     try {
       await expect(
         provider.requestActionBatch(input, {
@@ -175,6 +180,7 @@ it('streams tool activity before the final batch using one request', async () =>
     signal: new AbortController().signal,
     onProgress
   })
+
   await vi.waitFor(() =>
     expect(onProgress).toHaveBeenCalledWith({
       tool: 'vtracer',
@@ -204,6 +210,7 @@ it.each([
           headers: { 'content-type': 'application/x-ndjson' }
         })) as never
     })
+
     await expect(
       provider.requestActionBatch(input, {
         signal: new AbortController().signal
@@ -239,6 +246,7 @@ describe('sequential server prepared batch transport', () => {
         })) as never
     })
     const onProgress = vi.fn()
+
     try {
       await expect(
         provider.requestActionBatch(input, {
@@ -268,8 +276,9 @@ describe('sequential server prepared batch transport', () => {
     let sent = 0
     const stream = new ReadableStream({
       pull(controller) {
-        if (sent++ < 65) controller.enqueue(frame)
-        else {
+        if (sent++ < 65) {
+          controller.enqueue(frame)
+        } else {
           controller.enqueue(
             encoder.encode(JSON.stringify({ type: 'result', batch }) + '\n')
           )
@@ -284,6 +293,7 @@ describe('sequential server prepared batch transport', () => {
         })) as never
     })
     const onProgress = vi.fn()
+
     try {
       await expect(
         provider.requestActionBatch(input, {
@@ -302,8 +312,11 @@ describe('sequential server prepared batch transport', () => {
     let sent = 0
     const stream = new ReadableStream({
       pull(controller) {
-        if (sent++ < 65) controller.enqueue(chunk)
-        else controller.close()
+        if (sent++ < 65) {
+          controller.enqueue(chunk)
+        } else {
+          controller.close()
+        }
       }
     })
     const provider = createServerActionBatchProvider({
@@ -312,6 +325,7 @@ describe('sequential server prepared batch transport', () => {
           headers: { 'content-type': 'application/x-ndjson' }
         })) as never
     })
+
     try {
       await expect(
         provider.requestActionBatch(input, {
@@ -332,8 +346,10 @@ describe('sequential server prepared batch transport', () => {
         if ((init?.headers as Record<string, string>)?.['x-ai-batch-receipt']) {
           calls.push('receipt')
           expect(JSON.parse(String(init?.body))).toEqual(receipt)
+
           return new Response('{}', { status: 200 })
         }
+
         return new Response(
           [
             JSON.stringify({ type: 'batch', receiptToken, batch }),
@@ -348,12 +364,15 @@ describe('sequential server prepared batch transport', () => {
     })
     const result = await provider.requestActionBatch(input, {
       signal: new AbortController().signal,
+
       executeBatch: async (prepared) => {
         calls.push('execute')
         expect(prepared).toEqual(batch)
+
         return receipt
       }
     })
+
     expect(result.batchId).toBe('final')
     expect(calls).toEqual(['execute', 'receipt'])
     provider.dispose()
@@ -371,8 +390,10 @@ it('acknowledges a rejected browser batch and keeps the stream open for recovery
     fetch: (async (_url, init) => {
       if ((init.headers as Record<string, string>)['x-ai-batch-receipt']) {
         receipts.push(JSON.parse(String(init.body)))
+
         return new Response('{}')
       }
+
       return new Response(
         JSON.stringify({ type: 'batch', receiptToken, batch }) +
           '\n' +
@@ -384,6 +405,7 @@ it('acknowledges a rejected browser batch and keeps the stream open for recovery
       )
     }) as never
   })
+
   try {
     await expect(
       provider.requestActionBatch(input, {
@@ -421,6 +443,7 @@ it.each(['stop', 'lost-ack'])(
           posts++
           throw new Error('ack transport failed')
         }
+
         return new Response(
           JSON.stringify({
             type: 'batch',
@@ -433,13 +456,18 @@ it.each(['stop', 'lost-ack'])(
         )
       }) as never
     })
+
     try {
       await expect(
         provider.requestActionBatch(input, {
           signal: controller.signal,
+
           executeBatch: async () => {
             executions++
-            if (mode === 'stop') controller.abort()
+            if (mode === 'stop') {
+              controller.abort()
+            }
+
             throw new Error('executor failed')
           }
         })
@@ -461,11 +489,13 @@ it.each(['ACTION_BATCH_INVALID_RECEIPT', 'private body with secrets'])(
       fetch: (async (_url, init) => {
         if ((init.headers as Record<string, string>)['x-ai-batch-receipt']) {
           posts++
+
           return new Response('private error body', {
             status: 413,
             headers: { 'x-ai-error-code': code }
           })
         }
+
         return new Response(
           JSON.stringify({
             type: 'batch',
@@ -476,6 +506,7 @@ it.each(['ACTION_BATCH_INVALID_RECEIPT', 'private body with secrets'])(
         )
       }) as never
     })
+
     try {
       const failure = await provider
         .requestActionBatch(input, {
@@ -483,6 +514,7 @@ it.each(['ACTION_BATCH_INVALID_RECEIPT', 'private body with secrets'])(
           executeBatch
         })
         .catch((error: unknown) => error)
+
       expect(failure).toMatchObject({
         code: 'AI_PROVIDER_HTTP_STATUS',
         status: 413,
@@ -490,8 +522,10 @@ it.each(['ACTION_BATCH_INVALID_RECEIPT', 'private body with secrets'])(
       })
       expect(String(failure)).toContain('receipt')
       expect(String(failure)).not.toContain('private')
-      if (code === 'ACTION_BATCH_INVALID_RECEIPT')
+      if (code === 'ACTION_BATCH_INVALID_RECEIPT') {
         expect(String(failure)).toContain(code)
+      }
+
       expect(executeBatch).toHaveBeenCalledOnce()
       expect(posts).toBe(1)
     } finally {
@@ -515,10 +549,17 @@ it.each(['activity', 'receipt', 'handoff'])(
       fetch: (async (_url, init) => {
         if ((init.headers as Record<string, string>)['x-ai-batch-receipt']) {
           receipts++
-          if (phase === 'receipt') controller.abort()
+          if (phase === 'receipt') {
+            controller.abort()
+          }
+
           return new Response('{}')
         }
-        if (phase === 'handoff') controller.abort()
+
+        if (phase === 'handoff') {
+          controller.abort()
+        }
+
         return new Response(
           [
             { type: 'activity', tool: 'prepare_design', status: 'running' },
@@ -534,13 +575,17 @@ it.each(['activity', 'receipt', 'handoff'])(
         )
       }) as never
     })
+
     try {
       await expect(
         provider.requestActionBatch(input, {
           signal: controller.signal,
           executeBatch,
+
           onProgress: () => {
-            if (phase === 'activity') controller.abort()
+            if (phase === 'activity') {
+              controller.abort()
+            }
           }
         })
       ).rejects.toMatchObject({ code: 'AI_PROVIDER_ABORTED' })
@@ -583,22 +628,33 @@ describe('evaluation capture and actual provider protocol', () => {
           const id = captureRequestIdentity(
             {
               url: () => new URL(String(url), 'http://capture.test').href,
+
               method: () => init.method,
+
               headers: () => headers,
+
               postDataJSON: () => JSON.parse(String(init.body))
             },
             'http://capture.test'
           )
-          if (id) identities.push(id)
+
+          if (id) {
+            identities.push(id)
+          }
+
           if (headers[AI_BATCH_RECEIPT_HEADER] !== undefined) {
             receipts.push(JSON.parse(String(init.body)))
-            if (mode === 'lost-receipt')
+            if (mode === 'lost-receipt') {
               throw new Error('Acknowledgement connection lost')
+            }
+
             return new Response('{}', {
               status: mode === 'rejected-receipt' ? 409 : 200
             })
           }
+
           modelRequests++
+
           return new Response(
             [
               JSON.stringify({
@@ -612,6 +668,7 @@ describe('evaluation capture and actual provider protocol', () => {
           )
         }
       })
+
       try {
         const pending = provider.requestActionBatch(
           {
@@ -623,24 +680,35 @@ describe('evaluation capture and actual provider protocol', () => {
           },
           {
             signal: controller.signal,
+
             executeBatch: async () => {
               executions++
-              if (mode === 'cancelled') controller.abort()
-              if (mode === 'execution-failure')
+              if (mode === 'cancelled') {
+                controller.abort()
+              }
+
+              if (mode === 'execution-failure') {
                 throw new Error('Canonical execution rejected')
+              }
+
               return { actionResults: [], context: { executed: true } }
             }
           }
         )
-        if (['success', 'execution-failure'].includes(mode))
+
+        if (['success', 'execution-failure'].includes(mode)) {
           await expect(pending).resolves.toEqual(batch)
-        else await expect(pending).rejects.toBeDefined()
+        } else {
+          await expect(pending).rejects.toBeDefined()
+        }
+
         expect(identities).toEqual(['real-provider-request'])
         expect(modelRequests).toBe(1)
         expect(executions).toBe(1)
         expect(receipts).toHaveLength(mode === 'cancelled' ? 0 : 1)
-        if (mode === 'execution-failure')
+        if (mode === 'execution-failure') {
           expect(receipts[0]).toHaveProperty('batchFailure')
+        }
       } finally {
         controller.abort()
         provider.dispose()
@@ -657,15 +725,23 @@ it('delivers the exact local evaluation deadline with existing metadata and leav
     expandedNodeLimit: 2000
   }
   const url = new URL(previous)
+
   url.searchParams.set('aiEvaluationWindow', JSON.stringify(window))
   history.replaceState(null, '', url)
   const requests: unknown[] = []
   const provider = createServerActionBatchProvider({
     fetch: async (_url, init) => {
       requests.push(JSON.parse(String(init.body)))
-      return { ok: true, status: 200, json: async () => batch }
+
+      return {
+        ok: true,
+        status: 200,
+
+        json: async () => batch
+      }
     }
   })
+
   try {
     await provider.requestActionBatch(input, {
       signal: new AbortController().signal

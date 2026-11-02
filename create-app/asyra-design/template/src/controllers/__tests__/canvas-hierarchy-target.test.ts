@@ -278,6 +278,7 @@ describe('container double-click hierarchy target', () => {
     expect(hierarchyApis.getElementDataMap).toHaveBeenCalledOnce()
     expect(selectionApis.getSelectedIds).not.toHaveBeenCalled()
   })
+
   const childTarget = (
     hitElementId: string | null,
     containerId = 'group-1',
@@ -345,6 +346,7 @@ describe('container double-click hierarchy target', () => {
       ...elementDataMap,
       'group-1': { ...elementDataMap['group-1'], type: 'custom-group' }
     }
+
     expect(childTarget('nested-leaf', 'group-1', map)).toBe('group-2')
   })
 })

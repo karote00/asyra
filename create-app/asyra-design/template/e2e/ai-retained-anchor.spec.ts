@@ -1,3 +1,4 @@
+import { admitPreparedDesignDelivery } from '../src/ai/prepared-design-admission'
 import { expect, test, type Page } from '@playwright/test'
 import type { AiActionBatch } from '@asyra/ai-agent-runtime'
 import { createLocalDesignTools } from '../server/local-design-tools'
@@ -21,6 +22,7 @@ const connected = (page: Page) =>
       )
     )
     .toBe('connected')
+
 const anchorHarness = async (page: Page) => {
   const actions = await page.evaluate(async () => {
     const { testRuntimeState } = await import('../src/testing/runtime-access')
@@ -33,29 +35,41 @@ const anchorHarness = async (page: Page) => {
         }
       }
     })
+
     testRuntimeState.set('anchor-runtime', input)
     testRuntimeState.set('anchor-request', new AbortController())
+
     return JSON.parse(JSON.stringify(input.actionDefinitions))
   })
+
   const execute = async (batch: AiActionBatch) =>
     (await page.evaluate(async (batch) => {
       const { testRuntimeState } = await import('../src/testing/runtime-access')
+
       type Input = ReturnType<
         typeof import('../src/ai/runtime-input').createAiRuntimeInput
       >
       const input = testRuntimeState.get<Input>('anchor-runtime')
       const request = testRuntimeState.get<AbortController>('anchor-request')
-      if (!input?.transactionRunner || !request)
+
+      if (!input?.transactionRunner || !request) {
         throw new Error('Missing runtime transaction owner')
+      }
+
       return input.transactionRunner.run(
         'Retained anchor scenario',
         async (runMutation) => {
           const actionResults = []
+
           for (const a of batch.actions) {
             const action = input.actionDefinitions.find(
               (d) => d.name === a.name
             )
-            if (!action) throw new Error('Unknown action')
+
+            if (!action) {
+              throw new Error('Unknown action')
+            }
+
             actionResults.push({
               actionId: a.id,
               actionName: a.name,
@@ -65,10 +79,12 @@ const anchorHarness = async (page: Page) => {
               })
             })
           }
+
           return { context: {}, actionResults }
         }
       )
     }, batch)) as never
+
   return { actions, execute }
 }
 
@@ -77,6 +93,7 @@ test('retained anchor reaches real hierarchy, rejects ambiguity, and preserves p
   context
 }) => {
   const document = createTestDocumentIdentity()
+
   await page.goto(document.url)
   await waitForAppReady(page)
   await connected(page)
@@ -117,26 +134,31 @@ test('retained anchor reaches real hierarchy, rejects ambiguity, and preserves p
       }
     ]
   })
-  const design = packet.actions[0].arguments.design as {
-    rootId: string
-    keyToId: Record<string, string>
-  }
+  const design = admitPreparedDesignDelivery(packet.actions[0].arguments.design)
+
   await execute(packet)
+
   const readOrder = (client: Page) =>
     client.evaluate(async (rootId) => {
       const result = (
         await import('../src/testing/runtime-access')
       ).core.getElementChildren(rootId)
-      if (!result.available || result.nextOffset !== null)
+
+      if (!result.available || result.nextOffset !== null) {
         throw new Error('Incomplete known sibling read')
+      }
+
       return result.elementIds
     }, design.rootId)
+
   const originalOrder = await readOrder(page)
+
   expect(originalOrder).toEqual(
     ['anchor', 'a', 'b', 'unrelated'].map((key) => design.keyToId[key])
   )
   const initial = await getCoreDocumentDigest(page)
   const peer = await context.newPage()
+
   try {
     await peer.goto(document.url)
     await waitForAppReady(peer)
@@ -160,6 +182,7 @@ test('retained anchor reaches real hierarchy, rejects ambiguity, and preserves p
       ]
     }
     const invalid = structuredClone(operation)
+
     invalid.target[1].keys = ['anchor', 'unrelated']
     await expect(
       ops.call(
@@ -170,6 +193,7 @@ test('retained anchor reaches real hierarchy, rejects ambiguity, and preserves p
     ).rejects.toThrow(/exactly one/)
     expect(await getCoreDocumentDigest(page)).toEqual(initial)
     const aborted = new AbortController()
+
     aborted.abort()
     await expect(
       ops.call(
@@ -186,12 +210,15 @@ test('retained anchor reaches real hierarchy, rejects ambiguity, and preserves p
         signal
       )
     )
+
     expect(receipt.status).not.toBe('failed')
     const expectedOrder = ['a', 'b', 'anchor', 'unrelated'].map(
       (key) => design.keyToId[key]
     )
+
     expect(await readOrder(page)).toEqual(expectedOrder)
     const moved = await getCoreDocumentDigest(page)
+
     await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(moved)
     await expect.poll(() => readOrder(peer)).toEqual(expectedOrder)
     await expect

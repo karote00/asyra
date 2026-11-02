@@ -2167,7 +2167,7 @@ const runLocalAiProvider = async (
           ? assessmentInstructions
           : AI_APP_PROMPT +
             (isRecord(input.metadata) &&
-            isRecord(input.metadata.conversationHistory)
+            isRecord(input.metadata.conversationContext)
               ? AI_CONVERSATION_HISTORY_INSTRUCTIONS
               : '') +
             (operations

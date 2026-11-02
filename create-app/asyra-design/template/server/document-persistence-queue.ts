@@ -99,6 +99,7 @@ const requirePositivePolicy = (value: number, name: string): number => {
   if (!isPositiveSafeInteger(value)) {
     throw new Error(`[document-persistence-queue] ${name} must be positive`)
   }
+
   return value
 }
 
@@ -127,6 +128,7 @@ export const createDocumentPersistenceQueue = ({
       '[document-persistence-queue] document identity is required'
     )
   }
+
   if (
     !Number.isSafeInteger(flushIntervalMs) ||
     flushIntervalMs < MIN_DOCUMENT_PERSISTENCE_FLUSH_INTERVAL_MS ||
@@ -136,11 +138,13 @@ export const createDocumentPersistenceQueue = ({
       '[document-persistence-queue] flush interval must be within 1000..3000 ms'
     )
   }
+
   if (!isNonNegativeSafeInteger(initialDurableSequence)) {
     throw new Error(
       '[document-persistence-queue] initial durable sequence is invalid'
     )
   }
+
   requirePositivePolicy(retryIntervalMs, 'retry interval')
   requirePositivePolicy(maxPublicationCount, 'publication count limit')
   requirePositivePolicy(maxSerializedBytes, 'serialized byte limit')
@@ -173,8 +177,11 @@ export const createDocumentPersistenceQueue = ({
     resolve(value: number): void
     reject(error: unknown): void
   }>()
+
   const rejectDurabilityWaiters = (error: unknown): void => {
-    for (const waiter of [...durabilityWaiters]) waiter.reject(error)
+    for (const waiter of [...durabilityWaiters]) {
+      waiter.reject(error)
+    }
   }
 
   const unavailableError = (): Error =>
@@ -186,12 +193,14 @@ export const createDocumentPersistenceQueue = ({
 
   const resolveCapacityWaiters = (): void => {
     const waiters = [...capacityWaiters]
+
     capacityWaiters.clear()
     waiters.forEach(({ resolve }) => resolve())
   }
 
   const rejectCapacityWaiters = (error: Error): void => {
     const waiters = [...capacityWaiters]
+
     capacityWaiters.clear()
     waiters.forEach(({ reject }) => reject(error))
   }
@@ -213,18 +222,27 @@ export const createDocumentPersistenceQueue = ({
   }
 
   const setEditable = (next: boolean): void => {
-    if (editable === next) return
+    if (editable === next) {
+      return
+    }
+
     editable = next
     onEditabilityChange?.(next)
   }
 
   const clearDirtyTimer = (): void => {
-    if (dirtyTimer !== undefined) clearTimeout(dirtyTimer)
+    if (dirtyTimer !== undefined) {
+      clearTimeout(dirtyTimer)
+    }
+
     dirtyTimer = undefined
   }
 
   const clearRetryTimer = (): void => {
-    if (retryTimer !== undefined) clearTimeout(retryTimer)
+    if (retryTimer !== undefined) {
+      clearTimeout(retryTimer)
+    }
+
     retryTimer = undefined
   }
 
@@ -232,7 +250,9 @@ export const createDocumentPersistenceQueue = ({
     if (dirtyTimer !== undefined || dirtyStartedAt === undefined || disposed) {
       return
     }
+
     const remaining = Math.max(0, dirtyStartedAt + flushIntervalMs - Date.now())
+
     dirtyTimer = setTimeout(() => {
       dirtyTimer = undefined
       void beginPendingBatch()
@@ -240,7 +260,10 @@ export const createDocumentPersistenceQueue = ({
   }
 
   const scheduleRetry = (): void => {
-    if (retryTimer !== undefined || disposed || stopping) return
+    if (retryTimer !== undefined || disposed || stopping) {
+      return
+    }
+
     retryTimer = setTimeout(() => {
       retryTimer = undefined
       void attemptInFlight()
@@ -259,12 +282,18 @@ export const createDocumentPersistenceQueue = ({
         '[document-persistence-queue] backend durable acknowledgement is not contiguous'
       )
     }
+
     const wasBlocked = !editable
+
     backendUnavailable = false
     backendFailure = undefined
     durableSequence = acknowledgement.durableSequence
-    for (const waiter of [...durabilityWaiters])
-      if (waiter.sequence <= durableSequence) waiter.resolve(durableSequence)
+    for (const waiter of [...durabilityWaiters]) {
+      if (waiter.sequence <= durableSequence) {
+        waiter.resolve(durableSequence)
+      }
+    }
+
     onDurableSequenceChange?.(durableSequence)
     inFlight = undefined
     if (pending.length === 0) {
@@ -272,30 +301,43 @@ export const createDocumentPersistenceQueue = ({
       clearDirtyTimer()
       setEditable(true)
       resolveCapacityWaiters()
+
       return
     }
+
     const deadlineElapsed =
       dirtyStartedAt !== undefined &&
       dirtyStartedAt + flushIntervalMs <= Date.now()
+
     if (wasBlocked || deadlineElapsed || stopping) {
       void beginPendingBatch()
       setEditable(true)
       resolveCapacityWaiters()
+
       return
     }
+
     scheduleDirtyTimer()
     resolveCapacityWaiters()
   }
 
   async function attemptInFlight(): Promise<void> {
     const active = inFlight
-    if (!active || disposed) return
+
+    if (!active || disposed) {
+      return
+    }
+
     clearRetryTimer()
     try {
       const acknowledgement = await sendBatch(active.batch)
+
       completeSuccessfulBatch(active, acknowledgement)
     } catch (error) {
-      if (inFlight !== active) return
+      if (inFlight !== active) {
+        return
+      }
+
       backendUnavailable = true
       backendFailure = error instanceof Error ? error : new Error(String(error))
       setEditable(false)
@@ -316,9 +358,11 @@ export const createDocumentPersistenceQueue = ({
     if (disposed || inFlight || pending.length === 0) {
       return activeAttempt ?? Promise.resolve()
     }
+
     clearDirtyTimer()
     let batchBytes = 0
     let batchEntryCount = 0
+
     for (const entry of pending) {
       if (
         batchEntryCount > 0 &&
@@ -326,17 +370,22 @@ export const createDocumentPersistenceQueue = ({
       ) {
         break
       }
+
       batchBytes += entry.byteLength
       batchEntryCount += 1
     }
+
     const entries = pending.slice(0, batchEntryCount)
+
     pending = pending.slice(batchEntryCount)
     pendingBytes -= batchBytes
     if (pending.length === 0) {
       dirtyStartedAt = undefined
     }
+
     const firstSequence = entries[0]?.sequence
     const lastSequence = entries.at(-1)?.sequence
+
     if (
       firstSequence === undefined ||
       lastSequence === undefined ||
@@ -346,6 +395,7 @@ export const createDocumentPersistenceQueue = ({
         '[document-persistence-queue] pending sequence is not contiguous with durability'
       )
     }
+
     const batch: DocumentPersistenceBatch = Object.freeze({
       protocolVersion: DOCUMENT_PERSISTENCE_PROTOCOL_VERSION,
       batchId: createBatchId(documentId, firstSequence, lastSequence),
@@ -364,11 +414,16 @@ export const createDocumentPersistenceQueue = ({
         )
       )
     })
+
     inFlight = { batch }
     const trackedAttempt = attemptInFlight().finally(() => {
-      if (activeAttempt === trackedAttempt) activeAttempt = undefined
+      if (activeAttempt === trackedAttempt) {
+        activeAttempt = undefined
+      }
     })
+
     activeAttempt = trackedAttempt
+
     return trackedAttempt
   }
 
@@ -376,16 +431,22 @@ export const createDocumentPersistenceQueue = ({
     enqueue(entry) {
       queue.enqueueBatch([entry])
     },
+
     enqueueBatch(entries) {
       if (disposed) {
         throw new Error('[document-persistence-queue] queue is disposed')
       }
-      if (backendUnavailable) throw unavailableError()
+
+      if (backendUnavailable) {
+        throw unavailableError()
+      }
+
       if (entries.length === 0) {
         throw new Error(
           '[document-persistence-queue] publication batch is empty'
         )
       }
+
       const addedBytes = entries.reduce((total, entry, index) => {
         if (
           !isPositiveSafeInteger(entry.sequence) ||
@@ -399,8 +460,10 @@ export const createDocumentPersistenceQueue = ({
             '[document-persistence-queue] publication sequence is invalid'
           )
         }
+
         return total + entry.byteLength
       }, 0)
+
       if (
         inFlight &&
         (pending.length + entries.length > maxPublicationCount ||
@@ -408,10 +471,12 @@ export const createDocumentPersistenceQueue = ({
       ) {
         throw new PersistenceCapacityUnavailableError()
       }
+
       headSequence = entries.at(-1)?.sequence as number
       if (pending.length === 0) {
         dirtyStartedAt = Date.now()
       }
+
       pending.push(...entries.map((entry) => Object.freeze({ ...entry })))
       pendingBytes += addedBytes
       scheduleDirtyTimer()
@@ -426,65 +491,93 @@ export const createDocumentPersistenceQueue = ({
         }
       }
     },
+
     async enqueueBatchWhenAvailable(entries) {
       while (true) {
         if (disposed) {
           throw new Error('[document-persistence-queue] queue is disposed')
         }
-        if (backendUnavailable) throw unavailableError()
+
+        if (backendUnavailable) {
+          throw unavailableError()
+        }
+
         try {
           queue.enqueueBatch(entries)
+
           return
         } catch (error) {
           if (!(error instanceof PersistenceCapacityUnavailableError)) {
             throw error
           }
         }
+
         await new Promise<void>((resolve, reject) => {
           capacityWaiters.add({ reject, resolve })
         })
       }
     },
+
     async whenDurable(sequence, signal) {
       signal?.throwIfAborted()
-      if (disposed)
+      if (disposed) {
         throw new Error('[document-persistence-queue] queue is disposed')
+      }
+
       if (
         !Number.isSafeInteger(sequence) ||
         sequence < 0 ||
         sequence > headSequence
-      )
+      ) {
         throw new Error(
           '[document-persistence-queue] sequence has not been accepted'
         )
-      if (sequence <= durableSequence) return durableSequence
-      if (backendUnavailable) throw unavailableError()
+      }
+
+      if (sequence <= durableSequence) {
+        return durableSequence
+      }
+
+      if (backendUnavailable) {
+        throw unavailableError()
+      }
+
       return new Promise<number>((resolve, reject) => {
         const clean = () => {
           durabilityWaiters.delete(waiter)
           signal?.removeEventListener('abort', abort)
         }
+
         const waiter = {
           sequence,
+
           resolve: (value: number) => {
             clean()
             resolve(value)
           },
+
           reject: (error: unknown) => {
             clean()
             reject(error)
           }
         }
+
         const abort = () => waiter.reject(signal?.reason)
+
         durabilityWaiters.add(waiter)
         signal?.addEventListener('abort', abort, { once: true })
       })
     },
+
     flushNow() {
       return beginPendingBatch()
     },
+
     async flushForShutdown() {
-      if (disposed) return
+      if (disposed) {
+        return
+      }
+
       stopping = true
       clearDirtyTimer()
       clearRetryTimer()
@@ -493,16 +586,19 @@ export const createDocumentPersistenceQueue = ({
       } else if (activeAttempt) {
         await activeAttempt
       }
+
       while (!inFlight && pending.length > 0) {
         await beginPendingBatch()
       }
     },
+
     async discardForReset() {
       discardQueuedWork()
       await activeAttempt
       inFlight = undefined
       headSequence = durableSequence
     },
+
     getState() {
       return Object.freeze({
         editable,
@@ -512,6 +608,7 @@ export const createDocumentPersistenceQueue = ({
         ...(inFlight ? { inFlightBatchId: inFlight.batch.batchId } : {})
       })
     },
+
     dispose() {
       discardQueuedWork()
     }

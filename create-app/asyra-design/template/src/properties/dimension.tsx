@@ -11,11 +11,13 @@ const Dimension = () => {
   const handleChangeWidth = useCallback(
     (newValue: string) => {
       const nextValue = parseFiniteInputNumber(newValue)
+
       if (nextValue === null) {
         return false
       }
 
       updateSelectedElementProperties('width', nextValue)
+
       return true
     },
     [updateSelectedElementProperties]
@@ -24,11 +26,13 @@ const Dimension = () => {
   const handleChangeHeight = useCallback(
     (newValue: string) => {
       const nextValue = parseFiniteInputNumber(newValue)
+
       if (nextValue === null) {
         return false
       }
 
       updateSelectedElementProperties('height', nextValue)
+
       return true
     },
     [updateSelectedElementProperties]

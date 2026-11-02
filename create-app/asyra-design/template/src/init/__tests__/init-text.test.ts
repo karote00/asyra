@@ -16,6 +16,7 @@ describe('text installation', () => {
       registerRenderStrategy: vi.fn(),
       defineUIProperty: vi.fn()
     }
+
     initText(core as never)
     expect(core.defineComponent).toHaveBeenCalledWith(
       expect.objectContaining({ type: TEXT_COMPONENT_TYPE })
@@ -26,6 +27,7 @@ describe('text installation', () => {
       expect.objectContaining({ target: { kind: 'property', key: 'fills' } })
     )
     const migrate = core.registerLoadHook.mock.calls[0]?.[0]
+
     expect(migrate).toBeTypeOf('function')
     const saved = {
       version: '1.0.0',
@@ -53,9 +55,11 @@ describe('text installation', () => {
     }
     const original = structuredClone(saved)
     const migrated = migrate(saved)
+
     expect(saved).toEqual(original)
     const fillsId = migrated.sceneTree.elements.text.props.fills
     const fillId = migrated.props[fillsId].fills[0]
+
     expect(fillsId).toBe('text-fills-1')
     expect(fillId).toBe('text-fill-1')
     expect(migrated.props['text-fills']).toEqual(saved.props['text-fills'])
@@ -76,12 +80,14 @@ describe('text installation', () => {
     )
     expect(migrate(migrated)).toBe(migrated)
     const [key, config] = core.defineUIProperty.mock.calls[0]
+
     expect(key).toBe(TEXT_PROPERTY_TYPE)
     expect(config.triggers).toMatchObject({
       onSelectionChange: true
     })
     expect(config.compute({ selectedIds: new Set(), elements: [] })).toBeNull()
     const typography = { ...DEFAULT_TEXT_DATA, text: 'Heading' }
+
     expect(
       config.compute({
         selectedIds: new Set(['text']),

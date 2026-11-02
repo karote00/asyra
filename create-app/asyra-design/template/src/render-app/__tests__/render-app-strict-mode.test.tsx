@@ -33,31 +33,45 @@ const collaborationHandle = {
     roomId: 'file-1',
     actorId: `actor-${ACTOR_UUID}`
   }),
+
   getStatus: () => 'connected' as const,
+
   onStatusChange: (_subscriber: (status: ProviderStatus) => void) => () =>
     undefined,
+
   getSessionState: () => collaborationSessionState,
+
   onSessionStateChange: (
     subscriber: (state: CollaborationSessionState) => void
   ) => {
     collaborationSessionStateSubscriber = subscriber
+
     return () => {
       collaborationSessionStateSubscriber = undefined
     }
   },
+
   disconnect: async () => undefined,
+
   reconnect: async () => undefined,
+
   prepareRecovery: async () => undefined,
+
   getRecoveryDocument: () => undefined,
+
   hasUnpersistedChanges: () => false,
+
   whenIdle: async () => undefined,
+
   observePublicationOutcomes: () => () => undefined,
+
   dispose: async () => undefined
 } satisfies CollaborationDebugHandle
 const coreCollaborationSession = {
   prepare: vi.fn(async (_bridge: CoreCollaborationBridge) => ({
     loadSource: {
       name: 'SocketDocumentSession',
+
       load: async () => EMPTY_DOCUMENT
     }
   })),
@@ -143,6 +157,7 @@ describe('RenderApp StrictMode lifecycle', () => {
 
   it('starts one live Core and Collaboration lifetime and delegates StrictMode teardown', async () => {
     const host = document.createElement('div')
+
     document.body.append(host)
     const root = createRoot(host)
 
@@ -188,6 +203,7 @@ describe('RenderApp StrictMode lifecycle', () => {
 
   it('opens the socket document session before Core load and activates live delivery after Core hydration', async () => {
     const host = document.createElement('div')
+
     document.body.append(host)
     const root = createRoot(host)
 
@@ -217,6 +233,7 @@ describe('RenderApp StrictMode lifecycle', () => {
     const preparation =
       await coreCollaborationSession.prepare(collaborationBridge)
     const loadSource = preparation?.loadSource
+
     await expect(loadSource?.load()).resolves.toEqual(EMPTY_DOCUMENT)
 
     await act(async () => root.unmount())
@@ -224,6 +241,7 @@ describe('RenderApp StrictMode lifecycle', () => {
 
   it('injects the selected file load source before Core and activates Collaboration after Core', async () => {
     const host = document.createElement('div')
+
     document.body.append(host)
     const root = createRoot(host)
 
@@ -258,9 +276,11 @@ describe('RenderApp StrictMode lifecycle', () => {
     vi.stubEnv('VITE_COLLABORATION_WS_URL', '')
     window.history.replaceState({}, '', '/?fileId=crdt-7076-sample')
     const fetch = vi.fn()
+
     vi.stubGlobal('fetch', fetch)
     vi.mocked(core.start).mockResolvedValueOnce(undefined)
     const host = document.createElement('div')
+
     document.body.append(host)
     const root = createRoot(host)
 
@@ -296,6 +316,7 @@ describe('RenderApp StrictMode lifecycle', () => {
       .spyOn(console, 'error')
       .mockImplementation(() => undefined)
     const host = document.createElement('div')
+
     document.body.append(host)
     const root = createRoot(host)
 
@@ -328,15 +349,19 @@ describe('RenderApp StrictMode lifecycle', () => {
     const fetch = vi.fn(async () => {
       throw new Error('database unavailable')
     })
+
     vi.stubGlobal('fetch', fetch)
     let loadedDocument: unknown
+
     vi.mocked(core.start).mockImplementationOnce(async () => {
       const preparation =
         await coreCollaborationSession.prepare(collaborationBridge)
+
       loadedDocument = await preparation?.loadSource?.load()
       await coreCollaborationSession.activate()
     })
     const host = document.createElement('div')
+
     document.body.append(host)
     const root = createRoot(host)
 
@@ -363,6 +388,7 @@ describe('RenderApp StrictMode lifecycle', () => {
   it('starts collaboration with one file-scoped document provider', async () => {
     window.history.replaceState({}, '', '/?fileId=file-1')
     const host = document.createElement('div')
+
     document.body.append(host)
     const root = createRoot(host)
 
@@ -417,8 +443,10 @@ describe('RenderApp StrictMode lifecycle', () => {
       },
       props: {}
     }
+
     localStorage.setItem('FILE:file-1', JSON.stringify(existingDocument))
     const host = document.createElement('div')
+
     document.body.append(host)
     const root = createRoot(host)
 
@@ -451,6 +479,7 @@ describe('RenderApp StrictMode lifecycle', () => {
   it('does not activate collaboration after unmount aborts startup', async () => {
     window.history.replaceState({}, '', '/?fileId=file-aborted')
     let finishCoreStart: (() => void) | undefined
+
     vi.mocked(core.start).mockImplementationOnce(
       () =>
         new Promise<void>((resolve) => {
@@ -458,6 +487,7 @@ describe('RenderApp StrictMode lifecycle', () => {
         })
     )
     const host = document.createElement('div')
+
     document.body.append(host)
     const root = createRoot(host)
 
@@ -486,6 +516,7 @@ describe('RenderApp StrictMode lifecycle', () => {
       disconnectedEpoch: 0
     })
     const host = document.createElement('div')
+
     document.body.append(host)
     const root = createRoot(host)
 
@@ -508,12 +539,14 @@ describe('RenderApp StrictMode lifecycle', () => {
     const consoleError = vi
       .spyOn(console, 'error')
       .mockImplementation(() => undefined)
+
     vi.mocked(
       collaborationLifecycle.createCollaborationDocumentSession
     ).mockImplementationOnce(() => {
       throw new Error('collaboration composition failed')
     })
     const host = document.createElement('div')
+
     document.body.append(host)
     const root = createRoot(host)
 
@@ -539,6 +572,7 @@ describe('RenderApp StrictMode lifecycle', () => {
 
   it('keeps the App editable and emits one transition toast for disconnect and reconnect', async () => {
     const host = document.createElement('div')
+
     document.body.append(host)
     const root = createRoot(host)
 

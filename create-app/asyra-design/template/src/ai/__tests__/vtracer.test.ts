@@ -124,6 +124,7 @@ describe('Asyra Design VTracer adapter', () => {
         method: 'POST'
       })
       expect(Array.from(init?.body as Uint8Array)).toEqual([1, 2, 3, 4])
+
       return new Response(validSvg, {
         headers: { 'content-type': 'image/svg+xml' },
         status: 200

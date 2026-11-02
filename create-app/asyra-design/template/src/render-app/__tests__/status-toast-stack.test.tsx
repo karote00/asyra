@@ -32,6 +32,7 @@ describe('status toast stack', () => {
 
   it('dismisses one toast from its top-right close button and collapses its row before removal', async () => {
     const host = document.createElement('div')
+
     document.body.append(host)
     const root = createRoot(host)
 
@@ -49,6 +50,7 @@ describe('status toast stack', () => {
     const closeButton = host.querySelector<HTMLButtonElement>(
       `[aria-label="Close ${DATABASE_MESSAGE}"]`
     )
+
     expect(closeButton).not.toBeNull()
 
     await act(async () => closeButton?.click())
@@ -56,6 +58,7 @@ describe('status toast stack', () => {
     const exitingToast = host.querySelector<HTMLElement>(
       '[data-toast-id="database"]'
     )
+
     expect(exitingToast?.dataset.state).toBe('closing')
     expect(exitingToast?.style.gridTemplateRows).toBe('0fr')
     expect(exitingToast?.style.transitionProperty).toContain(
@@ -75,6 +78,7 @@ describe('status toast stack', () => {
 
   it('automatically dismisses a toast after ten seconds', async () => {
     const host = document.createElement('div')
+
     document.body.append(host)
     const root = createRoot(host)
 

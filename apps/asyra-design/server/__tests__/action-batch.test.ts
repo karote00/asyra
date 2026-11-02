@@ -803,6 +803,7 @@ describe('conversation continuity admission', () => {
     attachmentIndexes: [],
     question: { message: 'Group or title?', choices: [] }
   }
+
   it.each([
     { turns: [{ ...turn, attachmentIndexes: [0] }], attachmentIndexes: [] },
     {
@@ -821,6 +822,7 @@ describe('conversation continuity admission', () => {
         batchId: 'unused',
         actions: []
       }))
+
       await expect(
         resolveActionBatchRequest(
           {

@@ -54,6 +54,7 @@ const FillList = ({
 
       {fills.map((fill, index) => {
         const primaryFillId = fill.ids[0]
+
         if (!primaryFillId) {
           return null
         }

@@ -11,10 +11,12 @@ const publishHoveredElementId = (elementId: string | null) => {
     elementApis.isElementVisible(elementId)
   ) {
     systemContextApis.updateHoveredElementId(elementId)
+
     return { hoveredId: elementId }
   }
 
   systemContextApis.updateHoveredElementId(null)
+
   return { hoveredId: null }
 }
 
@@ -23,6 +25,7 @@ const resolveHoveredElementId = (
   snapshot: Pick<SystemContextSnapshot, 'keyMeta' | 'keyCtrl'>
 ) => {
   const pathEditingVectorId = systemContextApis.getPathEditingVectorId()
+
   if (
     pathEditingVectorId &&
     rawElementId &&
@@ -47,6 +50,7 @@ export const hoverElementFeature = defineFeature(
   {
     priority: 0,
     exclusive: false,
+
     execution: (snapshot: SystemContextSnapshot) => {
       if (snapshot.mouseDragging) {
         return null
@@ -55,6 +59,7 @@ export const hoverElementFeature = defineFeature(
       const rawElementId = elementApis.getRenderElementIdAtClientPos(
         snapshot.mousePosition
       )
+
       return publishHoveredElementId(
         resolveHoveredElementId(rawElementId, snapshot)
       )
@@ -72,6 +77,7 @@ export const hoverElementRenderHoverFeature = defineFeature(
   {
     priority: 10,
     exclusive: false,
+
     execution: (snapshot: SystemContextSnapshot) => {
       if (snapshot.mouseDragging) {
         return null
@@ -79,10 +85,13 @@ export const hoverElementRenderHoverFeature = defineFeature(
 
       const payload = (snapshot.detail ?? snapshot.payload) as
         RenderPointerPayload | undefined
+
       if (payload?.targetKind && payload.targetKind !== 'element') {
         return null
       }
+
       const rawElementId = payload?.elementId ?? null
+
       return publishHoveredElementId(
         resolveHoveredElementId(rawElementId, snapshot)
       )
@@ -100,6 +109,7 @@ export const hoverElementRenderLeaveFeature = defineFeature(
   {
     priority: 10,
     exclusive: false,
+
     execution: (snapshot) => {
       if (snapshot.mouseDragging) {
         return null
@@ -107,10 +117,13 @@ export const hoverElementRenderLeaveFeature = defineFeature(
 
       const payload = (snapshot.detail ?? snapshot.payload) as
         RenderPointerPayload | undefined
+
       if (payload?.targetKind && payload.targetKind !== 'element') {
         return null
       }
+
       systemContextApis.updateHoveredElementId(null)
+
       return { hoveredId: null }
     }
   }

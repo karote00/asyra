@@ -8,12 +8,6 @@ Never record completed plans here.
   [fixed user-approved prompt](modules/ai-development-and-debugging.md#fixed-full-building-taipei-101-test-prompt).
   Only an explicit user request may change that baseline input.
 
-- Awaiting user review: [Conversation continuity and tool contract corrections](plans/ai-design-agent-plan.md#conversation-continuity-and-tool-contract-corrections---2026-11-02),
-  under Editable Design Agent. Four local correction stages and one fixed-prompt
-  live test are complete; see the [evidence report](plans/ai-conversation-improvements-2026-11-02-report.md).
-  This does not close the parent plan or authorize remote operations.
-
-
 - Active - final validation: [Large document navigation performance](plans/large-document-navigation-performance-plan.md) -
   user accepted the candidate's navigation speed; retained navigation, shared
   native materials, bounded GPU batches and input scheduling corrections are

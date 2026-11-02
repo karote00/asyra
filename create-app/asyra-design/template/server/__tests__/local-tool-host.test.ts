@@ -22,7 +22,9 @@ const object = (properties: Record<string, unknown>) => ({
   required: Object.keys(properties),
   additionalProperties: false
 })
+
 const literal = (value: unknown) => ({ kind: 'literal', value })
+
 const recipe = {
   format: 1,
   name: 'prepared-part',
@@ -106,29 +108,38 @@ const recipe = {
     )
   }
 }
+
 const memory = () => {
   const entries = new Map<string, AiToolStoreEntry>()
   let revision = 0
+
   return {
     read: async (key: string) => entries.get(key),
+
     list: async () => [...entries.values()],
+
     write: async (input: {
       key: string
       expectedVersion?: string
       record: AiToolStoreEntry['record']
     }) => {
-      if (entries.get(input.key)?.version !== input.expectedVersion)
+      if (entries.get(input.key)?.version !== input.expectedVersion) {
         throw new Error('Conflict')
+      }
+
       const entry = {
         key: input.key,
         record: input.record,
         version: String(++revision)
       }
+
       entries.set(input.key, entry)
+
       return entry
     }
   }
 }
+
 const fixture = (store = memory(), requestId = 'first', workflow = false) => {
   let session: ReturnType<typeof createDesignPreparationSession>
   const host = createLocalToolHost({
@@ -145,6 +156,7 @@ const fixture = (store = memory(), requestId = 'first', workflow = false) => {
       bytes: 24000,
       issues: 8
     },
+
     createGroups: (ownership) => {
       session = createDesignPreparationSession(undefined, undefined, ownership)
       const actions = [
@@ -172,6 +184,7 @@ const fixture = (store = memory(), requestId = 'first', workflow = false) => {
           }))
         })
       )
+
       return [
         {
           name: 'design_preparation',
@@ -191,17 +204,26 @@ const fixture = (store = memory(), requestId = 'first', workflow = false) => {
     }
   })
   let call = 0
+
   const invoke = async (name: string, input: unknown) =>
     JSON.parse(
       (await host.invoke({ name, input, callId: `native-${++call}` })).text
     )
-  return { host, invoke, store, resolve: (id: string) => session.resolve(id) }
+
+  return {
+    host,
+    invoke,
+    store,
+
+    resolve: (id: string) => session.resolve(id)
+  }
 }
 
 it.each(['compact', 'full'])(
   'exports a %s compound artifact to a later native consumer after call cleanup',
   async (response) => {
     const { host, invoke, resolve } = fixture(memory(), 'compound', true)
+
     try {
       const produced = await invoke(
         'design_workflow.prepare_and_apply_design',
@@ -217,6 +239,7 @@ it.each(['compact', 'full'])(
           inspection: 'defer'
         }
       )
+
       expect(produced.toolOutcome).toMatchObject({
         status: 'partial',
         settlement: 'completed'
@@ -229,6 +252,7 @@ it.each(['compact', 'full'])(
           targets: [{ artifactId: produced.artifactId, keys: ['face'] }]
         }
       )
+
       expect(selected).toMatchObject({
         available: true,
         targets: [{ artifactId: produced.artifactId, count: 1 }]
@@ -255,6 +279,7 @@ it.each([false, true])(
         { type: 'rect', key: 'face', name: 'Face', width: 17, height: 20 }
       ]
     }
+
     try {
       const result = await invoke('design_workflow.prepare_and_apply_design', {
         parts: [
@@ -269,8 +294,12 @@ it.each([false, true])(
         ],
         inspection: 'defer'
       })
+
       expect(result.toolOutcome.status).toBe('partial')
-      if (!stopped) expect(result.toolOutcome.settlement).toBe('completed')
+      if (!stopped) {
+        expect(result.toolOutcome.settlement).toBe('completed')
+      }
+
       expect(result.parts).toHaveLength(stopped ? 2 : 3)
       for (const part of result.parts) {
         const selected = await invoke(
@@ -279,14 +308,17 @@ it.each([false, true])(
             targets: [{ artifactId: part.artifactId, keys: ['face'] }]
           }
         )
+
         expect(selected).toMatchObject({
           available: true,
           targets: [{ count: 1 }]
         })
       }
+
       await host.dispose()
-      for (const part of result.parts)
+      for (const part of result.parts) {
         expect(() => resolve(part.artifactId)).toThrow()
+      }
     } finally {
       await host.dispose()
     }
@@ -300,6 +332,7 @@ it.each([
   'retains a typed repair artifact from %s without reporting failed preparation as successful execution',
   async (tool) => {
     const { host, invoke } = fixture(memory(), 'repair', true)
+
     try {
       const result = await invoke(tool, {
         draft: {
@@ -312,6 +345,7 @@ it.each([
           ]
         }
       })
+
       expect(result).toMatchObject({
         applicable: false,
         toolOutcome: { status: 'failed' }
@@ -322,6 +356,7 @@ it.each([
           targets: [{ artifactId: result.artifactId, keys: ['face'] }]
         }
       )
+
       expect(retained).toMatchObject({
         available: true,
         targets: [{ count: 1 }]
@@ -334,8 +369,10 @@ it.each([
 
 it('delivers real preparation recovery through nested recipes and native library cleanup', async () => {
   const { host, invoke } = fixture()
+
   try {
     const proposal = structuredClone(recipe)
+
     proposal.steps[0].input.fields.draft.fields.width.value = 5
     expect(
       await invoke('tool_library.submit_tool', {
@@ -356,6 +393,7 @@ it('delivers real preparation recovery through nested recipes and native library
       ],
       output: { kind: 'step', step: 'part', path: '' }
     }
+
     expect(
       await invoke('tool_library.submit_tool', {
         submissionId: 'outer',
@@ -367,6 +405,7 @@ it('delivers real preparation recovery through nested recipes and native library
       revision: 1,
       input: 17
     })
+
     // Preparation currently reports unknown settlement; ancestors must preserve it.
     expect(result.execution).toMatchObject({
       status: 'unknown',
@@ -376,6 +415,7 @@ it('delivers real preparation recovery through nested recipes and native library
     expect(result.storage?.status).not.toBe('saved')
     expect(result.execution.recovery).toHaveLength(1)
     const failed = result.execution.recovery[0]
+
     expect(failed).toMatchObject({
       name: 'design_preparation.prepare_design',
       status: 'failed',
@@ -397,12 +437,14 @@ it('uses actual preparation owners through native controls, saves and reloads a 
     submissionId: 'one',
     proposal: recipe
   })
+
   expect(admitted, JSON.stringify(admitted)).toMatchObject({ ok: true })
   const result = await first.invoke('tool_library.invoke_tool', {
     name: recipe.name,
     revision: 1,
     input: 17
   })
+
   expect(result).toMatchObject({
     execution: {
       status: 'success',
@@ -412,6 +454,7 @@ it('uses actual preparation owners through native controls, saves and reloads a 
     storage: { status: 'saved' }
   })
   const target = result.execution.value
+
   expect(
     first
       .resolve(target.artifactId)
@@ -421,16 +464,19 @@ it('uses actual preparation owners through native controls, saves and reloads a 
     'design_preparation.retain_design_targets',
     { targets: [{ artifactId: target.artifactId, keys: ['part'] }] }
   )
+
   expect(reused).toMatchObject({ available: true })
   await first.host.dispose()
   expect(() => first.resolve(target.artifactId)).toThrow()
   const second = fixture(first.store, 'second')
+
   await second.host.load()
   const next = await second.invoke('tool_library.invoke_tool', {
     name: recipe.name,
     revision: 1,
     input: 31
   })
+
   expect(next.execution.status).toBe('success')
   expect(next.execution.value.artifactId).not.toBe(target.artifactId)
   expect(
@@ -442,6 +488,7 @@ it('uses actual preparation owners through native controls, saves and reloads a 
     'design_preparation.retain_design_targets',
     { targets: [{ artifactId: target.artifactId }] }
   )
+
   expect(foreign.toolOutcome).toMatchObject({
     status: 'failed',
     settlement: 'not-started'
@@ -493,6 +540,7 @@ it('keeps native artifacts usable by a composition and excludes resource control
     submissionId: 'take',
     proposal: take
   })
+
   expect(admitted, JSON.stringify(admitted)).toMatchObject({ ok: true })
   expect(
     await invoke('tool_library.invoke_tool', {
@@ -509,6 +557,7 @@ it('keeps native artifacts usable by a composition and excludes resource control
       { ...take.steps[0], tool: 'design_preparation.release_design_artifacts' }
     ]
   }
+
   expect(
     await invoke('tool_library.submit_tool', {
       submissionId: 'release',
@@ -528,6 +577,7 @@ it('returns cleanup failure with execution evidence and retries actual cleanup a
     receiptCapacity: 4,
     artifactCapacity: 8,
     limits: { steps: 8, bindings: 32, bindingDepth: 8, bytes: 4000, issues: 4 },
+
     createGroups: (ownership) => [
       {
         name: 'fixture',
@@ -548,15 +598,18 @@ it('returns cleanup failure with execution evidence and retries actual cleanup a
               )
             }
           ],
+
           call: async () => {
             ownership.publish(
               'temporary',
               () => {
-                if (++releaseCalls === 1)
+                if (++releaseCalls === 1) {
                   throw new Error('Store temporarily unavailable')
+                }
               },
               () => undefined
             )
+
             return JSON.stringify({ status: 'complete', work: 17 })
           }
         }
@@ -566,6 +619,7 @@ it('returns cleanup failure with execution evidence and retries actual cleanup a
   const result = JSON.parse(
     (await host.invoke({ name: 'fixture.execute', input: {} })).text
   )
+
   expect(result).toMatchObject({
     code: 'TOOL_CLEANUP_FAILED',
     executionResult: { status: 'complete' }
@@ -585,18 +639,23 @@ it('retries failed terminal cleanup without reopening the host to new work', asy
     receiptCapacity: 4,
     artifactCapacity: 8,
     limits: { steps: 8, bindings: 32, bindingDepth: 8, bytes: 4000, issues: 4 },
+
     createGroups: (ownership) => {
       ownership.publish(
         'diagnostic',
         () => {
-          if (++releaseCalls === 1) throw new Error('Retry cleanup')
+          if (++releaseCalls === 1) {
+            throw new Error('Retry cleanup')
+          }
         },
         () => undefined,
         'request'
       )
+
       return []
     }
   })
+
   await expect(host.dispose()).rejects.toThrow('Retry cleanup')
   await expect(
     host.invoke({ name: 'tool_library.manage_tool', input: {} })
@@ -607,7 +666,9 @@ it('retries failed terminal cleanup without reopening the host to new work', asy
 
 it('waits for cancelled native work and releases its unpublished intermediate', async () => {
   const controller = new AbortController()
+
   let ready: () => void = () => undefined
+
   const started = new Promise<void>((resolve) => {
     ready = resolve
   })
@@ -620,6 +681,7 @@ it('waits for cancelled native work and releases its unpublished intermediate', 
     receiptCapacity: 4,
     artifactCapacity: 8,
     limits: { steps: 8, bindings: 32, bindingDepth: 8, bytes: 4000, issues: 4 },
+
     createGroups: (ownership) => [
       {
         name: 'fixture',
@@ -637,6 +699,7 @@ it('waits for cancelled native work and releases its unpublished intermediate', 
               )
             }
           ],
+
           call: async (_name, _input, signal) => {
             ownership.publish(
               'intermediate',
@@ -646,6 +709,7 @@ it('waits for cancelled native work and releases its unpublished intermediate', 
               () => undefined
             )
             ready()
+
             return new Promise<string>((_resolve, reject) =>
               signal.addEventListener('abort', () => reject(signal.reason), {
                 once: true
@@ -657,9 +721,11 @@ it('waits for cancelled native work and releases its unpublished intermediate', 
     ]
   })
   const running = host.invoke({ name: 'fixture.execute', input: {} })
+
   await started
   const rejected = expect(running).rejects.toThrow('Cancelled')
   const closing = host.dispose()
+
   controller.abort(new Error('Cancelled'))
   await rejected
   await closing
@@ -718,29 +784,37 @@ it('delivers a registered model view after canonical validation while recipe suc
       bytes: 12000,
       issues: 8
     },
+
     createGroups: () => [
       {
         name: 'fixture',
         description: 'Full typed result owner',
         owner: {
           definitions: [source, consume],
+
           call: async (name, input) => {
             calls++
-            if (name === 'source')
+            if (name === 'source') {
               return JSON.stringify({
                 ids: ['a', 'b', 'c'],
                 modelResult: { count: 3 }
               })
+            }
+
             const ids = (input as { ids: string[] }).ids
+
             seen.push(ids)
+
             return JSON.stringify({ count: ids.length })
           }
         }
       }
     ]
   })
+
   try {
     const direct = await host.invoke({ name: 'fixture.source', input: {} })
+
     expect(JSON.parse(direct.text)).toMatchObject({ count: 3 })
     expect(JSON.parse(direct.text).ids).toBeUndefined()
     const proposal = {
@@ -776,11 +850,13 @@ it('delivers a registered model view after canonical validation while recipe suc
       name: 'tool_library.submit_tool',
       input: { submissionId: 'full-handoff', proposal }
     })
+
     expect(admission.success, admission.text).toBe(true)
     const invoked = await host.invoke({
       name: 'tool_library.invoke_tool',
       input: { name: 'count-source', revision: 1, input: {} }
     })
+
     expect(invoked.success, invoked.text).toBe(true)
     expect(seen).toEqual([['a', 'b', 'c']])
     expect(calls).toBe(3)
@@ -824,25 +900,30 @@ it('reports failed model delivery without replaying a successful library executi
       bytes: 12000,
       issues: 8
     },
+
     createGroups: () => [
       {
         name: 'fixture',
         description: 'Settled owner',
         owner: {
           definitions: [source],
+
           call: async () => {
             calls++
+
             return JSON.stringify({ applied: true })
           }
         }
       }
     ]
   })
+
   try {
     const reply = await host.invoke({
       name: 'tool_library.invoke_tool',
       input: { name: 'fixture.source', revision: 1, input: {} }
     })
+
     expect(reply.success, reply.text).toBe(false)
     expect(JSON.parse(reply.text)).toMatchObject({
       execution: {
@@ -895,6 +976,7 @@ it('retains a material revision across native call cleanup and retires its sourc
       }
     ]
   }
+
   try {
     const original = await invoke('design_preparation.prepare_design', {
       draft
@@ -913,6 +995,7 @@ it('retains a material revision across native call cleanup and retires its sourc
         }
       }
     )
+
     expect(revised).toMatchObject({
       available: true,
       applied: false,
@@ -926,6 +1009,7 @@ it('retains a material revision across native call cleanup and retires its sourc
       draft: extension,
       materialSourceId: revised.materialRevisionId
     })
+
     expect(next).toMatchObject({ available: true, applicable: true })
     await invoke('design_preparation.release_design_artifacts', {
       artifactIds: [revised.materialRevisionId]
@@ -934,6 +1018,7 @@ it('retains a material revision across native call cleanup and retires its sourc
       draft: extension,
       materialSourceId: revised.materialRevisionId
     })
+
     expect(refused.available).not.toBe(true)
   } finally {
     await host.dispose()
@@ -975,7 +1060,9 @@ it('preserves acknowledged cancellation evidence through the actual native host 
       bytes: 24000,
       issues: 8
     },
+
     executionEvidence: () => receipts,
+
     createGroups: () => [
       {
         name: 'drawing',
@@ -989,6 +1076,7 @@ it('preserves acknowledged cancellation evidence through the actual native host 
               ...toolSemantics({ type: 'object' }, 'mutation', ['document'])
             }
           ],
+
           call: async () => {
             calls++
             controller.abort()
@@ -998,6 +1086,7 @@ it('preserves acknowledged cancellation evidence through the actual native host 
       }
     ]
   })
+
   try {
     await expect(
       host.invoke({ name: 'drawing.draw', input: {} })
@@ -1040,9 +1129,11 @@ it.each(['direct', 'registered', 'direct-projector', 'registered-projector'])(
         bytes: 24000,
         issues: 8
       },
+
       observe: (event) => {
         observed.push(event)
       },
+
       createGroups: () => [
         {
           name: 'example',
@@ -1084,20 +1175,26 @@ it.each(['direct', 'registered', 'direct-projector', 'registered-projector'])(
                   ) => output
                 }
               : {}),
+
             call: async () => {
               calls += 1
+
               return JSON.stringify(value)
             }
           }
         }
       ]
     })
+
     try {
       const definition = host
         .definitions()
         .find((item) => item.registeredName === 'example.read')
-      if (!definition?.registeredName)
+
+      if (!definition?.registeredName) {
         throw new Error('Missing registered definition')
+      }
+
       const reply = await host.invoke({
         name: route.startsWith('direct')
           ? 'example.read'
@@ -1111,6 +1208,7 @@ it.each(['direct', 'registered', 'direct-projector', 'registered-projector'])(
       const delivered = route.startsWith('direct')
         ? output
         : output.execution.value
+
       expect(delivered).toMatchObject({
         status: 'complete',
         handle: value.handle,
@@ -1176,6 +1274,7 @@ it.each(['partial', 'failed'])(
         bytes: 24000,
         issues: 8
       },
+
       createGroups: () => [
         {
           name: 'example',
@@ -1191,14 +1290,17 @@ it.each(['partial', 'failed'])(
                 recoveryOutputSchema: resultSchema
               }
             ],
+
             call: async () => {
               calls += 1
+
               return JSON.stringify(value)
             }
           }
         }
       ]
     })
+
     try {
       const reply = JSON.parse(
         (
@@ -1209,6 +1311,7 @@ it.each(['partial', 'failed'])(
           })
         ).text
       )
+
       expect(reply).toMatchObject({
         status,
         settlement: 'partial',
@@ -1247,9 +1350,11 @@ it.each(['direct', 'registered'])(
         bytes: 24000,
         issues: 8
       },
+
       observe: (event) => {
         observed.push(event)
       },
+
       createGroups: (ownership) => {
         const actions = [
           {
@@ -1290,10 +1395,13 @@ it.each(['direct', 'registered'])(
           })
         )
         const original = operations.callInternal
+
         operations.callInternal = (...args) => {
           writes++
+
           return original(...args)
         }
+
         return [
           {
             name: 'design',
@@ -1303,12 +1411,16 @@ it.each(['direct', 'registered'])(
         ]
       }
     })
+
     try {
       const definition = host
         .definitions()
         .find((entry) => entry.name === 'prepare_and_apply_design')
-      if (!definition?.registeredName)
+
+      if (!definition?.registeredName) {
         throw new Error('Missing registered definition')
+      }
+
       const input = {
         parts: [
           {
@@ -1364,6 +1476,7 @@ it.each(['direct', 'registered'])(
         ).text
       )
       const result = route === 'direct' ? reply : reply.execution?.value
+
       expect(result?.status, JSON.stringify(reply)).toBe('partial')
       expect(result.measurementIssues[0].recovery).toContain(
         'Do not replay writes'
@@ -1377,6 +1490,7 @@ it.each(['direct', 'registered'])(
         expect(part.actionResults[0].result).not.toHaveProperty('timing')
         expect(part).not.toHaveProperty('context')
       }
+
       expect(JSON.stringify(observed)).toContain('ownerMs')
       expect(writes).toBe(2)
     } finally {
@@ -1418,9 +1532,11 @@ it.each(['direct', 'registered'])(
         bytes: 24000,
         issues: 8
       },
+
       observe: (event) => {
         evidence.push(event)
       },
+
       createGroups: () => [
         {
           name: 'design',
@@ -1429,6 +1545,7 @@ it.each(['direct', 'registered'])(
             [action],
             {
               modelActions: (actions) => actions,
+
               resolveBatch: (batch) => batch
             },
             async (batch) => {
@@ -1457,6 +1574,7 @@ it.each(['direct', 'registered'])(
                   contextFresh: true
                 }
               }
+
               throw new BrowserBatchExecutionError(
                 {
                   batchId: batch.batchId,
@@ -1473,12 +1591,16 @@ it.each(['direct', 'registered'])(
         }
       ]
     })
+
     try {
       const definition = host
         .definitions()
         .find((entry) => entry.name === action.name)
-      if (!definition?.registeredName)
+
+      if (!definition?.registeredName) {
         throw new Error('Missing registered definition')
+      }
+
       const input = { arguments: {} }
       const raw = JSON.parse(
         (
@@ -1500,6 +1622,7 @@ it.each(['direct', 'registered'])(
         route === 'direct'
           ? raw
           : (raw.execution.value ?? raw.execution.recovery?.[0]?.value)
+
       expect(result?.toolOutcome.status, JSON.stringify(raw)).toBe('partial')
       expect(result.recovery, JSON.stringify(raw)).toContain(
         'Do not automatically replay mutations'
@@ -1541,6 +1664,7 @@ it('keeps internal schema fields available to admitted recipe bindings before ex
       bytes: 24000,
       issues: 8
     },
+
     createGroups: () => [
       {
         name: 'owned',
@@ -1562,14 +1686,17 @@ it('keeps internal schema fields available to admitted recipe bindings before ex
               )
             }
           ],
+
           call: async () => {
             calls++
+
             return JSON.stringify({ status: 'complete', internal: 17 })
           }
         }
       }
     ]
   })
+
   try {
     const proposal = {
       format: 1,
@@ -1591,6 +1718,7 @@ it('keeps internal schema fields available to admitted recipe bindings before ex
         })
       ).text
     )
+
     expect(submitted, JSON.stringify(submitted)).toMatchObject({ ok: true })
     const invoked = JSON.parse(
       (
@@ -1600,11 +1728,13 @@ it('keeps internal schema fields available to admitted recipe bindings before ex
         })
       ).text
     )
+
     expect(invoked.execution.value).toBe(17)
     expect(calls).toBe(1)
     const direct = JSON.parse(
       (await host.invoke({ name: 'owned.compute', input: {} })).text
     )
+
     expect(direct).not.toHaveProperty('internal')
   } finally {
     await host.dispose()
@@ -1623,9 +1753,11 @@ it.each([
     const evidence: unknown[] = []
     const host = createLocalToolHost({
       requestId: 'invalid-view',
+
       observe: (event) => {
         evidence.push(event)
       },
+
       signal: new AbortController().signal,
       store: memory(),
       capacity: 32,
@@ -1638,6 +1770,7 @@ it.each([
         bytes: 24000,
         issues: 8
       },
+
       createGroups: () => [
         {
           name: 'owned',
@@ -1659,19 +1792,25 @@ it.each([
                 )
               }
             ],
+
             call: async () => {
               calls++
+
               return JSON.stringify({ status: 'complete', identity: 'created' })
             },
+
             projectModelResult: () => {
-              if (mode === 'throws')
+              if (mode === 'throws') {
                 throw new Error('Projection unavailable after execution')
+              }
+
               return { status: 'complete' }
             }
           }
         }
       ]
     })
+
     try {
       const reply = await host.invoke(
         route === 'native'
@@ -1683,6 +1822,7 @@ it.each([
       )
       const envelope = JSON.parse(reply.text)
       const value = route === 'native' ? envelope : envelope.execution.value
+
       expect(reply.success).toBe(false)
       expect(value).toMatchObject({
         code: 'TOOL_DELIVERY_INVALID',
@@ -1697,6 +1837,7 @@ it.each([
       const recorded = (evidence as { output?: { text?: string } }[]).flatMap(
         ({ output }) => (output?.text ? [JSON.parse(output.text)] : [])
       )
+
       expect(
         recorded.some(
           (output) => (output.execution?.value ?? output).identity === 'created'
@@ -1745,6 +1886,7 @@ it.each(['native', 'registered', 'batch'])(
         bytes: 24000,
         issues: 8
       },
+
       createGroups: () => [
         {
           name: 'design',
@@ -1753,10 +1895,12 @@ it.each(['native', 'registered', 'batch'])(
             [action],
             {
               modelActions: (actions) => actions,
+
               resolveBatch: (batch) => batch
             },
             async (batch) => {
               calls++
+
               return {
                 context: {},
                 actionResults: batch.actions.map((entry, index) => ({
@@ -1775,6 +1919,7 @@ it.each(['native', 'registered', 'batch'])(
         }
       ]
     })
+
     try {
       const definition = host
         .definitions()
@@ -1783,8 +1928,11 @@ it.each(['native', 'registered', 'batch'])(
             entry.name ===
             (route === 'batch' ? 'execute_design_batch' : action.name)
         )
-      if (!definition?.registeredName)
+
+      if (!definition?.registeredName) {
         throw new Error('Missing operation route')
+      }
+
       const input =
         route === 'batch'
           ? {
@@ -1810,6 +1958,7 @@ it.each(['native', 'registered', 'batch'])(
       const envelope = JSON.parse(reply.text)
       const result =
         route === 'registered' ? envelope.execution.value : envelope
+
       expect(result?.actionResults, JSON.stringify(envelope)).toBeDefined()
       expect(reply.success).toBe(false)
       expect(result.toolOutcome).toMatchObject({
@@ -1820,14 +1969,19 @@ it.each(['native', 'registered', 'batch'])(
         code: 'TOOL_DELIVERY_INVALID',
         executionResult: { identity: 'read-0' }
       })
-      if (route === 'batch')
+      if (route === 'batch') {
         expect(result.actionResults[1].result).toEqual({ identity: 'read-1' })
+      }
+
       if (route === 'registered') {
         const discovery = host
           .definitions()
           .find((entry) => entry.name === 'describe_design_apis')
-        if (!discovery?.registeredName)
+
+        if (!discovery?.registeredName) {
           throw new Error('Missing discovery route')
+        }
+
         const guide = JSON.parse(
           await readCompleteInformation(
             async (args) =>
@@ -1841,6 +1995,7 @@ it.each(['native', 'registered', 'batch'])(
           )
         )
         const selected = [...(guide.apis ?? []), ...(guide.tools ?? [])][0]
+
         expect(selected.execution).toEqual({
           kind: 'native-tool',
           namespace: definition.namespace,
@@ -1852,6 +2007,7 @@ it.each(['native', 'registered', 'batch'])(
           })
         ).toBeUndefined()
       }
+
       expect(calls).toBe(1)
     } finally {
       await host.dispose()
@@ -1874,6 +2030,7 @@ it('rejects a conflicting recipe revision without changing the first revision re
       bytes: 24000,
       issues: 8
     },
+
     createGroups: () => [
       {
         name: 'owned',
@@ -1892,11 +2049,13 @@ it('rejects a conflicting recipe revision without changing the first revision re
               )
             }
           ],
+
           call: async () => JSON.stringify({ status: 'complete' })
         }
       }
     ]
   })
+
   try {
     for (const revision of [1, 2]) {
       const field = revision === 1 ? 'firstResult' : 'secondResult'
@@ -1919,14 +2078,17 @@ it('rejects a conflicting recipe revision without changing the first revision re
         name: 'tool_library.submit_tool',
         input: { submissionId: `revision-${revision}`, proposal }
       })
+
       expect(JSON.parse(submitted.text), submitted.text).toMatchObject(
         revision === 1 ? { ok: true } : { ok: false, code: 'registration' }
       )
     }
+
     const reply = await host.invoke({
       name: 'tool_library.invoke_tool',
       input: { name: 'revision-result', revision: 1, input: {} }
     })
+
     expect(reply.success, reply.text).toBe(true)
     expect(JSON.parse(reply.text).execution.value).toEqual({
       status: 'complete',
@@ -1978,6 +2140,7 @@ it('propagates a nested workflow part delivery failure while retaining the execu
     {},
     original
   ) as typeof original
+
   expect(projected.toolOutcome).toMatchObject({
     status: 'partial',
     settlement: 'completed'
@@ -2013,6 +2176,7 @@ it.each(['native', 'registered'])(
         bytes: 24000,
         issues: 8
       },
+
       createGroups: () => [
         {
           name: 'owned',
@@ -2040,10 +2204,13 @@ it.each(['native', 'registered'])(
                 })
               }
             ],
+
             call: async () => {
               calls++
+
               return JSON.stringify(partial)
             },
+
             projectModelResult: () => ({
               status: 'complete',
               identity: 'one',
@@ -2053,6 +2220,7 @@ it.each(['native', 'registered'])(
         }
       ]
     })
+
     try {
       const reply = await host.invoke(
         route === 'native'
@@ -2068,6 +2236,7 @@ it.each(['native', 'registered'])(
           ? envelope
           : (envelope.execution.value ??
             envelope.execution.recovery?.[0]?.value)
+
       expect(reply.success).toBe(false)
       expect(value).toMatchObject({
         code: 'TOOL_DELIVERY_INVALID',

@@ -10,10 +10,15 @@ vi.mock('../../contexts', () => ({
 vi.mock('../../common-apis/design-review', () => ({ reviewDesign: vi.fn() }))
 import type { InspectionEvidenceStamp } from '../inspection-evidence'
 import { createDesignReviewAction } from '../review-action'
+
 const requiredEvidence = (result: { evidence?: InspectionEvidenceStamp }) => {
-  if (!result.evidence) throw new Error('Expected mechanical evidence')
+  if (!result.evidence) {
+    throw new Error('Expected mechanical evidence')
+  }
+
   return result.evidence
 }
+
 it('forwards review without mutation and respects cancellation', async () => {
   const review = vi.fn(async () => ({
     complete: true,
@@ -25,6 +30,7 @@ it('forwards review without mutation and respects cancellation', async () => {
   }))
   const action = createDesignReviewAction(review),
     controller = new AbortController()
+
   await action.execute({ elementId: 'f' }, {
     signal: controller.signal
   } as never)
@@ -51,6 +57,7 @@ it('delivers requested measurement scope and withdraws selection with stale evid
   let current = true
   const action = createDesignReviewAction(review, () => current)
   const context = { signal: new AbortController().signal }
+
   expect(action.inputSchema.properties).toHaveProperty('measurementTargets')
   expect(
     await action.execute(
@@ -89,21 +96,27 @@ it('routes mechanical capture and freshness through the real reviewer without vi
   const { createInspectionValidationAction } = await import('../inspection')
   const { createInspectionEvidence } =
     await import('../../common-apis/inspection-evidence')
+
   let changed: (change?: { elementIds: string[] }) => void = () => undefined
+
   const widths = { a: 10, b: 20 }
   const reviewer = createDesignReviewer(
     {
       observeChanges(listener) {
         changed = listener
+
         return () => undefined
       },
+
       read: () => ({ type: 'rect' }),
+
       computed: (id) => ({
         x: 0,
         y: 0,
         width: widths[id as keyof typeof widths],
         height: 10
       }),
+
       measure: () => []
     },
     async () => undefined,
@@ -113,12 +126,15 @@ it('routes mechanical capture and freshness through the real reviewer without vi
   const action = createDesignReviewAction(reviewer.capture, reviewer.isCurrent)
   const validate = createInspectionValidationAction(visual, reviewer)
   const context = { signal: new AbortController().signal }
+
   const read = async (elementId: string) =>
     (await action.execute({ elementId }, context)) as Awaited<
       ReturnType<typeof reviewer.capture>
     >
+
   const a = await read('a'),
     b = await read('b')
+
   expect(visual.isCurrent(a.evidence)).toBe(false)
   widths.a = 11
   changed({ elementIds: ['a'] })
@@ -139,10 +155,13 @@ it('routes mechanical capture and freshness through the real reviewer without vi
   ).toMatchObject({ current: false })
   const delayed = createDesignReviewAction(async (...args) => {
     const captured = await reviewer.capture(...args)
+
     widths.b++
     changed({ elementIds: ['b'] })
+
     return captured
   }, reviewer.isCurrent)
+
   expect(await delayed.execute({ elementId: 'b' }, context)).toMatchObject({
     available: false,
     complete: false,
@@ -172,15 +191,18 @@ it('publishes domain-owned mechanical verdicts with stable semantic progress', a
     findings
   }))
   const context = { signal: new AbortController().signal } as never
+
   const read = async (elementId = 'drawing') =>
     (await action.execute({ elementId }, context)) as {
       verification: { status: string; progress: string }
     }
+
   expect(action.verification).toEqual({
     statusPath: '/verification/status',
     progressPath: '/verification/progress'
   })
   const first = await read()
+
   expect(first.verification.status).toBe('repairable')
   expect(first.verification.progress).toMatch(/^[a-f0-9]{64}$/)
   findings = [...findings].reverse()

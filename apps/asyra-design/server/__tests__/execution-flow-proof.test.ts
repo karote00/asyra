@@ -1206,9 +1206,9 @@ it('execution proof validates continuity references before a successor request',
         }
       }
     })
-    expect(execute.mock.calls[1][0].metadata.conversationHistory).toMatchObject(
+    expect(execute.mock.calls[1][0].metadata.conversationContext).toMatchObject(
       {
-        omittedTurns: 0,
+        attachmentIndexes: [],
         turns: [
           { intent: 'Create deliberately rough artwork', outcome: 'success' }
         ]

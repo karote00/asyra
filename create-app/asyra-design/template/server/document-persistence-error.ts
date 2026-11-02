@@ -13,6 +13,7 @@ const statusByCode: Record<DocumentPersistenceErrorCode, number> = {
 
 export class DocumentPersistenceError extends Error {
   readonly status: number
+
   constructor(
     readonly code: DocumentPersistenceErrorCode,
     message: string,

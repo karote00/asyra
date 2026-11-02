@@ -51,8 +51,10 @@ export const IMAGE_LAYER_SCHEMA = {
     }
   }
 } as const
+
 const record = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
+
 const invalid = (): never => {
   throw new Error('Invalid image layer separation')
 }
@@ -84,8 +86,10 @@ export const separateImageBackground = async (
     Number(value.colorTolerance) < 0 ||
     Number(value.colorTolerance) > 32 ||
     !record(value.background)
-  )
+  ) {
     return invalid()
+  }
+
   if (
     value.foregroundColors !== undefined &&
     (!Array.isArray(value.foregroundColors) ||
@@ -94,18 +98,24 @@ export const separateImageBackground = async (
       value.foregroundColors.some(
         (color) => typeof color !== 'string' || !/^#[0-9a-f]{6}$/i.test(color)
       ))
-  )
+  ) {
     return invalid()
+  }
+
   const background = value.background
+
   if (
     Object.keys(background).length !== 3 ||
     !['oval', 'rect'].includes(String(background.componentType)) ||
     typeof background.fill !== 'string' ||
     !/^#[0-9a-f]{6}$/i.test(background.fill) ||
     !record(background.bounds)
-  )
+  ) {
     return invalid()
+  }
+
   const bounds = background.bounds
+
   if (
     Object.keys(bounds).length !== 4 ||
     !['x', 'y', 'width', 'height'].every(
@@ -115,8 +125,10 @@ export const separateImageBackground = async (
     Number(bounds.y) < 0 ||
     Number(bounds.width) <= 0 ||
     Number(bounds.height) <= 0
-  )
+  ) {
     return invalid()
+  }
+
   // Admit actual PNG/JPEG/WebP signatures before handing untrusted bytes to a decoder.
   const source = Buffer.from(bytes)
   const png = source
@@ -126,21 +138,27 @@ export const separateImageBackground = async (
   const webp =
     source.subarray(0, 4).toString('ascii') === 'RIFF' &&
     source.subarray(8, 12).toString('ascii') === 'WEBP'
+
   if (
     source.length > 16 * 1024 * 1024 ||
     !['image/png', 'image/jpeg', 'image/webp'].includes(contentType) ||
     !(png || jpeg || webp)
-  )
+  ) {
     return invalid()
+  }
+
   const decoder = sharp(source, {
     failOn: 'warning'
   }).timeout({ seconds: 10 })
   const metadata = await decoder.metadata()
+
   if (
     !['png', 'jpeg', 'webp'].includes(metadata.format ?? '') ||
     (metadata.pages ?? 1) !== 1
-  )
+  ) {
     return invalid()
+  }
+
   signal.throwIfAborted()
   // Match the orientation the model sees, rather than raw JPEG sensor coordinates.
   const { data, info } = await decoder
@@ -149,15 +167,19 @@ export const separateImageBackground = async (
     .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true })
+
   signal.throwIfAborted()
   const native = background as unknown as NativeImageBackground
   const b = native.bounds
+
   if (
     b.x + b.width > info.width ||
     b.y + b.height > info.height ||
     info.channels !== 4
-  )
+  ) {
     return invalid()
+  }
+
   const color = [1, 3, 5].map((offset) =>
     parseInt(native.fill.slice(offset, offset + 2), 16)
   )
@@ -165,7 +187,11 @@ export const separateImageBackground = async (
   const paletteNames = [native.fill, ...paletteColors].map((entry) =>
     entry.toUpperCase()
   )
-  if (new Set(paletteNames).size !== paletteNames.length) return invalid()
+
+  if (new Set(paletteNames).size !== paletteNames.length) {
+    return invalid()
+  }
+
   const palette = paletteColors.length
     ? [
         color,
@@ -176,36 +202,50 @@ export const separateImageBackground = async (
         )
       ]
     : []
+
   // VTracer treats every nonzero-alpha sample as a solid color. Classify the
   // visible sample over the explicitly selected base, not hidden matte RGB.
   const distance = (offset: number, candidate: number[]) => {
     const coverage = data[offset + 3] / 255
+
     return color.reduce((sum, channel, index) => {
       const visible = data[offset + index] * coverage + channel * (1 - coverage)
+
       return sum + (visible - candidate[index]) ** 2
     }, 0)
   }
+
   let removedPixelCount = 0
   let foregroundPixelCount = 0
   let clippedPixelCount = 0
+
   for (let y = 0; y < info.height; y++) {
     if (y % 32 === 0) {
       await yieldToEventLoop()
       signal.throwIfAborted()
     }
+
     for (let x = 0; x < info.width; x++) {
       const offset = (y * info.width + x) * 4
-      if (data[offset + 3] === 0) continue
+
+      if (data[offset + 3] === 0) {
+        continue
+      }
+
       const nx = (x + 0.5 - b.x) / b.width
       const ny = (y + 0.5 - b.y) / b.height
       let inside = nx >= 0 && nx < 1 && ny >= 0 && ny < 1
-      if (native.componentType === 'oval')
+
+      if (native.componentType === 'oval') {
         inside = inside && (nx * 2 - 1) ** 2 + (ny * 2 - 1) ** 2 <= 1
+      }
+
       if (!inside && value.clipToBackground) {
         data[offset + 3] = 0
         clippedPixelCount++
         continue
       }
+
       let matches =
         inside &&
         color.every(
@@ -213,39 +253,51 @@ export const separateImageBackground = async (
             Math.abs(data[offset + index] - channel) <=
             Number(value.colorTolerance)
         )
+
       if (inside && palette.length) {
         let nearest = 0
         let bestDistance = distance(offset, palette[0])
+
         for (let index = 1; index < palette.length; index++) {
           const candidateDistance = distance(offset, palette[index])
+
           if (candidateDistance < bestDistance) {
             nearest = index
             bestDistance = candidateDistance
           }
         }
+
         matches = nearest === 0
         if (!matches) {
           data.set(palette[nearest], offset)
           data[offset + 3] = 255
         }
       }
+
       if (matches) {
         data[offset + 3] = 0
         removedPixelCount++
-      } else foregroundPixelCount++
+      } else {
+        foregroundPixelCount++
+      }
     }
   }
-  if (!removedPixelCount)
+
+  if (!removedPixelCount) {
     throw new Error(
       'No pixels match the selected background region. Revise the separation parameters or keep the original vectors.'
     )
+  }
+
   const foreground = await sharp(data, {
     raw: { width: info.width, height: info.height, channels: 4 }
   })
     .png()
     .timeout({ seconds: 10 })
     .toBuffer()
+
   signal.throwIfAborted()
+
   return {
     foreground,
     width: info.width,

@@ -292,8 +292,10 @@ describe('AI Agent conversation panel intent boundary', () => {
         .mockImplementation(function (this: FileReader) {
           readers.push(this)
         })
+
       try {
         const harness = createPanelHarness()
+
         harness.pending.resolve({ status: 'executed', actionResults: [] })
         render(
           <AiConversationPanel
@@ -338,14 +340,16 @@ describe('AI Agent conversation panel intent boundary', () => {
         fireEvent.click(
           screen.getByRole('button', { name: 'First design', exact: true })
         )
-        if (completion === 'load')
+        if (completion === 'load') {
           expect(screen.getByAltText('late.png')).toBeTruthy()
-        else
+        } else {
           expect(
             screen.getByText(
               'Could not read one or more images. Try adding them again.'
             )
           ).toBeTruthy()
+        }
+
         expect(harness.feature.execute).toHaveBeenCalledTimes(1)
       } finally {
         spy.mockRestore()
@@ -360,8 +364,10 @@ describe('AI Agent conversation panel intent boundary', () => {
       .mockImplementation(function (this: FileReader) {
         readers.push(this)
       })
+
     try {
       const harness = createPanelHarness()
+
       harness.pending.resolve({ status: 'executed', actionResults: [] })
       render(
         <AiConversationPanel
@@ -408,6 +414,7 @@ describe('AI Agent conversation panel intent boundary', () => {
       .mockImplementation(function (this: FileReader) {
         readers.push(this)
       })
+
     try {
       const harness = createPanelHarness()
       const view = render(
@@ -417,14 +424,17 @@ describe('AI Agent conversation panel intent boundary', () => {
           onClose={vi.fn()}
         />
       )
+
       for (const name of ['first.png', 'second.png', 'retired.png']) {
         fireEvent.change(screen.getByLabelText('Choose images'), {
           target: { files: [new File(['a'], name, { type: 'image/png' })] }
         })
       }
+
       fireEvent.change(screen.getByLabelText('Message Agent'), {
         target: { value: 'Newest text' }
       })
+
       const complete = async (index: number) =>
         act(async () => {
           Object.defineProperty(readers[index], 'result', {
@@ -432,6 +442,7 @@ describe('AI Agent conversation panel intent boundary', () => {
           })
           readers[index].dispatchEvent(new ProgressEvent('load'))
         })
+
       await complete(1)
       await complete(0)
       expect(screen.getByAltText('first.png')).toBeTruthy()

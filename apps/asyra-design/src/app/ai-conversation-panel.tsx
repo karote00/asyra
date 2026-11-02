@@ -220,8 +220,10 @@ const AiConversationPanelLayout = ({
     () => new Map()
   )
   const mounted = useRef(true)
+
   useEffect(() => {
     mounted.current = true
+
     return () => {
       mounted.current = false
     }
@@ -239,13 +241,22 @@ const AiConversationPanelLayout = ({
   } = currentDraft
   const updateDraft = useCallback(
     (id: string, update: (current: ConversationDraft) => ConversationDraft) => {
-      if (!mounted.current) return
+      if (!mounted.current) {
+        return
+      }
+
       setDrafts((current) => {
         const previous = current.get(id) ?? EMPTY_CONVERSATION_DRAFT
         const next = update(previous)
-        if (next === previous) return current
+
+        if (next === previous) {
+          return current
+        }
+
         const result = new Map(current)
+
         result.set(id, next)
+
         return result
       })
     },
@@ -268,6 +279,7 @@ const AiConversationPanelLayout = ({
       if (conversation.getSnapshot().activeTurn) {
         return
       }
+
       const sourceId = conversation.getSnapshot().conversationId
       const generation = (drafts.get(sourceId) ?? EMPTY_CONVERSATION_DRAFT)
         .generation
@@ -276,6 +288,7 @@ const AiConversationPanelLayout = ({
       const acceptedFiles = selectedFiles.filter((file) =>
         ACCEPTED_IMAGE_TYPES.has(file.type as AiImageMediaType)
       )
+
       updateDraft(sourceId, (current) => ({
         ...current,
         error:
@@ -294,6 +307,7 @@ const AiConversationPanelLayout = ({
       const attachments = results.flatMap((result) =>
         result.status === 'fulfilled' ? [result.value] : []
       )
+
       updateDraft(sourceId, (current) =>
         current.generation !== generation
           ? current
@@ -308,7 +322,6 @@ const AiConversationPanelLayout = ({
                 : current.error
             }
       )
-
     },
     [conversation, drafts, updateDraft]
   )
@@ -371,8 +384,11 @@ const AiConversationPanelLayout = ({
   )
 
   const navigateConversation = (id: string | null) => {
-    if (id === null) conversation.newConversation()
-    else conversation.selectConversation(id)
+    if (id === null) {
+      conversation.newConversation()
+    } else {
+      conversation.selectConversation(id)
+    }
 
     promptRef.current?.focus({ preventScroll: true })
   }
@@ -518,6 +534,7 @@ const AiConversationPanelLayout = ({
             id="ai-agent-input"
             onChange={(event) => {
               const text = event.target.value
+
               updateDraft(conversationId, (current) => ({ ...current, text }))
             }}
             onKeyDown={(event) => event.stopPropagation()}

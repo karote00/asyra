@@ -22,14 +22,22 @@ import {
 const app = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const root = path.resolve(app, '../..')
 const env = loadEnvironment({ ...process.env })
-if (!env.APP_URL || env.AI_PROVIDER_BACKEND !== 'local-codex')
+
+if (!env.APP_URL || env.AI_PROVIDER_BACKEND !== 'local-codex') {
   throw new Error('Configure APP_URL and the local provider in the App .env.')
+}
+
 const configured = resolveEnvironment(env)
 const backendURL = env.DOCUMENT_PERSISTENCE_BACKEND_URL
-if (!backendURL) throw new Error('Missing document backend URL')
+
+if (!backendURL) {
+  throw new Error('Missing document backend URL')
+}
+
 const { prompt, sha256 } = readTaipei101Prompt()
 const id = `taipei-101-fixed-${Date.now()}`
 const directory = path.join(root, 'tmp/conversation-improvements/live', id)
+
 fs.mkdirSync(directory, { recursive: true })
 const services = []
 const meta = {
@@ -48,12 +56,15 @@ const meta = {
   errors: [],
   statuses: []
 }
+
 const save = () =>
   fs.writeFileSync(
     path.join(directory, 'run.json'),
     JSON.stringify(meta, null, 2)
   )
+
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
 const start = (name, command, args) => {
   const log = fs.openSync(path.join(directory, `${name}.log`), 'a')
   const child = spawn(command, args, {
@@ -68,39 +79,56 @@ const start = (name, command, args) => {
     detached: true,
     stdio: ['ignore', log, log]
   })
+
   fs.closeSync(log)
-  if (!child.pid) throw new Error(`Cannot start ${name}`)
+  if (!child.pid) {
+    throw new Error(`Cannot start ${name}`)
+  }
+
   child.on('error', (error) => {
     meta.errors.push(`${name}: ${error.message}`)
     save()
   })
   services.push({ name, pid: child.pid, cwd: app })
   save()
+
   return child
 }
+
 const ready = async (url) => {
   const until = Date.now() + 60000
+
   while (Date.now() < until) {
     try {
-      if ((await fetch(url, { signal: AbortSignal.timeout(1500) })).ok) return
+      if ((await fetch(url, { signal: AbortSignal.timeout(1500) })).ok) {
+        return
+      }
     } catch {
       /* bounded startup */
     }
+
     await sleep(250)
   }
+
   throw new Error(`Service did not become ready: ${url}`)
 }
+
 let browserServer, browser, context, page, deadline
+
 const snapshot = async () =>
   page.evaluate(async () => {
     const { core, getActiveAiDrawingPerformanceProfile } =
       await import('/src/testing/runtime-access.ts')
     const counts = {}
+
     for (const [id] of core.deps.sceneTree.getAllElements()) {
       const type = core.getElementData(id)?.type ?? 'unknown'
+
       counts[type] = (counts[type] ?? 0) + 1
     }
+
     const profile = getActiveAiDrawingPerformanceProfile()
+
     return {
       document: await core.save(),
       counts,
@@ -109,6 +137,7 @@ const snapshot = async () =>
       conversation: profile?.readConversationSnapshot()
     }
   })
+
 try {
   // Refuse occupied service ports; this recorder only terminates its own processes.
   for (const url of [
@@ -120,9 +149,12 @@ try {
       await fetch(url, { signal: AbortSignal.timeout(500) })
       throw new Error(`Service port is already occupied: ${url}`)
     } catch (error) {
-      if (error.message.startsWith('Service port')) throw error
+      if (error.message.startsWith('Service port')) {
+        throw error
+      }
     }
   }
+
   start('document-backend', process.execPath, [
     'dist/document-backend/document-backend.js'
   ])
@@ -139,6 +171,7 @@ try {
     String(configured.vitePort),
     '--strictPort'
   ])
+
   await ready(configured.appURL)
   browserServer = await chromium.launchServer({
     channel: 'chrome',
@@ -157,9 +190,12 @@ try {
     save()
   })
   page.on('request', (request) => {
-    if (!new URL(request.url()).pathname.endsWith('/api/ai/action-batch'))
+    if (!new URL(request.url()).pathname.endsWith('/api/ai/action-batch')) {
       return
+    }
+
     const body = request.postDataJSON()
+
     try {
       if (!assertTaipei101Submission(body, prompt, request.headers())) {
         meta.receiptPosts ??= []
@@ -168,11 +204,13 @@ try {
           bytes: Buffer.byteLength(request.postData() ?? '')
         })
         save()
+
         return
       }
     } catch (error) {
       meta.errors.push(error.message)
     }
+
     meta.submissions ??= []
     meta.submissions.push({
       at: Date.now(),
@@ -190,6 +228,7 @@ try {
         getActiveCollaborationHandle,
         getActiveAiDrawingPerformanceProfile
       } = await import('/src/testing/runtime-access.ts')
+
       return (
         !!core.getCurrentWorkspaceId() &&
         getActiveCollaborationHandle()?.getStatus() === 'connected' &&
@@ -204,18 +243,22 @@ try {
     .getByText('Local AI connected', { exact: true })
     .waitFor({ timeout: 60000 })
   const before = await snapshot()
+
   fs.writeFileSync(
     path.join(directory, 'before.json.gz'),
     gzipSync(JSON.stringify(before))
   )
   await page.getByLabel('Message Agent').fill(prompt)
-  if ((await page.getByLabel('Message Agent').inputValue()) !== prompt)
+  if ((await page.getByLabel('Message Agent').inputValue()) !== prompt) {
     throw new Error('Composer changed the fixed prompt')
+  }
+
   await page.screenshot({ path: path.join(directory, 'before.png') })
   await page.evaluate(async () => {
     const { core, getActiveAiDrawingPerformanceProfile } =
       await import('/src/testing/runtime-access.ts')
     const profile = getActiveAiDrawingPerformanceProfile()
+
     profile.reset()
     const baseline = profile.readRenderProjectionElementCount()
     const observation = {
@@ -233,6 +276,7 @@ try {
         })
       }
     })
+
     Object.assign(window, {
       fixedDrawingObservation: observation,
       stopFixedDrawingObservation: stop
@@ -248,11 +292,13 @@ try {
   await deadline.ready
   await page.getByRole('button', { name: 'Send', exact: true }).click()
   let lastStatus
+
   while (Date.now() - meta.sentAt < TAIPEI_101_DEADLINE_MS - 15000) {
     const state = await page.evaluate(async () => {
       const { getActiveAiDrawingPerformanceProfile } =
         await import('/src/testing/runtime-access.ts')
       const profile = getActiveAiDrawingPerformanceProfile()
+
       return {
         settlement: profile.readLatestTurnSettlement(),
         rendered: profile.readRenderProjectionElementCount(),
@@ -261,6 +307,7 @@ try {
           ?.textContent
       }
     })
+
     if (state.status !== lastStatus) {
       lastStatus = state.status
       meta.statuses.push({
@@ -268,18 +315,22 @@ try {
         text: state.status
       })
     }
+
     if (state.first !== null && meta.firstPaintOpportunityMs === undefined) {
       meta.firstPaintOpportunityMs = state.first
       await page.keyboard.press('Meta+1')
       await page.screenshot({ path: path.join(directory, 'first.png') })
     }
+
     if (state.settlement) {
       meta.settlement = state.settlement
       break
     }
+
     save()
     await sleep(1000)
   }
+
   if (!meta.settlement) {
     meta.deadlineOutcome = 'stopped-before-hard-deadline'
     await page
@@ -294,6 +345,7 @@ try {
       { timeout: 8000 }
     )
   }
+
   meta.elapsedMs = Date.now() - meta.sentAt
   meta.deadline = await deadline.finish()
   await page.keyboard.press('Meta+1')
@@ -309,30 +361,40 @@ try {
       async ({ fraction, nativeScale }) => {
         const { core } = await import('/src/testing/runtime-access.ts')
         const { viewportApis } = await import('/src/common-apis/viewport.ts')
+
         viewportApis.zoomFit()
         const bounds = core.getAllElementsBounds()
         const viewport = document
           .getElementById('viewport-anchor')
           ?.getBoundingClientRect()
-        if (!bounds || !viewport) return null
+
+        if (!bounds || !viewport) {
+          return null
+        }
+
         const scale = nativeScale ? 1 : viewportApis.getScale() * 3
         const centerX = viewport.x + viewport.width / 2
         const centerY = viewport.y + viewport.height / 2
         const x = (bounds.minX + bounds.maxX) / 2
         const y = bounds.minY + (bounds.maxY - bounds.minY) * fraction
+
         viewportApis.zoomToCenter(scale, centerX, centerY)
         viewportApis.panTo(centerX - x * scale, centerY - y * scale)
+
         return { scale, x, y, bounds }
       },
       { fraction, nativeScale }
     )
+
     if (view) {
       await page.screenshot({ path: path.join(directory, `${name}.png`) })
       meta.detailViews.push({ name, ...view })
     }
   }
+
   await page.keyboard.press('Meta+1')
   const final = await snapshot()
+
   meta.counts = final.counts
   fs.writeFileSync(
     path.join(directory, 'source-snapshot.json.gz'),
@@ -348,14 +410,19 @@ try {
     const handle = (
       await import('/src/testing/runtime-access.ts')
     ).getActiveCollaborationHandle()
+
     await handle.whenIdle()
+
     return handle.confirmPersistence(AbortSignal.timeout(15000))
   })
   const checkpoint = await fetch(
     `${backendURL}/api/documents/${encodeURIComponent(id)}/bootstrap-checkpoint`
   )
-  if (!checkpoint.ok)
+
+  if (!checkpoint.ok) {
     throw new Error(`Checkpoint unavailable: ${checkpoint.status}`)
+  }
+
   fs.writeFileSync(
     path.join(directory, 'checkpoint.json'),
     await checkpoint.text()
@@ -392,7 +459,10 @@ try {
     }
   }
 } finally {
-  if (deadline) meta.deadline = await deadline.finish()
+  if (deadline) {
+    meta.deadline = await deadline.finish()
+  }
+
   if (context && page && !page.isClosed()) {
     try {
       meta.video = await saveRemoteRecording(
@@ -405,6 +475,7 @@ try {
       /* original failure remains */
     }
   }
+
   await context?.close().catch(() => undefined)
   await browser?.close().catch(() => undefined)
   await browserServer?.close().catch(() => undefined)
@@ -412,9 +483,12 @@ try {
     try {
       process.kill(-service.pid, 'SIGTERM')
     } catch (error) {
-      if (error.code !== 'ESRCH') meta.errors.push(error.message)
+      if (error.code !== 'ESRCH') {
+        meta.errors.push(error.message)
+      }
     }
   }
+
   save()
   console.log(
     JSON.stringify({

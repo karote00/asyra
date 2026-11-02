@@ -27,36 +27,48 @@ import { operationInputIssue } from '../../server/operation-input-schema'
 // Each heterogeneous result is checked by its explicit semantic oracle below.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Value = any
+
 const required = <T>(value: T | null | undefined): T => {
-  if (value === null || value === undefined)
+  if (value === null || value === undefined) {
     throw new Error('Missing fixture value')
+  }
+
   return value
 }
+
 interface Case {
   input: Record<string, unknown>
   check: (value: Value) => void
   setup?: () => void
 }
+
 const equal = (actual: unknown, expected: unknown) => {
-  if (JSON.stringify(actual) !== JSON.stringify(expected))
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
     throw new Error(
       `Expected ${JSON.stringify(expected)}, received ${JSON.stringify(actual)}`
     )
+  }
 }
+
 const assert = (condition: unknown, message: string) => {
-  if (!condition) throw new Error(message)
+  if (!condition) {
+    throw new Error(message)
+  }
 }
+
 const includes = (actual: unknown, value: string) =>
   assert(
     JSON.stringify(actual)?.includes(value),
     `Missing ${value} in owner output`
   )
+
 const defined = (v: unknown) =>
   assert(v !== null && v !== undefined, 'Expected usable owner value')
 
 export const isBasicApiFixtureReady = () => {
   const id = core.getCurrentWorkspaceId()
   const session = getActiveCollaborationHandle()?.getSessionState()
+
   return (
     !!id &&
     !!core.getElementMetadata(id) &&
@@ -68,11 +80,14 @@ export const isBasicApiFixtureReady = () => {
 /** Real browser owners, explicit inputs and semantic oracles. No mocked API methods. */
 export const createBasicApiCases = async () => {
   const deadline = performance.now() + 10000
+
   while (!isBasicApiFixtureReady()) {
-    if (performance.now() > deadline)
+    if (performance.now() > deadline) {
       throw new Error(
         'The document session did not become ready for fixture creation'
       )
+    }
+
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
   }
 
@@ -85,6 +100,7 @@ export const createBasicApiCases = async () => {
     })
   })
   const workspace = core.getCurrentWorkspaceId()
+
   transactionApis.runTransaction(() => {
     core.createElementsInParent(
       [
@@ -143,6 +159,7 @@ export const createBasicApiCases = async () => {
       y: 200
     }).value
   )
+
   elementApis.appendVectorAnchorPoint(vector, {
     id: 'case-b',
     x: 120,
@@ -167,6 +184,7 @@ export const createBasicApiCases = async () => {
   const segment = Object.keys(topology.segments)[0]
   const group = hierarchyApis.groupElements(['case-other'])
   const groupId = group.groupId
+
   strokeApis.addStroke('case-rect')
   viewportApis.zoomToCenter(1, 0, 0)
   viewportApis.panTo(0, 0)
@@ -177,18 +195,25 @@ export const createBasicApiCases = async () => {
   const point = { x: 70, y: 70 },
     anchor = { x: 20, y: 200 },
     middle = { x: 70, y: 200 }
+
   const bounds = () =>
     core.getElementComputedData(rect, ['x', 'y', 'width', 'height']) as Value
+
   const fill = () =>
     (core.getElementComputedData(rect, ['fills'])?.fills as Value[])[0]
+
   const stroke = () =>
     (core.getElementComputedData(rect, ['strokes'])?.strokes as Value[])[0]
+
   const client = (p: { x: number; y: number }) => {
     const canvas = core.workspaceToCanvas(p),
       box = required(core.getCanvasBounds())
+
     return { x: canvas.x + box.left, y: canvas.y + box.top }
   }
+
   const cases: Record<string, Case> = {}
+
   const add = (
     owner: string,
     method: string,
@@ -197,19 +222,33 @@ export const createBasicApiCases = async () => {
     setup?: Case['setup']
   ) => {
     const name = `api_${owner}_${method}`
-    if (cases[name]) throw new Error(`Duplicate case: ${name}`)
+
+    if (cases[name]) {
+      throw new Error(`Duplicate case: ${name}`)
+    }
+
     cases[name] = { input, check, setup }
   }
+
   const eq = (v: unknown) => (actual: unknown) => equal(actual, v)
+
   const has = (v: string) => (actual: unknown) => includes(actual, v)
+
   const geometry = (patch: Record<string, number>) => () => {
-    for (const [k, v] of Object.entries(patch)) equal(bounds()[k], v)
+    for (const [k, v] of Object.entries(patch)) {
+      equal(bounds()[k], v)
+    }
   }
+
   const color = (expected: string) => () => equal(fill().color, expected)
+
   const removed = () => equal(core.getElementData(rect), undefined)
+
   const vectorPoint = (id: string) =>
     elementApis.getVectorAnchorPointById(vector, id)?.point as Value
+
   const vectorHas = (id: string) => () => defined(vectorPoint(id))
+
   const paintId = fill().id,
     strokeId = stroke().id
   const positionId = required(
@@ -226,8 +265,10 @@ export const createBasicApiCases = async () => {
       { position: 1, color: '#aabbcc', opacity: 1 }
     ]
   }
+
   const setupGradient = () =>
     fillApis.updateFillsAtIndex([rect], 0, { kind: 'gradient', gradient })
+
   const gradientArgs = { elementId: rect, fillId: paintId }
 
   // Canonical reads and coordinate transforms.
@@ -294,6 +335,7 @@ export const createBasicApiCases = async () => {
   })
   add('core', 'isContainerType', { type: 'frame' }, eq(true))
   add('core', 'hasProjectedElement', { elementId: rect }, eq(true))
+
   const hitRect = (value: unknown) => {
     assert(
       value === rect,
@@ -310,6 +352,7 @@ export const createBasicApiCases = async () => {
       })
     )
   }
+
   add('core', 'getElementIdAtClientPos', { clientPos: client(point) }, hitRect)
   add(
     'core',
@@ -401,8 +444,10 @@ export const createBasicApiCases = async () => {
   for (const method of [
     'getElementIdAtClientPos',
     'getRenderElementIdAtClientPos'
-  ])
+  ]) {
     add('element', method, { clientPos: client(point) }, hitRect)
+  }
+
   add(
     'element',
     'getMousePosInWorkspace',
@@ -434,6 +479,7 @@ export const createBasicApiCases = async () => {
       target: 'anchor' as const
     },
     segmentRef = { elementId: vector, segmentId: segment }
+
   for (const [method, structured, encoded, select] of [
     [
       'getVectorPointSelectionIds',
@@ -463,6 +509,7 @@ export const createBasicApiCases = async () => {
     void structured
     add('selection', method, {}, eq([encoded]), select)
   }
+
   add('viewport', 'getScale', {}, eq(1))
   add('viewport', 'getPosition', {}, eq({ x: 0, y: 0 }))
   add(
@@ -546,21 +593,27 @@ export const createBasicApiCases = async () => {
 
   for (const space of ['Workspace', 'Client'] as const) {
     const key = space === 'Workspace' ? 'workspacePos' : 'clientPos'
+
     const p = (v: typeof point) => (space === 'Workspace' ? v : client(v))
-    for (const method of ['getVectorAnchorPoint', 'getVectorEditablePoint'])
+
+    for (const method of ['getVectorAnchorPoint', 'getVectorEditablePoint']) {
       add(
         'element',
         `${method}At${space}Pos`,
         { elementId: vector, [key]: p(anchor) },
         has('case-a')
       )
-    for (const method of ['getVectorSegment', 'getVectorSegmentHit'])
+    }
+
+    for (const method of ['getVectorSegment', 'getVectorSegmentHit']) {
       add(
         'element',
         `${method}At${space}Pos`,
         { elementId: vector, [key]: p(middle), hitRadius: 8 },
         has(segment)
       )
+    }
+
     add(
       'element',
       `isPointNearVectorPathAt${space}Pos`,
@@ -568,12 +621,15 @@ export const createBasicApiCases = async () => {
       eq(true)
     )
   }
+
   for (const method of [
     'getVectorAnchorPoints',
     'getVectorAnchorSubpaths',
     'getVectorTopology'
-  ])
+  ]) {
     add('element', method, { elementId: vector }, has('case-a'))
+  }
+
   add(
     'element',
     'getVectorAnchorPointById',
@@ -612,10 +668,12 @@ export const createBasicApiCases = async () => {
 
   // Writes assert resulting canonical fields, not a mock's call count.
   const creation = { type: 'rect', x: 450, y: 50, width: 40, height: 30 }
+
   const created = (ids: string[]) => {
     assert(ids.length === 1, 'Expected one created ID')
     equal(core.getElementComputedData(ids[0], ['width'])?.width, 40)
   }
+
   add(
     'core',
     'createElementsInParent',
@@ -627,11 +685,14 @@ export const createBasicApiCases = async () => {
     propertyName: 'fills',
     path: [{ key: 'fills', childId: paintId }]
   }
+
   const shareMaterial = () => {
     fillApis.shareFillAtIndex(rect, [other], 0)
   }
+
   const readMaterial = () =>
     core.readElementPropertyTargets([materialTarget])[0]
+
   add(
     'core',
     'readElementPropertyTargets',
@@ -743,6 +804,7 @@ export const createBasicApiCases = async () => {
       records: [{ key: 'fills', set: { [paintId]: { color: '#abcdef' } } }]
     }
   ]
+
   add('core', 'patchElementProperties', { patches }, color('#abcdef'))
   add(
     'core',
@@ -763,7 +825,9 @@ export const createBasicApiCases = async () => {
     () => equal(core.getSelectedElementIds(), [rect])
   )
   const move = { elementIds: [rect], targetParentId: frame, targetIndex: 0 }
+
   const moved = () => equal(core.getElementData(rect)?.parentId, frame)
+
   add('core', 'moveElements', { request: move }, moved)
   add('element', 'setElementLock', { elementId: rect, lock: true }, () =>
     equal(core.getElementData(rect)?.lock, true)
@@ -878,6 +942,7 @@ export const createBasicApiCases = async () => {
   add('element', 'deleteElements', { elementIds: [rect] }, removed)
   add('hierarchy', 'groupElements', { elementIds: [rect, frame] }, () => {
     const parent = core.getElementData(rect)?.parentId
+
     assert(parent !== workspace, 'Ungrouped result')
     equal(parent, core.getElementData(frame)?.parentId)
   })
@@ -892,6 +957,7 @@ export const createBasicApiCases = async () => {
     () => {
       equal(core.getElementMetadata(rect)?.parentId, groupId)
       const children = core.getElementChildren(groupId, 0, 20).elementIds
+
       equal(children.indexOf(rect), children.indexOf(other) + 1)
     }
   )
@@ -909,10 +975,13 @@ export const createBasicApiCases = async () => {
   add('selection', 'selectElements', { elementIds: [rect] }, () =>
     equal(core.getSelectedElementIds(), [rect])
   )
+
   const pointSelection = () =>
     equal(selectionApis.getSelectedVectorPoints(), [pointRef])
+
   const segmentSelection = () =>
     equal(selectionApis.getSelectedVectorSegments(), [segmentRef])
+
   add(
     'selection',
     'selectVectorPoints',
@@ -976,6 +1045,7 @@ export const createBasicApiCases = async () => {
       const child = core.readElementPropertyTargets([
         { elementId: other, propertyName: 'fills', path: [root.children[0]] }
       ])[0]
+
       equal(child.sourceId, paintId)
       equal(child.effective.color, '#112233')
       equal(child.mode, 'source-backed')
@@ -1033,6 +1103,7 @@ export const createBasicApiCases = async () => {
     () => equal(stroke().width, 8)
   )
   const anchorArgs = { elementId: vector, pointId: 'case-a' }
+
   add(
     'element',
     'updateVectorAnchorPointPosition',
@@ -1094,7 +1165,7 @@ export const createBasicApiCases = async () => {
   for (const method of [
     'connectVectorAnchorEndpoints',
     'connectVectorAnchorPoints'
-  ])
+  ]) {
     add(
       'element',
       method,
@@ -1106,6 +1177,8 @@ export const createBasicApiCases = async () => {
           'Missing new connection'
         )
     )
+  }
+
   add('element', 'removeLastSinglePointSubpath', { elementId: vector }, () =>
     assert(!vectorPoint('case-c'), 'Last isolated point retained')
   )
@@ -1139,6 +1212,7 @@ export const createBasicApiCases = async () => {
     { elementId: vector, scale: { scaleX: 2, scaleY: 2 } },
     () => {
       const separation = vectorPoint('case-b').x - vectorPoint('case-a').x
+
       assert(
         separation === 200,
         `Expected scaled separation 200, received ${separation}`
@@ -1151,6 +1225,7 @@ export const createBasicApiCases = async () => {
     { updates: [{ elementId: vector, position: { x: 50, y: 300 } }] },
     () => {
       const b = core.getElementComputedData(vector, ['x', 'y'])
+
       equal(b?.x, 50)
       equal(b?.y, 300)
     }
@@ -1168,7 +1243,9 @@ export const createBasicApiCases = async () => {
   add('core', 'allocateIds', { types: ['el', 'el'] }, (ids) => {
     equal(ids.length, 2)
     equal(new Set(ids).size, 2)
-    for (const id of ids) equal(core.getElementMetadata(id), undefined)
+    for (const id of ids) {
+      equal(core.getElementMetadata(id), undefined)
+    }
   })
 
   equal(Object.keys(cases).sort(), basicApiContracts.map((c) => c.name).sort())
@@ -1179,20 +1256,25 @@ export const createBasicApiCases = async () => {
       action
     ])
   )
+
   return {
     names: Object.keys(cases),
+
     dispose: () => queries.dispose(),
+
     async run(name: string) {
       // Restore viewport separately: canvas transform is interaction state.
       viewportApis.zoomToCenter(1, 0, 0)
       viewportApis.panTo(0, 0)
       const scenario = cases[name],
         action = required(actions.get(name))
+
       scenario.setup?.()
       await new Promise<void>((resolve) =>
         requestAnimationFrame(() => resolve())
       )
       const issue = operationInputIssue(scenario.input, action.inputSchema)
+
       assert(!issue, issue ?? '')
       assert(
         operationInputIssue(
@@ -1205,27 +1287,33 @@ export const createBasicApiCases = async () => {
       const beforeRejected = JSON.stringify(await core.save())
       const selectionBefore = core.getSelectedElementIds().slice()
       let mutationCalls = 0
+
       const reject = async (
         input: Record<string, unknown>,
         signal: AbortSignal
       ) => {
         let rejected = false
+
         try {
           await observed.execute(input, {
             signal,
+
             runMutation: async (work) => {
               mutationCalls++
+
               return work()
             }
           })
         } catch {
           rejected = true
         }
+
         assert(rejected, `${name} invalid or cancelled invocation executed`)
         equal(mutationCalls, 0)
         equal(JSON.stringify(await core.save()), beforeRejected)
         equal(core.getSelectedElementIds(), selectionBefore)
       }
+
       await reject(
         { ...scenario.input, unexpectedOldSnapshot: {} },
         new AbortController().signal
@@ -1246,8 +1334,10 @@ export const createBasicApiCases = async () => {
                 { elementIds: ['missing-usage-selection', rect] }
               ]
             : [{ elementId: 'missing-usage-selection' }]
+
         for (const input of inputs) {
           let failure: unknown
+
           try {
             await createAiTransactionRunner().run(name, (runMutation) =>
               observed.execute(input, {
@@ -1258,11 +1348,14 @@ export const createBasicApiCases = async () => {
           } catch (error) {
             failure = error
           }
+
           const causes: Error[] = []
+
           while (failure instanceof Error && !causes.includes(failure)) {
             causes.push(failure)
             failure = failure.cause
           }
+
           assert(
             causes.some(
               (item) =>
@@ -1274,8 +1367,10 @@ export const createBasicApiCases = async () => {
           equal(core.getSelectedElementIds(), [other])
           equal(JSON.stringify(await core.save()), beforeRejected)
         }
+
         selectionApis.selectElements(selectionBefore, { undoable: false })
       }
+
       const signal = new AbortController().signal
       const originalInput = JSON.stringify(scenario.input)
       const beforeExecution = JSON.stringify(await core.save())
@@ -1286,6 +1381,7 @@ export const createBasicApiCases = async () => {
       )) as Value
       const { actionObservation: _observation, ...receipt } = result
       const outputIssue = operationInputIssue(receipt, action.outputSchema)
+
       assert(!outputIssue, `${name} output: ${outputIssue}`)
       assert(
         result.status !== 'failed' && result.status !== 'partial',
@@ -1301,19 +1397,25 @@ export const createBasicApiCases = async () => {
         const repeated = (await observed.execute(scenario.input, {
           signal
         })) as Value
+
         equal(repeated.value, result.value)
         equal(repeated.status, result.status)
         equal(JSON.stringify(await core.save()), beforeExecution)
       }
+
       const aborted = new AbortController()
+
       aborted.abort()
       let rejected = false
+
       try {
         await action.execute(scenario.input, { signal: aborted.signal })
       } catch {
         rejected = true
       }
+
       assert(rejected, 'Cancelled invocation executed')
+
       return { name, status: result.status }
     }
   }

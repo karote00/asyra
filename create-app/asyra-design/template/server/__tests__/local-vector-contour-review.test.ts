@@ -7,14 +7,20 @@ import {
 } from '../local-vector-contour-review'
 
 const required = <T>(value: T | undefined): T => {
-  if (value === undefined) throw new Error('Missing expected proposal')
+  if (value === undefined) {
+    throw new Error('Missing expected proposal')
+  }
+
   return value
 }
+
 const signal = () => new AbortController().signal
+
 const artifact = (d: string) =>
   parseLocalVectorArtifact(
     `<svg width="100" height="100"><path fill="#008800" d="${d}"/></svg>`
   )
+
 const nearStraight = () => artifact('M10,10C30,10.2 70,10.2 90,10L90,90L10,90Z')
 
 describe('backend contour quality', () => {
@@ -25,6 +31,7 @@ describe('backend contour quality', () => {
     const proposal = required(
       review.proposals.find((p) => p.kind === 'straighten')
     )
+
     expect(proposal).toBeDefined()
     expect(proposal.before).toBeGreaterThan(0)
     expect(proposal.after).toBe(0)
@@ -35,6 +42,7 @@ describe('backend contour quality', () => {
       [proposal.id],
       signal()
     )
+
     expect(result.artifact.paths[0].rings[0][0].outControl).toBeUndefined()
     expect(result.maxDisplacementPx).toBeLessThanOrEqual(0.5)
     expect(result.artifact.paths[0].fill).toBe(source.paths[0].fill)
@@ -48,6 +56,7 @@ describe('backend contour quality', () => {
     const smooth = required(
       review.proposals.find((p) => p.kind === 'smooth-join')
     )
+
     expect(smooth).toBeDefined()
     expect(smooth.after).toBeLessThan(smooth.before)
     expect(
@@ -61,6 +70,7 @@ describe('backend contour quality', () => {
   })
   it('does not approve broad bends, compound paths or degenerate contours', () => {
     const source = artifact('M10,10C30,30 70,30 90,10L90,90L10,90Z')
+
     expect(
       reviewVectorContours(source, ['path-1'], signal()).proposals.some(
         (p) => p.kind === 'straighten' && p.segmentIndex === 0
@@ -70,6 +80,7 @@ describe('backend contour quality', () => {
       'M10,10L90,10L90,90L10,90ZM30,30L30,60L60,60L60,30Z'
     )
     const review = reviewVectorContours(compound, ['path-1'], signal())
+
     expect(review.proposals).toHaveLength(0)
     expect(review.paths[0].limitation).toMatch(/Compound/)
   })
@@ -77,6 +88,7 @@ describe('backend contour quality', () => {
     const source = nearStraight()
     const review = reviewVectorContours(source, ['path-1'], signal())
     const id = review.proposals[0].id
+
     expect(() =>
       applyContourRefinements(nearStraight(), source, review, [id], signal())
     ).toThrow()
@@ -87,6 +99,7 @@ describe('backend contour quality', () => {
       applyContourRefinements(source, source, review, ['forged'], signal())
     ).toThrow()
     const c = new AbortController()
+
     c.abort()
     expect(() => reviewVectorContours(source, ['path-1'], c.signal)).toThrow()
     expect(() =>
@@ -96,9 +109,11 @@ describe('backend contour quality', () => {
   it('bounds drift against the original source, even when a later proposal looks locally small', () => {
     const source = nearStraight()
     const current = structuredClone(source)
+
     current.imageArtifactId = 'later'
     current.paths[0].rings[0][0].y += 2
     const review = reviewVectorContours(current, ['path-1'], signal())
+
     expect(() =>
       applyContourRefinements(
         current,
@@ -116,6 +131,7 @@ describe('backend contour quality', () => {
     const proposal = required(
       review.proposals.find((p) => p.kind === 'straighten')
     )
+
     expect(() =>
       applyContourRefinements(current, root, review, [proposal.id], signal())
     ).toThrow(/budget/)
@@ -133,17 +149,20 @@ describe('backend contour quality', () => {
       [proposal.id],
       signal()
     )
+
     expect(
       reviewVectorContours(result.artifact, ['path-1'], signal()).proposals
     ).toHaveLength(0)
   })
   it('preserves sharp polygon corners and reports self-intersections without edits', () => {
     const square = artifact('M10,10L90,10L90,90L10,90Z')
+
     expect(
       reviewVectorContours(square, ['path-1'], signal()).proposals
     ).toHaveLength(0)
     const crossed = artifact('M10,10L90,90L10,90L90,10Z')
     const report = reviewVectorContours(crossed, ['path-1'], signal())
+
     expect(report.proposals).toHaveLength(0)
     expect(report.paths[0].limitation).toMatch(/intersect/)
   })
@@ -158,9 +177,11 @@ describe('backend contour quality', () => {
         (p) => p.kind === 'smooth-join' && p.segmentIndex === 1
       )
     )
+
     expect(straight).toBeDefined()
     expect(smooth).toBeDefined()
     const before = JSON.stringify(source)
+
     expect(() =>
       applyContourRefinements(
         source,
@@ -174,6 +195,7 @@ describe('backend contour quality', () => {
   })
   it('uses both source and final drawing limits, including nonuniform enlargement and reduction', () => {
     const source = nearStraight()
+
     expect(
       resolveContourQuality(source, {
         mode: 'cleanup',

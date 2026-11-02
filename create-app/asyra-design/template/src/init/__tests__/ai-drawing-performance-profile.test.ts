@@ -47,6 +47,7 @@ describe('AI drawing performance profile', () => {
       throw new Error('diagnostic failure')
     })
     const priorCounter = vi.fn()
+
     observerDisposers.push(subscribeToBrowserDragPhases(priorPhase))
     observerDisposers.push(subscribeToDiagnosticCounters(priorCounter))
     const now = vi
@@ -64,6 +65,7 @@ describe('AI drawing performance profile', () => {
     emitDiagnosticCounter('render:flush', 2)
 
     const first = profile.snapshot()
+
     expect(first).toEqual({
       counters: [{ atMs: 9, name: 'render:flush', value: 2 }],
       phases: [{ atMs: 4, durationMs: 3.5, name: 'ui-context:flush' }],
@@ -93,6 +95,7 @@ describe('AI drawing performance profile', () => {
   it('reads one accumulated counter without materializing a full profile snapshot', () => {
     const profile = installAiDrawingPerformanceProfile({
       now: () => 0,
+
       runtime: 'production'
     })
 
@@ -118,6 +121,7 @@ describe('AI drawing performance profile', () => {
     const evidenceCapacity = 16_384
     const profile = installAiDrawingPerformanceProfile({
       now: () => 0,
+
       runtime: 'production'
     })
 
@@ -132,6 +136,7 @@ describe('AI drawing performance profile', () => {
     }
 
     const snapshot = profile.snapshot()
+
     expect(snapshot.counters).toHaveLength(evidenceCapacity)
     expect(snapshot.phases).toHaveLength(evidenceCapacity)
     expect(snapshot.counters[0]).toEqual({
@@ -191,15 +196,18 @@ describe('AI drawing performance profile', () => {
     const counterKeyCapacity = 1_024
     const profile = installAiDrawingPerformanceProfile({
       now: () => 0,
+
       runtime: 'production'
     })
 
     for (let index = 0; index < counterKeyCapacity; index += 1) {
       emitDiagnosticCounter(`counter-${index}`, 1)
     }
+
     emitDiagnosticCounter('counter-overflow', 1)
     emitDiagnosticCounter('counter-0', 1)
     const oversizedName = `phase-${'x'.repeat(512)}`
+
     emitBrowserDragPhase(oversizedName, 1)
     emitDiagnosticCounter(oversizedName, 1)
 
@@ -221,6 +229,7 @@ describe('AI drawing performance profile', () => {
   it('reads detached conversation failure evidence without exposing the controller snapshot', () => {
     const profile = installAiDrawingPerformanceProfile({
       now: () => 0,
+
       runtime: 'production'
     })
     const controllerSnapshot = {
@@ -253,6 +262,7 @@ describe('AI drawing performance profile', () => {
         subscriber: (snapshot: typeof controllerSnapshot) => void
       ) => {
         subscriber(controllerSnapshot)
+
         return () => undefined
       }
     } as never)
@@ -301,9 +311,11 @@ describe('AI drawing performance profile', () => {
       now,
       runtime: 'production'
     })
+
     profile.attachConversation({
       subscribe: (nextSubscriber: typeof subscriber) => {
         subscriber = nextSubscriber
+
         return () => undefined
       }
     } as never)
@@ -312,6 +324,7 @@ describe('AI drawing performance profile', () => {
       phase: string
       summary: string
     }[] = []
+
     const publish = (phase: string) => {
       progress.push({ attempt: 1, phase, summary: phase })
       subscriber?.({
@@ -346,6 +359,7 @@ describe('AI drawing performance profile', () => {
   it('bounds settlement strings without reading accessors or nested server geometry', () => {
     const profile = installAiDrawingPerformanceProfile({
       now: () => 0,
+
       runtime: 'production'
     })
     const stageGetter = vi.fn(() => {
@@ -367,6 +381,7 @@ describe('AI drawing performance profile', () => {
       message: 'M'.repeat(400),
       status: 'failed'
     }
+
     Object.defineProperty(result, 'stage', {
       enumerable: true,
       get: stageGetter
@@ -383,6 +398,7 @@ describe('AI drawing performance profile', () => {
             }
           ]
         })
+
         return () => undefined
       }
     } as never)
@@ -402,6 +418,7 @@ describe('AI drawing performance profile', () => {
   it('marks development observations as ineligible for release budgets', () => {
     const profile = installAiDrawingPerformanceProfile({
       now: () => 0,
+
       runtime: 'development'
     })
 
@@ -420,6 +437,7 @@ describe('AI drawing performance profile', () => {
   it('requires complete turn evidence for release eligibility in production', () => {
     const profile = installAiDrawingPerformanceProfile({
       now: () => 0,
+
       runtime: 'production'
     })
 
@@ -472,20 +490,30 @@ describe('AI drawing performance profile', () => {
     const epochNow = vi.fn<() => number>().mockReturnValueOnce(1_000)
     const profile = installAiDrawingPerformanceProfile({
       epochNow,
+
       now: () => 0,
+
       runtime: 'production'
     })
 
     const detachRuntime = attachAiDrawingPerformanceRuntimeEvidence(profile, {
       readCanonicalElementCount: () => canonicalElements.length,
+
       readCanonicalElements: () => canonicalElements,
+
       readCanonicalOwnerSnapshot: () => canonicalOwnerSnapshot,
+
       readHistoryDepth: () => authoritativeHistoryDepth,
+
       readRenderProjectionElementCount: () => renderProjectionElementCount,
+
       readViewportPosition: () => viewportPosition,
+
       readZoom: () => zoom,
+
       subscribeToTransactionStatus: (subscriber) => {
         transactionSubscriber = subscriber
+
         return detachTransactions
       }
     })
@@ -606,9 +634,11 @@ describe('AI drawing performance profile', () => {
       .factoryStatuses[0] as {
       failure?: { cause?: { message?: string } }
     }
+
     if (detachedStatusEvidence.failure?.cause) {
       detachedStatusEvidence.failure.cause.message = 'polluted consumer value'
     }
+
     expect(
       (
         profile.getRuntimeEvidence().factoryStatuses[0]?.failure?.cause as {
@@ -618,6 +648,7 @@ describe('AI drawing performance profile', () => {
     ).toBe('canonical mutation failed')
 
     const detachedElements = profile.readCanonicalElements()
+
     expect(detachedElements).toEqual(canonicalElements)
     expect(detachedElements).not.toBe(canonicalElements)
     ;(
@@ -627,6 +658,7 @@ describe('AI drawing performance profile', () => {
     ).props.points.pointA.x = 99
     expect(canonicalElements[0].raw.props.points.pointA.x).toBe(1)
     const detachedOwnerSnapshot = profile.readCanonicalOwnerSnapshot()
+
     expect(detachedOwnerSnapshot).toEqual(canonicalOwnerSnapshot)
     expect(detachedOwnerSnapshot).not.toBe(canonicalOwnerSnapshot)
     ;(
@@ -646,6 +678,7 @@ describe('AI drawing performance profile', () => {
     expect(profile.readLatestFactoryTransactionStatus()).toBeNull()
 
     const boundedError = new Error('E'.repeat(400))
+
     boundedError.name = 'N'.repeat(100)
     transactionSubscriber?.({
       changeCount: 0,
@@ -737,19 +770,29 @@ describe('AI drawing performance profile', () => {
       ((status: TransactionStatusPayload) => void) | undefined
     const profile = installAiDrawingPerformanceProfile({
       epochNow: () => 1_000,
+
       now: () => 0,
+
       runtime: 'production'
     })
     const detachRuntime = attachAiDrawingPerformanceRuntimeEvidence(profile, {
       readCanonicalElementCount: () => 0,
+
       readCanonicalElements: () => [],
+
       readCanonicalOwnerSnapshot: () => ({ props: {}, sceneTree: {} }),
+
       readHistoryDepth: () => 0,
+
       readRenderProjectionElementCount: () => 0,
+
       readViewportPosition: () => ({ x: 0, y: 0 }),
+
       readZoom: () => 1,
+
       subscribeToTransactionStatus: (subscriber) => {
         transactionSubscriber = subscriber
+
         return () => undefined
       }
     })
@@ -772,6 +815,7 @@ describe('AI drawing performance profile', () => {
     }
 
     const evidence = profile.getRuntimeEvidence()
+
     expect(evidence.factoryStatuses).toHaveLength(capacity)
     expect(evidence.factoryCommits).toHaveLength(capacity)
     expect(evidence.factoryPublications).toHaveLength(capacity)
@@ -792,6 +836,7 @@ describe('AI drawing performance profile', () => {
       ((status: TransactionStatusPayload) => void) | undefined
     const profile = installAiDrawingPerformanceProfile({
       now: () => 0,
+
       runtime: 'production'
     })
     const hostileTrap = vi.fn(() => {
@@ -808,14 +853,22 @@ describe('AI drawing performance profile', () => {
     )
     const detachRuntime = attachAiDrawingPerformanceRuntimeEvidence(profile, {
       readCanonicalElementCount: () => 0,
+
       readCanonicalElements: () => [],
+
       readCanonicalOwnerSnapshot: () => ({ props: {}, sceneTree: {} }),
+
       readHistoryDepth: () => 0,
+
       readRenderProjectionElementCount: () => 0,
+
       readViewportPosition: () => ({ x: 0, y: 0 }),
+
       readZoom: () => 1,
+
       subscribeToTransactionStatus: (subscriber) => {
         transactionSubscriber = subscriber
+
         return () => undefined
       }
     })

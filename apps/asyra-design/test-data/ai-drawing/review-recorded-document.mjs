@@ -15,8 +15,11 @@ import { waitForRecordedDocument } from './taipei-101-live-contract.mjs'
 const app = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const root = path.resolve(app, '../..')
 const runDirectory = fs.realpathSync(process.argv[2])
-if (!runDirectory.startsWith(path.join(root, 'tmp') + path.sep))
+
+if (!runDirectory.startsWith(path.join(root, 'tmp') + path.sep)) {
   throw new Error('Select a retained run inside this project tmp.')
+}
+
 const run = JSON.parse(
   fs.readFileSync(path.join(runDirectory, 'run.json'), 'utf8')
 )
@@ -30,17 +33,21 @@ const expectedCount = Object.values(source.counts).reduce(
   0
 )
 const directory = path.join(runDirectory, `reload-review-${Date.now()}`)
+
 fs.mkdirSync(directory)
 const env = loadEnvironment({ ...process.env })
 const configured = resolveEnvironment(env)
 const services = []
 const evidence = { runId: run.id, expectedCount, services, aiRequests: 0 }
+
 const save = () =>
   fs.writeFileSync(
     path.join(directory, 'review.json'),
     JSON.stringify(evidence, null, 2)
   )
+
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
 const start = (name, command, args) => {
   const fd = fs.openSync(path.join(directory, `${name}.log`), 'a')
   const child = spawn(command, args, {
@@ -54,23 +61,34 @@ const start = (name, command, args) => {
     detached: true,
     stdio: ['ignore', fd, fd]
   })
+
   fs.closeSync(fd)
-  if (!child.pid) throw new Error(`Cannot start ${name}`)
+  if (!child.pid) {
+    throw new Error(`Cannot start ${name}`)
+  }
+
   services.push({ name, pid: child.pid })
   save()
 }
+
 const ready = async (url) => {
   for (let i = 0; i < 120; i++) {
     try {
-      if ((await fetch(url, { signal: AbortSignal.timeout(1000) })).ok) return
+      if ((await fetch(url, { signal: AbortSignal.timeout(1000) })).ok) {
+        return
+      }
     } catch {
       /* startup */
     }
+
     await sleep(250)
   }
+
   throw new Error(`Service unavailable: ${url}`)
 }
+
 let browser
+
 try {
   for (const url of [
     configured.appURL,
@@ -81,9 +99,12 @@ try {
       await fetch(url, { signal: AbortSignal.timeout(500) })
       throw new Error('Occupied service port: ' + url)
     } catch (error) {
-      if (error.message.startsWith('Occupied')) throw error
+      if (error.message.startsWith('Occupied')) {
+        throw error
+      }
     }
   }
+
   start('document-backend', process.execPath, [
     'dist/document-backend/document-backend.js'
   ])
@@ -105,17 +126,21 @@ try {
   const page = await browser.newPage({
     viewport: { width: 1920, height: 1080 }
   })
+
   await page.route('**/api/ai/**', (route) => {
     evidence.aiRequests++
+
     return route.abort()
   })
   const started = Date.now()
+
   await page.goto(run.url)
   evidence.ready = await waitForRecordedDocument(page, expectedCount)
   evidence.loadMs = Date.now() - started
   const loaded = await page.evaluate(async () =>
     (await import('/src/testing/runtime-access.ts')).core.save()
   )
+
   evidence.documentMatches = isDeepStrictEqual(loaded, source.document)
   fs.writeFileSync(
     path.join(directory, 'document.json.gz'),
@@ -125,8 +150,9 @@ try {
     (await import('/src/common-apis/viewport.ts')).viewportApis.zoomFit()
   )
   await page.screenshot({ path: path.join(directory, 'reloaded.png') })
-  if (!evidence.documentMatches || evidence.aiRequests)
+  if (!evidence.documentMatches || evidence.aiRequests) {
     throw new Error('Retained document verification failed.')
+  }
 } catch (error) {
   evidence.failure = error.message
   process.exitCode = 1
@@ -136,9 +162,12 @@ try {
     try {
       process.kill(-pid, 'SIGTERM')
     } catch (error) {
-      if (error.code !== 'ESRCH') evidence.cleanupFailure = error.message
+      if (error.code !== 'ESRCH') {
+        evidence.cleanupFailure = error.message
+      }
     }
   }
+
   save()
   console.log(JSON.stringify({ directory, ...evidence }))
 }

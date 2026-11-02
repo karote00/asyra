@@ -80,6 +80,7 @@ export const initApp = (): AppInitialization => {
   initInputSystem()
   const aiStartup: AiStartup = createAiStartup()
   let initializedFeatures: ReturnType<typeof initFeatures>
+
   try {
     initializedFeatures = initFeatures({
       aiRuntime: aiStartup.runtime
@@ -92,14 +93,20 @@ export const initApp = (): AppInitialization => {
     ])
     throw error
   }
+
   const aiFeature = initializedFeatures.ai
   const aiConversation = createAiConversationController({
     confirmation: aiStartup.confirmation,
     history: aiStartup.history,
     feature: aiFeature.api,
+
     onPublished: (turn) => {
       const result = turn.result as { recordingId?: unknown } | null
-      if (typeof result?.recordingId !== 'string') return
+
+      if (typeof result?.recordingId !== 'string') {
+        return
+      }
+
       aiStartup.runtime.observe?.({
         sourceRequestId: result.recordingId,
         purpose: 'conversation-publication',
@@ -107,6 +114,7 @@ export const initApp = (): AppInitialization => {
         evidence: { outcome: turn.outcome, durationMs: turn.durationMs }
       })
     },
+
     getElementType: (elementId) => elementApis.getElementType(elementId)
   })
 
@@ -114,6 +122,7 @@ export const initApp = (): AppInitialization => {
   const detachPerformanceRuntimeEvidence = performanceProfile
     ? attachAiDrawingPerformanceRuntimeEvidence(performanceProfile, {
         readCanonicalElementCount: () => core.getCanonicalElementCount(),
+
         readCanonicalElements: () =>
           core.getAllElementData().map(({ elementId, data, computed }) => ({
             computed,
@@ -122,19 +131,26 @@ export const initApp = (): AppInitialization => {
             rendered: core.hasProjectedElement(elementId),
             type: String(data.type)
           })),
+
         readCanonicalOwnerSnapshot: () => {
           return core.getCanonicalOwnerSnapshot()
         },
+
         readHistoryDepth: () => core.getUndoHistoryDepth(),
+
         readRenderProjectionElementCount: () => core.getProjectedElementCount(),
+
         readViewportPosition: () => viewportApis.getPosition(),
+
         readZoom: () => viewportApis.getScale(),
+
         subscribeToTransactionStatus: (subscriber) =>
           core.subscribeToTransactionStatus(subscriber)
       })
     : undefined
 
   let disposal: Promise<void> | null = null
+
   const dispose = (): Promise<void> => {
     if (!disposal) {
       disposal = (async () => {
@@ -147,11 +163,14 @@ export const initApp = (): AppInitialization => {
         await aiStartup.runtime.dispose()
       })()
     }
+
     return disposal
   }
+
   const handlePageHide = () => {
     void dispose()
   }
+
   window.addEventListener('pagehide', handlePageHide, { once: true })
 
   return Object.freeze({

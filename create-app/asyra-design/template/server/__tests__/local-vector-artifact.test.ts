@@ -18,6 +18,7 @@ const input = {
     ]
   }
 }
+
 const signal = () => new AbortController().signal
 
 describe('native cubic reference geometry', () => {
@@ -25,10 +26,13 @@ describe('native cubic reference geometry', () => {
   // outside the image. Endpoints alone would report a zero-height shape.
   const curved =
     '<svg width="100" height="100"><path d="M10,50C10,-10,90,-10,90,50C90,110,10,110,10,50Z M40,40L40,60L60,60L60,40Z" fill="#008800"/></svg>'
+
   it('measures each admitted curve once and reuses its bounds across preparations', () => {
     const bbox = vi.spyOn(Bezier.prototype, 'bbox')
+
     try {
       const artifact = parseLocalVectorArtifact(curved)
+
       expect(bbox).toHaveBeenCalledTimes(2)
       for (const size of [120, 240, 480]) {
         const drawing = prepareLocalVectorArtifact(artifact, {
@@ -37,11 +41,13 @@ describe('native cubic reference geometry', () => {
           bounds: { x: 0, y: 0, width: size, height: size },
           excludePathIds: []
         })
+
         expect(drawing.slices[0].descriptors[0]).toMatchObject({
           width: size,
           height: size
         })
       }
+
       expect(bbox).toHaveBeenCalledTimes(2)
       parseLocalVectorArtifact(curved)
       expect(bbox).toHaveBeenCalledTimes(4)
@@ -51,6 +57,7 @@ describe('native cubic reference geometry', () => {
   })
   it('preserves cubic controls, closing endpoints, holes and exact curve bounds under nonuniform scaling', () => {
     const artifact = parseLocalVectorArtifact(curved)
+
     expect(artifact.paths[0]).toMatchObject({
       bounds: { x: 10, y: 5, width: 80, height: 90 },
       pointCount: 10
@@ -62,6 +69,7 @@ describe('native cubic reference geometry', () => {
       excludePathIds: []
     })
     const descriptor = drawing.slices[0].descriptors[0]
+
     expect(descriptor).toMatchObject({
       x: 0,
       y: 0,
@@ -77,6 +85,7 @@ describe('native cubic reference geometry', () => {
       controlForId?: string
       controlRole?: string
     }[]
+
     expect(points.filter((point) => point.kind === 'control')).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ x: 20, y: 15, controlRole: 'out' }),
@@ -90,6 +99,7 @@ describe('native cubic reference geometry', () => {
       segmentIds: string[]
       closed: boolean
     }[]
+
     expect(networks.map((n) => n.pointIds.length)).toEqual([2, 4])
     expect(networks.every((n) => n.closed)).toBe(true)
     const segments = Object.values(descriptor.segments) as {
@@ -98,6 +108,7 @@ describe('native cubic reference geometry', () => {
       outControlId: string | null
       inControlId: string | null
     }[]
+
     expect(segments[1].endId).toBe(segments[0].startId)
     for (const segment of segments.slice(0, 2)) {
       expect(points.find((p) => p.id === segment.outControlId)).toMatchObject({
@@ -111,6 +122,7 @@ describe('native cubic reference geometry', () => {
         controlRole: 'in'
       })
     }
+
     expect(drawing.pointCount).toBe(points.length)
     expect(artifact.paths[0].bounds).toEqual({
       x: 10,
@@ -127,6 +139,7 @@ describe('native cubic reference geometry', () => {
       const artifact = parseLocalVectorArtifact(
         `<svg width="100" height="100"><path d="${d}" fill="#000000"/></svg>`
       )
+
       expect(artifact.paths).toHaveLength(1)
       expect(artifact.paths[0].bounds.height).toBeGreaterThan(0)
     }
@@ -156,6 +169,7 @@ describe('request-owned vector artifacts', () => {
         '<path d="M1,1L2,2Z" fill="#000000"/><path d="M0,0'
       )
     )
+
     expect(artifact.paths).toHaveLength(2)
     expect(artifact.paths[0].pointCount).toBe(8)
   })
@@ -179,6 +193,7 @@ describe('request-owned vector artifacts', () => {
         bounds.x + bounds.width <= 138 &&
         bounds.y + bounds.height <= 125
     )
+
     expect(mouth).toBeDefined()
     expect(mouth?.bounds.width).toBeGreaterThan(10)
     const drawing = prepareLocalVectorArtifact(artifact, {
@@ -197,6 +212,7 @@ describe('request-owned vector artifacts', () => {
           'kind' in point &&
           point.kind === 'control'
       )
+
     expect(controls.length).toBeGreaterThan(100)
   })
   it('returns compact summaries and expands selected geometry without model-authored coordinates', async () => {
@@ -215,6 +231,7 @@ describe('request-owned vector artifacts', () => {
         signal()
       )
     )
+
     expect(summary.paths).toHaveLength(2)
     expect(summary.paths[0]).toMatchObject({
       bounds: { x: 0, y: 0, width: 80, height: 80 },
@@ -252,6 +269,7 @@ describe('request-owned vector artifacts', () => {
       ]
     })
     const drawing = batch.actions[0].arguments
+
     expect(drawing.groupBounds).toEqual({
       x: 10,
       y: 20,
@@ -261,6 +279,7 @@ describe('request-owned vector artifacts', () => {
     expect(drawing.elementCount).toBe(1)
     expect(drawing.pointCount).toBe(8)
     const vector = drawing.slices[0].descriptors[0]
+
     expect(Object.values(vector.points)).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ x: 10, y: 20 }),
@@ -296,6 +315,7 @@ describe('request-owned vector artifacts', () => {
       compositionRole: 'Reference',
       excludePathIds: []
     }
+
     const batch = (arguments_: unknown) => ({
       batchId: 'test',
       actions: [
@@ -307,6 +327,7 @@ describe('request-owned vector artifacts', () => {
         }
       ]
     })
+
     for (const invalid of [
       { ...args, imageArtifactId: 'foreign' },
       { ...args, excludePathIds: ['unknown'] },
@@ -318,6 +339,7 @@ describe('request-owned vector artifacts', () => {
     ]) {
       expect(() => tools.resolveBatch(batch(invalid))).toThrow()
     }
+
     expect(() =>
       createLocalImageTools(input, async () => svg).resolveBatch(batch(args))
     ).toThrow()
@@ -343,9 +365,12 @@ describe('request-owned vector artifacts', () => {
         )
       ).rejects.toThrow()
     }
+
     const controller = new AbortController()
+
     controller.abort()
     const convert = vi.fn(async () => svg)
+
     await expect(
       createLocalImageTools(input, convert).call(
         'vtracer',
@@ -373,6 +398,7 @@ describe('explicit native oval preparation', () => {
     bounds: { x: 10, y: 20, width: 190, height: 190 },
     excludePathIds: []
   }
+
   it('uses one native oval instead of polygon segments and preserves neighboring geometry', () => {
     const original = prepareLocalVectorArtifact(artifact, args)
     const result = prepareLocalVectorArtifact(artifact, {
@@ -380,6 +406,7 @@ describe('explicit native oval preparation', () => {
       componentMappings: [{ pathId: 'path-1', componentType: 'oval' }]
     })
     const descriptors = result.slices.flatMap((slice) => slice.descriptors)
+
     expect(descriptors[0]).toMatchObject({
       type: 'oval',
       x: 0,
@@ -425,6 +452,7 @@ describe('explicit native oval preparation', () => {
         prepareLocalVectorArtifact(artifact, { ...args, componentMappings })
       ).toThrow()
     }
+
     expect(() =>
       prepareLocalVectorArtifact(artifact, {
         ...args,
@@ -433,6 +461,7 @@ describe('explicit native oval preparation', () => {
       })
     ).toThrow()
     const compound = parseLocalVectorArtifact(svg)
+
     expect(() =>
       prepareLocalVectorArtifact(compound, {
         ...args,
@@ -453,6 +482,7 @@ describe('App component mapping before drawing', () => {
     bounds: { x: 10, y: 20, width: 180, height: 200 },
     excludePathIds: []
   }
+
   it('maps each supported component explicitly while keeping other geometry as vectors', () => {
     expect(vectorArtifactSummary(artifact)).toMatchObject({
       componentTargets: {
@@ -468,6 +498,7 @@ describe('App component mapping before drawing', () => {
       ]
     })
     const descriptors = result.slices.flatMap((slice) => slice.descriptors)
+
     expect(descriptors.map((item) => item.type)).toEqual([
       'rect',
       'oval',
@@ -503,11 +534,14 @@ describe('App component mapping before drawing', () => {
         { pathId: 'path-1', componentType: 'oval' }
       ],
       [{ pathId: 'path-1', componentType: 'rect', extra: true }]
-    ])
+    ]) {
       expect(() =>
         prepareLocalVectorArtifact(artifact, { ...args, componentMappings })
       ).toThrow()
+    }
+
     const mapping = [{ pathId: 'path-1', componentType: 'rect' }]
+
     expect(() =>
       prepareLocalVectorArtifact(artifact, {
         ...args,
@@ -523,6 +557,7 @@ describe('App component mapping before drawing', () => {
       })
     ).toThrow()
     const compound = parseLocalVectorArtifact(svg)
+
     expect(() =>
       prepareLocalVectorArtifact(compound, {
         ...args,

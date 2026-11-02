@@ -1,12 +1,12 @@
 # AI conversation corrections - implementation and Taipei 101 report
 
 Date: 2026-11-02 (Taiwan). Status: local implementation and one live test complete;
-user review pending. Parent: [Editable Design Agent](ai-design-agent-plan.md#conversation-continuity-and-tool-contract-corrections---2026-11-02).
+accepted by Asa for closeout and PR creation. Parent: [Editable Design Agent](../ai-design-agent-plan.md#conversation-continuity-and-tool-contract-corrections---2026-11-02).
 
 ## Scope and delivered behavior
 
 Worktree: `.worktrees/ai-conversation-improvements`. Branch:
-`codex/ai-conversation-improvements`. No push, PR, merge or publication.
+`codex/ai-conversation-improvements`. PR creation is authorized at closeout; no merge or publication.
 
 | Stage | Delivered behavior | Review and regression evidence |
 | --- | --- | --- |
@@ -23,8 +23,11 @@ before Feature execution; it does not silently truncate or summarize requirement
 
 Implementation commits: `52c5e4bd8`, `d7912966f`, `ba3f3d01c`, `ca8364763`.
 The live-tested source is **`ca83647639baa03906a467942cd9c0f20f8225d2`**.
-Subsequent changes affect recording verification, local-record template exclusions
-and documentation only; the production conversation implementation is unchanged.
+Immediate post-run corrections affected recording verification, local-record
+template exclusions and documentation. Later PR integration onto main preserves
+the newer tool/runtime code and replaces its overlapping history projector with
+this accepted contract. See the [closeout integration record](ai-conversation-improvements-plan.md#pr-integration).
+The live result is not a measurement of that rebased source.
 
 ## Validation
 
@@ -74,7 +77,7 @@ Provider request: `aca349a7-de29-40f3-b270-13761f89e687`.
 Root runtime request: `03fabc5e-949e-433f-938a-5bd82d3cad90`.
 Source fingerprint: `cadc58f1743effbe7358cb720f715e48496396a54d0ae058080e78abf8563e8a`.
 
-The runner read [the canonical prompt](../../../../../apps/asyra-design/test-data/ai-drawing/taipei-101-full-building-prompt.txt)
+The runner read [the canonical prompt](../../../../../../apps/asyra-design/test-data/ai-drawing/taipei-101-full-building-prompt.txt)
 and removed only its final newline. Fixture SHA-256:
 `25b9ad1aeb523fdb590a39d090a37fdc65ed62ff081a27acfa92d946f9b2ff51`.
 The composer and actual root request matched. There was exactly **one** user
@@ -177,7 +180,8 @@ not establish the requested highly realistic architectural detail. High node
 counts and a successful App result cannot close that quality gap. The agent states
 that secondary dimensions were estimated from photographs. Exact unseen geometry,
 all ornament fidelity and construction-scale architectural accuracy are not
-independently certified. Final artwork acceptance remains with Asa.
+independently certified. Asa accepted this result for the bounded task on 2026-11-02; the stated
+quality limitations remain, with no immediate correction required.
 
 The saved backend checkpoint equals the completion snapshot's document exactly.
 A separate reopen loaded all 20,920 nodes in **12.527 seconds** and proved deep
@@ -208,12 +212,12 @@ All local evidence is retained under `tmp/conversation-improvements/` in this
 worktree; large raw artifacts are intentionally local and are not committed.
 The report and permanent test helpers are committed project files.
 
-- [Verified reopened drawing](../../../../../tmp/conversation-improvements/live/taipei-101-fixed-1793560952884/reload-review-1793561569602/reloaded.png)
-- [Video](../../../../../tmp/conversation-improvements/live/taipei-101-fixed-1793560952884/recording.webm)
-- [Original run record](../../../../../tmp/conversation-improvements/live/taipei-101-fixed-1793560952884/run.json)
-- [Editable completion snapshot](../../../../../tmp/conversation-improvements/live/taipei-101-fixed-1793560952884/source-snapshot.json.gz)
-- [No-AI reopen proof](../../../../../tmp/conversation-improvements/live/taipei-101-fixed-1793560952884/reload-review-1793561569602/review.json)
-- [Structured offline execution report](../../../../../tmp/conversation-improvements/execution-report.json)
+- [Verified reopened drawing](../../../../../../tmp/conversation-improvements/live/taipei-101-fixed-1793560952884/reload-review-1793561569602/reloaded.png)
+- [Video](../../../../../../tmp/conversation-improvements/live/taipei-101-fixed-1793560952884/recording.webm)
+- [Original run record](../../../../../../tmp/conversation-improvements/live/taipei-101-fixed-1793560952884/run.json)
+- [Editable completion snapshot](../../../../../../tmp/conversation-improvements/live/taipei-101-fixed-1793560952884/source-snapshot.json.gz)
+- [No-AI reopen proof](../../../../../../tmp/conversation-improvements/live/taipei-101-fixed-1793560952884/reload-review-1793561569602/review.json)
+- [Structured offline execution report](../../../../../../tmp/conversation-improvements/execution-report.json)
 - Provider JSONL, input/output payloads, imported assets, durable backend documents,
   service logs and all detail screenshots are in the same live-run directory.
 - Stage evidence: `task1-*`, `task2-*`, `task3-*`, browser attempt directories and
@@ -224,8 +228,82 @@ Credit checks followed the requested 30-minute cadence. Last measured balance wa
 balance or the isolated live-test cost. No extra balance query is made just to
 close this report before the next scheduled interval.
 
-The four bounded corrections and single-run reporting task are complete. Review
-the generated artwork and implementation before choosing further work. Future
+The four bounded corrections and single-run reporting task are complete. Asa reviewed and accepted the generated artwork for this bounded scope. Future
 quality improvements and conservative report freshness classification require
 a separate bounded task. No release work is pending under this task.
 The parent Editable Design Agent plan remains open.
+
+## Original run - detailed tool payloads and timeline
+
+These tables were derived offline from the same original provider JSONL and its
+retained payload references; no model was called. Payload bytes are recorded
+serialized App inputs/outputs, not total network traffic. Inclusive call time
+includes downstream App exchange and differs from exclusive profiler ownership.
+The timeline uses Send as zero (provider start is 0.250 seconds later). Tool
+success can record a failing visual judgment; accepted coverage is shown separately.
+
+| Tool | Calls | Input bytes | Output bytes | Inclusive seconds |
+| --- | ---: | ---: | ---: | ---: |
+| `describe_design_apis` | 9 | 667 | 313,463 | 0.063 |
+| `import_reference_image` | 4 | 1,365 | 14,876 | 2.308 |
+| `define_design_criteria` | 1 | 1,514 | 214 | 0.003 |
+| `prepare_and_apply_design` | 6 | 997,166 | 52,459 | 17.386 |
+| `select_design_references` | 1 | 1,472 | 4,135 | 0.004 |
+| `record_design_facts` | 1 | 820 | 1,457 | 0.001 |
+| `review_drawing` | 8 | 22,536 | 71,279 | 1.051 |
+| `read_design_context` | 1 | 171 | 1,125 | 0.125 |
+| `retain_design_targets` | 1 | 114,031 | 1,293 | 0.009 |
+| `execute_design_batch` | 3 | 13,059 | 1,944 | 3.378 |
+| `read_design_checks` | 3 | 6 | 16,759 | 3.245 |
+| `review_design` | 10 | 1,429 | 12,832 | 0.147 |
+
+| Seconds after Send | Tool | Recorded result |
+| --- | --- | --- |
+| 9.02–9.06 | `describe_design_apis` | usable |
+| 14.64–16.52 | `import_reference_image` | usable |
+| 16.54–16.54 | `describe_design_apis` | usable |
+| 23.21–23.35 | `import_reference_image` | usable |
+| 23.37–23.37 | `describe_design_apis` | usable |
+| 49.44–49.44 | `define_design_criteria` | usable |
+| 49.44–52.46 | `prepare_and_apply_design` | usable; elementCount=4996 |
+| 61.85–61.86 | `select_design_references` | usable |
+| 61.86–61.86 | `record_design_facts` | usable |
+| 61.86–61.86 | `describe_design_apis` | usable |
+| 75.86–87.08 | `prepare_and_apply_design` | usable |
+| 91.87–92.01 | `import_reference_image` | usable |
+| 109.40–110.71 | `prepare_and_apply_design` | usable; elementCount=1177 |
+| 110.71–110.85 | `import_reference_image` | usable |
+| 150.48–151.27 | `prepare_and_apply_design` | usable; elementCount=328 |
+| 151.30–151.42 | `review_drawing` | usable; coverage=0/6; accepted=false |
+| 176.70–176.71 | `review_drawing` | usable; coverage=1/6; accepted=false |
+| 176.72–176.79 | `review_drawing` | usable; coverage=1/6; accepted=false |
+| 190.37–190.38 | `review_drawing` | usable; coverage=1/6; accepted=false |
+| 190.39–190.39 | `describe_design_apis` | usable |
+| 190.40–190.40 | `describe_design_apis` | usable |
+| 196.38–196.38 | `describe_design_apis` | usable |
+| 196.39–196.51 | `read_design_context` | usable |
+| 208.32–208.33 | `retain_design_targets` | usable |
+| 217.24–220.00 | `execute_design_batch` | usable |
+| 249.34–249.54 | `prepare_and_apply_design` | usable; elementCount=65 |
+| 249.54–249.56 | `execute_design_batch` | usable |
+| 249.56–250.61 | `read_design_checks` | usable |
+| 258.75–258.75 | `describe_design_apis` | usable |
+| 258.75–259.04 | `review_drawing` | usable; coverage=0/6; accepted=false |
+| 284.00–284.10 | `review_drawing` | usable; coverage=3/6; accepted=false |
+| 284.10–284.11 | `describe_design_apis` | usable |
+| 302.18–302.80 | `execute_design_batch` | usable |
+| 302.88–303.74 | `prepare_and_apply_design` | usable; elementCount=97 |
+| 309.50–309.57 | `review_design` | usable |
+| 309.57–310.64 | `read_design_checks` | usable |
+| 320.35–320.36 | `review_design` | usable |
+| 320.36–320.36 | `review_design` | usable |
+| 320.36–320.37 | `review_design` | usable |
+| 320.37–320.37 | `review_design` | usable |
+| 320.38–320.39 | `review_design` | usable |
+| 320.39–320.40 | `review_design` | usable |
+| 320.41–320.41 | `review_design` | usable |
+| 320.41–320.42 | `review_design` | usable |
+| 320.42–320.44 | `review_design` | usable |
+| 320.44–320.80 | `review_drawing` | usable; coverage=1/6; accepted=false |
+| 340.52–340.63 | `review_drawing` | usable; coverage=6/6; accepted=true |
+| 340.63–341.75 | `read_design_checks` | usable |

@@ -17,6 +17,7 @@ import core from '../contexts'
 export const hierarchyApis = {
   getWorkspaceId: (): string | null => {
     const workspaceId = core.getCurrentWorkspaceId()
+
     return typeof workspaceId === 'string' && workspaceId.length > 0
       ? workspaceId
       : null
@@ -56,16 +57,24 @@ export const hierarchyApis = {
       !request.elementIds.length ||
       !['before', 'after'].includes(request.placement) ||
       request.elementIds.includes(request.anchorId)
-    )
+    ) {
       throw new Error(
         'Relative move requires targets and a separate before/after anchor'
       )
+    }
+
     const anchor = core.getElementMetadata(request.anchorId)
-    if (!anchor?.parentId)
+
+    if (!anchor?.parentId) {
       throw new Error('Relative move anchor is unavailable')
+    }
+
     const parent = core.getElementMetadata(anchor.parentId)
-    if (!parent?.childCount)
+
+    if (!parent?.childCount) {
       throw new Error('Relative move parent is unavailable')
+    }
+
     const siblings = core.getElementChildren(
       anchor.parentId,
       0,
@@ -75,8 +84,11 @@ export const hierarchyApis = {
     const anchorIndex = siblings
       .filter((id) => !moving.has(id))
       .indexOf(request.anchorId)
-    if (anchorIndex < 0)
+
+    if (anchorIndex < 0) {
       throw new Error('Relative move anchor is not a current child')
+    }
+
     return moveElementsWithGroupGeometry(
       core,
       {

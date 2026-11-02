@@ -16,6 +16,7 @@ const saved = JSON.parse(
 
 test('saved search identities reproduce all three native router failures without inference', async () => {
   const fixture = (await loadFixtures())[0]
+
   assert.equal(saved.originalArguments, 'not-preserved')
   const result = await runNativeDelivery({
     fixture: { ...fixture, raw: '{"status":"complete"}' },
@@ -28,11 +29,13 @@ test('saved search identities reproduce all three native router failures without
       arguments: JSON.stringify({ query: saved.controlledQuery, limit: 1 })
     }))
   })
+
   for (const [index, outputs] of result.searchResults.entries()) {
     assert.equal(outputs.length, 1)
     assert.ok(JSON.stringify(outputs).includes(saved.calls[index].routedName))
     assert.ok(JSON.stringify(outputs).includes('unsupported'))
   }
+
   console.log(`Saved failure replay: ${result.directory}`)
 })
 
@@ -52,6 +55,7 @@ test('standard direct declarations discover deferred tools and deliver their res
       arguments: { query: saved.controlledQuery, limit: 1 }
     }))
   })
+
   assert.equal(result.initialToolDelivery.additionalTools.length, 0)
   assert.ok(!JSON.stringify(result.initialToolDelivery).includes('store('))
   assert.ok(!JSON.stringify(result.initialToolDelivery).includes('text('))
@@ -66,10 +70,12 @@ test('standard direct declarations discover deferred tools and deliver their res
     const namespace = outputs[0].tools.find(
       (tool) => tool.name === fixture.namespace
     )
+
     assert.equal(namespace?.tools[0]?.name, fixture.tool)
     assert.equal(namespace?.tools[0]?.parameters.type, 'object')
     assert.ok(namespace.tools[0].parameters.required.includes('ids'))
   }
+
   assert.equal(result.requests, saved.calls.length + 2)
   assert.equal(result.comparison.exact, true)
   assert.equal(result.cleanup.errors.length, 0)

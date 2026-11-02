@@ -53,6 +53,7 @@ describe('Asyra Design AI presentation summaries', () => {
         transaction: { status: 'rolled-back' }
       }
     }
+
     expect(summarizeAiTurn(failed).message).toContain(reason)
     expect(summarizeAiTurn(failed).message).toContain('rolled back')
     expect(
@@ -71,6 +72,7 @@ describe('Asyra Design AI presentation summaries', () => {
         transaction: { status: 'committed' }
       }
     }
+
     expect(summarizeAiTurn(stopped).message).toBe(
       'The request was stopped. Changes already applied have been kept.'
     )
@@ -87,6 +89,7 @@ describe('Asyra Design AI presentation summaries', () => {
         transaction: { status: 'committed' }
       }
     }
+
     expect(summarizeAiTurn(failed).message).toBe(
       'Refining the drawing could not be completed. Changes already applied have been kept.'
     )
@@ -102,6 +105,7 @@ describe('Asyra Design AI presentation summaries', () => {
         transaction: { status: 'unknown' }
       }
     }
+
     expect(summarizeAiTurn(failed).message).toBe(
       'The request stopped, but its final change state could not be confirmed. Review the canvas before continuing.'
     )
@@ -242,6 +246,7 @@ describe('capability outcomes', () => {
         ]
       }
     }
+
     expect(summarizeAiTurn(result).message).toContain(
       'cannot cut the connected mark'
     )
@@ -260,6 +265,7 @@ describe('shared current activity and activity history', () => {
       toolStatus,
       summary: 'Tool'
     })
+
     const updates = [
       tool('research_design_context', 'running'),
       tool('research_design_context', 'completed'),
@@ -278,6 +284,7 @@ describe('shared current activity and activity history', () => {
       tool('review_design', 'running'),
       tool('research_design_context', 'running')
     ]
+
     expect(
       projectAiActivity(updates).entries.map((entry) => entry.label)
     ).toEqual([
@@ -319,6 +326,7 @@ describe('shared current activity and activity history', () => {
         summary: 'Tool completed'
       }
     ])
+
     expect(projection.entries.map((entry) => entry.label)).toEqual([
       'Reviewing the drawing',
       'Converting artwork to vectors',
@@ -339,6 +347,7 @@ describe('shared current activity and activity history', () => {
       }
     ]
     const projection = projectAiActivity(updates)
+
     expect(projection.current).toMatchObject({
       label: 'Adjusting element visibility',
       message: 'Hiding the mark'
@@ -348,6 +357,7 @@ describe('shared current activity and activity history', () => {
       [{ awaitingApproval: true }, 'Awaiting approval']
     ] as const) {
       const controlled = projectAiActivity(updates, state)
+
       expect(controlled.current).toBe(controlled.entries.at(-1))
       expect(controlled.current.label).toBe(label)
     }
@@ -367,6 +377,7 @@ it('ends history with the authoritative result even when cancellation emitted no
     ],
     { outcome: 'cancelled' }
   )
+
   expect(projection.entries.at(-1)?.label).toBe('Stopped')
 })
 
@@ -386,6 +397,7 @@ it('describes provider work and unknown tools without exposing implementation na
     }
   ]) {
     const projection = projectAiActivity([update])
+
     expect(projection.current.label).toBe('Planning the drawing')
     expect(projection.current).toBe(projection.entries.at(-1))
   }
@@ -395,6 +407,7 @@ it('starts elapsed time at zero without inventing a minimum duration', () => {
   for (const duration of [-1, 0, 1, 24, 49]) {
     expect(formatElapsedTime(duration)).toBe('0s')
   }
+
   expect(formatElapsedTime(100)).toBe('0.1s')
   expect(formatElapsedTime(1250)).toBe('1.3s')
 })
@@ -417,6 +430,7 @@ it('shows concise execution descriptions instead of Applying changes', () => {
       ]).current.message
     ).toBe(summary)
   }
+
   for (const summary of [
     'Applying changes',
     'Updating the drawing',
@@ -450,6 +464,7 @@ it('names design preparation and application without exposing backend identifier
         toolStatus: 'running'
       }
     ])
+
     expect(projection.current.label).toBe(label)
   }
 })
@@ -467,6 +482,7 @@ it('preserves model operation messages regardless of language', () => {
     }
   ]
   const result = projectAiActivity(updates)
+
   expect(result.entries).toEqual([
     { label: 'Reading the design', message: '讀取目前選取' }
   ])
@@ -486,6 +502,7 @@ it('does not append Finished after a failed execution retained partial progress'
     ],
     { outcome: 'partial' }
   )
+
   expect(result.entries.map((entry) => entry.label)).toEqual([
     'Replacing the drawing',
     'Failed'
@@ -513,6 +530,7 @@ it('explains the actual failed step with the safe public reason and recovery', (
 
 describe('concrete current work', () => {
   let activitySequence = 0
+
   const running = (message?: string) => ({
     activity: {
       kind: 'work' as const,
@@ -559,6 +577,7 @@ describe('concrete current work', () => {
     ]
     const snapshot = structuredClone(updates)
     const activity = projectAiActivity(updates)
+
     expect(activity.entries).toEqual([
       { label: 'Refining the design', message: first.message },
       {
@@ -587,6 +606,7 @@ describe('concrete current work', () => {
         }
       }
     ])
+
     expect(activity.current.message ?? activity.current.label).toBe(
       'Refining the design'
     )
@@ -595,6 +615,7 @@ describe('concrete current work', () => {
   it('shows bounded authored text without guessing missing or oversized descriptions', () => {
     const detailed =
       'Adjusting the roof color to match the selected source and keeping the existing window reflections and shadows intact'
+
     expect(projectAiActivity([running(detailed)]).current.message).toBe(
       detailed
     )
@@ -630,8 +651,10 @@ describe('concrete current work', () => {
       },
       { ...running(), tool: 'read_design_context' }
     ]
+
     for (let count = 1; count <= internal.length; count++) {
       const projected = projectAiActivity([first, ...internal.slice(0, count)])
+
       expect(projected.current.message ?? projected.current.label).toBe(
         first.message
       )
@@ -639,11 +662,13 @@ describe('concrete current work', () => {
         projected.entries.every((entry) => entry.message === first.message)
       ).toBe(true)
     }
+
     const next = projectAiActivity([
       first,
       ...internal,
       running('Adjusting the roof color')
     ])
+
     expect([
       ...new Set(next.entries.map((entry) => entry.message ?? entry.label))
     ]).toEqual(['Adding window reflections', 'Adjusting the roof color'])
@@ -662,6 +687,7 @@ describe('concrete current work', () => {
         projectAiActivity([running('Adjusting the roof color')], state).current
       ).toEqual({ label })
     }
+
     expect(
       projectAiActivity([
         running('Adding windows'),
@@ -703,6 +729,7 @@ it('retains authored work when a real system message arrives and rejects older s
     message: 'Adding the base',
     activity: { kind: 'work' as const, callId: 'call-0', sequence: 1 }
   }
+
   expect(projectAiActivity([work, system, old]).current.message).toBe(
     'Adding window reflections'
   )
@@ -714,8 +741,10 @@ it('records each activity decision without rereading earlier progress', () => {
   const first = {
     get phase() {
       reads++
+
       return 'provider' as const
     },
+
     attempt: 1,
     summary: 'Preparing',
     tool: 'draw',
@@ -724,10 +753,12 @@ it('records each activity decision without rereading earlier progress', () => {
     activity: { kind: 'work' as const, callId: 'a', sequence: 1 }
   }
   const projection = createAiActivityProjection()
+
   expect(projection.append(first)).toMatchObject({
     reason: 'scoped-owner-phase'
   })
   const captured = reads
+
   expect(
     projection.append({
       phase: 'provider',
@@ -756,9 +787,11 @@ describe('activity lifecycle transitions', () => {
     { phase: 'settled' as const, summary: 'Done', outcome: 'executed' as const }
   ])('does not reopen $phase on late work', (control) => {
     const projection = createAiActivityProjection()
+
     projection.append(work(1))
     projection.append({ attempt: 1, ...control })
     const before = projection.result()
+
     expect(projection.append(work(2)).status).toBe('rejected')
     expect(projection.result()).toEqual(before)
   })
@@ -766,6 +799,7 @@ describe('activity lifecycle transitions', () => {
   it('keeps projection reads out of the activity history', () => {
     const projection = createAiActivityProjection()
     const empty = projection.result()
+
     expect(projection.result()).toEqual(empty)
     projection.append(work(1))
     expect(empty.entries).toEqual([{ label: 'Starting request' }])
@@ -774,6 +808,7 @@ describe('activity lifecycle transitions', () => {
 
   it('resumes approval on running progress, never on a late acknowledgement', () => {
     const projection = createAiActivityProjection()
+
     projection.append(work(1))
     projection.append({
       attempt: 1,
@@ -788,6 +823,7 @@ describe('activity lifecycle transitions', () => {
 
   it('accepts failure during saving and retains it after later progress', () => {
     const projection = createAiActivityProjection()
+
     projection.append({
       attempt: 1,
       phase: 'settlement',
@@ -831,6 +867,7 @@ describe('explicit activity state machine guards', () => {
       type: 'progress',
       update: { phase, attempt: 1, summary: 'Delayed work' }
     })
+
     expect(delayed.state.lifecycle).toBe('stopping')
     expect(delayed.state.entry.label).toBe('Stopping…')
     expect(delayed.decision.status).toBe('rejected')
@@ -847,6 +884,7 @@ describe('explicit activity state machine guards', () => {
         type: 'progress',
         update: { phase: 'settled', attempt: 1, summary: 'Done', outcome }
       })
+
       expect(terminal.state.lifecycle).toBe('settled')
       expect(terminal.decision.status).toBe('accepted')
     }
@@ -861,6 +899,7 @@ describe('explicit activity state machine guards', () => {
       message: 'Adding windows',
       activity: { kind: 'work' as const, callId: 'windows', sequence: 1 }
     }
+
     projection.append(work)
     expect(
       projection.append({
@@ -884,6 +923,7 @@ describe('explicit activity state machine guards', () => {
 
   it('keeps outcome projections repeatable and never mutates earlier snapshots', () => {
     const projection = createAiActivityProjection({ outcome: 'partial' })
+
     projection.append({
       attempt: 1,
       phase: 'settled',
@@ -891,6 +931,7 @@ describe('explicit activity state machine guards', () => {
       summary: 'Failure'
     })
     const first = projection.result()
+
     expect(projection.result()).toEqual(first)
     expect(first.entries).toEqual([{ label: 'Failed' }])
   })
@@ -912,6 +953,7 @@ it('does not restore approval after the user has started stopping', () => {
     type: 'conversation',
     snapshot: { awaitingApproval: true }
   })
+
   expect(lateApproval.state.lifecycle).toBe('stopping')
   expect(lateApproval.state.entry.label).toBe('Stopping…')
 })
@@ -920,6 +962,7 @@ it('returns to the observed provider phase without reviving the objective after 
   const projection = createAiActivityProjection({
     purpose: 'Draw the entire building'
   })
+
   projection.append({
     attempt: 1,
     summary: 'Observed owner phase',
@@ -987,6 +1030,7 @@ it('returns to the observed provider phase without reviving the objective after 
 it('closes child phases with their parent and keeps an independent concurrent purpose', () => {
   const projection = createAiActivityProjection({ purpose: 'Building details' })
   let sequence = 0
+
   const send = (
     callId: string,
     parentCallId?: string,
@@ -1008,6 +1052,7 @@ it('closes child phases with their parent and keeps an independent concurrent pu
         phase: 'preparing'
       }
     })
+
   send('independent', undefined, false, 'Roof colors')
   send('base', undefined, false, 'Base geometry')
   send('base-child', 'base')
@@ -1026,6 +1071,7 @@ it('retires superseded commentary after principal work without retaining complet
   const projection = createAiActivityProjection({
     purpose: 'Draw the entire building'
   })
+
   projection.append({
     attempt: 1,
     phase: 'provider',
@@ -1071,6 +1117,7 @@ it('does not assign unscoped commentary during work to an active parent', () => 
   const projection = createAiActivityProjection({
     purpose: 'Draw the entire building'
   })
+
   projection.append({
     attempt: 1,
     phase: 'provider',
@@ -1127,6 +1174,7 @@ it('does not retain concurrent unscoped commentary after principal completion', 
     toolStatus: 'running' as const,
     message: 'Add the crown'
   }
+
   projection.append({
     ...call,
     activity: { kind: 'work', callId: 'crown', sequence: 1, phase: 'queued' }
@@ -1166,6 +1214,7 @@ it('does not retain concurrent unscoped commentary after principal completion', 
 
 it('keeps principal work visible while authored children and coordinator phases advance', () => {
   const projection = createAiActivityProjection({ purpose: 'Build the tower' })
+
   const send = (
     callId: string,
     sequence: number,
@@ -1190,6 +1239,7 @@ it('keeps principal work visible while authored children and coordinator phases 
         phase
       }
     })
+
   send('parent', 1, undefined, 'Construct the building')
   send('child', 2, 'parent', 'Window reflections', 'applying')
   send('parent', 3)
@@ -1209,10 +1259,11 @@ it('keeps unrelated concurrent work distinct without adopting the objective or l
   const projection = createAiActivityProjection({
     purpose: 'Refine the building'
   })
+
   for (const [index, message] of [
     'Check the roof',
     'Read the windows'
-  ].entries())
+  ].entries()) {
     projection.append({
       attempt: 1,
       phase: 'provider',
@@ -1227,6 +1278,8 @@ it('keeps unrelated concurrent work distinct without adopting the objective or l
         phase: 'inspecting'
       }
     })
+  }
+
   expect(projection.result().current).toEqual({
     label: 'Checking the drawing - 2 operations'
   })
@@ -1274,6 +1327,7 @@ it('uses a common live coordinator purpose for parallel children and preserves a
     }
   }).state
   const purpose = state.calls.crown.purpose
+
   for (const [index, id] of ['roof', 'spire'].entries()) {
     state = reduceAiActivity(state, {
       type: 'progress',
@@ -1292,6 +1346,7 @@ it('uses a common live coordinator purpose for parallel children and preserves a
       }
     }).state
   }
+
   expect(state.entry).toEqual({
     label: 'Running an operation',
     message: 'Build the crown'
@@ -1339,6 +1394,7 @@ it('does not present the original objective as active work after completion or r
       phase: 'applying' as const
     }
   }
+
   projection.append(work)
   const decision = projection.append({
     ...work,
@@ -1346,6 +1402,7 @@ it('does not present the original objective as active work after completion or r
     toolStatus: 'completed',
     activity: { ...work.activity, kind: 'system', sequence: 2 }
   })
+
   expect(projection.result().current).toEqual({
     label: 'Operation ended - outcome unconfirmed',
     message: 'Window reflections'
@@ -1404,6 +1461,7 @@ it.each([undefined, 'Draw a tower'])(
       message: 'Checking the crown',
       activity: { kind: 'work' as const, callId: 'crown-check', sequence: 1 }
     }
+
     projection.append(start)
     expect(projection.result().current.message).toBe('Checking the crown')
     const end = projection.append({
@@ -1411,6 +1469,7 @@ it.each([undefined, 'Draw a tower'])(
       toolStatus: 'completed',
       activity: { ...start.activity, kind: 'system', sequence: 2 }
     })
+
     expect(end.activeCallCount).toBe(0)
     expect(projection.result().current).toEqual({
       label: 'Operation ended - outcome unconfirmed',
@@ -1428,6 +1487,7 @@ it.each([undefined, 'Draw a tower'])(
 
 it('updates identical visible starts and closes each invocation without leaking a completed purpose', () => {
   const projection = createAiActivityProjection({ purpose: 'Draw a tower' })
+
   const send = (callId: string, sequence: number, completed = false) =>
     projection.append({
       attempt: 1,
@@ -1442,6 +1502,7 @@ it('updates identical visible starts and closes each invocation without leaking 
         phase: 'inspecting'
       }
     })
+
   send('first', 1)
   send('second', 2)
   expect(send('first', 3, true).activeCallCount).toBe(1)
@@ -1469,6 +1530,7 @@ it('retires explicitly completed request commentary without presenting the objec
       phase: 'provider' as const
     }
   }
+
   projection.append(stage)
   projection.append({
     ...stage,
@@ -1482,6 +1544,7 @@ it('retires explicitly completed request commentary without presenting the objec
 
 it('tracks the identity of identical consecutive request purposes', () => {
   const projection = createAiActivityProjection({ purpose: 'Draw a tower' })
+
   const send = (callId: string, sequence: number, completed = false) =>
     projection.append({
       attempt: 1,
@@ -1496,6 +1559,7 @@ it('tracks the identity of identical consecutive request purposes', () => {
         sequence
       }
     })
+
   send('first', 1)
   send('second', 2)
   send('first', 3, true)
@@ -1518,6 +1582,7 @@ it.each(['provider', 'resolution'] as const)(
       message: 'Plan windows',
       activity: { kind: 'work' as const, callId: 'windows', sequence: 1 }
     }
+
     projection.append(start)
     projection.append({
       attempt: 1,
@@ -1529,6 +1594,7 @@ it.each(['provider', 'resolution'] as const)(
       toolStatus: 'completed',
       activity: { ...start.activity, kind: 'system', sequence: 2 }
     })
+
     expect(end.activeCallCount).toBe(0)
     expect(projection.result().current.label).toBe('Awaiting approval')
     projection.append({ attempt: 1, phase: 'execution', summary: 'Resumed' })
@@ -1541,6 +1607,7 @@ it.each(['provider', 'resolution'] as const)(
 
 it('keeps unchanged current presentation attached to its existing history entry', () => {
   const projection = createAiActivityProjection({ purpose: 'Draw a tower' })
+
   for (const sequence of [1, 2]) {
     projection.append({
       attempt: 1,
@@ -1555,6 +1622,7 @@ it('keeps unchanged current presentation attached to its existing history entry'
       }
     })
     const view = projection.result()
+
     expect(view.entries.at(-1)).toBe(view.current)
     expect(view.entries).toHaveLength(1)
   }
@@ -1565,6 +1633,7 @@ it('retires preceding stage context while preserving principal phase ownership',
     purpose: 'Draw the entire building'
   })
   let sequence = 0
+
   projection.append({
     attempt: 1,
     phase: 'provider',
@@ -1579,6 +1648,7 @@ it('retires preceding stage context while preserving principal phase ownership',
     }
   })
   const initial = projection.result().current
+
   expect(initial).toEqual({
     label: 'Current task',
     message: 'Third-tier window reflections'
@@ -1600,6 +1670,7 @@ it('retires preceding stage context while preserving principal phase ownership',
           phase
         }
       })
+
       expect(decision.activeCallCount).toBe(1)
       expect(decision.purposeSource).toBe(
         phase === 'applying' ? 'live-call' : 'none'
@@ -1623,6 +1694,7 @@ it('retires preceding stage context while preserving principal phase ownership',
         }[phase]
       })
     }
+
     const completed = projection.append({
       attempt: 1,
       phase: 'provider',
@@ -1636,15 +1708,20 @@ it('retires preceding stage context while preserving principal phase ownership',
         phase: 'applying'
       }
     })
+
     expect(completed.activeCallCount).toBe(0)
     expect(projection.result().current).toEqual({
       label: 'Operation ended - outcome unconfirmed',
       message: 'Applying a window reflection'
     })
   }
+
   const history = projection.result().entries
-  for (let index = 1; index < history.length; index++)
+
+  for (let index = 1; index < history.length; index++) {
     expect(history[index]).not.toEqual(history[index - 1])
+  }
+
   projection.append({
     attempt: 1,
     phase: 'provider',
@@ -1672,6 +1749,7 @@ it('retires preceding stage context while preserving principal phase ownership',
       phase: 'provider'
     }
   })
+
   expect(late.status).toBe('rejected')
   expect(projection.result().current.message).toBe('Roof material colors')
   // A late completion of the replaced stage must not remove the current stage.
@@ -1725,6 +1803,7 @@ it('retires preceding stage context while preserving principal phase ownership',
 it('records accepted live phases instead of rejected events or completed children', () => {
   const projection = createAiActivityProjection()
   let sequence = 0
+
   const event = (
     id: string,
     phase: 'executing' | 'applying' | 'inspecting',
@@ -1743,12 +1822,14 @@ it('records accepted live phases instead of rejected events or completed childre
       sequence: ++sequence
     }
   })
+
   projection.append(event('coordinator', 'executing'))
   projection.append(event('child', 'inspecting', 'coordinator'))
   expect(projection.append(event('coordinator', 'executing')).phaseLabel).toBe(
     'Checking the drawing'
   )
   const old = event('stale', 'applying')
+
   old.activity.sequence = 1
   expect(projection.append(old)).toMatchObject({
     status: 'rejected',
@@ -1773,6 +1854,7 @@ it('records accepted live phases instead of rejected events or completed childre
 
 it('shows the live inspection purpose instead of an earlier drawing stage and retains exact phase diagnostics', () => {
   const projection = createAiActivityProjection()
+
   projection.append({
     attempt: 1,
     phase: 'provider',
@@ -1795,6 +1877,7 @@ it('shows the live inspection purpose instead of an earlier drawing stage and re
     }
   }
   const decision = projection.append(event)
+
   expect(projection.result().current).toEqual({
     label: 'Checking the requested details',
     message: event.message
@@ -1804,6 +1887,7 @@ it('shows the live inspection purpose instead of an earlier drawing stage and re
     phaseLabel: 'Checking the drawing'
   })
   const current = projection.result().current
+
   projection.append({
     ...event,
     message: undefined,
@@ -1833,6 +1917,7 @@ it('shows the live inspection purpose instead of an earlier drawing stage and re
 
 it('preserves the original history snapshot while recording actual principal transitions', () => {
   const projection = createAiActivityProjection()
+
   projection.append({
     attempt: 1,
     phase: 'provider',
@@ -1841,6 +1926,7 @@ it('preserves the original history snapshot while recording actual principal tra
     activity: { kind: 'work', scope: 'request', callId: 'stage', sequence: 1 }
   })
   const snapshot = projection.result()
+
   for (const [index, tool] of [
     'read_design_context',
     'review_drawing',
@@ -1860,6 +1946,7 @@ it('preserves the original history snapshot while recording actual principal tra
       }
     })
     const running = projection.result()
+
     expect(running.entries).toHaveLength(2 + index * 2)
     expect(running.current).toBe(running.entries.at(-1))
     expect(running.current.label).not.toBe('Current task')
@@ -1872,6 +1959,7 @@ it('preserves the original history snapshot while recording actual principal tra
       activity: { kind: 'system', callId: tool, sequence: index * 2 + 3 }
     })
   }
+
   expect(projection.result().entries).toHaveLength(7)
   expect(snapshot.entries).toEqual([
     { label: 'Current task', message: 'Crown proportions' }
@@ -1888,6 +1976,7 @@ it('distinguishes queued application from actual canvas execution without admiss
     toolStatus: 'running' as const,
     message: 'Window reflections'
   }
+
   for (const [index, phase] of ['queued', 'admission', 'applying'].entries()) {
     projection.append({
       ...event,
@@ -1910,7 +1999,8 @@ it('names distinct concurrent operations instead of hiding both behind a count',
   const projection = createAiActivityProjection({
     purpose: 'Draw the building'
   })
-  for (const [index, phase] of ['preparing', 'inspecting'].entries())
+
+  for (const [index, phase] of ['preparing', 'inspecting'].entries()) {
     projection.append({
       attempt: 1,
       phase: 'provider',
@@ -1924,6 +2014,8 @@ it('names distinct concurrent operations instead of hiding both behind a count',
         phase: phase as 'preparing' | 'inspecting'
       }
     })
+  }
+
   expect(projection.result().current?.label).toBe(
     'Preparing geometry - Checking the drawing - 2 operations'
   )
@@ -1932,6 +2024,7 @@ it('names distinct concurrent operations instead of hiding both behind a count',
 it('projects recorded anonymous batch phases through their active named owner without losing diagnostics', () => {
   const projection = createAiActivityProjection()
   let sequence = 0
+
   const emit = (
     callId: string,
     tool: string,
@@ -1953,6 +2046,7 @@ it('projects recorded anonymous batch phases through their active named owner wi
         sequence: ++sequence
       }
     })
+
   projection.append({
     attempt: 1,
     phase: 'provider',
@@ -1968,9 +2062,11 @@ it('projects recorded anonymous batch phases through their active named owner wi
   })
   emit('root', 'prepare_and_apply_design', 'executing')
   const root = projection.result().current
+
   emit('batch', 'app-batch', 'executing', 'root')
   expect(projection.result().current).toEqual(root)
   const diagnostic = emit('batch', 'app-batch', 'applying', 'root')
+
   expect(diagnostic.activeCallCount).toBe(2)
   expect(diagnostic.phaseLabel).toBe('Updating the canvas')
   expect(projection.result().current).toEqual(root)
@@ -2003,6 +2099,7 @@ it('projects recorded anonymous batch phases through their active named owner wi
 
 it('does not display queued child intent as its executing parent work', () => {
   const projection = createAiActivityProjection()
+
   projection.append({
     attempt: 1,
     phase: 'provider',
@@ -2033,12 +2130,14 @@ it('does not display queued child intent as its executing parent work', () => {
       sequence: 2
     }
   })
+
   expect(projection.result().current).toEqual(before)
   expect(decision.purpose?.id).toBe('parent')
 })
 
 it('replays saved operation admission without public phase churn before execution', () => {
   const projection = createAiActivityProjection()
+
   projection.append({
     attempt: 1,
     phase: 'provider',
@@ -2060,12 +2159,16 @@ it('replays saved operation admission without public phase churn before executio
       summary: 'Recorded start phase',
       toolStatus: 'running'
     } as AiRuntimeProgressUpdate)
-    if (start.activity.phase !== 'executing')
+
+    if (start.activity.phase !== 'executing') {
       expect(projection.result().current).toEqual({
         label: 'Processing your request'
       })
+    }
+
     return decision
   })
+
   expect(decisions.map((item) => item.phaseLabel)).toEqual([
     'Queued App operation',
     'Checking inputs',
@@ -2079,6 +2182,7 @@ it('replays saved operation admission without public phase churn before executio
 it('keeps a principal status through named and authored child work and settlement', () => {
   const projection = createAiActivityProjection()
   let sequence = 0
+
   const send = (
     callId: string,
     tool: string,
@@ -2101,8 +2205,10 @@ it('keeps a principal status through named and authored child work and settlemen
         sequence: ++sequence
       }
     })
+
   send('principal', 'prepare_and_apply_design', undefined, 'Build the facade')
   const current = projection.result().current
+
   send('prepare', 'prepare_design', 'principal', 'Compute local windows')
   expect(projection.result().current).toEqual(current)
   const child = send(
@@ -2111,6 +2217,7 @@ it('keeps a principal status through named and authored child work and settlemen
     'principal',
     'Apply window colors'
   )
+
   expect(child.activeCallCount).toBe(3)
   expect(projection.result().current).toEqual(current)
   send('apply', 'apply_prepared_design', 'principal', undefined, 'completed')
@@ -2132,20 +2239,24 @@ it('keeps a principal status through named and authored child work and settlemen
 
 it('replays every retained provider input without labeling generic batches as edits', () => {
   const projection = createAiActivityProjection()
+
   expect(recordedEvents.events).toHaveLength(1063)
   for (const input of recordedEvents.events) {
     const update = input as AiRuntimeProgressUpdate
+
     projection.append(update)
-    if (update.tool === 'execute_design_batch')
+    if (update.tool === 'execute_design_batch') {
       expect(projection.result().current.label).not.toContain(
         'Applying planned edits'
       )
+    }
   }
 })
 
 it('keeps distinct authored purpose identities in history even when their prose matches', () => {
   const projection = createAiActivityProjection()
-  for (const [index, callId] of ['first-stage', 'second-stage'].entries())
+
+  for (const [index, callId] of ['first-stage', 'second-stage'].entries()) {
     projection.append({
       attempt: 1,
       phase: 'provider',
@@ -2153,6 +2264,8 @@ it('keeps distinct authored purpose identities in history even when their prose 
       message: 'Check the crown',
       activity: { kind: 'work', scope: 'request', callId, sequence: index + 1 }
     })
+  }
+
   expect(
     projection
       .result()
@@ -2163,6 +2276,7 @@ it('keeps distinct authored purpose identities in history even when their prose 
 it('projects actual descendant dispatch effects without replacing the principal purpose', () => {
   const projection = createAiActivityProjection()
   let sequence = 0
+
   const append = (
     callId: string,
     phase: 'executing' | 'applying',
@@ -2185,6 +2299,7 @@ it('projects actual descendant dispatch effects without replacing the principal 
         effect
       }
     })
+
   append('principal', 'executing')
   expect(projection.result().current.label).toBe('Running planned operations')
   append('read-batch', 'executing', 'read')
@@ -2209,6 +2324,7 @@ it('retires request commentary at principal dispatch and never resurrects it aft
   const projection = createAiActivityProjection({
     purpose: 'Draw the entire building'
   })
+
   const commentary = (id: string, sequence: number) =>
     projection.append({
       attempt: 1,
@@ -2218,6 +2334,7 @@ it('retires request commentary at principal dispatch and never resurrects it aft
       message: 'Correct old reflections',
       activity: { kind: 'work', scope: 'request', callId: id, sequence }
     })
+
   const operation = (id: string, sequence: number, completed = false) =>
     projection.append({
       attempt: 1,
@@ -2227,6 +2344,7 @@ it('retires request commentary at principal dispatch and never resurrects it aft
       toolStatus: completed ? 'completed' : 'running',
       activity: { kind: 'system', callId: id, sequence, phase: 'preparing' }
     })
+
   commentary('old', 1)
   operation('a', 2)
   operation('b', 3)
@@ -2254,6 +2372,7 @@ it.each(['success', 'partial', 'failed', 'unknown'] as const)(
     const projection = createAiActivityProjection({
       purpose: 'Original entire task'
     })
+
     projection.append({
       attempt: 1,
       phase: 'provider',
@@ -2306,6 +2425,7 @@ it.each(['success', 'partial', 'failed', 'unknown'] as const)(
 it('retains canonical concurrent outcomes only after every principal settles', () => {
   const projection = createAiActivityProjection()
   let sequence = 0
+
   const send = (
     callId: string,
     completed = false,
@@ -2329,6 +2449,7 @@ it('retains canonical concurrent outcomes only after every principal settles', (
           : {})
       }
     })
+
   send('Facade')
   send('Roof')
   send('child', false, 'success', 'Facade')
@@ -2342,6 +2463,7 @@ it('retains canonical concurrent outcomes only after every principal settles', (
     message: 'Facade; Roof'
   })
   const settled = projection.result()
+
   send('Roof', true)
   send('Facade')
   expect(projection.result().current).toEqual(settled.current)

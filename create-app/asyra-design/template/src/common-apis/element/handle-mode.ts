@@ -35,6 +35,7 @@ const normalizeVector = (vector: PositionData | null) => {
   }
 
   const length = vectorLength(vector)
+
   if (length <= HANDLE_MODE_EPSILON) {
     return null
   }
@@ -183,6 +184,7 @@ export const resolveHandleModeSwitchUpdate = (params: {
 
   if (mode === VectorHandleModes.MIRROR_ANGLE_LENGTH) {
     const baseVector = outVector ?? inVector
+
     if (!baseVector) {
       return null
     }
@@ -201,22 +203,27 @@ export const resolveHandleModeSwitchUpdate = (params: {
 
   const hasOutVector = outVector !== null
   const direction = normalizeVector(outVector) ?? normalizeVector(inVector)
+
   if (!direction) {
     return null
   }
 
   let outLength = 0
+
   if (inVector) {
     outLength = vectorLength(inVector)
   }
+
   if (outVector !== null) {
     outLength = vectorLength(outVector)
   }
 
   let inLength = 0
+
   if (outVector) {
     inLength = vectorLength(outVector)
   }
+
   if (inVector !== null) {
     inLength = vectorLength(inVector)
   }

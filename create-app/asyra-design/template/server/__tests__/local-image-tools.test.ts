@@ -2,8 +2,10 @@ import sharp from 'sharp'
 import { describe, expect, it, vi } from 'vitest'
 import { createLocalImageTools as createOwner } from '../local-image-tools'
 import { withToolContractAssertions } from './tool-contract-assertions'
+
 const createLocalImageTools = (...args: Parameters<typeof createOwner>) =>
   withToolContractAssertions(createOwner(...args))
+
 import { AiImageToolIds } from '../ai-domain-prompt'
 import * as analysis from '../local-vector-component-analysis'
 
@@ -13,6 +15,7 @@ describe('local provider image tools', () => {
     mediaType: 'image/png',
     size: 1
   }
+
   it('vectorizes only the referenced submitted image through the existing converter', async () => {
     const convert = vi.fn(
       async () =>
@@ -22,8 +25,10 @@ describe('local provider image tools', () => {
       { metadata: { imageAttachments: [attachment] } },
       convert
     )
+
     expect(tools.definitions).toHaveLength(6)
     const signal = new AbortController().signal
+
     expect(
       await tools.call(
         'vtracer',
@@ -77,6 +82,7 @@ describe('local provider image tools', () => {
         { metadata: { imageAttachments: [attachment] } },
         convert
       )
+
       await expect(
         tools.call(name as string, args, new AbortController().signal)
       ).rejects.toThrow()
@@ -125,6 +131,7 @@ describe('local provider image tools', () => {
       excludePathIds: [],
       componentMappings: [{ pathId: 'path-1', componentType: 'rect' }]
     }
+
     const batch = (reference: object) => ({
       batchId: 'selection',
       actions: [
@@ -135,8 +142,10 @@ describe('local provider image tools', () => {
         }
       ]
     })
+
     expect(() => tools.resolveBatch(batch(args))).toThrow(/analysis/i)
     const measure = vi.spyOn(analysis, 'analyzeVectorComponents')
+
     try {
       const report = JSON.parse(
         await tools.call(
@@ -145,6 +154,7 @@ describe('local provider image tools', () => {
           signal
         )
       )
+
       expect(report.paths[0].candidates).toContainEqual(
         expect.objectContaining({ componentType: 'rect', eligible: true })
       )
@@ -156,6 +166,7 @@ describe('local provider image tools', () => {
             bounds: { x: 0, y: 0, width: size, height: size }
           })
         )
+
         expect(prepared.actions[0].arguments).toMatchObject({
           slices: [
             {
@@ -166,6 +177,7 @@ describe('local provider image tools', () => {
           ]
         })
       }
+
       expect(measure).toHaveBeenCalledOnce()
       expect(convert).toHaveBeenCalledOnce()
       expect(() =>
@@ -194,6 +206,7 @@ describe('local provider image tools', () => {
           signal
         )
       )
+
       expect(() =>
         other.resolveBatch(
           batch({
@@ -259,16 +272,19 @@ describe('local provider image tools', () => {
       compositionRole: 'Shape',
       componentMappings: [{ pathId: 'path-1', componentType: 'rect' }]
     }
+
     const batch = (args: object) => ({
       batchId: 'test',
       actions: [
         { id: 'draw', name: 'insert_vector_composition', arguments: args }
       ]
     })
+
     const currentReference = {
       ...reference,
       imageArtifactId: source.imageArtifactId
     }
+
     expect(
       tools.resolveBatch(batch(currentReference)).actions[0].arguments
     ).toHaveProperty('slices')
@@ -289,6 +305,7 @@ describe('local provider image tools', () => {
       )
     ).toThrow(/analysis/i)
     const controller = new AbortController()
+
     controller.abort()
     await expect(
       tools.call(
@@ -297,12 +314,14 @@ describe('local provider image tools', () => {
         controller.signal
       )
     ).rejects.toThrow(/cancel/i)
-    for (let index = 1; index < 128; index++)
+    for (let index = 1; index < 128; index++) {
       await tools.call(
         AiImageToolIds.ANALYZE_VECTOR_COMPONENTS,
         selection,
         signal
       )
+    }
+
     expect(
       JSON.parse(
         await tools.call(
@@ -318,6 +337,7 @@ describe('local provider image tools', () => {
       componentMappings: _mappings,
       ...vector
     } = reference
+
     expect(
       tools.resolveBatch(batch(vector)).actions[0].arguments
     ).toMatchObject({ elementCount: 1 })
@@ -347,6 +367,7 @@ describe('local provider image tools', () => {
       pathIds: Array.from({ length: 16 }, (_, i) => `path-${i + 1}`)
     }
     const measure = vi.spyOn(analysis, 'analyzeVectorComponents')
+
     try {
       const jobs = Array.from({ length: 9 }, () =>
         tools.call(
@@ -356,6 +377,7 @@ describe('local provider image tools', () => {
         )
       )
       const settled = Promise.allSettled(jobs)
+
       expect(measure).not.toHaveBeenCalled()
       controller.abort()
       expect(
@@ -387,6 +409,7 @@ describe('local provider image tools', () => {
       )
     )
     const measure = vi.spyOn(analysis, 'analyzeVectorComponents')
+
     try {
       const result = JSON.parse(
         await tools.call(
@@ -398,6 +421,7 @@ describe('local provider image tools', () => {
           signal
         )
       )
+
       expect(result.paths).toHaveLength(100)
       expect(
         new Set(result.paths.map((path: { pathId: string }) => path.pathId))
@@ -466,6 +490,7 @@ describe('local provider image tools', () => {
         }
       ]
     })
+
     expect(batch.actions[0].arguments).toMatchObject({
       slices: [
         {
@@ -496,6 +521,7 @@ describe('contour review tool integration', () => {
       async () =>
         '<svg width="100" height="100"><path fill="#008800" d="M10,10C30,10.2 70,10.2 90,10L90,90L10,90Z"/></svg>'
     )
+
   const source = async (tools: ReturnType<typeof setup>) =>
     JSON.parse(
       await tools.call(
@@ -507,10 +533,12 @@ describe('contour review tool integration', () => {
         new AbortController().signal
       )
     )
+
   it('requires intent and output scale and keeps faithful reviews measurement-only', async () => {
     const tools = setup(),
       original = await source(tools),
       signal = new AbortController().signal
+
     await expect(
       tools.call(
         AiImageToolIds.REVIEW_VECTOR_CONTOURS,
@@ -529,6 +557,7 @@ describe('contour review tool integration', () => {
         signal
       )
     )
+
     expect(review.proposals).toHaveLength(0)
     expect(review.paths).toHaveLength(1)
     expect(review.quality.mode).toBe('faithful')
@@ -537,6 +566,7 @@ describe('contour review tool integration', () => {
     const tools = setup(),
       original = await source(tools),
       signal = new AbortController().signal
+
     const call = (width: number, height: number) =>
       tools.call(
         AiImageToolIds.REVIEW_VECTOR_CONTOURS,
@@ -547,12 +577,15 @@ describe('contour review tool integration', () => {
         },
         signal
       )
+
     const large = JSON.parse(await call(480, 160))
+
     expect(large.proposals).toHaveLength(0) // 0.2 source pixels becomes 1.2 output pixels.
     const review = JSON.parse(await call(160, 80))
     const proposal = review.proposals.find(
       (p: { kind: string }) => p.kind === 'straighten'
     )
+
     expect(proposal.displacementBoundOutputPx).toBeCloseTo(0.4)
     const result = JSON.parse(
       await tools.call(
@@ -561,7 +594,9 @@ describe('contour review tool integration', () => {
         signal
       )
     )
+
     expect(result.maxDisplacementOutputPx).toBeCloseTo(0.4)
+
     const batch = (width: number) => ({
       actions: [
         {
@@ -575,6 +610,7 @@ describe('contour review tool integration', () => {
         }
       ]
     })
+
     expect(() => tools.resolveBatch(batch(160))).not.toThrow()
     expect(() => tools.resolveBatch(batch(480))).toThrow(/output/i)
   })
@@ -594,6 +630,7 @@ describe('contour review tool integration', () => {
         signal
       )
     )
+
     expect(review.proposals.length).toBeGreaterThan(0)
     expect(review.proposals[0]).not.toHaveProperty('edits')
     const proposal = review.proposals.find(
@@ -606,8 +643,10 @@ describe('contour review tool integration', () => {
         signal
       )
     )
+
     expect(result.imageArtifactId).not.toBe(original.imageArtifactId)
     expect(result.changes[0]).toMatchObject({ kind: 'straighten', after: 0 })
+
     const prepare = (imageArtifactId: string) =>
       tools.resolveBatch({
         actions: [
@@ -622,6 +661,7 @@ describe('contour review tool integration', () => {
           }
         ]
       }).actions[0].arguments
+
     const points = (drawing: ReturnType<typeof prepare>) =>
       (
         drawing as {
@@ -633,6 +673,7 @@ describe('contour review tool integration', () => {
         (s: { descriptors: { points: Record<string, { kind: string }> }[] }) =>
           s.descriptors.flatMap((d) => Object.values(d.points))
       )
+
     expect(
       points(prepare(original.imageArtifactId)).filter(
         (p: { kind: string }) => p.kind === 'control'
@@ -651,6 +692,7 @@ describe('contour review tool integration', () => {
       )
     ).rejects.toThrow(/receipt/)
     const c = new AbortController()
+
     c.abort()
     await expect(
       tools.call(
@@ -683,6 +725,7 @@ describe('contour review tool integration', () => {
     )
     let current = await source(tools)
     const signal = new AbortController().signal
+
     for (let generation = 0; generation < 4; generation++) {
       const review = JSON.parse(
         await tools.call(
@@ -701,6 +744,7 @@ describe('contour review tool integration', () => {
       const proposal = review.proposals.find(
         (p: { kind: string }) => p.kind === 'straighten'
       )
+
       expect(proposal).toBeDefined()
       const result = JSON.parse(
         await tools.call(
@@ -709,6 +753,7 @@ describe('contour review tool integration', () => {
           signal
         )
       )
+
       expect(result.maxDisplacementPx).toBeLessThanOrEqual(0.5)
       current = result
     }
@@ -730,6 +775,7 @@ describe('contour review tool integration', () => {
       )
     )
     const results = (await Promise.all(requests)).map((s) => JSON.parse(s))
+
     expect(results.filter((r) => r.reviewId)).toHaveLength(129)
     expect(results[128].reviewId).toBeTruthy()
     await expect(
@@ -776,6 +822,7 @@ it('reports an oversized conversion as a bounded result instead of an unavailabl
       new AbortController().signal
     )
   )
+
   expect(result).toMatchObject({
     available: false,
     code: 'VECTOR_ARTIFACT_BYTE_LIMIT',
@@ -798,6 +845,7 @@ it('preserves native region pixels and isolates reuse by selected source region'
     .toBuffer()
   const convert = vi.fn(async ({ bytes: selected }) => {
     const metadata = await sharp(selected).metadata()
+
     return `<svg width="${metadata.width}" height="${metadata.height}"><path d="M0,0L1,0L1,1Z" fill="#000000"/></svg>`
   })
   const tools = createLocalImageTools(
@@ -814,6 +862,7 @@ it('preserves native region pixels and isolates reuse by selected source region'
     },
     convert
   )
+
   const call = (region: unknown) =>
     tools
       .call(
@@ -829,9 +878,11 @@ it('preserves native region pixels and isolates reuse by selected source region'
         new AbortController().signal
       )
       .then(JSON.parse)
+
   const region = { x: 1, y: 0, width: 1, height: 2 }
   const first = await call(region)
   const repeated = await call({ height: 2, width: 1, y: 0, x: 1 })
+
   expect(repeated.imageArtifactId).toBe(first.imageArtifactId)
   expect(convert).toHaveBeenCalledOnce()
   expect(first).toMatchObject({ width: 1, height: 2, sourceRegion: region })
@@ -839,6 +890,7 @@ it('preserves native region pixels and isolates reuse by selected source region'
     .removeAlpha()
     .raw()
     .toBuffer()
+
   expect(cropped).toEqual(Buffer.from([0, 255, 0, 20, 30, 40]))
   await call({ x: 0, y: 0, width: 1, height: 2 })
   expect(convert).toHaveBeenCalledTimes(2)
@@ -847,8 +899,10 @@ it('preserves native region pixels and isolates reuse by selected source region'
     { ...region, x: 0.5 },
     { ...region, width: 0 },
     { ...region, width: 3 }
-  ])
+  ]) {
     await expect(call(bad)).rejects.toThrow(/region/i)
+  }
+
   expect(convert).toHaveBeenCalledTimes(2)
 })
 
@@ -866,7 +920,10 @@ it('selects regions in display orientation and rejects cancelled conversion befo
   const controller = new AbortController()
   let cancel = true
   const convert = vi.fn(async (_input: { bytes: Uint8Array }) => {
-    if (cancel) controller.abort()
+    if (cancel) {
+      controller.abort()
+    }
+
     return '<svg width="1" height="3"><path d="M0,0L1,0L1,3Z" fill="#000000"/></svg>'
   })
   const input = {
@@ -889,6 +946,7 @@ it('selects regions in display orientation and rejects cancelled conversion befo
       region: { x: 1, y: 0, width: 1, height: 3 }
     }
   }
+
   await expect(tools.call('vtracer', args, controller.signal)).rejects.toThrow(
     /abort/i
   )
@@ -896,6 +954,7 @@ it('selects regions in display orientation and rejects cancelled conversion befo
   const result = JSON.parse(
     await tools.call('vtracer', args, new AbortController().signal)
   )
+
   expect(result).toMatchObject({ width: 1, height: 3 })
   expect(convert).toHaveBeenCalledTimes(2)
   expect(
@@ -938,6 +997,7 @@ it('converts a native region through the real worker and artifact parser', async
       new AbortController().signal
     )
   )
+
   expect(result).toMatchObject({
     width: 16,
     height: 12,
@@ -961,6 +1021,7 @@ it('extracts original pixels from a reference above four megapixels', async () =
     expect([...(await sharp(selected).raw().toBuffer())]).toEqual(
       Array(6).fill([18, 52, 86]).flat()
     )
+
     return '<svg width="2" height="3"><path d="M0,0L2,0L2,3Z" fill="#123456"/></svg>'
   })
   const tools = createLocalImageTools(
@@ -991,6 +1052,7 @@ it('extracts original pixels from a reference above four megapixels', async () =
       new AbortController().signal
     )
   )
+
   expect(result).toMatchObject({ width: 2, height: 3 })
   expect(convert).toHaveBeenCalledOnce()
 })
@@ -1022,6 +1084,7 @@ it('validates retained bytes with stable identity and reuses admission evidence'
       signal
     )
   )
+
   expect(first.references[0]).toMatchObject({
     attachmentIndex: index,
     bytes: bytes.length,
@@ -1052,14 +1115,18 @@ it('validates retained bytes with stable identity and reuses admission evidence'
 
 it('recovers an invalid layer source and hands real separated contours to drawing preparation', async () => {
   const pixels = Buffer.alloc(12 * 12 * 4)
-  for (let y = 0; y < 12; y++)
-    for (let x = 0; x < 12; x++)
+
+  for (let y = 0; y < 12; y++) {
+    for (let x = 0; x < 12; x++) {
       pixels.set(
         x >= 4 && x < 8 && y >= 4 && y < 8
           ? [255, 255, 255, 255]
           : [0, 136, 0, 255],
         (y * 12 + x) * 4
       )
+    }
+  }
+
   const bytes = await sharp(pixels, {
     raw: { width: 12, height: 12, channels: 4 }
   })
@@ -1087,6 +1154,7 @@ it('recovers an invalid layer source and hands real separated contours to drawin
     clipToBackground: true
   }
   const signal = new AbortController().signal
+
   await expect(
     tools.call(
       'vectorize_image_layers',
@@ -1117,6 +1185,7 @@ it('recovers an invalid layer source and hands real separated contours to drawin
       }[]
     }
   ).slices.flatMap((slice) => slice.descriptors)
+
   expect(descriptors[0]).toMatchObject({
     type: 'rect',
     width: 120,
@@ -1141,6 +1210,7 @@ it('preserves selected original reference bytes and excludes unselected research
     metadata: { imageAttachments: [user] }
   })
   const index = tools.addReference(research)
+
   expect(tools.referenceImages()).toEqual([
     { role: 'reference', dataUrl: user.dataUrl }
   ])
@@ -1166,11 +1236,14 @@ it('prepares reference uses lazily through the same retained validation as stand
     metadata: { imageAttachments: [image] }
   })
   const stats = vi.spyOn(sharp.prototype, 'stats')
+
   try {
     const identity = tools.validateReferences([0])[0]
+
     expect(identity).not.toHaveProperty('validation')
     expect(stats).not.toHaveBeenCalled()
     const signal = new AbortController().signal
+
     await tools.prepareReferences([0], signal)
     expect(
       tools.validateReferences([], [identity.referenceId])[0].validation
@@ -1183,6 +1256,7 @@ it('prepares reference uses lazily through the same retained validation as stand
         signal
       )
     )
+
     expect(explicit.references[0]).toMatchObject({
       referenceId: identity.referenceId,
       reused: true,
@@ -1219,19 +1293,24 @@ it('shares reference decoding across concurrent callers without allowing cancell
     .spyOn(sharp.prototype, 'stats')
     .mockImplementationOnce(async function (this: ReturnType<typeof sharp>) {
       const value = await original.call(this)
+
       await gate
+
       return value
     })
   const cancelled = new AbortController()
+
   try {
     const first = tools.prepareReferences([0], cancelled.signal)
     const checked = expect(first).rejects.toThrow()
     const second = tools.prepareReferences([0], new AbortController().signal)
+
     await vi.waitFor(() => expect(stats).toHaveBeenCalledOnce())
     cancelled.abort()
     release()
     await checked
     const result = JSON.parse(await second)
+
     expect(result.references[0]).toMatchObject({
       reused: true,
       validation: { width: 3, height: 7, validity: 'decoded' }
@@ -1256,6 +1335,7 @@ it('reuses imported admission and rejects foreign identities before decoding any
     size: bytes.length
   }
   const tools = createLocalImageTools({ metadata: {} })
+
   tools.addReference({
     ...image,
     validation: {
@@ -1267,16 +1347,19 @@ it('reuses imported admission and rejects foreign identities before decoding any
     }
   })
   const stats = vi.spyOn(sharp.prototype, 'stats')
+
   try {
     const result = JSON.parse(
       await tools.prepareReferences([0], new AbortController().signal)
     )
+
     expect(result.references[0]).toMatchObject({
       reused: true,
       validation: { validity: 'decoded' }
     })
     expect(stats).not.toHaveBeenCalled()
     const fresh = createLocalImageTools({ metadata: {} })
+
     expect(() =>
       fresh.validateReferences([], [result.references[0].referenceId])
     ).toThrow(/Unknown retained reference/)
@@ -1292,6 +1375,7 @@ it('reuses imported admission and rejects foreign identities before decoding any
     const invalid = JSON.parse(
       await broken.prepareReferences([0], new AbortController().signal)
     )
+
     expect(invalid.references[0].validation).toMatchObject({
       validity: 'invalid',
       reason: expect.any(String)

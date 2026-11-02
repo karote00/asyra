@@ -14,11 +14,13 @@ const useSystemProperty = <T,>(key: string, fallback: T): T => {
   return useSyncExternalStore(
     (onStoreChange) => {
       const subject = core.getSystemPropertyObservable<T>(key)
+
       if (!subject) {
         return () => undefined
       }
 
       const subscription = subject.subscribe(() => onStoreChange())
+
       return () => subscription.unsubscribe()
     },
     getSnapshot,
@@ -45,6 +47,7 @@ const AiDrawingProgressIndicator: React.FC = () => {
   const top = progress.bounds.y * zoom + viewportPosition.y
   const width = progress.bounds.width * zoom
   const height = progress.bounds.height * zoom
+
   if (
     !Number.isFinite(left) ||
     !Number.isFinite(top) ||

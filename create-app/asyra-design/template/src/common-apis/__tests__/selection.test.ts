@@ -10,6 +10,7 @@ import core from '../../contexts'
 import { selectionApis } from '../selection'
 
 let selected: string[]
+
 beforeEach(() => {
   vi.clearAllMocks()
   selected = ['previous']
@@ -47,6 +48,7 @@ describe('element selection admission', () => {
   })
   it('preserves explicit empty selection and mutation options', () => {
     const options = { undoable: false }
+
     selectionApis.selectElements([], options)
     expect(selected).toEqual([])
     expect(core.selectElements).toHaveBeenCalledWith([], options)
