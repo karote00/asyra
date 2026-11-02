@@ -8496,7 +8496,7 @@ it('execution proof delivers selected Knowledge decisions completely without opt
     expect(method.description).toMatch(/optional.*representation.*lighting/i)
     expect(method.description).toMatch(/without.*parameter walkthrough/i)
     expect(detail.description).toMatch(
-      /only when.*local-coordinate conversion.*worked example/i
+      /local-coordinate conversion.*worked example/i
     )
     expect(detail.description).toMatch(
       /known supported representation.*does not require/i
@@ -8526,6 +8526,23 @@ it('execution proof delivers selected Knowledge decisions completely without opt
       ).toBe(false)
       expect(JSON.stringify(result)).toContain('Never retry a settled drawing')
     }
+
+    const parameters = JSON.parse(
+      await owner.call(
+        'read_knowledge',
+        { ids: [detail.id], contexts },
+        new AbortController().signal
+      )
+    )
+
+    expect(parameters.contentDelivery).toBeUndefined()
+    expect(
+      parameters.documents.map((doc: { target: string }) => doc.target)
+    ).not.toContain(method.id)
+    expect(JSON.stringify(parameters)).toContain('Continuous material join')
+    expect(JSON.stringify(parameters)).toContain(
+      'Never retry a settled drawing'
+    )
   } finally {
     owner.dispose()
   }

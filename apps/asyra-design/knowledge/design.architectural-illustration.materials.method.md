@@ -18,39 +18,26 @@
 }
 ---
 
-### Optional method: ready surface, evidence, then dependent repetition
+### Decide representation before choosing a review method
 
-Choose this route when an uncertain repeated material warrants an early visual check.
-It can reduce rework but adds review time; known methods and independent parts need
-not wait. Its sequence is not a prerequisite for drawing or an extra acceptance
-standard. The following steps describe execution if this method is selected.
+Use the material roles and intended lighting domain already available. Do not infer a role
+from object names or hierarchy. A material family, continuous lighting scope and
+intentionally linked shared fill are distinct choices. Record unresolved choices
+concisely in existing assumptions only when needed; this is not another schema.
 
-1. Use the user's choices and supported reference regions to assign the visible
-   parts to material roles. Record the role-to-part relation, continuous lighting
-   scope, intentional boundaries and uncertain choices concisely in existing
-   `draft.brief.assumptions`; `viewpoint` carries the viewing interpretation.
-   Existing criteria `method` may carry the same method when criteria are already
-   needed. These are descriptive decisions, not executable selectors or a second
-   validation schema. Do not infer a role from object names or hierarchy.
-2. Assign role-specific `fillTemplates` to the actual draft children/motifs. Equal
-   independent fills remain independent. A material family, a continuous lighting
-   scope and intentionally linked `sharedFills` are different decisions. Use the already known complete contract directly. Acquire only missing route or
-   draft fields through the discovery paths in the contract guidance; retain those contracts and do
-   not reacquire the full catalog per material.
-3. Choose a ready portion that contains the relevant role contrast and, when
-   needed, adjacent portions spanning a join. Keep its intended projection,
-   material domain and layering. Use `prepare_and_apply_design` for a ready part;
-   do not require a separate prepare/review call or a disposable sample object.
-   `prepare_design` is available for a needed non-mutating input check. A successful
-   preparation validates declared input, not material appearance or continuity.
-4. Follow the representative declaration/capture in the materials.review child for an unresolved shared
-   material choice. Then choose the next action from the returned verdict table.
-   Continue independent ready work while that choice is unresolved. This is one
-   route for the selected method, not one review per object or another AI model.
-5. Existing-target corrections use materials.correction when needed. Selected-owner
-   edits create local overrides; change the shared source only for intentional
-   linked edits. Reset restores inheritance; detach only for independent ownership.
-   Preserve valid decisions and recheck affected joins, not unrelated parts.
+For a known representation, use the current tool contract directly. If local
+coordinate conversion is the unresolved question, select method.parameters; its
+worked example does not require adopting a sampling workflow.
+
+### Optional method for an uncertain repeated material
+
+A ready portion with adjacent surfaces can reveal an uncertain material or join
+before that choice is repeated. This adds capture and judgment time; use it when
+that cost is justified by likely rework. Known methods and independent parts need
+not wait. Keep the intended projection and material domain, apply the ready part
+with `prepare_and_apply_design`, then use materials.review for scoped evidence if
+needed. No disposable sample, extra preparation call or fixed drawing order is
+required. Review must not add acceptance obligations beyond the user's request.
 
 ### Choose an equivalent material representation
 
@@ -81,14 +68,9 @@ For retained color mapping, use the actual parent-local position basis and curre
 query/lease. It changes color/opacity only, not gradient handles or fill kind.
 Select method.parameters for the exact domain/ownership walkthrough if needed.
 
-If a retained input is stale, refresh the affected query before a new write.
-If a write completed but retaining its output failed, retain that settlement and
-refresh only needed evidence/targets; do not rerun the write. Unknown/partial
-settlement uses the existing receipt recovery. If the chosen visual method needs
-an unsupported field, keep the current result, state the missing expression and
-use explicit supported values when feasible. Do not silently replace the effect,
-create a callback or claim a new tool can synthesize it. A new capability requires
-a separate confirmed requirement; Knowledge does not invent one.
+Unsupported effects remain explicit limits, not silently substituted appearance
+or invented callbacks. Exact invocation and recovery belong to current tool
+contracts; the contracts dependency supplies the shared no-replay boundary.
 
 Use `prepare_and_apply_design` for ordinary ready parts; the optional standalone
 example does not require an extra preparation step. Mechanics do not judge

@@ -1,6 +1,6 @@
 ---
 {
-  "description": "Choose material method, existing material correction or representative acceptance; read only the needed child.",
+  "description": "Resolve continuous lighting versus per-piece material effects; select parameters for coordinate conversion, method for an uncertain choice, correction for existing fills or review for evidence.",
   "contexts": [
     "architectural-illustration"
   ],

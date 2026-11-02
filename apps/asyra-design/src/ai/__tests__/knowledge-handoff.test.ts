@@ -47,7 +47,7 @@ it('hands App-only method examples from real Knowledge reads to current discover
   )
   const domain = read.documents.find(
     (doc: { target: string }) =>
-      doc.target === 'illustration.architecture.materials.method'
+      doc.target === 'illustration.architecture.materials'
   )
   const app = read.documents.find(
     (doc: { target: string }) =>
@@ -55,9 +55,7 @@ it('hands App-only method examples from real Knowledge reads to current discover
       'design.architectural-illustration.materials.method.parameters'
   )
 
-  expect(domain.text).toContain(
-    'Evaluate an uncertain repeated material when useful'
-  )
+  expect(domain.text).toContain('A window grid is not a reflection model')
   expect(domain.text).not.toContain('map_retained_fills')
   expect(app.text).toContain('map_retained_fills')
   expect(app.text).toContain('not per-cell gradient endpoints')
@@ -333,12 +331,12 @@ it('carries the recorded material decision into initial preparation without chan
         source.revision
       ])
     ).toEqual([
-      ['design.architectural-illustration', 19],
+      ['design.architectural-illustration', 20],
       ['design.architectural-illustration.contracts', 2],
       ['illustration.architecture', 5],
       ['illustration.architecture.materials', 1],
       ['illustration.architecture.materials.method', 2],
-      ['design.architectural-illustration.materials.method', 4]
+      ['design.architectural-illustration.materials.method', 5]
     ])
     for (const action of [
       ...createBasicApiActions(),

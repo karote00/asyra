@@ -88,7 +88,11 @@ without weakening the final acceptance contract.
 Domain knowledge is optional reference material, not a default method or an
 additional acceptance standard. Global guidance does not prescribe representative
 sampling, construction order or refinement sequence. Exact tool contracts and
-truthful current-evidence completion remain required.
+truthful current-evidence completion remain required. Discovery describes the
+unresolved decisions advice can help resolve. Direct material parameter reads
+include domain and contract constraints without the optional sampling method;
+repetition advice does not require a representative check for known materials.
+Knowledge maps decisions to existing tool computation, not duplicate algorithms.
 
 When selected for an unresolved repeated material, chosen-method advice exposes
 one executable advisory route: choose the method,

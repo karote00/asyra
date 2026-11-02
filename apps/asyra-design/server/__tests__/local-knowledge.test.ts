@@ -304,7 +304,7 @@ it('delivers parent and detail selection conditions before reading and preserves
     expect(method.description).toMatch(/optional.*representation.*lighting/i)
     expect(method.description).toMatch(/without.*parameter walkthrough/i)
     expect(detail.description).toMatch(
-      /only when.*local-coordinate conversion.*worked example/i
+      /local-coordinate conversion.*worked example/i
     )
     expect(detail.description).toMatch(
       /known supported representation.*does not require/i
@@ -358,10 +358,15 @@ it('delivers parent and detail selection conditions before reading and preserves
       (doc: { target: string }) => doc.target
     )
 
-    expect(detailedTargets).toEqual([...targets, detail.id])
+    expect(detailedTargets).toEqual([
+      ...targets.filter((id: string) => !id.endsWith('materials.method')),
+      detail.id
+    ])
     expect(new Set(detailedTargets).size).toBe(detailedTargets.length)
     expect(JSON.stringify(detailed)).toContain('Continuous material join')
-    for (const doc of normal.documents) {
+    for (const doc of normal.documents.filter(
+      (doc: { target: string }) => !doc.target.endsWith('materials.method')
+    )) {
       expect(
         detailed.documents.find(
           (item: { target: string }) => item.target === doc.target
@@ -1707,8 +1712,10 @@ it('delivers optional method advice without making samples an added acceptance s
       }
     )
 
-    expect(response).toContain('not a prerequisite for drawing')
-    expect(response).toContain('adds review time')
+    expect(response).toContain(
+      'No disposable sample, extra preparation call or fixed drawing order'
+    )
+    expect(response).toContain('adds capture and judgment time')
     expect(response).not.toMatch(
       /default planning reference|default method reference/
     )
@@ -1720,7 +1727,7 @@ it('delivers optional method advice without making samples an added acceptance s
       expect.objectContaining({
         source: {
           id: 'design.architectural-illustration.materials.method',
-          revision: 4
+          revision: 5
         }
       })
     )
@@ -1732,6 +1739,114 @@ it('delivers optional method advice without making samples an added acceptance s
         }
       })
     )
+  } finally {
+    owner.dispose()
+  }
+})
+
+it('offers problem-oriented advice and reads coordinate parameters without a sampling workflow', async () => {
+  const { readCompleteInformation } = await import('./tool-contract-assertions')
+  const owner = createLocalKnowledgeTools('decision-handoff')
+  const contexts = ['architectural-illustration']
+
+  try {
+    const discovery = owner.definitions.find(
+      (tool) => tool.name === AiDesignToolIds.DISCOVER_KNOWLEDGE
+    )
+
+    expect.soft(discovery?.description).toContain('coordinate bases')
+    expect.soft(discovery?.description).toContain('repeated components')
+    const selected =
+      'design.architectural-illustration.materials.method.parameters'
+    const read = JSON.parse(
+      await readCompleteInformation(
+        (input) => owner.call(AiDesignToolIds.READ_KNOWLEDGE, input, signal()),
+        { ids: [selected], contexts }
+      )
+    )
+    const targets = read.documents.map((doc: { target: string }) => doc.target)
+
+    expect
+      .soft(targets)
+      .not.toContain('design.architectural-illustration.materials.method')
+    expect
+      .soft(targets)
+      .not.toContain('illustration.architecture.materials.method')
+    expect.soft(targets).toContain('illustration.architecture.materials')
+    expect
+      .soft(targets)
+      .toContain('design.architectural-illustration.contracts')
+    expect.soft(new Set(targets).size).toBe(targets.length)
+    expect.soft(JSON.stringify(read)).toContain('Continuous material join')
+    expect.soft(JSON.stringify(read)).toContain('Never retry a settled drawing')
+    const repetition = JSON.parse(
+      await readCompleteInformation(
+        (input) => owner.call(AiDesignToolIds.READ_KNOWLEDGE, input, signal()),
+        { ids: ['design.architectural-illustration.repetition'], contexts }
+      )
+    )
+    const text = repetition.documents
+      .map((doc: { text: string }) => doc.text)
+      .join('\n')
+
+    expect
+      .soft(text)
+      .not.toContain('Confirm representative material evidence separately')
+    expect.soft(text).toContain('This does not depth-sort')
+    expect.soft(text).toContain('If an unresolved repeated material')
+  } finally {
+    owner.dispose()
+  }
+})
+
+it('measures complete decision-advice delivery without loading unrelated topics', async () => {
+  const { readCompleteInformation } = await import('./tool-contract-assertions')
+  const owner = createLocalKnowledgeTools('delivery-measurement')
+
+  try {
+    for (const topic of [
+      'spatial',
+      'repetition',
+      'materials.method',
+      'materials.method.parameters'
+    ]) {
+      let pages = 0
+      let bytes = 0
+      const text = await readCompleteInformation(
+        async (input) => {
+          const reply = await owner.call(
+            AiDesignToolIds.READ_KNOWLEDGE,
+            input,
+            signal()
+          )
+
+          pages++
+          bytes += Buffer.byteLength(reply)
+
+          return reply
+        },
+        {
+          ids: [`design.architectural-illustration.${topic}`],
+          contexts: ['architectural-illustration']
+        }
+      )
+      const result = JSON.parse(text)
+      const targets = result.documents.map(
+        (doc: { target: string }) => doc.target
+      )
+
+      expect(new Set(targets).size).toBe(targets.length)
+      expect(targets).not.toContain(
+        'design.architectural-illustration.materials.correction'
+      )
+      expect(targets).not.toContain(
+        'design.architectural-illustration.materials.review'
+      )
+      expect(bytes).toBeLessThan(24000)
+      process.stdout.write(
+        JSON.stringify({ topic, pages, bytes, documents: targets }) + '\n'
+      )
+    }
   } finally {
     owner.dispose()
   }
