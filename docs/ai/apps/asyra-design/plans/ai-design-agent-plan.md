@@ -209,7 +209,12 @@ typecheck passes and scoped lint has no errors (three existing console warnings)
 Current-source Inspector candidate `4130308f-554b-4fa1-a079-d25859c238b2` passes.
 Bounded review confirms the guidance explains potential value without a lookup
 requirement, promised quality result or construction sequence. No live model run
-was performed; actual consultation behavior remains unmeasured for this change.
+was performed during implementation. The subsequent user-authorized
+[fifteen-minute test](../reports/taipei-101-knowledge-value-15m-2026-11-03.md)
+exited 0 with exact document/checkpoint/reload equality. It stopped at 886.043 s
+without final visual acceptance and made zero Knowledge calls. The provider record
+retains one incomplete span; instruction delivery is verified but improved
+consultation or quality is not established.
 
 ## Product target
 
