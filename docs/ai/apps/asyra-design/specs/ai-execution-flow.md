@@ -81,11 +81,17 @@ unconditionally. Batch independent gaps in native research; continue once eviden
 supports the next retained structural part. Further research must answer a specific
 remaining question, recorded briefly in existing progress/decision records without
 private reasoning or per-call chatter. The initial plan contains immediate method,
-constraints and acceptance criteria, not a complete geometry inventory. Emit ready
-coherent retained parts in a shared coordinate system; keep unresolved detail pending
+constraints and acceptance criteria, not a complete geometry inventory. Ready
+coherent retained parts may be emitted in a shared coordinate system; keep unresolved detail pending
 without weakening the final acceptance contract.
 
-Chosen-method advice exposes one executable advisory route: choose the method,
+Domain knowledge is optional reference material, not a default method or an
+additional acceptance standard. Global guidance does not prescribe representative
+sampling, construction order or refinement sequence. Exact tool contracts and
+truthful current-evidence completion remain required.
+
+When selected for an unresolved repeated material, chosen-method advice exposes
+one executable advisory route: choose the method,
 initially separate local material/join and whole-result obligations, apply a ready
 part, capture its actual representative region, consume the returned binding and
 record a primary-agent judgment before repeating that unresolved shared choice.

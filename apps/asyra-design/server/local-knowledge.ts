@@ -194,14 +194,24 @@ export const createDesignKnowledge = (
 
 const loadFiles = async (): Promise<readonly KnowledgeFile[]> => {
   const files = await Promise.all(
-    sharedIds.map(async (id) => ({
-      id,
-      revision: id === 'illustration.architecture' ? 5 : 1,
-      markdown: await readFile(
-        require.resolve(`@asyra/domain-knowledge/${id}.md`),
-        'utf8'
-      )
-    }))
+    sharedIds.map(async (id) => {
+      let revision = 1
+
+      if (id === 'illustration.architecture') {
+        revision = 5
+      } else if (id === 'illustration.architecture.materials.method') {
+        revision = 2
+      }
+
+      return {
+        id,
+        revision,
+        markdown: await readFile(
+          require.resolve(`@asyra/domain-knowledge/${id}.md`),
+          'utf8'
+        )
+      }
+    })
   )
 
   return [
@@ -230,15 +240,19 @@ const loadFiles = async (): Promise<readonly KnowledgeFile[]> => {
         }
 
         if (suffix === '.materials.method') {
-          revision = 3
+          revision = 4
         }
 
         if (suffix === '.materials.method.parameters') {
           revision = 2
         }
 
+        if (suffix === '.materials.review') {
+          revision = 2
+        }
+
         if (!suffix) {
-          revision = 18
+          revision = 19
         }
 
         return {

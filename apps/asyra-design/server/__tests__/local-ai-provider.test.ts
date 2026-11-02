@@ -2004,21 +2004,19 @@ describe('local subscription AI backend', () => {
     expect(thread?.config).toMatchObject({})
     const base = String(thread?.baseInstructions)
 
-    expect(base).toContain('First frame is optional')
-    expect(base).toContain('not a deadline or completion gate')
-    expect(base).toContain('research may come first')
-    expect(base).toContain('No forced previews or splitting for timing')
+    expect(base).toContain('optional reference material')
+    expect(base).toContain('not an additional acceptance standard')
     expect(base).toContain('Preserve validation, references and final review')
-    expect(base).toContain('not a deadline')
+    expect(delivered).not.toMatch(
+      /default method reference|representative route before repeating|seamless height grade/
+    )
     expect(base).not.toContain(
       'submit ready geometry before later grid details'
     )
     expect(base).not.toContain('Draw each coherent ready part')
     expect(base).not.toContain('Do not accumulate all stages in one draft')
-    expect(base).toContain(
-      'Draw when useful; research may come first, edits later'
-    )
-    expect(base).toContain('it is not a prerequisite for first visible content')
+    expect(base).toContain('No particular construction order')
+    expect(base).toContain('Known-value edits can proceed without a lookup')
     expect(base).toContain('Preserve validation, references and final review')
     expect(base).not.toContain('before committing those decisions')
     process.stdout.write(
@@ -2101,10 +2099,10 @@ describe('local subscription AI backend', () => {
       'verify_design_checks',
       'repair_design_checks'
     ]) {
-      expect(base).toContain(name)
+      expect(delivered).toContain(name)
     }
 
-    expect(base).toContain('returned requestId/checks')
+    expect(base).toContain('fresh request-owned evidence')
     expect(instructions).not.toContain(
       'Discover the relevant tools before composing calls'
     )
@@ -6207,10 +6205,10 @@ it('delivers attachment identity and prepares selected uses before capture and c
 
     const instructions = thread.params.baseInstructions as string
 
-    expect(instructions).toContain('select_design_references prepares')
+    expect(instructions).toContain('select_design_references')
     const guidance = instructions
       .split('\n')
-      .find((line) => line.startsWith('Attachment metadata already'))
+      .find((line) => line.startsWith('select_design_references for explicit'))
 
     if (!guidance) {
       throw new Error('Missing attachment guidance')
@@ -6424,12 +6422,8 @@ it('discovers and retrieves both knowledge contexts through the normal provider 
   )?.params
 
   expect(thread?.baseInstructions).toContain('discover_knowledge')
-  expect(thread?.baseInstructions).toContain(
-    'Select the sufficient parent or child directly'
-  )
-  expect(thread?.baseInstructions).toContain(
-    'hierarchy depth does not mean more complete advice'
-  )
+  expect(thread?.baseInstructions).toContain('optional reference material')
+  expect(thread?.baseInstructions).not.toContain('default method reference')
   expect(thread?.baseInstructions).toContain(
     'Known-value edits can proceed without a lookup'
   )

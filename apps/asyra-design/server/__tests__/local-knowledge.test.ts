@@ -301,7 +301,7 @@ it('delivers parent and detail selection conditions before reading and preserves
     // Inspect only metadata available before any body read, not model reasoning.
     expect(calls).toEqual([AiDesignToolIds.DISCOVER_KNOWLEDGE])
     expect(JSON.stringify(catalog)).not.toContain('## How')
-    expect(method.description).toMatch(/ordinary.*representation.*lighting/i)
+    expect(method.description).toMatch(/optional.*representation.*lighting/i)
     expect(method.description).toMatch(/without.*parameter walkthrough/i)
     expect(detail.description).toMatch(
       /only when.*local-coordinate conversion.*worked example/i
@@ -1692,4 +1692,47 @@ it('keeps unresolvable source metadata explicit and projects metadata without to
   expect(
     observations[1].provenanceReads / observations[0].provenanceReads
   ).toBe(observations[1].count / observations[0].count)
+})
+
+it('delivers optional method advice without making samples an added acceptance standard', async () => {
+  const { readCompleteInformation } = await import('./tool-contract-assertions')
+  const owner = createLocalKnowledgeTools('optional-material-method')
+
+  try {
+    const response = await readCompleteInformation(
+      (input) => owner.call(AiDesignToolIds.READ_KNOWLEDGE, input, signal()),
+      {
+        ids: ['design.architectural-illustration.materials.method'],
+        contexts: ['architectural-illustration']
+      }
+    )
+
+    expect(response).toContain('not a prerequisite for drawing')
+    expect(response).toContain('adds review time')
+    expect(response).not.toMatch(
+      /default planning reference|default method reference/
+    )
+    const documents = JSON.parse(response).documents as {
+      source: { id: string; revision: number }
+    }[]
+
+    expect(documents).toContainEqual(
+      expect.objectContaining({
+        source: {
+          id: 'design.architectural-illustration.materials.method',
+          revision: 4
+        }
+      })
+    )
+    expect(documents).toContainEqual(
+      expect.objectContaining({
+        source: {
+          id: 'illustration.architecture.materials.method',
+          revision: 2
+        }
+      })
+    )
+  } finally {
+    owner.dispose()
+  }
 })
