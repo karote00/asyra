@@ -649,7 +649,7 @@ const runLocalAiProvider = async (
       {
         name: 'design_knowledge',
         description:
-          'Discover and read relevant advisory design knowledge without changing files or permissions.',
+          'Domain principles, common design pitfalls and mappings to supported App capabilities help avoid re-deriving relationships and choosing unsuitable representations, even for familiar tasks. Discover relevant topics and read only useful advice; consultation is optional and does not change files or permissions.',
         owner: knowledge
       },
       {

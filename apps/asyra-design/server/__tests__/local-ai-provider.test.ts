@@ -2004,6 +2004,15 @@ describe('local subscription AI backend', () => {
     expect(thread?.config).toMatchObject({})
     const base = String(thread?.baseInstructions)
 
+    expect(base).toContain('domain principles, common failure modes')
+    expect(base).toContain(
+      'even when you already know how to approach the design'
+    )
+    const knowledgeGroup = (
+      thread?.dynamicTools as { name: string; description: string }[]
+    ).find((group) => group.name === 'design_knowledge')
+
+    expect(knowledgeGroup?.description).toContain('avoid re-deriving')
     expect(base).toContain('optional reference material')
     expect(base).toContain('not an additional acceptance standard')
     expect(base).toContain('Preserve validation, references and final review')

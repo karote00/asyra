@@ -183,6 +183,34 @@ Recorder exit 0; exact source/checkpoint/reload equality; 705.480-second deadlin
 cancellation. Knowledge was not read and final refinement was not visually
 accepted. Static delivery improvement is proven; live speed/quality benefit is not.
 
+### Follow-up - explain knowledge value before discovery - 2026-11-03
+
+User-authorized compose slice: always-present App instructions and the native
+Knowledge namespace explain domain principles, common failure modes and App
+capability mappings before deferred tool discovery. Familiarity with the domain
+is not a reason to hide this reference value. Keep consultation optional and
+preserve known-value edits, current tool authority and user-linked acceptance.
+
+Step Execution Card - compose: existing request context and registered definitions
+enter provider composition; base/system instructions and namespace metadata expose
+the same advisory purpose. No tool execution, retrieval or body loading is added.
+Allowlist: App prompt, native namespace description, direct prompt/provider tests,
+execution spec, compose Inspector condition and this plan. No tool schema, content
+catalog, runtime algorithm, user prompt, release work or live test changes.
+Review the actual native base and HTTP systemPrompt consumers; formal regression
+must first detect missing value guidance. Gates: focused prompt/provider tests,
+scoped lint, naming, typecheck and current-source Inspector candidate. No new
+public identifier or persisted identity is introduced.
+
+Completed: the prompt regression failed before implementation; 255 focused tests
+pass with one existing skip, including actual native base/namespace and HTTP
+systemPrompt delivery. Naming passes 15 checks, Inspector contract passes two,
+typecheck passes and scoped lint has no errors (three existing console warnings).
+Current-source Inspector candidate `4130308f-554b-4fa1-a079-d25859c238b2` passes.
+Bounded review confirms the guidance explains potential value without a lookup
+requirement, promised quality result or construction sequence. No live model run
+was performed; actual consultation behavior remains unmeasured for this change.
+
 ## Product target
 
 The product objective is to understand and fulfill the user’s design intent, not

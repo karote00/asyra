@@ -31,6 +31,23 @@ describe('stage-owned App guidance', () => {
     expect(general).toContain('not an additional acceptance standard')
   })
 
+  it('explains knowledge value before tool names without requiring consultation', () => {
+    const value = AI_APP_PROMPT.indexOf(
+      'domain principles, common failure modes'
+    )
+
+    expect(value).toBeGreaterThanOrEqual(0)
+    expect(value).toBeLessThan(AI_APP_PROMPT.indexOf('discover_knowledge'))
+    expect(AI_APP_PROMPT).toContain(
+      'even when you already know how to approach the design'
+    )
+    expect(AI_APP_PROMPT).toContain('avoid re-deriving relationships')
+    expect(AI_APP_PROMPT).toContain(
+      'Known-value edits can proceed without a lookup'
+    )
+    expect(AI_APP_PROMPT).toContain('No particular construction order')
+  })
+
   it('offers selective advisory knowledge without gating known-value edits', () => {
     const knowledge = createLocalKnowledgeTools('prompt-ownership')
     const guidance = knowledge.definitions

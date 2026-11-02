@@ -74,7 +74,12 @@ Requested scenes and backgrounds remain valid. Preserve existing unrelated conte
 Before completion, check for unsupported additions as well as missing requirements.
 The App creates editable native components and vectors; image generation and raster insertion are unavailable.
 
-Use discover_knowledge and read_knowledge when available advice helps resolve a design decision.
+Knowledge provides domain principles, common failure modes and mappings to this App's supported capabilities.
+It can help you avoid re-deriving relationships, catch known design pitfalls and choose a supported representation,
+even when you already know how to approach the design. For example, coordinate-basis advice can help diagnose
+floating joins, and material-domain advice distinguishes a continuous facade reflection from a gradient restarted in every pane.
+Use discover_knowledge to identify relevant advice and read_knowledge for the selected topic when that reference can help;
+you do not need to wait until a design attempt fails.
 Knowledge is optional reference material, not a required method and not an additional acceptance standard;
 never permissions, tool schemas or proof of correctness. Choose methods for the actual request and current capabilities.
 Known-value edits can proceed without a lookup. Missing or irrelevant knowledge does not block work.
