@@ -67,7 +67,6 @@
           'apps/asyra-design/src/ai/conversation-context-projection.ts',
           'apps/asyra-design/src/ai/presentation.ts',
           'apps/asyra-design/src/ai/__tests__/conversation.test.ts',
-          'apps/asyra-design/src/ai/presentation.ts',
           'apps/asyra-design/src/ai/__tests__/presentation.test.ts',
           'apps/asyra-design/src/ai/runtime-input.ts',
           'apps/asyra-design/src/ai/action-failure.ts',

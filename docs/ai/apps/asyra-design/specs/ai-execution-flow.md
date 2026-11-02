@@ -55,7 +55,6 @@ current intent stays separate. The backend validates this data before invoking a
 provider. Historical outcomes do not authorize replay or reuse of request-owned
 evidence. Fresh ephemeral provider threads receive the same admitted context.
 
-
 ## Capability discovery and composition
 
 Shared instructions state App-wide intent, data authority and completion rules
@@ -1879,6 +1878,17 @@ A delivery failure preserves acknowledged mutations and retained evidence. Use t
 advertised read/redisplay route without invoking the producer again; missing or
 malformed handles fail explicitly. No fallback capture, redraw, automatic retry or
 invented success is allowed. Independent results retain independent identities.
+
+The inspection owner declares `image.dataUrl`, `image.width` and `image.height`
+as required delivery fields. Pixel dimensions are integers from 1 through 1024
+and must match the original PNG header. Registered model projection preserves
+these fields before native image extraction; it must not recapture, resize or
+infer dimensions from document bounds. Overview, native regions and workspace
+overviews share this contract, including multiple images in one reply.
+
+Formal image regressions pass the production inspection declaration through
+model projection and image extraction, with a real host-boundary case. A fixture
+sent directly to image extraction is insufficient to prove the complete handoff.
 
 Formal tests send actual owner output through the native response channel and
 inspect the next outbound request. Zero, one and multiple images preserve bytes
