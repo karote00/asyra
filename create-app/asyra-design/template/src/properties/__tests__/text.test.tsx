@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   update: vi.fn(),
   style: vi.fn()
 }))
+
 vi.mock('../../hooks', () => ({
   useProperty: (key: string) =>
     key === 'elementSelection' ? mocks.selection : mocks.value
@@ -15,6 +16,7 @@ vi.mock('../../hooks', () => ({
 vi.mock('../../controllers/scene-tree', () => ({
   updateSelectedElementProperties: (...args: unknown[]) =>
     mocks.update(...args),
+
   updateSelectedTextStyle: (...args: unknown[]) => mocks.style(...args)
 }))
 
@@ -38,6 +40,7 @@ describe('manual text editing', () => {
   it('rejects invalid typography', () => {
     render(<TextProperties />)
     const size = screen.getByRole('spinbutton', { name: 'Font size' })
+
     fireEvent.change(size, { target: { value: '-3' } })
     fireEvent.blur(size)
     expect(mocks.update).not.toHaveBeenCalled()
@@ -56,6 +59,7 @@ describe('manual text editing', () => {
     mocks.update.mockClear()
     mocks.style.mockClear()
     const center = screen.getByRole('button', { name: 'Align center' })
+
     expect(center.getAttribute('aria-pressed')).toBe('false')
     fireEvent.click(center)
     expect(mocks.update).toHaveBeenCalledExactlyOnceWith('textAlign', 'center')
@@ -76,6 +80,7 @@ describe('manual text editing', () => {
   it('keeps IME confirmation inside a typography field', () => {
     render(<TextProperties />)
     const family = screen.getByRole('spinbutton', { name: 'Font size' })
+
     family.focus()
     fireEvent.change(family, { target: { value: '40' } })
     fireEvent.keyDown(family, { key: 'Enter', isComposing: true })

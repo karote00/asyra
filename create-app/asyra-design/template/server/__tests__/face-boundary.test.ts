@@ -26,15 +26,21 @@ import { AiActionNames } from '../../src/constants/ai-actions'
 
 const compact = (index: number) => {
   const input = structuredClone(fixture.inputs[index])
+
   for (const [path, face] of fixture.pairs[index]) {
     const keys = path as (string | number)[]
     let owner = input.draft as unknown as Record<PropertyKey, unknown>
-    for (const key of keys.slice(0, -1))
+
+    for (const key of keys.slice(0, -1)) {
       owner = owner[key] as Record<PropertyKey, unknown>
+    }
+
     owner[keys[keys.length - 1]] = { face }
   }
+
   return input
 }
+
 const generic = (order = 'cell-major') => {
   const grid = {
     type: 'surface-grid',
@@ -72,6 +78,7 @@ const generic = (order = 'cell-major') => {
       { x: 2, y: 0, z: 20 }
     ]
   }
+
   return {
     type: 'group',
     key: 'root',
@@ -86,27 +93,35 @@ const generic = (order = 'cell-major') => {
     children: [grid, face] as [typeof grid, typeof face]
   }
 }
+
 const inline = (source: unknown) => {
   const result = structuredClone(source) as {
     children: Record<string, unknown>[]
   }
+
   const scope = (members: Record<string, unknown>[]) => {
     for (const child of members) {
       if (child.type === 'surface-grid' && !Array.isArray(child.boundary)) {
         const reference = child.boundary as { face: string }
+
         child.boundary = members.find((n) => n.key === reference.face)?.vertices
       }
-      if (child.type === 'pattern')
+
+      if (child.type === 'pattern') {
         scope(child.members as Record<string, unknown>[])
+      }
     }
   }
+
   scope(result.children)
+
   return result
 }
 
 it('preserves the six recorded face boundaries and every prepared object', () => {
   for (let i = 0; i < fixture.inputs.length; i++) {
     const source = compact(i).draft
+
     expect(prepareDesign(source, 'same')).toEqual(
       prepareDesign(fixture.inputs[i].draft, 'same')
     )
@@ -120,6 +135,7 @@ it.each(['cell-major', 'motif-major'])(
   (order) => {
     const source = generic(order)
     const before = structuredClone(source)
+
     expect(prepareDesign(source, 'same')).toEqual(
       prepareDesign(inline(source), 'same')
     )
@@ -136,6 +152,7 @@ it.each(['cell-major', 'motif-major'])(
         }
       ]
     }
+
     expect(prepareDesign(repeated, 'same')).toEqual(
       prepareDesign(inline(repeated), 'same')
     )
@@ -215,19 +232,27 @@ it.each([
   ]
 ])('rejects %s without modifying the source', (_name, change) => {
   const source = generic()
+
   change(source)
   const before = structuredClone(source)
+
   expect(() => prepareDesign(source)).toThrow()
   expect(source).toEqual(before)
 })
 it('selects a grid without recreating a face from another retained part and re-resolves repairs', () => {
   const source = generic()
+
   source.children.reverse()
   const parts = partitionDesignBudget(source, 7).partitions
+
   expect(parts).toHaveLength(2)
-  if (!parts) throw new Error('Missing partition plan')
+  if (!parts) {
+    throw new Error('Missing partition plan')
+  }
+
   expect(parts).toEqual(partitionDesignBudget(inline(source), 7).partitions)
   const selected = selectDesignSource(source, parts[1].selections)
+
   expect(prepareDesign(selected, 'same')).toEqual(
     prepareDesign(
       selectDesignSource(inline(source), parts[1].selections),
@@ -239,6 +264,7 @@ it('selects a grid without recreating a face from another retained part and re-r
   ).toEqual(['grid'])
   const store = createDesignDraftRepairStore(7)
   const draftId = store.retain(source)
+
   expect(
     prepareDesign(store.repair({ draftId, partition: 1 }), 'same')
   ).toEqual(prepareDesign(selected, 'same'))
@@ -246,13 +272,17 @@ it('selects a grid without recreating a face from another retained part and re-r
     draftId,
     replacements: [{ path: '/children/0/vertices/0/x', value: 1 }]
   }) as Record<string, unknown>
+
   expect(prepareDesign(repaired, 'same')).toEqual(
     prepareDesign(inline(repaired), 'same')
   )
   expect(
     prepareDesign(store.repair({ draftId, partition: 1 }), 'same')
   ).toEqual(prepareDesign(selected, 'same'))
-  if (!draftId) throw new Error('Missing retained source')
+  if (!draftId) {
+    throw new Error('Missing retained source')
+  }
+
   store.release(draftId)
   expect(() => store.repair({ draftId, partition: 1 })).toThrow(/unavailable/)
 })
@@ -281,7 +311,9 @@ it('delivers and executes the selected boundary example with lower total bytes a
         const design = admitPreparedDesignDelivery(
           (a.arguments as { design: unknown }).design
         )
+
         applied.push(design)
+
         return {
           actionId: a.id,
           actionName: a.name,
@@ -303,9 +335,12 @@ it('delivers and executes the selected boundary example with lower total bytes a
   const pages: number[] = []
   const raw = await readCompleteInformation(async (input) => {
     const text = await operations.call('describe_design_apis', input, signal)
+
     pages.push(Buffer.byteLength(text))
+
     return text
   }, fixture.query)
+
   process.stdout.write(
     JSON.stringify({
       measurement: 'face-boundary-guide',
@@ -314,10 +349,13 @@ it('delivers and executes the selected boundary example with lower total bytes a
   )
   recordAcquisitionCost(fixture.query, raw, pages)
   const tool = JSON.parse(raw).tools[0]
+
   expect(JSON.stringify(tool.usageGuide.parameters)).toContain('face')
   const example = tool.invocationExample.invocation.arguments
+
   expect(JSON.stringify(example)).toContain('"boundary":{"face":')
   const definition = main.definitions[0]
+
   expect(
     JSON.parse(
       (
@@ -335,6 +373,7 @@ it('delivers and executes the selected boundary example with lower total bytes a
     Buffer.byteLength(JSON.stringify(fixture.query))
   let candidateBytes =
     Buffer.byteLength(raw) + Buffer.byteLength(JSON.stringify(fixture.query))
+
   for (let i = 0; i < fixture.inputs.length; i++) {
     const baselineInput = { ...fixture.inputs[i], inspection: 'defer' }
     const baselineReply = await invokeLocalTool(
@@ -343,6 +382,7 @@ it('delivers and executes the selected boundary example with lower total bytes a
       baselineInput,
       signal
     )
+
     expect(JSON.parse(baselineReply.text).toolOutcome.settlement).toBe(
       'completed'
     )
@@ -351,14 +391,17 @@ it('delivers and executes the selected boundary example with lower total bytes a
       Buffer.byteLength(baselineReply.text)
     const input = { ...compact(i), inspection: 'defer' }
     const reply = await invokeLocalTool(main, definition, input, signal)
+
     candidateBytes +=
       Buffer.byteLength(JSON.stringify(input)) + Buffer.byteLength(reply.text)
     const output = JSON.parse(reply.text)
+
     expect(output.toolOutcome.settlement).toBe('completed')
     expect(applied.at(-1)?.entries).toEqual(
       prepareDesign(fixture.inputs[i].draft, output.artifactId).entries
     )
   }
+
   expect(execute).toHaveBeenCalledTimes(7)
   expect(candidateBytes).toBeLessThan(
     completeUsageBudget(baselineBytes, 'draft')
@@ -378,6 +421,7 @@ it('indexes a source scope once rather than scanning its faces for each grid', (
   const source = generic()
   const target = source.children[1]
   const key = vi.fn(() => 'panel')
+
   Object.defineProperty(target, 'key', { get: key, enumerable: true })
   Object.assign(source, {
     children: [
@@ -391,6 +435,7 @@ it('indexes a source scope once rather than scanning its faces for each grid', (
   const resolved = resolveSurfaceBoundaries(source) as {
     children: Record<string, unknown>[]
   }
+
   expect(key).toHaveBeenCalledTimes(1)
   expect(
     resolved.children
@@ -417,8 +462,10 @@ it('continues only the failed retained part without resending geometry or recrea
   const session = createDesignPreparationSession(
     undefined,
     async (...args) => {
-      if (++preparations === 2)
+      if (++preparations === 2) {
         throw new Error('Injected preparation interruption')
+      }
+
       return prepareDesignAsync(...args)
     },
     undefined,
@@ -435,7 +482,7 @@ it('continues only the failed retained part without resending geometry or recrea
     ) => ({
       context: {},
       actionResults: batch.actions.map((a) => {
-        if (a.name === AiActionNames.REVIEW_DESIGN)
+        if (a.name === AiActionNames.REVIEW_DESIGN) {
           return {
             actionId: a.id,
             actionName: a.name,
@@ -446,15 +493,19 @@ it('continues only the failed retained part without resending geometry or recrea
               evidence: { sessionId: 'test', revision: 1 }
             }
           }
+        }
+
         calls++
         const design = admitPreparedDesignDelivery(
           (a.arguments as { design: unknown }).design
         )
+
         applied.push(
           ...design.entries
             .slice(design.continuation ? 1 : 0)
             .map((e) => e.descriptor.id)
         )
+
         return {
           actionId: a.id,
           actionName: a.name,
@@ -468,6 +519,7 @@ it('continues only the failed retained part without resending geometry or recrea
     })
   )
   const main = createLocalDesignWorkflow(designs, operations)
+
   const invoke = async (
     input: unknown,
     signal = new AbortController().signal
@@ -475,16 +527,21 @@ it('continues only the failed retained part without resending geometry or recrea
     JSON.parse(
       (await invokeLocalTool(main, main.definitions[0], input, signal)).text
     )
+
   const first = await invoke({ ...compact(0), inspection: 'defer' })
+
   expect(first.toolOutcome.status).toBe('partial')
   const prefix = [...applied]
+
   expect(first.recoveryInvocation, JSON.stringify(first)).toBeDefined()
   const retry = first.recoveryInvocation.arguments
+
   expect(JSON.stringify(retry)).not.toContain('vertices')
   expect(JSON.stringify(retry)).not.toContain('boundary')
   await expect(invoke(retry, AbortSignal.abort())).rejects.toThrow()
   expect(applied).toEqual(prefix)
   const result = await invoke(retry)
+
   expect(result.toolOutcome.settlement).toBe('completed')
   expect(applied.slice(0, prefix.length)).toEqual(prefix)
   expect(new Set(applied).size).toBe(applied.length)
@@ -511,6 +568,7 @@ it('bounds total source traversal across independent pattern scopes before compi
       members
     }))
   }
+
   expect(() => resolveSurfaceBoundaries(oversized)).toThrow(/source.*limit/i)
 })
 
@@ -524,14 +582,18 @@ it('keeps an independent inline boundary unchanged when a nearby face is repaire
   const before = prepareDesign(draft, 'independent')
   const changed = structuredClone(draft)
   const face = changed.children[1] as (typeof source.children)[1]
+
   face.vertices = face.vertices.map((p) => ({ ...p, x: p.x + 5 }))
   const after = prepareDesign(changed, 'independent')
+
   const grids = (design: typeof before) =>
     design.entries.filter((e) => e.key.startsWith('grid-'))
+
   for (const [index, entry] of grids(after).entries()) {
     const previous = grids(before)[index]
     const { x, y, ...descriptor } = entry.descriptor
     const { x: px, y: py, ...previousDescriptor } = previous.descriptor
+
     expect(descriptor).toEqual(previousDescriptor)
     // Group normalization changes local origins, not world-space geometry.
     expect(x + after.entries[0].descriptor.x).toBeCloseTo(
@@ -544,6 +606,7 @@ it('keeps an independent inline boundary unchanged when a nearby face is repaire
     )
     expect(entry.parentId).toBe(previous.parentId)
   }
+
   expect(after.entries.find((e) => e.key === 'panel')).not.toEqual(
     before.entries.find((e) => e.key === 'panel')
   )
@@ -566,7 +629,9 @@ it('recovers recorded ambiguous face keys through returned field repair without 
         const design = admitPreparedDesignDelivery(
           (a.arguments as { design: unknown }).design
         )
+
         applied.push(design)
+
         return {
           actionId: a.id,
           actionName: a.name,
@@ -582,12 +647,15 @@ it('recovers recorded ambiguous face keys through returned field repair without 
   const operations = createLocalOperationTools(actions, designs, execute)
   const main = createLocalDesignWorkflow(designs, operations)
   const signal = new AbortController().signal
+
   const call = async (input: unknown) =>
     JSON.parse(
       (await invokeLocalTool(main, main.definitions[0], input, signal)).text
     )
+
   const input = { ...collision.input, inspection: 'defer' }
   const failure = await call(input)
+
   expect(failure.toolOutcome.settlement).toBe('not-started')
   expect(execute).not.toHaveBeenCalled()
   expect(failure.conflicts, JSON.stringify(failure)).toEqual([
@@ -597,6 +665,7 @@ it('recovers recorded ambiguous face keys through returned field repair without 
   expect(failure.repairGuide.tool).toBe(main.definitions[0].name)
   expect(failure.repairGuide.arguments.draft).toBeUndefined()
   const repair = failure.repairGuide.arguments
+
   // Preserve the referenced face key; replace only the colliding grid key.
   repair.repair.replacements = failure.conflicts.map(
     (item: { key: string; paths: string[] }) => ({
@@ -605,15 +674,20 @@ it('recovers recorded ambiguous face keys through returned field repair without 
     })
   )
   const result = await call(repair)
+
   expect(result.toolOutcome.settlement).toBe('completed')
   expect(execute).toHaveBeenCalledTimes(1)
   const expected = structuredClone(collision.input.draft)
-  for (const node of expected.children)
+
+  for (const node of expected.children) {
     if (
       node.type === 'surface-grid' &&
       ['podium-x', 'podium-y'].includes(node.key)
-    )
+    ) {
       node.key += '-grid'
+    }
+  }
+
   expect(applied[0].entries).toEqual(
     prepareDesign(expected, result.artifactId).entries
   )

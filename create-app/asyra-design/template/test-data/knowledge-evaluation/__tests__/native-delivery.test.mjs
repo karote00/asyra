@@ -13,6 +13,7 @@ import {
 
 test('retained fixtures have verified bytes and source digests', async () => {
   const fixtures = await loadFixtures()
+
   assert.deepEqual(
     fixtures.map((f) => f.bytes),
     [66434, 84960]
@@ -34,6 +35,7 @@ test('outbound comparison preserves UTF-8 and distinguishes exact text', () => {
     'call',
     raw
   )
+
   assert.equal(result.exact, true)
   assert.equal(result.sourceBytes, Buffer.byteLength(raw))
 })
@@ -45,6 +47,7 @@ for (const mode of ['direct']) {
     async () => {
       for (const fixture of await loadFixtures()) {
         const result = await runNativeDelivery({ fixture })
+
         assert.equal(result.version, 'codex-cli 0.160.0')
         assert.equal(result.requests, 2)
         assert.equal(result.nativeReplyExact, true)
@@ -67,11 +70,13 @@ for (const mode of ['direct']) {
           (record) => record.stage === 'request-2'
         ).receipt
         const bytes = await readFile(join(result.directory, ref.path))
+
         assert.equal(
           createHash('sha256').update(bytes).digest('hex'),
           ref.sha256
         )
         const wire = JSON.parse(bytes).wireBody
+
         assert.deepEqual(
           inspectSuccessor(
             JSON.parse(wire),
@@ -89,6 +94,7 @@ for (const mode of ['direct']) {
 
 test('wrong native version fails before starting a provider', async () => {
   const fixture = (await loadFixtures())[0]
+
   await assert.rejects(
     runNativeDelivery({
       fixture: { ...fixture, nativeVersion: 'unsupported' }
@@ -105,6 +111,7 @@ for (const mode of ['direct']) {
       raw: JSON.stringify({ message: '材質🌲', status: 'complete' })
     }
     const result = await runNativeDelivery({ fixture })
+
     assert.equal(result.nativeReplyExact, true)
     assert.equal(result.comparison.exact, true)
     assert.equal(result.comparison.omission, null)
@@ -120,6 +127,7 @@ test('a literal truncation phrase in an intact reply is not evidence of loss', (
     'call',
     raw
   )
+
   assert.equal(result.exact, true)
   assert.equal(result.truncationMarker, false)
   assert.equal(result.omission, null)
@@ -127,6 +135,7 @@ test('a literal truncation phrase in an intact reply is not evidence of loss', (
 
 test('invalid direct call sequences reject before native startup', async () => {
   const fixture = (await loadFixtures())[1]
+
   for (const executions of [[], [{}], [{ input: {}, expected: '' }]]) {
     await assert.rejects(runNativeDelivery({ fixture, executions }), /Invalid/)
   }

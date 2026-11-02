@@ -19,6 +19,8 @@ export const startApp = async (
 ): Promise<AppInitialization> => {
   factories.getRequiredFileId()
   const initialization = factories.initializeApp()
+
   input.render(initialization)
+
   return initialization
 }

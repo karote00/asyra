@@ -33,7 +33,11 @@ for (const scenario of [
           elementApis.createVectorElementFromSinglePoint('a', { x: 10, y: 20 })
             .value
       )
-      if (!elementId) throw new Error('Vector creation failed')
+
+      if (!elementId) {
+        throw new Error('Vector creation failed')
+      }
+
       transactionApis.runTransaction(() => {
         elementApis.appendVectorAnchorPoint(elementId, {
           id: 'b',
@@ -50,11 +54,13 @@ for (const scenario of [
       })
       if (scenario !== 'AI workspace') {
         const { core } = await import('../src/testing/runtime-access')
+
         transactionApis.runTransaction(() => {
           const parentId = core.createElementInParent(
             { type: 'frame', x: 0, y: 0, width: 160, height: 100 },
             core.getCurrentWorkspaceId()
           )
+
           core.moveElements({
             elementIds: [elementId],
             targetParentId: parentId,
@@ -65,10 +71,14 @@ for (const scenario of [
           ])
         })
       }
+
       return { elementId, before: elementApis.getVectorAnchorPoints(elementId) }
     }, scenario)
+
     expect(fixture.before).toHaveLength(2)
+
     const mirror = (p: { x: number; y: number }) => ({ x: 100 - p.x, y: p.y })
+
     const actions = fixture.before.map((point, i) => ({
       id: `point-${i}`,
       name: 'api_element_updateVectorAnchorPointPosition',
@@ -86,6 +96,7 @@ for (const scenario of [
           : []
       )
     )
+
     await page.route('**/api/ai/action-batch', (route) =>
       route.fulfill({
         json: {
@@ -103,6 +114,7 @@ for (const scenario of [
       })
     )
     const depth = await getUndoHistoryDepth(page)
+
     if (scenario.startsWith('AI')) {
       await page.getByRole('button', { name: 'Open Agent' }).click()
       await page
@@ -118,6 +130,7 @@ for (const scenario of [
         async ({ elementId, targets, updates }) => {
           const { elementApis, transactionApis } =
             await import('../src/common-apis')
+
           transactionApis.runTransaction(() => {
             targets.forEach(({ pointId, position }) =>
               elementApis.updateVectorAnchorPointPosition(
@@ -136,13 +149,17 @@ for (const scenario of [
         }
       )
     }
+
     const read = () =>
       page.evaluate(async (id) => {
         const { elementApis } = await import('../src/common-apis')
+
         return elementApis.getVectorAnchorPoints(id)
       }, fixture.elementId)
+
     const after = await read()
     const statePath = testInfo.outputPath('vector-reflection-state.json')
+
     await writeFile(
       statePath,
       JSON.stringify(
@@ -151,6 +168,7 @@ for (const scenario of [
           after,
           computed: await page.evaluate(async (id) => {
             const { core } = await import('../src/testing/runtime-access')
+
             return core.getElementComputedData(id)
           }, fixture.elementId)
         },
@@ -162,6 +180,7 @@ for (const scenario of [
       contentType: 'application/json',
       path: statePath
     })
+
     const closePoints = (points: typeof fixture.before) =>
       points.map((point) => ({
         ...point,
@@ -180,6 +199,7 @@ for (const scenario of [
             }
           : null
       }))
+
     expect(after).toEqual(
       closePoints(
         fixture.before.map((p) => ({
@@ -191,8 +211,10 @@ for (const scenario of [
       )
     )
     expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
-    if (scenario.startsWith('AI'))
+    if (scenario.startsWith('AI')) {
       await page.getByRole('button', { name: 'Close Agent panel' }).click()
+    }
+
     await undo(page)
     expect(await read()).toEqual(closePoints(fixture.before))
     await redo(page)
@@ -202,6 +224,7 @@ for (const scenario of [
         async ({ id, point }) => {
           const { elementApis, transactionApis } =
             await import('../src/common-apis')
+
           try {
             transactionApis.runTransaction(() => {
               elementApis.updateVectorAnchorPointPosition(id, point.id, {
@@ -213,14 +236,17 @@ for (const scenario of [
           } catch (error) {
             return error instanceof Error ? error.message : String(error)
           }
+
           return null
         },
         { id: fixture.elementId, point: after[0] }
       )
+
       expect(rollback).toBe('Intentional rollback')
       expect(await read()).toEqual(closePoints(after))
       expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
     }
+
     await expect(page.getByText('Vector 1', { exact: true })).toBeVisible()
     expect(
       await page.evaluate(
@@ -246,14 +272,17 @@ test.describe('real registered basic actions', () => {
       await page.waitForFunction(async () => {
         const { isBasicApiFixtureReady } =
           await import('../e2e/fixtures/basic-api-cases')
+
         return isBasicApiFixtureReady()
       })
       const error = await page.evaluate(async (name) => {
         const { createBasicApiCases } =
           await import('../e2e/fixtures/basic-api-cases')
         const cases = await createBasicApiCases()
+
         try {
           await cases.run(name)
+
           return null
         } catch (error) {
           return error instanceof Error
@@ -263,6 +292,7 @@ test.describe('real registered basic actions', () => {
           cases.dispose()
         }
       }, contract.name)
+
       expect(error).toBeNull()
     })
   }
@@ -272,6 +302,7 @@ test('delivers canonical mutation scope through real history-group publication',
   page
 }) => {
   const identity = createTestDocumentIdentity()
+
   await page.goto(identity.url)
   await waitForAppReady(page)
   const result = await page.evaluate(async () => {
@@ -282,10 +313,15 @@ test('delivers canonical mutation scope through real history-group publication',
     const { createAiTransactionRunner } = await import('../src/ai/transaction')
     const actions = createBasicApiActions()
     const runner = createAiTransactionRunner()
+
     const invoke = (name: string, args: Record<string, unknown>) =>
       runner.run('Scope proof', async (runMutation) => {
         const action = actions.find((entry) => entry.name === name)
-        if (!action) throw new Error('Missing action')
+
+        if (!action) {
+          throw new Error('Missing action')
+        }
+
         return action.execute(args, {
           signal: new AbortController().signal,
           runMutation
@@ -298,6 +334,7 @@ test('delivers canonical mutation scope through real history-group publication',
           }
         }>
       })
+
     const ids = transactionApis.runTransaction(() =>
       core.createElementsInParent(
         [0, 60, 120].map((x) => ({
@@ -317,6 +354,7 @@ test('delivers canonical mutation scope through real history-group publication',
         { elementId: b, values: { width: 70 } }
       ]
     })
+
     transactionApis.runTransaction(() => {
       fillApis.addFills([a, b])
       fillApis.shareFillAtIndex(a, [b], 0)
@@ -372,6 +410,7 @@ test('delivers canonical mutation scope through real history-group publication',
       createOptions: []
     })
     const read = await invoke('api_core_getElementData', { elementId: b })
+
     return {
       a,
       b,
@@ -388,6 +427,7 @@ test('delivers canonical mutation scope through real history-group publication',
       read
     }
   })
+
   for (const receipt of [result.plural, result.shared]) {
     expect(receipt.mutationScope).toEqual({
       complete: true,
@@ -396,6 +436,7 @@ test('delivers canonical mutation scope through real history-group publication',
     })
     expect(receipt.mutationScope.elementIds).not.toContain(result.unrelated)
   }
+
   expect(result.mapped).toMatchObject({
     appliedCount: 1,
     mutationScope: {
@@ -422,10 +463,16 @@ test('delivers canonical mutation scope through real history-group publication',
     const { core, getActiveCollaborationHandle } =
       await import('../src/testing/runtime-access')
     const session = getActiveCollaborationHandle()
-    if (!session) throw new Error('Missing session')
+
+    if (!session) {
+      throw new Error('Missing session')
+    }
+
     const receipt = await session.confirmPersistence(AbortSignal.timeout(10000))
+
     return { receipt, document: await core.save() }
   })
+
   expect(saved.receipt.durableSequence).toBeGreaterThanOrEqual(
     saved.receipt.sequence
   )
@@ -453,6 +500,7 @@ for (const path of ['registered', 'canonical'] as const) {
     await page.evaluate(async () => {
       const { startDocumentPublicationCapture } =
         await import('../src/testing/runtime-access')
+
       startDocumentPublicationCapture('structural-persistence')
     })
     const result = await page.evaluate(async (path) => {
@@ -476,7 +524,11 @@ for (const path of ['registered', 'canonical'] as const) {
           core.getCurrentWorkspaceId()
         )
       )
-      if (ids.some((id) => !id)) throw new Error('Fixture creation failed')
+
+      if (ids.some((id) => !id)) {
+        throw new Error('Fixture creation failed')
+      }
+
       const queries = createRetainedDesignContext(core, observeDesignChanges)
       const actions = createBasicApiActions(undefined, undefined, queries)
       const signal = new AbortController().signal
@@ -487,27 +539,42 @@ for (const path of ['registered', 'canonical'] as const) {
       const edit = actions.find(
         (action) => action.name === 'api_element_setElementsVisible'
       )
-      if (!group || !edit) throw new Error('Missing registered operations')
+
+      if (!group || !edit) {
+        throw new Error('Missing registered operations')
+      }
+
       try {
         const receipt = await runner.run(
           'Retained structural edit',
           async (runMutation) => {
             const context = { signal, runMutation }
+
             if (path === 'canonical') {
-              if (!runMutation) throw new Error('Missing transaction owner')
+              if (!runMutation) {
+                throw new Error('Missing transaction owner')
+              }
+
               const value = await runMutation(() =>
                 hierarchyApis.groupElements(ids)
               )
-              if (!value) throw new Error('Grouping failed')
+
+              if (!value) {
+                throw new Error('Grouping failed')
+              }
+
               const grouped = {
                 value,
                 retained: queries.retainReceipt(ids, { value }, signal)
               }
+
               await runMutation(() =>
                 elementApis.setElementsVisible(ids, false)
               )
+
               return { grouped, edited: { status: 'complete' } }
             }
+
             const grouped = (await group.execute(
               { elementIds: ids },
               context
@@ -519,6 +586,7 @@ for (const path of ['registered', 'canonical'] as const) {
               { elementIds: grouped.retained, visible: false },
               context
             )
+
             return { grouped, edited }
           },
           { signal }
@@ -535,25 +603,30 @@ for (const path of ['registered', 'canonical'] as const) {
           { scope: 'ids', elementIds: ids, fields: [], delivery: 'reference' },
           signal
         )
+
         const stale = () => {
           try {
             queries.get(checkpoint.snapshotId, checkpoint.leaseId, signal)
+
             return false
           } catch (error) {
             return error instanceof Error && /stale/.test(error.message)
           }
         }
+
         await historyApis.undo()
         const afterUndo = {
           stale: stale(),
           groupMissing: !core.getElementData(receipt.grouped.value.groupId),
           parents: ids.map((id) => core.getElementMetadata(id).parentId)
         }
+
         await historyApis.redo()
         const afterRedo = {
           stale: stale(),
           parents: ids.map((id) => core.getElementMetadata(id).parentId)
         }
+
         return {
           ids,
           ...receipt,
@@ -569,6 +642,7 @@ for (const path of ['registered', 'canonical'] as const) {
     const publicationEvidence = await page.evaluate(async () => {
       const { readTestCapture, readDocumentPublicationDecodeFailures } =
         await import('../src/testing/runtime-access')
+
       return {
         publications: readTestCapture('structural-persistence'),
         failures: readDocumentPublicationDecodeFailures(
@@ -577,6 +651,7 @@ for (const path of ['registered', 'canonical'] as const) {
       }
     })
     const evidencePath = testInfo.outputPath('structural-publications.json')
+
     await writeFile(evidencePath, JSON.stringify(publicationEvidence, null, 2))
     await testInfo.attach('structural-publications.json', {
       path: evidencePath,
@@ -608,11 +683,13 @@ test('persists grouped structural actions and each history transition for a fres
   // Nine real three-second persistence windows plus independent page loads.
   test.setTimeout(120000)
   const identity = createTestDocumentIdentity()
+
   await page.goto(identity.url)
   await waitForAppReady(page)
   const fixture = await page.evaluate(async () => {
     const { core, startDocumentPublicationCapture } =
       await import('../src/testing/runtime-access')
+
     startDocumentPublicationCapture('save-reload')
     const { hierarchyApis, elementApis, transactionApis } =
       await import('../src/common-apis')
@@ -626,39 +703,62 @@ test('persists grouped structural actions and each history transition for a fres
         core.getCurrentWorkspaceId()
       )
     )
-    if (ids.some((id) => !id)) throw new Error('Fixture creation failed')
+
+    if (ids.some((id) => !id)) {
+      throw new Error('Fixture creation failed')
+    }
+
     const nestedId = transactionApis.runTransaction(() => {
       const [parentId] = core.createElementsInParent(
         [{ type: 'group' }],
         core.getCurrentWorkspaceId()
       )
-      if (!parentId) throw new Error('Missing second parent')
+
+      if (!parentId) {
+        throw new Error('Missing second parent')
+      }
+
       const [childId] = core.createElementsInParent(
         [{ type: 'rect', width: 20, height: 20 }],
         parentId
       )
-      if (!childId) throw new Error('Missing nested child')
+
+      if (!childId) {
+        throw new Error('Missing nested child')
+      }
+
       return childId
     })
     const { createAiTransactionRunner } = await import('../src/ai/transaction')
     const groupId = await createAiTransactionRunner().run(
       'Group and edit structural members',
       async (runMutation) => {
-        if (!runMutation) throw new Error('Missing transaction owner')
+        if (!runMutation) {
+          throw new Error('Missing transaction owner')
+        }
+
         const result = await runMutation(() => hierarchyApis.groupElements(ids))
-        if (!result) throw new Error('Grouping failed')
+
+        if (!result) {
+          throw new Error('Grouping failed')
+        }
+
         await runMutation(() => elementApis.setElementsVisible(ids, false))
+
         return result.groupId
       }
     )
+
     return { ids, groupId, nestedId }
   })
   const peerContext = await browser.newContext()
   const peer = await peerContext.newPage()
+
   captureBrowserErrors(peer)
   await peer.goto(identity.url)
   await waitForAppReady(peer)
   let previousSequence = 0
+
   for (const operation of [
     'grouped',
     'undo',
@@ -675,13 +775,18 @@ test('persists grouped structural actions and each history transition for a fres
         async ({ operation, fixture }) => {
           const { historyApis, hierarchyApis, elementApis, transactionApis } =
             await import('../src/common-apis')
-          if (operation === 'undo' || operation === 'redo')
+
+          if (operation === 'undo' || operation === 'redo') {
             await historyApis[operation]()
-          if (operation === 'ungroup')
+          }
+
+          if (operation === 'ungroup') {
             transactionApis.runTransaction(() =>
               hierarchyApis.ungroupElement(fixture.groupId)
             )
-          if (operation === 'delete')
+          }
+
+          if (operation === 'delete') {
             transactionApis.runTransaction(() =>
               elementApis.deleteElements([
                 fixture.ids[0],
@@ -689,6 +794,7 @@ test('persists grouped structural actions and each history transition for a fres
                 fixture.nestedId
               ])
             )
+          }
         },
         { operation, fixture }
       )
@@ -697,6 +803,7 @@ test('persists grouped structural actions and each history transition for a fres
           page.evaluate(async () => {
             const { getActiveCollaborationHandle } =
               await import('../src/testing/runtime-access')
+
             return getActiveCollaborationHandle()?.getSessionState().sync
           })
         )
@@ -705,9 +812,14 @@ test('persists grouped structural actions and each history transition for a fres
         const { getActiveCollaborationHandle } =
           await import('../src/testing/runtime-access')
         const session = getActiveCollaborationHandle()
-        if (!session) throw new Error('Missing document session')
+
+        if (!session) {
+          throw new Error('Missing document session')
+        }
+
         return session.confirmPersistence(AbortSignal.timeout(10000))
       })
+
       expect(receipt.sequence).toBeGreaterThan(previousSequence)
       expect(receipt.durableSequence).toBeGreaterThanOrEqual(receipt.sequence)
       previousSequence = receipt.sequence
@@ -718,6 +830,7 @@ test('persists grouped structural actions and each history transition for a fres
       const snapshotPath = testInfo.outputPath(
         `checkpoint-${receipt.sequence}.json`
       )
+
       await writeFile(
         snapshotPath,
         JSON.stringify(
@@ -760,6 +873,7 @@ test('persists grouped structural actions and each history transition for a fres
         )
         .toEqual(expected)
       const fresh = await context.newPage()
+
       try {
         await fresh.goto(identity.url)
         await waitForAppReady(fresh)
@@ -773,6 +887,7 @@ test('persists grouped structural actions and each history transition for a fres
       }
     })
   }
+
   await peerContext.close()
 })
 
@@ -782,12 +897,14 @@ test('exports immutable document bytes through the runtime and browser download 
 }, testInfo) => {
   test.setTimeout(90000)
   const identity = createTestDocumentIdentity()
+
   await page.goto(identity.url)
   await waitForAppReady(page)
   await page.evaluate(async () => {
     const { core, testRuntimeState } =
       await import('../src/testing/runtime-access')
     const { transactionApis } = await import('../src/common-apis')
+
     transactionApis.runTransaction(() =>
       core.createElementsInParent(
         [
@@ -811,13 +928,18 @@ test('exports immutable document bytes through the runtime and browser download 
     const startup = createAiStartup({
       createConfirmation: createAiConfirmationBroker,
       createHistory: createAiHistoryProjection,
+
       createProvider: () => ({
         requestActionBatch: async () => {
           const action = testRuntimeState.get<{
             name: string
             arguments: Record<string, unknown>
           }>('export-action')
-          if (!action) throw new Error('Missing explicit export action')
+
+          if (!action) {
+            throw new Error('Missing explicit export action')
+          }
+
           return {
             batchId: crypto.randomUUID(),
             actions: [
@@ -832,27 +954,37 @@ test('exports immutable document bytes through the runtime and browser download 
       })
     })
     const { runtime } = startup
+
     testRuntimeState.set('export-startup', startup)
     testRuntimeState.set('export-runtime', runtime)
   })
   const depth = await getUndoHistoryDepth(page)
+
   const invoke = (name: string, args: Record<string, unknown> = {}) =>
     page.evaluate(
       async ({ name, args }) => {
         const { testRuntimeState } =
           await import('../src/testing/runtime-access')
+
         testRuntimeState.set('export-action', { name, arguments: args })
         const runtime =
           testRuntimeState.get<
             import('@asyra/ai-agent-runtime').AiAgentRuntime
           >('export-runtime')
-        if (!runtime) throw new Error('Missing export runtime')
+
+        if (!runtime) {
+          throw new Error('Missing export runtime')
+        }
+
         const result = await runtime.run({
           intent: 'Export this document',
           signal: AbortSignal.timeout(15000)
         })
-        if (result.status !== 'executed')
+
+        if (result.status !== 'executed') {
           throw new Error(JSON.stringify(result))
+        }
+
         return result.actionResults[0].result as {
           artifact: { artifactId: string; bytes: number; sha256: string }
           released?: boolean
@@ -861,15 +993,19 @@ test('exports immutable document bytes through the runtime and browser download 
       },
       { name, args }
     )
+
   let primaryFailure: unknown
+
   try {
     const before = await page.evaluate(async () =>
       (await import('../src/testing/runtime-access')).core.save()
     )
     const exported = await invoke('export_document')
+
     expect(exported.artifact.bytes).toBeGreaterThan(0)
     expect(JSON.stringify(exported).length).toBeLessThan(2048)
     const downloadPromise = page.waitForEvent('download')
+
     expect(
       (
         await invoke('download_document_export', {
@@ -879,10 +1015,12 @@ test('exports immutable document bytes through the runtime and browser download 
     ).toBe('download-requested')
     const download = await downloadPromise
     const filePath = testInfo.outputPath(download.suggestedFilename())
+
     await download.saveAs(filePath)
     const { readFile } = await import('node:fs/promises')
     const { createHash } = await import('node:crypto')
     const bytes = await readFile(filePath)
+
     expect(bytes.byteLength).toBe(exported.artifact.bytes)
     expect(createHash('sha256').update(bytes).digest('hex')).toBe(
       exported.artifact.sha256
@@ -903,14 +1041,20 @@ test('exports immutable document bytes through the runtime and browser download 
       const session = (
         await import('../src/testing/runtime-access')
       ).getActiveCollaborationHandle()
-      if (!session) throw new Error('Missing document session')
+
+      if (!session) {
+        throw new Error('Missing document session')
+      }
+
       return session.confirmPersistence(AbortSignal.timeout(10000))
     })
+
     expect(persisted.durableSequence).toBeGreaterThanOrEqual(persisted.sequence)
     expect(
       (await getPersistedDocumentCheckpoint(identity.fileId)).checkpoint
     ).toEqual(before)
     const reopened = await context.newPage()
+
     try {
       await reopened.goto(identity.url)
       await waitForAppReady(reopened)
@@ -922,6 +1066,7 @@ test('exports immutable document bytes through the runtime and browser download 
     } finally {
       await reopened.close()
     }
+
     expect(
       (
         await invoke('release_document_export', {
@@ -937,6 +1082,7 @@ test('exports immutable document bytes through the runtime and browser download 
       .evaluate(async () => {
         const { testRuntimeState } =
           await import('../src/testing/runtime-access')
+
         await testRuntimeState
           .get<import('@asyra/ai-agent-runtime').AiAgentRuntime>(
             'export-runtime'
@@ -946,6 +1092,7 @@ test('exports immutable document bytes through the runtime and browser download 
           testRuntimeState.get<import('../src/ai/startup').AiStartup>(
             'export-startup'
           )
+
         startup?.history.dispose()
         startup?.confirmation.dispose()
         testRuntimeState.delete('export-startup')
@@ -953,7 +1100,10 @@ test('exports immutable document bytes through the runtime and browser download 
         testRuntimeState.delete('export-action')
       })
       .catch(async (error: unknown) => {
-        if (!primaryFailure) throw error
+        if (!primaryFailure) {
+          throw error
+        }
+
         await testInfo.attach('export-cleanup-failure', {
           body: String(error),
           contentType: 'text/plain'
@@ -967,11 +1117,15 @@ test('exports and reloads a retained large document without delivering its body 
   context
 }, testInfo) => {
   const path = process.env.E2E_EXPORT_DOCUMENT
+
   test.skip(
     !path,
     'Provide a project-local saved document for deterministic export replay.'
   )
-  if (!path) return
+  if (!path) {
+    return
+  }
+
   test.setTimeout(180000)
   const { resolve, relative, isAbsolute } = await import('node:path')
   const { readFile, appendFile } = await import('node:fs/promises')
@@ -979,28 +1133,39 @@ test('exports and reloads a retained large document without delivering its body 
   const { createServer } = await import('node:http')
   const filePath = resolve(path)
   const within = relative(resolve(process.cwd(), '../..'), filePath)
-  if (isAbsolute(within) || within === '..' || within.startsWith('../'))
+
+  if (isAbsolute(within) || within === '..' || within.startsWith('../')) {
     throw new Error('Export replay must remain inside the project')
+  }
+
   const downloadedPath = testInfo.outputPath('large-document.json')
   // Send document bytes through HTTP, never one oversized DevTools protocol frame.
   const fixtureServer = createServer((request, response) => {
     const original = request.url === '/source'
+
     response.setHeader('Access-Control-Allow-Origin', '*')
     response.setHeader('Content-Type', 'application/json')
-    if (original && filePath.endsWith('.gz'))
+    if (original && filePath.endsWith('.gz')) {
       response.setHeader('Content-Encoding', 'gzip')
+    }
+
     createReadStream(original ? filePath : downloadedPath)
       .on('error', () => response.destroy())
       .pipe(response)
   })
+
   await new Promise<void>((resolve) =>
     fixtureServer.listen(0, '127.0.0.1', resolve)
   )
   const address = fixtureServer.address()
-  if (!address || typeof address === 'string')
+
+  if (!address || typeof address === 'string') {
     throw new Error('Missing export fixture server')
+  }
+
   const fixtureURL = `http://127.0.0.1:${address.port}`
   const stagesPath = testInfo.outputPath('export-stages.jsonl')
+
   await page.exposeFunction('recordExportReplayStage', (stage: string) =>
     appendFile(stagesPath, JSON.stringify({ stage, at: Date.now() }) + '\n')
   )
@@ -1014,25 +1179,34 @@ test('exports and reloads a retained large document without delivering its body 
             recordExportReplayStage(name: string): Promise<void>
           }
         ).recordExportReplayStage(name)
+
       const { core, getActiveCollaborationHandle, testRuntimeState } =
         await import('../src/testing/runtime-access')
+
       await getActiveCollaborationHandle()?.disconnect()
       await stage('source-read')
       const source = await (await fetch(url + '/source')).json()
+
       await stage('source-decoded')
       core.load(source)
       await stage('source-loaded')
       const { createDocumentExport } = await import('../src/ai/document-export')
       const owner = createDocumentExport()
+
       testRuntimeState.set('large-export-owner', owner)
       const action = owner.actions.find(
         (entry) => entry.name === 'export_document'
       )
-      if (!action) throw new Error('Missing export action')
+
+      if (!action) {
+        throw new Error('Missing export action')
+      }
+
       const result = (await action.execute(
         {},
         { signal: AbortSignal.timeout(120000) }
       )) as { artifact: { artifactId: string; bytes: number; sha256: string } }
+
       await stage('exported')
       const canonical = new TextEncoder().encode(
         JSON.stringify(await core.save())
@@ -1042,16 +1216,19 @@ test('exports and reloads a retained large document without delivering its body 
       )
         .map((byte) => byte.toString(16).padStart(2, '0'))
         .join('')
+
       return {
         ...result.artifact,
         canonicalDigest: digest,
         receiptBytes: JSON.stringify(result).length
       }
     }, fixtureURL)
+
     expect(metadata.bytes).toBeGreaterThan(16 * 1024 * 1024)
     expect(metadata.receiptBytes).toBeLessThan(2048)
     expect(metadata.sha256).toBe(metadata.canonicalDigest)
     const downloadPromise = page.waitForEvent('download')
+
     await page.evaluate(async (artifactId) => {
       const { testRuntimeState } = await import('../src/testing/runtime-access')
       const owner =
@@ -1063,7 +1240,11 @@ test('exports and reloads a retained large document without delivering its body 
       const download = owner?.actions.find(
         (entry) => entry.name === 'download_document_export'
       )
-      if (!download) throw new Error('Missing download action')
+
+      if (!download) {
+        throw new Error('Missing download action')
+      }
+
       await download.execute(
         { artifactId },
         { signal: new AbortController().signal }
@@ -1072,33 +1253,39 @@ test('exports and reloads a retained large document without delivering its body 
     await (await downloadPromise).saveAs(downloadedPath)
     const bytes = await readFile(downloadedPath)
     const { createHash } = await import('node:crypto')
+
     expect(bytes.byteLength).toBe(metadata.bytes)
     expect(createHash('sha256').update(bytes).digest('hex')).toBe(
       metadata.sha256
     )
     await page.evaluate(async () => {
       const { testRuntimeState } = await import('../src/testing/runtime-access')
+
       testRuntimeState.get<{ dispose(): void }>('large-export-owner')?.dispose()
       testRuntimeState.delete('large-export-owner')
     })
     // Closing the source page also releases its large render/document allocation.
     await page.close()
     const reopened = await context.newPage()
+
     try {
       await reopened.goto(createTestDocumentIdentity().url)
       await waitForAppReady(reopened)
       const reloadedDigest = await reopened.evaluate(async (url) => {
         const { core, getActiveCollaborationHandle } =
           await import('../src/testing/runtime-access')
+
         await getActiveCollaborationHandle()?.disconnect()
         core.load(await (await fetch(url + '/download')).json())
         const json = new TextEncoder().encode(JSON.stringify(await core.save()))
+
         return Array.from(
           new Uint8Array(await crypto.subtle.digest('SHA-256', json))
         )
           .map((byte) => byte.toString(16).padStart(2, '0'))
           .join('')
       }, fixtureURL)
+
       expect(reloadedDigest).toBe(metadata.sha256)
       await testInfo.attach('export-delivery-metrics', {
         body: JSON.stringify(metadata),
@@ -1119,6 +1306,7 @@ test('visibility receipts preserve unchanged and unavailable outcomes through hi
   page
 }) => {
   const identity = createTestDocumentIdentity()
+
   await page.goto(identity.url)
   await waitForAppReady(page)
   const fixture = await page.evaluate(async () => {
@@ -1134,10 +1322,14 @@ test('visibility receipts preserve unchanged and unavailable outcomes through hi
         workspaceId
       )
     )
-    if (ids.length !== 2 || ids.some((id) => !id))
+
+    if (ids.length !== 2 || ids.some((id) => !id)) {
       throw new Error('Missing fixture')
+    }
+
     return { id: ids[0], sibling: ids[1], workspaceId }
   })
+
   const invoke = (elementId: string, visible: boolean) =>
     page.evaluate(
       async (input) => {
@@ -1149,7 +1341,11 @@ test('visibility receipts preserve unchanged and unavailable outcomes through hi
         const action = createAiActions().find(
           (item) => item.name === AiActionNames.SET_ELEMENT_VISIBILITY
         )
-        if (!action) throw new Error('Visibility action missing')
+
+        if (!action) {
+          throw new Error('Visibility action missing')
+        }
+
         return createAiTransactionRunner().run('Visibility', (runMutation) =>
           observeAiAction(action).execute(input, {
             runMutation,
@@ -1159,6 +1355,7 @@ test('visibility receipts preserve unchanged and unavailable outcomes through hi
       },
       { elementId, visible }
     )
+
   const visible = (id: string) =>
     page.evaluate(
       async (id) =>
@@ -1166,7 +1363,9 @@ test('visibility receipts preserve unchanged and unavailable outcomes through hi
           ?.visible,
       id
     )
+
   const before = await getUndoHistoryDepth(page)
+
   expect(await invoke(fixture.id, false)).toMatchObject({
     status: 'complete',
     changed: true,
@@ -1176,6 +1375,7 @@ test('visibility receipts preserve unchanged and unavailable outcomes through hi
   expect(await getUndoHistoryDepth(page)).toBe(before + 1)
   for (const id of [fixture.id, 'missing-visibility', fixture.workspaceId]) {
     const unavailable = id !== fixture.id
+
     expect(await invoke(id, false)).toMatchObject({
       changed: false,
       status: unavailable ? 'failed' : 'no-change',
@@ -1188,6 +1388,7 @@ test('visibility receipts preserve unchanged and unavailable outcomes through hi
     expect(await visible(fixture.sibling)).toBe(true)
     expect(await getUndoHistoryDepth(page)).toBe(before + 1)
   }
+
   await undo(page)
   expect(await visible(fixture.id)).toBe(true)
   await redo(page)
@@ -1210,12 +1411,20 @@ test('visibility receipts preserve unchanged and unavailable outcomes through hi
     const { core, getActiveCollaborationHandle } =
       await import('../src/testing/runtime-access')
     const session = getActiveCollaborationHandle()
-    if (!session) throw new Error('Document session missing')
+
+    if (!session) {
+      throw new Error('Document session missing')
+    }
+
     const receipt = await session.confirmPersistence(AbortSignal.timeout(10000))
-    if (receipt.durableSequence < receipt.sequence)
+
+    if (receipt.durableSequence < receipt.sequence) {
       throw new Error('Document changes were not durably persisted')
+    }
+
     return core.save()
   })
+
   expect(
     (await getPersistedDocumentCheckpoint(identity.fileId)).checkpoint
   ).toEqual(expected)

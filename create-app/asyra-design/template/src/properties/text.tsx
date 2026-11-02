@@ -39,7 +39,10 @@ const TextProperties = () => {
   const typography = useProperty<(TextData & Record<string, unknown>) | null>(
     TEXT_PROPERTY_TYPE
   )
-  if (!selectedId || !typography || typeof typography !== 'object') return null
+
+  if (!selectedId || !typography || typeof typography !== 'object') {
+    return null
+  }
 
   const field = (
     key: Exclude<keyof TextData, 'text'>,
@@ -64,6 +67,7 @@ const TextProperties = () => {
           onClick={() => {
             const edit = getFeature(FeatureNames.EDIT_TEXT)?.editSelected as
               (() => void) | undefined
+
             edit?.()
           }}
         >
@@ -75,8 +79,9 @@ const TextProperties = () => {
             <FontFamilySelect
               value={typography.fontFamily}
               onChange={(value) => {
-                if (value !== typography.fontFamily)
+                if (value !== typography.fontFamily) {
                   updateSelectedElementProperties('fontFamily', value)
+                }
               }}
             />
           </div>
@@ -96,6 +101,7 @@ const TextProperties = () => {
               }))}
               onChange={(value) => {
                 const style = fontStyles.find((entry) => entry.id === value)
+
                 if (
                   style &&
                   (style.fontWeight !== typography.fontWeight ||
@@ -135,8 +141,9 @@ const TextProperties = () => {
                     onKeyUp={(event) => event.stopPropagation()}
                     className="flex h-6 items-center justify-center rounded-sm text-white/60 hover:bg-white/10 focus-visible:outline focus-visible:outline-border-focus aria-pressed:bg-white/15 aria-pressed:text-white"
                     onClick={() => {
-                      if (typography.textAlign !== alignment)
+                      if (typography.textAlign !== alignment) {
                         updateSelectedElementProperties('textAlign', alignment)
+                      }
                     }}
                   >
                     <svg
@@ -163,4 +170,5 @@ const TextProperties = () => {
     </div>
   )
 }
+
 export default TextProperties

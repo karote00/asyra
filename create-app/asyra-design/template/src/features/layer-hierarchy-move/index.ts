@@ -18,9 +18,11 @@ const getDetail = (
   snapshot: SystemContextSnapshotWithDetail
 ): LayerHierarchyMoveDetail | null => {
   const value = snapshot.detail?.layerHierarchyMove
+
   if (!value || typeof value !== 'object' || !('phase' in value)) {
     return null
   }
+
   return value as LayerHierarchyMoveDetail
 }
 
@@ -40,25 +42,31 @@ export const layerHierarchyMoveSession = {
     snapshot: SystemContextSnapshotWithDetail
   ): LayerHierarchyMoveState | null => {
     const detail = getDetail(snapshot)
+
     if (detail?.phase !== 'start') {
       return null
     }
 
     const requestedSelection = detail.source.requestedSourceSelection
+
     if (!idsEqual(selectionApis.getSelectedIds(), requestedSelection)) {
       selectionApis.selectElements([...requestedSelection])
     }
+
     return { source: detail.source }
   },
+
   onUpdate: (
     _snapshot: SystemContextSnapshotWithDetail,
     _state: LayerHierarchyMoveState
   ): void => undefined,
+
   onEnd: (
     snapshot: SystemContextSnapshotWithDetail,
     _state: LayerHierarchyMoveState
   ): void => {
     const detail = getDetail(snapshot)
+
     if (
       detail?.phase !== 'end' ||
       !detail.pointerSession.dragActive ||
@@ -68,6 +76,7 @@ export const layerHierarchyMoveSession = {
     }
 
     const result = hierarchyApis.moveElements(detail.dropIntent.request)
+
     selectionApis.selectElements([...result.elementIds])
   }
 }

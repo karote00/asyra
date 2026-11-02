@@ -15,12 +15,15 @@ const createSubject = <T,>(initialValue: T) => {
 
   return {
     getValue: () => value,
+
     next: (next: T) => {
       value = next
       subscribers.forEach((subscriber) => subscriber())
     },
+
     subscribe: (subscriber: () => void) => {
       subscribers.add(subscriber)
+
       return {
         unsubscribe: () => subscribers.delete(subscriber)
       }
@@ -73,18 +76,22 @@ describe('RenderApp AI drawing progress indicator', () => {
         pendingCount: 0,
         sync: 'synced'
       }),
+
       onSessionStateChange: () => () => undefined
     } as never)
     vi.spyOn(core, 'getSystemPropertyObservable').mockImplementation((key) => {
       if (key === SystemPropertyKeys.AI_DRAWING_PROGRESS) {
         return progress as never
       }
+
       if (key === PresetSystemPropertyKeys.VIEWPORT_POSITION) {
         return viewportPosition as never
       }
+
       if (key === PresetSystemPropertyKeys.ZOOM) {
         return zoom as never
       }
+
       return undefined
     })
     document.body.replaceChildren()
@@ -100,6 +107,7 @@ describe('RenderApp AI drawing progress indicator', () => {
 
   it('projects exact transformed bounds through a pointer-transparent compositor indicator', async () => {
     const host = document.createElement('div')
+
     document.body.append(host)
     const root = createRoot(host)
 
@@ -124,6 +132,7 @@ describe('RenderApp AI drawing progress indicator', () => {
     const indicator = host.querySelector<HTMLElement>(
       '[data-testid="ai-drawing-progress-indicator"]'
     )
+
     expect(indicator).not.toBeNull()
     expect(indicator?.getAttribute('role')).toBe('status')
     expect(indicator?.getAttribute('aria-busy')).toBe('true')
@@ -137,6 +146,7 @@ describe('RenderApp AI drawing progress indicator', () => {
     const spinner = host.querySelector(
       '[data-testid="ai-drawing-progress-spinner"]'
     )
+
     expect(spinner?.classList.contains('animate-spin')).toBe(true)
     expect(spinner?.classList.contains('motion-reduce:animate-none')).toBe(true)
 

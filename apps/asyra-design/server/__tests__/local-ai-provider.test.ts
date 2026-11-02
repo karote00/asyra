@@ -1,3 +1,4 @@
+import { ConversationContextLimits } from '../../src/ai/conversation-context'
 vi.mock('../native-provider-config', () => ({
   createNativeProviderConfig: vi.fn(async () => ({
     path: 'fixture-model.json',
@@ -16,10 +17,7 @@ import {
   type AiAgentFeatureApi
 } from '../../src/features/ai-agent'
 import { FeatureNames } from '../../src/constants'
-import {
-  AI_CONVERSATION_HISTORY_MAXIMUM_BYTES,
-  createAiConversationController
-} from '../../src/ai/conversation'
+import { createAiConversationController } from '../../src/ai/conversation'
 import recordedAttachmentHandoff from './fixtures/recorded-101/attachment-reference-20261025.json'
 import briefFixture from './fixtures/recorded-101/brief-capacity-20261024.json'
 import capacityFixture from './fixtures/recorded-101/pattern-budget-recovery-20261023.json'
@@ -749,25 +747,26 @@ describe('local subscription AI backend', () => {
       }
 
       expect(nativeInput(firstServer).metadata).not.toHaveProperty(
-        'conversationHistory'
+        'conversationContext'
       )
       const expected = {
-        omittedTurns: 0,
+        attachmentIndexes: [],
         turns: [
           {
             turnId: first.turnId,
             intent: firstIntent,
             message: savedBatch.actions[0].arguments.message,
-            outcome: 'no-change'
+            outcome: 'no-change',
+            attachmentIndexes: []
           }
         ]
       }
 
-      expect(nativeInput(secondServer).metadata.conversationHistory).toEqual(
+      expect(nativeInput(secondServer).metadata.conversationContext).toEqual(
         expected
       )
       expect(posted[1].metadata).toMatchObject({
-        conversationHistory: expected
+        conversationContext: expected
       })
       expect(nativeInput(secondServer).intent).toBe(nextIntent)
       expect(posted).toHaveLength(2)
@@ -789,14 +788,14 @@ describe('local subscription AI backend', () => {
         expect(thread.ephemeral).toBe(true)
         if (server === secondServer) {
           expect(thread.baseInstructions).toContain(
-            'metadata.conversationHistory'
+            'metadata.conversationContext'
           )
           expect(thread.baseInstructions).toContain(
             'Never replay prior actions'
           )
         } else {
           expect(thread.baseInstructions).not.toContain(
-            'metadata.conversationHistory'
+            'metadata.conversationContext'
           )
         }
 
@@ -819,7 +818,7 @@ describe('local subscription AI backend', () => {
       }
 
       expect(Buffer.byteLength(wire)).toBeLessThanOrEqual(
-        AI_CONVERSATION_HISTORY_MAXIMUM_BYTES
+        ConversationContextLimits.textBytes
       )
     } finally {
       await controller.dispose()
@@ -1824,6 +1823,7 @@ describe('local subscription AI backend', () => {
             { ...input, ...request } as AiProviderInput,
             { environment }
           )
+
           return {
             status: 'executed',
             actionResults: [
@@ -1845,17 +1845,21 @@ describe('local subscription AI backend', () => {
     }
     const controller = createAiConversationController({
       feature,
+
       getElementType: () => undefined
     })
+
     await controller.submit({
       intent: 'Refine this card using the reference.',
       attachments: [image]
     })
     const secondServer = fakeServer()
+
     await controller.submit('Only its title; make it blue.')
     const turn = secondServer.packets.filter(
       ({ method }) => method === 'turn/start'
     )
+
     expect(turn).toHaveLength(1)
     const items = turn[0].params.input as {
       type: string
@@ -1863,6 +1867,7 @@ describe('local subscription AI backend', () => {
       url?: string
     }[]
     const payload = JSON.parse(String(items[0].text))
+
     expect(payload.input.intent).toBe('Only its title; make it blue.')
     expect(payload.input.metadata.conversationContext).toMatchObject({
       turns: [
@@ -1885,11 +1890,19 @@ describe('local subscription AI backend', () => {
       const thread = server.packets.find(
         ({ method }) => method === 'thread/start'
       )
+
       expect(thread?.params.ephemeral).toBe(true)
-      expect(thread?.params.baseInstructions).toContain(
-        'current input.intent overrides'
-      )
+      if (server === secondServer) {
+        expect(thread?.params.baseInstructions).toContain(
+          'current input.intent overrides'
+        )
+      } else {
+        expect(thread?.params.baseInstructions).not.toContain(
+          'metadata.conversationContext'
+        )
+      }
     }
+
     await controller.dispose()
   })
 

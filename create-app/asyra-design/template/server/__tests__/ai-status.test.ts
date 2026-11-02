@@ -64,6 +64,7 @@ describe('readiness route admission', () => {
         writableEnded: false
       })
       const next = vi.fn()
+
       await createAiStatusMiddleware()(
         request as unknown as IncomingMessage,
         response as unknown as ServerResponse,

@@ -16,27 +16,34 @@ const createHistoryHarness = () => {
   })
   const projection = createAiHistoryProjection({
     redo,
+
     subscribeToActions: (observer) => {
       actionObservers.add(observer)
+
       return () => {
         actionObservers.delete(observer)
         unsubscribeAction()
       }
     },
+
     subscribeToRedo: (observer) => {
       redoObservers.add(observer)
+
       return () => {
         redoObservers.delete(observer)
         unsubscribeRedo()
       }
     },
+
     subscribeToUndo: (observer) => {
       undoObservers.add(observer)
+
       return () => {
         undoObservers.delete(observer)
         unsubscribeUndo()
       }
     },
+
     undo
   })
 
@@ -44,12 +51,15 @@ const createHistoryHarness = () => {
     emitAction: (actionId: number) => {
       actionObservers.forEach((observer) => observer(actionId))
     },
+
     emitRedo: () => {
       redoObservers.forEach((observer) => observer())
     },
+
     emitUndo: () => {
       undoObservers.forEach((observer) => observer())
     },
+
     projection,
     redo,
     undo,
@@ -60,6 +70,7 @@ const createHistoryHarness = () => {
 describe('Asyra Design current AI history projection', () => {
   it('correlates only the active turn commit and invokes canonical Undo or Redo', async () => {
     const harness = createHistoryHarness()
+
     harness.projection.beginTurn('conversation-a:turn:1')
     harness.emitAction(41)
 
@@ -91,6 +102,7 @@ describe('Asyra Design current AI history projection', () => {
 
   it('removes stale AI control after a later action or a second undo', async () => {
     const harness = createHistoryHarness()
+
     harness.projection.beginTurn('conversation-a:turn:1')
     harness.emitAction(10)
     harness.projection.correlateCommittedAction(10)
@@ -111,6 +123,7 @@ describe('Asyra Design current AI history projection', () => {
 
   it('rejects non-current correlation and tears down instance listeners', () => {
     const harness = createHistoryHarness()
+
     harness.projection.beginTurn('conversation-a:turn:1')
     harness.emitAction(8)
 
@@ -143,22 +156,30 @@ describe('Asyra Design current AI history projection', () => {
     )
     const projection = createAiHistoryProjection({
       redo: vi.fn(async () => undefined),
+
       subscribeToActions: (observer) => {
         actionObservers.add(observer)
+
         return () => actionObservers.delete(observer)
       },
+
       subscribeToRedo: () => () => undefined,
+
       subscribeToUndo: (observer) => {
         undoObservers.add(observer)
+
         return () => undoObservers.delete(observer)
       },
+
       undo
     })
+
     projection.beginTurn('conversation-a:turn:pending')
     actionObservers.forEach((observer) => observer(91))
     projection.correlateCommittedAction(91)
 
     const firstRequest = projection.undoCurrent()
+
     expect(projection.getSnapshot()).toMatchObject({
       control: { actionId: 91, direction: 'undo' },
       replaying: true

@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import sharp from 'sharp'
 import { prepareDesign } from '../server/design-preparation'
+import { deliverPreparedDesign } from '../src/ai/prepared-design'
 import {
   createTestDocumentIdentity,
   getUndoHistoryDepth,
@@ -29,6 +30,7 @@ const text = (
   lineHeight: fontSize * 1.2,
   fill: textColor
 })
+
 const rect = (
   key: string,
   x: number,
@@ -37,6 +39,7 @@ const rect = (
   height: number,
   fill: string
 ) => ({ key, name: key, type: 'rect', x, y, width, height, fill })
+
 const coffee = {
   type: 'frame',
   name: 'Lento Coffee',
@@ -423,6 +426,7 @@ for (const [name, draft] of Object.entries({
   }, testInfo) => {
     await page.setViewportSize({ width: 1600, height: 1000 })
     const design = prepareDesign(draft)
+
     await page.route('**/api/ai/status', (route) =>
       route.fulfill({ json: { state: 'ready' } })
     )
@@ -435,7 +439,7 @@ for (const [name, draft] of Object.entries({
               id: 'create',
               name: 'apply_prepared_design',
               arguments: {
-                design,
+                design: deliverPreparedDesign(design),
                 ...(name === 'vectorGradients' ? { response: 'compact' } : {})
               },
               summary: `Create ${name} design`
@@ -447,6 +451,7 @@ for (const [name, draft] of Object.entries({
     await page.goto(createTestDocumentIdentity().url)
     await waitForAppReady(page)
     const before = await getUndoHistoryDepth(page)
+
     await page.getByRole('button', { name: 'Open Agent' }).click()
     await page
       .getByLabel('Message Agent')
@@ -471,6 +476,7 @@ for (const [name, draft] of Object.entries({
         const { core } = await import('../src/testing/runtime-access')
         const { reviewDesign } =
           await import('../src/common-apis/design-review')
+
         return {
           review: await reviewDesign(rootId),
           nodes: entries.map(({ descriptor }) => ({
@@ -487,13 +493,14 @@ for (const [name, draft] of Object.entries({
       },
       { rootId: design.rootId, entries: design.entries }
     )
+
     expect(evidence.nodes[0].values).toMatchObject({
       width: draft.width,
       height: draft.height
     })
     for (const [i, entry] of design.entries.entries()) {
       expect(evidence.nodes[i].type).toBe(entry.descriptor.type)
-      if ((name === 'gradients' || name === 'vectorGradients') && i > 0)
+      if ((name === 'gradients' || name === 'vectorGradients') && i > 0) {
         expect(evidence.nodes[i].values?.fills).toEqual([
           expect.objectContaining({
             kind: 'gradient',
@@ -501,9 +508,13 @@ for (const [name, draft] of Object.entries({
             gradient: entry.descriptor.fills?.[0].gradient
           })
         ])
-      if (entry.descriptor.type === 'text')
+      }
+
+      if (entry.descriptor.type === 'text') {
         expect(evidence.nodes[i].values?.text).toBe(entry.descriptor.text)
+      }
     }
+
     expect(evidence.review.complete).toBe(true)
     expect(
       evidence.review.findings.filter((f) => f.kind === 'text-overflow')
@@ -519,11 +530,13 @@ for (const [name, draft] of Object.entries({
       path: testInfo.outputPath(`${name}.png`),
       fullPage: false
     })
+
     if (name === 'vectorGradients') {
       const points = await page.evaluate(
         async (ids) => {
           const { core } = await import('../src/testing/runtime-access')
           const { viewportApis } = await import('../src/common-apis/viewport')
+
           return ids.flatMap((id) => {
             const data = core.getElementComputedData(id, [
               'x',
@@ -531,6 +544,7 @@ for (const [name, draft] of Object.entries({
               'width',
               'height'
             ])
+
             return [0.2, 0.35, 0.5, 0.65, 0.8].map((fraction) => ({
               id,
               fraction,
@@ -547,15 +561,18 @@ for (const [name, draft] of Object.entries({
         .ensureAlpha()
         .raw()
         .toBuffer({ resolveWithObject: true })
+
       for (const point of points) {
         const offset =
           (Math.round(point.y) * pixels.info.width + Math.round(point.x)) * 4
         const rgb = [...pixels.data.subarray(offset, offset + 3)]
-        for (const channel of rgb)
+
+        for (const channel of rgb) {
           expect(
             Math.abs(channel - point.fraction * 255),
             JSON.stringify({ point, rgb })
           ).toBeLessThan(25)
+        }
       }
     }
   })

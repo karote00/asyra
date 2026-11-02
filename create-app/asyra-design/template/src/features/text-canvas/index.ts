@@ -29,14 +29,20 @@ export const textCanvasFeature = defineFeature(
     api: {
       editSelected: () => {
         const ids = selectionApis.getSelectedIds()
-        if (ids.length === 1) textCanvasApis.beginEdit(ids[0])
+
+        if (ids.length === 1) {
+          textCanvasApis.beginEdit(ids[0])
+        }
       },
+
       finish: textCanvasApis.finish,
+
       cancel: () => {
         textCanvasApis.cancel()
         systemContextApis.switchPrimaryTool(PrimaryToolType.SELECT)
       }
     },
+
     execution: (snapshot: SystemContextSnapshot) => {
       if (
         snapshot.primaryTool !== PrimaryToolType.SELECT ||
@@ -44,16 +50,26 @@ export const textCanvasFeature = defineFeature(
         snapshot.keyCtrl ||
         snapshot.keyShift ||
         snapshot.keyAlt
-      )
+      ) {
         return null
+      }
+
       const id = elementApis.getRenderElementIdAtClientPos(
         snapshot.mousePosition
       )
-      if (!id || elementApis.getElementType(id) !== TEXT_COMPONENT_TYPE)
+
+      if (!id || elementApis.getElementType(id) !== TEXT_COMPONENT_TYPE) {
         return null
+      }
+
       const selected = selectionApis.getSelectedIds()
-      if (selected.length !== 1 || selected[0] !== id) return null
+
+      if (selected.length !== 1 || selected[0] !== id) {
+        return null
+      }
+
       textCanvasApis.beginEdit(id)
+
       return textCanvasApis.getSnapshot() ? { elementId: id } : null
     }
   }
@@ -68,39 +84,58 @@ export const createTextFeature = defineFeature(
     cancelPolicy: SessionCancelPolicies.ROLLBACK,
     session: {
       onStart: (snapshot: SystemContextSnapshot) => {
-        if (snapshot.primaryTool !== PrimaryToolType.TEXT) return null
+        if (snapshot.primaryTool !== PrimaryToolType.TEXT) {
+          return null
+        }
+
         const position = elementApis.getMousePosInWorkspace(
           snapshot.mousePosition
         )
-        if (!position) return null
+
+        if (!position) {
+          return null
+        }
+
         return { position, clientPosition: { ...snapshot.mousePosition } }
       },
+
       onEnd: (snapshot: SystemContextSnapshotWithDetail, state) => {
-        if (snapshot.detail?.cancelled) return
+        if (snapshot.detail?.cancelled) {
+          return
+        }
+
         const position = elementApis.getMousePosInWorkspace(
           snapshot.mousePosition
         )
-        if (!position) return
+
+        if (!position) {
+          return
+        }
+
         const dragged = elementApis.hasMovedBeyondThreshold(
           state.clientPosition,
           snapshot.mousePosition,
           FEATURE_MOVEMENT_THRESHOLD.createElement
         )
         let bounds = { ...state.position, width: 1, height: 1 }
+
         if (dragged) {
           const rectangle = rectFromPoints(state.position, position)
           const minimum = 4 / viewportApis.getScale()
+
           bounds = {
             ...rectangle,
             width: Math.max(minimum, rectangle.width),
             height: Math.max(minimum, rectangle.height)
           }
         }
+
         textCanvasApis.beginCreate(
           bounds,
           dragged ? TextSizing.AUTO_HEIGHT : TextSizing.AUTO_WIDTH
         )
       },
+
       onCancel: (): undefined => {
         textCanvasApis.cancel()
       }
@@ -114,10 +149,15 @@ export const cancelTextToolFeature = defineFeature(
   {
     priority: 110,
     exclusive: true,
+
     execution: (snapshot: SystemContextSnapshot) => {
-      if (snapshot.primaryTool !== PrimaryToolType.TEXT) return null
+      if (snapshot.primaryTool !== PrimaryToolType.TEXT) {
+        return null
+      }
+
       textCanvasApis.cancel()
       systemContextApis.switchPrimaryTool(PrimaryToolType.SELECT)
+
       return { cancelled: true }
     }
   }

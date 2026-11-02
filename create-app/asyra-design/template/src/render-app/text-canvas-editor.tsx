@@ -11,6 +11,7 @@ import {
 const action = (name: 'finish' | 'cancel', value?: string) => {
   const feature = getFeature(FeatureNames.EDIT_TEXT)
   const callback = feature?.[name] as ((value?: string) => void) | undefined
+
   callback?.(value)
 }
 
@@ -22,6 +23,7 @@ const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
     textCanvasApis.getDraftSnapshot
   )
   const draft = useRef(session.typography.text)
+
   draft.current = sharedDraft?.text ?? session.typography.text
   const [error, setError] = useState(session.error)
   const [transform, setTransform] = useState('')
@@ -31,29 +33,46 @@ const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
     const resumePresentation = session.elementId
       ? core.suspendElementPresentation(session.elementId)
       : null
+
     const update = () => {
       const project = (x: number, y: number) => {
         let point = { x: x + session.bounds.x, y: y + session.bounds.y }
+
         if (session.elementId) {
           const world = core.elementLocalToWorkspace(session.elementId, {
             x,
             y
           })
-          if (!world) return null
+
+          if (!world) {
+            return null
+          }
+
           point = world
         }
+
         return core.workspaceToCanvas(point)
       }
+
       const origin = project(0, 0)
       const horizontal = project(1, 0)
       const vertical = project(0, 1)
-      if (!origin || !horizontal || !vertical) return
+
+      if (!origin || !horizontal || !vertical) {
+        return
+      }
+
       const next = `matrix(${horizontal.x - origin.x},${horizontal.y - origin.y},${vertical.x - origin.x},${vertical.y - origin.y},${origin.x},${origin.y})`
+
       setTransform((previous) => (previous === next ? previous : next))
     }
+
     update()
     input.current?.focus()
-    if (session.elementId) input.current?.select()
+    if (session.elementId) {
+      input.current?.select()
+    }
+
     const frame = core.subscribeToFrameComplete(update)
     const publication = core.subscribeToSharedPublication(() => {
       if (
@@ -65,6 +84,7 @@ const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
         )
       }
     })
+
     const outsidePointer = (event: PointerEvent) => {
       if (
         !composing.current &&
@@ -74,12 +94,16 @@ const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
         action('finish', draft.current)
       }
     }
+
     window.addEventListener('pointerdown', outsidePointer, true)
+
     const refreshLayout = () => {
       textCanvasApis.updateDraft(draft.current, true)
     }
+
     document.fonts?.addEventListener('loadingdone', refreshLayout)
     const load = subscribeToFileLoadComplete(() => textCanvasApis.cancel())
+
     return () => {
       window.removeEventListener('pointerdown', outsidePointer, true)
       resumePresentation?.()
@@ -91,9 +115,13 @@ const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
   }, [session])
 
   const finish = () => {
-    if (composing.current || error) return
+    if (composing.current || error) {
+      return
+    }
+
     action('finish', draft.current)
   }
+
   return (
     <>
       <textarea
@@ -148,8 +176,10 @@ const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
             composing.current ||
             event.nativeEvent.isComposing ||
             event.keyCode === 229
-          )
+          ) {
             return
+          }
+
           if (event.key === 'Escape') {
             event.preventDefault()
             action('cancel')
@@ -173,7 +203,11 @@ export const TextCanvasEditor = () => {
     textCanvasApis.subscribe,
     textCanvasApis.getSnapshot
   )
+
   useEffect(() => () => textCanvasApis.cancel(), [])
-  if (!session) return null
+  if (!session) {
+    return null
+  }
+
   return <ActiveTextEditor session={session} />
 }

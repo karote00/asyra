@@ -23,6 +23,7 @@ it('projects conditional and pattern-addressed envelopes without discarding doma
     },
     else: { properties: { handle: { type: 'string' } }, required: ['handle'] }
   }
+
   for (const result of [
     {
       kind: 'partial',
@@ -35,6 +36,7 @@ it('projects conditional and pattern-addressed envelopes without discarding doma
       { ...result, hostCounter: 99 },
       schema
     )
+
     expect(actual).toEqual(result)
     expect(
       operationContractIssue(actual, schema, { stage: 'output' })
@@ -58,6 +60,7 @@ it('projects dynamic map values and references without losing names or mutating 
   )
   const before = JSON.stringify(input)
   const actual = projectToolResultFields(input, schema)
+
   expect(actual).toEqual(
     JSON.parse('{"__proto__":{"id":"first"},"context":{"id":"second"}}')
   )
@@ -68,10 +71,12 @@ it('does not publish a declared internal-only envelope or its required keys', ()
   const schema = toolResultObject({
     work: toolInternalResult({ type: 'number' })
   })
+
   expect(projectToolResultFields({ work: 4 }, schema)).toEqual({})
   const published = modelToolResultSchemas({
     outputSchema: schema
   }).outputSchema
+
   expect(JSON.stringify(published)).not.toContain('work')
   expect(
     operationContractIssue({}, published, { stage: 'output' })
@@ -107,6 +112,7 @@ it.each(['partial', 'failed'])(
         outputSchema: toolResultObject({ id: { type: 'string' } })
       }
     }
+
     for (const metadata of [false, true]) {
       const original = {
         status,
@@ -117,6 +123,7 @@ it.each(['partial', 'failed'])(
         ...(metadata ? { toolOutcome: { status, settlement: 'partial' } } : {})
       }
       const projected = projectToolDelivery(contract, original)
+
       expect(projected).toEqual({
         status,
         settlement: 'partial',

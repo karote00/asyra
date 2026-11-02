@@ -42,6 +42,7 @@ test.describe('Oval Tool', () => {
 
     // Verify Select tool is active
     const initialTool = await getActiveTool(page)
+
     expect(initialTool).toBe('select')
 
     // Press O to switch to Oval tool
@@ -50,6 +51,7 @@ test.describe('Oval Tool', () => {
 
     // Verify Oval tool is now active
     const newTool = await getActiveTool(page)
+
     expect(newTool).toBe('oval')
   })
 
@@ -77,15 +79,18 @@ test.describe('Oval Tool', () => {
 
     // Verify a new element was created
     const newCount = await getElementCount(page)
+
     expect(newCount).toBe(initialCount + 1)
 
     // Verify the new element is selected (Properties Panel shows properties)
     const isSelected = await hasSelectedElement(page)
+
     expect(isSelected).toBe(true)
 
     // Verify the Contents Panel shows the new oval
     const contentsPanel = page.locator('[style*="grid-area: left-sidebar"]')
     const ovalElement = contentsPanel.locator('text=Oval').first()
+
     await expect(ovalElement).toBeVisible()
   })
 
@@ -113,10 +118,12 @@ test.describe('Oval Tool', () => {
 
     // Verify a new element was created
     const newCount = await getElementCount(page)
+
     expect(newCount).toBe(initialCount + 1)
 
     // Verify the new element is selected
     const isSelected = await hasSelectedElement(page)
+
     expect(isSelected).toBe(true)
 
     // Check the dimensions in the Properties Panel
@@ -154,6 +161,7 @@ test.describe('Oval Tool', () => {
 
     // Verify Oval tool is now active
     const newTool = await getActiveTool(page)
+
     expect(newTool).toBe('oval')
   })
 
@@ -172,6 +180,7 @@ test.describe('Oval Tool', () => {
 
     // Verify two elements were created
     const count = await getElementCount(page)
+
     expect(count).toBeGreaterThanOrEqual(2)
   })
 
@@ -185,6 +194,7 @@ test.describe('Oval Tool', () => {
     // Check Contents Panel for the oval entry
     const contentsPanel = page.locator('[style*="grid-area: left-sidebar"]')
     const ovalEntry = contentsPanel.locator('text=Oval')
+
     await expect(ovalEntry.first()).toBeVisible()
   })
 
@@ -198,6 +208,7 @@ test.describe('Oval Tool', () => {
     await page.keyboard.press('r')
     await page.waitForTimeout(100)
     let activeTool = await getActiveTool(page)
+
     expect(activeTool).toBe('rectangle')
 
     // Switch to Oval tool

@@ -29,6 +29,7 @@ export const getClosestPointOnCubicBezier = (
 ): PositionData => {
   const curve = new Bezier(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y)
   const projected = curve.project({ x: target.x, y: target.y })
+
   return { x: projected.x, y: projected.y }
 }
 
@@ -85,6 +86,7 @@ export const splitCubicBezierAtT = (
 
   if (leftPoints.length >= 4 && rightPoints.length >= 4) {
     const splitPoint = leftPoints[3]
+
     return {
       splitPoint: { x: splitPoint.x, y: splitPoint.y },
       startOutControl: { x: leftPoints[1].x, y: leftPoints[1].y },
@@ -98,6 +100,7 @@ export const splitCubicBezierAtT = (
     x: from.x + (to.x - from.x) * clampedT,
     y: from.y + (to.y - from.y) * clampedT
   })
+
   const a = lerp(p0, p1)
   const b = lerp(p1, p2)
   const c = lerp(p2, p3)

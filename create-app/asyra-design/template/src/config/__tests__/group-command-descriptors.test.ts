@@ -142,6 +142,7 @@ describe('Group command descriptors', () => {
         platform: registration.platform,
         state
       })
+
       expect(group?.shortcut).toEqual({
         key: registration.key,
         modifiers: registration.modifiers

@@ -47,6 +47,7 @@ const drawRectOutline = (
     color: AREA_SELECTION_STROKE_COLOR
   })
 }
+
 export const registerAreaSelectionRenderLayer = (
   registerRenderLayer: RegisterRenderLayer,
   deps: {
@@ -60,6 +61,7 @@ export const registerAreaSelectionRenderLayer = (
   const layerRegistration = createOverlayLayerRegistration({
     name: AREA_SELECTION_LAYER_NAME,
     zIndex: 9,
+
     update: (canvas: OverlayCanvas) => {
       const selection =
         deps.systemProperties.getSystemProperty<AreaSelectionState | null>(
@@ -73,9 +75,11 @@ export const registerAreaSelectionRenderLayer = (
             selection.dragCurrent.y
           ].join('|')
         : 'empty'
+
       if (drawSignature === lastDrawSignature) {
         return false
       }
+
       lastDrawSignature = drawSignature
 
       canvas.clear()
@@ -96,11 +100,13 @@ export const registerAreaSelectionRenderLayer = (
       }
 
       const rectPoints = getRectPoints(rect)
+
       canvas.polygon(rectPoints, {
         color: AREA_SELECTION_STROKE_COLOR,
         alpha: AREA_SELECTION_FILL_ALPHA
       })
       drawRectOutline(canvas, rectPoints)
+
       return true
     }
   })

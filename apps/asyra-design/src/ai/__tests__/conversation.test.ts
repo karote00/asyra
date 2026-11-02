@@ -1,4 +1,8 @@
-import { projectAiActivity, summarizeAiTurn, canRetryAiTurn } from '../presentation'
+import {
+  projectAiActivity,
+  summarizeAiTurn,
+  canRetryAiTurn
+} from '../presentation'
 import * as contextProjection from '../conversation-context-projection'
 import { describe, expect, it, vi } from 'vitest'
 import {
@@ -99,8 +103,9 @@ it('keeps inherited reference images out of text replies while retaining provide
   await controller.submit('Draw a new circle')
   expect(feature.execute).toHaveBeenLastCalledWith(
     expect.objectContaining({
-      metadata: expect.not.objectContaining({
-        imageAttachments: expect.anything()
+      metadata: expect.objectContaining({
+        imageAttachments: [attachment],
+        conversationContext: expect.objectContaining({ attachmentIndexes: [] })
       })
     })
   )
@@ -506,14 +511,15 @@ describe('Asyra Design AI conversation controller', () => {
               'right-eye': ['eye-right-1']
             }
           },
-          conversationHistory: {
-            omittedTurns: 0,
+          conversationContext: {
+            attachmentIndexes: [],
             turns: [
               {
                 turnId: 'conversation-c:turn:1',
                 intent: 'draw a cat face',
                 message: 'Updated 4 editable elements.',
-                outcome: 'success'
+                outcome: 'success',
+                attachmentIndexes: []
               }
             ]
           },
@@ -1105,11 +1111,13 @@ describe('request conversation continuity', () => {
     name: 'brand.png',
     size: 1
   }
+
   const answer = (message: string) =>
     executed(
       { outcome: 'completed', message, status: 'no-change' },
       'report_outcome'
     )
+
   const question = (text: string) =>
     executed(
       {
@@ -1131,11 +1139,13 @@ describe('request conversation continuity', () => {
       intent: 'Use the reference, width 640 and blue.',
       attachments: [image]
     })
+
     await controller.submit({
       intent: 'Make it simpler; change blue to green.',
       attachments: [image]
     })
     const request = vi.mocked(feature.execute).mock.calls[1][0]
+
     expect(request.metadata).toMatchObject({
       imageAttachments: [image],
       conversationContext: {
@@ -1182,6 +1192,7 @@ describe('request conversation continuity', () => {
     })
     const first = await controller.submit('Refine this card.')
     const second = await controller.submit('The latter.')
+
     await controller.submit('Keep it.')
     expect(vi.mocked(feature.execute).mock.calls[2][0].metadata).toMatchObject({
       conversationContext: {
@@ -1223,6 +1234,7 @@ describe('request conversation continuity', () => {
       intent: 'Use this reference.',
       attachments: [image]
     })
+
     controller.newConversation()
     await controller.submit('Give advice only.')
     expect(
@@ -1234,6 +1246,7 @@ describe('request conversation continuity', () => {
     controller.selectConversation(first.conversationId)
     await controller.submit('Refine it.')
     const metadata = vi.mocked(feature.execute).mock.calls[2][0].metadata
+
     expect(metadata).toHaveProperty(
       'conversationContext.turns.0.intent',
       'Use this reference.'
@@ -1250,8 +1263,10 @@ describe('request conversation continuity', () => {
       feature,
       getElementType: vi.fn()
     })
+
     await controller.submit('x'.repeat(120 * 1024))
     const failed = await controller.submit('y'.repeat(16 * 1024))
+
     expect(feature.execute).toHaveBeenCalledTimes(1)
     expect(failed.outcome).toBe('failed')
     expect(failed.result).toMatchObject({
@@ -1274,10 +1289,12 @@ it('projects immutable context once per submission, never during progress or sna
     feature,
     getElementType: vi.fn()
   })
+
   await controller.submit('Keep the blue brand color.')
   const second = controller.submit('Make the title larger.')
   const request = vi.mocked(feature.execute).mock.calls[1][0]
   const before = JSON.stringify(request.metadata)
+
   expect(projection).toHaveBeenCalledTimes(2)
   for (let index = 0; index < 8; index += 1) {
     request.progressObserver({
@@ -1288,6 +1305,7 @@ it('projects immutable context once per submission, never during progress or sna
     controller.getSnapshot()
     controller.getNavigationSnapshot()
   }
+
   expect(projection).toHaveBeenCalledTimes(2)
   expect(JSON.stringify(request.metadata)).toBe(before)
   expect(
@@ -1320,7 +1338,227 @@ it('explains source-image budget failures without blind retry or Feature executi
       }
     ]
   })
+
   expect(feature.execute).not.toHaveBeenCalled()
   expect(summarizeAiTurn(failed).message).toContain('Start a new conversation')
   expect(canRetryAiTurn(failed)).toBe(false)
+})
+
+describe('settled conversation context delivery', () => {
+  const report = (message: string) =>
+    executed(
+      { status: 'no-change', outcome: 'completed', message },
+      'report_outcome'
+    )
+
+  const historyFrom = (feature: AiConversationFeature, index: number) =>
+    (
+      vi.mocked(feature.execute).mock.calls[index][0].metadata as {
+        conversationContext?: {
+          turns: {
+            turnId: string
+            intent: string
+            replyToTurnId?: string
+            message: string
+            outcome: string
+          }[]
+          attachmentIndexes: number[]
+        }
+      }
+    ).conversationContext
+
+  const requireHistory = (feature: AiConversationFeature, index: number) => {
+    const history = historyFrom(feature, index)
+
+    if (!history) {
+      throw new Error('Expected settled conversation history')
+    }
+
+    return history
+  }
+
+  it('delivers complete prior advice once without carrying raw execution data', async () => {
+    const result = report(
+      'Use matte silver, a cool blue facade and continuous reflections. No background.'
+    )
+
+    Object.defineProperty(result, 'diagnostics', {
+      get: () => {
+        throw new Error('Raw result traversal')
+      },
+
+      enumerable: true
+    })
+    const feature = createFeature(async () => result)
+    const controller = createAiConversationController({
+      feature,
+
+      getElementType: () => undefined
+    })
+
+    try {
+      const first = await controller.submit(
+        'Propose a glass and metal illustration, without drawing.'
+      )
+
+      await controller.submit(
+        'Keep that direction but change the glass to green.'
+      )
+      expect(historyFrom(feature, 0)).toBeUndefined()
+      expect(historyFrom(feature, 1)).toEqual({
+        turns: [
+          {
+            turnId: first.turnId,
+            intent: first.intent,
+            message: summarizeAiTurn(first).message,
+            outcome: 'no-change',
+            attachmentIndexes: []
+          }
+        ],
+        attachmentIndexes: []
+      })
+      expect(historyFrom(feature, 1)?.turns[0].message).toContain(
+        'continuous reflections'
+      )
+      expect(vi.mocked(feature.execute).mock.calls[1][0].intent).toBe(
+        'Keep that direction but change the glass to green.'
+      )
+      expect(feature.execute).toHaveBeenCalledTimes(2)
+      expect(Object.keys(requireHistory(feature, 1).turns[0])).toEqual([
+        'turnId',
+        'intent',
+        'message',
+        'outcome',
+        'attachmentIndexes'
+      ])
+      expect(controller.getSnapshot().settledTurns[0]).toBe(first)
+    } finally {
+      await controller.dispose()
+    }
+  })
+
+  it('isolates new conversations and restores only the selected conversation', async () => {
+    const feature = createFeature(async () => report('Proposal'))
+    let id = 0
+    const controller = createAiConversationController({
+      feature,
+
+      getElementType: () => undefined,
+
+      createConversationId: () => `context-${++id}`
+    })
+
+    try {
+      const first = await controller.submit('A standalone icon')
+
+      controller.newConversation()
+      await controller.submit('A different poster')
+      expect(historyFrom(feature, 1)).toBeUndefined()
+      controller.selectConversation(first.conversationId)
+      await controller.submit('Continue the icon')
+      expect(historyFrom(feature, 2)?.turns.map((turn) => turn.intent)).toEqual(
+        ['A standalone icon']
+      )
+    } finally {
+      await controller.dispose()
+    }
+  })
+
+  it.each([
+    { status: 'cancelled', transaction: { status: 'committed' } },
+    {
+      status: 'failed',
+      stage: 'execution',
+      transaction: { status: 'committed' }
+    },
+    {
+      status: 'failed',
+      stage: 'execution',
+      transaction: { status: 'rolled-back' }
+    },
+    {
+      status: 'failed',
+      stage: 'provider',
+      code: 'AI_PROVIDER_TRANSPORT_FAILED'
+    }
+  ])(
+    'preserves authoritative settlement without replay: $status $transaction.status',
+    async (result) => {
+      const feature = createFeature(
+        vi
+          .fn()
+          .mockResolvedValueOnce(result)
+          .mockResolvedValue(report('Next answer'))
+      )
+      const controller = createAiConversationController({
+        feature,
+
+        getElementType: () => undefined
+      })
+
+      try {
+        const first = await controller.submit('Draw once')
+
+        await controller.submit(
+          'Explain the current outcome without changing it'
+        )
+        expect(historyFrom(feature, 1)?.turns[0]).toEqual({
+          turnId: first.turnId,
+          intent: first.intent,
+          message: summarizeAiTurn(first).message,
+          outcome: first.outcome,
+          attachmentIndexes: []
+        })
+        expect(feature.execute).toHaveBeenCalledTimes(2)
+      } finally {
+        await controller.dispose()
+      }
+    }
+  )
+
+  it('preserves answered questions and their original objective across a safe retry', async () => {
+    const feature = createFeature(
+      vi
+        .fn()
+        .mockResolvedValueOnce(
+          executed(
+            {
+              status: 'no-change',
+              clarification: { kind: 'question', question: 'Which tone?' }
+            },
+            'request_clarification'
+          )
+        )
+        .mockResolvedValueOnce({
+          status: 'failed',
+          stage: 'provider',
+          code: 'AI_PROVIDER_TRANSPORT_FAILED'
+        })
+        .mockResolvedValue(report('Use the selected tone'))
+    )
+    const controller = createAiConversationController({
+      feature,
+
+      getElementType: () => undefined
+    })
+
+    try {
+      await controller.submit('Design a restrained book cover')
+      const failed = await controller.submit('Warm tones')
+
+      await controller.retry(failed.turnId)
+      const history = requireHistory(feature, 2)
+
+      expect(history.turns.map((turn) => turn.intent)).toEqual([
+        'Design a restrained book cover',
+        'Warm tones'
+      ])
+      expect(history.turns[1].replyToTurnId).toBe(history.turns[0].turnId)
+      expect(history.turns[0].message).toBe('Which tone?')
+      expect(history.turns[1].outcome).toBe('failed')
+      expect(feature.execute).toHaveBeenCalledTimes(3)
+    } finally {
+      await controller.dispose()
+    }
+  })
 })

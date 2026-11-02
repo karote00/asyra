@@ -213,12 +213,12 @@ export const resolveActionBatchRequest = async (
       'The action-batch request was aborted.'
     )
   }
+
   if (
     !isRecord(input) ||
     typeof input.intent !== 'string' ||
     !admitsConversationContext(input.intent, input.metadata)
   ) {
-
     throw new ActionBatchServerError(
       'ACTION_BATCH_INVALID_INPUT',
       'The action-batch input is invalid.'

@@ -32,6 +32,7 @@ test.use({ trace: 'retain-on-failure' })
 
 const attachExecutionEvidence = async (testInfo: TestInfo, value: unknown) => {
   const path = testInfo.outputPath('execution-continuity.json')
+
   await writeFile(path, JSON.stringify(value, null, 2))
   await testInfo.attach('execution-continuity', {
     contentType: 'application/json',
@@ -49,12 +50,16 @@ const captureEvidence = (page: Page) =>
     let owner = testRuntimeState.get<
       ReturnType<typeof createInspectionEvidence>
     >('inspection-evidence-owner')
+
     if (!owner) {
       owner = createInspectionEvidence()
       testRuntimeState.set('inspection-evidence-owner', owner)
     }
+
     const result = await owner.capture(() => ({ available: true }))
+
     testRuntimeState.set('inspection-evidence-stamp', result.evidence)
+
     return owner.isCurrent(result.evidence)
   })
 
@@ -64,7 +69,11 @@ const evidenceIsCurrent = (page: Page) =>
     const owner = testRuntimeState.get<{
       isCurrent: (value: unknown) => boolean
     }>('inspection-evidence-owner')
-    if (!owner) throw new Error('Inspection evidence owner is unavailable')
+
+    if (!owner) {
+      throw new Error('Inspection evidence owner is unavailable')
+    }
+
     return owner.isCurrent(testRuntimeState.get('inspection-evidence-stamp'))
   })
 
@@ -74,6 +83,7 @@ const waitForCollaboration = (page: Page) =>
       page.evaluate(async () => {
         const { getActiveCollaborationHandle } =
           await import('../src/testing/runtime-access')
+
         return getActiveCollaborationHandle()?.getStatus()
       })
     )
@@ -86,6 +96,7 @@ test('manual edits, Undo, Redo and isolated Core load invalidate canonical inspe
   const remote = await browser.newPage({
     baseURL: String(testInfo.project.use.baseURL)
   })
+
   try {
     await page.goto(createTestDocumentIdentity().url)
     await waitForAppReady(page)
@@ -96,6 +107,7 @@ test('manual edits, Undo, Redo and isolated Core load invalidate canonical inspe
     await page.evaluate(async () => {
       const { startDocumentPublicationCapture, startSharedPublicationCapture } =
         await import('../src/testing/runtime-access')
+
       startDocumentPublicationCapture('inspection-lifecycle-publications')
       startSharedPublicationCapture('inspection-lifecycle-raw')
     })
@@ -124,6 +136,7 @@ test('manual edits, Undo, Redo and isolated Core load invalidate canonical inspe
 
     const publications = await page.evaluate(async () => {
       const { readTestCapture } = await import('../src/testing/runtime-access')
+
       return JSON.stringify({
         document: readTestCapture('inspection-lifecycle-publications'),
         raw: readTestCapture('inspection-lifecycle-raw')
@@ -133,12 +146,14 @@ test('manual edits, Undo, Redo and isolated Core load invalidate canonical inspe
     const publicationsPath = test
       .info()
       .outputPath('inspection-lifecycle-publications.json')
+
     await writeFile(publicationsPath, publications)
     await test.info().attach('inspection-lifecycle-publications', {
       path: publicationsPath,
       contentType: 'application/json'
     })
     const expectedDocument = await getCoreDocumentDigest(page)
+
     await expect
       .poll(() => getCoreDocumentDigest(remote))
       .toEqual(expectedDocument)
@@ -146,16 +161,23 @@ test('manual edits, Undo, Redo and isolated Core load invalidate canonical inspe
       const { core, getActiveCollaborationHandle } =
         await import('../src/testing/runtime-access')
       const handle = getActiveCollaborationHandle()
-      if (!handle) throw new Error('Missing connected document owner')
+
+      if (!handle) {
+        throw new Error('Missing connected document owner')
+      }
+
       const persisted = await handle.confirmPersistence(
         new AbortController().signal
       )
       const saved = await core.save()
+
       // Isolate Core load from document publication; session replacement has its own tests.
       await handle.dispose()
       core.load(saved)
+
       return { persisted, documentId: handle.identity.documentId }
     })
+
     await test.info().attach('isolated-load-document', {
       body: JSON.stringify(loaded),
       contentType: 'application/json'
@@ -180,6 +202,7 @@ test('manual edits, Undo, Redo and isolated Core load invalidate canonical inspe
               const { core, getActiveCollaborationHandle, readTestCapture } =
                 await import('../src/testing/runtime-access')
               const transaction = core.deps.factory.transact
+
               return {
                 document: await core.save(),
                 status: getActiveCollaborationHandle()?.getStatus(),
@@ -197,12 +220,14 @@ test('manual edits, Undo, Redo and isolated Core load invalidate canonical inspe
         }))
       )
       const file = testInfo.outputPath('inspection-lifecycle-state.json')
+
       await writeFile(file, JSON.stringify(states))
       await testInfo.attach('inspection-lifecycle-state', {
         path: file,
         contentType: 'application/json'
       })
     }
+
     await remote.close()
   }
 })
@@ -211,21 +236,30 @@ test('recorded action stream preserves drawable targets during incremental const
   page
 }, testInfo) => {
   const manifestPath = process.env.E2E_INSPECTION_REPLAY
+
   test.skip(
     !manifestPath,
     'Provide a project-local recorded action replay manifest.'
   )
-  if (!manifestPath) return
+  if (!manifestPath) {
+    return
+  }
+
   test.setTimeout(300_000)
   const { readFile, appendFile, writeFile } = await import('node:fs/promises')
   const { resolve, relative } = await import('node:path')
   const projectRoot = resolve(process.cwd(), '../..')
+
   const localPath = (path: string) => {
     const resolved = resolve(path)
-    if (relative(projectRoot, resolved).startsWith('..'))
+
+    if (relative(projectRoot, resolved).startsWith('..')) {
       throw new Error('Replay inputs must be inside this project')
+    }
+
     return resolved
   }
+
   const manifest: {
     actionsPath: string
     groupResults: Record<string, string>
@@ -239,8 +273,10 @@ test('recorded action stream preserves drawable targets during incremental const
     .map((line) => JSON.parse(line))
     .filter((frame) => frame.type === 'batch')
     .map((frame) => frame.batch)
+
   expect(batches.length).toBeGreaterThan(0)
   const eventsPath = testInfo.outputPath('replay-events.ndjson')
+
   await writeFile(eventsPath, '')
   await page.exposeFunction('recordActionReplayEvent', (event: unknown) =>
     appendFile(eventsPath, `${JSON.stringify(event)}\n`)
@@ -249,24 +285,33 @@ test('recorded action stream preserves drawable targets during incremental const
     void appendFile(eventsPath, `${JSON.stringify({ error: error.stack })}\n`)
   })
   page.on('console', async (message) => {
-    if (message.type() !== 'error') return
+    if (message.type() !== 'error') {
+      return
+    }
+
     const argumentsWithErrors = await Promise.all(
       message.args().map((argument) =>
         argument
           .evaluate((value) => {
-            if (value instanceof Error) return value.stack
+            if (value instanceof Error) {
+              return value.stack
+            }
+
             if (value && typeof value === 'object' && 'error' in value) {
               const error = value.error
+
               return {
                 ...value,
                 error: error instanceof Error ? error.stack : error
               }
             }
+
             return value
           })
           .catch(() => 'Console argument unavailable')
       )
     )
+
     await appendFile(
       eventsPath,
       `${JSON.stringify({ consoleError: message.text(), argumentsWithErrors })}\n`
@@ -288,11 +333,15 @@ test('recorded action stream preserves drawable targets during incremental const
       const pipelineDebugger = traceHierarchy
         ? getActiveCanvasPipelineDebugger()
         : undefined
-      if (traceHierarchy && !pipelineDebugger)
+
+      if (traceHierarchy && !pipelineDebugger) {
         throw new Error('Requested Canvas Pipeline Debugger is unavailable')
+      }
+
       const aliases = new Map<string, string>()
       const started = performance.now()
       let currentBatchId = ''
+
       const record = (event: Record<string, unknown>) =>
         (
           window as unknown as {
@@ -303,12 +352,17 @@ test('recorded action stream preserves drawable targets during incremental const
           batchId: currentBatchId,
           ...event
         })
+
       const stopPublicationProfile = core.subscribeToSharedPublication(
         (publication) => {
           const serializedBytes = new TextEncoder().encode(
             JSON.stringify(publication)
           ).byteLength
-          if (serializedBytes < 1_000_000) return
+
+          if (serializedBytes < 1_000_000) {
+            return
+          }
+
           const deliveries = publication.slices.flatMap((slice) =>
             slice.batches.flatMap((batch) => batch.deliveries)
           )
@@ -328,6 +382,7 @@ test('recorded action stream preserves drawable targets during incremental const
             }))
             .sort((a, b) => b.bytes - a.bytes)
             .slice(0, 3)
+
           void record({
             phase: 'publication-profile',
             publicationId: publication.publicationId,
@@ -338,15 +393,25 @@ test('recorded action stream preserves drawable targets during incremental const
           })
         }
       )
+
       const remap = (value: unknown): unknown => {
-        if (typeof value === 'string') return aliases.get(value) ?? value
-        if (Array.isArray(value)) return value.map(remap)
-        if (value && typeof value === 'object')
+        if (typeof value === 'string') {
+          return aliases.get(value) ?? value
+        }
+
+        if (Array.isArray(value)) {
+          return value.map(remap)
+        }
+
+        if (value && typeof value === 'object') {
           return Object.fromEntries(
             Object.entries(value).map(([key, entry]) => [key, remap(entry)])
           )
+        }
+
         return value
       }
+
       const captureErrors: {
         batchId: string
         elementId: string
@@ -354,6 +419,7 @@ test('recorded action stream preserves drawable targets during incremental const
       }[] = []
       const originalCapture = core.captureElementSnapshot
       const originalMove = hierarchyApis.moveElements
+
       hierarchyApis.moveElements = (...args) => {
         try {
           return originalMove(...args)
@@ -365,6 +431,7 @@ test('recorded action stream preserves drawable targets during incremental const
           throw error
         }
       }
+
       core.captureElementSnapshot = (
         ...args: Parameters<typeof originalCapture>
       ) => {
@@ -379,15 +446,19 @@ test('recorded action stream preserves drawable targets during incremental const
                 ? (error.stack ?? error.message)
                 : String(error)
           }
+
           captureErrors.push(failure)
           void record({ phase: 'capture-failed', ...failure })
           throw error
         }
       }
+
       const provider: AiProvider = {
         requestActionBatch: async (_input, { executeBatch }) => {
-          if (!executeBatch)
+          if (!executeBatch) {
             throw new Error('Runtime batch executor is unavailable')
+          }
+
           for (const batch of batches) {
             currentBatchId = batch.batchId
             const debuggerHandle =
@@ -399,27 +470,38 @@ test('recorded action stream preserves drawable targets during incremental const
               )
                 ? pipelineDebugger
                 : undefined
+
             if (debuggerHandle) {
               debuggerHandle.setOverlayVisible(false)
               debuggerHandle.enable()
               debuggerHandle.clearTrace()
             }
+
             await record({
               phase: 'start',
               actions: batch.actions.length,
               names: [...new Set(batch.actions.map((action) => action.name))]
             })
             const receipt = await executeBatch(remap(batch) as AiActionBatch)
+
             for (const entry of receipt.actionResults) {
               const originalId = groupResults[entry.actionId]
-              if (!originalId) continue
+
+              if (!originalId) {
+                continue
+              }
+
               const result = entry.result as { groupId?: string }
-              if (!result.groupId)
+
+              if (!result.groupId) {
                 throw new Error(
                   `Recorded group result missing: ${entry.actionId}`
                 )
+              }
+
               aliases.set(originalId, result.groupId)
             }
+
             viewportApis.zoomFit()
             if (
               batch.actions.some((action) => action.name === 'organize_design')
@@ -428,6 +510,7 @@ test('recorded action stream preserves drawable targets during incremental const
               const roots = workspace
                 ? (core.getElementData(workspace)?.children ?? [])
                 : []
+
               await record({
                 phase: 'hierarchy-projection',
                 roots: roots.map((id) => ({
@@ -437,6 +520,7 @@ test('recorded action stream preserves drawable targets during incremental const
                 }))
               })
             }
+
             if (debuggerHandle) {
               await record({
                 phase: 'render-projection-trace',
@@ -446,11 +530,13 @@ test('recorded action stream preserves drawable targets during incremental const
               })
               debuggerHandle.disable()
             }
+
             await record({
               phase: 'complete',
               captureErrors: captureErrors.length
             })
           }
+
           return {
             batchId: 'replay-finished',
             actions: [
@@ -470,18 +556,23 @@ test('recorded action stream preserves drawable targets during incremental const
       }
       const startup = createAiStartup({
         createProvider: () => provider,
+
         createConfirmation: createAiConfirmationBroker,
         createHistory: createAiHistoryProjection
       })
       const { runtime } = startup
+
       // Replay only the recorded operations in this isolated test document.
       // A broker without a turn rejects confirmations before reaching the API.
       startup.confirmation.beginTurn('recorded-replay')
       const unsubscribeConfirmation = startup.confirmation.subscribe(
         ({ pending }) => {
-          if (pending) startup.confirmation.resolve(true)
+          if (pending) {
+            startup.confirmation.resolve(true)
+          }
         }
       )
+
       try {
         const outcome = await runtime.run({
           intent: 'Replay the recorded drawing operations.',
@@ -518,11 +609,13 @@ test('recorded action stream preserves drawable targets during incremental const
           ]),
           native: core.measureElementContentBounds([id])
         }))
+
         await record({
           phase: 'settled',
           status: outcome.status,
           captureErrors
         })
+
         return {
           status: outcome.status,
           failure: outcome.status === 'failed' ? outcome.message : null,
@@ -547,24 +640,32 @@ test('recorded action stream preserves drawable targets during incremental const
       traceHierarchy: manifest.traceHierarchy
     }
   )
+
   await writeFile(
     testInfo.outputPath('replay-result.json'),
     JSON.stringify(result, null, 2)
   )
   await page.screenshot({ path: testInfo.outputPath('replayed-app.png') })
   for (const [index, capture] of result.captures.entries()) {
-    if (capture.image)
+    if (capture.image) {
       await testInfo.attach(`replayed-root-${index}`, {
         body: Buffer.from(capture.image.dataUrl.split(',')[1], 'base64'),
         contentType: 'image/png'
       })
+    }
   }
+
   expect(result.status, result.failure ?? 'Recorded batches must execute').toBe(
     'executed'
   )
   const fileId = new URL(page.url()).searchParams.get('fileId')
-  if (!fileId) throw new Error('The test document has no file ID')
+
+  if (!fileId) {
+    throw new Error('The test document has no file ID')
+  }
+
   const canonicalDigest = await getCoreDocumentDigest(page)
+
   await expect
     .poll(() => getPersistedDocumentDigest(fileId), {
       timeout: 30_000,
@@ -589,6 +690,7 @@ test('an edit from another collaboration client invalidates canonical inspection
   const remote = await browser.newPage({
     baseURL: String(testInfo.project.use.baseURL)
   })
+
   try {
     await page.goto(document.url)
     await waitForAppReady(page)
@@ -597,6 +699,7 @@ test('an edit from another collaboration client invalidates canonical inspection
     await waitForAppReady(remote)
     await waitForCollaboration(remote)
     const before = await getElementCount(page)
+
     expect(await captureEvidence(page)).toBe(true)
 
     await createRectangle(remote)
@@ -621,15 +724,25 @@ test('canonical coverage follows ungrouped details into their current drawing', 
     const { createInspectionEvidence } =
       await import('../src/common-apis/inspection-evidence')
     const workspace = hierarchyApis.getWorkspaceId()
-    if (!workspace) throw new Error('Missing workspace')
+
+    if (!workspace) {
+      throw new Error('Missing workspace')
+    }
+
     const ids = core.getElementData(workspace)?.children ?? []
-    if (ids.length !== 2) throw new Error('Expected the two test rectangles')
+
+    if (ids.length !== 2) {
+      throw new Error('Expected the two test rectangles')
+    }
+
     const tower = hierarchyApis.groupElements([ids[0]])
     const collar = hierarchyApis.groupElements([ids[1]])
     const owner = createInspectionEvidence()
+
     try {
       const before = await owner.capture(() => ({ available: true }))
       const members = hierarchyApis.ungroupElement(collar.groupId).elementIds
+
       hierarchyApis.moveElements({
         elementIds: members,
         targetParentId: tower.groupId,
@@ -640,6 +753,7 @@ test('canonical coverage follows ungrouped details into their current drawing', 
         requiredIds: [tower.groupId, ...members],
         overviewIds: [tower.groupId]
       }
+
       return {
         retired: owner.validate(before.evidence, scope),
         covered: owner.validate(after.evidence, scope),
@@ -656,6 +770,7 @@ test('canonical coverage follows ungrouped details into their current drawing', 
       owner.dispose()
     }
   })
+
   expect(results.retired).toMatchObject({
     current: false,
     coverage: { complete: false }
@@ -682,15 +797,27 @@ test('inspection sees hierarchy edits before a long-running AI request settles',
     const runner = createAiTransactionRunner()
     const delivery = { undoable: true, sharedDelivery: 'immediate' } as const
     const workspace = hierarchyApis.getWorkspaceId()
-    if (!workspace) throw new Error('Missing workspace')
+
+    if (!workspace) {
+      throw new Error('Missing workspace')
+    }
+
     const ids = [...(core.getElementData(workspace)?.children ?? [])]
-    if (ids.length !== 2) throw new Error('Expected two rectangles')
+
+    if (ids.length !== 2) {
+      throw new Error('Expected two rectangles')
+    }
+
     return runner
       .run('Inspect a running drawing', async (mutate) => {
-        if (!mutate) throw new Error('Expected grouped mutation executor')
+        if (!mutate) {
+          throw new Error('Expected grouped mutation executor')
+        }
+
         const drawing = await mutate(() => {
           const body = hierarchyApis.groupElements([ids[0]], delivery)
           const detail = hierarchyApis.groupElements([ids[1]], delivery)
+
           // This is the delivery policy used by the registered basic API action.
           hierarchyApis.moveElements({
             elementIds: [detail.groupId],
@@ -698,6 +825,7 @@ test('inspection sees hierarchy edits before a long-running AI request settles',
             targetIndex: 1
           })
           const members = hierarchyApis.ungroupElement(body.groupId, delivery)
+
           return hierarchyApis.groupElements(members.elementIds, delivery)
         })
         const bounds = core.getElementComputedData(drawing.groupId, [
@@ -705,15 +833,20 @@ test('inspection sees hierarchy edits before a long-running AI request settles',
           'height'
         ])
         const image = core.captureElementSnapshot(drawing.groupId, 1024)
+
         return { bounds, image }
       })
       .catch((error: unknown) => {
         // Browser serialization omits custom Error fields; surface the canonical
         // cause so this permanent regression reports the failing owner.
-        if (error instanceof Error && 'cause' in error) throw error.cause
+        if (error instanceof Error && 'cause' in error) {
+          throw error.cause
+        }
+
         throw error
       })
   })
+
   expect(result.bounds?.width).toBeGreaterThan(0)
   expect(result.bounds?.height).toBeGreaterThan(0)
   expect(result.image.width).toBeGreaterThan(0)
@@ -733,16 +866,29 @@ test('rendered inspection survives moving a detail group and regrouping the whol
     const { hierarchyApis } = await import('../src/common-apis/hierarchy')
     const { createAiTransactionRunner } = await import('../src/ai/transaction')
     const runner = createAiTransactionRunner()
+
     const apply = <T>(operation: () => T) =>
       runner.run('Inspection replay', async (mutate) => {
-        if (!mutate) throw new Error('Expected grouped mutation executor')
+        if (!mutate) {
+          throw new Error('Expected grouped mutation executor')
+        }
+
         return mutate(operation)
       })
+
     const delivery = { undoable: true, sharedDelivery: 'immediate' } as const
     const workspace = hierarchyApis.getWorkspaceId()
-    if (!workspace) throw new Error('Missing workspace')
+
+    if (!workspace) {
+      throw new Error('Missing workspace')
+    }
+
     const ids = [...(core.getElementData(workspace)?.children ?? [])]
-    if (ids.length !== 3) throw new Error('Expected three rectangles')
+
+    if (ids.length !== 3) {
+      throw new Error('Expected three rectangles')
+    }
+
     const body = await apply(() =>
       hierarchyApis.groupElements([ids[0]], delivery)
     )
@@ -755,6 +901,7 @@ test('rendered inspection survives moving a detail group and regrouping the whol
     const detail = await apply(() =>
       hierarchyApis.groupElements([ids[2]], delivery)
     )
+
     await apply(() =>
       // Basic API actions use the public API's default delivery policy.
       hierarchyApis.moveElements({
@@ -764,6 +911,7 @@ test('rendered inspection survives moving a detail group and regrouping the whol
       })
     )
     const before = core.captureElementSnapshot(tower.groupId, 1024)
+
     core.captureElementSnapshot(body.groupId, 1024)
     core.captureElementSnapshot(glazing.groupId, 1024)
     core.captureElementSnapshot(detail.groupId, 1024)
@@ -774,16 +922,20 @@ test('rendered inspection survives moving a detail group and regrouping the whol
     ).elementIds
     const regrouped = await apply(() => {
       const result = hierarchyApis.groupElements(children, delivery)
+
       core.updateElementData(
         result.groupId,
         { name: 'Regrouped drawing' },
         delivery
       )
+
       return result
     })
     const after = core.captureElementSnapshot(regrouped.groupId, 1024)
+
     return { before, afterInnerUngroup, after }
   })
+
   expect(result.after.width).toBe(result.before.width)
   expect(result.after.height).toBe(result.before.height)
   expect(result.after.dataUrl).toBe(result.before.dataUrl)
@@ -799,17 +951,24 @@ test('saved drawing keeps a complete snapshot after public regrouping', async ({
     testInfo.annotations.push({ type: 'replay-stage', description: stage })
   })
   const documentPath = process.env.E2E_INSPECTION_DOCUMENT
+
   test.skip(
     !documentPath,
     'Provide a retained project-local document for deterministic inspection replay.'
   )
-  if (!documentPath) return
+  if (!documentPath) {
+    return
+  }
+
   const { readFile } = await import('node:fs/promises')
   const { resolve, relative } = await import('node:path')
   const projectRoot = resolve(process.cwd(), '../..')
   const filePath = resolve(documentPath)
-  if (relative(projectRoot, filePath).startsWith('..'))
+
+  if (relative(projectRoot, filePath).startsWith('..')) {
     throw new Error('Replay document must be inside this project')
+  }
+
   const document = JSON.parse(await readFile(filePath, 'utf8'))
   const actionPath = process.env.E2E_INSPECTION_ACTIONS
   const fillChanges: {
@@ -818,24 +977,36 @@ test('saved drawing keeps a complete snapshot after public regrouping', async ({
     currentFill: FillAttrs
     patch: FillPatch
   }[] = []
+
   if (actionPath) {
     const resolved = resolve(actionPath)
-    if (relative(projectRoot, resolved).startsWith('..'))
+
+    if (relative(projectRoot, resolved).startsWith('..')) {
       throw new Error('Replay actions must be inside this project')
+    }
+
     const frames = (await readFile(resolved, 'utf8')).trim().split('\n')
+
     for (const frame of frames) {
       const parsed = JSON.parse(frame)
-      if (parsed.type !== 'batch') continue
+
+      if (parsed.type !== 'batch') {
+        continue
+      }
+
       for (const action of parsed.batch.actions) {
-        if (action.name === 'api_fill_updateFillFields')
+        if (action.name === 'api_fill_updateFillFields') {
           fillChanges.push(action.arguments)
+        }
       }
     }
+
     expect(
       fillChanges.length,
       'Retained action stream must contain fill edits'
     ).toBeGreaterThan(0)
   }
+
   await page.goto(createTestDocumentIdentity().url)
   await waitForAppReady(page)
   const result = await page.evaluate(
@@ -846,6 +1017,7 @@ test('saved drawing keeps a complete snapshot after public regrouping', async ({
             recordInspectionReplayStage: (name: string) => Promise<void>
           }
         ).recordInspectionReplayStage(name)
+
       const { core } = await import('../src/testing/runtime-access')
       const { hierarchyApis } = await import('../src/common-apis/hierarchy')
       const { fillApis, transactionApis, viewportApis } =
@@ -853,21 +1025,35 @@ test('saved drawing keeps a complete snapshot after public regrouping', async ({
       const { createAiTransactionRunner } =
         await import('../src/ai/transaction')
       const runner = createAiTransactionRunner()
+
       const apply = <T>(operation: () => T) =>
         runner.run('Inspection replay', async (mutate) => {
-          if (!mutate) throw new Error('Expected grouped mutation executor')
+          if (!mutate) {
+            throw new Error('Expected grouped mutation executor')
+          }
+
           return mutate(operation)
         })
+
       const delivery = { undoable: true, sharedDelivery: 'immediate' } as const
+
       core.load(document)
       await stage('document loaded')
       viewportApis.zoomFit()
       const workspace = hierarchyApis.getWorkspaceId()
-      if (!workspace) throw new Error('Missing workspace')
+
+      if (!workspace) {
+        throw new Error('Missing workspace')
+      }
+
       const roots = core.getElementData(workspace)?.children ?? []
-      if (roots.length !== 1)
+
+      if (roots.length !== 1) {
         throw new Error('Replay requires one whole-drawing root')
+      }
+
       const before = core.captureElementSnapshot(roots[0], 1024)
+
       await stage('baseline captured')
       if (fillChanges.length) {
         transactionApis.runTransaction(() => {
@@ -891,10 +1077,14 @@ test('saved drawing keeps a complete snapshot after public regrouping', async ({
         })
         await stage('fill batch reapplied')
       }
+
       const recolored = core.captureElementSnapshot(roots[0], 1024)
+
       await stage('updated fills captured')
+
       const nextFrame = () =>
         new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+
       // Reproduce native-detail extraction before hierarchy edits, rather than
       // proving only a fresh document's first overview.
       const regionSize = Math.min(
@@ -908,6 +1098,7 @@ test('saved drawing keeps a complete snapshot after public regrouping', async ({
         width: regionSize,
         height: regionSize
       }
+
       core.captureElementSnapshot(roots[0], 1024, {
         nativeResolution: true,
         region
@@ -918,13 +1109,21 @@ test('saved drawing keeps a complete snapshot after public regrouping', async ({
         ...(await apply(() => hierarchyApis.ungroupElement(roots[0], delivery)))
           .elementIds
       ]
-      if (members.length < 2)
+
+      if (members.length < 2) {
         throw new Error('Replay requires a drawing and a separate detail group')
+      }
+
       const detail = members.pop()
-      if (!detail) throw new Error('Replay detail group is missing')
+
+      if (!detail) {
+        throw new Error('Replay detail group is missing')
+      }
+
       const drawing = await apply(() =>
         hierarchyApis.groupElements(members, delivery)
       )
+
       await nextFrame()
       await apply(() =>
         hierarchyApis.moveElements(
@@ -938,39 +1137,49 @@ test('saved drawing keeps a complete snapshot after public regrouping', async ({
       )
       await nextFrame()
       const moved = core.captureElementSnapshot(drawing.groupId, 1024)
+
       // Each subtree was also inspected in the live run before its parent was
       // removed. Exercise that engine state independently of saved geometry.
       for (const member of [...members, detail]) {
         core.captureElementSnapshot(member, 1024)
       }
+
       const allMembers = (
         await apply(() =>
           hierarchyApis.ungroupElement(drawing.groupId, delivery)
         )
       ).elementIds
+
       await nextFrame()
       const regrouped = await apply(() => {
         const result = hierarchyApis.groupElements(allMembers, delivery)
+
         core.updateElementData(
           result.groupId,
           { name: 'Regrouped drawing' },
           delivery
         )
+
         return result
       })
+
       await nextFrame()
       const after = core.captureElementSnapshot(regrouped.groupId, 1024)
+
       await stage('regrouped drawing captured')
+
       return { before, recolored, extracted, moved, after }
     },
     { document, fillChanges }
   )
+
   for (const [name, capture] of Object.entries(result)) {
     await testInfo.attach(`replayed-${name}`, {
       body: Buffer.from(capture.dataUrl.split(',')[1], 'base64'),
       contentType: 'image/png'
     })
   }
+
   expect(result.after.width).toBe(result.before.width)
   expect(result.after.height).toBe(result.before.height)
   // Reparenting changes floating-point transform accumulation. Permit sparse
@@ -980,32 +1189,50 @@ test('saved drawing keeps a complete snapshot after public regrouping', async ({
       async ({ before, after }) => {
         const decode = async (dataUrl: string) => {
           const image = new Image()
+
           image.src = dataUrl
           await image.decode()
           const canvas = document.createElement('canvas')
+
           canvas.width = image.width
           canvas.height = image.height
           const context = canvas.getContext('2d')
-          if (!context) throw new Error('Pixel comparison requires Canvas 2D')
+
+          if (!context) {
+            throw new Error('Pixel comparison requires Canvas 2D')
+          }
+
           context.drawImage(image, 0, 0)
+
           return context.getImageData(0, 0, image.width, image.height).data
         }
+
         const [left, right] = await Promise.all([decode(before), decode(after)])
-        if (left.length !== right.length)
+
+        if (left.length !== right.length) {
           throw new Error('Snapshot dimensions changed')
+        }
+
         let changedPixels = 0
         let maximumChannelDelta = 0
+
         for (let offset = 0; offset < left.length; offset += 4) {
           let changed = false
+
           for (let channel = 0; channel < 4; channel += 1) {
             const delta = Math.abs(
               left[offset + channel] - right[offset + channel]
             )
+
             maximumChannelDelta = Math.max(maximumChannelDelta, delta)
             changed ||= delta > 0
           }
-          if (changed) changedPixels += 1
+
+          if (changed) {
+            changedPixels += 1
+          }
         }
+
         return {
           changedFraction: changedPixels / (left.length / 4),
           maximumChannelDelta
@@ -1013,6 +1240,7 @@ test('saved drawing keeps a complete snapshot after public regrouping', async ({
       },
       { before: result.before.dataUrl, after: capture.dataUrl }
     )
+
     expect(difference.changedFraction, name).toBeLessThanOrEqual(0.001)
     expect(difference.maximumChannelDelta, name).toBeLessThanOrEqual(32)
   }
@@ -1059,6 +1287,7 @@ test('scoped inspection preserves other tiers and regions through canonical edit
     const owner = createInspectionEvidence()
     const action = createAiInspectionAction(undefined, owner)
     const signal = new AbortController().signal
+
     const capture = async (
       elementId: string,
       region?: { x: number; y: number; width: number; height: number }
@@ -1066,10 +1295,14 @@ test('scoped inspection preserves other tiers and regions through canonical edit
       const value = (await action.execute({ elementId, region }, {
         signal
       } as never)) as { available: boolean; evidence?: unknown }
-      if (!value.available || !value.evidence)
+
+      if (!value.available || !value.evidence) {
         throw new Error('Actual rendered capture failed')
+      }
+
       return value.evidence
     }
+
     try {
       const stamps = await Promise.all(tiers.map((id) => capture(id)))
       const whole = await capture(tower)
@@ -1079,6 +1312,7 @@ test('scoped inspection preserves other tiers and regions through canonical edit
         width: 80,
         height: 70
       })
+
       transactionApis.runTransaction(() =>
         core.updateElementProperties([
           { elementId: windows[2], values: { width: 60 } }
@@ -1087,6 +1321,7 @@ test('scoped inspection preserves other tiers and regions through canonical edit
       const afterThird = stamps.map((stamp) => owner.isCurrent(stamp))
       const wholeAfterThird = owner.isCurrent(whole)
       const regionAfterThird = owner.isCurrent(firstRegion)
+
       // Enter an existing crop from outside, without naming any old crop member.
       transactionApis.runTransaction(() =>
         core.updateElementProperties([
@@ -1100,23 +1335,29 @@ test('scoped inspection preserves other tiers and regions through canonical edit
         width: 80,
         height: 70
       })
+
       await historyApis.undo()
       const afterUndo = owner.isCurrent(entered)
       const afterUndoStamp = await capture(tiers[0])
+
       fillApis.updatePrimaryFillColor(windows[0], '#ff0000')
       const afterFill = owner.isCurrent(afterUndoStamp)
       const otherAfterFill = owner.isCurrent(stamps[7])
       const freshFirst = await capture(tiers[0])
+
       viewportApis.panTo(900, 900)
       viewportApis.zoomToCenter(0.25, 0, 0)
       const afterViewport = owner.isCurrent(freshFirst)
       const deletedTier = await capture(tiers[2])
+
       transactionApis.runTransaction(() => core.removeSubtrees([tiers[2]]))
       const afterDelete = owner.isCurrent(deletedTier)
       const otherAfterDelete = owner.isCurrent(freshFirst)
       const saved = await core.save()
+
       core.load(saved)
       const afterLoad = owner.isCurrent(freshFirst)
+
       return {
         afterFill,
         otherAfterFill,
@@ -1134,6 +1375,7 @@ test('scoped inspection preserves other tiers and regions through canonical edit
       owner.dispose()
     }
   })
+
   expect(result).toEqual({
     afterFill: false,
     otherAfterFill: true,
@@ -1173,6 +1415,7 @@ test('public review handoffs retain independent evidence and recover before runt
     await import('../server/design-check-results')
   const { AiActionNames } = await import('../src/constants/ai-actions')
   const { AiDesignToolIds } = await import('../src/constants/ai-design')
+
   type ProviderInput = import('../src/ai/action-batch-protocol').AiProviderInput
   type Receipt = import('../src/ai/action-batch-protocol').AiBatchReceipt
   type StoredCheck = import('../server/design-check-results').DesignCheckResult
@@ -1183,6 +1426,7 @@ test('public review handoffs retain independent evidence and recover before runt
   const ids = await page.evaluate(async () => {
     const { core } = await import('../src/testing/runtime-access')
     const { transactionApis } = await import('../src/common-apis')
+
     return transactionApis.runTransaction(() =>
       core.createElementsInParent(
         [
@@ -1194,17 +1438,20 @@ test('public review handoffs retain independent evidence and recover before runt
     )
   })
   const [left, right] = ids
+
   expect(left).toEqual(expect.any(String))
   expect(right).toEqual(expect.any(String))
   let before = await getCoreDocumentDigest(page)
   let exportedDocument: unknown
   let exportMetadata: { bytes: number; sha256: string } | undefined
   const downloadPromise = page.waitForEvent('download', { timeout: 90000 })
+
   void downloadPromise.catch(() => undefined)
   const attachmentReceipts: unknown[] = []
   let providerCalls = 0
   let bridgeFailure: unknown
   const dispatched: string[] = []
+
   await page.exposeFunction(
     'driveReviewHandoff',
     async (input: ProviderInput) => {
@@ -1230,19 +1477,26 @@ test('public review handoffs retain independent evidence and recover before runt
         },
         store: {
           read: async (key) => entries.get(key),
+
           list: async () => [...entries.values()],
+
           write: async (value) => {
-            if (entries.get(value.key)?.version !== value.expectedVersion)
+            if (entries.get(value.key)?.version !== value.expectedVersion) {
               throw new Error('Conflict')
+            }
+
             const entry = {
               key: value.key,
               record: value.record,
               version: crypto.randomUUID()
             }
+
             entries.set(value.key, entry)
+
             return entry
           }
         },
+
         createGroups: (ownership) => {
           const images = createLocalImageTools(
             {
@@ -1261,6 +1515,7 @@ test('public review handoffs retain independent evidence and recover before runt
             input.actions,
             createDesignPreparationSession(undefined, undefined, ownership)
           )
+
           operations = createLocalOperationTools(
             input.actions,
             {
@@ -1283,6 +1538,7 @@ test('public review handoffs retain independent evidence and recover before runt
                   'Test transport disconnected before read dispatch'
                 )
               }
+
               dispatched.push(...batch.actions.map((action) => action.name))
               const serializedReceipt = await page.evaluate(
                 async (serialized) => {
@@ -1291,7 +1547,11 @@ test('public review handoffs retain independent evidence and recover before runt
                   const execute = testRuntimeState.get<
                     (batch: AiActionBatch) => Promise<Receipt>
                   >('review-handoff-execute')
-                  if (!execute) throw new Error('Missing real runtime executor')
+
+                  if (!execute) {
+                    throw new Error('Missing real runtime executor')
+                  }
+
                   return JSON.stringify(
                     await execute(JSON.parse(serialized) as AiActionBatch)
                   )
@@ -1299,9 +1559,13 @@ test('public review handoffs retain independent evidence and recover before runt
                 JSON.stringify(batch)
               )
               const receipt = JSON.parse(serializedReceipt) as Receipt
-              for (const entry of receipt.actionResults)
-                if (entry.actionName === AiActionNames.READ_DESIGN_ATTACHMENT)
+
+              for (const entry of receipt.actionResults) {
+                if (entry.actionName === AiActionNames.READ_DESIGN_ATTACHMENT) {
                   attachmentReceipts.push(entry.result)
+                }
+              }
+
               if (
                 cancelAfterValidation &&
                 batch.actions.some(
@@ -1312,6 +1576,7 @@ test('public review handoffs retain independent evidence and recover before runt
                 cancelAfterValidation.abort()
                 cancelAfterValidation = undefined
               }
+
               return receipt
             },
             {
@@ -1320,10 +1585,13 @@ test('public review handoffs retain independent evidence and recover before runt
               referenceImages: images.referenceImages,
               validateReferences: images.validateReferences,
               requestSignal: controller.signal,
+
               getNativeTools: () => host.definitions(),
+
               getNativeToolsRevision: () => host.revision
             }
           )
+
           return [
             { name: 'images', description: 'Images', owner: images },
             { name: 'design', description: 'Prepared design', owner: designs },
@@ -1336,6 +1604,7 @@ test('public review handoffs retain independent evidence and recover before runt
         }
       })
       let callId = 0
+
       const invoke = async (
         name: string,
         input: unknown,
@@ -1347,8 +1616,10 @@ test('public review handoffs retain independent evidence and recover before runt
           signal,
           callId: `call-${++callId}`
         })
+
         return JSON.parse(reply.text)
       }
+
       const capture = async (elementId: string | null) => {
         const receipt = await invoke(AiActionNames.INSPECT_DRAWING, {
           arguments: { elementId, view: 'overview' }
@@ -1357,15 +1628,22 @@ test('public review handoffs retain independent evidence and recover before runt
           (entry: { result: { inspectionId?: string } }) =>
             entry.result.inspectionId
         )?.result
-        if (!image) throw new Error(JSON.stringify({ elementId, receipt }))
+
+        if (!image) {
+          throw new Error(JSON.stringify({ elementId, receipt }))
+        }
+
         expect(image).toMatchObject({
           inspectionId: expect.any(String),
           available: true
         })
         expect(image.image.dataUrl).toMatch(/^data:image\/png;base64,/)
+
         return image.inspectionId as string
       }
+
       let visualUse: unknown
+
       const judgment = (
         criterionId: string,
         inspectionId: string,
@@ -1379,6 +1657,7 @@ test('public review handoffs retain independent evidence and recover before runt
         status,
         evidence: `${criterionId} ${status} from the delivered target image`
       })
+
       const bindReview = async (
         phase: string,
         judgments: ReturnType<typeof judgment>[]
@@ -1390,12 +1669,17 @@ test('public review handoffs retain independent evidence and recover before runt
               selection
           )
         })
-        if (!bound.next?.arguments?.checks) return { unavailable: bound }
+
+        if (!bound.next?.arguments?.checks) {
+          return { unavailable: bound }
+        }
+
         expect(bound).toMatchObject({
           reviewOperation: 'bind',
           recordedChecks: []
         })
         expect(bound).not.toHaveProperty('readyForDetail')
+
         return {
           input: {
             ...bound.next.arguments,
@@ -1410,15 +1694,18 @@ test('public review handoffs retain independent evidence and recover before runt
           }
         }
       }
+
       const review = async (
         phase: string,
         judgments: ReturnType<typeof judgment>[]
       ) => {
         const bound = await bindReview(phase, judgments)
+
         return bound.input
           ? invoke(AiDesignToolIds.REVIEW_DRAWING, bound.input)
           : bound.unavailable
       }
+
       const read = async () =>
         (
           await invoke(AiDesignToolIds.READ_DESIGN_CHECKS, {
@@ -1426,6 +1713,7 @@ test('public review handoffs retain independent evidence and recover before runt
             includePassed: true
           })
         ).items as StoredCheck[]
+
       const completed: AiActionBatch = {
         batchId: 'completed',
         actions: [
@@ -1440,16 +1728,20 @@ test('public review handoffs retain independent evidence and recover before runt
           }
         ]
       }
+
       const settled = async () => {
         await operations.validateCompletion(controller.signal)
+
         return operations.settleOutcome(completed)
       }
+
       try {
         const beforeAdmission = dispatched.length
         const rejected = await invoke(
           AiDesignToolIds.DEFINE_DESIGN_CRITERIA,
           recordedScope.plan
         )
+
         expect(rejected).not.toMatchObject({ recorded: true })
         expect(JSON.stringify(rejected)).toContain('requiredUnits')
         expect(dispatched).toHaveLength(beforeAdmission)
@@ -1486,6 +1778,7 @@ test('public review handoffs retain independent evidence and recover before runt
         const validated = await invoke('images.validate_reference_images', {
           attachmentIndexes: [0]
         })
+
         expect(JSON.stringify(validated)).toContain('reference:')
         const selected = await invoke(
           AiDesignToolIds.SELECT_DESIGN_REFERENCES,
@@ -1510,6 +1803,7 @@ test('public review handoffs retain independent evidence and recover before runt
           }
         )
         const uses = selected.referenceDecisions[0].uses
+
         visualUse = uses.find(
           (use: { purpose: string }) => use.purpose === 'visual'
         ).receipt
@@ -1531,6 +1825,7 @@ test('public review handoffs retain independent evidence and recover before runt
             ]
           }
         })
+
         expect(prepared, JSON.stringify(prepared)).toMatchObject({
           available: true
         })
@@ -1547,6 +1842,7 @@ test('public review handoffs retain independent evidence and recover before runt
           AiDesignToolIds.REVIEW_PREPARED_DESIGN,
           preparation
         )
+
         expect(firstPreparation).toMatchObject({
           status: 'pass',
           appearance: 'unverified',
@@ -1556,6 +1852,7 @@ test('public review handoffs retain independent evidence and recover before runt
           AiDesignToolIds.REVIEW_PREPARED_DESIGN,
           preparation
         )
+
         expect(
           repeatedPreparation,
           JSON.stringify({
@@ -1568,6 +1865,7 @@ test('public review handoffs retain independent evidence and recover before runt
           arguments: { artifactId: prepared.artifactId },
           inspection: 'defer'
         })
+
         expect(applied).toMatchObject({
           toolOutcome: { status: 'success' },
           inspectionDeferred: true,
@@ -1579,8 +1877,10 @@ test('public review handoffs retain independent evidence and recover before runt
           (entry: { result: { compositionId?: string } }) =>
             entry.result.compositionId
         )?.result.compositionId
+
         expect(appliedRoot).toEqual(expect.any(String))
         const preparedImage = await capture(appliedRoot)
+
         expect(
           await review('visual', [judgment('Prepared', preparedImage)])
         ).toMatchObject({ accepted: false })
@@ -1598,6 +1898,7 @@ test('public review handoffs retain independent evidence and recover before runt
             }
           ]
         })
+
         expect(JSON.stringify(missingScope)).toContain('inspectionIds')
         expect(checks.read({ includePassed: true })).toEqual(beforeJudgments)
 
@@ -1612,6 +1913,7 @@ test('public review handoffs retain independent evidence and recover before runt
           outcome: 'unsupported'
         })
         const partial = await review('visual', [judgment('Left', a)])
+
         expect(partial).toMatchObject({
           reviewOperation: 'record',
           accepted: false,
@@ -1632,12 +1934,14 @@ test('public review handoffs retain independent evidence and recover before runt
           'Right fail from the delivered target image'
         )
         const completedReview = await review('visual', [judgment('Right', b)])
+
         expect(completedReview, JSON.stringify(completedReview)).toMatchObject({
           accepted: true
         })
         expect(await settled()).toEqual(completed)
         const passed = await read()
         const rightPass = passed.find((check) => check.criterionId === 'Right')
+
         expect(rightPass).toMatchObject({
           origin: 'main-agent',
           status: 'pass'
@@ -1662,10 +1966,12 @@ test('public review handoffs retain independent evidence and recover before runt
         })
         // Reject at the external read boundary, preserving the retained store.
         const retained = checks.read({ includePassed: true })
+
         rejectValidation = true
         const interrupted = await review('visual', [
           judgment('Left', a, 'fail')
         ])
+
         expect(
           interrupted,
           'Disconnected validation must not publish a judgment'
@@ -1676,6 +1982,7 @@ test('public review handoffs retain independent evidence and recover before runt
         })
         const count = dispatched.length
         const cancelled = new AbortController()
+
         cancelled.abort()
         await expect(
           invoke(
@@ -1690,6 +1997,7 @@ test('public review handoffs retain independent evidence and recover before runt
         const lateSubmission = await bindReview('visual', [
           judgment('Left', a, 'fail')
         ])
+
         cancelAfterValidation = lateCancel
         await expect(
           invoke(
@@ -1709,9 +2017,20 @@ test('public review handoffs retain independent evidence and recover before runt
             }
           ]
         })
+
         expect(unavailable).toMatchObject({
           accepted: false,
-          status: 'partial'
+          status: 'failed',
+          inspectionIds: [],
+          recordedChecks: [],
+          failedInspections: [
+            expect.objectContaining({
+              code: 'INSPECTION_TARGET_UNAVAILABLE',
+              inspection: expect.objectContaining({
+                elementId: 'missing-review-target'
+              })
+            })
+          ]
         })
         expect((await settled()).actions[0].arguments).toMatchObject({
           outcome: 'unsupported'
@@ -1722,6 +2041,7 @@ test('public review handoffs retain independent evidence and recover before runt
         })
         await page.evaluate(async () => {
           const { viewportApis } = await import('../src/common-apis')
+
           viewportApis.panTo(900, 900)
           viewportApis.zoomToCenter(0.25, 0, 0)
         })
@@ -1735,6 +2055,7 @@ test('public review handoffs retain independent evidence and recover before runt
           arguments: { updates: [{ elementId: left, values: { width: 120 } }] },
           inspection: 'defer'
         })
+
         expect(mutation, JSON.stringify(mutation)).toMatchObject({
           toolOutcome: { status: 'success' }
         })
@@ -1753,6 +2074,7 @@ test('public review handoffs retain independent evidence and recover before runt
           'Changed browser dependency must reject old evidence'
         ).not.toMatchObject({ accepted: true })
         const changed = await read()
+
         expect(changed.find((check) => check.id === rightPass?.id)).toEqual(
           rightPass
         )
@@ -1767,8 +2089,10 @@ test('public review handoffs retain independent evidence and recover before runt
           inspection: 'defer'
         })
         const retiredLeft = a
+
         a = await capture(left)
         const recovery = await bindReview('visual', [judgment('Left', a)])
+
         expect(
           await invoke(AiDesignToolIds.REVIEW_DRAWING, {
             ...recovery.input,
@@ -1777,6 +2101,7 @@ test('public review handoffs retain independent evidence and recover before runt
           'An available-list entry not cited by any judgment cannot reject local recovery'
         ).toMatchObject({ accepted: true })
         const recovered = checks.read({ includePassed: true })
+
         expect(
           await review('visual', [judgment('Left', retiredLeft)]),
           'Explicitly citing retired evidence must still be rejected'
@@ -1800,6 +2125,7 @@ test('public review handoffs retain independent evidence and recover before runt
           arguments: {}
         })
         const artifact = exported.actionResults[0].result.artifact
+
         exportMetadata = artifact
         expect(JSON.stringify(exported).length).toBeLessThan(4096)
         expect(
@@ -1807,6 +2133,7 @@ test('public review handoffs retain independent evidence and recover before runt
             arguments: { artifactId: artifact.artifactId }
           })
         ).toMatchObject({ toolOutcome: { status: 'success' } })
+
         return await settled()
       } catch (error) {
         bridgeFailure = error
@@ -1827,8 +2154,12 @@ test('public review handoffs retain independent evidence and recover before runt
     const provider: AiProvider = {
       requestActionBatch: async (input, { executeBatch }) => {
         try {
-          if (!executeBatch) throw new Error('Missing runtime executor')
+          if (!executeBatch) {
+            throw new Error('Missing runtime executor')
+          }
+
           testRuntimeState.set('review-handoff-execute', executeBatch)
+
           return await (
             window as unknown as {
               driveReviewHandoff(input: unknown): Promise<AiActionBatch>
@@ -1842,15 +2173,18 @@ test('public review handoffs retain independent evidence and recover before runt
     }
     const startup = createAiStartup({
       createProvider: () => provider,
+
       createConfirmation: createAiConfirmationBroker,
       createHistory: createAiHistoryProjection
     })
     const { runtime } = startup
+
     try {
       const outcome = await runtime.run({
         intent: 'Review and correct the two existing parts.',
         signal: new AbortController().signal
       })
+
       return {
         status: outcome.status,
         transaction: 'transaction' in outcome ? outcome.transaction : undefined,
@@ -1864,7 +2198,11 @@ test('public review handoffs retain independent evidence and recover before runt
       startup.confirmation.dispose()
     }
   })
-  if (bridgeFailure) throw bridgeFailure
+
+  if (bridgeFailure) {
+    throw bridgeFailure
+  }
+
   expect(result.providerError).toBeUndefined()
   expect(result).toMatchObject({
     status: 'executed',
@@ -1879,10 +2217,12 @@ test('public review handoffs retain independent evidence and recover before runt
   expect(await getCoreDocumentDigest(page)).toEqual(before)
   const downloaded = await downloadPromise
   const path = testInfo.outputPath('handoff-export.json')
+
   await downloaded.saveAs(path)
   const { readFile } = await import('node:fs/promises')
   const { createHash } = await import('node:crypto')
   const bytes = await readFile(path)
+
   expect(JSON.parse(bytes.toString())).toEqual(exportedDocument)
   expect(bytes.byteLength).toBe(exportMetadata?.bytes)
   expect(createHash('sha256').update(bytes).digest('hex')).toBe(
@@ -1902,7 +2242,7 @@ for (const mode of [
   'no-progress',
   'cancel-after-write',
   'interrupted-after-write'
-] as const)
+] as const) {
   test(`aggregate mechanical repair preserves independent passes through history and durable reload - ${mode}`, async ({
     page,
     browser
@@ -1916,10 +2256,26 @@ for (const mode of [
       await import('../server/design-check-results')
     const { prescribedPositionsSchema } =
       await import('../src/ai/prescribed-position-contract')
+    // Element-target expansion metadata belongs to the registered tool, not
+    // the recipe's own input binding language. Keep every value constraint.
+    const { 'x-design-element-binding': _binding, ...positionElementSchema } =
+      prescribedPositionsSchema.items.properties.elementId
+    const positionsSchema = {
+      ...prescribedPositionsSchema,
+      items: {
+        ...prescribedPositionsSchema.items,
+        properties: {
+          ...prescribedPositionsSchema.items.properties,
+          elementId: positionElementSchema
+        }
+      }
+    }
+
     type ProviderInput =
       import('../src/ai/action-batch-protocol').AiProviderInput
     type Receipt = import('../src/ai/action-batch-protocol').AiBatchReceipt
     const { createLocalToolStore } = await import('../server/local-tool-store')
+
     const openStore = () =>
       createLocalToolStore({
         directory: testInfo.outputPath('tool-library'),
@@ -1927,18 +2283,23 @@ for (const mode of [
         recordBytes: 262144,
         totalBytes: 1048576
       })
+
     let database = await openStore()
     let failEligibility = false
     const store: import('@asyra/ai-agent-runtime').AiToolStore = {
       read: (key) => database.read(key),
+
       list: (limit) => database.list(limit),
+
       write: (value) => {
         if (
           failEligibility &&
           (value.record as { availability?: string }).availability ===
             'eligible'
-        )
+        ) {
           throw new Error('Injected library acknowledgement failure')
+        }
+
         return database.write(value)
       }
     }
@@ -1953,6 +2314,7 @@ for (const mode of [
     const dispatched: string[] = []
     const measured: string[] = []
     let primaryCalls = 0
+
     try {
       await page.goto(document.url)
       await waitForAppReady(page)
@@ -1960,6 +2322,7 @@ for (const mode of [
       const ids = await page.evaluate(async () => {
         const { core } = await import('../src/testing/runtime-access')
         const { transactionApis } = await import('../src/common-apis')
+
         return transactionApis.runTransaction(() => {
           const roots = core.createElementsInParent(
             Array.from({ length: 8 }, (_, i) => ({
@@ -1983,10 +2346,12 @@ for (const mode of [
               parentId
             )
           )
+
           return { roots, children }
         })
       })
       const before = await getCoreDocumentDigest(page)
+
       await expect
         .poll(() => getPersistedDocumentDigest(document.fileId))
         .toEqual(before)
@@ -2006,10 +2371,12 @@ for (const mode of [
             parentCallId?: string
             name: string
           }[] = []
+
           const createHost = (requestId: string) =>
             createLocalToolHost({
               requestId,
               signal: controller.signal,
+
               observe: (event) => {
                 events.push({
                   phase: event.phase,
@@ -2018,6 +2385,7 @@ for (const mode of [
                   name: event.call.name
                 })
               },
+
               capacity: 32,
               receiptCapacity: 64,
               artifactCapacity: 32,
@@ -2029,6 +2397,7 @@ for (const mode of [
                 issues: 10
               },
               store,
+
               createGroups: (ownership) => [
                 {
                   name: 'design_operations',
@@ -2037,16 +2406,21 @@ for (const mode of [
                     input.actions,
                     {
                       modelActions: (value) => value,
+
                       resolveBatch: (value) => value,
+
                       checkResults: checks
                     },
                     async (batch) => {
                       dispatched.push(
                         ...batch.actions.map((action) => action.name)
                       )
-                      for (const action of batch.actions)
-                        if (action.name === 'review_design')
+                      for (const action of batch.actions) {
+                        if (action.name === 'review_design') {
                           measured.push(String(action.arguments.elementId))
+                        }
+                      }
+
                       if (
                         mode === 'basis-changed' &&
                         !basisChanged &&
@@ -2061,6 +2435,7 @@ for (const mode of [
                             await import('../src/testing/runtime-access')
                           const { transactionApis } =
                             await import('../src/common-apis')
+
                           transactionApis.runTransaction(() =>
                             core.updateElementProperties([
                               { elementId: parentId, values: { x: 350 } }
@@ -2070,6 +2445,7 @@ for (const mode of [
                         recoveryBefore = await getCoreDocumentDigest(page)
                         expect(recoveryBefore).not.toEqual(before)
                       }
+
                       const receipt = await page.evaluate(
                         async (serialized) => {
                           const { testRuntimeState } =
@@ -2077,8 +2453,11 @@ for (const mode of [
                           const execute = testRuntimeState.get<
                             (batch: AiActionBatch) => Promise<Receipt>
                           >('mechanical-integration-execute')
-                          if (!execute)
+
+                          if (!execute) {
                             throw new Error('Missing actual runtime executor')
+                          }
+
                           return JSON.parse(
                             JSON.stringify(
                               await execute(JSON.parse(serialized))
@@ -2087,14 +2466,18 @@ for (const mode of [
                         },
                         JSON.stringify(batch)
                       )
+
                       if (
                         batch.actions.some(
                           (action) =>
                             action.name === 'apply_prescribed_positions'
                         )
                       ) {
-                        if (mode === 'cancel-after-write') controller.abort()
-                        if (mode === 'interrupted-after-write')
+                        if (mode === 'cancel-after-write') {
+                          controller.abort()
+                        }
+
+                        if (mode === 'interrupted-after-write') {
                           throw new BrowserBatchExecutionError(
                             {
                               batchId: batch.batchId,
@@ -2116,7 +2499,9 @@ for (const mode of [
                               }
                             }
                           )
+                        }
                       }
+
                       return requireBatchSuccess(batch, receipt, 0)
                     },
                     { ownership, requestSignal: controller.signal }
@@ -2124,24 +2509,31 @@ for (const mode of [
                 }
               ]
             })
+
           let host = createHost('mechanical-integration')
+
           const invoke = async (name: string, input: unknown) =>
             JSON.parse((await host.invoke({ name, input })).text)
+
           try {
             const selection = []
+
             for (const root of ids.roots) {
               const receipt = await invoke('design_operations.review_design', {
                 arguments: { elementId: root }
               })
+
               expect(receipt, JSON.stringify(receipt)).toMatchObject({
                 toolOutcome: { status: 'success' },
                 mechanicalSelection: { requestId: 'mechanical-integration' }
               })
               selection.push(...receipt.mechanicalSelection.checks)
             }
+
             const independent = checks
               .read({ includePassed: true })
               .items.filter((item) => item.status === 'pass')
+
             expect(independent).toHaveLength(7)
             const attachment = await invoke(
               'design_operations.read_design_attachment',
@@ -2171,6 +2563,7 @@ for (const mode of [
               'design_operations.verify_design_checks',
               { ...state, requestId: 'another-request' }
             )
+
             expect(foreign).toMatchObject({
               toolOutcome: { status: 'failed', settlement: 'not-started' }
             })
@@ -2187,19 +2580,27 @@ for (const mode of [
                 }
               }
             )
+
             expect(invalid, JSON.stringify(invalid)).toMatchObject({
               toolOutcome: { status: 'failed', settlement: 'not-started' }
             })
             expect(dispatched).not.toContain('apply_prescribed_positions')
+
             const definition = (name: string) => {
               const result = host
                 .definitions()
                 .find((item) => item.name === name)
-              if (!result) throw new Error(`Missing ${name}`)
+
+              if (!result) {
+                throw new Error(`Missing ${name}`)
+              }
+
               return result
             }
+
             const verifier = definition('verify_design_checks'),
               repair = definition('repair_design_checks')
+
             const fields = (step: string) => ({
               kind: 'object',
               fields: {
@@ -2207,6 +2608,7 @@ for (const mode of [
                 checks: { kind: 'step', step, path: '/checks' }
               }
             })
+
             const policySchema = {
               type: 'object',
               additionalProperties: false,
@@ -2216,7 +2618,7 @@ for (const mode of [
                   type: 'string',
                   enum: ['set-prescribed-child-position']
                 },
-                positions: prescribedPositionsSchema
+                positions: positionsSchema
               }
             }
             const recipe = {
@@ -2280,10 +2682,14 @@ for (const mode of [
               submissionId: 'correct-selected-container',
               proposal: recipe
             })
+
             expect(submitted, JSON.stringify(submitted)).toMatchObject({
               ok: true
             })
-            if (mode === 'complete') failEligibility = true
+            if (mode === 'complete') {
+              failEligibility = true
+            }
+
             if (mode === 'cancel-after-write') {
               await expect(
                 invoke('tool_library.invoke_tool', {
@@ -2298,6 +2704,7 @@ for (const mode of [
                 revision: 1,
                 input: { selection: state, policy }
               })
+
               if (mode === 'complete') {
                 expect(result, JSON.stringify(result)).toMatchObject({
                   execution: { status: 'success', value: 'pass' },
@@ -2307,6 +2714,7 @@ for (const mode of [
                 const beforeSave = await getCoreDocumentDigest(page)
                 const beforeChecks = checks.read({ includePassed: true })
                 const beforeCalls = [...dispatched]
+
                 failEligibility = false
                 expect(
                   await invoke('tool_library.save_tool', {
@@ -2350,6 +2758,7 @@ for (const mode of [
                       )
                     }
                   )
+
                   expect(recovered, JSON.stringify(recovered)).toMatchObject({
                     toolOutcome: { status: 'success' },
                     verification: { status: 'repairable' }
@@ -2382,14 +2791,15 @@ for (const mode of [
                       }
                     }
                   })
+
                   expect(retry, JSON.stringify(retry)).toMatchObject({
                     execution: { status: 'success', value: 'pass' }
                   })
-                } else if (mode === 'no-progress')
+                } else if (mode === 'no-progress') {
                   expect(result.execution.issues).toContain(
                     'Repeated verification progress'
                   )
-                else {
+                } else {
                   expect(JSON.stringify(result.execution.recovery)).toContain(
                     ids.children[2]
                   )
@@ -2402,6 +2812,7 @@ for (const mode of [
                       )
                     }
                   )
+
                   expect(recovered, JSON.stringify(recovered)).toMatchObject({
                     toolOutcome: { status: 'success' },
                     verification: { status: 'pass' }
@@ -2409,25 +2820,32 @@ for (const mode of [
                 }
               }
             }
+
             if (mode === 'complete') {
               // Keep the real host alive while another actor invalidates one pass.
               const repaired = await getCoreDocumentDigest(page)
+
               await expect
                 .poll(() => getCoreDocumentDigest(peer))
                 .toEqual(repaired)
+
               const currentSelection = () => ({
                 requestId: state.requestId,
                 checks: checks.selection(selection.map((item) => item.checkId))
               })
+
               const settled = await invoke(
                 'design_operations.verify_design_checks',
                 currentSelection()
               )
+
               expect(settled.verification.status).toBe('pass')
               const firstRead = measured.length
+
               await peer.evaluate(async (elementId) => {
                 const { core } = await import('../src/testing/runtime-access')
                 const { transactionApis } = await import('../src/common-apis')
+
                 transactionApis.runTransaction(() =>
                   core.updateElementProperties([
                     { elementId, values: { x: 90 } }
@@ -2435,6 +2853,7 @@ for (const mode of [
                 )
               }, ids.children[2])
               const changed = await getCoreDocumentDigest(peer)
+
               expect(changed).not.toEqual(repaired)
               await expect
                 .poll(() => getCoreDocumentDigest(page))
@@ -2443,6 +2862,7 @@ for (const mode of [
                 'design_operations.verify_design_checks',
                 currentSelection()
               )
+
               expect(reopened.verification.status).toBe('repairable')
               expect(reopened.unresolved).toHaveLength(1)
               expect(reopened.unresolved[0].checkId).toBe(selection[2].checkId)
@@ -2458,6 +2878,7 @@ for (const mode of [
                 'design_operations.verify_design_checks',
                 currentSelection()
               )
+
               expect(restored.verification.status).toBe('pass')
               expect(restored.unresolved).toEqual([])
               expect(measured.slice(firstRead)).toEqual([
@@ -2468,6 +2889,7 @@ for (const mode of [
                 settled.checks[2].revision
               )
             }
+
             expect(
               checks
                 .read({ includePassed: true })
@@ -2477,6 +2899,7 @@ for (const mode of [
             ).toEqual(independent)
             if (mode === 'complete') {
               const beforeReuse = await getCoreDocumentDigest(page)
+
               await host.dispose()
               database.close()
               database = await openStore()
@@ -2497,6 +2920,7 @@ for (const mode of [
                 'design_operations.verify_design_checks',
                 state
               )
+
               expect(old).toMatchObject({
                 available: false,
                 toolOutcome: { status: 'failed', settlement: 'not-started' }
@@ -2530,12 +2954,14 @@ for (const mode of [
                   }
                 }
               })
+
               expect(reused).toMatchObject({
                 execution: { status: 'success', value: 'pass' },
                 storage: { status: 'saved' }
               })
               expect(await getCoreDocumentDigest(page)).toEqual(beforeReuse)
             }
+
             expect(
               dispatched.filter((name) => name === 'apply_prescribed_positions')
             ).toHaveLength(mode === 'basis-changed' ? 2 : 1)
@@ -2549,13 +2975,16 @@ for (const mode of [
                 )
               ).toHaveLength(1)
             }
+
             const nestedRepair = events.find(
               (event) =>
                 event.name === 'design_operations.repair_design_checks' &&
                 event.parentCallId &&
                 event.phase === 'started'
             )
+
             expect(nestedRepair).toBeDefined()
+
             return {
               batchId: 'mechanical-finished',
               actions: [
@@ -2590,7 +3019,10 @@ for (const mode of [
         let providerError: string | undefined
         const provider: AiProvider = {
           requestActionBatch: async (input, { executeBatch }) => {
-            if (!executeBatch) throw new Error('Missing runtime executor')
+            if (!executeBatch) {
+              throw new Error('Missing runtime executor')
+            }
+
             testRuntimeState.set('mechanical-integration-execute', executeBatch)
             try {
               return await (
@@ -2606,15 +3038,18 @@ for (const mode of [
         }
         const startup = createAiStartup({
           createProvider: () => provider,
+
           createConfirmation: createAiConfirmationBroker,
           createHistory: createAiHistoryProjection
         })
+
         try {
           const outcome = await startup.runtime.run({
             intent:
               'Correct the prescribed child position and verify only mechanical checks.',
             signal: new AbortController().signal
           })
+
           return { status: outcome.status, providerError }
         } finally {
           testRuntimeState.delete('mechanical-integration-execute')
@@ -2623,7 +3058,11 @@ for (const mode of [
           startup.confirmation.dispose()
         }
       })
-      if (bridgeFailure) throw bridgeFailure
+
+      if (bridgeFailure) {
+        throw bridgeFailure
+      }
+
       expect(result, JSON.stringify(result)).toMatchObject({
         status: 'executed'
       })
@@ -2633,6 +3072,7 @@ for (const mode of [
       const afterDocument = await page.evaluate(async () =>
         (await import('../src/testing/runtime-access')).core.save()
       )
+
       await writeFile(
         testInfo.outputPath('mechanical-after-document.json'),
         JSON.stringify(afterDocument)
@@ -2643,8 +3083,10 @@ for (const mode of [
         await waitForAppReady(page)
         await waitForCollaboration(page)
         expect(await getCoreDocumentDigest(page)).toEqual(before)
+
         return
       }
+
       expect(after).not.toEqual(before)
       await expect
         .poll(() => getPersistedDocumentDigest(document.fileId))
@@ -2684,6 +3126,7 @@ for (const mode of [
       await peer.close()
     }
   })
+}
 
 test('mechanical receipts preserve checked inputs across recorded grouping and stacking changes', async ({
   page
@@ -2708,16 +3151,22 @@ test('mechanical receipts preserve checked inputs across recorded grouping and s
         }
       })
       const signal = new AbortController().signal
+
       const invoke = async (name: string, args: Record<string, unknown>) => {
         const action = input.actionDefinitions?.find(
           (action) => action.name === name
         )
-        if (!action) throw new Error(`Missing action ${name}`)
+
+        if (!action) {
+          throw new Error(`Missing action ${name}`)
+        }
+
         return (await action.execute(args, { signal } as never)) as Record<
           string,
           unknown
         >
       }
+
       try {
         const ids = transactionApis.runTransaction(() =>
           core.createElementsInParent(
@@ -2732,6 +3181,7 @@ test('mechanical receipts preserve checked inputs across recorded grouping and s
         const { groupId } = transactionApis.runTransaction(() =>
           hierarchyApis.groupElements(ids.slice(0, 2))
         )
+
         transactionApis.runTransaction(() =>
           hierarchyApis.moveElementsRelative({
             elementIds: [groupId],
@@ -2740,11 +3190,14 @@ test('mechanical receipts preserve checked inputs across recorded grouping and s
           })
         )
         const captured = await invoke('review_design', { elementId: ids[0] })
+
         const validate = () =>
           invoke('validate_inspection_evidence', {
             evidence: captured.evidence
           })
+
         const before = await validate()
+
         // The saved run grouped targets, changed stacking and deleted siblings.
         // Use real canonical operations with fresh IDs, not saved actor identity.
         transactionApis.runTransaction(() =>
@@ -2755,20 +3208,24 @@ test('mechanical receipts preserve checked inputs across recorded grouping and s
           })
         )
         const reordered = await validate()
+
         transactionApis.runTransaction(() => {
           fillApis.addFills([ids[0]])
           fillApis.updateFillsAtIndex([ids[0]], 0, { color: '#112233' })
         })
         const painted = await validate()
+
         transactionApis.runTransaction(() =>
           hierarchyApis.groupElements([groupId, ids[2]])
         )
         const regrouped = await validate()
+
         transactionApis.runTransaction(() => core.removeSubtrees([ids[2]]))
         const deletedSibling = await validate()
         const groupEvidence = await invoke('review_design', {
           elementId: groupId
         })
+
         transactionApis.runTransaction(() => core.removeSubtrees([ids[1]]))
         const groupAfterDeletion = await invoke(
           'validate_inspection_evidence',
@@ -2782,6 +3239,7 @@ test('mechanical receipts preserve checked inputs across recorded grouping and s
           ])
         )
         const resized = await validate()
+
         return {
           captured,
           before,
@@ -2794,12 +3252,15 @@ test('mechanical receipts preserve checked inputs across recorded grouping and s
           resized
         }
       } finally {
-        for (const owner of input.ownedResources ?? []) await owner.dispose()
+        for (const owner of input.ownedResources ?? []) {
+          await owner.dispose()
+        }
       }
     },
     recordedMechanics.structuralCalls[1].operations[0].arguments.request
       ?.placement as 'before' | 'after'
   )
+
   expect(result.captured).toMatchObject({ complete: true, findings: [] })
   expect(result.before.current).toBe(true)
   expect(result.reordered.current).toBe(true)
@@ -2835,6 +3296,7 @@ test('server measurement freshness uses the browser mechanical owner through edi
         }
       }
     })
+
     testRuntimeState.set('mechanical-runtime', input)
     const ids = transactionApis.runTransaction(() =>
       core.createElementsInParent(
@@ -2846,42 +3308,64 @@ test('server measurement freshness uses the browser mechanical owner through edi
         core.getCurrentWorkspaceId()
       )
     )
+
     transactionApis.runTransaction(() => {
       hierarchyApis.groupElements(ids.slice(0, 2))
       fillApis.addFills(ids)
       fillApis.shareFillAtIndex(ids[0], ids.slice(1), 0)
     })
     testRuntimeState.set('mechanical-ids', ids)
+
     return { ids, actions: JSON.parse(JSON.stringify(input.actionDefinitions)) }
   })
   const measured: string[] = []
   let disconnected = false
   const operations = createLocalOperationTools(
     fixture.actions,
-    { modelActions: (actions) => actions, resolveBatch: (batch) => batch },
+    {
+      modelActions: (actions) => actions,
+
+      resolveBatch: (batch) => batch
+    },
     async (batch) => {
-      if (disconnected)
+      if (disconnected) {
         throw new Error('Simulated transport loss before browser dispatch')
+      }
+
       measured.push(
         ...batch.actions
           .filter((action) => action.name === 'review_design')
           .map((action) => String(action.arguments.elementId))
       )
+
       return (await page.evaluate(async (batch) => {
         const { testRuntimeState } =
           await import('../src/testing/runtime-access')
+
         type RuntimeInput = ReturnType<
           typeof import('../src/ai/runtime-input').createAiRuntimeInput
         >
         const input = testRuntimeState.get<RuntimeInput>('mechanical-runtime')
-        if (!input) throw new Error('Missing mechanical runtime')
-        if (!input) throw new Error('Missing runtime')
+
+        if (!input) {
+          throw new Error('Missing mechanical runtime')
+        }
+
+        if (!input) {
+          throw new Error('Missing runtime')
+        }
+
         const actionResults = []
+
         for (const entry of batch.actions) {
           const action = input.actionDefinitions.find(
             (action) => action.name === entry.name
           )
-          if (!action) throw new Error('Missing requested action')
+
+          if (!action) {
+            throw new Error('Missing requested action')
+          }
+
           actionResults.push({
             actionId: entry.id,
             actionName: entry.name,
@@ -2890,10 +3374,12 @@ test('server measurement freshness uses the browser mechanical owner through edi
             })
           })
         }
+
         return { context: {}, actionResults }
       }, batch)) as never
     }
   )
+
   const check = () =>
     operations.finishInspection(
       new Set(fixture.ids),
@@ -2901,6 +3387,7 @@ test('server measurement freshness uses the browser mechanical owner through edi
       true,
       new AbortController().signal
     )
+
   try {
     expect((await check()).checks.counts).toEqual({
       pass: 3,
@@ -2913,7 +3400,11 @@ test('server measurement freshness uses the browser mechanical owner through edi
       const { testRuntimeState } = await import('../src/testing/runtime-access')
       const { transactionApis, fillApis } = await import('../src/common-apis')
       const ids = testRuntimeState.get<string[]>('mechanical-ids')
-      if (!ids) throw new Error('Missing mechanical fixture IDs')
+
+      if (!ids) {
+        throw new Error('Missing mechanical fixture IDs')
+      }
+
       transactionApis.runTransaction(() =>
         fillApis.updateFillsAtIndex([ids[0]], 0, { color: '#334455' })
       )
@@ -2925,7 +3416,11 @@ test('server measurement freshness uses the browser mechanical owner through edi
         await import('../src/testing/runtime-access')
       const { transactionApis } = await import('../src/common-apis')
       const ids = testRuntimeState.get<string[]>('mechanical-ids')
-      if (!ids) throw new Error('Missing mechanical fixture IDs')
+
+      if (!ids) {
+        throw new Error('Missing mechanical fixture IDs')
+      }
+
       transactionApis.runTransaction(() =>
         core.updateElementProperties([
           {
@@ -2953,6 +3448,7 @@ test('server measurement freshness uses the browser mechanical owner through edi
     await page.evaluate(async () => {
       const { core } = await import('../src/testing/runtime-access')
       const snapshot = await core.save()
+
       await core.load(snapshot)
     })
     expect((await check()).checks.counts.pass).toBe(3)
@@ -2960,12 +3456,19 @@ test('server measurement freshness uses the browser mechanical owner through edi
   } finally {
     await page.evaluate(async () => {
       const { testRuntimeState } = await import('../src/testing/runtime-access')
+
       type RuntimeInput = ReturnType<
         typeof import('../src/ai/runtime-input').createAiRuntimeInput
       >
       const input = testRuntimeState.get<RuntimeInput>('mechanical-runtime')
-      if (!input) throw new Error('Missing mechanical runtime')
-      for (const owner of input.ownedResources ?? []) await owner.dispose()
+
+      if (!input) {
+        throw new Error('Missing mechanical runtime')
+      }
+
+      for (const owner of input.ownedResources ?? []) {
+        await owner.dispose()
+      }
     })
   }
 })
@@ -2977,8 +3480,11 @@ for (const rootType of ['frame', 'group'] as const) {
       : 'incremental Group review preserves identity through local edits history collaboration and durable reload',
     async ({ page, context }, testInfo) => {
       const document = createTestDocumentIdentity()
+
       await page.goto(document.url)
-      await waitForAppReady(page)
+      await page.waitForSelector('#viewport-anchor')
+      await page.waitForSelector('[data-testid="toolbar"]')
+      await page.waitForSelector('canvas')
       await waitForCollaboration(page)
       const peer = await context.newPage()
       const evidence = await createExecutionEvidence({
@@ -2986,20 +3492,26 @@ for (const rootType of ['frame', 'group'] as const) {
           observeExecutionPage(page, 'editor'),
           observeExecutionPage(peer, 'peer')
         ],
+
         captureSource: () =>
           captureAiSourceIdentity({
             directory: resolve(import.meta.dirname, '../../..'),
             paths: ['.']
           }),
+
         readCheckpoint: () => getPersistedDocumentCheckpoint(document.fileId),
+
         attach: (value) => attachExecutionEvidence(testInfo, value)
       })
+
       const phase = <T>(
         name: string,
         action: () => Promise<T>,
         expected?: unknown
       ) => test.step(name, () => evidence.phase(name, action, expected))
+
       let failure: unknown
+
       try {
         const { createLocalOperationTools } =
           await import('../server/local-operation-tools')
@@ -3017,6 +3529,7 @@ for (const rootType of ['frame', 'group'] as const) {
               }
             }
           })
+
           testRuntimeState.set('coverage-runtime', input)
           const ids = transactionApis.runTransaction(() => {
             const [root] = core.createElementsInParent(
@@ -3038,8 +3551,10 @@ for (const rootType of ['frame', 'group'] as const) {
               ],
               root
             )
+
             return { root, children }
           })
+
           return {
             ...ids,
             actions: JSON.parse(JSON.stringify(input.actionDefinitions))
@@ -3047,6 +3562,7 @@ for (const rootType of ['frame', 'group'] as const) {
         }, rootType)
         const signal = new AbortController().signal
         let interrupted = false
+
         const executeBatch = async (batch: AiActionBatch) => {
           if (
             interrupted &&
@@ -3055,22 +3571,34 @@ for (const rootType of ['frame', 'group'] as const) {
                 a.name === 'validate_inspection_evidence' &&
                 a.arguments.measurementTargets
             )
-          )
+          ) {
             throw new Error('Interrupted coverage delivery')
+          }
+
           return (await page.evaluate(async (batch) => {
             const { testRuntimeState } =
               await import('../src/testing/runtime-access')
+
             type Input = ReturnType<
               typeof import('../src/ai/runtime-input').createAiRuntimeInput
             >
             const input = testRuntimeState.get<Input>('coverage-runtime')
-            if (!input) throw new Error('Missing runtime')
+
+            if (!input) {
+              throw new Error('Missing runtime')
+            }
+
             const actionResults = []
+
             for (const entry of batch.actions) {
               const action = input.actionDefinitions.find(
                 (a) => a.name === entry.name
               )
-              if (!action) throw new Error('Missing action')
+
+              if (!action) {
+                throw new Error('Missing action')
+              }
+
               actionResults.push({
                 actionId: entry.id,
                 actionName: entry.name,
@@ -3079,23 +3607,33 @@ for (const rootType of ['frame', 'group'] as const) {
                 })
               })
             }
+
             return { context: {}, actionResults }
           }, batch)) as never
         }
+
         const operations = createLocalOperationTools(
           fixture.actions,
-          { modelActions: (a) => a, resolveBatch: (b) => b },
+          {
+            modelActions: (a) => a,
+
+            resolveBatch: (b) => b
+          },
           executeBatch
         )
+
         const invoke = async (name: string, args: unknown = {}) =>
           JSON.parse(await operations.call(name, args, signal))
+
         const review = (id: string) =>
           invoke('review_design', { arguments: { elementId: id } })
+
         const resize = async (id: string, width: number) =>
           page.evaluate(
             async ({ id, width }) => {
               const { core } = await import('../src/testing/runtime-access')
               const { transactionApis } = await import('../src/common-apis')
+
               transactionApis.runTransaction(() =>
                 core.updateElementProperties([
                   { elementId: id, values: { width } }
@@ -3104,14 +3642,20 @@ for (const rootType of ['frame', 'group'] as const) {
             },
             { id, width }
           )
-        for (const visible of [false, true])
+
+        for (const visible of [false, true]) {
           await invoke('set_element_visibility', {
             arguments: { elementId: fixture.children[0], visible },
             inspection: 'defer'
           })
+        }
+
         // Saved calls 60-62: complete root review, exact root verification, retained read.
         expect(recordedMechanics.sourceRun).toContain('1792342207875')
-        for (const id of fixture.children) await review(id)
+        for (const id of fixture.children) {
+          await review(id)
+        }
+
         await resize(fixture.children[0], 50)
         await resize(fixture.children[1], 60)
         expect((await invoke('read_design_checks')).counts.stale).toBe(2)
@@ -3123,6 +3667,7 @@ for (const rootType of ['frame', 'group'] as const) {
           ...recordedClosure.calls[0].input,
           arguments: { elementId: fixture.root }
         })
+
         expect(
           (
             await invoke(
@@ -3141,6 +3686,7 @@ for (const rootType of ['frame', 'group'] as const) {
         const retainedChild = await invoke('read_design_checks', {
           ids: [`measurement:${fixture.children[1]}`]
         })
+
         await review(fixture.children[1])
         expect(
           await invoke('read_design_checks', {
@@ -3157,12 +3703,15 @@ for (const rootType of ['frame', 'group'] as const) {
         await review(fixture.root)
         expect((await invoke('read_design_checks')).counts.pass).toBe(3)
         const edited = await getCoreDocumentDigest(page)
+
         await expect
           .poll(() => getPersistedDocumentDigest(document.fileId))
           .toEqual(edited)
         await evidence.reload('peer', async () => {
           await peer.goto(document.url)
-          await waitForAppReady(peer)
+          await peer.waitForSelector('#viewport-anchor')
+          await peer.waitForSelector('[data-testid="toolbar"]')
+          await peer.waitForSelector('canvas')
           await waitForCollaboration(peer)
         })
         await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(edited)
@@ -3222,6 +3771,7 @@ for (const rootType of ['frame', 'group'] as const) {
           (entry: { result: { inspectionId?: string } }) =>
             entry.result.inspectionId
         )?.result
+
         expect(image).toMatchObject({
           available: true,
           inspectionId: expect.any(String)
@@ -3232,6 +3782,7 @@ for (const rootType of ['frame', 'group'] as const) {
             { criterionId: 'layout', inspectionIds: [image.inspectionId] }
           ]
         })
+
         expect(binding.next?.arguments?.checks).toHaveLength(1)
         // Controlled primary-agent verdict: this proves the protocol, not AI visual quality.
         const judgment = await invoke('review_drawing', {
@@ -3244,6 +3795,7 @@ for (const rootType of ['frame', 'group'] as const) {
               'Both controlled rectangles remain in the captured container.'
           }))
         })
+
         expect(judgment).toMatchObject({ accepted: true })
         await review(fixture.children[1])
         await operations.validateCompletion(signal)
@@ -3261,6 +3813,7 @@ for (const rootType of ['frame', 'group'] as const) {
             }
           ]
         }
+
         expect(operations.settleOutcome(finalBatch)).toEqual(finalBatch)
         const finalResult = (await executeBatch(finalBatch)) as {
           actionResults: {
@@ -3271,6 +3824,7 @@ for (const rootType of ['frame', 'group'] as const) {
             }
           }[]
         }
+
         expect(finalResult.actionResults[0].result).toMatchObject({
           outcome: 'completed',
           status: 'no-change',
@@ -3282,27 +3836,33 @@ for (const rootType of ['frame', 'group'] as const) {
         await page.evaluate(async () => {
           const { testRuntimeState } =
             await import('../src/testing/runtime-access')
+
           type Input = ReturnType<
             typeof import('../src/ai/runtime-input').createAiRuntimeInput
           >
           for (const owner of testRuntimeState.get<Input>('coverage-runtime')
-            ?.ownedResources ?? [])
+            ?.ownedResources ?? []) {
             await owner.dispose()
+          }
         })
         await test.step('planned reload - editor', () =>
           evidence.reload('editor', async () => {
             await page.reload()
-            await waitForAppReady(page)
+            await page.waitForSelector('#viewport-anchor')
+            await page.waitForSelector('[data-testid="toolbar"]')
+            await page.waitForSelector('canvas')
             await waitForCollaboration(page)
           }))
         await expect.poll(() => getCoreDocumentDigest(page)).toEqual(edited)
         await phase('edit after reload', async () => {
           await page.evaluate(async (childId) => {
             const { elementApis } = await import('../src/common-apis')
+
             await elementApis.changeElementGeometry(childId, { width: 95 })
           }, fixture.children[0])
         })
         const subsequent = await getCoreDocumentDigest(page)
+
         expect(subsequent).not.toEqual(edited)
         await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(subsequent)
         await phase(
@@ -3345,7 +3905,9 @@ for (const rootType of ['frame', 'group'] as const) {
         await test.step('planned reload - editor', () =>
           evidence.reload('editor', async () => {
             await page.reload()
-            await waitForAppReady(page)
+            await page.waitForSelector('#viewport-anchor')
+            await page.waitForSelector('[data-testid="toolbar"]')
+            await page.waitForSelector('canvas')
             await waitForCollaboration(page)
           }))
         await expect.poll(() => getCoreDocumentDigest(page)).toEqual(subsequent)
@@ -3357,24 +3919,32 @@ for (const rootType of ['frame', 'group'] as const) {
         } catch (error) {
           failure = error
         }
+
         try {
           await page.evaluate(async () => {
             const { testRuntimeState } =
               await import('../src/testing/runtime-access')
+
             type Input = ReturnType<
               typeof import('../src/ai/runtime-input').createAiRuntimeInput
             >
             for (const owner of testRuntimeState.get<Input>('coverage-runtime')
-              ?.ownedResources ?? [])
+              ?.ownedResources ?? []) {
               await owner.dispose()
+            }
+
             testRuntimeState.delete('coverage-runtime')
           })
         } catch (error) {
           failure ??= error
         }
+
         await peer.close()
       }
-      if (failure !== undefined) throw failure
+
+      if (failure !== undefined) {
+        throw failure
+      }
     }
   )
 }
@@ -3388,21 +3958,28 @@ test('published representative guidance reaches real capture and completion with
   const { AiDesignToolIds } = await import('../src/constants/ai-design')
   const text = readFileSync(
     new URL(
-      '../knowledge/design.architectural-illustration.md',
+      '../knowledge/design.architectural-illustration.materials.review.md',
       import.meta.url
     ),
     'utf8'
   )
+
   const example = (label: string) => {
     const match = text.match(
       new RegExp('```json ' + label + '\\n([\\s\\S]*?)\\n```')
     )
-    if (!match) throw new Error(`Missing published ${label}`)
+
+    if (!match) {
+      throw new Error(`Missing published ${label}`)
+    }
+
     return JSON.parse(match[1])
   }
+
   const declaration = example('representative-review')
   const capture = example('representative-capture')
   const document = createTestDocumentIdentity()
+
   await page.goto(document.url)
   await waitForAppReady(page)
   await waitForCollaboration(page)
@@ -3419,6 +3996,7 @@ test('published representative guidance reaches real capture and completion with
         }
       }
     })
+
     testRuntimeState.set('guidance-runtime', input)
     const ids = transactionApis.runTransaction(() => {
       const [root] = core.createElementsInParent(
@@ -3432,9 +4010,12 @@ test('published representative guidance reaches real capture and completion with
         ],
         root
       )
+
       fillApis.addFills(parts)
+
       return { root, parts }
     })
+
     return {
       ...ids,
       actions: JSON.parse(JSON.stringify(input.actionDefinitions))
@@ -3444,23 +4025,38 @@ test('published representative guidance reaches real capture and completion with
   const dispatched: string[] = []
   const owner = createLocalOperationTools(
     fixture.actions,
-    { modelActions: (a) => a, resolveBatch: (b) => b },
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (b) => b
+    },
     async (batch) => {
       dispatched.push(...batch.actions.map((action) => action.name))
+
       return (await page.evaluate(async (batch) => {
         const { testRuntimeState } =
           await import('../src/testing/runtime-access')
+
         type Input = ReturnType<
           typeof import('../src/ai/runtime-input').createAiRuntimeInput
         >
         const input = testRuntimeState.get<Input>('guidance-runtime')
-        if (!input) throw new Error('Missing real runtime')
+
+        if (!input) {
+          throw new Error('Missing real runtime')
+        }
+
         const actionResults = []
+
         for (const entry of batch.actions) {
           const action = input.actionDefinitions.find(
             (action) => action.name === entry.name
           )
-          if (!action) throw new Error(`Missing ${entry.name}`)
+
+          if (!action) {
+            throw new Error(`Missing ${entry.name}`)
+          }
+
           actionResults.push({
             actionId: entry.id,
             actionName: entry.name,
@@ -3469,16 +4065,20 @@ test('published representative guidance reaches real capture and completion with
             })
           })
         }
+
         return { context: {}, actionResults }
       }, batch)) as never
     }
   )
+
   const call = async (name: string, args: unknown) =>
     JSON.parse(await owner.call(name, args, new AbortController().signal))
+
   try {
     await call(declaration.tool, declaration.arguments)
     capture.arguments.inspections[0].elementId = fixture.parts[0]
     const bound = await call(capture.tool, capture.arguments)
+
     expect(bound.next.arguments.checks).toHaveLength(1)
     expect(bound.recordedChecks).toEqual([])
     const local = await call(capture.tool, {
@@ -3490,6 +4090,7 @@ test('published representative guidance reaches real capture and completion with
           'Deterministic supplied local observation; actual browser image binding is required.'
       }))
     })
+
     expect(local).toMatchObject({
       accepted: false,
       recordedChecks: [
@@ -3510,6 +4111,7 @@ test('published representative guidance reaches real capture and completion with
         { elementId: fixture.root, checks: [{ criterionId: 'overall' }] }
       ]
     })
+
     expect(whole.next.arguments.final).toBe(false)
     const result = await call(capture.tool, {
       ...whole.next.arguments,
@@ -3521,6 +4123,7 @@ test('published representative guidance reaches real capture and completion with
           'Deterministic whole-view observation; this asserts the handoff, not aesthetic quality.'
       }))
     })
+
     expect(result).toMatchObject({
       accepted: true,
       coverage: { passed: 2, required: 2 }
@@ -3549,14 +4152,18 @@ test('published representative guidance reaches real capture and completion with
   } finally {
     await page.evaluate(async () => {
       const { testRuntimeState } = await import('../src/testing/runtime-access')
+
       type Input = ReturnType<
         typeof import('../src/ai/runtime-input').createAiRuntimeInput
       >
       const input = testRuntimeState.get<Input>('guidance-runtime')
-      for (const resource of input?.ownedResources ?? [])
+
+      for (const resource of input?.ownedResources ?? []) {
         await resource.dispose()
+      }
     })
   }
+
   await page.reload()
   await waitForAppReady(page)
   expect(await getCoreDocumentDigest(page)).toEqual(digest)
@@ -3583,21 +4190,26 @@ test('shared source field changes preserve masked visual receipts and unrelated 
         })),
         core.getCurrentWorkspaceId()
       )
+
       fillApis.addFills(ids)
       fillApis.shareFillAtIndex(ids[0], [ids[1]], 0)
       fillApis.updateFillsAtIndex([ids[1]], 0, { color: '#334455' })
+
       return ids
     })
     const sourceId = fillApis.getFillTargetsAtIndex([ids[0]], 0)[0].fillId
     const owner = createInspectionEvidence()
+
     const capture = async () =>
       Promise.all(
         ids.map((elementId) =>
           owner.capture(() => ({ available: true }), { elementId })
         )
       )
+
     try {
       const beforeColor = await capture()
+
       transactionApis.runTransaction(() =>
         core.updateSharedPropertySources([
           { propertyId: sourceId, values: { color: '#abcdef' } }
@@ -3605,6 +4217,7 @@ test('shared source field changes preserve masked visual receipts and unrelated 
       )
       const color = beforeColor.map((entry) => owner.isCurrent(entry.evidence))
       const beforeOpacity = await capture()
+
       transactionApis.runTransaction(() =>
         core.updateSharedPropertySources([
           { propertyId: sourceId, values: { opacity: 0.4 } }
@@ -3614,13 +4227,16 @@ test('shared source field changes preserve masked visual receipts and unrelated 
         owner.isCurrent(entry.evidence)
       )
       const beforeLocal = await capture()
+
       fillApis.updateFillsAtIndex([ids[1]], 0, { opacity: 0.7 })
       const local = beforeLocal.map((entry) => owner.isCurrent(entry.evidence))
+
       return { color, opacity, local }
     } finally {
       owner.dispose()
     }
   })
+
   expect(result).toEqual({
     color: [false, true, true],
     opacity: [false, false, true],
@@ -3636,6 +4252,7 @@ test('recorded UI Undo retires the exact property graph after removing its eleme
   const outcome = await page.evaluate(async (recorded) => {
     const { core, getActiveCollaborationHandle } =
       await import('../src/testing/runtime-access')
+
     await getActiveCollaborationHandle()?.dispose()
     core.load(recorded.document)
     try {
@@ -3645,6 +4262,7 @@ test('recorded UI Undo retires the exact property graph after removing its eleme
           recorded.changes as Parameters<typeof core.applyCanonicalChanges>[0]
         ]
       })
+
       return { error: null, document: await core.save() }
     } catch (error) {
       return {
@@ -3653,6 +4271,7 @@ test('recorded UI Undo retires the exact property graph after removing its eleme
       }
     }
   }, recordedPropertyUndo)
+
   expect(outcome.error).toBeNull()
   expect(Object.keys(outcome.document.props)).toEqual([])
   expect(Object.keys(outcome.document.sceneTree.elements)).toEqual([
@@ -3675,12 +4294,14 @@ for (const interruption of ['editor', 'peer', 'closed'] as const) {
           phases: { name: string; status: string }[]
         }
       | undefined
+
     try {
       await page.goto(document.url)
       await waitForAppReady(page)
       await waitForCollaboration(page)
       await createRectangle(page)
       const edited = await getCoreDocumentDigest(page)
+
       await expect
         .poll(() => getPersistedDocumentDigest(document.fileId))
         .toEqual(edited)
@@ -3693,12 +4314,15 @@ for (const interruption of ['editor', 'peer', 'closed'] as const) {
           observeExecutionPage(page, 'editor'),
           observeExecutionPage(peer, 'peer')
         ],
+
         captureSource: () =>
           captureAiSourceIdentity({
             directory: resolve(import.meta.dirname, '../../..'),
             paths: ['.']
           }),
+
         readCheckpoint: () => getPersistedDocumentCheckpoint(document.fileId),
+
         attach: async (value) => {
           attachment = value as typeof attachment
           await attachExecutionEvidence(testInfo, value)
@@ -3713,14 +4337,18 @@ for (const interruption of ['editor', 'peer', 'closed'] as const) {
         },
         edited
       )
-      if (interruption === 'closed') await page.close()
-      else {
+      if (interruption === 'closed') {
+        await page.close()
+      } else {
         const target = interruption === 'editor' ? page : peer
+
         await target.reload()
         await waitForAppReady(target)
         await waitForCollaboration(target)
       }
+
       const currentEvidence = evidence
+
       await expect(
         evidence.phase('undo', () =>
           undo(page, currentEvidence.assertContinuous)

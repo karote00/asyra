@@ -23,6 +23,7 @@ export const createNativeProviderConfig = async (options: {
       (error, stdout) => (error ? reject(error) : accept(stdout))
     )
   })
+
   options.signal?.throwIfAborted()
   const catalog: unknown = JSON.parse(raw)
   const models =
@@ -39,8 +40,11 @@ export const createNativeProviderConfig = async (options: {
       'slug' in entry &&
       entry.slug === options.model
   )
-  if (matches.length !== 1)
+
+  if (matches.length !== 1) {
     throw new Error('Selected native model metadata is missing or ambiguous')
+  }
+
   const selected = {
     ...matches[0],
     tool_mode: 'direct',
@@ -48,16 +52,21 @@ export const createNativeProviderConfig = async (options: {
     multi_agent_version: null
   }
   const root = resolve(options.directory)
+
   await mkdir(root, { recursive: true })
   const directory = await mkdtemp(join(root, 'native-model-'))
+
   const dispose = () => rm(directory, { recursive: true, force: true })
+
   try {
     options.signal?.throwIfAborted()
     const path = join(directory, 'model.json')
+
     await writeFile(path, JSON.stringify({ models: [selected] }), {
       mode: 0o600
     })
     options.signal?.throwIfAborted()
+
     return {
       path,
       arguments: ['-c', `model_catalog_json=${JSON.stringify(path)}`],

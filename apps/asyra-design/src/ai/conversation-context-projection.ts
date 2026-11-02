@@ -13,29 +13,42 @@ export const projectConversationContext = (
   intent: string,
   submitted: readonly AiImageAttachment[]
 ) => {
-  if (turns.length > ConversationContextLimits.turns)
+  if (turns.length > ConversationContextLimits.turns) {
     throw new ConversationContextError()
+  }
+
   const attachments: AiImageAttachment[] = []
   const indexes = new Map<string, number>()
   let attachmentBytes = 2
+
   const retain = (sources: readonly AiImageAttachment[]) =>
     Object.freeze(
       sources.map((source) => {
         const key = source.mediaType + ':' + source.dataUrl
         const known = indexes.get(key)
-        if (known !== undefined) return known
+
+        if (known !== undefined) {
+          return known
+        }
+
         attachmentBytes +=
           conversationTextBytes(source) + (attachments.length > 0 ? 1 : 0)
-        if (attachmentBytes > ConversationContextLimits.attachmentBytes)
+        if (attachmentBytes > ConversationContextLimits.attachmentBytes) {
           throw new ConversationContextError()
+        }
+
         const index = attachments.length
+
         indexes.set(key, index)
         attachments.push(source)
+
         return index
       })
     )
+
   const history = turns.map((turn) => {
     const question = projectAiQuestion(turn)
+
     return Object.freeze({
       turnId: turn.turnId,
       intent: turn.intent,
@@ -60,10 +73,13 @@ export const projectConversationContext = (
     turns: Object.freeze(history),
     attachmentIndexes: retain(submitted)
   })
+
   if (
     conversationTextBytes({ intent, context }) >
     ConversationContextLimits.textBytes
-  )
+  ) {
     throw new ConversationContextError()
+  }
+
   return Object.freeze({ context, attachments: Object.freeze(attachments) })
 }

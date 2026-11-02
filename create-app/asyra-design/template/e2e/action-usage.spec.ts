@@ -32,12 +32,14 @@ const draft = {
     }
   ]
 }
+
 for (const name of Object.values(AiActionNames)) {
   test(`registered action usage - ${name}`, async ({ page }) => {
     await page.goto(createTestDocumentIdentity().url)
     await waitForAppReady(page)
     await page.waitForFunction(async () => {
       const fixture = await import('../e2e/fixtures/action-usage-cases')
+
       return fixture.isActionFixtureReady()
     })
     const drawing = createPreparedDrawingArtifact(
@@ -70,6 +72,7 @@ for (const name of Object.values(AiActionNames)) {
       async (input) => {
         const { runActionUsageCase } =
           await import('../e2e/fixtures/action-usage-cases')
+
         try {
           return await runActionUsageCase(
             input.name,
@@ -80,10 +83,12 @@ for (const name of Object.values(AiActionNames)) {
         } catch (error) {
           const messages: string[] = []
           let current = error
+
           while (current instanceof Error && messages.length < 8) {
             messages.push(`${current.name}: ${current.message}`)
             current = current.cause
           }
+
           throw new Error(messages.join(' -> '))
         }
       },
@@ -94,6 +99,7 @@ for (const name of Object.values(AiActionNames)) {
         additional: prepareDesign(draft, 'usage-additional')
       }
     )
+
     expect(result).toMatchObject({ name, status: 'success' })
   })
 }

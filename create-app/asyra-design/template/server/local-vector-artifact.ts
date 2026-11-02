@@ -32,41 +32,59 @@ export interface LocalVectorArtifact {
   background?: NativeImageBackground
   sourceBounds?: Bounds
 }
+
 const record = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
+
 const invalid = (): never => {
   throw new Error('Invalid vector artifact')
 }
+
 const numberPattern = '-?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?'
 const tokensPattern = new RegExp(`[MLCZ]|${numberPattern}`, 'g')
+
 const boundsOf = (points: readonly Point[]): Bounds => {
   let x = Infinity,
     y = Infinity,
     maxX = -Infinity,
     maxY = -Infinity
+
   for (const point of points) {
     x = Math.min(x, point.x)
     y = Math.min(y, point.y)
     maxX = Math.max(maxX, point.x)
     maxY = Math.max(maxY, point.y)
   }
+
   return { x, y, width: maxX - x, height: maxY - y }
 }
+
 const attributes = (source: string): Record<string, string> => {
   const result: Record<string, string> = Object.create(null)
   const pattern = /([A-Za-z][\w:-]*)="([^"]*)"/g
+
   for (const match of source.matchAll(pattern)) {
-    if (match[1] in result) invalid()
+    if (match[1] in result) {
+      invalid()
+    }
+
     result[match[1]] = match[2]
   }
-  if (source.replace(pattern, '').trim()) invalid()
+
+  if (source.replace(pattern, '').trim()) {
+    invalid()
+  }
+
   return result
 }
+
 const curveBounds = (rings: readonly VectorAnchor[][]): Bounds => {
   const extrema: Point[] = []
+
   for (const ring of rings) {
     ring.forEach((start, index) => {
       const end = ring[(index + 1) % ring.length]
+
       if (start.outControl && end.inControl) {
         const bounds = new Bezier(
           start,
@@ -74,15 +92,20 @@ const curveBounds = (rings: readonly VectorAnchor[][]): Bounds => {
           end.inControl,
           end
         ).bbox()
+
         extrema.push(
           { x: bounds.x.min, y: bounds.y.min },
           { x: bounds.x.max, y: bounds.y.max }
         )
-      } else extrema.push(start, end)
+      } else {
+        extrema.push(start, end)
+      }
     })
   }
+
   return boundsOf(extrema)
 }
+
 /** Recompute derived measurements only when backend-owned contour data changes. */
 export const measureVectorPath = (
   path: LocalVectorArtifact['paths'][number]
@@ -99,15 +122,20 @@ const parseRings = (
   width: number,
   height: number
 ): VectorAnchor[][] => {
-  if (source.replace(tokensPattern, '').replace(/[,\s]/g, '')) invalid()
+  if (source.replace(tokensPattern, '').replace(/[,\s]/g, '')) {
+    invalid()
+  }
+
   const tokens = source.match(tokensPattern) ?? []
   const rings: VectorAnchor[][] = []
   let current: VectorAnchor[] | undefined
   let index = 0
   let command = ''
+
   const readPoint = (): Point => {
     const x = Number(tokens[index++]),
       y = Number(tokens[index++])
+
     // Fitted curves may overshoot image edges. Admit bounded native output;
     // clipping controls changes the curve rather than validating it.
     if (
@@ -117,15 +145,21 @@ const parseRings = (
       y < -height ||
       x > 2 * width ||
       y > 2 * height
-    )
+    ) {
       invalid()
+    }
+
     return { x, y }
   }
+
   while (index < tokens.length) {
     if (/^[MLCZ]$/.test(tokens[index])) {
       command = tokens[index++]
       if (command === 'Z') {
-        if (!current || current.length === 0) return invalid()
+        if (!current || current.length === 0) {
+          return invalid()
+        }
+
         if (
           current.length > 1 &&
           current[0].x === current.at(-1)?.x &&
@@ -134,30 +168,53 @@ const parseRings = (
           current[0].inControl = current.at(-1)?.inControl
           current.pop()
         }
-        if (current.length >= 3 || current.some((anchor) => anchor.outControl))
+
+        if (
+          current.length >= 3 ||
+          current.some((anchor) => anchor.outControl)
+        ) {
           rings.push(current)
+        }
+
         current = undefined
         command = ''
         continue
       }
+
       if (command === 'M') {
-        if (current) invalid()
+        if (current) {
+          invalid()
+        }
+
         current = []
       }
     }
-    if (!current || !['M', 'L', 'C'].includes(command)) return invalid()
+
+    if (!current || !['M', 'L', 'C'].includes(command)) {
+      return invalid()
+    }
+
     if (command === 'C') {
       const start = current.at(-1)
-      if (!start) return invalid()
+
+      if (!start) {
+        return invalid()
+      }
+
       start.outControl = readPoint()
       const inControl = readPoint()
+
       current.push({ ...readPoint(), inControl })
     } else {
       current.push(readPoint())
       command = 'L'
     }
   }
-  if (current) invalid()
+
+  if (current) {
+    invalid()
+  }
+
   return rings
 }
 
@@ -170,37 +227,59 @@ export const parseLocalVectorArtifact = (
     .replace(/<!--[^]*?-->/g, '')
     .trim()
   const root = /^<svg\s+([^>]*)>([^]*)<\/svg>$/.exec(clean)
-  if (!root) return invalid()
+
+  if (!root) {
+    return invalid()
+  }
+
   const attrs = attributes(root[1])
+
   if (
     Object.keys(attrs).some(
       (key) => !['width', 'height', 'version', 'xmlns'].includes(key)
     )
-  )
+  ) {
     invalid()
+  }
+
   const width = Number(attrs.width),
     height = Number(attrs.height)
+
   if (
     ![width, height].every(
       (value) => Number.isFinite(value) && value > 0 && value <= 32768
     )
-  )
+  ) {
     invalid()
+  }
+
   const pathPattern = /<path\s+([^>]*?)\s*\/>/g
   const paths: VectorPath[] = []
+
   for (const match of root[2].matchAll(pathPattern)) {
     const pathAttrs = attributes(match[1])
+
     if (
       Object.keys(pathAttrs).some((key) => !['d', 'fill'].includes(key)) ||
       !/^#[0-9a-f]{6}$/i.test(pathAttrs.fill) ||
       !pathAttrs.d
-    )
+    ) {
       invalid()
+    }
+
     const rings = parseRings(pathAttrs.d, width, height)
     const points = rings.flat()
-    if (!points.length) continue
+
+    if (!points.length) {
+      continue
+    }
+
     const bounds = curveBounds(rings)
-    if (bounds.width <= 0 || bounds.height <= 0) continue
+
+    if (bounds.width <= 0 || bounds.height <= 0) {
+      continue
+    }
+
     paths.push({
       id: `path-${paths.length + 1}`,
       fill: pathAttrs.fill.toUpperCase(),
@@ -213,7 +292,11 @@ export const parseLocalVectorArtifact = (
       )
     })
   }
-  if (!paths.length || root[2].replace(pathPattern, '').trim()) invalid()
+
+  if (!paths.length || root[2].replace(pathPattern, '').trim()) {
+    invalid()
+  }
+
   return { imageArtifactId: randomUUID(), width, height, paths }
 }
 
@@ -318,17 +401,23 @@ export const prepareLocalVectorArtifact = (
     input.compositionRole.length > 160 ||
     !record(input.bounds) ||
     !Array.isArray(input.excludePathIds)
-  )
+  ) {
     return invalid()
+  }
+
   const bounds = input.bounds
+
   if (
     Object.keys(bounds).length !== 4 ||
     !['x', 'y', 'width', 'height'].every(
       (key) => typeof bounds[key] === 'number' && Number.isFinite(bounds[key])
     )
-  )
+  ) {
     return invalid()
+  }
+
   const target = bounds as unknown as Bounds
+
   if (
     target.x < 0 ||
     target.y < 0 ||
@@ -336,19 +425,29 @@ export const prepareLocalVectorArtifact = (
     target.height <= 0 ||
     target.x + target.width > 2048 ||
     target.y + target.height > 2048
-  )
+  ) {
     invalid()
+  }
+
   const excluded = new Set(input.excludePathIds)
   const pathIds = new Set(artifact.paths.map(({ id }) => id))
+
   if (
     excluded.size !== input.excludePathIds.length ||
     [...excluded].some((id) => typeof id !== 'string' || !pathIds.has(id))
-  )
+  ) {
     invalid()
+  }
+
   const mappings =
     input.componentMappings === undefined ? [] : input.componentMappings
-  if (!Array.isArray(mappings)) return invalid()
+
+  if (!Array.isArray(mappings)) {
+    return invalid()
+  }
+
   const components = new Map<string, VectorComponentType>()
+
   for (const mapping of mappings) {
     if (
       !record(mapping) ||
@@ -361,18 +460,27 @@ export const prepareLocalVectorArtifact = (
       components.has(mapping.pathId) ||
       typeof mapping.componentType !== 'string' ||
       !Object.hasOwn(vectorComponentTargets, mapping.componentType)
-    )
+    ) {
       return invalid()
+    }
+
     components.set(mapping.pathId, mapping.componentType as VectorComponentType)
   }
+
   if (
     artifact.paths.some(
       (path) => components.has(path.id) && path.rings.length !== 1
     )
-  )
+  ) {
     return invalid()
+  }
+
   const retained = artifact.paths.filter(({ id }) => !excluded.has(id))
-  if (!retained.length && !artifact.background) invalid()
+
+  if (!retained.length && !artifact.background) {
+    invalid()
+  }
+
   const source =
     artifact.sourceBounds ??
     boundsOf(
@@ -381,16 +489,19 @@ export const prepareLocalVectorArtifact = (
         { x: b.x + b.width, y: b.y + b.height }
       ])
     )
+
   const mapPoint = (point: Point): Point => ({
     x: target.x + ((point.x - source.x) * target.width) / source.width,
     y: target.y + ((point.y - source.y) * target.height) / source.height
   })
+
   const base = (
     type: 'group' | 'vector' | VectorComponentType,
     name: string,
     b: Bounds
   ) => {
     const id = randomUUID()
+
     return {
       id,
       name,
@@ -407,6 +518,7 @@ export const prepareLocalVectorArtifact = (
       strokes: []
     }
   }
+
   const groupDescriptor = {
     ...base('group', input.compositionRole, target),
     children: [],
@@ -441,15 +553,20 @@ export const prepareLocalVectorArtifact = (
         gradient: null
       }
     ]
+
     roleToElementIds[path.id] = [common.id]
-    if (componentType)
+    if (componentType) {
       return { descriptor: { ...common, fills }, pointCount: 0, role: path.id }
+    }
+
     const points: Record<string, unknown> = {},
       segments: Record<string, unknown> = {},
       networks: Record<string, unknown> = {}
+
     path.rings.forEach((ring, ringIndex) => {
       const pointIds = ring.map((point, index) => {
         const id = `${common.id}-p-${ringIndex}-${index}`
+
         points[id] = {
           id,
           kind: 'anchor',
@@ -457,19 +574,25 @@ export const prepareLocalVectorArtifact = (
           handleMode: 'none',
           ...mapPoint(point)
         }
+
         return id
       })
       const segmentIds = pointIds.map((startId, index) => {
         const id = `${common.id}-s-${ringIndex}-${index}`
         const next = (index + 1) % ring.length
         const endId = pointIds[next]
+
         const addControl = (
           point: Point | undefined,
           anchorId: string,
           role: 'in' | 'out'
         ) => {
-          if (!point) return null
+          if (!point) {
+            return null
+          }
+
           const controlId = `${anchorId}-${role}`
+
           points[controlId] = {
             id: controlId,
             kind: 'control',
@@ -477,8 +600,10 @@ export const prepareLocalVectorArtifact = (
             controlRole: role,
             ...mapPoint(point)
           }
+
           return controlId
         }
+
         segments[id] = {
           id,
           startId,
@@ -486,12 +611,15 @@ export const prepareLocalVectorArtifact = (
           outControlId: addControl(ring[index].outControl, startId, 'out'),
           inControlId: addControl(ring[next].inControl, endId, 'in')
         }
+
         return id
       })
       const id = `${common.id}-n-${ringIndex}`
+
       networks[id] = { id, pointIds, segmentIds, closed: true }
     })
     roleToElementIds[path.id] = [common.id]
+
     return {
       descriptor: {
         ...common,
@@ -520,6 +648,7 @@ export const prepareLocalVectorArtifact = (
       role: path.id
     }
   })
+
   if (artifact.background) {
     const background = artifact.background
     const origin = mapPoint(background.bounds)
@@ -529,6 +658,7 @@ export const prepareLocalVectorArtifact = (
       width: (background.bounds.width * target.width) / source.width,
       height: (background.bounds.height * target.height) / source.height
     })
+
     roleToElementIds.background = [common.id]
     prepared.unshift({
       descriptor: {
@@ -551,13 +681,16 @@ export const prepareLocalVectorArtifact = (
       role: 'background'
     })
   }
+
   const slices: {
     descriptors: (typeof prepared)[number]['descriptor'][]
     pointCount: number
     roles: string[]
   }[] = []
+
   for (const item of prepared) {
     let slice = slices.at(-1)
+
     if (
       !slice ||
       slice.descriptors.length >= 32 ||
@@ -566,10 +699,12 @@ export const prepareLocalVectorArtifact = (
       slice = { descriptors: [], pointCount: 0, roles: [] }
       slices.push(slice)
     }
+
     slice.descriptors.push(item.descriptor)
     slice.pointCount += item.pointCount
     slice.roles.push(item.role)
   }
+
   return {
     artifactVersion: 1,
     compositionRole: input.compositionRole,

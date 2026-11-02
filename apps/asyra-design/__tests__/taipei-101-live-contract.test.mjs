@@ -17,6 +17,7 @@ test('fixed benchmark removes only the fixture final newline and keeps the ten m
     'utf8'
   )
   const { prompt, sha256 } = readTaipei101Prompt()
+
   assert.equal(prompt + '\n', fixture)
   assert.match(sha256, /^[a-f0-9]{64}$/)
   assert.equal(TAIPEI_101_DEADLINE_MS, 600000)
@@ -27,17 +28,19 @@ test('fixed benchmark removes only the fixture final newline and keeps the ten m
     { intent: prompt + ' Do not ask questions.' },
     { intent: prompt, metadata: { imageAttachments: [{}] } },
     { intent: prompt, metadata: { conversationContext: { turns: [{}] } } }
-  ])
+  ]) {
     assert.throws(
       () => assertTaipei101Submission(request, prompt),
       /exact prompt/
     )
+  }
 })
 
 test('tool receipts on the same endpoint do not become user prompt submissions', async () => {
   const { AI_BATCH_RECEIPT_HEADER } =
     await import('../src/ai/action-batch-endpoint.ts')
   const { prompt } = readTaipei101Prompt()
+
   assert.equal(
     assertTaipei101Submission({ batchId: 'b', actionResults: [] }, prompt, {
       [AI_BATCH_RECEIPT_HEADER]: 'owned-token'
@@ -50,6 +53,7 @@ test('tool receipts on the same endpoint do not become user prompt submissions',
 test('a connected socket cannot certify an empty or partially loaded drawing', async () => {
   const { recordedDocumentReady } =
     await import('../test-data/ai-drawing/taipei-101-live-contract.mjs')
+
   assert.equal(
     recordedDocumentReady(
       { connected: true, workspaceId: null, elementCount: 0 },

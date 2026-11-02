@@ -32,9 +32,11 @@ const rejectInvalidCanonicalProjection = (
 
   for (const elementId of flattenedIds) {
     const element = elementDataMap[elementId]
+
     if (!element || element.id !== elementId) {
       return rejectProjection(`missing element data for "${elementId}"`)
     }
+
     if (
       element.type === EntityTypes.WORKSPACE ||
       typeof element.parentId !== 'string' ||
@@ -50,6 +52,7 @@ const rejectInvalidCanonicalProjection = (
       if (visited.has(parentId)) {
         return rejectProjection(`cycle detected at "${parentId}"`)
       }
+
       visited.add(parentId)
 
       if (!flattenedIdSet.has(parentId)) {
@@ -59,6 +62,7 @@ const rejectInvalidCanonicalProjection = (
       }
 
       const parent = elementDataMap[parentId]
+
       if (
         !parent ||
         typeof parent.parentId !== 'string' ||
@@ -66,6 +70,7 @@ const rejectInvalidCanonicalProjection = (
       ) {
         return rejectProjection(`invalid parent data for "${parentId}"`)
       }
+
       parentId = parent.parentId
     }
 
@@ -82,6 +87,7 @@ const rejectInvalidCanonicalProjection = (
     const parentId = elementDataMap[elementId]?.parentId
     const parentIndex = parentId ? indexById.get(parentId) : undefined
     const elementIndex = indexById.get(elementId)
+
     if (
       parentIndex !== undefined &&
       elementIndex !== undefined &&
@@ -101,6 +107,7 @@ export const projectExpandedLayerRow = (
   elementDataMap: ElementDataMap
 ): VisibleLayerRow | null => {
   const element = elementDataMap[elementId]
+
   if (
     !element ||
     element.id !== elementId ||
@@ -114,12 +121,15 @@ export const projectExpandedLayerRow = (
   let depth = 0
   let parentId = element.parentId
   const visited = new Set<string>([elementId])
+
   while (elementDataMap[parentId]) {
     if (visited.has(parentId)) {
       return null
     }
+
     visited.add(parentId)
     const parent = elementDataMap[parentId]
+
     if (
       !parent ||
       typeof parent.parentId !== 'string' ||
@@ -127,12 +137,14 @@ export const projectExpandedLayerRow = (
     ) {
       return null
     }
+
     depth += 1
     parentId = parent.parentId
   }
 
   const canExpand =
     element.type !== undefined && elementApis.isContainerType(element.type)
+
   return {
     id: elementId,
     depth,
@@ -147,6 +159,7 @@ export const projectVisibleLayerRows = (
   collapsedGroupIds: ReadonlySet<string>
 ): LayerHierarchyProjection => {
   const flattenedIdSet = new Set(flattenedIds)
+
   if (flattenedIdSet.size !== flattenedIds.length) {
     return rejectProjection('duplicate element id in canonical projection')
   }
@@ -158,6 +171,7 @@ export const projectVisibleLayerRows = (
 
   for (const elementId of flattenedIds) {
     const element = elementDataMap[elementId]
+
     if (!element || element.id !== elementId) {
       return rejectInvalidCanonicalProjection(
         flattenedIds,
@@ -165,7 +179,9 @@ export const projectVisibleLayerRows = (
         flattenedIdSet
       )
     }
+
     const parentId = element.parentId
+
     if (
       element.type === EntityTypes.WORKSPACE ||
       typeof parentId !== 'string' ||
@@ -177,9 +193,11 @@ export const projectVisibleLayerRows = (
         flattenedIdSet
       )
     }
+
     parentIdById.set(elementId, parentId)
 
     let elementWorkspaceId = parentId
+
     if (elementDataMap[parentId]) {
       if (!flattenedIdSet.has(parentId)) {
         return rejectInvalidCanonicalProjection(
@@ -188,8 +206,10 @@ export const projectVisibleLayerRows = (
           flattenedIdSet
         )
       }
+
       const parentDepth = depthById.get(parentId)
       const parentWorkspaceId = workspaceIdById.get(parentId)
+
       if (parentDepth === undefined || parentWorkspaceId === undefined) {
         return rejectInvalidCanonicalProjection(
           flattenedIds,
@@ -197,11 +217,13 @@ export const projectVisibleLayerRows = (
           flattenedIdSet
         )
       }
+
       depthById.set(elementId, parentDepth + 1)
       elementWorkspaceId = parentWorkspaceId
     } else {
       depthById.set(elementId, 0)
     }
+
     workspaceIdById.set(elementId, elementWorkspaceId)
 
     if (workspaceId === null) {
@@ -217,10 +239,12 @@ export const projectVisibleLayerRows = (
 
   const rows: VisibleLayerRow[] = []
   const hiddenElementIds = new Set<string>()
+
   for (const elementId of flattenedIds) {
     const element = elementDataMap[elementId]
     const parentId = parentIdById.get(elementId)
     const parent = parentId ? elementDataMap[parentId] : undefined
+
     if (
       (parentId && hiddenElementIds.has(parentId)) ||
       (parentId &&
@@ -234,6 +258,7 @@ export const projectVisibleLayerRows = (
 
     const canExpand =
       element.type !== undefined && elementApis.isContainerType(element.type)
+
     rows.push({
       id: elementId,
       depth: depthById.get(elementId) ?? 0,

@@ -78,6 +78,7 @@ const getSelectionClientBounds = (elementIds: string[]): Rect | null => {
     }
 
     const bounds = elementApis.getElementClientBounds(elementId)
+
     if (!bounds) {
       return
     }
@@ -115,11 +116,13 @@ const resolveInitialPositions = (
     }
 
     const position = elementApis.getElementPosition(elementId)
+
     if (!position) {
       return acc
     }
 
     acc[elementId] = position
+
     return acc
   }, {})
 
@@ -146,13 +149,16 @@ const api: MoveElementsApi = {
     const dragStartClientPos = snapshot.mouseDragStart ?? snapshot.mousePosition
     const dragStartWorkspacePos =
       elementApis.getMousePosInWorkspace(dragStartClientPos)
+
     if (!dragStartWorkspacePos) {
       return null
     }
 
     const selectedElementIds = selectionApis.getSelectedIds()
+
     if (selectedElementIds.length > 0) {
       const selectionBounds = getSelectionClientBounds(selectedElementIds)
+
       if (
         selectionBounds &&
         isPointInsideBounds(dragStartClientPos, selectionBounds)
@@ -161,6 +167,7 @@ const api: MoveElementsApi = {
           dragStartWorkspacePos,
           selectedElementIds
         )
+
         if (selectionInitial) {
           return {
             ...selectionInitial,
@@ -171,6 +178,7 @@ const api: MoveElementsApi = {
     }
 
     const hoveredElementId = resolveCanvasHierarchyTargetAtClientPos(snapshot)
+
     if (!hoveredElementId) {
       return null
     }
@@ -180,6 +188,7 @@ const api: MoveElementsApi = {
     }
 
     let hoveredSelectionIds = selectedElementIds
+
     if (!hoveredSelectionIds.includes(hoveredElementId)) {
       selectionApis.selectElements([hoveredElementId], {
         undoable: false
@@ -191,6 +200,7 @@ const api: MoveElementsApi = {
       dragStartWorkspacePos,
       hoveredSelectionIds
     )
+
     if (!hoveredInitial) {
       return null
     }
@@ -203,6 +213,7 @@ const api: MoveElementsApi = {
 
   hasMovedBeyondThreshold: (snapshot: SystemContextSnapshot) => {
     const dragStart = snapshot.mouseDragStart ?? snapshot.mousePosition
+
     return elementApis.hasMovedBeyondThreshold(
       dragStart,
       snapshot.mousePosition,
@@ -225,6 +236,7 @@ const api: MoveElementsApi = {
         x: startPos.x + dx,
         y: startPos.y + dy
       }
+
       return acc
     }, {})
   },
@@ -242,6 +254,7 @@ const positionsMatch = (
   right: Record<string, PositionData>
 ): boolean => {
   const leftEntries = Object.entries(left)
+
   return (
     leftEntries.length === Object.keys(right).length &&
     leftEntries.every(
@@ -254,9 +267,11 @@ const positionsMatch = (
 export const moveElementsSession = {
   onStart: (snapshot: SystemContextSnapshot) => {
     const initialState = api.resolveInitialPositions(snapshot)
+
     if (!initialState) {
       return null
     }
+
     transactionApis.configureSharedDeliverySequence({
       mode: 'atomic',
       batchPublications: false,
@@ -278,6 +293,7 @@ export const moveElementsSession = {
     const currentWorkspacePos = elementApis.getMousePosInWorkspace(
       snapshot.mousePosition
     )
+
     if (!currentWorkspacePos) {
       return
     }
@@ -329,6 +345,7 @@ export const moveElementsSession = {
     const currentWorkspacePos = elementApis.getMousePosInWorkspace(
       snapshot.mousePosition
     )
+
     if (currentWorkspacePos) {
       const targetPositions = api.calculateTargetPositions(
         state.dragStartWorkspacePos,
@@ -345,6 +362,7 @@ export const moveElementsSession = {
       }
     }
   },
+
   onCancel: () => undefined
 }
 

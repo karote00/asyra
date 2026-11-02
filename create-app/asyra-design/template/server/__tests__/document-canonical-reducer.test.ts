@@ -34,10 +34,100 @@ const apply = (
 ): AppDocumentData => applyCanonicalChangesToDocument(document, changes)
 
 describe('backend canonical document reducer', () => {
+  it('retires an exact binary record after JSON storage normalizes signed zero', () => {
+    const component = {
+      id: 'fill',
+      type: 'fill',
+      samples: [
+        { x: 1, y: -0 },
+        { x: 0, y: 2 }
+      ]
+    }
+    const created = apply(initialDocument(), [
+      {
+        kind: 'property-components',
+        creations: [component],
+        updates: []
+      }
+    ])
+
+    expect(Object.is(component.samples[0].y, -0)).toBe(true)
+    expect(
+      Object.is(
+        (created.props.fill.samples as typeof component.samples)[0].y,
+        0
+      )
+    ).toBe(true)
+    const removed = apply(created, [
+      {
+        kind: 'property-components',
+        removals: [component],
+        updates: []
+      }
+    ])
+
+    expect(removed.props).toEqual({})
+    expect(created.props.fill).toBeDefined()
+  })
+
+  it.each([
+    {
+      samples: [
+        { x: 1, y: 0.001 },
+        { x: 0, y: 2 }
+      ]
+    },
+    { samples: [{ x: 1 }, { x: 0, y: 2 }] },
+    {
+      samples: [
+        { x: 1, y: '0' },
+        { x: 0, y: 2 }
+      ]
+    },
+    {
+      samples: [
+        { x: 0, y: 2 },
+        { x: 1, y: 0 }
+      ]
+    }
+  ])(
+    'rejects a truly stale retirement and preserves its durable prefix: %j',
+    (fields) => {
+      const component = {
+        id: 'fill',
+        type: 'fill',
+        samples: [
+          { x: 1, y: -0 },
+          { x: 0, y: 2 }
+        ]
+      }
+      const created = apply(initialDocument(), [
+        {
+          kind: 'property-components',
+          creations: [component],
+          updates: []
+        }
+      ])
+      const before = structuredClone(created)
+
+      expect(() =>
+        apply(created, [
+          {
+            kind: 'property-components',
+            removals: [{ ...component, ...fields }],
+            updates: []
+          }
+        ])
+      ).toThrow('stale or duplicate property retirement')
+      expect(created).toEqual(before)
+    }
+  )
+
   it.each([16, 1024])(
     'validates local layer changes without reading %i unrelated property graphs',
     (count) => {
       const document = initialDocument()
+
       document.props.source = {
         id: 'source',
         type: 'fill',
@@ -50,16 +140,21 @@ describe('backend canonical document reducer', () => {
         inheritance: { sourceId: 'source', overrides: {}, childBindings: {} }
       }
       let reads = 0
-      for (let i = 0; i < count; i++)
+
+      for (let i = 0; i < count; i++) {
         document.props[`unrelated-${i}`] = {
           id: `unrelated-${i}`,
           type: 'fill',
           opacity: 1,
+
           get inheritance() {
             reads += 1
+
             return undefined
           }
         }
+      }
+
       const next = apply(document, [
         {
           kind: 'property-components',
@@ -78,6 +173,7 @@ describe('backend canonical document reducer', () => {
           ]
         }
       ])
+
       expect(next.props.local.inheritance).toMatchObject({
         overrides: { opacity: 0.5 }
       })
@@ -87,6 +183,7 @@ describe('backend canonical document reducer', () => {
 
   it('validates surviving links independently of a binding and removal sharing a persistence window', () => {
     const document = initialDocument()
+
     document.props.source = {
       id: 'source',
       type: 'fill',
@@ -111,6 +208,7 @@ describe('backend canonical document reducer', () => {
       parentId: 'workspace',
       props: { fill: 'source' }
     }
+
     document.sceneTree.elements.a = element
     Object.assign(document.sceneTree.elements.workspace, { children: ['a'] })
     const binding: CanonicalChange = {
@@ -143,6 +241,7 @@ describe('backend canonical document reducer', () => {
       (current, change) => apply(current, [change]),
       document
     )
+
     expect(apply(document, [binding, removal, retired])).toEqual(separated)
     expect(separated.sceneTree.elements.a).toBeUndefined()
     expect(separated.props.source).toEqual(document.props.source)
@@ -162,8 +261,9 @@ describe('backend canonical document reducer', () => {
       opacity: 1,
       color: '#112233'
     }
+
     document.props.source = source
-    for (const id of ['a', 'b'])
+    for (const id of ['a', 'b']) {
       document.sceneTree.elements[id] = {
         id,
         type: 'rectangle',
@@ -173,6 +273,8 @@ describe('backend canonical document reducer', () => {
         parentId: 'workspace',
         props: { fill: 'source' }
       }
+    }
+
     const local = {
       id: 'local',
       type: 'fill',
@@ -182,6 +284,7 @@ describe('backend canonical document reducer', () => {
         childBindings: {}
       }
     }
+
     const binding = (from: string, to: string): CanonicalChange => ({
       kind: 'element-property-bindings',
       changes: [
@@ -193,6 +296,7 @@ describe('backend canonical document reducer', () => {
         }
       ]
     })
+
     const next = apply(document, [
       {
         kind: 'property-components',
@@ -206,6 +310,7 @@ describe('backend canonical document reducer', () => {
         updates: [{ propertyId: 'source', values: { color: '#abcdef' } }]
       }
     ])
+
     expect(next.props.local).toEqual(local)
     expect(next.sceneTree.elements.b.props).toEqual({ fill: 'source' })
     expect(document.props).toEqual({ source })
@@ -223,6 +328,7 @@ describe('backend canonical document reducer', () => {
         ]
       }
     ])
+
     expect(reset.props.local.inheritance).toEqual({
       sourceId: 'source',
       overrides: {},
@@ -252,6 +358,7 @@ describe('backend canonical document reducer', () => {
         removals: [reset.props.local]
       }
     ])
+
     expect(detached.props.local).toBeUndefined()
     expect(detached.props.source).toEqual({ ...source, color: '#abcdef' })
     expect(() =>
@@ -296,6 +403,7 @@ describe('backend canonical document reducer', () => {
 
   it('applies property relationship records, values, and element data without mutating the checkpoint input', () => {
     const document = initialDocument()
+
     document.sceneTree.elements.element = {
       id: 'element',
       name: 'Before',
@@ -382,6 +490,7 @@ describe('backend canonical document reducer', () => {
 
   it('restores exact nonadjacent slots across parents independently of replay order', () => {
     const document = initialDocument()
+
     const element = (id: string, parentId: string) => ({
       id,
       name: id,
@@ -390,6 +499,7 @@ describe('backend canonical document reducer', () => {
       visible: true,
       lock: false
     })
+
     document.sceneTree.elements.workspace.children = ['kept', 'other']
     document.sceneTree.elements.kept = element('kept', 'workspace')
     document.sceneTree.elements.other = {
@@ -403,10 +513,15 @@ describe('backend canonical document reducer', () => {
       { data: element('left', 'workspace'), parentId: 'workspace', index: 0 }
     ]
     const [right, , left] = entries
-    if (!right || !left) throw new Error('Missing exact insertion fixture')
+
+    if (!right || !left) {
+      throw new Error('Missing exact insertion fixture')
+    }
+
     const restored = apply(document, [
       { kind: 'element-creation', entries, properties: [] }
     ])
+
     expect(restored.sceneTree.elements.workspace.children).toEqual([
       'left',
       'kept',
@@ -429,6 +544,7 @@ describe('backend canonical document reducer', () => {
         ])
       ).toThrow(/index/)
     }
+
     expect(() =>
       apply(document, [
         {
@@ -488,6 +604,7 @@ describe('backend canonical document reducer', () => {
         ]
       }
     ])
+
     expect(
       (
         moved.sceneTree.elements
@@ -515,6 +632,7 @@ describe('backend canonical document reducer', () => {
         removals: [moved.props.position]
       }
     ])
+
     expect(removed.sceneTree.elements.element).toBeUndefined()
     expect(removed.props.position).toBeUndefined()
   })
@@ -530,6 +648,7 @@ describe('backend canonical document reducer', () => {
       lock: false,
       props: { root: 'property-root' }
     }
+
     document.sceneTree.elements.element = element
     ;(
       document.sceneTree.elements
@@ -613,6 +732,7 @@ describe('backend canonical document reducer', () => {
       lock: false,
       props: { position: 'position' }
     }
+
     document.sceneTree.elements.group = group
     document.sceneTree.elements.element = element
     ;(
@@ -627,6 +747,7 @@ describe('backend canonical document reducer', () => {
       x: 1,
       y: 2
     }
+
     document.props.position = position
     const sceneSnapshot = {
       elementId: 'group',
@@ -654,6 +775,7 @@ describe('backend canonical document reducer', () => {
       },
       { kind: 'property-components', updates: [], removals: [position] }
     ])
+
     expect(removed.sceneTree.elements.group).toBeUndefined()
     expect(removed.sceneTree.elements.element).toBeUndefined()
     expect(removed.props.position).toBeUndefined()
@@ -665,6 +787,7 @@ describe('backend canonical document reducer', () => {
         propsSnapshot: { components: [position] }
       }
     ])
+
     expect(restored.sceneTree.elements.group).toEqual(group)
     expect(restored.sceneTree.elements.element).toEqual(element)
     expect(restored.props.position).toEqual(position)

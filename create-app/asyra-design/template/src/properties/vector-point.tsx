@@ -199,7 +199,9 @@ const AnchorControls = ({
           value: 'sharp',
           label: 'Sharp',
           active: pointType === 'sharp',
+
           onSelect: () => onChangePointType('sharp'),
+
           icon: <SharpIcon />,
           testId: 'prop-point-type-sharp'
         },
@@ -207,7 +209,9 @@ const AnchorControls = ({
           value: 'smooth',
           label: 'Smooth',
           active: pointType === 'smooth',
+
           onSelect: () => onChangePointType('smooth'),
+
           icon: <SmoothIcon />,
           testId: 'prop-point-type-smooth'
         }
@@ -219,7 +223,9 @@ const AnchorControls = ({
           value: VectorHandleModes.NONE,
           label: 'None',
           active: handleMode === VectorHandleModes.NONE,
+
           onSelect: () => onChangeHandleMode(VectorHandleModes.NONE),
+
           icon: <HandleNoneIcon />,
           testId: 'prop-handle-mode-none'
         },
@@ -227,7 +233,9 @@ const AnchorControls = ({
           value: VectorHandleModes.MIRROR_ANGLE,
           label: 'Mirror Angle',
           active: handleMode === VectorHandleModes.MIRROR_ANGLE,
+
           onSelect: () => onChangeHandleMode(VectorHandleModes.MIRROR_ANGLE),
+
           icon: <HandleMirrorAngleIcon />,
           testId: 'prop-handle-mode-mirror-angle'
         },
@@ -235,8 +243,10 @@ const AnchorControls = ({
           value: VectorHandleModes.MIRROR_ANGLE_LENGTH,
           label: 'Mirror Angle + Length',
           active: handleMode === VectorHandleModes.MIRROR_ANGLE_LENGTH,
+
           onSelect: () =>
             onChangeHandleMode(VectorHandleModes.MIRROR_ANGLE_LENGTH),
+
           icon: <HandleMirrorAngleLengthIcon />,
           testId: 'prop-handle-mode-mirror-angle-length'
         }
@@ -294,9 +304,11 @@ const VectorPoint = () => {
   const pointType = anchorPoint?.type ?? 'sharp'
   const selectedHandleMode = selectedPoint?.handleMode
   let handleMode: VectorHandleMode = VectorHandleModes.NONE
+
   if (elementId && pointId) {
     handleMode = elementApis.getVectorAnchorPointHandleMode(elementId, pointId)
   }
+
   if (isVectorHandleMode(selectedHandleMode)) {
     handleMode = selectedHandleMode
   }
@@ -345,6 +357,7 @@ const VectorPoint = () => {
           pointId
         )
       })
+
       return true
     },
     [elementId, pointId]
@@ -383,12 +396,14 @@ const VectorPoint = () => {
       }
 
       const nextX = parseFiniteInputNumber(newValue)
+
       if (nextX === null) {
         return false
       }
 
       return runDiscreteVectorPointInteraction(() => {
         const structuralOperationIntent = createHandlePositionStructuralIntent()
+
         if (
           target !== VECTOR_TOKENS.POINT.TARGET.ANCHOR &&
           !structuralOperationIntent
@@ -414,6 +429,7 @@ const VectorPoint = () => {
                   structuralOperationIntent
                 }
               ).value
+
         return updatedPoint === true
           ? false
           : applyTargetSelection(updatedPoint, target)
@@ -438,12 +454,14 @@ const VectorPoint = () => {
       }
 
       const nextY = parseFiniteInputNumber(newValue)
+
       if (nextY === null) {
         return false
       }
 
       return runDiscreteVectorPointInteraction(() => {
         const structuralOperationIntent = createHandlePositionStructuralIntent()
+
         if (
           target !== VECTOR_TOKENS.POINT.TARGET.ANCHOR &&
           !structuralOperationIntent
@@ -469,6 +487,7 @@ const VectorPoint = () => {
                   structuralOperationIntent
                 }
               ).value
+
         return updatedPoint === true
           ? false
           : applyTargetSelection(updatedPoint, target)
@@ -501,6 +520,7 @@ const VectorPoint = () => {
             changedRecords: ['point:type'],
             undoable: true
           })
+
         if (!structuralOperationIntent) {
           return
         }
@@ -513,6 +533,7 @@ const VectorPoint = () => {
             structuralOperationIntent
           }
         ).value
+
         applyTargetSelection(updatedPoint, VECTOR_TOKENS.POINT.TARGET.ANCHOR)
       })
     },
@@ -539,6 +560,7 @@ const VectorPoint = () => {
             changedRecords: ['point:handleMode'],
             undoable: true
           })
+
         if (!structuralOperationIntent) {
           return
         }
@@ -551,6 +573,7 @@ const VectorPoint = () => {
             structuralOperationIntent
           }
         ).value
+
         if (!updatedPoint) {
           return
         }

@@ -1,5 +1,5 @@
 /* global structuredClone, Response */
-import test from 'node:test'
+import test, { before } from 'node:test'
 import { Buffer } from 'node:buffer'
 import assert from 'node:assert/strict'
 import { summarizeCalls, verifyPreservation, readPayload } from '../analyze.mjs'
@@ -9,11 +9,27 @@ import { URL, fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
 import process from 'node:process'
 
+const root = fileURLToPath(new URL('../../../../../', import.meta.url))
+
+before(() => {
+  fs.mkdirSync(path.join(root, 'tmp'), { recursive: true })
+})
+
+test('temporary evidence fixtures stay inside their owning checkout', () => {
+  assert.equal(
+    path.join(
+      root,
+      'apps/asyra-design/test-data/knowledge-evaluation/__tests__/analysis.test.mjs'
+    ),
+    fileURLToPath(import.meta.url)
+  )
+})
+
 test('analysis refuses incomplete capture rather than emitting a successful report', () => {
-  const root = fileURLToPath(new URL('../../../../../..', import.meta.url))
   const directory = fs.mkdtempSync(
     path.join(root, 'tmp/knowledge-capture-test-')
   )
+
   try {
     fs.mkdirSync(path.join(directory, 'apps/asyra-design/tmp/ai-executions'), {
       recursive: true
@@ -49,6 +65,7 @@ test('analysis refuses incomplete capture rather than emitting a successful repo
         [fileURLToPath(new URL('../analyze.mjs', import.meta.url)), directory],
         { cwd: directory }
       )
+
       assert.notEqual(result.status, 0, 'incomplete capture must fail analysis')
       assert.equal(fs.existsSync(path.join(directory, 'analysis.json')), false)
     }
@@ -64,12 +81,14 @@ test('knowledge observations require matching actual completed tool calls', () =
     callId: 'read',
     elapsedMs: 5
   }
+
   assert.equal(summarizeCalls([start]).knowledgeCalls.length, 0)
   const result = summarizeCalls([
     start,
     { stage: 'tool_completed', callId: 'other', elapsedMs: 10 },
     { stage: 'tool_completed', callId: 'read', elapsedMs: 12 }
   ])
+
   assert.equal(result.knowledgeCalls.length, 1)
   assert.equal(result.knowledgeCalls[0].elapsedMs, 7)
   assert.equal(result.incomplete.length, 0)
@@ -89,6 +108,7 @@ test('precision evidence rejects recreated IDs, collateral edits and extra targe
     }
   }
   const after = structuredClone(before)
+
   after.document.props['b-dim'].width = 140
   assert.deepEqual(
     verifyPreservation(before, after, ['a', 'b', 'c'], 'width', 140),
@@ -123,8 +143,10 @@ test('ordinary quality prompts allow zero Knowledge reads without weakening the 
   const spec = JSON.parse(
     fs.readFileSync(new URL('../quality-cases.json', import.meta.url))
   )
+
   for (const item of [...spec.development, ...spec.transfer]) {
     const scenario = qualityScenario(spec, item.id)
+
     assert.ok(scenario.prompt.startsWith(item.prompt + '\n\n'))
     assert.ok(
       scenario.prompt.includes('Knowledge is optional reference material')
@@ -140,6 +162,7 @@ test('ordinary quality prompts allow zero Knowledge reads without weakening the 
     )
     assert.deepEqual(scenario.criteria, item.criteria)
   }
+
   const observed = summarizeCalls([
     {
       stage: 'tool_started',
@@ -149,6 +172,7 @@ test('ordinary quality prompts allow zero Knowledge reads without weakening the 
     },
     { stage: 'tool_completed', callId: 'draw', elapsedMs: 3 }
   ])
+
   assert.equal(observed.knowledgeCalls.length, 0)
   assert.equal(observed.incomplete.length, 0)
 })
@@ -158,10 +182,12 @@ test('content arms use identical prompts and ablation preserves metadata only', 
     fs.readFileSync(new URL('../quality-cases.json', import.meta.url))
   )
   const selected = qualityScenario(spec, 'documentation-actions')
+
   assert.equal(selected.deadlineMs, 600000)
   assert.deepEqual(selected.modules, ['design.docs-page'])
   const original =
     '---\n{"description":"Example","references":["colors"]}\n---\nActual advice'
+
   assert.equal(
     withoutAdvice(original).split('---')[1],
     original.split('---')[1]
@@ -171,12 +197,12 @@ test('content arms use identical prompts and ablation preserves metadata only', 
 })
 
 test('content fixture restores original bytes after failed execution', async () => {
-  const root = fileURLToPath(new URL('../../../../../..', import.meta.url))
   const directory = fs.mkdtempSync(
     path.join(root, 'tmp/knowledge-fixture-test-')
   )
   const file = path.join(directory, 'module.md')
   const original = '---\n{"description":"Example"}\n---\nOriginal advice\n'
+
   fs.writeFileSync(file, original)
   try {
     await assert.rejects(
@@ -198,7 +224,6 @@ test('content fixture restores original bytes after failed execution', async () 
 import { captureCheckpoint } from '../checkpoint.mjs'
 
 test('streamed checkpoint evidence requires the exact persistence receipt and canonical document', async () => {
-  const root = fileURLToPath(new URL('../../../../../..', import.meta.url))
   const directory = fs.mkdtempSync(
     path.join(root, 'tmp/knowledge-checkpoint-test-')
   )
@@ -210,13 +235,16 @@ test('streamed checkpoint evidence requires the exact persistence receipt and ca
     checkpoint: { version: '1.0.0', sceneTree: {}, props: {} }
   }
   let captureIndex = 0
+
   const run = (value, status = 200) =>
     captureCheckpoint({
       url: 'http://127.0.0.1/checkpoint',
       filename: `${filename}-${captureIndex++}`,
       receipt,
+
       request: async () => new Response(JSON.stringify(value), { status })
     })
+
   try {
     assert.equal((await run(body)).durableSequence, 4)
     await assert.rejects(run(body, 500), /HTTP 500/)
@@ -244,6 +272,7 @@ test('quality receipt rejects missing, extra and duplicated editable text and wr
     }
   }
   const expected = { width: 640, height: 480, text: ['Hello world'] }
+
   assert.deepEqual(verifyQualitySnapshot(snapshot, expected), {
     exactText: true,
     exactDimensions: true
@@ -260,8 +289,6 @@ test('quality receipt rejects missing, extra and duplicated editable text and wr
 })
 
 test('analysis requires exact request records, complete Runtime evidence and every required capture stage', () => {
-  const root = fileURLToPath(new URL('../../../../../', import.meta.url))
-  fs.mkdirSync(path.join(root, 'tmp'), { recursive: true })
   const directory = fs.mkdtempSync(
     path.join(root, 'tmp/knowledge-analysis-review-')
   )
@@ -270,8 +297,10 @@ test('analysis requires exact request records, complete Runtime evidence and eve
     directory,
     'apps/asyra-design/tmp/ai-executions'
   )
+
   fs.mkdirSync(records)
   fs.mkdirSync(defaultRecords, { recursive: true })
+
   const entry = (id, source = 'wanted-source') => [
     {
       event: 'ai_request_started',
@@ -294,11 +323,13 @@ test('analysis requires exact request records, complete Runtime evidence and eve
       durationMs: 20
     }
   ]
+
   const write = (folder, name, rows) =>
     fs.writeFileSync(
       path.join(folder, name + '.jsonl'),
       rows.map((r) => JSON.stringify(r)).join('\n')
     )
+
   const base = {
     sentAt: '2026-10-18T10:00:00Z',
     elapsedMs: 30,
@@ -319,15 +350,18 @@ test('analysis requires exact request records, complete Runtime evidence and eve
       ].map((key) => [key, { status: 'complete' }])
     )
   }
+
   const invoke = (run) => {
     fs.rmSync(path.join(directory, 'analysis.json'), { force: true })
     fs.writeFileSync(path.join(directory, 'run.json'), JSON.stringify(run))
+
     return spawnSync(
       process.execPath,
       [fileURLToPath(new URL('../analyze.mjs', import.meta.url)), directory],
       { cwd: directory, encoding: 'utf8' }
     )
   }
+
   try {
     // Put a concurrent unrelated request in both locations; time proximity is not identity.
     write(defaultRecords, 'unrelated', entry('unrelated', 'another-source'))
@@ -339,6 +373,7 @@ test('analysis requires exact request records, complete Runtime evidence and eve
     )
     write(records, 'wanted', entry('wanted'))
     const passed = invoke(base)
+
     assert.equal(passed.status, 0, passed.stderr)
     assert.deepEqual(
       JSON.parse(
@@ -364,12 +399,15 @@ test('analysis requires exact request records, complete Runtime evidence and eve
       ...base,
       sourceRequestIds: ['wanted-source', 'wanted-source']
     })
+
     assert.equal(repeated.status, 0, repeated.stderr)
     fs.rmSync(path.join(records, 'retry.jsonl'))
     const nested = entry('nested', 'wanted')
+
     nested[0].purpose = 'review'
     write(records, 'nested', nested)
     const withNested = invoke(base)
+
     assert.equal(withNested.status, 0, withNested.stderr)
     assert.deepEqual(
       JSON.parse(fs.readFileSync(path.join(directory, 'analysis.json')))
@@ -379,6 +417,7 @@ test('analysis requires exact request records, complete Runtime evidence and eve
     )
     fs.rmSync(path.join(records, 'nested.jsonl'))
     const imageRows = entry('wanted')
+
     imageRows.splice(
       1,
       0,
@@ -413,6 +452,7 @@ test('analysis requires exact request records, complete Runtime evidence and eve
     )
     write(records, 'wanted', entry('wanted'))
     const missingStage = structuredClone(base)
+
     delete missingStage.evidence.reload
     assert.notEqual(invoke(missingStage).status, 0)
     assert.notEqual(invoke({ ...base, sourceRequestIds: [] }).status, 0)
@@ -423,6 +463,7 @@ test('analysis requires exact request records, complete Runtime evidence and eve
       'unterminated request must remain incomplete'
     )
     const gap = entry('wanted')
+
     gap[1].sequence = 2
     write(records, 'wanted', gap)
     assert.notEqual(
@@ -431,6 +472,7 @@ test('analysis requires exact request records, complete Runtime evidence and eve
       'sequence gap must not be treated as complete'
     )
     const failedProvider = entry('wanted')
+
     failedProvider[1].outcome = 'failed'
     write(records, 'wanted', failedProvider)
     assert.notEqual(
@@ -445,6 +487,7 @@ test('analysis requires exact request records, complete Runtime evidence and eve
       'complete capture is not successful generation'
     )
     const wrongModel = entry('wanted')
+
     wrongModel[0].model = 'other-model'
     write(records, 'wanted', wrongModel)
     assert.notEqual(invoke(base).status, 0)
@@ -454,10 +497,10 @@ test('analysis requires exact request records, complete Runtime evidence and eve
 })
 
 test('payload evidence refuses missing, corrupted and escaped content', () => {
-  const root = fileURLToPath(new URL('../../../../../', import.meta.url))
   const directory = fs.mkdtempSync(
     path.join(root, 'tmp/knowledge-payload-review-')
   )
+
   try {
     assert.throws(
       () => readPayload(directory, { path: 'missing.json', sha256: 'missing' }),
@@ -480,13 +523,13 @@ test('payload evidence refuses missing, corrupted and escaped content', () => {
 test('submitted image restoration verifies exact files and every delivery identity', async () => {
   const { createHash } = await import('node:crypto')
   const { restoreToolImages } = await import('../analyze.mjs')
-  const root = fileURLToPath(new URL('../../../../../', import.meta.url))
   const directory = fs.mkdtempSync(path.join(root, 'tmp/image-evidence-'))
   const pixels = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6CwAAAABJRU5ErkJggg==',
     'base64'
   )
   const sha256 = createHash('sha256').update(pixels).digest('hex')
+
   fs.writeFileSync(path.join(directory, 'pixels.png'), pixels)
   const completion = {
     stage: 'tool_completed',
@@ -509,6 +552,7 @@ test('submitted image restoration verifies exact files and every delivery identi
     }
   }
   const second = structuredClone(retained)
+
   second.evidence.contentIndex = 2
   try {
     const restored = restoreToolImages(directory, [
@@ -516,6 +560,7 @@ test('submitted image restoration verifies exact files and every delivery identi
       retained,
       second
     ])
+
     assert.deepEqual(
       restored.map((x) => x.contentIndex),
       [1, 2]
@@ -554,11 +599,13 @@ test('submitted image restoration verifies exact files and every delivery identi
       }
     ]) {
       const changed = structuredClone(retained)
+
       edit(changed)
       assert.throws(() =>
         restoreToolImages(directory, [completion, changed, second])
       )
     }
+
     fs.unlinkSync(path.join(directory, 'pixels.png'))
     assert.throws(
       () => restoreToolImages(directory, [completion, retained, second]),

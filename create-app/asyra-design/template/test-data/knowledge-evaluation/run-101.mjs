@@ -44,7 +44,11 @@ const here = path.dirname(fileURLToPath(import.meta.url))
 const app = path.resolve(here, '../..')
 const root = path.resolve(app, '../..')
 const [arm, ...deadlineArguments] = process.argv.slice(2)
-if (arm !== 'quality-knowledge') throw new Error('Unknown 101 arm')
+
+if (arm !== 'quality-knowledge') {
+  throw new Error('Unknown 101 arm')
+}
+
 const caseId = 'taipei-101'
 const specification = JSON.parse(
   fs.readFileSync(path.join(here, 'architecture-101.json'))
@@ -65,6 +69,7 @@ const vite = services.find((value) => value.name === 'vite')
 const producer = verifyEvaluationService(vite, app)
 const id = `knowledge-${arm}-${caseId}-${Date.now()}`
 const directory = path.join(root, 'tmp/knowledge-evaluation', id)
+
 fs.mkdirSync(directory, { recursive: true })
 const meta = {
   id,
@@ -105,6 +110,7 @@ const meta = {
   errors: [],
   statuses: []
 }
+
 meta.sourceManifest = captureSources(
   root,
   path.join(directory, 'source-snapshot.json.gz')
@@ -115,11 +121,13 @@ meta.sources = Object.fromEntries(
     value.sha256 ?? null
   ])
 )
+
 const save = () =>
   fs.writeFileSync(
     path.join(directory, 'run.json'),
     JSON.stringify(meta, null, 2)
   )
+
 const snapshot = async (page) =>
   page.evaluate(async () => {
     const { core, getActiveCollaborationHandle } =
@@ -130,13 +138,16 @@ const snapshot = async (page) =>
         core.getElementData(id)
       ])
     )
+
     return {
       elements,
       document: await core.save(),
       session: getActiveCollaborationHandle()?.getSessionState()
     }
   })
+
 const stage = (name, task) => collectEvidenceStage(meta, name, task, save)
+
 let ownedBrowser,
   context,
   deadline,
@@ -148,6 +159,7 @@ try {
   ownedBrowser = await launchCaptureBrowser({
     chromium,
     evidencePath: path.join(directory, 'cleanup-stop.json'),
+
     record: (event) => {
       ;(meta.browserLifecycle ??= []).push(event)
       save()
@@ -159,9 +171,13 @@ try {
   })
   page = await context.newPage()
   page.on('request', (request) => {
-    if (!meta.sentAt) return
+    if (!meta.sentAt) {
+      return
+    }
+
     try {
       const id = captureRequestIdentity(request, environment.appURL)
+
       if (id) {
         meta.sourceRequestIds.push(id)
         save()
@@ -174,9 +190,11 @@ try {
   page.setDefaultTimeout(30000)
   page.setDefaultNavigationTimeout(30000)
   let unexpectedNavigation
+
   page.on('framenavigated', (frame) => {
-    if (frame === page.mainFrame() && meta.sentAt)
+    if (frame === page.mainFrame() && meta.sentAt) {
       unexpectedNavigation = frame.url()
+    }
   })
   page.on('pageerror', (error) => {
     meta.errors.push(error.message)
@@ -189,10 +207,11 @@ try {
     (signal) => waitForCaptureReady(page, signal),
     60000
   )
-  if (scenario.seed)
+  if (scenario.seed) {
     meta.seed = await page.evaluate(async () => {
       const { core } = await import('/src/testing/runtime-access.ts')
       const { transactionApis } = await import('/src/common-apis')
+
       return transactionApis.runTransaction(() =>
         core.createElementsInParent(
           ['Keep Left', 'Target', 'Keep Right'].map((name, i) => ({
@@ -207,6 +226,8 @@ try {
         )
       )
     })
+  }
+
   fs.writeFileSync(
     path.join(directory, 'before.json'),
     JSON.stringify(
@@ -221,11 +242,14 @@ try {
   await page.getByLabel('Choose images').setInputFiles(
     specification.attachments.map((a) => {
       const filename = path.resolve(here, a.path)
+
       if (
         createHash('sha256').update(fs.readFileSync(filename)).digest('hex') !==
         a.sha256
-      )
+      ) {
         throw new Error('Reference hash mismatch')
+      }
+
       return filename
     })
   )
@@ -237,6 +261,7 @@ try {
   meta.attachments = specification.attachments
   await page.evaluate(async (source) => {
     const { core } = await import('/src/testing/runtime-access.ts')
+
     window.__qualityObserver = (0, eval)('(' + source + ')')(core)
   }, installRecordingObserver.toString())
   const fit = createRecordingBoundsFit(async (event) => {
@@ -244,11 +269,15 @@ try {
     meta.fits ??= []
     meta.fits.push({ at: Date.now(), ...event })
   })
+
   await page.getByLabel('Message Agent').fill(scenario.prompt)
-  if (captureSources(root).digest !== meta.sourceManifest.digest)
+  if (captureSources(root).digest !== meta.sourceManifest.digest) {
     throw new Error('Source changed before Send')
+  }
+
   verifyEvaluationService(vite, app)
   const sentAt = new Date().toISOString()
+
   meta.evaluationWindow = {
     workDeadlineAt: Date.parse(sentAt) + limitMs,
     reportTimeoutMs: meta.reportTimeoutMs,
@@ -256,6 +285,7 @@ try {
   }
   await page.evaluate((evaluationWindow) => {
     const url = new URL(location.href)
+
     url.searchParams.set('aiEvaluationWindow', JSON.stringify(evaluationWindow))
     history.replaceState(null, '', url)
   }, meta.evaluationWindow)
@@ -269,6 +299,7 @@ try {
     evidencePath: path.join(directory, 'deadline.json')
   })
   await deadline.ready
+
   const duringGeneration = (task) =>
     boundedCapture(
       'generation operation',
@@ -281,24 +312,31 @@ try {
           Date.now()
       )
     )
+
   await duringGeneration(() =>
     page.getByRole('button', { name: 'Send', exact: true }).click()
   )
   let previous,
     first = false
+
   while (
     Date.now() <
     meta.evaluationWindow.workDeadlineAt + meta.reportTimeoutMs + 2000
   ) {
-    if (meta.requestIdentityFailure)
+    if (meta.requestIdentityFailure) {
       throw new Error(meta.requestIdentityFailure)
-    if (unexpectedNavigation)
+    }
+
+    if (unexpectedNavigation) {
       throw new Error(
         'Unexpected navigation during evaluation: ' + unexpectedNavigation
       )
+    }
+
     const state = await duringGeneration(() =>
       page.evaluate(async () => {
         const { core } = await import('/src/testing/runtime-access.ts')
+
         return {
           outcome: [
             ...document.querySelectorAll('[data-testid="ai-agent-message"]')
@@ -314,8 +352,11 @@ try {
         }
       })
     )
-    if (state.observation.errors.length)
+
+    if (state.observation.errors.length) {
       throw new Error(JSON.stringify(state.observation.errors))
+    }
+
     await duringGeneration(() => fit(state.observation.bounds))
     if (!first && state.observation.bounds) {
       first = true
@@ -324,10 +365,12 @@ try {
         page.screenshot({ path: path.join(directory, 'first.png') })
       )
     }
+
     if (state.status !== previous) {
       previous = state.status
       meta.statuses.push({ at: new Date().toISOString(), text: state.status })
     }
+
     if (
       ['success', 'failed', 'partial', 'cancelled', 'no-change'].includes(
         state.outcome
@@ -337,9 +380,11 @@ try {
       meta.outcomeObservedAt = new Date().toISOString()
       break
     }
+
     save()
     await page.waitForTimeout(1000)
   }
+
   // The work cutoff is enforced by provider cancellation and browser mutation admission.
   // The external watchdog remains armed while collecting the independent report.
   try {
@@ -352,24 +397,35 @@ try {
     meta.reportDeliveryFailure = error.message
     save()
   }
+
   await captureEvaluationReport({
     meta,
     report,
+
     writeText: (text) =>
       fs.writeFileSync(path.join(directory, 'self-report.txt'), text),
+
     captureImage: () =>
       captureReportImage(page, report, path.join(directory, 'self-report.png')),
+
     save
   })
-  if (!meta.outcome)
+  if (!meta.outcome) {
     throw new Error('Evaluation report did not settle before its deadline')
+  }
+
   meta.deadline = await deadline.finish()
   generationSettled = meta.deadline.status === 'finished'
-  if (!generationSettled) throw new Error('Evaluation outer watchdog expired')
-  if (!meta.sourceRequestIds.length || meta.requestIdentityFailure)
+  if (!generationSettled) {
+    throw new Error('Evaluation outer watchdog expired')
+  }
+
+  if (!meta.sourceRequestIds.length || meta.requestIdentityFailure) {
     throw new Error(
       meta.requestIdentityFailure ?? 'Missing observed provider request'
     )
+  }
+
   meta.elapsedMs = Date.now() - Date.parse(meta.sentAt)
   meta.generation = {
     status: meta.outcome,
@@ -390,17 +446,24 @@ try {
     boundedCapture('final view', async () => {
       await page.keyboard.press('Meta+1')
       await page.screenshot({ path: path.join(directory, 'final.png') })
+
       return page.getByTestId('ai-agent-message').allTextContents()
     })
   )
-  if (conversation) meta.conversation = conversation
+
+  if (conversation) {
+    meta.conversation = conversation
+  }
+
   const captured = await stage('persistence', () => captureSessionOnPage(page))
+
   if (captured) {
     meta.persistence = captured.receipt
     meta.finalRoots = captured.roots
     const backend = services.find(
       (service) => service.name === 'document-backend'
     )
+
     meta.checkpoint = await stage('checkpoint', () =>
       captureCheckpoint({
         url: `http://127.0.0.1:${backend.port}/api/documents/${encodeURIComponent(id)}/bootstrap-checkpoint`,
@@ -409,20 +472,28 @@ try {
       })
     )
   }
+
   const workContextClosed = await stage('close-work-context', () =>
     boundedCapture(
       'close work context',
       async () => {
         await context.close()
+
         return true
       },
       5000
     )
   )
-  if (workContextClosed) context = undefined
+
+  if (workContextClosed) {
+    context = undefined
+  }
+
   await stage(captured ? 'reload' : 'read-only-recovery', () => {
-    if (!workContextClosed)
+    if (!workContextClosed) {
       throw new Error('Work context closure was not confirmed before reload')
+    }
+
     return captureReload({
       browser: ownedBrowser,
       viewport: meta.viewport,
@@ -433,17 +504,23 @@ try {
         directory,
         captured ? 'reload.png' : 'recovery.png'
       ),
+
       recordCleanup: (task) => stage('cleanup-reload-context', task)
     })
   })
   await stage('source-verification', async () => {
     const actual = captureSources(root)
-    if (actual.digest !== meta.sourceManifest.digest)
+
+    if (actual.digest !== meta.sourceManifest.digest) {
       throw new Error('Source changed during evaluation')
+    }
+
     return { digest: actual.digest }
   })
-  if (Object.values(meta.evidence).some((value) => value.status === 'failed'))
+  if (Object.values(meta.evidence).some((value) => value.status === 'failed')) {
     process.exitCode = 1
+  }
+
   save()
   console.log(
     JSON.stringify({
@@ -465,6 +542,7 @@ try {
       meta.stopFailure = stopError.message
     }
   }
+
   meta.elapsedMs ??= meta.sentAt
     ? Date.now() - Date.parse(meta.sentAt)
     : undefined
@@ -484,19 +562,25 @@ try {
       meta.stopFailure ??= error.message
     }
   }
+
   for (const [name, resource] of [
     ['context', context],
     ['browser', ownedBrowser]
   ]) {
-    if (!resource) continue
+    if (!resource) {
+      continue
+    }
+
     await stage(`cleanup-${name}`, () =>
       name === 'browser'
         ? resource.close()
         : boundedCapture(name, () => resource.close(), 5000)
     )
   }
+
   await stage('native-diagnostic-boundaries', async () => {
     meta.nativeBoundaryEvidence = captureNativeBoundaries(meta, directory)
+
     return meta.nativeBoundaryEvidence
   })
   if (
@@ -504,7 +588,9 @@ try {
       (value) => value.status === 'failed'
     ) ||
     meta.stopFailure
-  )
+  ) {
     process.exitCode = 1
+  }
+
   save()
 }

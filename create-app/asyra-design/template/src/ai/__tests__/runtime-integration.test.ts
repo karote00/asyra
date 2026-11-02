@@ -226,11 +226,15 @@ describe('Asyra Design server action-batch runtime integration', () => {
           summary: { kind: 'work', text: `Refine part ${index}` }
         }))
       }
-      if (outcome === 'cancelled')
+
+      if (outcome === 'cancelled') {
         vi.mocked(elementApis.setElementsVisible).mockImplementation(() => {
           controller.abort()
+
           return ['changed']
         })
+      }
+
       const projection = createAiActivityProjection()
       const snapshots: {
         id: string
@@ -247,33 +251,41 @@ describe('Asyra Design server action-batch runtime integration', () => {
           provider: {
             requestActionBatch: async (_input, options) => {
               if (outcome === 'repeated') {
-                if (!options.executeBatch)
+                if (!options.executeBatch) {
                   throw new Error('Expected batch executor')
+                }
+
                 await options.executeBatch({
                   ...batch,
                   batchId: 'earlier-batch'
                 })
               }
+
               return batch
             }
           }
         })
       )
+
       try {
         const result = await runtime.run({
           intent: 'Refine both parts',
           signal: controller.signal,
+
           progressObserver: (update) => {
             const decision = projection.append(update)
-            if (update.activity)
+
+            if (update.activity) {
               snapshots.push({
                 id: update.activity.callId,
                 status: update.toolStatus,
                 count: decision.activeCallCount,
                 message: projection.result().current.message
               })
+            }
           }
         })
+
         if (outcome !== 'cancelled') {
           expect(result.status).toBe('executed')
           const expected = [
@@ -282,6 +294,7 @@ describe('Asyra Design server action-batch runtime integration', () => {
             { status: 'running', count: 1, message: 'Refine part 1' },
             { status: 'completed', count: 0, message: 'Refine part 1' }
           ]
+
           expect(
             snapshots.map(({ status, count, message }) => ({
               status,
@@ -292,6 +305,7 @@ describe('Asyra Design server action-batch runtime integration', () => {
             outcome === 'repeated' ? [...expected, ...expected] : expected
           )
           const starts = snapshots.filter((item) => item.status === 'running')
+
           expect(new Set(starts.map((item) => item.id)).size).toBe(
             starts.length
           )
@@ -331,6 +345,7 @@ describe('Asyra Design server action-batch runtime integration', () => {
     if (result.status !== 'executed') {
       throw new Error('Expected the resident action batch to execute.')
     }
+
     expect(result.preview.actions).toEqual([
       {
         id: 'visibility-1',
@@ -379,6 +394,7 @@ describe('Asyra Design server action-batch runtime integration', () => {
     )
 
     const result = await executeBatch(compact16ItemBatch())
+
     expect(result.status, JSON.stringify(result)).toBe('executed')
     expect(result).toMatchObject({
       actionResults: [
@@ -428,6 +444,7 @@ describe('Asyra Design server action-batch runtime integration', () => {
         provider
       })
     )
+
     expect(provider.requestActionBatch).not.toHaveBeenCalled()
 
     try {
@@ -477,6 +494,7 @@ describe('Asyra Design server action-batch runtime integration', () => {
         requestConfirmation: confirmation.requestConfirmation
       })
     )
+
     confirmation.beginTurn('remove-turn')
 
     try {
@@ -484,6 +502,7 @@ describe('Asyra Design server action-batch runtime integration', () => {
         intent: 'delete the selected group',
         signal: new AbortController().signal
       })
+
       await pending.promise
 
       expect(confirmation.getSnapshot().pending).toMatchObject({

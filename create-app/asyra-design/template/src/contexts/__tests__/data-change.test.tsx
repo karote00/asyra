@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   getFeature: vi.fn(),
   subscribeToFileLoadComplete: vi.fn((subscriber: () => void) => {
     mocks.fileLoadSubscribers.push(subscriber)
+
     return {
       unsubscribe: mocks.fileLoadUnsubscribe
     }
@@ -53,6 +54,7 @@ describe('App data-change context', () => {
 
   it('observes canonical file completion without synthesizing it from Render readiness', async () => {
     const host = document.createElement('div')
+
     document.body.append(host)
     const root = createRoot(host)
 

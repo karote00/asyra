@@ -42,13 +42,17 @@ export const FontFamilySelect = ({
   const [families, setFamilies] = useState(() =>
     getAvailableFontFamilies(document)
   )
+
   useEffect(() => {
     const refresh = () => setFamilies(getAvailableFontFamilies(document))
+
     document.fonts?.addEventListener('loadingdone', refresh)
+
     return () => document.fonts?.removeEventListener('loadingdone', refresh)
   }, [])
   // An existing document font remains selectable even when absent on this machine.
   const values = families.includes(value) ? families : [value, ...families]
+
   return (
     <TextSelect
       label="Font family"

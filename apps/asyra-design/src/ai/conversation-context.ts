@@ -54,33 +54,46 @@ export const admitsConversationContext = (
   intent: string,
   metadata: unknown
 ): boolean => {
-  if (!record(metadata) || metadata.conversationContext === undefined)
+  if (!record(metadata) || metadata.conversationContext === undefined) {
     return true
+  }
+
   const context = metadata.conversationContext
+
   if (
     !record(context) ||
     !keysWithin(context, ['turns', 'attachmentIndexes']) ||
     !Array.isArray(context.turns) ||
     context.turns.length > ConversationContextLimits.turns
-  )
+  ) {
     return false
+  }
+
   const attachments = metadata.imageAttachments ?? []
+
   if (
     !Array.isArray(attachments) ||
     conversationTextBytes(attachments) >
       ConversationContextLimits.attachmentBytes ||
     conversationTextBytes({ intent, context }) >
       ConversationContextLimits.textBytes
-  )
+  ) {
     return false
+  }
+
   const validIndexes = (value: unknown) =>
     Array.isArray(value) &&
     value.every(
       (index) =>
         Number.isSafeInteger(index) && index >= 0 && index < attachments.length
     )
-  if (!validIndexes(context.attachmentIndexes)) return false
+
+  if (!validIndexes(context.attachmentIndexes)) {
+    return false
+  }
+
   const turnIds = new Set<string>()
+
   for (const turn of context.turns) {
     if (
       !record(turn) ||
@@ -104,18 +117,23 @@ export const admitsConversationContext = (
         String(turn.outcome)
       ) ||
       !validIndexes(turn.attachmentIndexes)
-    )
+    ) {
       return false
+    }
+
     for (const key of ['replyToTurnId', 'retryOfTurnId']) {
       if (
         turn[key] !== undefined &&
         (typeof turn[key] !== 'string' || !turnIds.has(turn[key] as string))
-      )
+      ) {
         return false
+      }
     }
+
     turnIds.add(turn.turnId)
     if (turn.question !== undefined) {
       const question = turn.question
+
       if (
         !record(question) ||
         !keysWithin(question, ['message', 'choices']) ||
@@ -137,9 +155,11 @@ export const admitsConversationContext = (
             (choice.resourceWarning === null ||
               typeof choice.resourceWarning === 'string')
         )
-      )
+      ) {
         return false
+      }
     }
   }
+
   return true
 }

@@ -72,10 +72,12 @@ describe('execution evaluation', () => {
       evidence: { result: { phase: 'plan', method: output } }
     }
   ]
+
   it('reports exact retained plan echoes without exposing narrative or inferring model delay', () => {
     const report = evaluateExecution(
       run('echo', planEcho('plan', 'Private construction method'))
     )
+
     expect(report.findings).toContainEqual(
       expect.objectContaining({
         kind: 'input-echo-candidate',
@@ -117,6 +119,7 @@ describe('execution evaluation', () => {
         evidence: { code: 'INPUT_INVALID' }
       }
     ]
+
     const period = createExecutionPeriodReport(
       [
         run('plan', failure('review_drawing', 'plan')),
@@ -126,10 +129,12 @@ describe('execution evaluation', () => {
       ],
       { from: '2026-10-01', to: '2026-10-03' }
     )
+
     expect(period.investigationTargets).toHaveLength(3)
     const target = period.investigationTargets.find(
       (target) => target.phase === 'plan'
     )
+
     expect(target).toMatchObject({
       tool: 'review_drawing',
       code: 'INPUT_INVALID',
@@ -151,11 +156,13 @@ describe('execution evaluation', () => {
   it('does not pool new revisions with historical failures or turn partial summaries into echo evidence', () => {
     const before = run('before', planEcho('plan', 'Use the supplied outline'))
     const after = run('after', planEcho('plan', 'Use the supplied outline'))
+
     after.metadata.sourceRevision = 'candidate'
     const period = createExecutionPeriodReport([before, after], {
       from: '2026-10-01',
       to: '2026-10-03'
     })
+
     expect(period.investigationTargets).toHaveLength(2)
     expect(
       period.investigationTargets.map(
@@ -163,6 +170,7 @@ describe('execution evaluation', () => {
       )
     ).toEqual(['abc123', 'candidate'])
     const partial = { count: 2, items: ['one'], truncated: true }
+
     expect(
       evaluateExecution(run('partial', planEcho('plan', partial))).findings
     ).toEqual([])
@@ -170,12 +178,14 @@ describe('execution evaluation', () => {
   it('keeps different dirty source snapshots separate within the same revision', () => {
     const before = run('before', planEcho('plan', 'Use the supplied outline'))
     const after = run('after', planEcho('plan', 'Use the supplied outline'))
+
     before.metadata.sourceFingerprint = 'a'.repeat(64)
     after.metadata.sourceFingerprint = 'b'.repeat(64)
     const period = createExecutionPeriodReport([before, after], {
       from: '2026-10-01',
       to: '2026-10-03'
     })
+
     expect(period.investigationTargets).toHaveLength(2)
     expect(
       period.investigationTargets.map(
@@ -215,12 +225,14 @@ describe('execution evaluation', () => {
         }
       ])
     )
+
     expect(report.toolCalls).toHaveLength(1)
     expect(report.actions).toMatchObject([{ callId: 'inner', handlerMs: 7 }])
   })
   it('projects actual retained batch selectors without mutation values', () => {
     const lines: string[] = []
     const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+
     try {
       const usage = createAiExecutionProfiler(
         { intent: 'private', context: {}, actions: [], attempt: 1 },
@@ -230,10 +242,12 @@ describe('execution evaluation', () => {
             write: (entry) => {
               lines.push(JSON.stringify(entry))
             },
+
             flush: async () => ({ status: 'saved', path: null })
           }
         }
       )
+
       usage.trace('tool_started', {
         tool: 'execute_design_batch',
         callId: 'batch',
@@ -259,6 +273,7 @@ describe('execution evaluation', () => {
       })
       usage.finish('completed')
       const report = evaluateExecution(parseExecutionRecord(lines.join('\n')))
+
       expect(report.toolCalls[0]).toMatchObject({
         selectors: {
           operations: [
@@ -302,6 +317,7 @@ describe('execution evaluation', () => {
         elapsedMs: 2
       }
     ]
+
     expect(evaluateExecution(run('a', review)).modelReview.current).toBe(true)
     expect(
       evaluateExecution(
@@ -333,6 +349,7 @@ describe('execution evaluation', () => {
         }
       ])
     )
+
     expect(result.findings).toEqual([
       expect.objectContaining({ kind: 'unavailable-result', callId: 'a' })
     ])
@@ -341,6 +358,7 @@ describe('execution evaluation', () => {
   it('reads actual retained array summaries when reusing model review evidence', () => {
     const lines: string[] = []
     const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+
     try {
       const usage = createAiExecutionProfiler(
         { intent: 'private', context: {}, actions: [], attempt: 1 },
@@ -350,10 +368,12 @@ describe('execution evaluation', () => {
             write: (record) => {
               lines.push(JSON.stringify(record))
             },
+
             flush: async () => ({ status: 'saved', path: null })
           }
         }
       )
+
       usage.trace('tool_started', {
         tool: 'review_drawing',
         callId: 'review',
@@ -376,6 +396,7 @@ describe('execution evaluation', () => {
       })
       usage.finish('completed')
       const report = evaluateExecution(parseExecutionRecord(lines.join('\n')))
+
       expect(report.modelReview).toMatchObject({
         status: 'recorded',
         inspectionIds: ['i-1'],
@@ -398,6 +419,7 @@ describe('execution evaluation', () => {
         ...query('b', { fields: ['name'] })
       ])
     )
+
     expect(result.timing).toMatchObject({
       durationMs: 100,
       observedToolAndResearchMs: 20,
@@ -420,6 +442,7 @@ describe('execution evaluation', () => {
       ...query('g', { fields: ['[truncated]'], elementIds: ['x'] }, 'scene-1')
     ]
     const result = evaluateExecution(run('a', events))
+
     expect(result.findings).toEqual([
       expect.objectContaining({
         kind: 'repeat-query-candidate',
@@ -438,6 +461,7 @@ describe('execution evaluation', () => {
       ...query('a', { fields: ['id'] }, 'one'),
       ...query('b', { fields: ['id'] }, 'one')
     ].map((event) => ({ ...event, tool: 'execute_design_batch' }))
+
     expect(evaluateExecution(run('a', events)).findings).toEqual([])
   })
 
@@ -470,6 +494,7 @@ describe('execution evaluation', () => {
         false
       )
     )
+
     expect(result.complete).toBe(false)
     expect(result.outcome).toBe('incomplete')
     expect(result.findings.map((finding) => finding.kind)).toEqual([
@@ -532,6 +557,7 @@ describe('execution evaluation', () => {
         ]),
         { feedback: 'The shape is wrong.' }
       )
+
       expect(result.modelReview).toMatchObject({
         status: 'recorded',
         detailRequired,
@@ -584,6 +610,7 @@ describe('execution evaluation', () => {
           : []),
         { stage: 'lifecycle_completed', callId: 'provider-turn', elapsedMs: 90 }
       ]
+
       expect(
         evaluateExecution(run('settled', events)).modelReview.current
       ).toBe(!laterEdit)
@@ -614,6 +641,7 @@ describe('execution evaluation', () => {
     const report = evaluateExecution(
       run('programs', [...events, ...query('child', {})])
     )
+
     expect(report.orchestration).toMatchObject({
       nativeTurnIds: ['native-turn'],
       modelRoundCount: null,
@@ -635,6 +663,7 @@ describe('execution evaluation', () => {
     (current) => {
       const lines: string[] = []
       const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+
       try {
         const usage = createAiExecutionProfiler(
           { actions: [], context: {}, intent: 'Draw', attempt: 1 },
@@ -642,10 +671,12 @@ describe('execution evaluation', () => {
           {
             sink: {
               write: (record) => lines.push(JSON.stringify(record)),
+
               flush: async () => ({ status: 'saved', path: null })
             }
           }
         )
+
         usage.trace('tool_started', {
           tool: 'review_drawing',
           callId: 'review',
@@ -668,11 +699,13 @@ describe('execution evaluation', () => {
         })
         usage.finish('completed')
         const parsed = parseExecutionRecord(lines.join('\n'))
+
         expect(parsed.issues).toEqual([])
         expect(parsed.complete).toBe(true)
         const receipt = parsed.records.find(
           (entry) => entry.stage === 'action_completed'
         )
+
         expect(
           (receipt?.evidence as { result: { current?: boolean } }).result
             .current
@@ -706,6 +739,7 @@ describe('execution evaluation', () => {
         }
       ])
     )
+
     expect(result.modelReview.status).toBe('unavailable')
   })
 
@@ -718,11 +752,13 @@ describe('execution evaluation', () => {
       run('unknown', [], 'invalid'),
       run('partial', [], '2026-10-02T00:00:00Z', false)
     ]
+
     runs[5].metadata.model = 'other-model'
     const report = createExecutionPeriodReport(runs, {
       from: '2026-10-01T00:00:00Z',
       to: '2026-10-03T00:00:00Z'
     })
+
     expect(report.runs.map((entry) => entry.requestId)).toEqual([
       'start',
       'partial'
@@ -740,6 +776,7 @@ describe('execution evaluation', () => {
     const report = createExecutionPeriodReport([], {
       now: new Date('2026-10-03T00:00:00Z')
     })
+
     expect(report.from).toBe('2026-09-26T00:00:00.000Z')
     expect(report.runs).toEqual([])
     expect(report.groups).toEqual([])
@@ -787,6 +824,7 @@ it('counts receipt outcomes separately from completed transport and nested actio
       evidence: { result }
     }
   ])
+
   events.push(
     {
       stage: 'tool_started',
@@ -817,6 +855,7 @@ it('counts receipt outcomes separately from completed transport and nested actio
   const progress = evaluateExecution(
     run('outcomes', events, '2026-10-02T00:00:00Z', false)
   )
+
   expect(progress.complete).toBe(false)
   expect(report.complete).toBe(true)
   expect(progress.toolOutcomes).toEqual(report.toolOutcomes)
@@ -859,6 +898,7 @@ it('preserves acknowledged partial work from the actual recoverable failure enve
     }
   )
   const result = JSON.parse(reply.text)
+
   expect(result).toMatchObject({
     available: false,
     toolOutcome: { status: 'partial' }
@@ -880,6 +920,7 @@ it('preserves acknowledged partial work from the actual recoverable failure enve
       }
     ])
   )
+
   expect(report.toolCalls[0].execution).toMatchObject({
     status: 'partial',
     recoverable: true,
@@ -892,6 +933,7 @@ it('preserves acknowledged partial work from the actual recoverable failure enve
 function evaluateExecution(...[run, options]: Parameters<typeof evaluate>) {
   return evaluate(run, { ...options, policy: designReportPolicy })
 }
+
 function createExecutionPeriodReport(
   ...[runs, options]: Parameters<typeof periodReport>
 ) {
