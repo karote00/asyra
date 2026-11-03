@@ -420,3 +420,24 @@ CPU profiling remain explicit opt-ins.
 - no Contents optimization in this correction;
 - no default high-detail recording, trace, or profile capture;
 - no product behavior selected by a performance query parameter.
+
+### Completion evidence by runner
+
+The fixed taipei-101-live runner records continuously, retains the same-thread
+report, confirms persistence separately, and reloads the same browser context.
+The knowledge-evaluation run-101 collector intentionally omits video and uses a
+fresh-context reload. Do not apply its capture lifecycle to the fixed recorder.
+
+Evaluation report instructions require unsupported; that classification is host
+policy, not the model independently rejecting the drawing. Native work completion,
+report success and ordinary completed-action durability are separate assertions.
+The fixed run does not replace focused ordinary completion/presentation tests.
+
+The fixed recorder fits after settled/rendered document changes only when content
+leaves the visible drawing area, including movement with unchanged element count.
+It records fit revisions/times in run.json. Idle polls do not scan bounds. External
+pan/zoom suspends automatic framing for deliberate detail views; the test controller
+can explicitly resume it. Dispose the controller at report entry, after watchdog
+retirement. Framing failures join evidenceErrors without aborting report collection.
+The permanent drawing-framing browser fixture retains intermediate screenshots and
+video and verifies unchanged canonical data, selection and Undo depth around fit.

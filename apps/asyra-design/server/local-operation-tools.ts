@@ -5001,7 +5001,9 @@ export const createLocalOperationTools = (
             failedInspections,
             ...designReview.judgmentHandoff(
               inspectionIds,
-              reviewArgs.phase as 'structure' | 'visual'
+              reviewArgs.phase as 'structure' | 'visual',
+              selections.size ? [...selections.values()] : undefined,
+              true
             ),
             actionResults: capturedResults,
             message
@@ -5038,7 +5040,8 @@ export const createLocalOperationTools = (
           const handoff = designReview.judgmentHandoff(
             inspectionIds,
             phase,
-            hasReusedImages ? undefined : [...selections.values()]
+            [...selections.values()],
+            hasReusedImages
           )
 
           return JSON.stringify({

@@ -1114,3 +1114,21 @@ session and commits through Core creation/property APIs inside one transaction.
 The Canvas editor subscribes only while active and derives placement through
 `elementLocalToWorkspace` and `workspaceToCanvas`. See `specs/editable-text.md`
 and `bdd-features/text-canvas.feature` for lifecycle and accepted behavior.
+
+### Native discovery entry
+
+With drawing operations enabled, describe_design_apis is the sole eagerly
+available native operation entry. Its declaration and dispatch still come from
+the existing operation owner. Domain tools remain deferred; no-operation and
+assessment requests do not add the entry. Native advertised counts/bytes reflect
+the actual registration. Qualified names, selected usage, scopes and batch/native
+execution envelopes retain their existing contracts.
+
+### Mixed capture recovery
+
+Mixed review capture preserves declared new-image roles in an unsigned
+`next.arguments.bindChecks` template when retained image roles remain unknown.
+Partial capture also retains successful roles while failed targets remain pending.
+Complete explicit roles through the existing binding route; enclosing images
+never become implicit dependencies. Conflicting declarations for the same check
+are rejected before capture, including reference-use and supersession differences.

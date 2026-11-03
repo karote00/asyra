@@ -290,3 +290,14 @@ test('evidence collection retains later artifacts after a failed stage', async (
     { stage: 'video', error: 'Recording unavailable' }
   ])
 })
+
+test('fixed recorder observes framing throughout drawing and disposes it before reload', () => {
+  const source = readFileSync(
+    new URL('../test-data/ai-drawing/taipei-101-live.mjs', import.meta.url),
+    'utf8'
+  )
+
+  assert.ok(source.includes('installDrawingFraming'))
+  assert.ok(source.includes('fixedDrawingFraming.tick()'))
+  assert.ok(source.includes('fixedDrawingFraming.dispose()'))
+})

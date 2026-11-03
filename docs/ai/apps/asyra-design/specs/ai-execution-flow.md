@@ -3,7 +3,8 @@
 ## Direct native tool delivery
 
 Tools expose vendor-independent JSON contracts and owner results. The local adapter
-registers deferred native declarations and delivers text and images directly through
+registers one eager operation discovery entry when operations are available,
+keeps domain declarations deferred, and delivers text and images directly through
 the native tool-response channel. No generated JavaScript program, interpreter
 storage or model-authored forwarding step participates. App-owned result handles,
 bounded content continuations and explicit refresh remain the recovery authority;
@@ -24,6 +25,15 @@ with ordinary grouped Undo. The App prompt owns contextual permission questions
 for external-tool use or security concerns through request_clarification; it does
 not turn internal edit effects into confirmation requirements. Schema admission,
 canonical locks and host/external security boundaries remain enforced.
+
+### Native discovery bootstrap
+
+When drawing operations are available, the canonical describe_design_apis tool
+is directly available in the initial native registration. Other native domain
+tools remain deferred. Initial metadata counts and bytes derive from actual
+registration; unrelated catalog growth must not enlarge the bootstrap. No-operation
+and assessment-only requests do not acquire an operation discovery entry. Native
+and batch routes remain distinct; direct availability does not authorize writes.
 
 ## Product contract
 
@@ -1353,10 +1363,18 @@ request/turn identity; the collector must match the observed request and recheck
 identity and the assistant result text before taking its screenshot. User text or
 work-history text cannot substitute for the displayed report. A raw provider report,
 ordinary outcome, prior turn or failed/cancelled result cannot substitute. Missing
-or ambiguous evidence stays failed; no drawing operation is repeated for capture. It saves report text and its screenshot without recording
-video, then closes the work context before fresh-context reload. On report/capture
-failure it records the missing evidence and attempts bounded cleanup; an external
-watchdog bounds hangs independently. A self-report is not measured
+or ambiguous evidence stays failed; no drawing operation is repeated for capture. The knowledge-evaluation run-101 collector saves report text and its screenshot
+without video, then closes the work context before fresh-context reload. The fixed
+taipei-101-live collector records continuously and reloads the same context after
+retaining report and source evidence. During drawing, canonical changes are
+coalesced until rendered and transaction-idle. When bounds leave the visible
+canvas, the existing viewport API fits the current content. Idle polls do not read
+bounds; same-count geometry changes still trigger inspection. External pan/zoom
+suspends framing until explicit resume. Framing does not change canonical content,
+selection or history. Retire the drawing watchdog before framing disposal and
+report evidence. Framing failures are evidence errors and cannot abort native
+report collection. On report/capture failure, retain missing evidence and attempt
+bounded cleanup; an external watchdog bounds hangs independently. A self-report is not measured
 provider reasoning time or a verified cause. Evidence collection has its own bounded
 cleanup after reporting and cannot grant extra drawing time.
 
@@ -2339,6 +2357,13 @@ away required failures or substitute an overview for requested native detail.
 Retry may combine successful current IDs with corrected pending targets. Missing,
 stale, mixed-generation or insufficient-coverage evidence still blocks review;
 all original criteria and post-assessment freshness checks remain in effect.
+
+Mixed review capture preserves declared new-image roles in an unsigned
+`next.arguments.bindChecks` template when retained image roles remain unknown.
+Partial capture also retains successful roles while failed targets remain pending.
+Complete explicit roles through the existing binding route; enclosing images
+never become implicit dependencies. Conflicting declarations for the same check
+are rejected before capture, including reference-use and supersession differences.
 
 ## Whole-request observation and retained query consumption
 

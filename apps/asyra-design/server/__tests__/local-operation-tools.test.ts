@@ -6141,6 +6141,98 @@ describe('capture-to-review handoff', () => {
     ])
   })
 
+  it('preserves declared roles in mixed image recovery without capturing again', async () => {
+    const f = await setup()
+    const first = await f.call(AiDesignToolIds.REVIEW_DRAWING, {
+      phase: f.review.phase,
+      inspections: [f.targets[0]]
+    })
+    const mixed = await f.call(AiDesignToolIds.REVIEW_DRAWING, {
+      phase: f.review.phase,
+      inspectionIds: first.inspectionIds,
+      inspections: [f.targets[1]]
+    })
+    const newId = mixed.inspectionIds.find(
+      (id: string) => !first.inspectionIds.includes(id)
+    )
+
+    expect(mixed.recordedChecks).toEqual([])
+    expect(mixed.next.requiredInputs).toEqual(['bindChecks'])
+    expect(mixed.next.arguments.bindChecks).toEqual([
+      { criterionId: 'view', inspectionIds: [newId] }
+    ])
+    expect(mixed.next.arguments).not.toHaveProperty('checks')
+    expect(mixed.next.arguments.inspectionIds).toEqual(mixed.inspectionIds)
+    const bound = await f.call(mixed.next.tool, {
+      ...mixed.next.arguments,
+      bindChecks: mixed.next.arguments.bindChecks.map(
+        (check: Record<string, unknown>) => ({
+          ...check,
+          inspectionIds: mixed.inspectionIds
+        })
+      )
+    })
+    const result = await f.call(bound.next.tool, {
+      ...bound.next.arguments,
+      final: true,
+      checks: bound.next.arguments.checks.map(
+        (check: Record<string, unknown>) => ({
+          ...check,
+          status: 'pass',
+          evidence: 'Both delivered views show the requested parts.'
+        })
+      )
+    })
+
+    expect(result.accepted).toBe(true)
+    expect(
+      f.execute.mock.calls
+        .flatMap(([batch]) => batch.actions)
+        .filter((action) => action.name === AiActionNames.INSPECT_DRAWING)
+    ).toHaveLength(2)
+    const { designEvidenceDefinitions } = await import('../local-design-review')
+    const { operationInputIssue } = await import('../operation-input-schema')
+    const declaration = designEvidenceDefinitions.find(
+      (tool) => tool.name === AiDesignToolIds.REVIEW_DRAWING
+    )
+
+    if (!declaration) {
+      throw new Error('Missing review declaration')
+    }
+
+    expect(operationInputIssue(mixed, declaration.outputSchema)).toBeUndefined()
+  })
+
+  it('rejects conflicting repeated capture declarations before any capture', async () => {
+    const f = await setup(['detail'])
+
+    await expect(
+      f.call(AiDesignToolIds.REVIEW_DRAWING, {
+        phase: f.review.phase,
+        inspections: [
+          {
+            ...f.targets[0],
+            checks: [{ criterionId: 'view', unitId: 'detail' }]
+          },
+          {
+            ...f.targets[1],
+            checks: [
+              {
+                criterionId: 'view',
+                unitId: 'detail',
+                supersedes: {
+                  revision: 1,
+                  reason: 'Change the selected scope.'
+                }
+              }
+            ]
+          }
+        ]
+      })
+    ).rejects.toThrow('Conflicting source uses or supersession')
+    expect(f.execute).not.toHaveBeenCalled()
+  })
+
   it('rejects an older verdict after a concurrent bound verdict commits during evidence validation', async () => {
     const f = await setup()
     const capture = await f.call(AiDesignToolIds.REVIEW_DRAWING, {
@@ -6238,6 +6330,11 @@ describe('capture-to-review handoff', () => {
         { inspection: f.targets[1], message: expect.stringContaining('1024') }
       ]
     })
+    expect(failed.next.arguments.bindChecks).toEqual([
+      { criterionId: 'view', inspectionIds: failed.inspectionIds }
+    ])
+    expect(failed.next.requiredInputs).toEqual(['bindChecks'])
+    expect(failed.next.arguments).not.toHaveProperty('checks')
     expect(failed.actionResults).toHaveLength(2)
     expect(failed.actionResults[0].result.image.dataUrl).toContain(
       'data:image/png'

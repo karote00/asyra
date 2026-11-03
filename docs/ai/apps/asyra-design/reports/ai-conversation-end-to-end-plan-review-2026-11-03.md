@@ -89,19 +89,16 @@ judgmentHandoff. The returned recovery therefore cannot retain those known roles
 This behavior is consistent with the current requirement for explicit old-image
 binding, but dropping known new-image roles is unnecessary for that requirement.
 
-There is a second boundary the previous plan missed: selections are merged by
-criterionId/unitId. Subsequent entries add inspection IDs and compare supersedes,
-but do not merge or compare referenceUses. Different reference-use declarations
-for the same check could be silently lost. The retained 101 call uses the same
-reference use, so this is a source-level risk requiring a failing regression,
-not an observed cause of this particular retry.
+Implementation review correction (2026-11-04): the earlier merge-risk finding
+missed the upstream `validateCaptureChecks` call. It compares complete check
+declarations, including reference uses and supersession, before any capture.
+Conflicting declarations cannot reach aggregation. Focused regressions now cover
+valid individual source uses conflicting when combined, identical declarations,
+and rejection before browser dispatch. No merge-rule change is needed.
 
-Resolve explicit assignment and reference-use merge/conflict semantics before
-changing the handoff. Preserve all declared roles or reject conflicting roles;
-never silently choose the first. Keep old-image roles unresolved until supplied,
-then validate through the existing signed binding route. Existing reuse tests
-show capture counts and eventual success; they do not alone establish that the
-model-visible mixed recovery preserves every declared role.
+Preserve known new-image roles in the unsigned recovery template. Keep old-image
+roles unresolved until supplied, then validate through the existing signed binding
+route. Existing capture-count tests alone did not cover model-visible recovery.
 
 ### 4. Data and visual review are not fully independent contracts
 
