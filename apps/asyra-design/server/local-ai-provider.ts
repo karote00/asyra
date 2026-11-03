@@ -242,6 +242,11 @@ const turnInput = (
     : input.metadata
   const images: Record<string, unknown>[] = []
 
+  // Host evaluation controls and retrospective questions are not drawing input.
+  if (isRecord(metadata)) {
+    delete metadata.evaluationWindow
+  }
+
   if (isRecord(metadata) && Array.isArray(metadata.imageAttachments)) {
     metadata.imageAttachments = metadata.imageAttachments.map(
       (attachment: unknown, index: number) => {
@@ -649,7 +654,7 @@ const runLocalAiProvider = async (
       {
         name: 'design_knowledge',
         description:
-          'Domain principles, common design pitfalls and mappings to supported App capabilities help avoid re-deriving relationships and choosing unsuitable representations, even for familiar tasks. Discover relevant topics and read only useful advice; consultation is optional and does not change files or permissions.',
+          'Domain principles, common design pitfalls and mappings to supported App capabilities help avoid re-deriving relationships and reduce exploration or repeated correction, even for familiar tasks. Discover relevant advice when a method is uncertain or an adjustment keeps missing its target. Consultation is optional, adds no detail or polish requirement and does not change files or permissions.',
         owner: knowledge
       },
       {
@@ -1134,17 +1139,23 @@ const runLocalAiProvider = async (
   let reportPhase = false
   let workTimer: ReturnType<typeof setTimeout> | undefined
   let reportTimer: ReturnType<typeof setTimeout> | undefined
+  let reportStarted = false
 
   const beginReportBudget = () => {
-    if (!evaluation || reportTimer !== undefined) {
+    if (!evaluation || reportStarted) {
       return
     }
 
+    reportStarted = true
     usage?.trace('host_observation', {
       callId: 'evaluation-report-started',
       workDeadlineAt: evaluation.workDeadlineAt,
       timeoutMs: evaluation.reportTimeoutMs
     })
+    if (evaluation.reportTimeoutMs === null) {
+      return
+    }
+
     reportTimer = setTimeout(() => {
       usage?.trace('host_observation', {
         callId: 'evaluation-report-failed',
@@ -2231,7 +2242,7 @@ const runLocalAiProvider = async (
       throw failure('AI_MODEL_BACKEND_TIMEOUT')
     }
 
-    if (evaluation) {
+    if (evaluation && evaluation.announceWorkDeadline !== false) {
       inputItems.push({
         type: 'text',
         text: `This evaluation has ${Math.max(0, Math.floor((evaluation.workDeadlineAt - Date.now()) / 1000))} seconds of work remaining, ending at ${new Date(evaluation.workDeadlineAt).toISOString()}. Prioritize useful visible progress. The host will stop operations at that time and ask for a public report. Do not continue drawing during reporting; preserve completed work.`,
@@ -2376,11 +2387,15 @@ const runLocalAiProvider = async (
               : null
           }))
       }
+      const reportInstructions = evaluation.reportInstructions
+        ? 'The work phase has ended. Stay in this same thread and use its existing work context. Do not call tools, research, draw, or replay work. Write the complete detailed report as public commentary. Then return one final JSON batch containing exactly one report_outcome action with outcome="unsupported" and a summary message of at most 1000 characters. The summary limit does not limit public commentary. This self-report is not artwork acceptance. Do not reveal private reasoning or invent measured causes.\n\n' +
+          evaluation.reportInstructions
+        : 'The work phase has ended. Do not call any tools, research, draw, or replay work. Using only this same thread, return one final JSON batch containing exactly one report_outcome action with outcome="unsupported". Its message must be at most 1000 characters and contain a concise public evaluation self-report: completed work, unfinished work, whether you believe a first frame was produced, observable blockers, and uncertain hypotheses for delay. Distinguish observed facts from your interpretation, cite known tool names or call IDs, and say when evidence is unavailable. Do not reveal private reasoning or claim a measured cause. This report is not artwork acceptance.'
       const reportInput = [
         {
           type: 'text',
           text_elements: [],
-          text: 'The work phase has ended. Do not call any tools, research, draw, or replay work. Using only this same thread, return one final JSON batch containing exactly one report_outcome action with outcome="unsupported". Its message must be at most 1000 characters and contain a concise public evaluation self-report: completed work, unfinished work, whether you believe a first frame was produced, observable blockers, and uncertain hypotheses for delay. Distinguish observed facts from your interpretation, cite known tool names or call IDs, and say when evidence is unavailable. Do not reveal private reasoning or claim a measured cause. This report is not artwork acceptance.'
+          text: reportInstructions
         },
         {
           type: 'text',

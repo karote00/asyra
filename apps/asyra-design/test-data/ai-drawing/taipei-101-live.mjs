@@ -1,6 +1,12 @@
-import { stopRecordedDrawing } from './stop-recorded-drawing.mjs'
 /* global document, window, requestAnimationFrame, AbortSignal, fetch, performance, console */
-/** Explicit live benchmark only. No request interception, references or extra prompts. */
+/** Fixed drawing benchmark followed by the user-authorized report-only turn. */
+import { isDeepStrictEqual } from 'node:util'
+import {
+  collectEvidenceStages,
+  createReportWindow,
+  collectSameThreadReport,
+  createWorkPhaseObserver
+} from './taipei-101-self-report.mjs'
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
@@ -56,6 +62,7 @@ const meta = {
   viewport: { width: 1920, height: 1080 },
   services,
   errors: [],
+  evidenceErrors: [],
   statuses: []
 }
 
@@ -115,7 +122,7 @@ const ready = async (url) => {
   throw new Error(`Service did not become ready: ${url}`)
 }
 
-let browserServer, browser, context, page, deadline
+let browserServer, browser, context, page, deadline, workSnapshot
 
 const snapshot = async () =>
   page.evaluate(async () => {
@@ -199,7 +206,13 @@ try {
     const body = request.postDataJSON()
 
     try {
-      if (!assertTaipei101Submission(body, prompt, request.headers())) {
+      const submitted = assertTaipei101Submission(
+        body,
+        prompt,
+        request.headers()
+      )
+
+      if (!submitted) {
         meta.receiptPosts ??= []
         meta.receiptPosts.push({
           at: Date.now(),
@@ -216,6 +229,7 @@ try {
     meta.submissions ??= []
     meta.submissions.push({
       at: Date.now(),
+      phase: 'drawing',
       bytes: Buffer.byteLength(request.postData() ?? ''),
       intent: body.intent,
       metadata: body.metadata
@@ -285,8 +299,15 @@ try {
     })
   })
   meta.sentAt = Date.now()
+  meta.evaluationWindow = createReportWindow(meta.sentAt, deadlineMs)
+  await page.evaluate((evaluationWindow) => {
+    const url = new URL(window.location.href)
+
+    url.searchParams.set('aiEvaluationWindow', JSON.stringify(evaluationWindow))
+    window.history.replaceState(null, '', url)
+  }, meta.evaluationWindow)
   deadline = createLiveTestDeadline({
-    deadlineAt: meta.sentAt + deadlineMs,
+    deadlineAt: meta.sentAt + deadlineMs + 30000,
     groups: [vite.pid],
     processes: [browserServer.process().pid],
     evidencePath: path.join(directory, 'deadline.json')
@@ -294,8 +315,11 @@ try {
   await deadline.ready
   await page.getByRole('button', { name: 'Send', exact: true }).click()
   let lastStatus
+  const observeWork = createWorkPhaseObserver(
+    path.join(directory, 'provider-records')
+  )
 
-  while (Date.now() - meta.sentAt < deadlineMs - 15000) {
+  for (;;) {
     const state = await page.evaluate(async () => {
       const { getActiveAiDrawingPerformanceProfile } =
         await import('/src/testing/runtime-access.ts')
@@ -320,8 +344,41 @@ try {
 
     if (state.first !== null && meta.firstPaintOpportunityMs === undefined) {
       meta.firstPaintOpportunityMs = state.first
-      await page.keyboard.press('Meta+1')
-      await page.screenshot({ path: path.join(directory, 'first.png') })
+      meta.evidenceErrors.push(
+        ...(await collectEvidenceStages([
+          [
+            'first-frame',
+            async () => {
+              await page.keyboard.press('Meta+1')
+              await page.screenshot({ path: path.join(directory, 'first.png') })
+            }
+          ]
+        ]))
+      )
+    }
+
+    if (!meta.reportObservedAt) {
+      const reporting = observeWork.poll()
+
+      if (reporting) {
+        meta.reportObservedAt = Date.now()
+        meta.deadline ??= await deadline.finish()
+        save()
+        meta.evidenceErrors.push(
+          ...(await collectEvidenceStages([
+            [
+              'work-snapshot',
+              async () => {
+                workSnapshot = await snapshot()
+                fs.writeFileSync(
+                  path.join(directory, 'work-snapshot.json.gz'),
+                  gzipSync(JSON.stringify(workSnapshot))
+                )
+              }
+            ]
+          ]))
+        )
+      }
     }
 
     if (state.settlement) {
@@ -333,23 +390,162 @@ try {
     await sleep(1000)
   }
 
-  if (!meta.settlement) {
-    meta.deadlineOutcome = 'stopped-before-hard-deadline'
-    await stopRecordedDrawing(page)
-    await page.waitForFunction(
-      async () =>
-        (await import('/src/testing/runtime-access.ts'))
-          .getActiveAiDrawingPerformanceProfile()
-          ?.readLatestTurnSettlement(),
-      null,
-      { timeout: 8000 }
+  meta.elapsedMs = Date.now() - meta.sentAt
+  meta.deadline ??= await deadline.finish()
+  save()
+  let final
+
+  const collect = async (stage, action) => {
+    meta.evidenceErrors.push(
+      ...(await collectEvidenceStages([[stage, action]]))
     )
+    save()
   }
 
-  meta.elapsedMs = Date.now() - meta.sentAt
-  meta.deadline = await deadline.finish()
-  await page.keyboard.press('Meta+1')
-  await page.screenshot({ path: path.join(directory, 'final.png') })
+  await collect('report', async () => {
+    const recordDirectory = path.join(directory, 'provider-records')
+    const matches = fs
+      .readdirSync(recordDirectory)
+      .filter((name) => name.endsWith('.jsonl'))
+      .map((name) =>
+        fs
+          .readFileSync(path.join(recordDirectory, name), 'utf8')
+          .trim()
+          .split('\n')
+          .filter(Boolean)
+          .map((line) => JSON.parse(line))
+      )
+      .filter(
+        (records) =>
+          records[0]?.provider === 'local-codex' &&
+          records[0]?.turnId === meta.submissions?.[0]?.metadata?.turnId
+      )
+
+    if (matches.length !== 1 || meta.submissions?.length !== 1) {
+      throw new Error('Expected one App request and one native provider record')
+    }
+
+    const records = matches[0]
+    const report = collectSameThreadReport(records, (name) =>
+      JSON.parse(fs.readFileSync(path.join(recordDirectory, name), 'utf8'))
+    )
+    const workEnd = records.find(
+      (record) =>
+        record.stage === 'host_observation' &&
+        record.evidence?.callId === 'evaluation-work-settled'
+    )
+    const reportEnd = records.find(
+      (record) =>
+        record.stage === 'host_observation' &&
+        record.evidence?.callId === 'evaluation-report' &&
+        record.evidence?.phase === 'output'
+    )
+
+    meta.selfReport = {
+      status: 'collected',
+      nativeThreadId: report.nativeThreadId,
+      nativeTurnId: report.nativeTurnId,
+      workNativeTurnId: report.work.nativeTurnId,
+      workStatus: report.work.status,
+      stoppedAtDeadline: report.work.stoppedAtDeadline,
+      workElapsedMs: workEnd?.elapsedMs,
+      reportElapsedMs: reportEnd?.elapsedMs - workEnd?.elapsedMs
+    }
+    fs.writeFileSync(path.join(directory, 'self-report.txt'), report.text)
+    fs.writeFileSync(
+      path.join(directory, 'self-report-evidence.json'),
+      JSON.stringify(report, null, 2)
+    )
+  })
+  await collect('source', async () => {
+    final = await snapshot()
+
+    meta.counts = final.counts
+    fs.writeFileSync(
+      path.join(directory, 'source-snapshot.json.gz'),
+      gzipSync(JSON.stringify(final))
+    )
+    meta.conversation = await page
+      .getByTestId('ai-agent-message')
+      .allTextContents()
+    meta.requiresUserAnswer =
+      (await page
+        .getByText('Waiting for your answer', { exact: true })
+        .count()) > 0
+  })
+  await collect('report-receipt', async () => {
+    const summary = await page.evaluate(async () => {
+      const { getActiveAiDrawingPerformanceProfile } =
+        await import('/src/testing/runtime-access.ts')
+      const { projectEvaluationReport } =
+        await import('/src/ai/evaluation-window.ts')
+
+      return projectEvaluationReport(
+        getActiveAiDrawingPerformanceProfile()
+          .readConversationSnapshot()
+          .settledTurns.at(-1)
+      )
+    })
+
+    if (
+      !summary ||
+      summary.turnId !== meta.submissions?.[0]?.metadata?.turnId
+    ) {
+      throw new Error('Missing or mismatched settled evaluation report receipt')
+    }
+
+    if (!final || !meta.selfReport) {
+      throw new Error('Missing canonical content or retained report')
+    }
+
+    const turn = final.conversation.settledTurns.at(-1)
+
+    fs.writeFileSync(
+      path.join(directory, 'self-report-summary.txt'),
+      summary.text
+    )
+    fs.writeFileSync(
+      path.join(directory, 'self-report-turn.json'),
+      JSON.stringify(turn, null, 2)
+    )
+    meta.selfReport.documentUnchanged =
+      !!workSnapshot && isDeepStrictEqual(workSnapshot.document, final.document)
+    if (!meta.selfReport.documentUnchanged) {
+      throw new Error('Report-phase document equality unavailable or failed')
+    }
+
+    meta.selfReport.status = 'completed'
+  })
+  await collect('persistence', async () => {
+    meta.persistence = await page.evaluate(async () => {
+      const handle = (
+        await import('/src/testing/runtime-access.ts')
+      ).getActiveCollaborationHandle()
+
+      await handle.whenIdle()
+
+      return handle.confirmPersistence(AbortSignal.timeout(15000))
+    })
+  })
+  await collect('checkpoint', async () => {
+    const checkpoint = await fetch(
+      `${backendURL}/api/documents/${encodeURIComponent(id)}/bootstrap-checkpoint`,
+      { signal: AbortSignal.timeout(15000) }
+    )
+
+    if (!checkpoint.ok) {
+      throw new Error(`Checkpoint unavailable: ${checkpoint.status}`)
+    }
+
+    fs.writeFileSync(
+      path.join(directory, 'checkpoint.json'),
+      await checkpoint.text()
+    )
+  })
+  await collect('overview', async () => {
+    await page.keyboard.press('Meta+1')
+    await page.screenshot({ path: path.join(directory, 'final.png') })
+  })
   meta.detailViews = []
   for (const [name, fraction, nativeScale] of [
     ['spire', 0.08, false],
@@ -357,97 +553,86 @@ try {
     ['base', 0.92, false],
     ['native-detail', 0.5, true]
   ]) {
-    const view = await page.evaluate(
-      async ({ fraction, nativeScale }) => {
-        const { core } = await import('/src/testing/runtime-access.ts')
-        const { viewportApis } = await import('/src/common-apis/viewport.ts')
+    await collect(`detail-${name}`, async () => {
+      const view = await page.evaluate(
+        async ({ fraction, nativeScale }) => {
+          const { core } = await import('/src/testing/runtime-access.ts')
+          const { viewportApis } = await import('/src/common-apis/viewport.ts')
 
-        viewportApis.zoomFit()
-        const bounds = core.getAllElementsBounds()
-        const viewport = document
-          .getElementById('viewport-anchor')
-          ?.getBoundingClientRect()
+          viewportApis.zoomFit()
+          const bounds = core.getAllElementsBounds()
+          const viewport = document
+            .getElementById('viewport-anchor')
+            ?.getBoundingClientRect()
 
-        if (!bounds || !viewport) {
-          return null
-        }
+          if (!bounds || !viewport) {
+            return null
+          }
 
-        const scale = nativeScale ? 1 : viewportApis.getScale() * 3
-        const centerX = viewport.x + viewport.width / 2
-        const centerY = viewport.y + viewport.height / 2
-        const x = (bounds.minX + bounds.maxX) / 2
-        const y = bounds.minY + (bounds.maxY - bounds.minY) * fraction
+          const scale = nativeScale ? 1 : viewportApis.getScale() * 3
+          const centerX = viewport.x + viewport.width / 2
+          const centerY = viewport.y + viewport.height / 2
+          const x = (bounds.minX + bounds.maxX) / 2
+          const y = bounds.minY + (bounds.maxY - bounds.minY) * fraction
 
-        viewportApis.zoomToCenter(scale, centerX, centerY)
-        viewportApis.panTo(centerX - x * scale, centerY - y * scale)
+          viewportApis.zoomToCenter(scale, centerX, centerY)
+          viewportApis.panTo(centerX - x * scale, centerY - y * scale)
 
-        return { scale, x, y, bounds }
-      },
-      { fraction, nativeScale }
-    )
+          return { scale, x, y, bounds }
+        },
+        { fraction, nativeScale }
+      )
 
-    if (view) {
-      await page.screenshot({ path: path.join(directory, `${name}.png`) })
-      meta.detailViews.push({ name, ...view })
-    }
+      if (view) {
+        await page.screenshot({ path: path.join(directory, `${name}.png`) })
+        meta.detailViews.push({ name, ...view })
+      } else {
+        throw new Error('Missing drawing bounds for detail capture')
+      }
+    })
   }
 
-  await page.keyboard.press('Meta+1')
-  const final = await snapshot()
-
-  meta.counts = final.counts
-  fs.writeFileSync(
-    path.join(directory, 'source-snapshot.json.gz'),
-    gzipSync(JSON.stringify(final))
-  )
-  meta.conversation = await page
-    .getByTestId('ai-agent-message')
-    .allTextContents()
-  meta.requiresUserAnswer =
-    (await page.getByText('Waiting for your answer', { exact: true }).count()) >
-    0
-  meta.persistence = await page.evaluate(async () => {
-    const handle = (
-      await import('/src/testing/runtime-access.ts')
-    ).getActiveCollaborationHandle()
-
-    await handle.whenIdle()
-
-    return handle.confirmPersistence(AbortSignal.timeout(15000))
+  await collect('report-screenshot', async () => {
+    await page.screenshot({ path: path.join(directory, 'self-report.png') })
   })
-  const checkpoint = await fetch(
-    `${backendURL}/api/documents/${encodeURIComponent(id)}/bootstrap-checkpoint`
-  )
+  await collect('reload', async () => {
+    if (!final) {
+      throw new Error('Missing source snapshot for reload comparison')
+    }
 
-  if (!checkpoint.ok) {
-    throw new Error(`Checkpoint unavailable: ${checkpoint.status}`)
+    await page.reload()
+    await waitForRecordedDocument(
+      page,
+      Object.values(final.counts).reduce((sum, count) => sum + count, 0)
+    )
+    await page.keyboard.press('Meta+1')
+    await page.screenshot({ path: path.join(directory, 'reload.png') })
+    const reloaded = await snapshot()
+
+    fs.writeFileSync(
+      path.join(directory, 'reload-snapshot.json.gz'),
+      gzipSync(JSON.stringify(reloaded))
+    )
+    meta.reloadDocumentUnchanged = isDeepStrictEqual(
+      final.document,
+      reloaded.document
+    )
+    if (!meta.reloadDocumentUnchanged) {
+      throw new Error('Reload canonical document changed')
+    }
+  })
+  if (meta.evidenceErrors.length) {
+    meta.failure = 'Evidence collection incomplete; see evidenceErrors'
+    process.exitCode = 1
   }
-
-  fs.writeFileSync(
-    path.join(directory, 'checkpoint.json'),
-    await checkpoint.text()
-  )
-  await page.evaluate(() => window.stopFixedDrawingObservation())
-  await page.reload()
-  await waitForRecordedDocument(
-    page,
-    Object.values(final.counts).reduce((sum, count) => sum + count, 0)
-  )
-  await page.keyboard.press('Meta+1')
-  await page.screenshot({ path: path.join(directory, 'reload.png') })
-  fs.writeFileSync(
-    path.join(directory, 'reload-snapshot.json.gz'),
-    gzipSync(JSON.stringify(await snapshot()))
-  )
-  meta.video = await saveRemoteRecording(
-    context,
-    page,
-    path.join(directory, 'recording.webm')
-  )
-  context = undefined
 } catch (error) {
   meta.failure = error.message
   process.exitCode = 1
+  if (deadline) {
+    meta.deadline ??= await deadline.finish()
+  }
+
+  save()
   if (page && !page.isClosed()) {
     try {
       await page.screenshot({
@@ -460,10 +645,10 @@ try {
   }
 } finally {
   if (deadline) {
-    meta.deadline = await deadline.finish()
+    meta.deadline ??= await deadline.finish()
   }
 
-  if (context && page && !page.isClosed()) {
+  if (context && page) {
     try {
       meta.video = await saveRemoteRecording(
         context,
@@ -471,8 +656,10 @@ try {
         path.join(directory, 'recording.webm')
       )
       context = undefined
-    } catch {
-      /* original failure remains */
+    } catch (error) {
+      meta.evidenceErrors.push({ stage: 'video', error: error.message })
+      meta.failure ??= 'Video evidence collection failed'
+      process.exitCode = 1
     }
   }
 

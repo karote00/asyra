@@ -192,6 +192,15 @@ const readActivityStream = async (
       throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
     }
 
+    if (
+      event &&
+      typeof event === 'object' &&
+      event.type === 'activity' &&
+      batch
+    ) {
+      return
+    }
+
     if (!event || typeof event !== 'object' || batch) {
       throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
     }
@@ -249,19 +258,24 @@ const readActivityStream = async (
       return
     }
 
+    if (event.type !== 'activity') {
+      throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
+    }
+
+    // Progress is observational; a rejected frame cannot retire execution.
     if (
-      event.type !== 'activity' ||
       typeof event.tool !== 'string' ||
-      !/^[a-zA-Z0-9_-]{1,64}$/.test(event.tool) ||
+      event.tool.length > 256 ||
+      !/^[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)*$/.test(event.tool) ||
       (event.status !== 'running' && event.status !== 'completed')
     ) {
-      throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
+      return
     }
 
     const activity = event.activity as AiToolProgress['activity']
 
     if (activity !== undefined && !isExecutionActivity(activity)) {
-      throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
+      return
     }
 
     if (!signal.aborted) {

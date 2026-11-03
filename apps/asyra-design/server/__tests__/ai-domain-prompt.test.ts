@@ -48,6 +48,44 @@ describe('stage-owned App guidance', () => {
     expect(AI_APP_PROMPT).toContain('No particular construction order')
   })
 
+  it('exposes deterministic delegation and optional reusable composition before discovery', () => {
+    expect(AI_APP_PROMPT).toContain(
+      'You choose visual intent, design parameters'
+    )
+    expect(AI_APP_PROMPT).toContain('instead of manually\nexpanding values')
+    expect(AI_APP_PROMPT).toContain('Prefer a suitable existing direct tool')
+    expect(AI_APP_PROMPT).toContain(
+      'use submit_tool for a finite recipe and invoke_tool'
+    )
+    expect(AI_APP_PROMPT).toContain(
+      'Successful execution attempts durable saving'
+    )
+    expect(AI_APP_PROMPT).toContain(
+      'cannot create missing primitive capabilities'
+    )
+    expect(AI_APP_PROMPT).toContain(
+      'registered mechanically decidable checks and repairs'
+    )
+    expect(AI_APP_PROMPT).toContain('Do not build a recipe for every task')
+    expect(AI_APP_PROMPT).toContain(
+      'save_tool retries failed saving without executing the drawing again'
+    )
+  })
+
+  it('positions knowledge as a shortcut through uncertainty without extra polish', () => {
+    expect(AI_APP_PROMPT).toContain(
+      'shorten exploration and repeated correction'
+    )
+    expect(AI_APP_PROMPT).toContain('an adjustment keeps missing its target')
+    expect(AI_APP_PROMPT).toContain(
+      'does not raise the requested level of detail or polish'
+    )
+    expect(AI_APP_PROMPT).toContain(
+      'Known-value edits can proceed without a lookup'
+    )
+    expect(AI_APP_PROMPT).toContain('No particular construction order')
+  })
+
   it('offers selective advisory knowledge without gating known-value edits', () => {
     const knowledge = createLocalKnowledgeTools('prompt-ownership')
     const guidance = knowledge.definitions

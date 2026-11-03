@@ -53,7 +53,7 @@ The runner verifies fixture SHA-256
 the composer value and the actual submitted intent. It supplies no reference
 attachments, prior conversation or extra test instructions. A user-approved prompt
 change must explicitly update the fixture and its contract; no default adaptation.
-The default test guard is ten minutes, independent of production task duration.
+The default drawing guard is fifteen minutes, independent of production task duration.
 An explicit user-requested duration may be supplied as `--minutes=N` (integer
 1–15), for example `yarn workspace @asyra/asyra-design test:live:taipei-101 --minutes=12`.
 This changes only that run, records `deadlineMs`, preserves the fixed prompt, and
@@ -74,6 +74,43 @@ checkpoint. First paint opportunity is a rendering opportunity metric, not proof
 of visible quality; inspect the saved images. Report request bytes, tool/research
 activity, rejected inputs, completion/timeout and unresolved review work from the
 actual records. Keep unmeasured CPU or provider metrics explicitly unmeasured.
+
+### Drawing agent self-report
+
+The fixed benchmark uses one App request and the existing native evaluation
+window. After normal completion or deadline interruption acknowledgement and tool
+drainage, the provider starts the report turn on the original native thread. It
+does not create another App request or provider session. The exact drawing prompt
+remains unchanged; `announceWorkDeadline: false` suppresses evaluation coaching,
+and host evaluation metadata is excluded from the model's drawing input.
+
+The maintained `test-data/ai-drawing/taipei-101-self-report.txt` supplies bounded
+report instructions only after work ends. Ask why multiple intervals last tens of
+seconds, using the original work context, and request evidence-based improvements.
+No private reasoning or invented timings; unavailable provider/network causes
+remain unknown. The fixed benchmark sets `reportTimeoutMs: null`: reporting has no time limit
+and no tool/mutation permission. The 15-minute limit applies only to drawing. Ordinary evaluations keep their concise report unless explicitly
+configured with detailed instructions; normal App requests are unchanged.
+
+The collector requires retained work/report exchanges with the same native thread
+and distinct turn IDs, plus the settled App evaluation-report receipt. Export only
+completed public commentary for that exact report turn into `self-report.txt`,
+verbatim; save the bounded final summary separately. Work outcome, report outcome
+and artwork acceptance are independent. Capture canonical content when the report
+input is recorded after tool drainage, compare it at settlement, then confirm
+persistence and reload. Trace phase observation consumes each appended byte once.
+Missing/mismatched identities, missing report text, failed settlement or changed
+content fail explicitly; no fresh-session fallback or automatic drawing retry.
+
+Retire the drawing watchdog before report-entry capture. Save the completed native
+report before browser-dependent evidence. Collect source, receipt, persistence,
+checkpoint, screenshots, reload, and video independently; retain stage errors and
+fail the run when required evidence is missing. Report cancellation and transport
+failure remain failures; no report-duration watchdog is installed.
+
+Finish all source and report-fixture edits before live services start: Vite can
+reload the page and destroy its in-memory conversation. Preserve failed evidence.
+Deliver the AI's original report rather than substituting another causal analysis.
 
 Receipt POSTs share the action-batch endpoint. Classify them by the canonical
 receipt header before validating user intent; they are not additional submissions.
@@ -119,6 +156,32 @@ client geometry reconstruction, or post-action `save`/`isEqual` verification.
 The action path trusts the registered action and canonical owner results.
 Incorrect output is a product bug to fix at its first incorrect owner, not a
 reason to duplicate the complete document or geometry graph.
+
+### Agent decisions, tool execution and optional advice
+
+The always-present App prompt owns the division of work: the agent chooses
+visual intent and parameters and judges the actual result; registered tools
+perform supported deterministic computation. Prefer an existing direct tool.
+Use the existing tool library to compose finite operations only when reusable
+orchestration reduces manual work. Recipes cannot invent primitives or replace
+artistic judgment. Invocation success, durable tool saving and visual acceptance
+remain separate outcomes; retry saving without replaying drawing work.
+
+Knowledge is optional assistance for uncertain methods, repeated derivation or
+corrections that keep missing their target. Its purpose is to shorten exploration,
+not to add detail, polish or a mandatory drawing sequence. The native namespace
+and selected tool descriptions must agree with the shared App instructions.
+Changes to this guidance must be reflected in both native base instructions and
+the HTTP systemPrompt consumer.
+
+Existing provider records can show announced targets, invocation timing,
+arguments, failures and subsequent corrections. A long provider wait alone does
+not establish that the model was confused or explain why it skipped Knowledge.
+Use observed repeated operations and their owner failures to identify candidates:
+missing decision guidance may belong in Knowledge; repeated supported mechanical
+work may fit an existing tool or finite recipe. A missing primitive requires an
+explicit capability change, not stronger prompting. Measure elapsed time to an
+equivalent completed task; Knowledge/tool call counts are not success targets.
 
 ## Adding an AI Action
 

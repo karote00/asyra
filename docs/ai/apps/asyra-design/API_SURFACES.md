@@ -935,6 +935,9 @@ Data criteria omit that field. Established obligations cannot shrink after revie
 
 Capture targets share the `inspect_drawing` schema. Capture-only calls return images,
 pending coverage and the next judgment input, without inventing visual approval.
+Each binding carries requestId, requirementRevision, checkRevision and signature.
+The existing request-local inspection owner retains image dependencies and signs
+and validates them; the model does not return duplicate dependency bodies.
 Failed captures return successful IDs and exact failed targets for retry. Each
 submitted judgment names its own nonempty `inspectionIds` subset of the enclosing
 image menu; omitted bindings are rejected, never inherited. Unused menu images are not dependencies and cannot veto local recovery;

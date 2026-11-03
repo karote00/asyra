@@ -216,6 +216,521 @@ without final visual acceptance and made zero Knowledge calls. The provider reco
 retains one incomplete span; instruction delivery is verified but improved
 consultation or quality is not established.
 
+### Follow-up - decision and execution responsibilities - 2026-11-03
+
+Base: `a1ed9040315a70be8a6fbf13c79b072536d6ac0d`, pushed before this slice.
+The user prohibits full or overly broad local test runs unless explicitly
+requested. Focused tests for modified behavior and directly affected consumers
+remain authorized. Do not expand this slice to repository-wide or unrelated
+workspace validation.
+
+Step Execution Card - compose: existing user intent, registered capabilities and
+optional knowledge enter the same native/HTTP instruction composition. The
+output explains that the agent chooses design intent and judges appearance,
+existing tools compute supported deterministic work, and finite recipes connect
+available primitives when reusable orchestration is useful. Knowledge reduces
+uncertainty, repeated derivation and correction attempts; it adds no quality bar.
+Known direct edits bypass lookup and recipe authorship. Exact schemas, fresh
+bindings, finite mechanical checks, no-replay recovery, independent saving and
+primary-agent visual acceptance retain their existing owners.
+
+Allowlist: App prompt, native namespace and selected tool descriptions, their
+direct regression tests, execution specification, compose Inspector condition,
+this plan and development guidance. The subsequent explicit user instruction
+also authorizes restricting AGENTS.md standing test permission to focused tests;
+full or overly broad local runs require an explicit request. No new runtime, capability, schema, provider,
+model setting, dependency, construction order, live run or benchmark prompt edit.
+The current tool library already admits, invokes and saves finite compositions;
+this slice exposes that choice before deferred discovery rather than adding an
+execution mechanism. A recipe cannot create a missing primitive or automate an
+artistic decision. Provider wait duration alone cannot identify model confusion.
+
+Review scope: instruction consistency, actual native and HTTP delivery paths,
+existing recipe execution/saving contracts, direct consumers and the bounded diff.
+Use the directly modified prompt, native provider, HTTP provider and tool-library
+test suites for focused verification. Record static review separately from test
+evidence; do not claim measured speed improvement.
+
+Implemented and verified with focused tests: the shared prompt exposes
+deterministic delegation and optional finite composition before discovery;
+native Knowledge metadata and submit_tool guidance agree. Native baseInstructions
+and HTTP systemPrompt delivery assertions pass. Existing receipt, mechanical
+iteration and save-only recovery behavior remains unchanged.
+
+The four directly modified suites (ai-domain-prompt, local-ai-provider,
+ai-model-provider and local-tool-library-tools) pass: 262 tests passed and one
+existing opt-in protocol executable case skipped because
+LOCAL_AI_PROTOCOL_EXECUTABLE was not configured. Duration: 18.27 seconds.
+This includes the three new regression cases and native/HTTP delivery assertions.
+Evidence: `tmp/conversation-improvements/decision-delegation-focused-tests.log`.
+The initial blanket test restriction was an agent misunderstanding; focused
+verification is authorized and is now complete. No full local suite, live model
+run, build, typecheck, lint or Inspector candidate was run for this verification.
+Static diff review found no remaining conflict in this bounded instruction change.
+Actual model choices and drawing speed remain unmeasured. The canonical Taipei 101
+prompt is unchanged. New work remains local; the preceding push contains only the
+earlier implementation and reports.
+
+A subsequent user-authorized single
+[fifteen-minute test](../reports/taipei-101-decision-delegation-15m-2026-11-03.md)
+ran on this uncommitted source, with retained patch and file hashes. The recorder
+exited 0 after the deadline stop at 885.481 s; first paint was 169.065 s. Source,
+checkpoint and reload match exactly (17,883 nodes). All 33 App calls settled:
+32 usable and one recoverable stale-inspection binding partial. The agent
+reacquired three invalid images and rebound them but did not record final
+acceptance before cancellation. Knowledge and reusable-tool calls were zero.
+The complete provider lifecycle has no report issues; token usage is partial.
+Full silhouette, saved state and successful binding do not certify completed
+visual acceptance or a speed improvement. No rerun or product fix followed.
+
+The subsequent [evidence review](../reports/taipei-101-decision-delegation-analysis-2026-11-03.md)
+confirms an insufficient first hierarchy repair and byte-identical recaptures,
+while distinguishing suspected invalidation imprecision from a proven runtime bug.
+The two existing inspection suites pass (34 tests); their coverage does not yet
+reproduce the observed group-normalization path. Follow-up recommendations remain
+unimplemented. No additional live run or product-code change was made.
+
+### Follow-up - regional evidence and occlusion diagnosis - 2026-11-03
+
+Authorized scope: reproduce the unchanged-crop invalidation from the preceding
+analysis, fix only a confirmed inspection dependency defect, add optional spatial
+Knowledge for internal versus external occlusion, then run one unchanged-prompt
+Taipei 101 benchmark with a fifteen-minute budget and retain a detailed report.
+Preserve existing dirty work. No forced retrieval, new drawing sequence, weaker
+currency guard, new tool, broad tests, release work or remote operation.
+
+Step execution card - `inspect`, owned by the App review coordinator: actual
+rendered regional candidates and canonical events enter the existing receipt
+owner; output is independently current or stale evidence. Verify whether the
+region query's enclosing Group bounds incorrectly count as painted content even
+when none of its children contributes. Preset's exported Group render strategy
+and Core's public registry own that distinction; do not infer it from a container
+type list. Keep actual contributing ancestors, entrants/exits, painter order,
+unknown render strategies, whole-target checks and load invalidation. No image
+hash cache or canonical model copy. If this bounded reproduction does not prove
+a defect, retain the conservative behavior and report the result.
+
+Allowed implementation: App inspection evidence adapter and direct tests; optional
+spatial Knowledge; this plan, execution spec, matching Inspector condition and
+reports. Existing hierarchy and rendering owners are diagnostic dependencies,
+not authorized cleanup. Naming uses owner-local helpers only, without new public,
+persisted or wire identities. Existing receipt lifetime and spatial-query owner
+remain unchanged. Gates: failing real-App regression before code, focused receipt
+unit tests, selected regional E2E cases, Knowledge contract tests, scoped lint,
+naming, and one formal live benchmark with screenshot review. Review the receipt
+slice before the Knowledge slice, and both before the live run. The task closes
+with implementation evidence plus an honest benchmark result, not a guaranteed
+model completion or whole-plan closeout.
+
+Receipt slice review: the new real-App case failed before implementation solely
+because an unchanged crop lost currency after an outside element left a Group.
+The bounded adapter fix now passes that case and the existing scoped-region case.
+Actual entrant, Undo, paint and whole-view invalidation remain intact. The two
+receipt unit files pass (36 cases), including a custom-renderer negative case.
+The fix excludes only the exported registered non-painting strategy from direct
+regional members; contributing ancestry still invalidates conservatively. It
+makes no claim to reuse all world-equivalent Group normalization results.
+
+Knowledge slice: extend the existing spatial topic and its real-catalog delivery
+test with internal versus external occlusion diagnosis, partial-repair handling
+and optionality. It adds no prompt, runtime state, criterion or mandatory tool
+call. This remains under the existing decision/knowledge handoff; the `inspect`
+contract continues to own evidence currency and final acceptance.
+
+Pre-live bounded review passed: 68 focused receipt/Knowledge tests, two regional
+E2E cases, four unchanged-prompt/deadline contract cases, naming and scoped lint.
+The Inspector module loads with its existing seven steps; this is a structural
+load check, not whole-plan acceptance. The new topic advice reaches real catalog
+read delivery and remains absent from unrelated contexts. No App prompt or
+benchmark prompt was changed in this slice.
+
+The [single fifteen-minute-budget run and analysis](../reports/taipei-101-regional-evidence-15m-2026-11-03.md)
+completed in 693.783 s with seven accepted visual checks and 371 passed request
+checks, no unresolved results, and exact source/checkpoint/reload equality
+(17,356 nodes). Ten captured images had ten distinct hashes; the original tier
+overview was reused. A nonplanar face, oversized native captures and an omitted
+scope-replacement reason recovered without replaying successful drawing work.
+Knowledge and composed-tool calls remained zero, so advisory benefit is unmeasured.
+Final runtime currency checks passed; the profiler's conservative current flag
+is not authoritative rejection. Focused implementation and this live task are
+complete; no whole-plan closeout or causal speed claim is made. Capture preflight
+and report-summary clarity remain documented follow-up candidates, not added
+implementation scope. No commit, push, extra live run or full local test followed.
+
+### Follow-up - drawing agent self-report benchmark - 2026-11-03
+
+User-authorized test change: keep the exact drawing prompt and fifteen-minute
+budget, then ask the drawing App conversation for its own report after either
+normal completion or deadline cancellation. Explicitly ask why several intervals
+last tens of seconds before the next action. Supply only observed tool timing,
+not another agent's explanation. Retain the raw answer without editorial analysis.
+The current provider creates ephemeral sessions per turn; the report is a same-App
+conversation follow-up, not access to unrecorded prior-session internal processing.
+Require high-level operational explanations, evidence/uncertainty and no fabricated
+causes or private reasoning. This limitation must be stated to the user.
+
+Bounded owner: the formal Taipei 101 runner, its prompt/phase contract and direct
+Node tests, plus this plan and debugging guide. No App/provider runtime change,
+Inspector semantics change, modified drawing prompt, coaching during drawing,
+automatic rerun, full local gate or remote operation. Capture the drawing before
+analysis; keep report time separate, with a five-minute safety budget and no canvas
+changes. Preserve both raw turns, IDs, exact report prompt, original drawing
+settlement and document equality. Test normal/cancelled entry, exact first prompt,
+report context admission, old-turn rejection and neutral timing extraction before
+the one live run. Finish by delivering the drawing AI's own report, with factual
+run metadata only; do not substitute a new agent-written problem analysis.
+
+Implementation review: the default drawing limit is now fifteen minutes; the
+report-only turn has its own five-minute guard. Exact submission validation
+separates drawing, report and receipt POSTs. New-turn identity prevents treating
+the settled drawing as a completed report. The ordinary final summary stays
+within its 1000-character contract; the detailed public commentary is retained
+verbatim, excluding reasoning payloads. Drawing document equality is checked
+before reload. Focused contract/deadline tests pass (15); naming and scoped lint
+pass. No production/provider implementation changed in this slice.
+
+Live evidence: `tmp/conversation-improvements/live/taipei-101-fixed-1793688686012/`.
+The drawing was deadline-cancelled at 885,787 ms; the same-conversation report
+completed in 251,486 ms with `no-change`, 16 long-interval rows and prioritized
+recommendations. Its raw public commentary is retained in `self-report.txt`.
+Report and reload document equality passed. The original drawing prompt hash
+remained `25b9ad1aeb523fdb590a39d090a37fdc65ed62ff081a27acfa92d946f9b2ff51`.
+The original report status misclassified `no-change`; a failing regression was
+proved, then corrected without another live run. `report-assessment.json` records
+the corrected classification without overwriting original run evidence. Focused
+contract/deadline tests now pass (16). The report's reference to a user stop means
+the benchmark's ordinary cancellation control; no user clicked Stop.
+
+An earlier attempt, `taipei-101-fixed-1793687809064`, was invalidated by the test
+operator editing the report fixture during drawing. Vite reloaded the page,
+destroying the in-memory conversation; recorder cleanup cancelled the provider at
+about 788 seconds. This failure was disclosed and preserved before one explicit
+operator-initiated rerun. It was not an AI completion or a fifteen-minute timeout.
+No source or prompt edits occurred during the valid rerun. Keep all fixture edits
+outside live service lifetimes; tailor report questions through observed timing
+data. The AI report still cannot recover unrecorded prior-session processing.
+
+
+### Follow-up - same-thread benchmark report - 2026-11-03
+
+Objective: replace the second App request with the existing native evaluation
+report turn, preserving the drawing prompt and original provider thread after both
+normal completion and deadline interruption. This supersedes the preceding
+fresh-session report approach, whose evidence remains historical.
+
+Step execution card - compose: extend the existing evaluation-window admission
+with optional bounded report instructions, a five-minute maximum report budget,
+and explicit deadline-announcement suppression. Keep report instructions out of
+the work turn; default evaluation announcements and ordinary requests remain
+unchanged. The provider owns one thread, work interruption acknowledgement, tool
+drainage, tool denial during reporting and cleanup after reporting. No new session
+store, cache, model, tool registry or general conversation continuity change.
+Tests must prove one thread/two turns on normal completion and interruption,
+report-only instruction delivery, unchanged work intent, bounded invalid inputs,
+late-tool denial, timeout and error preservation. Reuse existing lifecycle traces.
+
+Step execution card - evidence: wire the fixed runner through the existing URL
+metadata admission; submit exactly one App request, with no deadline coaching.
+Extract only completed public commentary from the exact report native turn,
+verify matching thread IDs and distinct native turn IDs, preserve work outcome
+separately from report settlement, and compare drawing/report document snapshots.
+Use the original fixed prompt hash. Keep external PID cleanup guards, separate
+work/report budgets, exact evidence and reload verification. No source edits while
+live services run. Remove the superseded second-request runner path and its tests.
+
+Scope: evaluation-window, local provider, fixed benchmark runner/helper/report
+fixture, direct formal tests, existing execution spec/Inspector and debug guide.
+Gates: focused admission/provider/runner/deadline tests, scoped lint, naming,
+Inspector structural validation and one 15-minute live run. No full local tests,
+release work, dependency changes, commit/push, or additional automatic live runs.
+Deliver the original AI report with measured metadata, not another causal essay.
+
+Pre-live review: the compose tests proved the old behavior failed, then passed
+normal completion/interruption, single-thread identity, host-only questions,
+report tool denial and error cases. Focused gates passed: 32 provider/admission
+cases, 15 runner/deadline cases, one browser metadata case, one existing execution
+integration case and two Inspector contract checks. Scoped lint has no errors
+(three pre-existing console warnings). No App request is submitted for the report;
+its text is captured only with exact native identity and a settled report receipt.
+Work snapshots are captured after tool drainage at report-input observation.
+No known in-scope review finding remains before the one authorized live run.
+
+Live result: `tmp/conversation-improvements/live/taipei-101-fixed-1793691918526`.
+One App submission; unchanged fixed prompt hash; no source drift. Work ended by
+deadline interruption at provider elapsed 899,698.726 ms. Reporting completed in
+277,312.283 ms on native thread `01a1a05e-ca95-72a0-bea6-ba3708e39202`.
+Work turn `01a1a05e-cafa-7242-b1a6-d5352a081ecb` and report turn
+`01a1a06c-7f04-7621-a65b-1f44b104da38` are distinct on that same thread.
+The App settled executed/partial, separately from the successful report; this is
+not artwork acceptance. Complete public report retained verbatim in
+`self-report.txt` and identical Markdown copy `self-report.md` (8,926 characters).
+Report-entry/final documents and source/reload documents are equal. Owned services
+and browser closed, with video and provider exchanges retained. The report's
+reference to a user stop describes the host deadline interruption, not a user click.
+Its persistence uncertainty reflects information available to the model during
+reporting; later harness persistence/reload evidence is separate. No new live
+attempt, full local test, commit or push was performed.
+
+
+
+
+### Follow-up - reduce exploration and repeated work - 2026-11-03
+
+Status: implemented and reviewed. Original findings and audit test limitations are in
+the [self-report audit](../reports/taipei-101-self-report-audit-2026-11-03.md).
+
+Objective: help the AI find and use relevant capabilities with less exploration,
+repeated calculation and tool interaction. Knowledge supplies useful decision
+support; tools perform mechanical operations. The AI retains design decisions
+and decides when either is useful. Success is reduced avoidable work while meeting
+the user's request, not more detail or more Knowledge calls.
+
+1. Improve access to relevant capabilities. Check the native tool-discovery
+   handoff separately from App lookup, and assess whether existing scoped
+   descriptions are easy to use. Improve the description or example where an
+   existing capability is hard to find or use; fix implementation only where a
+   failure is demonstrated. Unavailable provider evidence leaves that question
+   open without blocking independent improvements.
+2. Reduce repetitive judgment data. Evaluate how the existing review owner can
+   avoid requiring the AI to copy large bindings. Choose the simplest approach
+   that preserves evidence identity, freshness and partial judgments; a compact
+   reference is an option, not a predetermined design.
+3. Reduce avoidable drawing adjustments. Use the observed grouping, layer-order
+   and inspection cases to distinguish missing guidance from missing operations.
+   Reuse existing tools and composition where they fit. Add a tool capability
+   when it removes demonstrated repetitive work; put reusable decision guidance
+   in Knowledge. Correct misleading source-verification wording alongside the
+   affected tool descriptions.
+4. Review each change and run its focused tests. Evaluate reduced description
+   traffic, judgment payload and repeated operations alongside task completion.
+   Any subsequent 101 benchmark keeps the fixed prompt, 15-minute drawing limit
+   and original-session AI report. Distinguish partial and completed outcomes and
+   leave unobserved delays unattributed.
+
+The plan adds no required drawing sequence, Knowledge lookup, recipe creation or
+quality target. Follow existing project implementation rules; the detailed audit
+retains evidence and uncertainties rather than adding another approval process.
+
+
+
+Implementation and review results:
+
+- Compose: discovery now distinguishes new-operation usage, owner scope and missing
+  fields. Twenty-one provider/discovery cases passed; no native-search failure was
+  reproduced, so ranking and startup instructions were unchanged.
+- Inspect: bindings retain request/requirement/check revisions and signature while
+  dependency bodies remain in the existing inspection map. The HMAC still covers
+  the same evidence, with no new retention. The recorded final input projects from
+  6,970 to 4,668 bytes (33.0% smaller); this is not a live latency measurement.
+- Guidance: spatial Knowledge explains parent-local attachment, composition IDs,
+  relative moves and common-ancestor inspection. Removed the workflow's forced
+  drawing-before-further-research instruction and corrected source-assertion wording.
+- Review: updated direct consumers and schema fixtures, retained raw recordings,
+  and verified changed-source, foreign/tampered binding, stale, sparse and replay
+  cases. The earlier workflow coverage-guard issue was caused by selecting only
+  partial-outcome cases; the affected owner suite passed without changing its guard.
+- Validation: 274 review/workflow/Knowledge/hierarchy cases, 197 operation cases,
+  four final review/flow integration cases, two Inspector checks and 15 naming
+  checks passed, in addition to the 21 discovery/provider cases. Affected server
+  and flow-proof TypeScript checks passed. Scoped ESLint has zero errors and two
+  existing console warnings. Failure logs and successful reruns are retained under
+  `tmp/conversation-improvements/exploration-*`.
+
+All three implementation segments were reviewed and corrected before advancing.
+No full local test, new live 101 run, prompt edit, commit or push was performed.
+Native-provider internal search and unexplained waiting remain evidence limits,
+not claimed fixes. Actual time savings and model adoption need a later live run.
+
+
+### Follow-up - isolate progress admission from execution - 2026-11-03
+
+Scope: the browser streamed-provider adapter and its direct tests, current execution
+spec/Inspector, fixed benchmark evidence. Preserve edits, receipts, cancellation,
+protocol errors, fixed drawing prompt and original-thread report identity.
+The compose/settle handoff treats parsed activity frames as observation: invalid
+progress fields are ignored, valid qualified names remain displayable, and observer
+exceptions cannot cancel execution. Unparseable framing, unknown event kinds,
+invalid operation/result envelopes and explicit failures remain execution errors.
+No reconnect, replay, replacement provider session or new state owner is added.
+
+Test first through the public provider: invalid activity before a valid batch must
+not close transport; execute and acknowledge once, receive the final result, and
+preserve explicit cancellation and malformed operation failures. Review the bounded
+diff and run adapter, server handoff, provider-report, type/lint and flow checks.
+Then run the unchanged 15-minute benchmark once and deliver the original AI report.
+Monitor runner exit/failure as well as progress to avoid stale-status reporting.
+
+Pre-live review: six regression scenarios first failed on the old adapter, including
+late activity after a final result. The corrected adapter passed 41 browser cases;
+six server/progress/same-thread-report cases, two Inspector checks and 15 naming
+checks passed. App typecheck and scoped lint passed. Invalid progress remains
+observational, while operations, acknowledgement failure, explicit cancellation,
+unknown frames and malformed JSON preserve their existing behavior. No replay or
+provider-lifecycle change was introduced.
+
+Live outcome: drawing completed normally at 14 minutes 10 seconds and reporting
+started on the same native thread. The existing five-minute report guard interrupted
+its final paragraph; 10,777 public characters were retained verbatim as incomplete.
+The outer request timed out and artifact finalization did not confirm persistence
+or reload. The progress fix is validated; the full-report delivery requirement is
+not complete. See [live result](../reports/taipei-101-progress-isolation-15m-2026-11-03.md).
+
+
+### Follow-up - untimed benchmark report and resilient evidence - 2026-11-03
+
+Completed and live-verified. The unchanged-prompt run completed drawing in
+14m 15.87s and its same-thread full report in 3m 34.44s. Report text, source,
+receipt, persistence, checkpoint, screenshots, reload, and video were retained
+without evidence errors; canonical content matches across report and reload.
+See [run evidence](../reports/taipei-101-untimed-report-15m-2026-11-03.md).
+
+
+User contract: only drawing is limited to 15 minutes. The fixed benchmark explicitly
+selects an untimed report on the same native thread. Existing explicitly timed
+non-benchmark evaluations keep their policy. Null reportTimeoutMs means no timer;
+report tool denial, user cancellation, transport failure and cleanup remain valid.
+Compose owns admission and provider phase transition. Tests must hold reporting
+past five minutes without killing it and then finish on the original thread.
+
+The runner retires its owned drawing watchdog when reporting begins or execution
+settles, before expensive collection. Reporting has no aggregate runner deadline.
+Retain original completed report first, then source/persistence, then visual/reload
+artifacts; stage failures are recorded independently and cannot skip later evidence
+or cleanup. No fallback report, automatic redraw or fabricated verification.
+The previous browser-closure cause is unconfirmed: its deadline receipt says
+finished, not expired. Do not misattribute that failure to watchdog termination.
+
+Scope: evaluation admission/provider, fixed runner and helper, direct tests and
+existing spec/Inspector/debug guide. Review and focused tests precede one live run;
+no full local test, drawing prompt edit, commit/push or release work.
+
+Validation before live execution: failing admission/provider/collector regressions
+were reproduced before implementation. Focused checks pass: 19 provider/admission
+cases, 41 browser-stream cases, 17 runner/watchdog/recording cases, two Inspector
+contract cases, App typecheck, naming, scoped lint (existing console warnings
+only), and diff whitespace checks. Review confirmed explicit null policy, one
+native thread, tool denial, drawing-only watchdog retirement, report-first
+retention, and independent evidence failures. No full local suite or release
+gate ran. The immutable drawing prompt hash remains
+`25b9ad1aeb523fdb590a39d090a37fdc65ed62ff081a27acfa92d946f9b2ff51`.
+
+## Follow-up - reduce verified task overhead and frame live recordings - 2026-11-03
+
+Status: revised after end-to-end review; audit and planning only. No production, prompt, test, or Inspector
+behavior changes are authorized by this planning task. Parent: Editable Design
+Agent. Continue in `codex/ai-conversation-improvements`; preserve existing changes.
+
+Outcome: reduce avoidable contract/evidence round trips and keep live drawing
+progress visible. Do not increase drawing detail, prescribe construction order,
+require Knowledge, or create a recipe merely to increase tool usage.
+
+### Evidence and classification
+
+Primary evidence: `taipei-101-fixed-1793699786368`, its original self-report,
+provider record `e7b016db-d2e2-4bf3-9d60-b4f6e8854891.jsonl`, and numbered payloads
+under the matching `.payloads/` directory. Recording evidence additionally uses
+`taipei-101-fixed-1793638204793`, whose reload image matches the user's screenshot.
+Both are under `tmp/conversation-improvements/live/`.
+
+| Finding | Verified evidence and current owner | Classification |
+| --- | --- | --- |
+| Tool-name searches allegedly return submit_tool or no match | Self-report claims this, but the retained App call sequence begins with successful describe_design_apis at 14.0s. The failed search request/result pairs are not established in this App trace. local-operation-tools exact-name/semantic/qualified lookup and ambiguity tests already exist. | Unconfirmed search-layer cause. Do not change App matching or claim a provider defect from this self-report alone. |
+| Broad contract read | 413-input requests unqualified read_design_context usage. 414-output advertises 78,598 total bytes but delivers a bounded fragment through byte 20,062; retained JSON is 23,072 bytes. 419-input selects design_operations.read_design_context and one schema path; 420-output is 11,465 bytes. | Existing qualified/scoped capability successfully used after a broad lookup. Not a 78 KB single delivered response or missing pagination. |
+| Repeated contract acquisition | 19 describe_design_apis calls, 272,565 retained output bytes, approximately 681 ms summed host tool duration. Initial multi-tool usage spans three pages. | Observable acquisition/round-trip cost; not proof that App lookup execution caused tens-of-seconds gaps. Retained serialized bytes are not token counts. |
+| Mixed capture and retained images | 595-input supplies an old crown image plus two new captures with declared check roles. 606-output requests bindChecks; 610/613 acquire bind guidance and bind. local-operation-tools passes undefined selections whenever hasReusedImages is true. | Current explicit-binding contract, with a handoff opportunity: known new-capture roles are not carried into this generic recovery. Old-image roles still require explicit assignment. |
+| Unrelated results marked stale | 621-input still uses whole-view evidence for dependent checks; 642/650 rebind and resubmit only scale/base with the latest overview and retained local images. | Correct dependency invalidation and existing selective reuse. Do not auto-pass old judgments or remove whole-view dependencies silently. |
+| Large drawing inputs | Payloads 103/118/133 are 4,202/7,840/10,046 bytes; grids/patterns expand them into thousands of elements. Repair 143 is 441 bytes. Seven prepare/apply calls total approximately 9,980 ms host duration. | Existing deterministic expansion and local repair work. No demonstrated need for a new building generator or mandatory composed recipe. |
+| Nonplanar face | NONPLANAR_FACE rejects before writes; retained draft repaired locally. design-construction owns the tolerance check, with permanent workflow/proof tests. | Invalid AI input, successful guard and recovery. Preserve geometry admission; do not silently triangulate or change intended shape. |
+| Crown shape and missing top | AI changed an incorrect square plate to round, then added a visible top surface. Native oval/projection and hierarchy moves were already available. | Design/representation mistakes, not absent tools. Small optional advice is a candidate, not a proven speedup. |
+| No Knowledge calls | The prompt already explains reducing exploration/repeated correction; spatial Knowledge already covers common world basis, geometric gaps versus order, related capture scope, and selective evidence reuse. | Non-use does not establish missing Knowledge or a prompt defect. Do not duplicate existing advice or require retrieval. |
+| Recording remains on initial base | Current live runner fits at first paint, then only at final/detail/reload collection. No later drawing-stage refit is scheduled. | Confirmed recorder behavior gap. Ending screenshots and a nonempty video do not prove usable process recording. |
+
+Nine review_drawing calls total approximately 883 ms host tool duration. These
+observed durations exclude unknown provider generation/queue/network intervals;
+call counts and gaps must not be presented as measured causal model latency.
+Existing traces already expose invocation boundaries and explicitly mark missing
+pre-dispatch/generation-versus-stall visibility. No new telemetry subsystem is
+justified by the AI saying it cannot see those measurements.
+
+### Reviewed implementation order - upstream before downstream
+
+The previous order is superseded by the
+[end-to-end source review](../reports/ai-conversation-end-to-end-plan-review-2026-11-03.md).
+Planning only; no implementation or new live runs are authorized by this review.
+
+1. **Resolve actual entry and evaluator contracts.** Trace thread/start prompt
+   composition and deferred native registration before App lookup. Define the
+   minimal discovery-bootstrap policy; a minimal eager entry is a candidate, not
+   an approved change. Review existing all-deferred tests with the policy. Separate
+   ordinary completion, fixed same-thread reporting, and other evaluator lifecycle
+   contracts. Correct the scoped spec/Inspector wording about video and reload;
+   remove superseded statements at their original owner instead of appending an
+   exception elsewhere. Preserve the original drawing prompt and untimed report.
+2. **Prove producer-to-consumer contracts using real declarations.** Add focused
+   fixtures from actual native definitions, selected usage and retained calls.
+   Follow returned examples/recovery through the actual route; do not bypass the
+   producer with manually correct input. Include ordinary completed-action
+   persistence and conversation continuation separately from benchmark reporting.
+   This closes verification gaps before measuring a candidate improvement.
+3. **Improve discovery/delivery only at the first incorrect producer.** Audit
+   initial prompt, namespace description, native tool declaration and selected
+   usage together. Existing exact/qualified/scoped lookup remains authoritative.
+   Reduce only proven redundant representation; preserve input/results/recovery
+   and native/action route distinctions. Do not claim an App search defect from
+   unretained provider search calls. If bootstrap policy changes, update its tests,
+   instructions and contract in the same slice; do not eagerly load the catalog.
+4. **Repair mixed-image handoff end to end.** First establish merge/conflict
+   semantics for repeated criterion/unit entries with different referenceUses;
+   reproduce information loss before changing code. Preserve declared new-image
+   roles in partial recovery while explicitly requesting missing old-image roles.
+   Issue complete bindings only after canonical validation; no inferred purpose,
+   automatic pass, lost references, recapture or replay. Preserve unaffected passes.
+   Do not weaken data-check image requirements as a shortcut: changing that
+   acceptance contract is separate from recovery-template improvement.
+5. **Fix process recording and verify intermediate frames.** In the fixed runner,
+   refit after settled/rendered changes when geometry leaves the visible drawing
+   area. Coalesce updates, detect movement without count changes, skip idle work,
+   and suspend automatic framing for deliberate detail views. Verify canonical
+   content/selection/history remain unchanged and review base/tower/spire video
+   frames. Keep report-first evidence saving, cleanup and error preservation.
+6. **Reassess residual computation/Knowledge needs from the corrected path.**
+   Retain existing grids, patterns, projection and local repair. Do not implement
+   a new building tool or add optional advice as a mandatory development step.
+   Only a remaining demonstrated gap justifies an additional scoped proposal.
+   Keep Knowledge optional and do not add a global drawing/refinement sequence.
+
+Each future slice requires self-review and focused regressions, including the
+upstream contract and downstream consumer. Record removals/replacements of old
+instructions beside their owners. Completion means the actual entry-to-exit case
+works, not just that a downstream helper accepts ideal test data. No full local
+suite, automatic repeated model runs, release work or new dependencies.
+
+### Review, validation and documentation
+
+Before each future implementation slice, match its owner to the current compose,
+prepare, inspect or observe Inspector contract and update only the selected
+contract where proposed behavior differs. Add failing formal regressions before
+bug fixes; review and iterate each slice with its focused tests. Do not run full
+local tests or release workflows. No source edits or new live test run are part
+of this planning task.
+
+Synchronize changed tool contracts with API_SURFACES, ai-execution-flow spec,
+relevant Inspector steps and direct tool examples. Document recording framing in
+ai-development-and-debugging and keep this parent plan current. Change the spatial
+Knowledge file only for a verified gap; leave the common App prompt unchanged
+unless a separate, evidenced contract inconsistency requires review.
+
+Preserve the immutable drawing prompt, 15-minute drawing limit, untimed same-native-
+thread report, error isolation, report-first evidence saving, persistence/reload
+checks and original failed artifacts. A later authorized live validation must
+inspect process video plus complete report and evidence; do not silently launch
+extra runs or compare an interrupted drawing as a completed counterpart.
+
+Plan review: no missing tool is inferred from non-use; no search root cause is
+invented; no stale evidence is accepted; no compulsory refinement/research stages
+are introduced. Planning checks are evidence-to-source review, paths and whitespace.
+Implementation and live validation remain pending user direction.
+
 ## Product target
 
 The product objective is to understand and fulfill the user’s design intent, not

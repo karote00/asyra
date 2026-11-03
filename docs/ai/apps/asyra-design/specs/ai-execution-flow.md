@@ -87,9 +87,11 @@ without weakening the final acceptance contract.
 
 Always-present App instructions explain Knowledge value before tool names: domain
 principles, common failure modes and mappings to supported App capabilities can
-reduce repeated derivation and unsuitable representation choices, including for
-familiar tasks. Native namespace metadata exposes that purpose before deferred
-tool loading. This promises no quality improvement and introduces no lookup gate.
+reduce repeated derivation, exploration and correction attempts, including for
+familiar tasks. Uncertain methods or adjustments that repeatedly miss their target
+are useful occasions to consult relevant advice about a cause or supported tool.
+Native namespace metadata exposes that purpose before deferred tool loading.
+This adds no detail or polish requirement and introduces no lookup gate.
 Domain knowledge is optional reference material, not a default method or an
 additional acceptance standard. Global guidance does not prescribe representative
 sampling, construction order or refinement sequence. Exact tool contracts and
@@ -98,6 +100,19 @@ unresolved decisions advice can help resolve. Direct material parameter reads
 include domain and contract constraints without the optional sampling method;
 repetition advice does not require a representative check for known materials.
 Knowledge maps decisions to existing tool computation, not duplicate algorithms.
+
+Always-present instructions assign visual intent, design parameters and final
+appearance judgments to the primary agent. Supported deterministic projection,
+repetition, transforms, material mapping and mechanical checks belong in existing
+registered tools rather than model-expanded values. Prefer a sufficient direct
+tool. When reusable orchestration would reduce manual work, the agent discovers
+exact dependencies, submits a finite recipe and invokes it with fresh inputs.
+Composition connects available primitives; it cannot invent capabilities or make
+artistic decisions. Only registered mechanically decidable checks and repairs
+qualify for bounded iteration. No recipe or tool-count target is required.
+Successful execution attempts saving independently; inspect storage outcomes and
+retry failed saving through save_tool without replaying drawing work. Existing
+selected tool contracts retain exact authorship, admission and recovery authority.
 
 When selected for an unresolved repeated material, chosen-method advice exposes
 one executable advisory route: choose the method,
@@ -1065,6 +1080,12 @@ evidence invalidation, including manual, remote and Undo/Redo changes. Inspectio
 must reject mixed-generation results. Reuse requires unchanged identity and a
 complete dependency footprint; unknown dependencies invalidate conservatively.
 No target-local cache is admitted merely because the local tool revision matches.
+Regional membership excludes a container's enclosing bounds only when its current
+registered renderer is Preset's exported non-painting Group strategy. Actual
+contributing descendants still retain all ancestors as dependencies. Unknown or
+custom render strategies remain conservative; container capability alone does
+not prove non-painting behavior. Whole-target receipts and genuine regional
+entry, exit, order, geometry and paint changes retain their existing invalidation.
 Final overall inspection and unresolved requirements remain mandatory.
 
 Completion coverage follows the current canonical containment of this request's
@@ -1160,6 +1181,16 @@ status or settlement. No new proxy, database scanner, logging configuration or r
 reasoning/code/diagnostic capture is introduced.
 
 ## Execution recording
+
+Browser streaming admission separates observational activity from execution frames.
+Qualified tool names remain intact. A parsed activity frame with invalid progress
+fields is omitted from presentation without cancelling the stream or executing
+anything; observer callback exceptions are likewise isolated. Activity following
+the final result is ignored without reopening progress or rejecting the result. Existing server
+records retain original tool activity. Unknown frame kinds, malformed JSON or
+operation/result envelopes, receipt failures and explicit errors remain fatal.
+User cancellation and transport cleanup retain their existing semantics.
+
 
 The Runtime profiler emits a versioned, append-only local record per invocation in
 addition to existing console diagnostics. The record includes request/call and
@@ -1288,8 +1319,9 @@ geometry, order and existing no-replay rules. The runner records both limits and
 never claims recovery coverage when a live submission does not exceed the limit.
 
 An explicitly configured local evaluation window separates the work deadline from
-an independent report timeout (60 seconds). Normal product requests have no such
-window. The browser and provider consume the same absolute work deadline. The
+an independent report policy: `reportTimeoutMs: null` waits for report completion
+without a time limit; an explicit positive timeout is bounded to five minutes.
+The fixed 101 benchmark uses the untimed policy. Normal product requests have no such window. The browser and provider consume the same absolute work deadline. The
 browser checks it at the actual synchronous mutation boundary, including queued
 work. A finite mutation already entered may settle; no later mutation enters and
 committed changes are never replayed or undone by the deadline.
@@ -1298,7 +1330,16 @@ At the work cutoff the native provider cancels App tool execution and interrupts
 the active turn. After its terminal acknowledgement it requests a concise public
 report in the same native thread. Reports explain completed work, remaining work,
 first-frame delays and uncertainty without requesting private reasoning. Report
-calls cannot execute App tools or final drawing actions. Early work completion also
+calls cannot execute App tools or final drawing actions. Optional `reportInstructions` (nonblank, at most
+8000 characters) requests detailed public commentary with the existing final
+1000-character summary contract. These host controls are excluded from drawing
+input. `announceWorkDeadline: false` suppresses the otherwise unchanged work
+countdown instruction. Report instructions are delivered only after work settles
+and tools drain. The fixed benchmark submits once and verifies retained work/report
+exchanges share a native thread with distinct turn IDs, then extracts only public
+commentary from that report turn and requires the settled evaluation receipt.
+Its incremental trace observer reads each byte once; canonical content captured at
+report entry must match report settlement. No new-session report fallback. Early work completion also
 enters reporting. Missing interruption, transport failure, cancellation, malformed
 report and report timeout are explicit failures, never artwork completion.
 
@@ -1322,7 +1363,13 @@ cleanup after reporting and cannot grant extra drawing time.
 DoD: deterministic protocol tests prove same-thread transition and denial of late
 App calls; actual transaction tests prove deferred-write rejection, retained partial
 history and Undo/Redo; capture tests prove report/text/screenshot capture,
-report timeout and failure preservation. Ordinary requests remain unchanged. Live
+explicit report timeout, untimed report continuation, and failure preservation.
+The fixed benchmark retires its drawing watchdog before report-entry evidence,
+retains completed native report text before browser captures, and independently
+collects source, receipt, persistence, checkpoint, screenshots, reload, and video.
+Missing evidence fails explicitly while other collectors continue. Its report has
+no duration watchdog; cancellation and transport errors still terminate normally.
+Ordinary requests remain unchanged. Live
 model compliance and screenshot appearance require a separately authorized run.
 
 ## Execution evaluation
@@ -3573,8 +3620,11 @@ passes remain accumulated. Original bytes and decisions remain reusable.
 
 review_drawing capture inputs declare criterion/unit checks on each target. Existing
 images are bound explicitly with bindChecks. The review owner returns per-check
-request-authenticated descriptors with requirement/result revisions and canonical
-image dependencies. The primary agent supplies status/evidence after seeing images;
+request-authenticated descriptors with request identity, requirement/result revisions
+and a signature. Canonical image dependencies stay in the existing request-local
+inspection store; issuance and validation sign those dependencies directly rather
+than requiring the agent to return a duplicate dependency body. No new store or
+lookup is introduced. The primary agent supplies status/evidence after seeing images;
 submission never infers or changes the declared scope. Tool submissions require
 current bindings and browser currency validation, with atomic mixed rejection and
 unchanged independent passes. Exact current replay is idempotent. Failed capture
@@ -3622,6 +3672,12 @@ text matches. Approval, failure, saving, stopping and terminal outcomes override
 work immediately. No time-based display hold or extra model call is permitted.
 
 ### Knowledge-to-capability adoption
+
+Spatial guidance explains parent-local attachment, retained composition identity,
+relative hierarchy moves and common-ancestor regional inspection. These are
+optional ways to avoid rebuilding or regrouping content. Tool descriptions leave
+the order of drawing, detail work and research to the agent. Stored source facts
+are attributed assertions, not independent source verification.
 
 Relevant advisory knowledge is the default method reference for open design
 choices, subject to user intent and current capability/security contracts. Shared
@@ -4296,6 +4352,11 @@ The existing verification gate must fail when a registered entry lacks required
 coverage; local evidence does not claim model adoption or universal correctness.
 
 ### Unified usage acquisition
+
+Discovery descriptions distinguish complete operation usage, owner-published input
+scopes and missing-field queries. Native callable declarations retain exact names
+and routes independently of App contract lookup. No additional lookup is required
+when the current contract is already known.
 
 Exact selection without owner-declared operation choices is sufficient to obtain
 an executable usage contract. Selected scopes retain the same promise. General

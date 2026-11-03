@@ -3542,7 +3542,7 @@ const exerciseMultiscaleEvidence = async () => {
   const check = combined.next.arguments.checks[0]
 
   expect(check.inspectionIds).toHaveLength(2)
-  expect(check.binding.dependencies).toHaveLength(2)
+  expect(check.binding).not.toHaveProperty('dependencies')
   const before = checkResults.read({ includePassed: true })
   const tampered = structuredClone(combined.next.arguments)
 
@@ -3603,13 +3603,13 @@ const exerciseMultiscaleEvidence = async () => {
   const overall = await bind('Overall', [check.inspectionIds[0]])
 
   expect((await submit(overall, true)).accepted).toBe(true)
+
   let active = combined
 
   for (const dependencyIndex of [0, 1]) {
-    const dependency =
-      active.next.arguments.checks[0].binding.dependencies[dependencyIndex]
+    const dependency = captures.slice(-2)[dependencyIndex]
 
-    invalid.add(dependency.source.receiptId)
+    invalid.add(dependency.receiptId)
     await call(AiDesignToolIds.READ_DESIGN_CHECKS, { view: 'details' })
     const results = checkResults.read({ includePassed: true }).items
 

@@ -114,7 +114,7 @@ it('partitions the preserved source under the effective limit without changing s
   )
 })
 
-it('admits the authorized fifteen-minute window while enforcing independent work and report ceilings', () => {
+it('admits the drawing ceiling with explicit timed or untimed reporting', () => {
   const now = 1793070000000
   const clock = vi.spyOn(Date, 'now').mockReturnValue(now)
 
@@ -122,11 +122,18 @@ it('admits the authorized fifteen-minute window while enforcing independent work
     const policy = { workDeadlineAt: now + 900000, reportTimeoutMs: 60000 }
 
     expect(readEvaluationWindow(policy)).toEqual(policy)
+    expect(readEvaluationWindow({ ...policy, reportTimeoutMs: null })).toEqual({
+      ...policy,
+      reportTimeoutMs: null
+    })
+    expect(
+      readEvaluationWindow({ ...policy, reportTimeoutMs: 300000 })
+    ).toEqual({ ...policy, reportTimeoutMs: 300000 })
     expect(() =>
       readEvaluationWindow({ ...policy, workDeadlineAt: now + 900001 })
     ).toThrow('Invalid evaluation window')
     expect(() =>
-      readEvaluationWindow({ ...policy, reportTimeoutMs: 60001 })
+      readEvaluationWindow({ ...policy, reportTimeoutMs: 300001 })
     ).toThrow('Invalid evaluation window')
   } finally {
     clock.mockRestore()
