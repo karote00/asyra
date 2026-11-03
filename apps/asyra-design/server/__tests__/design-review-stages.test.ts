@@ -140,6 +140,80 @@ const assessReferences = (
       }))
   })
 
+it('rejects different valid reference uses for one capture check before merging', () => {
+  const review = referenceReview()
+
+  review.record(plan)
+  assessReferences(review, [0, 1])
+  const first = {
+    criterionId: 'Viewpoint',
+    referenceUses: useReceipts(review, 0, 'visual', 'Viewpoint')
+  }
+  const second = {
+    criterionId: 'Viewpoint',
+    referenceUses: useReceipts(review, 1, 'visual', 'Viewpoint')
+  }
+
+  expect(first.referenceUses).toHaveLength(1)
+  expect(second.referenceUses).toHaveLength(1)
+  expect(() =>
+    review.validateCaptureChecks('visual', [{ checks: [first] }])
+  ).not.toThrow()
+  expect(() =>
+    review.validateCaptureChecks('visual', [{ checks: [second] }])
+  ).not.toThrow()
+  expect(() =>
+    review.validateCaptureChecks('visual', [
+      { checks: [first] },
+      { checks: [second] }
+    ])
+  ).toThrow('Conflicting source uses or supersession')
+  expect(() =>
+    review.validateCaptureChecks('visual', [
+      { checks: [first] },
+      { checks: [first] }
+    ])
+  ).not.toThrow()
+})
+
+it('retains explicit reference uses in unsigned mixed-image recovery', () => {
+  const review = referenceReview()
+
+  review.record(plan)
+  assessReferences(review, [0])
+  const fresh = review.inspect('new', true, true)
+  const old = review.inspect('old', true, true)
+
+  if (!fresh || !old) {
+    throw new Error('Missing fixture inspections')
+  }
+
+  const selection = {
+    criterionId: 'Viewpoint',
+    referenceUses: useReceipts(review, 0, 'visual', 'Viewpoint'),
+    inspectionIds: [fresh.inspectionId]
+  }
+  const oldId = old.inspectionId
+  const result = review.judgmentHandoff(
+    [oldId, ...selection.inspectionIds],
+    'visual',
+    [selection],
+    true
+  )
+
+  if (!result.next) {
+    throw new Error('Missing recovery template')
+  }
+
+  expect(result.next.arguments).toMatchObject({
+    bindChecks: [selection],
+    inspectionIds: [oldId, ...selection.inspectionIds]
+  })
+  expect(result.next.arguments).not.toHaveProperty('checks')
+  expect(result.next.requiredInputs).toEqual(['bindChecks'])
+  expect(review.isAccepted()).toBe(false)
+})
+
 const check = (criterionId: string, status = 'pass') => ({
   criterionId,
   status,
@@ -2926,7 +3000,7 @@ describe('declared regional acceptance', () => {
     )
 
     expect(declaration.revision).toBe(5)
-    expect(inspection.revision).toBe(17)
+    expect(inspection.revision).toBe(18)
     const local = {
       phase: 'visual',
       inspectionIds: ['image'],

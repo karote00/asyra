@@ -616,9 +616,10 @@ gate ran. The immutable drawing prompt hash remains
 
 ## Follow-up - reduce verified task overhead and frame live recordings - 2026-11-03
 
-Status: revised after end-to-end review; audit and planning only. No production, prompt, test, or Inspector
-behavior changes are authorized by this planning task. Parent: Editable Design
-Agent. Continue in `codex/ai-conversation-improvements`; preserve existing changes.
+Status: implemented and reviewed on 2026-11-04 with focused validation.
+Parent: Editable Design Agent. Branch: `codex/ai-conversation-improvements`.
+The user authorized implementation after the revised review and required the
+existing changes to be pushed first. A fresh live model run is separate.
 
 Outcome: reduce avoidable contract/evidence round trips and keep live drawing
 progress visible. Do not increase drawing detail, prescribe construction order,
@@ -654,14 +655,39 @@ justified by the AI saying it cannot see those measurements.
 
 ### Reviewed implementation order - upstream before downstream
 
+Implementation authorized on 2026-11-04 after baseline commit/push
+`2a3bab72d5957700e0d9a73a063339e264a7dbfd`; worktree verified clean.
+
+Compose entry review: completed. Formal regression first observed zero eager
+entries; the current producer exposes exactly one operation discovery entry.
+Four focused provider cases and the current native capability envelope proof pass;
+real createBasicApiActions declarations are used for bootstrap/cost tests. No-operation
+behavior is preserved. App typecheck, two Inspector contract cases, naming and
+scoped lint pass. Evaluator lifecycle wording is scoped at both old contract owners.
+This proves availability and contract consistency, not a live model speedup.
+
+Step execution - compose entry and evaluator contracts: the existing
+DESCRIBE_DESIGN_APIS identity is the sole eager discovery entry when operations
+are available; domain tools remain deferred. No new tool/schema/persisted identity.
+Native registration owns exposure, advertisement counts derive from the actual
+registration, and generated Main tool scope remains owned by its current schema.
+Tests invoke that real declaration and verify unrelated catalog growth leaves
+bootstrap bytes/count unchanged. No-operation and assessment requests retain
+existing exposure. Update current spec/Inspector and direct assertions together.
+The fixed runner owns continuous recording and same-context reload; knowledge
+comparison evaluators retain their explicitly video-free fresh-context route.
+Gates: test-first provider/registration/advertisement cases, scoped native delivery,
+Inspector contract, naming, lint and affected types. No live model run in this step.
+
+
 The previous order is superseded by the
 [end-to-end source review](../reports/ai-conversation-end-to-end-plan-review-2026-11-03.md).
-Planning only; no implementation or new live runs are authorized by this review.
+Implementation is authorized by the 2026-11-04 user instruction; a new live model
+run remains outside this task.
 
 1. **Resolve actual entry and evaluator contracts.** Trace thread/start prompt
    composition and deferred native registration before App lookup. Define the
-   minimal discovery-bootstrap policy; a minimal eager entry is a candidate, not
-   an approved change. Review existing all-deferred tests with the policy. Separate
+   minimal discovery-bootstrap policy; the existing operation discovery entry is eager when operations are available. Review existing all-deferred tests with the policy. Separate
    ordinary completion, fixed same-thread reporting, and other evaluator lifecycle
    contracts. Correct the scoped spec/Inspector wording about video and reload;
    remove superseded statements at their original owner instead of appending an
@@ -679,9 +705,9 @@ Planning only; no implementation or new live runs are authorized by this review.
    and native/action route distinctions. Do not claim an App search defect from
    unretained provider search calls. If bootstrap policy changes, update its tests,
    instructions and contract in the same slice; do not eagerly load the catalog.
-4. **Repair mixed-image handoff end to end.** First establish merge/conflict
-   semantics for repeated criterion/unit entries with different referenceUses;
-   reproduce information loss before changing code. Preserve declared new-image
+4. **Repair mixed-image handoff end to end.** Preserve upstream full-declaration conflict rejection before capture; the
+   review correction confirms no missing merge rule. Reproduce mixed-handoff
+   information loss before changing code. Preserve declared new-image
    roles in partial recovery while explicitly requesting missing old-image roles.
    Issue complete bindings only after canonical validation; no inferred purpose,
    automatic pass, lost references, recapture or replay. Preserve unaffected passes.
@@ -699,20 +725,40 @@ Planning only; no implementation or new live runs are authorized by this review.
    Only a remaining demonstrated gap justifies an additional scoped proposal.
    Keep Knowledge optional and do not add a global drawing/refinement sequence.
 
-Each future slice requires self-review and focused regressions, including the
+Each implementation slice requires self-review and focused regressions, including the
 upstream contract and downstream consumer. Record removals/replacements of old
 instructions beside their owners. Completion means the actual entry-to-exit case
 works, not just that a downstream helper accepts ideal test data. No full local
 suite, automatic repeated model runs, release work or new dependencies.
 
+Step execution - inspect handoff: capture preflight owns declaration conflicts;
+aggregation retains identical admitted declarations. Mixed capture delivers known
+new-image roles as unsigned bindChecks, never binds an incomplete scope, and asks
+for explicit retained-image roles. Canonical bind admission remains authoritative.
+Allowed changes: review/operation owners, direct schemas/descriptions, focused
+owner tests and current contract docs. Gates: real mixed capture -> returned
+template -> bind -> record, conflict-before-capture, stale evidence and existing
+owner contract assertions. No new query, image recapture or automatic judgment.
+
+Step execution - observe recording: the fixed runner owns navigation only.
+Use the existing canonical change observer, Core frame completion and transaction
+idle boundary. Coalesce revisions until the next runner poll; read bounds once
+per changed rendered revision, with the existing zoomFit API reading them again
+only when fitting is necessary. Idle polls perform no bounds work. An externally
+changed viewport suspends auto-framing until explicit resume. Dispose before
+report evidence/reload. No document, selection, history or provider prompt writes.
+Allowed changes: fixed runner, framing helper, permanent unit/browser regressions,
+runner test command registration and current observe docs. Gates: work counts,
+settlement/render gating, movement with unchanged count, detail pause, canonical
+state equality and retained intermediate base/tower/spire screenshots and video.
+
 ### Review, validation and documentation
 
-Before each future implementation slice, match its owner to the current compose,
+Before each implementation slice, match its owner to the current compose,
 prepare, inspect or observe Inspector contract and update only the selected
 contract where proposed behavior differs. Add failing formal regressions before
 bug fixes; review and iterate each slice with its focused tests. Do not run full
-local tests or release workflows. No source edits or new live test run are part
-of this planning task.
+local tests or release workflows. Implementation is authorized; no new live model run is part of this task.
 
 Synchronize changed tool contracts with API_SURFACES, ai-execution-flow spec,
 relevant Inspector steps and direct tool examples. Document recording framing in
@@ -728,8 +774,52 @@ extra runs or compare an interrupted drawing as a completed counterpart.
 
 Plan review: no missing tool is inferred from non-use; no search root cause is
 invented; no stale evidence is accepted; no compulsory refinement/research stages
-are introduced. Planning checks are evidence-to-source review, paths and whitespace.
-Implementation and live validation remain pending user direction.
+are introduced. Implementation is complete for this follow-up; live model timing
+and artwork comparison remain unmeasured until a separately authorized run.
+
+### Implementation review and focused evidence - 2026-11-04
+
+1. Compose entry: the existing operation-discovery tool is directly callable;
+   other native domain tools remain deferred. Registration owns both exposure
+   and advertised eager count/bytes. Real canonical declarations prove unchanged
+   bootstrap size when unrelated tools grow. No-operation and assessment isolation
+   remain covered. No new discovery identity or common App workflow instruction.
+2. Producer/consumer: real selected usage, recorded recovery and native envelopes
+   pass through actual owners. Existing exact/scoped lookup is retained. Ordinary
+   completed-action storage and clarification continuation passed nine focused
+   cases; these remain distinct from evaluation report outcome.
+3. Inspect handoff: mixed and partially failed capture retain successful image
+   roles and reference uses in an unsigned bindChecks template. The actual returned
+   template continues through bind and record without extra captures. Self-review
+   caught the partial-failure branch and added its failing regression before repair.
+   Existing complete-declaration conflict admission was already correct; dedicated
+   tests reject conflicting valid reference uses before aggregation and conflicting
+   supersession before browser dispatch. No merge policy was changed.
+4. Observe recording: canonical change/frame/transaction signals drive coalesced
+   fit checks. Twenty idle polls add zero bounds reads; three pending changes add
+   one settled bounds read. Same-count movement triggers a new check. External
+   navigation pauses framing. Browser coverage with the Agent panel open verifies
+   base, tower, spire and movement visibility with identical canonical data,
+   selection and history before/after fit. Intermediate screenshots and decoded
+   process-video frames were inspected. The drawing watchdog is retired before
+   framing disposal/evidence; framing errors cannot stop report collection.
+5. Residual Knowledge/computation: existing projection, pattern, mapping and repair
+   capabilities still cover the identified operations. No demonstrated missing
+   capability justifies another tool or mandatory Knowledge/refinement instruction.
+
+Focused gates: 320 operation/review owner cases; 10 selected native producer and
+consumer proofs; two no-operation/assessment cases; nine ordinary completion and
+continuation cases; 14 runner/framing/Inspector contract cases; one browser case;
+app typecheck, scoped lint, naming and whitespace/link review. No full local suite,
+release gate, new dependency, model inference or drawing-prompt modification.
+
+Local evidence: `tmp/conversation-improvements/final-*.log`,
+`tmp/conversation-improvements/ordinary-handoff.log`, and
+`tmp/conversation-improvements/framing-browser/` (the first passing process video,
+intermediate screenshots and decoded frames). The panel-open rerun is retained in
+`apps/asyra-design/test-results/drawing-framing-recording--de239-ment-without-document-edits-chromium/`.
+These artifacts prove contract behavior and recording framing, not reduced model
+thinking time or improved 101 artwork. The parent plan is not closed by this slice.
 
 ## Product target
 

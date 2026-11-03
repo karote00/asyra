@@ -185,6 +185,25 @@ interface Packet {
   params: Record<string, unknown>
 }
 
+const readCanonicalActions = async () => {
+  const hadWindow = 'window' in globalThis
+
+  if (!hadWindow) {
+    vi.stubGlobal('window', {})
+  }
+
+  try {
+    const { createBasicApiActions } =
+      await import('../../src/ai/basic-api-actions')
+
+    return createBasicApiActions().map(createAiToolContract)
+  } finally {
+    if (!hadWindow) {
+      vi.unstubAllGlobals()
+    }
+  }
+}
+
 const nativeToolDefinitions = (thread?: Record<string, unknown>) =>
   (
     thread?.dynamicTools as {
@@ -2599,7 +2618,17 @@ describe('local subscription AI backend', () => {
   it('keeps initial instructions bounded when unrelated deferred tools grow', async () => {
     const baseline = fakeServer()
 
-    await requestConfiguredAiActionBatch(input, { environment })
+    await requestConfiguredAiActionBatch(
+      {
+        ...input,
+        actions: await readCanonicalActions()
+      },
+      {
+        environment,
+
+        executeBatch: async () => ({ context: {}, actionResults: [] })
+      }
+    )
     const before = baseline.packets.find(
       ({ method }) => method === 'thread/start'
     )?.params
@@ -2625,7 +2654,17 @@ describe('local subscription AI backend', () => {
     )
     const expanded = fakeServer()
 
-    await requestConfiguredAiActionBatch(input, { environment })
+    await requestConfiguredAiActionBatch(
+      {
+        ...input,
+        actions: await readCanonicalActions()
+      },
+      {
+        environment,
+
+        executeBatch: async () => ({ context: {}, actionResults: [] })
+      }
+    )
     const after = expanded.packets.find(
       ({ method }) => method === 'thread/start'
     )?.params
@@ -2635,9 +2674,17 @@ describe('local subscription AI backend', () => {
     expect(nativeToolDefinitions(after).length).toBe(
       nativeToolDefinitions(before).length + 1000
     )
-    expect(
-      nativeToolDefinitions(after).every((tool) => tool.deferLoading)
-    ).toBe(true)
+    const beforeEager = nativeToolDefinitions(before).filter(
+      (tool) => !tool.deferLoading
+    )
+    const afterEager = nativeToolDefinitions(after).filter(
+      (tool) => !tool.deferLoading
+    )
+
+    expect(afterEager.map((tool) => tool.name)).toEqual([
+      'describe_design_apis'
+    ])
+    expect(afterEager).toEqual(beforeEager)
   })
 
   it('uses one tool-free ephemeral process, exact model, and no HTTP/API key or account output', async () => {
@@ -5344,6 +5391,54 @@ it('records native discovery lifecycle and counts unseen notifications without r
       })
     )
     expect(JSON.stringify(records)).not.toContain('PRIVATE_BODY')
+  } finally {
+    log.mockRestore()
+  }
+})
+
+it('exposes one callable discovery bootstrap with truthful advertised bytes', async () => {
+  const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+  const server = fakeServer({
+    toolCall: true,
+    toolName: 'describe_design_apis',
+    toolArguments: { query: 'fill' }
+  })
+
+  spawn.mockReturnValue(server.child)
+  try {
+    await requestConfiguredAiActionBatch(
+      {
+        ...input,
+        actions: await readCanonicalActions()
+      },
+      {
+        environment,
+
+        executeBatch: async () => ({ context: {}, actionResults: [] })
+      }
+    )
+    const thread = server.packets.find(
+      (packet) => packet.method === 'thread/start'
+    )?.params
+    const eager = nativeToolDefinitions(thread).filter(
+      (tool) => !tool.deferLoading
+    )
+
+    expect(eager.map((tool) => tool.name)).toEqual(['describe_design_apis'])
+    const reply = server.packets.find(
+      (packet) => packet.id === 99 && packet.result
+    )?.result as { success?: boolean } | undefined
+
+    expect(reply?.success, JSON.stringify(reply)).toBe(true)
+    const records = log.mock.calls.map(([entry]) => JSON.parse(String(entry)))
+
+    expect(
+      records.find((record) => record.stage === 'capabilities_advertised')
+        ?.evidence
+    ).toMatchObject({
+      eagerToolCount: 1,
+      eagerToolDefinitionBytes: Buffer.byteLength(JSON.stringify(eager), 'utf8')
+    })
   } finally {
     log.mockRestore()
   }

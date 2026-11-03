@@ -900,7 +900,9 @@ const runLocalAiProvider = async (
                   name,
                   description,
                   inputSchema: nativeToolInputSchema(inputSchema),
-                  deferLoading: true
+                  deferLoading:
+                    owner !== operations ||
+                    name !== AiDesignToolIds.DESCRIBE_DESIGN_APIS
                 }))
             }
           ]
@@ -2146,6 +2148,10 @@ const runLocalAiProvider = async (
       'utf8'
     )
 
+    const eagerDefinitions = nativeDefinitions.flatMap((group) =>
+      group.tools.filter((tool) => !tool.deferLoading)
+    )
+
     usage?.trace('capabilities_advertised', {
       callId: 'advertised-contracts',
       definitions: {
@@ -2158,8 +2164,10 @@ const runLocalAiProvider = async (
       }),
       toolCount: toolBindings.size,
       toolDefinitionBytes,
-      eagerToolCount: 0,
-      eagerToolDefinitionBytes: 0
+      eagerToolCount: eagerDefinitions.length,
+      eagerToolDefinitionBytes: eagerDefinitions.length
+        ? Buffer.byteLength(JSON.stringify(eagerDefinitions), 'utf8')
+        : 0
     })
     await request(
       'thread/start',
@@ -2190,7 +2198,7 @@ const runLocalAiProvider = async (
             (operations
               ? ' input.actions lists final-response actions, not the complete capability catalog. Drawing operations are supplied separately as callable tools; their absence from input.actions does not mean drawing is unavailable. Use backend operation tools to apply changes, inspect actual receipts, and continue with registered operations. Do not repeat an executed operation in the final batch. End with report_outcome: {outcome:"completed"|"unsupported",message:string}.'
               : ' Return the prepared action batch without invoking backend operation tools. Use report_outcome only for an unsupported request.') +
-            ` ${libraryUnavailable ? 'Saved tools could not be loaded. Native tools remain available; saving returns explicit status, and save-only retry must not repeat document edits.' : ''} Discover tools by operation purpose using describe_design_apis query; use exact names for known capabilities. Categories and their continuations remain available when an intentional complete inventory is useful. Native discovery provides callable declarations. Read bounded tool results directly, preserving complete selected restrictions and following returned continuations when needed. Reuse App-owned artifacts, target references and recipes for intermediate geometry and data binding. Runtime owns admitted finite iteration; do not coordinate each deterministic check/repair through a new model turn. Use compact mutation receipts and prepared artifact target references when individual acknowledgements are unnecessary. Known current contracts need no lookup. Native wrappers and recipe registeredName/revision are different fields; use the returned exact route. ${localToolResultInstructions}`,
+            ` ${libraryUnavailable ? 'Saved tools could not be loaded. Native tools remain available; saving returns explicit status, and save-only retry must not repeat document edits.' : ''} The describe_design_apis entry is available directly when drawing operations are enabled; other domain tools use native deferred discovery. Discover tools by operation purpose using describe_design_apis query; use exact names for known capabilities. Categories and their continuations remain available when an intentional complete inventory is useful. Native discovery provides callable declarations. Read bounded tool results directly, preserving complete selected restrictions and following returned continuations when needed. Reuse App-owned artifacts, target references and recipes for intermediate geometry and data binding. Runtime owns admitted finite iteration; do not coordinate each deterministic check/repair through a new model turn. Use compact mutation receipts and prepared artifact target references when individual acknowledgements are unnecessary. Known current contracts need no lookup. Native wrappers and recipe registeredName/revision are different fields; use the returned exact route. ${localToolResultInstructions}`,
         config: {
           model_reasoning_effort: 'medium',
           ...localProviderIsolationConfig,

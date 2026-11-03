@@ -994,7 +994,7 @@ it('execution proof preserves registered native capability envelopes', async ({
   for (const definition of definitions) {
     expect(definition).toMatchObject({
       type: 'function',
-      deferLoading: true,
+      deferLoading: definition.name !== AiDesignToolIds.DESCRIBE_DESIGN_APIS,
       name: expect.any(String),
       description: expect.any(String),
       inputSchema: expect.any(Object)
@@ -1145,8 +1145,11 @@ it('execution proof preserves registered native capability envelopes', async ({
   expect(catalog).toMatchObject({
     toolCount: definitions.length,
     toolDefinitionBytes: Buffer.byteLength(JSON.stringify(groups), 'utf8'),
-    eagerToolCount: 0,
-    eagerToolDefinitionBytes: 0
+    eagerToolCount: 1,
+    eagerToolDefinitionBytes: Buffer.byteLength(
+      JSON.stringify(definitions.filter((tool) => !tool.deferLoading)),
+      'utf8'
+    )
   })
 })
 

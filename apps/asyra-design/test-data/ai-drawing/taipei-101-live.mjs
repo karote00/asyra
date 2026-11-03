@@ -275,6 +275,10 @@ try {
       await import('/src/testing/runtime-access.ts')
     const profile = getActiveAiDrawingPerformanceProfile()
 
+    const { installDrawingFraming } =
+      await import('/test-data/ai-drawing/drawing-framing.mjs')
+
+    window.fixedDrawingFraming = await installDrawingFraming()
     profile.reset()
     const baseline = profile.readRenderProjectionElementCount()
     const observation = {
@@ -325,7 +329,17 @@ try {
         await import('/src/testing/runtime-access.ts')
       const profile = getActiveAiDrawingPerformanceProfile()
 
+      let framing
+
+      try {
+        framing = window.fixedDrawingFraming.tick()
+      } catch (error) {
+        window.fixedDrawingFraming.dispose()
+        framing = { status: 'failed', message: String(error) }
+      }
+
       return {
+        framing,
         settlement: profile.readLatestTurnSettlement(),
         rendered: profile.readRenderProjectionElementCount(),
         first: window.fixedDrawingObservation.firstPaintOpportunityMs,
@@ -333,6 +347,21 @@ try {
           ?.textContent
       }
     })
+
+    if (state.framing.status === 'failed') {
+      meta.evidenceErrors.push({
+        stage: 'process-framing',
+        message: state.framing.message
+      })
+    }
+
+    if (state.framing.status === 'fitted') {
+      meta.framing ??= []
+      meta.framing.push({
+        elapsedMs: Date.now() - meta.sentAt,
+        ...state.framing
+      })
+    }
 
     if (state.status !== lastStatus) {
       lastStatus = state.status
@@ -349,7 +378,6 @@ try {
           [
             'first-frame',
             async () => {
-              await page.keyboard.press('Meta+1')
               await page.screenshot({ path: path.join(directory, 'first.png') })
             }
           ]
@@ -366,6 +394,10 @@ try {
         save()
         meta.evidenceErrors.push(
           ...(await collectEvidenceStages([
+            [
+              'stop-framing',
+              () => page.evaluate(() => window.fixedDrawingFraming.dispose())
+            ],
             [
               'work-snapshot',
               async () => {
