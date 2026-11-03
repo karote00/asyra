@@ -172,6 +172,9 @@ it('executes the advertised ordered input example without hidden envelope fields
   const definition = workflow.definitions[0]
 
   expect(definition.description).not.toContain('Ordered input example: ')
+  expect(definition.description).not.toContain(
+    'Call before generating later details'
+  )
   const example = definition.inputSchema.examples.find(
     (entry) => 'parts' in entry
   )
@@ -2914,10 +2917,12 @@ it('binds only the completed parts boundary and retains independent binding with
     )
   )
 
-  expect(
-    value.visualReview.next.arguments.checks[0].binding.dependencies[0]
-      .elementId
-  ).toBe('part-2')
+  expect(value.visualReview.next.arguments.checks[0].inspectionIds).toEqual(
+    value.visualReview.inspectionIds
+  )
+  expect(value.visualReview.next.arguments.checks[0].binding.signature).toEqual(
+    expect.any(String)
+  )
   expect(
     f.events.filter((event) => event.startsWith('inspect_drawing:'))
   ).toEqual(['inspect_drawing:part-2'])

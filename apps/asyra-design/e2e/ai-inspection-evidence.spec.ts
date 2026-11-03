@@ -1246,6 +1246,141 @@ test('saved drawing keeps a complete snapshot after public regrouping', async ({
   }
 })
 
+test('regional evidence excludes empty Group extents while preserving real contributors', async ({
+  page
+}, testInfo) => {
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  const result = await page.evaluate(async () => {
+    const { core } = await import('../src/testing/runtime-access')
+    const { transactionApis, hierarchyApis, historyApis, fillApis } =
+      await import('../src/common-apis')
+    const { createInspectionEvidence } =
+      await import('../src/common-apis/inspection-evidence')
+    const { createAiInspectionAction } = await import('../src/ai/inspection')
+    const frame = transactionApis.runTransaction(() =>
+      core.createElementInParent(
+        { type: 'frame', x: 0, y: 0, width: 800, height: 800 },
+        core.getCurrentWorkspaceId()
+      )
+    )
+    const ids = transactionApis.runTransaction(() =>
+      core.createElementsInParent(
+        [0, 300, 600].map((y) => ({
+          type: 'rect',
+          x: 100,
+          y,
+          width: 80,
+          height: 80
+        })),
+        frame
+      )
+    )
+    const group = hierarchyApis.groupElements([ids[0], ids[2]]).groupId
+    const region = { x: 90, y: 290, width: 100, height: 100 }
+    const owner = createInspectionEvidence()
+    const action = createAiInspectionAction(undefined, owner)
+    let captures = 0
+
+    const capture = async (elementId = frame, crop = true) => {
+      captures++
+      const value = (await action.execute(
+        {
+          elementId,
+          ...(crop ? { region } : {})
+        },
+        { signal: new AbortController().signal } as never
+      )) as {
+        available: boolean
+        evidence: unknown
+        image: { dataUrl: string }
+      }
+
+      if (!value.available || !value.evidence) {
+        throw new Error('Actual regional capture failed')
+      }
+
+      return value
+    }
+
+    try {
+      const initial = await capture()
+      const whole = await capture(frame, false)
+      const boundsBefore = core.getElementComputedData(group, [
+        'x',
+        'y',
+        'width',
+        'height'
+      ])
+
+      hierarchyApis.moveElementsRelative({
+        elementIds: [ids[0]],
+        anchorId: ids[1],
+        placement: 'before'
+      })
+      const currentAfterMove = owner.isCurrent(initial.evidence)
+      const wholeAfterMove = owner.isCurrent(whole.evidence)
+      const boundsAfter = core.getElementComputedData(group, [
+        'x',
+        'y',
+        'width',
+        'height'
+      ])
+      const after = await capture()
+      const checksBefore = captures
+
+      for (let i = 0; i < 10; i++) {
+        owner.isCurrent(after.evidence)
+      }
+
+      const validationCaptures = captures - checksBefore
+
+      // Entry must invalidate even though the empty container was not a member.
+      transactionApis.runTransaction(() =>
+        core.updateElementProperties([{ elementId: group, values: { y: 300 } }])
+      )
+      const afterEntry = owner.isCurrent(after.evidence)
+      const entered = await capture()
+
+      await historyApis.undo()
+      const afterUndo = owner.isCurrent(entered.evidence)
+      const clean = await capture()
+
+      fillApis.updatePrimaryFillColor(ids[1], '#ff0000')
+      const afterPaint = owner.isCurrent(clean.evidence)
+
+      return {
+        currentAfterMove,
+        wholeAfterMove,
+        validationCaptures,
+        identicalPixels: initial.image.dataUrl === after.image.dataUrl,
+        boundsChanged:
+          JSON.stringify(boundsBefore) !== JSON.stringify(boundsAfter),
+        afterEntry,
+        afterUndo,
+        afterPaint
+      }
+    } finally {
+      owner.dispose()
+    }
+  })
+
+  await testInfo.attach('regional-group-evidence', {
+    body: JSON.stringify(result, null, 2),
+    contentType: 'application/json'
+  })
+  expect(result).toEqual({
+    currentAfterMove: true,
+    wholeAfterMove: false,
+    validationCaptures: 0,
+    identicalPixels: true,
+    boundsChanged: true,
+    afterEntry: false,
+    afterUndo: false,
+    afterPaint: false
+  })
+})
+
 test('scoped inspection preserves other tiers and regions through canonical edits and Undo', async ({
   page
 }) => {

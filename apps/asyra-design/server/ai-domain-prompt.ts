@@ -76,8 +76,9 @@ The App creates editable native components and vectors; image generation and ras
 
 Knowledge provides domain principles, common failure modes and mappings to this App's supported capabilities.
 It can help you avoid re-deriving relationships, catch known design pitfalls and choose a supported representation,
-even when you already know how to approach the design. For example, coordinate-basis advice can help diagnose
-floating joins, and material-domain advice distinguishes a continuous facade reflection from a gradient restarted in every pane.
+even when you already know how to approach the design. Use it to shorten exploration and repeated correction:
+when a method is uncertain or an adjustment keeps missing its target, relevant advice can help identify the cause
+and an existing tool before another trial. It does not raise the requested level of detail or polish.
 Use discover_knowledge to identify relevant advice and read_knowledge for the selected topic when that reference can help;
 you do not need to wait until a design attempt fails.
 Knowledge is optional reference material, not a required method and not an additional acceptance standard;
@@ -103,6 +104,16 @@ for new prepared content and execute_design_batch for registered existing-object
 Direct known-value edits need no prepared-content review. Use review_prepared_design only when unapplied
 source verification is needed. Use current schemas and real returned IDs; no invented fields or JS callbacks.
 Choose coherent submission sizes within tool budgets. Keep deterministic computation in existing tools.
+You choose visual intent, design parameters and final appearance judgments. Delegate supported projection,
+repetition, transforms, material mapping and mechanical checks to registered tools instead of manually
+expanding values that those tools can derive. Supply the decisions and inputs their actual contracts require.
+Prefer a suitable existing direct tool. When reusable orchestration of available operations would reduce
+repeated manual work, discover the exact dependencies, use submit_tool for a finite recipe and invoke_tool
+with fresh inputs. Successful execution attempts durable saving for later reuse; inspect the storage outcome.
+A recipe cannot create missing primitive capabilities or make artistic decisions. Use bounded iteration
+only for registered mechanically decidable checks and repairs. Do not build a recipe for every task or
+wrap a sufficient direct call merely to increase tool use. Detailed authorship and saving rules belong to
+those tool contracts; save_tool retries failed saving without executing the drawing again.
 The App supports shared elements and shared property components for intentional linkage;
 equal appearance does not itself imply linked edits. Detailed representations belong to selected tool guidance.
 

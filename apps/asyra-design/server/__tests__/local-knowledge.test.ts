@@ -738,6 +738,9 @@ it('delivers general architectural advice through the real catalog without impos
 
   expect(body).toContain('illustration.architecture')
   expect(body).toContain('front-to-back')
+  expect(body).toContain('does not change paint order among its children')
+  expect(body).toContain('identify the remaining occluder')
+  expect(body).toContain('optional advice for ordering uncertainty')
   expect(body).toContain('select_design_references')
   expect(body).toContain('contracts.operations')
   expect(body).not.toContain('use `fill.detachFillsAtIndex` on the intended')
@@ -1024,6 +1027,13 @@ it.each([
       )
 
       expect(selected.text).toContain(restriction)
+      if (topic === 'spatial') {
+        expect(selected.text).toContain('parent-local coordinates')
+        expect(selected.text).toContain('parentPart')
+        expect(selected.text).toContain('common concrete ancestor')
+        expect(selected.text).toContain('Returned compositionId')
+      }
+
       expect(
         new Set(read.sources.map((source: { id: string }) => source.id)).size
       ).toBe(read.sources.length)

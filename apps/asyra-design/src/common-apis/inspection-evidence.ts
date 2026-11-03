@@ -1,6 +1,8 @@
 import core from '../contexts'
+import { GROUP_RENDER_STRATEGY } from '@asyra/preset'
 import {
   EventTypes,
+  renderStrategyRegistry,
   subscribeToEventBatches,
   subscribeToFileLoadComplete
 } from '@asyra/core'
@@ -334,6 +336,18 @@ const dependencySource = {
     const parents = new Map<string, string | undefined>()
 
     return core.getElementIdsInBounds(bounds).filter((candidate) => {
+      const element = core.getElementMetadata(candidate)
+
+      // The official Group strategy paints no content of its own. Its enclosing
+      // bounds may cross this region without a contributing descendant. Actual
+      // descendants still retain this Group through their dependency ancestry.
+      if (
+        element?.type &&
+        renderStrategyRegistry.get(element.type) === GROUP_RENDER_STRATEGY
+      ) {
+        return false
+      }
+
       let id: string | undefined = candidate
       const seen = new Set<string>()
 

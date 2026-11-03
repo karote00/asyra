@@ -29,14 +29,7 @@ const schemaReviewInput = (input: unknown): unknown => {
         requestId: 'schema-fixture',
         requirementRevision: 1,
         checkRevision: 1,
-        signature: 'schema-only',
-        dependencies: [
-          {
-            inspectionId: 'current',
-            elementId: 'root',
-            scope: 'overview:whole'
-          }
-        ]
+        signature: 'schema-only'
       }
     }))
   }
@@ -2933,7 +2926,7 @@ describe('declared regional acceptance', () => {
     )
 
     expect(declaration.revision).toBe(5)
-    expect(inspection.revision).toBe(16)
+    expect(inspection.revision).toBe(17)
     const local = {
       phase: 'visual',
       inspectionIds: ['image'],
@@ -4056,11 +4049,38 @@ describe('explicit review binding handoff', () => {
       requirementRevision: 1,
       checkRevision: 1
     })
-    expect(bound.checks[0].binding.dependencies[0]).toMatchObject({
-      inspectionId: image,
-      elementId: 'root',
-      source: { receiptId: 'current-root' }
-    })
+    expect(Object.keys(bound.checks[0].binding).sort()).toEqual([
+      'checkRevision',
+      'requestId',
+      'requirementRevision',
+      'signature'
+    ])
+    const compactBytes = Buffer.byteLength(JSON.stringify(bound))
+    const repeatedDependencies = bound.checks.map((check) => ({
+      ...check,
+      binding: {
+        ...check.binding,
+        dependencies: [
+          {
+            inspectionId: image,
+            elementId: 'root',
+            scope: 'root',
+            source: {
+              sessionId: 'binding-document',
+              revision: 1,
+              receiptId: 'current-root'
+            }
+          }
+        ]
+      }
+    }))
+
+    expect(
+      Buffer.byteLength(
+        JSON.stringify({ ...bound, checks: repeatedDependencies })
+      ) - compactBytes
+    ).toBeGreaterThan(300)
+
     const submit = {
       ...bound,
       checks: bound.checks.map((item) => ({
@@ -4117,6 +4137,39 @@ describe('explicit review binding handoff', () => {
         .readChecks({ includePassed: true })
         .items.find((item) => item.criterionId === 'Viewpoint')?.status
     ).toBe('pass')
+  })
+  it('authenticates retained dependencies without accepting changed source evidence', () => {
+    const { review } = setup()
+    const source = {
+      sessionId: 'binding-document',
+      revision: 2,
+      receiptId: 'retained-source'
+    }
+    const image = requireTestValue(
+      review.inspect('root', true, true, undefined, false, source)
+    ).inspectionId
+    const bound = review.bindReview('visual', [
+      { criterionId: 'Viewpoint', inspectionIds: [image] }
+    ])
+    const submit = {
+      ...bound,
+      checks: bound.checks.map((check) => ({
+        ...check,
+        status: 'pass',
+        evidence: 'Observed.'
+      }))
+    }
+    const before = review.readChecks({ includePassed: true })
+
+    source.receiptId = 'changed-source'
+    expect(() => review.recordBoundReview(submit)).toThrow(/binding/)
+    expect(review.readChecks({ includePassed: true })).toEqual(before)
+    source.receiptId = 'retained-source'
+    review.recordBoundReview(submit)
+    review.invalidateInspections([image], 'Target changed')
+    expect(() => review.recordBoundReview(submit)).toThrow(
+      /unavailable|binding/
+    )
   })
   it('rejects forged or foreign bindings atomically without accepting an unbound tool verdict', () => {
     const { review, image } = setup()
@@ -4608,4 +4661,15 @@ it('keeps fact targets on the exact correction unit and shares only explicitly c
     })
   ).toThrow()
   expect(review.readChecks({ includePassed: true })).toEqual(before)
+})
+
+it('describes stored source facts as assertions rather than independent verification', () => {
+  const definition = requireTestValue(
+    designEvidenceDefinitions.find(
+      (tool) => tool.name === 'record_design_facts'
+    )
+  )
+
+  expect(definition.description).toContain('source assertions')
+  expect(definition.description).not.toContain('verified source facts')
 })

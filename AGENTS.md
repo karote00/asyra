@@ -120,20 +120,19 @@ These rules apply to every task without requiring additional document reads:
   approval.
 - Obtain explicit user approval before upgrading Node.js, Yarn, a package
   manager, or any other environment/runtime tool.
-- Existing project-owned tests are permanently authorized across the entire
-  repository, including guarded, opt-in, resource-aware, high-detail, 7076,
-  performance, visual, E2E, clean-consumer, and release validation gates. When
-  such a gate is applicable to the current task or flow, enable and run it
-  directly without asking for separate permission or treating a prior run as a
-  one-time budget. Expensive gates such as 7076 run after the relevant complete
-  feature or owner slice passes its focused tests and small proofs, at the
-  defined milestone, final, or release checkpoint; do not rerun them after each
-  small code edit. After an expensive gate fails, complete the bounded owner
-  correction and its focused gates before rerunning it. Preserve every formal
-  fail-fast, CPU, time, process-ownership, and cleanup guard. This standing test
-  authorization does not authorize otherwise approval-gated mutations such as
-  adding dependencies, upgrading tools, publishing, tagging, merging, or
-  deploying.
+- Focused local tests for modified behavior and directly affected consumers are
+  authorized without a separate request. Select the smallest relevant test files
+  or cases, including regression tests needed for the current change. Do not run
+  full local test suites, local CI, or broadly selected validation across unrelated
+  owners unless the user explicitly requests that scope. Implementation, review,
+  commit, push and PR requests do not implicitly authorize full local testing.
+  This scope restriction overrides broader automatic test execution instructions
+  in workflows, plans and skills. Do not select all branch-versus-main changes
+  when only the current changes need verification, or rerun already validated
+  unrelated work. Report exactly what ran and what remains unverified; preserve
+  fail-fast, CPU, time, process-ownership and cleanup guards. Test authorization
+  does not authorize dependencies, upgrades, publishing, tagging, merging or
+  deployment.
 - Freeze a bounded task contract before editing. Reading may expand to resolve
   risk, but rules and discoveries must not independently expand mutation scope.
   Task prompts may reference an existing plan's explicit task contract instead

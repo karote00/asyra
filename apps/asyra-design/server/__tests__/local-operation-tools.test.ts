@@ -6101,7 +6101,7 @@ describe('capture-to-review handoff', () => {
     ).toBeUndefined()
     const incomplete = structuredClone(result)
 
-    delete incomplete.next.arguments.checks[0].binding.dependencies
+    delete incomplete.next.arguments.checks[0].binding.signature
     expect(
       operationInputIssue(incomplete, declaration.outputSchema)
     ).toBeDefined()
@@ -6113,18 +6113,7 @@ describe('capture-to-review handoff', () => {
         binding: {
           requirementRevision: 1,
           checkRevision: 1,
-          dependencies: [
-            {
-              inspectionId: result.inspectionIds[0],
-              elementId: 'drawing',
-              scope: 'overview:whole'
-            },
-            {
-              inspectionId: result.inspectionIds[1],
-              elementId: 'window',
-              scope: 'detail:[0,0,100,100]'
-            }
-          ]
+          signature: expect.any(String)
         }
       }
     ])

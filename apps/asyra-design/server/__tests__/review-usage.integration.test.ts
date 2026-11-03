@@ -663,9 +663,9 @@ async function verifySelectedReviewFlow() {
     })
 
     expect(multiscale.next.arguments.checks[0].inspectionIds).toHaveLength(2)
-    expect(
-      multiscale.next.arguments.checks[0].binding.dependencies
-    ).toHaveLength(2)
+    expect(multiscale.next.arguments.checks[0].binding).not.toHaveProperty(
+      'dependencies'
+    )
     const multiPass = await judge(multiscale.next)
 
     expect(multiPass.recordedChecks[0].status).toBe('pass')

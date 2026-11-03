@@ -2013,6 +2013,21 @@ describe('local subscription AI backend', () => {
     ).find((group) => group.name === 'design_knowledge')
 
     expect(knowledgeGroup?.description).toContain('avoid re-deriving')
+    expect(knowledgeGroup?.description).toContain(
+      'reduce exploration or repeated correction'
+    )
+    expect(knowledgeGroup?.description).toContain(
+      'adds no detail or polish requirement'
+    )
+    expect(base).toContain('You choose visual intent, design parameters')
+    expect(base).toContain('Prefer a suitable existing direct tool')
+    expect(base).toContain(
+      'use submit_tool for a finite recipe and invoke_tool'
+    )
+    expect(base).toContain('cannot create missing primitive capabilities')
+    expect(base).toContain(
+      'save_tool retries failed saving without executing the drawing again'
+    )
     expect(base).toContain('optional reference material')
     expect(base).toContain('not an additional acceptance standard')
     expect(base).toContain('Preserve validation, references and final review')
@@ -7592,6 +7607,10 @@ it.each([
     )
     expect(description).not.toContain('Information forwarding example')
     expect(description).not.toContain('Code Mode')
+    expect(description).toContain('Choose the smallest missing contract')
+    expect(
+      nativeToolDefinitions(thread).find((tool) => tool.name === name)
+    ).toMatchObject({ deferLoading: true })
 
     expect(
       nativeToolDefinitions(thread).find(
@@ -8048,9 +8067,15 @@ it('delivers failed inspection lookup and successful narrow recovery through nat
 })
 
 describe('bounded evaluation reporting', () => {
-  it.each(['saved', 'storage-failed'])(
+  it.each(['saved', 'storage-failed', 'early-completion', 'untimed-report'])(
     'interrupts work and reports in the same thread with %s evidence',
     async (mode) => {
+      if (mode === 'untimed-report') {
+        vi.useFakeTimers()
+      }
+
+      let finishReport: (() => void) | undefined
+
       if (mode === 'storage-failed') {
         vi.spyOn(retainedPayloads, 'push').mockImplementation((entry) => {
           if (entry.callId === 'evaluation-report') {
@@ -8090,18 +8115,7 @@ describe('bounded evaluation reporting', () => {
             const turnId = turns === 1 ? 'turn-1' : 'report-turn'
 
             server.send({ id: packet.id, result: { turn: { id: turnId } } })
-            if (turns === 2) {
-              server.send({
-                id: 700,
-                method: 'item/tool/call',
-                params: {
-                  threadId: 'thread-1',
-                  turnId,
-                  callId: 'late-tool',
-                  tool: 'describe_design_apis',
-                  arguments: { query: 'create rectangle' }
-                }
-              })
+            if (turns === 1 && mode === 'early-completion') {
               server.notify('item/completed', {
                 turnId,
                 item: {
@@ -8114,6 +8128,38 @@ describe('bounded evaluation reporting', () => {
                 turnId,
                 turn: { id: turnId, status: 'completed' }
               })
+            }
+
+            if (turns === 2) {
+              finishReport = () => {
+                server.send({
+                  id: 700,
+                  method: 'item/tool/call',
+                  params: {
+                    threadId: 'thread-1',
+                    turnId,
+                    callId: 'late-tool',
+                    tool: 'describe_design_apis',
+                    arguments: { query: 'create rectangle' }
+                  }
+                })
+                server.notify('item/completed', {
+                  turnId,
+                  item: {
+                    type: 'agentMessage',
+                    phase: 'final_answer',
+                    text: JSON.stringify(report)
+                  }
+                })
+                server.notify('turn/completed', {
+                  turnId,
+                  turn: { id: turnId, status: 'completed' }
+                })
+              }
+
+              if (mode !== 'untimed-report') {
+                finishReport()
+              }
             }
           }
 
@@ -8132,7 +8178,10 @@ describe('bounded evaluation reporting', () => {
           metadata: {
             evaluationWindow: {
               workDeadlineAt: Date.now() + 150,
-              reportTimeoutMs: 500
+              reportTimeoutMs: mode === 'untimed-report' ? null : 500,
+              announceWorkDeadline: false,
+              reportInstructions:
+                'Explain long waits in a detailed public report with tables.'
             }
           }
         },
@@ -8147,9 +8196,32 @@ describe('bounded evaluation reporting', () => {
       void result.catch(() => undefined)
       try {
         await vi.waitFor(() => expect(turns).toBe(2), { timeout: 1000 })
+        if (mode === 'untimed-report') {
+          await vi.advanceTimersByTimeAsync(600000)
+          expect(server.child.kill).not.toHaveBeenCalled()
+          expect(finishReport).toBeDefined()
+          finishReport?.()
+        }
+
         const value = await result
 
         expect(value).toMatchObject({ actions: report.actions })
+        const nativeTurns = server.packets.filter(
+          (p) => p.method === 'turn/start'
+        )
+
+        expect(JSON.stringify(nativeTurns[0].params.input)).not.toContain(
+          'Explain long waits'
+        )
+        expect(JSON.stringify(nativeTurns[0].params.input)).not.toContain(
+          'seconds of work remaining'
+        )
+        expect(JSON.stringify(nativeTurns[1].params.input)).toContain(
+          'Explain long waits'
+        )
+        expect(JSON.stringify(nativeTurns[1].params.input)).toContain(
+          'public commentary'
+        )
         expect(executeBatch).not.toHaveBeenCalled()
         expect(
           server.packets.filter((p) => p.method === 'thread/start')
@@ -8191,6 +8263,9 @@ describe('bounded evaluation reporting', () => {
       } finally {
         controller.abort()
         await result.catch(() => undefined)
+        if (mode === 'untimed-report') {
+          vi.useRealTimers()
+        }
       }
     }
   )

@@ -28,10 +28,7 @@ import {
   designFactsSchema,
   designCalculationsSchema
 } from './local-design-facts'
-import {
-  inspectionEvidenceSchema,
-  type InspectionEvidenceStamp
-} from '../src/ai/inspection-evidence'
+import type { InspectionEvidenceStamp } from '../src/ai/inspection-evidence'
 import { createHmac, randomUUID } from 'node:crypto'
 import { AiDesignToolIds } from '../src/constants/ai-design'
 
@@ -256,21 +253,7 @@ const reviewBindingSchema = {
     requestId: toolResultString,
     requirementRevision: toolResultCount,
     checkRevision: toolResultCount,
-    signature: toolResultString,
-    dependencies: {
-      type: 'array',
-      minItems: 1,
-      maxItems: 24,
-      items: toolResultObject(
-        {
-          inspectionId: toolResultString,
-          elementId: toolResultString,
-          scope: toolResultString,
-          source: inspectionEvidenceSchema
-        },
-        ['inspectionId', 'elementId', 'scope']
-      )
-    }
+    signature: toolResultString
   })
 }
 const reviewSubmissionSchema = {
@@ -1030,7 +1013,7 @@ export const designEvidenceDefinitions = [
     revision: 2,
     name: AiDesignToolIds.RECORD_DESIGN_FACTS,
     description:
-      'Record or retrieve verified source facts and their criterion/element bindings. A source fact requires id, statement, scope, sources, verification and dependencies:[{key,version}]. Preserve unchanged facts. Use dependencyChanges only for actual changed sources or contrary evidence, never to fix an arithmetic transcription. Use sourceCorrections:[{factId,sources,verification,reason}] to correct only a citation without changing its statement or dependency versions. Use retained referenceId or an existing attachment:N for image sources; source URLs remain attributed assertions. Use record_design_calculations for derived numbers. Bind with factId, exact criterionId/unitId, known elementIds and explicit fact-purpose referenceUses for cited images. Omit all fields to retrieve existing facts. A changed source returns the pending review scope; recording facts is not approval. Examples use placeholder identities; substitute real evidence and known IDs.\n' +
+      'Record or retrieve source assertions and their criterion/element bindings; storage does not independently verify a source. A source fact requires id, statement, scope, sources, verification and dependencies:[{key,version}]. Preserve unchanged facts. Use dependencyChanges only for actual changed sources or contrary evidence, never to fix an arithmetic transcription. Use sourceCorrections:[{factId,sources,verification,reason}] to correct only a citation without changing its statement or dependency versions. Use retained referenceId or an existing attachment:N for image sources; source URLs remain attributed assertions. Use record_design_calculations for derived numbers. Bind with factId, exact criterionId/unitId, known elementIds and explicit fact-purpose referenceUses for cited images. Omit all fields to retrieve existing facts. A changed source returns the pending review scope; recording facts is not approval. Examples use placeholder identities; substitute real evidence and known IDs.\n' +
       factUsage,
     inputSchema: sourceEvidenceSchema
   },
@@ -1083,10 +1066,10 @@ export const designEvidenceDefinitions = [
     ...toolSemantics(reviewResultAlternatives, 'prepare', [
       'request-artifacts'
     ]),
-    revision: 16,
+    revision: 17,
     name: AiDesignToolIds.REVIEW_DRAWING,
     description:
-      'For current review use describe_design_apis with this exact name, view=usage and inputScope.operation=capture, bind or record; no nodeTypes. Review the current drawing against retained criteria and selected references. Execution success is not visual approval. reviewOperation identifies capture/bind/record; recordedChecks acknowledges exactly the committed judgments (including local passes), while accepted reports whole-request completion. Counts are labeled with their request or selected scope. phase=structure checks the optional structural subset; phase=visual records valid supplied judgments across calls. final=true (default) additionally attempts completion from all retained current passes; pending coverage returns accepted=false without discarding valid local work. Submit criterionId plus declared unitId and exact inspectionIds for each regional or cross-region check. A conclusion may cite necessary overview and detail images of the same target. Every cited image is a dependency: broad evidence carries broad invalidation. Cite only necessary local images for independent local conclusions; never inherit the enclosing image list. A regional overview does not replace the separate whole-view judgment. Do not discard necessary evidence merely to recover a pass. Additional distinct scopes require explicit supersession. Do not resend unrelated passed checks. Coverage reports required/passed counts and pending IDs; omission cannot remove an obligation. A whole-view criterion requires its own whole image and canonical coverage. Requested native detail and mechanical checks remain required. First request inspections [{elementId,view?,region?,checks:[{criterionId,unitId?,supersedes?}]}] with explicit intended checks to receive actual images and bound submission descriptors. To reuse existing images, supply bindChecks [{criterionId,unitId?,inspectionIds,supersedes?}] instead. Neither capture nor binding records a judgment. Read acceptanceContext for the current method and selected criterion meaning; it is informational and must not be copied into arguments. After viewing those images, use next.arguments and record observed passes and failures before editing; fill status/evidence in the returned bound checks; preserve their binding and exact dependencies with current inspectionIds and no new capture targets. Captures may reuse prior IDs (24 total). This tool never invokes a model. Current workspace overview captures all roots together without regrouping; use its actual ID. Workspace detail/region is unsupported: select a concrete child for native detail. Unavailable images never approve a check. Capture targets use the inspect_drawing schema; regions are target-local and at most 1024 per side. Any failed capture returns successful images/inspectionIds and failedInspections without recording judgments. Retry with the successful IDs and corrected failed targets. A rejected binding after successful capture returns partial with those images and bindChecks recovery; read the affected current revisions and rebind without recapturing or replaying edits. Use correction.checks for each unresolved identity, status and evidence, with linked inspections and explicit unavailableInspectionIds. factElementIds are source-fact associations, not edit targets. Follow optional correction.discovery only for a missing edit or target-query contract; known edits need no lookup. Source facts, criteria and calculations use their own tools. Optional polish is advisory; do not invent tighter precision than requested. The optional whole-structure checkpoint does not block ready parts. Record deferredDetails with id, description and reason; resolve them with deferredChecks (id, status and evidence). Valid sparse decisions are retained with their submitted image dependencies; omit unchanged decisions in later calls. Defer the whole-view judgment until a final candidate is ready, while recording local results as they become available.',
+      'For current review use describe_design_apis with this exact name, view=usage and inputScope.operation=capture, bind or record; no nodeTypes. Review the current drawing against retained criteria and selected references. Execution success is not visual approval. reviewOperation identifies capture/bind/record; recordedChecks acknowledges exactly the committed judgments (including local passes), while accepted reports whole-request completion. Counts are labeled with their request or selected scope. phase=structure checks the optional structural subset; phase=visual records valid supplied judgments across calls. final=true (default) additionally attempts completion from all retained current passes; pending coverage returns accepted=false without discarding valid local work. Submit criterionId plus declared unitId and exact inspectionIds for each regional or cross-region check. A conclusion may cite necessary overview and detail images of the same target. Every cited image is a dependency: broad evidence carries broad invalidation. Cite only necessary local images for independent local conclusions; never inherit the enclosing image list. A regional overview does not replace the separate whole-view judgment. Do not discard necessary evidence merely to recover a pass. Additional distinct scopes require explicit supersession. Do not resend unrelated passed checks. Coverage reports required/passed counts and pending IDs; omission cannot remove an obligation. A whole-view criterion requires its own whole image and canonical coverage. Requested native detail and mechanical checks remain required. First request inspections [{elementId,view?,region?,checks:[{criterionId,unitId?,supersedes?}]}] with explicit intended checks to receive actual images and bound submission descriptors. To reuse existing images, supply bindChecks [{criterionId,unitId?,inspectionIds,supersedes?}] instead. Neither capture nor binding records a judgment. Read acceptanceContext for the current method and selected criterion meaning; it is informational and must not be copied into arguments. After viewing those images, use next.arguments and record observed passes and failures before editing; fill status/evidence in the returned bound checks; preserve their binding and current inspectionIds; dependency bodies are retained by the review owner and no new capture targets. Captures may reuse prior IDs (24 total). This tool never invokes a model. Current workspace overview captures all roots together without regrouping; use its actual ID. Workspace detail/region is unsupported: select a concrete child for native detail. Unavailable images never approve a check. Capture targets use the inspect_drawing schema; regions are target-local and at most 1024 per side. Any failed capture returns successful images/inspectionIds and failedInspections without recording judgments. Retry with the successful IDs and corrected failed targets. A rejected binding after successful capture returns partial with those images and bindChecks recovery; read the affected current revisions and rebind without recapturing or replaying edits. Use correction.checks for each unresolved identity, status and evidence, with linked inspections and explicit unavailableInspectionIds. factElementIds are source-fact associations, not edit targets. Follow optional correction.discovery only for a missing edit or target-query contract; known edits need no lookup. Source facts, criteria and calculations use their own tools. Optional polish is advisory; do not invent tighter precision than requested. The optional whole-structure checkpoint does not block ready parts. Record deferredDetails with id, description and reason; resolve them with deferredChecks (id, status and evidence). Valid sparse decisions are retained with their submitted image dependencies; omit unchanged decisions in later calls. Defer the whole-view judgment until a final candidate is ready, while recording local results as they become available.',
     inputSchema: {
       'x-design-input-scope': {
         operations: '/oneOf',
@@ -1408,11 +1391,7 @@ export const createLocalDesignReview = (
         binding.requestId !== bindingRequestId ||
         binding.requirementRevision !== references.revision() ||
         binding.signature !==
-          bindingSignature(String(value.phase), check, binding) ||
-        !isDeepStrictEqual(
-          binding.dependencies,
-          bindingDependencies(check.inspectionIds)
-        )
+          bindingSignature(String(value.phase), check, binding)
       ) {
         throw new Error(
           'Review binding is foreign, modified or stale; bind current evidence again.'
@@ -1823,8 +1802,7 @@ export const createLocalDesignReview = (
         const binding = {
           requestId: bindingRequestId,
           requirementRevision: references.revision(),
-          checkRevision: previous?.revision ?? 0,
-          dependencies: bindingDependencies(check.inspectionIds)
+          checkRevision: previous?.revision ?? 0
         }
 
         return {
