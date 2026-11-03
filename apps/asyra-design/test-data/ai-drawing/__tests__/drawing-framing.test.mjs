@@ -89,7 +89,7 @@ test('coalesces settled rendered changes, detects same-count movement and skips 
   assert.equal(f.state.reads, 3)
 })
 
-test('preserves deliberate detail navigation until explicit resume and detaches on dispose', () => {
+test('preserves cropped detail navigation until overview and detaches on dispose', () => {
   const f = setup()
 
   f.frame()
@@ -98,12 +98,76 @@ test('preserves deliberate detail navigation until explicit resume and detaches 
   f.change()
   f.frame()
   assert.equal(f.framing.tick().status, 'paused')
-  assert.equal(f.state.reads, 1)
+  assert.equal(f.state.reads, 2)
   assert.equal(f.state.fits, 0)
-  f.framing.resume()
-  assert.equal(f.framing.tick().status, 'fitted')
+  f.state.viewport.scale = 0.1
+  assert.equal(f.framing.tick().status, 'resumed')
   f.framing.dispose()
   f.framing.dispose()
   assert.equal(f.state.stops, 2)
   assert.equal(f.framing.tick().status, 'disposed')
+})
+
+test('an external overview fit keeps tracking later geometry without manual resume', () => {
+  const f = setup()
+
+  f.frame()
+  f.framing.tick()
+  f.state.bounds.maxY = 500
+  f.change()
+  f.frame()
+  f.state.viewport.scale = 0.1
+  assert.equal(f.framing.tick().status, 'visible')
+  f.state.bounds.maxY = 2000
+  f.change()
+  f.frame()
+  assert.equal(f.framing.tick().status, 'fitted')
+  assert.equal(f.state.fits, 1)
+})
+
+test('returning from detail to overview resumes through the runner tick without another fit', () => {
+  const f = setup()
+
+  f.frame()
+  f.framing.tick()
+  f.state.viewport.scale = 10
+  assert.equal(f.framing.tick().status, 'paused')
+  const pausedReads = f.state.reads
+
+  f.state.bounds.maxY = 500
+  f.change()
+  f.frame()
+  for (let i = 0; i < 20; i++) {
+    assert.equal(f.framing.tick().status, 'paused')
+  }
+
+  assert.equal(f.state.reads, pausedReads)
+  f.state.viewport.scale = 0.1
+  assert.equal(f.framing.tick().status, 'resumed')
+  assert.equal(f.state.reads, pausedReads + 1)
+  assert.equal(f.state.fits, 0)
+  assert.equal(f.framing.tick().status, 'idle')
+  f.state.bounds.maxY = 2000
+  f.change()
+  f.frame()
+  assert.equal(f.framing.tick().status, 'fitted')
+})
+
+test('classifies navigation only after the current geometry is settled and rendered', () => {
+  const f = setup()
+
+  f.frame()
+  f.framing.tick()
+  f.state.bounds.maxY = 500
+  f.change()
+  f.state.viewport.scale = 0.1
+  assert.equal(f.framing.tick().status, 'pending')
+  assert.equal(f.state.reads, 1)
+  f.frame()
+  f.state.settled = false
+  assert.equal(f.framing.tick().status, 'pending')
+  assert.equal(f.state.reads, 1)
+  f.state.settled = true
+  assert.equal(f.framing.tick().status, 'visible')
+  assert.equal(f.state.reads, 2)
 })

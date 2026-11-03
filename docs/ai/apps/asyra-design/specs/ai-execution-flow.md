@@ -1369,9 +1369,12 @@ taipei-101-live collector records continuously and reloads the same context afte
 retaining report and source evidence. During drawing, canonical changes are
 coalesced until rendered and transaction-idle. When bounds leave the visible
 canvas, the existing viewport API fits the current content. Idle polls do not read
-bounds; same-count geometry changes still trigger inspection. External pan/zoom
-suspends framing until explicit resume. Framing does not change canonical content,
-selection or history. Retire the drawing watchdog before framing disposal and
+bounds; same-count geometry changes still trigger inspection. External navigation
+is classified only against settled/rendered geometry: a cropped view pauses
+framing, and navigation exposing all content automatically resumes it through
+the production runner tick. Unchanged paused polls do not read bounds. Ordinary
+fit navigation does not disable tracking. The runner records pause/resume times.
+Framing does not change canonical content, selection or history. Retire the drawing watchdog before framing disposal and
 report evidence. Framing failures are evidence errors and cannot abort native
 report collection. On report/capture failure, retain missing evidence and attempt
 bounded cleanup; an external watchdog bounds hangs independently. A self-report is not measured

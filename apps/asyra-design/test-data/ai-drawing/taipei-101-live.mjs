@@ -319,6 +319,7 @@ try {
   await deadline.ready
   await page.getByRole('button', { name: 'Send', exact: true }).click()
   let lastStatus
+  let lastFramingStatus
   const observeWork = createWorkPhaseObserver(
     path.join(directory, 'provider-records')
   )
@@ -355,13 +356,19 @@ try {
       })
     }
 
-    if (state.framing.status === 'fitted') {
+    if (
+      state.framing.status === 'fitted' ||
+      (state.framing.status !== lastFramingStatus &&
+        ['paused', 'resumed'].includes(state.framing.status))
+    ) {
       meta.framing ??= []
       meta.framing.push({
         elapsedMs: Date.now() - meta.sentAt,
         ...state.framing
       })
     }
+
+    lastFramingStatus = state.framing.status
 
     if (state.status !== lastStatus) {
       lastStatus = state.status
