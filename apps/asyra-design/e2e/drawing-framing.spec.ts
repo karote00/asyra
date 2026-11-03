@@ -6,7 +6,7 @@ type Framing = ReturnType<typeof createDrawingFraming>
 
 test.use({ video: 'on', viewport: { width: 1920, height: 1080 } })
 
-test('recording frames base tower spire and same-count movement without document edits', async ({
+test('recording resumes after overview navigation and frames later geometry without document edits', async ({
   page
 }, testInfo) => {
   await page.route('**/api/ai/status', (route) =>
@@ -65,6 +65,22 @@ test('recording frames base tower spire and same-count movement without document
         requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
       )
     }, stage)
+    if (stage.name === 'tower') {
+      const paused = await page.evaluate(async () => {
+        const { testRuntimeState } =
+          await import('../src/testing/runtime-access')
+
+        return testRuntimeState.get<Framing>('recording-framing')?.tick().status
+      })
+
+      expect(paused).toBe('paused')
+      await page.evaluate(async () => {
+        const { viewportApis } = await import('../src/common-apis/viewport')
+
+        viewportApis.zoomFit()
+      })
+    }
+
     const before = await page.evaluate(async () => {
       const { core, getActiveAiDrawingPerformanceProfile } =
         await import('../src/testing/runtime-access')
@@ -87,7 +103,7 @@ test('recording frames base tower spire and same-count movement without document
             .status
         })
       )
-      .toBe('fitted')
+      .toBe(stage.name === 'tower' ? 'resumed' : 'fitted')
     const after = await page.evaluate(async () => {
       const { core, getActiveAiDrawingPerformanceProfile } =
         await import('../src/testing/runtime-access')
@@ -137,6 +153,19 @@ test('recording frames base tower spire and same-count movement without document
 
     await page.screenshot({ path: testInfo.outputPath(stage.name + '.png') })
     await page.waitForTimeout(300) // Retain each settled composition in the process video.
+    if (stage.name === 'base') {
+      const status = await page.evaluate(async () => {
+        const { viewportApis } = await import('../src/common-apis/viewport')
+        const { testRuntimeState } =
+          await import('../src/testing/runtime-access')
+
+        viewportApis.zoomToCenter(viewportApis.getScale() * 4, 960, 540)
+
+        return testRuntimeState.get<Framing>('recording-framing')?.tick().status
+      })
+
+      expect(status).toBe('paused')
+    }
   }
 
   await page.evaluate(async () => {

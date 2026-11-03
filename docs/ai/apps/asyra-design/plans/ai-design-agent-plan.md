@@ -745,7 +745,8 @@ Use the existing canonical change observer, Core frame completion and transactio
 idle boundary. Coalesce revisions until the next runner poll; read bounds once
 per changed rendered revision, with the existing zoomFit API reading them again
 only when fitting is necessary. Idle polls perform no bounds work. An externally
-changed viewport suspends auto-framing until explicit resume. Dispose before
+changed viewport is classified against settled/rendered bounds: a cropped view
+pauses framing; an overview resumes it through the production runner. Dispose before
 report evidence/reload. No document, selection, history or provider prompt writes.
 Allowed changes: fixed runner, framing helper, permanent unit/browser regressions,
 runner test command registration and current observe docs. Gates: work counts,
@@ -776,6 +777,35 @@ Plan review: no missing tool is inferred from non-use; no search root cause is
 invented; no stale evidence is accepted; no compulsory refinement/research stages
 are introduced. Implementation is complete for this follow-up; live model timing
 and artwork comparison remain unmeasured until a separately authorized run.
+
+### Recording navigation recovery correction - 2026-11-04
+
+User-authorized correction after review: the observe-step framing controller must
+classify external navigation from current settled/rendered bounds. Preserve a
+cropped detail view; automatically resume when navigation exposes all content.
+The production runner tick owns this transition and logs pause/resume events.
+Reuse Core bounds and viewport APIs; no new App navigation event or persisted
+identity. Scan bounds once per changed rendered revision or changed navigation,
+never on unchanged idle/paused polls. Do not infer overview from stale geometry.
+Scope: framing helper/runner, existing unit/browser tests, current spec/Inspector
+and debugging guide. Gates: failing no-manual-resume regressions first, scoped
+Node and browser tests, lint/naming, documentation/diff review. Preserve drawing
+prompt, report policy, detail navigation, canonical content, selection and Undo.
+No full local suite, live model run, publication, dependency or unrelated edits.
+
+Correction review: completed. Three new formal regressions failed with the old
+permanent-pause behavior, then passed after classification moved behind settled
+render evidence. The runner now logs pause/resume transitions; the unused manual
+resume method was removed. Five framing cases cover ordinary fit, automatic
+recovery, pending geometry, paused work counts and disposal. Seventeen selected
+framing/runner/Inspector cases and the browser navigation sequence passed, plus
+scoped lint, naming and diff checks. The browser case keeps a cropped view during
+tower creation, calls the existing viewport zoomFit API, resumes through the
+same tick used by the runner, then fits spire growth and same-count movement.
+Canonical content, selection and Undo depth remain unchanged around framing.
+Tower/spire screenshots were inspected. Logs: `tmp/conversation-improvements/framing-recovery-*.log`;
+images/video: `tmp/conversation-improvements/framing-recovery-browser/`.
+No full local tests or model run were performed.
 
 ### Implementation review and focused evidence - 2026-11-04
 

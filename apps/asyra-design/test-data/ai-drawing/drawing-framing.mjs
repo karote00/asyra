@@ -26,16 +26,13 @@ export const createDrawingFraming = (source) => {
 
       const current = source.readViewport()
 
-      if (!sameView(current, viewport)) {
-        paused = true
-      }
+      const navigated = !sameView(current, viewport)
 
-      viewport = current
-      if (paused) {
+      if (paused && !navigated) {
         return { status: 'paused' }
       }
 
-      if (revision === inspectedRevision) {
+      if (!navigated && revision === inspectedRevision) {
         return { status: 'idle' }
       }
 
@@ -52,7 +49,10 @@ export const createDrawingFraming = (source) => {
       const bounds = source.readBounds()
 
       inspectedRevision = revision
+      viewport = current
       if (!bounds) {
+        paused = false
+
         return { status: 'empty', revision }
       }
 
@@ -62,6 +62,18 @@ export const createDrawingFraming = (source) => {
         bounds.minY * current.scale + current.y < area.y ||
         bounds.maxY * current.scale + current.y > area.y + area.height
 
+      if (navigated) {
+        const wasPaused = paused
+
+        paused = outside
+
+        if (paused) {
+          return { status: 'paused', revision }
+        }
+
+        return { status: wasPaused ? 'resumed' : 'visible', revision }
+      }
+
       if (!outside) {
         return { status: 'visible', revision }
       }
@@ -70,12 +82,6 @@ export const createDrawingFraming = (source) => {
       viewport = source.readViewport()
 
       return { status: 'fitted', revision }
-    },
-
-    resume() {
-      paused = false
-      viewport = source.readViewport()
-      inspectedRevision = -1
     },
 
     dispose() {

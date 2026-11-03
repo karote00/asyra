@@ -435,9 +435,11 @@ The fixed run does not replace focused ordinary completion/presentation tests.
 
 The fixed recorder fits after settled/rendered document changes only when content
 leaves the visible drawing area, including movement with unchanged element count.
-It records fit revisions/times in run.json. Idle polls do not scan bounds. External
-pan/zoom suspends automatic framing for deliberate detail views; the test controller
-can explicitly resume it. Dispose the controller at report entry, after watchdog
-retirement. Framing failures join evidenceErrors without aborting report collection.
+It records fit and pause/resume revisions/times in run.json. Unchanged idle or
+paused polls do not scan bounds. External navigation that crops content preserves
+the detail view; returning to an overview automatically resumes framing through
+the production runner tick. Ordinary fit does not permanently pause tracking.
+Navigation classification waits for current settled/rendered geometry. Dispose
+the controller at report entry, after watchdog retirement. Framing failures join evidenceErrors without aborting report collection.
 The permanent drawing-framing browser fixture retains intermediate screenshots and
 video and verifies unchanged canonical data, selection and Undo depth around fit.
