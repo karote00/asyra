@@ -189,6 +189,7 @@ async function verifySelectedReviewFlow() {
     const result = await call('describe_design_apis', {
       names: ['review_drawing'],
       view: 'usage',
+      includeResultSchema: true,
       inputScope: { operation }
     })
 
@@ -196,7 +197,12 @@ async function verifySelectedReviewFlow() {
     expect(result.contentDelivery).toBeUndefined()
     guideReplyBytes[operation] = Buffer.byteLength(JSON.stringify(result))
     recordAcquisitionCost(
-      { names: ['review_drawing'], view: 'usage', inputScope: { operation } },
+      {
+        names: ['review_drawing'],
+        view: 'usage',
+        includeResultSchema: true,
+        inputScope: { operation }
+      },
       JSON.stringify(result),
       [guideReplyBytes[operation]]
     )
@@ -327,7 +333,8 @@ async function verifySelectedReviewFlow() {
     const referenceGuide = (
       await call('describe_design_apis', {
         names: ['select_design_references'],
-        view: 'usage'
+        view: 'usage',
+        includeResultSchema: true
       })
     ).tools[0]
 
@@ -374,7 +381,7 @@ async function verifySelectedReviewFlow() {
     expect(menu.tools).toHaveLength(1)
     const choices = menu.tools[0].inputScopes
 
-    expect(choices.operations).toEqual(['record', 'capture', 'bind'])
+    expect(choices.operations).toEqual(['data', 'record', 'capture', 'bind'])
     expect(choices.nodeTypes).toEqual([])
     expect(choices.selection).toContain('reuse retained images')
     const menuBytes = bytes
@@ -638,6 +645,7 @@ async function verifySelectedReviewFlow() {
     const invalidScope = await call('describe_design_apis', {
       names: ['review_drawing'],
       view: 'usage',
+      includeResultSchema: true,
       inputScope: { operation: 'invalid' }
     })
 
@@ -959,6 +967,40 @@ async function verifySelectedReviewFlow() {
         }
       })
     )
+    // Compare independent acquisition modes after the measured execution path.
+    for (const operation of ['capture', 'record']) {
+      const machine = await call('describe_design_apis', {
+        names: ['review_drawing'],
+        view: 'usage',
+        inputScope: { operation },
+        includeResultSchema: true
+      })
+      const direct = await call('describe_design_apis', {
+        names: ['review_drawing'],
+        view: 'usage',
+        inputScope: { operation }
+      })
+
+      expect(direct.tools[0].usageGuide.parameters).toEqual(
+        machine.tools[0].usageGuide.parameters
+      )
+      expect(direct.tools[0].invocationExample).toEqual(
+        machine.tools[0].invocationExample
+      )
+      const directBytes = Buffer.byteLength(JSON.stringify(direct))
+      const machineBytes = Buffer.byteLength(JSON.stringify(machine))
+
+      expect(directBytes).toBeLessThan(machineBytes * 0.85)
+      process.stdout.write(
+        JSON.stringify({
+          measurement: 'default-versus-machine-review',
+          operation,
+          defaultBytes: directBytes,
+          machineBytes,
+          calls: 1
+        }) + '\n'
+      )
+    }
   } finally {
     capture.mockRestore()
     evidence.dispose()

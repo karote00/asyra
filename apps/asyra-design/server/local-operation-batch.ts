@@ -15,12 +15,11 @@ const record = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === 'object' && !Array.isArray(v)
 
 // The operation registry owns argument locations. Do not guess from API names.
-const targetPath = (
+const targetSlots = (
   schema: unknown,
-  field: string,
   input: Record<string, unknown>,
-  requested?: unknown
-): ElementBindingSlot => {
+  field?: string
+) => {
   const paths = new Map<string, ElementBindingSlot>()
 
   const visit = (
@@ -36,7 +35,8 @@ const targetPath = (
     const mode = value['x-design-element-binding']
 
     if (
-      path.at(-1) === field &&
+      path.length &&
+      (field === undefined || path.at(-1) === field) &&
       (mode === 'all' || mode === 'each' || mode === 'one')
     ) {
       const key = JSON.stringify(path)
@@ -109,6 +109,66 @@ const targetPath = (
   }
 
   visit(schema, [], input)
+
+  return paths
+}
+
+export const artifactKeyOperations = (
+  name: string,
+  schema: unknown,
+  input: Record<string, unknown>
+) => {
+  const examples = []
+  let slots: Map<string, ElementBindingSlot>
+
+  try {
+    slots = targetSlots(schema, input)
+  } catch {
+    // Ambiguous registered slots cannot produce an executable example.
+    return []
+  }
+
+  for (const { path } of slots.values()) {
+    const args = structuredClone(input)
+    let parent: unknown = args
+
+    for (const key of path.slice(0, -1)) {
+      parent =
+        record(parent) || Array.isArray(parent)
+          ? (parent as Record<string, unknown>)[key]
+          : undefined
+    }
+
+    const field = path.at(-1)
+
+    if (!field || !record(parent) || !Object.hasOwn(parent, field)) {
+      continue
+    }
+
+    Reflect.deleteProperty(parent, field)
+    examples.push({
+      name,
+      arguments: args,
+      target: {
+        field,
+        path,
+        artifactId: 'example-artifact',
+        keys: ['example-key']
+      }
+    })
+  }
+
+  return examples
+}
+
+const targetPath = (
+  schema: unknown,
+  field: string,
+  input: Record<string, unknown>,
+  requested?: unknown
+): ElementBindingSlot => {
+  const paths = targetSlots(schema, input, field)
+
   if (requested !== undefined) {
     if (
       !Array.isArray(requested) ||
@@ -191,6 +251,114 @@ const assignTarget = (
 }
 
 /** Expand request-owned identity references; canonical actions still admit every write. */
+export const bindOperationTargets = (
+  schema: unknown,
+  input: Record<string, unknown>,
+  target: unknown,
+  operationIndex: number,
+  resolveTargets?: (reference: unknown, mode: ElementBindingMode) => string[]
+) => {
+  let inputs = [input]
+
+  if (target !== undefined) {
+    const targets = Array.isArray(target) ? target : [target]
+
+    if (!targets.length) {
+      throw new Error('Target references cannot be empty.')
+    }
+
+    const bindings: {
+      mode: ElementBindingMode
+      path: string[]
+      reference: Record<string, unknown>
+    }[] = []
+    const issues: string[] = []
+    let reserved = input
+
+    for (const [targetIndex, target] of targets.entries()) {
+      try {
+        if (
+          !record(target) ||
+          typeof target.field !== 'string' ||
+          !target.field.trim()
+        ) {
+          throw new Error(
+            'Provide an exact registered element-identity target field.'
+          )
+        }
+
+        const { field, path: requested, ...reference } = target
+        const { path, mode } = targetPath(
+          schema,
+          String(field),
+          input,
+          requested
+        )
+
+        // Reserve every destination before any retained-source lookup. This
+        // also catches duplicate bindings without changing caller arguments.
+        reserved = assignTarget(reserved, path, undefined)
+        if (
+          mode === 'each' &&
+          bindings.some((binding) => binding.mode === 'each')
+        ) {
+          throw new Error(
+            'Only one fan-out element target is allowed per operation.'
+          )
+        }
+
+        bindings.push({ mode, path, reference })
+      } catch (error) {
+        issues.push(
+          `operations[${operationIndex}].target[${targetIndex}]: ${error instanceof Error ? error.message : String(error)}`
+        )
+      }
+    }
+
+    if (issues.length) {
+      throw new Error(issues.join('\n'))
+    }
+
+    if (!resolveTargets) {
+      throw new Error('Artifact references are unavailable.')
+    }
+
+    for (const { mode, path, reference } of bindings) {
+      let ids: string[]
+
+      try {
+        ids = resolveTargets(reference, mode)
+      } catch (error) {
+        if (error instanceof Error) {
+          error.message = `operations[${operationIndex}].arguments ${JSON.stringify(path)}: ${error.message}`
+        }
+
+        throw error
+      }
+
+      if (mode === 'one' && ids.length !== 1) {
+        throw new Error(
+          `operations[${operationIndex}].arguments ${JSON.stringify(path)} requires exactly one resolved element; received ${ids.length}.`
+        )
+      }
+
+      inputs = inputs.flatMap((current) => {
+        if (mode === 'all') {
+          return [assignTarget(current, path, ids)]
+        }
+
+        if (mode === 'one') {
+          return [assignTarget(current, path, ids[0])]
+        }
+
+        return ids.map((elementId) => assignTarget(current, path, elementId))
+      })
+    }
+  }
+
+  return inputs
+}
+
 export const prepareOperationBatch = (
   operations: unknown,
   registered: AiProviderInput['actions'],
@@ -222,95 +390,13 @@ export const prepareOperationBatch = (
     }
 
     const input = operation.arguments
-    let inputs = [input]
-
-    if (operation.target !== undefined) {
-      const targets = Array.isArray(operation.target)
-        ? operation.target
-        : [operation.target]
-
-      if (!targets.length) {
-        throw new Error('Target references cannot be empty.')
-      }
-
-      const bindings: {
-        mode: ElementBindingMode
-        path: string[]
-        reference: Record<string, unknown>
-      }[] = []
-      const issues: string[] = []
-      let reserved = input
-
-      for (const [targetIndex, target] of targets.entries()) {
-        try {
-          if (
-            !record(target) ||
-            typeof target.field !== 'string' ||
-            !target.field.trim()
-          ) {
-            throw new Error(
-              'Provide an exact registered element-identity target field.'
-            )
-          }
-
-          const { field, path: requested, ...reference } = target
-          const { path, mode } = targetPath(
-            definition.inputSchema,
-            String(field),
-            input,
-            requested
-          )
-
-          // Reserve every destination before any retained-source lookup. This
-          // also catches duplicate bindings without changing caller arguments.
-          reserved = assignTarget(reserved, path, undefined)
-          if (
-            mode === 'each' &&
-            bindings.some((binding) => binding.mode === 'each')
-          ) {
-            throw new Error(
-              'Only one fan-out element target is allowed per operation.'
-            )
-          }
-
-          bindings.push({ mode, path, reference })
-        } catch (error) {
-          issues.push(
-            `operations[${operationIndex}].target[${targetIndex}]: ${error instanceof Error ? error.message : String(error)}`
-          )
-        }
-      }
-
-      if (issues.length) {
-        throw new Error(issues.join('\n'))
-      }
-
-      if (!resolveTargets) {
-        throw new Error('Artifact references are unavailable.')
-      }
-
-      for (const { mode, path, reference } of bindings) {
-        const ids = resolveTargets(reference, mode)
-
-        if (mode === 'one' && ids.length !== 1) {
-          throw new Error(
-            `operations[${operationIndex}].arguments ${JSON.stringify(path)} requires exactly one resolved element; received ${ids.length}.`
-          )
-        }
-
-        inputs = inputs.flatMap((current) => {
-          if (mode === 'all') {
-            return [assignTarget(current, path, ids)]
-          }
-
-          if (mode === 'one') {
-            return [assignTarget(current, path, ids[0])]
-          }
-
-          return ids.map((elementId) => assignTarget(current, path, elementId))
-        })
-      }
-    }
+    const inputs = bindOperationTargets(
+      definition.inputSchema,
+      input,
+      operation.target,
+      operationIndex,
+      resolveTargets
+    )
 
     for (const args of inputs) {
       const issue = operationInputIssue(args, definition.inputSchema)
@@ -334,7 +420,7 @@ export const prepareOperationBatch = (
 /** Remove only App binding and model-visibility annotations for Runtime recipe type proofs.
  * Binding expansion remains owned by the App; all JSON Schema constraints stay intact.
  */
-export const runtimeOperationSchema = <T>(schema: T): T => {
+export const runtimeOperationSchema = <T>(schema: T, recipe = false): T => {
   const visit = (value: unknown): unknown => {
     if (!record(value)) {
       return value
@@ -342,8 +428,13 @@ export const runtimeOperationSchema = <T>(schema: T): T => {
 
     const result = { ...value }
 
+    if (recipe && value === schema) {
+      delete result['x-design-input-scope']
+    }
+
     delete result['x-design-element-binding']
     delete result['x-model-visibility']
+    delete result['x-host-delivery']
     for (const key of [
       'properties',
       'patternProperties',
@@ -353,10 +444,18 @@ export const runtimeOperationSchema = <T>(schema: T): T => {
     ]) {
       if (record(result[key])) {
         result[key] = Object.fromEntries(
-          Object.entries(result[key]).map(([name, child]) => [
-            name,
-            visit(child)
-          ])
+          Object.entries(result[key])
+            .filter(
+              ([, child]) =>
+                !(
+                  recipe &&
+                  key === 'properties' &&
+                  value === schema &&
+                  record(child) &&
+                  child['x-host-delivery'] === true
+                )
+            )
+            .map(([name, child]) => [name, visit(child)])
         )
       }
     }

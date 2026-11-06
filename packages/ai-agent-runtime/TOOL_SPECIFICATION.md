@@ -234,12 +234,16 @@ after child completion, shared lease isolation and terminal request cleanup.
 
 ## Typed recipe admission
 
-A version-1 recipe contains finite ordered steps and an optional bounded repair iteration. Public
+The host admits inline proposals in inline mode. Registered submission and saved graph
+execution retain their configured step budget. Inline execution follows the authored
+sequence and check/repair round count, with byte, binding and safe-integer checks.
+
+A version-1 recipe contains finite ordered steps, optional stage checkpoints and an optional final repair iteration. Public
 parameters/results use JSON Schema. Bindings are literal JSON, a JSON Pointer into
 public input or an earlier step result, or an explicitly constructed object/array.
 There are no arbitrary expressions, unbounded loops, callbacks or dynamic dependency names.
 A proposal names exact registered dependency revisions. Host limits bound encoded
-size, step count, nesting, expansion and repair issues; exceeding them rejects the
+size, binding depth/count and repair issues, plus step count and expansion for registered graphs; exceeding them rejects the
 proposal without partial registration or execution.
 
 An optional `iteration` declares `id`, `stateSchema`, `state` (initial binding),
@@ -271,10 +275,14 @@ cannot downgrade mutation/external effects or grant resource access.
 
 Recipe-authored public schemas use the closed structural subset: objects,
 homogeneous arrays, primitives, required fields, enums and finite bounds. Registered
-dependencies may also use open objects, omitted optional `required`, primitive
+dependencies may also use typed object maps (`additionalProperties` schemas with
+optional `propertyNames`), open objects, omitted optional `required`, primitive
 `const`, homogeneous untyped enums, and disjoint union variants. Dependency fields
 are projected by declared required paths. Unused opaque siblings do not prevent
 that projection; opaque values cannot be bound, constructed or silently narrowed.
+Whole-map forwarding proves key/value constraints and nested runtime lifetimes;
+untyped maps cannot satisfy typed destinations, and unknown map keys are never
+guaranteed source paths. Object construction validates each declared key and value.
 A path through a union must exist in every branch. Object construction selects a
 union branch only when declared literal or bound discriminators exclude every
 other branch; ambiguous variants reject before execution. Open source objects
@@ -422,3 +430,28 @@ Repeated use of a leaf retains distinct causal call IDs and recipe steps. Root
 admission failures do not fabricate a pinned revision or recipe step. The host
 forwards these fields with its existing input/output and lifecycle records; they
 do not grant execution authority or change scheduling, retries or settlement.
+
+### Iteration checkpoints and preparation overlap
+
+Recipes may declare `checkpoints: [{after: stepId, iteration}]`. Each checkpoint
+runs after its named ordinary step and before the next step; all checkpoint IDs,
+check/repair IDs and ordinary IDs must be unique. The existing top-level iteration
+runs after the final ordinary step. Admission proves the ordered bindings and
+aggregate iteration budget; future or iteration-private outputs cannot escape their
+scope. The shared invoker pins the full dependency inventory before execution.
+
+Host option `canOverlapPreparation(definition, input)` is an owner capability,
+not model-authored permission. A following preparation with resolved inputs may
+start alongside a mutation only when the owner allows it and no checkpoint lies
+between them. Other work remains ordered. Both started branches settle before
+failure delivery, with separate receipts and lease ownership. Existing cancellation,
+verification progress, remaining-only recovery and registered recipe budgets apply.
+
+### Selected sequence output objects
+
+A host-admitted one-call sequence may return an object of prior step-field
+bindings. Admission derives each field from its registered owner, preserves
+validation and runtime-reference metadata (including nested local references),
+and rejects unknown steps, unavailable paths and non-step leaves. This lets a
+host export selected earlier outputs before intermediate leases close. It does
+not change saved-recipe contracts or permit literal captured request handles.

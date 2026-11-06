@@ -1,3 +1,4 @@
+import { resolveMotifReference } from './design-motif-reference'
 import {
   DesignKeyConflictError,
   readFaceVertices,
@@ -821,12 +822,20 @@ export function* constructDesignSteps(
     name: string
     fill: unknown
     fills?: unknown[]
+    materialField?: string
     offset: { x: number; y: number }
     worldOffset: Point3
     vertices: { u: number; v: number }[]
   }
 
+  const motifSources = record(input.motifTemplates) ? input.motifTemplates : {}
   const motifDefinitions = new Map<string, CompiledMotif[]>()
+  const compiledMotifs = new WeakMap<object, CompiledMotif>()
+  const compiledVertices = new WeakMap<object, CompiledMotif['vertices']>()
+  const compiledOffsets = new WeakMap<
+    object,
+    Pick<CompiledMotif, 'offset' | 'worldOffset'>
+  >()
 
   function* compileMotifs(
     source: unknown
@@ -851,7 +860,7 @@ export function* constructDesignSteps(
 
       fields(
         item,
-        ['key', 'name', 'fill', 'fills', 'offset', 'vertices'],
+        ['key', 'name', 'fill', 'fills', 'materialField', 'offset', 'vertices'],
         'surface grid motif'
       )
       const motifKey = label(item.key, 'surface grid motif key', 40)
@@ -861,11 +870,31 @@ export function* constructDesignSteps(
       }
 
       keys.add(motifKey)
+      const cached = compiledMotifs.get(item)
+
+      if (cached) {
+        motifs.push(cached)
+        continue
+      }
+
       if (item.fill !== undefined && !isDesignFill(item.fill)) {
         return fail('surface grid motif fill')
       }
 
       const fills = item.fills
+
+      if (item.materialField !== undefined) {
+        if (item.fill !== undefined || fills !== undefined) {
+          return fail('materialField conflicts with surface grid fill/fills')
+        }
+
+        if (
+          typeof item.materialField !== 'string' ||
+          !linearFields.has(item.materialField)
+        ) {
+          return fail(`unknown materialField ${String(item.materialField)}`)
+        }
+      }
 
       if (
         fills !== undefined &&
@@ -877,7 +906,14 @@ export function* constructDesignSteps(
       let offset = { x: 0, y: 0 }
       let worldOffset = { x: 0, y: 0, z: 0 }
 
-      if (item.offset !== undefined) {
+      const cachedOffset = record(item.offset)
+        ? compiledOffsets.get(item.offset)
+        : undefined
+
+      if (cachedOffset) {
+        offset = cachedOffset.offset
+        worldOffset = cachedOffset.worldOffset
+      } else if (item.offset !== undefined) {
         const shift = point3(item.offset)
 
         worldOffset = shift
@@ -885,6 +921,9 @@ export function* constructDesignSteps(
         const moved = projectMotif(shift)
 
         offset = { x: moved.x - zero.x, y: moved.y - zero.y }
+        if (record(item.offset)) {
+          compiledOffsets.set(item.offset, { offset, worldOffset })
+        }
       }
 
       const rawVertices = item.vertices
@@ -893,32 +932,42 @@ export function* constructDesignSteps(
         return fail('surface grid motif vertices')
       }
 
-      if (sourceWork.admit(rawVertices.length)) {
-        yield
+      let vertices = compiledVertices.get(rawVertices)
+
+      if (!vertices) {
+        if (sourceWork.admit(rawVertices.length)) {
+          yield
+        }
+
+        vertices = rawVertices.map((point) => {
+          if (!record(point)) {
+            return fail('surface grid motif point')
+          }
+
+          fields(point, ['u', 'v'], 'surface grid motif point')
+
+          return {
+            u: number(point.u, 'surface grid u', 0, 1),
+            v: number(point.v, 'surface grid v', 0, 1)
+          }
+        })
+
+        compiledVertices.set(rawVertices, vertices)
       }
 
-      const vertices = rawVertices.map((point) => {
-        if (!record(point)) {
-          return fail('surface grid motif point')
-        }
-
-        fields(point, ['u', 'v'], 'surface grid motif point')
-
-        return {
-          u: number(point.u, 'surface grid u', 0, 1),
-          v: number(point.v, 'surface grid v', 0, 1)
-        }
-      })
-
-      motifs.push({
+      const compiled = {
         key: motifKey,
         name: label(item.name, 'surface grid motif name', 60),
         fill: item.fill,
         fills: fills as unknown[] | undefined,
+        materialField: item.materialField as string | undefined,
         offset,
         worldOffset,
         vertices
-      })
+      }
+
+      compiledMotifs.set(item, compiled)
+      motifs.push(compiled)
     }
 
     return motifs
@@ -1004,19 +1053,13 @@ export function* constructDesignSteps(
         return fail('surface grid motifs')
       }
 
-      fields(value.motifs, ['template'], 'surface grid motif reference')
-      const template = label(
-        value.motifs.template,
-        'surface grid motif template',
-        160
-      )
-      const definition = motifDefinitions.get(template)
+      const source = resolveMotifReference(value.motifs, motifSources)
 
-      if (!definition) {
-        return fail(`unknown motif template ${template}`)
-      }
-
-      motifs = definition
+      motifs =
+        value.motifs.overrides === undefined
+          ? (motifDefinitions.get(String(value.motifs.template)) ??
+            fail('uncompiled motif template'))
+          : yield* compileMotifs(source)
     }
 
     if (nodeCount + count * motifs.length > limits.expandedNodes) {
@@ -1047,6 +1090,25 @@ export function* constructDesignSteps(
 
     const result: Node[] = []
     const total = count * motifs.length
+    // A cell changes paint bounds, not the admitted plane or field equation.
+    const gridFields = new Map<
+      string,
+      ReturnType<typeof createLinearFieldFill>
+    >()
+
+    for (const motif of motifs) {
+      if (motif.materialField && !gridFields.has(motif.materialField)) {
+        gridFields.set(
+          motif.materialField,
+          createLinearFieldFill(
+            linearFields,
+            motif.materialField,
+            boundary,
+            corners
+          )
+        )
+      }
+    }
 
     for (let index = 0; index < total; index++) {
       const cell =
@@ -1079,19 +1141,50 @@ export function* constructDesignSteps(
         }
       })
 
-      result.push(
-        vectorFromPoints(
-          {
-            name: `${name} - ${cell + 1} - ${motif.name}`,
-            fill: motif.fills
-              ? motif.fills[cell % motif.fills.length]
-              : motif.fill
-          },
-          `${key}-${cell}-${motif.key}`,
-          points,
-          worldBounds !== undefined
-        )
+      const compiled = vectorFromPoints(
+        {
+          name: `${name} - ${cell + 1} - ${motif.name}`,
+          fill: motif.fills
+            ? motif.fills[cell % motif.fills.length]
+            : motif.fill
+        },
+        `${key}-${cell}-${motif.key}`,
+        points,
+        worldBounds !== undefined
       )
+
+      if (motif.materialField) {
+        const material =
+          gridFields.get(motif.materialField) ??
+          fail('uncompiled grid material')
+        const bounds = {
+          x: Number(compiled.x) - motif.offset.x,
+          y: Number(compiled.y) - motif.offset.y,
+          width: Number(compiled.width),
+          height: Number(compiled.height)
+        }
+
+        const paint: ReturnType<typeof createLinearFieldFill> = (
+          offset = { x: 0, y: 0, z: 0 }
+        ) =>
+          material(
+            {
+              x: motif.worldOffset.x + offset.x,
+              y: motif.worldOffset.y + offset.y,
+              z: motif.worldOffset.z + offset.z
+            },
+            bounds
+          )
+
+        compiled.fill = paint()
+        materialFills.set(compiled, paint)
+        materialNames.set(compiled, motif.materialField)
+        if (!worldBounds) {
+          materialFields[String(compiled.key)] = motif.materialField
+        }
+      }
+
+      result.push(compiled)
     }
 
     return result

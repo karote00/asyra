@@ -159,7 +159,7 @@ it.each(basicApiContracts)(
         await invokeLocalTool(
           operations,
           definition,
-          { names: [contract.name], view: 'usage' },
+          { names: [contract.name], view: 'usage', includeResultSchema: true },
           signal
         )
       ).text
@@ -339,7 +339,11 @@ it.each(native)(
     const namespace = operations.definitions.includes(definition)
       ? 'design_operations'
       : 'design'
-    const args = { names: [`${namespace}.${definition.name}`], view: 'usage' }
+    const args = {
+      names: [`${namespace}.${definition.name}`],
+      view: 'usage',
+      includeResultSchema: true
+    }
     const text = await readCompleteInformation(
       async (input) =>
         (
@@ -491,7 +495,11 @@ it.each(runtime.actionDefinitions)(
       throw new Error('Missing discovery definition')
     }
 
-    const args = { names: [action.name], view: 'usage' }
+    const args = {
+      names: [action.name],
+      view: 'usage',
+      includeResultSchema: true
+    }
     const text = await readCompleteInformation(
       async (input) =>
         (
@@ -569,7 +577,11 @@ it('executes a delivered final-response contract through its real control owner 
     throw new Error('Missing discovery definition')
   }
 
-  const args = { names: ['report_outcome'], view: 'usage' }
+  const args = {
+    names: ['report_outcome'],
+    view: 'usage',
+    includeResultSchema: true
+  }
   const text = await readCompleteInformation(
     async (input) =>
       (await invokeLocalTool(operations, definition, input, signal)).text,
@@ -621,6 +633,7 @@ it.each(host.definitions())(
     const query = {
       names: [registration.registeredName],
       view: 'usage',
+      includeResultSchema: true,
       ...(inputScope ? { inputScope } : {})
     }
     const entry = JSON.parse(

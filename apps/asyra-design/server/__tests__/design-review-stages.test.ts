@@ -1,3 +1,4 @@
+import { createDesignDataEvidence } from '../design-data-evidence'
 import correctionFixture from './fixtures/recorded-101/correction-handoff-20261023.json'
 import exactReviewBinding from './fixtures/recorded-101/exact-review-binding-20261017.json'
 import recordedBindings from './fixtures/recorded-101/review-bindings-20261017.json'
@@ -1245,8 +1246,40 @@ it('can select a replacement reference after drawing without rewriting requireme
   expect(() => r.selectReferences([-1])).toThrow()
 })
 
-it('routes visual and data evidence separately without dropping the data requirement', () => {
-  const r = createLocalDesignReview({})
+it('routes visual and data evidence separately without dropping the data requirement', async () => {
+  const dataEvidence = createDesignDataEvidence(async () => ({
+    available: true,
+    workspaceId: 'workspace',
+    coordinateSpace: 'parent-local',
+    nextOffset: null,
+    total: 1,
+    missingIds: [],
+    elements: [
+      {
+        id: 'root',
+        type: 'rect',
+        parentId: 'workspace',
+        properties: { width: 20 },
+        truncatedFields: []
+      }
+    ]
+  }))
+  const data = await dataEvidence.capture({
+    criterionId: 'scale',
+    elementIds: ['root'],
+    fields: ['width']
+  })
+
+  const judgments = (ids: unknown[], checks: ReturnType<typeof check>[]) => ({
+    ...wholeViewJudgments(ids, checks),
+    checks: wholeViewJudgments(ids, checks).checks.map((item) =>
+      item.criterionId === 'scale'
+        ? { ...item, inspectionIds: [], dataEvidenceIds: [data.id] }
+        : item
+    )
+  })
+
+  const r = createLocalDesignReview({ dataEvidence })
 
   r.record({
     ...plan,
@@ -1273,7 +1306,7 @@ it('routes visual and data evidence separately without dropping the data require
   })
   const args = {
     phase: 'structure',
-    ...wholeViewJudgments(
+    ...judgments(
       [r.inspect('root', true, true)?.inspectionId],
       [check('view'), check('scale')]
     )
@@ -1285,7 +1318,7 @@ it('routes visual and data evidence separately without dropping the data require
   expect(
     r.record({
       ...args,
-      ...wholeViewJudgments(args.inspectionIds, [
+      ...judgments(args.inspectionIds, [
         check('view'),
         check('scale', 'unverified')
       ])
@@ -1802,8 +1835,40 @@ it('corrects derived calculation notes without changing source facts or approved
   ).toThrow(/valid source fact/)
 })
 
-it('rechecks only affected data criteria after a source correction while retaining unchanged visual evidence', () => {
-  const review = createLocalDesignReview({})
+it('rechecks only affected data criteria after a source correction while retaining unchanged visual evidence', async () => {
+  const dataEvidence = createDesignDataEvidence(async () => ({
+    available: true,
+    workspaceId: 'workspace',
+    coordinateSpace: 'parent-local',
+    nextOffset: null,
+    total: 1,
+    missingIds: [],
+    elements: [
+      {
+        id: 'root',
+        type: 'rect',
+        parentId: 'workspace',
+        properties: { width: 20 },
+        truncatedFields: []
+      }
+    ]
+  }))
+  const data = await dataEvidence.capture({
+    criterionId: 'scale',
+    elementIds: ['root'],
+    fields: ['width']
+  })
+
+  const judgments = (ids: unknown[], checks: ReturnType<typeof check>[]) => ({
+    ...wholeViewJudgments(ids, checks),
+    checks: wholeViewJudgments(ids, checks).checks.map((item) =>
+      item.criterionId === 'scale'
+        ? { ...item, inspectionIds: [], dataEvidenceIds: [data.id] }
+        : item
+    )
+  })
+
+  const review = createLocalDesignReview({ dataEvidence })
   const criteria = {
     appearance: {
       requirement: 'Recognizable view',
@@ -1835,7 +1900,7 @@ it('rechecks only affected data criteria after a source correction while retaini
 
   review.record({
     phase: 'visual',
-    ...wholeViewJudgments(inspectionIds, [check('appearance'), check('scale')])
+    ...judgments(inspectionIds, [check('appearance'), check('scale')])
   })
   expect(review.isAccepted()).toBe(true)
   review.record({
@@ -1863,14 +1928,14 @@ it('rechecks only affected data criteria after a source correction while retaini
   expect(
     review.record({
       phase: 'visual',
-      ...wholeViewJudgments(inspectionIds, [check('scale')])
+      ...judgments(inspectionIds, [check('scale')])
     })
   ).toMatchObject({ accepted: true })
   review.mutate()
   expect(
     review.record({
       phase: 'visual',
-      ...wholeViewJudgments(
+      ...judgments(
         [requireTestValue(review.inspect('root', true, true)).inspectionId],
         [check('scale')]
       )
@@ -4549,7 +4614,7 @@ it('delivers individual correction scopes across sparse reviews without inferrin
     unavailableInspectionIds: [],
     discovery: {
       tool: 'describe_design_apis',
-      arguments: { view: 'full' },
+      arguments: { view: 'usage' },
       requiredInputs: ['query']
     }
   })
@@ -4746,4 +4811,26 @@ it('describes stored source facts as assertions rather than independent verifica
 
   expect(definition.description).toContain('source assertions')
   expect(definition.description).not.toContain('verified source facts')
+})
+
+it('rejects image-only judgments for canonical data criteria', () => {
+  const review = createLocalDesignReview()
+
+  review.record({
+    ...plan,
+    structureCriteria: [],
+    detailRequired: false,
+    criteria: {
+      scale: {
+        requirement: 'Width 20',
+        description: 'Canonical width is 20',
+        verification: 'data'
+      }
+    }
+  })
+  const id = requireTestValue(review.inspect('root', true, true)).inspectionId
+
+  expect(() =>
+    review.bindReview('visual', [{ criterionId: 'scale', inspectionIds: [id] }])
+  ).toThrow(/data/)
 })

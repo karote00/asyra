@@ -202,6 +202,8 @@ export const createLocalToolLibraryTools = (
     AiJsonValue
   >
 
+  const executes = (name: string) => name === AiDesignToolIds.INVOKE_TOOL
+
   const definition = (
     name: string,
     description: string,
@@ -214,10 +216,8 @@ export const createLocalToolLibraryTools = (
     inputSchema,
     ...toolSemantics(
       outputSchema,
-      name === AiDesignToolIds.INVOKE_TOOL ? 'mutation' : 'prepare',
-      name === AiDesignToolIds.INVOKE_TOOL
-        ? ['tool-library', 'document']
-        : ['tool-library']
+      executes(name) ? 'mutation' : 'prepare',
+      executes(name) ? ['tool-library', 'document'] : ['tool-library']
     ),
     composition: 'control-plane' as const,
     executionAccess: LocalToolAccess.COORDINATOR
@@ -274,9 +274,8 @@ export const createLocalToolLibraryTools = (
 
     projectModelResult(name: string, input: unknown, value: unknown) {
       if (
-        name !== AiDesignToolIds.INVOKE_TOOL ||
+        !executes(name) ||
         !record(input) ||
-        typeof input.name !== 'string' ||
         !record(value) ||
         !record(value.execution)
       ) {
@@ -289,9 +288,15 @@ export const createLocalToolLibraryTools = (
             status: value.execution.status,
             settlement: value.execution.settlement
           }
-      const projected = Object.hasOwn(value.execution, 'value')
-        ? project(input.name, input.input, value.execution.value)
-        : undefined
+      let projected: unknown
+
+      if (Object.hasOwn(value.execution, 'value')) {
+        projected = project(
+          String(input.name),
+          input.input,
+          value.execution.value
+        )
+      }
 
       return {
         ...value,

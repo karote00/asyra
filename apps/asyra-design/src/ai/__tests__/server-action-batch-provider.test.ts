@@ -993,3 +993,63 @@ it('ignores late progress after the final result without reopening activity', as
     provider.dispose()
   }
 })
+
+it('acknowledges browser conversation result writes and private reads without invoking a canvas action', async () => {
+  const token = '12345678-1234-1234-1234-123456789abc'
+  const commands = [
+    { save: { trim: 'private-element-id' } },
+    { read: { trim: { name: 'trim', path: '' } } },
+    { read: { trim: { name: 'trim', path: '' } } }
+  ]
+  const requests: Record<string, unknown>[] = []
+  const acks: AiBatchReceiptLike[] = []
+
+  interface AiBatchReceiptLike {
+    context: { ok: boolean; values?: Record<string, unknown> }
+  }
+  const provider = createServerActionBatchProvider({
+    fetch: async (_url, init) => {
+      const value = JSON.parse(init.body)
+
+      if ('context' in value && 'actionResults' in value) {
+        acks.push(value)
+
+        return new Response('{}')
+      }
+
+      requests.push(value)
+
+      return new Response(
+        JSON.stringify({
+          type: 'conversation-results',
+          receiptToken: token,
+          command: commands.shift()
+        }) +
+          '\n' +
+          JSON.stringify({ type: 'result', batch }) +
+          '\n',
+        { headers: { 'content-type': 'application/x-ndjson' } }
+      )
+    }
+  })
+  const executeBatch = vi.fn()
+
+  try {
+    for (const conversationId of ['one', 'one', 'two']) {
+      await provider.requestActionBatch(
+        { ...input, metadata: { conversationId } },
+        { signal: new AbortController().signal, executeBatch }
+      )
+    }
+
+    expect(acks.map((a) => a.context.ok)).toEqual([true, true, false])
+    expect(acks[1].context.values).toEqual({ trim: 'private-element-id' })
+    expect(requests[1].metadata).toMatchObject({
+      conversationResultNames: ['trim']
+    })
+    expect(JSON.stringify(requests)).not.toContain('private-element-id')
+    expect(executeBatch).not.toHaveBeenCalled()
+  } finally {
+    provider.dispose()
+  }
+})

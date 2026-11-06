@@ -1,5 +1,6 @@
 export const LocalToolAccess = Object.freeze({
   COORDINATOR: 'coordinator',
+  ISOLATED: 'isolated',
   INDEPENDENT: 'independent',
   EXCLUSIVE: 'exclusive'
 } as const)
@@ -17,7 +18,10 @@ export const createLocalToolScheduler = (signal: AbortSignal) => {
     work: () => Promise<T>
   ): Promise<T> => {
     // Host-declared orchestration never owns the barrier needed by its leaves.
-    if (access === LocalToolAccess.COORDINATOR) {
+    if (
+      access === LocalToolAccess.COORDINATOR ||
+      access === LocalToolAccess.ISOLATED
+    ) {
       return Promise.resolve().then(() => {
         signal.throwIfAborted()
 

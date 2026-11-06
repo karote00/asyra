@@ -26,7 +26,7 @@ export const createDesignEditAction = (
   ),
   name: AiActionNames.UPDATE_DESIGN_ELEMENT,
   description:
-    'Revise a known editable object as an item of execute_design_batch; read context only if required identities or values are unknown. Change its name, parent-local geometry, native text/typography, or an existing primary fill/stroke color. Preserve other fields and objects. Returns the edited object for rendered review. Does not add missing fills/strokes or change vector path points.',
+    'Revise a known editable object as an item of execute_design; read context only if required identities or values are unknown. Change its name, parent-local geometry, native text/typography, or an existing primary fill/stroke color. Preserve other fields and objects. Returns the edited object for rendered review. Does not add missing fills/strokes or change vector path points.',
   inputSchema: {
     type: 'object',
     additionalProperties: false,

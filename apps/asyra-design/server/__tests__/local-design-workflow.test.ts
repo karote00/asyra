@@ -5,7 +5,10 @@ import {
 import materialRepair from '../../test-data/knowledge-evaluation/__fixtures__/material-repair-20261028.json'
 import nonplanar from './fixtures/recorded-101/nonplanar-recovery-20261026.json'
 import briefFixture from './fixtures/recorded-101/brief-capacity-20261024.json'
-import { projectWorkflowInput } from '../design-workflow-discovery'
+import {
+  projectWorkflowInput,
+  workflowUsageGuide
+} from '../design-workflow-discovery'
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { createAiExecutionProfiler } from '@asyra/ai-agent-runtime'
@@ -170,6 +173,21 @@ it('preserves unknown application settlement across an ordered part boundary wit
 it('executes the advertised ordered input example without hidden envelope fields', async () => {
   const { workflow, compile, execute } = setup()
   const definition = workflow.definitions[0]
+
+  const guide = workflowUsageGuide(definition.inputSchema, {
+    operation: 'draft',
+    nodeTypes: ['projected-face']
+  })
+
+  for (const delivered of [definition.description, guide.instructions]) {
+    expect(delivered).toContain(
+      'Initial criteria may be recorded after drawing'
+    )
+    expect(delivered).toContain('Established criteria cannot be rewritten')
+    expect(delivered).toContain('Preserve supplied 2D geometry')
+    expect(delivered).not.toContain('Preserve 2D;')
+    expect(delivered).not.toContain('before review, immutable after drawing')
+  }
 
   expect(definition.description).not.toContain('Ordered input example: ')
   expect(definition.description).not.toContain(
@@ -2263,6 +2281,7 @@ it.each([undefined, 'defer', 'immediate'] as const)(
       settlement: 'completed'
     })
     expect(result.parts).toHaveLength(2)
+    expect(result.compositionIds).toHaveLength(1)
     expect(
       events.filter((name) =>
         name.startsWith(AiActionNames.APPLY_PREPARED_DESIGN + ':')
@@ -2333,6 +2352,12 @@ it('delivers the saved compact receipt without diagnostics or loss of any operat
   expect(reply.success, reply.text).toBe(true)
   const expected = JSON.parse(JSON.stringify(compactFixture.delivered))
 
+  expected.compositionIds = [
+    expected.actionResults.find(
+      (entry: { actionName: string }) =>
+        entry.actionName === AiActionNames.APPLY_PREPARED_DESIGN
+    ).result.compositionId
+  ]
   delete expected.reuse
   delete expected.sourceWork
   delete expected.actionResults[0].result.timing
@@ -2350,7 +2375,13 @@ it('delivers the saved compact receipt without diagnostics or loss of any operat
     imageUrl: imageResult.dataUrl
   })
   expect(Buffer.byteLength(JSON.stringify(compactFixture.delivered))).toBe(5372)
-  expect(Buffer.byteLength(delivered.text)).toBeLessThanOrEqual(1938)
+  const { compositionIds, ...existingFields } = JSON.parse(delivered.text)
+
+  expect(compositionIds).toEqual(expected.compositionIds)
+  expect(Buffer.byteLength(JSON.stringify(existingFields))).toBeLessThanOrEqual(
+    1938
+  )
+  expect(Buffer.byteLength(delivered.text)).toBeLessThanOrEqual(2005)
   expect(designs.call).toHaveBeenCalledOnce()
   expect(operations.callInternal).toHaveBeenCalledTimes(2)
   const prepared = observations.find(

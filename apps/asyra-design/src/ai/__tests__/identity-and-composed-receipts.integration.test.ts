@@ -116,7 +116,7 @@ it('executes the published identity example through the real Core and uses issue
   const example = invocation.arguments.operations[0].arguments
 
   expect(example).toEqual((contract.inputSchema.examples as unknown[])[0])
-  expect(invocation.tool).toBe('execute_design_batch')
+  expect(invocation.tool).toBe('execute_design')
   const batchDefinition = operations.definitions.find(
     (item) => item.name === invocation.tool
   )

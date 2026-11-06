@@ -17,7 +17,7 @@ import type {
 } from '../common-apis/inspection-evidence'
 import type { AiActionDefinition } from '@asyra/ai-agent-runtime'
 import { inspectionApis } from '../common-apis'
-import { AiActionNames } from '../constants'
+import { AiActionNames, AiInspectionLimits } from '../constants'
 
 export const createAiInspectionAction = (
   inspect: (
@@ -37,16 +37,26 @@ export const createAiInspectionAction = (
       available: { const: true },
       image: toolResultObject({
         dataUrl: toolResultString,
-        width: { type: 'integer', minimum: 1, maximum: 1024 },
-        height: { type: 'integer', minimum: 1, maximum: 1024 }
+        width: {
+          type: 'integer',
+          minimum: 1,
+          maximum: AiInspectionLimits.maxEdge
+        },
+        height: {
+          type: 'integer',
+          minimum: 1,
+          maximum: AiInspectionLimits.maxEdge
+        }
       })
     })
   ),
-  revision: 3,
+  revision: 4,
   recoveryOutputSchema: inspectionFailureSchema,
   name: AiActionNames.INSPECT_DRAWING,
   description:
-    'Use the actual current workspace ID for overview of all roots in their shared positions/order, without grouping or modifying the document. Workspace does not support detail/region: choose a concrete element for native detail. Unavailable images return a reason and completed read settlement, not visual approval. Inspect an existing drawing or composition using its actual rendered image and current evidence. Fetch needed object data separately through read_design_context. Default overview renders the entire subtree into a bounded composition preview without changing source images, vectors or dimensions. Use view=detail for native-resolution close-ups, or region in target-local coordinates at most 1024 per side. A region is always native detail, never an overview. Read-only; does not change the document. Use the returned image to compare the complete result with the original request/reference, then make supported corrections and inspect again.',
+    'Use the actual current workspace ID for overview of all roots in their shared positions/order, without grouping or modifying the document. Workspace does not support detail/region: choose a concrete element for native detail. Unavailable images return a reason and completed read settlement, not visual approval. Inspect an existing drawing or composition using its actual rendered image and current evidence. Fetch needed object data separately through read_design_context. Default overview renders the entire subtree into a bounded composition preview without changing source images, vectors or dimensions. ' +
+    inspectionInputSchema.properties.view.description +
+    ' Use region for an explicit target-local native close-up. A region is always native detail, never an overview. Read-only; does not change the document. Use the returned image to compare the complete result with the original request/reference, then make supported corrections and inspect again.',
   inputSchema: inspectionInputSchema,
 
   execute: async (args, { signal }) => {

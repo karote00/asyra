@@ -1,3 +1,4 @@
+import { getActiveDocumentScope } from '../collaboration/lifecycle'
 import { createBrowserRecordOutbox } from './record-outbox'
 import { AI_EXECUTION_RECORD_ENDPOINT } from './action-batch-endpoint'
 import { basicApiPermissionRules } from './basic-api-catalog'
@@ -40,7 +41,11 @@ interface AiStartupFactories {
 const defaultFactories: AiStartupFactories = {
   createConfirmation: createAiConfirmationBroker,
   createHistory: createAiHistoryProjection,
-  createProvider: createServerActionBatchProvider
+
+  createProvider: () =>
+    createServerActionBatchProvider({
+      documentScope: getActiveDocumentScope
+    })
 }
 
 export const createAiStartup = (

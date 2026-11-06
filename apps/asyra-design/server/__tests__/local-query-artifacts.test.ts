@@ -651,7 +651,7 @@ it.each([
       const mapped = JSON.parse(
         (
           await host.invoke({
-            name: 'design_operations.execute_design_batch',
+            name: 'design_operations.execute_design',
             input: {
               operations: [
                 {
@@ -996,7 +996,7 @@ it.each(['recipe', 'native', 'partial'] as const)(
           JSON.parse(
             (
               await host.invoke({
-                name: 'design_operations.execute_design_batch',
+                name: 'design_operations.execute_design',
                 input: {
                   operations: [
                     { name, arguments: args },

@@ -155,6 +155,7 @@ export type {
   ExecutionRecordDeliveryIssue
 } from './profiler/record-outbox.js'
 
+export { registeredRecipeOutputAt } from './recipe-schema.js'
 export { admitAiRecipe } from './recipe-admission.js'
 export type {
   AiRecipe,

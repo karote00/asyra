@@ -122,7 +122,8 @@ export interface LocalToolOwner {
 export class LocalToolInputError extends Error {
   constructor(
     message: string,
-    readonly code = 'PREPARATION_REJECTED'
+    readonly code = 'PREPARATION_REJECTED',
+    readonly recovery?: 'correct_input'
   ) {
     super(message)
   }
@@ -479,6 +480,7 @@ export const invokeLocalTool = async (
         explanation?.message ?? formatOperationInputIssues(issues),
         explanation?.code ?? 'PREPARATION_REJECTED',
         {
+          recovery: 'correct_input',
           ...owner.rejectInput?.(definition.name, args, issues),
           stage,
           settlement: 'not-started'
@@ -626,6 +628,7 @@ export const invokeLocalTool = async (
               reportedSettlement ??
               'unknown'),
         recovery:
+          (inputFailure && !hasPriorExecution && error.recovery) ||
           'Inspect the failure and current state, then choose a corrected or alternate operation. Do not automatically replay mutations.',
         ...(batchError ? { batchFailure: batchError.failure } : {}),
         executionResult: JSON.parse(

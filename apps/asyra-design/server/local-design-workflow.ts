@@ -1,9 +1,14 @@
-import { designRepresentationGuidance } from './design-preparation-examples'
+import { directResultDeliveryProperties } from './local-design-sequence'
+import {
+  designRepresentationGuidance,
+  suppliedGeometryGuidance
+} from './design-preparation-examples'
 import type { AiInvocationMiddleware } from '@asyra/ai-agent-runtime'
 import {
   toolInternalResult,
   toolSemantics,
   toolResultObject,
+  toolDocumentReference,
   toolRequestReference
 } from '../src/ai/tool-contract'
 import {
@@ -16,6 +21,7 @@ import {
 import { designCheckSummarySchema } from './design-check-results'
 import {
   reviewPlanSchema,
+  reviewCriteriaTimingGuidance,
   reviewPlanExample,
   reviewCaptureChecksSchema,
   reviewJudgmentFieldsSchema
@@ -67,7 +73,7 @@ export const createLocalDesignWorkflow = (
     (tool) => tool.name === AiDesignToolIds.REVIEW_DRAWING
   )
 
-  const finishReview = async (
+  const finishReviewSelection = async (
     value: Record<string, unknown>,
     selection: unknown,
     signal: AbortSignal
@@ -321,6 +327,44 @@ export const createLocalDesignWorkflow = (
       )
     ]
   }
+
+  const acknowledgedRoot = (part: Record<string, unknown>) => {
+    const entry =
+      Array.isArray(part.actionResults) &&
+      part.actionResults.find(
+        (entry) => entry?.actionName === AiActionNames.APPLY_PREPARED_DESIGN
+      )
+
+    return typeof entry?.result?.compositionId === 'string' &&
+      entry.result.compositionId
+      ? (entry.result.compositionId as string)
+      : undefined
+  }
+
+  const finishReview = async (
+    value: Record<string, unknown>,
+    selection: unknown,
+    signal: AbortSignal
+  ) => {
+    const result = await finishReviewSelection(value, selection, signal)
+
+    if (localToolOutcome(result).status !== 'success') {
+      return result
+    }
+
+    const parts = Array.isArray(result.parts) ? result.parts : [result]
+    const roots = parts.map(acknowledgedRoot)
+
+    return roots.length && roots.every((id) => typeof id === 'string')
+      ? { ...result, compositionIds: [...new Set(roots)] }
+      : result
+  }
+
+  const compositionIdsSchema = {
+    type: 'array',
+    minItems: 1,
+    items: toolDocumentReference
+  }
   const semantics = toolSemantics(
     {
       allOf: [followupSchema],
@@ -418,7 +462,7 @@ export const createLocalDesignWorkflow = (
             {
               ...preparation,
               ...semantics,
-              revision: 4,
+              revision: 6,
               partialOutputSchema: {
                 anyOf: [semantics.partialOutputSchema, stoppedOutputSchema]
               },
@@ -426,7 +470,9 @@ export const createLocalDesignWorkflow = (
               name: AiDesignToolIds.PREPARE_AND_APPLY_DESIGN,
               executionAccess: LocalToolAccess.EXCLUSIVE,
               description:
-                'Optional plan records request-linked review criteria in this same call. Omit it to draw a ready part immediately; record initial criteria with define_design_criteria before primary-agent result review. Established criteria cannot be rewritten after drawing. Prepare and apply one ready retained part, through existing validation and canvas operations. Optional parentId attaches this part to an existing container in parent-local coordinates. The compact compositionId identifies the new part and is sufficient to attach later parts; no full ID map is needed for continuation. Invalid preparation never applies. Safe capacity plans execute through ordered retained parts in this call; only actual receipts prove writes. Returns preparation findings, actual root identity and review evidence. Default compact response omits duplicated context, ID maps and pure work/timing diagnostics; full retains them. Operation results, limitations and recovery remain complete. Use inspection=defer when no immediate visual decision is needed, then inspect at the next visual decision boundary. Does not replace existing objects or retry failures. ' +
+                'Optional plan records request-linked review criteria in this same call. Omit it to draw a ready part immediately. ' +
+                reviewCriteriaTimingGuidance +
+                ' Prepare and apply one ready retained part, through existing validation and canvas operations. Optional parentId attaches this part to an existing container in parent-local coordinates. The successful compositionIds list contains acknowledged roots in creation order. Bind /compositionIds/0 for a single created part; the same ID can anchor later parts; no full ID map is needed for continuation. Invalid preparation never applies. Safe capacity plans execute through ordered retained parts in this call; only actual receipts prove writes. Returns preparation findings, actual root identity and review evidence. Default compact response omits duplicated context, ID maps and pure work/timing diagnostics; full retains them. Operation results, limitations and recovery remain complete. Use inspection=defer when no immediate visual decision is needed, then inspect at the next visual decision boundary. Does not replace existing objects or retry failures. ' +
                 designRepresentationGuidance,
               inputSchema: {
                 ...preparation.inputSchema,
@@ -443,8 +489,7 @@ export const createLocalDesignWorkflow = (
                       }
                     : {}),
                   parentId: {
-                    type: 'string',
-                    minLength: 1,
+                    ...toolDocumentReference,
                     description:
                       'Existing editable container for this ready part; coordinates are parent-local. Omit for workspace insertion.'
                   },
@@ -492,6 +537,8 @@ export const createLocalDesignWorkflow = (
               'materialSourceId',
               ...(review ? ['plan'] : []),
               ...(judgment ? ['reviewChecks'] : []),
+              'retain',
+              'delivery',
               'message',
               'inspection',
               'response',
@@ -772,6 +819,7 @@ export const createLocalDesignWorkflow = (
     properties: {
       key: { type: 'string', minLength: 1, maxLength: 160 },
       materialSourceId: definition.inputSchema.properties.materialSourceId,
+      ...directResultDeliveryProperties,
       draft: { $ref: '#/$defs/readyDraft' },
       repair: { $ref: '#/$defs/draftRepair' },
       parentId: definition.inputSchema.properties.parentId,
@@ -841,22 +889,28 @@ export const createLocalDesignWorkflow = (
       repetition: { type: 'pattern', memberField: 'members' },
       optionalInputs: [
         ...(review ? ['plan'] : []),
-        ...(judgment ? ['reviewChecks'] : [])
+        ...(judgment ? ['reviewChecks'] : []),
+        'retain',
+        'delivery'
       ],
-      selection: `Choose component contents and painter order, then outer repetition and operation/nodeTypes for the next submitted part. Component order: one pattern of face/grid members. Layer order: sibling patterns, with independent nodes at their painter positions. For either, define members once; axes count/step set translation. Selecting projected-face/surface-grid includes pattern with members; no extra query is needed. Examples are optional; select types for independent siblings. inputScope usage gives complete parameters/results/recovery. draft creates an artifact within ${designs.expandedNodeLimit} expanded objects or continues a safely partitionable source through retained parts in this call; repair corrects retained preparation; parts submits independent artifacts exceeding that total together, each within limits, with partial receipts. Independent world-space planar faces in a shared orthographic projection: projected-face. Pattern-only queries include all face/grid members; content queries include only selected kinds. origin sets the start. For faces mode, explicitly select pattern. surface-grid repeats normalized motifs on a planar convex four-corner boundary using rows/columns and painter order. Select grid if this submission needs it; later grid details may be added separately when useful. Arbitrary or already-projected 2D outlines: vector; identical 2D curves: vector-pattern. Guides include root group/frame; nodeTypes selects children, including nested containers. Nest group for organization, frame for size; rect/oval/text for primitives. Root changes need no query. optionalInputs: plan for criteria, reviewChecks for image checks. Selection does not require sending either; omit plan without rereading. Select used types only. Size/rotation/irregular exceptions stay explicit. Templates reduce input, not output budgets; safe excess continues via retained parts. Use parts for independent layers or bounded complete-instance ranges; never replay acknowledged parts. No Knowledge or planning call is required. Known scopes can read directly; full schema/field queries remain available.`,
+      selection: `Choose component contents and painter order, then outer repetition and operation/nodeTypes for the next submitted part. Component order: one pattern of face/grid members. Layer order: sibling patterns, with independent nodes at their painter positions. For either, define members once; axes count/step set translation. Selecting projected-face/surface-grid includes pattern with members; no extra query is needed. Examples are optional; select types for independent siblings. inputScope usage gives complete parameters/results/recovery. draft creates an artifact within ${designs.expandedNodeLimit} expanded objects or continues a safely partitionable source through retained parts in this call; repair corrects retained preparation; parts submits independent artifacts exceeding that total together, each within limits, with partial receipts. Independent world-space planar faces in a shared orthographic projection: projected-face. Pattern-only queries include all face/grid members; content queries include only selected kinds. origin sets the start. For faces mode, explicitly select pattern. surface-grid repeats normalized motifs on a planar convex four-corner boundary using rows/columns and painter order. Select grid if this submission needs it; later grid details may be added separately when useful. Arbitrary or already-projected 2D outlines: vector; identical 2D curves: vector-pattern. Guides include root group/frame; nodeTypes selects children, including nested containers. Nest group for organization, frame for size; rect/oval/text for primitives. Root changes need no query. optionalInputs: plan, reviewChecks, retain, delivery. Preserve authored inputs with source:"input" or portable result fields by path; omit step. Request handles are not conversation values. Omit unused optional inputs without rereading. Select used types only. Size/rotation/irregular exceptions stay explicit. Templates reduce input, not output budgets; safe excess continues via retained parts. Use parts for independent layers or bounded complete-instance ranges; never replay acknowledged parts. No Knowledge or planning call is required. Known scopes can read directly; full schema/field queries remain available.`,
       usage: {
         instructions:
-          'nodeTypes selects children; root group/frame needs no reread. Optional plan/define_design_criteria sets criteria before review, immutable after drawing. inspection=defer writes; full adds maps. One-time layout; no live Auto Layout/clipping/frame borders/radii. Preserve 2D; no invented depth/faces. Resolve overflow; render text-metrics-required. AI judges visuals; edit target IDs only.',
+          'nodeTypes selects children; root group/frame needs no reread. ' +
+          reviewCriteriaTimingGuidance +
+          ' inspection=defer writes; full adds maps. One-time layout; no live Auto Layout/clipping/frame borders/radii. ' +
+          suppliedGeometryGuidance +
+          ' Resolve overflow; render text-metrics-required. AI judges visuals; edit target IDs only.',
         operations: {
-          draft: `draft: ${designs.expandedNodeLimit} expanded objects/artifact; safe excess continues via retained parts.`,
+          draft: `draft: ${designs.expandedNodeLimit} expanded objects/artifact; safe excess continues via retained parts. For ready drafts use execute_design.operations with the same draft arguments under each prepare_and_apply_design operation; no parts lookup is needed.`,
           repair:
             'Supply repair only, not draft or parts. Use an owned current source artifact and exact repair operations; keep unaffected geometry and valid artifacts. Repair preparation does not authorize replay of an earlier application.',
           parts: `Independent sources: each part artifact fits ${designs.expandedNodeLimit} expanded objects; safe excess continues via retained partitions. Supply ordered key + draft/repair envelopes. parentPart links backward; parentId is exclusive. No top-level parentId/materialSourceId. Not atomic: keep successful parts and stop successors on failure; inspections defer.`
         },
         results:
-          'Use toolOutcome.status/settlement and actionResults, not transport success. Acknowledgement is not visual approval/save; unknown is not success. partial preserves completed work; every status retains completedSteps/parts. actionResults[].result.compositionId is the continuation root; artifactId/applicable/findings describe preparation, failedStep failure, checks/measurementIssues/inspectionIssues follow-up. Retain targets and visual failures.',
+          'Check toolOutcome.status/settlement, actionResults, completedSteps/parts and follow-up issues. For dependent edits bind /compositionIds/0 in execute_design. partial preserves completed work.',
         recovery:
-          'Never replay completed writes. Inspect uncertain settlement; refresh stale reads/preparation/bindings. Invalid preparation writes nothing: correct findings. Safe excess retains source/root via parts; otherwise correct it. Follow remaining-only recoveryInvocation for unfinished work or failed checks/captures; no bypass/automatic retry. instanceRanges selects missing whole instances, never uncertain partial writes.'
+          'Never replay completed writes. Inspect unknown settlement; refresh stale evidence. Correct invalid preparation before writing. Use recoveryInvocation for remaining parts or checks; instanceRanges selects missing whole instances.'
       }
     },
     ...definition.inputSchema,
@@ -885,6 +939,7 @@ export const createLocalDesignWorkflow = (
     },
     properties: {
       ...definition.inputSchema.properties,
+      ...directResultDeliveryProperties,
       draft: { $ref: '#/$defs/readyDraft' },
       repair: { $ref: '#/$defs/draftRepair' },
       parts: {
@@ -971,6 +1026,10 @@ export const createLocalDesignWorkflow = (
     definitions: [
       {
         ...definition,
+        outputSchema: {
+          ...(semantics.outputSchema as Record<string, unknown>),
+          ...toolResultObject({ compositionIds: compositionIdsSchema })
+        },
         inputSchema: {
           ...inputSchema,
           examples: [
@@ -994,6 +1053,7 @@ export const createLocalDesignWorkflow = (
         },
         description:
           definition.description +
+          ' Direct retain/delivery use App context; omit step. Saving never replays writes. ' +
           ' Alternatively supply parts as envelopes, each requiring its own key and draft or repair; do not put bare drafts in parts. key is a local label, not an element ID. Put parentId on each part, never at the top level with parts; alternatively parentPart links an earlier part by its actual returned ID. Single-part draft/repair stays available. Parts are not one atomic batch: failures retain prior receipts and stop successors without retry. Intermediate inspections defer until the end of this block.'
       }
     ],
@@ -1181,6 +1241,16 @@ export const createLocalDesignWorkflow = (
       signal: AbortSignal
     ): Promise<string> {
       signal.throwIfAborted()
+      if (
+        args &&
+        typeof args === 'object' &&
+        ('retain' in args || 'delivery' in args)
+      ) {
+        throw new LocalOperationPreparationError(
+          'Result delivery is handled at the host entry. Inside execute_design select retain/delivery on that enclosing call.'
+        )
+      }
+
       if (!args || typeof args !== 'object' || !('parts' in args)) {
         const result = JSON.parse(await single.call(name, args, signal))
 
@@ -1492,10 +1562,7 @@ export const createLocalDesignWorkflow = (
           artifactIds.set(part.key, receipt.artifactId)
         }
 
-        const identity = receipt.actionResults?.find(
-          (entry: { actionName: string }) =>
-            entry.actionName === AiActionNames.APPLY_PREPARED_DESIGN
-        )?.result?.compositionId
+        const identity = acknowledgedRoot(receipt)
 
         if (typeof identity === 'string' && identity) {
           parentIds.set(part.key, identity)

@@ -6,7 +6,8 @@ import {
 import { operationInputIssue } from '../operation-input-schema'
 import {
   createLocalToolLeases,
-  localToolReferences
+  localToolReferences,
+  localToolSchemaIsPortable
 } from '../local-tool-leases'
 
 const reference = {
@@ -401,4 +402,38 @@ it('passes request data through real leases while retaining explicitly nested ar
   )
   await host.dispose()
   expect(release).toHaveBeenCalledOnce()
+})
+
+it('classifies retained result lifetime from schema metadata rather than names or examples', () => {
+  expect(
+    localToolSchemaIsPortable({
+      type: 'object',
+      properties: { artifactId: { type: 'string' } }
+    })
+  ).toBe(true)
+  expect(
+    localToolSchemaIsPortable({ type: 'string', 'x-runtime-value': 'document' })
+  ).toBe(true)
+  expect(
+    localToolSchemaIsPortable({
+      type: 'object',
+      properties: { a: { $ref: '#/$defs/value' } },
+      $defs: { value: reference }
+    })
+  ).toBe(false)
+  expect(
+    localToolSchemaIsPortable({
+      anyOf: [{ type: 'null' }, { type: 'array', items: reference }]
+    })
+  ).toBe(false)
+  expect(
+    localToolSchemaIsPortable({
+      type: 'object',
+      examples: [{ 'x-runtime-value': 'secret' }],
+      $defs: { unused: reference }
+    })
+  ).toBe(true)
+  expect(
+    localToolSchemaIsPortable({ type: 'string', 'x-runtime-value': 'secret' })
+  ).toBe(false)
 })

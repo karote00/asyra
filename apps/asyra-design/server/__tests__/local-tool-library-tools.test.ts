@@ -158,7 +158,9 @@ it('keeps recipe guidance within available capabilities and independent save rec
   expect(invoke?.description).toContain(
     'Successful execution attempts saving independently'
   )
-  expect(invoke?.description).toContain('never repeat invocation to retry saving')
+  expect(invoke?.description).toContain(
+    'never repeat invocation to retry saving'
+  )
 })
 
 it('exposes canonical recursive bindings through native conversion and validates malformed submissions before dispatch', async () => {

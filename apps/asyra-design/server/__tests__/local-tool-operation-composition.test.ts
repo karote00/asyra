@@ -729,7 +729,7 @@ it('does not turn a read result field into a mutation inspection target', async 
     id: 'a',
     compositionId: 'unrelated-payload'
   })
-  await f.invoke('execute_design_batch', {
+  await f.invoke('execute_design', {
     inspection: 'defer',
     operations: [
       {
@@ -1044,7 +1044,7 @@ it.each([false, true])(
 
     expect(explicit.actionResults[0].result.findings).toEqual(f.state.findings)
     f.state.current = false
-    const full = await f.invoke('execute_design_batch', {
+    const full = await f.invoke('execute_design', {
       operations: [
         {
           name: f.api('element.createElements'),
@@ -1123,6 +1123,7 @@ it('delivers terminal scope recovery on the first lost mutation acknowledgement'
 
 it.each([
   'repair',
+  'inline',
   'stuck',
   'decision',
   'cancel',
@@ -1445,21 +1446,58 @@ it.each([
     }
 
     try {
-      const admitted = await invoke('tool_library.submit_tool', {
-        submissionId: 'repair-container',
-        proposal: recipe
-      })
+      const input = {
+        target: 'frame',
+        elementIds: ['child'],
+        values: { x: 50, y: 10 }
+      }
 
-      expect(admitted, JSON.stringify(admitted)).toMatchObject({ ok: true })
-      const execution = invoke('tool_library.invoke_tool', {
-        name: recipe.name,
-        revision: 1,
-        input: {
-          target: 'frame',
-          elementIds: ['child'],
-          values: { x: 50, y: 10 }
-        }
-      })
+      if (mode !== 'inline') {
+        const admitted = await invoke('tool_library.submit_tool', {
+          submissionId: 'repair-container',
+          proposal: recipe
+        })
+
+        expect(admitted, JSON.stringify(admitted)).toMatchObject({ ok: true })
+      }
+
+      const execution =
+        mode === 'inline'
+          ? invoke('design_operations.execute_design', {
+              operations: [
+                {
+                  name: initialRead.name,
+                  arguments: { elementId: input.target }
+                }
+              ],
+              inspection: 'defer',
+              iteration: {
+                id: 'verified',
+                stateSchema: { type: 'null' },
+                state: null,
+                check: {
+                  name: checker.registeredName,
+                  arguments: { arguments: { elementId: input.target } }
+                },
+                repairs: [
+                  {
+                    name: repair.name,
+                    arguments: {
+                      elementIds: input.elementIds,
+                      values: input.values
+                    }
+                  }
+                ],
+                next: { kind: 'state', path: '' },
+                maxIterations: 2
+              },
+              output: recipe.output
+            })
+          : invoke('tool_library.invoke_tool', {
+              name: recipe.name,
+              revision: 1,
+              input
+            })
 
       if (mode === 'cancel') {
         await expect(execution).rejects.toMatchObject({ name: 'AbortError' })
@@ -1477,11 +1515,15 @@ it.each([
       expect(
         calls.filter((name) => name === 'api_core_getElementMetadata')
       ).toHaveLength(1)
-      if (mode === 'repair') {
+      if (mode === 'repair' || mode === 'inline') {
         expect(result, JSON.stringify(result)).toMatchObject({
           execution: { status: 'success', value: 'pass' },
-          storage: { status: 'saved' }
+          ...(mode === 'repair' ? { storage: { status: 'saved' } } : {})
         })
+        if (mode === 'inline') {
+          expect(entries.size).toBe(0)
+        }
+
         expect((await review('frame')).findings).toEqual([])
         expect(geometry.child.x).toBe(50)
       } else {

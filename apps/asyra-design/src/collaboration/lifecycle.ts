@@ -252,6 +252,15 @@ const createSessionComposition = (
 class CollaborationSessionController {
   readonly identity: CollaborationDebugHandle['identity']
 
+  get documentScope() {
+    return JSON.stringify([
+      this.identity.documentId,
+      this.identity.roomId,
+      this.identity.actorId,
+      this.outbox.getDocumentGeneration()
+    ])
+  }
+
   private readonly mode: CollaborationMode
 
   private readonly processRemotePublication: ProcessRemotePublication
@@ -1357,6 +1366,8 @@ class CollaborationSessionController {
 let activeController: CollaborationSessionController | undefined
 let activeHandle: CollaborationDebugHandle | undefined
 let startPromise: Promise<CollaborationDebugHandle> | undefined
+
+export const getActiveDocumentScope = () => activeController?.documentScope
 
 export const getActiveCollaborationHandle = ():
   CollaborationDebugHandle | undefined => activeHandle

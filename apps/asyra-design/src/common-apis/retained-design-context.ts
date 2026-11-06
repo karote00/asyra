@@ -1,10 +1,10 @@
+import { designContextPageLimit } from './design-context-fields'
 import {
   createDesignContextReader,
   validateDesignContextQuery,
   validateDesignContextFilter,
   matchesDesignContextFilter,
   assertDesignContextCount,
-  designContextPageLimit,
   type DesignContextQuery,
   type DesignContextSource
 } from './design-context'
@@ -800,6 +800,7 @@ export const createRetainedDesignContext = (
       leaseId: undefined as string | undefined,
       revision: value.revision,
       coordinateSpace: value.coordinateSpace,
+      workspaceId: value.workspaceId,
       offset,
       limit,
       nextOffset: offset + limit < result.total ? offset + limit : null,

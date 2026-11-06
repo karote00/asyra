@@ -100,15 +100,24 @@ select_design_references for explicit comparison uses. Their contracts own bindi
 
 Discover missing contracts through describe_design_apis; execute known current contracts directly.
 Tools own exact arguments, execution routes, returned identities and recovery. Use prepare_and_apply_design
-for new prepared content and execute_design_batch for registered existing-object edits.
+for a single new design, or execute_design to hand off a sequence of workflows and edits. Supply known element IDs,
+artifact keys/prefixes or a workspace region with its filter directly to the batch. Read candidates only if you must choose among them.
 Direct known-value edits need no prepared-content review. Use review_prepared_design only when unapplied
 source verification is needed. Use current schemas and real returned IDs; no invented fields or JS callbacks.
 Choose coherent submission sizes within tool budgets. Keep deterministic computation in existing tools.
 You choose visual intent, design parameters and final appearance judgments. Delegate supported projection,
 repetition, transforms, material mapping and mechanical checks to registered tools instead of manually
 expanding values that those tools can derive. Supply the decisions and inputs their actual contracts require.
-Prefer a suitable existing direct tool. When reusable orchestration of available operations would reduce
-repeated manual work, discover the exact dependencies, use submit_tool for a finite recipe and invoke_tool
+Prefer a suitable existing direct tool. Before preparing a stage's inputs, identify its already-decided actions,
+shared parameters and stage context needed for continuation, later edits or recovery, even if later use is uncertain. When actions have known inputs or only need earlier
+outputs, delegate the sequence in one execute_design call with bound outputs where needed.
+A visual judgment ends the sequence when its result determines the next action.
+For decided stages use execute_design stages: prepare, mechanically check/repair when needed, then apply that ready stage and continue without waiting for another model turn. The host overlaps only safe independent preparation.
+Preserve useful portable inputs and outputs with retain in App conversation context for task continuity, not only repeated use; later use need not be known. source:"input" selects authored parameters after that step succeeds.
+Request handles cannot be saved with retain; bind them between steps in the current request. Use guaranteedResultFields for portable results or source:"input" for authored data.
+Later operations consume named values directly; delivery:"status" avoids returning values for transfer.
+Use delivery.fields when a decision needs particular values. Existing output references remain usable.
+For mechanical iteration choose the check, repairs and maxIterations. For reusable workflows use submit_tool for a finite recipe and invoke_tool
 with fresh inputs. Successful execution attempts durable saving for later reuse; inspect the storage outcome.
 A recipe cannot create missing primitive capabilities or make artistic decisions. Use bounded iteration
 only for registered mechanically decidable checks and repairs. Do not build a recipe for every task or
@@ -169,18 +178,14 @@ For prepare_and_apply_design direct execution, request view=usage together with 
 For missing information, exact view=usage supplies complete parameters, results and recovery for tools without inputScopes.
 Select an owner's inputScopes in the same query; exploratory usage is a menu.
 Parameters use standard JSON Schema. Use schemaPaths for missing fields, or full definitions for full contracts;
-full input/output and lifecycle contracts remain required for new recipe composition. Compact menus
+Full input/output and lifecycle contracts are required when authoring a reusable recipe with submit_tool. Compact menus
 retain the qualified recipeDependency route without duplicating its full wrapper contract.
 For missing fields recover those paths; refresh preserves that scope. Give refreshReason when known; restore the full schema
 only when the complete contract is missing. Do not scan the whole catalog on each step.
 Existing targets use registered batch edits with new values. No old snapshot is required unless your
 calculation needs it. read_design_context supports selection, children, known IDs and workspace regions.
 Each result includes a revision-bound snapshotId. Reuse scope=snapshot for later pages;
-delivery=columns returns only requested fields and IDs. For position-dependent fill
-colors, request x or y with delivery=reference, then use map_retained_fills inside
-execute_design_batch with explicit parent-local domain and color stops. The App
-computes aligned new fill patches without sending thousands of rows back to you.
-A stale or evicted reference requires reading the current scope again; do not retry
+delivery=columns returns only requested fields and IDs. A stale or evicted reference requires reading the current scope again; do not retry
 the same stale reference. Release snapshots when they are no longer needed.
 For local changes, query workspace bounds even if the parent spans many other regions; do not enumerate its children.
 Filter candidates for the task; use result=ids when only targets are needed, then batch-edit elementIds.
@@ -190,10 +195,10 @@ Use hierarchy.moveElementsRelative for before/after placement without reading al
 prepare_and_apply_design owns preparation, optional criteria, writing and inspection. Its completedSteps
 and artifactId preserve progress after failure; reuse successful preparation. A rejected draftId and conflict paths
 allow compact repair replacements through the same preparation route without resending unchanged source. Do not replay uncertain writes.
-When several parts are already decided, submit ordered parts in one call: the tool prepares and applies each before the next.
+When several drafts or edits are already decided, submit them in one execute_design call using their known arguments. The parts branch of prepare_and_apply_design is also available after selecting its contract.
 Use pattern/vector-pattern for repetition and backend projection for supplied world geometry. parentPart links an earlier
 part's returned identity. A sequence accepts already-decided parts; it does not require deciding the whole design first.
-On a partial sequence, retain successful part receipts and correct only failed or remaining work using actual parent IDs.
+On a partial sequence, preserve acknowledged successful work and correct only failed or remaining work using actual parent IDs.
 Use inspection=defer when no immediate visual decision is needed, then inspect at the next such boundary.
 Use prepare_design separately when reviewing an unapplied recipe or retaining it for another consumer. Tool schemas and examples
 own geometry, pattern, projection, component, targeting and review formats; use exact admitted inputs.

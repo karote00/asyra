@@ -115,7 +115,7 @@ export const readEvaluationWindow = (
       (!Number.isSafeInteger(reportTimeoutMs) ||
         reportTimeoutMs <= 0 ||
         reportTimeoutMs > 300000)) ||
-    workDeadlineAt > Date.now() + 900000
+    workDeadlineAt > Date.now() + 18 * 60 * 1000
   ) {
     throw new Error('Invalid evaluation window')
   }

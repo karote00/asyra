@@ -1,3 +1,4 @@
+import { readBrowserSnapshot } from './browser-snapshot.mjs'
 /* global document, window, requestAnimationFrame, AbortSignal, fetch, performance, console */
 /** Fixed drawing benchmark followed by the user-authorized report-only turn. */
 import { isDeepStrictEqual } from 'node:util'
@@ -5,7 +6,8 @@ import {
   collectEvidenceStages,
   createReportWindow,
   collectSameThreadReport,
-  createWorkPhaseObserver
+  createWorkPhaseObserver,
+  waitForRecordedReport
 } from './taipei-101-self-report.mjs'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -23,7 +25,8 @@ import {
   readTaipei101Prompt,
   assertTaipei101Submission,
   waitForRecordedDocument,
-  readTaipei101Deadline
+  readTaipei101Deadline,
+  shouldCaptureDrawingDetails
 } from './taipei-101-live-contract.mjs'
 
 const app = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
@@ -59,6 +62,11 @@ const meta = {
   startedAt: new Date().toISOString(),
   url: `${configured.appURL}/?fileId=${id}&aiPerformance=profile`,
   deadlineMs,
+  strictStop: process.env.TAIPEI_101_STRICT_STOP === '1',
+  failurePolicy:
+    process.env.TAIPEI_101_STRICT_STOP === '1'
+      ? 'tool-failures-only'
+      : 'deadline-only',
   viewport: { width: 1920, height: 1080 },
   services,
   errors: [],
@@ -125,27 +133,35 @@ const ready = async (url) => {
 let browserServer, browser, context, page, deadline, workSnapshot
 
 const snapshot = async () =>
-  page.evaluate(async () => {
-    const { core, getActiveAiDrawingPerformanceProfile } =
-      await import('/src/testing/runtime-access.ts')
-    const counts = {}
+  readBrowserSnapshot(
+    page,
+    async () => {
+      const { core, getActiveAiDrawingPerformanceProfile } =
+        await import('/src/testing/runtime-access.ts')
+      const counts = {}
 
-    for (const [id] of core.deps.sceneTree.getAllElements()) {
-      const type = core.getElementData(id)?.type ?? 'unknown'
+      for (const [id] of core.deps.sceneTree.getAllElements()) {
+        const type = core.getElementData(id)?.type ?? 'unknown'
 
-      counts[type] = (counts[type] ?? 0) + 1
+        counts[type] = (counts[type] ?? 0) + 1
+      }
+
+      const profile = getActiveAiDrawingPerformanceProfile()
+
+      return {
+        document: await core.save(),
+        counts,
+        performance: profile?.snapshot(),
+        runtime: profile?.getRuntimeEvidence(),
+        conversation: profile?.readConversationSnapshot()
+      }
+    },
+    (transfer) => {
+      meta.snapshotTransfers ??= []
+      meta.snapshotTransfers.push({ at: Date.now(), ...transfer })
+      save()
     }
-
-    const profile = getActiveAiDrawingPerformanceProfile()
-
-    return {
-      document: await core.save(),
-      counts,
-      performance: profile?.snapshot(),
-      runtime: profile?.getRuntimeEvidence(),
-      conversation: profile?.readConversationSnapshot()
-    }
-  })
+  )
 
 try {
   // Refuse occupied service ports; this recorder only terminates its own processes.
@@ -187,13 +203,27 @@ try {
     headless: true,
     artifactsDir: path.join(directory, 'browser-artifacts')
   })
+
+  const lifecycle = (event, details = {}) => {
+    meta.browserLifecycle ??= []
+    meta.browserLifecycle.push({ event, at: Date.now(), ...details })
+    save()
+  }
+
+  browserServer
+    .process()
+    .on('exit', (code, signal) => lifecycle('process-exit', { code, signal }))
+  browserServer.on('close', () => lifecycle('server-close'))
   browser = await chromium.connect(browserServer.wsEndpoint())
+  browser.on('disconnected', () => lifecycle('disconnected'))
   context = await browser.newContext({
     viewport: meta.viewport,
     recordVideo: { dir: path.join(directory, 'video'), size: meta.viewport },
     deviceScaleFactor: 1
   })
   page = await context.newPage()
+  page.on('crash', () => lifecycle('page-crash'))
+  page.on('close', () => lifecycle('page-close'))
   page.on('pageerror', (error) => {
     meta.errors.push(error.message)
     save()
@@ -304,6 +334,19 @@ try {
   })
   meta.sentAt = Date.now()
   meta.evaluationWindow = createReportWindow(meta.sentAt, deadlineMs)
+  if (meta.strictStop) {
+    const controls = path.join(directory, 'provider-records')
+
+    fs.mkdirSync(controls, { recursive: true })
+    fs.writeFileSync(
+      path.join(controls, 'evaluation-control.json'),
+      JSON.stringify({
+        workDeadlineAt: meta.evaluationWindow.workDeadlineAt,
+        stopOnFailure: true
+      })
+    )
+  }
+
   await page.evaluate((evaluationWindow) => {
     const url = new URL(window.location.href)
 
@@ -324,109 +367,136 @@ try {
     path.join(directory, 'provider-records')
   )
 
-  for (;;) {
-    const state = await page.evaluate(async () => {
-      const { getActiveAiDrawingPerformanceProfile } =
-        await import('/src/testing/runtime-access.ts')
-      const profile = getActiveAiDrawingPerformanceProfile()
+  try {
+    for (;;) {
+      const state = await page.evaluate(async () => {
+        const { getActiveAiDrawingPerformanceProfile } =
+          await import('/src/testing/runtime-access.ts')
+        const profile = getActiveAiDrawingPerformanceProfile()
 
-      let framing
+        let framing
 
-      try {
-        framing = window.fixedDrawingFraming.tick()
-      } catch (error) {
-        window.fixedDrawingFraming.dispose()
-        framing = { status: 'failed', message: String(error) }
+        try {
+          framing = window.fixedDrawingFraming.tick()
+        } catch (error) {
+          window.fixedDrawingFraming.dispose()
+          framing = { status: 'failed', message: String(error) }
+        }
+
+        return {
+          framing,
+          settlement: profile.readLatestTurnSettlement(),
+          rendered: profile.readRenderProjectionElementCount(),
+          first: window.fixedDrawingObservation.firstPaintOpportunityMs,
+          status: document.querySelector('[aria-label="Current activity"]')
+            ?.textContent
+        }
+      })
+
+      if (state.framing.status === 'failed') {
+        meta.evidenceErrors.push({
+          stage: 'process-framing',
+          message: state.framing.message
+        })
       }
 
-      return {
-        framing,
-        settlement: profile.readLatestTurnSettlement(),
-        rendered: profile.readRenderProjectionElementCount(),
-        first: window.fixedDrawingObservation.firstPaintOpportunityMs,
-        status: document.querySelector('[aria-label="Current activity"]')
-          ?.textContent
+      if (
+        state.framing.status === 'fitted' ||
+        (state.framing.status !== lastFramingStatus &&
+          ['paused', 'resumed'].includes(state.framing.status))
+      ) {
+        meta.framing ??= []
+        meta.framing.push({
+          elapsedMs: Date.now() - meta.sentAt,
+          ...state.framing
+        })
       }
-    })
 
-    if (state.framing.status === 'failed') {
-      meta.evidenceErrors.push({
-        stage: 'process-framing',
-        message: state.framing.message
-      })
-    }
+      lastFramingStatus = state.framing.status
 
-    if (
-      state.framing.status === 'fitted' ||
-      (state.framing.status !== lastFramingStatus &&
-        ['paused', 'resumed'].includes(state.framing.status))
-    ) {
-      meta.framing ??= []
-      meta.framing.push({
-        elapsedMs: Date.now() - meta.sentAt,
-        ...state.framing
-      })
-    }
+      if (state.status !== lastStatus) {
+        lastStatus = state.status
+        meta.statuses.push({
+          elapsedMs: Date.now() - meta.sentAt,
+          text: state.status
+        })
+      }
 
-    lastFramingStatus = state.framing.status
-
-    if (state.status !== lastStatus) {
-      lastStatus = state.status
-      meta.statuses.push({
-        elapsedMs: Date.now() - meta.sentAt,
-        text: state.status
-      })
-    }
-
-    if (state.first !== null && meta.firstPaintOpportunityMs === undefined) {
-      meta.firstPaintOpportunityMs = state.first
-      meta.evidenceErrors.push(
-        ...(await collectEvidenceStages([
-          [
-            'first-frame',
-            async () => {
-              await page.screenshot({ path: path.join(directory, 'first.png') })
-            }
-          ]
-        ]))
-      )
-    }
-
-    if (!meta.reportObservedAt) {
-      const reporting = observeWork.poll()
-
-      if (reporting) {
-        meta.reportObservedAt = Date.now()
-        meta.deadline ??= await deadline.finish()
-        save()
+      if (state.first !== null && meta.firstPaintOpportunityMs === undefined) {
+        meta.firstPaintOpportunityMs = state.first
         meta.evidenceErrors.push(
           ...(await collectEvidenceStages([
             [
-              'stop-framing',
-              () => page.evaluate(() => window.fixedDrawingFraming.dispose())
-            ],
-            [
-              'work-snapshot',
+              'first-frame',
               async () => {
-                workSnapshot = await snapshot()
-                fs.writeFileSync(
-                  path.join(directory, 'work-snapshot.json.gz'),
-                  gzipSync(JSON.stringify(workSnapshot))
-                )
+                await page.screenshot({
+                  path: path.join(directory, 'first.png')
+                })
               }
             ]
           ]))
         )
       }
+
+      if (!meta.reportObservedAt) {
+        const reporting = observeWork.poll()
+
+        if (reporting) {
+          meta.reportObservedAt = Date.now()
+          meta.deadline ??= await deadline.finish()
+          save()
+          meta.evidenceErrors.push(
+            ...(await collectEvidenceStages([
+              [
+                'stop-framing',
+                () => page.evaluate(() => window.fixedDrawingFraming.dispose())
+              ],
+              [
+                'work-snapshot',
+                async () => {
+                  workSnapshot = await snapshot()
+                  fs.writeFileSync(
+                    path.join(directory, 'work-snapshot.json.gz'),
+                    gzipSync(JSON.stringify(workSnapshot))
+                  )
+                }
+              ]
+            ]))
+          )
+        }
+      }
+
+      if (state.settlement) {
+        meta.settlement = state.settlement
+        break
+      }
+
+      save()
+      await sleep(1000)
+    }
+  } catch (error) {
+    const workRecord = observeWork.poll()
+
+    if (!workRecord) {
+      throw error
     }
 
-    if (state.settlement) {
-      meta.settlement = state.settlement
-      break
-    }
-
+    meta.evidenceErrors.push({ stage: 'report-browser', error: error.message })
+    meta.deadline ??= await deadline.finish()
     save()
-    await sleep(1000)
+    await waitForRecordedReport(
+      path.join(directory, 'provider-records'),
+      () => {
+        try {
+          process.kill(vite.pid, 0)
+
+          return true
+        } catch {
+          return false
+        }
+      },
+      workRecord.requestId
+    )
   }
 
   meta.elapsedMs = Date.now() - meta.sentAt
@@ -487,9 +557,35 @@ try {
       workNativeTurnId: report.work.nativeTurnId,
       workStatus: report.work.status,
       stoppedAtDeadline: report.work.stoppedAtDeadline,
+      stopReason: report.work.stopReason ?? null,
       workElapsedMs: workEnd?.elapsedMs,
       reportElapsedMs: reportEnd?.elapsedMs - workEnd?.elapsedMs
     }
+    if (meta.strictStop) {
+      if (
+        !records.some(
+          (record) =>
+            record.stage === 'host_observation' &&
+            record.evidence?.callId === 'evaluation-control-armed'
+        )
+      ) {
+        meta.evidenceErrors.push({
+          stage: 'strict-policy',
+          error: 'Strict evaluation control was not armed'
+        })
+      }
+
+      if (
+        report.work.stopReason &&
+        report.work.stopReason.kind !== 'work-deadline'
+      ) {
+        meta.strictFailure = report.work.stopReason
+        meta.failure =
+          'Strict drawing attempt stopped; original-session report retained'
+        process.exitCode = 1
+      }
+    }
+
     fs.writeFileSync(path.join(directory, 'self-report.txt'), report.text)
     fs.writeFileSync(
       path.join(directory, 'self-report-evidence.json'),
@@ -586,12 +682,22 @@ try {
     await page.screenshot({ path: path.join(directory, 'final.png') })
   })
   meta.detailViews = []
-  for (const [name, fraction, nativeScale] of [
-    ['spire', 0.08, false],
-    ['tiers', 0.5, false],
-    ['base', 0.92, false],
-    ['native-detail', 0.5, true]
-  ]) {
+  const captureDetails = shouldCaptureDrawingDetails(final?.counts)
+
+  if (!captureDetails) {
+    meta.detailCapture = { status: 'not-applicable', reason: 'empty-document' }
+  }
+
+  const detailTargets = captureDetails
+    ? [
+        ['spire', 0.08, false],
+        ['tiers', 0.5, false],
+        ['base', 0.92, false],
+        ['native-detail', 0.5, true]
+      ]
+    : []
+
+  for (const [name, fraction, nativeScale] of detailTargets) {
     await collect(`detail-${name}`, async () => {
       const view = await page.evaluate(
         async ({ fraction, nativeScale }) => {

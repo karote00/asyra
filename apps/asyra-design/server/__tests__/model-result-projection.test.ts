@@ -3,6 +3,7 @@ import {
   modelToolResultSchemas,
   projectToolDelivery,
   projectToolResultFields,
+  toolDeliveryFailure,
   toolInternalResult,
   toolResultObject
 } from '../../src/ai/tool-contract'
@@ -79,7 +80,11 @@ it('does not publish a declared internal-only envelope or its required keys', ()
 
   expect(JSON.stringify(published)).not.toContain('work')
   expect(
-    operationContractIssue({}, published, { stage: 'output' })
+    operationContractIssue(
+      { toolOutcome: { status: 'success', settlement: 'completed' } },
+      published,
+      { stage: 'output' }
+    )
   ).toBeUndefined()
 })
 
@@ -133,7 +138,10 @@ it.each(['partial', 'failed'])(
       })
       expect(
         operationContractIssue(
-          projected,
+          {
+            ...(projected as object),
+            toolOutcome: { status, settlement: 'partial' }
+          },
           modelToolResultSchemas(contract).partialOutputSchema,
           { stage: 'output' }
         )
@@ -142,3 +150,30 @@ it.each(['partial', 'failed'])(
     }
   }
 )
+
+it('preserves local result references inside acknowledged delivery failure evidence', () => {
+  const contract = {
+    outputSchema: {
+      ...toolResultObject({ id: { $ref: '#/$defs/identity' } }),
+      $defs: { identity: { type: 'string' } }
+    }
+  }
+  const original = {
+    id: 'acknowledged',
+    toolOutcome: { status: 'success', settlement: 'completed' }
+  }
+  const failure = toolDeliveryFailure(
+    original,
+    'Delivery interrupted',
+    contract
+  )
+
+  expect(failure.executionResult).toEqual(original)
+  expect(
+    operationContractIssue(
+      failure,
+      modelToolResultSchemas(contract).partialOutputSchema,
+      { stage: 'output' }
+    )
+  ).toBeUndefined()
+})

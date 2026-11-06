@@ -1,3 +1,11 @@
+import type { LocalToolImage } from './local-tool-media'
+import type { ExchangeConversationResults } from '../src/ai/conversation-results'
+import {
+  resultDelivery,
+  readNamedFields,
+  resolveConversationInputs,
+  type DeliveryRequest
+} from './local-result-delivery'
 import { runtimeOperationSchema } from './local-operation-batch'
 import { AsyncLocalStorage } from 'node:async_hooks'
 import {
@@ -5,25 +13,38 @@ import {
   createAiInvoker,
   createAiToolContract,
   selectAiToolResultSchema,
+  registeredRecipeOutputAt,
   embedAiToolSchema,
   type AiInvocation,
   type AiInvocationContext,
   type AiInvocationEvent,
   type AiRecipeInvocationEvent,
   type AiRecipeLimits,
+  type AiRecipeBinding,
   type AiToolStore,
   type AiJsonValue,
   type AiToolOutcome
 } from '@asyra/ai-agent-runtime'
-import { createLocalToolLeases } from './local-tool-leases'
+import { createLocalToolLeases, localToolReferences } from './local-tool-leases'
 import { createLocalToolLibrary } from './local-tool-library'
-import { createLocalToolLibraryTools } from './local-tool-library-tools'
+import {
+  operationGroupName,
+  createDesignSequencePlanner,
+  designStageOutcomes,
+  sequenceDefinition,
+  resultReceiptSchema
+} from './local-design-sequence'
+import {
+  createLocalToolLibraryTools,
+  registeredToolInvocationSchemas
+} from './local-tool-library-tools'
 import {
   createLocalToolScheduler,
-  type LocalToolAccess
+  LocalToolAccess
 } from './local-tool-scheduler'
 import {
   invokeLocalTool,
+  LocalToolInputError,
   localToolFailureReply,
   localToolFailureSchema,
   localToolErrorMessage,
@@ -50,16 +71,27 @@ export interface LocalToolGroup {
   readonly name: string
   readonly description: string
   readonly owner: LocalToolOwner & {
+    bindScheduledArtifact?(
+      name: string,
+      args: Record<string, unknown>,
+      target: unknown,
+      index: number
+    ): Record<string, unknown>
+    validateScheduledOperations?(operations: unknown): void
+    canOverlapPreparation?(name: string, input: unknown): boolean
     readonly definitions: readonly (LocalToolDefinition & {
       readonly executionAccess?: LocalToolAccess
     })[]
   }
 }
-type Reply = Awaited<ReturnType<typeof invokeLocalTool>>
+type Reply = Awaited<ReturnType<typeof invokeLocalTool>> & {
+  media?: LocalToolImage[]
+}
 
 /** One request host: registered metadata, guarded leaves and actual store ownership. */
 export const createLocalToolHost = (options: {
   requestId: string
+  resultContext?: ExchangeConversationResults
   signal: AbortSignal
   store: AiToolStore
   capacity: number
@@ -82,6 +114,7 @@ export const createLocalToolHost = (options: {
   ) => void | Promise<void>
 }) => {
   const context = new AsyncLocalStorage<AiInvocationContext>()
+  const selectedImages = new WeakMap<AiInvocationContext, LocalToolImage[]>()
   const registry = createAiActionRegistry()
   const leases = createLocalToolLeases({
     requestId: options.requestId,
@@ -131,20 +164,24 @@ export const createLocalToolHost = (options: {
       throw new Error('No registered native owner for this invocation')
     }
 
-    return schedule(binding.access, () =>
-      context.run(call, async () => {
-        const work = () =>
-          invokeLocalTool(
-            binding.owner,
-            binding.definition,
-            call.input,
-            call.signal ?? options.signal,
-            options.executionEvidence,
-            (phase) => options.onPhase?.(call, phase)
-          )
+    return schedule(
+      binding.owner.canOverlapPreparation?.(binding.definition.name, call.input)
+        ? LocalToolAccess.ISOLATED
+        : binding.access,
+      () =>
+        context.run(call, async () => {
+          const work = () =>
+            invokeLocalTool(
+              binding.owner,
+              binding.definition,
+              call.input,
+              call.signal ?? options.signal,
+              options.executionEvidence,
+              (phase) => options.onPhase?.(call, phase)
+            )
 
-        return options.execute ? options.execute(call, work) : work()
-      })
+          return options.execute ? options.execute(call, work) : work()
+        })
     )
   }
 
@@ -177,14 +214,15 @@ export const createLocalToolHost = (options: {
                 key,
                 runtimeOperationSchema(
                   hostToolResultSchema(
-                    definition[key as keyof typeof definition]
+                    definition[key as keyof typeof definition],
+                    true
                   )
                 )
               ]
             )
           )
         }),
-        inputSchema: runtimeOperationSchema(definition.inputSchema),
+        inputSchema: runtimeOperationSchema(definition.inputSchema, true),
         name,
         composition: source.composition ?? 'control-plane',
 
@@ -206,8 +244,47 @@ export const createLocalToolHost = (options: {
     }
   }
 
+  const operationGroup = groups.find(
+    (group) => group.name === 'design_operations'
+  )
+  const operationOwner = operationGroup?.owner
+  const batch = operationOwner?.definitions.find(
+    (d) => d.name === AiDesignToolIds.EXECUTE_DESIGN
+  )
+
+  if (batch && operationOwner && operationGroup) {
+    register({
+      name: 'host_operations',
+      description: 'Internal canvas dispatcher',
+      owner: {
+        ...operationOwner,
+        definitions: [{ ...batch, composition: 'allowed' }]
+      }
+    })
+    groups[groups.indexOf(operationGroup)] = {
+      ...operationGroup,
+      owner: {
+        ...operationOwner,
+        definitions: operationOwner.definitions.filter((d) => d !== batch)
+      }
+    }
+  }
+
   groups.forEach(register)
   const library = createLocalToolLibrary({
+    privateDependency: operationGroupName,
+
+    canOverlapPreparation: (definition, input) => {
+      const binding = bindings.get(definition.name)
+
+      return (
+        binding?.owner.canOverlapPreparation?.(
+          binding.definition.name,
+          input
+        ) === true
+      )
+    },
+
     requestId: options.requestId,
     registry,
     store: options.store,
@@ -221,7 +298,14 @@ export const createLocalToolHost = (options: {
       const reply = await leaf(call)
       const value = JSON.parse(reply.text)
 
-      return { ...value.toolOutcome, value }
+      return {
+        ...value.toolOutcome,
+        issues:
+          value.toolOutcome.issues?.map(
+            (issue: { message: string }) => issue.message
+          ) ?? [],
+        value
+      }
     },
 
     observe: options.observe,
@@ -243,9 +327,707 @@ export const createLocalToolHost = (options: {
     }),
     (name, input, value) => project(name, input, value)
   )
+  const operationNames = new Map<string, string[]>()
+
+  for (const name of bindings.keys()) {
+    if (name === operationGroupName) {
+      continue
+    }
+
+    const short = name.slice(name.lastIndexOf('.') + 1)
+
+    operationNames.set(short, [...(operationNames.get(short) ?? []), name])
+  }
+
+  const resolveStep = (name: string) => {
+    if (name === operationGroupName) {
+      throw new LocalToolInputError('Private dispatcher')
+    }
+
+    const names = operationNames.get(name)
+
+    if (names && names.length > 1) {
+      throw new LocalToolInputError('Ambiguous operation: ' + name)
+    }
+
+    return library.describe(names?.[0] ?? name)
+  }
+
+  const sequence = sequenceDefinition(batch)
+
+  const planSequence = createDesignSequencePlanner(
+    batch,
+    resolveStep,
+    () => library.describe(operationGroupName),
+    operationOwner?.validateScheduledOperations,
+    operationOwner?.bindScheduledArtifact
+  )
+
+  const prepare = (args: unknown) => {
+    if ((args as DeliveryRequest).retain && !options.resultContext) {
+      throw new LocalToolInputError('No active App conversation context')
+    }
+
+    const prepared = planSequence(args as Record<string, unknown>)
+
+    if (prepared.batch) {
+      return { batch: prepared.batch }
+    }
+
+    const admitted = library.admitInline(prepared.proposal, 'sequence')
+
+    if (!admitted.ok) {
+      throw new LocalToolInputError(
+        admitted.issues.map((i) => i.path + ' ' + i.actual).join('; ')
+      )
+    }
+
+    const recipe = admitted.value.recipe
+
+    if (recipe.output.kind === 'step' && recipe.output.path) {
+      const output = recipe.output
+      const loop = recipe.iteration
+      const checked =
+        loop?.id === output.step &&
+        (output.path === '/result' || output.path.startsWith('/result/'))
+      const step = checked
+        ? loop?.check
+        : recipe.steps.find((s) => s.id === output.step)
+      const leaf = step && bindings.get(step.tool)
+
+      if (leaf) {
+        const path = checked ? output.path.slice('/result'.length) : output.path
+
+        registeredRecipeOutputAt(
+          modelToolResultSchemas(leaf.definition).outputSchema,
+          path
+        )
+      }
+    }
+
+    const requested = (args as DeliveryRequest).delivery
+
+    if (typeof requested === 'object') {
+      const exports: Record<string, AiRecipeBinding> = {}
+
+      for (const [name, selector] of Object.entries(requested.fields)) {
+        if (selector.source === 'input') {
+          continue
+        }
+
+        let source: AiRecipeBinding | undefined
+
+        if (selector.step) {
+          source = { kind: 'step', step: selector.step, path: selector.path }
+        } else if (recipe.output.kind === 'step') {
+          source = {
+            ...recipe.output,
+            path: recipe.output.path + selector.path
+          }
+        }
+
+        if (!source) {
+          throw new LocalToolInputError(
+            'Selected result requires a step output'
+          )
+        }
+
+        if (source.kind === 'step') {
+          const step = recipe.steps.find((entry) => entry.id === source.step)
+          const owner =
+            step &&
+            (bindings.get(step.tool)?.definition ?? library.describe(step.tool))
+
+          if (owner) {
+            try {
+              registeredRecipeOutputAt(
+                modelToolResultSchemas(owner).outputSchema,
+                source.path
+              )
+            } catch (error) {
+              throw new LocalToolInputError(
+                'delivery.fields.' +
+                  name +
+                  ' (step ' +
+                  source.step +
+                  ', path ' +
+                  source.path +
+                  '): ' +
+                  localToolErrorMessage(error)
+              )
+            }
+          }
+        }
+
+        exports[name] = source
+      }
+
+      if (Object.keys(exports).length) {
+        const exported = library.admitInline(
+          {
+            ...prepared.proposal,
+            output: {
+              kind: 'object',
+              fields: {
+                value: recipe.output,
+                fields: { kind: 'object', fields: exports }
+              }
+            }
+          },
+          'sequence'
+        )
+
+        if (!exported.ok) {
+          throw new LocalToolInputError(
+            exported.issues.map((i) => i.path + ' ' + i.actual).join('; ')
+          )
+        }
+
+        return { recipe: exported.value, deliveryEnvelope: true }
+      }
+    }
+
+    return { recipe: admitted.value }
+  }
+
+  const preparedCalls = new WeakMap<object, ReturnType<typeof prepare>>()
+
+  const preparedFor = (args: unknown) => {
+    const call = context.getStore()
+    const previous = call && preparedCalls.get(call)
+
+    if (previous) {
+      return previous
+    }
+
+    let plan: ReturnType<typeof prepare>
+
+    try {
+      plan = prepare(args)
+    } catch (error) {
+      if (error instanceof LocalToolInputError) {
+        throw error
+      }
+
+      throw new LocalToolInputError(localToolErrorMessage(error))
+    }
+
+    if (call) {
+      preparedCalls.set(call, plan)
+    }
+
+    return plan
+  }
+
+  const sequenceOwner = {
+    definitions: [
+      { ...sequence, executionAccess: LocalToolAccess.COORDINATOR }
+    ],
+
+    invocationSchemas(_name: string, args: unknown) {
+      try {
+        if (
+          !(args as Record<string, unknown>)?.operations &&
+          !(args as Record<string, unknown>)?.stages
+        ) {
+          return {
+            inputSchema: sequence.inputSchema,
+            outputSchema: resultReceiptSchema
+          }
+        }
+
+        const plan = preparedFor(args)
+
+        if (
+          (args as DeliveryRequest).retain ||
+          (args as DeliveryRequest).delivery ||
+          (args as Record<string, unknown>).stages
+        ) {
+          return {
+            inputSchema:
+              plan.batch && batch ? batch.inputSchema : sequence.inputSchema,
+            ...(() => {
+              const selected =
+                typeof (args as DeliveryRequest).delivery === 'object'
+                  ? (
+                      (args as DeliveryRequest).delivery as {
+                        fields: Record<string, unknown>
+                      }
+                    ).fields
+                  : undefined
+              const output = plan.recipe?.recipe.output
+              const fallback =
+                plan.deliveryEnvelope && output?.kind === 'object'
+                  ? output.fields.value
+                  : output
+              const properties = Object.fromEntries(
+                Object.entries(selected ?? {}).map(([name, raw]) => {
+                  const selector = raw as {
+                    path: string
+                    step?: string
+                    source?: string
+                  }
+                  const selectedStep =
+                    selector.step ??
+                    (fallback?.kind === 'step' ? fallback.step : undefined)
+                  const step = plan.recipe?.recipe.steps.find(
+                    (s) => s.id === selectedStep
+                  )
+                  let owner = plan.batch ? batch : undefined
+
+                  if (step) {
+                    owner =
+                      bindings.get(step.tool)?.definition ??
+                      library.describe(step.tool)
+                  }
+
+                  const basePath =
+                    !selector.step && fallback?.kind === 'step'
+                      ? fallback.path
+                      : ''
+                  const path = basePath + selector.path
+                  const schema = owner
+                    ? registeredRecipeOutputAt(
+                        selector.source === 'input'
+                          ? registeredRecipeOutputAt(
+                              owner.inputSchema,
+                              planSequence.publicInputSchemaPath(
+                                step?.tool ?? operationGroupName,
+                                selectedStep
+                              )
+                            )
+                          : modelToolResultSchemas(owner).outputSchema,
+                        path
+                      )
+                    : {}
+
+                  return [
+                    name,
+                    embedAiToolSchema(
+                      schema as AiJsonValue,
+                      '#/properties/fields/properties/' +
+                        name.replace(/~/g, '~0').replace(/\//g, '~1')
+                    )
+                  ]
+                })
+              )
+              const publicFields = selected
+                ? { type: 'object', properties, additionalProperties: false }
+                : undefined
+              const failures = plan.recipe
+                ? registeredToolInvocationSchemas(
+                    plan.recipe.contract,
+                    plan.recipe.contract,
+                    library.describeRecovery(
+                      plan.recipe.contract.name,
+                      plan.recipe.contract.revision,
+                      plan.recipe.dependencies
+                    )
+                  )
+                : batch && modelToolResultSchemas(batch)
+              const schema = {
+                ...resultReceiptSchema,
+                properties: {
+                  ...resultReceiptSchema.properties,
+                  ...(publicFields ? { fields: publicFields } : {}),
+                  failure: {
+                    anyOf: [
+                      failures?.partialOutputSchema,
+                      failures?.recoveryOutputSchema,
+                      localToolFailureSchema
+                    ]
+                      .filter((value) => value !== undefined)
+                      .map((value, index) =>
+                        embedAiToolSchema(
+                          value as AiJsonValue,
+                          '#/properties/failure/anyOf/' + index
+                        )
+                      )
+                  }
+                }
+              }
+
+              return {
+                outputSchema: schema,
+                partialOutputSchema: schema,
+                recoveryOutputSchema: schema
+              }
+            })()
+          }
+        }
+
+        if (!plan.recipe) {
+          return batch
+        }
+
+        const { contract, dependencies } = plan.recipe
+
+        return {
+          ...registeredToolInvocationSchemas(
+            contract,
+            contract,
+            library.describeRecovery(
+              contract.name,
+              contract.revision,
+              dependencies
+            )
+          ),
+          inputSchema: sequence.inputSchema
+        }
+      } catch {
+        return undefined
+      }
+    },
+
+    async call(_name: string, args: unknown, signal: AbortSignal) {
+      if (
+        !(args as Record<string, unknown>).operations &&
+        !(args as Record<string, unknown>).stages
+      ) {
+        try {
+          return JSON.stringify(
+            await readNamedFields(args, options.resultContext)
+          )
+        } catch (error) {
+          throw new LocalToolInputError(localToolErrorMessage(error))
+        }
+      }
+
+      const plan = preparedFor(args)
+      const call = context.getStore()
+
+      const request: DeliveryRequest = (args as Record<string, unknown>).stages
+        ? { delivery: 'status', ...(args as DeliveryRequest) }
+        : (args as DeliveryRequest)
+      const delivery =
+        request.delivery || request.retain
+          ? resultDelivery(request, options.resultContext, (images, name) => {
+              if (call) {
+                const prefix =
+                  '/fields/' + name.replace(/~/g, '~0').replace(/\//g, '~1')
+                const selected = (selectedImages.get(call) ?? []).filter(
+                  (image) =>
+                    image.path !== prefix &&
+                    !image.path.startsWith(prefix + '/')
+                )
+
+                selected.push(...images)
+                selectedImages.set(call, selected)
+              }
+            })
+          : undefined
+
+      const capture = async (
+        step: string | undefined,
+        name: string,
+        input: unknown,
+        value: unknown
+      ) => {
+        if (!delivery?.selects(step)) {
+          return
+        }
+
+        try {
+          const descriptor =
+            bindings.get(name)?.definition ?? library.describe(name)
+
+          if (!descriptor) {
+            throw Error('Missing result owner')
+          }
+
+          const blocked = new Set<unknown>()
+
+          if (delivery.retains(step)) {
+            localToolReferences(
+              value,
+              hostToolResultSchema(descriptor.outputSchema),
+              blocked
+            )
+          }
+
+          const blockedInput = new Set<unknown>()
+
+          localToolReferences(input, descriptor.inputSchema, blockedInput)
+          await delivery.capture(step, project(name, input, value), blocked, {
+            value: planSequence.publicInput(name, input, step),
+            blocked: blockedInput
+          })
+        } catch (error) {
+          delivery.failed(localToolErrorMessage(error))
+        }
+      }
+
+      if (plan.batch && batch && operationOwner) {
+        const reply = await schedule(batch.executionAccess, () =>
+          invokeLocalTool(
+            operationOwner,
+            batch,
+            plan.batch,
+            signal,
+            options.executionEvidence
+          )
+        )
+
+        if (!delivery) {
+          return reply.text
+        }
+
+        const value = JSON.parse(reply.text)
+
+        if (value.toolOutcome.status === 'success') {
+          await capture(undefined, operationGroupName, plan.batch, value)
+        }
+
+        return JSON.stringify({
+          ...(await delivery.finish(
+            value.toolOutcome,
+            (value.actionResults ?? []).map(
+              (a: { actionName: string }) => a.actionName
+            ),
+            (value.toolOutcome.issues ?? []).map(
+              (i: { message: string }) => i.message
+            )
+          )),
+          ...(value.toolOutcome.status !== 'success'
+            ? { failure: project(operationGroupName, plan.batch, value) }
+            : {})
+        })
+      }
+
+      if (!plan.recipe) {
+        throw new LocalToolInputError('Missing sequence')
+      }
+
+      let report = await library.runInline(
+        plan.recipe,
+        {
+          input: null,
+          parentCallId: call?.callId,
+          signal,
+          actor: call?.actor,
+          purpose: call?.purpose,
+          purposeSource: call?.purposeSource
+        },
+        delivery
+          ? (step, input, value) => capture(step.id, step.tool, input, value)
+          : undefined
+      )
+
+      if (!delivery) {
+        return JSON.stringify(report)
+      }
+
+      if (plan.deliveryEnvelope && report.execution.status === 'success') {
+        report = {
+          ...report,
+          execution: {
+            ...report.execution,
+            value: (report.execution.value as { value: AiJsonValue }).value
+          }
+        }
+      }
+
+      if (
+        report.execution.status === 'success' &&
+        delivery.selects(undefined)
+      ) {
+        try {
+          const view = sequenceOwner.projectModelResult(
+            '',
+            args,
+            report
+          ) as typeof report
+          const blocked = new Set<unknown>()
+
+          if (delivery.retains(undefined)) {
+            localToolReferences(
+              report.execution.value,
+              plan.deliveryEnvelope
+                ? registeredRecipeOutputAt(
+                    plan.recipe.contract.outputSchema,
+                    '/value'
+                  )
+                : plan.recipe.contract.outputSchema,
+              blocked
+            )
+          }
+
+          await delivery.capture(undefined, view.execution.value, blocked)
+        } catch (error) {
+          delivery.failed(localToolErrorMessage(error))
+        }
+      }
+
+      return JSON.stringify({
+        ...(await delivery.finish(
+          report.execution,
+          report.execution.calls
+            .filter((c) => c.status === 'success')
+            .map((c) => ('stepId' in c ? String(c.stepId) : c.name)),
+          [...report.execution.issues],
+          report.execution.calls
+            .filter((c) => c.status !== 'success' && 'stepId' in c)
+            .map((c) => String((c as { stepId?: string }).stepId))
+        )),
+        ...(report.execution.status !== 'success'
+          ? { failure: sequenceOwner.projectModelResult('', args, report) }
+          : {}),
+        ...((args as Record<string, unknown>).stages
+          ? {
+              stages: designStageOutcomes(
+                args as Record<string, unknown>,
+                report.execution.calls
+              )
+            }
+          : {})
+      })
+    },
+
+    resultOutcome(_name: string, value: unknown) {
+      if (
+        value &&
+        typeof value === 'object' &&
+        'saved' in value &&
+        'toolOutcome' in value
+      ) {
+        return value.toolOutcome as ReturnType<typeof localToolOutcome>
+      }
+
+      if (value && typeof value === 'object' && 'execution' in value) {
+        return controls.resultOutcome('', value)
+      }
+
+      return localToolOutcome(value as Record<string, unknown>)
+    },
+
+    projectModelResult(_name: string, args: unknown, value: unknown) {
+      if (value && typeof value === 'object' && 'saved' in value) {
+        return value
+      }
+
+      if (!value || typeof value !== 'object' || !('execution' in value)) {
+        return project(operationGroupName, args, value)
+      }
+
+      const receipt = value.execution as {
+        calls?: { name: string; stepId?: string }[]
+        value?: unknown
+        recovery?: { name: string; value?: unknown }[]
+      }
+      const request = args as {
+        operations?: { name: string; id?: string }[]
+        output?: { step: string; path: string }
+        iteration?: { id: string; check?: { id?: string } }
+        stages?: {
+          id: string
+          apply: { id?: string }[]
+          iteration?: { id: string; check?: { id?: string } }
+        }[]
+      }
+      const selected = request?.output
+      const lastStage = request.stages?.at(-1)
+      const loop =
+        request?.iteration ??
+        request.stages?.find((stage) => stage.iteration?.id === selected?.step)
+          ?.iteration
+      const iterationResult =
+        loop &&
+        (!selected ||
+          (selected.step === loop.id &&
+            (selected.path === '/result' ||
+              selected.path.startsWith('/result/'))))
+      const stepId = iterationResult
+        ? (loop.check?.id ?? loop.id + '-check')
+        : (selected?.step ??
+          (lastStage
+            ? (lastStage.apply.at(-1)?.id ??
+              lastStage.id + '-apply-' + lastStage.apply.length)
+            : undefined) ??
+          request.operations?.at(-1)?.id ??
+          'step-' + request.operations?.length)
+      const name = receipt.calls?.find((c) => c.stepId === stepId)?.name
+      const path = iterationResult
+        ? (selected?.path.slice('/result'.length) ?? '')
+        : selected?.path
+      const descriptor =
+        name && (bindings.get(name)?.definition ?? library.describe(name))
+      const publicField =
+        path && descriptor
+          ? registeredRecipeOutputAt(
+              hostToolResultSchema(descriptor.outputSchema),
+              path
+            )
+          : undefined
+      const projectFinal = name && !path && receipt.value !== undefined
+      let finalValue = receipt.value
+
+      if (projectFinal) {
+        finalValue = project(name, undefined, receipt.value)
+      } else if (publicField) {
+        finalValue = projectToolResultFields(receipt.value, publicField)
+      }
+
+      const incomplete =
+        projectFinal &&
+        finalValue &&
+        typeof finalValue === 'object' &&
+        'toolOutcome' in finalValue
+          ? localToolOutcome(finalValue as Record<string, unknown>)
+          : undefined
+
+      return {
+        ...value,
+        ...(incomplete && incomplete.status !== 'success'
+          ? {
+              toolOutcome: {
+                ...incomplete,
+                settlement: (value.execution as { settlement: string })
+                  .settlement
+              }
+            }
+          : {}),
+        execution: {
+          ...receipt,
+          ...(receipt.value !== undefined ? { value: finalValue } : {}),
+          ...(receipt.recovery
+            ? {
+                recovery: receipt.recovery.map((r) => ({
+                  ...r,
+                  value: project(r.name, undefined, r.value)
+                }))
+              }
+            : {})
+        }
+      }
+    }
+  }
+  const publicGroup = {
+    name: 'design_operations',
+    description: 'Execute decided operations in one host call.',
+    owner: sequenceOwner
+  }
+
+  register(publicGroup)
+  // Provider groups dispatch through host.invoke; retain the public namespace only once.
+  const groupIndex = groups.findIndex((g) => g.name === publicGroup.name)
+
+  if (groupIndex < 0) {
+    groups.push(publicGroup)
+  } else {
+    const group = groups[groupIndex]
+
+    groups[groupIndex] = {
+      ...group,
+      owner: {
+        ...group.owner,
+        definitions: [...group.owner.definitions, ...sequenceOwner.definitions]
+      }
+    }
+  }
+
   const controlGroup = {
     name: 'tool_library',
-    description: 'Author, invoke and manage registered reusable tools.',
+    description: 'Author, invoke and manage reusable tools.',
     owner: controls
   }
 
@@ -275,9 +1057,8 @@ export const createLocalToolHost = (options: {
         return leaf(call)
       }
 
-      const projection = binding.owner.invocationSchemas?.(
-        binding.definition.name,
-        call.input
+      const projection = context.run(call, () =>
+        binding.owner.invocationSchemas?.(binding.definition.name, call.input)
       )
       const schemas = projection ?? binding.definition
       let opened = false
@@ -367,6 +1148,26 @@ export const createLocalToolHost = (options: {
         throw new Error('Native invocation did not settle')
       }
 
+      const media = selectedImages.get(call)
+
+      if (media?.length) {
+        if (output === reply) {
+          return { ...output, media }
+        }
+
+        const failure = JSON.parse(output.text)
+
+        if (failure.executionResult) {
+          return {
+            ...output,
+            media: media.map((image) => ({
+              ...image,
+              path: '/executionResult' + image.path
+            }))
+          }
+        }
+      }
+
       return output
     }
   })
@@ -401,7 +1202,20 @@ export const createLocalToolHost = (options: {
         throw new Error('Missing registered result contract')
       }
 
-      const schemas = modelToolResultSchemas(contract)
+      // Selected-result envelopes need their argument-specific failure contract.
+      // Other owners retain their established model projection schemas.
+      const invocation =
+        input === undefined ||
+        binding.owner !== sequenceOwner ||
+        !value ||
+        typeof value !== 'object' ||
+        !('saved' in value)
+          ? undefined
+          : binding.owner.invocationSchemas?.(binding.definition.name, input)
+      const activeContract = invocation
+        ? { ...contract, ...invocation }
+        : contract
+      const schemas = modelToolResultSchemas(activeContract)
       const projectionSchema = {
         anyOf: [
           schemas.outputSchema,
@@ -445,8 +1259,10 @@ export const createLocalToolHost = (options: {
 
           // Cleanup can fail after a valid owner result was retained. Project that
           // result through its own contract, preserving the cleanup failure outside.
-          // Invalid/transport evidence remains with its existing failure owner.
+          // Raw browser prefixes have no host acknowledgement yet and remain
+          // with the operation failure projector, not this native egress boundary.
           if (
+            'toolOutcome' in failure.executionResult &&
             !operationContractIssue(failure.executionResult, ownerResults, {
               stage: 'output'
             })
@@ -507,12 +1323,12 @@ export const createLocalToolHost = (options: {
         anyOf: [
           projectionSchema,
           ...[
-            contract.outputSchema,
-            contract.partialOutputSchema,
-            contract.recoveryOutputSchema
+            activeContract.outputSchema,
+            activeContract.partialOutputSchema,
+            activeContract.recoveryOutputSchema
           ]
             .filter((schema) => schema !== undefined)
-            .map(hostToolResultSchema)
+            .map((schema) => hostToolResultSchema(schema))
         ].map((schema, index) =>
           embedAiToolSchema(schema as AiJsonValue, `#/anyOf/${index}`)
         )
@@ -540,6 +1356,92 @@ export const createLocalToolHost = (options: {
 
   function invoke(call: AiInvocation, internal = false): Promise<Reply> {
     return track(async () => {
+      if (!internal && call.name === operationGroupName) {
+        return localToolFailureReply(
+          'Private dispatch is unavailable.',
+          'UNKNOWN_TOOL',
+          { settlement: 'not-started' }
+        )
+      }
+
+      if (
+        !internal &&
+        call.name ===
+          'design_workflow.' + AiDesignToolIds.PREPARE_AND_APPLY_DESIGN &&
+        call.input &&
+        typeof call.input === 'object' &&
+        ('retain' in call.input || 'delivery' in call.input)
+      ) {
+        const definition = bindings.get(call.name)?.definition
+        const issue =
+          definition && operationInputIssue(call.input, definition.inputSchema)
+
+        if (!definition || issue) {
+          return localToolFailureReply(
+            issue ?? 'Missing drawing owner',
+            'PREPARATION_REJECTED',
+            { settlement: 'not-started' }
+          )
+        }
+
+        const { retain, delivery, ...arguments_ } = call.input as Record<
+          string,
+          unknown
+        > &
+          DeliveryRequest
+
+        const selections = (value: DeliveryRequest['retain']) =>
+          value &&
+          Object.fromEntries(
+            Object.entries(value).map(([key, selector]) => [
+              key,
+              { ...selector, step: 'draw' }
+            ])
+          )
+
+        call = {
+          ...call,
+          name: 'design_operations.' + AiDesignToolIds.EXECUTE_DESIGN,
+          input: {
+            operations: [
+              { id: 'draw', name: call.name, arguments: arguments_ }
+            ],
+            ...(retain ? { retain: selections(retain) } : {}),
+            ...(delivery
+              ? {
+                  delivery:
+                    typeof delivery === 'object'
+                      ? { fields: selections(delivery.fields) }
+                      : delivery
+                }
+              : {})
+          }
+        }
+      }
+
+      if (
+        call.name === 'design_operations.' + AiDesignToolIds.EXECUTE_DESIGN &&
+        call.input &&
+        typeof call.input === 'object'
+      ) {
+        try {
+          call = {
+            ...call,
+            input: await resolveConversationInputs(
+              call.input as Record<string, unknown>,
+              options.resultContext,
+              planSequence.authoredInput
+            )
+          }
+        } catch (error) {
+          return localToolFailureReply(
+            localToolErrorMessage(error),
+            'RESULT_CONTEXT_UNAVAILABLE',
+            { settlement: 'not-started' }
+          )
+        }
+      }
+
       const reply = await native.invoke({
         ...call,
         signal: call.signal ?? options.signal
@@ -567,6 +1469,7 @@ export const createLocalToolHost = (options: {
           : localToolOutcome(projected)
 
       return {
+        ...reply,
         success: reply.success && outcome.status === 'success',
         text: JSON.stringify(projected)
       }
@@ -581,59 +1484,69 @@ export const createLocalToolHost = (options: {
     },
 
     definitions() {
-      return library.list().map((definition) => {
-        const binding = bindings.get(definition.name)
+      return library
+        .list()
+        .filter((definition) => definition.name !== operationGroupName)
+        .map((definition) => {
+          const binding = bindings.get(definition.name)
 
-        if (binding) {
-          return {
-            ...definition,
-            ...Object.fromEntries(
-              [
-                'outputSchema',
-                'partialOutputSchema',
-                'recoveryOutputSchema'
-              ].map((key) => [
-                key,
-                hostToolResultSchema(
-                  binding.definition[key as keyof typeof binding.definition]
-                )
-              ])
-            ),
-            resultStage: 'host' as const,
-            name: binding.definition.name,
-            registeredName: definition.name,
-            namespace: definition.name.slice(
-              0,
-              -(binding.definition.name.length + 1)
-            ),
-            ...(binding.definition.providerExposure === 'registry'
-              ? {
-                  execution: {
-                    kind: 'registered-tool' as const,
-                    namespace: 'tool_library',
-                    tool: AiDesignToolIds.INVOKE_TOOL,
-                    arguments: {
-                      name: definition.name,
-                      revision: definition.revision
+          if (binding) {
+            return {
+              ...definition,
+              inputSchema: runtimeOperationSchema(
+                binding.definition.inputSchema
+              ),
+              ...Object.fromEntries(
+                [
+                  'outputSchema',
+                  'partialOutputSchema',
+                  'recoveryOutputSchema'
+                ].map((key) => [
+                  key,
+                  hostToolResultSchema(
+                    binding.definition[key as keyof typeof binding.definition],
+                    true
+                  )
+                ])
+              ),
+              resultStage: 'host' as const,
+              name: binding.definition.name,
+              registeredName: definition.name,
+              namespace: definition.name.slice(
+                0,
+                -(binding.definition.name.length + 1)
+              ),
+              ...(binding.definition.providerExposure === 'registry'
+                ? {
+                    execution: {
+                      kind: 'registered-tool' as const,
+                      namespace: 'tool_library',
+                      tool: AiDesignToolIds.INVOKE_TOOL,
+                      arguments: {
+                        name: definition.name,
+                        revision: definition.revision
+                      }
                     }
                   }
-                }
-              : {})
+                : {})
+            }
           }
-        }
 
-        return {
-          ...definition,
-          registeredName: definition.name,
-          namespace: 'tool_library',
-          execution: {
-            kind: 'registered-tool' as const,
+          return {
+            ...definition,
+            registeredName: definition.name,
             namespace: 'tool_library',
-            tool: AiDesignToolIds.INVOKE_TOOL,
-            arguments: { name: definition.name, revision: definition.revision }
+            execution: {
+              kind: 'registered-tool' as const,
+              namespace: 'tool_library',
+              tool: AiDesignToolIds.INVOKE_TOOL,
+              arguments: {
+                name: definition.name,
+                revision: definition.revision
+              }
+            }
           }
-        }
-      })
+        })
     },
 
     load: () => track(library.load),

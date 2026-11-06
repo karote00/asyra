@@ -280,13 +280,19 @@ const toolDeliveryFailureSchema = (executionResult: unknown) =>
         status: { const: 'partial' },
         settlement: { enum: ['not-started', 'completed', 'partial', 'unknown'] }
       }),
-      executionResult
+      executionResult: embedAiToolSchema(
+        executionResult as AiJsonValue,
+        '#/properties/executionResult'
+      )
     },
     ['available', 'recoverable', 'code', 'message', 'settlement', 'toolOutcome']
   )
 
 /** Admit host metadata only at the result root; business objects stay closed. */
-export const hostToolResultSchema = (schema: unknown): unknown => {
+export const hostToolResultSchema = (
+  schema: unknown,
+  requireOutcome = false
+): unknown => {
   const record = (value: unknown): value is Record<string, unknown> =>
     !!value && typeof value === 'object' && !Array.isArray(value)
 
@@ -360,14 +366,27 @@ export const hostToolResultSchema = (schema: unknown): unknown => {
       typeof result.minProperties === 'number' ||
       typeof result.maxProperties === 'number'
 
+    if (
+      !root &&
+      !restricted &&
+      !bounded &&
+      result.propertyNames === undefined &&
+      record(result.properties)
+    ) {
+      const { toolOutcome: _outcome, ...properties } = result.properties
+
+      if (Object.keys(properties).length) {
+        result.properties = properties
+      } else {
+        delete result.properties
+      }
+    }
+
     if (restricted || bounded || result.propertyNames !== undefined || root) {
       result.properties = {
         ...(record(result.properties) ? result.properties : {}),
-        toolOutcome:
-          record(result.properties) &&
-          result.properties.toolOutcome !== undefined
-            ? { allOf: [result.properties.toolOutcome, outcome] }
-            : outcome
+        // Owner output validation precedes this host-owned acknowledgement.
+        toolOutcome: root ? outcome : true
       }
       if (result.propertyNames !== undefined) {
         result.propertyNames = {
@@ -397,6 +416,15 @@ export const hostToolResultSchema = (schema: unknown): unknown => {
           { anyOf: [without, withOutcome] }
         ]
       }
+    }
+
+    if (root && requireOutcome) {
+      result.required = [
+        ...new Set([
+          ...(Array.isArray(result.required) ? result.required : []),
+          'toolOutcome'
+        ])
+      ]
     }
 
     if (referenced !== undefined) {
@@ -448,7 +476,9 @@ export const modelToolResultSchemas = (
   stage: 'owner' | 'host' = 'owner'
 ) => {
   const annotate = (schema: unknown) =>
-    modelResultSchema(stage === 'host' ? schema : hostToolResultSchema(schema))
+    modelResultSchema(
+      stage === 'host' ? schema : hostToolResultSchema(schema, true)
+    )
 
   const failure = toolDeliveryFailureSchema(
     modelResultSchema(declaredToolResults(contract, stage))
@@ -456,14 +486,16 @@ export const modelToolResultSchemas = (
 
   return {
     outputSchema: contract.delivery
-      ? modelResultSchema(hostToolResultSchema(contract.delivery.outputSchema))
+      ? modelResultSchema(
+          hostToolResultSchema(contract.delivery.outputSchema, true)
+        )
       : annotate(contract.outputSchema),
     partialOutputSchema: {
       anyOf: [
         ...(contract.delivery
           ? [
               modelResultSchema(
-                hostToolResultSchema(contract.delivery.outputSchema)
+                hostToolResultSchema(contract.delivery.outputSchema, true)
               )
             ]
           : []),

@@ -1,3 +1,7 @@
+import {
+  createConversationResults,
+  type ResultContextCommand
+} from './conversation-results'
 import { readEvaluationWindow } from './evaluation-window'
 import { isExecutionActivity } from '@asyra/ai-agent-runtime'
 import {
@@ -163,7 +167,10 @@ const readActivityStream = async (
   sendReceipt?: (
     token: string,
     receipt: AiBatchReceipt | BrowserBatchFailureEnvelope
-  ) => Promise<void>
+  ) => Promise<void>,
+  resultContext?: ReturnType<
+    ReturnType<typeof createConversationResults>['open']
+  >
 ): Promise<AiActionBatch> => {
   const reader = response.body?.getReader()
 
@@ -203,6 +210,41 @@ const readActivityStream = async (
 
     if (!event || typeof event !== 'object' || batch) {
       throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
+    }
+
+    if (event.type === 'conversation-results') {
+      if (
+        !sendReceipt ||
+        typeof event.receiptToken !== 'string' ||
+        !/^[a-f0-9-]{36}$/.test(event.receiptToken)
+      ) {
+        throw backendFailure('ACTION_BATCH_MODEL_INVALID_RESPONSE')
+      }
+
+      let context: AiBatchReceipt['context']
+
+      try {
+        if (!resultContext) {
+          throw Error('No App conversation for result storage')
+        }
+
+        context = {
+          ok: true,
+          values: resultContext.exchange(event.command as ResultContextCommand)
+        }
+      } catch (error) {
+        context = {
+          ok: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : 'Result context unavailable'
+        }
+      }
+
+      await sendReceipt(event.receiptToken, { context, actionResults: [] })
+
+      return
     }
 
     if (event.type === 'batch') {
@@ -353,8 +395,13 @@ const readActivityStream = async (
 }
 
 export const createServerActionBatchProvider = (
-  options: Pick<GenericHttpAiProviderOptions, 'fetch'> = {}
+  options: Pick<GenericHttpAiProviderOptions, 'fetch'> & {
+    documentScope?: () => unknown
+  } = {}
 ): GenericHttpAiProvider => {
+  const results = createConversationResults(
+    options.documentScope ?? (() => undefined)
+  )
   let disposed = false
   const attempts = new Set<GenericHttpAiProvider>()
 
@@ -365,6 +412,20 @@ export const createServerActionBatchProvider = (
           code: 'AI_PROVIDER_DISPOSED',
           message: 'The provider is disposed.'
         })
+      }
+
+      const meta = input.metadata as Record<string, never> | undefined
+      const context =
+        typeof meta?.conversationId === 'string'
+          ? results.open(meta.conversationId)
+          : undefined
+      const names = context?.names()
+
+      if (names?.length) {
+        input = {
+          ...input,
+          metadata: { ...meta, conversationResultNames: names }
+        }
       }
 
       const evaluationWindow = browserEvaluationWindow()
@@ -436,7 +497,8 @@ export const createServerActionBatchProvider = (
                     message: `The action receipt was not acknowledged${diagnostic}. Execution must not be replayed automatically.`
                   })
                 }
-              }
+              },
+              context
             )
 
             return {
@@ -466,6 +528,7 @@ export const createServerActionBatchProvider = (
   return Object.freeze({
     dispose: () => {
       disposed = true
+      results.clear()
       attempts.forEach((provider) => provider.dispose())
       attempts.clear()
     },

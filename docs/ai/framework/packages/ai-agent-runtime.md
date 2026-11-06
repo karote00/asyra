@@ -435,8 +435,8 @@ See [Tool Specification](../../../../packages/ai-agent-runtime/TOOL_SPECIFICATIO
 for the current declarative format and lifecycle.
 
 - `admitAiRecipe(proposal, options)` returns a frozen typed recipe/derived contract
-  or bounded repair issues, without execution. Limits bound bytes, steps and
-  bindings. The deliberately conservative schema subset proves field/type handoffs;
+  or bounded repair issues, without execution. Limits bound bytes and bindings. Registered graphs also have a step budget.
+  Pass mode `inline` to admit an authored single-invocation sequence without that count ceiling. For a host-created one-call sequence, current invocation values are admitted against the destination, secured leaves pin request references, and the host derives the result schema from a guaranteed step output. Saved recipes continue to reject captured runtime references. The deliberately conservative schema subset proves field/type handoffs;
   the host's full validator remains authoritative for actual inputs and outputs.
   Necessary root property constraints may prove an opaque sibling disjoint from a
   guaranteed binding. This never admits an opaque selected branch or guesses an
@@ -457,6 +457,11 @@ for the current declarative format and lifecycle.
   host's registered-operation dispatcher to route primitive and composed entries
   through the composition-aware invoker before advertising submission. Do not
   route a coordinator through a legacy host queue that holds resources for children.
+- A host can pass an admitted inline root as the second argument of
+  `invoker.invoke(request, admitted)`. Its name and revision must match the
+  invocation. The invoker verifies admission identity, pins every registered
+  dependency and applies ordinary validation, leases,
+  settlement and finite repair loop. The inline root has invocation lifetime.
 - `createAiRecipeInvoker({ registry, recipe, validate, execute, leases, maxSteps })`
   pins the admitted graph before dispatch. Only `execute` for primitive leaves
   reaches the existing host scheduler/security/transaction boundary; every node
@@ -467,7 +472,7 @@ for the current declarative format and lifecycle.
   Initial steps run once. Only the check's `pass` completes mechanical iteration;
   unknown/decision-required findings, repeated progress, budget exhaustion,
   cancellation or uncertain settlement stop without replay. Admission and invocation
-  both bound the complete nested expansion. No callback, arbitrary expression or
+  both check safe-integer expansion; registered graphs also enforce the configured step budget. No callback, arbitrary expression or
   secondary model is involved. See the specification for exact fields and bindings.
 - Verification belongs to the registered domain descriptor: `statusPath` and
   `progressPath` refer to required output values. Transport adapters must relocate
@@ -616,3 +621,27 @@ provider for this selection. Recheck permissions/generation/epoch/cancellation;
 foreign, evicted or invalidated results fail with KNOWLEDGE_REUSE_UNAVAILABLE and
 ordinary selected-read recovery. A selected result gets its own contextKey and
 complete source metadata. No new store, filesystem reader or semantic summarizer.
+
+Recipe binding can read a required common field on an object intersection when
+its alternatives omit that field, allow it without constraints, or repeat exactly
+the same field schema.
+Differing declarations, runtime lifetimes and unsupported boundary constraints
+remain unprovable; no App-specific field names are recognized. Fixed
+object bindings can exclude negated schemas requiring an omitted key. Literal
+values of registered homogeneous maps retain full validator and capture checks.
+
+### Iteration checkpoints and preparation overlap
+
+Recipes may declare `checkpoints: [{after: stepId, iteration}]`. Each checkpoint
+runs after its named ordinary step and before the next step; all checkpoint IDs,
+check/repair IDs and ordinary IDs must be unique. The existing top-level iteration
+runs after the final ordinary step. Admission proves the ordered bindings and
+aggregate iteration budget; future or iteration-private outputs cannot escape their
+scope. The shared invoker pins the full dependency inventory before execution.
+
+Host option `canOverlapPreparation(definition, input)` is an owner capability,
+not model-authored permission. A following preparation with resolved inputs may
+start alongside a mutation only when the owner allows it and no checkpoint lies
+between them. Other work remains ordered. Both started branches settle before
+failure delivery, with separate receipts and lease ownership. Existing cancellation,
+verification progress, remaining-only recovery and registered recipe budgets apply.
