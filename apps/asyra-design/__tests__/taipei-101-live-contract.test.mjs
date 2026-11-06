@@ -89,9 +89,10 @@ test('explicit benchmark duration preserves the default and rejects unsafe or am
   assert.equal(readTaipei101Deadline([]), 900000)
   assert.equal(readTaipei101Deadline(['--minutes=12']), 720000)
   assert.equal(readTaipei101Deadline(['--minutes=15']), 900000)
+  assert.equal(readTaipei101Deadline(['--minutes=18']), 1080000)
   for (const args of [
     ['--minutes=0'],
-    ['--minutes=16'],
+    ['--minutes=19'],
     ['--minutes=1.5'],
     ['--minutes=NaN'],
     ['--minutes=12', '--minutes=10'],
@@ -112,6 +113,19 @@ test('fixed benchmark report uses host-only policy without changing the drawing 
   assert.equal(policy.announceWorkDeadline, false)
   assert.match(policy.reportInstructions, /tens of seconds/)
   assert.match(policy.reportInstructions, /same provider thread/)
+  assert.match(
+    policy.reportInstructions,
+    /which operations you delegated together through execute_design/
+  )
+  assert.match(
+    policy.reportInstructions,
+    /even when the single host entry was never used/
+  )
+  assert.match(policy.reportInstructions, /measured response bytes/)
+  assert.match(
+    policy.reportInstructions,
+    /only to transfer an already-produced value/
+  )
   assert.doesNotMatch(policy.reportInstructions, /fresh ephemeral session/)
   assert.deepEqual(readTaipei101Prompt(), before)
 })
@@ -300,4 +314,106 @@ test('fixed recorder observes framing throughout drawing and disposes it before 
   assert.ok(source.includes('installDrawingFraming'))
   assert.ok(source.includes('fixedDrawingFraming.tick()'))
   assert.ok(source.includes('fixedDrawingFraming.dispose()'))
+})
+
+test('requires detail capture except for a proven empty workspace', async () => {
+  const { shouldCaptureDrawingDetails } =
+    await import('../test-data/ai-drawing/taipei-101-live-contract.mjs')
+
+  assert.equal(shouldCaptureDrawingDetails({ workspace: 1 }), false)
+  assert.equal(shouldCaptureDrawingDetails({ workspace: 1, vector: 4 }), true)
+  assert.equal(shouldCaptureDrawingDetails({ workspace: 1, group: 1 }), true)
+  assert.equal(shouldCaptureDrawingDetails(undefined), true)
+  assert.equal(shouldCaptureDrawingDetails({}), true)
+})
+
+test('waits for retained report completion after browser loss without a report deadline', async () => {
+  const { waitForRecordedReport } =
+    await import('../test-data/ai-drawing/taipei-101-self-report.mjs')
+  const { mkdtempSync, writeFileSync, appendFileSync, rmSync, mkdirSync } =
+    await import('node:fs')
+
+  mkdirSync('tmp', { recursive: true })
+  const directory = mkdtempSync('tmp/report-disconnect-')
+  const file = directory + '/request.jsonl'
+
+  writeFileSync(
+    file,
+    JSON.stringify({
+      requestId: 'report-owner',
+      stage: 'host_observation',
+      evidence: { callId: 'evaluation-report', phase: 'input' }
+    }) + '\n'
+  )
+  // An App lifecycle request can settle while the original provider still reports.
+  writeFileSync(
+    directory + '/000-unrelated.jsonl',
+    JSON.stringify({
+      requestId: 'app-lifecycle',
+      stage: 'settlement',
+      evidence: { status: 'completed' }
+    }) + '\n'
+  )
+  let polls = 0
+
+  try {
+    const result = await waitForRecordedReport(
+      directory,
+      () => true,
+      'report-owner',
+      async () => {
+        polls++
+        if (polls === 3) {
+          appendFileSync(
+            file,
+            JSON.stringify({
+              requestId: 'report-owner',
+              stage: 'host_observation',
+              evidence: {
+                callId: 'evaluation-report',
+                phase: 'output',
+                path: 'report.json'
+              }
+            }) + '\n'
+          )
+        }
+      }
+    )
+
+    assert.equal(polls, 3)
+    assert.equal(result.evidence.path, 'report.json')
+    appendFileSync(
+      file,
+      JSON.stringify({
+        requestId: 'report-owner',
+        stage: 'settlement',
+        evidence: { outcome: 'completed' }
+      }) + '\n'
+    )
+    assert.equal(
+      (await waitForRecordedReport(directory, () => false, 'report-owner'))
+        .evidence.path,
+      'report.json'
+    )
+
+    writeFileSync(file, '')
+    await assert.rejects(
+      waitForRecordedReport(directory, () => false, 'report-owner'),
+      /Provider service ended/
+    )
+    writeFileSync(
+      file,
+      JSON.stringify({
+        requestId: 'report-owner',
+        stage: 'settlement',
+        evidence: { outcome: 'cancelled' }
+      }) + '\n'
+    )
+    await assert.rejects(
+      waitForRecordedReport(directory, () => true, 'report-owner'),
+      /before report completion/
+    )
+  } finally {
+    rmSync(directory, { recursive: true, force: true })
+  }
 })

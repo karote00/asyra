@@ -709,7 +709,8 @@ it('publishes the exact submission fields and binding variants used by admission
   expect(schema.required).toEqual(recipeFormatKeys.proposal)
   expect(Object.keys(schema.properties)).toEqual([
     ...recipeFormatKeys.proposal,
-    'iteration'
+    'iteration',
+    'checkpoints'
   ])
   for (const variant of schema.$defs.binding.oneOf) {
     expect(variant.required).toEqual(
@@ -1389,3 +1390,174 @@ it('preserves unique request selections through finite recipe input schemas', ()
     ).ok
   ).toBe(false)
 })
+
+it('requires independent output fields and preserves lifetimes across compound results', () => {
+  const roots = { type: 'array', minItems: 1, items: reference }
+  const base = {
+    type: 'object',
+    required: ['roots'],
+    properties: { roots },
+    anyOf: [
+      { allOf: [{ required: ['a'] }, { required: ['b'] }] },
+      { required: ['c'] }
+    ]
+  }
+
+  expect(
+    recipeSchemaAt(readRegisteredRecipeSchema(base), '/roots/0')
+  ).toMatchObject({ 'x-runtime-value': reference['x-runtime-value'] })
+  const conditional = {
+    ...base,
+    anyOf: [
+      {
+        allOf: [
+          {
+            properties: {
+              roots: { type: 'array', 'x-runtime-value': 'secret' }
+            }
+          }
+        ]
+      },
+      { required: ['c'] }
+    ]
+  }
+
+  expect(() =>
+    recipeSchemaAt(readRegisteredRecipeSchema(conditional), '/roots/0')
+  ).toThrow()
+})
+
+it('checks captures in literal maps nested inside registered objects', () => {
+  const map = {
+    type: 'object',
+    propertyNames: { minLength: 1 },
+    additionalProperties: number
+  }
+
+  const destination = (items: unknown) =>
+    object({
+      section: object({ layout: { ...map, additionalProperties: items } })
+    })
+
+  const binding = (value: unknown) => ({
+    kind: 'object',
+    fields: { section: { kind: 'literal', value: { layout: { left: value } } } }
+  })
+
+  expect(
+    admitStructured(destination(number), number, binding(4))
+  ).toMatchObject({ ok: true })
+  expect(
+    admitStructured(destination(reference), number, binding('captured')).ok
+  ).toBe(false)
+})
+
+it('discharges a nested object negation only for a provably absent required field', () => {
+  const section = {
+    ...object({ x: number, y: number }),
+    required: ['x'],
+    not: { required: ['y'] }
+  }
+  const destination = object({ section })
+
+  const binding = (withY: boolean) => ({
+    kind: 'object',
+    fields: {
+      section: {
+        kind: 'object',
+        fields: {
+          x: { kind: 'literal', value: 1 },
+          ...(withY ? { y: { kind: 'literal', value: 2 } } : {})
+        }
+      }
+    }
+  })
+
+  expect(admitStructured(destination, number, binding(false))).toMatchObject({
+    ok: true
+  })
+  expect(admitStructured(destination, number, binding(true)).ok).toBe(false)
+})
+
+it('derives selected sequence outputs from prior owners and rejects unavailable output bindings', () => {
+  const input = proposal()
+
+  input.output = {
+    kind: 'object',
+    fields: {
+      found: { kind: 'step', step: input.steps[0].id, path: '' },
+      edited: input.output
+    }
+  }
+  const result = admitAiRecipe(input, options(), 'sequence')
+
+  expect(result, JSON.stringify(result)).toMatchObject({ ok: true })
+  if (result.ok) {
+    expect(result.value.contract.outputSchema).toMatchObject({
+      type: 'object',
+      properties: { found: { type: 'object' }, edited: { type: 'number' } }
+    })
+  }
+
+  for (const binding of [
+    { kind: 'step', step: 'future', path: '' },
+    { kind: 'step', step: input.steps[0].id, path: '/missing' },
+    { kind: 'literal', value: 'unowned' }
+  ]) {
+    input.output = {
+      kind: 'object',
+      fields: { invalid: binding as AiRecipeBinding }
+    }
+    expect(admitAiRecipe(input, options(), 'sequence').ok).toBe(false)
+  }
+})
+
+it.each([false, true])(
+  'binds a required outer field across non-narrowing compound branches (unconstrained=%s)',
+  (unconstrained) => {
+    const field = {
+      type: 'object',
+      properties: { state: { type: 'string' } },
+      required: ['state'],
+      additionalProperties: false
+    }
+    const schema = {
+      type: 'object',
+      properties: { receipt: field },
+      required: ['receipt'],
+      allOf: [
+        {
+          type: 'object',
+          properties: { receipt: unconstrained ? true : structuredClone(field) }
+        }
+      ],
+      anyOf: [
+        { type: 'object', properties: { a: { type: 'number' } } },
+        {
+          type: 'object',
+          properties: {
+            receipt: unconstrained ? true : structuredClone(field),
+            b: { type: 'number' }
+          }
+        }
+      ]
+    }
+
+    expect(
+      recipeSchemaAt(readRegisteredRecipeSchema(schema), '/receipt/state').type
+    ).toBe('string')
+    for (const changed of [
+      { ...field, 'x-runtime-value': 'request' },
+      { type: 'string' }
+    ]) {
+      const invalid = {
+        ...schema,
+        allOf: [{ type: 'object', properties: { receipt: changed } }]
+      }
+
+      expect(() =>
+        recipeSchemaAt(readRegisteredRecipeSchema(invalid), '/receipt/state')
+      ).toThrow(/absent|guaranteed/)
+    }
+  }
+)

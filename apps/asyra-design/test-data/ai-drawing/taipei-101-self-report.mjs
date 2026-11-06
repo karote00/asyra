@@ -1,3 +1,4 @@
+import { setTimeout as delay } from 'node:timers/promises'
 import { Buffer } from 'node:buffer'
 import path from 'node:path'
 import { StringDecoder } from 'node:string_decoder'
@@ -98,7 +99,13 @@ export const collectSameThreadReport = (records, readPayload) => {
 }
 
 /** Consume each trace byte once; do not rescan growing records every poll. */
-export const createWorkPhaseObserver = (directory) => {
+export const createWorkPhaseObserver = (
+  directory,
+  matches = (record) =>
+    record.stage === 'host_observation' &&
+    record.evidence?.callId === 'evaluation-report' &&
+    record.evidence?.phase === 'input'
+) => {
   const files = new Map()
   let settled
   let bytesRead = 0
@@ -146,11 +153,7 @@ export const createWorkPhaseObserver = (directory) => {
             for (const line of lines.filter(Boolean)) {
               const record = JSON.parse(line)
 
-              if (
-                record.stage === 'host_observation' &&
-                record.evidence?.callId === 'evaluation-report' &&
-                record.evidence?.phase === 'input'
-              ) {
+              if (!settled && matches(record)) {
                 settled = record
               }
             }
@@ -181,4 +184,47 @@ export const collectEvidenceStages = async (stages) => {
   }
 
   return failures
+}
+
+/** Report ownership survives a failed browser collector; no report time budget. */
+export const waitForRecordedReport = async (
+  directory,
+  providerAvailable,
+  requestId,
+  wait = (milliseconds) => delay(milliseconds)
+) => {
+  if (typeof requestId !== 'string' || !requestId) {
+    throw Error('Report provider request identity is required')
+  }
+
+  const observer = createWorkPhaseObserver(
+    directory,
+    (record) =>
+      record.requestId === requestId &&
+      ((record.stage === 'host_observation' &&
+        record.evidence?.callId === 'evaluation-report' &&
+        record.evidence?.phase === 'output') ||
+        record.stage === 'settlement')
+  )
+
+  for (;;) {
+    const record = observer.poll()
+
+    if (record) {
+      if (record.stage === 'settlement') {
+        throw Error(
+          'Provider settled before report completion: ' +
+            record.evidence?.outcome
+        )
+      }
+
+      return record
+    }
+
+    if (!providerAvailable()) {
+      throw Error('Provider service ended before report completion')
+    }
+
+    await wait(1000)
+  }
 }

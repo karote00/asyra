@@ -1,3 +1,5 @@
+import { AiInspectionLimits } from '../constants'
+
 export const inspectionInputSchema = {
   type: 'object',
   additionalProperties: false,
@@ -10,7 +12,11 @@ export const inspectionInputSchema = {
       type: 'string',
       minLength: 1
     },
-    view: { type: 'string', enum: ['overview', 'detail'] },
+    view: {
+      type: 'string',
+      enum: ['overview', 'detail'],
+      description: `Default overview fits the whole target into a preview. Detail without a region captures the entire target at native resolution only when both dimensions are at most ${AiInspectionLimits.maxEdge} pixels. For larger targets, choose a smaller child or an explicit target-local region within that limit. Detail never automatically crops or scales down.`
+    },
     region: {
       type: 'object',
       additionalProperties: false,
@@ -18,8 +24,16 @@ export const inspectionInputSchema = {
       properties: {
         x: { type: 'number' },
         y: { type: 'number' },
-        width: { type: 'number', exclusiveMinimum: 0, maximum: 1024 },
-        height: { type: 'number', exclusiveMinimum: 0, maximum: 1024 }
+        width: {
+          type: 'number',
+          exclusiveMinimum: 0,
+          maximum: AiInspectionLimits.maxEdge
+        },
+        height: {
+          type: 'number',
+          exclusiveMinimum: 0,
+          maximum: AiInspectionLimits.maxEdge
+        }
       }
     }
   }

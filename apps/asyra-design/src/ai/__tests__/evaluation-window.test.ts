@@ -186,3 +186,20 @@ describe('detailed evaluation report admission', () => {
     ).toThrow()
   })
 })
+
+it('accepts the explicit eighteen-minute work window and keeps its ceiling independent from reporting', () => {
+  const now = Date.now()
+
+  expect(
+    readEvaluationWindow({
+      workDeadlineAt: now + 1080000,
+      reportTimeoutMs: null
+    })
+  ).toEqual({ workDeadlineAt: now + 1080000, reportTimeoutMs: null })
+  expect(() =>
+    readEvaluationWindow({
+      workDeadlineAt: Date.now() + 1140000,
+      reportTimeoutMs: null
+    })
+  ).toThrow('Invalid evaluation window')
+})

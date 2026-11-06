@@ -100,6 +100,7 @@ export const createPreparedDesignAction = (
   attachmentEvidence?: PreparedAttachmentEvidence
   materialElementIds?: string[]
 }> => ({
+  composition: 'allowed',
   ...actionToolSemantics(AiActionNames.APPLY_PREPARED_DESIGN, {
     allOf: [
       toolResultObject(

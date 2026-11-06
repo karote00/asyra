@@ -722,7 +722,7 @@ test('artifact-targeted mixed batch uses normal actions and one Undo/Redo bounda
   )
 
   await operations.call(
-    'execute_design_batch',
+    'execute_design',
     {
       operations: [
         {

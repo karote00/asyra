@@ -216,7 +216,8 @@ describe('local semantic design tools', () => {
     expect(tools.definitions.map((t) => t.name)).toEqual([
       'prepare_design',
       'retain_design_targets',
-      'release_design_artifacts'
+      'release_design_artifacts',
+      'read_design_templates'
     ])
     const schema = tools.modelActions(actions)[0].inputSchema
 
@@ -955,7 +956,7 @@ it('uses retained semantic identities for repeated edits without rebuilding or a
 
   for (const x of [10, 20]) {
     await operations.call(
-      'execute_design_batch',
+      'execute_design',
       {
         inspection: 'defer',
         operations: [
@@ -1598,7 +1599,7 @@ it('blocks a contradicted reviewed artifact through both native and batch apply 
   ).rejects.toThrow(/correction/i)
   await expect(
     operations.call(
-      'execute_design_batch',
+      'execute_design',
       {
         operations: [
           {
@@ -1858,7 +1859,7 @@ it('hands a material revision to its material-only consumer and reuses the same 
   const found = JSON.parse(
     await query.call(
       guidance.tool,
-      { ...guidance.arguments, query: materialDefinition.name },
+      { ...guidance.arguments, query: materialDefinition.name, view: 'full' },
       signal()
     )
   )
@@ -2028,4 +2029,54 @@ it('keeps exhausted source retention a genuine no-write failure', async () => {
   })
   expect(rejected.draftId).toBeUndefined()
   expect(compile).not.toHaveBeenCalled()
+})
+
+it('exports public template definitions and rejects released source handles', async () => {
+  const tools = createLocalDesignTools(actions)
+  const source = {
+    ...draft(),
+    fillTemplates: { metal: '#123456' },
+    linearFields: {
+      glass: {
+        frame: 'world',
+        start: { x: 0, y: 0, z: 0 },
+        end: { x: 0, y: 0, z: 20 },
+        gradientStops: [
+          { position: 0, color: '#123456', opacity: 1 },
+          { position: 1, color: '#abcdef', opacity: 1 }
+        ]
+      }
+    }
+  }
+  const prepared = JSON.parse(
+    await tools.call('prepare_design', { draft: source }, signal())
+  )
+
+  expect(prepared.available).toBe(true)
+  const result = JSON.parse(
+    await tools.call(
+      'read_design_templates',
+      { artifactId: prepared.artifactId },
+      signal()
+    )
+  )
+
+  expect(result).toEqual({
+    motifTemplates: {},
+    fillTemplates: source.fillTemplates,
+    linearFields: source.linearFields,
+    sharedFills: {}
+  })
+  await tools.call(
+    'release_design_artifacts',
+    { artifactIds: [prepared.artifactId] },
+    signal()
+  )
+  await expect(
+    tools.call(
+      'read_design_templates',
+      { artifactId: prepared.artifactId },
+      signal()
+    )
+  ).rejects.toThrow(/unavailable|reference/i)
 })

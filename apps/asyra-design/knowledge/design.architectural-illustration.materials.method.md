@@ -45,9 +45,9 @@ Use the decided roles and lighting domains to choose what varies:
 
 Choose an existing representation by the intended effect:
 
-- Normal gradients cover a surface; keep structure separate. Projected/pattern
-  faces can use `linearFields` with `materialField`; do not combine a field with
-  an explicit face fill/palette. Unsupported fields reject before apply.
+- Normal gradients cover a surface; keep structure separate. Projected faces and grid
+  motifs (including pattern members) can use `linearFields` with `materialField`; do not combine a field with
+  an explicit fill/palette. Unsupported fields reject before apply.
 - `fillTemplates` preserve independent fills; `sharedFills` means intentional
   linked future edits. A repeated palette is appropriate only for intended cycling.
 - `map_retained_fills` changes color/opacity, not per-cell gradient endpoints or

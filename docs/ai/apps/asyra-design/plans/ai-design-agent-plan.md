@@ -2,6 +2,608 @@
 
 ## Status and authority
 
+Current task: [Staged Design Execution and Conversation Context](staged-design-execution-plan.md).
+The new plan prioritizes stage continuity, per-stage application and dependency-aware
+overlap. Reusable motif variants below retain the completed implementation evidence.
+
+## Reusable motif variants
+
+Implement per-reference motif overrides, reuse existing canonical shared Fill
+bindings, and expose retained source definitions as public values for App
+conversation storage. Replay the recorded facade inputs through production tools.
+Tool templates are immutable authoring values, not persistent SceneTree instances.
+Existing-instance linkage remains owned by native shared properties/elements; this
+slice adds no parallel template propagation mechanism.
+
+1. Prepare owner: references accept overrides keyed by motif key. Override only
+   supplied name, vertices, offset, fill or fills; replace arrays as complete fields.
+   An explicit fill replaces an inherited palette unless fills is also supplied.
+   Reject unknown motif identities and invalid resulting definitions before writes.
+   Budget the effective geometry and the authored patches before expansion. Reuse
+   unchanged compiled motifs within the current preparation.
+2. Apply owner: preserve native sharedFills and independent Fill semantics. Verify
+   source edits, selected-owner overrides, reset and Undo through canonical APIs
+   after applying projected motifs. Template substitution never silently creates
+   canonical source linkage.
+3. Compose owner: read_design_templates reads definitions from an owned retained
+   source. Return public motifTemplates, fillTemplates and sharedFills values;
+   execute_design can retain those fields in App conversation context and consume
+   them in a later request without returning geometry to the model. Only explicit
+   reads export definitions. Existing artifact ownership and lifetime apply.
+4. Synchronize selected usage, examples, specifications and Inspector contracts.
+   Run focused source, budget, integration, discovery, type/naming/lint and recorder
+   gates. Review each owner before advancing. Run the original fixed prompt once
+   for fifteen minutes and collect the original provider's untimed same-session
+   report, recording actual template, override and named-result adoption.
+
+Mutation scope is preparation/construction/budget, existing tool discovery and
+host/result handoffs, direct application regressions and contract documents.
+Canonical property behavior is consumed through its current APIs. No new cache
+or alternate property store is introduced.
+
+Owner review passed. Keyed variants preserve the three recorded facade outputs;
+source work reuses unchanged motif geometry. The App-context integration survives
+request disposal and preserves canonical shared Fill source edits, local overrides,
+reset, Undo/Redo and durable reload. Public export rejects released sources.
+Selected executable usage now includes variants; its inline-equivalence oracle
+includes the declared patch. Preparation, workflow, discovery and integration
+focused suites pass, as do server typecheck, naming, scoped lint and twelve
+Inspector/recorder cases. The drawing prompt SHA-256 remains
+`25b9ad1aeb523fdb590a39d090a37fdc65ed62ff081a27acfa92d946f9b2ff51`.
+Live run 1793891248152 used motif overrides successfully, then exposed a missed
+compose handoff: read_design_templates output maps could not bind directly into
+prepare_and_apply_design because registered dictionary schemas were classified
+as opaque. Named App values had passed because they are resolved before admission.
+The original run remains immutable evidence. Its report was interrupted because
+an agent test-file edit triggered Vite page reload at 15:27 UTC; this is an agent
+workflow failure, not an AI decision or report timeout. Do not modify files from
+live launch until drawing, report and recorder evidence have fully settled.
+
+Bounded correction: replay the exact 128-input request against its 89-input source;
+extend the runtime registered-schema owner to prove typed dictionary forwarding,
+including key constraints, value constraints and runtime lifetimes. Preserve
+opaque rejection, missing-key rejection and canonical invocation validation.
+Synchronize the public output key constraints with the preparation owner. Cover
+safe map forwarding and unsafe key/value/lifetime cases before rerunning the same
+fixed fifteen-minute live test. No model-specific fallback or new storage owner.
+
+The correction passes the two recorded variants: the unchanged request completes
+both writes and preserves partial rejection of its two request-artifact saves;
+the same request retaining only public values/document IDs succeeds. All 112
+focused runtime map/admission/execution cases, affected App integrations, scoped
+type/lint/naming and twelve Inspector/recorder cases pass. Unknown map keys remain
+unguaranteed, untyped narrowing and runtime-lifetime loss remain rejected. The
+runtime distribution was rebuilt for the App consumer before replay. Freeze all
+source/test files through the replacement live run and its untimed report.
+
+Replacement live run `1793892999749` completed the fifteen-minute work window and
+566.152-second same-session report. The recorder exited cleanly, source/prompt
+checksums stayed unchanged, the report left the document unchanged, and durable
+sequence 451 matched reload. It used motif overrides but did not execute template
+export or cross-draft named reuse. Drawing remained partial at the deadline after
+a successful final deletion without subsequent AI visual acceptance. See the
+[implementation and live report](../reports/taipei-101-motif-variants-2026-11-06.md).
+This bounded slice is complete; broader discovery/adoption recommendations remain
+observations rather than new authorized implementation.
+
+## Stage reuse planning and template investigation
+
+Run 1793820396103 decided all three facade corrections at call 951. Calls 1080,
+1128 and 1166 then submitted 6,502 bytes and created 13,983 objects without an
+intermediate visual judgment. Calls 1706 and 1864 had decided ornament replacement
+and cornice correction before three separate writes. These observations support
+one submission for ready work, without claiming the inter-call gaps disappear.
+
+The October 23 shared-motifs contract deliberately admitted root-local exact motif
+reuse only. The recorded case had six identical arrays; overrides were explicitly
+excluded from that slice. Current Core owner-local property/source operations
+support sparse overrides, reset and detach. Template substitution and a persistent
+shared document binding have different lifetimes and must retain their owners.
+
+Authorized slice: revise existing compose instructions and selected draft usage,
+and replay the three recorded drafts through one execute_design call. Consider
+ready successors and likely reusable outputs before preparing a stage. Save useful
+public outputs in App context even when later use is uncertain; retain decision
+reads and visual boundaries. Known individual draft contracts remain sufficient
+inside execute_design; acquiring parts is only needed to use the parts branch.
+Scope includes direct tests, current specs and the compose Inspector contract.
+Focused gates cover delivered guide, three parent-correct applications, optional
+App snapshots, scope/type checks, naming and lint. No template implementation or
+canonical persistence change is part of this slice.
+
+Historical template follow-up, implemented by the reusable motif variants slice above:
+- Resolve per-use changes by motif identity against the immutable source before
+  budget admission and projection. Changed geometry must revalidate and affect
+  expanded counts; unchanged motif work should be reused within preparation.
+- Use canonical Props sources and local overrides for intentional persistent
+  property sharing. Existing sharedFills/public Core APIs are the integration
+  path. Independent repeated geometry remains supported.
+- A prepared motif currently disappears into ordinary vectors. A future editable
+  geometric template needs an explicit source-to-instance mapping and regeneration
+  contract, including projection, Undo and durable reload. Sharing an existing
+  property alone does not regenerate bilinear projected cells.
+- Optional input-template reuse across calls requires a consumer contract; retain
+  currently selects successful public outputs and cannot save an arbitrary input.
+- Formal cases must distinguish independent copies, linked source updates, local
+  overrides, reset/detach, projected geometry and partial success. The earlier
+  no-overrides contract has been superseded by the keyed-variant specification.
+
+Compose validation passed. The focused delivered-guide regression failed before the
+change and passes with the existing draft arguments route. The three recorded
+drafts execute under one host invocation, create all 13,983 objects under their
+correct parents and save three optional names without returning their IDs. The
+24 selected guidance/integration cases, two Inspector cases, server typecheck,
+scoped lint and naming passed. Model adoption has not been remeasured.
+
+## Bound ordering and artifact anchors
+
+In run 1793817200456 call 1979, the host rejected a whole-array step binding
+for request.elementIds together with a separate artifact target for request.anchorId.
+Call 2110 retried with a literal moved ID. Its baseCentral source expands to
+468 document elements and has no exact element key. The original report records
+zero named saves and gives no reason for choosing field delivery during recovery.
+
+1. Replay the recorded create and order with the original source key and with a
+   single expanded key. Reject the former before writes and execute the latter
+   with status delivery. Validate other arguments and dependencies through the
+   registered action contract. Preserve step-time region selection.
+2. At the artifact owner distinguish unavailable references, missing exact keys
+   and ambiguous singleton targets. Use bounded recovery information. Keep the
+   target path in errors and never choose an anchor implicitly.
+3. Exercise optional App retention when the create succeeds and a later edit
+   fails. In the original-session report distinguish the agent's reason for
+   choosing or skipping retention from observed requests, saves and reuse.
+4. Review each owner against focused regressions, then run the fixed drawing
+   prompt once for up to fifteen minutes and collect the untimed same-session
+   report. Preserve current ready batch routing, existing work and prior receipts.
+
+The recorded ordering regression now rejects the source key, the 468-member
+prefix and a scalar producer for the array slot before either write. An exact
+expanded key succeeds in one host call with status delivery. Recovery reuses
+the saved base root from a new host after a failed region edit. Thirteen
+focused integration cases and twelve Inspector/recorder cases passed.
+
+The <a href="../reports/taipei-101-bound-order-2026-11-05.md" target="_blank" rel="noopener noreferrer">live observation and original report</a>
+record a completed drawing and report, with partial browser evidence.
+
+## Sequence result delivery and reuse
+
+Use the complete single-host 101 runs ending at 687 and 836 seconds as
+baselines. The affected owners are the conversation request, execute_design
+and the existing Runtime step binder. Preserve current tool authorization,
+canonical partial settlement, original drawing prompt and same-thread reporting.
+
+1. Keep decided successors in one request. Allow named projections of successful
+   step outputs to be retained as part of execution, including several steps.
+   A later operation consumes the name directly, without a retrieval dispatch.
+The browser App owns named result context for its open document and conversation.
+Only names accompany the next model turn; values move on demand over the
+private App exchange. Closing the App runtime releases its context.
+
+2. Return only status when requested and selected public fields for decisions.
+   Keep acknowledged work and failure causes visible. Preserve ordinary result
+   delivery for callers requesting it. Scope names to the same conversation
+   and document across turns; never persist live request leases as reusable IDs.
+3. Replay the actual creation/order handoffs and window data reads, with
+   cross-turn, scope isolation, failed prerequisites and delivery byte checks.
+   Review each owner and run focused gates.
+4. Run the unchanged fifteen-minute drawing once. Collect its untimed original
+   thread report. Compare model-facing response bytes and calls made solely
+   to transfer data as independent measurements against both previous runs.
+
+
+Owner review: successful requested projections are acknowledged by the browser
+before the next scheduled step. A same-call name binds the producer directly;
+a later turn resolves only the required paths in one private App exchange.
+Known canvas calls retain their direct batch route. Failure and unknown
+settlement remain visible, including the completed name and stopped successor.
+The original 209- and 41-element create/order inputs completed through separate
+request hosts in one open App conversation. The original dimensions read
+delivered one height and retained the columns. Browser transport, conversation
+and document isolation, field-only retrieval and nonportable artifact checks
+passed. Focused gates passed 157 App server, 65 browser, three selected provider,
+47 Runtime and 12 Inspector/recorder cases.
+
+The [benchmark report and independent measurements](../reports/taipei-101-app-result-context-2026-11-05.md)
+record 239,237 App text bytes, 6,752 execute_design text bytes, two successful
+84-byte status acknowledgements, and zero confirmed transfer-only calls.
+Named persistence was exercised in cross-turn regressions and not chosen in
+the live run. Drawing stopped at 7/8; its original thread completed the report.
+
+## Single host execution entry
+
+Use one provider entry and one ordered operation list for known edits, bound
+workflow outputs, mechanical iteration and live region selections after writes.
+The host chooses execution boundaries. Preserve registry ownership, exact
+dependency admission, preflight, partial receipts, no replay and Undo behavior.
+Keep durable recipe authoring separate from execution of a one-time request.
+
+1. Freeze regressions using the recorded 101 trim creation/order and material
+   and deletion batches. Cover a region selected after a preceding mutation,
+   invalid downstream steps before effects and bounded automatic repair.
+2. Integrate the known-operation dispatcher and Runtime at the request host.
+   Derive dependency identities and transient proposal metadata there. Keep
+   simple batches compact. Review each owner using focused tests.
+3. Switch discovery, examples, provider declarations, failure recovery, tests,
+   Inspector and API/spec to the single entry. Retire the two former native
+   execution entries. Preserve immutable evidence and existing saved identities.
+4. Run the unchanged fifteen-minute drawing once, then collect the original
+   native thread's untimed report on grouped and split actions, dependencies,
+   decision handoffs and the causes of waiting. Verify evidence and persistence.
+
+
+Implementation review: one native design_operations.execute_design declaration
+and one operations array cover the public handoff. Ready operations use the
+canvas owner; the host pins dependencies, compiles output bindings and finite
+repair, and resolves step-time region targets after prior writes. Saved
+admission excludes the private canvas dispatcher. Native discovery, owner
+examples, Knowledge and the retrospective use the current public entry.
+The previous 7,809-element trim was created and ordered in one outer call.
+The recorded six material operations planned one exchange; all three crown
+deletions ran together. The region regression reads real changed Core data
+through a controlled spatial adapter in jsdom. Loop, no-replay, failure,
+large-sequence, provider inventory and receipt gates passed. Before the live
+run, 546 App cases, three selected provider cases, 128 Runtime cases and 12
+Inspector/recorder cases passed. Only focused suites were used.
+
+The [single host live run and original AI report](../reports/taipei-101-single-host-15m-2026-11-05.md)
+finished drawing in 687.220 seconds and reporting in 295.200 seconds. Three
+unified calls grouped 2, 2 and 7 operations. The same-thread report explains
+why the four construction requests were separate. All 10 review units passed
+self-assessment. The document matched after reporting and reload.
+
+## Host execution of decided actions
+
+The previous [101 trace](../reports/taipei-101-created-targets-15m-2026-11-04.md)
+returned a new trim root to the agent before it requested ordering, and its
+query "edit delete elements by artifact keys" missed. Work on the current
+reviewed feature tree.
+
+1. Runtime admission and execution: remove the App's 64-step ceiling on
+   ordinary inline sequences, including expanded ordinary dependencies. Keep
+   independent resource and recursion guards. The author supplies the mechanical
+   check, prescribed repair and stopping limit; stop on success, decision,
+   stalled progress, cancellation or exhaustion. Verify above the old threshold.
+2. Compose and discover: route already-decided actions with output dependencies
+   to one host call. Use direct IDs, artifact selectors or region bindings.
+   Replay the recorded 7,809-element trim and relative order, and the exact
+   missed query and prefix deletion. Preserve unrelated search and visual handoffs.
+3. Trace shared target resolution and the lifetime of artifact membership across
+   calls and turns. Assess reuse without conflating artifact and document IDs.
+4. Review each owner and its focused tests, then run one unchanged 15-minute 101.
+   Preserve the original thread for its untimed full report and compare actual
+   host handoffs with the recorded regressions.
+
+Step review: the App control ran 65 steps in one invocation. A declared
+40-round inline repair stopped after two successful repairs or at exhaustion,
+with one initial write. Registered admission and invocation keep their budgets.
+The 7,809-element replay created trim at the workspace and moved its returned
+root after the existing anchor in one call. The exact failed query now found
+deletion using registered mutation metadata. Applying its prefix to the
+recorded crown removed the 12 seams and preserved the needle. Target membership
+uses the existing request-owned key-to-ID mapping, lazy prefix index and
+optional retained sets. Cross-turn membership would require a document-scoped
+reference available to the conversation and validation against current objects.
+Focused Runtime (110), App (334), Inspector and recorder (12) cases passed.
+
+The [fresh live run and full original AI report](../reports/taipei-101-decided-actions-15m-2026-11-04.md)
+record four multi-operation batch calls and no inline recipe. Work stopped at
+the 15-minute deadline. The untimed report completed on the same native thread.
+The browser closed during evidence collection; the work snapshot matched durable
+storage and the retained recording played through the cutoff.
+
+## Created targets and routed discovery
+
+Base: current reviewed ai-conversation-improvements working tree on 736bd1431.
+Owner: current task owner. Evidence: [last 101 run](../reports/taipei-101-purpose-inline-15m-2026-11-04.md),
+native calls 711, 1012, 1666 and 1704. Initial admission rejected the real
+window-trim workflow input as opaque. Its nested acknowledgement ID was not
+guaranteed by the successful registered result. The composite lookup missed
+because batch target binding and deletion were indexed independently.
+
+1. Prepare/execute: preserve the recorded draft, parent, anchor and actual
+   ordering operation in a permanent regression. Expose a sound creation
+   identity handoff for recipe binding, then execute creation and relative
+   ordering in one native request. Assert actual ID propagation, order, no
+   replay and failure settlement. Preserve full schema validation, multipart
+   identities, independent calls and current resource ownership.
+2. Compose: use the unmodified query “resolve prepared artifact targets by keys
+   delete elements” through discovery. Return the registered deletion operation
+   with its actual batch target binding, then execute the discovered route with
+   artifact keys. Preserve exact identities, ambiguity and qualified access.
+3. Align owner schemas, spec, Inspector, examples and direct consumers. Review
+   and focused-test each change. Run the unchanged fifteen-minute 101 once on
+   the verified source. Collect the original thread's untimed full report and
+   separate discovery exchanges, host steps and design decisions in the report.
+
+Scope is limited to the two replayed handoffs, their direct producers and
+consumers, focused gates and benchmark evidence. No release work, full local
+suite, mandatory recipe use or change to the drawing prompt.
+
+Implementation review: the registered workflow now returns ordered, distinct
+acknowledged composition IDs. Typed recipe admission accepts the recorded
+draft and a document-scoped output binding. The recorded creation and move
+succeeded in one outer call. Failed ordering preserved creation without replay.
+The original compound query returned an executable batch deletion example,
+which removed the ten recorded keys from a controlled document. The baseline
+receipt retains its byte budget, with a separate bound for the new ID array.
+Focused verification passed 382 App cases, 108 Runtime cases and 12 recorder
+and Inspector cases. Scoped lint, server typecheck, naming and live builds passed.
+
+Live outcome: the original prompt finished in 750.343 seconds. The same thread
+completed its untimed report. The live agent passed the returned trim ID to
+ordering in a separate call. A paraphrased deletion query with an additional
+word missed, while the recovered prefix deletion succeeded.
+See the [measured calls, evidence and original report](../reports/taipei-101-created-targets-15m-2026-11-04.md).
+
+## Purpose discovery and single-call execution
+
+Parent: Editable Design Agent. Base: the reviewed working tree on 736bd1431,
+including the completed exact-usage changes. Owner: current task owner.
+Evidence: [observed host dispatch and round trips](../reports/taipei-101-exact-usage-15m-2026-11-04.md).
+
+1. Compose - use owner capability descriptions for purpose discovery and
+   missing-name recovery across admitted actions and the native catalog. Exact
+   identifiers, qualified ambiguity, recovered definitions and pagination retain
+   their contracts. Test opaque a/b/c names and a misleading name. With only an
+   unknown identifier, preserve explicit absence.
+2. Execute - admit and execute one inline finite proposal with fresh inputs in
+   one native call. Reuse Runtime bindings, secured leaves, mechanical iteration,
+   progress and settlement without publishing a reusable tool by default. Prove a
+   single window section and reflection with an initially failing mechanical
+   check, prescribed repair and recheck. Count outer calls and leaf effects.
+   Decision-required findings or uncertain settlement must return to the AI.
+3. Observe - extend the post-drawing report request with discovery round trips,
+   host steps per call and reasons for handoffs. Run focused owner tests, review
+   each change against spec/Inspector and direct consumers. Run the unchanged
+   fifteen-minute Taipei 101 prompt once and obtain the original thread's untimed
+   report. Preserve recording, snapshot and durability evidence. Distinguish
+   deterministic proofs from the live AI's choice of tools.
+
+Scope: existing discovery, tool-library invocation, their Runtime admission and
+execution owners as needed, direct metadata, tests, docs and post-run evidence.
+Exclude release work, full local tests, new dependencies and a mandatory drawing
+order. Preserve the existing worktree and earlier benchmark artifacts.
+
+Owner review: a/b/c and the misleading-name regression failed on the baseline,
+then passed with metadata ranking and candidate recovery. The operation suite
+passed 200 cases. A native run_recipe test executed layout, reflection, check,
+prescribed repair and recheck in one outer call. A decision-required check
+stopped before repair. The existing App container checker also ran an inline
+repair against the real review and edit owners. Host/control/composition suites
+passed 100 cases. Runtime admission/execution passed 105 cases, including
+forged admission and removed-leaf rejection. Provider envelope checks passed.
+The fixed drawing input was not edited. Only the post-run report asks for
+lookup counts, inner host work and handoff causes.
+
+The fixed run completed before the deadline. The original native thread delivered
+the untimed report. See the [live report, host round trips and original AI assessment](../reports/taipei-101-purpose-inline-15m-2026-11-04.md).
+The live AI used the existing workflows and artifact-based review and did not
+use inline recipes. A mixed-intent purpose lookup missed. Durability, report
+integrity and intermediate video were verified. This bounded task is complete.
+
+## Exact usage and artifact data review
+
+Parent: Editable Design Agent. Base: the reviewed working tree on 736bd1431,
+including the preceding contract delivery changes. Owner: current task owner.
+Evidence: [15-minute run and original report](../reports/taipei-101-contract-delivery-15m-2026-11-04.md).
+
+The real short-name fill/retain/batch usage lookup advertised 86,909 bytes. A
+single read_design_context lookup advertised 56,463. Each delivered only its
+first fragment. Offline reconstruction matched both first pages and body sizes.
+The alternate fill and read routes alone listed 272 and 255 nested output paths
+(40,630 and 30,250 bytes). The batch result summary itself used only 700 bytes.
+Exact operations fetched usable action contracts in one reply. Prior selected
+workflow tests did not cover this combination. Public timing cannot assign the
+nine gaps (528.8 seconds) to provider generation. Late reference use preceded
+roof replacement, and the initial base crop omitted overlays. These observations
+do not justify a new drawing order. The numeric review first resolved four keys
+in two artifacts through a batch read, then read those four IDs and a group again.
+
+1. Compose: reproduce the two production selectors in permanent focused tests.
+   Return one executable action guide for a short name and its own batch wrapper,
+   retaining explicit qualified access. Keep independent tools, namespace ambiguity,
+   explicit qualified selection, partial coverage, full schemas and field recovery.
+   Replace recursive exact usage output navigation with bounded owner navigation.
+   Measure pages and bytes and inspect search matches at their source.
+2. Compose/inspect: retire contradictory snapshot-first mapping and full-first
+   correction discovery at their producers. Verify delivered instructions and
+   actual correction receipts against the existing query-based fill owner.
+3. Inspect/prepare: admit exact artifact keys for numeric review through the existing
+   request-owned target resolver. Support the recorded combination across artifacts
+   and known IDs. Resolve before canonical reads, preserve bounded selection,
+   signed evidence, release, freshness and visual obligations. Count external
+   acquisition calls and canonical reads in a focused test.
+4. Review each owner and its consumers against the spec and Inspector, correct
+   failures and run only focused gates. Run the immutable Taipei 101 benchmark
+   once with a fifteen-minute drawing window and an untimed original-thread report.
+   Verify source, prompt, session, persistence, framing, recording and settlement.
+   Preserve unrelated work. No release, full local suite or independent provider
+   search redesign. Complete this task without closing the parent plan.
+
+Owner reviews: the production short-name regression failed before the compose
+change. On the captured declarations, the fill/retain/batch reply is now 31,085
+bytes in two pages and the context reply is 15,809 bytes in one. Qualified and
+machine reads retain their routes. A separate failure proved that an unrelated
+saved tool could be advertised as an action's recipe dependency. Matching the
+registered owner identity fixes that issue. Exact dispatch already uses namespace
+and name. Correction receipt/schema and actual sent instructions were corrected
+after failing regressions. Data review now resolves keys from two real preparation
+artifacts and a known ID in one model acquisition with one canonical read.
+Overlapping and foreign references fail before reads. Changed data still goes stale.
+
+Focused validation: operation suite 199 passed, batch/data/review suites 147
+passed, selected discovery cases 8 passed, provider/correction receipt cases 2
+passed and direct correction/proof consumers 2 passed. Server typecheck, naming,
+Inspector, scoped lint and runner builds passed. One unchanged-prompt run reached
+the drawing deadline. The original thread delivered the complete untimed report.
+The runner exited 1 after the browser page closed during evidence collection.
+Independent recovery confirmed cutoff/checkpoint equality, fresh App reopening
+and playable intermediate video. The original final App receipt is unavailable.
+See the [live report and original AI assessment](../reports/taipei-101-exact-usage-15m-2026-11-04.md).
+This bounded task is ready for review.
+
+## Contract delivery and evidence closure - 2026-11-04
+
+Status: implementation, per-owner reviews, focused gates and one live test complete; ready for Asa's review.
+Parent: Editable Design Agent; closeout owner: current task owner, with Asa's review.
+Base: `736bd14316756765abc8aa189feb6bf38fb3db4f` on
+`codex/ai-conversation-improvements`. Preserve the existing untracked live report.
+Evidence and historical classification: [contract delivery trace](../reports/ai-contract-delivery-trace-2026-11-04.md).
+
+Objective: correct inconsistent contract projections, reduce redundant acquisition,
+separate canonical data evidence from visual evidence, and retain enough safe
+delivery evidence to verify the actual handoff. Correctness and work reduction
+are separate acceptance results; no promise of a particular model latency.
+
+Scope: App preparation/discovery/review/provider owners and their direct schemas,
+consumers and formal tests; existing profiler safe recording where necessary;
+the execution spec/API docs/Inspector; this plan and test reports. No new drawing
+generator, forced Knowledge lookup, global method, additional quality target,
+dependency, release work, full local suite, or unrelated refactor. Preserve
+immutable recordings and benchmark prompt. No automatic repeated live runs.
+
+Implementation sequence and owner cards:
+
+1. **Compose/prepare contract conditions.** Inputs are canonical owner descriptions
+   and selected scopes; outputs must preserve the same eligibility and limitations
+   in native and selected representations. Replace unconditional compressed
+   criteria/2D wording at its producer. Test-first the actual delivered guide;
+   preserve initial criteria after first drawing, locked established criteria,
+   supplied 2D geometry and legal supplied world projection. Review and run the
+   directly affected discovery/workflow/review cases before advancing.
+2. **Compose acquisition representation.** Preserve the existing eager entry,
+   exact operations, owner scopes and full machine schemas. Reduce proven repeated
+   executable-guide result structure at its canonical projection owner, retaining
+   every admission, partial/unknown settlement and recovery case. Fixed cases use
+   this run's selected draft, deletion, capture and record queries through real
+   declarations and returned continuations/examples. Measure bytes/pages and
+   required acquisition calls; do not merely relax historical budgets. Complete
+   direct invocation without a parent-contract lookup; verify unrelated inventory
+   cannot enlarge selected contracts.
+3. **Inspect data versus visual evidence.** The review owner owns criteria and
+   dependency validity; canonical read/measurement owners supply data. Establish
+   a bounded data-evidence path with real owner-issued values/identities and
+   relevant freshness checks; model notes and pixels are not numeric proof.
+   Remove unconditional image requirements from data judgments, keeping visual
+   capture/binding/whole-view coverage intact. Related source/data changes must
+   invalidate; unrelated decoration/image changes must not force data recapture.
+   Test forged/missing/stale evidence, partial judgments and final acceptance
+   through real upstream producers, not hand-authored valid downstream fixtures.
+   Review the exact evidence design in spec/Inspector before production edits.
+4. **Observe instruction delivery.** Retain safe App-owned instruction identity,
+   digest and composition evidence at the actual send boundary. Separate retained
+   evidence from source reconstruction; preserve secret/user-content/reasoning
+   redaction. Use the existing profiler, no parallel telemetry system. Verify the
+   exact blocks sent match captured evidence and failures remain observational.
+5. **Integrated verification and live run.** Recheck upstream/downstream/retired
+   contracts on the final source. Run the affected focused suites, naming, scoped
+   lint/type checks and Inspector contracts. Then run the formal Taipei 101 runner
+   once with the immutable prompt and fifteen-minute drawing limit. Report time
+   is unlimited; preserve native thread identity, intermediate framing, original
+   report, receipts, persistence/reload and cleanup evidence. Inspect screenshots
+   and process video. Distinguish measured improvements from unproven latency.
+
+Before advancing each owner, reread its Inspector contract and review changed
+producers, direct consumers, negative cases and fixed gates. Failures are corrected
+within that owner before continuing. Scope discovery is frozen to the trace's
+candidate classes. Infeasible evidence design triggers an in-scope replan, not a
+weakened check or invented fallback. Update this section with actual tests and
+remaining work; the product parent is not closed by completing this task.
+
+Step 1 review: the delivered native/scoped condition regression failed on the
+baseline. Both projections now consume the same review-owned criteria timing and
+preparation-owned supplied-geometry condition; no admission or drawing order
+changed. Workflow and review suites pass 235 tests. The existing behavior cases
+prove first drawing before initial criteria and refusal to rewrite established
+criteria. Naming passes before and after the slice. Logs use
+`tmp/conversation-improvements/contract-conditions-*`; scoped lint is part of the
+stage gate. No remaining condition discrepancy was found in the changed direct
+consumers. Step 1 scoped lint passes.
+
+Step 2 design review: direct execution consumes complete input constraints, owner
+result meaning/fields and no-replay recovery. Complete result validation schemas
+remain at runtime and in explicit includeResultSchema=true usage acquisition for
+machine consumers. This replaces mandatory schema delivery in every usage reply;
+it does not replace runtime validation with prose. Existing schema-validation
+consumers explicitly request that mode; default-mode tests execute the same
+owner examples and compare acquisition bytes with the complete-schema mode.
+Refresh and pagination preserve the selected mode, with no compatibility alias.
+
+Step 2 review: selected direct usage preserves canonical inputs and executable
+examples; machine consumers request full result schemas explicitly. Default deletion
+usage is at least 20% smaller and executes the real owner example. Refresh and
+invalid-scope correction preserve mode. Focused discovery, batch, review, registered
+host, delivery audit and execution proof cases pass after correcting stale test
+consumers that carried usage-only options into full/field reads and skipped the
+current mixed-image binding handoff. Naming and Inspector contract gates pass.
+
+Step 3 reviewed design: the existing review owner accepts dataQueries for exact
+criterion IDs, element IDs and canonical context fields. It reads the registered
+canonical context action internally, releases its owned query lease, and retains
+immutable selected values under request-owned data evidence IDs. The same signed
+review binding and result store consume those IDs. Data checks use no images;
+visual checks cannot consume data IDs. Revalidation compares the selected values
+and identity metadata through the same canonical read owner before binding,
+recording and final acceptance. Missing, truncated, foreign or changed values fail
+closed. Unrelated names/styles not selected by the query do not invalidate numeric
+evidence. Source fact/criterion dependency changes continue to invalidate the
+linked judgment. Numeric receipts prove document values, not unseen real-world
+facts or model judgment correctness. No extra document model, expression evaluator,
+forced data check or new drawing method is introduced.
+
+Step 3 review: the image-only data regression fails on the baseline and passes
+with canonical receipts. Data/review suites pass 124 cases; upstream context
+suites pass 77. Real canonical context acquisition, exact bindings, resource
+release, foreign/stale/missing/truncated rejection and selected-value invalidation
+are exercised. Existing visual and source-correction tests retain their obligations.
+The field registry is now a pure shared owner so server admission does not import
+the browser runtime. Server typecheck, naming, scoped lint and Inspector gates pass.
+
+Step 4 card: compose immutable App-owned base/developer blocks once, pass their
+joined text to thread/start, and retain those same ordered blocks with source,
+role and digest in the existing advertised-contract payload. Actual user/history
+messages and model reasoning never enter this record. The generic serializer's
+redaction remains unchanged. Validate against actual transport packets, including
+history-mode selection without history content, and observational sink failure.
+
+Step 4 review: the retained-block regression fails on the baseline. Provider
+transport tests now prove exact ordered role assembly and per-block SHA-256,
+including static history-mode rules without user/history bodies. Existing broken
+sink tests still settle the product request. The provider suite passes 232 cases
+with one pre-existing skip. No shared serializer exception or new telemetry owner
+was needed. Final owner review also found correctionContext mislabeling data IDs
+as image IDs; a failing regression preceded its producer/schema correction.
+Data/review/execution-proof suites pass 209 cases after that correction.
+
+Measured default versus machine-schema reply bodies: vector draft 15,900 versus
+23,289 bytes; mixed draft 20,879 versus 28,268; capture 8,697 versus 18,172; record
+9,185 versus 18,115. Draft acquisition drops from two bounded replies to one in
+these cases. These are delivery costs, not measured model latency. The deletion
+case also preserves executable inputs and removes more than 20% of reply bytes.
+Step 5 review: final focused gates passed after correcting two stale consumer
+assertions and the data correction-context regression. Scoped type checks, lint
+(zero errors; five existing warnings), naming and Inspector contracts passed.
+No full local suite was run. Final recorded App/Inspector source hashes were
+unchanged through live verification.
+
+Run `taipei-101-fixed-1793731065236` used the unchanged approved prompt and reached
+the fifteen-minute drawing deadline. The original native thread completed its
+untimed report in 200.51 seconds without changing the document. Numeric review
+used actual data evidence without images. Four App-owned instruction blocks were
+retained with verified digests. Durable sequence 476 and identical reload were
+confirmed; intermediate video frames show the current full building after fit-zoom.
+The drawing remained partially accepted (three of six checks unresolved); this is
+not a completed-drawing benchmark. Wide usage acquisition and provider latency
+attribution remain explicitly limited, not claimed solved.
+
+See the [implementation and live report](../reports/taipei-101-contract-delivery-15m-2026-11-04.md)
+for gates, call/gap tables, original AI report, recording and retained evidence.
+This bounded task is complete; the parent product plan remains active. No commit
+or push was performed.
+
+## Previous status and authority
+
 Current update - 2026-11-02: Asa accepted the bounded
 [conversation corrections](#conversation-continuity-and-tool-contract-corrections---2026-11-02)
 for closeout and PR creation. This does not close the entire Editable Design Agent
@@ -410,7 +1012,6 @@ No source or prompt edits occurred during the valid rerun. Keep all fixture edit
 outside live service lifetimes; tailor report questions through observed timing
 data. The AI report still cannot recover unrecorded prior-session processing.
 
-
 ### Follow-up - same-thread benchmark report - 2026-11-03
 
 Objective: replace the second App request with the existing native evaluation
@@ -471,9 +1072,6 @@ Its persistence uncertainty reflects information available to the model during
 reporting; later harness persistence/reload evidence is separate. No new live
 attempt, full local test, commit or push was performed.
 
-
-
-
 ### Follow-up - reduce exploration and repeated work - 2026-11-03
 
 Status: implemented and reviewed. Original findings and audit test limitations are in
@@ -511,8 +1109,6 @@ The plan adds no required drawing sequence, Knowledge lookup, recipe creation or
 quality target. Follow existing project implementation rules; the detailed audit
 retains evidence and uncertainties rather than adding another approval process.
 
-
-
 Implementation and review results:
 
 - Compose: discovery now distinguishes new-operation usage, owner scope and missing
@@ -540,7 +1136,6 @@ All three implementation segments were reviewed and corrected before advancing.
 No full local test, new live 101 run, prompt edit, commit or push was performed.
 Native-provider internal search and unexplained waiting remain evidence limits,
 not claimed fixes. Actual time savings and model adoption need a later live run.
-
 
 ### Follow-up - isolate progress admission from execution - 2026-11-03
 
@@ -575,7 +1170,6 @@ The outer request timed out and artifact finalization did not confirm persistenc
 or reload. The progress fix is validated; the full-report delivery requirement is
 not complete. See [live result](../reports/taipei-101-progress-isolation-15m-2026-11-03.md).
 
-
 ### Follow-up - untimed benchmark report and resilient evidence - 2026-11-03
 
 Completed and live-verified. The unchanged-prompt run completed drawing in
@@ -583,7 +1177,6 @@ Completed and live-verified. The unchanged-prompt run completed drawing in
 receipt, persistence, checkpoint, screenshots, reload, and video were retained
 without evidence errors; canonical content matches across report and reload.
 See [run evidence](../reports/taipei-101-untimed-report-15m-2026-11-03.md).
-
 
 User contract: only drawing is limited to 15 minutes. The fixed benchmark explicitly
 selects an untimed report on the same native thread. Existing explicitly timed
@@ -633,18 +1226,18 @@ under the matching `.payloads/` directory. Recording evidence additionally uses
 `taipei-101-fixed-1793638204793`, whose reload image matches the user's screenshot.
 Both are under `tmp/conversation-improvements/live/`.
 
-| Finding | Verified evidence and current owner | Classification |
-| --- | --- | --- |
-| Tool-name searches allegedly return submit_tool or no match | Self-report claims this, but the retained App call sequence begins with successful describe_design_apis at 14.0s. The failed search request/result pairs are not established in this App trace. local-operation-tools exact-name/semantic/qualified lookup and ambiguity tests already exist. | Unconfirmed search-layer cause. Do not change App matching or claim a provider defect from this self-report alone. |
-| Broad contract read | 413-input requests unqualified read_design_context usage. 414-output advertises 78,598 total bytes but delivers a bounded fragment through byte 20,062; retained JSON is 23,072 bytes. 419-input selects design_operations.read_design_context and one schema path; 420-output is 11,465 bytes. | Existing qualified/scoped capability successfully used after a broad lookup. Not a 78 KB single delivered response or missing pagination. |
-| Repeated contract acquisition | 19 describe_design_apis calls, 272,565 retained output bytes, approximately 681 ms summed host tool duration. Initial multi-tool usage spans three pages. | Observable acquisition/round-trip cost; not proof that App lookup execution caused tens-of-seconds gaps. Retained serialized bytes are not token counts. |
-| Mixed capture and retained images | 595-input supplies an old crown image plus two new captures with declared check roles. 606-output requests bindChecks; 610/613 acquire bind guidance and bind. local-operation-tools passes undefined selections whenever hasReusedImages is true. | Current explicit-binding contract, with a handoff opportunity: known new-capture roles are not carried into this generic recovery. Old-image roles still require explicit assignment. |
-| Unrelated results marked stale | 621-input still uses whole-view evidence for dependent checks; 642/650 rebind and resubmit only scale/base with the latest overview and retained local images. | Correct dependency invalidation and existing selective reuse. Do not auto-pass old judgments or remove whole-view dependencies silently. |
-| Large drawing inputs | Payloads 103/118/133 are 4,202/7,840/10,046 bytes; grids/patterns expand them into thousands of elements. Repair 143 is 441 bytes. Seven prepare/apply calls total approximately 9,980 ms host duration. | Existing deterministic expansion and local repair work. No demonstrated need for a new building generator or mandatory composed recipe. |
-| Nonplanar face | NONPLANAR_FACE rejects before writes; retained draft repaired locally. design-construction owns the tolerance check, with permanent workflow/proof tests. | Invalid AI input, successful guard and recovery. Preserve geometry admission; do not silently triangulate or change intended shape. |
-| Crown shape and missing top | AI changed an incorrect square plate to round, then added a visible top surface. Native oval/projection and hierarchy moves were already available. | Design/representation mistakes, not absent tools. Small optional advice is a candidate, not a proven speedup. |
-| No Knowledge calls | The prompt already explains reducing exploration/repeated correction; spatial Knowledge already covers common world basis, geometric gaps versus order, related capture scope, and selective evidence reuse. | Non-use does not establish missing Knowledge or a prompt defect. Do not duplicate existing advice or require retrieval. |
-| Recording remains on initial base | Current live runner fits at first paint, then only at final/detail/reload collection. No later drawing-stage refit is scheduled. | Confirmed recorder behavior gap. Ending screenshots and a nonempty video do not prove usable process recording. |
+| Finding                                                     | Verified evidence and current owner                                                                                                                                                                                                                                                             | Classification                                                                                                                                                                        |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tool-name searches allegedly return submit_tool or no match | Self-report claims this, but the retained App call sequence begins with successful describe_design_apis at 14.0s. The failed search request/result pairs are not established in this App trace. local-operation-tools exact-name/semantic/qualified lookup and ambiguity tests already exist.   | Unconfirmed search-layer cause. Do not change App matching or claim a provider defect from this self-report alone.                                                                    |
+| Broad contract read                                         | 413-input requests unqualified read_design_context usage. 414-output advertises 78,598 total bytes but delivers a bounded fragment through byte 20,062; retained JSON is 23,072 bytes. 419-input selects design_operations.read_design_context and one schema path; 420-output is 11,465 bytes. | Existing qualified/scoped capability successfully used after a broad lookup. Not a 78 KB single delivered response or missing pagination.                                             |
+| Repeated contract acquisition                               | 19 describe_design_apis calls, 272,565 retained output bytes, approximately 681 ms summed host tool duration. Initial multi-tool usage spans three pages.                                                                                                                                       | Observable acquisition/round-trip cost; not proof that App lookup execution caused tens-of-seconds gaps. Retained serialized bytes are not token counts.                              |
+| Mixed capture and retained images                           | 595-input supplies an old crown image plus two new captures with declared check roles. 606-output requests bindChecks; 610/613 acquire bind guidance and bind. local-operation-tools passes undefined selections whenever hasReusedImages is true.                                              | Current explicit-binding contract, with a handoff opportunity: known new-capture roles are not carried into this generic recovery. Old-image roles still require explicit assignment. |
+| Unrelated results marked stale                              | 621-input still uses whole-view evidence for dependent checks; 642/650 rebind and resubmit only scale/base with the latest overview and retained local images.                                                                                                                                  | Correct dependency invalidation and existing selective reuse. Do not auto-pass old judgments or remove whole-view dependencies silently.                                              |
+| Large drawing inputs                                        | Payloads 103/118/133 are 4,202/7,840/10,046 bytes; grids/patterns expand them into thousands of elements. Repair 143 is 441 bytes. Seven prepare/apply calls total approximately 9,980 ms host duration.                                                                                        | Existing deterministic expansion and local repair work. No demonstrated need for a new building generator or mandatory composed recipe.                                               |
+| Nonplanar face                                              | NONPLANAR_FACE rejects before writes; retained draft repaired locally. design-construction owns the tolerance check, with permanent workflow/proof tests.                                                                                                                                       | Invalid AI input, successful guard and recovery. Preserve geometry admission; do not silently triangulate or change intended shape.                                                   |
+| Crown shape and missing top                                 | AI changed an incorrect square plate to round, then added a visible top surface. Native oval/projection and hierarchy moves were already available.                                                                                                                                             | Design/representation mistakes, not absent tools. Small optional advice is a candidate, not a proven speedup.                                                                         |
+| No Knowledge calls                                          | The prompt already explains reducing exploration/repeated correction; spatial Knowledge already covers common world basis, geometric gaps versus order, related capture scope, and selective evidence reuse.                                                                                    | Non-use does not establish missing Knowledge or a prompt defect. Do not duplicate existing advice or require retrieval.                                                               |
+| Recording remains on initial base                           | Current live runner fits at first paint, then only at final/detail/reload collection. No later drawing-stage refit is scheduled.                                                                                                                                                                | Confirmed recorder behavior gap. Ending screenshots and a nonempty video do not prove usable process recording.                                                                       |
 
 Nine review_drawing calls total approximately 883 ms host tool duration. These
 observed durations exclude unknown provider generation/queue/network intervals;
@@ -679,7 +1272,6 @@ comparison evaluators retain their explicitly video-free fresh-context route.
 Gates: test-first provider/registration/advertisement cases, scoped native delivery,
 Inspector contract, naming, lint and affected types. No live model run in this step.
 
-
 The previous order is superseded by the
 [end-to-end source review](../reports/ai-conversation-end-to-end-plan-review-2026-11-03.md).
 Implementation is authorized by the 2026-11-04 user instruction; a new live model
@@ -712,7 +1304,9 @@ run remains outside this task.
    Issue complete bindings only after canonical validation; no inferred purpose,
    automatic pass, lost references, recapture or replay. Preserve unaffected passes.
    Do not weaken data-check image requirements as a shortcut: changing that
-   acceptance contract is separate from recovery-template improvement.
+   acceptance contract is separate from recovery-template improvement. This was
+   the scope boundary of that historical correction; the 2026-11-04 contract
+   delivery section now replaces it with canonical data evidence, not weaker checks.
 5. **Fix process recording and verify intermediate frames.** In the fixed runner,
    refit after settled/rendered changes when geometry leaves the visible drawing
    area. Coalesce updates, detect movement without count changes, skip idle work,

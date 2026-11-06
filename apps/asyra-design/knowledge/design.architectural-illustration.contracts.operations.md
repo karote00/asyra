@@ -82,7 +82,7 @@ run IDs. Use a ready known edit without a Knowledge-read prerequisite.
 
 ```json
 {
-  "tool": "execute_design_batch",
+  "tool": "execute_design",
   "arguments": {
     "operations": [
       {
@@ -97,7 +97,7 @@ run IDs. Use a ready known edit without a Knowledge-read prerequisite.
 
 ```json
 {
-  "tool": "execute_design_batch",
+  "tool": "execute_design",
   "arguments": {
     "operations": [
       {

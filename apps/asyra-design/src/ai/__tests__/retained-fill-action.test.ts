@@ -1,3 +1,4 @@
+import { operationInputIssue } from '../tool-schema'
 import { expect, it, vi } from 'vitest'
 import {
   createAiActionRegistry,
@@ -81,7 +82,7 @@ it('maps retained positions to one plural new-value fill call inside mutation ad
     { elementId: 'b', fillId: 'fill-b', patch: { color: '#808080' } },
     { elementId: 'c', fillId: 'fill-c', patch: { color: '#ffffff' } }
   ])
-  expect(action.revision).toBe(7)
+  expect(action.revision).toBe(8)
   expect(result).toMatchObject({ appliedCount: 3 })
 })
 it('rejects a reference invalidated while queued and performs no write', async () => {
@@ -203,7 +204,7 @@ it('discovers the mapping by operation and admits the advertised input through t
     expect(result.apis[0]).toMatchObject({
       name: action.name,
       operation: action.name,
-      execution: { kind: 'batch-action', tool: 'execute_design_batch' }
+      execution: { kind: 'batch-action', tool: 'execute_design' }
     })
     expect(result.apis[0].inputSchema).toEqual(action.inputSchema)
     const operations = prepareOperationBatch(
@@ -1153,4 +1154,42 @@ it('preserves transaction settlement and the original rejection without replay',
   }
 
   expect(update).not.toHaveBeenCalled()
+})
+
+it('converts a requested solid mapping in the same plural color write', async () => {
+  const update = vi.fn(changedReceipt)
+  const action = createRetainedFillAction({ get: () => snapshot } as never, {
+    targets,
+
+    metadata: () => ({ lock: false }),
+
+    update
+  })
+  const request = {
+    mappings: [{ ...input.mappings[0], kind: 'solid' as const }]
+  }
+
+  expect(operationInputIssue(request, action.inputSchema)).toBeUndefined()
+  await action.execute(request, {
+    signal: new AbortController().signal,
+
+    runMutation: async (write) => write()
+  })
+  expect(update).toHaveBeenCalledExactlyOnceWith([
+    {
+      elementId: 'a',
+      fillId: 'fill-a',
+      patch: { color: '#000000', kind: 'solid', gradient: null }
+    },
+    {
+      elementId: 'b',
+      fillId: 'fill-b',
+      patch: { color: '#808080', kind: 'solid', gradient: null }
+    },
+    {
+      elementId: 'c',
+      fillId: 'fill-c',
+      patch: { color: '#ffffff', kind: 'solid', gradient: null }
+    }
+  ])
 })

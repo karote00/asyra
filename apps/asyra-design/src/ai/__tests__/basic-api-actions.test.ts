@@ -504,7 +504,7 @@ it('versions selected-owner property semantics separately from read and structur
     'api_fill_shareFillAtIndex',
     'api_stroke_updateStrokeFieldsBatch'
   ]) {
-    let revision = 9
+    let revision = 10
 
     if (name.startsWith('api_core_')) {
       revision = 8

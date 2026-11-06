@@ -424,7 +424,7 @@ test('recorded world material reaches real tools, local checks, history, peer an
     // Read actual complete values through the registered public tool. The
     // compact context view is intentionally not a writable gradient payload.
     const readFills = async (elementId: string) => {
-      const result = await invoke('execute_design_batch', {
+      const result = await invoke('execute_design', {
         inspection: 'defer',
         operations: [
           {
@@ -482,9 +482,7 @@ test('recorded world material reaches real tools, local checks, history, peer an
     incompleteGradient.operations[0].arguments.patch[0].gradient = {
       gradientStops: gradient.gradientStops
     }
-    await expect(
-      invoke('execute_design_batch', incompleteGradient)
-    ).rejects.toThrow()
+    await expect(invoke('execute_design', incompleteGradient)).rejects.toThrow()
     const missingTarget = structuredClone(edit)
 
     missingTarget.operations[0].arguments.elementIds.push(
@@ -500,7 +498,7 @@ test('recorded world material reaches real tools, local checks, history, peer an
       execute
     )
     const missingReceipt = JSON.parse(
-      await lostReceiptOwner.call('execute_design_batch', missingTarget, signal)
+      await lostReceiptOwner.call('execute_design', missingTarget, signal)
     )
 
     expect(missingReceipt).toMatchObject({
@@ -510,7 +508,7 @@ test('recorded world material reaches real tools, local checks, history, peer an
     })
     expect(await getCoreDocumentDigest(page)).toEqual(created)
     const refusedRetry = JSON.parse(
-      await lostReceiptOwner.call('execute_design_batch', edit, signal)
+      await lostReceiptOwner.call('execute_design', edit, signal)
     )
 
     expect(refusedRetry).toMatchObject({
@@ -524,10 +522,10 @@ test('recorded world material reaches real tools, local checks, history, peer an
 
     cancelled.abort()
     await expect(
-      ops.call('execute_design_batch', edit, cancelled.signal)
+      ops.call('execute_design', edit, cancelled.signal)
     ).rejects.toThrow()
     expect(await getCoreDocumentDigest(page)).toEqual(created)
-    await invoke('execute_design_batch', edit)
+    await invoke('execute_design', edit)
     const afterFills = await Promise.all(ids.map(readFills))
 
     expect(afterFills[0][0]).toEqual({ ...beforeFills[0][0], gradient })

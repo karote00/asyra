@@ -55,7 +55,27 @@ describe('stage-owned App guidance', () => {
     expect(AI_APP_PROMPT).toContain('instead of manually\nexpanding values')
     expect(AI_APP_PROMPT).toContain('Prefer a suitable existing direct tool')
     expect(AI_APP_PROMPT).toContain(
+      'delegate the sequence in one execute_design call with bound outputs'
+    )
+    expect(AI_APP_PROMPT).toContain(
+      'artifact keys/prefixes or a workspace region with its filter directly to the batch'
+    )
+    expect(AI_APP_PROMPT).toContain(
       'use submit_tool for a finite recipe and invoke_tool'
+    )
+    expect(AI_APP_PROMPT).toContain('Before preparing a stage')
+    expect(AI_APP_PROMPT).toContain('later use need not be known')
+    expect(AI_APP_PROMPT).toContain('execute_design stages')
+    expect(AI_APP_PROMPT).toContain('source:"input"')
+    expect(AI_APP_PROMPT).toContain('portable inputs and outputs')
+    expect(AI_APP_PROMPT).toContain(
+      'Request handles cannot be saved with retain'
+    )
+    expect(AI_APP_PROMPT).not.toContain(
+      'Preserve useful public inputs and outputs'
+    )
+    expect(AI_APP_PROMPT).toContain(
+      'Later operations consume named values directly'
     )
     expect(AI_APP_PROMPT).toContain(
       'Successful execution attempts durable saving'
@@ -114,7 +134,7 @@ describe('stage-owned App guidance', () => {
     expect(general).toContain('not an additional acceptance standard')
     expect(general).toContain('Reuse unaffected decisions and passed evidence')
     expect(general).toContain(
-      'full input/output and lifecycle contracts remain required'
+      'Full input/output and lifecycle contracts are required when authoring a reusable recipe with submit_tool'
     )
     expect(general).toContain(
       'Do not invent parameters, silently simplify appearance'
@@ -271,7 +291,7 @@ describe('stage-owned App guidance', () => {
   it('keeps deterministic stages inside tools and preserves schema authority and receipts', () => {
     for (const name of [
       'prepare_and_apply_design',
-      'execute_design_batch',
+      'execute_design',
       'describe_design_apis',
       'completedSteps',
       'artifactId',

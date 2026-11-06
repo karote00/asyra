@@ -31,6 +31,7 @@ interface FillMapping {
   axis: 'x' | 'y'
   domain: number[]
   index: number
+  kind?: 'solid'
   outside: 'clamp' | 'reject'
   stops: { at: number; color: string; opacity?: number }[]
 }
@@ -112,7 +113,7 @@ export const createRetainedFillAction = (
       message: { type: 'string' }
     })
   }),
-  revision: 7,
+  revision: 8,
   delivery: {
     path: '/modelResult',
     outputSchema: mappingModelSchema,
@@ -121,7 +122,7 @@ export const createRetainedFillAction = (
   composition: 'allowed',
   name: AiActionNames.MAP_RETAINED_FILLS,
   description:
-    'Apply position-dependent fill colors from a query or retained read_design_context snapshots without exporting rows or resending IDs. Prefer query={scope:ids,elementIds} or query={scope:region,bounds,filter}; required columns are read and consumed internally before one atomic write. For existing snapshots pass snapshotId and its leaseId; caller-owned leases remain retained until explicit release or request settlement. Internally acquired query leases are released by this action. Request x or y columns with delivery=reference only when that result has another consumer. Coordinates are parent-local; choose an explicit domain in that space. Map normalized positions through ordered color stops. All mappings must use the same fill index and disjoint targets; one plural canonical fill call preserves shared-property validation and Undo. Mapped fields become selected-owner local overrides. Different owners may use different colors on the same shared source without detaching; unchanged source users remain unaffected.',
+    'Apply position-dependent fill colors from a query or retained read_design_context snapshots without exporting rows or resending IDs. Prefer query={scope:ids,elementIds} or query={scope:region,bounds,filter}; required columns are read and consumed internally before one atomic write. For existing snapshots pass snapshotId and its leaseId; caller-owned leases remain retained until explicit release or request settlement. Internally acquired query leases are released by this action. Request x or y columns with delivery=reference only when that result has another consumer. Coordinates are parent-local; choose an explicit domain in that space. Map normalized positions through ordered color stops. Set kind=solid to apply the mapped color visibly by clearing an existing gradient in the same write; omit kind to preserve the current paint mode and gradient. All mappings must use the same fill index and disjoint targets; one plural canonical fill call preserves shared-property validation and Undo. Mapped fields become selected-owner local overrides. Different owners may use different colors on the same shared source without detaching; unchanged source users remain unaffected.',
   inputSchema: {
     type: 'object',
     additionalProperties: false,
@@ -167,6 +168,11 @@ export const createRetainedFillAction = (
               items: { type: 'number' }
             },
             index: { type: 'integer', minimum: 0 },
+            kind: {
+              const: 'solid',
+              description:
+                'Convert selected Fill rows to solid paint and clear their gradient during the same color update. Omit to preserve their current paint mode.'
+            },
             outside: { type: 'string', enum: ['clamp', 'reject'] },
             stops: {
               type: 'array',
@@ -238,6 +244,7 @@ export const createRetainedFillAction = (
             !mapping ||
             mapping.coordinateSpace !== 'parent-local' ||
             !['x', 'y'].includes(mapping.axis) ||
+            (mapping.kind !== undefined && mapping.kind !== 'solid') ||
             !Number.isSafeInteger(index) ||
             index < 0 ||
             mapping.index !== index ||
@@ -370,6 +377,9 @@ export const createRetainedFillAction = (
             const interpolate = (a: number, b: number) => a + (b - a) * ratio
 
             patches.push({
+              ...(mapping.kind === 'solid'
+                ? { kind: 'solid' as const, gradient: null }
+                : {}),
               color:
                 '#' +
                 channels[left]

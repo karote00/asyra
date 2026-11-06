@@ -126,7 +126,7 @@ const create = async (draft: unknown) => {
   const canonical = preparation.resolve(prepared.artifactId)
 
   await operations.call(
-    AiDesignToolIds.EXECUTE_DESIGN_BATCH,
+    AiDesignToolIds.EXECUTE_DESIGN,
     {
       inspection: 'defer',
       operations: [
@@ -733,7 +733,7 @@ it('bounds material follow-up exchange and saved payloads by actual coverage ins
       const history = core.getUndoHistoryDepth()
       const response = JSON.parse(
         await owner.call(
-          AiDesignToolIds.EXECUTE_DESIGN_BATCH,
+          AiDesignToolIds.EXECUTE_DESIGN,
           {
             inspection: 'defer',
             operations: [

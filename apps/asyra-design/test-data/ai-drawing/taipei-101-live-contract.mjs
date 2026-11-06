@@ -21,7 +21,7 @@ export const readTaipei101Deadline = (args = []) => {
 
   if (!Number.isSafeInteger(duration) || duration > LIVE_TEST_LIMIT_MS) {
     throw new Error(
-      'Invalid test duration; use --minutes=1 through --minutes=15.'
+      'Invalid test duration; use --minutes=1 through --minutes=18.'
     )
   }
 
@@ -104,3 +104,7 @@ export const waitForRecordedDocument = async (page, expectedCount) => {
     'The recorded document did not finish loading within 60 seconds.'
   )
 }
+
+/** Missing bounds remain an error unless the captured document is proven empty. */
+export const shouldCaptureDrawingDetails = (counts) =>
+  !(counts && Object.keys(counts).length === 1 && counts.workspace >= 1)

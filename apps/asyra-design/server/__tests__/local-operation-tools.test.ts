@@ -2882,7 +2882,7 @@ it('dispatches many registered edits once and reviews the completed batch once',
   )
 
   await tools.call(
-    'execute_design_batch',
+    'execute_design',
     {
       operations: Array.from({ length: 47 }, (_, i) => ({
         name: action.name,
@@ -2901,7 +2901,7 @@ it('dispatches many registered edits once and reviews the completed batch once',
   execute.mockClear()
   await expect(
     tools.call(
-      'execute_design_batch',
+      'execute_design',
       {
         operations: [
           { name: action.name, arguments: { elementId: 'ok', visible: false } },
@@ -2962,11 +2962,7 @@ it('resolves identity families into one exchange with a compact batch summary an
     ]
   }
   const result = JSON.parse(
-    await tools.call(
-      'execute_design_batch',
-      input,
-      new AbortController().signal
-    )
+    await tools.call('execute_design', input, new AbortController().signal)
   )
 
   expect(resolveTargets).toHaveBeenCalledExactlyOnceWith({
@@ -2981,16 +2977,12 @@ it('resolves identity families into one exchange with a compact batch summary an
   aborted.abort()
   execute.mockClear()
   await expect(
-    tools.call('execute_design_batch', input, aborted.signal)
+    tools.call('execute_design', input, aborted.signal)
   ).rejects.toThrow()
   expect(execute).not.toHaveBeenCalled()
   execute.mockRejectedValueOnce(new Error('Target removed or locked'))
   const rejected = JSON.parse(
-    await tools.call(
-      'execute_design_batch',
-      input,
-      new AbortController().signal
-    )
+    await tools.call('execute_design', input, new AbortController().signal)
   )
 
   expect(rejected).toMatchObject({
@@ -3129,7 +3121,7 @@ it('executes discovered APIs in a batch and identifies unknown lookup names', as
   const signal = new AbortController().signal
 
   await operations.call(
-    AiDesignToolIds.EXECUTE_DESIGN_BATCH,
+    AiDesignToolIds.EXECUTE_DESIGN,
     {
       operations: [
         {
@@ -3539,7 +3531,7 @@ it('does not infer model delivery from a tool name when its declaration is absen
     }))
   }
   const compact = JSON.parse(
-    await tools.call('execute_design_batch', args, new AbortController().signal)
+    await tools.call('execute_design', args, new AbortController().signal)
   )
 
   expect(
@@ -3547,7 +3539,7 @@ it('does not infer model delivery from a tool name when its declaration is absen
   ).toEqual(values)
   const full = JSON.parse(
     await tools.call(
-      'execute_design_batch',
+      'execute_design',
       { ...args, response: 'full' },
       new AbortController().signal
     )
@@ -3614,7 +3606,7 @@ it('retains valueless owner receipts instead of replacing their evidence with su
 
   expect(
     JSON.stringify(
-      tools.definitions.find((tool) => tool.name === 'execute_design_batch')
+      tools.definitions.find((tool) => tool.name === 'execute_design')
     )
   ).toContain('preserves ordered owner receipts')
   const args = {
@@ -3625,7 +3617,7 @@ it('retains valueless owner receipts instead of replacing their evidence with su
     }))
   }
   const compact = JSON.parse(
-    await tools.call('execute_design_batch', args, new AbortController().signal)
+    await tools.call('execute_design', args, new AbortController().signal)
   )
 
   expect(compact.batchSummary).toEqual({
@@ -3644,7 +3636,7 @@ it('retains valueless owner receipts instead of replacing their evidence with su
   })
   const full = JSON.parse(
     await tools.call(
-      'execute_design_batch',
+      'execute_design',
       { ...args, response: 'full' },
       new AbortController().signal
     )
@@ -3856,7 +3848,7 @@ it('resolves a nested plural target through the registered schema in one canonic
 
   const call = (argumentsValue: unknown) =>
     tools.call(
-      'execute_design_batch',
+      'execute_design',
       {
         inspection: 'defer',
         operations: [
@@ -4048,6 +4040,15 @@ it.each(['visual', 'data', 'reference-change', 'uncovered'] as const)(
       )
     }
 
+    if (verification === 'data') {
+      const imageOnly = await call(AiDesignToolIds.REVIEW_DRAWING, review)
+
+      expect(imageOnly.accepted).toBe(false)
+      expect(imageOnly.coverage.passed).toBe(0)
+
+      return
+    }
+
     expect(await call(AiDesignToolIds.REVIEW_DRAWING, review)).toMatchObject({
       structureAccepted: true
     })
@@ -4181,7 +4182,7 @@ it('exposes single-object conveniences only inside the batch schema', () => {
     expect.arrayContaining(names)
   )
   const batch = tools.definitions.find(
-    (tool) => tool.name === AiDesignToolIds.EXECUTE_DESIGN_BATCH
+    (tool) => tool.name === AiDesignToolIds.EXECUTE_DESIGN
   )
 
   expect(JSON.stringify(batch?.inputSchema)).toContain(
@@ -4300,7 +4301,7 @@ it.each([
     )
 
     await tools.call(
-      'execute_design_batch',
+      'execute_design',
       { operations: [{ name: contract.name, arguments: args }] },
       new AbortController().signal
     )
@@ -4398,7 +4399,7 @@ it('keeps prepared targets and different Fill patches in one plural operation wi
     ['api_element_setElementsVisible', { visible: false }]
   ] as const) {
     await tools.call(
-      'execute_design_batch',
+      'execute_design',
       {
         operations: [
           {
@@ -4550,7 +4551,7 @@ it.each([
       criteria: reviewCriteria(['Visibility']),
       detailRequired: false
     })
-    const receipt = await call('execute_design_batch', {
+    const receipt = await call('execute_design', {
       operations: [
         { name: contract.name, arguments: { elementIds: ids, visible: false } }
       ],
@@ -4717,7 +4718,7 @@ it('resolves mixed action and native names without discarding known matches or d
   const native = [
     {
       namespace: 'registered_operations',
-      name: AiDesignToolIds.EXECUTE_DESIGN_BATCH,
+      name: AiDesignToolIds.EXECUTE_DESIGN,
       description: 'Dispatch',
       inputSchema: { type: 'object', required: ['operations'] }
     },
@@ -4757,7 +4758,7 @@ it('resolves mixed action and native names without discarding known matches or d
 
   const result = await lookup([
     action.name,
-    AiDesignToolIds.EXECUTE_DESIGN_BATCH,
+    AiDesignToolIds.EXECUTE_DESIGN,
     'prepare_new_capability',
     'unregistered'
   ])
@@ -4767,7 +4768,7 @@ it('resolves mixed action and native names without discarding known matches or d
       ...action,
       execution: {
         kind: 'batch-action',
-        tool: AiDesignToolIds.EXECUTE_DESIGN_BATCH
+        tool: AiDesignToolIds.EXECUTE_DESIGN
       }
     })
   ])
@@ -5167,7 +5168,7 @@ it('returns requested action definitions on repeated reads with explicit context
   expect(changed.inputSchema.required).toEqual(['different'])
 })
 
-it('projects direct image, multi-image and text-only results without leaking image bytes', async () => {
+it('projects image receipts without leaking or duplicating identical image bytes', async () => {
   for (const count of [0, 1, 2]) {
     const receipt = {
       actionResults: Array.from({ length: count }, () => ({
@@ -5183,8 +5184,9 @@ it('projects direct image, multi-image and text-only results without leaking ima
 
     expect(texts).toHaveLength(1)
     expect(JSON.stringify(texts)).not.toContain('base64')
+    expect(JSON.parse(texts[0].text).actionResults).toHaveLength(count)
     expect(content.filter((item) => item.type === 'inputImage')).toEqual(
-      Array.from({ length: count }, () => ({
+      Array.from({ length: Math.min(count, 1) }, () => ({
         type: 'inputImage',
         imageUrl: png
       }))
@@ -5216,7 +5218,7 @@ it('retains the exact preparation rejection so the next call can correct it with
 
   await expect(
     tools.call(
-      'execute_design_batch',
+      'execute_design',
       {
         operations: [
           {
@@ -5255,7 +5257,7 @@ it('rejects scalar region references inside target arrays before reading', async
 
   await expect(
     tools.call(
-      'execute_design_batch',
+      'execute_design',
       {
         inspection: 'defer',
         operations: [
@@ -5317,7 +5319,7 @@ it.each(['invalid-bounds', 'snapshot', 'ambiguous'])(
 
     await expect(
       tools.call(
-        'execute_design_batch',
+        'execute_design',
         {
           inspection: 'defer',
           operations: [
@@ -5385,7 +5387,7 @@ it('resolves a region target once internally and supplies all IDs to one plural 
   )
   const result = JSON.parse(
     await tools.call(
-      'execute_design_batch',
+      'execute_design',
       {
         inspection: 'defer',
         operations: [
@@ -5410,8 +5412,7 @@ it('resolves a region target once internally and supplies all IDs to one plural 
 
   expect(execute).toHaveBeenCalledTimes(2)
   expect(execute.mock.calls[0][0].actions[0].arguments).toMatchObject({
-    filter: { name: { prefix: 'roof-' } },
-    expectedCount: ids.length
+    filter: { name: { prefix: 'roof-' } }
   })
   expect(execute.mock.calls[1][0].actions).toHaveLength(1)
   expect(execute.mock.calls[1][0].actions[0].arguments).toEqual({
@@ -5488,29 +5489,41 @@ it.each([
     execute
   )
 
-  await expect(
-    tools.call(
-      'execute_design_batch',
-      {
-        inspection: 'defer',
-        operations: [
-          {
-            name,
-            arguments: {},
-            target: {
-              field: 'elementIds',
-              query: {
-                scope: 'region',
-                bounds: { x: 1, y: 2, width: 3, height: 4 },
-                ...(failure === 'wrong-count' ? { expectedCount: 2 } : {})
-              }
+  const result = tools.call(
+    'execute_design',
+    {
+      inspection: 'defer',
+      operations: [
+        {
+          name,
+          arguments: {},
+          target: {
+            field: 'elementIds',
+            query: {
+              scope: 'region',
+              bounds: { x: 1, y: 2, width: 3, height: 4 },
+              ...(failure === 'wrong-count' ? { expectedCount: 2 } : {})
             }
           }
-        ]
-      },
-      controller.signal
+        }
+      ]
+    },
+    controller.signal
+  )
+
+  if (failure === 'empty' || failure === 'wrong-count') {
+    expect(JSON.parse(await result)).toMatchObject({
+      recovery: 'correct_input',
+      settlement: 'not-started',
+      toolOutcome: { status: 'failed', settlement: 'not-started' }
+    })
+    expect(execute.mock.calls[0][0].actions[0].arguments).not.toHaveProperty(
+      'expectedCount'
     )
-  ).rejects.toThrow()
+  } else {
+    await expect(result).rejects.toThrow()
+  }
+
   expect(execute).toHaveBeenCalledTimes(1)
   expect(execute.mock.calls[0][0].actions[0].name).toBe(read.name)
 })
@@ -6936,7 +6949,7 @@ it('reports every target binding conflict before resolving or dispatching the re
   const before = structuredClone(operation)
   const error = await tools
     .call(
-      'execute_design_batch',
+      'execute_design',
       { operations: [operation], inspection: 'defer' },
       new AbortController().signal
     )
@@ -6958,7 +6971,7 @@ it('reports every target binding conflict before resolving or dispatching the re
   expect(operation).toEqual(before)
 
   await tools.call(
-    'execute_design_batch',
+    'execute_design',
     {
       operations: [
         {
@@ -7765,7 +7778,7 @@ it('checks only surviving targets after creation and deletion in the same batch'
   )
 
   await operations.call(
-    'execute_design_batch',
+    'execute_design',
     {
       inspection: 'defer',
       operations: [
@@ -7858,7 +7871,7 @@ it.each([false, true])(
     const signal = new AbortController().signal
 
     await operations.call(
-      'execute_design_batch',
+      'execute_design',
       {
         inspection: 'defer',
         operations: [
@@ -8003,7 +8016,7 @@ it.each([AiActionNames.ARRANGE_DESIGN, AiActionNames.MAP_RETAINED_FILLS])(
     )
 
     await tools.call(
-      'execute_design_batch',
+      'execute_design',
       { inspection: 'defer', operations: [{ name, arguments: {} }] },
       new AbortController().signal
     )
@@ -8906,7 +8919,7 @@ it('resolves sixteen region edits through the real query owner with all retained
 
   try {
     await tools.call(
-      'execute_design_batch',
+      'execute_design',
       {
         inspection: 'defer',
         operations: Array.from({ length: 17 }, (_, x) => ({
@@ -8990,7 +9003,7 @@ it.each([
     )
     const output = JSON.parse(
       await tools.call(
-        'execute_design_batch',
+        'execute_design',
         { inspection: 'defer', operations: [{ name, arguments: {} }] },
         new AbortController().signal
       )
@@ -9077,7 +9090,7 @@ it('advertises only admitted batch routes and actual explicit inspection wrapper
   }
 
   expect(execute).toHaveBeenCalledTimes(2)
-  const batch = owner.definitions.find((d) => d.name === 'execute_design_batch')
+  const batch = owner.definitions.find((d) => d.name === 'execute_design')
 
   expect(JSON.stringify(batch?.inputSchema)).not.toContain('review_design')
 })
@@ -9255,13 +9268,11 @@ it('never substitutes a saved same-name tool for an unavailable explicit action 
         {
           name,
           namespace: 'saved_tools',
+          registeredName: 'saved_tools.' + name,
           description: 'A different saved recipe',
           inputSchema: { type: 'object' },
-          ...toolSemantics({
-            effect: 'read',
-            composition: 'control-plane',
-            outputSchema: { type: 'object' }
-          })
+          ...toolSemantics({ type: 'object' }, 'read', []),
+          composition: 'allowed'
         }
       ]
     }
@@ -9275,6 +9286,7 @@ it('never substitutes a saved same-name tool for an unavailable explicit action 
   )
 
   expect(result.apis[0].execution.kind).toBe('unavailable')
+  expect(result.apis[0].recipeDependency).toBeUndefined()
 })
 
 it('delivers API, native and mixed discovery pages through the actual invocation boundary', async () => {
@@ -9678,8 +9690,7 @@ it('preserves successful mixed schema lookups and returns exact recovery for a u
       getNativeTools: () =>
         tools.definitions
           .filter(
-            (definition) =>
-              definition.name === AiDesignToolIds.EXECUTE_DESIGN_BATCH
+            (definition) => definition.name === AiDesignToolIds.EXECUTE_DESIGN
           )
           .map((definition) => ({
             ...definition,
@@ -9698,10 +9709,7 @@ it('preserves successful mixed schema lookups and returns exact recovery for a u
     )
 
   const input = {
-    names: [
-      AiActionNames.READ_DESIGN_CONTEXT,
-      AiDesignToolIds.EXECUTE_DESIGN_BATCH
-    ],
+    names: [AiActionNames.READ_DESIGN_CONTEXT, AiDesignToolIds.EXECUTE_DESIGN],
     schemaPaths: ['/properties']
   }
   const first = await read(input)
@@ -10054,7 +10062,7 @@ it('routes exact final-action discovery to the current final-response contract w
   ).rejects.toThrow()
   await expect(
     owner.call(
-      AiDesignToolIds.EXECUTE_DESIGN_BATCH,
+      AiDesignToolIds.EXECUTE_DESIGN,
       {
         operations: [{ name: final.name, arguments: { outcome: 'completed' } }]
       },
@@ -10174,13 +10182,13 @@ it('replays recorded conflicting and corrected targets without reading or writin
   const before = structuredClone(bad)
 
   await expect(
-    tools.call(rejected.tool, bad, new AbortController().signal)
+    tools.call('execute_design', bad, new AbortController().signal)
   ).rejects.toThrow(/conflicting target binding/)
   expect(execute).not.toHaveBeenCalled()
   expect(bad).toEqual(before)
   const result = JSON.parse(
     await tools.call(
-      corrected.tool,
+      'execute_design',
       restore(corrected.input),
       new AbortController().signal
     )
@@ -10411,7 +10419,7 @@ it('delivers a validated usage invocation with canonical identity cardinality an
   expect(usage.invocationExample).toEqual({
     illustrative: true,
     invocation: {
-      tool: 'execute_design_batch',
+      tool: 'execute_design',
       arguments: {
         operations: [
           {
@@ -10595,7 +10603,10 @@ describe('context entry navigation and recovery', () => {
 
       try {
         const usage = await t.read({
-          query: 'structural retained output',
+          query:
+            route === 'action'
+              ? 'structural retained output'
+              : 'design_operations.read_design_context',
           view: 'usage'
         })
         const entry = route === 'action' ? usage.apis[0] : usage.tools[0]
@@ -10735,7 +10746,10 @@ describe('context entry navigation and recovery', () => {
     const t = await setup()
 
     try {
-      const usage = await t.read(t.saved.usageQuery)
+      const usage = await t.read({
+        ...t.saved.usageQuery,
+        names: [t.action.name, 'design_operations.' + t.action.name]
+      })
       const { invokeLocalTool } = await import('../local-tool-invocation')
       const invalidValues = [
         { scope: 'ids' },
@@ -11300,4 +11314,87 @@ it('prepares only explicit reference uses and preserves selection through failed
     stats.mockRestore()
     timeout.mockRestore()
   }
+})
+
+it('discovers opaque names by owner capability and recovers a wrong identity using the supplied purpose', async () => {
+  const candidates = [
+    ['a', 'Arrange repeated panes', 'windowLayout'],
+    ['b', 'Map glass reflection', 'fillStops'],
+    ['c', 'Verify coverage of window panes', 'missingCount'],
+    ['arrange_window_layout', 'Export a text note', 'note']
+  ].map(([name, description, field]) => ({
+    namespace: 'fixture',
+    name,
+    description,
+    inputSchema: { type: 'object' },
+    ...toolSemantics(
+      { type: 'object', properties: { [field]: { type: 'string' } } },
+      'read',
+      []
+    )
+  }))
+  const owner = createLocalOperationTools(
+    basicApiContracts.slice(0, 1),
+    {
+      modelActions: (a) => a,
+
+      resolveBatch: (b) => b
+    },
+    vi.fn(),
+    { getNativeTools: () => candidates }
+  )
+
+  const search = async (args: unknown) =>
+    JSON.parse(
+      await owner.call(
+        'describe_design_apis',
+        args,
+        new AbortController().signal
+      )
+    )
+
+  for (const [purpose, expected] of [
+    ['arrange window layout', 'a'],
+    ['map glass reflection', 'b'],
+    ['verify missing count', 'c']
+  ]) {
+    const found = await search({ query: purpose })
+
+    expect(found.tools[0].name).toBe(expected)
+    const recovery = await search({ names: ['unknown_identity'], purpose })
+
+    expect(recovery.missingNames).toEqual(['unknown_identity'])
+    expect(recovery.candidates[0]).toMatchObject({
+      name: expected,
+      namespace: 'fixture'
+    })
+  }
+
+  const absent = await search({ names: ['xyzqq'] })
+
+  expect(absent.missingNames).toEqual(['xyzqq'])
+  expect(absent.candidates).toEqual([])
+})
+
+it('finds existing vector curve editing using the recorded compound purpose query', async () => {
+  const owner = createLocalOperationTools(
+    basicApiContracts,
+    {
+      modelActions: (actions) => actions,
+
+      resolveBatch: (batch) => batch
+    },
+    vi.fn()
+  )
+  const found = JSON.parse(
+    await owner.call(
+      'describe_design_apis',
+      { query: 'smooth vector path curves', view: 'usage' },
+      new AbortController().signal
+    )
+  )
+
+  expect(
+    found.apis.map((api: { operation: string }) => api.operation)
+  ).toContain('element.updateVectorAnchorPointHandles')
 })

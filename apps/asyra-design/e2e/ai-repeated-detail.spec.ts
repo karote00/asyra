@@ -257,7 +257,7 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
     const beforeFills = await fills()
 
     const edit = () =>
-      invoke('execute_design_batch', {
+      invoke('execute_design', {
         inspection: 'defer',
         operations: [
           {

@@ -1351,6 +1351,85 @@ it('derives repeated vector bounds once and preserves independent Fill identitie
 })
 
 describe('signed draft coordinates and Group normalization', () => {
+  it('preserves the recorded zero-origin Frame attachment without confusing projection origin with parent position', async () => {
+    const { default: recorded } =
+      await import('./fixtures/recorded-101/strict-frame-space-20261106.json')
+    const original = structuredClone(recorded)
+    const parent = recorded.canonicalRoots[0]
+    const child = recorded.canonicalRoots[1]
+    const [base, tiers] = recorded.operations
+    const preparedBase = prepareDesign(base.arguments.draft)
+    const preparedTiers = prepareDesign(tiers.arguments.draft)
+    const baseRoot = preparedBase.entries[0].descriptor
+    const tiersRoot = preparedTiers.entries[0].descriptor
+
+    expect(parent).toMatchObject({
+      type: 'frame',
+      parentId: 'workspace',
+      x: 0,
+      y: 0,
+      rotation: 0
+    })
+    expect(baseRoot).toMatchObject({ type: 'frame', x: 0, y: 0 })
+    expect(base.arguments.draft.projection).toEqual(
+      tiers.arguments.draft.projection
+    )
+    expect(base.arguments.draft.projection).toMatchObject({
+      originX: 16000,
+      originY: 47000
+    })
+    expect(tiers.arguments.parentId).toBe(parent.id)
+    expect(child.parentId).toBe(parent.id)
+    expect(Number(tiersRoot.x)).toBeCloseTo(child.x, 9)
+    expect(Number(tiersRoot.y)).toBeCloseTo(child.y, 9)
+    // Projection positions the content; the containing Frame stays at zero.
+    expect({ x: child.x + parent.x, y: child.y + parent.y }).toEqual({
+      x: Number(tiersRoot.x),
+      y: Number(tiersRoot.y)
+    })
+    expect(recorded).toEqual(original)
+  })
+  it('reproduces the recorded parent-space displacement and preserves workspace placement without an implicit transform', async () => {
+    const { default: recorded } =
+      await import('./fixtures/recorded-101/strict-parent-space-20261106.json')
+    const original = structuredClone(recorded)
+    const parent = recorded.canonicalGroups[0]
+
+    expect(parent.parentId).toBe('workspace')
+    expect(recorded.operations).toHaveLength(4)
+    recorded.operations.forEach((operation, index) => {
+      const source = operation.arguments.draft
+      const receipt = prepareDesign(source)
+      const root = receipt.entries[0].descriptor
+      const saved = recorded.canonicalGroups[index]
+
+      expect(root.name).toBe(saved.name)
+      expect(Number(root.x)).toBeCloseTo(saved.x, 9)
+      expect(Number(root.y)).toBeCloseTo(saved.y, 9)
+      expect(source.projection).toEqual(
+        recorded.operations[0].arguments.draft.projection
+      )
+      if (index === 0) {
+        return
+      }
+
+      expect(operation.arguments).toMatchObject({
+        parentId: { kind: 'named', name: 'taipeiRoot', path: '' }
+      })
+      expect(saved.parentId).toBe(parent.id)
+      // The unchanged root descriptor is local to the selected container.
+      // Omitted parent inserts the same descriptor at its intended workspace point.
+      const insertedWorkspace = { x: saved.x + parent.x, y: saved.y + parent.y }
+
+      expect(insertedWorkspace.x - Number(root.x)).toBeCloseTo(parent.x, 9)
+      expect(insertedWorkspace.y - Number(root.y)).toBeCloseTo(parent.y, 9)
+      expect(insertedWorkspace).not.toEqual({
+        x: Number(root.x),
+        y: Number(root.y)
+      })
+    })
+    expect(recorded).toEqual(original)
+  })
   it('normalizes nested Group children without moving their workspace positions', () => {
     const input = {
       type: 'group',

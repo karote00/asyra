@@ -78,10 +78,11 @@ A draft may declare `linearFields`, a named map of
 `{frame:"world",start:{x,y,z},end:{x,y,z},gradientStops}`. Distinct finite endpoints
 use the same units and basis as projected vertices; t(p)=dot(p-start,end-start)/
 |end-start|^2. Stops retain the existing ordered linear color/opacity contract.
-Root projected faces and translated pattern faces select `materialField:key`
-instead of `fill`. A field-bound pattern face cannot receive palette overrides.
-Plain nodes, surface-grid motifs and shared/template Fill definitions do not accept
-this selector. Existing native fills remain independent supported construction.
+Root projected faces, translated pattern faces and surface-grid motifs select
+`materialField:key` instead of `fill`/`fills`. Plain nodes and shared/template Fill
+definitions do not accept this selector. Grid motif templates may select the same
+field or override paint mode: a field patch clears inherited fill/palette, and a
+fill/palette patch clears an inherited field. Conflicting modes in one patch reject. Existing native fills remain independent supported construction.
 
 Preparation maps the affine field on the admitted plane through the existing
 orthographic camera into the final normalized vector bounds, then emits ordinary
@@ -95,7 +96,8 @@ nonplanar field projection are unsupported. No renderer change is implied.
 
 Fields are immutable preparation intent, not persisted live constraints or linked
 Fill identities. Per-template plane derivation is reused only within this
-preparation; each instance consumes its actual world offset and produces its own
+preparation; grids solve once per boundary/field, normalize each cell bounds and
+retain actual motif offsets and pattern translation phase; each instance consumes its actual world offset and produces its own
 editable Fill. Reload restores ordinary fills. Explicit later reconstruction uses
 current arguments/authority; direct native edits remain valid. No mechanical
 conversion result or Knowledge read grants visual approval. Existing artifact
@@ -173,7 +175,7 @@ ID; pagination advances across those slots. Invalid input fails before reading.
 Text previews are limited to 2,000 characters and style lists to 8 entries, with
 explicit truncation flags. No vector points are requested. Reads are fresh;
 restart pagination after hierarchy changes. Parent children observation still
-copies the existing child list once per page. Pagination explicitly reports truncation. The targeted edit action changes one current object; execute_design_batch expands a target set to ordered actions in one call: optional name,
+copies the existing child list once per page. Pagination explicitly reports truncation. The targeted edit action changes one current object; execute_design expands a target set to ordered actions in one call: optional name,
 parent-local x/y/width/height/rotation, native typography patch, or primary fill and
 stroke color. It admits all fields first, checks the object's ancestor chain for
 locks, and requires existing property support. Typography uses its native schema.
@@ -412,7 +414,7 @@ batch boundaries, with fresh evidence when dependencies change or are unknown.
 ### Request-owned targets and grouped operations
 
 Prepared `keyToId` remains authoritative for original creation identities during
-that request even when application returns compact receipts. `execute_design_batch`
+that request even when application returns compact receipts. `execute_design`
 accepts ordered registered operations and optional artifact targets (exact keys,
 key prefix, or the entire prepared set). Unknown/released artifacts and unknown
 keys reject before dispatch. References are not mutable Group membership or cached

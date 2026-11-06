@@ -331,7 +331,7 @@ const updateVectorAnchorPointHandlesApi = defineBasicApi({
   ],
   description:
     vectorWorkspaceEditingDescription +
-    ' Plural handle updates share one topology commit; null removes the specified handle.'
+    ' Shape vector path curves with explicit Bezier handles; forceSmooth couples the opposite handle for a smooth anchor. Plural handle updates share one topology commit; null removes the specified handle. This edits supplied coordinates, not automatic visual smoothing.'
 })
 
 const appendVectorAnchorPointApi = defineBasicApi({

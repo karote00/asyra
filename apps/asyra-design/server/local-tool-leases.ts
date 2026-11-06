@@ -24,7 +24,8 @@ const record = (value: unknown): value is Record<string, unknown> =>
 /** Inspect only declared reference fields, never opaque product payloads or names. */
 export const localToolReferences = (
   value: unknown,
-  schema: unknown
+  schema: unknown,
+  nonPortable?: Set<unknown>
 ): string[] => {
   const result = new Set<string>()
 
@@ -59,6 +60,23 @@ export const localToolReferences = (
       }
 
       visit(item, target, depth + 1)
+    }
+
+    if (
+      nonPortable &&
+      ['request', 'secret'].includes(String(shape['x-runtime-value']))
+    ) {
+      const collect = (v: unknown): void => {
+        if (v !== null && typeof v === 'object') {
+          Object.values(v).forEach(collect)
+        } else if (v != null) {
+          nonPortable.add(v)
+        }
+      }
+
+      collect(item)
+
+      return
     }
 
     if (shape['x-runtime-value'] === 'request-artifact') {
@@ -127,6 +145,12 @@ export const localToolReferences = (
   }
 
   visit(value, schema, 0)
+
+  if (nonPortable) {
+    for (const handle of result) {
+      nonPortable.add(handle)
+    }
+  }
 
   return [...result]
 }
@@ -526,5 +550,123 @@ export const createLocalToolLeases = (options: {
 
       return disposal
     }
+  }
+}
+
+/** Possible request/secret fields make a complete value unsuitable for App storage. */
+export const localToolSchemaIsPortable = (
+  schema: unknown,
+  referenceRoot: unknown = schema
+): boolean => {
+  const seen = new Set<unknown>()
+
+  const visit = (shape: unknown): boolean => {
+    if (!record(shape) || seen.has(shape)) {
+      return true
+    }
+
+    seen.add(shape)
+    if (
+      ['request', 'request-artifact', 'secret'].includes(
+        String(shape['x-runtime-value'])
+      )
+    ) {
+      return false
+    }
+
+    if (typeof shape.$ref === 'string') {
+      if (!shape.$ref.startsWith('#/')) {
+        throw Error('Artifact reference schema must be local')
+      }
+
+      let target: unknown = referenceRoot
+
+      for (const part of shape.$ref.slice(2).split('/')) {
+        const key = part.replace(/~1/g, '/').replace(/~0/g, '~')
+
+        if (
+          (!record(target) && !Array.isArray(target)) ||
+          !Object.hasOwn(target, key)
+        ) {
+          throw Error('Missing artifact reference schema: ' + shape.$ref)
+        }
+
+        target = (target as Record<string, unknown>)[key]
+      }
+
+      if (!visit(target)) {
+        return false
+      }
+    }
+
+    for (const key of ['properties', 'patternProperties']) {
+      if (record(shape[key]) && !Object.values(shape[key]).every(visit)) {
+        return false
+      }
+    }
+
+    for (const key of ['anyOf', 'oneOf', 'allOf', 'prefixItems']) {
+      if (Array.isArray(shape[key]) && !shape[key].every(visit)) {
+        return false
+      }
+    }
+
+    return ['items', 'additionalProperties'].every((key) => visit(shape[key]))
+  }
+
+  return visit(schema)
+}
+
+/** Top-level result choices retain their declared lifetime even when conditional. */
+export const localToolResultFieldLifetimes = (schema: unknown) => {
+  const fields = new Set<string>()
+  const requestScoped = new Set<string>()
+  const seen = new Set<unknown>()
+
+  const visit = (node: unknown): void => {
+    if (!record(node) || seen.has(node)) {
+      return
+    }
+
+    seen.add(node)
+    if (typeof node.$ref === 'string' && node.$ref.startsWith('#/')) {
+      let target: unknown = schema
+
+      for (const part of node.$ref.slice(2).split('/')) {
+        const key = part.replace(/~1/g, '/').replace(/~0/g, '~')
+
+        target =
+          (record(target) || Array.isArray(target)) &&
+          Object.hasOwn(target, key)
+            ? (target as Record<string, unknown>)[key]
+            : undefined
+      }
+
+      visit(target)
+    }
+
+    if (record(node.properties)) {
+      for (const [name, value] of Object.entries(node.properties)) {
+        const path = '/' + name.replace(/~/g, '~0').replace(/\//g, '~1')
+
+        fields.add(path)
+        if (!localToolSchemaIsPortable(value, schema)) {
+          requestScoped.add(path)
+        }
+      }
+    }
+
+    for (const key of ['allOf', 'anyOf', 'oneOf']) {
+      if (Array.isArray(node[key])) {
+        node[key].forEach(visit)
+      }
+    }
+  }
+
+  visit(schema)
+
+  return {
+    fields: [...fields].sort(),
+    requestScopedFields: [...requestScoped].sort()
   }
 }

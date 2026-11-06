@@ -1,25 +1,12 @@
+import type { DesignContextQuery } from './design-context-fields'
+export type { DesignContextQuery } from './design-context-fields'
+import {
+  designContextFields,
+  designContextPageLimit
+} from './design-context-fields'
 import core from '../contexts'
 import type { Rect } from '@asyra/utils'
 
-export interface DesignContextQuery {
-  scope: 'selection' | 'children' | 'ids' | 'region'
-  expectedCount?: number
-  allMatches?: boolean
-  result?: 'elements' | 'ids'
-  bounds?: Rect
-  filter?: {
-    name?: { equals?: string; prefix?: string; suffix?: string }
-    type?: string
-    parentId?: string
-    ancestorId?: string
-    locked?: boolean
-  }
-  elementIds?: string[]
-  fields?: string[]
-  parentId?: string
-  offset?: number
-  limit?: number
-}
 export interface DesignContextSource {
   getCurrentWorkspaceId(): string | null | undefined
   getSelectedElementIds(): string[]
@@ -157,25 +144,6 @@ export const matchesDesignContextFilter = (
   return true
 }
 
-export const designContextPageLimit = 200
-
-export const designContextFields = Object.freeze([
-  'x',
-  'y',
-  'width',
-  'height',
-  'rotation',
-  'text',
-  'fontFamily',
-  'fontSize',
-  'fontWeight',
-  'fontStyle',
-  'textAlign',
-  'lineHeight',
-  'letterSpacing',
-  'fills',
-  'strokes'
-])
 /** Scope ownership shared by canonical admission and advertised query alternatives. */
 export const designContextCommonFields: readonly string[] = [
   'scope',
