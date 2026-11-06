@@ -1,3 +1,14 @@
+import { localToolImages, type LocalToolImage } from './local-tool-media'
+import { registeredRecipeOutputAt } from '@asyra/ai-agent-runtime'
+import {
+  localToolSchemaIsPortable,
+  localToolResultFieldLifetimes
+} from './local-tool-leases'
+import {
+  createDesignDataEvidence,
+  resolveDesignDataQuery,
+  type DesignDataSelection
+} from './design-data-evidence'
 import {
   registeredToolInvocationSchemas,
   registeredToolInvocationInstructions
@@ -90,6 +101,8 @@ import {
   getBasicApiContract
 } from '../src/ai/basic-api-catalog'
 import {
+  artifactKeyOperations,
+  bindOperationTargets,
   prepareOperationBatch,
   type ElementBindingMode
 } from './local-operation-batch'
@@ -99,7 +112,8 @@ import {
   designEvidenceInput,
   reviewVisualSchema,
   reviewCaptureChecksSchema,
-  reviewInspectionIds
+  reviewInspectionIds,
+  reviewDataEvidenceIds
 } from './local-design-review'
 import { AiDesignToolIds } from '../src/constants/ai-design'
 import { AiReferenceToolIds } from './ai-domain-prompt'
@@ -188,6 +202,33 @@ const usageResults = (
       modelToolResultSchemas({ outputSchema: boundary }, 'host').outputSchema
     ])
   )
+
+/** Enumerate possible top-level owner fields without rendering machine schemas. */
+const usageResultFields = (schemas: {
+  outputSchema?: unknown
+  partialOutputSchema?: unknown
+  recoveryOutputSchema?: unknown
+}) => {
+  const fields = new Set<string>()
+  const requestScoped = new Set<string>()
+
+  for (const schema of [
+    schemas.outputSchema,
+    schemas.partialOutputSchema,
+    schemas.recoveryOutputSchema,
+    localToolFailureSchema
+  ]) {
+    const selected = localToolResultFieldLifetimes(schema)
+
+    selected.fields.forEach((path) => fields.add(path))
+    selected.requestScopedFields.forEach((path) => requestScoped.add(path))
+  }
+
+  return {
+    fields: [...fields].sort(),
+    requestScopedFields: [...requestScoped].sort()
+  }
+}
 
 const followupResultFields = {
   batchId: { type: 'string' },
@@ -423,8 +464,10 @@ const discoveryInputIssue = (args: unknown): string | undefined => {
       (key) =>
         !selectors.includes(key) &&
         ![
+          'purpose',
           'inputScope',
           'includeSchemas',
+          'includeResultSchema',
           'refresh',
           'refreshReason',
           'view',
@@ -446,7 +489,10 @@ const discoveryInputIssue = (args: unknown): string | undefined => {
   const hasInvalidPresentation =
     !hasInvalidFields &&
     !hasInvalidPagination &&
-    ((args.refresh !== undefined && typeof args.refresh !== 'boolean') ||
+    ((args.includeResultSchema !== undefined &&
+      (typeof args.includeResultSchema !== 'boolean' ||
+        args.view !== 'usage')) ||
+      (args.refresh !== undefined && typeof args.refresh !== 'boolean') ||
       (args.view !== undefined &&
         (typeof args.view !== 'string' ||
           !['usage', 'full'].includes(args.view))) ||
@@ -485,7 +531,11 @@ const discoveryInputIssue = (args: unknown): string | undefined => {
     !hasInvalidPagination &&
     !hasInvalidPresentation &&
     !hasInvalidRefreshOrSchemaOptions &&
-    (selectors.filter((key) => args[key] !== undefined).length > 1 ||
+    ((args.purpose !== undefined &&
+      (typeof args.purpose !== 'string' ||
+        !args.purpose.trim() ||
+        !(args.names || args.operations || args.operation))) ||
+      selectors.filter((key) => args[key] !== undefined).length > 1 ||
       ['query', 'operation', 'category'].some(
         (key) =>
           args[key] !== undefined &&
@@ -506,7 +556,7 @@ const discoveryInputIssue = (args: unknown): string | undefined => {
     hasInvalidRefreshOrSchemaOptions ||
     hasInvalidSelector
   ) {
-    return 'Provide one selector: operations, operation, category, names or query; omit selectors for categories. includeSchemas requires category. view (usage/full) requires a selector; nonempty schemaPaths requires exact names/operations. inputScope requires one exact native tool via names or query and cannot combine with schemaPaths; use owner-published scope choices. Partial views cannot combine with each other. refreshReason requires refresh=true and must be context-loss, delivery-failure or missing-fields.'
+    return 'Provide one selector: operations, operation, category, names or query; omit selectors for categories. includeSchemas requires category; includeResultSchema is boolean and requires view=usage. view (usage/full) requires a selector; nonempty schemaPaths requires exact names/operations. inputScope requires one exact native tool via names or query and cannot combine with schemaPaths; use owner-published scope choices. Partial views cannot combine with each other. refreshReason requires refresh=true and must be context-loss, delivery-failure or missing-fields.'
   }
 
   return undefined
@@ -520,6 +570,8 @@ export class LocalOperationPreparationError extends LocalToolInputError {
     )
   }
 }
+
+class LocalOperationTargetError extends LocalOperationPreparationError {}
 
 export const localOperationNamespace = 'design_operations'
 
@@ -766,9 +818,6 @@ const schemaSlots = (
 
   return slots
 }
-
-const inputFieldPaths = (schema: unknown): string[] =>
-  schemaSlots(schema).map((slot) => slot.path)
 
 /** Navigation stops at branch roots; it is not a flattened validation schema. */
 const usageInputPaths = (schema: unknown): string[] => {
@@ -1264,6 +1313,8 @@ export const createLocalOperationTools = (
       {
         type: 'object',
         additionalProperties: false,
+        description:
+          'Resolve prepared artifact targets by exact keys. The batch binds the selected elements to the operation argument.',
         required: ['artifactId', 'field'],
         properties: {
           artifactId: { type: 'string' },
@@ -1383,7 +1434,9 @@ export const createLocalOperationTools = (
 
     for (const [key, query] of queryKeys) {
       signal.throwIfAborted()
-      const argumentsValue = { ...query }
+      // This owner validates the complete match count before admitting any writes.
+      // A browser count exception would hide the valid selection behind execution failure.
+      const { expectedCount: _expectedCount, ...argumentsValue } = query
       const issue = operationInputIssue(
         argumentsValue,
         contextReader.inputSchema
@@ -1440,13 +1493,13 @@ export const createLocalOperationTools = (
         query.expectedCount !== undefined &&
         value.total !== query.expectedCount
       ) {
-        throw new Error(
+        throw new LocalOperationTargetError(
           'Region target match count differs from expectedCount; no mutation was submitted.'
         )
       }
 
       if (!value.elementIds.length) {
-        throw new Error(
+        throw new LocalOperationTargetError(
           'Region query matched no targets; no mutation was submitted.'
         )
       }
@@ -1489,7 +1542,7 @@ export const createLocalOperationTools = (
       batchResultResources
     ),
     revision: 3,
-    name: AiDesignToolIds.EXECUTE_DESIGN_BATCH,
+    name: AiDesignToolIds.EXECUTE_DESIGN,
     description:
       'Submit an ordered batch of registered edits or narrow reads in one canvas exchange. Use each named operation schema. For region edits, target={field:"elementIds",query:{scope:"region",bounds,filter?}} resolves every matching ID internally once before batch writes; use a plural API, without metadata reads or pagination. Unavailable/incomplete/empty matches make no writes. Queries select current identities; mutation admission still rechecks targets. target alternatively supplies artifactId with a targetSetId from retain_design_targets, exact keys or keyPrefix and field=elementId (apply to each identity) or elementIds (one plural operation); omitted keys selects the prepared set. The field is resolved at its unique registered schema path, including nested request arguments; ambiguous paths require explicit arguments. Omit target-supplied argument slots entirely, including empty arrays, null or placeholders. Each destination schema declares x-design-element-binding: all supplies the list, each expands per element, one requires exactly one (for example anchorId). Multiple bindings may fill distinct omitted slots with at most one each destination; no Cartesian expansion. anchorId uses field="anchorId", path=["request","anchorId"], not field="elementId". Region queries allow all or one slots, never each. Other identity types are not element targets. References identify original creation members, not current Group children. Current canonical permission/existence checks still apply. All inputs are checked before dispatch. Existing Runtime transaction, Undo and failure semantics remain; inspect once after the stage, not after each item. Use inspection=defer only when another stage follows. Structural receipts provide retained={snapshotId,leaseId,total}; pass that object directly in a declared elementIds slot for the next edit. Read read_design_context with scope=snapshot and delivery=receipt for the original full receipt without repeating a mutation. Read operations should use fields=[] or specific fields, never reread the hierarchy to recover known IDs.',
     inputSchema: {
@@ -1746,7 +1799,14 @@ export const createLocalOperationTools = (
         refresh: true,
         refreshReason: 'context-loss',
         ...(args.inputScope ? { inputScope: args.inputScope } : {}),
-        ...(args.view === 'usage' ? { view: 'usage' } : {})
+        ...(args.view === 'usage'
+          ? {
+              view: 'usage',
+              ...(args.includeResultSchema !== undefined
+                ? { includeResultSchema: args.includeResultSchema }
+                : {})
+            }
+          : {})
       }
     }
     let coverage = 'full'
@@ -1836,9 +1896,7 @@ export const createLocalOperationTools = (
             ...(inputScopes?.selection
               ? {}
               : {
-                  outputFields: (exactSelection
-                    ? inputFieldPaths
-                    : usageInputPaths)(modelResults.outputSchema)
+                  outputFields: usageInputPaths(modelResults.outputSchema)
                 }),
             elementBindings: schemaSlots(inputSchema).flatMap(
               ({ path, schema }) =>
@@ -1881,7 +1939,7 @@ export const createLocalOperationTools = (
         }
 
         throw new LocalOperationPreparationError(
-          `${error instanceof Error ? error.message : 'Invalid inputScope'} Correct the query from these choices; the example is illustrative, not a replacement for valid selections. Scope guidance: ${JSON.stringify({ inputScopes: { operations: guidance.inputScopes.operations, nodeTypes: guidance.inputScopes.nodeTypes, optionalInputs: guidance.inputScopes.optionalInputs }, example: guidance.example })}`
+          `${error instanceof Error ? error.message : 'Invalid inputScope'} Correct the query from these choices; the example is illustrative, not a replacement for valid selections. Scope guidance: ${JSON.stringify({ inputScopes: { operations: guidance.inputScopes.operations, nodeTypes: guidance.inputScopes.nodeTypes, optionalInputs: guidance.inputScopes.optionalInputs }, example: { ...guidance.example, arguments: { ...guidance.example.arguments, ...(args.includeResultSchema !== undefined ? { includeResultSchema: args.includeResultSchema } : {}) } } })}`
         )
       }
     }
@@ -1939,6 +1997,21 @@ export const createLocalOperationTools = (
           }
         : localToolFailureSchema
 
+      const resultFields = usageResultFields(results)
+      const guaranteedFields: string[] = []
+      const portableFields = resultFields.fields.filter((path) => {
+        try {
+          const schema = registeredRecipeOutputAt(results.outputSchema, path)
+
+          guaranteedFields.push(path)
+
+          return localToolSchemaIsPortable(schema)
+        } catch {
+          // Optional or variant-dependent fields need their selected owner contract.
+          return false
+        }
+      })
+
       projection = {
         ...usage,
         ...usageNavigation,
@@ -1953,6 +2026,13 @@ export const createLocalOperationTools = (
         }),
         usageGuide: {
           ...guidance,
+          retention: {
+            inputRoot: 'operation.arguments',
+            scope: 'conversation',
+            wholeResultAllowed: localToolSchemaIsPortable(results.outputSchema),
+            guaranteedResultFields: portableFields,
+            forbiddenResultFields: resultFields.requestScopedFields
+          },
           ...(selectedBatch
             ? {
                 instructions: batchDefinition.description,
@@ -1962,7 +2042,17 @@ export const createLocalOperationTools = (
           parameters: workflowUsageParameters(
             selectedBatchInput ?? scopedRegistered?.inputSchema ?? selected
           ),
-          results: usageResults(results, failure),
+          results:
+            args.includeResultSchema === true
+              ? usageResults(results, failure)
+              : {
+                  guaranteedFields,
+                  conditionalFields: resultFields.fields.filter(
+                    (path) => !guaranteedFields.includes(path)
+                  ),
+                  interpretation:
+                    'Read the owner result and toolOutcome.status with settlement. Completed execution is not visual approval or durable storage. Preserve completed work on partial/failed results; unknown settlement is not permission to replay. Use the owner recovery and returned next arguments. Complete result schemas are available with includeResultSchema=true when a machine consumer needs validation.'
+                },
           recovery: [
             guidance.recovery,
             selectedBatch
@@ -2040,7 +2130,14 @@ export const createLocalOperationTools = (
           arguments: {
             ...selector,
             ...(args.inputScope ? { inputScope: args.inputScope } : {}),
-            ...(args.view === 'usage' ? { view: 'usage' } : {}),
+            ...(args.view === 'usage'
+              ? {
+                  view: 'usage',
+                  ...(args.includeResultSchema !== undefined
+                    ? { includeResultSchema: args.includeResultSchema }
+                    : {})
+                }
+              : {}),
             ...(args.schemaPaths ? { schemaPaths: args.schemaPaths } : {}),
             refresh: true,
             refreshReason: 'delivery-failure'
@@ -2064,6 +2161,52 @@ export const createLocalOperationTools = (
   let nativeCatalogFingerprint: string | undefined
   let nativeCatalogRevision = 0
   let nativeTools: NativeToolDescriptor[] = []
+
+  const normalize = (value: string) =>
+    value
+      .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+      .normalize('NFKC')
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
+      .trim()
+
+  const searchText = new WeakMap<object, string>()
+
+  const metadataText = (entry: {
+    description: string
+    inputSchema: unknown
+    outputSchema?: unknown
+  }) => {
+    const cached = searchText.get(entry)
+
+    if (cached !== undefined) {
+      return cached
+    }
+
+    const fields = [entry.description]
+
+    for (const schema of [entry.inputSchema, entry.outputSchema]) {
+      if (!isRecord(schema)) {
+        continue
+      }
+
+      for (const value of [schema.title, schema.description]) {
+        if (typeof value === 'string') {
+          fields.push(value)
+        }
+      }
+
+      if (isRecord(schema.properties)) {
+        fields.push(...Object.keys(schema.properties))
+      }
+    }
+
+    const text = normalize(fields.join(' '))
+
+    searchText.set(entry, text)
+
+    return text
+  }
 
   const nativeMatches = (name: string): NativeToolDescriptor[] => {
     const revision = options.getNativeToolsRevision?.() ?? 0
@@ -2122,10 +2265,17 @@ export const createLocalOperationTools = (
     tool: NativeToolDescriptor,
     action: (typeof registered)[number]
   ) =>
-    Boolean(getBasicApiContract(action.name)) &&
     tool.name === action.name &&
     tool.namespace === localOperationNamespace &&
     tool.registeredName === `${localOperationNamespace}.${action.name}`
+
+  const representedBatchWrapper = (
+    tool: NativeToolDescriptor,
+    action: (typeof registered)[number]
+  ) =>
+    batchActionNames.has(action.name) &&
+    tool.composition === 'allowed' &&
+    isCanonicalWrapper(tool, action)
 
   const actionExecution = (action: (typeof registered)[number]) => {
     if (finalActions.has(action.name)) {
@@ -2135,7 +2285,7 @@ export const createLocalOperationTools = (
     if (batchActionNames.has(action.name)) {
       return {
         kind: 'batch-action',
-        tool: AiDesignToolIds.EXECUTE_DESIGN_BATCH
+        tool: AiDesignToolIds.EXECUTE_DESIGN
       }
     }
 
@@ -2155,6 +2305,57 @@ export const createLocalOperationTools = (
         'An unambiguous native wrapper is required for explicit inspection.',
       candidates: wrappers.map((tool) => `${tool.namespace}.${tool.name}`)
     }
+  }
+
+  const artifactRouteText = normalize(
+    targetReferenceSchema.anyOf[0].description ?? ''
+  )
+  const artifactExamples = new WeakMap<
+    object,
+    { tool: string; arguments: { operations: unknown[] } }[]
+  >()
+
+  const routedExamples = (api: (typeof registered)[number]) => {
+    const cached = artifactExamples.get(api)
+
+    if (cached) {
+      return cached
+    }
+
+    const example = usageInvocation({
+      ...api,
+      execution: actionExecution(api)
+    }).invocation
+    const first =
+      example &&
+      'operations' in example.arguments &&
+      Array.isArray(example.arguments.operations)
+        ? example.arguments.operations[0]
+        : undefined
+    const examples: { tool: string; arguments: { operations: unknown[] } }[] =
+      []
+
+    if (first && isRecord(first.arguments)) {
+      for (const operation of artifactKeyOperations(
+        api.name,
+        api.inputSchema,
+        first.arguments
+      )) {
+        try {
+          prepareOperationBatch([operation], [api], () => ['example-element'])
+          examples.push({
+            tool: AiDesignToolIds.EXECUTE_DESIGN,
+            arguments: { operations: [operation] }
+          })
+        } catch {
+          // An illustrative target cannot supply all required arguments in this branch.
+        }
+      }
+    }
+
+    artifactExamples.set(api, examples)
+
+    return examples
   }
 
   const discoveryGuidance = {
@@ -2204,20 +2405,63 @@ export const createLocalOperationTools = (
 
   const requestId = options.ownership?.requestId ?? randomUUID()
   const checkResults = preparation.checkResults ?? createDesignCheckResults()
+  const dataEvidence = createDesignDataEvidence(async (query, activeSignal) => {
+    const signal = activeSignal ?? new AbortController().signal
+    const value = await readCanonicalEvidence(
+      AiActionNames.READ_DESIGN_CONTEXT,
+      {
+        ...(query.query ?? {
+          scope: 'ids',
+          elementIds: query.elementIds,
+          expectedCount: (query.elementIds ?? []).length
+        }),
+        fields: query.fields,
+        limit: query.query?.expectedCount ?? (query.elementIds ?? []).length,
+        delivery: 'page'
+      },
+      signal
+    )
+
+    if (typeof value.snapshotId === 'string' && !signal.aborted) {
+      const released = await readCanonicalEvidence(
+        AiActionNames.RELEASE_DESIGN_CONTEXT,
+        { snapshotId: value.snapshotId },
+        signal
+      )
+
+      if (released.released !== true) {
+        throw new Error(
+          'Canonical data evidence lease release was not acknowledged.'
+        )
+      }
+    }
+
+    return value
+  })
+
+  const validateDataEvidence = async (ids: string[], signal?: AbortSignal) => {
+    const invalid = await dataEvidence.validate(ids, signal)
+
+    designReview.invalidateData(invalid)
+
+    return invalid
+  }
+
   const designReview = createLocalDesignReview({
+    dataEvidence,
     results: checkResults,
     resolveSources: options.resolveSources,
     validateReferences: options.validateReferences
   })
 
-  const readAttachmentEvidence = async (
+  const readCanonicalEvidence = async (
     name: string,
     args: Record<string, unknown>,
     signal: AbortSignal
   ): Promise<Record<string, unknown>> => {
     signal.throwIfAborted()
     if (!registered.some((action) => action.name === name)) {
-      throw new Error('Canonical attachment evidence action is unavailable.')
+      throw new Error('Canonical evidence action is unavailable.')
     }
 
     const id = randomUUID()
@@ -2228,7 +2472,7 @@ export const createLocalOperationTools = (
           id,
           name,
           arguments: args,
-          summary: 'Read canonical attachment evidence'
+          summary: 'Read canonical evidence'
         }
       ]
     })
@@ -2239,8 +2483,12 @@ export const createLocalOperationTools = (
     )
     const result = matches.length === 1 ? matches[0].result : undefined
 
-    if (!isRecord(result)) {
-      throw new Error('Canonical attachment evidence is unavailable.')
+    if (
+      receipt.failure ||
+      receipt.actionResults.length !== 1 ||
+      !isRecord(result)
+    ) {
+      throw new Error('Canonical evidence is unavailable.')
     }
 
     return result
@@ -2254,7 +2502,7 @@ export const createLocalOperationTools = (
         context: (receipts) => designReview.preparationContext(receipts),
 
         resolveAttachment: async (parentId, signal) => {
-          const result = await readAttachmentEvidence(
+          const result = await readCanonicalEvidence(
             AiActionNames.READ_DESIGN_ATTACHMENT,
             parentId === undefined ? {} : { parentId },
             signal
@@ -2275,7 +2523,7 @@ export const createLocalOperationTools = (
                 !Number.isFinite(point.y)
             )
           ) {
-            throw new Error('Canonical attachment evidence is incomplete.')
+            throw new Error('Canonical evidence is incomplete.')
           }
 
           return {
@@ -2289,7 +2537,7 @@ export const createLocalOperationTools = (
 
         attachmentCurrent: async (attachment, signal) =>
           (
-            await readAttachmentEvidence(
+            await readCanonicalEvidence(
               AiActionNames.VALIDATE_INSPECTION_EVIDENCE,
               { evidence: attachment.evidence },
               signal
@@ -3410,6 +3658,51 @@ export const createLocalOperationTools = (
   }
 
   const owner = {
+    bindScheduledArtifact(
+      name: string,
+      args: Record<string, unknown>,
+      target: unknown,
+      index: number
+    ) {
+      const action = batchActions.find((item) => item.name === name)
+
+      if (!action || !preparation.resolveTargets) {
+        throw new Error('Artifact targets require a registered canvas action')
+      }
+
+      const inputs = bindOperationTargets(
+        action.inputSchema,
+        args,
+        target,
+        index,
+        preparation.resolveTargets
+      )
+
+      if (inputs.length !== 1) {
+        throw new Error(
+          'A dependent operation requires a single invocation after binding'
+        )
+      }
+
+      return inputs[0]
+    },
+
+    validateScheduledOperations(operations: unknown) {
+      prepareOperationBatch(operations, batchActions, (ref, mode) => {
+        if (
+          isRecord(ref) &&
+          ref.query !== undefined &&
+          (mode === 'each' ||
+            !regionTargetSchema ||
+            operationInputIssue(ref.query, regionTargetSchema))
+        ) {
+          throw new Error('Unsupported region target or invalid selector.')
+        }
+
+        return ['validation-target']
+      })
+    },
+
     projectModelResult(name: string, args: unknown, value: unknown): unknown {
       if (!isRecord(value)) {
         return value
@@ -3520,6 +3813,7 @@ export const createLocalOperationTools = (
       }
 
       try {
+        await validateDataEvidence(designReview.dataEvidenceIds(), signal)
         const completionIds = [
           ...new Set([
             ...designReview.evidenceEntries().map((entry) => entry.id),
@@ -3534,7 +3828,10 @@ export const createLocalOperationTools = (
           designReview.overviewTargets(completionIds),
           signal
         )
-        if (!(await validateEvidence(completionIds, signal))) {
+        if (
+          completionIds.length &&
+          !(await validateEvidence(completionIds, signal))
+        ) {
           designReview.requireReview(
             'Current inspection evidence is required before completion.'
           )
@@ -3688,15 +3985,21 @@ export const createLocalOperationTools = (
                 'read',
                 ['tool-registry']
               ),
-              revision: 7,
+              revision: 9,
               name: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
               executionAccess: LocalToolAccess.INDEPENDENT,
               description:
-                'Discover missing contracts. Prefer operations=["owner.method", ...] for known semantic operations; operation accepts one. names accepts exact action names, unique semantic identities or native tools (namespace.name disambiguates). Use the returned action name and execution route. With no selector returns categories; category gives a paginated scoped menu (includeSchemas=true includes schemas), query first resolves an exact registered name (including namespace.name or semantic operation); otherwise it searches capability names/descriptions. Exact hits preserve ambiguity and independent routes, without related descriptive matches. Use purpose terms or categories to explore related capabilities, not subjects or external reference material. Use native web research for missing subject facts/images. A menu explains what is available; exact names retrieve the selected contract. Follow next.arguments while complete=false; exact selectors preserve selection but oversized content still uses bounded contentDelivery. Use only one selector. Selection and representation are independent: view=usage or full works with exact, query and category selectors; query/category default to menus, exact selectors default to full. schemaPaths requires exact identities. The same schemaPaths list applies to EVERY selected identity, not a union across tools. For different fields issue separate independent per-tool queries; copy inputFields only from that entry usage. For field queries use the same-entry fieldQuery example; replace only schemaPaths with needed paths from its inputFields. The example selects one path, not all fields. Never transfer paths or selectors between entries. Exact selected usage delivers complete canonical parameters, result constraints and recovery regardless of effect or execution route. Batch usage includes its invocation envelope; no parent contract read is needed. Tools publishing inputScopes remain menus until a scope is selected. Exploratory usage lists choices; it is not an executable contract. Usage parameters are standard JSON Schema. Lookup success means all requested definitions were delivered; partial/failed means some/none were delivered, even when the read settlement is completed. A narrowerQuery recovers only valid requested paths, not the rejected scope. Each tool resolves its own paths; schemaResolution reports unavailable paths and compact root/branch navigation without discarding other tools or marking the failed scope delivered. Repeated reads return requested content; prior App output does not prove model receipt. Use refresh=true only to restore missing context or failed delivery, including incomplete field delivery. For missing fields use schemaPaths and refreshReason=missing-fields; refresh preserves that partial scope. Reuse the returned resultKey for selected retained contracts; request only missing fields instead of fetching every definition again. Full inputSchema and constraints remain available. Execute known contracts directly; no discovery prerequisite for every edit. Mutations accept new values and stable IDs. Follow each execution route: batch-action uses execute_design_batch; native-tool uses its namespace/tool. An action with argumentField=arguments wraps its action input in that native argument field. Explicit review and capture are native calls, never batch items. Exact final-response actions use the final response actions array, never a callable tool or batch item. Missing or ambiguous entries preserve unique matches and never select a similar route.',
+                'Choose the smallest missing contract: view=usage for a new operation, inputScope for owner-published branches, or schemaPaths for missing fields of a known contract. Prefer operations=["owner.method", ...] for known semantic operations; operation accepts one. names accepts exact action names, unique semantic identities or native tools (namespace.name disambiguates). Use the returned action name and execution route. With no selector returns categories; category gives a paginated scoped menu (includeSchemas=true includes schemas), query first resolves an exact registered name (including namespace.name or semantic operation); otherwise it searches capability metadata, including descriptions and input/output field names. Supply purpose alongside a guessed exact name for capability candidates on a miss. Exact hits preserve ambiguity. Ordinary short-name usage delivers the executable batch action and its qualified wrapper reference. Use the qualified name for wrapper usage. Use purpose terms or categories to explore related capabilities, not subjects or external reference material. Use native web research for missing subject facts/images. For a purpose combining an artifact-key target and an operation, artifactKeyExamples shows the existing batch binding with only the supplied slot omitted. A menu explains what is available; exact names retrieve the selected contract. Follow next.arguments while complete=false; exact selectors preserve selection but oversized content still uses bounded contentDelivery. Use only one selector. Selection and representation are independent: view=usage or full works with exact, query and category selectors; query/category default to menus, exact selectors default to full. schemaPaths requires exact identities. The same schemaPaths list applies to EVERY selected identity, not a union across tools. For different fields issue separate independent per-tool queries; copy inputFields only from that entry usage. For field queries use the same-entry fieldQuery example; replace only schemaPaths with needed paths from its inputFields. The example selects one path, not all fields. Never transfer paths or selectors between entries. Exact selected usage delivers complete canonical parameters, owner result fields/meaning and recovery regardless of effect or execution route. Request includeResultSchema=true with view=usage only when a machine consumer needs the complete result validation schema; direct execution needs no extra lookup. Batch usage includes its invocation envelope; no parent contract read is needed. Tools publishing inputScopes remain menus until a scope is selected. Exploratory usage lists choices; it is not an executable contract. Usage parameters are standard JSON Schema. Lookup success means all requested definitions were delivered; partial/failed means some/none were delivered, even when the read settlement is completed. A narrowerQuery recovers only valid requested paths, not the rejected scope. Each tool resolves its own paths; schemaResolution reports unavailable paths and compact root/branch navigation without discarding other tools or marking the failed scope delivered. Repeated reads return requested content; prior App output does not prove model receipt. Use refresh=true only to restore missing context or failed delivery, including incomplete field delivery. For missing fields use schemaPaths and refreshReason=missing-fields; refresh preserves that partial scope. Reuse the returned resultKey for selected retained contracts; request only missing fields instead of fetching every definition again. Full inputSchema and constraints remain available. Execute known contracts directly; no discovery prerequisite for every edit. Mutations accept new values and stable IDs. Follow each execution route: batch-action uses execute_design; native-tool uses its namespace/tool. An action with argumentField=arguments wraps its action input in that native argument field. Explicit review and capture are native calls, never batch items. Exact final-response actions use the final response actions array, never a callable tool or batch item. Missing or ambiguous entries preserve unique matches and never select a similar route.',
               inputSchema: {
                 type: 'object',
                 additionalProperties: false,
                 properties: {
+                  purpose: {
+                    type: 'string',
+                    minLength: 1,
+                    description:
+                      'Optional intended capability with exact names or operations. If an identity is missing, use the same purpose search as query to return candidates without substituting a tool.'
+                  },
                   registryRevision: {
                     type: 'integer',
                     minimum: 0,
@@ -3714,6 +4017,11 @@ export const createLocalOperationTools = (
                     enum: ['usage', 'full'],
                     description:
                       'usage for an exact tool without inputScopes, or a selected inputScope, returns complete parameters, results, route and recovery. Examples are included when the owner supplies one; their absence does not omit constraints. Exploratory usage and unselected inputScopes are menus. Parameters use standard JSON Schema. Full is the exact-selector default; category/query default to menus.'
+                  },
+                  includeResultSchema: {
+                    type: 'boolean',
+                    description:
+                      'For view=usage only. Request complete result validation schemas for machine consumers. Direct execution defaults to result fields, owner meaning and recovery; runtime always validates full schemas.'
                   },
                   inputScope: {
                     type: 'object',
@@ -3947,7 +4255,7 @@ export const createLocalOperationTools = (
           }
         }
 
-        if (name === AiDesignToolIds.EXECUTE_DESIGN_BATCH) {
+        if (name === AiDesignToolIds.EXECUTE_DESIGN) {
           if (
             !isRecord(value.batchSummary) ||
             !Number.isSafeInteger(value.batchSummary.actionCount)
@@ -4268,7 +4576,7 @@ export const createLocalOperationTools = (
               tool.name === api.name &&
               tool.composition === 'allowed' &&
               tool.registeredName &&
-              (!contract || isCanonicalWrapper(tool, api))
+              isCanonicalWrapper(tool, api)
           )
           const dependency =
             dependencies.length === 1 ? dependencies[0] : undefined
@@ -4334,7 +4642,109 @@ export const createLocalOperationTools = (
           )
         }
 
+        const searchCapabilities = (purpose: string) => {
+          const terms = normalize(purpose).split(' ').filter(Boolean)
+
+          const score = (
+            entry: (typeof apis)[number] | NativeToolDescriptor
+          ) => {
+            const metadata = metadataText(entry)
+
+            if (!terms.length) {
+              return 0
+            }
+
+            if (terms.every((term) => metadata.includes(term))) {
+              return 2
+            }
+
+            const combined = metadata + ' ' + normalize(entry.name)
+
+            return terms.every((term) => combined.includes(term)) ? 1 : 0
+          }
+
+          const matches = apis
+            .map((api) => {
+              const direct = score(api)
+
+              if (!batchActionNames.has(api.name)) {
+                return { api, score: direct }
+              }
+
+              const identity = normalize(
+                api.name +
+                  ' ' +
+                  (getBasicApiContract(api.name)?.operation ?? '')
+              )
+              const text = [
+                metadataText(api),
+                identity,
+                'effect' in api && api.effect === 'mutation' ? 'edit' : ''
+              ].join(' ')
+
+              if (
+                terms.some(
+                  (t) => !text.includes(t) && artifactRouteText.includes(t)
+                ) &&
+                terms.some(
+                  (t) => identity.includes(t) && !artifactRouteText.includes(t)
+                ) &&
+                terms.every(
+                  (t) => text.includes(t) || artifactRouteText.includes(t)
+                )
+              ) {
+                const artifactKeyExamples = routedExamples(api)
+
+                if (artifactKeyExamples.length) {
+                  return { api, score: 3, artifactKeyExamples }
+                }
+              }
+
+              return { api, score: direct }
+            })
+            .filter((v) => v.score)
+          const native = nativeInventory()
+            .map((tool) => ({ tool, score: score(tool) }))
+            .filter(
+              (v) =>
+                v.score &&
+                !(
+                  args.view !== 'full' &&
+                  args.includeSchemas !== true &&
+                  matches.some(
+                    ({ api }) =>
+                      representedBatchWrapper(v.tool, api) &&
+                      nativeMatches(api.name).filter((candidate) =>
+                        isCanonicalWrapper(candidate, api)
+                      ).length === 1
+                  )
+                )
+            )
+
+          return [...matches, ...native].sort((a, b) => b.score - a.score)
+        }
+
         const candidatesFor = (missing: string[]) => {
+          if (typeof args.purpose === 'string') {
+            return searchCapabilities(args.purpose)
+              .slice(0, 6)
+              .map((entry) =>
+                'api' in entry
+                  ? {
+                      name: entry.api.name,
+                      description: entry.api.description,
+                      ...(entry.artifactKeyExamples
+                        ? { artifactKeyExamples: entry.artifactKeyExamples }
+                        : {}),
+                      operation:
+                        getBasicApiContract(entry.api.name)?.operation ??
+                        entry.api.name,
+                      execution: actionExecution(entry.api)
+                    }
+                  : nativeMenu(entry.tool)
+              )
+          }
+
           const terms = missing
             .join(' ')
             .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
@@ -4470,7 +4880,23 @@ export const createLocalOperationTools = (
               ]
             }))
           const selected = [...new Set(unique.flatMap((match) => match.apis))]
-          const tools = [...new Set(unique.flatMap((match) => match.tools))]
+          const tools = [
+            ...new Set(
+              unique.flatMap((match) =>
+                match.tools.filter(
+                  (tool) =>
+                    !(
+                      args.view === 'usage' &&
+                      args.inputScope === undefined &&
+                      args.includeResultSchema !== true &&
+                      match.apis.some((api) =>
+                        representedBatchWrapper(tool, api)
+                      )
+                    )
+                )
+              )
+            )
+          ]
           const missingNames = matches
             .filter((match) => !match.apis.length && !match.tools.length)
             .map((match) => match.name)
@@ -4602,50 +5028,7 @@ export const createLocalOperationTools = (
           })
         }
 
-        const normalize = (value: string) =>
-          value
-            .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-            .normalize('NFKC')
-            .toLowerCase()
-            .replace(/[^\p{L}\p{N}]+/gu, ' ')
-            .trim()
-
-        const terms = normalize(String(args.query)).split(' ').filter(Boolean)
-
-        const matchesTerms = (name: string, description: string) => {
-          const descriptor = normalize(`${name} ${description}`)
-
-          return terms.every((term) => descriptor.includes(term))
-        }
-
-        const matches = apis.filter((api) =>
-          matchesTerms(api.name, api.description)
-        )
-        const native = nativeInventory().filter((tool) => {
-          if (!matchesTerms(tool.name, tool.description)) {
-            return false
-          }
-
-          // Compact views expose this wrapper via recipeDependency. Full
-          // views retain both independently executable contracts.
-          const represented =
-            args.view !== 'full' &&
-            args.includeSchemas !== true &&
-            matches.some(
-              (api) =>
-                isCanonicalWrapper(tool, api) &&
-                tool.composition === 'allowed' &&
-                nativeMatches(api.name).filter((candidate) =>
-                  isCanonicalWrapper(candidate, api)
-                ).length === 1
-            )
-
-          return !represented
-        })
-        const inventory = [
-          ...matches.map((api) => ({ api })),
-          ...native.map((tool) => ({ tool }))
-        ]
+        const inventory = searchCapabilities(String(args.query))
         const page = pageBoundary(inventory.length)
         const selected = inventory.slice(
           page.offset,
@@ -4667,7 +5050,16 @@ export const createLocalOperationTools = (
                 }
               }),
           apis: selected.flatMap((entry) =>
-            'api' in entry ? [details(entry.api, args.view !== undefined)] : []
+            'api' in entry
+              ? [
+                  {
+                    ...details(entry.api, args.view !== undefined),
+                    ...(entry.artifactKeyExamples
+                      ? { artifactKeyExamples: entry.artifactKeyExamples }
+                      : {})
+                  }
+                ]
+              : []
           ),
           tools: selected.flatMap((entry) =>
             'tool' in entry
@@ -4800,6 +5192,51 @@ export const createLocalOperationTools = (
 
         if (!candidate) {
           return JSON.stringify(recordReview())
+        }
+
+        if (Array.isArray(reviewArgs.dataQueries)) {
+          try {
+            const queries = (
+              reviewArgs.dataQueries as DesignDataSelection[]
+            ).map((selection) =>
+              resolveDesignDataQuery(selection, preparation.resolveTargets)
+            )
+
+            for (const query of queries) {
+              designReview.validateDataQuery(query)
+            }
+
+            const captured = []
+
+            for (const query of queries) {
+              captured.push(await dataEvidence.capture(query, signal))
+            }
+
+            return JSON.stringify({
+              phase: reviewArgs.phase,
+              reviewOperation: 'data',
+              recordedChecks: [],
+              accepted: designReview.isAccepted(),
+              inspectionIds: [],
+              dataEvidence: captured,
+              ...designReview.judgmentHandoff(
+                [],
+                reviewArgs.phase as 'visual' | 'structure',
+                captured.map((entry) => ({
+                  criterionId: entry.criterionId,
+                  inspectionIds: [],
+                  dataEvidenceIds: [entry.id]
+                }))
+              )
+            })
+          } catch (error) {
+            signal.throwIfAborted()
+            throw new LocalOperationPreparationError(
+              error instanceof Error
+                ? error.message
+                : 'Canonical data evidence is unavailable.'
+            )
+          }
         }
 
         if (
@@ -5001,7 +5438,9 @@ export const createLocalOperationTools = (
             failedInspections,
             ...designReview.judgmentHandoff(
               inspectionIds,
-              reviewArgs.phase as 'structure' | 'visual'
+              reviewArgs.phase as 'structure' | 'visual',
+              selections.size ? [...selections.values()] : undefined,
+              true
             ),
             actionResults: capturedResults,
             message
@@ -5038,7 +5477,8 @@ export const createLocalOperationTools = (
           const handoff = designReview.judgmentHandoff(
             inspectionIds,
             phase,
-            hasReusedImages ? undefined : [...selections.values()]
+            [...selections.values()],
+            hasReusedImages
           )
 
           return JSON.stringify({
@@ -5059,7 +5499,23 @@ export const createLocalOperationTools = (
         }
 
         if (Array.isArray(reviewArgs.bindChecks)) {
-          if (!(await validateEvidence(inspectionIds, signal, false))) {
+          if (
+            (
+              await validateDataEvidence(
+                reviewDataEvidenceIds(reviewArgs),
+                signal
+              )
+            ).length
+          ) {
+            throw new LocalOperationPreparationError(
+              'Data evidence is stale or unavailable; read current dataQueries and rebind affected checks.'
+            )
+          }
+
+          if (
+            inspectionIds.length &&
+            !(await validateEvidence(inspectionIds, signal, false))
+          ) {
             return JSON.stringify(unavailableEvidence())
           }
 
@@ -5082,6 +5538,23 @@ export const createLocalOperationTools = (
         }
 
         let candidateReview
+
+        const submittedData = reviewDataEvidenceIds(reviewArgs)
+        const invalidData = await validateDataEvidence(
+          [
+            ...submittedData,
+            ...(reviewArgs.final !== false
+              ? designReview.dataEvidenceIds()
+              : [])
+          ],
+          signal
+        )
+
+        if (invalidData.some((id) => submittedData.includes(id))) {
+          throw new LocalOperationPreparationError(
+            'Data evidence is stale or unavailable; read current dataQueries and rebind affected checks.'
+          )
+        }
 
         try {
           candidateReview = designReview.validateBoundReview(reviewArgs)
@@ -5106,11 +5579,9 @@ export const createLocalOperationTools = (
         let current = false
 
         try {
-          current = await validateEvidence(
-            effectiveIds,
-            signal,
-            requireCoverage
-          )
+          current = effectiveIds.length
+            ? await validateEvidence(effectiveIds, signal, requireCoverage)
+            : true
         } catch (error) {
           if (!(error instanceof LocalOperationPreparationError)) {
             throw error
@@ -5149,6 +5620,17 @@ export const createLocalOperationTools = (
           pendingMeasurement = measurementPending
           // Measurement can yield to external edits; never commit a mixed-source judgment.
           await validateEvidence(effectiveIds, signal, false)
+          const changedData = await validateDataEvidence(
+            [...submittedData, ...designReview.dataEvidenceIds()],
+            signal
+          )
+
+          if (changedData.some((id) => submittedData.includes(id))) {
+            throw new LocalOperationPreparationError(
+              'Data evidence changed during review; read current dataQueries.'
+            )
+          }
+
           if (
             submittedChanged() ||
             (isRecord(latestEvidenceValidation) &&
@@ -5206,7 +5688,7 @@ export const createLocalOperationTools = (
         return JSON.stringify(result)
       }
 
-      const batchMode = name === AiDesignToolIds.EXECUTE_DESIGN_BATCH
+      const batchMode = name === AiDesignToolIds.EXECUTE_DESIGN
       const definition = registered.find((action) => action.name === name)
 
       if (
@@ -5248,6 +5730,15 @@ export const createLocalOperationTools = (
               preparation.resolveTargets
             )
       } catch (error) {
+        signal.throwIfAborted()
+        if (error instanceof LocalOperationTargetError) {
+          return localToolFailureReply(error.message, error.code, {
+            stage: 'admission',
+            settlement: 'not-started',
+            recovery: 'correct_input'
+          }).text
+        }
+
         throw new LocalOperationPreparationError(
           error instanceof Error ? error.message : 'Invalid operation batch'
         )
@@ -6056,7 +6547,8 @@ For visual decisions inspect the delivered images. Bind retained inspectionIds w
 
 /** Separate validated original reference rasters and bounded canvas snapshots from text. */
 export const localToolContent = async (
-  text: string
+  text: string,
+  selectedImages: readonly LocalToolImage[] = []
 ): Promise<
   (
     | { type: 'inputText'; text: string }
@@ -6066,71 +6558,84 @@ export const localToolContent = async (
   const value = JSON.parse(text)
   const images: { type: 'inputImage'; imageUrl: string }[] = []
 
-  if (isRecord(value) && Array.isArray(value.actionResults)) {
-    for (const entry of value.actionResults) {
+  const delivered = new Set<string>()
+  const decoded = new Map<string, Buffer>()
+
+  for (const entry of [...localToolImages(value), ...selectedImages]) {
+    const snapshot = entry.image
+
+    if (
+      !isRecord(snapshot) ||
+      typeof snapshot.dataUrl !== 'string' ||
+      snapshot.dataUrl.length > 8 * 1024 * 1024 + 64 ||
+      !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(
+        snapshot.dataUrl
+      )
+    ) {
+      throw new Error('Invalid drawing snapshot')
+    }
+
+    const bytes =
+      decoded.get(snapshot.dataUrl) ??
+      Buffer.from(snapshot.dataUrl.split(',')[1], 'base64')
+
+    decoded.set(snapshot.dataUrl, bytes)
+
+    if (entry.actionName === AiReferenceToolIds.IMPORT_REFERENCE_IMAGE) {
+      // Import already decodes once. Read metadata only here to validate the
+      // handoff without re-decoding, resampling or imposing a second pixel cap.
+      const metadata = await sharp(bytes).metadata()
+      const declaredType = snapshot.dataUrl.slice(
+        11,
+        snapshot.dataUrl.indexOf(';')
+      )
+
       if (
-        !isRecord(entry) ||
-        (entry.actionName !== AiActionNames.INSPECT_DRAWING &&
-          entry.actionName !== AiReferenceToolIds.IMPORT_REFERENCE_IMAGE) ||
-        !isRecord(entry.result) ||
-        entry.result.available !== true
+        bytes.length > 6 * 1024 * 1024 ||
+        metadata.format !== declaredType ||
+        (metadata.pages ?? 1) !== 1 ||
+        metadata.autoOrient.width !== snapshot.width ||
+        metadata.autoOrient.height !== snapshot.height
       ) {
-        continue
+        throw new Error('Invalid reference image metadata')
       }
+    } else if (
+      !snapshot.dataUrl.startsWith('data:image/png;base64,') ||
+      bytes.length < 24 ||
+      !bytes
+        .subarray(0, 8)
+        .equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) ||
+      bytes.readUInt32BE(16) !== snapshot.width ||
+      bytes.readUInt32BE(20) !== snapshot.height ||
+      Number(snapshot.width) < 1 ||
+      Number(snapshot.height) < 1 ||
+      Number(snapshot.width) > 1024 ||
+      Number(snapshot.height) > 1024
+    ) {
+      throw new Error('Invalid drawing snapshot dimensions')
+    }
 
-      const snapshot = entry.result.image
-
-      if (
-        !isRecord(snapshot) ||
-        typeof snapshot.dataUrl !== 'string' ||
-        snapshot.dataUrl.length > 8 * 1024 * 1024 + 64 ||
-        !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(
-          snapshot.dataUrl
-        )
-      ) {
-        throw new Error('Invalid drawing snapshot')
-      }
-
-      const bytes = Buffer.from(snapshot.dataUrl.split(',')[1], 'base64')
-
-      if (entry.actionName === AiReferenceToolIds.IMPORT_REFERENCE_IMAGE) {
-        // Import already decodes once. Read metadata only here to validate the
-        // handoff without re-decoding, resampling or imposing a second pixel cap.
-        const metadata = await sharp(bytes).metadata()
-        const declaredType = snapshot.dataUrl.slice(
-          11,
-          snapshot.dataUrl.indexOf(';')
-        )
-
-        if (
-          bytes.length > 6 * 1024 * 1024 ||
-          metadata.format !== declaredType ||
-          (metadata.pages ?? 1) !== 1 ||
-          metadata.autoOrient.width !== snapshot.width ||
-          metadata.autoOrient.height !== snapshot.height
-        ) {
-          throw new Error('Invalid reference image metadata')
-        }
-      } else if (
-        !snapshot.dataUrl.startsWith('data:image/png;base64,') ||
-        bytes.length < 24 ||
-        !bytes
-          .subarray(0, 8)
-          .equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) ||
-        bytes.readUInt32BE(16) !== snapshot.width ||
-        bytes.readUInt32BE(20) !== snapshot.height ||
-        Number(snapshot.width) < 1 ||
-        Number(snapshot.height) < 1 ||
-        Number(snapshot.width) > 1024 ||
-        Number(snapshot.height) > 1024
-      ) {
-        throw new Error('Invalid drawing snapshot dimensions')
-      }
-
+    if (!delivered.has(snapshot.dataUrl)) {
       images.push({ type: 'inputImage', imageUrl: snapshot.dataUrl })
-      const { dataUrl: _dataUrl, ...metadata } = snapshot
+      delivered.add(snapshot.dataUrl)
+    }
 
-      entry.result = { ...entry.result, image: metadata }
+    const { dataUrl: _dataUrl, ...metadata } = snapshot
+
+    const parts = entry.path
+      .slice(1)
+      .split('/')
+      .map((part) => part.replace(/~1/g, '/').replace(/~0/g, '~'))
+    let parent = value
+
+    for (const part of parts.slice(0, -1)) {
+      parent = parent?.[part]
+    }
+
+    const key = parts.at(-1)
+
+    if (parent && key !== undefined && Object.hasOwn(parent, key)) {
+      parent[key] = metadata
     }
   }
 

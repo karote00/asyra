@@ -30,6 +30,7 @@ test.describe('Gradient Fill Handles', () => {
     await page.waitForTimeout(150)
 
     const snapshot = await getSelectedGradientSnapshot(page)
+
     expect(snapshot?.gradient?.gradientHandles).toEqual([
       { x: 0.5, y: 0 },
       { x: 0.5, y: 1 }
@@ -59,6 +60,7 @@ test.describe('Gradient Fill Handles', () => {
 
     const before = await getTransactionSnapshot(page)
     const beforeSnapshot = await getSelectedGradientSnapshot(page)
+
     expect(beforeSnapshot?.gradient?.gradientHandles[0]?.y).toBe(0)
 
     const startHandle = await getGradientHandleClientPosition(page, 0)
@@ -68,6 +70,7 @@ test.describe('Gradient Fill Handles', () => {
     await page.evaluate(async () => {
       const { startSharedChannelCapture } =
         await import('../src/testing/runtime-access')
+
       startSharedChannelCapture('gradient-preview-deliveries', 'props')
     })
     await page.mouse.move(startHandle.x, startHandle.y)
@@ -78,6 +81,7 @@ test.describe('Gradient Fill Handles', () => {
     await page.waitForTimeout(120)
 
     const duringDrag = await getSelectedGradientSnapshot(page)
+
     expect(duringDrag?.gradient?.gradientHandles[0]?.x).toBeCloseTo(0.5, 2)
     expect(duringDrag?.gradient?.gradientHandles[0]?.y).toBeCloseTo(0.25, 2)
     expect(duringDrag?.gradient?.gradientHandles[1]?.y).toBeCloseTo(1, 2)
@@ -88,12 +92,15 @@ test.describe('Gradient Fill Handles', () => {
     ])
 
     const duringTransaction = await getTransactionSnapshot(page)
+
     expect(duringTransaction.undoCount).toBe(before.undoCount)
     expect(duringTransaction.isTransacting).toBeGreaterThan(0)
     const previewDeliveries = await page.evaluate(async () => {
       const { readTestCapture } = await import('../src/testing/runtime-access')
+
       return readTestCapture('gradient-preview-deliveries')
     })
+
     expect(previewDeliveries).toContainEqual(
       expect.objectContaining({
         options: expect.objectContaining({ sharedDelivery: 'immediate' })
@@ -104,21 +111,26 @@ test.describe('Gradient Fill Handles', () => {
     await page.mouse.up()
     const finalDeliveries = await page.evaluate(async () => {
       const { readTestCapture } = await import('../src/testing/runtime-access')
+
       return readTestCapture('gradient-preview-deliveries')
     })
+
     expect(finalDeliveries).toHaveLength(previewDeliveryCount)
     await page.evaluate(async () => {
       const { stopTestCapture } = await import('../src/testing/runtime-access')
+
       stopTestCapture('gradient-preview-deliveries')
     })
     await page.waitForTimeout(180)
 
     const afterMouseUp = await getSelectedGradientSnapshot(page)
+
     expect(afterMouseUp?.gradient?.gradientHandles[0]?.x).toBeCloseTo(0.5, 2)
     expect(afterMouseUp?.gradient?.gradientHandles[0]?.y).toBeCloseTo(0.25, 2)
     expect(afterMouseUp?.gradient?.gradientHandles[1]?.y).toBeCloseTo(1, 2)
 
     const afterTransaction = await getTransactionSnapshot(page)
+
     expect(afterTransaction.undoCount).toBe(before.undoCount + 1)
     expect(afterTransaction.isTransacting).toBe(0)
 
@@ -126,6 +138,7 @@ test.describe('Gradient Fill Handles', () => {
     await page.waitForTimeout(180)
 
     const afterUndo = await getSelectedGradientSnapshot(page)
+
     expect(afterUndo?.gradient?.gradientHandles).toEqual([
       { x: 0.5, y: 0 },
       { x: 0.5, y: 1 }
@@ -154,6 +167,7 @@ test.describe('Gradient Fill Handles', () => {
     await page.waitForTimeout(120)
 
     const canvasCenter = await getCanvasPosition(page, 0.5, 0.5)
+
     await page.mouse.move(canvasCenter.x, canvasCenter.y)
     await page.keyboard.down('Meta')
     await page.mouse.wheel(0, -240)
@@ -161,6 +175,7 @@ test.describe('Gradient Fill Handles', () => {
     await page.waitForTimeout(180)
 
     const zoomedBefore = await getSelectedGradientSnapshot(page)
+
     expect((zoomedBefore?.zoom ?? 1) > 1).toBeTruthy()
 
     const startHandle = await getGradientHandleClientPosition(page, 0)
@@ -177,6 +192,7 @@ test.describe('Gradient Fill Handles', () => {
     await page.waitForTimeout(180)
 
     const zoomedAfter = await getSelectedGradientSnapshot(page)
+
     expect(zoomedAfter?.gradient?.gradientHandles[0]?.x).toBeCloseTo(0.5, 2)
     expect(zoomedAfter?.gradient?.gradientHandles[0]?.y).toBeCloseTo(0.25, 2)
     expect(zoomedAfter?.gradient?.gradientHandles[1]?.y).toBeCloseTo(1, 2)
@@ -216,12 +232,14 @@ test.describe('Gradient Fill Handles', () => {
     await page.waitForTimeout(120)
 
     const duringDrag = await getSelectedGradientSnapshot(page)
+
     expect(duringDrag?.gradient?.gradientHandles[0]?.y).toBeGreaterThan(1)
 
     await page.mouse.up()
     await page.waitForTimeout(180)
 
     const afterMouseUp = await getSelectedGradientSnapshot(page)
+
     expect(afterMouseUp?.gradient?.gradientHandles[0]?.y).toBeGreaterThan(1)
   })
 })

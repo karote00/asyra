@@ -25,11 +25,20 @@ export const surfaceMotifsSchema = {
     type: 'object',
     additionalProperties: false,
     required: ['key', 'name', 'vertices'],
+    anyOf: [
+      { properties: { materialField: false } },
+      { properties: { fill: false, fills: false } }
+    ],
     properties: {
       key: { ...key, maxLength: 40 },
       name: { ...key, maxLength: 60 },
       fill: designFillSchema,
       fills: { type: 'array', minItems: 1, items: designFillSchema },
+      materialField: {
+        ...key,
+        description:
+          'World linearFields key for continuous paint across cells and translated instances; exclusive with fill/fills. Each cell stays independently editable.'
+      },
       offset: {
         type: 'object',
         additionalProperties: false,
@@ -60,7 +69,7 @@ export const designConstructionSchema = {
     propertyNames: key,
     additionalProperties: { $ref: '#/$defs/surfaceMotifs' },
     description:
-      'Shared motifs via motifs:{template:key}, without overrides. Invalid definitions/references reject before writes.'
+      'Shared motifs via motifs:{template:key,overrides?:{motifKey:patch}}. Supplied fields replace values/arrays; fill clears inherited fills unless fills is supplied. materialField clears inherited fill/fills; fill/fills clears inherited materialField. Conflicting paint modes in one patch reject before writes.'
   },
   linearFields: {
     type: 'object',
@@ -87,7 +96,7 @@ export const designConstructionSchema = {
       }
     },
     description:
-      'World phase=dot(p-start,end-start)/lengthSquared(end-start). Distinct endpoints use face-vertex units. Faces/pattern faces use materialField instead of fill/palettes. Owner normalizes gradients per face/instance; no live constraints/shared Fill IDs.'
+      'World phase=dot(p-start,end-start)/lengthSquared(end-start). Distinct endpoints use world vertex units. Faces and grid motifs use materialField instead of fill/palettes. Owner normalizes gradients per face/cell/translated instance; no live constraints/shared Fill IDs.'
   },
   brief: {
     type: 'object',
@@ -282,7 +291,23 @@ export const surfaceGridSchema = {
           type: 'object',
           additionalProperties: false,
           required: ['template'],
-          properties: { template: key }
+          properties: {
+            template: key,
+            overrides: {
+              type: 'object',
+              propertyNames: { ...key, maxLength: 40 },
+              additionalProperties: {
+                type: 'object',
+                additionalProperties: false,
+                anyOf: surfaceMotifsSchema.items.anyOf,
+                properties: Object.fromEntries(
+                  Object.entries(surfaceMotifsSchema.items.properties).filter(
+                    ([name]) => name !== 'key'
+                  )
+                )
+              }
+            }
+          }
         }
       ]
     }

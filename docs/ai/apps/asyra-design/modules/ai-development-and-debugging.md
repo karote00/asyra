@@ -5,6 +5,129 @@ drawing flow when an AI assistant is unavailable. The active Inspector remains
 the exact architecture authority; this document explains how to work within
 that contract.
 
+## Fixed full-building Taipei 101 test prompt
+
+User decision - 2026-11-02: every full-building Taipei 101 drawing test must
+submit the exact text in
+[the canonical prompt fixture](../../../../../apps/asyra-design/test-data/ai-drawing/taipei-101-full-building-prompt.txt).
+This applies to manual, automated, recorded, acceptance and performance runs.
+Read the fixture directly; remove only its final file newline when submitting.
+Do not paraphrase, translate, shorten, append instructions, change punctuation
+or substitute a prompt copied from a historical run. Only an explicit user
+request authorizes a deviation or a change to this fixture. A generic request
+to test, retry, improve results or optimize execution is not such authorization.
+
+The test represents an ordinary user stating the desired result. Do not add
+reference-image usage advice, search restrictions, tool recipes, construction
+steps, acceptance hints or corrective coaching to the submitted request or
+through a test-only system/developer message. Do not attach reference images,
+preselected research or prepared drawing content unless explicitly requested.
+The agent uses the ordinary App capabilities and production instructions to
+obtain information and carry out the task itself. This rule fixes the test input;
+it does not freeze the production App prompt or prohibit ordinary agent research.
+
+For each run, verify the actual submitted user text against the fixture before
+Send and retain that exact text in the run record. A mismatch is an invalid
+baseline run, not a new accepted prompt version. If the App asks a clarification,
+retain the question and seek the user's answer rather than inventing test-driver
+coaching. Keep any user-authorized variant and its explicit authorization separate
+from baseline results; a one-run exception does not replace this default.
+
+The former upper-two-tier prompt and the aerial-image/ornament-close-up variant
+are historical or explicitly selected scenarios, not substitutes for this test.
+Preserve their original evidence without rewriting it. Existing test resource,
+recording and cancellation guards remain in force; a timeout does not authorize
+changing the brief to make the next attempt pass.
+
+### Recorded baseline runner
+
+After the applicable App validation gates pass, run
+`yarn workspace @asyra/asyra-design test:live:taipei-101` once. Build the existing
+App, document backend and collaboration server first. Keep the source and package
+outputs static throughout recording. The runner reads the App `.env`, refuses
+occupied service ports, starts and tracks its own local services, and stops them
+on exit. No remote publication or new dependency installation is involved.
+
+The runner verifies fixture SHA-256
+`25b9ad1aeb523fdb590a39d090a37fdc65ed62ff081a27acfa92d946f9b2ff51`,
+the composer value and the actual submitted intent. It supplies no reference
+attachments, prior conversation or extra test instructions. A user-approved prompt
+change must explicitly update the fixture and its contract; no default adaptation.
+The default drawing guard is fifteen minutes, independent of production task duration.
+An explicit user-requested duration may be supplied as `--minutes=N` (integer
+1–15), for example `yarn workspace @asyra/asyra-design test:live:taipei-101 --minutes=12`.
+This changes only that run, records `deadlineMs`, preserves the fixed prompt, and
+keeps the existing 15-second soft-stop margin and 15-minute safety ceiling. It requests
+Stop before the hard deadline to retain evidence, with the existing worker-owned
+hard termination as backup. A timeout, failure or clarification is an outcome to
+report, not permission to rerun or coach the model.
+The deadline stop uses the Agent button's accessible name, `Cancel request`,
+through the same helper exercised by the streamed drawing cancellation/Undo
+browser case. Visible button text is not its accessible locator. A recorder
+cleanup failure remains a failed run; do not infer a final App settlement or
+successful reload from retained backend data alone.
+
+Evidence is retained under `tmp/conversation-improvements/live/<run-id>/`: exact
+request metadata, provider JSONL/payloads/assets, service logs and PIDs, recording,
+first/final/reloaded screenshots, detail views, editable source snapshot and durable
+checkpoint. First paint opportunity is a rendering opportunity metric, not proof
+of visible quality; inspect the saved images. Report request bytes, tool/research
+activity, rejected inputs, completion/timeout and unresolved review work from the
+actual records. Keep unmeasured CPU or provider metrics explicitly unmeasured.
+
+### Drawing agent self-report
+
+The fixed benchmark uses one App request and the existing native evaluation
+window. After normal completion or deadline interruption acknowledgement and tool
+drainage, the provider starts the report turn on the original native thread. It
+does not create another App request or provider session. The exact drawing prompt
+remains unchanged; `announceWorkDeadline: false` suppresses evaluation coaching,
+and host evaluation metadata is excluded from the model's drawing input.
+
+The maintained `test-data/ai-drawing/taipei-101-self-report.txt` supplies bounded
+report instructions only after work ends. Ask why multiple intervals last tens of
+seconds, using the original work context, and request evidence-based improvements.
+No private reasoning or invented timings; unavailable provider/network causes
+remain unknown. The fixed benchmark sets `reportTimeoutMs: null`: reporting has no time limit
+and no tool/mutation permission. The 15-minute limit applies only to drawing. Ordinary evaluations keep their concise report unless explicitly
+configured with detailed instructions; normal App requests are unchanged.
+
+The collector requires retained work/report exchanges with the same native thread
+and distinct turn IDs, plus the settled App evaluation-report receipt. Export only
+completed public commentary for that exact report turn into `self-report.txt`,
+verbatim; save the bounded final summary separately. Work outcome, report outcome
+and artwork acceptance are independent. Capture canonical content when the report
+input is recorded after tool drainage, compare it at settlement, then confirm
+persistence and reload. Trace phase observation consumes each appended byte once.
+Missing/mismatched identities, missing report text, failed settlement or changed
+content fail explicitly; no fresh-session fallback or automatic drawing retry.
+
+Retire the drawing watchdog before report-entry capture. Save the completed native
+report before browser-dependent evidence. Collect source, receipt, persistence,
+checkpoint, screenshots, reload, and video independently; retain stage errors and
+fail the run when required evidence is missing. Report cancellation and transport
+failure remain failures; no report-duration watchdog is installed.
+
+Finish all source and report-fixture edits before live services start: Vite can
+reload the page and destroy its in-memory conversation. Preserve failed evidence.
+Deliver the AI's original report rather than substituting another causal analysis.
+
+Receipt POSTs share the action-batch endpoint. Classify them by the canonical
+receipt header before validating user intent; they are not additional submissions.
+A connected collaboration socket alone does not prove document bootstrap. Wait for
+the expected canonical node count before taking the reload screenshot.
+
+To verify an existing retained drawing without another AI run, use:
+
+```sh
+node apps/asyra-design/test-data/ai-drawing/review-recorded-document.mjs <absolute-run-directory>
+```
+
+This helper only accepts runs inside the current project `tmp`, blocks AI routes,
+compares the loaded document with the retained source, and writes a separate
+`reload-review-<timestamp>` directory. Preserve original failed evidence. The helper
+requires the same built services and App environment as the original recorder.
+
 ## Current Drawing Flow
 
 The production frontend consumes one server-prepared `AiActionBatch`. The
@@ -33,6 +156,32 @@ client geometry reconstruction, or post-action `save`/`isEqual` verification.
 The action path trusts the registered action and canonical owner results.
 Incorrect output is a product bug to fix at its first incorrect owner, not a
 reason to duplicate the complete document or geometry graph.
+
+### Agent decisions, tool execution and optional advice
+
+The always-present App prompt owns the division of work: the agent chooses
+visual intent and parameters and judges the actual result; registered tools
+perform supported deterministic computation. Prefer an existing direct tool.
+Use the existing tool library to compose finite operations only when reusable
+orchestration reduces manual work. Recipes cannot invent primitives or replace
+artistic judgment. Invocation success, durable tool saving and visual acceptance
+remain separate outcomes; retry saving without replaying drawing work.
+
+Knowledge is optional assistance for uncertain methods, repeated derivation or
+corrections that keep missing their target. Its purpose is to shorten exploration,
+not to add detail, polish or a mandatory drawing sequence. The native namespace
+and selected tool descriptions must agree with the shared App instructions.
+Changes to this guidance must be reflected in both native base instructions and
+the HTTP systemPrompt consumer.
+
+Existing provider records can show announced targets, invocation timing,
+arguments, failures and subsequent corrections. A long provider wait alone does
+not establish that the model was confused or explain why it skipped Knowledge.
+Use observed repeated operations and their owner failures to identify candidates:
+missing decision guidance may belong in Knowledge; repeated supported mechanical
+work may fit an existing tool or finite recipe. A missing primitive requires an
+explicit capability change, not stronger prompting. Measure elapsed time to an
+equivalent completed task; Knowledge/tool call counts are not success targets.
 
 ## Adding an AI Action
 
@@ -271,3 +420,26 @@ CPU profiling remain explicit opt-ins.
 - no Contents optimization in this correction;
 - no default high-detail recording, trace, or profile capture;
 - no product behavior selected by a performance query parameter.
+
+### Completion evidence by runner
+
+The fixed taipei-101-live runner records continuously, retains the same-thread
+report, confirms persistence separately, and reloads the same browser context.
+The knowledge-evaluation run-101 collector intentionally omits video and uses a
+fresh-context reload. Do not apply its capture lifecycle to the fixed recorder.
+
+Evaluation report instructions require unsupported; that classification is host
+policy, not the model independently rejecting the drawing. Native work completion,
+report success and ordinary completed-action durability are separate assertions.
+The fixed run does not replace focused ordinary completion/presentation tests.
+
+The fixed recorder fits after settled/rendered document changes only when content
+leaves the visible drawing area, including movement with unchanged element count.
+It records fit and pause/resume revisions/times in run.json. Unchanged idle or
+paused polls do not scan bounds. External navigation that crops content preserves
+the detail view; returning to an overview automatically resumes framing through
+the production runner tick. Ordinary fit does not permanently pause tracking.
+Navigation classification waits for current settled/rendered geometry. Dispose
+the controller at report entry, after watchdog retirement. Framing failures join evidenceErrors without aborting report collection.
+The permanent drawing-framing browser fixture retains intermediate screenshots and
+video and verifies unchanged canonical data, selection and Undo depth around fit.

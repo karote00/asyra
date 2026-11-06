@@ -1,6 +1,6 @@
 ---
 {
-  "description": "Select only when local-coordinate conversion remains unresolved or a worked example is needed after choosing a material method. A known supported representation does not require this walkthrough. Direct selection includes method constraints; no parent read is required.",
+  "description": "Resolve local-coordinate conversion or select a supported material representation from worked examples. A known supported representation does not require this walkthrough. Direct selection includes material and contract constraints, not an optional sampling workflow.",
   "contexts": [
     "architectural-illustration"
   ],
@@ -8,7 +8,8 @@
     "Asyra Design advisory mapping reviewed against current public tool descriptions and schemas."
   ],
   "references": [
-    "design.architectural-illustration.materials.method"
+    "design.architectural-illustration.contracts",
+    "illustration.architecture.materials"
   ]
 }
 ---
@@ -24,7 +25,7 @@ points, not additional required calls or new schema fields.
 | Choice | Concrete existing handoff | Independent evidence question |
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
 | Material role | Assign the selected `fillTemplates` key or explicit Fill to the actual base surface or motif; keep structural paint distinct when the request requires it. | Does the rendered base plus overlaid structure express the chosen material? |
-| Continuous domain versus repeated local effect | A gradient uses normalized local `gradientHandles` and ordered `gradientStops`. Copying identical handles to every cell restarts the field in every cell. Put a continuous field on a covering surface with separate structural geometry when that expresses the request, or use `linearFields` with `materialField` on projected/pattern faces so preparation maps the world domain to each native fill. For other supported shapes, explicitly transform the domain to local coordinates. | Is the intended field continuous across the relevant join, with intentional discontinuities preserved? |
+| Continuous domain versus repeated local effect | A gradient uses normalized local `gradientHandles` and ordered `gradientStops`. Copying identical handles to every cell restarts the field in every cell. Put a continuous field on a covering surface with separate structural geometry when that expresses the request, or use `linearFields` with `materialField` on projected faces or grid motifs, including pattern members so preparation maps the world domain to each native fill. For other supported shapes, explicitly transform the domain to local coordinates. | Is the intended field continuous across the relevant join, with intentional discontinuities preserved? |
 | Different orientations or projections | Transform to the actual local basis or choose another supported representation; the same local numbers on differently oriented faces are not one common physical lighting field. | Are the visible orientations consistent with the chosen light/material interpretation? |
 | Incomplete architecture or ornament | Keep a separate criterion/unit for the requested geometry/detail, using its actual scope. | What requested content remains missing, independently of whether existing material is correct? |
 
@@ -39,11 +40,9 @@ shared Fill object is inappropriate when the required local handles differ.
 Single-axis `map_retained_fills` updates color/opacity only; it cannot perform this
 per-part gradient-handle transformation. Never invent such a parameter.
 
-The rendered material review described in the materials.review child checks the chosen domain and join as
-well as role contrast. A wrong common premise is corrected before its dependent
-expansion; missing detail and failed capture remain separate findings. Preserve
-existing criterion meanings and require current explicit replacement receipts when
-changing a review scope.
+For an unresolved visual choice, the optional materials.review topic explains
+evidence selection. Coordinate conversion does not require a representative sample.
+Preserve requested criteria; successful preparation does not certify appearance.
 
 This executable preparation example implements the axis-aligned domain conversion in the method guidance on two adjacent parts. Both paint domains reach parent y=0..80, meet at the
 same gradient parameter at y=40, and remain independently editable. The structural
@@ -180,8 +179,8 @@ Never send formula or gradient-handle fields to the retained color mapper.
 | Chosen material method | Existing representation and boundary |
 | --- | --- |
 | One continuous gradient on one surface | A normal gradient fill on that surface; separate structural lines when needed. A surface gradient is not automatically a separate gradient inside each pane. |
-| One world-linear field across projected/pattern faces | Declare `draft.linearFields` with world start/end and ordered stops, then select `materialField` on each face. Preparation preserves phase across origin/axis translations and emits independent native fills. Discover the executable preparation example and exact schema. Do not combine a field with an explicit face fill/palette; unsupported or unrepresentable fields reject before apply. |
+| One world-linear field across projected faces/grid motifs | Declare `draft.linearFields` with world start/end and ordered stops, then select `materialField` on each face or motif. Preparation preserves phase across origin/axis translations and emits independent native fills. Discover the executable preparation example and exact schema. Do not combine a field with an explicit fill/palette; unsupported or unrepresentable fields reject before apply. |
 | Equal independent material values | `draft.fillTemplates` and `fill: {template: key}`. Template reuse preserves independent fills; use `sharedFills` only for intentional linked edits. |
 | Intentional repeated palette | `surface-grid` motif `fills` cycles by row-major cell index. Do not use cycling for a nonperiodic reflection field. |
-| Single-axis color variation on existing targets | `map_retained_fills` inside `execute_design_batch`, with query or caller-owned snapshot/lease, parent-local x/y domain, fill index and ordered color stops. Backend reads columns and prepares color/opacity patches only; existing gradient/kind fields remain unchanged. Selected-owner patches create local overrides on shared fills; use explicit source updates for linked changes, and detach only for independent ownership. |
+| Single-axis color variation on existing targets | `map_retained_fills` inside `execute_design`, with query or caller-owned snapshot/lease, parent-local x/y domain, fill index and ordered color stops. Backend reads columns and prepares color/opacity patches only; existing gradient/kind fields remain unchanged. Selected-owner patches create local overrides on shared fills; use explicit source updates for linked changes, and detach only for independent ownership. |
 | Irregular per-cell gradients or a continuous field beyond current mapping | Existing `fills` can enumerate actual variations; reuse equal definitions with templates. Single-axis mapping changes color/opacity, not per-cell gradient endpoints or an arbitrary 2D lighting field. Do not claim equivalence, invent a formula parameter, silently simplify requested appearance or send arbitrary callbacks. |

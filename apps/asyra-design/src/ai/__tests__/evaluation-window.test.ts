@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   evaluationReportExplanation,
-  projectEvaluationReport
+  projectEvaluationReport,
+  readEvaluationWindow
 } from '../evaluation-window'
 
 const admitted = () => ({
@@ -150,4 +151,55 @@ describe('settled evaluation report projection', () => {
     alter(turn)
     expect(projectEvaluationReport(turn)).toBeUndefined()
   })
+})
+
+describe('detailed evaluation report admission', () => {
+  it('admits an explicitly untimed report without changing the drawing deadline', () => {
+    const value = { workDeadlineAt: Date.now() + 900000, reportTimeoutMs: null }
+
+    expect(readEvaluationWindow(value)).toEqual(value)
+  })
+  it('retains bounded report questions and silent work policy with an independent five minute budget', () => {
+    const value = {
+      workDeadlineAt: Date.now() + 900000,
+      reportTimeoutMs: 300000,
+      announceWorkDeadline: false,
+      reportInstructions: 'Explain long waits.'
+    }
+
+    expect(readEvaluationWindow(value)).toEqual(value)
+  })
+  it.each([
+    { reportTimeoutMs: 300001 },
+    { announceWorkDeadline: 'false' },
+    { reportInstructions: '' },
+    { reportInstructions: ' ' },
+    { reportInstructions: 'a'.repeat(8001) },
+    { reportInstructions: 1 }
+  ])('rejects invalid reporting configuration %j', (override) => {
+    expect(() =>
+      readEvaluationWindow({
+        workDeadlineAt: Date.now() + 10000,
+        reportTimeoutMs: 60000,
+        ...override
+      })
+    ).toThrow()
+  })
+})
+
+it('accepts the explicit eighteen-minute work window and keeps its ceiling independent from reporting', () => {
+  const now = Date.now()
+
+  expect(
+    readEvaluationWindow({
+      workDeadlineAt: now + 1080000,
+      reportTimeoutMs: null
+    })
+  ).toEqual({ workDeadlineAt: now + 1080000, reportTimeoutMs: null })
+  expect(() =>
+    readEvaluationWindow({
+      workDeadlineAt: Date.now() + 1140000,
+      reportTimeoutMs: null
+    })
+  ).toThrow('Invalid evaluation window')
 })

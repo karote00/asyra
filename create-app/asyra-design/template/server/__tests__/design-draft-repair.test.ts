@@ -13,12 +13,17 @@ it('retains immutable rejected source with exact request-local references', () =
   const store = createDesignDraftRepairStore()
   const source = { children: [{ key: 'duplicate' }], 'a/b~c': 1 }
   const draftId = store.retain(source)
-  if (!draftId) throw new Error('Expected the valid draft to be retained')
+
+  if (!draftId) {
+    throw new Error('Expected the valid draft to be retained')
+  }
+
   source.children[0].key = 'later caller change'
   const repair = {
     draftId,
     replacements: [{ path: '/children/0/key', value: 'corrected' }]
   }
+
   expect(store.repair(repair)).toEqual({
     children: [{ key: 'corrected' }],
     'a/b~c': 1
@@ -39,8 +44,11 @@ it('retains immutable rejected source with exact request-local references', () =
 it('refuses new retention at capacity without evicting an existing repair source', () => {
   const store = createDesignDraftRepairStore()
   const first = store.retain({ key: 'first' })
-  for (let index = 1; index < limits.retainedDrafts; index++)
+
+  for (let index = 1; index < limits.retainedDrafts; index++) {
     store.retain({ key: index })
+  }
+
   expect(store.retain({ key: 'overflow' })).toBeUndefined()
   expect(
     store.repair({
@@ -56,6 +64,7 @@ it('refuses new retention at capacity without evicting an existing repair source
 it('rejects nonexisting or malformed paths without changing a retained draft', () => {
   const store = createDesignDraftRepairStore()
   const draftId = store.retain({ children: [{ key: 'old' }] })
+
   for (const path of [
     '/missing',
     '/children/4/key',
@@ -68,6 +77,7 @@ it('rejects nonexisting or malformed paths without changing a retained draft', (
       store.repair({ draftId, replacements: [{ path, value: 'new' }] })
     ).toThrow()
   }
+
   expect(() =>
     store.repair({
       draftId,
@@ -88,9 +98,17 @@ it('rejects nonexisting or malformed paths without changing a retained draft', (
 it('offers source-referenced budget partitions without copying geometry into recovery', () => {
   const store = createDesignDraftRepairStore()
   const draftId = store.retain(recoveryFixture.input.draft)
-  if (!draftId) throw new Error('Missing retained source')
+
+  if (!draftId) {
+    throw new Error('Missing retained source')
+  }
+
   const source = store.describe(draftId)
-  if (!source?.partitions) throw new Error('Missing partitions')
+
+  if (!source?.partitions) {
+    throw new Error('Missing partitions')
+  }
+
   expect(source.partitions).toHaveLength(2)
   expect(source.partitions.reduce((n, p) => n + p.expandedNodes - 1, 0)).toBe(
     13094
@@ -103,6 +121,7 @@ it('offers source-referenced budget partitions without copying geometry into rec
     children: Record<string, unknown>[]
     fillTemplates?: unknown
   }
+
   expect(inspectDesignBudget(first)).toBeUndefined()
   expect(inspectDesignBudget(second)).toBeUndefined()
   expect(first.children.at(-1)?.instanceRanges).toEqual([{ start: 0, end: 6 }])
@@ -120,7 +139,11 @@ it('offers source-referenced budget partitions without copying geometry into rec
 it('compiles retained partitions once and binds continuation to the original root', async () => {
   const session = createDesignPreparationSession()
   const draftId = session.retainRejectedDraft(recoveryFixture.input.draft)
-  if (!draftId) throw new Error('Missing retained source')
+
+  if (!draftId) {
+    throw new Error('Missing retained source')
+  }
+
   const signal = new AbortController().signal
   const firstRepair = { draftId, partition: 0 }
   const first = await session.prepareAsync(
@@ -140,6 +163,7 @@ it('compiles retained partitions once and binds continuation to the original roo
   )
   const a = session.resolve(first.artifactId)
   const b = session.resolve(later.artifactId)
+
   expect(b.rootId).toBe(a.rootId)
   expect(b.continuation?.anchor.id).toBe(a.entries[1].descriptor.id)
   expect(b.entries.slice(1).every((entry) => entry.parentId === a.rootId)).toBe(
@@ -150,6 +174,7 @@ it('compiles retained partitions once and binds continuation to the original roo
     signal,
     laterRepair
   )
+
   expect(repeated.artifactId).toBe(later.artifactId)
   expect(session.resolve(repeated.artifactId)).toBe(b)
   await expect(
@@ -163,7 +188,11 @@ it('compiles retained partitions once and binds continuation to the original roo
 it('preserves sparse original instance ranges and rejects indivisible or relational recovery', () => {
   const original = recoveryFixture.input.draft
   const pattern = original.children.find((child) => child.type === 'pattern')
-  if (!pattern) throw new Error('Missing pattern')
+
+  if (!pattern) {
+    throw new Error('Missing pattern')
+  }
+
   const source = {
     ...original,
     children: [
@@ -179,14 +208,23 @@ it('preserves sparse original instance ranges and rejects indivisible or relatio
   }
   const store = createDesignDraftRepairStore()
   const draftId = store.retain(source)
-  if (!draftId) throw new Error('Missing retained source')
+
+  if (!draftId) {
+    throw new Error('Missing retained source')
+  }
+
   const parts = store.describe(draftId)?.partitions
-  if (!parts) throw new Error('Missing partitions')
+
+  if (!parts) {
+    throw new Error('Missing partitions')
+  }
+
   expect(parts).toHaveLength(2)
   const a = store.repair({ draftId, partition: 0 }) as {
     children: Record<string, unknown>[]
     fillTemplates?: unknown
   }
+
   expect(a.children).toHaveLength(1)
   expect(a.children[0].instanceRanges).toEqual([
     { start: 0, end: 4 },
@@ -197,15 +235,24 @@ it('preserves sparse original instance ranges and rejects indivisible or relatio
     children: Record<string, unknown>[]
     fillTemplates?: unknown
   }
+
   expect(b.children[0].instanceRanges).toEqual([{ start: 10, end: 12 }])
   const relations = store.retain({ ...original, relations: [] })
-  if (!relations) throw new Error('Missing retained source')
+
+  if (!relations) {
+    throw new Error('Missing retained source')
+  }
+
   expect(store.describe(relations)?.partitions).toBeUndefined()
   const indivisible = store.retain({
     ...original,
     children: [{ ...original.children[3], rows: 10000, columns: 2 }]
   })
-  if (!indivisible) throw new Error('Missing retained source')
+
+  if (!indivisible) {
+    throw new Error('Missing retained source')
+  }
+
   expect(store.describe(indivisible)?.partitions).toBeUndefined()
 })
 
@@ -223,7 +270,11 @@ it.each([
       limit
     )
     const draftId = session.retainRejectedDraft(source)
-    if (!draftId) throw new Error('Missing source')
+
+    if (!draftId) {
+      throw new Error('Missing source')
+    }
+
     const signal = new AbortController().signal
     const firstRepair = { draftId, partition: 0 }
     const first = await session.prepareAsync(
@@ -233,19 +284,26 @@ it.each([
     )
     const receipts = [first]
     const partitions = session.describeRejectedDraft(draftId)?.partitions
-    if (!partitions) throw new Error('Missing partitions')
+
+    if (!partitions) {
+      throw new Error('Missing partitions')
+    }
+
     for (let partition = 1; partition < partitions.length; partition++) {
       const repair = {
         draftId,
         partition,
         continueFromArtifact: first.artifactId
       }
+
       receipts.push(
         await session.prepareAsync(session.repairDraft(repair), signal, repair)
       )
     }
+
     const normalize = (design: ReturnType<typeof prepareDesign>) => {
       const root = design.entries[0].descriptor
+
       return design.entries.slice(1).map(({ descriptor }) =>
         JSON.parse(
           JSON.stringify({
@@ -256,6 +314,7 @@ it.each([
         )
       )
     }
+
     const actual = receipts.flatMap((receipt) =>
       normalize(session.resolve(receipt.artifactId))
     )
@@ -264,43 +323,62 @@ it.each([
         prepareDesign({ ...source, children: [child] }, `oracle-${index}`)
       )
     )
+
     const difference = (
       a: unknown,
       b: unknown,
       path = 'output'
     ): string | undefined => {
-      if (typeof b === 'number')
+      if (typeof b === 'number') {
         return typeof a === 'number' && Math.abs(a - b) < 0.00000005
           ? undefined
           : path
+      }
+
       if (Array.isArray(b)) {
-        if (!Array.isArray(a) || a.length !== b.length) return path
+        if (!Array.isArray(a) || a.length !== b.length) {
+          return path
+        }
+
         for (let i = 0; i < b.length; i++) {
           const result = difference(a[i], b[i], `${path}[${i}]`)
-          if (result) return result
+
+          if (result) {
+            return result
+          }
         }
+
         return
       }
+
       if (b && typeof b === 'object') {
         if (
           !a ||
           typeof a !== 'object' ||
           JSON.stringify(Object.keys(a).sort()) !==
             JSON.stringify(Object.keys(b).sort())
-        )
+        ) {
           return path
+        }
+
         for (const [key, value] of Object.entries(b)) {
           const result = difference(
             (a as Record<string, unknown>)[key],
             value,
             `${path}.${key}`
           )
-          if (result) return result
+
+          if (result) {
+            return result
+          }
         }
+
         return
       }
+
       return a === b ? undefined : path
     }
+
     expect(difference(actual, expected)).toBeUndefined()
   }
 )
@@ -311,8 +389,10 @@ it('counts each source component without repeatedly scanning an accumulating par
   const children = Array.from({ length: 250 }, (_, i) => ({
     ...face,
     key: `face-${i}`,
+
     get vertices() {
       reads++
+
       return face.vertices
     }
   }))
@@ -338,6 +418,7 @@ it('counts each source component without repeatedly scanning an accumulating par
     ]
   }
   const partitions = partitionDesignBudget(source).partitions
+
   expect(partitions).toHaveLength(2)
   expect(reads).toBeLessThanOrEqual(250 * 10)
 })
@@ -352,6 +433,7 @@ it('bounds recovery metadata and keeps exact object and path limits', () => {
       { x: 1, y: 1, z: 0 }
     ]
   }
+
   const draft = (count: number) => ({
     type: 'group',
     projection: {},
@@ -364,6 +446,7 @@ it('bounds recovery metadata and keeps exact object and path limits', () => {
       }
     ]
   })
+
   expect(partitionDesignBudget(draft(9999)).partitions).toBeUndefined()
   expect(
     partitionDesignBudget(draft(10000)).partitions?.map((p) => p.expandedNodes)
@@ -383,6 +466,7 @@ it('bounds recovery metadata and keeps exact object and path limits', () => {
     children: [{ ...draft(2001).children[0], members: [paths] }]
   }
   const partitions = partitionDesignBudget(source).partitions
+
   expect(partitions?.map((p) => p.expandedPathCommands)).toEqual([200000, 100])
   expect(partitions?.map((p) => p.expandedNodes)).toEqual([2001, 2])
 })
@@ -397,12 +481,17 @@ it('keeps world material revisions targeted at each partition actual members', a
   }
   const draft = JSON.parse(JSON.stringify(recoveryFixture.input.draft))
   const face = draft.children[5].members[0]
+
   delete face.fill
   face.materialField = 'glass'
   draft.linearFields = { glass: field }
   const session = createDesignPreparationSession()
   const draftId = session.retainRejectedDraft(draft)
-  if (!draftId) throw new Error('Missing retained source')
+
+  if (!draftId) {
+    throw new Error('Missing retained source')
+  }
+
   const signal = new AbortController().signal
   const first = await session.prepareAsync(draft, signal, {
     draftId,
@@ -414,14 +503,17 @@ it('keeps world material revisions targeted at each partition actual members', a
     continueFromArtifact: first.artifactId
   })
   const rootId = session.resolve(first.artifactId).rootId
+
   for (const artifact of [first, second]) {
     const ids = session.materialMembers(artifact.artifactId)
+
     expect(ids.length).toBeGreaterThan(0)
     const preparedIds = new Set(
       session
         .resolve(artifact.artifactId)
         .entries.map((entry) => entry.descriptor.id)
     )
+
     expect(ids.every((id) => preparedIds.has(id))).toBe(true)
     const revision = await session.reviseMaterial(
       artifact.artifactId,
@@ -430,6 +522,7 @@ it('keeps world material revisions targeted at each partition actual members', a
       signal
     )
     const updates = session.materialRevision(revision.materialRevisionId)
+
     expect(updates.rootId).toBe(rootId)
     expect(updates.updates.map((entry) => entry.elementId)).toEqual(ids)
   }
@@ -437,6 +530,7 @@ it('keeps world material revisions targeted at each partition actual members', a
 
 it('does not partition conflicting semantic keys into separately accepted artifacts', () => {
   const draft = structuredClone(recoveryFixture.input.draft)
+
   draft.children[draft.children.length - 1].key = draft.children[0].key
   expect(partitionDesignBudget(draft).partitions).toBeUndefined()
   draft.children[draft.children.length - 1].key =
@@ -463,19 +557,31 @@ it.each([
   (_, source) => {
     const store = createDesignDraftRepairStore()
     const draftId = store.retain(source)
-    if (!draftId) throw new Error('Missing source')
+
+    if (!draftId) {
+      throw new Error('Missing source')
+    }
+
     const partitions = store.describe(draftId)?.partitions
+
     expect(partitions).toHaveLength(2)
-    if (!partitions) throw new Error('Missing retained partitions')
+    if (!partitions) {
+      throw new Error('Missing retained partitions')
+    }
+
     const before = structuredClone(source)
+
     for (let partition = 0; partition < partitions.length; partition++) {
       const selected = store.repair({ draftId, partition }) as typeof source
+
       expect(selected.brief).toEqual(source.brief)
       expect(inspectDesignBudget(selected)).toBeUndefined()
       const compiled = prepareDesign(selected, `brief-part-${partition}`)
+
       expect(compiled.review).toMatchObject(source.brief)
       expect(compiled.findings).toEqual([])
     }
+
     expect(source).toEqual(before)
   }
 )
@@ -495,7 +601,11 @@ it.each([
     const source = { ...recoveryFixture.input.draft, key: 'root', brief }
     const store = createDesignDraftRepairStore()
     const draftId = store.retain(source)
-    if (!draftId) throw new Error('Missing source')
+
+    if (!draftId) {
+      throw new Error('Missing source')
+    }
+
     expect(store.describe(draftId)).toMatchObject({
       partitionLimitation: { code, message: expect.any(String) }
     })
@@ -514,13 +624,19 @@ it('reuses unchanged retained source only after complete owner admission', () =>
   const store = createDesignDraftRepairStore()
   const source = { type: 'frame', name: 'Kept', width: 100, height: 100 }
   const draftId = store.retain(source)
-  if (!draftId) throw new Error('Expected retained source')
+
+  if (!draftId) {
+    throw new Error('Expected retained source')
+  }
+
   const repair = { draftId, replacements: [] }
   let validations = 0
   const accepted = store.repair(repair, (candidate) => {
     validations++
+
     return JSON.stringify(candidate) === JSON.stringify(source)
   }) as typeof source
+
   expect(validations).toBe(1)
   expect(accepted).toEqual(source)
   accepted.width = 5

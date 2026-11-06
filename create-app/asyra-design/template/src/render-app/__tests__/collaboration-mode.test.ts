@@ -20,6 +20,7 @@ describe('collaboration public file identity', () => {
     window.history.replaceState({}, '', '/?fileId=public-crdt-file')
 
     const mode = getConfiguredCollaborationMode()
+
     expect(mode).toMatchObject({
       fileId: 'public-crdt-file',
       actorId: `actor-${ACTOR_UUID}`,

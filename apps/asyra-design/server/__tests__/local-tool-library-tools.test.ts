@@ -141,6 +141,28 @@ const proposal = {
   output: { kind: 'step', step: 'use', path: '' }
 }
 
+it('keeps recipe guidance within available capabilities and independent save recovery', () => {
+  const { owner } = fixture()
+  const submit = owner.definitions.find(
+    (definition) => definition.name === AiDesignToolIds.SUBMIT_TOOL
+  )
+  const invoke = owner.definitions.find(
+    (definition) => definition.name === AiDesignToolIds.INVOKE_TOOL
+  )
+
+  expect(submit?.description).toContain('no existing direct tool already fits')
+  expect(submit?.description).toContain('cannot invent missing primitives')
+  expect(submit?.description).toContain('task-specific choices in fresh inputs')
+  expect(submit?.description).toContain('only mechanically decidable repairs')
+  expect(invoke?.description).toContain('not visual acceptance')
+  expect(invoke?.description).toContain(
+    'Successful execution attempts saving independently'
+  )
+  expect(invoke?.description).toContain(
+    'never repeat invocation to retry saving'
+  )
+})
+
 it('exposes canonical recursive bindings through native conversion and validates malformed submissions before dispatch', async () => {
   const { owner, call, execute } = fixture()
   const definition = owner.definitions.find(

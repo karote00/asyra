@@ -128,6 +128,17 @@ Completed plan:
   a waiting state, and submits the selection once with the retained attachments
   and `metadata.replyTo` containing the original intent and turn id. Stale reply
   targets are rejected before provider work; past questions are inactive.
+- `metadata.conversationContext` contains `turns` and current-message
+  `attachmentIndexes`. Each chronological turn has `turnId`, exact `intent`,
+  public `message`, `outcome`, original `attachmentIndexes`, optional
+  `replyToTurnId` / `retryOfTurnId` and optional `question: {message, choices}`.
+  Indexes address the deduplicated `metadata.imageAttachments` array; they do
+  not claim source suitability. Links refer to earlier turns in the same context.
+  The App controller computes this once per submission; the server rejects
+  extra fields, invalid indexes/links, duplicate turn IDs and exceeded bounds.
+  Limits and no-write failure are specified in `specs/ai-conversation-experience.md`.
+  Current intent stays separate; raw tool results and request-owned handles are
+  never conversation context. New conversations omit the field.
 - follow-up updates consume only canonical ids projected from the preceding
   action result; each target is revalidated immediately before its common-API
   mutation
@@ -224,6 +235,10 @@ Completed plan:
 - providers may use only App-registered tools. Intermediate image data remains
   outside canonical state, persistence, and collaboration, and the final
   server result must still enter the ordinary registered action executor
+- selected host output fields preserve image provenance through aliases. The
+  provider emits selected images through native image content and keeps only
+  metadata in text. Status-only, non-image fields and authored input do not emit
+  images. This is delivery of existing pixels, not capture or visual approval
 - conversation progress contains only the runtime's stable operational
   summaries. Settled UI summaries never render raw arguments, provider bodies,
   canonical ids, secrets, or private chain-of-thought
@@ -446,6 +461,13 @@ canonical application, not visual scope. Empty patches validate their targets.
 Transport/settlement failures retain their existing recovery owner; never replay
 acknowledged writes to reconstruct output. Reads, transient selection/viewport,
 structural receipts and existing ordered-status batches keep their own contracts.
+
+Registered AI actions for this receipt kind expose a bounded model view with
+`status`, `changed`, `settlement`, `acceptedCount`, `unavailableCount`, mutation-scope
+counts and a retained receipt reference. Internal consumers receive the complete
+canonical receipt. Use existing paged `read_design_context` snapshot receipt
+readback when the original IDs are needed. Partial/failed results retain their
+meaning; retention failure is explicit and must not trigger replay of settled edits.
 
 The same contract applies to `setElementLock`, `toggleElementLock`,
 `toggleElementVisible`, `resetElementSize`, `changeElementGeometry` and
@@ -893,7 +915,8 @@ absolute, row, column or grid constraints and native frame/rect/oval/text/vector
 nodes; it does not invent content. Prepared data is admitted in full before writes.
 See `specs/design-preparation.md` and `specs/editable-text.md`.
 An explicit draft `linearFields` map supplies common world-space linear paint
-for projected or translated pattern faces selected with `materialField`. The
+for projected faces and surface-grid motifs, including translated pattern members,
+selected with `materialField`. The
 preparation owner emits independent native gradients; no renderer, live material
 constraint or persistent document format is added. Ordinary native fills remain
 available. Scope, conflicts and unsupported inputs follow the preparation spec.
@@ -917,16 +940,20 @@ and explains unresolved constraints rather than reporting unconditional success.
 The local tools separate criteria declaration (`define_design_criteria`), source
 facts (`record_design_facts`), calculations (`record_design_calculations`), reference
 selection (`select_design_references`) and rendered judgments (`review_drawing`).
-Declare criteria before judging; this is not a gate before the first ready drawing.
+Criteria, facts and calculations are composable through their existing request-state
+owners. Declare criteria before judging; this is not a gate before the first ready drawing.
 Visual criteria require explicit `requiredUnits`: [] means a whole-view obligation;
 nonempty stable IDs mean regional obligations, with a separate overall criterion.
 Data criteria omit that field. Established obligations cannot shrink after review.
 
 Capture targets share the `inspect_drawing` schema. Capture-only calls return images,
 pending coverage and the next judgment input, without inventing visual approval.
+Each binding carries requestId, requirementRevision, checkRevision and signature.
+The existing request-local inspection owner retains image dependencies and signs
+and validates them; the model does not return duplicate dependency bodies.
 Failed captures return successful IDs and exact failed targets for retry. Each
 submitted judgment names its own nonempty `inspectionIds` subset of the enclosing
-image menu. Unused menu images are not dependencies and cannot veto local recovery;
+image menu; omitted bindings are rejected, never inherited. Unused menu images are not dependencies and cannot veto local recovery;
 deferred-detail decisions still depend on their enclosing images. Actual referenced
 images must be current. Independent current passes accumulate; changed image,
 criterion or source dependencies reopen only dependent results. `final=true` checks
@@ -989,7 +1016,7 @@ Selectors are mutually exclusive. No lexical match returns the category menu,
 not an unavailable capability or a requirement to scan every API. Existing known
 operations may be executed directly without discovery or a preliminary data read.
 
-Execute basic operations through `execute_design_batch`, including one-item edits.
+Execute basic operations through `execute_design`, including one-item edits.
 Redundant scalar aliases have explicit batch replacements in dispositions; UI
 methods remain at their existing owners. Single-object composite editing and
 visibility are also batch items only. Collection preparation/application remains
@@ -1091,7 +1118,6 @@ and compilation, and never replay prior writes. References are request-local,
 FIFO bounded to four drafts / 8 MiB; an unavailable reference requires resending
 source. Prepared artifact IDs and canonical element IDs are unchanged.
 
-
 ## Canvas text authoring
 
 `features/text-canvas` exposes edit-selected, finish and cancel through the
@@ -1100,3 +1126,301 @@ session and commits through Core creation/property APIs inside one transaction.
 The Canvas editor subscribes only while active and derives placement through
 `elementLocalToWorkspace` and `workspaceToCanvas`. See `specs/editable-text.md`
 and `bdd-features/text-canvas.feature` for lifecycle and accepted behavior.
+
+### Native discovery entry
+
+With drawing operations enabled, `describe_design_apis` and the single
+`execute_design` host entry are eagerly available native tools. Its declaration and dispatch still come from
+the existing operation owner. Domain tools remain deferred; no-operation and
+assessment requests do not add the entry. Native advertised counts/bytes reflect
+the actual registration. Qualified names, selected usage, scopes and batch/native
+execution envelopes retain their existing contracts.
+
+### Mixed capture recovery
+
+Mixed review capture preserves declared new-image roles in an unsigned
+`next.arguments.bindChecks` template when retained image roles remain unknown.
+Partial capture also retains successful roles while failed targets remain pending.
+Complete explicit roles through the existing binding route; enclosing images
+never become implicit dependencies. Conflicting declarations for the same check
+are rejected before capture, including reference-use and supersession differences.
+
+### Executable usage result representation
+
+`describe_design_apis` with `view: "usage"` returns complete selected input
+constraints, owner examples, result fields and settlement/recovery meaning.
+`includeResultSchema: true` explicitly includes the full model-facing result
+validation schema for machine consumers. It requires usage view. Refresh, paging
+and invalid-scope correction retain the chosen mode. Runtime validation and
+internal recipe result schemas remain complete in both modes.
+
+### Canonical data evidence for drawing review
+
+For exact short-name usage, an admitted batch action carries its canonical
+wrapper's qualified dependency reference. Select that qualified name for wrapper
+usage. Explicit full and machine-schema selections retain both routes. Names
+shared across native namespaces require qualification. Output navigation exposes
+root fields and branch choices.
+
+Use `review_drawing` with `dataQueries: [{criterionId, fields, elementIds?, artifacts?}]`.
+Supply known IDs, exact `artifacts: [{artifactId, keys}]`, or both in the same query
+for a declared `verification: "data"` criterion. The canonical context field
+registry and page limit govern selection. Read returned `dataEvidence[].values`,
+then submit `next.arguments` with status/evidence. The signed check carries
+`dataEvidenceIds` and `inspectionIds: []`; no screenshot is required. Visual
+criteria still require image evidence. Data values and identity metadata are
+revalidated through canonical reads before judgment/final acceptance. Changed,
+missing or truncated values require a new data query, without replaying edits.
+The context page includes its canonical workspaceId. Query leases are released
+after their values are retained by the request review owner.
+
+Use describe_design_apis query for owner capability metadata. With exact
+names/operations, optional purpose supplies recovery candidates when an identity
+is missing. design_operations.execute_design accepts one ordered operations array.
+Each operation specifies a name and ordinary arguments. Optional id identifies
+an output for later arguments using {kind:"step",step:"id",path:"/field"}.
+A known operation can specify an artifact or region target; selectAt:"step"
+resolves membership when that step executes. Ready operations share a canvas
+exchange. The host admits dependencies before dispatch, pins revisions and owns
+mechanical iteration. Optional output selects a guaranteed step field. Shared
+toolOutcome identifies settlement; actionResults or execution.calls identify
+completed work. Keep durable authoring and saving independent.
+
+A successful prepare_and_apply_design revision 5 returns compositionIds, the
+ordered unique document roots from acknowledged application receipts. A recipe
+creating one part may bind /compositionIds/0 into a later operation. For
+hierarchy.moveElementsRelative, bind that ID as the one member of request.elementIds
+and supply a current request.anchorId and placement. Partial and unknown results
+stop dependent steps. Ordinary actionResults and per-part receipts remain available.
+
+Discovery joins artifact-key binding and action metadata for compound purpose
+queries. A matching action with a bindable owner example exposes artifactKeyExamples.
+Replace its illustrative artifactId and keys with current request values and use
+the displayed batch route. Other required arguments retain their actual nesting.
+
+### Conversation result delivery
+
+Use ordinary step bindings when the successor is decided. To save public values
+in the current App conversation, add `retain: {alias: {step, path}}` to
+execute_design. The default reply for this request is a status acknowledgement.
+A later operation uses `{kind:"named", name:"alias", path:""}` in its arguments
+without model retrieval. Same-call aliases with a producer step compile to step
+bindings. For a decision use `delivery: {fields: {label: {step, path}}}`.
+Omitting step selects the final projected result (the existing receipt on the
+ready canvas route). Read a field of a saved snapshot with no operations and
+`delivery: {fields: {label: {name:"alias", path:"/field"}}}`.
+
+Names survive subsequent requests in the same open App document and
+conversation. The browser owns bounded immutable JSON snapshots; only names
+accompany the next model turn. Browser context exchanges do not execute canvas
+actions. Request-only handles cannot become cross-turn references. Named
+document targets remain subject to current validation before writes. A stale
+document, failed selection or storage error reports actual settlement; never
+replay completed work to recover delivery. App runtime disposal releases storage.
+
+A dependent canvas action can bind a previous output to one argument and a
+request-owned artifact selection to a distinct element slot in the same step.
+The host resolves the artifact's exact membership at admission and type-checks
+the remaining bindings against the registered action. The secured action
+validates current document targets when it runs. Use one concrete expanded key
+for a singleton anchor. Missing keys identify their argument and offer up to
+three matching keys; ambiguous anchors report the match count. Live region
+membership retains its step-time resolution.
+
+Before preparing stage inputs, the agent considers ready actions, common parameters
+and potentially reusable outputs. Known independent drafts and dependent operations
+share execute_design; a selected draft guide supplies the same per-operation
+arguments without a parts lookup. Visual decisions remain actual return boundaries.
+Optional named public outputs may be saved before their later use is certain.
+To save selected authored parameters after a successful operation, use
+`retain: {alias: {step, source: "input", path: "/draft"}}`. Paths address the
+ordinary operation arguments for native tools and canvas actions; internal
+registered action wrappers are not exposed as selection roots.
+Same-call consumers bind those authored values without a dummy tool; later turns
+read the App snapshot. Request-scoped references still cannot cross turns.
+
+### Reusable drawing definitions
+
+The preparation tool `read_design_templates({ artifactId })` returns public
+`motifTemplates`, `fillTemplates`, `linearFields` and `sharedFills` maps from an owned prepared
+source. Bind it after preparation in `execute_design`, retain its result under a
+name, and use named field bindings in later drafts, including subsequent turns.
+This exports immutable values, not request handles or live SceneTree instances.
+
+Surface-grid `motifs` accepts an inline array or `{ template, overrides? }`.
+Overrides are keyed by existing motif identity and replace supplied name, vertices,
+offset, fill, fills or materialField. A field patch clears inherited fill/palette;
+a native paint patch clears an inherited field. Conflicting modes in one patch reject. Arrays replace completely; fill clears an inherited palette
+unless fills is explicitly supplied. Effective definitions drive validation and
+budgets. Intentional native shared Fill references preserve Core source edits,
+local overrides and reset; template substitution alone creates no linkage.
+
+### Staged host execution
+
+`execute_design` accepts either `operations` or `stages`. A stage declares a unique
+`id`, preparation `operations`, optional `iteration`, and `apply` operations. Step
+IDs are global across the request. Omitted step IDs become `<stage>-prepare-N` or
+`<stage>-apply-N`; bind explicit IDs when consuming an output. All input contracts
+and dependencies are admitted before the first write. The iteration checks and
+repairs that stage before its application. Application uses ordinary registered
+actions, including composition-eligible `apply_prepared_design`; it never guesses
+how arbitrary results should be drawn. The original flat final iteration remains
+available for a single sequence.
+
+Stage requests default to status delivery and return stage states `pending`,
+`prepared`, `applied` or `failed`, plus selected fields and acknowledged names.
+An applied stage is an execution acknowledgement, not visual acceptance or durable
+storage. Optional save rejection identifies the alias and exact transient paths;
+acknowledged writes and already-bound successors survive that delivery failure.
+
+The runtime may overlap the next immutable preparation with a pending application
+only when the preparation owner permits it and every bound input exists. The
+current preparation owner permits fresh draft compilation without repair or a
+material-source dependency. Document reads, artifact edits/releases and writes
+retain their barriers. Started work settles before failure returns; each branch
+owns its receipts and request leases. No new background queue or model round trip
+is introduced.
+
+### Direct stage continuation and selected reference ownership
+
+`record_design_facts` and `record_design_calculations` are composable under their
+existing source/dependency validation. Ordered facts then calculations require no
+model handoff. Visual capture/judgment retains its native boundary.
+
+The direct `prepare_and_apply_design` entry also accepts optional `retain` and
+`delivery`, with the same selectors as execute_design but no step field. For
+example, `retain: {draft: {source: "input", path: "/draft"}, root: {path:
+"/compositionIds/0"}}` saves useful stage context even without a known later
+consumer. Select these optional inputs in scoped usage. The host lowers the
+direct request into the existing sequence/result owner; there is no second store.
+Inside an execute_design sequence, use its enclosing retain/delivery controls.
+Unselected native calls preserve their existing full decision/recovery receipts.
+Unavailable context rejects before drawing; optional storage failure retains the
+acknowledged write and reports partial delivery without replay.
+
+Selected model-visible result fields preserve their registered request-reference
+lifetimes through runtime output export and host delivery. Runtime sequences may
+assemble multiple prior step fields into a typed output object; no inferred IDs,
+private lookup or lifetime extension is substituted. Owner model projection and
+internal execution schema remain distinct. Named App snapshots still reject
+request-only handles. Status-only delivery does not export discarded artifacts.
+
+`review_drawing.dataQueries` alternatively accepts `query: {scope: "region",
+bounds, filter?, expectedCount}` with criterionId and fields. It cannot mix the
+region selector with elementIds/artifacts. The canonical read resolves membership
+and selected values once, within one page; expectedCount is required and positive.
+Evidence retains that query and rechecks membership and values before judgments.
+The existing ID/artifact route remains available. Missing, duplicate, truncated or
+changed data cannot certify a criterion; no image is needed for data evidence.
+
+Explicit evaluation work windows now allow up to eighteen minutes. The Taipei 101
+runner accepts `--minutes=18`, retaining its fifteen-minute default and unchanged
+prompt checksum. Report duration remains independent; null means no report limit.
+
+The native host catalog publishes the registered owner input contract. Runtime
+leaf schemas are separate: their removal of direct-only delivery fields must not
+remove those fields from native discovery while retaining the original scope
+declaration. Invalid scopes still fail; nested direct delivery options still fail
+before writes.
+
+Position mapping through `map_retained_fills` accepts optional `kind: solid` per
+mapping. It sets the selected rows' solid kind, null gradient and mapped color in
+one plural Fill write. Omitting `kind` preserves paint mode and gradient. Changes
+remain local overrides on selected owners; shared sources and unselected users
+are unchanged. This operation changes tool inputs, not shared component semantics.
+
+Recorder-armed strict evaluation reports survive `request closed` transport loss
+only after the work phase has settled and reporting has started. Their original
+native thread remains tool-free until the complete report is retained. Explicit
+cancellation and ordinary requests keep existing cancellation behavior. A failed
+browser collector waits on the original provider request evidence before
+owned-service cleanup. Other App lifecycle settlements cannot end that wait;
+same-request failure and provider-service loss remain explicit failures.
+
+Known literal authored-input paths are validated before any sequence writes.
+A whole named result whose registered schema contains request/secret references
+is rejected before writes; selected portable fields and runtime checks remain.
+Usage discovery publishes retention input roots, possible result fields, guaranteed
+result fields, and portable/request-scoped selections derived from the registered
+output and lifetime contracts. Selected delivery rejects unavailable paths with
+the exact alias, step and path before execution. Known request-scoped named
+selections are rejected before writes, including individually selected handles. No fields are silently removed from saved values.
+
+Selected usage makes named retention actionable: retention.scope is conversation,
+wholeResultAllowed states whether an entire output can be saved,
+guaranteedResultFields lists guaranteed portable selections, and
+forbiddenResultFields identifies request/secret-bearing selections. Result
+guaranteedFields and conditionalFields are disjoint; conditional presence is not
+a binding guarantee. Explicit machine-result schemas remain authoritative; the same retention
+permissions accompany both concise and machine-schema usage. App/host/workflow guidance distinguishes portable
+continuation data from request handles; retaining an alias never extends a lease.
+
+Recorder-armed evaluation stops on typed App/native execution failures, including
+partial/unknown settlement, and externally confirmed missing or incorrect App data
+that prevents execution. Preserve the first concrete failure across native calls
+and nested host operations before same-thread unlimited reporting. Successful
+review recording remains design feedback even when recordedChecks or check counts
+contain failures: allow normal correction in the original drawing turn. Pending
+coverage, accepted=false, incomplete artwork and arbitrary nested user data do not
+stop drawing. The external control accepts tool-failure, not the superseded
+corrective-rework reason. The drawing deadline and final acceptance requirements
+remain unchanged. Ordinary requests retain normal recovery.
+
+Selected preparation examples are validated against the selected schema first.
+After the existing selected-optional-input priority, rank valid owner-authored
+examples by distinct requested node-kind coverage. Compute coverage once per
+example, using only the owner-declared selection. Widening a face/grid scope to
+permit vector siblings therefore preserves composition coverage; vector-only and
+unscoped discovery retain their existing examples. No inferred style, new material
+behavior or mandatory workflow is introduced. Example selection is guidance, not
+proof of visual acceptance.
+
+Native inspection uses one App-owned maxEdge for schema region bounds, output
+image bounds, capture execution and failure recovery. Selected capture usage
+preserves the view contract: detail without region captures the entire target at
+native resolution only if both dimensions fit the 1024-pixel bound. Larger targets
+need a smaller child or an explicit target-local region. Overview fits the whole
+target into a preview; detail does not silently crop or downscale. Existing partial
+capture receipts and valid-image retention remain unchanged.
+
+Strict evaluation diagnostics inspect only the known actionResults/result receipt
+structure for a concrete child failure before using an aggregate partial message.
+This preserves the native capture constraint in the same-thread report without
+claiming that a captured image was displayed to the AI. Parent call identity,
+bounded message size, first-stop latching and normal-request recovery remain.
+
+
+### Correctable input and failure delivery
+
+`execute_design` revision 6 preserves a `failure` field when status-only or
+selected-field delivery cannot complete. It contains the existing projected owner
+receipt or sequence execution/recovery, using that invocation's failure schemas.
+Draft references keep their request lifetime; they are not named conversation
+snapshots. Successful delivery remains compact. Missing selected success fields
+do not replace the actual failure or require the model to anticipate its shape.
+
+Complete region target reads enforce expectedCount at the host after reading.
+Empty or wrong-count matches return correct_input with not-started settlement,
+without dispatching mutations. Incomplete, unavailable or unknown reads remain
+blocking failures. Literal selectors stay literal; no fuzzy target substitution.
+
+Strict evaluation allows owner-declared correct_input recovery with known safe
+settlement, including multipart successes followed by a rejected input and the
+inline root's aggregate receipt. It preserves the failed receipt for the same AI
+to repair; it neither retries automatically nor replays successful parts.
+Independent result-delivery errors, unknown settlement, unavailable App data and
+abnormal interruption still stop. Ordinary visual corrections remain allowed.
+
+Canonical input-schema rejection and a known native control placed in a sequence
+return explicit correct_input before dispatch. The control remains native; its
+receipt identifies the registered direct route without automatically invoking it.
+The host preserves the typed owner recovery through admission wrappers. Missing
+or ambiguous capabilities, unavailable App context and errors with acknowledged
+prior execution do not receive this safe-input classification.
+
+Correlated native dynamicToolCall completion summarizes the existing App reply;
+it is not a second execution outcome. Evaluation and protocol admission reuse
+the registered binding, issued call identity and terminal status check. Actual
+App receipts and delivery still own blocking failures; unmatched or invalid native
+events retain their existing failure handling. No result cache or automatic retry
+is introduced.

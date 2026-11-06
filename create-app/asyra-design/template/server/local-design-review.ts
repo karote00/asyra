@@ -37,8 +37,10 @@ import { AiDesignToolIds } from '../src/constants/ai-design'
 
 const record = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value)
+
 const text = (value: unknown): value is string =>
   typeof value === 'string' && value.trim().length > 0 && value.length <= 1000
+
 const strings = (value: unknown): value is string[] =>
   Array.isArray(value) && value.length <= 24 && value.every(text)
 
@@ -49,11 +51,14 @@ export const reviewInspectionIds = (
   if (
     (Array.isArray(value.inspections) && value.inspections.length) ||
     (Array.isArray(value.deferredChecks) && value.deferredChecks.length)
-  )
+  ) {
     return strings(value.inspectionIds) ? [...value.inspectionIds] : []
+  }
+
   const selected = Array.isArray(value.bindChecks)
     ? value.bindChecks
     : value.checks
+
   return [
     ...new Set(
       (Array.isArray(selected) ? selected : []).flatMap((check) =>
@@ -102,18 +107,25 @@ const visualCheckIdentity = (check: {
   check.unitId === undefined
     ? `visual:${check.criterionId}`
     : `visual-unit:${JSON.stringify([check.criterionId, check.unitId])}`
+
 const reviewSupersessionConstraint = {
   anyOf: [{ required: ['unitId'] }, { properties: { supersedes: false } }]
 }
+
 const validateSupersession = (check: {
   unitId?: unknown
   supersedes?: unknown
 }) => {
-  if (check.supersedes === undefined) return
-  if (check.unitId === undefined)
+  if (check.supersedes === undefined) {
+    return
+  }
+
+  if (check.unitId === undefined) {
     throw new Error(
       'Whole-criterion checks must omit supersedes. It replaces an existing regional unit scope only; do not invent unitId. Reuse current images and bind the same criterion without supersedes.'
     )
+  }
+
   if (
     !record(check.supersedes) ||
     !Number.isInteger(check.supersedes.revision) ||
@@ -123,18 +135,27 @@ const validateSupersession = (check: {
     Object.keys(check.supersedes).some(
       (key) => !['revision', 'reason'].includes(key)
     )
-  )
+  ) {
     throw new Error(
       'Unit supersession requires an exact revision and redesign reason.'
     )
+  }
 }
+
 /** Pure corrective input only; the next invocation still validates evidence and scope. */
 export const reviewSupersessionRecovery = (value: unknown) => {
-  if (!record(value)) return
+  if (!record(value)) {
+    return
+  }
+
   const next = structuredClone(value)
   let corrected = false
+
   const correct = (items: unknown) => {
-    if (!Array.isArray(items)) return
+    if (!Array.isArray(items)) {
+      return
+    }
+
     for (const check of items) {
       if (
         record(check) &&
@@ -146,28 +167,46 @@ export const reviewSupersessionRecovery = (value: unknown) => {
       }
     }
   }
-  if (Array.isArray(next.inspections))
-    for (const target of next.inspections)
-      if (record(target)) correct(target.checks)
+
+  if (Array.isArray(next.inspections)) {
+    for (const target of next.inspections) {
+      if (record(target)) {
+        correct(target.checks)
+      }
+    }
+  }
+
   correct(next.bindChecks)
   correct(next.checks)
-  if (!corrected) return
+  if (!corrected) {
+    return
+  }
+
   if (Array.isArray(next.checks)) {
     next.bindChecks = next.checks.map((check) => {
-      if (!record(check)) return check
+      if (!record(check)) {
+        return check
+      }
+
       const {
         status: _status,
         evidence: _evidence,
         binding: _binding,
         ...selection
       } = check
+
       return selection
     })
     delete next.checks
   }
+
   const schema =
     next.phase === 'structure' ? designEvidenceSchema : reviewVisualSchema
-  if (operationInputIssue(next, schema)) return
+
+  if (operationInputIssue(next, schema)) {
+    return
+  }
+
   return {
     next: {
       tool: AiDesignToolIds.REVIEW_DRAWING,
@@ -178,6 +217,7 @@ export const reviewSupersessionRecovery = (value: unknown) => {
     }
   }
 }
+
 const checkIdentityProperties = {
   referenceUses: referenceUsesSchema,
   criterionId: { type: 'string', minLength: 1 },
@@ -709,6 +749,7 @@ const optionalPhaseSchema = <
     required: schema.required.filter((key) => key !== 'phase')
   }
 }
+
 const sourceEvidenceSchema = optionalPhaseSchema(reviewFactsSchema)
 
 // Result alternatives share the same operation identities as scoped input.
@@ -1076,10 +1117,14 @@ export const designEvidenceInput = (
   name: string,
   input: Record<string, unknown>
 ) => {
-  if (name === AiDesignToolIds.DEFINE_DESIGN_CRITERIA)
+  if (name === AiDesignToolIds.DEFINE_DESIGN_CRITERIA) {
     return { ...input, phase: 'plan' }
-  if (name === AiDesignToolIds.RECORD_DESIGN_FACTS)
+  }
+
+  if (name === AiDesignToolIds.RECORD_DESIGN_FACTS) {
     return { ...input, phase: 'facts' }
+  }
+
   return input
 }
 
@@ -1088,10 +1133,12 @@ const validateReferenceIndexes = (indexes: unknown): number[] => {
     !Array.isArray(indexes) ||
     indexes.some((index) => !Number.isSafeInteger(index) || index < 0) ||
     new Set(indexes).size !== indexes.length
-  )
+  ) {
     throw new Error(
       'Reference image indexes must be unique nonnegative integers.'
     )
+  }
+
   return [...indexes]
 }
 
@@ -1110,6 +1157,7 @@ export const createLocalDesignReview = (
   const facts = createDesignFacts(options.resolveSources)
   const references = createReferenceDecisions()
   let factBindings = new Map<string, FactBinding>()
+
   const recordFacts = (value: Record<string, unknown>, criteria: string[]) => {
     const nextBindings = new Map(factBindings)
     const affectedCriteria = new Set<string>()
@@ -1117,9 +1165,13 @@ export const createLocalDesignReview = (
     let changedKnownFact = false
     let unknownImpact = false
     const additions = value.factBindings ?? []
-    if (!Array.isArray(additions) || additions.length > 24)
+
+    if (!Array.isArray(additions) || additions.length > 24) {
       throw new Error('Invalid factBindings.')
+    }
+
     const keys = new Set<string>()
+
     for (const item of additions) {
       if (
         !record(item) ||
@@ -1139,24 +1191,33 @@ export const createLocalDesignReview = (
               'referenceUses'
             ].includes(key)
         )
-      )
+      ) {
         throw new Error(
           'Fact bindings require a planned criterion and unique canonical element IDs.'
         )
+      }
+
       const declarations = (
         record(value.criteria) ? value.criteria : plan?.criteria
       ) as Record<string, DesignCriterion> | undefined
       const units = declarations?.[item.criterionId]?.requiredUnits ?? []
+
       if (
         (item.unitId !== undefined &&
           (!text(item.unitId) || !units.includes(item.unitId))) ||
         (units.length && item.unitId === undefined)
-      )
+      ) {
         throw new Error(
           'Fact binding requires an exact declared criterion/unit.'
         )
+      }
+
       const key = JSON.stringify([item.factId, item.criterionId, item.unitId])
-      if (keys.has(key)) throw new Error('Duplicate fact binding.')
+
+      if (keys.has(key)) {
+        throw new Error('Duplicate fact binding.')
+      }
+
       keys.add(key)
       if (!isDeepStrictEqual(factBindings.get(key), item)) {
         affectedCriteria.add(item.criterionId)
@@ -1164,6 +1225,7 @@ export const createLocalDesignReview = (
           `check-scope:${visualCheckIdentity(item as unknown as FactBinding)}`
         )
       }
+
       nextBindings.set(key, {
         factId: item.factId,
         criterionId: item.criterionId,
@@ -1178,6 +1240,7 @@ export const createLocalDesignReview = (
         elementIds: [...item.elementIds]
       })
     }
+
     const result = facts.record(
       {
         phase: 'facts',
@@ -1191,6 +1254,7 @@ export const createLocalDesignReview = (
       },
       (retained, changes) => {
         const changed = new Set(changes.changedIds)
+
         changedKnownFact = changes.changedExistingIds.length > 0
         unknownImpact = changes.changedExistingIds.some(
           (id) =>
@@ -1202,21 +1266,28 @@ export const createLocalDesignReview = (
             affectedScopes.add(`check-scope:${visualCheckIdentity(binding)}`)
           }
         }
+
         const ids = new Set(retained.map((fact) => fact.id))
+
         for (const binding of nextBindings.values()) {
-          for (const receipt of binding.referenceUses ?? [])
+          for (const receipt of binding.referenceUses ?? []) {
             resolveSelectedUse(receipt, 'fact', binding)
+          }
+
           if (
             !ids.has(binding.factId) ||
             !criteria.includes(binding.criterionId)
-          )
+          ) {
             throw new Error(
               'Fact binding refers to an unknown fact or criterion.'
             )
+          }
         }
       }
     )
+
     factBindings = nextBindings
+
     return {
       result: {
         ...result,
@@ -1228,6 +1299,7 @@ export const createLocalDesignReview = (
       unknownImpact
     }
   }
+
   const bindingRequestId = randomUUID()
   const bindingSecret = randomUUID()
   let revision = 0
@@ -1268,6 +1340,7 @@ export const createLocalDesignReview = (
       region?: Record<string, unknown>
     }
   >()
+
   const bindingSignature = (
     phase: string,
     check: Record<string, unknown>,
@@ -1289,13 +1362,17 @@ export const createLocalDesignReview = (
         })
       )
       .digest('hex')
+
   const bindingDependencies = (ids: string[]) =>
     ids.map((inspectionId) => {
       const image = inspections.get(inspectionId)
-      if (!image)
+
+      if (!image) {
         throw new Error(
           `Review binding evidence ${inspectionId} is unavailable.`
         )
+      }
+
       return {
         inspectionId,
         elementId: image.target,
@@ -1303,19 +1380,29 @@ export const createLocalDesignReview = (
         ...(image.source ? { source: structuredClone(image.source) } : {})
       }
     })
+
   const validateBindings = (value: unknown) => {
-    if (!record(value) || !Array.isArray(value.checks) || !value.checks.length)
+    if (
+      !record(value) ||
+      !Array.isArray(value.checks) ||
+      !value.checks.length
+    ) {
       throw new Error('Review submission requires exact check bindings.')
+    }
+
     for (const check of value.checks) {
       if (
         !record(check) ||
         !record(check.binding) ||
         !strings(check.inspectionIds)
-      )
+      ) {
         throw new Error(
           'Review submission requires a current binding for every check.'
         )
+      }
+
       const binding = check.binding
+
       resolveCheckUses(check as unknown as ReviewSelection)
       if (
         binding.requestId !== bindingRequestId ||
@@ -1326,10 +1413,12 @@ export const createLocalDesignReview = (
           binding.dependencies,
           bindingDependencies(check.inspectionIds)
         )
-      )
+      ) {
         throw new Error(
           'Review binding is foreign, modified or stale; bind current evidence again.'
         )
+      }
+
       const previous = results.read({
         ids: [
           visualCheckIdentity(check as { criterionId: string; unitId?: string })
@@ -1342,18 +1431,23 @@ export const createLocalDesignReview = (
         previous.evidence === check.evidence &&
         isDeepStrictEqual(previous.scope, check.inspectionIds) &&
         isDeepStrictEqual(previous.supersedes, check.supersedes)
-      if (binding.checkRevision !== (previous?.revision ?? 0) && !replay)
+
+      if (binding.checkRevision !== (previous?.revision ?? 0) && !replay) {
         throw new Error(
           `Review binding for ${String(check.criterionId)} is stale; rebind only this check.`
         )
+      }
     }
   }
+
   const mechanicalIssue = () => {
     const pending = results.firstPending('tool')
+
     return pending
       ? `Mechanical check ${pending.id} remains ${pending.status}; resolve it without resubmitting unchanged visual judgments.`
       : undefined
   }
+
   const requiredChecks = () =>
     Object.entries(plan?.criteria ?? {}).flatMap(([criterionId, criterion]) =>
       (criterion.requiredUnits?.length
@@ -1365,6 +1459,7 @@ export const createLocalDesignReview = (
         ...(unitId === undefined ? {} : { unitId })
       }))
     )
+
   const reviewState = (
     replacements: Pick<
       DesignCheckResult,
@@ -1389,7 +1484,11 @@ export const createLocalDesignReview = (
         .read({ includePassed: true, origin: 'main-agent' })
         .items.map((item) => [item.id, item])
     )
-    for (const item of replacements) current.set(item.id, item)
+
+    for (const item of replacements) {
+      current.set(item.id, item)
+    }
+
     const pending = required.flatMap((item) => {
       const result = current.get(item.id)
       let status = result?.status ?? 'missing'
@@ -1398,7 +1497,11 @@ export const createLocalDesignReview = (
         item.unitId === undefined &&
         plan?.criteria[item.criterionId]?.verification === 'visual' &&
         !result?.scope?.some((id) => inspections.get(id)?.overview)
-      if (wholeViewRequired) status = 'unverified'
+
+      if (wholeViewRequired) {
+        status = 'unverified'
+      }
+
       return status === 'pass'
         ? []
         : [
@@ -1417,6 +1520,7 @@ export const createLocalDesignReview = (
       )
     ]
     const evidence = inspectionIds.map((id) => inspections.get(id))
+
     return {
       coverage: {
         required: required.length,
@@ -1434,6 +1538,7 @@ export const createLocalDesignReview = (
         (!plan?.detailRequired || evidence.some((entry) => entry?.detail))
     }
   }
+
   const pendingCriterionIds = () => [
     ...new Set([
       ...reviewState().coverage.pending.map((item) => item.criterionId),
@@ -1442,6 +1547,7 @@ export const createLocalDesignReview = (
         .items.flatMap((item) => (item.criterionId ? [item.criterionId] : []))
     ])
   ]
+
   const resolveSelectedUse = (
     receipt: ReferenceUseReceipt,
     purpose: ReferencePurpose,
@@ -1454,17 +1560,25 @@ export const createLocalDesignReview = (
           item.referenceId === receipt.referenceId &&
           plan?.referenceImageIndexes?.includes(item.attachmentIndex)
       )
-    if (!entry)
+
+    if (!entry) {
       throw new Error('Reference use is not selected for this request.')
+    }
+
     return references.resolve(receipt, purpose, scope)
   }
+
   const resolveCheckUses = (check: ReviewSelection) =>
     (check.referenceUses ?? []).map((receipt) =>
       resolveSelectedUse(receipt, 'visual', check)
     )
+
   const unsupportedFactSources = (sources: string[], binding: FactBinding) =>
     sources.filter((source) => {
-      if (!source.startsWith('reference:')) return false
+      if (!source.startsWith('reference:')) {
+        return false
+      }
+
       try {
         return !(binding.referenceUses ?? []).some(
           (receipt) =>
@@ -1475,6 +1589,7 @@ export const createLocalDesignReview = (
         return true
       }
     })
+
   const factSnapshots = () =>
     facts.snapshot().map((fact) => {
       const bindings = [...factBindings.values()].filter(
@@ -1492,8 +1607,15 @@ export const createLocalDesignReview = (
       )
       let assessmentStatus: 'unverified' | 'model-assessed' | 'asserted' =
         'asserted'
-      if (imageSources.length) assessmentStatus = 'model-assessed'
-      if (inapplicable.length) assessmentStatus = 'unverified'
+
+      if (imageSources.length) {
+        assessmentStatus = 'model-assessed'
+      }
+
+      if (inapplicable.length) {
+        assessmentStatus = 'unverified'
+      }
+
       return {
         ...fact,
         freshness:
@@ -1510,10 +1632,12 @@ export const createLocalDesignReview = (
         }
       }
     })
+
   const referenceIssues = () => {
     const decisions = references.snapshot()
     const pending = (plan?.referenceImageIndexes ?? []).filter((index) => {
       const decision = decisions.find((item) => item.attachmentIndex === index)
+
       return (
         !decision ||
         decision.status === 'pending' ||
@@ -1525,6 +1649,7 @@ export const createLocalDesignReview = (
         fact.evidence.status === 'unverified' &&
         [...factBindings.values()].some((binding) => binding.factId === fact.id)
     )
+
     return [
       ...(pending.length
         ? [
@@ -1538,6 +1663,7 @@ export const createLocalDesignReview = (
         : [])
     ]
   }
+
   const reviewHandoff = (
     affectedCriterionIds: string[],
     dependencies = affectedCriterionIds.map((id) => `criterion:${id}`)
@@ -1587,8 +1713,15 @@ export const createLocalDesignReview = (
       | typeof nextReview
       | typeof nextFacts
       | typeof nextMechanical = mechanical ? nextMechanical : nextReview
-    if (sourceIssues.length) next = nextReferences
-    if (invalidatedFactIds.length) next = nextFacts
+
+    if (sourceIssues.length) {
+      next = nextReferences
+    }
+
+    if (invalidatedFactIds.length) {
+      next = nextFacts
+    }
+
     return {
       accepted: accepted && !mechanicalIssue(),
       requiresFreshReview: !accepted,
@@ -1613,12 +1746,15 @@ export const createLocalDesignReview = (
     readChecks: results.read,
     deliverChecks: results.deliver,
     resolveReferenceUse: resolveSelectedUse,
+
     validateCaptureChecks(
       phase: 'structure' | 'visual',
       targets: { checks: Omit<ReviewSelection, 'inspectionIds'>[] }[]
     ) {
-      if (!plan)
+      if (!plan) {
         throw new Error('Define criteria before requesting review captures.')
+      }
+
       const allowed = new Set(
         (phase === 'structure'
           ? plan.structureCriteria.map((criterionId) => ({ criterionId }))
@@ -1626,31 +1762,44 @@ export const createLocalDesignReview = (
         ).map(visualCheckIdentity)
       )
       const intended = new Map<string, unknown>()
+
       for (const target of targets) {
-        if (!Array.isArray(target.checks) || !target.checks.length)
+        if (!Array.isArray(target.checks) || !target.checks.length) {
           throw new Error(
             'Each review capture requires explicit check identities.'
           )
+        }
+
         for (const check of target.checks) {
           validateSupersession(check)
-          if (!allowed.has(visualCheckIdentity(check)))
+          if (!allowed.has(visualCheckIdentity(check))) {
             throw new Error(
               'Review capture requires an exact declared criterion/unit identity.'
             )
+          }
+
           resolveCheckUses({ ...check, inspectionIds: [] })
           const key = visualCheckIdentity(check)
-          if (intended.has(key) && !isDeepStrictEqual(intended.get(key), check))
+
+          if (
+            intended.has(key) &&
+            !isDeepStrictEqual(intended.get(key), check)
+          ) {
             throw new Error(
               'Conflicting source uses or supersession for one capture check.'
             )
+          }
+
           intended.set(key, structuredClone(check))
         }
       }
     },
+
     bindReview(phase: 'structure' | 'visual', selections: ReviewSelection[]) {
       const inspectionIds = [
         ...new Set(selections.flatMap((check) => check.inspectionIds))
       ]
+
       // Use the existing domain preflight; binding never records a judgment.
       this.record(
         {
@@ -1677,6 +1826,7 @@ export const createLocalDesignReview = (
           checkRevision: previous?.revision ?? 0,
           dependencies: bindingDependencies(check.inspectionIds)
         }
+
         return {
           ...structuredClone(check),
           binding: {
@@ -1685,6 +1835,7 @@ export const createLocalDesignReview = (
           }
         }
       })
+
       return {
         phase,
         ...(phase === 'visual' ? { final: false } : {}),
@@ -1692,21 +1843,27 @@ export const createLocalDesignReview = (
         checks
       }
     },
+
     validateBoundReview(value: unknown) {
       validateBindings(value)
+
       return this.validateReview(value)
     },
+
     recordBoundReview(value: unknown) {
       validateBindings(value)
+
       return this.record(value)
     },
+
     coverage: () => reviewState().coverage,
+
     judgmentHandoff(
       inspectionIds: string[],
       phase: 'structure' | 'visual',
       selections?: ReviewSelection[]
     ) {
-      if (!plan)
+      if (!plan) {
         return {
           coverage: reviewState().coverage,
           next: {
@@ -1717,6 +1874,8 @@ export const createLocalDesignReview = (
               'Define request-linked criteria before binding image evidence.'
           }
         }
+      }
+
       const criteria = plan.criteria
       const acceptanceContext = {
         method: planDeclaration?.method,
@@ -1735,6 +1894,7 @@ export const createLocalDesignReview = (
         )
       }
       let boundArguments
+
       try {
         boundArguments = selections
           ? this.bindReview(phase, selections)
@@ -1749,13 +1909,18 @@ export const createLocalDesignReview = (
           supersedes?: { revision: number; reason?: string }
         })[] = structuredClone(selections ?? [])
         const requiredInputs: string[] = []
+
         if (error instanceof ReviewScopeConflictError) {
           for (const { index, revision } of error.conflicts) {
             bindChecks[index].supersedes = { revision }
             requiredInputs.push(`bindChecks[${index}].supersedes.reason`)
           }
         }
-        if (!requiredInputs.length) requiredInputs.push('bindChecks')
+
+        if (!requiredInputs.length) {
+          requiredInputs.push('bindChecks')
+        }
+
         return {
           status: 'failed',
           settlement: 'not-started',
@@ -1778,6 +1943,7 @@ export const createLocalDesignReview = (
             'No judgments were recorded. Successful images and selected checks are retained in next.arguments; complete requiredInputs before rebinding.'
         }
       }
+
       return {
         coverage: reviewState().coverage,
         acceptanceContext,
@@ -1797,21 +1963,27 @@ export const createLocalDesignReview = (
           : {})
       }
     },
+
     invalidateWholeView(message: string): void {
       results.invalidate([wholeViewCoverageDependency], message)
       structureAccepted = false
       this.requireReview(message)
     },
+
     reviewEvidenceIds: () =>
       reviewState().inspectionIds.filter((id) => inspections.has(id)),
+
     preparationContext(receipts: ReferenceUseReceipt[] = []) {
-      if (!plan)
+      if (!plan) {
         throw new Error(
           'Define request-linked criteria before prepared review.'
         )
+      }
+
       const uses = receipts.map((receipt) =>
         resolveSelectedUse(receipt, 'preparation')
       )
+
       return {
         criteria: Object.fromEntries(
           Object.entries(plan.criteria).map(([id, item]) => [
@@ -1824,15 +1996,19 @@ export const createLocalDesignReview = (
         sourceAssertions: []
       }
     },
+
     selectReferences(
       indexes: unknown,
       decisions: unknown = {}
     ): Record<string, unknown> {
       const selected = validateReferenceIndexes(indexes)
-      if (!plan)
+
+      if (!plan) {
         throw new Error(
           'Define design criteria before selecting comparison references.'
         )
+      }
+
       const previousDecisions = references.snapshot()
       const update = references.update(
         (ids) => options.validateReferences?.(selected, ids) ?? [],
@@ -1881,14 +2057,18 @@ export const createLocalDesignReview = (
           [...(plan.referenceImageIndexes ?? [])].sort((a, b) => a - b),
           [...selected].sort((a, b) => a - b)
         ) || update.changedIds.length > 0
+
       plan.referenceImageIndexes = selected
       if (affected.length || referenceIssues().length) {
         accepted = false
-        if (affected.some((id) => plan?.structureCriteria.includes(id)))
+        if (affected.some((id) => plan?.structureCriteria.includes(id))) {
           structureAccepted = false
+        }
+
         issue =
           'Reference applicability changed; compare the affected criteria again.'
       }
+
       return {
         referenceImageIndexes: [...selected],
         changed,
@@ -1897,7 +2077,9 @@ export const createLocalDesignReview = (
         review: reviewHandoff(affected, dependencies)
       }
     },
+
     recordCalculations: facts.recordCalculations,
+
     correctionContext() {
       const coverage = reviewState().coverage
       const pending = new Map(
@@ -1908,25 +2090,33 @@ export const createLocalDesignReview = (
       )
       // Coverage can require re-review of a retained pass (for example missing whole-view evidence).
       const missing = coverage.pending.filter((item) => !pending.has(item.id))
+
       for (const item of results.read({
         ids: missing.map((item) => item.id),
         includePassed: true,
         origin: 'main-agent'
-      }).items)
+      }).items) {
         pending.set(item.id, item)
+      }
+
       const obligations = new Map(
         coverage.pending.map((item) => [item.id, item])
       )
-      for (const item of pending.values())
-        if (!obligations.has(item.id))
+
+      for (const item of pending.values()) {
+        if (!obligations.has(item.id)) {
           obligations.set(item.id, {
             id: item.id,
             criterionId: item.criterionId as string,
             ...(item.unitId === undefined ? {} : { unitId: item.unitId }),
             status: item.status
           })
+        }
+      }
+
       const checks = [...obligations.values()].map((obligation) => {
         const item = pending.get(obligation.id)
+
         return {
           ...obligation,
           ...(item ? { revision: item.revision, evidence: item.evidence } : {}),
@@ -1948,6 +2138,7 @@ export const createLocalDesignReview = (
       const inspectionIds = [
         ...new Set(checks.flatMap((check) => check.inspectionIds))
       ]
+
       return {
         diagnosticOnly: true,
         coverage,
@@ -1957,6 +2148,7 @@ export const createLocalDesignReview = (
         checks,
         inspections: inspectionIds.flatMap((inspectionId) => {
           const entry = inspections.get(inspectionId)
+
           return entry
             ? [
                 {
@@ -1990,26 +2182,33 @@ export const createLocalDesignReview = (
           : {})
       }
     },
+
     factTargets: () => [
       ...new Set(
         [...factBindings.values()].flatMap((binding) => binding.elementIds)
       )
     ],
+
     requireReview(message: string): void {
       reviewRequired = true
       accepted = false
       acceptedIds = []
       issue = message
     },
+
     invalidateInspections(ids: readonly string[], message: string): void {
       results.invalidate(
         ids.map((id) => `inspection:${id}`),
         message
       )
-      for (const id of ids) inspections.delete(id)
+      for (const id of ids) {
+        inspections.delete(id)
+      }
+
       lastReviewIds = lastReviewIds.filter((id) => !ids.includes(id))
       this.requireReview(message)
     },
+
     mutate(): void {
       results.invalidate(['scene'], 'Unscoped canonical evidence changed.')
       this.invalidateInspections(
@@ -2020,6 +2219,7 @@ export const createLocalDesignReview = (
       )
       revision++
     },
+
     inspect(
       elementId: string,
       available: boolean,
@@ -2028,11 +2228,15 @@ export const createLocalDesignReview = (
       detail = !overview,
       source?: InspectionEvidenceStamp
     ): { inspectionId: string; revision: number } | undefined {
-      if (!available) return undefined
+      if (!available) {
+        return undefined
+      }
+
       const scope = record(region)
         ? JSON.stringify([region.x, region.y, region.width, region.height])
         : 'whole'
       const scopedView = `${detail ? 'detail' : 'overview'}:${scope}`
+
       // Repeated captures are fresh images of the same revision and scope.
       // Their receipt stays valid; only a mutation retires prior evidence.
       for (const [inspectionId, evidence] of inspections) {
@@ -2044,10 +2248,13 @@ export const createLocalDesignReview = (
           evidence.source?.receiptId === source?.receiptId
         ) {
           evidence.overview ||= overview && !region
+
           return { inspectionId, revision }
         }
       }
+
       const inspectionId = randomUUID()
+
       inspections.set(inspectionId, {
         target: elementId,
         scope: scopedView,
@@ -2056,16 +2263,22 @@ export const createLocalDesignReview = (
         source,
         ...(record(region) ? { region: structuredClone(region) } : {})
       })
+
       return { inspectionId, revision }
     },
+
     evidenceFor(
       ids: unknown = acceptedIds
     ): InspectionEvidenceStamp | undefined {
-      if (!Array.isArray(ids) || !ids.length) return undefined
+      if (!Array.isArray(ids) || !ids.length) {
+        return undefined
+      }
+
       const sources = ids.map((id) =>
         typeof id === 'string' ? inspections.get(id)?.source : undefined
       )
       const first = sources[0]
+
       if (
         !first ||
         sources.some(
@@ -2076,10 +2289,13 @@ export const createLocalDesignReview = (
               !first.receiptId &&
               source.revision !== first.revision)
         )
-      )
+      ) {
         return undefined
+      }
+
       return first
     },
+
     evidenceEntries(ids: unknown = acceptedIds) {
       return Array.isArray(ids)
         ? ids.map((id) => ({
@@ -2088,19 +2304,26 @@ export const createLocalDesignReview = (
           }))
         : []
     },
+
     overviewTargets(ids: unknown = acceptedIds): string[] {
-      if (!Array.isArray(ids)) return []
+      if (!Array.isArray(ids)) {
+        return []
+      }
+
       return [
         ...new Set(
           ids.flatMap((id) => {
             const inspection =
               typeof id === 'string' ? inspections.get(id) : undefined
+
             return inspection?.overview ? [inspection.target] : []
           })
         )
       ]
     },
+
     isAccepted: () => accepted && !mechanicalIssue(),
+
     invalidateAssessment(message: string): void {
       results.invalidate(
         ['scene', ...[...inspections.keys()].map((id) => `inspection:${id}`)],
@@ -2110,33 +2333,45 @@ export const createLocalDesignReview = (
       acceptedIds = []
       issue = message
     },
+
     validateReview(value: unknown) {
       if (
         !record(value) ||
         !['structure', 'visual'].includes(String(value.phase))
-      )
+      ) {
         throw new Error(
           'Only structure and visual review candidates can be validated.'
         )
+      }
+
       return this.record(value, { validateOnly: true })
     },
+
     record(
       value: unknown,
       recordOptions: { validateOnly?: boolean } = {}
     ): Record<string, unknown> {
-      if (!record(value)) throw new Error('Review arguments must be an object.')
+      if (!record(value)) {
+        throw new Error('Review arguments must be an object.')
+      }
+
       if (value.referenceImageIndexes !== undefined) {
-        if (value.phase !== 'plan')
+        if (value.phase !== 'plan') {
           throw new Error(
             'Use select_design_references to change comparison references.'
           )
+        }
+
         const selected = validateReferenceIndexes(value.referenceImageIndexes)
+
         options.validateReferences?.(selected)
       }
+
       if (value.phase === 'facts') {
         const update = recordFacts(value, Object.keys(plan?.criteria ?? {}))
+
         if (update.changedKnownFact || update.affectedCriterionIds.length) {
-          if (update.unknownImpact)
+          if (update.unknownImpact) {
             results.invalidate(
               [
                 'scene',
@@ -2144,11 +2379,14 @@ export const createLocalDesignReview = (
               ],
               'Source changes have unknown review impact.'
             )
+          }
+
           acceptedIds = []
           accepted = false
           issue =
             'Source conditions changed; check the affected result before completion.'
         }
+
         return {
           ...update.result,
           facts: factSnapshots(),
@@ -2162,16 +2400,20 @@ export const createLocalDesignReview = (
             : {})
         }
       }
+
       if (
         value.phase !== 'plan' &&
         (value.facts !== undefined ||
           value.dependencyChanges !== undefined ||
           value.factBindings !== undefined)
-      )
+      ) {
         throw new Error(
           'Record source facts and bindings with phase=plan or phase=facts.'
         )
+      }
+
       const additions = value.deferredDetails ?? []
+
       if (
         !Array.isArray(additions) ||
         additions.length > 24 ||
@@ -2186,25 +2428,32 @@ export const createLocalDesignReview = (
             )
         ) ||
         new Set(additions.map((item) => item.id)).size !== additions.length
-      )
+      ) {
         throw new Error(
           'Provide unique deferredDetails with id, description and reason; do not send geometry.'
         )
-      if (value.deferredChecks !== undefined && value.phase !== 'visual')
+      }
+
+      if (value.deferredChecks !== undefined && value.phase !== 'visual') {
         throw new Error('Deferred decisions require a current visual review.')
+      }
+
       const nextDeferred = new Map(deferredDetails)
-      for (const item of additions)
+
+      for (const item of additions) {
         nextDeferred.set(item.id, {
           id: item.id,
           description: item.description,
           reason: item.reason
         })
+      }
+
       if (value.phase === 'plan') {
         if (
           plan &&
           planDeclaration &&
           isDeepStrictEqual(planDeclaration, value)
-        )
+        ) {
           return {
             phase: 'plan',
             recorded: true,
@@ -2213,6 +2462,8 @@ export const createLocalDesignReview = (
             facts: facts.snapshot().map(({ id, status }) => ({ id, status })),
             deferredDetailIds: [...deferredDetails.keys()]
           }
+        }
+
         if (
           plan &&
           (revision > 0 ||
@@ -2222,10 +2473,12 @@ export const createLocalDesignReview = (
                 (item) =>
                   item.origin === 'main-agent' && item.scope !== undefined
               ))
-        )
+        ) {
           throw new Error(
             'Established criteria cannot be rewritten after drawing; preserve the original user requirements.'
           )
+        }
+
         if (
           !text(value.method) ||
           !strings(value.references) ||
@@ -2250,37 +2503,46 @@ export const createLocalDesignReview = (
               )
           ) ||
           typeof value.detailRequired !== 'boolean'
-        )
+        ) {
           throw new Error(
             'Provide method, references, named request-linked criteria and detailRequired for the plan.'
           )
+        }
+
         const structureCriteria = value.structureCriteria ?? []
+
         if (
           !strings(structureCriteria) ||
           new Set(structureCriteria).size !== structureCriteria.length ||
           structureCriteria.some(
             (id) => !Object.hasOwn(value.criteria as object, id)
           )
-        )
+        ) {
           throw new Error(
             'Structure criteria must be a unique subset of planned criteria.'
           )
+        }
+
         const declared = value.criteria as Record<string, DesignCriterion>
         const scoped = Object.entries(declared).filter(
           ([, item]) => item.requiredUnits !== undefined
         )
+
         if (
           Object.values(declared).some(
             (item) =>
               item.verification === 'visual' && item.requiredUnits === undefined
           )
-        )
+        ) {
           throw new Error(
             'Every visual criterion requires explicit requiredUnits: [] for whole-view, or stable regional unit IDs. No plan was stored.'
           )
+        }
+
         const partitioned = scoped.filter(
           ([, item]) => item.requiredUnits?.length
         )
+
         if (
           scoped.some(
             ([id, item]) =>
@@ -2294,21 +2556,26 @@ export const createLocalDesignReview = (
               ) ||
               new Set(item.requiredUnits).size !== item.requiredUnits.length
           )
-        )
+        ) {
           throw new Error(
             'Provide unique declared units for visual criteria outside structure checkpoints.'
           )
+        }
+
         if (
           partitioned.length &&
           !Object.values(declared).some(
             (item) =>
               item.verification === 'visual' && item.requiredUnits?.length === 0
           )
-        )
+        ) {
           throw new Error(
             'Regional criteria require a separate whole-view visual criterion.'
           )
+        }
+
         const recordedFacts = recordFacts(value, Object.keys(value.criteria))
+
         references.setRequirements(value.criteria)
         references.update(
           () =>
@@ -2331,7 +2598,7 @@ export const createLocalDesignReview = (
         }
         planDeclaration = structuredClone(value)
         deferredDetails = nextDeferred
-        for (const required of requiredChecks())
+        for (const required of requiredChecks()) {
           results.record({
             ...required,
             origin: 'main-agent',
@@ -2350,6 +2617,8 @@ export const createLocalDesignReview = (
               )
             }
           })
+        }
+
         return {
           phase: 'plan',
           recorded: true,
@@ -2362,35 +2631,47 @@ export const createLocalDesignReview = (
           deferredDetailIds: [...deferredDetails.keys()]
         }
       }
+
       if (
         !['visual', 'structure'].includes(String(value.phase)) ||
         !plan ||
         !strings(value.inspectionIds) ||
         !value.inspectionIds.length ||
         reviewInspectionIds(value).some((id) => !inspections.has(id))
-      )
+      ) {
         throw new Error(
           'Use current inspection IDs for referenced evidence and an existing declared plan.'
         )
+      }
+
       const structure = value.phase === 'structure'
+
       if (
         value.final !== undefined &&
         (structure || typeof value.final !== 'boolean')
-      )
+      ) {
         throw new Error('final is a visual-review boolean.')
+      }
+
       const final = !structure && value.final !== false
-      if (structure && !plan.structureCriteria.length)
+
+      if (structure && !plan.structureCriteria.length) {
         throw new Error(
           'Declare structureCriteria in the plan before using structure review.'
         )
+      }
+
       const criteria = structure
         ? plan.structureCriteria
         : Object.keys(plan.criteria)
+
       if (
         structure &&
         !reviewInspectionIds(value).some((id) => inspections.get(id)?.overview)
-      )
+      ) {
         throw new Error('Inspect the full drawing before structure review.')
+      }
+
       if (
         !Array.isArray(value.checks) ||
         !value.checks.length ||
@@ -2404,10 +2685,12 @@ export const createLocalDesignReview = (
             )
           ) ||
             value.checks.length !== criteria.length))
-      )
+      ) {
         throw new Error(
           'Assess every planned structure criterion exactly once.'
         )
+      }
+
       const suppliedIds = new Set(
         value.checks.map((check) =>
           record(check)
@@ -2431,6 +2714,7 @@ export const createLocalDesignReview = (
           )
         ]
       }))
+
       if (
         !checks.every(
           (check) =>
@@ -2441,10 +2725,12 @@ export const createLocalDesignReview = (
         ) ||
         new Set(checks.map((check) => visualCheckIdentity(check))).size !==
           checks.length
-      )
+      ) {
         throw new Error(
           'Each planned criterion needs one pass, fail or unverified status and concrete evidence from the declared verification source.'
         )
+      }
+
       for (const check of checks) {
         resolveCheckUses(check)
         if (
@@ -2461,35 +2747,45 @@ export const createLocalDesignReview = (
                     unsupportedFactSources(fact.sources, binding).length > 0
                 )
           )
-        )
+        ) {
           throw new Error(
             'Current explicit fact-purpose reference uses are required before passing this check.'
           )
+        }
       }
+
       const submittedScopes = new Map<string, readonly string[]>()
+
       for (const check of value.checks) {
         const requiredUnits = plan.criteria[check.criterionId]?.requiredUnits
+
         if (
           check.unitId !== undefined &&
           !requiredUnits?.includes(check.unitId)
-        )
+        ) {
           throw new Error(
             'Use an exact declared unit; whole-view criteria do not accept regional unit IDs.'
           )
+        }
+
         if (
           requiredUnits?.length &&
           (check.unitId === undefined || !requiredUnits.includes(check.unitId))
-        )
+        ) {
           throw new Error(
             'Use an exact declared unit for this regional criterion.'
           )
+        }
+
         if (
           check.unitId !== undefined &&
           (structure || !text(check.unitId) || check.unitId.length > 256)
-        )
+        ) {
           throw new Error(
             'Visual unitId must be a stable nonempty regional identity.'
           )
+        }
+
         if (
           !strings(check.inspectionIds) ||
           !check.inspectionIds.length ||
@@ -2497,26 +2793,35 @@ export const createLocalDesignReview = (
           check.inspectionIds.some(
             (id: string) => !(value.inspectionIds as string[]).includes(id)
           )
-        )
+        ) {
           throw new Error(
             'Each check.inspectionIds must be a nonempty unique subset of the current review images.'
           )
+        }
       }
+
       const scopeConflicts: {
         index: number
         revision: number
         message: string
       }[] = []
+
       for (const [index, check] of value.checks.entries()) {
         validateSupersession(check)
-        if (check.unitId === undefined) continue
+        if (check.unitId === undefined) {
+          continue
+        }
+
         const key = visualCheckIdentity(check)
         const scope = [
           ...new Set<string>(
             check.inspectionIds.map((id: string) => {
               const image = inspections.get(id)
-              if (!image)
+
+              if (!image) {
                 throw new Error('Unit requires current delivered image scope.')
+              }
+
               return JSON.stringify([image.target, image.scope])
             })
           )
@@ -2528,6 +2833,7 @@ export const createLocalDesignReview = (
           originalScope !== undefined &&
           (originalScope.length !== scope.length ||
             originalScope.some((item) => !scope.includes(item)))
+
         if (check.supersedes !== undefined) {
           const exactReplay =
             !changedScope &&
@@ -2539,10 +2845,13 @@ export const createLocalDesignReview = (
             previous.evidence === check.evidence &&
             JSON.stringify(previous.scope) ===
               JSON.stringify(check.inspectionIds)
-          if (!previous)
+
+          if (!previous) {
             throw new Error(
               'Unit supersession revision is stale or unavailable.'
             )
+          }
+
           if (previous.revision !== check.supersedes.revision && !exactReplay) {
             scopeConflicts.push({
               index,
@@ -2552,9 +2861,12 @@ export const createLocalDesignReview = (
             continue
           }
         }
+
         if (changedScope && !check.supersedes) {
-          if (!previous)
+          if (!previous) {
             throw new Error('Unit scope has no current result revision.')
+          }
+
           scopeConflicts.push({
             index,
             revision: previous.revision,
@@ -2562,15 +2874,20 @@ export const createLocalDesignReview = (
           })
           continue
         }
+
         submittedScopes.set(
           key,
           check.supersedes || !originalScope ? scope : originalScope
         )
       }
-      if (scopeConflicts.length)
+
+      if (scopeConflicts.length) {
         throw new ReviewScopeConflictError(scopeConflicts)
+      }
+
       const submittedDeferred = value.deferredChecks ?? []
       const deferredChecks = submittedDeferred
+
       if (
         !Array.isArray(deferredChecks) ||
         !deferredChecks.every(
@@ -2586,10 +2903,12 @@ export const createLocalDesignReview = (
         ) ||
         new Set(deferredChecks.map((item) => item.id)).size !==
           deferredChecks.length
-      )
+      ) {
         throw new Error(
           'Assess known deferred IDs once with omit, restored or pending and current visual evidence.'
         )
+      }
+
       const deferredResults = new Map(
         results
           .read({
@@ -2624,10 +2943,14 @@ export const createLocalDesignReview = (
           )
         }
       }))
-      for (const item of deferredCandidates)
+
+      for (const item of deferredCandidates) {
         deferredResults.set(item.id, { ...item, revision: 0 })
+      }
+
       const currentDeferred = [...nextDeferred].flatMap(([id, detail]) => {
         const result = deferredResults.get(`deferred:${id}`)
+
         return result?.status === 'pass' &&
           result.deferredDecision &&
           result.dependencies[`deferred:${id}`] === JSON.stringify(detail)
@@ -2661,7 +2984,8 @@ export const createLocalDesignReview = (
         pendingDetails.length === 0 &&
         !facts.hasInvalidated() &&
         referenceIssues().length === 0
-      if (recordOptions.validateOnly)
+
+      if (recordOptions.validateOnly) {
         return {
           phase: value.phase,
           checks,
@@ -2669,27 +2993,41 @@ export const createLocalDesignReview = (
           inspectionIds: effective.inspectionIds,
           coverage: effective.coverage
         }
+      }
 
       // A published judgment also governs review-only requests for existing content.
       reviewRequired = true
-      for (const [id, detail] of nextDeferred)
+      for (const [id, detail] of nextDeferred) {
         if (
           deferredDetails.has(id) &&
           JSON.stringify(deferredDetails.get(id)) !== JSON.stringify(detail)
-        )
+        ) {
           results.invalidate(
             [`deferred:${id}`],
             'The deferred detail definition changed.'
           )
-      for (const item of deferredCandidates) results.record(item)
-      for (const [key, scope] of submittedScopes) unitScopes.set(key, scope)
+        }
+      }
+
+      for (const item of deferredCandidates) {
+        results.record(item)
+      }
+
+      for (const [key, scope] of submittedScopes) {
+        unitScopes.set(key, scope)
+      }
+
       lastReviewIds = [...value.inspectionIds]
       const recordedChecks: Pick<
         DesignCheckResult,
         'id' | 'criterionId' | 'unitId' | 'origin' | 'status' | 'revision'
       >[] = []
+
       for (const check of checks) {
-        if (!suppliedIds.has(visualCheckIdentity(check))) continue
+        if (!suppliedIds.has(visualCheckIdentity(check))) {
+          continue
+        }
+
         const supersedes =
           check.supersedes ??
           results.read({
@@ -2739,6 +3077,7 @@ export const createLocalDesignReview = (
             [`criterion:${check.criterionId}`]: String(references.revision())
           }
         })
+
         recordedChecks.push({
           id: visualCheckIdentity(check),
           criterionId: check.criterionId,
@@ -2748,6 +3087,7 @@ export const createLocalDesignReview = (
           revision: checkRevision
         })
       }
+
       if (structure) {
         deferredDetails = nextDeferred
         structureAccepted = checks.every((check) => check.status === 'pass')
@@ -2761,6 +3101,7 @@ export const createLocalDesignReview = (
                 .join('; ')}`
             : 'Deferred details require a current final visual review.'
         }
+
         return {
           phase: 'structure',
           reviewOperation: 'record' as const,
@@ -2776,6 +3117,7 @@ export const createLocalDesignReview = (
           correction: this.correctionContext()
         }
       }
+
       deferredDetails = nextDeferred
       const regressions = checks
         .filter(
@@ -2794,6 +3136,7 @@ export const createLocalDesignReview = (
           )?.evidence,
           currentEvidence: check.evidence
         }))
+
       previousChecks = [
         ...previousChecks.filter(
           (old) =>
@@ -2812,11 +3155,13 @@ export const createLocalDesignReview = (
       ]
       const unresolvedUnits = effective.unresolvedUnits
       const requiredCoverage = effective.coverage
+
       accepted = readyForCompletion
       acceptedIds = accepted ? effective.inspectionIds : []
       const unmet = checks
         .filter((check) => check.status !== 'pass')
         .map((check) => `${check.criterionId}: ${check.evidence}`)
+
       unmet.push(
         ...unresolvedUnits.map(
           (item) =>
@@ -2829,15 +3174,19 @@ export const createLocalDesignReview = (
             `${item.criterionId}${item.unitId === undefined ? '' : ` - ${item.unitId}`}: ${item.status}`
         )
       )
-      if (!effective.evidenceComplete)
+      if (!effective.evidenceComplete) {
         unmet.push(
           'Current whole-view and requested native detail evidence remain required.'
         )
+      }
+
       unmet.push(...referenceIssues())
-      if (!final)
+      if (!final) {
         unmet.push(
           'A final assessment of all requested criteria is still required.'
         )
+      }
+
       unmet.push(
         ...pendingDetails.map(
           (id) => `Deferred detail ${id} needs a current omit/restored decision`
@@ -2851,6 +3200,7 @@ export const createLocalDesignReview = (
               '; '
             )}${unmet.length > 3 ? '; additional criteria remain unmet.' : ''}`
         : issue
+
       return {
         phase: 'visual',
         reviewOperation: 'record' as const,
@@ -2873,17 +3223,32 @@ export const createLocalDesignReview = (
         correction: this.correctionContext()
       }
     },
+
     getStructureIssue(): string | undefined {
-      if (plan?.structureCriteria.length && !structureAccepted)
+      if (plan?.structureCriteria.length && !structureAccepted) {
         return 'Whole-structure review remains pending. Review ready retained parts with phase=visual, final=false and continue coherent batches. Check all structureCriteria at a whole-structure checkpoint; do not remove or weaken final criteria.'
+      }
     },
+
     getIssue(): string | undefined {
-      if (referenceIssues().length) return referenceIssues().join(' ')
-      if (facts.hasInvalidated())
+      if (referenceIssues().length) {
+        return referenceIssues().join(' ')
+      }
+
+      if (facts.hasInvalidated()) {
         return 'A changed source fact remains unverified; reverify its dependencies before completion.'
+      }
+
       const mechanical = mechanicalIssue()
-      if (mechanical) return mechanical
-      if ((revision === 0 && !reviewRequired) || accepted) return undefined
+
+      if (mechanical) {
+        return mechanical
+      }
+
+      if ((revision === 0 && !reviewRequired) || accepted) {
+        return undefined
+      }
+
       return plan
         ? issue
         : 'The drawing was created, but its requested quality was not verified against the original request and its review criteria.'

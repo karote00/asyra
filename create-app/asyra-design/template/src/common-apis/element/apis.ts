@@ -58,25 +58,43 @@ const setElementFlags = (
   const changes = new Set<string>()
   const targets = new Map<string, ElementFlagResult>()
   const result = elementIds.map((elementId): ElementFlagResult => {
-    if (changes.has(elementId)) return 'unchanged'
+    if (changes.has(elementId)) {
+      return 'unchanged'
+    }
+
     const previous = targets.get(elementId)
-    if (previous) return previous
+
+    if (previous) {
+      return previous
+    }
+
     const element = core.getElementData(elementId)
     let status: ElementFlagResult = 'changed'
-    if (!element || element.type === EntityTypes.WORKSPACE)
+
+    if (!element || element.type === EntityTypes.WORKSPACE) {
       status = 'unavailable'
-    else if (element[key] === value) status = 'unchanged'
+    } else if (element[key] === value) {
+      status = 'unchanged'
+    }
+
     targets.set(elementId, status)
-    if (status === 'changed') changes.add(elementId)
+    if (status === 'changed') {
+      changes.add(elementId)
+    }
+
     return status
   })
+
   if (changes.size) {
     const resolvedOptions = resolveEventOptions(options)
+
     runTransaction(() => {
-      for (const elementId of changes)
+      for (const elementId of changes) {
         core.updateElementData(elementId, { [key]: value }, resolvedOptions)
+      }
     })
   }
+
   return result
 }
 
@@ -94,6 +112,7 @@ const setElementFlagReceipt = (
   options?: EVENT_OPTIONS
 ): MutationReceipt<boolean> => {
   const status = setElementFlags([elementId], key, value, options)[0]
+
   return mutationReceipt(
     status === 'changed',
     {
@@ -128,6 +147,7 @@ const isContainerType = (type: string): boolean => {
 
 const getElementChildren = (element: unknown): string[] => {
   const value = (element as { children?: unknown } | null)?.children
+
   if (!Array.isArray(value)) {
     return []
   }
@@ -140,13 +160,16 @@ const getElementChildren = (element: unknown): string[] => {
 const getWorkspaceOrderedElementIds = (): string[] => {
   const workspaceId = core.getCurrentWorkspaceId()
   const workspace = core.getElementData(workspaceId)
+
   if (!workspace) {
     return []
   }
 
   const orderedIds: string[] = []
+
   const visit = (elementId: string) => {
     const element = core.getElementData(elementId)
+
     if (!element) {
       return
     }
@@ -159,14 +182,17 @@ const getWorkspaceOrderedElementIds = (): string[] => {
         element,
         'children'
       )
+
       if (canReadChildren) {
         const children = getElementChildren(element)
+
         if (children.length > 0) {
           children.forEach((childId) => visit(childId))
         }
       }
 
       orderedIds.push(elementId)
+
       return
     }
 
@@ -174,6 +200,7 @@ const getWorkspaceOrderedElementIds = (): string[] => {
   }
 
   const workspaceChildren = getElementChildren(workspace)
+
   if (workspaceChildren.length > 0) {
     workspaceChildren.forEach((childId) => visit(childId))
   }
@@ -190,18 +217,23 @@ const createElementAtWorkspacePos = (
   parentWorkspaceOrigin?: PositionData
 ): string | null => {
   const workspaceId = core.getCurrentWorkspaceId()
+
   if (!workspaceId) {
     return null
   }
 
   let targetIndex: number | null = null
+
   if (parentId !== workspaceId) {
     const parent = core.getElementData(parentId)
+
     if (parent?.type !== EntityTypes.GROUP) {
       return null
     }
+
     targetIndex = getElementChildren(parent).length
   }
+
   const createDirectlyInParent =
     targetIndex !== null &&
     parentWorkspaceOrigin !== undefined &&
@@ -226,6 +258,7 @@ const createElementAtWorkspacePos = (
       undefined,
       options
     )
+
     if (!elementId) {
       throw new Error('[element-creation] canonical element creation failed')
     }
@@ -253,14 +286,17 @@ export const elementApis = {
 
   getElementIdAtWorkspacePos: (workspacePos: PositionData): string | null => {
     const orderedIds = getWorkspaceOrderedElementIds()
+
     for (let i = orderedIds.length - 1; i >= 0; i -= 1) {
       const elementId = orderedIds[i]
       const element = core.getElementData(elementId)
+
       if (!element) {
         continue
       }
 
       const type = element.type
+
       if (type === EntityTypes.WORKSPACE) {
         continue
       }
@@ -278,11 +314,13 @@ export const elementApis = {
 
   getElementIdAtClientPos: (clientPos: PositionData): string | null => {
     const renderHit = core.getElementIdAtClientPos(clientPos)
+
     if (renderHit) {
       return renderHit
     }
 
     const workspacePos = elementApis.getMousePosInWorkspace(clientPos)
+
     return workspacePos
       ? elementApis.getElementIdAtWorkspacePos(workspacePos)
       : null
@@ -298,11 +336,13 @@ export const elementApis = {
 
   isElementLocked: (elementId: string): boolean => {
     const lockValue = core.getElementData(elementId)?.lock
+
     return lockValue === true
   },
 
   isElementVisible: (elementId: string): boolean => {
     const visibleValue = core.getElementData(elementId)?.visible
+
     return visibleValue !== false
   },
 
@@ -334,6 +374,7 @@ export const elementApis = {
     options?: EVENT_OPTIONS
   ): MutationReceipt<boolean> => {
     const element = core.getElementData(elementId)
+
     if (!element || element.type === EntityTypes.WORKSPACE) {
       return mutationReceipt(false, { acceptedIds: [], changed: false }, [
         elementId
@@ -348,6 +389,7 @@ export const elementApis = {
     options?: EVENT_OPTIONS
   ): MutationReceipt<boolean> => {
     const element = core.getElementData(elementId)
+
     if (!element || element.type === EntityTypes.WORKSPACE) {
       return mutationReceipt(false, { acceptedIds: [], changed: false }, [
         elementId
@@ -364,6 +406,7 @@ export const elementApis = {
 
   getElementBounds: (elementId: string): ElementBounds | null => {
     const computed = core.getElementComputedData(elementId)
+
     if (!computed) {
       return null
     }
@@ -384,6 +427,7 @@ export const elementApis = {
 
   getElementClientBounds: (elementId: string): ElementBounds | null => {
     const bounds = elementApis.getElementBounds(elementId)
+
     if (!bounds || !core.hasProjectedElement(elementId)) {
       return null
     }
@@ -395,15 +439,19 @@ export const elementApis = {
       { x: 0, y: bounds.height }
     ].map((point) => {
       const workspacePoint = core.elementLocalToWorkspace(elementId, point)
+
       return workspacePoint
         ? viewportApis.getCanvasPositionFromWorkspace(workspacePoint)
         : null
     })
+
     if (corners.some((point) => point === null)) {
       return null
     }
+
     const resolvedCorners = corners as PositionData[]
     const values = resolvedCorners.flatMap(({ x, y }) => [x, y])
+
     if (values.some((value) => !Number.isFinite(value))) {
       return null
     }
@@ -426,6 +474,7 @@ export const elementApis = {
 
   getElementPosition: (elementId: string): PositionData | null => {
     const bounds = elementApis.getElementBounds(elementId)
+
     if (!bounds) {
       return null
     }
@@ -457,6 +506,7 @@ export const elementApis = {
     }
 
     const parent = core.getElementData(parentId)
+
     if (parent?.type !== EntityTypes.GROUP) {
       return null
     }
@@ -465,7 +515,11 @@ export const elementApis = {
       parentId,
       workspacePosition
     )
-    if (!localPosition) return null
+
+    if (!localPosition) {
+      return null
+    }
+
     if (
       !Number.isFinite(localPosition.x) ||
       !Number.isFinite(localPosition.y)
@@ -485,12 +539,16 @@ export const elementApis = {
     padding = 0
   ): boolean => {
     const bounds = elementApis.getElementBounds(elementId)
+
     if (!bounds) {
       return false
     }
 
     const localPoint = core.workspaceToElementLocal(elementId, point)
-    if (!localPoint) return false
+
+    if (!localPoint) {
+      return false
+    }
 
     return (
       localPoint.x >= -padding &&
@@ -515,6 +573,7 @@ export const elementApis = {
     if (descriptors.length === 0) {
       return Object.freeze([])
     }
+
     if (parentId.length === 0) {
       return null
     }
@@ -534,26 +593,34 @@ export const elementApis = {
     if (createOptions.length === 0) {
       return []
     }
+
     return runTransaction(() => {
       const result: (string | null)[] = []
       let offset = 0
+
       while (offset < createOptions.length) {
         const current = createOptions[offset]
+
         if (current.type !== 'vector') {
           result.push(elementApis.createElement(current, options))
           offset++
           continue
         }
+
         const parentId = current.parentId ?? core.getCurrentWorkspaceId()
         const first = offset++
+
         while (
           offset < createOptions.length &&
           createOptions[offset].type === 'vector' &&
           (createOptions[offset].parentId ?? core.getCurrentWorkspaceId()) ===
             parentId
-        )
+        ) {
           offset++
+        }
+
         const group = createOptions.slice(first, offset)
+
         result.push(
           ...(vectorApis.createVectorElementsInParent(
             group,
@@ -562,6 +629,7 @@ export const elementApis = {
           ) ?? group.map(() => null))
         )
       }
+
       return Object.freeze(result)
     })
   },
@@ -575,6 +643,7 @@ export const elementApis = {
     }
 
     let workspacePos: PositionData | null = null
+
     if (
       createOptions.workspacePosition &&
       Number.isFinite(createOptions.workspacePosition.x) &&
@@ -587,9 +656,11 @@ export const elementApis = {
         clientY: createOptions.clientPosition.y
       })
     }
+
     if (!workspacePos) {
       return null
     }
+
     const parentId = createOptions.parentId ?? core.getCurrentWorkspaceId()
 
     const initialData: Record<string, DataTypes> = {
@@ -599,9 +670,11 @@ export const elementApis = {
     if (createOptions.width !== undefined) {
       initialData.width = createOptions.width
     }
+
     if (createOptions.height !== undefined) {
       initialData.height = createOptions.height
     }
+
     if (createOptions.strokes !== undefined) {
       initialData.strokes = createOptions.strokes
     }
@@ -625,6 +698,7 @@ export const elementApis = {
 
   deleteElement: (elementId: string, options?: EVENT_OPTIONS): boolean => {
     const element = core.getElementData(elementId)
+
     if (!element || element.type === EntityTypes.WORKSPACE) {
       return false
     }
@@ -661,6 +735,7 @@ export const elementApis = {
     options?: EVENT_OPTIONS
   ) => {
     const uniqueElementIds = [...new Set(elementIds)]
+
     if (uniqueElementIds.length === 0) {
       return
     }
@@ -673,6 +748,7 @@ export const elementApis = {
     options?: EVENT_OPTIONS
   ) => {
     const entries = Object.entries(positionsById ?? {})
+
     if (entries.length === 0) {
       return mutationReceipt(null, { acceptedIds: [], changed: false })
     }
@@ -688,12 +764,15 @@ export const elementApis = {
       entries.forEach(([elementId, position]) => {
         if (!Number.isFinite(position?.x) || !Number.isFinite(position?.y)) {
           unavailableIds.push(elementId)
+
           return
         }
 
         const currentPosition = elementApis.getElementPosition(elementId)
+
         if (!currentPosition) {
           unavailableIds.push(elementId)
+
           return
         }
 
@@ -718,6 +797,7 @@ export const elementApis = {
         propertyUpdates.length > 0
           ? core.updateElementProperties(propertyUpdates, options).changed
           : false
+
       return mutationReceipt(null, { acceptedIds, changed }, unavailableIds)
     })
   },

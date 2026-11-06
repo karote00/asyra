@@ -54,6 +54,7 @@ describe('Undo/Redo feature cooperative replay', () => {
 
   it('keeps the exclusive Undo execution pending until replay settles', async () => {
     let releaseUndo: (() => void) | undefined
+
     mocks.undo.mockImplementation(
       () =>
         new Promise<void>((resolve) => {
@@ -66,6 +67,7 @@ describe('Undo/Redo feature cooperative replay', () => {
       detail: { historyDirection: 'undo' }
     })
     let settled = false
+
     void Promise.resolve(result).then(() => {
       settled = true
     })

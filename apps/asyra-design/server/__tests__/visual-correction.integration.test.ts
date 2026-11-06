@@ -221,7 +221,10 @@ async function exerciseCorrectionConsumer(
     expect(contract.execution.kind).toBe('batch-action')
     const args = { elementIds: ['part'], index: 0, patch: { color: '#334455' } }
 
-    expect(operationInputIssue(args, contract.inputSchema)).toBeUndefined()
+    expect(contract.usageGuide.operationParameters).toBeDefined()
+    expect(
+      operationInputIssue(args, contract.usageGuide.operationParameters)
+    ).toBeUndefined()
     const before = await core.save()
     const independent = core.getElementComputedData('independent', ['fills'])
 

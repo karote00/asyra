@@ -1,3 +1,4 @@
+import { evaluationToolStop } from '../evaluation-control'
 import { createLocalKnowledgeTools } from '../local-knowledge'
 import { toolSemantics } from '../../src/ai/tool-contract'
 import {
@@ -280,16 +281,19 @@ it('rejects extra fields without guessing aliases and allows a corrected call', 
   )
   const owner = { call }
 
-  expect(
-    (
-      await invokeLocalTool(
-        owner,
-        definition,
-        { sourceUrl: 'not-a-source-list' },
-        signal()
-      )
-    ).success
-  ).toBe(false)
+  const rejected = await invokeLocalTool(
+    owner,
+    definition,
+    { sourceUrl: 'not-a-source-list' },
+    signal()
+  )
+
+  expect(rejected.success).toBe(false)
+  expect(JSON.parse(rejected.text)).toMatchObject({
+    recovery: 'correct_input',
+    settlement: 'not-started'
+  })
+  expect(evaluationToolStop(rejected)).toBeUndefined()
   expect(call).not.toHaveBeenCalled()
   expect((await invokeLocalTool(owner, definition, {}, signal())).success).toBe(
     true
@@ -496,7 +500,11 @@ it('does not describe a later compound-input failure as zero prior execution', a
   const reply = await invokeLocalTool(
     {
       call: async () => {
-        throw new LocalToolInputError('Inspection target rejected')
+        throw new LocalToolInputError(
+          'Inspection target rejected',
+          'PREPARATION_REJECTED',
+          'correct_input'
+        )
       }
     },
     definition,
@@ -510,6 +518,8 @@ it('does not describe a later compound-input failure as zero prior execution', a
     settlement: 'unknown',
     executionResult
   })
+  expect(JSON.parse(reply.text).recovery).not.toBe('correct_input')
+  expect(evaluationToolStop(reply)).toBeDefined()
 })
 
 it('observes internal input/output once, links the parent and isolates recorder failure', async () => {

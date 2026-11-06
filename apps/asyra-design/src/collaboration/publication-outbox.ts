@@ -346,6 +346,10 @@ export class DocumentPublicationOutbox {
     return this.appendPublication(publication, false)
   }
 
+  getDocumentGeneration() {
+    return this.documentGeneration
+  }
+
   bindDocumentGeneration(documentGeneration: number): Promise<void> {
     if (!Number.isSafeInteger(documentGeneration) || documentGeneration < 0) {
       return Promise.reject(

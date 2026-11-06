@@ -202,6 +202,8 @@ export const createLocalToolLibraryTools = (
     AiJsonValue
   >
 
+  const executes = (name: string) => name === AiDesignToolIds.INVOKE_TOOL
+
   const definition = (
     name: string,
     description: string,
@@ -214,10 +216,8 @@ export const createLocalToolLibraryTools = (
     inputSchema,
     ...toolSemantics(
       outputSchema,
-      name === AiDesignToolIds.INVOKE_TOOL ? 'mutation' : 'prepare',
-      name === AiDesignToolIds.INVOKE_TOOL
-        ? ['tool-library', 'document']
-        : ['tool-library']
+      executes(name) ? 'mutation' : 'prepare',
+      executes(name) ? ['tool-library', 'document'] : ['tool-library']
     ),
     composition: 'control-plane' as const,
     executionAccess: LocalToolAccess.COORDINATOR
@@ -229,7 +229,7 @@ export const createLocalToolLibraryTools = (
   })[] = [
     definition(
       AiDesignToolIds.SUBMIT_TOOL,
-      'Submit a reusable finite recipe when existing tools do not provide the needed higher-level operation. Optional iteration declares typed state, one registered verification check, repair steps and a finite round budget; use only mechanically decidable repairs. First get exact dependency contracts through describe_design_apis and use each registeredName and revision as the recipe dependency identity; bind fresh inputs and earlier successful outputs. The proposal schema is the canonical Runtime format. Admission checks every field and dependency revision without executing. Repair returned issues with a new submissionId; never send JavaScript, callbacks, permissions or captured request IDs. Registration is private until a genuine successful invocation and durable save. Storage failure does not undo admission; retry save_tool without replay.',
+      'Submit a reusable finite recipe when orchestrating available operations would reduce repeated manual work and no existing direct tool already fits. Composition connects registered capabilities; it cannot invent missing primitives or decide visual intent. Keep task-specific choices in fresh inputs rather than captured document identities. Optional iteration declares typed state, one registered verification check, repair steps and a finite round budget; use only mechanically decidable repairs. First get exact dependency contracts through describe_design_apis and use each registeredName and revision as the recipe dependency identity; bind fresh inputs and earlier successful outputs. The proposal schema is the canonical Runtime format. Admission checks every field and dependency revision without executing. Repair returned issues with a new submissionId; never send JavaScript, callbacks, permissions or captured request IDs. Registration is private until a genuine successful invocation and durable save. Storage failure does not undo admission; retry save_tool without replay.',
       {
         ...object(
           {
@@ -274,9 +274,8 @@ export const createLocalToolLibraryTools = (
 
     projectModelResult(name: string, input: unknown, value: unknown) {
       if (
-        name !== AiDesignToolIds.INVOKE_TOOL ||
+        !executes(name) ||
         !record(input) ||
-        typeof input.name !== 'string' ||
         !record(value) ||
         !record(value.execution)
       ) {
@@ -289,9 +288,15 @@ export const createLocalToolLibraryTools = (
             status: value.execution.status,
             settlement: value.execution.settlement
           }
-      const projected = Object.hasOwn(value.execution, 'value')
-        ? project(input.name, input.input, value.execution.value)
-        : undefined
+      let projected: unknown
+
+      if (Object.hasOwn(value.execution, 'value')) {
+        projected = project(
+          String(input.name),
+          input.input,
+          value.execution.value
+        )
+      }
 
       return {
         ...value,

@@ -4,6 +4,10 @@ Never record completed plans here.
 
 ## Current Status
 
+- Full-building Taipei 101 testing uses the
+  [fixed user-approved prompt](modules/ai-development-and-debugging.md#fixed-full-building-taipei-101-test-prompt).
+  Only an explicit user request may change that baseline input.
+
 - Active - final validation: [Large document navigation performance](plans/large-document-navigation-performance-plan.md) -
   user accepted the candidate's navigation speed; retained navigation, shared
   native materials, bounded GPU batches and input scheduling corrections are
@@ -14,7 +18,18 @@ Never record completed plans here.
   recording first, then evaluation, retrieval, efficiency and local validation.
 - Active: [Editable Design Agent](plans/ai-design-agent-plan.md), including the
   accepted [AI Conversation Experience](plans/ai-conversation-experience-plan.md) contracts.
-  Implementation is in progress under the plan’s bounded owner stages.
+  Contract delivery, canonical data review and provider instruction evidence
+  are owned by that plan and `specs/ai-execution-flow.md`.
+  Implemented task: [Staged Design Execution and Conversation Context](plans/staged-design-execution-plan.md) -
+  preserve useful stage results in App context, apply each ready stage, continue
+  through the host and overlap independent preparation; consolidate recorded
+  discovery, retention and review improvements. The eighteen-minute follow-up
+  completed drawing naturally in 14m59s and the unlimited same-session report.
+  Seven stages used direct preparation/application bindings; eleven named values
+  were saved without later named reuse. A real host catalog defect found live
+  was fixed with focused regression coverage. Original browser evidence closeout
+  failed; separate read-only recovery proved saved-document equality and durable
+  persistence. See the [follow-up report](reports/taipei-101-continuation-contracts-2026-11-06.md).
 - Most recently completed canonical App plan:
   `plans/completed/trusted-publication-and-crdt-7076-flow-realignment-plan.md`.
 - The completed plan retains the accepted one-time canonical data admission,

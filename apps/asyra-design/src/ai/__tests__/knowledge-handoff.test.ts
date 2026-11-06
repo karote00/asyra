@@ -47,7 +47,7 @@ it('hands App-only method examples from real Knowledge reads to current discover
   )
   const domain = read.documents.find(
     (doc: { target: string }) =>
-      doc.target === 'illustration.architecture.materials.method'
+      doc.target === 'illustration.architecture.materials'
   )
   const app = read.documents.find(
     (doc: { target: string }) =>
@@ -55,7 +55,7 @@ it('hands App-only method examples from real Knowledge reads to current discover
       'design.architectural-illustration.materials.method.parameters'
   )
 
-  expect(domain.text).toContain('Choose a material method')
+  expect(domain.text).toContain('A window grid is not a reflection model')
   expect(domain.text).not.toContain('map_retained_fills')
   expect(app.text).toContain('map_retained_fills')
   expect(app.text).toContain('not per-cell gradient endpoints')
@@ -110,8 +110,7 @@ it('hands App-only method examples from real Knowledge reads to current discover
     ).text
   ].join('\n')
   const samples = [...exampleText.matchAll(/```json\n([\s\S]*?)\n```/g)].filter(
-    (match) =>
-      JSON.parse(match[1]).tool !== AiDesignToolIds.EXECUTE_DESIGN_BATCH
+    (match) => JSON.parse(match[1]).tool !== AiDesignToolIds.EXECUTE_DESIGN
   )
 
   expect(samples).toHaveLength(3)
@@ -331,12 +330,12 @@ it('carries the recorded material decision into initial preparation without chan
         source.revision
       ])
     ).toEqual([
-      ['design.architectural-illustration', 18],
+      ['design.architectural-illustration', 20],
       ['design.architectural-illustration.contracts', 2],
       ['illustration.architecture', 5],
       ['illustration.architecture.materials', 1],
-      ['illustration.architecture.materials.method', 1],
-      ['design.architectural-illustration.materials.method', 3]
+      ['illustration.architecture.materials.method', 2],
+      ['design.architectural-illustration.materials.method', 5]
     ])
     for (const action of [
       ...createBasicApiActions(),
@@ -642,7 +641,7 @@ it('routes recorded local material edits through actual discovery and artifact t
 
     const call = (value: unknown) =>
       operations.call(
-        'execute_design_batch',
+        'execute_design',
         {
           inspection: 'defer',
           operations: [value]
@@ -1444,7 +1443,7 @@ it('joins advisory reads, real preparation and scoped material verdict recovery 
     ).apis[0]
 
     expect(selected.operation).toBe('fill.updateFillsAtIndex')
-    expect(selected.execution.tool).toBe('execute_design_batch')
+    expect(selected.execution.tool).toBe('execute_design')
     const correction = {
       inspection: 'defer',
       operations: [
@@ -1463,11 +1462,11 @@ it('joins advisory reads, real preparation and scoped material verdict recovery 
 
     invalid.operations[0].target.keys.push('missing-pane')
     await expect(
-      operations.call('execute_design_batch', invalid, signal())
+      operations.call('execute_design', invalid, signal())
     ).rejects.toThrow()
     expect(dispatch).not.toHaveBeenCalled()
     const settled = JSON.parse(
-      await operations.call('execute_design_batch', correction, signal())
+      await operations.call('execute_design', correction, signal())
     )
 
     expect(localToolOutcome(settled)).toMatchObject({
@@ -1754,7 +1753,7 @@ it('executes documented exclusive direct and retained target inputs through cano
     )
     const examples = [...app.text.matchAll(/```json\n([\s\S]*?)\n```/g)]
       .map((match) => JSON.parse(String(match[1])))
-      .filter((sample) => sample.tool === AiDesignToolIds.EXECUTE_DESIGN_BATCH)
+      .filter((sample) => sample.tool === AiDesignToolIds.EXECUTE_DESIGN)
 
     expect(examples).toHaveLength(2)
     const session = createDesignPreparationSession()

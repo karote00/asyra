@@ -659,7 +659,7 @@ it('preserves activity provenance and order through the HTTP progress handoff', 
     await import('../../src/ai/server-action-batch-provider')
   const events = [
     {
-      tool: 'execute_design_batch',
+      tool: 'execute_design',
       status: 'running' as const,
       message: 'Adding windows',
       activity: { kind: 'work' as const, callId: 'draw-1', sequence: 1 }
@@ -790,6 +790,109 @@ it('accepts independently addressed final request records and preserves idempote
     expect(requestModelActionBatch).not.toHaveBeenCalled()
   } finally {
     await middleware.dispose()
+    await new Promise<void>((resolve) => server.close(() => resolve()))
+  }
+})
+
+describe('conversation continuity admission', () => {
+  const turn = {
+    turnId: 'chat:turn:1',
+    intent: 'Keep the blue color.',
+    message: 'Group or title?',
+    outcome: 'no-change',
+    attachmentIndexes: [],
+    question: { message: 'Group or title?', choices: [] }
+  }
+
+  it.each([
+    { turns: [{ ...turn, attachmentIndexes: [0] }], attachmentIndexes: [] },
+    {
+      turns: [{ ...turn, inspectionId: 'old-receipt' }],
+      attachmentIndexes: []
+    },
+    { turns: [turn, turn], attachmentIndexes: [] },
+    {
+      turns: [{ ...turn, intent: 'x'.repeat(128 * 1024) }],
+      attachmentIndexes: []
+    }
+  ])(
+    'rejects missing source references, foreign fields, duplicate turns and oversize context before model work',
+    async (conversationContext) => {
+      const requestModelActionBatch = vi.fn(async () => ({
+        batchId: 'unused',
+        actions: []
+      }))
+
+      await expect(
+        resolveActionBatchRequest(
+          {
+            intent: 'The latter.',
+            attempt: 1,
+            context: {},
+            actions: [],
+            metadata: { conversationContext }
+          },
+          { requestModelActionBatch }
+        )
+      ).rejects.toMatchObject({ code: 'ACTION_BATCH_INVALID_INPUT' })
+      expect(requestModelActionBatch).not.toHaveBeenCalled()
+    }
+  )
+})
+
+it('saves and reads the originating App result context across independent HTTP turns', async () => {
+  const { createServerActionBatchProvider } =
+    await import('../../src/ai/server-action-batch-provider')
+  const middleware = createActionBatchMiddleware({
+    requestModelActionBatch: async (input, options) => {
+      if (!options.resultContext) {
+        throw Error('Missing result context')
+      }
+
+      if (input.intent === 'save') {
+        await options.resultContext({ save: { root: 'document-element' } })
+      } else {
+        expect(
+          await options.resultContext({
+            read: { root: { name: 'root', path: '' } }
+          })
+        ).toEqual({ root: 'document-element' })
+      }
+
+      return { batchId: 'done', actions: [] }
+    }
+  })
+  const server = createServer(
+    (req, res) => void middleware(req, res, () => res.end())
+  )
+
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+  const origin = 'http://127.0.0.1:' + (server.address() as AddressInfo).port
+  const app = createServerActionBatchProvider({
+    fetch: (url, init) =>
+      fetch(origin + url, { ...init, headers: { ...init.headers, origin } })
+  })
+  const executeBatch = vi.fn()
+
+  try {
+    for (const intent of ['save', 'read']) {
+      await expect(
+        app.requestActionBatch(
+          {
+            intent,
+            actions: [],
+            attempt: 1,
+            context: {},
+            metadata: { conversationId: 'same-app-chat' }
+          },
+          { signal: new AbortController().signal, executeBatch }
+        )
+      ).resolves.toMatchObject({ batchId: 'done' })
+    }
+
+    expect(executeBatch).not.toHaveBeenCalled()
+  } finally {
+    app.dispose()
     await new Promise<void>((resolve) => server.close(() => resolve()))
   }
 })

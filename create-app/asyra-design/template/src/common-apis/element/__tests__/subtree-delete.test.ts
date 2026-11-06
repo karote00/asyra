@@ -25,9 +25,11 @@ vi.mock('../../../contexts', () => ({
   default: {
     getElementData: vi.fn((elementId: string) => {
       const element = mocks.getElementById(elementId)
+
       if (!element) {
         return undefined
       }
+
       return {
         parentId: element.get('parentId'),
         type: element.get('type')
@@ -69,23 +71,28 @@ describe('element subtree deletion handoff', () => {
             if (key === 'type') {
               return 'group'
             }
+
             if (key === 'parentId') {
               return 'workspace'
             }
+
             return undefined
           }
         }
       }
+
       if (elementId === 'workspace') {
         return {
           get: (key: string) => {
             if (key === 'type') {
               return 'workspace'
             }
+
             return undefined
           }
         }
       }
+
       return undefined
     })
     mocks.removeElement.mockReturnValue(true)
@@ -110,6 +117,7 @@ describe('element subtree deletion handoff', () => {
 
   it('hands all deletion IDs to one canonical owner call without per-element reads', () => {
     const ids = Array.from({ length: 288 }, (_, i) => `target-${i}`)
+
     mocks.removeSubtrees.mockReturnValue(ids)
     expect(elementApis.deleteElements(ids)).toEqual({
       removed: ids.map((elementId) => ({ elementId }))

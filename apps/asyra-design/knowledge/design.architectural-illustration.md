@@ -1,6 +1,6 @@
 ---
 {
-  "description": "Design architectural illustration entry: select spatial evidence, material topics, contract recovery or repeated components as needed.",
+  "description": "Resolve architectural coordinate bases, repeated components and material continuity using existing Design tools; select only the unresolved decision.",
   "contexts": [
     "architectural-illustration"
   ],
@@ -16,47 +16,22 @@
 }
 ---
 
-# Architectural illustration in Design
+# Architectural decisions in Design
 
-## What
+Use this advice when a design decision is unresolved. Choose a topic by the
+problem it can resolve; knowing the subject alone does not require a lookup.
 
-Apply relevant architectural methods through existing registered capabilities.
+| Unresolved decision | Selectable topic and useful result |
+| --- | --- |
+| Which coordinate basis, contact or visibility relationship to use | Spatial: distinguish geometry, overlap order and reference scope before choosing a correction |
+| How to express repeated faces or facade cells compactly | Repetition: map a prototype and repeat axes to existing projection/expansion tools |
+| How to express continuous lighting versus independent material repeats | Materials: supported representation choices and coordinate conversion examples |
+| How to recover a missing contract or uncertain settlement | Contracts: current tool discovery and recovery boundaries |
 
-## Why
-
-Design decisions belong to the primary agent; deterministic projection, expansion,
-queries and supported checks belong to tools. Avoid re-deriving their results.
-
-## How
-
-This section is Asyra-specific advisory application guidance, not a duplicate API
-schema or permission source. The current discovered contract always owns exact
-arguments, output identities and recovery. Shared modules contain no Asyra tool
-names. Select the representation from the data already available, rather than
-reconstructing geometry or retrieving the entire catalog.
-
-
-### Turn relevant methods into execution choices
-
-For open architectural decisions, use applicable shared advice as the default
-planning reference. The user controls style and values; advice never overrides
-permissions or the discovered tool contract. Do not look up advice for every
-known-value edit or block work when relevant advice is unavailable.
-
-When repeated surfaces have open material choices, select the applicable material-method child from discovery. Keep user-requested
-quality in criteria; optional polish or a Knowledge recommendation is not a new
-completion demand. Do not add a call just to acknowledge reading advice.
-
-## Provenance
-
-App-authored mapping of current Design preparation, construction, review,
-operation and tool-library contracts. Exact discovered schemas and returned
-receipts own invocation syntax, authority, lifecycle and recovery.
-
-## Evaluation Guidance
-
-Inspect actual intent-to-tool handoffs, rejection reasons, partial recovery,
-retained valid judgments and preservation of unrelated content. Check rendered
-quality separately; a tool success is not visual acceptance. Do not require a
-new composed tool when an existing main tool already covers the task. No
-particular building, test result or fixed drawing sequence is prescribed.
+Design choices belong to the primary agent. Tools own deterministic projection,
+expansion and checks; avoid re-deriving their outputs. Existing discovered schemas
+own executable arguments and permissions. Knowledge is optional advice, not a
+schema, proof of correctness or an additional acceptance standard. Known-value
+edits and already-known methods can proceed directly. No construction order or
+representative sample is required. Preserve the user's requested detail and
+scope; optional polish does not add completion obligations.

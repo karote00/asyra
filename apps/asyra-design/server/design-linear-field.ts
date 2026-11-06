@@ -15,6 +15,10 @@ interface ScreenPoint {
   x: number
   y: number
 }
+interface PaintBounds extends ScreenPoint {
+  width: number
+  height: number
+}
 interface LinearField {
   start: Point
   direction: Point
@@ -162,8 +166,8 @@ export const createLinearFieldFill = (
   key: unknown,
   vertices: Point[],
   points: ScreenPoint[],
-  localBounds?: { x: number; y: number; width: number; height: number }
-): ((offset?: Point) => DesignGradientData) => {
+  localBounds?: PaintBounds
+): ((offset?: Point, bounds?: PaintBounds) => DesignGradientData) => {
   const field = typeof key === 'string' ? fields.get(key) : undefined
 
   if (!field) {
@@ -212,16 +216,24 @@ export const createLinearFieldFill = (
     ys = points.map((v) => v.y),
     x = localBounds?.x ?? Math.min(...xs),
     y = localBounds?.y ?? Math.min(...ys)
-  const gx = ax * (localBounds?.width ?? Math.max(...xs) - x),
-    gy = ay * (localBounds?.height ?? Math.max(...ys) - y),
-    length = gx * gx + gy * gy
+  const defaultBounds = {
+    x,
+    y,
+    width: localBounds?.width ?? Math.max(...xs) - x,
+    height: localBounds?.height ?? Math.max(...ys) - y
+  }
   const initial =
-    dot(field.direction, sub(p, field.start)) / field.lengthSquared +
-    ax * (x - q.x) +
-    ay * (y - q.y)
+    dot(field.direction, sub(p, field.start)) / field.lengthSquared
 
-  return (offset = { x: 0, y: 0, z: 0 }) => {
-    const phase = initial + dot(field.direction, offset) / field.lengthSquared
+  return (offset = { x: 0, y: 0, z: 0 }, bounds = defaultBounds) => {
+    const gx = ax * bounds.width,
+      gy = ay * bounds.height
+    const length = gx * gx + gy * gy
+    const phase =
+      initial +
+      ax * (bounds.x - q.x) +
+      ay * (bounds.y - q.y) +
+      dot(field.direction, offset) / field.lengthSquared
     let gradient: DesignGradientData
 
     if (length === 0) {

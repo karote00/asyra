@@ -596,7 +596,7 @@ describe('concrete current work', () => {
       {
         attempt: 1,
         phase: 'execution',
-        tool: 'execute_design_batch',
+        tool: 'execute_design',
         summary: 'Removing covered objects',
         activity: {
           kind: 'work',
@@ -707,7 +707,7 @@ it('retains authored work when a real system message arrives and rejects older s
   const work = {
     attempt: 1,
     phase: 'provider' as const,
-    tool: 'execute_design_batch',
+    tool: 'execute_design',
     toolStatus: 'running' as const,
     summary: 'Running a tool',
     message: 'Adding window reflections',
@@ -2245,7 +2245,7 @@ it('replays every retained provider input without labeling generic batches as ed
     const update = input as AiRuntimeProgressUpdate
 
     projection.append(update)
-    if (update.tool === 'execute_design_batch') {
+    if (update.tool === 'execute_design') {
       expect(projection.result().current.label).not.toContain(
         'Applying planned edits'
       )
@@ -2287,7 +2287,7 @@ it('projects actual descendant dispatch effects without replacing the principal 
       attempt: 1,
       phase: 'provider',
       summary: 'Operation',
-      tool: callId === 'principal' ? 'execute_design_batch' : 'app-batch',
+      tool: callId === 'principal' ? 'execute_design' : 'app-batch',
       toolStatus: completed ? 'completed' : 'running',
       message: callId === 'principal' ? 'Adjust crown reflections' : undefined,
       activity: {

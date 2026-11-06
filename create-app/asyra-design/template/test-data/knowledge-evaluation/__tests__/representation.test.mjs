@@ -18,10 +18,12 @@ const saved = JSON.parse(
 test('saved material observations distinguish rule geometry from explicit per-cell paints', () => {
   const before = JSON.stringify(saved)
   const result = observeKnowledgeUse(saved.calls)
+
   assert.equal(result.delivered.length, 2)
   const reflection = result.representations.find(
     (row) => row.inputBytes === 670447
   )
+
   assert.ok(reflection)
   assert.equal(reflection.surfaceGrids, 32)
   assert.equal(reflection.cellMaterialEntries, 3584)
@@ -39,6 +41,7 @@ test('missing or failed evidence cannot claim delivery, execution success or vis
     false
   )
   const knowledge = saved.calls.find((call) => call.tool === 'read_knowledge')
+
   assert.deepEqual(
     observeKnowledgeUse([{ ...knowledge, status: 'failed' }]).delivered,
     []
@@ -59,6 +62,7 @@ test('missing or failed evidence cannot claim delivery, execution success or vis
     }
   }
   const row = observeRepresentation(failed)
+
   assert.equal(row.executionStatus, 'failed')
   assert.equal(row.templateUses, 1)
   assert.equal(row.sharedUses, 1)
@@ -77,6 +81,7 @@ test('rejected draft shapes and reference-only receipts remain observations, not
       draft: { type: 'surface-grid', motifs: {}, children: null }
     }
   }
+
   assert.equal(observeRepresentation(call).executionStatus, 'failed')
   assert.equal(observeRepresentation(call).cellMaterialEntries, 0)
   assert.deepEqual(

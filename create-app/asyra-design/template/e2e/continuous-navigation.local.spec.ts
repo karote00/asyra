@@ -13,12 +13,16 @@ test('measures sustained native wheel pan and zoom on the full document', async 
   test.skip(Boolean(process.env.CI), 'Local machine measurement only')
   test.setTimeout(180_000)
   const inputHz = Number(process.env.NAVIGATION_INPUT_HZ ?? 60)
-  if (![60, 120].includes(inputHz))
+
+  if (![60, 120].includes(inputHz)) {
     throw new Error('Navigation input cadence must be 60 or 120 Hz')
+  }
+
   const inputCount = inputHz * 5
   const deltaScale = 60 / inputHz
   const { identity, manifest } = await prepareLargeNavigationDocument(baseURL)
   const errors: string[] = []
+
   page.on('pageerror', (error) => errors.push(error.message))
   await installNavigationWorkProbe(page)
   await page.goto(identity.url)
@@ -28,6 +32,7 @@ test('measures sustained native wheel pan and zoom on the full document', async 
       () =>
         page.evaluate(async () => {
           const { core } = await import('../src/testing/runtime-access')
+
           return Object.keys(core.sceneTreeSaveData().elements).length - 1
         }),
       { timeout: 60_000 }
@@ -35,19 +40,30 @@ test('measures sustained native wheel pan and zoom on the full document', async 
     .toBe(manifest.elements)
   const cdp = await page.context().newCDPSession(page)
   const withProfiler = process.env.NAVIGATION_CPU_PROFILE === 'true'
-  if (withProfiler) await cdp.send('Profiler.enable')
+
+  if (withProfiler) {
+    await cdp.send('Profiler.enable')
+  }
+
   const results = []
 
   for (const phase of ['idle', 'pan', 'zoom'] as const) {
     await page.evaluate(async () => {
       const { viewportApis } = await import('../src/common-apis/viewport')
+
       viewportApis.zoomFit()
     })
     await page.mouse.move(1000, 450)
     // Keep initialization and warmup out of the interaction measurement.
     await delay(500)
-    if (phase === 'zoom') await page.keyboard.down('Meta')
-    if (withProfiler && phase !== 'idle') await cdp.send('Profiler.start')
+    if (phase === 'zoom') {
+      await page.keyboard.down('Meta')
+    }
+
+    if (withProfiler && phase !== 'idle') {
+      await cdp.send('Profiler.start')
+    }
+
     const measurement = page.evaluate(async () => {
       const { core } = await import('../src/testing/runtime-access')
       const { viewportApis } = await import('../src/common-apis/viewport')
@@ -60,21 +76,25 @@ test('measures sustained native wheel pan and zoom on the full document', async 
         publications++
       })
       const inputs: { time: number; deltaX: number; deltaY: number }[] = []
+
       const onWheel = (event: WheelEvent) =>
         inputs.push({
           time: performance.now(),
           deltaX: event.deltaX,
           deltaY: event.deltaY
         })
+
       window.addEventListener('wheel', onWheel, {
         capture: true,
         passive: true
       })
       const longTasks: { start: number; duration: number }[] = []
       const observer = new PerformanceObserver((list) => {
-        for (const entry of list.getEntries())
+        for (const entry of list.getEntries()) {
           longTasks.push({ start: entry.startTime, duration: entry.duration })
+        }
       })
+
       observer.observe({ type: 'longtask' })
       window.navigationGpuWork = {
         draws: 0,
@@ -90,9 +110,11 @@ test('measures sustained native wheel pan and zoom on the full document', async 
       }[] = []
       // Read-only camera sampling. No direct viewport updates in this interval.
       const start = performance.now()
+
       await new Promise<void>((resolve) => {
         const frame = () => {
           const position = viewportApis.getPosition()
+
           samples.push({
             time: performance.now(),
             draws: window.navigationGpuWork.draws,
@@ -100,14 +122,19 @@ test('measures sustained native wheel pan and zoom on the full document', async 
             y: position.y,
             scale: viewportApis.getScale()
           })
-          if (performance.now() - start < 6500) requestAnimationFrame(frame)
-          else resolve()
+          if (performance.now() - start < 6500) {
+            requestAnimationFrame(frame)
+          } else {
+            resolve()
+          }
         }
+
         requestAnimationFrame(frame)
       })
       observer.disconnect()
       window.removeEventListener('wheel', onWheel, true)
       unsubscribe()
+
       return {
         before,
         inputs,
@@ -125,12 +152,14 @@ test('measures sustained native wheel pan and zoom on the full document', async 
     const offered = []
     const started = performance.now()
     const pending: Promise<unknown>[] = []
+
     if (phase !== 'idle') {
       for (let index = 0; index < inputCount; index++) {
         await delay(
           Math.max(0, started + index * (1000 / inputHz) - performance.now())
         )
         const direction = index < inputCount / 2 ? 1 : -1
+
         offered.push(performance.now() - started)
         pending.push(
           cdp.send('Input.dispatchMouseEvent', {
@@ -143,17 +172,25 @@ test('measures sustained native wheel pan and zoom on the full document', async 
           })
         )
       }
+
       await Promise.all(pending)
     }
+
     const report = await measurement
-    if (phase === 'zoom') await page.keyboard.up('Meta')
+
+    if (phase === 'zoom') {
+      await page.keyboard.up('Meta')
+    }
+
     if (withProfiler && phase !== 'idle') {
       const { profile } = await cdp.send('Profiler.stop')
+
       await writeFile(
         testInfo.outputPath(`${phase}.cpuprofile`),
         JSON.stringify(profile)
       )
     }
+
     const first = report.inputs[0]?.time ?? report.samples[0].time
     const last =
       report.inputs.at(-1)?.time ?? report.samples.at(-1)?.time ?? first
@@ -174,7 +211,11 @@ test('measures sustained native wheel pan and zoom on the full document', async 
           sample.y !== active[index - 1].y ||
           sample.scale !== active[index - 1].scale)
     )
-    if (active.length < 2) throw new Error('Insufficient active frame samples')
+
+    if (active.length < 2) {
+      throw new Error('Insufficient active frame samples')
+    }
+
     const duration = active[active.length - 1].time - active[0].time
     const summary = {
       phase,
@@ -193,6 +234,7 @@ test('measures sustained native wheel pan and zoom on the full document', async 
       longTasks: report.longTasks.length,
       gpuWork: report.gpuWork
     }
+
     results.push({ summary, offered, ...report })
     await writeFile(
       testInfo.outputPath('continuous-navigation.json'),
@@ -204,7 +246,7 @@ test('measures sustained native wheel pan and zoom on the full document', async 
     if (phase !== 'idle') {
       expect(report.inputs.length).toBeGreaterThan(1)
       expect(cameraChanges.length).toBeGreaterThan(1)
-      if (phase === 'pan')
+      if (phase === 'pan') {
         expect(
           Math.max(
             ...active.map((sample) =>
@@ -212,11 +254,13 @@ test('measures sustained native wheel pan and zoom on the full document', async 
             )
           )
         ).toBeGreaterThan(100)
-      else
+      } else {
         expect(
           Math.max(...active.map((sample) => sample.scale))
         ).toBeGreaterThan(report.before.scale * 2)
+      }
     }
   }
+
   expect(errors).toEqual([])
 })

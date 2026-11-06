@@ -2,6 +2,13 @@
 
 ## Current direction
 
+Planning follow-up - 2026-11-02: use the Editable Design Agent plan's
+[conversation continuity and tool contract corrections](ai-design-agent-plan.md#conversation-continuity-and-tool-contract-corrections---2026-11-02)
+for cross-turn context, complete clarification handoff, asynchronous attachment
+ownership and consistent review guidance. These corrections are planned, not
+implemented or admitted by this reference. Existing accepted behavior remains
+owned by the current conversation specification.
+
 The [Editable Design Agent plan](ai-design-agent-plan.md) now owns the broader
 prompt-to-editable-design work, native research, complete UI/UX and PR delivery.
 The sections below retain prior accepted contracts and historical local evidence;

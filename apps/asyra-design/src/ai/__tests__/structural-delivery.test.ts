@@ -66,7 +66,7 @@ const recoverReceipt = async (
   }
 }
 
-const fixture = (count = 1000, maxBytes?: number) => {
+const fixture = (count = 1000, maxBytes?: number, fillReceipt?: unknown) => {
   const controller = new AbortController()
   const signal = controller.signal
 
@@ -112,6 +112,15 @@ const fixture = (count = 1000, maxBytes?: number) => {
     bounds: { x: 0, y: 0, width: 10, height: 10 }
   }))
   const edit = vi.fn((elementIds: string[]) => elementIds.map(() => 'changed'))
+  const fill = vi.fn(
+    (elementIds: string[]) =>
+      fillReceipt ?? {
+        value: null,
+        acceptedIds: elementIds,
+        unavailableIds: [],
+        changed: elementIds.length > 0
+      }
+  )
   const actions = createBasicApiActions(
     () => ({
       core: {
@@ -147,7 +156,7 @@ const fixture = (count = 1000, maxBytes?: number) => {
           rootParentChildrenAfter: []
         })
       },
-      fill: {},
+      fill: { updateFillsAtIndex: fill },
       stroke: {},
       selection: {},
       viewport: {}
@@ -188,6 +197,7 @@ const fixture = (count = 1000, maxBytes?: number) => {
 
   return {
     queries,
+    fill,
     controller,
     context,
     ids,
@@ -353,7 +363,7 @@ it('keeps model structural replies bounded while full receipts remain readable w
 
   try {
     const text = await tools.call(
-      'execute_design_batch',
+      'execute_design',
       {
         operations: [
           {
@@ -646,6 +656,7 @@ it('publishes structural output through the real runtime wrapper before a depend
 })
 
 it('projects real observed fill receipts after preserving complete original mutation scopes', async () => {
+  const app = fixture()
   let listener: ((change?: InspectionDependencyChange) => void) | undefined
   const writes = vi.fn((elementIds: string[]) => {
     listener?.({ elementIds })
@@ -677,7 +688,8 @@ it('projects real observed fill receipts after preserving complete original muta
       },
 
       resolve: () => 'live'
-    }
+    },
+    app.queries
   ).find((action) => action.name === 'api_fill_updateFillsAtIndex')
 
   if (!base) {
@@ -726,7 +738,7 @@ it('projects real observed fill receipts after preserving complete original muta
         )
 
         compact = await tools.call(
-          'execute_design_batch',
+          'execute_design',
           {
             inspection: 'defer',
             operations: Array.from({ length: 16 }, (_, part) => ({
@@ -808,11 +820,14 @@ it('projects real observed fill receipts after preserving complete original muta
       })
     }
 
-    // Explicit owner identities remain actionable; compact scope is not inferred success.
-    for (const [part, receipt] of reply.actionResults.entries()) {
-      expect(receipt.result.acceptedIds).toEqual(
-        Array.from({ length: 192 }, (_, index) => `window-${part}-${index}`)
-      )
+    // Internal identities remain available while the model receives a retained receipt.
+    for (const receipt of reply.actionResults) {
+      expect(receipt.result).not.toHaveProperty('acceptedIds')
+      expect(receipt.result).toMatchObject({
+        acceptedCount: 192,
+        unavailableCount: 0,
+        retained: { total: 192 }
+      })
     }
 
     expect(reply.checks.counts.unverified).toBe(3072)
@@ -824,12 +839,13 @@ it('projects real observed fill receipts after preserving complete original muta
     })
     expect(
       reply.actionResults.every(
-        (receipt: { result: { unavailableIds: string[] } }) =>
-          receipt.result.unavailableIds.length === 0
+        (receipt: { result: { unavailableCount: number } }) =>
+          receipt.result.unavailableCount === 0
       )
     ).toBe(true)
   } finally {
     await runtime.dispose()
+    app.queries.dispose()
   }
 })
 
@@ -879,6 +895,197 @@ it('keeps eight structural recovery receipts without exhausting a subsequent reg
 
     expect(app.group).toHaveBeenCalledTimes(8)
     expect(app.children).not.toHaveBeenCalled()
+  } finally {
+    app.controller.abort()
+    app.queries.dispose()
+  }
+})
+
+it('retains large canonical fill acknowledgements and delivers counts without copying IDs', async () => {
+  const app = fixture(10832)
+
+  try {
+    const action = app.action('api_fill_updateFillsAtIndex')
+    const result = (await action.execute(
+      {
+        elementIds: app.ids,
+        index: 0,
+        patch: { kind: 'solid', gradient: null }
+      },
+      app.context
+    )) as StructuralReceipt & {
+      acceptedIds: string[]
+      modelResult: Record<string, unknown>
+    }
+
+    expect(result.acceptedIds).toEqual(app.ids)
+    expect(result.modelResult).toMatchObject({
+      status: 'complete',
+      changed: true,
+      settlement: 'completed',
+      acceptedCount: 10832,
+      unavailableCount: 0,
+      retained: { total: 10832 }
+    })
+    expect(JSON.stringify(result.modelResult).length).toBeLessThan(1000)
+    expect(result.modelResult).not.toHaveProperty('acceptedIds')
+    const read = createDocumentContextAction(app.queries.read)
+    const full = await recoverReceipt((offset) =>
+      read.execute(
+        {
+          scope: 'snapshot',
+          snapshotId: result.retained.snapshotId,
+          delivery: 'receipt',
+          offset
+        },
+        app.context
+      )
+    )
+
+    expect(
+      (full.receipt as unknown as { acceptedIds: string[] }).acceptedIds
+    ).toEqual(app.ids)
+    expect(app.children).not.toHaveBeenCalled()
+    expect(app.metadata).not.toHaveBeenCalled()
+  } finally {
+    app.queries.dispose()
+  }
+})
+
+it.each([
+  {
+    receipt: {
+      value: null,
+      acceptedIds: ['child-0'],
+      unavailableIds: ['missing'],
+      changed: true
+    },
+    status: 'partial',
+    settlement: 'partial',
+    acceptedCount: 1,
+    unavailableCount: 1
+  },
+  {
+    receipt: {
+      value: null,
+      acceptedIds: ['child-0'],
+      unavailableIds: [],
+      changed: false
+    },
+    status: 'no-change',
+    settlement: 'completed',
+    acceptedCount: 1,
+    unavailableCount: 0
+  },
+  {
+    receipt: {
+      value: null,
+      acceptedIds: [],
+      unavailableIds: ['missing'],
+      changed: false
+    },
+    status: 'failed',
+    settlement: 'not-started',
+    acceptedCount: 0,
+    unavailableCount: 1
+  }
+])(
+  'preserves $status canonical acknowledgements in bounded delivery',
+  async ({ receipt, ...expected }) => {
+    const app = fixture(1, undefined, receipt)
+
+    try {
+      const action = app.action('api_fill_updateFillsAtIndex')
+      const result = (await action.execute(
+        {
+          elementIds: ['child-0', 'missing'],
+          index: 0,
+          patch: { opacity: 0.5 }
+        },
+        app.context
+      )) as StructuralReceipt & { modelResult: unknown }
+
+      expect(result.modelResult).toMatchObject(expected)
+      expect(
+        operationInputIssue(result, action.partialOutputSchema ?? false)
+      ).toBeUndefined()
+      expect(
+        operationInputIssue(
+          result.modelResult,
+          action.delivery?.outputSchema ?? false
+        )
+      ).toBeUndefined()
+      const recovered = await recoverReceipt((offset) =>
+        app.queries.read(
+          {
+            scope: 'snapshot',
+            snapshotId: result.retained.snapshotId,
+            delivery: 'receipt',
+            offset
+          },
+          app.context.signal
+        )
+      )
+
+      expect(recovered.receipt).toMatchObject(receipt)
+      expect(app.fill).toHaveBeenCalledTimes(1)
+    } finally {
+      app.controller.abort()
+      app.queries.dispose()
+    }
+  }
+)
+
+it('keeps invalid canonical output visible without claiming accepted targets', async () => {
+  const app = fixture(1, undefined, { value: null, changed: true })
+
+  try {
+    const action = app.action('api_fill_updateFillsAtIndex')
+    const result = (await action.execute(
+      { elementIds: app.ids, index: 0, patch: { opacity: 0.5 } },
+      app.context
+    )) as StructuralReceipt & { modelResult: unknown }
+
+    expect(result.modelResult).toMatchObject({
+      status: 'failed',
+      code: 'OWNER_RESULT_INVALID',
+      settlement: 'completed'
+    })
+    expect(result.modelResult).not.toHaveProperty('acceptedCount')
+    expect(
+      operationInputIssue(result, action.partialOutputSchema ?? false)
+    ).toBeUndefined()
+    expect(app.fill).toHaveBeenCalledTimes(1)
+  } finally {
+    app.controller.abort()
+    app.queries.dispose()
+  }
+})
+
+it('reports canonical receipt retention failure without replaying the settled write', async () => {
+  const app = fixture(10832, 10)
+
+  try {
+    const action = app.action('api_fill_updateFillsAtIndex')
+    const result = (await action.execute(
+      { elementIds: app.ids, index: 0, patch: { opacity: 0.5 } },
+      app.context
+    )) as StructuralReceipt & { modelResult: unknown }
+
+    expect(result.modelResult).toMatchObject({
+      status: 'complete',
+      changed: true,
+      acceptedCount: 10832,
+      delivery: {
+        status: 'unavailable',
+        message: expect.stringContaining('do not replay')
+      }
+    })
+    expect(result).not.toHaveProperty('retained')
+    expect(
+      operationInputIssue(result, action.partialOutputSchema ?? false)
+    ).toBeUndefined()
+    expect(app.fill).toHaveBeenCalledTimes(1)
   } finally {
     app.controller.abort()
     app.queries.dispose()

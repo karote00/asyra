@@ -198,7 +198,7 @@ describe('execution evaluation', () => {
       run('nested', [
         {
           stage: 'tool_started',
-          tool: 'execute_design_batch',
+          tool: 'execute_design',
           callId: 'outer',
           elapsedMs: 10
         },
@@ -219,7 +219,7 @@ describe('execution evaluation', () => {
         },
         {
           stage: 'tool_completed',
-          tool: 'execute_design_batch',
+          tool: 'execute_design',
           callId: 'outer',
           elapsedMs: 40
         }
@@ -249,7 +249,7 @@ describe('execution evaluation', () => {
       )
 
       usage.trace('tool_started', {
-        tool: 'execute_design_batch',
+        tool: 'execute_design',
         callId: 'batch',
         arguments: {
           operations: [
@@ -268,7 +268,7 @@ describe('execution evaluation', () => {
         }
       })
       usage.trace('tool_completed', {
-        tool: 'execute_design_batch',
+        tool: 'execute_design',
         callId: 'batch'
       })
       usage.finish('completed')
@@ -460,7 +460,7 @@ describe('execution evaluation', () => {
     const events = [
       ...query('a', { fields: ['id'] }, 'one'),
       ...query('b', { fields: ['id'] }, 'one')
-    ].map((event) => ({ ...event, tool: 'execute_design_batch' }))
+    ].map((event) => ({ ...event, tool: 'execute_design' }))
 
     expect(evaluateExecution(run('a', events)).findings).toEqual([])
   })

@@ -1,3 +1,4 @@
+import stageReuse from './fixtures/recorded-101/stage-reuse-20261105.json'
 import {
   completeUsageBudget,
   recordAcquisitionCost
@@ -415,4 +416,114 @@ it('keeps inline exceptions independent alongside shared definitions', () => {
       'same'
     )
   )
+})
+
+it('resolves motif overrides by key before projection and counts replacement vertices', () => {
+  const input = generic()
+  const original = input.motifTemplates.markers[0]
+  const patch = {
+    fill: '#135790',
+    vertices: [
+      { u: 0.1, v: 0.1 },
+      { u: 0.9, v: 0.1 },
+      { u: 0.9, v: 0.9 },
+      { u: 0.1, v: 0.9 }
+    ]
+  }
+
+  input.children[0].motifs = {
+    ...input.children[0].motifs,
+    ...{ overrides: { [original.key]: patch } }
+  }
+  const expected = inline(input)
+
+  expected.children[0].motifs = expected.children[0].motifs.map((item, i) =>
+    i ? item : { ...item, ...patch, fills: undefined }
+  )
+  expect(prepareDesign(input, 'variant')).toEqual(
+    prepareDesign(expected, 'variant')
+  )
+  expect(measureDesignBudget(input).observed.expandedPathCommands).toBe(78)
+  expect(partitionDesignBudget(input, 15).partitions).toHaveLength(2)
+  for (const part of partitionDesignBudget(input, 15).partitions ?? []) {
+    expect(
+      prepareDesign(selectDesignSource(input, part.selections), 'part').entries
+    ).toHaveLength(13)
+  }
+})
+
+it('reuses motif geometry for a fill override and rejects unknown motif or patch fields', () => {
+  const input = generic()
+  const key = input.motifTemplates.markers[0].key
+
+  Object.assign(input.children[0].motifs, {
+    overrides: { [key]: { fill: '#135790' } }
+  })
+  expect(constructDesign(input).sourceWork.pathCommands).toBe(14)
+  for (const overrides of [
+    { absent: { fill: '#135790' } },
+    { [key]: { invented: 1 } },
+    { [key]: { vertices: [{ u: 0, v: 0 }] } }
+  ]) {
+    const invalid = structuredClone(input)
+
+    Object.assign(invalid.children[0].motifs, { overrides })
+    expect(() => prepareDesign(invalid, 'invalid')).toThrow()
+  }
+})
+
+it('preserves all three recorded facade drafts with one base motif and per-use variants', () => {
+  const base = stageReuse.drafts[0].draft.motifTemplates.frame
+
+  for (const { draft } of stageReuse.drafts) {
+    const variant = JSON.parse(JSON.stringify(draft))
+    const definitions = variant.motifTemplates
+
+    const visit = (value: Record<string, unknown>) => {
+      if (value.type === 'surface-grid') {
+        const ref = value.motifs as { template: string }
+        const source = definitions[ref.template] as Record<string, unknown>[]
+        const overrides = Object.fromEntries(
+          source.map((motif) => {
+            const original = base.find((item) => item.key === motif.key)
+
+            if (!original) {
+              throw new Error('Recorded motif has no base')
+            }
+
+            return [
+              String(motif.key),
+              Object.fromEntries(
+                Object.entries(motif).filter(
+                  ([key, field]) =>
+                    key !== 'key' &&
+                    JSON.stringify(field) !==
+                      JSON.stringify(original[key as keyof typeof original])
+                )
+              )
+            ]
+          })
+        )
+
+        value.motifs = { template: 'frame', overrides }
+      }
+
+      for (const key of ['children', 'members']) {
+        if (Array.isArray(value[key])) {
+          for (const child of value[key]) {
+            visit(child)
+          }
+        }
+      }
+    }
+
+    visit(variant)
+    variant.motifTemplates = { frame: base }
+    const expected = prepareDesign(draft, 'recorded')
+
+    expect(prepareDesign(variant, 'recorded')).toEqual(expected)
+    expect(measureDesignBudget(variant).observed.expandedPathCommands).toBe(
+      measureDesignBudget(draft).observed.expandedPathCommands
+    )
+  }
 })

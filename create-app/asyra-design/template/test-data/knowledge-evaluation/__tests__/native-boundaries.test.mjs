@@ -1,4 +1,4 @@
-import test from 'node:test'
+import test, { before } from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -7,8 +7,24 @@ import { DatabaseSync } from 'node:sqlite'
 import { createHash } from 'node:crypto'
 import { restorePublicActivity } from '../public-activity.mjs'
 
-const root = fileURLToPath(new URL('../../../../../..', import.meta.url))
+const root = fileURLToPath(new URL('../../../../../', import.meta.url))
+
+before(() => {
+  fs.mkdirSync(path.join(root, 'tmp'), { recursive: true })
+})
+
+test('temporary evidence fixtures stay inside their owning checkout', () => {
+  assert.equal(
+    path.join(
+      root,
+      'apps/asyra-design/test-data/knowledge-evaluation/__tests__/native-boundaries.test.mjs'
+    ),
+    fileURLToPath(import.meta.url)
+  )
+})
+
 const hash = (value) => createHash('sha256').update(value).digest('hex')
+
 const pending = {
   status: 'available',
   threadId: 'thread',
@@ -42,6 +58,7 @@ test('activity timeline preserves pending native boundaries without inventing co
     { elapsedMs: 2000, stage: 'tool_started', tool: 'draw' }
   ]
   const timeline = restorePublicActivity(rows, () => null, pending)
+
   assert.equal(timeline.nativeDiagnostics.status, 'available')
   assert.equal(timeline.events[1].stage, 'native-output-item-started')
   assert.equal(timeline.events[1].completion, 'unavailable')
@@ -61,10 +78,12 @@ async function databaseCase(run) {
   const directory = fs.mkdtempSync(path.join(root, 'tmp/native-boundary-test-'))
   const filename = path.join(directory, 'diagnostics.sqlite')
   const db = new DatabaseSync(filename)
+
   try {
     db.exec(
       'CREATE TABLE logs(id INTEGER PRIMARY KEY, ts INTEGER, ts_nanos INTEGER, target TEXT, thread_id TEXT, process_uuid TEXT, feedback_log_body TEXT)'
     )
+
     const insert = (
       id,
       seconds,
@@ -76,6 +95,7 @@ async function databaseCase(run) {
       db
         .prepare('INSERT INTO logs VALUES (?, ?, 0, ?, ?, ?, ?)')
         .run(id, seconds, target, thread, process, body)
+
     await run({ db, insert, filename, directory })
   } finally {
     db.close()
@@ -85,9 +105,11 @@ async function databaseCase(run) {
 
 test('read-only native extraction isolates process and window and saves only boundary facts', async () => {
   const { collectNativeBoundaries } = await import('../native-boundaries.mjs')
+
   await databaseCase(async ({ insert, filename }) => {
     const started =
       'PRIVATE prefix try_run_sampling_request{turn_id=turn}: Output item item_type="function_call" item_id="ctc_item" PRIVATE suffix'
+
     insert(1, 1, 'codex_core::stream_events_utils', started)
     insert(
       2,
@@ -130,6 +152,7 @@ test('read-only native extraction isolates process and window and saves only bou
       startMs: 1000,
       endMs: 4000
     })
+
     assert.equal(hash(fs.readFileSync(filename)), before)
     assert.equal(result.status, 'available')
     assert.deepEqual(
@@ -172,12 +195,14 @@ test('read-only native extraction isolates process and window and saves only bou
       startMs: 1000,
       endMs: 4000
     })
+
     assert.equal(exact.boundaries.length, 3)
   })
 })
 
 test('missing database, unsupported schema and no boundary evidence remain unavailable', async () => {
   const { collectNativeBoundaries } = await import('../native-boundaries.mjs')
+
   await databaseCase(async ({ filename, directory, db }) => {
     const options = {
       databasePath: filename,
@@ -185,8 +210,10 @@ test('missing database, unsupported schema and no boundary evidence remain unava
       startMs: 1000,
       endMs: 4000
     }
+
     assert.equal(collectNativeBoundaries(options).status, 'unavailable')
     const missing = path.join(directory, 'missing.sqlite')
+
     assert.equal(
       collectNativeBoundaries({ ...options, databasePath: missing }).status,
       'unavailable'
@@ -207,6 +234,7 @@ test('missing database, unsupported schema and no boundary evidence remain unava
 test('evaluation capture follows exact recorded requests and the analyzer consumes retained provenance', async () => {
   const { captureNativeBoundaries } = await import('../native-boundaries.mjs')
   const { readPayload } = await import('../analyze.mjs')
+
   await databaseCase(async ({ insert, filename, directory }) => {
     insert(
       1,
@@ -215,6 +243,7 @@ test('evaluation capture follows exact recorded requests and the analyzer consum
       'try_run_sampling_request{turn_id=turn}: Output item item_type="function_call" item_id="ctc_item"'
     )
     const recordingDirectory = path.join(directory, 'provider')
+
     fs.mkdirSync(recordingDirectory)
     const rows = [
       {
@@ -230,6 +259,7 @@ test('evaluation capture follows exact recorded requests and the analyzer consum
       },
       { elapsedMs: 2000, stage: 'tool_started', tool: 'draw' }
     ]
+
     fs.writeFileSync(
       path.join(recordingDirectory, 'provider.jsonl'),
       rows.map(JSON.stringify).join('\n')
@@ -248,6 +278,7 @@ test('evaluation capture follows exact recorded requests and the analyzer consum
       endMs: 4000
     })
     const saved = readPayload(directory, reference)
+
     assert.deepEqual(
       saved.streams.map((s) => s.requestId),
       ['provider']
@@ -257,6 +288,7 @@ test('evaluation capture follows exact recorded requests and the analyzer consum
       () => null,
       saved.streams[0].diagnostics[0]
     )
+
     assert.equal(
       timeline.events.filter((e) => e.source === 'native-diagnostic').length,
       1
@@ -272,6 +304,7 @@ test('evaluation capture follows exact recorded requests and the analyzer consum
 
 test('fractional window excludes other processes and unknown item formats do not claim starts', async () => {
   const { collectNativeBoundaries } = await import('../native-boundaries.mjs')
+
   await databaseCase(async ({ insert, db, filename }) => {
     insert(
       1,
@@ -300,6 +333,7 @@ test('fractional window excludes other processes and unknown item formats do not
       startMs: 1501,
       endMs: 4000
     })
+
     assert.equal(result.status, 'available')
     assert.deepEqual(
       result.boundaries.map((value) => value.stage),

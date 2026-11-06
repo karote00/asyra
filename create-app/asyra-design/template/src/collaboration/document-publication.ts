@@ -20,6 +20,7 @@ const invalid = (path: string): never => {
     `Invalid canonical operation at ${path}`
   )
 }
+
 const fields = (
   value: unknown,
   required: string[],
@@ -30,17 +31,23 @@ const fields = (
   Object.keys(value).every(
     (key) => required.includes(key) || optional.includes(key)
   )
+
 const array = (value: unknown, check: (entry: unknown) => boolean): boolean =>
   Array.isArray(value) && value.every(check)
+
 const strings = (value: unknown): boolean => array(value, isNonBlankString)
+
 const index = (value: unknown): boolean =>
   Number.isSafeInteger(value) && Number(value) >= 0
+
 const location = (value: unknown): boolean =>
   fields(value, ['parentId', 'index']) &&
   isNonBlankString(value.parentId) &&
   index(value.index)
+
 const component = (value: unknown): boolean =>
   isRecord(value) && isNonBlankString(value.id) && isNonBlankString(value.type)
+
 const element = (value: unknown): boolean =>
   component(value) &&
   isRecord(value) &&
@@ -48,11 +55,13 @@ const element = (value: unknown): boolean =>
     (isRecord(value.props) &&
       Object.values(value.props).every(isNonBlankString))) &&
   (value.children === undefined || strings(value.children))
+
 const entry = (value: unknown): boolean =>
   fields(value, ['data', 'parentId', 'index']) &&
   element(value.data) &&
   isNonBlankString(value.parentId) &&
   index(value.index)
+
 const removed = (value: unknown): boolean =>
   fields(value, ['data', 'elementId', 'parentId', 'index']) &&
   element(value.data) &&
@@ -60,11 +69,13 @@ const removed = (value: unknown): boolean =>
   value.elementId === value.data.id &&
   isNonBlankString(value.parentId) &&
   index(value.index)
+
 const scene = (value: unknown): boolean =>
   fields(value, ['elementId', 'removed', 'rootParentChildrenAfter']) &&
   isNonBlankString(value.elementId) &&
   array(value.removed, removed) &&
   strings(value.rootParentChildrenAfter)
+
 const dataChange = (value: unknown): boolean =>
   fields(value, ['action', 'eventName', 'id', 'changes']) &&
   value.action === 'updateElementData' &&
@@ -82,7 +93,10 @@ const dataChange = (value: unknown): boolean =>
   )
 
 const isCanonicalChange = (value: unknown): value is CanonicalChange => {
-  if (!isRecord(value)) return false
+  if (!isRecord(value)) {
+    return false
+  }
+
   switch (value.kind) {
     case 'property-components':
       return (
@@ -186,9 +200,12 @@ const isCanonicalChange = (value: unknown): value is CanonicalChange => {
           'removed',
           'rootParentChildrenAfter'
         ])
-      )
+      ) {
         return false
+      }
+
       const { action, undoAction, eventName, ...snapshot } = value.change
+
       return (
         action === 'removeSubtree' &&
         undoAction === 'restoreSubtree' &&
@@ -196,6 +213,7 @@ const isCanonicalChange = (value: unknown): value is CanonicalChange => {
         scene(snapshot)
       )
     }
+
     default:
       return false
   }
@@ -205,15 +223,21 @@ const isCanonicalChange = (value: unknown): value is CanonicalChange => {
 export const readDocumentPublicationSlices = (
   publication: SharedPublication
 ): readonly (readonly CanonicalChange[])[] => {
-  if (!isSharedPublication(publication)) invalid('envelope')
+  if (!isSharedPublication(publication)) {
+    invalid('envelope')
+  }
+
   return Object.freeze(
     publication.slices.map((slice) =>
       Object.freeze(
         slice.batches.flatMap((batch) => {
-          if (batch.channel !== DocumentPublicationContract.channel)
+          if (batch.channel !== DocumentPublicationContract.channel) {
             invalid(`slice ${slice.sliceId}/channel`)
+          }
+
           return batch.deliveries.flatMap((delivery) => {
             const payload = delivery.payload
+
             if (
               delivery.eventName !== DocumentPublicationContract.event ||
               delivery.compensatesDeliveryId !== undefined ||
@@ -225,9 +249,12 @@ export const readDocumentPublicationSlices = (
             ) {
               return invalid(`delivery ${delivery.deliveryId}`)
             }
+
             return payload.changes.map((change, position) => {
-              if (!isCanonicalChange(change))
+              if (!isCanonicalChange(change)) {
                 invalid(`delivery ${delivery.deliveryId}/changes/${position}`)
+              }
+
               return change
             })
           })
@@ -249,6 +276,7 @@ const documentChange = (change: CanonicalChange): CanonicalChange => {
       )
     })
   }
+
   if (change.kind === 'subtree-removal') {
     const {
       action,
@@ -258,6 +286,7 @@ const documentChange = (change: CanonicalChange): CanonicalChange => {
       removed,
       rootParentChildrenAfter
     } = change.change
+
     return Object.freeze({
       kind: change.kind,
       change: Object.freeze({
@@ -270,6 +299,7 @@ const documentChange = (change: CanonicalChange): CanonicalChange => {
       })
     })
   }
+
   return change
 }
 
@@ -293,6 +323,7 @@ export const prepareDocumentPublication = (
           organizeSourceSlice(slice, organization)
         )
         const deliveryId = `${slice.sliceId}:document`
+
         return Object.freeze({
           sliceId: slice.sliceId,
           orderedIds: Object.freeze([deliveryId]),
@@ -317,5 +348,6 @@ export const prepareDocumentPublication = (
       })
     )
   })
+
   return publication
 }

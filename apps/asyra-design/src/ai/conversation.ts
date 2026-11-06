@@ -1,7 +1,8 @@
+import { projectConversationContext } from './conversation-context-projection'
+import { ConversationContextError } from './conversation-context'
 import {
   canRetryAiTurn,
   projectAiQuestion,
-  summarizeAiTurn,
   createAiActivityProjection
 } from './presentation'
 import type { AiActivityProjectionState } from './activity-state'
@@ -14,9 +15,6 @@ import type {
 
 export type AiConversationOutcome =
   'cancelled' | 'failed' | 'no-change' | 'partial' | 'success'
-
-// App history-delivery cost policy; complete messages are never sliced to fit.
-export const AI_CONVERSATION_HISTORY_MAXIMUM_BYTES = 32 * 1024
 
 export interface AiTargetHints {
   readonly compositionId: string | null
@@ -298,51 +296,6 @@ const readActionResults = (
   }
 
   return value.actionResults.filter(isPlainObject)
-}
-
-const projectConversationHistory = (
-  settledTurns: readonly AiSettledTurn[]
-): AiJsonValue | undefined => {
-  if (!settledTurns.length) {
-    return
-  }
-
-  const encoder = new TextEncoder()
-  const turns: AiJsonValue[] = []
-  let pairBytes = 0
-  let omittedTurns = settledTurns.length
-
-  for (let index = settledTurns.length - 1; index >= 0; index -= 1) {
-    const turn = settledTurns[index]
-    const intent = turn.requestIntent ?? turn.intent
-    const pair = {
-      turnId: turn.turnId,
-      intent,
-      ...(turn.originalIntent && turn.originalIntent !== intent
-        ? { originalIntent: turn.originalIntent }
-        : {}),
-      message: summarizeAiTurn(turn).message,
-      outcome: turn.outcome
-    }
-    const bytes = encoder.encode(JSON.stringify(pair)).length
-    const envelopeBytes = encoder.encode(
-      JSON.stringify({ turns: [], omittedTurns: index })
-    ).length
-
-    // Each prior included pair adds one comma. Never skip an oversized gap.
-    if (
-      envelopeBytes + pairBytes + bytes + turns.length >
-      AI_CONVERSATION_HISTORY_MAXIMUM_BYTES
-    ) {
-      break
-    }
-
-    turns.push(pair)
-    pairBytes += bytes
-    omittedTurns = index
-  }
-
-  return { turns: turns.reverse(), omittedTurns }
 }
 
 const outcomeForResult = (
@@ -776,13 +729,8 @@ export const createAiConversationController = (
         throw new AiConversationError('AI_CONVERSATION_INVALID_REPLY')
       }
 
-      const referenceTurn = replyTo ?? retryOf
-      const requestAttachments =
-        attachments.length > 0
-          ? attachments
-          : (referenceTurn?.requestAttachments ??
-            referenceTurn?.attachments ??
-            EMPTY_IMAGE_ATTACHMENTS)
+      let requestAttachments = attachments
+
       let requestIntent = intent
 
       if (submission?.detailOption) {
@@ -858,9 +806,18 @@ export const createAiConversationController = (
       let result: unknown
 
       try {
-        const conversationHistory = projectConversationHistory(settledTurns)
+        const projection = projectConversationContext(
+          settledTurns,
+          requestIntent,
+          attachments
+        )
+
+        requestAttachments = projection.attachments
         const metadata: AiJsonValue = {
-          ...(conversationHistory ? { conversationHistory } : {}),
+          ...(settledTurns.length > 0
+            ? { conversationContext: projection.context }
+            : {}),
+
           ...(replyTo
             ? { replyTo: { turnId: replyTo.turnId, intent: originalIntent } }
             : {}),
@@ -904,11 +861,17 @@ export const createAiConversationController = (
       } catch (error) {
         result = Object.freeze({
           code:
-            isPlainObject(error) && typeof error.code === 'string'
+            (isPlainObject(error) ||
+              error instanceof ConversationContextError) &&
+            typeof error.code === 'string'
               ? error.code
               : 'AI_FEATURE_FAILED',
-          stage: 'feature',
-          status: 'failed'
+          stage:
+            error instanceof ConversationContextError ? 'context' : 'feature',
+          status: 'failed',
+          ...(error instanceof ConversationContextError
+            ? { message: error.message }
+            : {})
         })
       }
 

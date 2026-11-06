@@ -17,7 +17,7 @@ export const activityToolLabels: Readonly<Record<string, string>> =
     [AiDesignToolIds.READ_DESIGN_CHECKS]: 'Reading unresolved checks',
     [AiDesignToolIds.CHECK_DRAWING_IMAGE]: 'Comparing image regions',
     [AiDesignToolIds.PREPARE_AND_APPLY_DESIGN]: 'Running the planned task',
-    [AiDesignToolIds.EXECUTE_DESIGN_BATCH]: 'Running planned operations',
+    [AiDesignToolIds.EXECUTE_DESIGN]: 'Running planned operations',
     [AiDesignToolIds.RETAIN_DESIGN_TARGETS]: 'Retaining edit targets',
     [AiDesignToolIds.RELEASE_DESIGN_ARTIFACTS]: 'Releasing retained data',
     [AiDesignToolIds.SUBMIT_TOOL]: 'Validating a reusable operation',

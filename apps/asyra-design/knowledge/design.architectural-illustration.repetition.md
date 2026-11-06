@@ -1,6 +1,6 @@
 ---
 {
-  "description": "Represent repeated multi-face components once while preserving painter order and genuine exceptions.",
+  "description": "Avoid enumerating repeated vertices: map known world faces, facade cells or identical 2D curves to backend projection and expansion; preserve painter order and exceptions.",
   "contexts": [
     "architectural-illustration"
   ],
@@ -35,8 +35,10 @@ material should continue across copies. Preserve source contour detail. Identica
 2D curves use `vector-pattern`; arbitrary nontranslated 3D shapes remain explicit.
 Knowledge is optional; these are representation choices, not invocation eligibility.
 
-Confirm representative material evidence separately from overall detail completion
-using the scoped review flow in the materials.review child. Ready parts still use `prepare_and_apply_design`.
+If an unresolved repeated material warrants a representative check, the optional
+materials.method and materials.review topics describe that route. Known material
+choices do not require a sample or extra lookup. Ready parts use
+`prepare_and_apply_design`; no particular construction sequence is required.
 Use current returned IDs or `retain_design_targets` with the artifact and exact
 instance prefix for a later local edit; generated keys are not canonical IDs or
 cross-artifact aliases. Reuse unaffected passes after that edit. Release/cancellation

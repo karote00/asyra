@@ -284,11 +284,20 @@ const areJsonTransportValuesEqual = (
   right: unknown
 ): boolean => {
   const pairs: (readonly [unknown, unknown])[] = [[left, right]]
+
   while (pairs.length > 0) {
     const pair = pairs.pop()
-    if (!pair) return false
+
+    if (!pair) {
+      return false
+    }
+
     const [leftValue, rightValue] = pair
-    if (Object.is(leftValue, rightValue)) continue
+
+    if (Object.is(leftValue, rightValue)) {
+      continue
+    }
+
     if (
       !leftValue ||
       !rightValue ||
@@ -298,25 +307,38 @@ const areJsonTransportValuesEqual = (
     ) {
       return false
     }
+
     if (Array.isArray(leftValue) && Array.isArray(rightValue)) {
-      if (leftValue.length !== rightValue.length) return false
+      if (leftValue.length !== rightValue.length) {
+        return false
+      }
+
       for (let index = leftValue.length - 1; index >= 0; index -= 1) {
         pairs.push([leftValue[index], rightValue[index]])
       }
+
       continue
     }
+
     const leftEntries = Object.entries(leftValue)
     const rightEntries = Object.entries(rightValue)
-    if (leftEntries.length !== rightEntries.length) return false
+
+    if (leftEntries.length !== rightEntries.length) {
+      return false
+    }
+
     for (let index = leftEntries.length - 1; index >= 0; index -= 1) {
       const leftEntry = leftEntries[index]
       const rightEntry = rightEntries[index]
+
       if (!leftEntry || !rightEntry || leftEntry[0] !== rightEntry[0]) {
         return false
       }
+
       pairs.push([leftEntry[1], rightEntry[1]])
     }
   }
+
   return true
 }
 
@@ -330,6 +352,7 @@ const hasExactOwnKeys = (
 ): boolean => {
   const allowedKeys = new Set([...requiredKeys, ...optionalKeys])
   const ownKeys = Object.keys(value)
+
   return (
     requiredKeys.every((key) =>
       Object.prototype.hasOwnProperty.call(value, key)
@@ -360,6 +383,7 @@ const isSharedPublicationDelivery = (
   ) {
     return false
   }
+
   return true
 }
 
@@ -376,6 +400,7 @@ const isSharedPublicationBatch = (
   ) {
     return false
   }
+
   return value.deliveries.every(isSharedPublicationDelivery)
 }
 
@@ -385,6 +410,7 @@ const hasValidCompensationCorrelation = (
   delivery: SharedPublicationDelivery
 ): boolean => {
   const hasDeliveryTarget = Object.hasOwn(delivery, 'compensatesDeliveryId')
+
   return channel === DocumentPublicationContract.channel
     ? !hasDeliveryTarget
     : (origin === 'rollback-compensation') === hasDeliveryTarget
@@ -422,16 +448,20 @@ export const isSharedPublication = (
   ) {
     return false
   }
+
   const isCompensation = value.origin === 'rollback-compensation'
+
   if (
     isCompensation !==
     Object.prototype.hasOwnProperty.call(value, 'compensatesPublicationId')
   ) {
     return false
   }
+
   const sliceIds = new Set<string>()
   const batchIds = new Set<string>()
   const deliveryIds = new Set<string>()
+
   for (const slice of value.slices) {
     if (
       !isRecord(slice) ||
@@ -445,14 +475,17 @@ export const isSharedPublication = (
     ) {
       return false
     }
+
     sliceIds.add(slice.sliceId)
     const sliceDeliveryIds: string[] = []
     const sliceOrderedIds: string[] = []
     const seenSliceOrderedIds = new Set<string>()
+
     for (const batch of slice.batches) {
       if (!isSharedPublicationBatch(batch) || batchIds.has(batch.batchId)) {
         return false
       }
+
       batchIds.add(batch.batchId)
       for (const delivery of batch.deliveries) {
         if (
@@ -465,15 +498,20 @@ export const isSharedPublication = (
         ) {
           return false
         }
+
         deliveryIds.add(delivery.deliveryId)
         sliceDeliveryIds.push(delivery.deliveryId)
         delivery.orderedIds.forEach((orderedId) => {
-          if (seenSliceOrderedIds.has(orderedId)) return
+          if (seenSliceOrderedIds.has(orderedId)) {
+            return
+          }
+
           seenSliceOrderedIds.add(orderedId)
           sliceOrderedIds.push(orderedId)
         })
       }
     }
+
     if (
       !areJsonTransportValuesEqual(slice.orderedIds, sliceDeliveryIds) &&
       !areJsonTransportValuesEqual(slice.orderedIds, sliceOrderedIds)
@@ -481,6 +519,7 @@ export const isSharedPublication = (
       return false
     }
   }
+
   return deliveryIds.size > 0
 }
 
@@ -510,15 +549,22 @@ const analyzeFiniteTransportValue = (
     { depth: 0, kind: 'value', value }
   ]
   let maximumDepth = 0
+
   while (frames.length > 0) {
     const frame = frames.pop()
-    if (!frame) return null
+
+    if (!frame) {
+      return null
+    }
+
     if (frame.kind === 'leave') {
       ancestors.delete(frame.value)
       continue
     }
+
     maximumDepth = Math.max(maximumDepth, frame.depth)
     const child = frame.value
+
     if (
       child === null ||
       typeof child === 'string' ||
@@ -526,26 +572,45 @@ const analyzeFiniteTransportValue = (
     ) {
       continue
     }
+
     if (typeof child === 'number') {
       if (
         !Number.isFinite(child) ||
         (rejectNegativeZero && Object.is(child, -0))
-      )
+      ) {
         return null
+      }
+
       continue
     }
-    if (typeof child !== 'object' || ancestors.has(child)) return null
+
+    if (typeof child !== 'object' || ancestors.has(child)) {
+      return null
+    }
+
     ancestors.add(child)
     frames.push({ kind: 'leave', value: child })
 
     if (Array.isArray(child)) {
       const keys = Reflect.ownKeys(child)
-      if (keys.length !== child.length + 1) return null
+
+      if (keys.length !== child.length + 1) {
+        return null
+      }
+
       const values = new Array<unknown>(child.length)
+
       for (const key of keys) {
-        if (key === 'length') continue
-        if (typeof key !== 'string') return null
+        if (key === 'length') {
+          continue
+        }
+
+        if (typeof key !== 'string') {
+          return null
+        }
+
         const index = Number(key)
+
         if (
           !Number.isInteger(index) ||
           index < 0 ||
@@ -554,10 +619,16 @@ const analyzeFiniteTransportValue = (
         ) {
           return null
         }
+
         const descriptor = Object.getOwnPropertyDescriptor(child, key)
-        if (!descriptor?.enumerable || !('value' in descriptor)) return null
+
+        if (!descriptor?.enumerable || !('value' in descriptor)) {
+          return null
+        }
+
         values[index] = descriptor.value
       }
+
       for (let index = values.length - 1; index >= 0; index -= 1) {
         frames.push({
           depth: frame.depth + 1,
@@ -565,17 +636,31 @@ const analyzeFiniteTransportValue = (
           value: values[index]
         })
       }
+
       continue
     }
 
     const prototype = Object.getPrototypeOf(child)
-    if (prototype !== Object.prototype && prototype !== null) return null
+
+    if (prototype !== Object.prototype && prototype !== null) {
+      return null
+    }
+
     const keys = Reflect.ownKeys(child)
+
     for (let index = keys.length - 1; index >= 0; index -= 1) {
       const key = keys[index]
-      if (typeof key !== 'string') return null
+
+      if (typeof key !== 'string') {
+        return null
+      }
+
       const descriptor = Object.getOwnPropertyDescriptor(child, key)
-      if (!descriptor?.enumerable || !('value' in descriptor)) return null
+
+      if (!descriptor?.enumerable || !('value' in descriptor)) {
+        return null
+      }
+
       frames.push({
         depth: frame.depth + 1,
         kind: 'value',
@@ -583,6 +668,7 @@ const analyzeFiniteTransportValue = (
       })
     }
   }
+
   return { maximumDepth }
 }
 
@@ -693,43 +779,66 @@ const publicationFrameMessageTypeFromCode = (
 const isWellFormedPublicationFrameString = (value: string): boolean => {
   for (let index = 0; index < value.length; index += 1) {
     const code = value.charCodeAt(index)
+
     if (code >= 0xd800 && code <= 0xdbff) {
       const next = value.charCodeAt(index + 1)
-      if (next < 0xdc00 || next > 0xdfff) return false
+
+      if (next < 0xdc00 || next > 0xdfff) {
+        return false
+      }
+
       index += 1
       continue
     }
-    if (code >= 0xdc00 && code <= 0xdfff) return false
+
+    if (code >= 0xdc00 && code <= 0xdfff) {
+      return false
+    }
   }
+
   return true
 }
 
 const publicationFrameStringBytes = (value: string | undefined): Uint8Array => {
-  if (!value) return new Uint8Array()
+  if (!value) {
+    return new Uint8Array()
+  }
+
   if (isWellFormedPublicationFrameString(value)) {
     const utf8 = publicationFrameTextEncoder.encode(value)
     const encoded = new Uint8Array(1 + utf8.byteLength)
+
     encoded[0] = PUBLICATION_FRAME_STRING_UTF8
     encoded.set(utf8, 1)
+
     return encoded
   }
+
   const encoded = new Uint8Array(1 + value.length * 2)
+
   encoded[0] = PUBLICATION_FRAME_STRING_UTF16
   for (let index = 0; index < value.length; index += 1) {
     const code = value.charCodeAt(index)
+
     encoded[1 + index * 2] = code & 0xff
     encoded[2 + index * 2] = code >>> 8
   }
+
   return encoded
 }
 
 const decodePublicationFrameString = (bytes: Uint8Array): string => {
-  if (bytes.byteLength === 0) return ''
+  if (bytes.byteLength === 0) {
+    return ''
+  }
+
   const encoding = bytes[0]
   const valueBytes = bytes.subarray(1)
+
   if (encoding === PUBLICATION_FRAME_STRING_UTF8) {
     return publicationFrameTextDecoder.decode(valueBytes)
   }
+
   if (
     encoding !== PUBLICATION_FRAME_STRING_UTF16 ||
     valueBytes.byteLength % 2 !== 0
@@ -738,8 +847,10 @@ const decodePublicationFrameString = (bytes: Uint8Array): string => {
       '[collaboration] invalid publication frame string encoding'
     )
   }
+
   let value = ''
   const codeUnits = new Uint16Array(Math.min(valueBytes.byteLength / 2, 8_192))
+
   for (
     let byteOffset = 0;
     byteOffset < valueBytes.byteLength;
@@ -749,19 +860,24 @@ const decodePublicationFrameString = (bytes: Uint8Array): string => {
       codeUnits.length,
       (valueBytes.byteLength - byteOffset) / 2
     )
+
     for (let index = 0; index < chunkLength; index += 1) {
       const sourceOffset = byteOffset + index * 2
+
       codeUnits[index] =
         (valueBytes[sourceOffset] ?? 0) |
         ((valueBytes[sourceOffset + 1] ?? 0) << 8)
     }
+
     value += String.fromCharCode(...codeUnits.subarray(0, chunkLength))
   }
+
   if (isWellFormedPublicationFrameString(value)) {
     throw new TypeError(
       '[collaboration] non-canonical publication frame string encoding'
     )
   }
+
   return value
 }
 
@@ -775,14 +891,18 @@ const publicationFrameId = (
   sequence: number
 ): string => {
   let identityKind = 'anonymous'
+
   if (requestId !== undefined) {
     identityKind = 'request'
   } else if (fromActorId !== undefined) {
     identityKind = 'actor'
   }
+
   const identity = requestId ?? fromActorId ?? ''
+
   const lengthPrefixed = (value: string): string =>
     `${String(value.length)}:${value}`
+
   return [
     messageType,
     identityKind,
@@ -810,11 +930,13 @@ const buildPublicationFrame = (
     publicationIdBytes.byteLength +
     fromActorIdBytes.byteLength
   const bytes = new Uint8Array(headerByteLength + payload.byteLength)
+
   bytes.set(PUBLICATION_FRAME_MAGIC, 0)
   bytes[PUBLICATION_FRAME_VERSION_OFFSET] = PUBLICATION_FRAME_VERSION
   bytes[PUBLICATION_FRAME_VERSION_OFFSET + 1] =
     publicationFrameKinds[header.messageType]
   const view = new DataView(bytes.buffer)
+
   view.setUint32(8, headerByteLength, true)
   view.setUint32(12, payload.byteLength, true)
   view.setUint32(16, header.publicationIndex, true)
@@ -826,6 +948,7 @@ const buildPublicationFrame = (
   view.setUint32(40, fromActorIdBytes.byteLength, true)
   view.setBigUint64(44, BigInt(header.sequence), true)
   let offset = PUBLICATION_FRAME_FIXED_HEADER_BYTES
+
   bytes.set(requestIdBytes, offset)
   offset += requestIdBytes.byteLength
   bytes.set(publicationIdBytes, offset)
@@ -839,6 +962,7 @@ const buildPublicationFrame = (
   if (offset !== bytes.byteLength) {
     throw new TypeError('[collaboration] publication frame length mismatch')
   }
+
   return bytes.buffer
 }
 
@@ -846,24 +970,31 @@ const inspectPublicationFrame = (
   input: ArrayBuffer | ArrayBufferView
 ): PublicationFrameHeader & { readonly payloadOffset: number } => {
   const bytes = asPublicationFrameBytes(input)
+
   if (bytes.byteLength < PUBLICATION_FRAME_FIXED_HEADER_BYTES) {
     throw new TypeError('[collaboration] truncated publication frame header')
   }
+
   if (PUBLICATION_FRAME_MAGIC.some((byte, index) => bytes[index] !== byte)) {
     throw new TypeError('[collaboration] invalid publication frame marker')
   }
+
   const version = bytes[PUBLICATION_FRAME_VERSION_OFFSET]
+
   if (version !== PUBLICATION_FRAME_VERSION) {
     throw new TypeError(
       `[collaboration] unsupported publication frame version: ${String(version)}`
     )
   }
+
   const messageType = publicationFrameMessageTypeFromCode(
     bytes[PUBLICATION_FRAME_VERSION_OFFSET + 1] ?? -1
   )
+
   if (!messageType) {
     throw new TypeError('[collaboration] invalid publication frame kind')
   }
+
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
   const headerByteLength = view.getUint32(8, true)
   const payloadByteLength = view.getUint32(12, true)
@@ -875,28 +1006,35 @@ const inspectPublicationFrame = (
   const publicationIdByteLength = view.getUint32(36, true)
   const fromActorIdByteLength = view.getUint32(40, true)
   const sequenceBigInt = view.getBigUint64(44, true)
+
   if (sequenceBigInt > BigInt(Number.MAX_SAFE_INTEGER)) {
     throw new TypeError('[collaboration] invalid publication sequence')
   }
+
   const sequence = Number(sequenceBigInt)
   const expectedHeaderByteLength =
     PUBLICATION_FRAME_FIXED_HEADER_BYTES +
     requestIdByteLength +
     publicationIdByteLength +
     fromActorIdByteLength
+
   if (
     headerByteLength !== expectedHeaderByteLength ||
     headerByteLength > bytes.byteLength
   ) {
     throw new TypeError('[collaboration] truncated publication frame header')
   }
+
   const expectedFrameByteLength = headerByteLength + payloadByteLength
+
   if (expectedFrameByteLength > bytes.byteLength) {
     throw new TypeError('[collaboration] truncated publication frame payload')
   }
+
   if (expectedFrameByteLength < bytes.byteLength) {
     throw new TypeError('[collaboration] trailing publication frame data')
   }
+
   if (
     publicationCount === 0 ||
     publicationIndex >= publicationCount ||
@@ -906,30 +1044,46 @@ const inspectPublicationFrame = (
   ) {
     throw new TypeError('[collaboration] invalid publication frame metadata')
   }
+
   let offset = PUBLICATION_FRAME_FIXED_HEADER_BYTES
+
   const decodeHeaderString = (byteLength: number): string => {
     const decoded = decodePublicationFrameString(
       bytes.subarray(offset, offset + byteLength)
     )
+
     offset += byteLength
+
     return decoded
   }
+
   const requestId = decodeHeaderString(requestIdByteLength)
   const publicationId = decodeHeaderString(publicationIdByteLength)
   const fromActorId = decodeHeaderString(fromActorIdByteLength)
   const clientFrame =
     messageType === CollaborationMessageTypes.SEND_PUBLICATION ||
     messageType === CollaborationMessageTypes.SEND_PUBLICATIONS
-  if (
-    !isNonBlankString(publicationId) ||
-    (clientFrame && !isNonBlankString(requestId)) ||
-    (!clientFrame && requestId.length > 0) ||
+
+  const hasPublicationIdentity = isNonBlankString(publicationId)
+  const hasInvalidRequestIdentity =
+    hasPublicationIdentity &&
+    ((clientFrame && !isNonBlankString(requestId)) ||
+      (!clientFrame && requestId.length > 0))
+  const hasInvalidSenderIdentity =
+    hasPublicationIdentity &&
+    !hasInvalidRequestIdentity &&
     (clientFrame
       ? fromActorId.length !== 0 || sequence !== 0
       : !isNonBlankString(fromActorId) || !isPositiveInteger(sequence))
+
+  if (
+    !hasPublicationIdentity ||
+    hasInvalidRequestIdentity ||
+    hasInvalidSenderIdentity
   ) {
     throw new TypeError('[collaboration] invalid publication frame identity')
   }
+
   return {
     version,
     messageType,
@@ -961,6 +1115,7 @@ export const inspectPublicationFrameHeader = (
 ): PublicationFrameHeader => {
   const { payloadOffset: _payloadOffset, ...header } =
     inspectPublicationFrame(input)
+
   return header
 }
 
@@ -968,6 +1123,7 @@ export const isPublicationFrame = (
   input: ArrayBuffer | ArrayBufferView
 ): boolean => {
   const bytes = asPublicationFrameBytes(input)
+
   return (
     bytes.byteLength >= PUBLICATION_FRAME_MAGIC.byteLength &&
     PUBLICATION_FRAME_MAGIC.every((byte, index) => bytes[index] === byte)
@@ -1050,9 +1206,11 @@ const encodePublicationPayloadChunks = (
   const units = publication.slices.flatMap((slice) =>
     slice.batches.flatMap((batch) => batch.deliveries)
   )
+
   if (units.length === 0) {
     throw new TypeError('[collaboration] publication has no wire deliveries')
   }
+
   const metadataEncoding = prepareCompactBinaryEncoding({
     ...publicationWireMetadata(publication),
     slices: publication.slices.map((slice) => ({
@@ -1068,6 +1226,7 @@ const encodePublicationPayloadChunks = (
   const metadata = encodePreparedCompactBinary(metadataEncoding)
   const encodedUnits = units.map((unit) => {
     const unitEncoding = prepareCompactBinaryEncoding(unit)
+
     return encodePreparedCompactBinary(unitEncoding)
   })
   const prefixByteLength = PUBLICATION_PAYLOAD_FIXED_BYTES + metadata.byteLength
@@ -1076,6 +1235,7 @@ const encodePublicationPayloadChunks = (
       total + PUBLICATION_PAYLOAD_UNIT_LENGTH_BYTES + unit.byteLength,
     prefixByteLength
   )
+
   if (
     !Number.isSafeInteger(payloadByteLength) ||
     payloadByteLength > 0xffff_ffff
@@ -1084,22 +1244,28 @@ const encodePublicationPayloadChunks = (
       '[collaboration] publication payload exceeds wire range'
     )
   }
+
   const prefix = new Uint8Array(prefixByteLength)
+
   prefix.set(PUBLICATION_PAYLOAD_MAGIC, 0)
   prefix[4] = PUBLICATION_PAYLOAD_VERSION
   const prefixView = new DataView(prefix.buffer)
+
   prefixView.setUint32(8, metadata.byteLength, true)
   prefixView.setUint32(12, encodedUnits.length, true)
   prefix.set(metadata, PUBLICATION_PAYLOAD_FIXED_BYTES)
   const items = encodedUnits.map((unit) => {
     const length = new Uint8Array(PUBLICATION_PAYLOAD_UNIT_LENGTH_BYTES)
+
     new DataView(length.buffer).setUint32(0, unit.byteLength, true)
+
     return {
       byteLength: length.byteLength + unit.byteLength,
       segments: [length, unit] as const
     }
   })
   const onlyItem = items[0]
+
   if (onlyItem && items.length === 1) {
     return [
       {
@@ -1113,8 +1279,12 @@ const encodePublicationPayloadChunks = (
   const chunks: PublicationPayloadChunk[] = []
   let currentByteLength = 0
   let currentSegments: Uint8Array[] = []
+
   const flush = (): void => {
-    if (currentByteLength === 0) return
+    if (currentByteLength === 0) {
+      return
+    }
+
     chunks.push({
       byteLength: currentByteLength,
       segments: currentSegments
@@ -1124,11 +1294,13 @@ const encodePublicationPayloadChunks = (
   }
 
   let prefixOffset = 0
+
   while (prefixOffset < prefix.byteLength) {
     const consumed = Math.min(
       payloadCapacity - currentByteLength,
       prefix.byteLength - prefixOffset
     )
+
     currentSegments.push(prefix.subarray(prefixOffset, prefixOffset + consumed))
     prefixOffset += consumed
     currentByteLength += consumed
@@ -1144,14 +1316,17 @@ const encodePublicationPayloadChunks = (
     ) {
       flush()
     }
+
     if (item.byteLength > payloadCapacity) {
       flush()
       chunks.push(item)
       continue
     }
+
     currentSegments.push(...item.segments)
     currentByteLength += item.byteLength
   }
+
   flush()
   if (
     chunks.length === 0 ||
@@ -1168,6 +1343,7 @@ const encodePublicationPayloadChunks = (
   ) {
     throw new TypeError('[collaboration] invalid publication frame ranges')
   }
+
   return chunks
 }
 
@@ -1177,9 +1353,11 @@ export const encodePublicationMessageFrames = (
 ): readonly ArrayBuffer[] => {
   const { messageType, requestId, fromActorId, publications, sequences } =
     publicationMessageParts(message)
+
   if (publications.length === 0) {
     throw new TypeError('[collaboration] invalid shared publication')
   }
+
   if (
     sequences.length !== publications.length ||
     sequences.some((sequence) =>
@@ -1188,18 +1366,24 @@ export const encodePublicationMessageFrames = (
   ) {
     throw new TypeError('[collaboration] invalid publication sequence')
   }
+
   const publicationIds = new Set<string>()
+
   for (const publication of publications) {
     if (publicationIds.has(publication.publicationId)) {
       throw new TypeError('[collaboration] duplicate publication identity')
     }
+
     publicationIds.add(publication.publicationId)
   }
+
   const softTargetBytes =
     options.softTargetBytes ?? PUBLICATION_FRAME_DEFAULT_SOFT_TARGET_BYTES
+
   if (!Number.isSafeInteger(softTargetBytes) || softTargetBytes <= 0) {
     throw new TypeError('[collaboration] invalid publication frame target')
   }
+
   return publications.flatMap((publication, publicationIndex) => {
     const headerByteLength = publicationFrameHeaderByteLength(
       requestId,
@@ -1211,6 +1395,7 @@ export const encodePublicationMessageFrames = (
       softTargetBytes,
       headerByteLength
     )
+
     return payloads.map((payload, chunkIndex) =>
       buildPublicationFrame(
         {
@@ -1289,9 +1474,11 @@ const rebuildPublication = (
   chunks: readonly PublicationWireChunk[]
 ): SharedPublication => {
   const first = chunks[0]
+
   if (!first) {
     throw new TypeError('[collaboration] missing publication frame chunks')
   }
+
   if (
     chunks.some(
       (chunk) =>
@@ -1304,15 +1491,19 @@ const rebuildPublication = (
   ) {
     throw new TypeError('[collaboration] inconsistent publication frame chunks')
   }
+
   const slices: MutablePublicationSlice[] = []
   const slicesById = new Map<string, MutablePublicationSlice>()
   const batchesById = new Map<string, MutablePublicationBatch>()
+
   chunks
     .flatMap(({ units }) => units)
     .forEach(({ batch, delivery }) => {
       const existing = batchesById.get(batch.batchId)
+
       if (existing) {
         const currentSlice = slices[slices.length - 1]
+
         if (
           currentSlice?.batches[currentSlice.batches.length - 1] !== existing
         ) {
@@ -1320,15 +1511,20 @@ const rebuildPublication = (
             '[collaboration] non-contiguous publication batch chunks'
           )
         }
+
         if (!areJsonTransportValuesEqual(existing.metadata, batch)) {
           throw new TypeError(
             '[collaboration] inconsistent publication batch chunks'
           )
         }
+
         existing.deliveries.push(delivery)
+
         return
       }
+
       let slice = slicesById.get(batch.sliceId)
+
       if (slice) {
         if (
           slices[slices.length - 1] !== slice ||
@@ -1347,7 +1543,9 @@ const rebuildPublication = (
         slicesById.set(batch.sliceId, slice)
         slices.push(slice)
       }
+
       const created = { metadata: batch, deliveries: [delivery] }
+
       batchesById.set(batch.batchId, created)
       slice.batches.push(created)
     })
@@ -1360,6 +1558,7 @@ const rebuildPublication = (
       deliveries
     }))
   }))
+
   return {
     publicationId,
     artifactId: first.artifactId,
@@ -1384,29 +1583,38 @@ const decodePublicationWirePayload = (
   if (bytes.byteLength < PUBLICATION_PAYLOAD_FIXED_BYTES) {
     throw new TypeError('[collaboration] truncated publication wire payload')
   }
+
   if (PUBLICATION_PAYLOAD_MAGIC.some((byte, index) => bytes[index] !== byte)) {
     throw new TypeError('[collaboration] invalid publication wire payload')
   }
+
   const payloadVersion = bytes[4]
+
   if (payloadVersion !== 1 && payloadVersion !== PUBLICATION_PAYLOAD_VERSION) {
     throw new TypeError(
       `[collaboration] unsupported publication payload version: ${String(bytes[4])}`
     )
   }
+
   if (bytes[5] !== 0 || bytes[6] !== 0 || bytes[7] !== 0) {
     throw new TypeError('[collaboration] invalid publication wire payload')
   }
+
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
   const metadataByteLength = view.getUint32(8, true)
   const unitCount = view.getUint32(12, true)
+
   if (metadataByteLength === 0 || unitCount === 0) {
     throw new TypeError('[collaboration] invalid publication wire payload')
   }
+
   let offset = PUBLICATION_PAYLOAD_FIXED_BYTES
   const metadataEnd = offset + metadataByteLength
+
   if (metadataEnd > bytes.byteLength) {
     throw new TypeError('[collaboration] truncated publication wire metadata')
   }
+
   // Each unit needs its length prefix and at least one encoded byte. Bound the
   // layout before expanding counts from an untrusted transport envelope.
   if (
@@ -1420,22 +1628,28 @@ const decodePublicationWirePayload = (
       '[collaboration] invalid publication wire delivery count'
     )
   }
+
   const decodedMetadata = decodeCompactBinary(
     bytes.subarray(offset, metadataEnd)
   )
   const indexedBatches: PublicationWireBatchMetadata[] = []
   let metadata: unknown = decodedMetadata
+
   if (payloadVersion === 2) {
     if (!isRecord(decodedMetadata)) {
       throw new TypeError('[collaboration] invalid publication wire metadata')
     }
+
     const { slices, ...base } = decodedMetadata
+
     metadata = base
     if (!Array.isArray(slices) || slices.length === 0) {
       throw new TypeError('[collaboration] invalid publication wire layout')
     }
+
     const sliceIds = new Set<string>()
     const batchIds = new Set<string>()
+
     for (const slice of slices) {
       if (
         !isRecord(slice) ||
@@ -1449,6 +1663,7 @@ const decodePublicationWirePayload = (
       ) {
         throw new TypeError('[collaboration] invalid publication wire layout')
       }
+
       sliceIds.add(slice.sliceId)
       for (const batch of slice.batches) {
         if (
@@ -1462,6 +1677,7 @@ const decodePublicationWirePayload = (
         ) {
           throw new TypeError('[collaboration] invalid publication wire layout')
         }
+
         batchIds.add(batch.batchId)
         const batchMetadata = {
           batchId: batch.batchId,
@@ -1469,37 +1685,49 @@ const decodePublicationWirePayload = (
           sliceId: slice.sliceId,
           orderedIds: slice.orderedIds
         }
-        for (let index = 0; index < batch.deliveryCount; index += 1)
+
+        for (let index = 0; index < batch.deliveryCount; index += 1) {
           indexedBatches.push(batchMetadata)
+        }
       }
     }
+
     if (indexedBatches.length !== unitCount) {
       throw new TypeError(
         '[collaboration] invalid publication wire delivery count'
       )
     }
   }
+
   if (!isPublicationWireMetadata(metadata)) {
     throw new TypeError('[collaboration] invalid publication wire metadata')
   }
+
   offset = metadataEnd
   const units: PublicationWireUnit[] = []
+
   for (let index = 0; index < unitCount; index += 1) {
     if (offset + PUBLICATION_PAYLOAD_UNIT_LENGTH_BYTES > bytes.byteLength) {
       throw new TypeError('[collaboration] truncated publication wire unit')
     }
+
     const unitByteLength = view.getUint32(offset, true)
+
     offset += PUBLICATION_PAYLOAD_UNIT_LENGTH_BYTES
     const unitEnd = offset + unitByteLength
+
     if (unitByteLength === 0 || unitEnd > bytes.byteLength) {
       throw new TypeError('[collaboration] truncated publication wire unit')
     }
+
     const decodedUnit = decodeCompactBinary(bytes.subarray(offset, unitEnd))
     let unit: PublicationWireUnit
+
     if (payloadVersion === 1) {
       if (!isPublicationWireUnit(decodedUnit, metadata)) {
         throw new TypeError('[collaboration] invalid publication wire unit')
       }
+
       unit = decodedUnit
     } else {
       if (
@@ -1513,17 +1741,22 @@ const decodePublicationWirePayload = (
       ) {
         throw new TypeError('[collaboration] invalid publication wire unit')
       }
+
       unit = { batch: indexedBatches[index], delivery: decodedUnit }
     }
+
     if (!unit.batch) {
       throw new TypeError('[collaboration] invalid publication wire unit')
     }
+
     units.push(unit)
     offset = unitEnd
   }
+
   if (offset !== bytes.byteLength) {
     throw new TypeError('[collaboration] trailing publication wire payload')
   }
+
   return { ...metadata, units }
 }
 
@@ -1537,6 +1770,7 @@ const decodePublicationFrameParts = (
       header.payloadOffset,
       header.payloadOffset + header.payloadByteLength
     )
+
     return { header, payload }
   })
 
@@ -1549,6 +1783,7 @@ const decodePublicationFromParts = (
   decoded: readonly DecodedPublicationFramePart[]
 ): DecodedPublicationFrame => {
   const first = decoded[0]
+
   if (
     !first ||
     decoded.length !== first.header.chunkCount ||
@@ -1567,21 +1802,27 @@ const decodePublicationFromParts = (
   ) {
     throw new TypeError('[collaboration] missing publication frame chunks')
   }
+
   const payloadByteLength = decoded.reduce(
     (total, { payload }) => total + payload.byteLength,
     0
   )
+
   if (!Number.isSafeInteger(payloadByteLength) || payloadByteLength === 0) {
     throw new TypeError('[collaboration] invalid publication frame payload')
   }
+
   const payload = new Uint8Array(payloadByteLength)
   let payloadOffset = 0
+
   for (const part of decoded) {
     payload.set(part.payload, payloadOffset)
     payloadOffset += part.payload.byteLength
   }
+
   const chunk = decodePublicationWirePayload(payload)
   const { payloadOffset: _payloadOffset, ...header } = first.header
+
   return {
     header,
     publication: rebuildPublication(first.header.publicationId, [chunk])
@@ -1594,6 +1835,7 @@ export const decodePublicationFramePublication = (
   if (inputs.length === 0) {
     throw new TypeError('[collaboration] missing publication frame chunks')
   }
+
   return decodePublicationFromParts(decodePublicationFrameParts(inputs))
 }
 
@@ -1603,11 +1845,14 @@ export const decodePublicationMessageFrames = (
   if (inputs.length === 0) {
     throw new TypeError('[collaboration] missing publication frames')
   }
+
   const decoded = decodePublicationFrameParts(inputs)
   const first = decoded[0]
+
   if (!first) {
     throw new TypeError('[collaboration] missing publication frames')
   }
+
   if (
     decoded.some(
       ({ header }) =>
@@ -1619,9 +1864,11 @@ export const decodePublicationMessageFrames = (
   ) {
     throw new TypeError('[collaboration] inconsistent publication frames')
   }
+
   const publications: SharedPublication[] = []
   const sequences: number[] = []
   let cursor = 0
+
   for (
     let publicationIndex = 0;
     publicationIndex < first.header.publicationCount;
@@ -1632,6 +1879,7 @@ export const decodePublicationMessageFrames = (
       cursor + (decoded[cursor]?.header.chunkCount ?? 0)
     )
     const publicationHeader = publicationFrames[0]?.header
+
     if (
       !publicationHeader ||
       publicationHeader.publicationIndex !== publicationIndex ||
@@ -1647,25 +1895,32 @@ export const decodePublicationMessageFrames = (
     ) {
       throw new TypeError('[collaboration] missing publication frame chunks')
     }
+
     publications.push(decodePublicationFromParts(publicationFrames).publication)
     sequences.push(publicationHeader.sequence)
     cursor += publicationFrames.length
   }
+
   if (cursor !== decoded.length) {
     throw new TypeError('[collaboration] trailing publication frames')
   }
+
   const publicationIds = new Set<string>()
+
   for (const publication of publications) {
     if (publicationIds.has(publication.publicationId)) {
       throw new TypeError('[collaboration] duplicate publication identity')
     }
+
     publicationIds.add(publication.publicationId)
   }
+
   switch (first.header.messageType) {
     case CollaborationMessageTypes.SEND_PUBLICATION:
       if (publications.length !== 1 || !first.header.requestId) {
         throw new TypeError('[collaboration] invalid publication request frame')
       }
+
       return {
         type: first.header.messageType,
         requestId: first.header.requestId,
@@ -1675,6 +1930,7 @@ export const decodePublicationMessageFrames = (
       if (!first.header.requestId) {
         throw new TypeError('[collaboration] invalid publication request frame')
       }
+
       return {
         type: first.header.messageType,
         requestId: first.header.requestId,
@@ -1684,6 +1940,7 @@ export const decodePublicationMessageFrames = (
       if (publications.length !== 1) {
         throw new TypeError('[collaboration] invalid publication relay frame')
       }
+
       return {
         type: first.header.messageType,
         publication: publications[0] as SharedPublication,
@@ -1730,12 +1987,15 @@ export const encodeCollaborationControlMessage = (value: unknown): string => {
       '[collaboration] control message contains a value that JSON cannot preserve'
     )
   }
+
   const encoded = JSON.stringify(value)
+
   if (encoded === undefined) {
     throw new TypeError(
       '[collaboration] control message contains a value that JSON cannot preserve'
     )
   }
+
   return encoded
 }
 
@@ -1756,13 +2016,16 @@ export const encodeCollaborationMessage = (
       value as unknown as PublicationFrameMessage
     )
     const frame = frames[0]
+
     if (!frame || frames.length !== 1) {
       throw new TypeError(
         '[collaboration] publication message requires framed transport'
       )
     }
+
     return new Uint8Array(frame)
   }
+
   if (
     isRecord(value) &&
     typeof value.type === 'string' &&
@@ -1770,22 +2033,29 @@ export const encodeCollaborationMessage = (
   ) {
     return encodeCollaborationControlMessage(value)
   }
+
   const analysis = analyzeFiniteTransportValue(value)
+
   if (!analysis) {
     throw new TypeError(
       '[collaboration] message contains a value that JSON cannot preserve'
     )
   }
+
   if (analysis.maximumDepth > MAX_RECURSIVE_JSON_TRANSPORT_DEPTH) {
     return encodeCompactBinary(value)
   }
+
   const plain = JSON.stringify(value)
+
   if (plain === undefined) {
     throw new TypeError(
       '[collaboration] message contains a value that JSON cannot preserve'
     )
   }
+
   const compactBinary = encodeCompactBinaryIfSmaller(value, plain)
+
   return compactBinary instanceof Uint8Array
     ? compactBinary
     : encodeCompactJsonIfSmaller(value, plain)
@@ -1797,11 +2067,13 @@ export const decodeCollaborationMessage = (
   if (typeof encoded === 'string') {
     return decodeCollaborationControlMessage(encoded)
   }
+
   if (!isPublicationFrame(encoded)) {
     throw new TypeError(
       '[collaboration] binary collaboration message must be a publication frame'
     )
   }
+
   return decodePublicationMessageFrames([encoded])
 }
 
@@ -1856,9 +2128,12 @@ const parseDocumentSessionBootstrap = (
   ) {
     return
   }
+
   const pendingTail: DocumentSessionBootstrapPublication[] = []
+
   for (let index = 0; index < value.pendingTail.length; index += 1) {
     const item = value.pendingTail[index]
+
     if (
       !isRecord(item) ||
       item.sequence !== value.durableSequence + index + 1 ||
@@ -1870,6 +2145,7 @@ const parseDocumentSessionBootstrap = (
     ) {
       return
     }
+
     pendingTail.push({
       sequence: item.sequence,
       publicationId: item.publicationId,
@@ -1877,6 +2153,7 @@ const parseDocumentSessionBootstrap = (
       fromActorId: item.fromActorId
     })
   }
+
   return {
     checkpoint: value.checkpoint,
     documentGeneration: Number(value.documentGeneration ?? 0),
@@ -1892,6 +2169,7 @@ export const parseCollaborationClientMessage = (
   if (!isRecord(value) || !isNonBlankString(value.type)) {
     return
   }
+
   switch (value.type) {
     case CollaborationMessageTypes.HELLO:
       return isProviderIdentity(value.identity)
@@ -1992,20 +2270,25 @@ export const parseCollaborationServerMessage = (
   if (!isRecord(value) || !isNonBlankString(value.type)) {
     return
   }
+
   switch (value.type) {
     case CollaborationMessageTypes.BOOTSTRAP_CHECKPOINT_READY:
       return hasExactOwnKeys(value, ['type']) ? { type: value.type } : undefined
     case CollaborationMessageTypes.READY: {
       const bootstrap = parseDocumentSessionBootstrap(value.bootstrap)
+
       return bootstrap ? { type: value.type, bootstrap } : undefined
     }
+
     case CollaborationMessageTypes.RESPONSE:
       if (!isNonBlankString(value.requestId) || typeof value.ok !== 'boolean') {
         return
       }
+
       if (value.ok) {
         const acceptedSequences = value.acceptedSequences
         const persistence = value.persistence
+
         if (
           persistence !== undefined &&
           (!isRecord(persistence) ||
@@ -2014,14 +2297,17 @@ export const parseCollaborationServerMessage = (
             !isNonNegativeSafeInteger(persistence.sequence) ||
             !isNonNegativeSafeInteger(persistence.durableSequence) ||
             persistence.durableSequence < persistence.sequence)
-        )
+        ) {
           return undefined
+        }
+
         if (
           Object.prototype.hasOwnProperty.call(value, 'acceptedSequences') &&
           !isContiguousPositiveIntegerArray(acceptedSequences)
         ) {
           return
         }
+
         return {
           type: value.type,
           requestId: value.requestId,
@@ -2037,9 +2323,11 @@ export const parseCollaborationServerMessage = (
             : {})
         }
       }
+
       if (!isFailurePayload(value.error)) {
         return
       }
+
       return {
         type: value.type,
         requestId: value.requestId,

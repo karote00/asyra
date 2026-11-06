@@ -371,7 +371,12 @@ const composedMaterialExample = {
           {
             ...surfaceGridExample.draft.children[0],
             boundary: { face: 'surface' },
-            motifs: { template: 'detail' }
+            motifs: {
+              template: 'detail',
+              overrides: {
+                inset: { name: 'Glass variant', materialField: 'glass' }
+              }
+            }
           }
         ]
       }
@@ -391,6 +396,11 @@ export const designPreparationExamples = [
   repeatedWorldFacesExample
 ] as const
 
+export const suppliedGeometryGuidance =
+  'Preserve supplied 2D geometry; do not invent depth, force orthographic perspective or build hidden faces to enable projection.'
+
 /** Representation decisions belong to the model; the backend only executes the supplied data. */
 export const designRepresentationGuidance =
-  'Delegate ready parts to prepare_and_apply_design: preparation, optional criteria, writes and inspection; consume its receipt. Choose from existing data: object IDs -> registered batch edits, not reconstruction; arbitrary/already-projected 2D -> vector (omit both dimensions for measured bounds); identical 2D curves -> vector-pattern template + placements; world planar faces -> projection + projected-face; circles/ellipses -> ellipse:{center,u,v} instead of vertices; translated faces -> pattern.faces + origin/axes; face/grid assemblies -> ordered pattern.members, then origin/axes; UI placement -> row/column/grid or relations. Members keep materials; no pattern fills, nesting or new container. Order: instance, member, grid; last axis fastest. Keep irregular exceptions at their painter position. Let the backend expand templates and calculate projection instead of emitting derived vertices. Define intentional shared fills in draft.sharedFills and use fill:{shared:key}; independent inline fills stay independent. Continuous world materials on projected/pattern faces use draft.linearFields + materialField; plain nodes/grids use native fills. No inferred lighting or visual approval. Resolve artifact targets for edits, never reconstruct canonical IDs from pattern keys. instanceRanges restores known missing complete instances, never uncertain partial writes. Preserve supplied 2D geometry; do not invent depth, force orthographic perspective or build hidden faces to enable projection. Irregular/nonrepeating vectors remain valid; these choices do not set style, detail level or camera angles.'
+  'Delegate ready parts to prepare_and_apply_design: preparation, optional criteria, writes and inspection; consume its receipt. Choose from existing data: object IDs -> registered batch edits, not reconstruction; arbitrary/already-projected 2D -> vector (omit both dimensions for measured bounds); identical 2D curves -> vector-pattern template + placements; world planar faces -> projection + projected-face; circles/ellipses -> ellipse:{center,u,v} instead of vertices; translated faces -> pattern.faces + origin/axes; face/grid assemblies -> ordered pattern.members, then origin/axes; UI placement -> row/column/grid or relations. Members keep materials; no pattern fills, nesting or new container. Order: instance, member, grid; last axis fastest. Keep irregular exceptions at their painter position. Let the backend expand templates and calculate projection instead of emitting derived vertices. For repeated motifs with variations, define draft.motifTemplates once and use motifs:{template:key,overrides:{motifKey:patch}}; replace only supplied fields. To keep definitions for later calls, bind read_design_templates.artifactId to this preparation output inside execute_design and retain its result in App context; future drafts bind the named maps directly. Tool templates are value snapshots, not live SceneTree instances. Define intentional shared fills in draft.sharedFills and use fill:{shared:key}; independent inline fills stay independent. Continuous world materials on faces/grid motifs use draft.linearFields + materialField; native fills restart in each local box. No inferred lighting or visual approval. Resolve artifact targets for edits, never reconstruct canonical IDs from pattern keys. instanceRanges restores known missing complete instances, never uncertain partial writes. ' +
+  suppliedGeometryGuidance +
+  ' Irregular/nonrepeating vectors remain valid; these choices do not set style, detail level or camera angles.'

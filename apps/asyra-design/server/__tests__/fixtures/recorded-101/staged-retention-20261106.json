@@ -1,0 +1,107 @@
+{
+  "provenance": {
+    "run": "taipei-101-fixed-1793892999749",
+    "input": "275-input.json",
+    "output": "294-output.json"
+  },
+  "input": {
+    "message": "整合台北101各細節圖層以進行完整建築檢查",
+    "operations": [
+      {
+        "name": "api_hierarchy_groupElements",
+        "arguments": {
+          "elementIds": [
+            "design-4139a06a-756a-4646-aee9-784ed69efa7a-0",
+            "design-363df915-35da-4f7d-8506-ca4aef1015fe-0",
+            "design-570054ee-05b3-49b6-9a90-ccc4ecc37372-0",
+            "design-96ab8a20-8375-48ae-9ef8-20d5fffd7b18-0"
+          ]
+        }
+      }
+    ],
+    "inspection": "defer",
+    "retain": {
+      "taipei101Assembly": {
+        "path": ""
+      }
+    },
+    "delivery": {
+      "fields": {
+        "groupReceipt": {
+          "path": ""
+        }
+      }
+    }
+  },
+  "output": {
+    "saved": [],
+    "fields": {
+      "groupReceipt": {
+        "actionResults": [
+          {
+            "actionId": "47935cc9-f051-4380-9d1d-caaf64efbf4a",
+            "actionName": "api_hierarchy_groupElements",
+            "result": {
+              "status": "complete",
+              "value": {
+                "count": 4,
+                "groupId": "grp-actor-ca4b5a22-a2d5-432f-8c56-7aee63231cf2-5"
+              },
+              "mutationScope": {
+                "complete": true,
+                "elementCount": 5,
+                "removedElementCount": 0
+              },
+              "retained": {
+                "snapshotId": "4d1b2dcf-0ff9-480b-b1d4-c412245c55aa",
+                "leaseId": "5a27ac4c-48b5-4930-9f0f-5c43f0cfe040",
+                "total": 4
+              },
+              "toolOutcome": {
+                "status": "success",
+                "settlement": "completed"
+              }
+            }
+          }
+        ],
+        "inspectionDeferred": true,
+        "measurementDeferred": false,
+        "checks": {
+          "countsScope": "selected-checks",
+          "counts": {
+            "pass": 5,
+            "fail": 0,
+            "unverified": 0,
+            "stale": 0
+          }
+        },
+        "batchSummary": {
+          "operationCount": 1,
+          "actionCount": 1
+        },
+        "toolOutcome": {
+          "status": "success",
+          "settlement": "completed",
+          "issues": []
+        }
+      }
+    },
+    "completed": [
+      "api_hierarchy_groupElements"
+    ],
+    "stopped": [],
+    "issues": [
+      "Request-scoped references cannot be saved across turns"
+    ],
+    "toolOutcome": {
+      "status": "partial",
+      "settlement": "completed",
+      "issues": [
+        {
+          "code": "RESULT_DELIVERY",
+          "message": "Request-scoped references cannot be saved across turns"
+        }
+      ]
+    }
+  }
+}

@@ -15,6 +15,7 @@ const api: ZoomAPI = {
     const newScale =
       currentScale *
       (deltaY < 0 ? 1 + ZOOM_SMOOTH_RATIO : 1 - ZOOM_SMOOTH_RATIO)
+
     viewportApis.zoomToCenter(newScale, clientX, clientY)
   }
 }
@@ -26,6 +27,7 @@ export const zoomFeature = defineFeature(
     priority: 5,
     exclusive: true,
     api,
+
     execution: (snapshot: SystemContextSnapshot) => {
       if (!snapshot.keyMeta && !snapshot.keyCtrl) {
         return null

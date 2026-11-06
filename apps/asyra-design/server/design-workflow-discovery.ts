@@ -485,23 +485,49 @@ export const projectWorkflowInput = (input: unknown, scope: unknown) => {
 
   delete schema['x-design-input-scope']
   if (Array.isArray(schema.examples)) {
+    const selected = Array.isArray(scope.optionalInputs)
+      ? scope.optionalInputs
+      : []
+
     schema.examples = schema.examples
       .filter((example) => !operationInputIssue(example, schema))
-      .sort((left, right) => {
-        const selected = Array.isArray(scope.optionalInputs)
-          ? scope.optionalInputs
-          : []
+      .map((example) => {
+        const kinds = new Set<string>()
 
-        const present = (example: unknown) =>
-          selected.filter(
+        // These are validated owner-authored examples, not arbitrary user data.
+        const visit = (value: unknown) => {
+          if (Array.isArray(value)) {
+            value.forEach(visit)
+          } else if (record(value)) {
+            if (
+              typeof value.type === 'string' &&
+              selectedTypes.includes(value.type)
+            ) {
+              kinds.add(value.type)
+            }
+
+            Object.values(value).forEach(visit)
+          }
+        }
+
+        visit(example)
+
+        return {
+          example,
+          coverage: kinds.size,
+          optional: selected.filter(
             (key) =>
               typeof key === 'string' &&
               record(example) &&
               Object.hasOwn(example, key)
           ).length
-
-        return present(right) - present(left)
+        }
       })
+      .sort(
+        (left, right) =>
+          right.optional - left.optional || right.coverage - left.coverage
+      )
+      .map(({ example }) => example)
   }
 
   // Retain exact recursive reference closure. This changes only the read projection;

@@ -1,4 +1,9 @@
-import { projectAiActivity, summarizeAiTurn } from '../presentation'
+import {
+  projectAiActivity,
+  summarizeAiTurn,
+  canRetryAiTurn
+} from '../presentation'
+import * as contextProjection from '../conversation-context-projection'
 import { describe, expect, it, vi } from 'vitest'
 import {
   AiConversationError,
@@ -98,8 +103,9 @@ it('keeps inherited reference images out of text replies while retaining provide
   await controller.submit('Draw a new circle')
   expect(feature.execute).toHaveBeenLastCalledWith(
     expect.objectContaining({
-      metadata: expect.not.objectContaining({
-        imageAttachments: expect.anything()
+      metadata: expect.objectContaining({
+        imageAttachments: [attachment],
+        conversationContext: expect.objectContaining({ attachmentIndexes: [] })
       })
     })
   )
@@ -505,14 +511,15 @@ describe('Asyra Design AI conversation controller', () => {
               'right-eye': ['eye-right-1']
             }
           },
-          conversationHistory: {
-            omittedTurns: 0,
+          conversationContext: {
+            attachmentIndexes: [],
             turns: [
               {
                 turnId: 'conversation-c:turn:1',
                 intent: 'draw a cat face',
                 message: 'Updated 4 editable elements.',
-                outcome: 'success'
+                outcome: 'success',
+                attachmentIndexes: []
               }
             ]
           },
@@ -1097,6 +1104,246 @@ it('reads current activity without replaying old progress and preserves point-in
   await controller.dispose()
 })
 
+describe('request conversation continuity', () => {
+  const image = {
+    dataUrl: 'data:image/png;base64,YQ==',
+    mediaType: 'image/png' as const,
+    name: 'brand.png',
+    size: 1
+  }
+
+  const answer = (message: string) =>
+    executed(
+      { outcome: 'completed', message, status: 'no-change' },
+      'report_outcome'
+    )
+
+  const question = (text: string) =>
+    executed(
+      {
+        status: 'no-change',
+        clarification: { kind: 'question', question: text }
+      },
+      'request_clarification'
+    )
+
+  it('delivers exact prior requirements and original image once after ordinary completion', async () => {
+    const feature = createFeature(async () =>
+      answer('Created the brand layout.')
+    )
+    const controller = createAiConversationController({
+      feature,
+      getElementType: vi.fn()
+    })
+    const first = await controller.submit({
+      intent: 'Use the reference, width 640 and blue.',
+      attachments: [image]
+    })
+
+    await controller.submit({
+      intent: 'Make it simpler; change blue to green.',
+      attachments: [image]
+    })
+    const request = vi.mocked(feature.execute).mock.calls[1][0]
+
+    expect(request.metadata).toMatchObject({
+      imageAttachments: [image],
+      conversationContext: {
+        turns: [
+          {
+            turnId: first.turnId,
+            intent: first.intent,
+            message: 'Created the brand layout.',
+            attachmentIndexes: [0]
+          }
+        ],
+        attachmentIndexes: [0]
+      }
+    })
+    await controller.submit(
+      'Keep the revised color and increase the title size.'
+    )
+    expect(vi.mocked(feature.execute).mock.calls[2][0].metadata).toMatchObject({
+      imageAttachments: [image],
+      conversationContext: {
+        turns: [
+          { intent: first.intent },
+          { intent: 'Make it simpler; change blue to green.' }
+        ],
+        attachmentIndexes: []
+      }
+    })
+    expect(controller.getSnapshot().settledTurns[2].attachments).toEqual([])
+  })
+
+  it('preserves both exact questions, intervening answers and answer links in a fresh request', async () => {
+    const feature = createFeature(
+      vi
+        .fn()
+        .mockResolvedValueOnce(question('Change the group or only its title?'))
+        .mockResolvedValueOnce(
+          question('Keep the current width or use 800 pixels?')
+        )
+        .mockResolvedValue(answer('Updated.'))
+    )
+    const controller = createAiConversationController({
+      feature,
+      getElementType: vi.fn()
+    })
+    const first = await controller.submit('Refine this card.')
+    const second = await controller.submit('The latter.')
+
+    await controller.submit('Keep it.')
+    expect(vi.mocked(feature.execute).mock.calls[2][0].metadata).toMatchObject({
+      conversationContext: {
+        turns: [
+          {
+            turnId: first.turnId,
+            intent: 'Refine this card.',
+            question: {
+              message: 'Change the group or only its title?',
+              choices: []
+            }
+          },
+          {
+            turnId: second.turnId,
+            intent: 'The latter.',
+            replyToTurnId: first.turnId,
+            question: {
+              message: 'Keep the current width or use 800 pixels?',
+              choices: []
+            }
+          }
+        ]
+      }
+    })
+  })
+
+  it('isolates navigation and never serializes historical execution handles or progress', async () => {
+    const feature = createFeature(async () => ({
+      ...answer('Ready.'),
+      inspectionId: 'expired-inspection',
+      artifactId: 'expired-artifact',
+      geometry: [1, 2, 3]
+    }))
+    const controller = createAiConversationController({
+      feature,
+      getElementType: vi.fn()
+    })
+    const first = await controller.submit({
+      intent: 'Use this reference.',
+      attachments: [image]
+    })
+
+    controller.newConversation()
+    await controller.submit('Give advice only.')
+    expect(
+      vi.mocked(feature.execute).mock.calls[1][0].metadata
+    ).not.toHaveProperty('conversationContext')
+    expect(
+      vi.mocked(feature.execute).mock.calls[1][0].metadata
+    ).not.toHaveProperty('imageAttachments')
+    controller.selectConversation(first.conversationId)
+    await controller.submit('Refine it.')
+    const metadata = vi.mocked(feature.execute).mock.calls[2][0].metadata
+
+    expect(metadata).toHaveProperty(
+      'conversationContext.turns.0.intent',
+      'Use this reference.'
+    )
+    expect(metadata).toHaveProperty('imageAttachments.0.name', 'brand.png')
+    expect(JSON.stringify(metadata)).not.toMatch(
+      /expired-inspection|expired-artifact|geometry/
+    )
+  })
+
+  it('rejects oversized context before Feature execution instead of dropping a requirement', async () => {
+    const feature = createFeature(async () => answer('Ready.'))
+    const controller = createAiConversationController({
+      feature,
+      getElementType: vi.fn()
+    })
+
+    await controller.submit('x'.repeat(120 * 1024))
+    const failed = await controller.submit('y'.repeat(16 * 1024))
+
+    expect(feature.execute).toHaveBeenCalledTimes(1)
+    expect(failed.outcome).toBe('failed')
+    expect(failed.result).toMatchObject({
+      code: 'AI_CONVERSATION_CONTEXT_LIMIT',
+      stage: 'context'
+    })
+  })
+})
+
+it('projects immutable context once per submission, never during progress or snapshot reads', async () => {
+  const projection = vi.spyOn(contextProjection, 'projectConversationContext')
+  const pending = createDeferred<unknown>()
+  const feature = createFeature(
+    vi
+      .fn()
+      .mockResolvedValueOnce({ status: 'executed', actionResults: [] })
+      .mockImplementationOnce(() => pending.promise)
+  )
+  const controller = createAiConversationController({
+    feature,
+    getElementType: vi.fn()
+  })
+
+  await controller.submit('Keep the blue brand color.')
+  const second = controller.submit('Make the title larger.')
+  const request = vi.mocked(feature.execute).mock.calls[1][0]
+  const before = JSON.stringify(request.metadata)
+
+  expect(projection).toHaveBeenCalledTimes(2)
+  for (let index = 0; index < 8; index += 1) {
+    request.progressObserver({
+      attempt: 1,
+      phase: 'provider',
+      summary: 'Working'
+    })
+    controller.getSnapshot()
+    controller.getNavigationSnapshot()
+  }
+
+  expect(projection).toHaveBeenCalledTimes(2)
+  expect(JSON.stringify(request.metadata)).toBe(before)
+  expect(
+    Object.isFrozen(
+      (request.metadata as Record<string, unknown>).conversationContext
+    )
+  ).toBe(true)
+  pending.resolve({ status: 'executed', actionResults: [] })
+  await second
+  projection.mockRestore()
+})
+
+it('explains source-image budget failures without blind retry or Feature execution', async () => {
+  const feature = createFeature(async () => ({
+    status: 'executed',
+    actionResults: []
+  }))
+  const controller = createAiConversationController({
+    feature,
+    getElementType: vi.fn()
+  })
+  const failed = await controller.submit({
+    intent: 'Draw this.',
+    attachments: [
+      {
+        mediaType: 'image/png',
+        dataUrl: 'data:image/png;base64,' + 'A'.repeat(8 * 1024 * 1024),
+        name: 'large.png',
+        size: 6 * 1024 * 1024
+      }
+    ]
+  })
+
+  expect(feature.execute).not.toHaveBeenCalled()
+  expect(summarizeAiTurn(failed).message).toContain('Start a new conversation')
+  expect(canRetryAiTurn(failed)).toBe(false)
+})
+
 describe('settled conversation context delivery', () => {
   const report = (message: string) =>
     executed(
@@ -1107,18 +1354,18 @@ describe('settled conversation context delivery', () => {
   const historyFrom = (feature: AiConversationFeature, index: number) =>
     (
       vi.mocked(feature.execute).mock.calls[index][0].metadata as {
-        conversationHistory?: {
+        conversationContext?: {
           turns: {
             turnId: string
             intent: string
-            originalIntent?: string
+            replyToTurnId?: string
             message: string
             outcome: string
           }[]
-          omittedTurns: number
+          attachmentIndexes: number[]
         }
       }
-    ).conversationHistory
+    ).conversationContext
 
   const requireHistory = (feature: AiConversationFeature, index: number) => {
     const history = historyFrom(feature, index)
@@ -1164,10 +1411,11 @@ describe('settled conversation context delivery', () => {
             turnId: first.turnId,
             intent: first.intent,
             message: summarizeAiTurn(first).message,
-            outcome: 'no-change'
+            outcome: 'no-change',
+            attachmentIndexes: []
           }
         ],
-        omittedTurns: 0
+        attachmentIndexes: []
       })
       expect(historyFrom(feature, 1)?.turns[0].message).toContain(
         'continuous reflections'
@@ -1180,7 +1428,8 @@ describe('settled conversation context delivery', () => {
         'turnId',
         'intent',
         'message',
-        'outcome'
+        'outcome',
+        'attachmentIndexes'
       ])
       expect(controller.getSnapshot().settledTurns[0]).toBe(first)
     } finally {
@@ -1257,7 +1506,8 @@ describe('settled conversation context delivery', () => {
           turnId: first.turnId,
           intent: first.intent,
           message: summarizeAiTurn(first).message,
-          outcome: first.outcome
+          outcome: first.outcome,
+          attachmentIndexes: []
         })
         expect(feature.execute).toHaveBeenCalledTimes(2)
       } finally {
@@ -1303,102 +1553,10 @@ describe('settled conversation context delivery', () => {
         'Design a restrained book cover',
         'Warm tones'
       ])
-      expect(history.turns[1].originalIntent).toBe(
-        'Design a restrained book cover'
-      )
+      expect(history.turns[1].replyToTurnId).toBe(history.turns[0].turnId)
       expect(history.turns[0].message).toBe('Which tone?')
       expect(history.turns[1].outcome).toBe('failed')
       expect(feature.execute).toHaveBeenCalledTimes(3)
-    } finally {
-      await controller.dispose()
-    }
-  })
-
-  it('bounds complete Unicode pairs without visiting the omitted prefix or changing stored turns', async () => {
-    const feature = createFeature(async () =>
-      report('Complete advice: preserve the final exception.')
-    )
-    const controller = createAiConversationController({
-      feature,
-
-      getElementType: () => undefined
-    })
-
-    try {
-      const oldest = await controller.submit('Old topic')
-      const oversized = await controller.submit('界'.repeat(12_000))
-
-      await controller.submit('New subject')
-      expect(historyFrom(feature, 2)).toEqual({ turns: [], omittedTurns: 2 })
-      // The newest oversized pair is a hard suffix boundary: no scan of older results.
-      Object.defineProperty(oldest.result, 'status', {
-        get: () => {
-          throw new Error('Omitted prefix read')
-        }
-      })
-      await controller.submit('Continue the new subject')
-      const history = requireHistory(feature, 3)
-
-      expect(history.omittedTurns).toBe(2)
-      expect(history.turns.map((turn) => turn.intent)).toEqual(['New subject'])
-      expect(
-        new TextEncoder().encode(JSON.stringify(history)).length
-      ).toBeLessThanOrEqual(32 * 1024)
-      expect(controller.getSnapshot().settledTurns[1]).toBe(oversized)
-    } finally {
-      await controller.dispose()
-    }
-  })
-
-  it('keeps the maximal contiguous whole-turn suffix and charges JSON escaping and Unicode bytes', async () => {
-    const feature = createFeature(async () =>
-      report('Complete answer: keep all constraints.')
-    )
-    const controller = createAiConversationController({
-      feature,
-
-      getElementType: () => undefined
-    })
-
-    try {
-      for (let index = 0; index < 12; index += 1) {
-        await controller.submit(`${index}:` + '界\n"'.repeat(800))
-      }
-
-      await controller.submit('Continue')
-      const all = controller.getSnapshot().settledTurns.slice(0, -1)
-      const history = requireHistory(feature, 12)
-
-      expect(history.omittedTurns).toBeGreaterThan(0)
-      expect(history.turns).toEqual(
-        all.slice(history.omittedTurns).map((turn) => ({
-          turnId: turn.turnId,
-          intent: turn.intent,
-          message: summarizeAiTurn(turn).message,
-          outcome: turn.outcome
-        }))
-      )
-
-      const bytes = (value: unknown) =>
-        new TextEncoder().encode(JSON.stringify(value)).length
-
-      expect(bytes(history)).toBeLessThanOrEqual(32 * 1024)
-      const prior = all[history.omittedTurns - 1]
-
-      expect(
-        bytes({
-          turns: [
-            {
-              turnId: prior.turnId,
-              intent: prior.intent,
-              message: summarizeAiTurn(prior).message,
-              outcome: prior.outcome
-            },
-            ...history.turns
-          ],
-          omittedTurns: history.omittedTurns - 1
-        })
-      ).toBeGreaterThan(32 * 1024)
     } finally {
       await controller.dispose()
     }

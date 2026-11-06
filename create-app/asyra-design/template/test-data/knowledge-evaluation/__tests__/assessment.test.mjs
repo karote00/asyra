@@ -9,11 +9,14 @@ import { createHash } from 'node:crypto'
 import { spawnSync } from 'node:child_process'
 
 const digest = (bytes) => createHash('sha256').update(bytes).digest('hex')
+
 function fixture() {
   const root = fileURLToPath(new URL('../../../../../', import.meta.url))
+
   fs.mkdirSync(path.join(root, 'tmp'), { recursive: true })
   const directory = fs.mkdtempSync(path.join(root, 'tmp/attribution-test-'))
   const records = path.join(directory, 'records')
+
   fs.mkdirSync(records)
   const rows = [
     {
@@ -37,6 +40,7 @@ function fixture() {
       durationMs: 20
     }
   ]
+
   fs.writeFileSync(
     path.join(records, 'drawing.jsonl'),
     rows.map((r) => JSON.stringify(r)).join('\n')
@@ -63,6 +67,7 @@ function fixture() {
     )
   }
   const bytes = JSON.stringify(run)
+
   fs.writeFileSync(path.join(directory, 'run.json'), bytes)
   fs.writeFileSync(
     path.join(directory, 'facts.json'),
@@ -101,17 +106,21 @@ function fixture() {
     ]
   }
   const output = path.join(directory, 'analysis.json')
+
   return {
     directory,
     assessment,
     reference,
     output,
+
     invoke(value = assessment, args) {
-      if (value)
+      if (value) {
         fs.writeFileSync(
           path.join(directory, 'assessment.json'),
           JSON.stringify(value)
         )
+      }
+
       return spawnSync(
         process.execPath,
         [
@@ -125,16 +134,20 @@ function fixture() {
         { encoding: 'utf8' }
       )
     },
+
     read: () => JSON.parse(fs.readFileSync(output)),
+
     cleanup: () => fs.rmSync(directory, { recursive: true, force: true })
   }
 }
 
 test('CLI binds descriptive change attribution and report lessons without asserting causal improvement', () => {
   const f = fixture()
+
   try {
     assert.equal(f.invoke().status, 0)
     const report = f.read().attribution
+
     assert.equal(report.changes[0].effect, 'confounded')
     assert.equal(report.changes[0].proposedEffect, 'helped')
     assert.equal(report.changes[0].support[0].value, 'partial')
@@ -148,6 +161,7 @@ test('CLI binds descriptive change attribution and report lessons without assert
 })
 test('CLI absence means not-assessed and NO_ENTRY; unexpected options are errors', () => {
   const f = fixture()
+
   try {
     assert.equal(f.invoke(null).status, 0)
     assert.equal(f.read().attribution.status, 'not-assessed')
@@ -159,6 +173,7 @@ test('CLI absence means not-assessed and NO_ENTRY; unexpected options are errors
 })
 test('CLI refuses stale, forged and malformed evidence before replacing existing analysis', () => {
   const f = fixture()
+
   try {
     for (const mutate of [
       (a) => {
@@ -193,6 +208,7 @@ test('CLI refuses stale, forged and malformed evidence before replacing existing
       }
     ]) {
       const a = structuredClone(f.assessment)
+
       mutate(a)
       fs.writeFileSync(f.output, 'preserved')
       assert.notEqual(f.invoke(a).status, 0)
@@ -204,8 +220,10 @@ test('CLI refuses stale, forged and malformed evidence before replacing existing
 })
 test('CLI supports escaped JSON pointers, line references and explicit counterevidence', () => {
   const f = fixture()
+
   try {
     const c = f.assessment.changes[0]
+
     c.support[0].pointer = '/a~1b/~0'
     c.counterevidence = [
       {
@@ -231,6 +249,7 @@ test('CLI supports escaped JSON pointers, line references and explicit counterev
 })
 test('CLI does not retain unsupported, unreviewed, unbounded or unexercised lessons', () => {
   const f = fixture()
+
   try {
     for (const mutate of [
       (c) => {
@@ -250,6 +269,7 @@ test('CLI does not retain unsupported, unreviewed, unbounded or unexercised less
       }
     ]) {
       const a = structuredClone(f.assessment)
+
       mutate(a.changes[0])
       assert.equal(f.invoke(a).status, 0)
       assert.equal(
@@ -263,6 +283,7 @@ test('CLI does not retain unsupported, unreviewed, unbounded or unexercised less
 })
 test('CLI rejects symlink escape even with a matching digest', () => {
   const f = fixture()
+
   try {
     fs.symlinkSync('../facts.json', path.join(f.directory, 'records/link.json'))
     Object.assign(f.assessment.changes[0].support[0], {
@@ -276,8 +297,10 @@ test('CLI rejects symlink escape even with a matching digest', () => {
 })
 test('deterministic observations remain tool-scoped; historical and Knowledge claims cannot inherit test success', () => {
   const f = fixture()
+
   try {
     const c = f.assessment.changes[0]
+
     c.method = 'deterministic-regression'
     assert.equal(f.invoke().status, 0)
     assert.equal(f.read().attribution.changes[0].effect, 'helped')

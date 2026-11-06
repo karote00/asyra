@@ -21,8 +21,10 @@ export const zoomFitFeature = defineFeature(
     priority: 10,
     exclusive: true,
     api,
+
     execution: (snapshot: SystemContextSnapshot) => {
       api.zoomFit()
+
       return { zoomedToFit: true }
     }
   }

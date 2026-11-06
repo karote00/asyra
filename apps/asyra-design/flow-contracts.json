@@ -42,6 +42,9 @@
       "inputs": [
         "src/**",
         "server/**",
+        "test-data/ai-drawing/fixtures/strict-grid-material-20261106.json",
+        "test-data/ai-drawing/fixtures/selected-inspection-20261106.json",
+        "test-data/ai-drawing/fixtures/strict-target-stop-20261106.json",
         "knowledge/**",
         "vtracer-tool-server.mjs",
         "collaboration-server.ts",
@@ -56,7 +59,11 @@
         "test-data/knowledge-evaluation/architecture-protocol.mjs",
         "test-data/knowledge-evaluation/native-boundaries.mjs",
         "test-data/knowledge-evaluation/public-activity.mjs",
-        "test-data/knowledge-evaluation/__fixtures__/model-delivery-20261028.json"
+        "test-data/knowledge-evaluation/__fixtures__/model-delivery-20261028.json",
+        "test-data/ai-drawing/fixtures/correctable-preparation-20261106.json",
+        "test-data/ai-drawing/fixtures/control-admission-20261106.json",
+        "test-data/ai-drawing/taipei-101-self-report.mjs",
+        "test-data/ai-drawing/taipei-101-live.mjs"
       ],
       "entry": null
     },
@@ -517,6 +524,18 @@
           ]
         },
         {
+          "id": "prepare.grid-material",
+          "stepId": "prepare",
+          "testName": "execution proof revises continuous grid materials without changing creation identities",
+          "implementationPaths": [
+            "apps/asyra-design/server/design-linear-field.ts",
+            "apps/asyra-design/server/design-construction.ts",
+            "apps/asyra-design/server/design-construction-schema.ts",
+            "apps/asyra-design/server/design-motif-reference.ts",
+            "apps/asyra-design/test-data/ai-drawing/fixtures/strict-grid-material-20261106.json"
+          ]
+        },
+        {
           "id": "prepare.world-material",
           "stepId": "prepare",
           "testName": "execution proof preserves world material phase through preparation and current artifact consumption",
@@ -852,7 +871,11 @@
           "stepId": "compose",
           "testName": "execution proof preserves retained images during direct response reprojection",
           "implementationPaths": [
-            "apps/asyra-design/server/local-operation-tools.ts"
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/local-tool-media.ts",
+            "apps/asyra-design/server/local-result-delivery.ts",
+            "apps/asyra-design/server/local-tool-host.ts",
+            "apps/asyra-design/test-data/ai-drawing/fixtures/selected-inspection-20261106.json"
           ]
         },
         {
@@ -916,6 +939,40 @@
             "apps/asyra-design/server/design-check-results.ts",
             "apps/asyra-design/server/local-design-review.ts",
             "apps/asyra-design/test-data/knowledge-evaluation/visual-result-selection-20261028.json"
+          ]
+        },
+        {
+          "id": "compose.browser-prefix-handoff",
+          "stepId": "compose",
+          "testName": "execution proof preserves raw browser prefixes at the host failure boundary",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-tool-host.ts",
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/local-tool-invocation.ts",
+            "apps/asyra-design/src/ai/tool-contract.ts"
+          ]
+        },
+        {
+          "id": "compose.correctable-delivery",
+          "stepId": "compose",
+          "testName": "execution proof retains correctable selected failures for same-host repair",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-tool-host.ts",
+            "apps/asyra-design/server/local-design-sequence.ts",
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/evaluation-control.ts",
+            "apps/asyra-design/test-data/ai-drawing/fixtures/correctable-preparation-20261106.json",
+            "apps/asyra-design/server/local-tool-invocation.ts",
+            "apps/asyra-design/test-data/ai-drawing/fixtures/control-admission-20261106.json"
+          ]
+        },
+        {
+          "id": "observe.report-request-owner",
+          "stepId": "observe",
+          "testName": "execution proof waits for the original provider report across unrelated settlements",
+          "implementationPaths": [
+            "apps/asyra-design/test-data/ai-drawing/taipei-101-self-report.mjs",
+            "apps/asyra-design/test-data/ai-drawing/taipei-101-live.mjs"
           ]
         }
       ],

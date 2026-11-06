@@ -1,3 +1,4 @@
+import { createDesignDataEvidence } from '../design-data-evidence'
 import correctionFixture from './fixtures/recorded-101/correction-handoff-20261023.json'
 import exactReviewBinding from './fixtures/recorded-101/exact-review-binding-20261017.json'
 import recordedBindings from './fixtures/recorded-101/review-bindings-20261017.json'
@@ -29,14 +30,7 @@ const schemaReviewInput = (input: unknown): unknown => {
         requestId: 'schema-fixture',
         requirementRevision: 1,
         checkRevision: 1,
-        signature: 'schema-only',
-        dependencies: [
-          {
-            inspectionId: 'current',
-            elementId: 'root',
-            scope: 'overview:whole'
-          }
-        ]
+        signature: 'schema-only'
       }
     }))
   }
@@ -146,6 +140,80 @@ const assessReferences = (
         uses: declaredUses(['Viewpoint', 'Finish'])
       }))
   })
+
+it('rejects different valid reference uses for one capture check before merging', () => {
+  const review = referenceReview()
+
+  review.record(plan)
+  assessReferences(review, [0, 1])
+  const first = {
+    criterionId: 'Viewpoint',
+    referenceUses: useReceipts(review, 0, 'visual', 'Viewpoint')
+  }
+  const second = {
+    criterionId: 'Viewpoint',
+    referenceUses: useReceipts(review, 1, 'visual', 'Viewpoint')
+  }
+
+  expect(first.referenceUses).toHaveLength(1)
+  expect(second.referenceUses).toHaveLength(1)
+  expect(() =>
+    review.validateCaptureChecks('visual', [{ checks: [first] }])
+  ).not.toThrow()
+  expect(() =>
+    review.validateCaptureChecks('visual', [{ checks: [second] }])
+  ).not.toThrow()
+  expect(() =>
+    review.validateCaptureChecks('visual', [
+      { checks: [first] },
+      { checks: [second] }
+    ])
+  ).toThrow('Conflicting source uses or supersession')
+  expect(() =>
+    review.validateCaptureChecks('visual', [
+      { checks: [first] },
+      { checks: [first] }
+    ])
+  ).not.toThrow()
+})
+
+it('retains explicit reference uses in unsigned mixed-image recovery', () => {
+  const review = referenceReview()
+
+  review.record(plan)
+  assessReferences(review, [0])
+  const fresh = review.inspect('new', true, true)
+  const old = review.inspect('old', true, true)
+
+  if (!fresh || !old) {
+    throw new Error('Missing fixture inspections')
+  }
+
+  const selection = {
+    criterionId: 'Viewpoint',
+    referenceUses: useReceipts(review, 0, 'visual', 'Viewpoint'),
+    inspectionIds: [fresh.inspectionId]
+  }
+  const oldId = old.inspectionId
+  const result = review.judgmentHandoff(
+    [oldId, ...selection.inspectionIds],
+    'visual',
+    [selection],
+    true
+  )
+
+  if (!result.next) {
+    throw new Error('Missing recovery template')
+  }
+
+  expect(result.next.arguments).toMatchObject({
+    bindChecks: [selection],
+    inspectionIds: [oldId, ...selection.inspectionIds]
+  })
+  expect(result.next.arguments).not.toHaveProperty('checks')
+  expect(result.next.requiredInputs).toEqual(['bindChecks'])
+  expect(review.isAccepted()).toBe(false)
+})
 
 const check = (criterionId: string, status = 'pass') => ({
   criterionId,
@@ -1178,8 +1246,40 @@ it('can select a replacement reference after drawing without rewriting requireme
   expect(() => r.selectReferences([-1])).toThrow()
 })
 
-it('routes visual and data evidence separately without dropping the data requirement', () => {
-  const r = createLocalDesignReview({})
+it('routes visual and data evidence separately without dropping the data requirement', async () => {
+  const dataEvidence = createDesignDataEvidence(async () => ({
+    available: true,
+    workspaceId: 'workspace',
+    coordinateSpace: 'parent-local',
+    nextOffset: null,
+    total: 1,
+    missingIds: [],
+    elements: [
+      {
+        id: 'root',
+        type: 'rect',
+        parentId: 'workspace',
+        properties: { width: 20 },
+        truncatedFields: []
+      }
+    ]
+  }))
+  const data = await dataEvidence.capture({
+    criterionId: 'scale',
+    elementIds: ['root'],
+    fields: ['width']
+  })
+
+  const judgments = (ids: unknown[], checks: ReturnType<typeof check>[]) => ({
+    ...wholeViewJudgments(ids, checks),
+    checks: wholeViewJudgments(ids, checks).checks.map((item) =>
+      item.criterionId === 'scale'
+        ? { ...item, inspectionIds: [], dataEvidenceIds: [data.id] }
+        : item
+    )
+  })
+
+  const r = createLocalDesignReview({ dataEvidence })
 
   r.record({
     ...plan,
@@ -1206,7 +1306,7 @@ it('routes visual and data evidence separately without dropping the data require
   })
   const args = {
     phase: 'structure',
-    ...wholeViewJudgments(
+    ...judgments(
       [r.inspect('root', true, true)?.inspectionId],
       [check('view'), check('scale')]
     )
@@ -1218,7 +1318,7 @@ it('routes visual and data evidence separately without dropping the data require
   expect(
     r.record({
       ...args,
-      ...wholeViewJudgments(args.inspectionIds, [
+      ...judgments(args.inspectionIds, [
         check('view'),
         check('scale', 'unverified')
       ])
@@ -1735,8 +1835,40 @@ it('corrects derived calculation notes without changing source facts or approved
   ).toThrow(/valid source fact/)
 })
 
-it('rechecks only affected data criteria after a source correction while retaining unchanged visual evidence', () => {
-  const review = createLocalDesignReview({})
+it('rechecks only affected data criteria after a source correction while retaining unchanged visual evidence', async () => {
+  const dataEvidence = createDesignDataEvidence(async () => ({
+    available: true,
+    workspaceId: 'workspace',
+    coordinateSpace: 'parent-local',
+    nextOffset: null,
+    total: 1,
+    missingIds: [],
+    elements: [
+      {
+        id: 'root',
+        type: 'rect',
+        parentId: 'workspace',
+        properties: { width: 20 },
+        truncatedFields: []
+      }
+    ]
+  }))
+  const data = await dataEvidence.capture({
+    criterionId: 'scale',
+    elementIds: ['root'],
+    fields: ['width']
+  })
+
+  const judgments = (ids: unknown[], checks: ReturnType<typeof check>[]) => ({
+    ...wholeViewJudgments(ids, checks),
+    checks: wholeViewJudgments(ids, checks).checks.map((item) =>
+      item.criterionId === 'scale'
+        ? { ...item, inspectionIds: [], dataEvidenceIds: [data.id] }
+        : item
+    )
+  })
+
+  const review = createLocalDesignReview({ dataEvidence })
   const criteria = {
     appearance: {
       requirement: 'Recognizable view',
@@ -1768,7 +1900,7 @@ it('rechecks only affected data criteria after a source correction while retaini
 
   review.record({
     phase: 'visual',
-    ...wholeViewJudgments(inspectionIds, [check('appearance'), check('scale')])
+    ...judgments(inspectionIds, [check('appearance'), check('scale')])
   })
   expect(review.isAccepted()).toBe(true)
   review.record({
@@ -1796,14 +1928,14 @@ it('rechecks only affected data criteria after a source correction while retaini
   expect(
     review.record({
       phase: 'visual',
-      ...wholeViewJudgments(inspectionIds, [check('scale')])
+      ...judgments(inspectionIds, [check('scale')])
     })
   ).toMatchObject({ accepted: true })
   review.mutate()
   expect(
     review.record({
       phase: 'visual',
-      ...wholeViewJudgments(
+      ...judgments(
         [requireTestValue(review.inspect('root', true, true)).inspectionId],
         [check('scale')]
       )
@@ -2933,7 +3065,7 @@ describe('declared regional acceptance', () => {
     )
 
     expect(declaration.revision).toBe(5)
-    expect(inspection.revision).toBe(16)
+    expect(inspection.revision).toBe(18)
     const local = {
       phase: 'visual',
       inspectionIds: ['image'],
@@ -4056,11 +4188,38 @@ describe('explicit review binding handoff', () => {
       requirementRevision: 1,
       checkRevision: 1
     })
-    expect(bound.checks[0].binding.dependencies[0]).toMatchObject({
-      inspectionId: image,
-      elementId: 'root',
-      source: { receiptId: 'current-root' }
-    })
+    expect(Object.keys(bound.checks[0].binding).sort()).toEqual([
+      'checkRevision',
+      'requestId',
+      'requirementRevision',
+      'signature'
+    ])
+    const compactBytes = Buffer.byteLength(JSON.stringify(bound))
+    const repeatedDependencies = bound.checks.map((check) => ({
+      ...check,
+      binding: {
+        ...check.binding,
+        dependencies: [
+          {
+            inspectionId: image,
+            elementId: 'root',
+            scope: 'root',
+            source: {
+              sessionId: 'binding-document',
+              revision: 1,
+              receiptId: 'current-root'
+            }
+          }
+        ]
+      }
+    }))
+
+    expect(
+      Buffer.byteLength(
+        JSON.stringify({ ...bound, checks: repeatedDependencies })
+      ) - compactBytes
+    ).toBeGreaterThan(300)
+
     const submit = {
       ...bound,
       checks: bound.checks.map((item) => ({
@@ -4117,6 +4276,39 @@ describe('explicit review binding handoff', () => {
         .readChecks({ includePassed: true })
         .items.find((item) => item.criterionId === 'Viewpoint')?.status
     ).toBe('pass')
+  })
+  it('authenticates retained dependencies without accepting changed source evidence', () => {
+    const { review } = setup()
+    const source = {
+      sessionId: 'binding-document',
+      revision: 2,
+      receiptId: 'retained-source'
+    }
+    const image = requireTestValue(
+      review.inspect('root', true, true, undefined, false, source)
+    ).inspectionId
+    const bound = review.bindReview('visual', [
+      { criterionId: 'Viewpoint', inspectionIds: [image] }
+    ])
+    const submit = {
+      ...bound,
+      checks: bound.checks.map((check) => ({
+        ...check,
+        status: 'pass',
+        evidence: 'Observed.'
+      }))
+    }
+    const before = review.readChecks({ includePassed: true })
+
+    source.receiptId = 'changed-source'
+    expect(() => review.recordBoundReview(submit)).toThrow(/binding/)
+    expect(review.readChecks({ includePassed: true })).toEqual(before)
+    source.receiptId = 'retained-source'
+    review.recordBoundReview(submit)
+    review.invalidateInspections([image], 'Target changed')
+    expect(() => review.recordBoundReview(submit)).toThrow(
+      /unavailable|binding/
+    )
   })
   it('rejects forged or foreign bindings atomically without accepting an unbound tool verdict', () => {
     const { review, image } = setup()
@@ -4422,7 +4614,7 @@ it('delivers individual correction scopes across sparse reviews without inferrin
     unavailableInspectionIds: [],
     discovery: {
       tool: 'describe_design_apis',
-      arguments: { view: 'full' },
+      arguments: { view: 'usage' },
       requiredInputs: ['query']
     }
   })
@@ -4608,4 +4800,37 @@ it('keeps fact targets on the exact correction unit and shares only explicitly c
     })
   ).toThrow()
   expect(review.readChecks({ includePassed: true })).toEqual(before)
+})
+
+it('describes stored source facts as assertions rather than independent verification', () => {
+  const definition = requireTestValue(
+    designEvidenceDefinitions.find(
+      (tool) => tool.name === 'record_design_facts'
+    )
+  )
+
+  expect(definition.description).toContain('source assertions')
+  expect(definition.description).not.toContain('verified source facts')
+})
+
+it('rejects image-only judgments for canonical data criteria', () => {
+  const review = createLocalDesignReview()
+
+  review.record({
+    ...plan,
+    structureCriteria: [],
+    detailRequired: false,
+    criteria: {
+      scale: {
+        requirement: 'Width 20',
+        description: 'Canonical width is 20',
+        verification: 'data'
+      }
+    }
+  })
+  const id = requireTestValue(review.inspect('root', true, true)).inspectionId
+
+  expect(() =>
+    review.bindReview('visual', [{ criterionId: 'scale', inspectionIds: [id] }])
+  ).toThrow(/data/)
 })

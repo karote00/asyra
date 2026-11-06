@@ -15,10 +15,12 @@ export const AiConversationNavigation = ({
   const [historyOpen, setHistoryOpen] = useState(false)
   const historyId = useId()
   const toggleRef = useRef<HTMLButtonElement>(null)
+
   const navigate = (id: string | null) => {
     setHistoryOpen(false)
     onNavigate(id)
   }
+
   return (
     <div className="flex min-w-0 flex-1 items-center gap-2">
       <button
@@ -73,7 +75,10 @@ export const AiConversationNavigation = ({
           id={historyId}
           aria-label="Conversation history"
           onKeyDown={(event) => {
-            if (event.key !== 'Escape') return
+            if (event.key !== 'Escape') {
+              return
+            }
+
             event.stopPropagation()
             setHistoryOpen(false)
             toggleRef.current?.focus()

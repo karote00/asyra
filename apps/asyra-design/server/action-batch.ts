@@ -1,3 +1,5 @@
+import type { ExchangeConversationResults } from '../src/ai/conversation-results'
+import { admitsConversationContext } from '../src/ai/conversation-context'
 import {
   createExecutionRecordSink,
   createRecordCollector,
@@ -180,6 +182,7 @@ export type RequestModelActionBatch = (
   options: {
     readonly signal?: AbortSignal
     readonly onProgress?: (event: AiToolProgress) => void
+    readonly resultContext?: ExchangeConversationResults
     readonly executeBatch?: ExecuteAiBatch
   }
 ) => Promise<AiActionBatch>
@@ -201,6 +204,7 @@ export const resolveActionBatchRequest = async (
   options: {
     readonly requestModelActionBatch?: RequestModelActionBatch
     readonly onProgress?: (event: AiToolProgress) => void
+    readonly resultContext?: ExchangeConversationResults
     readonly executeBatch?: ExecuteAiBatch
     readonly requestId?: string
     readonly signal?: AbortSignal
@@ -213,7 +217,11 @@ export const resolveActionBatchRequest = async (
     )
   }
 
-  if (!isRecord(input) || typeof input.intent !== 'string') {
+  if (
+    !isRecord(input) ||
+    typeof input.intent !== 'string' ||
+    !admitsConversationContext(input.intent, input.metadata)
+  ) {
     throw new ActionBatchServerError(
       'ACTION_BATCH_INVALID_INPUT',
       'The action-batch input is invalid.'
@@ -251,6 +259,7 @@ export const resolveActionBatchRequest = async (
     batch = await requestModelActionBatch(input, {
       signal: options.signal,
       onProgress: options.onProgress,
+      resultContext: options.resultContext,
       executeBatch: options.executeBatch
     })
   } catch (error) {
@@ -461,23 +470,54 @@ export const createActionBatchMiddleware = (
         request.headers[AI_BATCH_EXECUTION_HEADER] === '1' &&
         request.headers.accept?.includes('application/x-ndjson') &&
         admitsLocalProviderRequest(request)
+
+      const writeFrame = (frame: unknown) => {
+        if (response.destroyed || response.writableEnded) {
+          throw new Error('Request closed')
+        }
+
+        if (!response.headersSent) {
+          response.setHeader('content-type', 'application/x-ndjson')
+        }
+
+        response.write(JSON.stringify(frame) + '\n')
+      }
+
       const batch = await resolveActionBatchRequest(
         input as unknown as AiProviderInput,
         {
           ...(canExecute
             ? {
                 executeBatch: (prepared) =>
-                  exchange.execute(prepared, controller.signal, (frame) => {
-                    if (response.destroyed || response.writableEnded) {
-                      throw new Error('Request closed')
-                    }
+                  exchange.execute(prepared, controller.signal, writeFrame),
 
-                    if (!response.headersSent) {
-                      response.setHeader('content-type', 'application/x-ndjson')
-                    }
+                resultContext: async (command) => {
+                  const receipt = await exchange.execute(
+                    { batchId: randomUUID(), actions: [] },
+                    controller.signal,
+                    ({ receiptToken }) =>
+                      writeFrame({
+                        type: 'conversation-results',
+                        receiptToken,
+                        command
+                      })
+                  )
+                  const context = receipt.context
 
-                    response.write(JSON.stringify(frame) + '\n')
-                  })
+                  if (
+                    !isRecord(context) ||
+                    context.ok !== true ||
+                    !isRecord(context.values)
+                  ) {
+                    throw Error(
+                      isRecord(context) && typeof context.error === 'string'
+                        ? context.error
+                        : 'App result context unavailable'
+                    )
+                  }
+
+                  return context.values as Record<string, AiJsonValue>
+                }
               }
             : {}),
 

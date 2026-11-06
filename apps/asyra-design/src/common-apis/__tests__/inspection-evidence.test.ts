@@ -63,7 +63,8 @@ import {
   createInspectionEvidence,
   observeInspectionChanges
 } from '../inspection-evidence'
-import { EventTypes } from '@asyra/core'
+import { EventTypes, renderStrategyRegistry } from '@asyra/core'
+import { GROUP_RENDER_STRATEGY } from '@asyra/preset'
 import { createInspectionValidationAction } from '../../ai/inspection'
 
 const setup = () => {
@@ -930,3 +931,59 @@ it('keeps canonical mutations separate from effective visual freshness and dispo
   evidence.dispose()
   expect(observed.channels.size).toBe(0)
 })
+
+it.each([true, false])(
+  'uses registered paint ownership for a container with official Group strategy=%s',
+  async (official) => {
+    const type = 'inspection-region-container'
+    const render = official ? GROUP_RENDER_STRATEGY : () => undefined
+
+    renderStrategyRegistry.register(type, render)
+    observed.getElementIdsInBounds.mockClear()
+    observed.getElementMetadata.mockImplementation((id) => ({
+      id,
+      type: id === 'container' ? type : 'rect',
+      parentId: id === 'root' ? '' : 'root'
+    }))
+    observed.getElementIdsInBounds.mockReturnValue([
+      'content',
+      'container',
+      'root'
+    ])
+
+    let changed: (change: { elementIds: string[] }) => void = () => undefined
+
+    const evidence = createInspectionEvidence((listener) => {
+      changed = listener
+
+      return () => undefined
+    })
+    const capture = vi.fn(() => ({ available: true }))
+
+    try {
+      const result = await evidence.capture(capture, {
+        elementId: 'root',
+        region: { x: 0, y: 0, width: 20, height: 20 }
+      })
+
+      expect(result.available).toBe(true)
+      changed({ elementIds: ['container'] })
+      expect(evidence.isCurrent(result.evidence)).toBe(official)
+      for (let i = 0; i < 10; i++) {
+        expect(evidence.isCurrent(result.evidence)).toBe(official)
+      }
+
+      expect(capture).toHaveBeenCalledOnce()
+      expect(observed.getElementIdsInBounds).toHaveBeenCalledTimes(
+        official ? 2 : 1
+      )
+      if (official) {
+        changed({ elementIds: ['content'] })
+        expect(evidence.isCurrent(result.evidence)).toBe(false)
+      }
+    } finally {
+      evidence.dispose()
+      renderStrategyRegistry.unregister(type)
+    }
+  }
+)

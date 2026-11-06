@@ -25,12 +25,14 @@ describe('document context action', () => {
     }
     const signal = new AbortController().signal
     const result = await action.execute(query, { signal } as never)
+
     expect(result).toBe(receipt)
     expect(read).toHaveBeenCalledExactlyOnceWith(query, signal)
   })
   it('does not read after cancellation', async () => {
     const read = vi.fn()
     const controller = new AbortController()
+
     controller.abort()
     await expect(
       createDocumentContextAction(read).execute({ scope: 'selection' }, {
@@ -52,6 +54,7 @@ it('advertises the same snapshot-only fields to native tools and action admissio
     filter: { name: { prefix: 'tier-3-', suffix: '-window' } },
     expectedCount: 24
   }
+
   for (const definition of [schema, nativeToolInputSchema(schema)]) {
     expect(operationInputIssue(valid, definition)).toBeUndefined()
     expect(operationInputIssue({ scope: 'snapshot' }, definition)).toBeDefined()
@@ -71,6 +74,7 @@ it('defaults AI queries to retained references without transferring rows and pre
   const read = vi.fn(() => ({ available: true }))
   const action = createDocumentContextAction(read)
   const signal = new AbortController().signal
+
   await action.execute({ scope: 'selection' }, { signal })
   expect(read).toHaveBeenLastCalledWith(
     { scope: 'selection', delivery: 'reference' },
@@ -87,6 +91,7 @@ it('separates live query output from explicit release without weakening either i
   const read = vi.fn(() => ({ released: true }))
   const query = createDocumentContextAction(read)
   const release = createDocumentContextReleaseAction(read)
+
   expect(
     operationInputIssue(
       { scope: 'snapshot', snapshotId: 'known', release: true },
@@ -98,6 +103,7 @@ it('separates live query output from explicit release without weakening either i
   ).toBeUndefined()
   expect(release.composition).toBe('control-plane')
   const signal = new AbortController().signal
+
   expect(await release.execute({ snapshotId: 'known' }, { signal })).toEqual({
     snapshotId: 'known',
     released: true
@@ -114,6 +120,7 @@ it('keeps transient and retained contracts disjoint through native conversion', 
     scope: 'region',
     bounds: { x: 0, y: 0, width: 1, height: 1 }
   }
+
   for (const schema of [
     action.inputSchema,
     nativeToolInputSchema(action.inputSchema)
@@ -125,9 +132,11 @@ it('keeps transient and retained contracts disjoint through native conversion', 
       { offset: 0 },
       { fields: ['x'] },
       { scope: 'snapshot', snapshotId: 'saved' }
-    ])
+    ]) {
       expect(operationInputIssue({ ...query, ...patch }, schema)).toBeDefined()
+    }
   }
+
   const result = {
     delivery: 'transient',
     available: true,
@@ -138,6 +147,7 @@ it('keeps transient and retained contracts disjoint through native conversion', 
     elements: [],
     nextOffset: null
   }
+
   expect(operationInputIssue(result, action.outputSchema)).toBeUndefined()
   expect(
     operationInputIssue(
@@ -146,6 +156,7 @@ it('keeps transient and retained contracts disjoint through native conversion', 
     )
   ).toBeDefined()
   const { delivery: _delivery, ...withoutMode } = result
+
   expect(operationInputIssue(withoutMode, action.outputSchema)).toBeDefined()
 })
 
@@ -179,31 +190,36 @@ it('advertises scope-correct selectors and complete result constraints in both c
     { ...valid[4], result: 'elements' }
   ]
   const schema = createDocumentContextAction().inputSchema
+
   for (const definition of [schema, nativeToolInputSchema(schema)]) {
-    for (const query of valid)
+    for (const query of valid) {
       expect(
         operationInputIssue(query, definition),
         JSON.stringify(query)
       ).toBeUndefined()
-    for (const query of invalid)
+    }
+
+    for (const query of invalid) {
       expect(
         operationInputIssue(query, definition),
         JSON.stringify(query)
       ).toBeDefined()
+    }
   }
 })
 
 it('preserves canonical scope, result and page admission through native schema conversion', () => {
   const native = nativeToolInputSchema(documentContextSchema)
+
   for (const selector of [
     { scope: 'selection' },
     { scope: 'children', parentId: 'parent' },
     { scope: 'ids', elementIds: ['part'] },
     { scope: 'region', bounds: { x: 0, y: 0, width: 10, height: 10 } }
   ]) {
-    for (const result of [undefined, 'elements', 'ids'])
-      for (const fields of [undefined, [], ['x']])
-        for (const allMatches of [undefined, false, true])
+    for (const result of [undefined, 'elements', 'ids']) {
+      for (const fields of [undefined, [], ['x']]) {
+        for (const allMatches of [undefined, false, true]) {
           for (const page of [{}, { offset: 0, limit: 1 }, { offset: -1 }]) {
             const query = {
               ...selector,
@@ -213,16 +229,22 @@ it('preserves canonical scope, result and page admission through native schema c
               ...(allMatches === undefined ? {} : { allMatches })
             }
             let accepted = true
+
             try {
               validateDesignContextQuery(query as never)
             } catch {
               accepted = false
             }
-            for (const schema of [documentContextSchema, native])
+
+            for (const schema of [documentContextSchema, native]) {
               expect(
                 operationInputIssue(query, schema) === undefined,
                 JSON.stringify(query)
               ).toBe(accepted)
+            }
           }
+        }
+      }
+    }
   }
 })

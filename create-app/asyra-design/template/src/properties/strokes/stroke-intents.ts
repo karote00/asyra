@@ -55,11 +55,13 @@ export const createStrokeStyleIntent = ({
     ): entry is [StrokeStyleIntentKey, StrokeAttrs[StrokeStyleIntentKey]] =>
       entry[1] !== undefined
   )
+
   if (entries.length !== 1) {
     return null
   }
 
   const [key, nextValue] = entries[0]
+
   if (!STROKE_STYLE_INTENT_KEYS.has(key) || Object.is(stroke[key], nextValue)) {
     return null
   }

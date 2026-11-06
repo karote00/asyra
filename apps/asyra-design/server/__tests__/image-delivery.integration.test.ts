@@ -1,6 +1,20 @@
+import { createBasicApiActions } from '../../src/ai/basic-api-actions'
+vi.mock('../../src/contexts', () => ({ default: {} }))
+import { resultDelivery } from '../local-result-delivery'
+import type { LocalToolImage } from '../local-tool-media'
 import { readFileSync } from 'node:fs'
-import { expect, it } from 'vitest'
-import { localToolContent } from '../local-operation-tools'
+import { expect, it, vi } from 'vitest'
+import { createAiInspectionAction } from '../../src/ai/inspection'
+import { projectToolDelivery } from '../../src/ai/tool-contract'
+
+vi.mock('../../src/common-apis', () => ({ inspectionApis: {} }))
+import {
+  localToolContent,
+  createLocalOperationTools
+} from '../local-operation-tools'
+import { createLocalToolHost } from '../local-tool-host'
+import { createAiToolContract } from '@asyra/ai-agent-runtime'
+import selectedInspection from '../../test-data/ai-drawing/fixtures/selected-inspection-20261106.json'
 
 const fixtureRoot = new URL(
   '../../test-data/knowledge-evaluation/fixtures/native-delivery/',
@@ -11,6 +25,46 @@ const fixture = JSON.parse(
 )
 const pixels = readFileSync(new URL('inspection.png', fixtureRoot))
 const uri = 'data:image/png;base64,' + pixels.toString('base64')
+
+it('delivers pixels selected under the recorded host receipt alias without Base64 text', async () => {
+  const receipt = structuredClone(selectedInspection.response)
+  const capture = receipt.fields.receipt.find(
+    (entry) => entry.actionName === 'inspect_drawing'
+  )
+
+  if (!capture) {
+    throw new Error('Missing recorded capture')
+  }
+
+  // Recorded payloads redact image bytes. Restore only transport pixels here.
+  capture.result.image = {
+    dataUrl: uri,
+    width: pixels.readUInt32BE(16),
+    height: pixels.readUInt32BE(20)
+  }
+  const before = structuredClone(receipt)
+  const media: LocalToolImage[] = []
+  const delivery = resultDelivery(
+    selectedInspection.request,
+    undefined,
+    (items) => media.push(...items)
+  )
+
+  await delivery.capture(
+    'group',
+    { actionResults: receipt.fields.receipt },
+    new Set()
+  )
+  const content = await localToolContent(JSON.stringify(receipt), media)
+
+  expect(content.filter((item) => item.type === 'inputImage')).toEqual([
+    { type: 'inputImage', imageUrl: uri }
+  ])
+  expect(content[0]).toMatchObject({ type: 'inputText' })
+  expect(JSON.stringify(content[0])).not.toContain('base64,')
+  expect(JSON.stringify(content[0])).toContain(capture.result.inspectionId)
+  expect(receipt).toEqual(before)
+})
 
 import { createHash } from 'node:crypto'
 import sharp from 'sharp'
@@ -64,7 +118,20 @@ const verifyImageDelivery = async (count: number, native: boolean) => {
     })
   }
 
-  const content = await localToolContent(JSON.stringify(receipt))
+  const inspection = createAiInspectionAction()
+  const projected = {
+    ...receipt,
+    actionResults: receipt.actionResults.map(
+      (entry: { actionName: string; result: unknown }) => ({
+        ...entry,
+        result:
+          entry.actionName === inspection.name
+            ? projectToolDelivery(inspection, entry.result)
+            : entry.result
+      })
+    )
+  }
+  const content = await localToolContent(JSON.stringify(projected))
   const raw = content[0].type === 'inputText' ? content[0].text : ''
 
   expect(
@@ -156,4 +223,366 @@ it('verifies the permanent original image independently of ignored run artifacts
   )
   expect(pixels.length).toBe(fixture.imageBytes)
   expect(fixture.historicalForwardingError).toBe('unconfirmed')
+})
+
+it.each([
+  { name: 'overview', elementId: 'drawing', width: 874, height: 1024 },
+  { name: 'region', elementId: 'drawing', width: 1000, height: 1000 },
+  { name: 'workspace', elementId: 'workspace', width: 822, height: 1024 }
+])(
+  'delivers $name pixels through the declared inspection contract without recapture',
+  async ({ name, elementId, width, height }) => {
+    const bytes = await sharp({
+      create: { width, height, channels: 3, background: '#126584' }
+    })
+      .png()
+      .toBuffer()
+    const imageUrl = 'data:image/png;base64,' + bytes.toString('base64')
+    const result = {
+      available: true,
+      image: { dataUrl: imageUrl, width, height },
+      toolOutcome: { status: 'success', settlement: 'completed', issues: [] }
+    }
+    const capture = vi.fn(() => result)
+    const action = createAiInspectionAction(capture)
+    const args = {
+      elementId,
+      ...(name === 'region' ? { region: { x: 0, y: 0, width, height } } : {})
+    }
+    const ownerResult = await action.execute(args, {
+      signal: new AbortController().signal
+    } as never)
+    const delivered = projectToolDelivery(action, ownerResult)
+    const content = await localToolContent(
+      JSON.stringify({
+        actionResults: [{ actionName: action.name, result: delivered }]
+      })
+    )
+
+    expect(content).toContainEqual({ type: 'inputImage', imageUrl })
+    expect(capture).toHaveBeenCalledOnce()
+    expect(result.image).toEqual({ dataUrl: imageUrl, width, height })
+    expect(content[0]).toMatchObject({ type: 'inputText' })
+    expect(JSON.stringify(content[0])).not.toContain('base64,')
+  }
+)
+
+it.each(['direct', 'selected', 'full', 'status', 'input'])(
+  'delivers %s inspection through the actual host without repeating capture',
+  async (mode) => {
+    const action =
+      mode === 'direct'
+        ? createAiInspectionAction()
+        : createBasicApiActions().find(
+            (item) => item.name === 'api_hierarchy_groupElements'
+          )
+
+    if (!action) {
+      throw new Error('Missing grouping contract')
+    }
+
+    const receipt =
+      mode === 'direct'
+        ? structuredClone(fixture.receipt)
+        : {
+            actionResults: structuredClone(
+              selectedInspection.response.fields.receipt
+            )
+          }
+    const capture = receipt.actionResults.find(
+      (entry: { actionName: string }) => entry.actionName === 'inspect_drawing'
+    )
+
+    capture.result.image = {
+      dataUrl: uri,
+      width: pixels.readUInt32BE(16),
+      height: pixels.readUInt32BE(20)
+    }
+    if (mode === 'direct') {
+      receipt.actionResults = [capture]
+    }
+
+    if (mode !== 'direct') {
+      const grouping = receipt.actionResults[0].result
+      const ids = selectedInspection.request.operations[0].arguments.elementIds
+
+      Object.assign(grouping, {
+        modelResult: structuredClone(grouping),
+        value: { ...grouping.value, elementIds: ids },
+        mutationScope: {
+          complete: true,
+          elementIds: ids,
+          removedElementIds: []
+        }
+      })
+      Object.assign(receipt, {
+        batchSummary: {
+          actionCount: 1,
+          operationCount: 1,
+          followupActionCount: 1,
+          targetCount: ids.length
+        }
+      })
+    }
+
+    let publish: (() => void) | undefined
+    const execute = vi.fn(async () => {
+      publish?.()
+      const value = structuredClone(receipt)
+
+      return JSON.stringify({
+        ...value,
+        modelResult: {
+          ...selectedInspection.response,
+          actionResults:
+            mode === 'direct'
+              ? value.actionResults
+              : structuredClone(selectedInspection.response.fields.receipt).map(
+                  (entry) =>
+                    entry.actionName === 'inspect_drawing' ? capture : entry
+                )
+        },
+        toolOutcome: { status: 'success', settlement: 'completed', issues: [] }
+      })
+    })
+    const operations = createLocalOperationTools(
+      [
+        createAiToolContract(action),
+        ...(mode === 'direct'
+          ? []
+          : [createAiToolContract(createAiInspectionAction())])
+      ],
+      {
+        modelActions: (value) => value,
+
+        resolveBatch: (value) => value
+      },
+      async () => {
+        throw new Error('Unexpected capture replay')
+      }
+    )
+    const host = createLocalToolHost({
+      requestId: 'inspection-delivery',
+      signal: new AbortController().signal,
+      store: {
+        read: async () => undefined,
+
+        list: async () => [],
+
+        write: async () => {
+          throw new Error('Unexpected persistence')
+        }
+      },
+      capacity: 32,
+      receiptCapacity: 8,
+      artifactCapacity: 64,
+      limits: {
+        steps: 16,
+        bindings: 240,
+        bindingDepth: 32,
+        bytes: 24000,
+        issues: 8
+      },
+
+      createGroups: (ownership) => {
+        publish = () => {
+          if (mode !== 'direct') {
+            const retained =
+              selectedInspection.response.fields.receipt[0].result.retained
+
+            if (!retained) {
+              throw new Error('Missing retained fixture')
+            }
+
+            ownership.publish(
+              retained.leaseId,
+              () => undefined,
+              () => undefined
+            )
+            ownership.publish(
+              retained.snapshotId,
+              () => undefined,
+              () => undefined
+            )
+          }
+        }
+
+        return [
+          {
+            name: 'design_operations',
+            description: 'Inspection delivery',
+            owner: { ...operations, callInternal: execute }
+          }
+        ]
+      }
+    })
+
+    try {
+      const definition = host
+        .definitions()
+        .find((entry) => entry.name === action.name)
+
+      if (!definition?.registeredName) {
+        throw new Error('Missing inspection route')
+      }
+
+      const reply = await host.invoke({
+        name:
+          mode === 'direct'
+            ? definition.registeredName
+            : 'design_operations.execute_design',
+        input:
+          mode === 'direct'
+            ? { arguments: { elementId: 'drawing' } }
+            : {
+                operations: selectedInspection.request.operations,
+                ...(mode === 'full'
+                  ? {}
+                  : {
+                      delivery:
+                        mode === 'status'
+                          ? 'status'
+                          : {
+                              fields: {
+                                chosen: {
+                                  step: 'group',
+                                  ...(mode === 'input'
+                                    ? { source: 'input' }
+                                    : {}),
+                                  path: mode === 'input' ? '' : '/actionResults'
+                                }
+                              }
+                            }
+                    })
+              }
+      })
+
+      expect(
+        JSON.parse(reply.text).toolOutcome,
+        reply.text.slice(0, 1000)
+      ).toMatchObject({ status: 'success' })
+      const content = await localToolContent(reply.text, reply.media)
+      const count = ['status', 'metadata', 'input'].includes(mode) ? 0 : 1
+
+      expect(content.filter((item) => item.type === 'inputImage')).toHaveLength(
+        count
+      )
+      expect(
+        content.some(
+          (item) => item.type === 'inputImage' && item.imageUrl === uri
+        )
+      ).toBe(count === 1)
+      expect(JSON.stringify(content[0])).not.toContain('base64,')
+      expect(execute).toHaveBeenCalledOnce()
+      expect(capture.result.image.dataUrl).toBe(uri)
+    } finally {
+      await host.dispose()
+    }
+  }
+)
+
+it.each([
+  'receipt',
+  'image',
+  'bytes',
+  'metadata',
+  'input',
+  'invalid',
+  'multiple'
+])('preserves selected output media provenance for %s', async (mode) => {
+  const source = {
+    actionResults: [
+      {
+        actionName: 'inspect_drawing',
+        result: {
+          available: true,
+          inspectionId: 'first',
+          image: {
+            dataUrl: mode === 'invalid' ? 'invalid' : uri,
+            width: pixels.readUInt32BE(16),
+            height: pixels.readUInt32BE(20)
+          }
+        }
+      }
+    ]
+  }
+
+  if (mode === 'multiple') {
+    source.actionResults.push({
+      ...source.actionResults[0],
+      result: { ...source.actionResults[0].result, inspectionId: 'second' }
+    })
+  }
+
+  const path =
+    (
+      {
+        image: '/actionResults/0/result/image',
+        bytes: '/actionResults/0/result/image/dataUrl',
+        metadata: '/actionResults/0/result/image/width'
+      } as Record<string, string>
+    )[mode] ?? ''
+  const media: LocalToolImage[] = []
+  const delivery = resultDelivery(
+    {
+      delivery: {
+        fields: {
+          'view/one~': {
+            path,
+            ...(mode === 'input' ? { source: 'input' as const } : {})
+          },
+          ...(mode === 'multiple' ? { another: { path: '' } } : {})
+        }
+      }
+    },
+    undefined,
+    (items) => media.push(...items)
+  )
+
+  await delivery.capture(undefined, source, new Set(), {
+    value: source,
+    blocked: new Set()
+  })
+  const receipt = delivery.finish(
+    { status: 'success', settlement: 'completed' },
+    [],
+    []
+  )
+  const before = structuredClone(receipt)
+
+  if (mode === 'invalid') {
+    await expect(
+      localToolContent(JSON.stringify(receipt), media)
+    ).rejects.toThrow('Invalid drawing snapshot')
+
+    return
+  }
+
+  const from = vi.spyOn(Buffer, 'from')
+
+  try {
+    const content = await localToolContent(JSON.stringify(receipt), media)
+    const count = ['metadata', 'input'].includes(mode) ? 0 : 1
+
+    expect(content.filter((item) => item.type === 'inputImage')).toHaveLength(
+      count
+    )
+    expect(from.mock.calls.filter((args) => args[1] === 'base64')).toHaveLength(
+      count
+    )
+    if (mode === 'input') {
+      expect(JSON.stringify(content[0])).toContain('base64,')
+    } else {
+      expect(JSON.stringify(content[0])).not.toContain('base64,')
+    }
+
+    if (mode === 'multiple') {
+      expect(JSON.stringify(content[0])).toContain('first')
+      expect(JSON.stringify(content[0])).toContain('second')
+    }
+
+    expect(receipt).toEqual(before)
+  } finally {
+    from.mockRestore()
+  }
 })

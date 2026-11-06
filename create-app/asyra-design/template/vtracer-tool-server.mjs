@@ -23,6 +23,7 @@ const optionsForProfile = (profile) => {
       'VTracer profile is invalid.'
     )
   }
+
   return {
     hierarchical: 'cutout',
     // Preserve small intentional foreground details in submitted references.
@@ -65,14 +66,17 @@ const convertInWorker = (bytes, options, signal) =>
       }
     )
     let settled = false
+
     const settle = (callback) => {
       if (settled) {
         return
       }
+
       settled = true
       signal.removeEventListener('abort', abort)
       callback()
     }
+
     const abort = () => {
       void worker.terminate()
       settle(() =>
@@ -84,6 +88,7 @@ const convertInWorker = (bytes, options, signal) =>
         )
       )
     }
+
     signal.addEventListener('abort', abort, { once: true })
     worker.once('message', (message) => {
       void worker.terminate()
@@ -99,8 +104,10 @@ const convertInWorker = (bytes, options, signal) =>
               'VTracer conversion failed.'
             )
           )
+
           return
         }
+
         resolve(message.svg)
       })
     })
@@ -137,6 +144,7 @@ export const convertVTracerBuffer = async ({
       'VTracer conversion was aborted.'
     )
   }
+
   if (
     !acceptedContentTypes.has(contentType) ||
     !(bytes instanceof Uint8Array) ||
@@ -147,6 +155,7 @@ export const convertVTracerBuffer = async ({
       'VTracer request is invalid.'
     )
   }
+
   return convertInWorker(bytes, optionsForProfile(profile), signal)
 }
 
@@ -154,6 +163,7 @@ const sendJson = (response, statusCode, code) => {
   if (response.writableEnded || response.destroyed) {
     return
   }
+
   response.statusCode = statusCode
   response.setHeader('content-type', 'application/json; charset=utf-8')
   response.end(JSON.stringify({ code }))
@@ -162,17 +172,23 @@ const sendJson = (response, statusCode, code) => {
 export const createVTracerMiddleware =
   () => async (request, response, next) => {
     const url = new globalThis.URL(request.url ?? '/', 'http://app.local')
+
     if (url.pathname !== VTRACER_ENDPOINT) {
       next()
+
       return
     }
+
     if (request.method !== 'POST') {
       sendJson(response, 405, 'VTRACER_METHOD_NOT_ALLOWED')
+
       return
     }
 
     const controller = new globalThis.AbortController()
+
     const abort = () => controller.abort('request closed')
+
     request.once('aborted', abort)
     response.once('close', () => {
       if (!response.writableEnded) {
@@ -181,11 +197,13 @@ export const createVTracerMiddleware =
     })
     try {
       const chunks = []
+
       for await (const chunk of request) {
         chunks.push(
           typeof chunk === 'string' ? Buffer.from(chunk) : Buffer.from(chunk)
         )
       }
+
       const contentType = String(request.headers['content-type'] ?? '')
         .split(';', 1)[0]
         .trim()
@@ -200,6 +218,7 @@ export const createVTracerMiddleware =
         profile,
         signal: controller.signal
       })
+
       if (!response.writableEnded && !response.destroyed) {
         response.statusCode = 200
         response.setHeader('content-type', 'image/svg+xml; charset=utf-8')

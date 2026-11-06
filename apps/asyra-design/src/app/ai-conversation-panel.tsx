@@ -192,6 +192,20 @@ export interface AiConversationPanelProps {
   readonly onClose: () => void
 }
 
+interface ConversationDraft {
+  readonly text: string
+  readonly attachments: readonly AiImageAttachment[]
+  readonly error: string | null
+  readonly generation: number
+}
+
+const EMPTY_CONVERSATION_DRAFT: ConversationDraft = Object.freeze({
+  text: '',
+  attachments: Object.freeze([]),
+  error: null,
+  generation: 0
+})
+
 const AiConversationPanelLayout = ({
   conversation,
   onClose,
@@ -201,21 +215,53 @@ const AiConversationPanelLayout = ({
 }) => {
   const imageInputRef = useRef<HTMLInputElement>(null)
   const promptRef = useRef<HTMLTextAreaElement>(null)
-  const [draft, setDraft] = useState('')
   const [aiAvailable, setAiAvailable] = useState(true)
-  const drafts = useRef(
-    new Map<
-      string,
-      { text: string; attachments: readonly AiImageAttachment[] }
-    >()
+  const [drafts, setDrafts] = useState<ReadonlyMap<string, ConversationDraft>>(
+    () => new Map()
   )
-  const [draftAttachments, setDraftAttachments] = useState<
-    readonly AiImageAttachment[]
-  >([])
-  const [attachmentError, setAttachmentError] = useState<string | null>(null)
+  const mounted = useRef(true)
+
+  useEffect(() => {
+    mounted.current = true
+
+    return () => {
+      mounted.current = false
+    }
+  }, [])
   const [draggingImages, setDraggingImages] = useState(false)
   const [conversationSnapshot, setConversationSnapshot] =
     useState<AiConversationSnapshot>(() => conversation.getSnapshot())
+
+  const conversationId = conversationSnapshot.conversationId
+  const currentDraft = drafts.get(conversationId) ?? EMPTY_CONVERSATION_DRAFT
+  const {
+    text: draft,
+    attachments: draftAttachments,
+    error: attachmentError
+  } = currentDraft
+  const updateDraft = useCallback(
+    (id: string, update: (current: ConversationDraft) => ConversationDraft) => {
+      if (!mounted.current) {
+        return
+      }
+
+      setDrafts((current) => {
+        const previous = current.get(id) ?? EMPTY_CONVERSATION_DRAFT
+        const next = update(previous)
+
+        if (next === previous) {
+          return current
+        }
+
+        const result = new Map(current)
+
+        result.set(id, next)
+
+        return result
+      })
+    },
+    []
+  )
 
   useEffect(
     () => conversation.subscribe(setConversationSnapshot),
@@ -234,16 +280,23 @@ const AiConversationPanelLayout = ({
         return
       }
 
+      const sourceId = conversation.getSnapshot().conversationId
+      const generation = (drafts.get(sourceId) ?? EMPTY_CONVERSATION_DRAFT)
+        .generation
+
       const selectedFiles = Array.from(files)
       const acceptedFiles = selectedFiles.filter((file) =>
         ACCEPTED_IMAGE_TYPES.has(file.type as AiImageMediaType)
       )
 
-      setAttachmentError(
-        acceptedFiles.length === selectedFiles.length
-          ? null
-          : 'Choose PNG, JPEG, or WebP images.'
-      )
+      updateDraft(sourceId, (current) => ({
+        ...current,
+        error:
+          acceptedFiles.length === selectedFiles.length
+            ? null
+            : 'Choose PNG, JPEG, or WebP images.'
+      }))
+
       if (acceptedFiles.length === 0) {
         return
       }
@@ -251,28 +304,26 @@ const AiConversationPanelLayout = ({
       const results = await Promise.allSettled(
         acceptedFiles.map(readImageAttachment)
       )
-
-      if (conversation.getSnapshot().activeTurn) {
-        return
-      }
-
       const attachments = results.flatMap((result) =>
         result.status === 'fulfilled' ? [result.value] : []
       )
 
-      if (attachments.length > 0) {
-        setDraftAttachments((current) =>
-          Object.freeze([...current, ...attachments])
-        )
-      }
-
-      if (results.some((result) => result.status === 'rejected')) {
-        setAttachmentError(
-          'Could not read one or more images. Try adding them again.'
-        )
-      }
+      updateDraft(sourceId, (current) =>
+        current.generation !== generation
+          ? current
+          : {
+              ...current,
+              attachments: Object.freeze([
+                ...current.attachments,
+                ...attachments
+              ]),
+              error: results.some((result) => result.status === 'rejected')
+                ? 'Could not read one or more images. Try adding them again.'
+                : current.error
+            }
+      )
     },
-    [conversation]
+    [conversation, drafts, updateDraft]
   )
 
   const chooseImages = useCallback(
@@ -314,34 +365,31 @@ const AiConversationPanelLayout = ({
       })
 
       if (conversation.getSnapshot().activeTurn?.intent === intent) {
-        setDraft('')
-        setDraftAttachments([])
-        setAttachmentError(null)
+        updateDraft(conversationId, (current) => ({
+          ...EMPTY_CONVERSATION_DRAFT,
+          generation: current.generation + 1
+        }))
       }
 
       void settlement.catch(() => undefined)
     },
-    [conversation, draft, draftAttachments, aiAvailable]
+    [
+      conversation,
+      conversationId,
+      draft,
+      draftAttachments,
+      aiAvailable,
+      updateDraft
+    ]
   )
 
   const navigateConversation = (id: string | null) => {
-    drafts.current.set(conversation.getSnapshot().conversationId, {
-      text: draft,
-      attachments: draftAttachments
-    })
     if (id === null) {
       conversation.newConversation()
     } else {
       conversation.selectConversation(id)
     }
 
-    const restored = drafts.current.get(
-      conversation.getSnapshot().conversationId
-    )
-
-    setDraft(restored?.text ?? '')
-    setDraftAttachments(restored?.attachments ?? [])
-    setAttachmentError(null)
     promptRef.current?.focus({ preventScroll: true })
   }
 
@@ -452,15 +500,16 @@ const AiConversationPanelLayout = ({
               attachments={draftAttachments}
               onRemove={(index) => {
                 if (!active) {
-                  setDraftAttachments((current) =>
-                    Object.freeze(
-                      current.filter(
+                  updateDraft(conversationId, (current) => ({
+                    ...current,
+                    attachments: Object.freeze(
+                      current.attachments.filter(
                         (_attachment, attachmentIndex) =>
                           attachmentIndex !== index
                       )
-                    )
-                  )
-                  setAttachmentError(null)
+                    ),
+                    error: null
+                  }))
                 }
               }}
             />
@@ -483,7 +532,11 @@ const AiConversationPanelLayout = ({
             className="block min-h-[72px] w-full resize-none rounded-t-lg border-0 bg-transparent px-3 py-2 text-[12px] leading-5 text-white outline-none placeholder:text-[#777982]"
             data-ai-agent-prompt="true"
             id="ai-agent-input"
-            onChange={(event) => setDraft(event.target.value)}
+            onChange={(event) => {
+              const text = event.target.value
+
+              updateDraft(conversationId, (current) => ({ ...current, text }))
+            }}
             onKeyDown={(event) => event.stopPropagation()}
             onKeyUp={(event) => event.stopPropagation()}
             placeholder="Describe a drawing or refinement…"

@@ -1,3 +1,4 @@
+import { stopRecordedDrawing } from '../test-data/ai-drawing/stop-recorded-drawing.mjs'
 import { createServer, type ServerResponse } from 'node:http'
 import { writeFile } from 'node:fs/promises'
 import { prepareDesign } from '../server/design-preparation'
@@ -2479,9 +2480,7 @@ test('streamed AI members stay visible and independent of user Undo, then Stop s
       }) + '\n'
     )
     await expect.poll(() => receipts.length).toBe(2)
-    await page
-      .getByRole('button', { name: 'Cancel request', exact: true })
-      .click()
+    await stopRecordedDrawing(page)
     await expect(message).toHaveAttribute('data-outcome', 'cancelled')
     await expect(message).toContainText(
       'Changes already applied have been kept.'

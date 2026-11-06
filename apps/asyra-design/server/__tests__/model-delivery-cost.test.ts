@@ -79,19 +79,22 @@ it('compares complete model result contracts against the same owner declarations
         let wire = 0
         let pages = 0
         let input = 0
-        const text = await readCompleteInformation(async (args) => {
-          input += Buffer.byteLength(JSON.stringify(args))
-          const reply = await operations.call(
-            'describe_design_apis',
-            args,
-            new AbortController().signal
-          )
+        const text = await readCompleteInformation(
+          async (args) => {
+            input += Buffer.byteLength(JSON.stringify(args))
+            const reply = await operations.call(
+              'describe_design_apis',
+              args,
+              new AbortController().signal
+            )
 
-          wire += Buffer.byteLength(reply)
-          pages++
+            wire += Buffer.byteLength(reply)
+            pages++
 
-          return reply
-        }, entry.query)
+            return reply
+          },
+          { ...entry.query, includeResultSchema: true }
+        )
 
         acquisition.push({ body: Buffer.byteLength(text), wire, pages, input })
         const body = JSON.parse(text)

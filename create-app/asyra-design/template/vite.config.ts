@@ -15,9 +15,11 @@ const enablesE2eDocumentDatabase = process.env.E2E_DOCUMENT_DATABASE === '1'
 
 const createVTracerPlugin = (): Plugin => ({
   name: 'vtracer-tool',
+
   configureServer(server) {
     server.middlewares.use(createVTracerMiddleware())
   },
+
   configurePreviewServer(server) {
     server.middlewares.use(createVTracerMiddleware())
   }
@@ -25,8 +27,10 @@ const createVTracerPlugin = (): Plugin => ({
 
 const createActionBatchPlugin = (): Plugin => ({
   name: 'action-batch-server',
+
   configureServer(server) {
     const actionBatch = createActionBatchMiddleware()
+
     server.middlewares.use(actionBatch)
     server.httpServer?.once('close', () => {
       void actionBatch.dispose()
@@ -34,8 +38,10 @@ const createActionBatchPlugin = (): Plugin => ({
     server.middlewares.use(createAiStatusMiddleware())
     server.middlewares.use(createToolLibraryManagementMiddleware())
   },
+
   configurePreviewServer(server) {
     const actionBatch = createActionBatchMiddleware()
+
     server.middlewares.use(actionBatch)
     server.httpServer?.once('close', () => {
       void actionBatch.dispose()
@@ -47,6 +53,7 @@ const createActionBatchPlugin = (): Plugin => ({
 
 const createDocumentDatabaseTestPlugin = (): Plugin => ({
   name: 'e2e-document-database',
+
   configureServer(server) {
     server.middlewares.use(createDocumentDatabaseMiddleware())
   }

@@ -268,7 +268,10 @@ const isBinaryValue = (
 const toOwnedArrayBuffer = (
   value: ArrayBuffer | ArrayBufferView
 ): ArrayBuffer => {
-  if (isArrayBuffer(value)) return value
+  if (isArrayBuffer(value)) {
+    return value
+  }
+
   return value.buffer.slice(
     value.byteOffset,
     value.byteOffset + value.byteLength
@@ -324,27 +327,46 @@ const publicationIdsFromRequest = (
 
 export class CollaborationTransportWorkerRuntime {
   private readonly createWebSocket: (endpoint: string) => WebSocket
+
   private readonly postMessage: TransportWorkerPost
+
   private codecRuntime = new PublicationCodecWorkerRuntime()
+
   private socket: WebSocket | null = null
+
   private identity: ProviderIdentity | undefined
+
   private generation = 0
+
   private bootstrapCheckpointReady = false
+
   private bootstrapFrameReceived = false
+
   private connected = false
+
   private destroyed = false
+
   private intentionalClose = false
+
   private terminalFailure = false
+
   private creditSequence = 0
+
   private codecSequence = 0
+
   private deliverySequence = 0
+
   private activeOutboundPublication: ActiveOutboundPublication | undefined
+
   private readonly pendingPublicationResponses = new Map<
     string,
     PendingPublicationResponse
   >()
+
   private activeInboundPublication: ActiveInboundPublication | undefined
+
   private readonly pendingControlRequestIds = new Set<string>()
+
   private readonly inboundCodecStartedAt = new Map<string, number>()
 
   constructor(options: CollaborationTransportWorkerRuntimeOptions) {
@@ -353,33 +375,52 @@ export class CollaborationTransportWorkerRuntime {
   }
 
   handle(request: CollaborationTransportWorkerRequest): void {
-    if (this.destroyed) return
+    if (this.destroyed) {
+      return
+    }
+
     if (request.type === 'connect') {
       this.connect(request)
+
       return
     }
-    if (request.generation !== this.generation) return
+
+    if (request.generation !== this.generation) {
+      return
+    }
+
     if (request.type === 'send-request') {
       this.sendRequest(request)
+
       return
     }
+
     if (request.type === 'settle-publication') {
       this.settlePublication(request)
+
       return
     }
+
     if (request.type === 'settle-source-publication') {
       this.settleSourcePublication(request)
+
       return
     }
+
     if (request.type === 'disconnect') {
       this.disconnect(request.generation)
+
       return
     }
+
     this.destroy()
   }
 
   destroy(): void {
-    if (this.destroyed) return
+    if (this.destroyed) {
+      return
+    }
+
     this.destroyed = true
     this.intentionalClose = true
     this.closeSocket(1000, 'provider disposed')
@@ -394,8 +435,10 @@ export class CollaborationTransportWorkerRuntime {
         undefined,
         true
       )
+
       return
     }
+
     this.generation = request.generation
     this.identity = request.identity
     this.intentionalClose = false
@@ -406,6 +449,7 @@ export class CollaborationTransportWorkerRuntime {
     this.codecRuntime.destroy()
     this.codecRuntime = new PublicationCodecWorkerRuntime()
     let socket: WebSocket
+
     try {
       socket = this.createWebSocket(request.endpoint)
       socket.binaryType = 'arraybuffer'
@@ -419,10 +463,13 @@ export class CollaborationTransportWorkerRuntime {
         undefined,
         true
       )
+
       return
     }
+
     this.socket = socket
     const generation = request.generation
+
     socket.addEventListener('open', () => this.handleOpen(generation))
     socket.addEventListener('message', (event) =>
       this.handleSocketMessage(generation, event.data)
@@ -434,10 +481,17 @@ export class CollaborationTransportWorkerRuntime {
   }
 
   private handleOpen(generation: number): void {
-    if (!this.isCurrent(generation)) return
+    if (!this.isCurrent(generation)) {
+      return
+    }
+
     const socket = this.socket
     const identity = this.identity
-    if (!socket || !identity || socket.readyState !== SOCKET_OPEN) return
+
+    if (!socket || !identity || socket.readyState !== SOCKET_OPEN) {
+      return
+    }
+
     this.postMessage({
       type: 'bootstrap-progress',
       generation,
@@ -462,8 +516,12 @@ export class CollaborationTransportWorkerRuntime {
   }
 
   private handleSocketMessage(generation: number, value: unknown): void {
-    if (!this.isCurrent(generation) || this.terminalFailure) return
+    if (!this.isCurrent(generation) || this.terminalFailure) {
+      return
+    }
+
     const receivedAt = performance.now()
+
     this.postCounter('collaboration:inbound-frame-entry', 1)
     if (typeof value === 'string') {
       if (!this.connected && !this.bootstrapFrameReceived) {
@@ -474,13 +532,16 @@ export class CollaborationTransportWorkerRuntime {
           phase: 'bootstrap-received'
         })
       }
+
       this.postCounter(
         'collaboration:inbound-frame-byte-length',
         new TextEncoder().encode(value).byteLength
       )
       this.handleControlMessage(value, receivedAt)
+
       return
     }
+
     if (!isBinaryValue(value)) {
       this.fail(
         'transport-failed',
@@ -488,14 +549,18 @@ export class CollaborationTransportWorkerRuntime {
         undefined,
         true
       )
+
       return
     }
+
     const frame = toOwnedArrayBuffer(value)
+
     this.postCounter(
       'collaboration:inbound-frame-byte-length',
       frame.byteLength
     )
     const jobId = `decode:${this.generation}:${++this.codecSequence}`
+
     this.inboundCodecStartedAt.set(jobId, receivedAt)
     this.codecRuntime.handle(
       {
@@ -509,6 +574,7 @@ export class CollaborationTransportWorkerRuntime {
 
   private handleControlMessage(encoded: string, receivedAt: number): void {
     let parsed
+
     try {
       parsed = parseCollaborationServerMessage(
         decodeCollaborationControlMessage(encoded)
@@ -516,6 +582,7 @@ export class CollaborationTransportWorkerRuntime {
     } catch {
       parsed = undefined
     }
+
     if (!parsed) {
       this.fail(
         'transport-failed',
@@ -523,8 +590,10 @@ export class CollaborationTransportWorkerRuntime {
         undefined,
         true
       )
+
       return
     }
+
     this.postTiming(
       'collaboration:inbound-receive-to-dispatch',
       duration(receivedAt)
@@ -538,14 +607,17 @@ export class CollaborationTransportWorkerRuntime {
             undefined,
             true
           )
+
           return
         }
+
         this.bootstrapCheckpointReady = true
         this.postMessage({
           type: 'bootstrap-progress',
           generation: this.generation,
           phase: 'checkpoint-ready'
         })
+
         return
       case CollaborationMessageTypes.READY:
         if (this.connected) {
@@ -555,8 +627,10 @@ export class CollaborationTransportWorkerRuntime {
             undefined,
             true
           )
+
           return
         }
+
         this.connected = true
         this.postMessage({
           type: 'bootstrap-progress',
@@ -568,15 +642,19 @@ export class CollaborationTransportWorkerRuntime {
           generation: this.generation,
           bootstrap: parsed.bootstrap
         })
+
         return
       case CollaborationMessageTypes.SOURCE_FRAME_ADMITTED:
         this.handleSourceFrameAdmitted(parsed)
+
         return
       case CollaborationMessageTypes.SOURCE_PUBLICATION_PROPOSED:
         this.handleSourcePublicationProposed(parsed)
+
         return
       case CollaborationMessageTypes.RESPONSE:
         this.handleControlResponse(parsed)
+
         return
       case CollaborationMessageTypes.AWARENESS:
         this.postMessage({
@@ -588,6 +666,7 @@ export class CollaborationTransportWorkerRuntime {
             state: parsed.state
           }
         })
+
         return
       case CollaborationMessageTypes.AWARENESS_DISCONNECT:
         this.postMessage({
@@ -598,6 +677,7 @@ export class CollaborationTransportWorkerRuntime {
             reason: 'disconnect'
           }
         })
+
         return
       case CollaborationMessageTypes.FAILURE:
         this.postMessage({
@@ -610,9 +690,11 @@ export class CollaborationTransportWorkerRuntime {
             : {}),
           terminal: false
         })
+
         return
       case CollaborationMessageTypes.CONNECTION_ERROR:
         this.fail(parsed.code, parsed.message, parsed.publicationId, true)
+
         return
       case CollaborationMessageTypes.PUBLICATION:
       case CollaborationMessageTypes.PUBLICATIONS:
@@ -627,13 +709,20 @@ export class CollaborationTransportWorkerRuntime {
 
   private sendRequest(request: SendCollaborationTransportRequest): void {
     const { message } = request
-    if (!this.requireConnected(message.requestId)) return
-    if (isPublicationRequest(message)) {
-      this.sendPublicationRequest(message)
+
+    if (!this.requireConnected(message.requestId)) {
       return
     }
+
+    if (isPublicationRequest(message)) {
+      this.sendPublicationRequest(message)
+
+      return
+    }
+
     const startedAt = performance.now()
     let encoded: string
+
     try {
       encoded = encodeCollaborationControlMessage(message)
     } catch {
@@ -642,8 +731,10 @@ export class CollaborationTransportWorkerRuntime {
         'transport-failed',
         '[collaboration] request contains a value that JSON cannot preserve'
       )
+
       return
     }
+
     this.postTiming('collaboration:outbound-encode', duration(startedAt))
     this.postCounter(
       'collaboration:outbound-encoded-byte-length',
@@ -651,11 +742,14 @@ export class CollaborationTransportWorkerRuntime {
     )
     this.pendingControlRequestIds.add(message.requestId)
     const sendStartedAt = performance.now()
+
     try {
       const socket = this.socket
+
       if (!socket || socket.readyState !== SOCKET_OPEN) {
         throw new Error('[collaboration] provider is not connected')
       }
+
       socket.send(encoded)
       this.postTiming(
         'collaboration:outbound-wire-send',
@@ -682,6 +776,7 @@ export class CollaborationTransportWorkerRuntime {
     >
   ): void {
     const publicationId = publicationIdFromRequest(message)
+
     if (this.activeOutboundPublication) {
       this.rejectRequest(
         message.requestId,
@@ -689,10 +784,13 @@ export class CollaborationTransportWorkerRuntime {
         '[collaboration] outbound publication capacity is occupied',
         publicationId
       )
+
       return
     }
+
     const jobId = `encode:${this.generation}:${++this.codecSequence}`
     const encodeStartedAt = performance.now()
+
     this.codecRuntime.handle(
       {
         type: 'encode-publications',
@@ -716,8 +814,10 @@ export class CollaborationTransportWorkerRuntime {
               response.publicationId ?? publicationId
             )
           }
+
           return
         }
+
         this.postTiming(
           'collaboration:codec-worker-encode',
           response.durationMs,
@@ -751,8 +851,13 @@ export class CollaborationTransportWorkerRuntime {
 
   private sendNextPublicationFrame(): void {
     const active = this.activeOutboundPublication
-    if (!active || !this.isCurrent(active.generation)) return
+
+    if (!active || !this.isCurrent(active.generation)) {
+      return
+    }
+
     const frame = active.frames[active.nextFrameIndex]
+
     if (!frame) {
       this.fail(
         'transport-failed',
@@ -760,9 +865,12 @@ export class CollaborationTransportWorkerRuntime {
         active.publicationId,
         true
       )
+
       return
     }
+
     let header: PublicationFrameHeader
+
     try {
       header = inspectPublicationFrameHeader(frame)
       if (header.requestId !== active.requestId) {
@@ -775,15 +883,20 @@ export class CollaborationTransportWorkerRuntime {
         active.publicationId,
         true
       )
+
       return
     }
+
     active.inFlightHeader = header
     const startedAt = performance.now()
+
     try {
       const socket = this.socket
+
       if (!socket || socket.readyState !== SOCKET_OPEN) {
         throw new Error('[collaboration] provider is not connected')
       }
+
       socket.send(frame)
       this.postTiming(
         'collaboration:outbound-wire-send',
@@ -803,6 +916,7 @@ export class CollaborationTransportWorkerRuntime {
         active.publicationId,
         true
       )
+
       return
     }
   }
@@ -813,9 +927,13 @@ export class CollaborationTransportWorkerRuntime {
       { type: typeof CollaborationMessageTypes.SOURCE_FRAME_ADMITTED }
     >
   ): void {
-    if (!message) return
+    if (!message) {
+      return
+    }
+
     const active = this.activeOutboundPublication
     const header = active?.inFlightHeader
+
     if (
       !active ||
       !header ||
@@ -830,15 +948,19 @@ export class CollaborationTransportWorkerRuntime {
         active?.publicationId ?? message.publicationId,
         true
       )
+
       return
     }
+
     active.inFlightHeader = undefined
     active.frames[active.nextFrameIndex] = undefined
     active.nextFrameIndex += 1
     if (active.nextFrameIndex < active.frames.length) {
       this.sendNextPublicationFrame()
+
       return
     }
+
     this.pendingPublicationResponses.set(active.requestId, {
       publicationId: active.publicationId,
       publicationIds: active.publicationIds,
@@ -860,8 +982,12 @@ export class CollaborationTransportWorkerRuntime {
       { type: typeof CollaborationMessageTypes.SOURCE_PUBLICATION_PROPOSED }
     >
   ): void {
-    if (!message) return
+    if (!message) {
+      return
+    }
+
     const active = this.activeOutboundPublication
+
     if (active?.requestId === message.requestId) {
       if (
         active.proposedSequences ||
@@ -880,8 +1006,10 @@ export class CollaborationTransportWorkerRuntime {
           active.publicationId,
           true
         )
+
         return
       }
+
       active.proposedSequences = message.sequences
       this.postMessage({
         type: 'source-publication-proposed',
@@ -890,9 +1018,12 @@ export class CollaborationTransportWorkerRuntime {
         publicationIds: message.publicationIds,
         sequences: message.sequences
       })
+
       return
     }
+
     const pending = this.pendingPublicationResponses.get(message.requestId)
+
     if (
       !pending ||
       pending.proposedSequences ||
@@ -909,8 +1040,10 @@ export class CollaborationTransportWorkerRuntime {
         pending?.publicationId ?? message.publicationIds[0],
         true
       )
+
       return
     }
+
     this.pendingPublicationResponses.set(message.requestId, {
       ...pending,
       proposedSequences: message.sequences
@@ -930,8 +1063,12 @@ export class CollaborationTransportWorkerRuntime {
       { type: typeof CollaborationMessageTypes.RESPONSE }
     >
   ): void {
-    if (!message) return
+    if (!message) {
+      return
+    }
+
     const active = this.activeOutboundPublication
+
     if (active?.requestId === message.requestId) {
       if (message.ok) {
         this.fail(
@@ -948,11 +1085,14 @@ export class CollaborationTransportWorkerRuntime {
           true
         )
       }
+
       return
     }
+
     const pendingPublication = this.pendingPublicationResponses.get(
       message.requestId
     )
+
     if (pendingPublication) {
       this.pendingPublicationResponses.delete(message.requestId)
       if (message.ok) {
@@ -972,8 +1112,10 @@ export class CollaborationTransportWorkerRuntime {
             pendingPublication.publicationId,
             true
           )
+
           return
         }
+
         this.postMessage({
           type: 'request-accepted',
           generation: this.generation,
@@ -981,17 +1123,24 @@ export class CollaborationTransportWorkerRuntime {
           acceptedSequences: message.acceptedSequences,
           persistence: message.persistence
         })
+
         return
       }
+
       this.rejectRequest(
         message.requestId,
         message.error.code,
         message.error.message,
         pendingPublication.publicationId
       )
+
       return
     }
-    if (!this.pendingControlRequestIds.delete(message.requestId)) return
+
+    if (!this.pendingControlRequestIds.delete(message.requestId)) {
+      return
+    }
+
     if (message.ok) {
       this.postMessage({
         type: 'request-accepted',
@@ -999,8 +1148,10 @@ export class CollaborationTransportWorkerRuntime {
         requestId: message.requestId,
         persistence: message.persistence
       })
+
       return
     }
+
     this.rejectRequest(
       message.requestId,
       message.error.code,
@@ -1009,19 +1160,26 @@ export class CollaborationTransportWorkerRuntime {
   }
 
   private handleCodecResponse(response: PublicationCodecWorkerResponse): void {
-    if (this.destroyed || this.terminalFailure) return
-    if (response.type === 'publication-frame-consumed') {
-      this.sendFrameConsumed(response.header)
+    if (this.destroyed || this.terminalFailure) {
       return
     }
+
+    if (response.type === 'publication-frame-consumed') {
+      this.sendFrameConsumed(response.header)
+
+      return
+    }
+
     if (response.type === 'publication-frame-accepted') {
       this.finishInboundCodecTiming(
         response.jobId,
         response.durationMs,
         response.header.publicationId
       )
+
       return
     }
+
     if (response.type === 'decoded-publication') {
       this.finishInboundCodecTiming(
         response.jobId,
@@ -1035,9 +1193,12 @@ export class CollaborationTransportWorkerRuntime {
           response.publication.publicationId,
           true
         )
+
         return
       }
+
       const deliveryId = `delivery:${this.generation}:${++this.deliverySequence}`
+
       this.activeInboundPublication = {
         generation: this.generation,
         deliveryId,
@@ -1046,6 +1207,7 @@ export class CollaborationTransportWorkerRuntime {
         sequence: response.sequence
       }
       const handoffStartedAt = performance.now()
+
       this.postMessage({
         type: 'publication-delivery',
         generation: this.generation,
@@ -1062,9 +1224,14 @@ export class CollaborationTransportWorkerRuntime {
         duration(handoffStartedAt),
         response.publication.publicationId
       )
+
       return
     }
-    if (response.type === 'decoded-publication-delivery-settled') return
+
+    if (response.type === 'decoded-publication-delivery-settled') {
+      return
+    }
+
     if (response.type === 'publication-codec-failure') {
       this.inboundCodecStartedAt.delete(response.jobId)
       this.fail(
@@ -1078,6 +1245,7 @@ export class CollaborationTransportWorkerRuntime {
 
   private sendFrameConsumed(header: PublicationFrameHeader): void {
     const requestId = this.nextCreditRequestId()
+
     try {
       this.sendInternalControl({
         type: CollaborationMessageTypes.FRAME_CONSUMED,
@@ -1106,7 +1274,9 @@ export class CollaborationTransportWorkerRuntime {
     ) {
       return
     }
+
     const active = this.activeInboundPublication
+
     if (!active || active.deliveryId !== request.deliveryId) {
       this.fail(
         'transport-failed',
@@ -1114,15 +1284,19 @@ export class CollaborationTransportWorkerRuntime {
         active?.publicationId,
         true
       )
+
       return
     }
+
     if (request.outcome === 'failed') {
       this.terminalFailure = true
       this.intentionalClose = true
       this.closeSocket(1002, 'canonical publication apply failed')
       this.clearOwnedState()
+
       return
     }
+
     if (active.fromActorId) {
       try {
         this.sendInternalControl({
@@ -1138,11 +1312,14 @@ export class CollaborationTransportWorkerRuntime {
           active.publicationId,
           true
         )
+
         return
       }
     }
+
     this.activeInboundPublication = undefined
     const jobId = `settle:${this.generation}:${++this.codecSequence}`
+
     this.codecRuntime.handle(
       {
         type: 'settle-decoded-publication-delivery',
@@ -1161,6 +1338,7 @@ export class CollaborationTransportWorkerRuntime {
       active?.requestId === request.requestId && active.proposedSequences
         ? active
         : undefined
+
     if (!pending?.proposedSequences && !activeProposal) {
       this.fail(
         'acknowledgement-failed',
@@ -1168,8 +1346,10 @@ export class CollaborationTransportWorkerRuntime {
         pending?.publicationId ?? active?.publicationId,
         true
       )
+
       return
     }
+
     try {
       this.sendInternalControl({
         type: CollaborationMessageTypes.SOURCE_PUBLICATION_SETTLEMENT,
@@ -1191,15 +1371,19 @@ export class CollaborationTransportWorkerRuntime {
     message: CollaborationRequestMessage | SourcePublicationSettlementMessage
   ): void {
     const socket = this.socket
+
     if (!this.connected || !socket || socket.readyState !== SOCKET_OPEN) {
       throw new Error('[collaboration] provider is not connected')
     }
+
     const encoded = encodeCollaborationControlMessage(message)
+
     socket.send(encoded)
   }
 
   private nextCreditRequestId(): string {
     const actorId = this.identity?.actorId ?? 'transport'
+
     return `${actorId}:credit:${++this.creditSequence}`
   }
 
@@ -1209,8 +1393,12 @@ export class CollaborationTransportWorkerRuntime {
     publicationId: string
   ): void {
     const startedAt = this.inboundCodecStartedAt.get(jobId)
+
     this.inboundCodecStartedAt.delete(jobId)
-    if (codecDurationMs === undefined && startedAt === undefined) return
+    if (codecDurationMs === undefined && startedAt === undefined) {
+      return
+    }
+
     this.postTiming(
       'collaboration:codec-worker-decode',
       codecDurationMs ?? (startedAt === undefined ? 0 : duration(startedAt)),
@@ -1226,16 +1414,22 @@ export class CollaborationTransportWorkerRuntime {
   }
 
   private disconnect(generation: number): void {
-    if (!this.isCurrent(generation)) return
+    if (!this.isCurrent(generation)) {
+      return
+    }
+
     this.intentionalClose = true
     this.connected = false
     const socket = this.socket
+
     this.clearOwnedState()
     if (!socket || socket.readyState === SOCKET_CLOSED) {
       this.socket = null
       this.postMessage({ type: 'disconnected', generation })
+
       return
     }
+
     try {
       socket.close(1000, 'client disconnect')
     } catch {
@@ -1245,7 +1439,10 @@ export class CollaborationTransportWorkerRuntime {
   }
 
   private handleSocketError(generation: number): void {
-    if (!this.isCurrent(generation) || this.intentionalClose) return
+    if (!this.isCurrent(generation) || this.intentionalClose) {
+      return
+    }
+
     this.fail(
       this.connected ? 'transport-failed' : 'connection-failed',
       this.connected
@@ -1261,12 +1458,19 @@ export class CollaborationTransportWorkerRuntime {
     code: number,
     reason: string
   ): void {
-    if (generation !== this.generation || this.destroyed) return
+    if (generation !== this.generation || this.destroyed) {
+      return
+    }
+
     this.socket = null
     const wasIntentional = this.intentionalClose
+
     this.connected = false
     this.clearOwnedState()
-    if (this.terminalFailure && !wasIntentional) return
+    if (this.terminalFailure && !wasIntentional) {
+      return
+    }
+
     this.postMessage({
       type: 'disconnected',
       generation,
@@ -1284,11 +1488,13 @@ export class CollaborationTransportWorkerRuntime {
     ) {
       return true
     }
+
     this.rejectRequest(
       requestId,
       'not-connected',
       '[collaboration] provider is not connected'
     )
+
     return false
   }
 
@@ -1341,7 +1547,10 @@ export class CollaborationTransportWorkerRuntime {
     terminal: boolean,
     _cause?: unknown
   ): void {
-    if (this.destroyed || (terminal && this.terminalFailure)) return
+    if (this.destroyed || (terminal && this.terminalFailure)) {
+      return
+    }
+
     this.postMessage({
       type: 'failure',
       generation: this.generation,
@@ -1350,7 +1559,10 @@ export class CollaborationTransportWorkerRuntime {
       ...(publicationId ? { publicationId } : {}),
       terminal
     })
-    if (!terminal) return
+    if (!terminal) {
+      return
+    }
+
     this.terminalFailure = true
     this.connected = false
     this.closeSocket(1002, 'collaboration transport failure')
@@ -1359,8 +1571,12 @@ export class CollaborationTransportWorkerRuntime {
 
   private closeSocket(code: number, reason: string): void {
     const socket = this.socket
+
     this.socket = null
-    if (!socket || socket.readyState === SOCKET_CLOSED) return
+    if (!socket || socket.readyState === SOCKET_CLOSED) {
+      return
+    }
+
     try {
       socket.close(code, reason)
     } catch {
@@ -1405,7 +1621,9 @@ if (
 ) {
   const runtime = new CollaborationTransportWorkerRuntime({
     createWebSocket: (endpoint) => new WorkerWebSocket(endpoint),
+
     postMessage: (response) => workerScope.postMessage(response)
   })
+
   workerScope.addEventListener('message', (event) => runtime.handle(event.data))
 }
