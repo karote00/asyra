@@ -36,6 +36,14 @@
      precise contact-region inspection are separate tasks, not unfinished scope
      of this PR. No new Framework 3D profile is enabled by closeout.
 
+2. [Self-authored etching and lithography cases](plans/process-cases/plan.md)
+   - Planning authorized 2026-11-07: implement synthetic process models ourselves
+     under MIT, without external solver code or experimental datasets.
+   - Sequence: numerical feasibility, complete etching case, complete four-stage
+     lithography case with adjustable/timed source heads, then ideal mask transfer.
+   - Implementation and numerical acceptance have not started. The process flow
+     retains unexecuted criteria; this work does not waive or expand R0 gates.
+
 ## Completed Work
 
 - [M5 controlled-pilot candidate delivery](plans/completed/m5-controlled-pilot.md)
