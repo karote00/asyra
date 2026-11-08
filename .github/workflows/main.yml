@@ -42,7 +42,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
       - name: Check whether source parsing is needed
@@ -66,7 +66,7 @@ jobs:
         run: node scripts/ci-scope.mjs
       - name: Upload CI scope evidence
         if: steps.scope.outcome == 'success'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ci-scope-evidence
           path: ci-scope-evidence.json
@@ -114,7 +114,7 @@ jobs:
         run: corepack enable && yarn set version 4.3.1
 
       - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           cache: 'yarn'
@@ -126,7 +126,7 @@ jobs:
         run: node --test .github/__tests__/site-cloudflare.test.mjs .github/__tests__/app-cloudflare.test.mjs scripts/__tests__/app-cloudflare.test.mjs
 
       - name: Download CI scope evidence for shared checks
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: ci-scope-evidence
           path: tmp/ci-scope
@@ -167,7 +167,7 @@ jobs:
 
       - name: Upload selected CI check results
         if: always() && hashFiles('ci-selected-check-results.json') != ''
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ci-selected-check-results
           path: ci-selected-check-results.json
@@ -210,13 +210,13 @@ jobs:
         run: python3 apps/asyra-sim/scripts/supervise-tests.py --init-ci
       - name: Setup Yarn
         run: corepack enable && yarn set version 4.3.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           cache: yarn
       - run: yarn install --immutable
       - name: Download CI scope evidence for workspace checks
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: ci-scope-evidence
           path: tmp/ci-scope
@@ -248,7 +248,7 @@ jobs:
           PY
       - name: Upload this workspace result
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: workspace-result-${{ matrix.workspace.artifactId }}
           path: .ci-workspace-results/${{ matrix.workspace.artifactId }}.json
@@ -256,7 +256,7 @@ jobs:
 
       - name: Upload failed workspace E2E diagnostics
         if: always() && steps.workspace-checks.outcome == 'failure' && matrix.workspace.e2eSelection.mode != 'not-selected'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: workspace-e2e-diagnostics-${{ matrix.workspace.artifactId }}
           path: |
@@ -284,13 +284,13 @@ jobs:
           persist-credentials: false
       - name: Setup Yarn
         run: corepack enable && yarn set version 4.3.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           cache: yarn
       - run: yarn install --immutable
       - name: Download CI scope evidence for Inspector contracts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: ci-scope-evidence
           path: tmp/ci-scope
@@ -408,13 +408,13 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
       - name: Download workspace matrix results
         if: always() && needs.scope.result == 'success' && needs.scope.outputs.workspace_matrix != '[]'
         continue-on-error: true
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: workspace-result-*
           path: .ci-workspace-results
@@ -422,14 +422,14 @@ jobs:
       - name: Download CI scope evidence
         if: always() && needs.scope.result == 'success'
         continue-on-error: true
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: ci-scope-evidence
           path: .
       - name: Download selected CI check results
         if: always() && needs.shared-validation.result != 'skipped'
         continue-on-error: true
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: ci-selected-check-results
           path: .
@@ -454,7 +454,7 @@ jobs:
       - name: Download complete observation bundles
         if: always()
         continue-on-error: true
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: flow-observations-*
           path: tmp/flow-ci/bundles
@@ -493,7 +493,7 @@ jobs:
         run: node tools/flow-inspector/control-plane/workflow-results.cjs aggregate
       - name: Upload complete workflow result
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: workflow-result-${{ github.run_id }}-${{ github.run_attempt }}
           path: tmp/flow-ci/workflow-result.json
