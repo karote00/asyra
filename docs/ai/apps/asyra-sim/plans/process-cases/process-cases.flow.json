@@ -1,0 +1,395 @@
+{
+  "schemaVersion": 1,
+  "projectId": "asyra",
+  "flowId": "sim-process-cases",
+  "revision": 0,
+  "definition": {
+    "title": "Asyra Sim - self-authored process cases",
+    "purpose": "Verify synthetic etching, four-stage lithography and ideal geometric transfer under independently authored models; no real-material accuracy claim.",
+    "nodes": [
+      {
+        "id": "numerical-design",
+        "title": "Prove numerical feasibility",
+        "objective": "Proposed specification -> independent derivations, permanent proofs and fixed resource envelope. Own unresolved stability, accuracy and budget failures; block production until downstream handoffs are feasible. No UI or imported numerical code.",
+        "owner": "Sim numerical model preparation",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "proof",
+            "title": "Independent E01-E05 and L01-L05 proofs and resource measurements",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "sim-process-cases/numerical-design/proof"
+            }
+          },
+          {
+            "id": "review",
+            "title": "Contract, handoff and evidence review accepted",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-sim/specs/process-cases-v1.md",
+          "docs/ai/apps/asyra-sim/plans/process-cases/plan.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-sim/src/analysis",
+          "docs/ai/apps/asyra-sim/specs/process-cases-v1.md",
+          "docs/ai/apps/asyra-sim/plans/process-cases/plan.md"
+        ],
+        "actions": []
+      },
+      {
+        "id": "process-execution",
+        "title": "Own detached process execution",
+        "objective": "Admitted definitions -> detached snapshots and bounded job artifacts. Own validation, cancellation, retirement and completion. Worker cannot edit canonical state; no collision-pair substitution.",
+        "owner": "Sim domain and analysis lifecycle",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "sim-process-cases",
+            "nodeId": "numerical-design"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "proof",
+            "title": "Admission, lifetime, byte budgets and preserved mechanical execution",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "sim-process-cases/process-execution/proof"
+            }
+          },
+          {
+            "id": "review",
+            "title": "Contract, handoff and evidence review accepted",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-sim/specs/process-cases-v1.md",
+          "docs/ai/apps/asyra-sim/plans/process-cases/plan.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-sim/src/domain",
+          "apps/asyra-sim/src/analysis",
+          "apps/asyra-sim/src/features",
+          "apps/asyra-sim/src/common-apis",
+          "apps/asyra-sim/src/init"
+        ],
+        "actions": []
+      },
+      {
+        "id": "etching",
+        "title": "Compute material removal",
+        "objective": "Frozen section, mask and speed law -> timed interfaces and metrics. Own unstable steps, inaccessible boundaries and convergence failures. No renderer geometry or boundary wrapping.",
+        "owner": "Sim etching numerical method",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "sim-process-cases",
+            "nodeId": "process-execution"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "proof",
+            "title": "E01-E05 analytic, symmetry, mask and convergence cases",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "sim-process-cases/etching/proof"
+            }
+          },
+          {
+            "id": "review",
+            "title": "Contract, handoff and evidence review accepted",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-sim/specs/process-cases-v1.md",
+          "docs/ai/apps/asyra-sim/plans/process-cases/plan.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-sim/src/analysis",
+          "apps/asyra-sim/src/domain"
+        ],
+        "actions": []
+      },
+      {
+        "id": "etching-workbench",
+        "title": "Deliver etching journey",
+        "objective": "Process definitions and immutable results -> configure, run, compare, export and reopen. Own projection and persistence failures; numerical interpretation remains kernel-owned. No solve during playback.",
+        "owner": "Sim UI and storage",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "sim-process-cases",
+            "nodeId": "etching"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "proof",
+            "title": "E06 ordinary etching journey and mechanical regressions",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "sim-process-cases/etching-workbench/proof"
+            }
+          },
+          {
+            "id": "review",
+            "title": "Contract, handoff and evidence review accepted",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-sim/specs/process-cases-v1.md",
+          "docs/ai/apps/asyra-sim/plans/process-cases/plan.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-sim/src",
+          "apps/asyra-sim/e2e"
+        ],
+        "actions": []
+      },
+      {
+        "id": "optics",
+        "title": "Propagate adjustable optical fields",
+        "objective": "Admitted heads, coherence and stack -> fields, irradiance and optical accounting. Own angle, sampling and finite-domain rejection. No high-NA or general Maxwell claims.",
+        "owner": "Sim optical domain and numerical method",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "sim-process-cases",
+            "nodeId": "etching-workbench"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "proof",
+            "title": "L01-L02 wave, phase, coherence, absorption and energy cases",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "sim-process-cases/optics/proof"
+            }
+          },
+          {
+            "id": "review",
+            "title": "Contract, handoff and evidence review accepted",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-sim/specs/process-cases-v1.md",
+          "docs/ai/apps/asyra-sim/plans/process-cases/plan.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-sim/src/domain",
+          "apps/asyra-sim/src/analysis",
+          "apps/asyra-sim/src/features",
+          "apps/asyra-sim/src/common-apis"
+        ],
+        "actions": []
+      },
+      {
+        "id": "exposure",
+        "title": "Integrate exposure and reaction",
+        "objective": "Frozen pose track and current absorption -> optical solve, reaction update and next absorption state. Own time alignment and stable feedback; internal iteration is not a task-cycle bypass. No result clipping.",
+        "owner": "Sim exposure integrator",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "sim-process-cases",
+            "nodeId": "optics"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "proof",
+            "title": "L03 and L05 reaction, shutter, scan and feedback cases",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "sim-process-cases/exposure/proof"
+            }
+          },
+          {
+            "id": "review",
+            "title": "Contract, handoff and evidence review accepted",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-sim/specs/process-cases-v1.md",
+          "docs/ai/apps/asyra-sim/plans/process-cases/plan.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-sim/src/analysis",
+          "apps/asyra-sim/src/domain"
+        ],
+        "actions": []
+      },
+      {
+        "id": "development",
+        "title": "Compute accessible resist removal",
+        "objective": "Post-exposure fraction and boundaries -> arrival times and retained resist. Own speed admission and accessibility failures; mask and substrate block removal. No buried threshold deletion.",
+        "owner": "Sim development numerical method",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "sim-process-cases",
+            "nodeId": "exposure"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "proof",
+            "title": "L04 constant, layered, blocked and refined development cases",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "sim-process-cases/development/proof"
+            }
+          },
+          {
+            "id": "review",
+            "title": "Contract, handoff and evidence review accepted",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-sim/specs/process-cases-v1.md",
+          "docs/ai/apps/asyra-sim/plans/process-cases/plan.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-sim/src/analysis",
+          "apps/asyra-sim/src/domain"
+        ],
+        "actions": []
+      },
+      {
+        "id": "lithography-workbench",
+        "title": "Deliver four-stage lithography journey",
+        "objective": "Source setup and four-stage artifacts -> reproducible stationary and scanned experiments. Own UI and persistence failures; preserve frozen evidence. No pointer timing as exposure or solve on playback.",
+        "owner": "Sim UI and storage",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "sim-process-cases",
+            "nodeId": "development"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "proof",
+            "title": "L06 four-stage journey, pose undo and existing behavior",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "sim-process-cases/lithography-workbench/proof"
+            }
+          },
+          {
+            "id": "review",
+            "title": "Contract, handoff and evidence review accepted",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-sim/specs/process-cases-v1.md",
+          "docs/ai/apps/asyra-sim/plans/process-cases/plan.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-sim/src",
+          "apps/asyra-sim/e2e"
+        ],
+        "actions": []
+      },
+      {
+        "id": "transfer",
+        "title": "Connect developed opening to etching",
+        "objective": "Completed single cleared opening -> new etch definition with source provenance and declared ideal transfer. Own residual-film, frame, units and unsupported geometry rejection. No merge, rescale or physical transfer claim.",
+        "owner": "Sim process-to-process conversion",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "sim-process-cases",
+            "nodeId": "etching-workbench"
+          },
+          {
+            "flowId": "sim-process-cases",
+            "nodeId": "lithography-workbench"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "proof",
+            "title": "B01 transfer, rejection, undo, export and replay cases",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "sim-process-cases/transfer/proof"
+            }
+          },
+          {
+            "id": "review",
+            "title": "Contract, handoff and evidence review accepted",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-sim/specs/process-cases-v1.md",
+          "docs/ai/apps/asyra-sim/plans/process-cases/plan.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-sim/src/domain",
+          "apps/asyra-sim/src/common-apis",
+          "apps/asyra-sim/src/features",
+          "apps/asyra-sim/src/ui",
+          "apps/asyra-sim/src/storage",
+          "apps/asyra-sim/e2e"
+        ],
+        "actions": []
+      }
+    ],
+    "criteria": [
+      {
+        "id": "integrated-evidence",
+        "title": "E, L and B evidence and preservation gates pass on the same source",
+        "kind": "automated",
+        "selector": {
+          "producer": "custom",
+          "identity": "sim-process-cases/integrated-evidence"
+        }
+      },
+      {
+        "id": "product-acceptance",
+        "title": "User accepts complete synthetic process journeys and declared limits",
+        "kind": "manual"
+      }
+    ]
+  },
+  "current": {
+    "observations": [],
+    "notes": [],
+    "progress": [],
+    "sources": [],
+    "warnings": []
+  }
+}
