@@ -1738,15 +1738,18 @@ it('validates a selected nested sequence result against the selected union field
       }
     ]
   }
+
   input.output = { kind: 'step', step: 'source', path: '/value' }
   const result = admitAiRecipe(
     input,
     options({ resolve: () => dependency }),
     'sequence'
   )
+
   expect(result, JSON.stringify(result)).toMatchObject({ ok: true })
-  if (result.ok)
+  if (result.ok) {
     expect(result.value.contract.outputSchema).toEqual({
       anyOf: [{ type: 'number' }, { type: 'number' }]
     })
+  }
 })
