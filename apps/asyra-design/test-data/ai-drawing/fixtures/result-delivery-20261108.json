@@ -1,0 +1,564 @@
+{
+  "sourceRun": "taipei-101-fixed-1794114896420",
+  "requestId": "8022bce0-16d3-4e31-b0a6-62732377cbff",
+  "import": {
+    "operations": [
+      {
+        "id": "images",
+        "name": "design_references.import_reference_image",
+        "arguments": {
+          "references": [
+            {
+              "sourceUrl": "https://www.onenessarchitects.com/project/Taipei-101",
+              "imageUrl": "https://www.onenessarchitects.com/uploads/default/NS_project_relates/raw/cf06f7887927f99667ac51a2b451256c.jpg"
+            },
+            {
+              "sourceUrl": "https://www.taipei-tickets.com/taipei-101-observatory/",
+              "imageUrl": "https://cdn-imgix.headout.com/media/images/0ef6768864b988ab94b54e787dba06e7-TAIPEI101-5.jpg"
+            }
+          ]
+        }
+      },
+      {
+        "id": "facts",
+        "name": "design_operations.record_design_facts",
+        "arguments": {
+          "facts": [
+            {
+              "id": "height",
+              "statement": "Architect's project page gives height 508 m and floors B5–101F.",
+              "scope": "Whole architectural height, not individual component sizes.",
+              "sources": [
+                "https://www.onenessarchitects.com/project/Taipei-101"
+              ],
+              "verification": "Read height and floor fields on architect's page.",
+              "dependencies": [
+                {
+                  "key": "architect-project",
+                  "version": "2026-11-08"
+                }
+              ]
+            },
+            {
+              "id": "tiers",
+              "statement": "Eight eight-storey flared modules above level 26; architect describes bamboo tiering, ruyi and dragon motifs and circular-square emblems at floors 24–27.",
+              "scope": "Tier count and ornament identity; detailed ornament profiles and panel dimensions are visual estimates.",
+              "sources": [
+                "https://siny.org/wp-content/uploads/2014/12/2014_TallandSupertallBuildings_Preview.pdf",
+                "https://www.onenessarchitects.com/project/Taipei-101"
+              ],
+              "verification": "Architect description and engineering chapter excerpt agree on stacked 8-storey form.",
+              "dependencies": [
+                {
+                  "key": "architect-project",
+                  "version": "2026-11-08"
+                },
+                {
+                  "key": "engineering-chapter",
+                  "version": "2014"
+                }
+              ]
+            },
+            {
+              "id": "width",
+              "statement": "Published structural reference gives ground cross-section 63.5 × 63.5 m; other engineering summary gives 45.9 m typical footprint, not adopted as ground width.",
+              "scope": "Adopt 63.5 m tower base; 45.9 m used as typical narrow upper-tier width estimate. Does not verify podium dimensions.",
+              "sources": [
+                "https://ndl.ethernet.edu.et/bitstream/123456789/46132/1/Tall%20Buildings%20Structural%20Systems%20and%20Aerodynamic%20Form.pdf",
+                "https://www.structuremag.org/article/dynamic-loading-solutions-in-taipei-101/"
+              ],
+              "verification": "Different source footprint scopes retained explicitly; base 6350 cm, tier neck approximately 4590 cm.",
+              "dependencies": [
+                {
+                  "key": "structural-form",
+                  "version": "2013"
+                },
+                {
+                  "key": "structure-summary",
+                  "version": "2026-11-08"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "name": "design_operations.record_design_calculations",
+        "arguments": {
+          "calculations": [
+            {
+              "id": "height-cm",
+              "value": 50800,
+              "unit": "cm = unprojected px",
+              "sourceFactIds": [
+                "height"
+              ],
+              "verification": "508 m × 100 cm/m; projection scale 1 px/cm. Preserve full source height, no fit scaling."
+            },
+            {
+              "id": "base-cm",
+              "value": 6350,
+              "unit": "cm = unprojected px",
+              "sourceFactIds": [
+                "width"
+              ],
+              "verification": "63.5 × 100; use ±3175 cm around tower axis."
+            }
+          ]
+        }
+      }
+    ],
+    "response": "full",
+    "retain": {
+      "sources": {
+        "step": "facts",
+        "path": "/facts"
+      }
+    },
+    "message": "保留建築參考、已知尺寸與估算範圍"
+  },
+  "select": {
+    "operations": [
+      {
+        "id": "criteria",
+        "name": "design_operations.define_design_criteria",
+        "arguments": {
+          "method": "Editable native projected planar faces, surface grids, gradients and explicit ornaments. All world coordinates in cm; orthographic elevated architectural three-quarter projection azimuth 35°, elevation 25°, scale 1 px/cm. Overall 508 m height is sourced; intermediate heights, facade spacing and podium dimensions are photo-based estimates, not survey data.",
+          "references": [
+            "https://www.onenessarchitects.com/project/Taipei-101",
+            "https://www.taipei-tickets.com/taipei-101-observatory/"
+          ],
+          "criteria": {
+            "whole": {
+              "requirement": "Entire Taipei 101 from base through spire, highly detailed realistic architectural illustration, not schematic.",
+              "description": "Whole-building silhouette, all eight projecting bamboo tiers, tapered base and complete crown/spire; no added scenery or labels.",
+              "verification": "visual",
+              "requiredUnits": []
+            },
+            "view": {
+              "requirement": "Fixed elevated three-quarter view, clear top surfaces and consistent perspective.",
+              "description": "Visible two facades and terraces/roofs share one projection throughout.",
+              "verification": "visual",
+              "requiredUnits": []
+            },
+            "detail": {
+              "requirement": "Preserve facade structure, window frames and visible ornamentation with realistic materials, light and shadows.",
+              "description": "Native window grids, mullions, spandrels, tier rims and recess shadows, corner ornaments, circular emblems, podium and spire detailing at close range.",
+              "verification": "visual",
+              "requiredUnits": [
+                "base",
+                "tiers",
+                "crown"
+              ]
+            },
+            "scale": {
+              "requirement": "Real-world dimensions at 1 cm = 1 px before projection; projected lengths reflect angle.",
+              "description": "World z 0–50800 cm with scale 1, azimuth 35 elevation25; native output retains projected size. Source limitations documented.",
+              "verification": "data"
+            },
+            "editable": {
+              "requirement": "Use editable 2D shapes.",
+              "description": "All building components native vectors/ovals and independent editable fills, no raster.",
+              "verification": "data"
+            }
+          },
+          "detailRequired": true
+        }
+      },
+      {
+        "id": "selectrefs",
+        "name": "design_operations.select_design_references",
+        "arguments": {
+          "referenceImageIndexes": [
+            0,
+            1
+          ],
+          "requirementRevision": {
+            "kind": "step",
+            "step": "criteria",
+            "path": "/requirementRevision"
+          },
+          "referenceDecisions": [
+            {
+              "referenceId": "reference:2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7",
+              "status": "restricted",
+              "reason": "Architect's full-tower aerial shows silhouette and base; low resolution limits fine detail.",
+              "uses": [
+                {
+                  "id": "whole-reference",
+                  "criterionId": "whole",
+                  "purpose": "visual",
+                  "region": "whole",
+                  "limitations": [
+                    "Different azimuth and perspective; use silhouette and tier counts, not pixel alignment."
+                  ]
+                },
+                {
+                  "id": "base-reference",
+                  "criterionId": "detail",
+                  "unitId": "base",
+                  "purpose": "visual",
+                  "region": "whole",
+                  "limitations": [
+                    "Base form visible but fine panel spacing estimated."
+                  ]
+                }
+              ]
+            },
+            {
+              "referenceId": "reference:75e1f4a2133fdfd69b3d1d5d34ed537b2e0d4ed2fa747c42b2ea072ae987ea76",
+              "status": "restricted",
+              "reason": "High aerial shows tier faces, rim details and crown clearly, bottom cropped.",
+              "uses": [
+                {
+                  "id": "tiers-reference",
+                  "criterionId": "detail",
+                  "unitId": "tiers",
+                  "purpose": "visual",
+                  "region": "whole",
+                  "limitations": [
+                    "No dimensions; panel sizes estimated; only top modules shown."
+                  ]
+                },
+                {
+                  "id": "crown-reference",
+                  "criterionId": "detail",
+                  "unitId": "crown",
+                  "purpose": "visual",
+                  "region": "whole",
+                  "limitations": [
+                    "Different lighting, projected proportions not exact trace."
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "output": {
+      "kind": "step",
+      "step": "selectrefs",
+      "path": ""
+    },
+    "retain": {
+      "referenceUses": {
+        "step": "selectrefs",
+        "path": "/referenceDecisions"
+      }
+    },
+    "message": "建立完整建築、比例與局部細節的檢查標準"
+  },
+  "read": {
+    "delivery": {
+      "fields": {
+        "referenceUses": {
+          "name": "referenceUses",
+          "path": ""
+        },
+        "baseTargets": {
+          "name": "baseTargets",
+          "path": "",
+          "view": "shape"
+        },
+        "crownTargets": {
+          "name": "crownTargets",
+          "path": "",
+          "view": "shape"
+        }
+      }
+    }
+  },
+  "capture": {
+    "operations": [
+      {
+        "id": "review",
+        "name": "design_operations.review_drawing",
+        "arguments": {
+          "phase": "visual",
+          "final": false,
+          "inspections": [
+            {
+              "elementId": "workspace",
+              "view": "overview",
+              "checks": [
+                {
+                  "criterionId": "whole",
+                  "referenceUses": [
+                    {
+                      "kind": "named",
+                      "name": "referenceUses",
+                      "path": "/0/uses/0/receipt"
+                    }
+                  ]
+                },
+                {
+                  "criterionId": "view"
+                }
+              ]
+            },
+            {
+              "elementId": "design-001ebbb2-0ea0-4d55-9260-d4ebfe5d7ddc-0",
+              "view": "overview",
+              "checks": [
+                {
+                  "criterionId": "detail",
+                  "unitId": "base",
+                  "referenceUses": [
+                    {
+                      "kind": "named",
+                      "name": "referenceUses",
+                      "path": "/0/uses/1/receipt"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "elementId": "design-28572e2b-73a5-4bc3-bf86-adf938ccc606-0",
+              "view": "overview",
+              "checks": [
+                {
+                  "criterionId": "detail",
+                  "unitId": "tiers",
+                  "referenceUses": [
+                    {
+                      "kind": "named",
+                      "name": "referenceUses",
+                      "path": "/1/uses/0/receipt"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "elementId": "design-d07081ee-239a-4ec1-af52-2f1ca2535c79-0",
+              "view": "overview",
+              "checks": [
+                {
+                  "criterionId": "detail",
+                  "unitId": "crown",
+                  "referenceUses": [
+                    {
+                      "kind": "named",
+                      "name": "referenceUses",
+                      "path": "/1/uses/1/receipt"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "elementId": {
+                "kind": "named",
+                "name": "baseTargets",
+                "path": "/0/keyToId/base-y"
+              },
+              "view": "detail",
+              "region": {
+                "x": 1000,
+                "y": 3000,
+                "width": 1000,
+                "height": 1000
+              },
+              "checks": [
+                {
+                  "criterionId": "detail",
+                  "unitId": "base",
+                  "referenceUses": [
+                    {
+                      "kind": "named",
+                      "name": "referenceUses",
+                      "path": "/0/uses/1/receipt"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "elementId": {
+                "kind": "named",
+                "name": "tierTargets",
+                "path": "/0/keyToId/bamboo-3-south"
+              },
+              "view": "detail",
+              "region": {
+                "x": 1200,
+                "y": 1000,
+                "width": 1000,
+                "height": 1000
+              },
+              "checks": [
+                {
+                  "criterionId": "detail",
+                  "unitId": "tiers",
+                  "referenceUses": [
+                    {
+                      "kind": "named",
+                      "name": "referenceUses",
+                      "path": "/1/uses/0/receipt"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "elementId": {
+                "kind": "named",
+                "name": "crownTargets",
+                "path": "/0/keyToId/crown-taper-y"
+              },
+              "view": "detail",
+              "region": {
+                "x": 400,
+                "y": 500,
+                "width": 1000,
+                "height": 1000
+              },
+              "checks": [
+                {
+                  "criterionId": "detail",
+                  "unitId": "crown",
+                  "referenceUses": [
+                    {
+                      "kind": "named",
+                      "name": "referenceUses",
+                      "path": "/1/uses/1/receipt"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "output": {
+      "kind": "step",
+      "step": "review",
+      "path": ""
+    },
+    "message": "檢視完整建築與基座、竹節、塔冠原生細節"
+  },
+  "recapture": {
+    "operations": [
+      {
+        "id": "details",
+        "name": "design_operations.review_drawing",
+        "arguments": {
+          "phase": "visual",
+          "final": false,
+          "inspectionIds": [
+            "10a9eb2a-aa35-4cef-912f-7984ab28c47c",
+            "3d2df45f-f680-4bd1-a604-fcbd26dd4cee",
+            "130bdf0d-5a93-41a5-b5ed-d35799c5adc1"
+          ],
+          "inspections": [
+            {
+              "elementId": "design-001ebbb2-0ea0-4d55-9260-d4ebfe5d7ddc-0",
+              "view": "detail",
+              "region": {
+                "x": 9000,
+                "y": 4000,
+                "width": 1024,
+                "height": 1024
+              },
+              "checks": [
+                {
+                  "criterionId": "detail",
+                  "unitId": "base",
+                  "referenceUses": [
+                    {
+                      "kind": "named",
+                      "name": "referenceUses",
+                      "path": "/0/uses/1/receipt"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "elementId": "design-28572e2b-73a5-4bc3-bf86-adf938ccc606-0",
+              "view": "detail",
+              "region": {
+                "x": 1900,
+                "y": 14000,
+                "width": 1024,
+                "height": 1024
+              },
+              "checks": [
+                {
+                  "criterionId": "detail",
+                  "unitId": "tiers",
+                  "referenceUses": [
+                    {
+                      "kind": "named",
+                      "name": "referenceUses",
+                      "path": "/1/uses/0/receipt"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "elementId": "design-d07081ee-239a-4ec1-af52-2f1ca2535c79-0",
+              "view": "detail",
+              "region": {
+                "x": 1800,
+                "y": 7000,
+                "width": 1024,
+                "height": 1024
+              },
+              "checks": [
+                {
+                  "criterionId": "detail",
+                  "unitId": "crown",
+                  "referenceUses": [
+                    {
+                      "kind": "named",
+                      "name": "referenceUses",
+                      "path": "/1/uses/1/receipt"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "output": {
+      "kind": "step",
+      "step": "details",
+      "path": ""
+    },
+    "message": "補查包含窗框、玻璃及相鄰飾件的原尺寸區域"
+  },
+  "constructionQuery": {
+    "names": [
+      "prepare_and_apply_design"
+    ],
+    "view": "usage",
+    "inputScope": {
+      "operation": "draft",
+      "nodeTypes": [
+        "projected-face",
+        "surface-grid",
+        "vector",
+        "pattern"
+      ],
+      "optionalInputs": [
+        "plan"
+      ]
+    }
+  },
+  "captureQuery": {
+    "names": [
+      "review_drawing"
+    ],
+    "view": "usage",
+    "inputScope": {
+      "operation": "capture"
+    }
+  }
+}

@@ -16,6 +16,7 @@ import { URL } from 'node:url'
 export const createReportWindow = (sentAt, duration) => ({
   workDeadlineAt: sentAt + duration,
   reportTimeoutMs: null,
+  keepReportSession: true,
   announceWorkDeadline: false,
   reportInstructions: readFileSync(
     new URL('./taipei-101-self-report.txt', import.meta.url),

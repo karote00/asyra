@@ -19,7 +19,7 @@ describe('retained design check results', () => {
     })
     store.record({
       id: 'glass',
-      origin: 'main-agent',
+      origin: 'tool',
       status: 'fail',
       evidence: 'Wrong reflection',
       dependencies: { material: '1' }
@@ -28,7 +28,7 @@ describe('retained design check results', () => {
     expect(store.read().counts.pass).toBe(1)
     store.record({
       id: 'glass',
-      origin: 'main-agent',
+      origin: 'tool',
       status: 'pass',
       evidence: 'Current pixels match',
       dependencies: { material: '1' }
@@ -56,7 +56,7 @@ describe('retained design check results', () => {
     })
     store.record({
       id: 'colour',
-      origin: 'main-agent',
+      origin: 'tool',
       status: 'pass',
       evidence: 'Matches',
       dependencies: { material: '1' }
@@ -77,9 +77,8 @@ describe('retained design check results', () => {
     expect(store.read().items[0].evidence).toBe('Width valid')
   })
 
-  it('never lets another author overwrite a tool failure and detaches returned data', () => {
+  it('detaches returned check data and invalidates unknown changes', () => {
     const store = createDesignCheckResults()
-
     store.record({
       id: 'join',
       origin: 'tool',
@@ -87,15 +86,6 @@ describe('retained design check results', () => {
       evidence: 'Gap',
       dependencies: { geometry: '1' }
     })
-    expect(() =>
-      store.record({
-        id: 'join',
-        origin: 'main-agent',
-        status: 'pass',
-        evidence: 'Looks good',
-        dependencies: {}
-      })
-    ).toThrow(/origin/)
     const result = store.read()
 
     result.items[0].evidence = 'Changed externally'
@@ -120,7 +110,7 @@ it('reads unresolved work without scanning accumulated passes and rejects depend
 
   store.record({
     id: 'pending',
-    origin: 'main-agent',
+    origin: 'tool',
     status: 'fail',
     evidence: 'Adjust colour',
     dependencies: { material: '1' }
@@ -151,7 +141,7 @@ it('invalidates dependency-free results too when the change scope is unknown', (
 
   store.record({
     id: 'overall',
-    origin: 'main-agent',
+    origin: 'tool',
     status: 'pass',
     evidence: 'Whole result inspected',
     dependencies: {}
@@ -187,15 +177,13 @@ it('declares and validates the exact retained result delivery contract', () => {
   ).toBeDefined()
 })
 
-it('records redesign provenance and invalidates only real dependent results', () => {
+it('replaces program check dependencies without invalidating unrelated results', () => {
   const store = createDesignCheckResults()
   const original = {
     id: 'unit',
-    origin: 'main-agent' as const,
+    origin: 'tool' as const,
     status: 'pass' as const,
-    unitId: 'third',
-    criterionId: 'finish',
-    evidence: 'Original design',
+    evidence: 'Original pixel comparison',
     dependencies: { 'inspection:old': '1' }
   }
 
@@ -209,7 +197,7 @@ it('records redesign provenance and invalidates only real dependent results', ()
   })
   store.record({
     id: 'other',
-    origin: 'main-agent',
+    origin: 'tool',
     status: 'pass',
     evidence: 'Other unit',
     dependencies: { 'inspection:other': '1' }
@@ -217,9 +205,8 @@ it('records redesign provenance and invalidates only real dependent results', ()
   const replacement = {
     ...original,
     status: 'unverified' as const,
-    evidence: 'Redesigned scope awaits judgment',
-    dependencies: { 'inspection:new': '2' },
-    supersedes: { revision: 1, reason: 'Replacement geometry' }
+    evidence: 'Replacement pixels need comparison',
+    dependencies: { 'inspection:new': '2' }
   }
 
   expect(store.record(replacement)).toBe(2)
@@ -357,8 +344,8 @@ it('retires a removed tool target, preserves dependent obligations and never reu
   })
 
   store.record({
-    id: 'visual',
-    origin: 'main-agent',
+    id: 'non-recheckable',
+    origin: 'tool',
     status: 'pass',
     evidence: 'Compared',
     dependencies: { 'check:measurement:removed': String(revision) }
@@ -366,9 +353,8 @@ it('retires a removed tool target, preserves dependent obligations and never reu
   store.retire('measurement:removed', 'Target was removed')
   expect(store.read()).toMatchObject({
     counts: { pass: 0, stale: 1 },
-    items: [{ id: 'visual', status: 'stale' }]
+    items: [{ id: 'non-recheckable', status: 'stale' }]
   })
-  expect(() => store.retire('visual', 'Not a tool target')).toThrow(/tool/)
   expect(
     store.record({
       id: 'measurement:removed',
@@ -436,49 +422,7 @@ it('summarizes large retained failures without retransmitting their evidence', (
   )
 })
 
-it('discards only untouched declaration placeholders and validates the whole removal first', () => {
-  const store = createDesignCheckResults()
-  const declaration = {
-    id: 'declared',
-    origin: 'main-agent' as const,
-    status: 'unverified' as const,
-    evidence: 'Await judgment',
-    dependencies: { 'criterion:one': '1' }
-  }
-
-  store.record(declaration)
-  store.record({ ...declaration, id: 'observed', scope: ['image'] })
-  const before = store.read({ includePassed: true })
-
-  expect(() => store.discardDeclarations(['declared', 'observed'])).toThrow(
-    /declaration/
-  )
-  expect(store.read({ includePassed: true })).toEqual(before)
-  store.invalidate(
-    ['criterion:one'],
-    'The declared source changed before any judgment'
-  )
-  expect(() => store.discardDeclarations(['observed'])).toThrow(/declaration/)
-  store.discardDeclarations(['declared', 'declared'])
-  expect(
-    store.read({ includePassed: true }).items.map((item) => item.id)
-  ).toEqual(['observed'])
-  expect(store.read().counts).toEqual({
-    pass: 0,
-    fail: 0,
-    unverified: 0,
-    stale: 1
-  })
-  expect(store.record(declaration)).toBe(2)
-  for (const status of ['fail', 'pass'] as const) {
-    store.record({ ...declaration, status })
-    expect(() => store.discardDeclarations(['declared', 'declared'])).toThrow(
-      /declaration/
-    )
-  }
-})
-
-it('admits a complete detached mechanical selection and rejects mixed ownership', () => {
+it('admits a complete detached mechanical selection and rejects unknown result identities', () => {
   const store = createDesignCheckResults()
   const value = {
     id: 'part',
@@ -494,11 +438,11 @@ it('admits a complete detached mechanical selection and rejects mixed ownership'
   }
   const revision = store.record(value, descriptor)
 
-  store.record({ ...value, id: 'visual', origin: 'main-agent' })
+  store.record({ ...value, id: 'non-recheckable', origin: 'tool' })
   expect(() =>
     store.select([
       { checkId: 'part', revision },
-      { checkId: 'visual', revision: 1 }
+      { checkId: 'missing', revision: 1 }
     ])
   ).toThrow(/mechanical/)
   expect(() =>
@@ -608,7 +552,7 @@ it('labels selected counts separately from request counts without rescanning evi
   })
   store.record({
     id: 'material',
-    origin: 'main-agent',
+    origin: 'tool',
     status: 'unverified',
     evidence: 'Wrong crop',
     dependencies: {}
@@ -630,71 +574,4 @@ it('labels selected counts separately from request counts without rescanning evi
     countsScope: 'request-checks',
     counts: { pass: 1, unverified: 1 }
   })
-})
-
-it('selects result origin before cloning while retaining full and exact reads', () => {
-  const store = createDesignCheckResults()
-
-  for (const [id, origin, status] of [
-    ['mechanical', 'tool', 'fail'],
-    ['visual-pass', 'main-agent', 'pass'],
-    ['visual-fail', 'main-agent', 'fail']
-  ] as const) {
-    store.record({
-      id,
-      origin,
-      status,
-      evidence: id,
-      dependencies: { source: '1' }
-    })
-  }
-
-  const clone = vi.spyOn(globalThis, 'structuredClone')
-
-  try {
-    const selection = { includePassed: true, origin: 'main-agent' as const }
-    const result = store.read(selection)
-
-    expect(result.items.map((item) => item.id)).toEqual([
-      'visual-pass',
-      'visual-fail'
-    ])
-    expect(result.countsScope).toBe('selected-checks')
-    expect(result.counts).toEqual({ pass: 1, fail: 1, stale: 0, unverified: 0 })
-    expect(clone.mock.calls).toHaveLength(2)
-    result.items[0].dependencies.source = 'external'
-    expect(store.read(selection).items[0].dependencies.source).toBe('1')
-    const pending = store.read({ origin: 'main-agent' })
-
-    expect(pending.items.map((item) => item.id)).toEqual(['visual-fail'])
-    expect(pending.countsScope).toBe('selected-checks')
-    expect(pending.counts).toEqual({
-      pass: 0,
-      fail: 1,
-      stale: 0,
-      unverified: 0
-    })
-    expect(pending.visitedResults).toBe(2)
-    expect(
-      store
-        .read({ ...selection, ids: ['mechanical', 'visual-pass', 'missing'] })
-        .items.map((item) => item.id)
-    ).toEqual(['visual-pass'])
-    expect(store.read({ ...selection, ids: [] }).items).toEqual([])
-    expect(store.read({ includePassed: true }).items).toHaveLength(3)
-    expect(
-      store.read({ ids: ['mechanical'], includePassed: true }).items[0].status
-    ).toBe('fail')
-    store.invalidate(['source'], 'Changed source')
-    expect(
-      store.read(selection).items.every((item) => item.status === 'stale')
-    ).toBe(true)
-    expect(store.firstPending('tool')).toEqual({
-      id: 'mechanical',
-      status: 'stale'
-    })
-    expect(createDesignCheckResults().read(selection).items).toEqual([])
-  } finally {
-    clone.mockRestore()
-  }
 })

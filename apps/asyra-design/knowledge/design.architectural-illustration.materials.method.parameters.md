@@ -19,7 +19,7 @@
 ### Connect the chosen domain to actual parameters
 
 The method is not implemented merely by naming a material in the brief. Make the
-following choices in the existing draft and criteria; these are advisory decision
+following choices in the existing draft; these are advisory decision
 points, not additional required calls or new schema fields.
 
 | Choice | Concrete existing handoff | Independent evidence question |
@@ -27,7 +27,7 @@ points, not additional required calls or new schema fields.
 | Material role | Assign the selected `fillTemplates` key or explicit Fill to the actual base surface or motif; keep structural paint distinct when the request requires it. | Does the rendered base plus overlaid structure express the chosen material? |
 | Continuous domain versus repeated local effect | A gradient uses normalized local `gradientHandles` and ordered `gradientStops`. Copying identical handles to every cell restarts the field in every cell. Put a continuous field on a covering surface with separate structural geometry when that expresses the request, or use `linearFields` with `materialField` on projected faces or grid motifs, including pattern members so preparation maps the world domain to each native fill. For other supported shapes, explicitly transform the domain to local coordinates. | Is the intended field continuous across the relevant join, with intentional discontinuities preserved? |
 | Different orientations or projections | Transform to the actual local basis or choose another supported representation; the same local numbers on differently oriented faces are not one common physical lighting field. | Are the visible orientations consistent with the chosen light/material interpretation? |
-| Incomplete architecture or ornament | Keep a separate criterion/unit for the requested geometry/detail, using its actual scope. | What requested content remains missing, independently of whether existing material is correct? |
+| Incomplete architecture or ornament | Assess missing geometry/detail separately from material appearance at its actual scope. | What requested content remains missing, independently of whether existing material is correct? |
 
 For axis-aligned adjacent parts in the same 2D parent basis, a parent-space gradient
 point maps to a part's normalized local handle as `(point - partOrigin) / partSize`

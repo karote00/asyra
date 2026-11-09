@@ -1,6 +1,5 @@
 /* global requestAnimationFrame */
 import { AI_BATCH_RECEIPT_HEADER } from '../../src/ai/action-batch-endpoint.ts'
-import { LIVE_TEST_LIMIT_MS } from './live-test-deadline.mjs'
 import { setTimeout } from 'node:timers'
 import { URL } from 'node:url'
 import { readFileSync } from 'node:fs'
@@ -19,9 +18,9 @@ export const readTaipei101Deadline = (args = []) => {
   const match = args.length === 1 && /^--minutes=([1-9]\d*)$/.exec(args[0])
   const duration = match ? Number(match[1]) * 60000 : NaN
 
-  if (!Number.isSafeInteger(duration) || duration > LIVE_TEST_LIMIT_MS) {
+  if (!Number.isSafeInteger(duration) || duration > 30 * 60 * 1000) {
     throw new Error(
-      'Invalid test duration; use --minutes=1 through --minutes=18.'
+      'Invalid test duration; use --minutes=1 through --minutes=30.'
     )
   }
 

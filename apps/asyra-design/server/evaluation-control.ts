@@ -11,7 +11,7 @@ export interface EvaluationStopReason {
 const record = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 
-/** Only owner-declared input recovery permits continuing; never infer it from prose. */
+/** Only owner-declared recoveries permit continuing; never infer them from prose. */
 const correctableInput = (value: unknown): boolean => {
   if (!record(value) || value.error) {
     return false
@@ -23,9 +23,84 @@ const correctableInput = (value: unknown): boolean => {
     return false
   }
 
+  // Discovery has completed a read, not rejected a pending mutation. Keep its
+  // incomplete identity coverage without treating a selectable name as lost data.
+  if (record(value.recovery) && value.recovery.kind === 'select_identity') {
+    return (
+      value.code === 'IDENTITY_UNRESOLVED' &&
+      value.settlement === 'completed' &&
+      outcome.settlement === 'completed' &&
+      value.status === outcome.status &&
+      ['partial', 'failed'].includes(String(outcome.status)) &&
+      [value.issues, outcome.issues].every(
+        (issues) =>
+          issues === undefined ||
+          (Array.isArray(issues) &&
+            issues.every(
+              (issue) => record(issue) && issue.code === 'IDENTITY_UNRESOLVED'
+            ))
+      )
+    )
+  }
+
   if (value.available === false && value.recovery === 'correct_input') {
     return (
       value.settlement === 'not-started' && outcome.settlement === 'not-started'
+    )
+  }
+
+  if (record(value.recovery) && value.recovery.kind === 'select_reference') {
+    return (
+      value.available === false &&
+      value.settlement === 'not-started' &&
+      value.recovery.settlement === 'not-started' &&
+      outcome.settlement === 'not-started' &&
+      (outcome.status === undefined || outcome.status === 'failed') &&
+      typeof value.code === 'string' &&
+      [value.issues, outcome.issues].every(
+        (issues) =>
+          issues === undefined ||
+          (Array.isArray(issues) &&
+            issues.every((issue) => record(issue) && issue.code === value.code))
+      )
+    )
+  }
+
+  if (Array.isArray(value.references) && Array.isArray(value.actionResults)) {
+    const references = value.references
+    const failures = references.filter(
+      (entry) => record(entry) && entry.available === false
+    )
+    const codes = new Set(
+      failures.map((entry) => (entry as Record<string, unknown>).code)
+    )
+
+    codes.add('RESULT_PARTIAL')
+    codes.add('RESULT_UNAVAILABLE')
+
+    return (
+      failures.length > 0 &&
+      failures.every(correctableInput) &&
+      references.every(
+        (entry) =>
+          record(entry) &&
+          (correctableInput(entry) ||
+            (entry.available === true &&
+              typeof entry.referenceId === 'string' &&
+              Number.isSafeInteger(entry.attachmentIndex)))
+      ) &&
+      value.actionResults.every(
+        (entry) =>
+          record(entry) &&
+          record(entry.result) &&
+          !evaluationToolStop(entry.result)
+      ) &&
+      [value.issues, outcome.issues].every(
+        (issues) =>
+          issues === undefined ||
+          (Array.isArray(issues) &&
+            issues.every((issue) => record(issue) && codes.has(issue.code)))
+      )
     )
   }
 
@@ -84,11 +159,32 @@ const correctableInput = (value: unknown): boolean => {
       calls.every((call) =>
         call.status === 'success'
           ? call.settlement === 'completed'
-          : call.settlement === 'not-started' &&
-            recovery.some(
-              (entry) =>
-                entry.callId === call.callId && correctableInput(entry.value)
-            )
+          : call.status !== 'unknown' &&
+            ['not-started', 'partial'].includes(String(call.settlement)) &&
+            recovery.some((entry) => {
+              if (!record(entry.value)) {
+                return false
+              }
+
+              let owner = entry.value
+
+              if (record(owner.execution)) {
+                owner = owner.execution
+              }
+
+              if (record(owner.toolOutcome)) {
+                owner = owner.toolOutcome
+              }
+
+              return (
+                entry.callId === call.callId &&
+                entry.status === call.status &&
+                entry.settlement === call.settlement &&
+                owner.status === call.status &&
+                owner.settlement === call.settlement &&
+                correctableInput(entry.value)
+              )
+            })
       )
     )
   }
@@ -159,8 +255,8 @@ export const evaluationToolStop = (
     }
   }
 
-  // A successful review may report failed design checks that the AI can repair.
-  // Only execution failures stop the evaluation; judgments remain review data.
+  // A successful diagnostic can report design findings that the AI can repair.
+  // Only execution failures stop the evaluation; findings remain diagnostic data.
   return undefined
 }
 

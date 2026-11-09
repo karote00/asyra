@@ -329,3 +329,7 @@ Local computed projection reads resolved effective values and creates no history
 publication or persisted mirror. One existing Factory/Session boundary owns the
 user action. Implementation and complete peer/history/reload evidence remain
 required by the active plan; these declarations do not assert completion.
+
+## Property input rejection
+
+ElementPropertyInputError identifies an unsupported registered property key with elementId and propertyKey before property application. Core re-exports this owner error. Registered custom properties and aliases use the same resolution; element metadata uses its existing data mutation API. Broken registrations, missing owner relations and other internal failures remain distinct errors. SceneTree does not classify AI recovery, route metadata edits or report enclosing transaction settlement.

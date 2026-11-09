@@ -1,8 +1,4 @@
-import {
-  createLocalDesignReview,
-  designEvidenceDefinitions
-} from '../local-design-review'
-import { operationInputIssue } from '../operation-input-schema'
+import { designContextDefinitions } from '../local-design-context'
 import { describe, expect, it } from 'vitest'
 import {
   AI_APP_PROMPT,
@@ -142,19 +138,12 @@ describe('stage-owned App guidance', () => {
     expect(general).not.toContain('default method reference')
   })
 
-  it('never promises inherited image dependencies that review admission rejects', () => {
-    expect(general).toContain('follow its returned next arguments')
-    expect(general).not.toContain(
-      'Omitted bindings depend on every supplied image'
+  it('does not require a second approval protocol for observations', () => {
+    expect(general).not.toMatch(
+      /define_design_criteria|review_drawing|bindChecks|dataEvidence|optionalInputs=\["plan"\]|defining criteria/
     )
-    const review = requireTestValue(
-      designEvidenceDefinitions.find((tool) => tool.name === 'review_drawing')
-    )
-
-    expect(review.description).toContain('exact inspectionIds')
-    expect(review.description).toContain(
-      'Neither capture nor binding records a judgment'
-    )
+    expect(general).toContain('final')
+    expect(general).toContain("user's request")
   })
 
   it('consumes chronological conversation data with current intent precedence', () => {
@@ -187,8 +176,6 @@ describe('stage-owned App guidance', () => {
   it('reviews reference-dependent ready recipes without requiring a complete geometry inventory', () => {
     expect(general).toContain('No particular construction order')
     expect(general).toContain('review_prepared_design')
-    expect(general).toContain('no extra model assessor is required')
-    expect(general).toContain('primary agent reviews actual rendered images')
     expect(general).toContain(
       'Direct known-value edits need no prepared-content review'
     )
@@ -203,34 +190,26 @@ describe('stage-owned App guidance', () => {
     )
     expect(general).toContain('real returned IDs')
   })
-  it('separates chosen-method local decisions from tool success and whole completion', () => {
-    expect(general).toContain('A successful capture or record is not a pass')
-    expect(general).toContain('local pass can coexist with whole-result')
-    expect(general).toContain(
-      'Repair actual deviations and reuse unaffected passes'
-    )
-    expect(general).toContain('Completion requires all original criteria')
-    const review = requireTestValue(
-      designEvidenceDefinitions.find((tool) => tool.name === 'review_drawing')
-    )
-
-    expect(review.description).toContain('final=true (default)')
-    expect(review.description).toContain('exact inspectionIds')
+  it('leaves design judgments with the AI rather than treating a tool receipt as approval', () => {
+    expect(general).toContain('tool success does not establish visual quality')
+    expect(general).toContain('Final verification is your responsibility')
+    expect(general).not.toContain('Completion requires all original criteria')
   })
-  it('assigns reference purpose and pixel scope to the primary agent', () => {
+
+  it('offers reference purpose and region as optional context', () => {
     const selection = requireTestValue(
-      designEvidenceDefinitions.find(
+      designContextDefinitions.find(
         (tool) => tool.name === 'select_design_references'
       )
     )
-
-    expect(selection.description).toContain('original-pixel region')
-    expect(selection.description).toContain('criterionId/unitId')
-    expect(selection.description).toContain(
-      'Download success does not establish suitability'
+    expect(selection.inputSchema).toMatchObject({
+      required: ['referenceImageIndexes']
+    })
+    expect(JSON.stringify(selection.inputSchema)).not.toMatch(
+      /criterionId|requirementRevision|referenceUse/
     )
-    expect(general).toContain('Their contracts own bindings and source scope')
   })
+
   it('preserves original user intent, verified facts and original resolution', () => {
     expect(general).toContain('original user request remains authoritative')
     expect(general).toContain('rough, ugly, simple')
@@ -329,40 +308,14 @@ describe('stage-owned App guidance', () => {
     )
     expect(general).toContain('Read-only advice leaves the canvas unchanged')
   })
-  it('routes criteria facts calculations references and review to distinct tools', () => {
-    for (const name of [
-      'define_design_criteria',
-      'record_design_facts',
-      'record_design_calculations',
-      'select_design_references',
-      'review_drawing'
-    ]) {
-      expect(general).toContain(name)
-    }
-
-    expect(general).not.toContain('record_design_review')
-    expect(general).toContain('all original criteria')
-    const review = requireTestValue(
-      designEvidenceDefinitions.find((tool) => tool.name === 'review_drawing')
+  it('offers standalone notes and reference context without prior registration', () => {
+    for (const tool of designContextDefinitions)
+      expect(general).toContain(tool.name)
+    expect(general).not.toMatch(
+      /define_design_criteria|review_drawing|bindChecks/
     )
-
-    expect(review.description).toContain('final=true (default)')
-    expect(review.description).toContain('without discarding valid local work')
-    expect(review.description).toContain('deferredDetails')
-    const criteria = requireTestValue(
-      designEvidenceDefinitions.find(
-        (tool) => tool.name === 'define_design_criteria'
-      )
-    )
-    const example = (criteria.inputSchema as { examples: unknown[] })
-      .examples[0]
-
-    expect(criteria.description).not.toContain(JSON.stringify(example))
-    expect(operationInputIssue(example, criteria.inputSchema)).toBeUndefined()
-    expect(createLocalDesignReview().record(example)).toMatchObject({
-      recorded: true
-    })
   })
+
   it('keeps detailed tracing procedures in image tools', () => {
     expect(general).not.toMatch(
       /colorTolerance|clipToBackground|0\.5 source pixels/
@@ -403,9 +356,7 @@ it('separates remaining-work execution from replay and library availability reco
 
 it('leaves construction order to the task without weakening final validation', () => {
   expect(AI_APP_PROMPT).toContain('No particular construction order')
-  expect(AI_APP_PROMPT).toContain(
-    'Preserve validation, references and final review'
-  )
+  expect(AI_APP_PROMPT).toContain('Final verification is your responsibility')
   expect(AI_APP_PROMPT).not.toMatch(
     /First frame is optional|research may come first|Draw each coherent ready part|representative route before repeating/
   )

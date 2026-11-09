@@ -421,10 +421,14 @@ export const createServerActionBatchProvider = (
           : undefined
       const names = context?.names()
 
-      if (names?.length) {
+      if (context && names?.length) {
         input = {
           ...input,
-          metadata: { ...meta, conversationResultNames: names }
+          metadata: {
+            ...meta,
+            conversationResultNames: names,
+            conversationResults: context.describe()
+          }
         }
       }
 

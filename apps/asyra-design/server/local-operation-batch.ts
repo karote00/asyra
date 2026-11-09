@@ -1,9 +1,17 @@
+import { LocalToolInputError } from './local-tool-invocation'
 import { randomUUID } from 'node:crypto'
 import type {
   AiActionBatch,
   AiProviderInput
 } from '../src/ai/action-batch-protocol'
 import { operationInputIssue } from './operation-input-schema'
+
+export const operationInspectionSchema = {
+  enum: ['immediate', 'defer'],
+  default: 'immediate',
+  description:
+    'Controls automatic inspection after ready canvas operations in this submission. Omitted or immediate captures their settled result; defer omits that automatic image. Registered tools retain their own inspection arguments. An explicit inspect_drawing operation always runs, including under outer defer. Delivery selects returned images independently of capture.'
+}
 
 export type ElementBindingMode = 'all' | 'each' | 'one'
 interface ElementBindingSlot {
@@ -264,7 +272,11 @@ export const bindOperationTargets = (
     const targets = Array.isArray(target) ? target : [target]
 
     if (!targets.length) {
-      throw new Error('Target references cannot be empty.')
+      throw new LocalToolInputError(
+        'Target references cannot be empty.',
+        'PREPARATION_REJECTED',
+        'correct_input'
+      )
     }
 
     const bindings: {
@@ -316,7 +328,11 @@ export const bindOperationTargets = (
     }
 
     if (issues.length) {
-      throw new Error(issues.join('\n'))
+      throw new LocalToolInputError(
+        issues.join('\n'),
+        'PREPARATION_REJECTED',
+        'correct_input'
+      )
     }
 
     if (!resolveTargets) {
@@ -365,7 +381,11 @@ export const prepareOperationBatch = (
   resolveTargets?: (reference: unknown, mode: ElementBindingMode) => string[]
 ): AiActionBatch['actions'] => {
   if (!Array.isArray(operations) || !operations.length) {
-    throw new Error('A nonempty operations array is required.')
+    throw new LocalToolInputError(
+      'A nonempty operations array is required.',
+      'PREPARATION_REJECTED',
+      'correct_input'
+    )
   }
 
   const actions: AiActionBatch['actions'][number][] = []
@@ -378,7 +398,11 @@ export const prepareOperationBatch = (
       ) ||
       !record(operation.arguments)
     ) {
-      throw new Error('Invalid batch operation.')
+      throw new LocalToolInputError(
+        'Invalid batch operation.',
+        'PREPARATION_REJECTED',
+        'correct_input'
+      )
     }
 
     const definition = registered.find(
@@ -402,7 +426,11 @@ export const prepareOperationBatch = (
       const issue = operationInputIssue(args, definition.inputSchema)
 
       if (issue) {
-        throw new Error(issue)
+        throw new LocalToolInputError(
+          issue,
+          'PREPARATION_REJECTED',
+          'correct_input'
+        )
       }
 
       actions.push({
@@ -431,6 +459,9 @@ export const runtimeOperationSchema = <T>(schema: T, recipe = false): T => {
     if (recipe && value === schema) {
       delete result['x-design-input-scope']
     }
+
+    // Discovery branch labels never constrain Runtime inputs or outputs.
+    delete result['x-design-operation']
 
     delete result['x-design-element-binding']
     delete result['x-model-visibility']

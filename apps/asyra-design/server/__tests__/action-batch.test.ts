@@ -896,3 +896,133 @@ it('saves and reads the originating App result context across independent HTTP t
     await new Promise<void>((resolve) => server.close(() => resolve()))
   }
 })
+
+it('keeps evaluation questions available after HTTP settlement and protects local admission', async () => {
+  let sessionId = ''
+  let release!: () => void
+  const wait = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const record = vi.fn(async () => undefined)
+  const close = vi.fn(async () => undefined)
+  const middleware = createActionBatchMiddleware({
+    requestModelActionBatch: async (_input, options) => {
+      if (!options.reportSessions) {
+        throw Error('Missing service report owner')
+      }
+
+      sessionId = options.reportSessions.retain({
+        requestId: 'original',
+        nativeThreadId: 'native-original',
+
+        lost: () => false,
+
+        close,
+        record,
+
+        async ask(question) {
+          await wait
+
+          return {
+            nativeThreadId: 'native-original',
+            nativeTurnId: 'followup',
+            messages: [{ phase: 'commentary', text: question }]
+          }
+        }
+      }).sessionId
+
+      return {
+        batchId: 'report',
+        actions: [
+          {
+            id: 'report',
+            name: 'report_outcome',
+            arguments: { outcome: 'unsupported', message: 'Report' },
+            summary: 'Report'
+          }
+        ]
+      }
+    }
+  })
+  const server = createServer((request, response) => {
+    void middleware(request, response, () => response.end())
+  })
+
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+  const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
+
+  const post = (endpoint: string, value: unknown, headers = {}) =>
+    fetch(base + endpoint, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...headers },
+      body: JSON.stringify(value)
+    })
+
+  try {
+    expect(
+      (
+        await post(ACTION_BATCH_ENDPOINT, {
+          intent: 'A drawing',
+          context: {},
+          actions: [],
+          attempt: 1
+        })
+      ).status
+    ).toBe(200)
+    expect(sessionId).toBeTruthy()
+    const endpoint = '/api/ai/evaluation-report'
+
+    expect(
+      (
+        await post(
+          endpoint,
+          { operation: 'status', sessionId },
+          { origin: 'https://foreign.invalid' }
+        )
+      ).status
+    ).toBe(403)
+    expect(
+      await (await post(endpoint, { operation: 'status', sessionId })).json()
+    ).toMatchObject({ status: 'waiting', nativeThreadId: 'native-original' })
+    const controller = new AbortController()
+    const asking = fetch(base + endpoint, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        operation: 'ask',
+        sessionId,
+        question: 'Explain.'
+      }),
+      signal: controller.signal
+    })
+    const disconnected = expect(asking).rejects.toThrow()
+
+    await vi.waitFor(() => expect(record).toHaveBeenCalledTimes(1))
+    controller.abort()
+    await disconnected
+    release()
+    await vi.waitFor(() => expect(record).toHaveBeenCalledTimes(2))
+    expect(
+      await (await post(endpoint, { operation: 'status', sessionId })).json()
+    ).toMatchObject({ status: 'waiting' })
+    expect(
+      await (await post(endpoint, { operation: 'close', sessionId })).json()
+    ).toMatchObject({ status: 'closed' })
+    await post(endpoint, { operation: 'close', sessionId })
+    expect(close).toHaveBeenCalledTimes(1)
+    expect(
+      (
+        await post(endpoint, {
+          operation: 'ask',
+          sessionId: 'missing',
+          question: 'Explain'
+        })
+      ).status
+    ).toBe(409)
+  } finally {
+    release()
+    await middleware.dispose()
+    server.closeAllConnections()
+    await new Promise<void>((resolve) => server.close(() => resolve()))
+  }
+})

@@ -90,9 +90,10 @@ test('explicit benchmark duration preserves the default and rejects unsafe or am
   assert.equal(readTaipei101Deadline(['--minutes=12']), 720000)
   assert.equal(readTaipei101Deadline(['--minutes=15']), 900000)
   assert.equal(readTaipei101Deadline(['--minutes=18']), 1080000)
+  assert.equal(readTaipei101Deadline(['--minutes=30']), 1800000)
   for (const args of [
     ['--minutes=0'],
-    ['--minutes=19'],
+    ['--minutes=31'],
     ['--minutes=1.5'],
     ['--minutes=NaN'],
     ['--minutes=12', '--minutes=10'],
@@ -108,6 +109,7 @@ test('fixed benchmark report uses host-only policy without changing the drawing 
   const before = readTaipei101Prompt()
   const policy = createReportWindow(1000, 900000)
 
+  assert.equal(policy.keepReportSession, true)
   assert.equal(policy.workDeadlineAt, 901000)
   assert.equal(policy.reportTimeoutMs, null)
   assert.equal(policy.announceWorkDeadline, false)

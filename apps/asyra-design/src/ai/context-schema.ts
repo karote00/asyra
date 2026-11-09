@@ -48,8 +48,8 @@ export const documentContextProperties = {
         }
       },
       type: { type: 'string', minLength: 1, maxLength: 256 },
-      parentId: { ...toolDocumentReference, maxLength: 256 },
-      ancestorId: { ...toolDocumentReference, maxLength: 256 },
+      parentId: toolDocumentReference,
+      ancestorId: toolDocumentReference,
       locked: { type: 'boolean' }
     }
   },
@@ -58,14 +58,14 @@ export const documentContextProperties = {
     type: 'array',
     minItems: 1,
     uniqueItems: true,
-    items: { ...toolDocumentReference, maxLength: 256 }
+    items: toolDocumentReference
   },
   fields: {
     type: 'array',
     uniqueItems: true,
     items: { type: 'string', enum: [...designContextFields] }
   },
-  parentId: { ...toolDocumentReference, maxLength: 256 },
+  parentId: toolDocumentReference,
   offset: { type: 'integer', minimum: 0 },
   limit: {
     type: 'integer',

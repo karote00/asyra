@@ -29,7 +29,9 @@ it('identifies the rejected alias and exact request references without losing a 
     []
   )
 
-  expect(receipt.saved).toEqual(['assemblyGroup'])
+  expect(receipt.saved.map(({ name }: { name: string }) => name)).toEqual([
+    'assemblyGroup'
+  ])
   expect(receipt.toolOutcome.settlement).toBe('completed')
   expect(receipt.issues?.join(' ')).toContain('taipei101Assembly')
   expect(receipt.issues?.join(' ')).toContain(
@@ -73,11 +75,57 @@ it('retains only public authored input fields after successful execution', async
     []
   )
 
-  expect(receipt.saved).toEqual(['dimensions'])
+  expect(receipt.saved.map(({ name }: { name: string }) => name)).toEqual([
+    'dimensions'
+  ])
   expect(receipt.issues).toEqual([
     'source: Request-scoped references cannot be saved across turns: /artifactId'
   ])
   expect(
     context.exchange({ read: { next: { name: 'dimensions', path: '' } } })
   ).toEqual({ next: { width: 30, height: 40 } })
+})
+
+it('acknowledges saved operation results with reusable provenance and shape without returning values', async () => {
+  const app = createConversationResults(() => 'document')
+  const context = app.open('staged')
+  const delivery = resultDelivery(
+    {
+      retain: { paneTargets: { step: 'panes', path: '/compositionIds' } },
+      delivery: 'status'
+    },
+    async (request) => context.exchange(request)
+  )
+
+  await delivery.capture(
+    'panes',
+    { compositionIds: ['private-pane-id'] },
+    new Set(),
+    undefined,
+    'design_operations.prepare_and_apply_design'
+  )
+  const receipt = delivery.finish(
+    { status: 'success', settlement: 'completed', issues: [] },
+    ['panes'],
+    []
+  )
+
+  expect(receipt.saved).toEqual([
+    expect.objectContaining({
+      name: 'paneTargets',
+      type: 'array',
+      origin: {
+        operation: 'design_operations.prepare_and_apply_design',
+        step: 'panes',
+        source: 'result',
+        path: '/compositionIds'
+      },
+      paths: expect.arrayContaining([{ path: '', type: 'array', length: 1 }])
+    })
+  ])
+  expect(JSON.stringify(receipt)).not.toContain('private-pane-id')
+  expect(app.open('staged').describe()).toEqual(receipt.saved)
+  expect(
+    context.exchange({ read: { ids: { name: 'paneTargets', path: '' } } })
+  ).toEqual({ ids: ['private-pane-id'] })
 })

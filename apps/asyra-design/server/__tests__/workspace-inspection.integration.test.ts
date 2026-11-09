@@ -3,7 +3,6 @@ import { beforeAll, expect, it, vi } from 'vitest'
 import { applyPreset, PresetDefaults, PresetProfiles } from '@asyra/preset'
 import { Group } from '@asyra/scene-tree'
 import factory from '@asyra/factory'
-import fixture from './fixtures/recorded-101/workspace-inspection-20261024.json'
 import core from '../../src/contexts'
 import {
   createAiInspectionAction,
@@ -26,7 +25,7 @@ beforeAll(() => {
   })
 })
 
-it('uses actual inspection owners through native review and retries only failed captures', async () => {
+it('uses actual native inspection owners and retries only failed captures', async () => {
   const original = {
     getElementData: core.getElementData,
     getElementMetadata: core.getElementMetadata,
@@ -148,96 +147,38 @@ it('uses actual inspection owners through native review and retries only failed 
 
   try {
     const guide = tools.definitions.find(
-      (entry) => entry.name === 'review_drawing'
+      (entry) => entry.name === 'inspect_drawing'
     )
-
-    if (!guide) {
-      throw new Error('Missing review tool')
-    }
-
-    expect(guide.description).toMatch(/workspace.*overview/i)
+    expect(guide).toBeDefined()
     const delivered = await call('describe_design_apis', {
-      names: ['review_drawing'],
-      schemaPaths: ['/properties/inspections/items/properties/elementId']
+      names: ['inspect_drawing'],
+      view: 'usage'
     })
-
-    expect(JSON.stringify(delivered)).toContain('actual current workspace ID')
-    await call('define_design_criteria', {
-      method: 'Inspect independent roots',
-      references: [],
-      structureCriteria: [],
-      detailRequired: false,
-      criteria: {
-        overall: {
-          description: 'Whole scene',
-          requirement: 'Whole scene',
-          verification: 'visual',
-          requiredUnits: []
-        },
-        detail: {
-          description: 'Native detail',
-          requirement: 'Native detail',
-          verification: 'visual',
-          requiredUnits: []
-        }
-      }
+    expect(JSON.stringify(delivered)).toContain('workspace')
+    const overview = await call('inspect_drawing', {
+      arguments: { elementId: 'sheet-a', view: 'overview' }
     })
-    const input = structuredClone(fixture.input)
-
-    input.inspections[0].elementId = 'sheet-a'
-    const overview = await call('review_drawing', input)
-
-    expect(overview).toMatchObject({
-      accepted: false,
-      reviewOperation: 'capture',
-      toolOutcome: { status: 'success', settlement: 'completed' }
-    })
-    expect(overview.inspectionIds).toHaveLength(1)
-    expect(core.captureElementSnapshot).toHaveBeenCalledTimes(1)
-    const failed = await call('review_drawing', {
-      phase: 'visual',
-      final: false,
-      inspections: [
-        { elementId: 'part-b', checks: [{ criterionId: 'overall' }] }
-      ]
-    })
-
-    expect(failed).toMatchObject({
-      available: false,
-      accepted: false,
-      toolOutcome: { status: 'failed', settlement: 'completed' },
-      failedInspections: [{ code: 'CAPTURE_UNAVAILABLE' }]
-    })
-    expect(JSON.stringify(failed)).not.toContain('"unknown"')
-    const mixed = await call('review_drawing', {
-      phase: 'visual',
-      final: false,
-      inspectionIds: overview.inspectionIds,
-      inspections: failed.failedInspections.map(
-        (entry: { inspection: unknown }) => entry.inspection
-      )
-    })
-
-    expect(mixed.toolOutcome).toMatchObject({
-      status: 'partial',
+    expect(overview.toolOutcome).toMatchObject({
+      status: 'success',
       settlement: 'completed'
     })
-    expect(mixed.inspectionIds).toEqual(overview.inspectionIds)
-    failure = ''
-    const recovered = await call('review_drawing', {
-      phase: 'visual',
-      final: false,
-      inspectionIds: mixed.inspectionIds,
-      inspections: mixed.failedInspections.map(
-        (entry: { inspection: unknown }) => entry.inspection
-      )
+    expect(core.captureElementSnapshot).toHaveBeenCalledTimes(1)
+    const failed = await call('inspect_drawing', {
+      arguments: { elementId: 'part-b', view: 'overview' }
     })
-
+    expect(failed.toolOutcome).toMatchObject({
+      status: 'failed',
+      settlement: 'completed'
+    })
+    expect(JSON.stringify(failed)).not.toContain('"unknown"')
+    failure = ''
+    const recovered = await call('inspect_drawing', {
+      arguments: { elementId: 'part-b', view: 'overview' }
+    })
     expect(recovered.toolOutcome).toMatchObject({
       status: 'success',
       settlement: 'completed'
     })
-    expect(recovered.inspectionIds).toHaveLength(2)
     expect(
       vi
         .mocked(core.captureElementSnapshot)
@@ -261,19 +202,13 @@ it('uses actual inspection owners through native review and retries only failed 
       { elementId: 'sheet-a', view: 'detail' },
       { elementId: 'sheet-a', region: { x: 0, y: 0, width: 1, height: 1 } }
     ]) {
-      const unavailable = await call('review_drawing', {
-        phase: 'visual',
-        final: false,
-        inspections: [{ ...inspection, checks: [{ criterionId: 'overall' }] }]
+      const unavailable = await call('inspect_drawing', {
+        arguments: inspection
       })
-
-      expect(unavailable).toMatchObject({
-        available: false,
-        accepted: false,
-        toolOutcome: { status: 'failed', settlement: 'completed' }
+      expect(unavailable.toolOutcome).toMatchObject({
+        status: 'failed',
+        settlement: 'completed'
       })
-      expect(unavailable.failedInspections[0].code).toBeTruthy()
-      expect(unavailable.inspectionIds).toEqual([])
     }
 
     const prior = overview.actionResults[0].result.evidence
@@ -518,7 +453,7 @@ it.each([false, true])(
       true
     )
     // Rendering is covered by the existing browser snapshot cases. All scene,
-    // evidence, mechanical, action and final-review owners below are real.
+    // evidence, mechanical and action owners below are real.
     const snapshot = vi.spyOn(core, 'captureElementSnapshot').mockReturnValue({
       type: 'snapshot',
       width: 2,
@@ -575,98 +510,34 @@ it.each([false, true])(
     }
 
     try {
-      await call('define_design_criteria', {
-        method: 'Check complete scene',
-        references: [],
-        structureCriteria: [],
-        detailRequired: false,
-        criteria: {
-          overall: {
-            requirement: 'Complete scene',
-            description: 'Visible roots',
-            verification: 'visual',
-            requiredUnits: []
-          }
-        }
+      const capture = await call('inspect_drawing', {
+        arguments: { elementId: 'scene', view: 'overview' }
       })
-      const capture = await call('review_drawing', {
-        phase: 'visual',
-        final: false,
-        inspections: [
-          { elementId: 'scene', checks: [{ criterionId: 'overall' }] }
-        ]
+      expect(capture.toolOutcome).toMatchObject({
+        status: 'success',
+        settlement: 'completed'
       })
-
-      expect(capture, JSON.stringify(capture)).toHaveProperty('next')
-      expect(capture.next.arguments.checks).toHaveLength(1)
-      const record = {
-        ...capture.next.arguments,
-        final: true,
-        checks: capture.next.arguments.checks.map((check: object) => ({
-          ...check,
-          status: 'pass',
-          evidence: 'Both roots visible in delivered overview'
-        }))
-      }
-      const result = await call('review_drawing', record)
-
-      if (unavailable) {
-        expect(result).toMatchObject({
-          accepted: false,
-          status: 'partial',
-          next: {
-            tool: 'read_design_checks',
-            arguments: { ids: ['measurement:scene'] }
-          }
-        })
-        const pending = await call(result.next.tool, result.next.arguments)
-
-        expect(pending.items).toHaveLength(1)
-        expect(JSON.parse(pending.items[0].evidence).findings).toEqual([
-          { kind: 'geometry-unavailable', elementId: children[0] }
-        ])
-      } else {
-        expect(result).toMatchObject({
-          accepted: true,
-          coverage: { required: 1, passed: 1 }
-        })
-      }
-
-      expect(
-        dispatched.filter((name) => name === 'review_design')
-      ).toHaveLength(1)
-      if (unavailable) {
-        geometry.mockImplementation(computed)
-        const retained = await call(result.next.tool, result.next.arguments)
-        const retry = await call('review_design', {
-          arguments: { elementId: retained.items[0].scope[0] }
-        })
-
-        expect(retry.actionResults[0].result.verification.status).toBe('pass')
-        expect(await call('review_drawing', record)).toMatchObject({
-          accepted: true
-        })
-        expect(
-          dispatched.filter((name) => name === 'review_design')
-        ).toHaveLength(2)
-      }
-
+      expect(dispatched).toEqual(['inspect_drawing'])
       expect(snapshot).toHaveBeenCalledTimes(1)
-      if (!unavailable) {
-        expect(
-          (
-            await call('read_design_checks', {
-              view: 'details',
-              includePassed: true
-            })
-          ).items
-        ).toEqual(
-          expect.arrayContaining([
-            expect.objectContaining({ id: 'measurement:scene', status: 'pass' })
-          ])
+      // Explicit diagnostics are independent of capture and final AI judgment.
+      const diagnosis = await call('review_design', {
+        arguments: { elementId: 'scene' }
+      })
+      const result = diagnosis.actionResults[0].result
+      if (unavailable) {
+        expect(result.findings).toContainEqual(
+          expect.objectContaining({
+            kind: 'geometry-unavailable',
+            elementId: children[0]
+          })
         )
-      }
-
+        geometry.mockImplementation(computed)
+        const retry = await call('review_design', {
+          arguments: { elementId: 'scene' }
+        })
+        expect(retry.actionResults[0].result.verification.status).toBe('pass')
+      } else expect(result.verification.status).toBe('pass')
+      expect(snapshot).toHaveBeenCalledTimes(1)
       expect(await core.save()).toEqual(document)
       expect(core.getUndoHistoryDepth()).toBe(history)
       expect(published).not.toHaveBeenCalled()

@@ -26,7 +26,7 @@ export interface AiToolContractInput {
   effect: 'read' | 'prepare' | 'mutation' | 'external'
   resources: readonly string[]
   /** Only explicitly admitted data-plane tools can be recipe dependencies. */
-  composition?: 'allowed' | 'control-plane'
+  composition?: 'allowed' | 'request' | 'control-plane'
   lifecycle: {
     cancellation: 'cooperative' | 'before-dispatch'
     retry: 'never' | 'read-only' | 'reconcile'
@@ -52,7 +52,7 @@ export interface AiToolContract {
   >
   readonly effect: AiToolContractInput['effect']
   readonly resources: readonly string[]
-  readonly composition?: 'allowed' | 'control-plane'
+  readonly composition?: 'allowed' | 'request' | 'control-plane'
   readonly lifecycle: Readonly<AiToolContractInput['lifecycle']>
 }
 
@@ -130,7 +130,7 @@ export const createAiToolContract = (
 
   if (
     input.composition !== undefined &&
-    !['allowed', 'control-plane'].includes(input.composition)
+    !['allowed', 'request', 'control-plane'].includes(input.composition)
   ) {
     throw new TypeError('Invalid composition eligibility')
   }

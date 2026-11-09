@@ -100,6 +100,15 @@ const structure = (schema: unknown) => {
   }
 }
 
+const optionalInputChoices = (declaration: Record<string, unknown>) => [
+  ...(Array.isArray(declaration.optionalInputs)
+    ? declaration.optionalInputs
+    : []),
+  ...Object.keys(
+    record(declaration.optionalInputPaths) ? declaration.optionalInputPaths : {}
+  )
+]
+
 // Explicit owner opt-in, never a second capability/type registry.
 export const workflowInputScopes = (schema: unknown) => {
   const source = structure(schema)
@@ -114,7 +123,7 @@ export const workflowInputScopes = (schema: unknown) => {
           )
         ],
         nodeTypes: source.nodes.flatMap(nodeTypes),
-        optionalInputs: source.declaration.optionalInputs ?? [],
+        optionalInputs: optionalInputChoices(source.declaration),
         ...(typeof source.declaration.selection === 'string'
           ? { selection: source.declaration.selection }
           : {})
@@ -350,6 +359,50 @@ export const projectWorkflowInput = (input: unknown, scope: unknown) => {
       !scope.optionalInputs.includes(field)
     ) {
       schema.properties[field] = false
+    }
+  }
+
+  const optionalPaths = source.declaration.optionalInputPaths
+
+  if (optionalPaths !== undefined && !record(optionalPaths)) {
+    throw new Error('Invalid optional input paths')
+  }
+
+  for (const [group, paths] of Object.entries(optionalPaths ?? {})) {
+    if (
+      !Array.isArray(paths) ||
+      !paths.length ||
+      optionalInputs.includes(group)
+    ) {
+      throw new Error('Invalid optional input group')
+    }
+
+    for (const path of paths) {
+      if (typeof path !== 'string' || !path.includes('/properties/')) {
+        throw new Error(
+          'Optional input paths must address canonical properties'
+        )
+      }
+
+      const split = path.lastIndexOf('/properties/')
+      const owner = at(schema, path.slice(0, split))
+      const field = path.slice(split + '/properties/'.length)
+
+      if (
+        !record(owner) ||
+        !record(owner.properties) ||
+        !Object.hasOwn(owner.properties, field) ||
+        (Array.isArray(owner.required) && owner.required.includes(field))
+      ) {
+        throw new Error('Only optional canonical properties may be selected')
+      }
+
+      if (
+        !Array.isArray(scope.optionalInputs) ||
+        !scope.optionalInputs.includes(group)
+      ) {
+        owner.properties[field] = false
+      }
     }
   }
 
@@ -639,6 +692,14 @@ export const projectWorkflowResult = (
   return result
 }
 
+/** Select the same executable owner example for native declarations and usage. */
+export const workflowInvocationExample = (schema: unknown) =>
+  record(schema) && Array.isArray(schema.examples)
+    ? schema.examples.find(
+        (value) => record(value) && !operationInputIssue(value, schema)
+      )
+    : undefined
+
 /** A lossless JSON Schema projection; no separate parameter grammar or validator. */
 export const workflowUsageParameters = (input: unknown) => {
   if (!record(input)) {
@@ -671,7 +732,7 @@ export const workflowUsageParameters = (input: unknown) => {
   ): Record<string, unknown> => {
     const result = { ...schema }
 
-    // Examples are delivered once in the existing executable invocation field.
+    // Callers deliver one selected example in the native schema or usage invocation.
     delete result.examples
     if (result.additionalProperties === true) {
       delete result.additionalProperties
@@ -1024,6 +1085,7 @@ export const workflowUsageGuide = (input: unknown, scope: unknown) => {
   const usage = source?.declaration.usage
 
   if (
+    !source ||
     !record(scope) ||
     !record(usage) ||
     !record(usage.operations) ||
@@ -1040,11 +1102,14 @@ export const workflowUsageGuide = (input: unknown, scope: unknown) => {
 
   return {
     instructions: `${usage.instructions} ${usage.operations[scope.operation]} ${usage.results}`,
-    optionalInputs: source?.declaration.optionalInputs ?? [],
+    ...(Array.isArray(usage.resultPaths)
+      ? { resultPaths: usage.resultPaths }
+      : {}),
+    optionalInputs: optionalInputChoices(source.declaration),
     selection:
       typeof usage.selection === 'string'
         ? usage.selection
-        : 'Selection does not require sending optionalInputs. Omit plan without rereading.',
+        : 'Select only optional input groups needed by this operation. Omitted groups need no reread.',
     recovery: usage.recovery
   }
 }

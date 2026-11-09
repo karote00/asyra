@@ -1,11 +1,6 @@
 import { readCompleteInformation } from '../../../server/__tests__/tool-contract-assertions'
-import type {
-  AiActionBatch,
-  AiBatchReceipt,
-  AiJsonValue
-} from '../action-batch-protocol'
+
 import recordedDecisions from '../../../test-data/knowledge-evaluation/evidence/architecture-2026-10-18/decision-evidence-replay.json'
-import { createLocalDesignReview } from '../../../server/local-design-review'
 import { readFileSync } from 'node:fs'
 import { expect, it, vi } from 'vitest'
 import { createAiActionRegistry } from '@asyra/ai-agent-runtime'
@@ -90,7 +85,7 @@ it('hands App-only method examples from real Knowledge reads to current discover
     registry.register(action)
   }
 
-  const actions = registry.list()
+  const actions = [...createBasicApiActions(), createPreparedDesignAction()]
   const session = createDesignPreparationSession()
   const designs = createLocalDesignTools(actions, session)
   const dispatch = vi.fn()
@@ -345,10 +340,13 @@ it('carries the recorded material decision into initial preparation without chan
     }
 
     const session = createDesignPreparationSession()
-    const designs = createLocalDesignTools(registry.list(), session)
+    const designs = createLocalDesignTools(
+      [...createBasicApiActions(), createPreparedDesignAction()],
+      session
+    )
     const dispatch = vi.fn()
     const operations = createLocalOperationTools(
-      registry.list(),
+      [...createBasicApiActions(), createPreparedDesignAction()],
       designs,
       dispatch,
       {
@@ -583,7 +581,10 @@ it('routes recorded local material edits through actual discovery and artifact t
     }
 
     const session = createDesignPreparationSession()
-    const designs = createLocalDesignTools(registry.list(), session)
+    const designs = createLocalDesignTools(
+      [...createBasicApiActions(), createPreparedDesignAction()],
+      session
+    )
     const prepared = JSON.parse(
       await designs.call(
         'prepare_design',
@@ -600,8 +601,21 @@ it('routes recorded local material edits through actual discovery and artifact t
           actionId: action.id,
           actionName: action.name,
           result: {
+            modelResult: {
+              status: 'complete',
+              changed: true,
+              acceptedCount: action.arguments.elementIds.length,
+              unavailableCount: 0,
+              settlement: 'completed',
+              mutationScope: {
+                complete: true,
+                elementCount: action.arguments.elementIds.length,
+                removedElementCount: 0
+              }
+            },
             status: 'complete',
-            value: null,
+            settlement: 'completed',
+            value: { acceptedIds: action.arguments.elementIds, changed: true },
             acceptedIds: action.arguments.elementIds,
             unavailableIds: [],
             changed: true,
@@ -617,7 +631,7 @@ it('routes recorded local material edits through actual discovery and artifact t
       })
     )
     const operations = createLocalOperationTools(
-      registry.list(),
+      [...createBasicApiActions(), createPreparedDesignAction()],
       designs,
       dispatch
     )
@@ -657,10 +671,8 @@ it('routes recorded local material edits through actual discovery and artifact t
     const result = JSON.parse(await call(operation))
 
     expect(localToolOutcome(result)).toMatchObject({
-      status: 'partial',
-      issues: expect.arrayContaining([
-        expect.objectContaining({ code: 'FOLLOWUP_UNAVAILABLE' })
-      ])
+      status: 'success',
+      issues: []
     })
     expect(result.actionResults[0].result.toolOutcome.status).toBe('success')
     expect(dispatch).toHaveBeenCalledTimes(1)
@@ -694,10 +706,8 @@ it('routes recorded local material edits through actual discovery and artifact t
     const freshResult = JSON.parse(await call(fresh))
 
     expect(localToolOutcome(freshResult)).toMatchObject({
-      status: 'partial',
-      issues: expect.arrayContaining([
-        expect.objectContaining({ code: 'FOLLOWUP_UNAVAILABLE' })
-      ])
+      status: 'success',
+      issues: []
     })
     expect(freshResult.actionResults[0].result.toolOutcome.status).toBe(
       'success'
@@ -1074,478 +1084,6 @@ it('hands a declared color-only method through exact discovery to retained mappi
   }
 })
 
-it.each([false, true])(
-  'keeps reference-backed spatial judgment independent of local detail with Knowledge read=%s',
-  async (readAdvice) => {
-    const knowledge = createLocalKnowledgeTools('spatial-decision')
-
-    try {
-      if (readAdvice) {
-        const response = JSON.parse(
-          await knowledge.call(
-            AiDesignToolIds.READ_KNOWLEDGE,
-            {
-              ids: ['design.architectural-illustration.spatial'],
-              contexts: ['architectural-illustration']
-            },
-            signal()
-          )
-        )
-
-        expect(
-          response.documents.map((doc: { target: string }) => doc.target)
-        ).toContain('illustration.architecture.spatial')
-      }
-
-      // The recorded agent selected massing advice but its criteria did not isolate
-      // relationships. We control that decision here; no automated visual judgment.
-      const recorded = recordedDecisions.calls
-
-      expect(Object.keys(recorded.criteria.inputValue.criteria)).toEqual([
-        'overall',
-        'detail',
-        'scale'
-      ])
-      expect(
-        recorded.earlyCapture.inputValue.inspections.every((item) =>
-          item.checks.every((check) => !('referenceUses' in check))
-        )
-      ).toBe(true)
-      const source = recorded.references.inputValue.referenceDecisions[0]
-      const review = createLocalDesignReview({
-        validateReferences: () => [
-          {
-            attachmentIndex: 0,
-            referenceId: source.referenceId,
-            validation: { width: 507, height: 665 }
-          }
-        ]
-      })
-
-      review.record({
-        phase: 'plan',
-        method:
-          'Compare the chosen attached-mass relationship separately from detail',
-        references: [],
-        detailRequired: false,
-        criteria: {
-          relationship: {
-            requirement:
-              'Preserve the visible offset and contact of the attached lower mass',
-            description:
-              'Compare both masses and their join; dimensions remain estimated',
-            verification: 'visual',
-            requiredUnits: []
-          },
-          detail: {
-            requirement: 'Keep the requested entrance detail',
-            description: 'Entrance only',
-            verification: 'visual',
-            requiredUnits: ['base']
-          }
-        }
-      })
-
-      const select = (
-        region:
-          'whole' | { x: number; y: number; width: number; height: number }
-      ) =>
-        review.selectReferences([0], {
-          requirementRevision: 1,
-          referenceDecisions: [
-            {
-              ...source,
-              uses: [
-                {
-                  ...source.uses[0],
-                  criterionId: 'relationship',
-                  region
-                }
-              ]
-            }
-          ]
-        })
-
-      select('whole')
-
-      const receipt = () =>
-        review.correctionContext().referenceDecisions[0].uses[0].receipt
-
-      const whole = review.inspect('composition', true, true)?.inspectionId
-      const detail = review.inspect('entrance', true, false)?.inspectionId
-
-      if (!whole || !detail) {
-        throw new Error('Expected controlled capture receipts')
-      }
-
-      const submit = (bound: ReturnType<typeof review.bindReview>) =>
-        review.recordBoundReview({
-          ...bound,
-          final: true,
-          checks: bound.checks.map((check) => ({
-            ...check,
-            status: 'pass',
-            evidence:
-              'Controlled primary-agent verdict for this explicit requirement'
-          }))
-        })
-
-      // No reference or Knowledge prerequisite for an ordinary detail judgment.
-      submit(
-        review.bindReview('visual', [
-          { criterionId: 'detail', unitId: 'base', inspectionIds: [detail] }
-        ])
-      )
-      expect(review.isAccepted()).toBe(false)
-      const independent = review
-        .readChecks({ includePassed: true })
-        .items.find((item) => item.unitId === 'base')
-
-      expect(() =>
-        review.bindReview('visual', [
-          {
-            criterionId: 'detail',
-            unitId: 'base',
-            inspectionIds: [detail],
-            referenceUses: [receipt()]
-          }
-        ])
-      ).toThrow()
-
-      const binding = () =>
-        review.bindReview('visual', [
-          {
-            criterionId: 'relationship',
-            inspectionIds: [whole],
-            referenceUses: [receipt()]
-          }
-        ])
-
-      const original = binding()
-
-      submit(original)
-      expect(review.isAccepted()).toBe(true)
-      const checks = review.readChecks({ includePassed: true })
-
-      expect(review.inspect('composition', false, true)).toBeUndefined()
-      expect(review.readChecks({ includePassed: true })).toEqual(checks)
-      expect(() => select({ x: 500, y: 0, width: 20, height: 20 })).toThrow()
-      expect(review.readChecks({ includePassed: true })).toEqual(checks)
-      select({ x: 0, y: 0, width: 507, height: 664 })
-      expect(review.isAccepted()).toBe(false)
-      expect(() => submit(original)).toThrow(/stale/)
-      expect(
-        review
-          .readChecks({ includePassed: true })
-          .items.find((item) => item.unitId === 'base')
-      ).toEqual(independent)
-      submit(binding())
-      expect(review.isAccepted()).toBe(true)
-    } finally {
-      knowledge.dispose()
-    }
-  }
-)
-
-it('joins advisory reads, real preparation and scoped material verdict recovery without approving unfinished detail', async () => {
-  const knowledge = createLocalKnowledgeTools('combined-material')
-
-  try {
-    const read = JSON.parse(
-      await knowledge.call(
-        AiDesignToolIds.READ_KNOWLEDGE,
-        {
-          ids: [
-            'design.architectural-illustration.materials.method.parameters'
-          ],
-          contexts: ['architectural-illustration']
-        },
-        signal()
-      )
-    )
-    const advice = read.documents.find(
-      (document: { target: string }) =>
-        document.target ===
-        'design.architectural-illustration.materials.method.parameters'
-    )
-    const sample = [...advice.text.matchAll(/```json\n([\s\S]*?)\n```/g)]
-      .map((match) => JSON.parse(match[1]))
-      .find((entry) => entry.tool === 'prepare_design')
-    const session = createDesignPreparationSession()
-    const actions = [...createBasicApiActions(), createPreparedDesignAction()]
-    const designs = createLocalDesignTools(actions, session)
-    const prepared = JSON.parse(
-      await designs.call(sample.tool, sample.arguments, signal())
-    )
-
-    expect(prepared.available).toBe(true)
-    const artifact = session.resolve(prepared.artifactId)
-
-    expect(admitPreparedDesign(structuredClone(artifact))).toEqual(artifact)
-    const pane = artifact.keyToId['pane-a'],
-      mullion = artifact.keyToId.mullion
-
-    expect(pane).toBeTypeOf('string')
-    expect(mullion).toBeTypeOf('string')
-    // The original input demonstrates frame-only evidence followed later by a
-    // containing-composition crop. It is not a current-session capture receipt.
-    const saved = recordedDecisions.calls
-    const oldFrame = saved.earlyCapture.inputValue.inspections[1].elementId
-    const combined = saved.combinedCapture.inputValue.inspections[2]
-
-    expect(combined.elementId).not.toBe(oldFrame)
-    expect(combined.checks[0].supersedes.revision).toBeGreaterThan(0)
-    const source = saved.references.inputValue.referenceDecisions[0]
-    const review = createLocalDesignReview({
-      validateReferences: () => [
-        {
-          attachmentIndex: 0,
-          referenceId: source.referenceId,
-          validation: { width: 507, height: 665 }
-        }
-      ]
-    })
-
-    review.record({
-      phase: 'plan',
-      method: 'Separate chosen material contrast from detail completion',
-      references: [],
-      detailRequired: false,
-      criteria: {
-        overall: {
-          requirement: 'Preserve spatial relationships',
-          description: 'Whole composition',
-          verification: 'visual',
-          requiredUnits: []
-        },
-        material: {
-          requirement: 'Distinguish chosen glass and metal',
-          description: 'Actual paint and bordering structure together',
-          verification: 'visual',
-          requiredUnits: ['surface']
-        },
-        detail: {
-          requirement: 'Complete the requested detail',
-          description: 'Independent completion judgment',
-          verification: 'visual',
-          requiredUnits: ['repeat']
-        }
-      }
-    })
-    review.selectReferences([0], {
-      requirementRevision: saved.references.inputValue.requirementRevision,
-      referenceDecisions: [source]
-    })
-    const referenceUse =
-      review.correctionContext().referenceDecisions[0].uses[0].receipt
-
-    const capture = (
-      elementId: string,
-      overview: boolean,
-      region?: unknown
-    ) => {
-      const receipt = review.inspect(elementId, true, overview, region)
-
-      if (!receipt) {
-        throw new Error('Expected controlled image capture')
-      }
-
-      return receipt.inspectionId
-    }
-
-    const overview = capture(artifact.rootId, true)
-    const isolatedFrame = capture(mullion, false)
-    // The primary agent intentionally requests the containing ready surface;
-    // the tool does not infer whether a crop looks like glass.
-    const region = { x: 0, y: 0, width: 24, height: 40 }
-    let surface = capture(artifact.rootId, false, region)
-    const detail = capture(artifact.keyToId['pane-b'], false)
-
-    const bind = () =>
-      review.bindReview('visual', [
-        {
-          criterionId: 'overall',
-          inspectionIds: [overview],
-          referenceUses: [referenceUse]
-        },
-        {
-          criterionId: 'material',
-          unitId: 'surface',
-          inspectionIds: [surface]
-        },
-        { criterionId: 'detail', unitId: 'repeat', inspectionIds: [detail] }
-      ])
-
-    const original = bind()
-
-    expect(
-      original.checks[1].binding.dependencies.map((item) => item.inspectionId)
-    ).toEqual([surface])
-    expect(
-      original.checks[1].binding.dependencies.map((item) => item.inspectionId)
-    ).not.toContain(isolatedFrame)
-    review.recordBoundReview({
-      ...original,
-      final: false,
-      checks: original.checks.map((check) => ({
-        ...check,
-        status: check.criterionId === 'detail' ? 'fail' : 'pass',
-        evidence:
-          check.criterionId === 'detail'
-            ? 'Controlled choice: requested detail remains'
-            : 'Controlled choice: existing visible relationship is acceptable'
-      }))
-    })
-    const before = review.readChecks({ includePassed: true }).items
-
-    expect(before.find((item) => item.criterionId === 'material')?.status).toBe(
-      'pass'
-    )
-    expect(before.find((item) => item.criterionId === 'detail')?.status).toBe(
-      'fail'
-    )
-    expect(review.isAccepted()).toBe(false)
-    const late = bind()
-    // Actual preparation/operation owners resolve the target; the browser exchange
-    // is controlled here. This proves routing, not a rendered paint or save.
-    const dispatch = vi.fn(
-      async (batch: import('../action-batch-protocol').AiActionBatch) => ({
-        context: {},
-        actionResults: batch.actions.map((action) => ({
-          actionId: action.id,
-          actionName: action.name,
-          result: {
-            status: 'complete',
-            value: null,
-            acceptedIds: action.arguments.elementIds,
-            unavailableIds: [],
-            changed: true,
-            toolOutcome: { status: 'success', settlement: 'completed' },
-            mutationScope: {
-              complete: true,
-              elementIds: action.arguments.elementIds,
-              removedElementIds: []
-            }
-          }
-        }))
-      })
-    )
-    const operations = createLocalOperationTools(actions, designs, dispatch)
-    const selected = JSON.parse(
-      await operations.call(
-        'describe_design_apis',
-        {
-          operations: ['fill.updateFillsAtIndex'],
-          view: 'usage'
-        },
-        signal()
-      )
-    ).apis[0]
-
-    expect(selected.operation).toBe('fill.updateFillsAtIndex')
-    expect(selected.execution.tool).toBe('execute_design')
-    const correction = {
-      inspection: 'defer',
-      operations: [
-        {
-          name: selected.name,
-          target: {
-            artifactId: prepared.artifactId,
-            keys: ['pane-a'],
-            field: 'elementIds'
-          },
-          arguments: { index: 0, patch: { color: '#426a78' } }
-        }
-      ]
-    }
-    const invalid = structuredClone(correction)
-
-    invalid.operations[0].target.keys.push('missing-pane')
-    await expect(
-      operations.call('execute_design', invalid, signal())
-    ).rejects.toThrow()
-    expect(dispatch).not.toHaveBeenCalled()
-    const settled = JSON.parse(
-      await operations.call('execute_design', correction, signal())
-    )
-
-    expect(localToolOutcome(settled)).toMatchObject({
-      status: 'partial',
-      issues: expect.arrayContaining([
-        expect.objectContaining({ code: 'FOLLOWUP_UNAVAILABLE' })
-      ])
-    })
-    expect(settled.actionResults[0].result.toolOutcome.status).toBe('success')
-    expect(dispatch).toHaveBeenCalledTimes(1)
-    expect(dispatch.mock.calls[0][0].actions[0].arguments).toEqual({
-      elementIds: [pane],
-      index: 0,
-      patch: { color: '#426a78' }
-    })
-    // Controlled browser change notification: a paint edit affects its crop and
-    // overview, not the independent detail evidence. This does not simulate pixels.
-    review.invalidateInspections([surface, overview], 'Selected paint changed')
-    expect(() =>
-      review.recordBoundReview({
-        ...late,
-        checks: late.checks.map((check) => ({
-          ...check,
-          status: 'pass',
-          evidence: 'Late judgment'
-        }))
-      })
-    ).toThrow()
-    expect(
-      review.inspect(artifact.rootId, false, false, region)
-    ).toBeUndefined()
-    expect(
-      review
-        .readChecks({ includePassed: true })
-        .items.find((item) => item.criterionId === 'detail')
-    ).toEqual(before.find((item) => item.criterionId === 'detail'))
-    surface = capture(artifact.rootId, false, region)
-    const currentOverview = capture(artifact.rootId, true)
-    const repaired = review.bindReview('visual', [
-      {
-        criterionId: 'overall',
-        inspectionIds: [currentOverview],
-        referenceUses: [referenceUse]
-      },
-      { criterionId: 'material', unitId: 'surface', inspectionIds: [surface] }
-    ])
-
-    review.recordBoundReview({
-      ...repaired,
-      final: true,
-      checks: repaired.checks.map((check) => ({
-        ...check,
-        status: 'pass',
-        evidence: 'Controlled post-edit verdict'
-      }))
-    })
-    expect(review.isAccepted()).toBe(false)
-    const completed = review.bindReview('visual', [
-      { criterionId: 'detail', unitId: 'repeat', inspectionIds: [detail] }
-    ])
-
-    review.recordBoundReview({
-      ...completed,
-      final: true,
-      checks: completed.checks.map((check) => ({
-        ...check,
-        status: 'pass',
-        evidence: 'Controlled final detail verdict'
-      }))
-    })
-    expect(review.isAccepted()).toBe(true)
-    expect(session.resolve(prepared.artifactId)).toEqual(artifact)
-    // Inspection recovery did not replay the settled edit.
-    expect(dispatch).toHaveBeenCalledTimes(1)
-  } finally {
-    knowledge.dispose()
-  }
-})
-
 it('uses the current qualified route across partial, full and recovery retrieval without treating receipt history as delivery proof', async () => {
   const recorded = recordedDecisions.discoveryProjection
 
@@ -1576,10 +1114,13 @@ it('uses the current qualified route across partial, full and recovery retrieval
     }
 
     const session = createDesignPreparationSession()
-    const designs = createLocalDesignTools(registry.list(), session)
+    const designs = createLocalDesignTools(
+      [...createBasicApiActions(), createPreparedDesignAction()],
+      session
+    )
     const dispatch = vi.fn()
     const operations = createLocalOperationTools(
-      registry.list(),
+      [...createBasicApiActions(), createPreparedDesignAction()],
       designs,
       dispatch,
       {
@@ -1813,594 +1354,6 @@ it('executes documented exclusive direct and retained target inputs through cano
   }
 })
 
-it('executes the documented representative review through recorded wrong-crop recovery and independent result reuse', async () => {
-  const present = <T>(value: T | null | undefined): T => {
-    if (value == null) {
-      throw new Error('Missing required review receipt')
-    }
-
-    return value
-  }
-
-  const saved = JSON.parse(
-    readFileSync(
-      new URL(
-        '../../../server/__tests__/fixtures/recorded-101/representative-review-20261019.json',
-        import.meta.url
-      ),
-      'utf8'
-    )
-  )
-  const declaration = saved.calls.find(
-    (call: { index: number }) => call.index === 5
-  ).input
-
-  expect(
-    Object.values(declaration.criteria).every(
-      (criterion: { requiredUnits: string[] }) =>
-        criterion.requiredUnits.length === 0
-    )
-  ).toBe(true)
-  const recorded = saved.calls.find(
-    (call: { index: number }) => call.index === 14
-  )
-
-  expect(recorded.output.accepted).toBe(false)
-  const observed = recorded.input.checks.find(
-    (check: { criterionId: string }) => check.criterionId === 'facade'
-  )
-
-  expect(observed.status).toBe('unverified')
-
-  const knowledge = createLocalKnowledgeTools('representative-review')
-
-  try {
-    const delivery = JSON.parse(
-      await knowledge.call(
-        AiDesignToolIds.READ_KNOWLEDGE,
-        {
-          ids: ['design.architectural-illustration.materials.review'],
-          contexts: ['architectural-illustration']
-        },
-        signal()
-      )
-    )
-    const app = delivery.documents.find(
-      (document: { target: string }) =>
-        document.target === 'design.architectural-illustration.materials.review'
-    )
-    const match = app.text.match(
-      /```json representative-review\n([\s\S]*?)\n```/
-    )
-
-    if (!match) {
-      throw new Error('Missing executable representative review example')
-    }
-
-    const example = JSON.parse(match[1])
-    const { designEvidenceDefinitions } =
-      await import('../../../server/local-design-review')
-    const definition = designEvidenceDefinitions.find(
-      (item) => item.name === example.tool
-    )
-
-    if (!definition) {
-      throw new Error('Unknown documented declaration')
-    }
-
-    expect(
-      operationInputIssue(example.arguments, definition.inputSchema)
-    ).toBeUndefined()
-    const owner = createLocalDesignReview()
-
-    owner.record({ ...example.arguments, phase: 'plan' })
-
-    const crop = (x: number, revision: number) => {
-      const result = owner.inspect(
-        'sample',
-        true,
-        false,
-        { x, y: 0, width: 40, height: 40 },
-        true,
-        {
-          sessionId: 'sample-document',
-          revision,
-          receiptId: `sample-${revision}`
-        }
-      )
-
-      if (!result) {
-        throw new Error('Missing image receipt')
-      }
-
-      return result.inspectionId
-    }
-
-    const roof = crop(0, 1)
-    const bound = owner.bindReview('visual', [
-      { criterionId: 'material', unitId: 'sample-join', inspectionIds: [roof] }
-    ])
-    const missing = owner.recordBoundReview({
-      ...bound,
-      final: false,
-      checks: bound.checks.map((check) => ({
-        ...check,
-        status: observed.status,
-        evidence: observed.evidence
-      }))
-    })
-
-    expect(missing).toMatchObject({
-      reviewOperation: 'record',
-      accepted: false,
-      recordedChecks: [
-        { criterionId: 'material', unitId: 'sample-join', status: 'unverified' }
-      ]
-    })
-    const before = owner.readChecks({ includePassed: true })
-    const facade = crop(50, 1)
-
-    expect(() =>
-      owner.bindReview('visual', [
-        {
-          criterionId: 'material',
-          unitId: 'sample-join',
-          inspectionIds: [facade]
-        }
-      ])
-    ).toThrow(/supersed/i)
-    expect(owner.readChecks({ includePassed: true })).toEqual(before)
-    const rebound = owner.bindReview('visual', [
-      {
-        criterionId: 'material',
-        unitId: 'sample-join',
-        inspectionIds: [facade],
-        supersedes: {
-          revision: present(missing.recordedChecks)[0].revision,
-          reason: 'The previous crop showed the roof, not the material join.'
-        }
-      }
-    ])
-    const pass = owner.recordBoundReview({
-      ...rebound,
-      final: false,
-      checks: rebound.checks.map((check) => ({
-        ...check,
-        status: 'pass',
-        evidence:
-          'Supplied deterministic observation of the actual material and join.'
-      }))
-    })
-
-    expect(pass).toMatchObject({
-      accepted: false,
-      recordedChecks: [{ status: 'pass' }],
-      coverage: {
-        passed: 1,
-        pending: [expect.objectContaining({ criterionId: 'overall' })]
-      }
-    })
-    const currentPass = owner.readChecks({
-      ids: [present(pass.recordedChecks)[0].id],
-      includePassed: true
-    })
-
-    owner.mutate()
-    expect(
-      owner.readChecks({
-        ids: [present(pass.recordedChecks)[0].id],
-        includePassed: true
-      })
-    ).toEqual(currentPass)
-    const whole = present(
-      owner.inspect('drawing', true, true, undefined, false, {
-        sessionId: 'sample-document',
-        revision: 2,
-        receiptId: 'whole-2'
-      })
-    )
-    const finalBinding = owner.bindReview('visual', [
-      { criterionId: 'overall', inspectionIds: [whole.inspectionId] }
-    ])
-
-    expect(
-      owner.recordBoundReview({
-        ...finalBinding,
-        final: true,
-        checks: finalBinding.checks.map((check) => ({
-          ...check,
-          status: 'pass',
-          evidence: 'Supplied whole-drawing observation.'
-        }))
-      })
-    ).toMatchObject({ accepted: true, coverage: { required: 2, passed: 2 } })
-    const late = owner.bindReview('visual', [
-      {
-        criterionId: 'material',
-        unitId: 'sample-join',
-        inspectionIds: [facade]
-      }
-    ])
-
-    owner.invalidateInspections(
-      [facade, whole.inspectionId],
-      'The material region and its whole-view image changed.'
-    )
-    expect(() =>
-      owner.recordBoundReview({
-        ...late,
-        checks: late.checks.map((check) => ({
-          ...check,
-          status: 'pass',
-          evidence: 'Late stale result'
-        }))
-      })
-    ).toThrow()
-    expect(
-      owner.readChecks({ ids: [present(pass.recordedChecks)[0].id] }).items[0]
-        .status
-    ).toBe('stale')
-    expect(
-      owner.readChecks({ ids: ['visual:overall'], includePassed: true })
-        .items[0].status
-    ).toBe('stale')
-    const fresh = crop(50, 3)
-    const recovery = owner.bindReview('visual', [
-      { criterionId: 'material', unitId: 'sample-join', inspectionIds: [fresh] }
-    ])
-
-    expect(
-      owner.recordBoundReview({
-        ...recovery,
-        final: true,
-        checks: recovery.checks.map((check) => ({
-          ...check,
-          status: 'pass',
-          evidence: 'Supplied recovered material observation.'
-        }))
-      })
-    ).toMatchObject({ accepted: false })
-    const recoveredWhole = present(
-      owner.inspect('drawing', true, true, undefined, false, {
-        sessionId: 'sample-document',
-        revision: 3,
-        receiptId: 'whole-3'
-      })
-    )
-    const complete = owner.bindReview('visual', [
-      { criterionId: 'overall', inspectionIds: [recoveredWhole.inspectionId] }
-    ])
-
-    expect(
-      owner.recordBoundReview({
-        ...complete,
-        final: true,
-        checks: complete.checks.map((check) => ({
-          ...check,
-          status: 'pass',
-          evidence: 'Supplied recovered whole-drawing observation.'
-        }))
-      })
-    ).toMatchObject({ accepted: true })
-  } finally {
-    knowledge.dispose()
-  }
-})
-
-it.each(['unverified', 'fail'] as const)(
-  'dispatches the published native route through %s recovery without discarding an independent pass',
-  async (status) => {
-    const { AiActionNames } = await import('../../constants/ai-actions')
-    const { localOperationNamespace } =
-      await import('../../../server/local-operation-tools')
-    const saved = JSON.parse(
-      readFileSync(
-        new URL(
-          '../../../server/__tests__/fixtures/recorded-101/representative-review-20261019.json',
-          import.meta.url
-        ),
-        'utf8'
-      )
-    )
-    const observation = saved.calls
-      .find((call: { index: number }) => call.index === 14)
-      .input.checks.find(
-        (check: { criterionId: string }) => check.criterionId === 'facade'
-      )
-
-    expect(observation.status).toBe('unverified')
-    const knowledge = createLocalKnowledgeTools('native-representative-handoff')
-
-    try {
-      const response = JSON.parse(
-        await knowledge.call(
-          AiDesignToolIds.READ_KNOWLEDGE,
-          {
-            ids: ['design.architectural-illustration.materials.review'],
-            contexts: ['architectural-illustration']
-          },
-          signal()
-        )
-      )
-      const text = response.documents.find(
-        (document: { target: string }) =>
-          document.target ===
-          'design.architectural-illustration.materials.review'
-      ).text
-
-      const example = (label: string) => {
-        const match = text.match(
-          new RegExp('```json ' + label + '\\n([\\s\\S]*?)\\n```')
-        )
-
-        if (!match) {
-          throw new Error(`Missing ${label} example`)
-        }
-
-        return JSON.parse(match[1])
-      }
-
-      const declaration = example('representative-review')
-      const capture = example('representative-capture')
-
-      declaration.arguments.criteria.independent = {
-        requirement: 'Keep the independent accepted part',
-        description: 'Separate image and dependencies',
-        verification: 'visual',
-        requiredUnits: []
-      }
-      let available = true
-      const dispatch = vi.fn(
-        async (batch: AiActionBatch): Promise<AiBatchReceipt> => ({
-          context: {},
-          actionResults: batch.actions.map((action) => {
-            let result: AiJsonValue = {
-              current: true,
-              validatedAt: { sessionId: 'saved-route', revision: 1 },
-              coverage: { complete: true }
-            }
-
-            if (action.name === AiActionNames.INSPECT_DRAWING) {
-              result = available
-                ? {
-                    available: true,
-                    imageScope: (action.arguments as Record<string, unknown>)
-                      .region
-                      ? 'region'
-                      : 'overview',
-                    evidence: { sessionId: 'saved-route', revision: 1 },
-                    image: { dataUrl: 'data:image/png;base64,AA==' }
-                  }
-                : {
-                    available: false,
-                    message:
-                      'Capture is unavailable; select the actual visible join.'
-                  }
-            }
-
-            return { actionId: action.id, actionName: action.name, result }
-          })
-        })
-      )
-      const operations = createLocalOperationTools(
-        [
-          AiActionNames.INSPECT_DRAWING,
-          AiActionNames.VALIDATE_INSPECTION_EVIDENCE
-        ].map((name) => ({ name, description: name, inputSchema: {} })),
-        {
-          modelActions: (a) => a,
-
-          resolveBatch: (b) => b
-        },
-        dispatch,
-        {
-          getNativeTools: () =>
-            operations.definitions.map((definition) => ({
-              ...definition,
-              namespace: localOperationNamespace
-            }))
-        }
-      )
-
-      const call = async (name: string, args: unknown) =>
-        JSON.parse(await operations.call(name, args, signal()))
-
-      for (const sample of [declaration, capture]) {
-        const name = `${localOperationNamespace}.${sample.tool}`
-        const usage = (
-          await call('describe_design_apis', { names: [name], view: 'usage' })
-        ).tools[0]
-
-        expect(usage.definition.coverage).toBe('usage')
-        const full = (await call('describe_design_apis', { names: [name] }))
-          .tools[0]
-
-        expect(
-          operationInputIssue(sample.arguments, full.inputSchema)
-        ).toBeUndefined()
-        const repeated = (await call('describe_design_apis', { names: [name] }))
-          .tools[0]
-
-        expect(repeated.definition.availableInResponse).toBe(true)
-        const restored = (
-          await call('describe_design_apis', {
-            ...repeated.definition.refresh.arguments,
-            refreshReason: 'delivery-failure'
-          })
-        ).tools[0]
-
-        expect(restored.inputSchema).toEqual(full.inputSchema)
-      }
-
-      expect(dispatch).not.toHaveBeenCalled()
-      await call(declaration.tool, declaration.arguments)
-
-      const judge = async (
-        bound: { next: { arguments: { checks: object[] } } },
-        verdict: string,
-        evidence: string,
-        final?: boolean
-      ) =>
-        call(capture.tool, {
-          ...bound.next.arguments,
-          ...(final === undefined ? {} : { final }),
-          checks: bound.next.arguments.checks.map((check) => ({
-            ...check,
-            status: verdict,
-            evidence
-          }))
-        })
-
-      const independent = await call(capture.tool, {
-        phase: 'visual',
-        final: false,
-        inspections: [
-          { elementId: 'independent', checks: [{ criterionId: 'independent' }] }
-        ]
-      })
-      const prior = (
-        await judge(
-          independent,
-          'pass',
-          'Deterministic independent observation.'
-        )
-      ).recordedChecks[0]
-
-      const retained = () =>
-        call(AiDesignToolIds.READ_DESIGN_CHECKS, {
-          view: 'details',
-          ids: [prior.id],
-          includePassed: true
-        })
-
-      const before = await retained()
-
-      available = false
-      const unavailable = await call(capture.tool, capture.arguments)
-
-      expect(unavailable.recordedChecks ?? []).toEqual([])
-      expect(unavailable.accepted).not.toBe(true)
-      expect((await retained()).items).toEqual(before.items)
-      available = true
-      const bound = await call(capture.tool, capture.arguments)
-      const missing = await judge(
-        bound,
-        status,
-        status === 'unverified'
-          ? observation.evidence
-          : 'Deterministic material contrast failure at the selected join.'
-      )
-
-      expect(missing).toMatchObject({
-        accepted: false,
-        recordedChecks: [
-          { criterionId: 'material', unitId: 'sample-join', status }
-        ]
-      })
-      const failed = missing.recordedChecks[0]
-      const replacement = structuredClone(capture.arguments)
-
-      replacement.inspections[0].region.x = 40
-      replacement.inspections[0].checks[0].supersedes = {
-        revision: failed.revision,
-        reason:
-          status === 'unverified'
-            ? 'Use the actual facade join rather than the roof.'
-            : 'Judge the corrected material using a fresh image.'
-      }
-      const recovered = await call(capture.tool, replacement)
-      const pass = await judge(
-        recovered,
-        'pass',
-        'Deterministic corrected join observation; this test does not judge real pixels.'
-      )
-
-      expect(pass).toMatchObject({
-        accepted: false,
-        recordedChecks: [
-          {
-            criterionId: 'material',
-            unitId: 'sample-join',
-            status: 'pass',
-            revision: expect.any(Number)
-          }
-        ],
-        coverage: {
-          pending: [expect.objectContaining({ criterionId: 'overall' })]
-        }
-      })
-      expect(pass.recordedChecks[0].revision).toBeGreaterThan(failed.revision)
-      expect((await retained()).items).toEqual(before.items)
-      // A delayed submission cannot overwrite the replacement with the old binding.
-      await expect(
-        judge(bound, 'pass', 'Late obsolete observation')
-      ).rejects.toThrow()
-      expect((await retained()).items).toEqual(before.items)
-      const local = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
-        view: 'details',
-        ids: [failed.id],
-        includePassed: true
-      })
-
-      expect(local.items[0]).toMatchObject({
-        status: 'pass',
-        revision: pass.recordedChecks[0].revision
-      })
-      const whole = await call(capture.tool, {
-        phase: 'visual',
-        final: true,
-        inspections: [
-          { elementId: 'whole', checks: [{ criterionId: 'overall' }] }
-        ]
-      })
-
-      expect(whole.next.arguments.final).toBe(false)
-      expect(
-        await judge(whole, 'pass', 'Deterministic whole observation.')
-      ).toMatchObject({
-        accepted: false,
-        coverage: { required: 3, passed: 3 }
-      })
-
-      const captures = () =>
-        dispatch.mock.calls
-          .flatMap(([batch]) => batch.actions)
-          .filter((action) => action.name === AiActionNames.INSPECT_DRAWING)
-          .length
-
-      const beforeCompletion = captures()
-      const completion = await call(capture.tool, {
-        phase: 'visual',
-        bindChecks: [
-          { criterionId: 'overall', inspectionIds: whole.inspectionIds }
-        ]
-      })
-
-      expect(
-        await judge(
-          completion,
-          'pass',
-          'Retained whole observation with explicit completion.',
-          true
-        )
-      ).toMatchObject({ accepted: true, coverage: { required: 3, passed: 3 } })
-      expect(captures()).toBe(beforeCompletion)
-      expect((await retained()).items).toEqual(before.items)
-      expect(
-        dispatch.mock.calls
-          .flatMap(([batch]) => batch.actions)
-          .every(
-            (action) =>
-              action.name === AiActionNames.INSPECT_DRAWING ||
-              action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE
-          )
-      ).toBe(true)
-    } finally {
-      knowledge.dispose()
-    }
-  }
-)
-
 // These scenario consumers assemble read pages before interpreting domain advice.
 const createLocalKnowledgeTools = (
   ...args: Parameters<typeof createKnowledgeOwner>
@@ -2425,3 +1378,29 @@ const createLocalOperationTools = (
 
   return owner
 }
+
+it('delivers optional visual advice without retired approval operations', async () => {
+  const owner = createLocalKnowledgeTools('current-observation-advice')
+
+  try {
+    const text = await owner.call(
+      AiDesignToolIds.READ_KNOWLEDGE,
+      {
+        ids: [
+          'design.architectural-illustration.materials.review',
+          'design.architectural-illustration.contracts.operations'
+        ],
+        contexts: ['architectural-illustration']
+      },
+      signal()
+    )
+
+    expect(text).toContain('inspect_drawing')
+    expect(text).not.toMatch(
+      /bindChecks|review_drawing|define_design_criteria|recordBoundReview/
+    )
+    expect(text).toContain('execute_design')
+  } finally {
+    owner.dispose()
+  }
+})

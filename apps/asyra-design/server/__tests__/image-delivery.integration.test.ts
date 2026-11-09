@@ -586,3 +586,51 @@ it.each([
     from.mockRestore()
   }
 })
+
+it('delivers the recorded failure-prefix image through native media without scanning authored data', async () => {
+  const { default: recorded } =
+    await import('../../test-data/ai-drawing/fixtures/phase-continuity-20261108.json')
+  const receipt = structuredClone(recorded.replacementOutput)
+  const capture =
+    receipt.failure.execution.recovery[0].value.actionResults[1].result
+
+  capture.image = {
+    dataUrl: uri,
+    width: pixels.readUInt32BE(16),
+    height: pixels.readUInt32BE(20)
+  }
+  const content = await localToolContent(JSON.stringify(receipt))
+
+  const images = content.filter((item) => item.type === 'inputImage')
+
+  expect(images).toHaveLength(1)
+  expect(images[0].type === 'inputImage' && images[0].imageUrl === uri).toBe(
+    true
+  )
+  expect(
+    JSON.stringify(content.filter((item) => item.type === 'inputText'))
+  ).not.toContain('base64,')
+  expect(JSON.stringify(content)).toContain(capture.inspectionId)
+  const authored = await localToolContent(
+    JSON.stringify({ draft: { failure: receipt.failure } })
+  )
+
+  expect(authored.filter((item) => item.type === 'inputImage')).toEqual([])
+})
+
+it('declares and validates the actual capture observation without an approval revision', async () => {
+  const { operationInputIssue } = await import('../operation-input-schema')
+  const action = createAiInspectionAction()
+  const owner = createLocalOperationTools([createAiToolContract(action)], {
+    modelActions: (actions) => actions,
+    resolveBatch: (batch) => batch
+  }, async (batch) => ({ context: {}, actionResults: batch.actions.map((item) => ({
+    actionId: item.id, actionName: item.name,
+    result: { available: true, image: { dataUrl: uri, width: pixels.readUInt32BE(16), height: pixels.readUInt32BE(20) } }
+  })) }))
+  const definition = owner.definitions.find((tool) => tool.name === action.name)!
+  const result = JSON.parse(await owner.call(action.name, { arguments: { elementId: 'drawing' } }, new AbortController().signal))
+  expect(operationInputIssue(result, definition.outputSchema)).toBeUndefined()
+  expect(result.actionResults[0].result.inspectionId).toEqual(expect.any(String))
+  expect(result.actionResults[0].result).not.toHaveProperty('revision')
+})

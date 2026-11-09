@@ -14,6 +14,7 @@ import {
   createAiToolContract,
   selectAiToolResultSchema,
   registeredRecipeOutputAt,
+  RecipeReferenceError,
   embedAiToolSchema,
   type AiInvocation,
   type AiInvocationContext,
@@ -25,7 +26,11 @@ import {
   type AiJsonValue,
   type AiToolOutcome
 } from '@asyra/ai-agent-runtime'
-import { createLocalToolLeases, localToolReferences } from './local-tool-leases'
+import {
+  createLocalToolLeases,
+  localToolReferences,
+  localToolSchemaIsPortable
+} from './local-tool-leases'
 import { createLocalToolLibrary } from './local-tool-library'
 import {
   operationGroupName,
@@ -66,6 +71,15 @@ import {
   hostToolResultSchema
 } from '../src/ai/tool-contract'
 import { AiDesignToolIds } from '../src/constants/ai-design'
+
+/** Keep Runtime admission and model recovery projection on the same failure contract. */
+const invocationRecoverySchema = (schema: unknown): AiJsonValue => ({
+  anyOf: [schema, localToolFailureSchema]
+    .filter((value) => value !== undefined)
+    .map((value, index) =>
+      embedAiToolSchema(value as AiJsonValue, `#/anyOf/${index}`)
+    )
+})
 
 export interface LocalToolGroup {
   readonly name: string
@@ -199,7 +213,8 @@ export const createLocalToolHost = (options: {
         owner: group.owner,
         definition: {
           ...definition,
-          providerExposure: source.providerExposure
+          providerExposure: source.providerExposure,
+          resultPaths: source.resultPaths
         },
         access: source.executionAccess
       })
@@ -214,7 +229,11 @@ export const createLocalToolHost = (options: {
                 key,
                 runtimeOperationSchema(
                   hostToolResultSchema(
-                    definition[key as keyof typeof definition],
+                    key === 'recoveryOutputSchema'
+                      ? invocationRecoverySchema(
+                          definition.recoveryOutputSchema
+                        )
+                      : definition[key as keyof typeof definition],
                     true
                   )
                 )
@@ -363,6 +382,25 @@ export const createLocalToolHost = (options: {
     operationOwner?.bindScheduledArtifact
   )
 
+  const admissionError = (
+    failure: Extract<ReturnType<typeof library.admitInline>, { ok: false }>
+  ) =>
+    new LocalToolInputError(
+      failure.issues.map((i) => i.path + ' ' + i.actual).join('; '),
+      'PREPARATION_REJECTED',
+      failure.omittedIssues === 0 &&
+        failure.issues.length > 0 &&
+        failure.issues.every(
+          (issue) =>
+            issue.code === 'value' ||
+            issue.code === 'reference' ||
+            (issue.code === 'binding' &&
+              (issue.path === '/output' || issue.path.startsWith('/output/')))
+        )
+        ? 'correct_input'
+        : undefined
+    )
+
   const prepare = (args: unknown) => {
     if ((args as DeliveryRequest).retain && !options.resultContext) {
       throw new LocalToolInputError('No active App conversation context')
@@ -377,9 +415,7 @@ export const createLocalToolHost = (options: {
     const admitted = library.admitInline(prepared.proposal, 'sequence')
 
     if (!admitted.ok) {
-      throw new LocalToolInputError(
-        admitted.issues.map((i) => i.path + ' ' + i.actual).join('; ')
-      )
+      throw admissionError(admitted)
     }
 
     const recipe = admitted.value.recipe
@@ -398,17 +434,26 @@ export const createLocalToolHost = (options: {
       if (leaf) {
         const path = checked ? output.path.slice('/result'.length) : output.path
 
-        registeredRecipeOutputAt(
-          modelToolResultSchemas(leaf.definition).outputSchema,
-          path
-        )
+        const schema = modelToolResultSchemas(leaf.definition).outputSchema
+
+        try {
+          registeredRecipeOutputAt(runtimeOperationSchema(schema), path, true)
+        } catch (error) {
+          throw new LocalToolInputError(
+            localToolErrorMessage(error),
+            error instanceof RecipeReferenceError
+              ? 'PREPARATION_REJECTED'
+              : 'TOOL_CONTRACT_INVALID',
+            error instanceof RecipeReferenceError ? 'correct_input' : undefined
+          )
+        }
       }
     }
 
     const requested = (args as DeliveryRequest).delivery
 
     if (typeof requested === 'object') {
-      const exports: Record<string, AiRecipeBinding> = {}
+      const resourceExports: Record<string, AiRecipeBinding> = {}
 
       for (const [name, selector] of Object.entries(requested.fields)) {
         if (selector.source === 'input') {
@@ -428,7 +473,9 @@ export const createLocalToolHost = (options: {
 
         if (!source) {
           throw new LocalToolInputError(
-            'Selected result requires a step output'
+            'Selected result requires a step output',
+            'PREPARATION_REJECTED',
+            'correct_input'
           )
         }
 
@@ -438,12 +485,36 @@ export const createLocalToolHost = (options: {
             step &&
             (bindings.get(step.tool)?.definition ?? library.describe(step.tool))
 
-          if (owner) {
+          if (owner && step) {
+            const schema = modelToolResultSchemas(owner).outputSchema
+
             try {
-              registeredRecipeOutputAt(
-                modelToolResultSchemas(owner).outputSchema,
-                source.path
+              const selectedSchema = registeredRecipeOutputAt(
+                runtimeOperationSchema(schema),
+                source.path,
+                true
               )
+              // Export declared execution fields to preserve their resource leases.
+              // A portable model-only field needs no Runtime output binding.
+              const executionOwner =
+                bindings.get(step.tool)?.definition ??
+                library.describe(step.tool)
+
+              try {
+                registeredRecipeOutputAt(
+                  runtimeOperationSchema(executionOwner?.outputSchema),
+                  source.path,
+                  true
+                )
+                resourceExports[name] = source
+              } catch (error) {
+                if (
+                  !(error instanceof RecipeReferenceError) ||
+                  !localToolSchemaIsPortable(selectedSchema)
+                ) {
+                  throw error
+                }
+              }
             } catch (error) {
               throw new LocalToolInputError(
                 'delivery.fields.' +
@@ -453,16 +524,20 @@ export const createLocalToolHost = (options: {
                   ', path ' +
                   source.path +
                   '): ' +
-                  localToolErrorMessage(error)
+                  localToolErrorMessage(error),
+                error instanceof RecipeReferenceError
+                  ? 'PREPARATION_REJECTED'
+                  : 'TOOL_CONTRACT_INVALID',
+                error instanceof RecipeReferenceError
+                  ? 'correct_input'
+                  : undefined
               )
             }
           }
         }
-
-        exports[name] = source
       }
 
-      if (Object.keys(exports).length) {
+      if (Object.keys(resourceExports).length) {
         const exported = library.admitInline(
           {
             ...prepared.proposal,
@@ -470,7 +545,7 @@ export const createLocalToolHost = (options: {
               kind: 'object',
               fields: {
                 value: recipe.output,
-                fields: { kind: 'object', fields: exports }
+                resources: { kind: 'object', fields: resourceExports }
               }
             }
           },
@@ -478,9 +553,7 @@ export const createLocalToolHost = (options: {
         )
 
         if (!exported.ok) {
-          throw new LocalToolInputError(
-            exported.issues.map((i) => i.path + ' ' + i.actual).join('; ')
-          )
+          throw admissionError(exported)
         }
 
         return { recipe: exported.value, deliveryEnvelope: true }
@@ -509,7 +582,10 @@ export const createLocalToolHost = (options: {
         throw error
       }
 
-      throw new LocalToolInputError(localToolErrorMessage(error))
+      throw new LocalToolInputError(
+        localToolErrorMessage(error),
+        'TOOL_CONTRACT_INVALID'
+      )
     }
 
     if (call) {
@@ -524,8 +600,33 @@ export const createLocalToolHost = (options: {
       { ...sequence, executionAccess: LocalToolAccess.COORDINATOR }
     ],
 
-    invocationSchemas(_name: string, args: unknown) {
+    invocationSchemas(
+      _name: string,
+      args: unknown,
+      stage: 'owner' | 'model' = 'owner'
+    ) {
       try {
+        const recoveryContract =
+          stage === 'model'
+            ? (contract: ReturnType<typeof createAiToolContract>) => {
+                const owner = bindings.get(contract.name)?.definition
+
+                if (owner && owner.revision !== contract.revision) {
+                  throw new Error('Recovery owner revision changed')
+                }
+
+                const schemas = modelToolResultSchemas(owner ?? contract)
+
+                return createAiToolContract({
+                  ...contract,
+                  ...schemas,
+                  recoveryOutputSchema: invocationRecoverySchema(
+                    schemas.recoveryOutputSchema
+                  )
+                })
+              }
+            : undefined
+
         if (
           !(args as Record<string, unknown>)?.operations &&
           !(args as Record<string, unknown>)?.stages
@@ -538,11 +639,66 @@ export const createLocalToolHost = (options: {
 
         const plan = preparedFor(args)
 
-        if (
-          (args as DeliveryRequest).retain ||
-          (args as DeliveryRequest).delivery ||
-          (args as Record<string, unknown>).stages
-        ) {
+        if ((args as DeliveryRequest).delivery === undefined) {
+          // The final leaf is projected and validated by its own owner below.
+          // The model envelope must not revalidate that public value as a raw
+          // execution value (for example, retained structural receipts).
+          let schemas:
+            | {
+                inputSchema?: unknown
+                outputSchema?: unknown
+                partialOutputSchema?: unknown
+                recoveryOutputSchema?: unknown
+              }
+            | undefined = batch
+
+          if (plan.recipe) {
+            schemas =
+              stage === 'model'
+                ? registeredToolInvocationSchemas({})
+                : registeredToolInvocationSchemas(
+                    plan.recipe.contract,
+                    plan.recipe.contract,
+                    library.describeRecovery(
+                      plan.recipe.contract.name,
+                      plan.recipe.contract.revision,
+                      plan.recipe.dependencies,
+                      recoveryContract
+                    )
+                  )
+          }
+
+          const metadata = Boolean(
+            (args as DeliveryRequest).retain ||
+            (args as Record<string, unknown>).stages
+          )
+
+          const withMetadata = (schema: unknown) => {
+            if (!metadata || !schema || typeof schema !== 'object') {
+              return schema
+            }
+
+            const value = schema as Record<string, unknown>
+
+            return {
+              ...value,
+              properties: {
+                ...(value.properties as Record<string, unknown>),
+                ...resultReceiptSchema.properties
+              }
+            }
+          }
+
+          return {
+            ...schemas,
+            inputSchema: sequence.inputSchema,
+            outputSchema: withMetadata(schemas?.outputSchema),
+            partialOutputSchema: withMetadata(schemas?.partialOutputSchema),
+            recoveryOutputSchema: withMetadata(schemas?.recoveryOutputSchema)
+          }
+        }
+
+        {
           return {
             inputSchema:
               plan.batch && batch ? batch.inputSchema : sequence.inputSchema,
@@ -590,14 +746,17 @@ export const createLocalToolHost = (options: {
                     ? registeredRecipeOutputAt(
                         selector.source === 'input'
                           ? registeredRecipeOutputAt(
-                              owner.inputSchema,
+                              runtimeOperationSchema(owner.inputSchema),
                               planSequence.publicInputSchemaPath(
                                 step?.tool ?? operationGroupName,
                                 selectedStep
                               )
                             )
-                          : modelToolResultSchemas(owner).outputSchema,
-                        path
+                          : runtimeOperationSchema(
+                              modelToolResultSchemas(owner).outputSchema
+                            ),
+                        path,
+                        true
                       )
                     : {}
 
@@ -621,7 +780,8 @@ export const createLocalToolHost = (options: {
                     library.describeRecovery(
                       plan.recipe.contract.name,
                       plan.recipe.contract.revision,
-                      plan.recipe.dependencies
+                      plan.recipe.dependencies,
+                      recoveryContract
                     )
                   )
                 : batch && modelToolResultSchemas(batch)
@@ -655,26 +815,11 @@ export const createLocalToolHost = (options: {
             })()
           }
         }
-
-        if (!plan.recipe) {
-          return batch
+      } catch (error) {
+        if (stage === 'model') {
+          throw error
         }
 
-        const { contract, dependencies } = plan.recipe
-
-        return {
-          ...registeredToolInvocationSchemas(
-            contract,
-            contract,
-            library.describeRecovery(
-              contract.name,
-              contract.revision,
-              dependencies
-            )
-          ),
-          inputSchema: sequence.inputSchema
-        }
-      } catch {
         return undefined
       }
     },
@@ -696,11 +841,11 @@ export const createLocalToolHost = (options: {
       const plan = preparedFor(args)
       const call = context.getStore()
 
-      const request: DeliveryRequest = (args as Record<string, unknown>).stages
-        ? { delivery: 'status', ...(args as DeliveryRequest) }
-        : (args as DeliveryRequest)
+      const request = args as DeliveryRequest
       const delivery =
-        request.delivery || request.retain
+        request.delivery ||
+        request.retain ||
+        (args as Record<string, unknown>).stages
           ? resultDelivery(request, options.resultContext, (images, name) => {
               if (call) {
                 const prefix =
@@ -748,10 +893,16 @@ export const createLocalToolHost = (options: {
           const blockedInput = new Set<unknown>()
 
           localToolReferences(input, descriptor.inputSchema, blockedInput)
-          await delivery.capture(step, project(name, input, value), blocked, {
-            value: planSequence.publicInput(name, input, step),
-            blocked: blockedInput
-          })
+          await delivery.capture(
+            step,
+            project(name, input, value),
+            blocked,
+            {
+              value: planSequence.publicInput(name, input, step),
+              blocked: blockedInput
+            },
+            name
+          )
         } catch (error) {
           delivery.failed(localToolErrorMessage(error))
         }
@@ -779,6 +930,7 @@ export const createLocalToolHost = (options: {
         }
 
         return JSON.stringify({
+          ...(request.delivery === undefined ? value : {}),
           ...(await delivery.finish(
             value.toolOutcome,
             (value.actionResults ?? []).map(
@@ -788,7 +940,8 @@ export const createLocalToolHost = (options: {
               (i: { message: string }) => i.message
             )
           )),
-          ...(value.toolOutcome.status !== 'success'
+          ...(request.delivery !== undefined &&
+          value.toolOutcome.status !== 'success'
             ? { failure: project(operationGroupName, plan.batch, value) }
             : {})
         })
@@ -859,6 +1012,7 @@ export const createLocalToolHost = (options: {
       }
 
       return JSON.stringify({
+        ...(request.delivery === undefined ? report : {}),
         ...(await delivery.finish(
           report.execution,
           report.execution.calls
@@ -869,8 +1023,9 @@ export const createLocalToolHost = (options: {
             .filter((c) => c.status !== 'success' && 'stepId' in c)
             .map((c) => String((c as { stepId?: string }).stepId))
         )),
-        ...(report.execution.status !== 'success'
-          ? { failure: sequenceOwner.projectModelResult('', args, report) }
+        ...(request.delivery !== undefined &&
+        report.execution.status !== 'success'
+          ? { failure: report }
           : {}),
         ...((args as Record<string, unknown>).stages
           ? {
@@ -900,9 +1055,30 @@ export const createLocalToolHost = (options: {
       return localToolOutcome(value as Record<string, unknown>)
     },
 
-    projectModelResult(_name: string, args: unknown, value: unknown) {
-      if (value && typeof value === 'object' && 'saved' in value) {
-        return value
+    projectModelResult(_name: string, args: unknown, value: unknown): unknown {
+      if (
+        value &&
+        typeof value === 'object' &&
+        'saved' in value &&
+        !('execution' in value)
+      ) {
+        if ((args as DeliveryRequest).delivery === undefined) {
+          const projected = project(operationGroupName, args, value)
+
+          return {
+            ...(projected as Record<string, unknown>),
+            saved: value.saved
+          }
+        }
+
+        // Canonical validation and lease handoff must see complete owner values.
+        // Project nested recovery only at the same model boundary as other results.
+        return 'failure' in value
+          ? {
+              ...value,
+              failure: sequenceOwner.projectModelResult('', args, value.failure)
+            }
+          : value
       }
 
       if (!value || typeof value !== 'object' || !('execution' in value)) {
@@ -916,7 +1092,6 @@ export const createLocalToolHost = (options: {
       }
       const request = args as {
         operations?: { name: string; id?: string }[]
-        output?: { step: string; path: string }
         iteration?: { id: string; check?: { id?: string } }
         stages?: {
           id: string
@@ -924,48 +1099,21 @@ export const createLocalToolHost = (options: {
           iteration?: { id: string; check?: { id?: string } }
         }[]
       }
-      const selected = request?.output
       const lastStage = request.stages?.at(-1)
-      const loop =
-        request?.iteration ??
-        request.stages?.find((stage) => stage.iteration?.id === selected?.step)
-          ?.iteration
-      const iterationResult =
-        loop &&
-        (!selected ||
-          (selected.step === loop.id &&
-            (selected.path === '/result' ||
-              selected.path.startsWith('/result/'))))
-      const stepId = iterationResult
+      const loop = request?.iteration
+      const stepId = loop
         ? (loop.check?.id ?? loop.id + '-check')
-        : (selected?.step ??
-          (lastStage
+        : ((lastStage
             ? (lastStage.apply.at(-1)?.id ??
               lastStage.id + '-apply-' + lastStage.apply.length)
             : undefined) ??
           request.operations?.at(-1)?.id ??
           'step-' + request.operations?.length)
       const name = receipt.calls?.find((c) => c.stepId === stepId)?.name
-      const path = iterationResult
-        ? (selected?.path.slice('/result'.length) ?? '')
-        : selected?.path
-      const descriptor =
-        name && (bindings.get(name)?.definition ?? library.describe(name))
-      const publicField =
-        path && descriptor
-          ? registeredRecipeOutputAt(
-              hostToolResultSchema(descriptor.outputSchema),
-              path
-            )
-          : undefined
-      const projectFinal = name && !path && receipt.value !== undefined
-      let finalValue = receipt.value
-
-      if (projectFinal) {
-        finalValue = project(name, undefined, receipt.value)
-      } else if (publicField) {
-        finalValue = projectToolResultFields(receipt.value, publicField)
-      }
+      const projectFinal = name && receipt.value !== undefined
+      const finalValue = projectFinal
+        ? project(name, undefined, receipt.value)
+        : receipt.value
 
       const incomplete =
         projectFinal &&
@@ -1202,16 +1350,22 @@ export const createLocalToolHost = (options: {
         throw new Error('Missing registered result contract')
       }
 
-      // Selected-result envelopes need their argument-specific failure contract.
-      // Other owners retain their established model projection schemas.
+      // Save receipts and selected results use their invocation's public schema.
+      // Retention metadata must not replace or hide the default final result.
       const invocation =
         input === undefined ||
         binding.owner !== sequenceOwner ||
         !value ||
         typeof value !== 'object' ||
-        !('saved' in value)
+        !('saved' in value) ||
+        ((input as DeliveryRequest).delivery !== undefined &&
+          !('failure' in value))
           ? undefined
-          : binding.owner.invocationSchemas?.(binding.definition.name, input)
+          : binding.owner.invocationSchemas?.(
+              binding.definition.name,
+              input,
+              'model'
+            )
       const activeContract = invocation
         ? { ...contract, ...invocation }
         : contract
@@ -1509,6 +1663,7 @@ export const createLocalToolHost = (options: {
                   )
                 ])
               ),
+              resultPaths: binding.definition.resultPaths,
               resultStage: 'host' as const,
               name: binding.definition.name,
               registeredName: definition.name,

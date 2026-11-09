@@ -1,3 +1,9 @@
+import { mkdir, writeFile } from 'node:fs/promises'
+import {
+  EvaluationReportFailure,
+  type EvaluationReportSessions,
+  type EvaluationReportReply
+} from './evaluation-report-sessions'
 import {
   createEvaluationControl,
   evaluationToolStop,
@@ -6,7 +12,11 @@ import {
 import type { ExchangeConversationResults } from '../src/ai/conversation-results'
 import { createNativeProviderConfig } from './native-provider-config'
 import { selectPublicActivity } from './local-provider-activity'
-import { workflowQueryGuidance } from './design-workflow-discovery'
+import {
+  workflowQueryGuidance,
+  workflowInvocationExample,
+  workflowUsageParameters
+} from './design-workflow-discovery'
 import {
   readEvaluationWindow,
   evaluationReportExplanation
@@ -66,7 +76,7 @@ import { observeLocalToolExecution } from './local-tool-invocation'
 import { createLocalImageTools } from './local-image-tools'
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
 import { homedir } from 'node:os'
-import { resolve } from 'node:path'
+import { join, resolve } from 'node:path'
 import { StringDecoder } from 'node:string_decoder'
 import type { AiProviderInput } from '../src/ai/action-batch-protocol'
 import {
@@ -327,6 +337,12 @@ const runLocalAiProvider = async (
       phase: 'input' | 'output',
       value: unknown
     ) => void
+    readonly reportSessions?: EvaluationReportSessions
+    readonly recordFollowup?: (
+      callId: string,
+      phase: 'input' | 'output',
+      value: unknown
+    ) => Promise<void>
     readonly checkOnly?: boolean
     readonly assessmentOnly?: boolean
     readonly toolLibraryDirectory?: string
@@ -343,6 +359,16 @@ const runLocalAiProvider = async (
       : readEvaluationWindow(
           isRecord(input.metadata) ? input.metadata.evaluationWindow : undefined
         )
+
+  if (
+    evaluation?.keepReportSession &&
+    (!options.reportSessions || !options.recordFollowup || !usage)
+  ) {
+    throw Error(
+      'Retained evaluation reporting requires a service owner and evidence recording'
+    )
+  }
+
   let progressSequence = 0
 
   const reportProgress = (
@@ -517,7 +543,9 @@ const runLocalAiProvider = async (
             if (
               phase !== 'cleanup' &&
               evaluation &&
-              (workStopped || Date.now() >= evaluation.workDeadlineAt)
+              (workStopped ||
+                pendingToolStop ||
+                Date.now() >= evaluation.workDeadlineAt)
             ) {
               throw new Error(
                 'The evaluation work deadline has expired; do not replay completed work.'
@@ -838,7 +866,7 @@ const runLocalAiProvider = async (
           event.phase !== 'started' &&
           (event.phase !== 'completed' || toolStop)
         ) {
-          evaluationControl.stop({
+          queueEvaluationStop({
             ...(toolStop ?? {
               kind: 'tool-failure' as const,
               message: localToolErrorMessage(event.error)
@@ -928,15 +956,24 @@ const runLocalAiProvider = async (
                 .filter(
                   (definition) => definition.providerExposure !== 'registry'
                 )
-                .map(({ name, description, inputSchema }) => ({
-                  type: 'function',
-                  name,
-                  description,
-                  inputSchema: nativeToolInputSchema(inputSchema),
-                  deferLoading:
-                    name !== AiDesignToolIds.DESCRIBE_DESIGN_APIS &&
-                    name !== AiDesignToolIds.EXECUTE_DESIGN
-                }))
+                .map(({ name, description, inputSchema }) => {
+                  const example = workflowInvocationExample(inputSchema)
+
+                  return {
+                    type: 'function',
+                    name,
+                    description,
+                    inputSchema: {
+                      ...workflowUsageParameters(
+                        nativeToolInputSchema(inputSchema)
+                      ),
+                      ...(example ? { examples: [example] } : {})
+                    },
+                    deferLoading:
+                      name !== AiDesignToolIds.DESCRIBE_DESIGN_APIS &&
+                      name !== AiDesignToolIds.EXECUTE_DESIGN
+                  }
+                })
             }
           ]
         : []
@@ -1123,6 +1160,9 @@ const runLocalAiProvider = async (
   let completedTurnId: string | undefined
   let completedTurnStatus: string | undefined
   let stopped = false
+  let retainedSession = false
+  let transportClosed = false
+  let followupMessages: { phase: string; text: string }[] | undefined
   let resolveClose!: () => void
   const closed = new Promise<void>((resolve) => {
     resolveClose = resolve
@@ -1219,6 +1259,14 @@ const runLocalAiProvider = async (
     }, evaluation.reportTimeoutMs)
   }
 
+  let pendingToolStop: EvaluationStopReason | undefined
+
+  const queueEvaluationStop = (reason: EvaluationStopReason) => {
+    // Stop admitting new work, but let the active host invocation settle and
+    // deliver its acknowledged prefix before interrupting the drawing turn.
+    pendingToolStop ??= reason
+  }
+
   const stopEvaluationWork = (
     reason: EvaluationStopReason = {
       kind: 'work-deadline',
@@ -1229,14 +1277,16 @@ const runLocalAiProvider = async (
       return
     }
 
+    const stopReason = pendingToolStop ?? reason
+
     workStopped = true
-    workStopReason = reason
+    workStopReason = stopReason
     evaluationControl?.dispose()
     toolController.abort()
     beginReportBudget()
     usage?.trace('host_observation', {
       callId: 'evaluation-work-stopped',
-      stopReason: reason,
+      stopReason,
       workDeadlineAt: evaluation.workDeadlineAt,
       nativeTurnId: turnId
     })
@@ -1269,7 +1319,9 @@ const runLocalAiProvider = async (
         evaluation &&
         isRecord(params) &&
         params.threadId === threadId &&
-        (workStopped || Date.now() >= evaluation.workDeadlineAt)
+        (workStopped ||
+          pendingToolStop ||
+          Date.now() >= evaluation.workDeadlineAt)
       ) {
         usage?.trace('host_observation', {
           kind: 'evaluation-tool-rejected',
@@ -1330,12 +1382,8 @@ const runLocalAiProvider = async (
         message = 'Checking the prepared composition and detail recipe'
       } else if (toolName === AiDesignToolIds.RETAIN_DESIGN_TARGETS) {
         message = 'Retaining the selected object sets for subsequent changes'
-      } else if (toolName === AiDesignToolIds.REVIEW_DRAWING) {
-        message = 'Checking the requested details'
-      } else if (toolName === AiDesignToolIds.DEFINE_DESIGN_CRITERIA) {
-        message = 'Defining the requested checks'
       } else if (toolName === AiDesignToolIds.RECORD_DESIGN_FACTS) {
-        message = 'Recording verified sources'
+        message = 'Saving source notes'
       } else if (toolName === AiDesignToolIds.RECORD_DESIGN_CALCULATIONS) {
         message = 'Recording derived measurements'
       } else if (toolName === AiDesignToolIds.SELECT_DESIGN_REFERENCES) {
@@ -1533,7 +1581,7 @@ const runLocalAiProvider = async (
               : undefined
 
             if (evaluationControl && !workStopped && toolStop) {
-              evaluationControl.stop({
+              queueEvaluationStop({
                 ...toolStop,
                 callId: String(params.callId),
                 tool: toolName
@@ -1573,7 +1621,7 @@ const runLocalAiProvider = async (
             })
           } else {
             if (evaluationControl && !workStopped) {
-              evaluationControl.stop({
+              queueEvaluationStop({
                 kind: 'tool-failure',
                 message: localToolErrorMessage(event.error),
                 callId: String(params.callId),
@@ -1633,6 +1681,15 @@ const runLocalAiProvider = async (
               }
             }) + '\n'
           )
+          usage?.trace('provider_transport_event', {
+            method: 'tool-result-submitted',
+            tool: toolName,
+            callId: params.callId,
+            imageCount: contentItems.filter(
+              (item) => item.type === 'inputImage'
+            ).length,
+            visibility: 'submitted-to-transport'
+          })
           contentItems.forEach((item, contentIndex) => {
             if (item.type === 'inputImage') {
               options.retainToolImage?.(
@@ -1666,6 +1723,14 @@ const runLocalAiProvider = async (
         })
         .finally(() => {
           toolTasks.delete(task)
+          if (
+            pendingToolStop &&
+            toolTasks.size === 0 &&
+            !terminalError &&
+            !workStopped
+          ) {
+            evaluationControl?.stop(pendingToolStop)
+          }
         })
 
       toolTasks.set(task, toolName)
@@ -1801,6 +1866,20 @@ const runLocalAiProvider = async (
       )
     ) {
       return protocolFailure('Unexpected tool item in diagnostic assessment')
+    }
+
+    if (
+      followupMessages &&
+      value.method === 'item/completed' &&
+      isRecord(params.item) &&
+      params.item.type === 'agentMessage' &&
+      typeof params.item.text === 'string' &&
+      params.turnId === turnId
+    ) {
+      followupMessages.push({
+        phase: String(params.item.phase ?? 'commentary'),
+        text: params.item.text
+      })
     }
 
     if (value.method === 'thread/tokenUsage/updated') {
@@ -2064,7 +2143,8 @@ const runLocalAiProvider = async (
     toolTasks.size === 0
 
   child.once('close', () => {
-    if (!stopped && !protocolComplete()) {
+    transportClosed = true
+    if (!stopped && (retainedSession || !protocolComplete())) {
       fail(failure('AI_MODEL_BACKEND_TRANSPORT_FAILED'))
     }
 
@@ -2093,7 +2173,7 @@ const runLocalAiProvider = async (
       return
     }
 
-    const terminal = !protocolComplete()
+    const terminal = retainedSession || !protocolComplete()
 
     observeStream(channel, status, terminal)
     if (terminal) {
@@ -2321,7 +2401,7 @@ const runLocalAiProvider = async (
             (operations
               ? ' input.actions lists final-response actions, not the complete capability catalog. Drawing operations are supplied separately as callable tools; their absence from input.actions does not mean drawing is unavailable. Use backend operation tools to apply changes, inspect actual receipts, and continue with registered operations. Do not repeat an executed operation in the final batch. End with report_outcome: {outcome:"completed"|"unsupported",message:string}.'
               : ' Return the prepared action batch without invoking backend operation tools. Use report_outcome only for an unsupported request.') +
-            ` ${libraryUnavailable ? 'Saved tools could not be loaded. Native tools remain available; saving returns explicit status, and save-only retry must not repeat document edits.' : ''} The describe_design_apis and execute_design entries are available directly when drawing operations are enabled; domain tools use native deferred discovery. Discover tools by operation purpose using describe_design_apis query; use exact names for known capabilities. Categories and their continuations remain available when an intentional complete inventory is useful. Native discovery provides callable declarations. Read bounded tool results directly, preserving complete selected restrictions and following returned continuations when needed. Reuse App-owned artifacts, target references and recipes for intermediate geometry and data binding. Runtime owns admitted finite iteration; do not coordinate each deterministic check/repair through a new model turn. Use compact mutation receipts and prepared artifact target references when individual acknowledgements are unnecessary. Known current contracts need no lookup. Use execute_design for decided sequences. Name steps only to bind their results. Use the returned action names and current target selectors. ${localToolResultInstructions}`
+            ` ${libraryUnavailable ? 'Saved tools could not be loaded. Native tools remain available; saving returns explicit status, and save-only retry must not repeat document edits.' : ''} The describe_design_apis and execute_design entries are available directly when drawing operations are enabled; domain tools use native deferred discovery. Discover tools by operation purpose using describe_design_apis query; use exact names for known capabilities. Categories and their continuations remain available when an intentional complete inventory is useful. Native discovery provides callable declarations. Read bounded tool results directly, preserving complete selected restrictions and following returned continuations when needed. Reuse App-owned artifacts, target references and recipes for intermediate geometry and data binding. Runtime owns admitted finite iteration; do not coordinate each deterministic check/repair through a new model turn. Use compact mutation receipts and prepared artifact target references when individual acknowledgements are unnecessary. Known current contracts need no lookup. Use execute_design for decided sequences. Name steps for binding, retention or selected delivery, including earlier images. Use the returned action names and current target selectors. ${localToolResultInstructions}`
       }
     ].map((block) => ({
       ...block,
@@ -2649,6 +2729,111 @@ const runLocalAiProvider = async (
         report
       })
 
+      if (
+        evaluation.keepReportSession &&
+        options.reportSessions &&
+        options.recordFollowup &&
+        usage &&
+        threadId
+      ) {
+        if (transportClosed || terminalError) {
+          throw terminalError ?? failure('AI_MODEL_BACKEND_TRANSPORT_FAILED')
+        }
+
+        const nativeThreadId = threadId
+        const descriptor = options.reportSessions.retain({
+          requestId: usage.requestId,
+          nativeThreadId,
+
+          lost: () => Boolean(terminalError) || stopped,
+
+          record: options.recordFollowup,
+
+          async ask(question): Promise<EvaluationReportReply> {
+            if (terminalError || stopped) {
+              throw terminalError ?? Error('Evaluation report session lost')
+            }
+
+            finalText = undefined
+            completedTurnId = undefined
+            followupMessages = []
+            completion = new Promise<void>((resolve, reject) => {
+              resolveCompletion = resolve
+              rejectCompletion = reject
+            })
+            void completion.catch(() => undefined)
+            try {
+              await request(
+                'turn/start',
+                {
+                  threadId: nativeThreadId,
+                  effort: 'medium',
+                  input: [
+                    {
+                      type: 'text',
+                      text_elements: [],
+                      text:
+                        'Continue the public analysis of your own drawing in this same thread. Do not call tools, research, draw, or replay work. Explain observable actions and uncertainty, not private reasoning. Answer fully as public commentary; the report has no time limit.\n\n' +
+                        question
+                    }
+                  ]
+                },
+                (started) => {
+                  if (
+                    !isRecord(started) ||
+                    !isRecord(started.turn) ||
+                    typeof started.turn.id !== 'string'
+                  ) {
+                    throw failure('AI_MODEL_BACKEND_INVALID_RESPONSE')
+                  }
+
+                  turnId = started.turn.id
+                }
+              )
+              await completion
+              if (terminalError) {
+                throw terminalError
+              }
+
+              if (
+                !turnId ||
+                completedTurnId !== turnId ||
+                completedTurnStatus !== 'completed'
+              ) {
+                throw failure('AI_MODEL_BACKEND_INVALID_RESPONSE')
+              }
+
+              return {
+                nativeThreadId,
+                nativeTurnId: turnId,
+                messages: followupMessages
+              }
+            } catch (error) {
+              throw new EvaluationReportFailure(localToolErrorMessage(error), {
+                nativeThreadId,
+                nativeTurnId: turnId ?? '',
+                messages: followupMessages
+              })
+            } finally {
+              followupMessages = undefined
+            }
+          },
+
+          async close() {
+            fail(failure('AI_MODEL_BACKEND_ABORTED'))
+            await closed
+            await nativeConfig?.dispose()
+          }
+        })
+
+        options.retainEvaluationExchange?.(
+          'evaluation-session',
+          'output',
+          descriptor
+        )
+        retainedSession = true
+      }
+
       return {
         ...report,
         explanation: evaluationReportExplanation
@@ -2690,12 +2875,6 @@ const runLocalAiProvider = async (
 
       const batch = preparation.resolveBatch(parsed)
 
-      stage = 'completion-validation'
-      await operations?.validateCompletion(options.signal)
-      if (options.signal?.aborted) {
-        throw failure('AI_MODEL_BACKEND_ABORTED')
-      }
-
       stage = 'outcome-settlement'
 
       return operations
@@ -2733,15 +2912,22 @@ const runLocalAiProvider = async (
     }
 
     options.signal?.removeEventListener('abort', abort)
-    stop()
-    const finishClose = usage?.span({
-      callId: 'provider-close',
-      owner: 'provider',
-      purpose: 'Await provider subprocess shutdown'
-    })
+    if (!retainedSession) {
+      stop()
+    }
+
+    const finishClose = !retainedSession
+      ? usage?.span({
+          callId: 'provider-close',
+          owner: 'provider',
+          purpose: 'Await provider subprocess shutdown'
+        })
+      : undefined
 
     try {
-      await closed
+      if (!retainedSession) {
+        await closed
+      }
     } finally {
       finishClose?.()
     }
@@ -2755,7 +2941,10 @@ const runLocalAiProvider = async (
 
     try {
       for (const [component, cleanup] of [
-        ['native-configuration', () => nativeConfig?.dispose()],
+        [
+          'native-configuration',
+          () => (retainedSession ? undefined : nativeConfig?.dispose())
+        ],
         ['knowledge', () => knowledge.dispose()],
         ['tool-host', () => host?.dispose()],
         ['tool-store', () => storage.close()]
@@ -2786,11 +2975,17 @@ const runLocalAiProvider = async (
       }
     } finally {
       finishCleanup?.()
+      // The initial execution is sealed below. Follow-ups have their own public
+      // exchange records; never append provider events to a finished drawing.
+      if (retainedSession) {
+        usage = undefined
+      }
     }
   }
 }
 
 interface LocalAiProviderOptions {
+  readonly reportSessions?: EvaluationReportSessions
   readonly toolLibraryDirectory?: string
   readonly model: string
   readonly executable: string
@@ -2909,6 +3104,20 @@ const requestRecordedLocalAi = async (
         ...options,
         retainReference,
         retainToolImage,
+
+        async recordFollowup(callId, phase, value) {
+          const directory = join(
+            options.recordDirectory ?? 'tmp/ai-executions',
+            `${usage.requestId}.followups`
+          )
+
+          await mkdir(directory, { recursive: true, mode: 0o700 })
+          await writeFile(
+            join(directory, `${callId}-${phase}.json`),
+            JSON.stringify(value, null, 2),
+            { flag: 'wx', mode: 0o600 }
+          )
+        },
 
         retainEvaluationExchange: (callId, phase, value) => {
           let receipt

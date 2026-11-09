@@ -1,4 +1,9 @@
-import { runAiMutation, type AiActionDefinition } from '@asyra/ai-agent-runtime'
+import { ElementPropertyInputError } from '@asyra/core'
+import {
+  AiActionInputError,
+  runAiMutation,
+  type AiActionDefinition
+} from '@asyra/ai-agent-runtime'
 import core from '../contexts'
 import {
   elementApis,
@@ -80,6 +85,10 @@ const basicApiResources = (effect: BasicApiContract['effect']) => {
 }
 
 const basicApiRevision = (contract: BasicApiContract): number => {
+  if (contract.result.kind === 'property-mutation') {
+    return 9
+  }
+
   if (contract.result.kind === 'mutation-receipt') {
     return 10
   }
@@ -279,7 +288,18 @@ export const createBasicApiActions = (
           })
         }
 
-        return call()
+        try {
+          return call()
+        } catch (error) {
+          if (error instanceof ElementPropertyInputError) {
+            throw new AiActionInputError(error.message, {
+              elementId: error.elementId,
+              propertyKey: error.propertyKey
+            })
+          }
+
+          throw error
+        }
       }
 
       const finish = (value: unknown, atSettlement: boolean) => {

@@ -1,16 +1,17 @@
+import { toolDocumentReference } from './tool-contract'
 import { AiInspectionLimits } from '../constants'
 
 export const inspectionInputSchema = {
   type: 'object',
   additionalProperties: false,
   required: ['elementId'],
+  examples: [{ elementId: 'example-target', view: 'overview' }],
   properties: {
     elementId: {
       description:
-        'Current scene element ID, or actual current workspace ID for overview of all roots without grouping. Workspace accepts overview only; choose a concrete child for detail/region. Overview never substitutes for required native detail.',
+        "Current scene element ID: capture only its subtree, excluding siblings even when they overlap. To include sibling details, choose their owning group and a region in that group's target-local coordinates. Or use the actual current workspace ID for overview of all roots without grouping. Workspace accepts overview only; choose a concrete child for detail/region. Overview never substitutes for required native detail.",
       'x-design-element-binding': 'each',
-      type: 'string',
-      minLength: 1
+      ...toolDocumentReference
     },
     view: {
       type: 'string',

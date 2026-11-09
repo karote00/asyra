@@ -387,7 +387,8 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
     describeRecovery(
       name: string,
       revision: number,
-      dependencies?: readonly AiToolContract[]
+      dependencies?: readonly AiToolContract[],
+      projectContract?: (contract: AiToolContract) => AiToolContract
     ) {
       const contracts = new Map<string, AiToolContract>()
 
@@ -422,7 +423,11 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
         collect(name, revision)
       }
 
-      return createAiRecipeRecoverySchema([...contracts.values()])
+      return createAiRecipeRecoverySchema(
+        [...contracts.values()].map(
+          (contract) => projectContract?.(contract) ?? contract
+        )
+      )
     },
 
     admitInline: (proposal: unknown, mode: 'inline' | 'sequence' = 'inline') =>

@@ -18,8 +18,10 @@ Never record completed plans here.
   recording first, then evaluation, retrieval, efficiency and local validation.
 - Active: [Editable Design Agent](plans/ai-design-agent-plan.md), including the
   accepted [AI Conversation Experience](plans/ai-conversation-experience-plan.md) contracts.
-  Contract delivery, canonical data review and provider instruction evidence
-  are owned by that plan and `specs/ai-execution-flow.md`.
+  Active design follow-up: [Predictable tools without mandatory review ceremonies](plans/agent-context-and-report-continuity-plan.md#predictable-tools-without-mandatory-review-ceremonies) -
+  remove compulsory evidence/approval procedures and completion gates; preserve
+  fixed tool contracts, staged reuse and AI final verification. Documentation and
+  review only; implementation is pending. Earlier observations remain in that plan.
   Implemented task: [Staged Design Execution and Conversation Context](plans/staged-design-execution-plan.md) -
   preserve useful stage results in App context, apply each ready stage, continue
   through the host and overlap independent preparation; consolidate recorded

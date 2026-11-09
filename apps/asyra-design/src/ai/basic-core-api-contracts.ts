@@ -389,7 +389,7 @@ const updateElementPropertiesApi = defineBasicApi({
   effect: 'write',
   parameters: [{ name: 'updates', schema: elementPropertyUpdatesSchema }],
   description:
-    'Plural canonical property value updates. Relationship lists such as fills/strokes contain reference IDs, not expanded computed objects. To edit linked records, use patchElementProperties records (one plural call for all targets), or the App fill/stroke APIs. Use App vector APIs for anchor/handle editing so coordinate and geometry invariants are preserved.'
+    'Update registered component properties and their declared aliases (for example x/y). Element metadata name/visible/lock belongs to core.updateElementData, not values here. Unsupported keys reject before property writes and return an input diagnostic. Plural canonical property value updates. Relationship lists such as fills/strokes contain reference IDs, not expanded computed objects. To edit linked records, use patchElementProperties records (one plural call for all targets), or the App fill/stroke APIs. Use App vector APIs for anchor/handle editing so coordinate and geometry invariants are preserved.'
 })
 
 const patchElementPropertiesApi = defineBasicApi({
@@ -527,7 +527,7 @@ const moveElementsApi = defineBasicApi({
     }
   ],
   description:
-    'Prefer hierarchy.moveElements in this app to maintain automatic group bounds.'
+    'Move elements to a parent and insertion index. Prefer hierarchy.moveElements in this app to maintain automatic container bounds.'
 })
 
 const propertyTargetSchema = apiObject(

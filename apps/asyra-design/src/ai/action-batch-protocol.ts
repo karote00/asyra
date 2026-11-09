@@ -58,6 +58,7 @@ export interface AiBatchReceipt {
     readonly actionExecutionMs: number | null
     readonly settlement: 'not-started' | 'completed' | 'partial' | 'unknown'
     readonly contractStage?: 'registration' | 'input' | 'output'
+    readonly inputIssue?: AiJsonValue
     readonly observedResult?: AiJsonValue
     readonly contextFresh: boolean
   }

@@ -8,6 +8,8 @@ import type { AiJsonValue, AiToolOutcome } from '@asyra/ai-agent-runtime'
 import {
   validResultName,
   resultAt,
+  type ConversationResultOrigin,
+  type ConversationResultDescription,
   type ExchangeConversationResults
 } from '../src/ai/conversation-results'
 import { LocalToolInputError } from './local-tool-invocation'
@@ -202,7 +204,7 @@ export function resultDelivery(
   exchange?: ExchangeConversationResults,
   deliverImages?: (images: LocalToolImage[], name: string) => void
 ) {
-  const names: string[] = []
+  const descriptions: ConversationResultDescription[] = []
   const fields: Record<string, AiJsonValue> = Object.create(null)
   const issues: string[] = []
 
@@ -226,7 +228,8 @@ export function resultDelivery(
       step: string | undefined,
       view: unknown,
       blocked: ReadonlySet<unknown>,
-      input?: { value: unknown; blocked: ReadonlySet<unknown> }
+      input?: { value: unknown; blocked: ReadonlySet<unknown> },
+      operation = 'execute_design'
     ) {
       if (
         record(view) &&
@@ -239,6 +242,8 @@ export function resultDelivery(
       }
 
       const saved: Record<string, AiJsonValue> = Object.create(null)
+      const origins: Record<string, ConversationResultOrigin> =
+        Object.create(null)
       let images: LocalToolImage[] | undefined
 
       for (const [retain, targets] of [
@@ -288,6 +293,12 @@ export function resultDelivery(
               }
 
               saved[name] = value
+              origins[name] = {
+                operation,
+                ...(step ? { step } : {}),
+                source: sel.source ?? 'result',
+                path: sel.path
+              }
             } else {
               fields[name] = value
               if (sel.source !== 'input' && deliverImages) {
@@ -318,8 +329,23 @@ export function resultDelivery(
             throw Error('App conversation context unavailable')
           }
 
-          await exchange({ save: saved })
-          names.push(...selected)
+          const receipts = await exchange({ save: saved, origins })
+
+          for (const name of selected) {
+            const receipt = receipts[name]
+
+            if (
+              !record(receipt) ||
+              receipt.name !== name ||
+              !Array.isArray(receipt.paths)
+            ) {
+              throw Error('Missing saved result description: ' + name)
+            }
+
+            descriptions.push(
+              receipt as unknown as ConversationResultDescription
+            )
+          }
         } catch (error) {
           issues.push(
             selected.join(', ') +
@@ -341,7 +367,7 @@ export function resultDelivery(
       if (
         outcome.status === 'success' &&
         !issues.length &&
-        (names.length !== Object.keys(request.retain ?? {}).length ||
+        (descriptions.length !== Object.keys(request.retain ?? {}).length ||
           Object.keys(fields).length !==
             Object.keys(
               typeof request.delivery === 'object'
@@ -358,7 +384,7 @@ export function resultDelivery(
           : outcome.status
 
       return {
-        saved: names,
+        saved: descriptions,
         ...(Object.keys(fields).length ? { fields } : {}),
         ...(status !== 'success'
           ? { completed, stopped, issues: [...errors, ...issues] }

@@ -28,8 +28,6 @@ export const activityToolLabels: Readonly<Record<string, string>> =
     [AiDesignToolIds.PREPARE_MATERIAL_REVISION]:
       'Calculating the material correction',
     [AiActionNames.APPLY_PREPARED_MATERIAL]: 'Applying the material correction',
-    [AiDesignToolIds.REVIEW_DRAWING]: 'Checking the requested details',
-    [AiDesignToolIds.DEFINE_DESIGN_CRITERIA]: 'Defining the requested checks',
     [AiDesignToolIds.RECORD_DESIGN_FACTS]: 'Recording verified sources',
     [AiDesignToolIds.RECORD_DESIGN_CALCULATIONS]:
       'Recording derived measurements',

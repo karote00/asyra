@@ -61,6 +61,8 @@ export interface AiRecipeIssue {
     | 'dependency'
     | 'step'
     | 'binding'
+    | 'value'
+    | 'reference'
     | 'captured-value'
   readonly path: string
   readonly step?: string

@@ -25,6 +25,7 @@ import {
   recipeRecord,
   recipeOwn,
   recipeSchemaAt,
+  RecipeReferenceError,
   type RecipeSchema
 } from './recipe-schema.js'
 
@@ -206,7 +207,9 @@ export const admitAiRecipe = (
     ) {
       const source = outputs.get(binding.step)
 
-      return source ? recipeSchemaAt(source, binding.path) : { type: 'opaque' }
+      return source
+        ? recipeSchemaAt(source, binding.path, mode === 'sequence')
+        : { type: 'opaque' }
     }
 
     if (binding.kind === 'object' && recipeRecord(binding.fields)) {
@@ -292,7 +295,7 @@ export const admitAiRecipe = (
       }
 
       if (target.type === 'never') {
-        reject('The registered contract forbids this value')
+        reject('The registered contract forbids this value', 'value')
 
         return
       }
@@ -325,7 +328,7 @@ export const admitAiRecipe = (
         )
 
         if (validation !== undefined) {
-          reject(validation)
+          reject(validation, 'value')
         }
 
         return
@@ -340,7 +343,7 @@ export const admitAiRecipe = (
           exactKeys(binding, recipeFormatKeys.bindings.step))
       ) {
         if (typeof binding.path !== 'string') {
-          reject('Expected JSON Pointer')
+          reject('Expected JSON Pointer', 'reference')
 
           return
         }
@@ -356,12 +359,21 @@ export const admitAiRecipe = (
         }
 
         if (!source) {
-          reject('Output must belong to a valid earlier step')
+          reject('Output must belong to a valid earlier step', 'reference')
 
           return
         }
 
-        if (!recipeAssignable(recipeSchemaAt(source, binding.path), target)) {
+        if (
+          !recipeAssignable(
+            recipeSchemaAt(
+              source,
+              binding.path,
+              mode === 'sequence' && binding.kind === 'step'
+            ),
+            target
+          )
+        ) {
           reject('Source schema does not guarantee the destination contract')
         }
 
@@ -403,7 +415,7 @@ export const admitAiRecipe = (
 
         for (const key of target.required) {
           if (!recipeOwn(fields, key)) {
-            reject(`Missing required field ${key}`)
+            reject(`Missing required field ${key}`, 'value')
           }
         }
 
@@ -417,7 +429,7 @@ export const admitAiRecipe = (
             : extra
 
           if (!field) {
-            reject(`Unknown destination field ${key}`)
+            reject(`Unknown destination field ${key}`, 'value')
             continue
           }
 
@@ -428,7 +440,7 @@ export const admitAiRecipe = (
               recipeValidationSchema(target.propertyNames)
             ) !== undefined
           ) {
-            reject(`Invalid destination key ${key}`)
+            reject(`Invalid destination key ${key}`, 'value')
             continue
           }
 
@@ -454,7 +466,7 @@ export const admitAiRecipe = (
           binding.items.length < (target.minItems ?? 0) ||
           binding.items.length > (target.maxItems ?? Infinity)
         ) {
-          reject('Array length violates the destination contract')
+          reject('Array length violates the destination contract', 'value')
         }
 
         if (target.uniqueItems && binding.items.length > 1) {
@@ -492,7 +504,10 @@ export const admitAiRecipe = (
 
       reject('Unsupported binding shape or destination type')
     } catch (error) {
-      reject(reason(error))
+      reject(
+        reason(error),
+        error instanceof RecipeReferenceError ? 'reference' : 'binding'
+      )
     }
   }
 
@@ -549,7 +564,8 @@ export const admitAiRecipe = (
       !contract ||
       contract.name !== step.tool ||
       contract.revision !== step.revision ||
-      contract.composition !== 'allowed'
+      (contract.composition !== 'allowed' &&
+        !(mode === 'sequence' && contract.composition === 'request'))
     ) {
       issue(
         'dependency',
@@ -801,7 +817,7 @@ export const admitAiRecipe = (
             throw Error('Unknown output step')
           }
 
-          return recipeSchemaAt(source, binding.path)
+          return recipeSchemaAt(source, binding.path, true)
         }
 
         if (binding.kind === 'object' && recipeRecord(binding.fields)) {
@@ -840,7 +856,7 @@ export const admitAiRecipe = (
 
       resultSchema = recipeValidationSchema(selected(detached.output))
     } catch (error) {
-      issue('binding', '/output', 'Guaranteed prior step output', reason(error))
+      issue('binding', '/output', 'Declared prior step output', reason(error))
     }
   } else {
     checkBinding(detached.output, outputSchema, '/output')

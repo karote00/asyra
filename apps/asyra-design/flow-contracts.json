@@ -6,7 +6,7 @@
   "specPath": "docs/ai/apps/asyra-design/specs/ai-execution-flow.md",
   "testFile": "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
   "configFile": "apps/asyra-design/server/__tests__/execution-flow.config.ts",
-  "negativeCaseIds": ["compose.registered-tools"],
+  "negativeCaseIds": ["compose.registered-tools", "compose.evaluation-report"],
   "externalInputs": [
     "artifact:request-context",
     "artifact:tool-program",
@@ -42,7 +42,12 @@
       "inputs": [
         "src/**",
         "server/**",
+        "test-data/ai-drawing/fixtures/contract-review-20261107.json",
+        "test-data/ai-drawing/fixtures/preparation-findings-20261107.json",
+        "test-data/ai-drawing/fixtures/target-admission-20261107.json",
+        "test-data/ai-drawing/fixtures/data-binding-20261107.json",
         "test-data/ai-drawing/fixtures/strict-grid-material-20261106.json",
+        "test-data/ai-drawing/fixtures/capability-acquisition-20261106.json",
         "test-data/ai-drawing/fixtures/selected-inspection-20261106.json",
         "test-data/ai-drawing/fixtures/strict-target-stop-20261106.json",
         "knowledge/**",
@@ -63,7 +68,18 @@
         "test-data/ai-drawing/fixtures/correctable-preparation-20261106.json",
         "test-data/ai-drawing/fixtures/control-admission-20261106.json",
         "test-data/ai-drawing/taipei-101-self-report.mjs",
-        "test-data/ai-drawing/taipei-101-live.mjs"
+        "test-data/ai-drawing/taipei-101-live.mjs",
+        "test-data/ai-drawing/fixtures/discovery-identity-stop-20261107.json",
+        "test-data/ai-drawing/fixtures/selected-prefix-recovery-20261107.json",
+        "test-data/ai-drawing/fixtures/review-binding-stop-20261107.json",
+        "test-data/ai-drawing/fixtures/result-route-stop-20261107.json",
+        "test-data/ai-drawing/fixtures/phase-continuity-20261108.json",
+        "test-data/ai-drawing/fixtures/sequence-input-recovery-20261108.json",
+        "test-data/ai-drawing/fixtures/sequence-reference-recovery-20261108.json",
+        "test-data/ai-drawing/fixtures/source-recovery-20261108.json",
+        "test-data/ai-drawing/fixtures/result-delivery-20261108.json",
+        "test-data/ai-drawing/fixtures/inspection-recovery-20261109.json",
+        "test-data/ai-drawing/fixtures/executable-handoffs-20261109.json"
       ],
       "entry": null
     },
@@ -127,7 +143,6 @@
             "apps/asyra-design/server/local-image-tools.ts",
             "apps/asyra-design/server/local-ai-provider.ts",
             "apps/asyra-design/server/local-operation-tools.ts",
-            "apps/asyra-design/server/local-design-review.ts",
             "apps/asyra-design/server/ai-domain-prompt.ts"
           ]
         },
@@ -174,7 +189,6 @@
           "implementationPaths": [
             "apps/asyra-design/server/local-operation-tools.ts",
             "apps/asyra-design/server/local-design-tools.ts",
-            "apps/asyra-design/server/local-design-review.ts",
             "apps/asyra-design/server/operation-input-schema.ts"
           ]
         },
@@ -223,41 +237,31 @@
           ]
         },
         {
-          "id": "inspect.regional-units",
-          "stepId": "inspect",
-          "testName": "execution proof retains regional units without requiring global coverage for local review",
-          "implementationPaths": [
-            "apps/asyra-design/server/local-design-review.ts",
-            "apps/asyra-design/server/local-operation-tools.ts",
-            "apps/asyra-design/server/design-check-results.ts"
-          ]
-        },
-        {
-          "id": "inspect.scoped-dependencies",
-          "stepId": "inspect",
-          "testName": "execution proof reconciles scoped criterion results after external edits without recapturing other tiers",
-          "implementationPaths": [
-            "apps/asyra-design/server/local-operation-tools.ts",
-            "apps/asyra-design/server/local-design-review.ts",
-            "packages/core/src/core.ts",
-            "packages/scene-tree/src/components/group.ts"
-          ]
-        },
-        {
           "id": "inspect.deferred-measurement",
           "stepId": "inspect",
-          "testName": "execution proof checks all acknowledged parts before returning deferred capture without another model",
+          "testName": "execution proof applies acknowledged parts without unrequested quality reads",
           "implementationPaths": [
             "apps/asyra-design/server/local-operation-tools.ts"
           ]
         },
         {
-          "id": "inspect.current-evidence",
-          "stepId": "inspect",
-          "testName": "execution proof distinguishes stage readiness from current final assessment",
+          "id": "compose.target-admission-recovery",
+          "stepId": "compose",
+          "testName": "execution proof preserves target admission correction across direct and inline routes",
           "implementationPaths": [
-            "apps/asyra-design/server/local-design-review.ts",
-            "apps/asyra-design/server/local-operation-tools.ts"
+            "apps/asyra-design/server/local-operation-batch.ts",
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/local-design-sequence.ts",
+            "apps/asyra-design/test-data/ai-drawing/fixtures/target-admission-20261107.json"
+          ]
+        },
+        {
+          "id": "prepare.compiled-findings-recovery",
+          "stepId": "prepare",
+          "testName": "execution proof preserves correctable compiled findings before any canvas write",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-design-tools.ts",
+            "apps/asyra-design/test-data/ai-drawing/fixtures/preparation-findings-20261107.json"
           ]
         },
         {
@@ -320,34 +324,11 @@
           ]
         },
         {
-          "id": "inspect.evidence-responsibilities",
-          "stepId": "inspect",
-          "testName": "execution proof routes separate evidence tools without canvas mutations",
-          "implementationPaths": [
-            "apps/asyra-design/server/local-operation-tools.ts"
-          ]
-        },
-        {
           "id": "settle.durability",
           "stepId": "settle",
           "testName": "execution proof confirms a durable sequence without extending it to later edits",
           "implementationPaths": [
             "apps/asyra-design/server/document-persistence-queue.ts"
-          ]
-        },
-        {
-          "id": "inspect.capture-handoff",
-          "stepId": "inspect",
-          "testName": "execution proof composes capture and assessment without dropping unavailable targets",
-          "implementationPaths": [
-            "apps/asyra-design/server/local-operation-tools.ts",
-            "apps/asyra-design/src/common-apis/inspection.ts",
-            "apps/asyra-design/src/ai/inspection.ts",
-            "apps/asyra-design/src/ai/inspection-schema.ts",
-            "apps/asyra-design/src/common-apis/inspection-evidence.ts",
-            "apps/asyra-design/server/local-design-review.ts",
-            "packages/render/src/render.ts",
-            "packages/render/src/layers/viewport/viewport-layer.ts"
           ]
         },
         {
@@ -416,7 +397,6 @@
           "stepId": "inspect",
           "testName": "execution proof uses only current conversion and primary judgment contracts",
           "implementationPaths": [
-            "apps/asyra-design/server/local-design-review.ts",
             "apps/asyra-design/server/local-operation-tools.ts"
           ]
         },
@@ -567,16 +547,6 @@
           ]
         },
         {
-          "id": "compose.chosen-method-handoff",
-          "stepId": "compose",
-          "testName": "execution proof dispatches the published chosen-method route without converting record success into acceptance",
-          "implementationPaths": [
-            "apps/asyra-design/server/ai-domain-prompt.ts",
-            "apps/asyra-design/knowledge/design.architectural-illustration.materials.review.md",
-            "apps/asyra-design/server/local-operation-tools.ts"
-          ]
-        },
-        {
           "id": "compose.material-correction",
           "stepId": "compose",
           "testName": "execution proof admits complete per-target material corrections from the published route",
@@ -698,6 +668,7 @@
           "stepId": "compose",
           "testName": "execution proof delivers selected operation contracts without exhaustive discovery",
           "implementationPaths": [
+            "apps/asyra-design/server/capability-search.ts",
             "apps/asyra-design/server/design-workflow-discovery.ts",
             "apps/asyra-design/server/local-design-workflow.ts",
             "apps/asyra-design/server/local-operation-tools.ts",
@@ -716,6 +687,20 @@
           "implementationPaths": [
             "apps/asyra-design/server/local-operation-tools.ts",
             "apps/asyra-design/server/local-information-delivery.ts"
+          ]
+        },
+        {
+          "id": "compose.report-session",
+          "stepId": "compose",
+          "testName": "execution proof preserves report session ownership after initial settlement",
+          "implementationPaths": [
+            "apps/asyra-design/server/evaluation-report-sessions.ts",
+            "apps/asyra-design/server/local-ai-provider.ts",
+            "apps/asyra-design/server/action-batch.ts",
+            "apps/asyra-design/server/ai-model-provider.ts",
+            "apps/asyra-design/src/ai/evaluation-window.ts",
+            "apps/asyra-design/test-data/ai-drawing/taipei-101-live.mjs",
+            "apps/asyra-design/test-data/ai-drawing/taipei-101-report-session.mjs"
           ]
         },
         {
@@ -849,16 +834,6 @@
           ]
         },
         {
-          "id": "compose.visual-judgment-handoff",
-          "stepId": "compose",
-          "testName": "execution proof binds an explicitly selected workflow image through the existing review owner",
-          "implementationPaths": [
-            "apps/asyra-design/server/local-design-workflow.ts",
-            "apps/asyra-design/server/local-operation-tools.ts",
-            "apps/asyra-design/server/local-design-review.ts"
-          ]
-        },
-        {
           "id": "apply.ui-projection",
           "stepId": "apply",
           "testName": "execution proof preserves incremental UI publications without unrelated hierarchy work",
@@ -912,36 +887,6 @@
           ]
         },
         {
-          "id": "compose.selected-review-usage",
-          "stepId": "compose",
-          "testName": "execution proof delivers selected review usage to real capture binding and recording",
-          "implementationPaths": [
-            "apps/asyra-design/server/design-workflow-discovery.ts",
-            "apps/asyra-design/server/local-operation-tools.ts",
-            "apps/asyra-design/server/local-design-review.ts"
-          ]
-        },
-        {
-          "id": "inspect.automatic-coverage-delivery",
-          "stepId": "inspect",
-          "testName": "execution proof delivers automatic mechanical scope without accumulating candidates",
-          "implementationPaths": [
-            "apps/asyra-design/server/local-operation-tools.ts",
-            "apps/asyra-design/src/ai/review-action.ts",
-            "apps/asyra-design/src/common-apis/design-review.ts"
-          ]
-        },
-        {
-          "id": "inspect.visual-result-selection",
-          "stepId": "inspect",
-          "testName": "execution proof selects visual results before cloning mechanical evidence",
-          "implementationPaths": [
-            "apps/asyra-design/server/design-check-results.ts",
-            "apps/asyra-design/server/local-design-review.ts",
-            "apps/asyra-design/test-data/knowledge-evaluation/visual-result-selection-20261028.json"
-          ]
-        },
-        {
           "id": "compose.browser-prefix-handoff",
           "stepId": "compose",
           "testName": "execution proof preserves raw browser prefixes at the host failure boundary",
@@ -963,7 +908,9 @@
             "apps/asyra-design/server/evaluation-control.ts",
             "apps/asyra-design/test-data/ai-drawing/fixtures/correctable-preparation-20261106.json",
             "apps/asyra-design/server/local-tool-invocation.ts",
-            "apps/asyra-design/test-data/ai-drawing/fixtures/control-admission-20261106.json"
+            "apps/asyra-design/test-data/ai-drawing/fixtures/control-admission-20261106.json",
+            "apps/asyra-design/server/local-tool-library.ts",
+            "apps/asyra-design/test-data/ai-drawing/fixtures/selected-prefix-recovery-20261107.json"
           ]
         },
         {
@@ -973,6 +920,81 @@
           "implementationPaths": [
             "apps/asyra-design/test-data/ai-drawing/taipei-101-self-report.mjs",
             "apps/asyra-design/test-data/ai-drawing/taipei-101-live.mjs"
+          ]
+        },
+        {
+          "id": "compose.discovery-identity-recovery",
+          "stepId": "compose",
+          "testName": "execution proof preserves recoverable discovery identity selection without hiding unavailable contracts",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/evaluation-control.ts",
+            "apps/asyra-design/test-data/ai-drawing/fixtures/discovery-identity-stop-20261107.json"
+          ]
+        },
+        {
+          "id": "compose.result-route-selection",
+          "stepId": "compose",
+          "testName": "execution proof uses named-step result contracts and corrects selectors before dispatch",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/local-tool-host.ts",
+            "apps/asyra-design/server/local-design-sequence.ts",
+            "apps/asyra-design/test-data/ai-drawing/fixtures/result-route-stop-20261107.json"
+          ]
+        },
+        {
+          "id": "compose.request-continuation",
+          "stepId": "compose",
+          "testName": "execution proof composes request-only reads with guarded successor inputs",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-tool-host.ts",
+            "apps/asyra-design/server/local-design-sequence.ts",
+            "packages/ai-agent-runtime/src/recipe-admission.ts",
+            "packages/ai-agent-runtime/src/recipe-schema.ts",
+            "packages/ai-agent-runtime/src/tool-contract.ts"
+          ]
+        },
+        {
+          "id": "request.saved-navigation",
+          "stepId": "request",
+          "testName": "execution proof reuses named result navigation without transferring stored values",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/conversation-results.ts",
+            "apps/asyra-design/src/ai/server-action-batch-provider.ts"
+          ]
+        },
+        {
+          "id": "compose.authored-input-recovery",
+          "stepId": "compose",
+          "testName": "execution proof preserves authored input correction while blocking incomplete admission",
+          "implementationPaths": [
+            "packages/ai-agent-runtime/src/recipe-admission.ts",
+            "packages/ai-agent-runtime/src/recipe-types.ts",
+            "apps/asyra-design/server/local-tool-host.ts",
+            "apps/asyra-design/server/evaluation-control.ts",
+            "apps/asyra-design/test-data/ai-drawing/fixtures/sequence-input-recovery-20261108.json",
+            "apps/asyra-design/test-data/ai-drawing/fixtures/sequence-reference-recovery-20261108.json",
+            "apps/asyra-design/test-data/ai-drawing/fixtures/source-recovery-20261108.json"
+          ]
+        },
+        {
+          "id": "inspect.direct-observations",
+          "stepId": "inspect",
+          "testName": "execution proof delivers observations and authored context without approval prerequisites",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/local-design-context.ts",
+            "apps/asyra-design/server/local-design-facts.ts"
+          ]
+        },
+        {
+          "id": "inspect.saved-pixels",
+          "stepId": "inspect",
+          "testName": "execution proof restores a captured view without recapture or current-state certification",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/test-data/ai-drawing/fixtures/inspection-recovery-20261109.json"
           ]
         }
       ],
@@ -1029,33 +1051,29 @@
           "routeId": "apply-to-inspect",
           "decision": "required",
           "caseIds": [
-            "inspect.current-evidence",
             "apply.bounded-receipt-delivery",
-            "apply.registered-model-delivery"
+            "apply.registered-model-delivery",
+            "inspect.direct-observations"
           ]
         },
         {
           "routeId": "apply-to-settle",
           "decision": "required",
-          "caseIds": ["settle.partial", "apply.history-intent"]
+          "caseIds": [
+            "settle.partial",
+            "apply.history-intent",
+            "inspect.direct-observations"
+          ]
         },
         {
           "routeId": "inspect-to-compose",
           "decision": "required",
-          "caseIds": [
-            "inspect.current-evidence",
-            "inspect.current-contract",
-            "inspect.visual-result-selection"
-          ]
+          "caseIds": ["inspect.current-contract", "inspect.direct-observations"]
         },
         {
           "routeId": "inspect-to-settle",
           "decision": "required",
-          "caseIds": [
-            "inspect.current-evidence",
-            "inspect.current-contract",
-            "inspect.visual-result-selection"
-          ]
+          "caseIds": ["inspect.current-contract", "inspect.direct-observations"]
         },
         {
           "routeId": "prepare-to-inspect",
@@ -1085,7 +1103,7 @@
     {
       "id": "omit-registered-tools",
       "title": "Omit registered tools",
-      "expectedFailedCaseIds": ["compose.registered-tools"],
+      "expectedFailedCaseIds": ["compose.registered-tools", "compose.evaluation-report"],
       "mutation": {
         "file": "apps/asyra-design/server/local-ai-provider.ts",
         "from": "dynamicTools: nativeDefinitions,",
@@ -1105,13 +1123,7 @@
     {
       "id": "ignore-canonical-evidence",
       "title": "Ignore a stale App inspection verdict",
-      "expectedFailedCaseIds": [
-        "inspect.current-evidence",
-        "inspect.scoped-dependencies",
-        "inspect.regional-units",
-        "inspect.regional-pixels",
-        "inspect.visual-result-selection"
-      ],
+      "expectedFailedCaseIds": ["inspect.regional-pixels"],
       "mutation": {
         "file": "apps/asyra-design/server/local-operation-tools.ts",
         "from": "if (isRecord(result) && result.current === false) {\n            invalidIds.push(...group.ids)\n          }",

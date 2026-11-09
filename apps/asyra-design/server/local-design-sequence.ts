@@ -2,9 +2,14 @@ import {
   localToolSchemaIsPortable,
   localToolResultFieldLifetimes
 } from './local-tool-leases'
+import {
+  runtimeOperationSchema,
+  operationInspectionSchema
+} from './local-operation-batch'
 import { modelToolResultSchemas } from '../src/ai/tool-contract'
 import {
   embedAiToolSchema,
+  registeredRecipeOutputAt,
   type AiJsonValue,
   type AiRecipeBinding,
   type AiToolContract
@@ -71,44 +76,6 @@ const binding = (value: unknown): AiRecipeBinding => {
   }
 }
 
-const stepSchema = object(
-  {
-    name: toolResultString,
-    id: toolResultString,
-    arguments: {},
-    target: {},
-    selectAt: { const: 'step' },
-    revision: { type: 'integer', minimum: 1 }
-  },
-  ['name', 'arguments']
-)
-const ref = object(
-  { kind: { const: 'step' }, step: toolResultString, path: { type: 'string' } },
-  ['kind', 'step', 'path']
-)
-const iterationSchema = object(
-  {
-    id: toolResultString,
-    stateSchema: { type: 'object' },
-    state: {},
-    next: {},
-    check: stepSchema,
-    repairs: { type: 'array', minItems: 1, items: stepSchema },
-    maxIterations: { type: 'integer', minimum: 1 }
-  },
-  ['id', 'stateSchema', 'state', 'next', 'check', 'repairs', 'maxIterations']
-)
-
-const stageSchema = object(
-  {
-    id: toolResultString,
-    operations: { type: 'array', minItems: 1, items: stepSchema },
-    iteration: iterationSchema,
-    apply: { type: 'array', minItems: 1, items: stepSchema }
-  },
-  ['id', 'operations', 'apply']
-)
-
 const selector = object(
   {
     step: toolResultString,
@@ -125,6 +92,8 @@ const selection = {
 }
 export const directResultDeliveryProperties = {
   retain: {
+    description:
+      'Save portable values in App conversation context without changing delivery. Returns save metadata, not another copy of the saved value.',
     'x-host-delivery': true,
     ...selection,
     additionalProperties: {
@@ -133,6 +102,8 @@ export const directResultDeliveryProperties = {
     }
   },
   delivery: {
+    description:
+      'Independently select model-visible results. Omitted: final public result and images. Status: no work values or images. Fields: only selected values and images.',
     'x-host-delivery': true,
     anyOf: [
       { const: 'status' },
@@ -160,14 +131,48 @@ const storedFields = {
   additionalProperties: object(
     {
       name: { type: 'string', pattern: resultNamePattern },
-      path: { type: 'string' }
+      path: { type: 'string' },
+      view: {
+        const: 'shape',
+        description:
+          'Return bounded names, types, array lengths and absolute field paths below this saved path, without values. Omit to read the value. Known paths bind directly without a read.'
+      }
     },
     ['name', 'path']
   )
 }
 export const resultReceiptSchema = object(
   {
-    saved: { type: 'array', items: toolResultString },
+    saved: {
+      type: 'array',
+      items: object(
+        {
+          name: toolResultString,
+          type: toolResultString,
+          origin: object(
+            {
+              operation: toolResultString,
+              step: toolResultString,
+              source: { enum: ['input', 'result'] },
+              path: { type: 'string', minLength: 0 }
+            },
+            ['operation', 'source', 'path']
+          ),
+          paths: {
+            type: 'array',
+            items: object(
+              {
+                path: { type: 'string', minLength: 0 },
+                type: toolResultString,
+                length: { type: 'integer' }
+              },
+              ['path', 'type']
+            )
+          }
+        },
+        ['name', 'type', 'paths', 'origin']
+      )
+    },
     stages: {
       type: 'array',
       items: object(
@@ -197,7 +202,57 @@ export const resultReceiptSchema = object(
   ['saved', 'toolOutcome']
 )
 
+const batchOperationProperties = (batch?: LocalToolDefinition) => {
+  const schema = batch?.inputSchema as
+    | {
+        properties?: {
+          operations?: {
+            items?: {
+              properties?: { name?: { enum?: string[] }; target?: unknown }
+            }
+          }
+        }
+      }
+    | undefined
+
+  return schema?.properties?.operations?.items?.properties
+}
+
 export const sequenceDefinition = (batch?: LocalToolDefinition) => {
+  const stepSchema = object(
+    {
+      name: toolResultString,
+      id: toolResultString,
+      arguments: {},
+      target: batchOperationProperties(batch)?.target ?? false,
+      selectAt: { const: 'step' },
+      revision: { type: 'integer', minimum: 1 }
+    },
+    ['name', 'arguments']
+  )
+  const iterationSchema = object(
+    {
+      id: toolResultString,
+      stateSchema: { type: 'object' },
+      state: {},
+      next: {},
+      check: stepSchema,
+      repairs: { type: 'array', minItems: 1, items: stepSchema },
+      maxIterations: { type: 'integer', minimum: 1 }
+    },
+    ['id', 'stateSchema', 'state', 'next', 'check', 'repairs', 'maxIterations']
+  )
+
+  const stageSchema = object(
+    {
+      id: toolResultString,
+      operations: { type: 'array', minItems: 1, items: stepSchema },
+      iteration: iterationSchema,
+      apply: { type: 'array', minItems: 1, items: stepSchema }
+    },
+    ['id', 'operations', 'apply']
+  )
+
   const execution = registeredToolInvocationSchemas({})
 
   const either = (a: unknown, b: unknown) => ({
@@ -208,11 +263,74 @@ export const sequenceDefinition = (batch?: LocalToolDefinition) => {
 
   return {
     name: AiDesignToolIds.EXECUTE_DESIGN,
-    revision: 6,
+    revision: 12,
     description:
-      'Execute decided work in one host call. For staged work use stages:[{id,operations,iteration?,apply}]: each stage prepares, checks/repairs when declared, and immediately applies before continuing. All operation IDs are globally unique; later stages bind earlier results. Independent preparation can overlap pending application only when the host proves safe access and resolved inputs. Use top-level retain to preserve useful stage context even without a known later consumer. Alternatively execute an ordered list of operations in one host call. Use the returned action name or an exact registered tool name and its ordinary arguments. Known operations share a canvas exchange. Name a step with id and put {kind:"step",step:"id",path:"/field"} in a later argument or output to bind its result. Pass known IDs in arguments. A previous output and an artifact selector may fill separate argument slots of one action. Omit a target-bound argument and use target={field,artifactId,keys|keyPrefix} or {field,query:{scope:"region",bounds,filter}}. Set selectAt:"step" to resolve a region after earlier writes. An optional iteration declares stateSchema, initial state, check, repairs, next and maxIterations; {kind:"state",path:""} reads current state. Return to the agent for visual decisions. Bind decided steps directly. To save portable values in App conversation context send retain:{alias:{step:"id",path:"/field"}}; the default reply is status only. To retain selected authored parameters after a successful step, add source:"input" to its selector (paths address the operation ordinary arguments for every tool, without an /arguments wrapper). Request handles cannot be saved with retain; bind them within the current request. Whole-result retention requires wholeResultAllowed; guaranteedResultFields are safe named result selections. No dummy computation is needed. Use {kind:"named",name:"alias",path:""} in later arguments, including future turns. For decisions use delivery:{fields:{label:{step:"id",path:"/field"}}}; omit step for the final result (ready batch: batch receipt). For a saved result read just a field with {delivery:{fields:{label:{name:"alias",path:"/field"}}}} and no operations. Use delivery:"status" if no values are needed. Never replay acknowledged work.',
+      'Execute decided work in one host call. For staged work use stages:[{id,operations,iteration?,apply}]: each stage prepares, checks/repairs when declared, and immediately applies before continuing. All operation IDs are globally unique; later stages bind earlier results. Independent preparation can overlap pending application only when the host proves safe access and resolved inputs. Use top-level retain to preserve useful stage context even without a known later consumer. Alternatively execute an ordered list of operations in one host call. Use the returned action name or an exact registered tool name and its ordinary arguments. Known operations share a canvas exchange. Name a step with id and put {kind:"step",step:"id",path:"/field"} in a later argument to bind its result. Request sequences check a declared optional result path at execution: if absent or empty, stop before its dependent operation without replaying completed work. Unknown paths and incompatible types reject before dispatch. Pass known IDs in arguments. A previous output and an artifact selector may fill separate argument slots of one action. Omit a target-bound argument and use target={field,artifactId,keys|keyPrefix} or {field,query:{scope:"region",bounds,filter}}. Set selectAt:"step" to resolve a region after earlier writes. An optional iteration declares stateSchema, initial state, check, repairs, next and maxIterations; {kind:"state",path:""} reads current state. Return to the agent for visual decisions. Bind decided steps directly. To save portable values in App conversation context send retain:{alias:{step:"id",path:"/field"}}; saving only adds saved names, producing operations, selected input/result paths and bounded shapes; it never changes delivery. Use that index to bind later fields directly; unused saves are valid. To retain selected authored parameters after a successful step, add source:"input" to its selector (paths address the operation ordinary arguments for every tool, without an /arguments wrapper). Request handles cannot be saved with retain; bind them within the current request. Whole-result retention requires wholeResultAllowed; guaranteedResultFields are safe named result selections. No dummy computation is needed. Use {kind:"named",name:"alias",path:""} in later arguments, including future turns. Within the same submission, an input alias resolves the declared authored parameters before execution; an output alias becomes a step dependency. Neither requires a model read or a prior call. Delivery alone selects model-visible results, independently of retention. Select an earlier step explicitly when its result or images are needed; omitted delivery returns the final public result and its images for ordinary sequences and stages, whether or not retain is present. For decisions use delivery:{fields:{label:{step:"id",path:"/field"}}}; omit step for the final result (ready batch: batch receipt). For a saved result read just a field with {delivery:{fields:{label:{name:"alias",path:"/field"}}}} and no operations; add view:"shape" to that field selector only when you need to discover a saved subtree path without retrieving its values. Use delivery:"status" if no values are needed. Never replay acknowledged work.',
     inputSchema: {
       examples: [
+        {
+          operations: [
+            {
+              id: 'first',
+              name: 'design_workflow.prepare_and_apply_design',
+              arguments: {
+                inspection: 'defer',
+                draft: {
+                  type: 'group',
+                  name: 'Panel',
+                  children: [
+                    {
+                      type: 'rect',
+                      name: 'Face',
+                      key: 'face',
+                      width: 100,
+                      height: 80,
+                      fill: '#287dc4'
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              id: 'second',
+              name: 'design_workflow.prepare_and_apply_design',
+              arguments: {
+                inspection: 'defer',
+                draft: {
+                  type: 'group',
+                  name: 'Second panel',
+                  children: [
+                    {
+                      type: 'rect',
+                      name: 'Face',
+                      key: 'face',
+                      x: 120,
+                      width: {
+                        kind: 'named',
+                        name: 'panelInput',
+                        path: '/children/0/width'
+                      },
+                      height: {
+                        kind: 'named',
+                        name: 'panelInput',
+                        path: '/children/0/height'
+                      },
+                      fill: {
+                        kind: 'named',
+                        name: 'panelInput',
+                        path: '/children/0/fill'
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          retain: {
+            panelInput: { step: 'first', source: 'input', path: '/draft' }
+          },
+          delivery: 'status'
+        },
         {
           inspection: 'defer',
           stages: [
@@ -265,7 +383,6 @@ export const sequenceDefinition = (batch?: LocalToolDefinition) => {
             {
               operations: { type: 'array', minItems: 1, items: stepSchema },
               stages: { type: 'array', minItems: 1, items: stageSchema },
-              output: ref,
               retain: selection,
               delivery: {
                 anyOf: [
@@ -274,8 +391,7 @@ export const sequenceDefinition = (batch?: LocalToolDefinition) => {
                 ]
               },
               iteration: iterationSchema,
-              inspection: { enum: ['immediate', 'defer'] },
-              response: { enum: ['compact', 'full'] },
+              inspection: operationInspectionSchema,
               message: { type: 'string', minLength: 1, maxLength: 1000 }
             },
             []
@@ -326,18 +442,7 @@ export function createDesignSequencePlanner(
     index: number
   ) => Record<string, unknown>
 ) {
-  const schema = batch?.inputSchema as
-    | {
-        properties?: {
-          operations?: {
-            items?: {
-              properties?: { name?: { enum?: string[] }; target?: unknown }
-            }
-          }
-        }
-      }
-    | undefined
-  const item = schema?.properties?.operations?.items?.properties
+  const item = batchOperationProperties(batch)
   const known = new Set(item?.name?.enum ?? [])
 
   const actionNames = new Map<string, string>()
@@ -442,7 +547,11 @@ export function createDesignSequencePlanner(
         }
 
         if (typeof selector.step !== 'string' || !ids.includes(selector.step)) {
-          throw new LocalToolInputError('Unknown selected step')
+          throw new LocalToolInputError(
+            'Unknown selected step',
+            'PREPARATION_REJECTED',
+            'correct_input'
+          )
         }
 
         if (selector.source === 'input') {
@@ -456,7 +565,11 @@ export function createDesignSequencePlanner(
                 'Invalid authored input selection for ' +
                   selector.step +
                   ': ' +
-                  (error instanceof Error ? error.message : 'Unavailable field')
+                  (error instanceof Error
+                    ? error.message
+                    : 'Unavailable field'),
+                'PREPARATION_REJECTED',
+                'correct_input'
               )
             }
           }
@@ -478,13 +591,18 @@ export function createDesignSequencePlanner(
 
         if (
           owner &&
-          (selector.path === ''
-            ? !localToolSchemaIsPortable(
-                modelToolResultSchemas(owner).outputSchema
+          (localToolResultFieldLifetimes(
+            modelToolResultSchemas(owner).outputSchema
+          ).requestScopedFields.includes(selector.path) ||
+            !localToolSchemaIsPortable(
+              registeredRecipeOutputAt(
+                runtimeOperationSchema(
+                  modelToolResultSchemas(owner).outputSchema
+                ),
+                selector.path,
+                true
               )
-            : localToolResultFieldLifetimes(
-                modelToolResultSchemas(owner).outputSchema
-              ).requestScopedFields.includes(selector.path))
+            ))
         ) {
           throw new LocalToolInputError(
             'Nonportable result selection: ' +
@@ -494,7 +612,9 @@ export function createDesignSequencePlanner(
               ', path ' +
               selector.path +
               ')' +
-              '. Select portable output fields or authored source input; request handles cannot be saved across turns.'
+              '. Select portable output fields or authored source input; request handles cannot be saved across turns.',
+            'PREPARATION_REJECTED',
+            'correct_input'
           )
         }
       }
@@ -504,7 +624,6 @@ export function createDesignSequencePlanner(
       !stages &&
       !selectedSteps.size &&
       !input.iteration &&
-      !input.output &&
       operations.every(isPlain)
     ) {
       const { delivery: _delivery, retain: _retain, ...args } = input
@@ -527,7 +646,7 @@ export function createDesignSequencePlanner(
 
       if (
         !dep ||
-        dep.composition !== 'allowed' ||
+        !['allowed', 'request'].includes(dep.composition ?? '') ||
         (revision !== undefined && dep.revision !== revision)
       ) {
         throw new LocalToolInputError(
@@ -552,7 +671,11 @@ export function createDesignSequencePlanner(
           s.target !== undefined &&
           operationInputIssue(s.target, item?.target)
         ) {
-          throw new LocalToolInputError('Invalid target selector')
+          throw new LocalToolInputError(
+            'Invalid target selector',
+            'PREPARATION_REJECTED',
+            'correct_input'
+          )
         }
       }
 
@@ -565,8 +688,7 @@ export function createDesignSequencePlanner(
         revision: dep.revision,
         input: binding({
           operations: members,
-          ...(input.inspection ? { inspection: input.inspection } : {}),
-          ...(input.response ? { response: input.response } : {})
+          ...(input.inspection ? { inspection: input.inspection } : {})
         })
       }
     }
@@ -596,7 +718,28 @@ export function createDesignSequencePlanner(
         }
 
         if (!containsExpression(s.arguments)) {
-          return grouped([s], id)
+          const dep = lookup(name, s.revision)
+
+          if (operationInputIssue(s.target, item?.target)) {
+            throw new LocalToolInputError(
+              'Invalid target selector',
+              'PREPARATION_REJECTED',
+              'correct_input'
+            )
+          }
+
+          validateGroup?.([raw(s)])
+
+          return {
+            id,
+            tool: dep.name,
+            revision: dep.revision,
+            input: binding({
+              arguments: s.arguments,
+              ...(s.target === undefined ? {} : { target: s.target }),
+              ...(input.inspection ? { inspection: input.inspection } : {})
+            })
+          }
         }
 
         const targets = Array.isArray(s.target) ? s.target : [s.target]
@@ -706,7 +849,7 @@ export function createDesignSequencePlanner(
       after: checkpoint.after,
       iteration: compileIteration(checkpoint.iteration)
     }))
-    const output = input.output ?? {
+    const output = {
       kind: 'step',
       step: iteration ? loop?.id : steps.at(-1)?.id,
       path: iteration ? '/result' : ''

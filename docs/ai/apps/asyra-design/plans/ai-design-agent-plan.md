@@ -2,9 +2,14 @@
 
 ## Status and authority
 
-Current task: [Staged Design Execution and Conversation Context](staged-design-execution-plan.md).
-The new plan prioritizes stage continuity, per-stage application and dependency-aware
-overlap. Reusable motif variants below retain the completed implementation evidence.
+Current task: [Predictable tools without mandatory review ceremonies](agent-context-and-report-continuity-plan.md#predictable-tools-without-mandatory-review-ceremonies).
+The approved direction removes compulsory evidence/approval procedures and their
+completion gates while preserving fixed tool contracts, staged context reuse and
+AI final verification. This task updates the plan only; implementation is pending.
+Conflicting review obligations below are historical design, not requirements for
+the replacement. [Staged execution](staged-design-execution-plan.md) and reusable
+motif variants retain their implementation evidence; no past live-run allowance
+authorizes a new test.
 
 ## Reusable motif variants
 

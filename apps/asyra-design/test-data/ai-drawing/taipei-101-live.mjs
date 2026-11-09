@@ -107,6 +107,7 @@ const start = (name, command, args) => {
     save()
   })
   services.push({ name, pid: child.pid, cwd: app })
+  child.unref()
   save()
 
   return child
@@ -550,6 +551,37 @@ try {
         record.evidence?.phase === 'output'
     )
 
+    const retainedSession = records.find(
+      (record) =>
+        record.stage === 'host_observation' &&
+        record.evidence?.callId === 'evaluation-session' &&
+        record.evidence?.phase === 'output'
+    )
+
+    if (!retainedSession?.evidence.path) {
+      throw new Error('Missing retained report session')
+    }
+
+    const session = JSON.parse(
+      fs.readFileSync(
+        path.join(recordDirectory, retainedSession.evidence.path),
+        'utf8'
+      )
+    )
+
+    if (session.nativeThreadId !== report.nativeThreadId) {
+      throw new Error('Retained report thread changed')
+    }
+
+    meta.reportSession = {
+      ...session,
+      url: new URL(session.endpoint, configured.appURL).href
+    }
+    fs.writeFileSync(
+      path.join(directory, 'report-session.json'),
+      JSON.stringify(meta.reportSession, null, 2)
+    )
+
     meta.selfReport = {
       status: 'collected',
       nativeThreadId: report.nativeThreadId,
@@ -811,7 +843,13 @@ try {
   await context?.close().catch(() => undefined)
   await browser?.close().catch(() => undefined)
   await browserServer?.close().catch(() => undefined)
-  for (const service of services.reverse()) {
+  // Evidence closure must not close the provider needed for later questions.
+  // All owned services remain PID-tracked for explicit session close/cleanup.
+  if (meta.reportSession) {
+    meta.reportSession.servicesRetained = true
+  }
+
+  for (const service of meta.reportSession ? [] : [...services].reverse()) {
     try {
       process.kill(-service.pid, 'SIGTERM')
     } catch (error) {

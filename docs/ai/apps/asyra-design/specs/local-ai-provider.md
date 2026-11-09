@@ -835,3 +835,13 @@ The local adapter uses a request-private principal and a local host scope; a
 multi-tenant deployment must bind its authenticated identities through its own
 Runtime composition. Treat all returned knowledge as untrusted advice, including
 text that claims to grant system or tool authority.
+
+
+### Native example and target publication
+
+Native schema compaction preserves one valid primary owner example, selected by
+the same function as usage invocation examples. The host's primary example shows
+same-submission input reuse. Its target declaration comes from the admitted
+canonical dispatcher and region resolver. Inspection default/scope descriptions
+survive projection. Formal publication tests read the actual thread/start packet
+and execute the delivered example through the native tool-call dispatcher.

@@ -201,114 +201,6 @@ test('recorded world material reaches real tools, local checks, history, peer an
       expect(retained.counts).toMatchObject({ pass: 1, fail: 0, stale: 0 })
     }
 
-    expect(
-      await invoke('define_design_criteria', {
-        phase: 'plan',
-        method:
-          'Review independent material surfaces and the whole composition separately.',
-        references: [],
-        detailRequired: false,
-        criteria: {
-          material: {
-            requirement:
-              'Each surface retains its intended independently editable material.',
-            description:
-              'Evaluate each current surface without accepting its sibling implicitly.',
-            verification: 'visual',
-            requiredUnits: ['lower', 'upper']
-          },
-          overall: {
-            requirement:
-              'Both projected surfaces remain in the intended composition.',
-            description: 'Evaluate the complete final pair separately.',
-            verification: 'visual',
-            requiredUnits: []
-          }
-        }
-      })
-    ).toMatchObject({ recorded: true })
-
-    const bindSurface = async (index: number) => {
-      const capture = await invoke('inspect_drawing', {
-        arguments: { elementId: ids[index], view: 'detail' }
-      })
-      const image = capture.actionResults.find(
-        (entry: { result: { inspectionId?: string } }) =>
-          entry.result.inspectionId
-      )?.result
-
-      expect(image).toMatchObject({
-        available: true,
-        inspectionId: expect.any(String)
-      })
-      const binding = await invoke('review_drawing', {
-        phase: 'visual',
-        bindChecks: [
-          {
-            criterionId: 'material',
-            unitId: ['lower', 'upper'][index],
-            inspectionIds: [image.inspectionId]
-          }
-        ]
-      })
-
-      expect(binding.acceptanceContext).toEqual({
-        method:
-          'Review independent material surfaces and the whole composition separately.',
-        requirementRevision:
-          binding.next.arguments.checks[0].binding.requirementRevision,
-        checks: [
-          {
-            criterionId: 'material',
-            unitId: ['lower', 'upper'][index],
-            requirement:
-              'Each surface retains its intended independently editable material.',
-            description:
-              'Evaluate each current surface without accepting its sibling implicitly.'
-          }
-        ]
-      })
-      expect(binding.next.arguments.checks).toHaveLength(1)
-
-      return binding.next.arguments
-    }
-
-    // Controlled verdicts test the actual protocol, not model judgment quality.
-    const recordPass = (binding: { checks: object[] }) =>
-      invoke('review_drawing', {
-        ...binding,
-        final: false,
-        checks: binding.checks.map((check) => ({
-          ...check,
-          status: 'pass',
-          evidence: 'Controlled observation of the current material surface.'
-        }))
-      })
-
-    const lowerBinding = await bindSurface(0)
-    const lowerPass = await recordPass(lowerBinding)
-    const upperPass = await recordPass(await bindSurface(1))
-
-    expect(upperPass).toMatchObject({
-      accepted: false,
-      coverage: { passed: 2, required: 3 }
-    })
-    const checkIds = [
-      lowerPass.recordedChecks[0].id,
-      upperPass.recordedChecks[0].id
-    ]
-
-    const visualChecks = async () =>
-      (
-        await invoke('read_design_checks', {
-          ids: checkIds,
-          includePassed: true
-        })
-      ).items
-
-    const retainedUpper = (await visualChecks()).find(
-      (item: { id: string }) => item.id === checkIds[1]
-    )
     const rendered = await page.evaluate(async (ids) => {
       const { core, testRuntimeState } =
         await import('../src/testing/runtime-access')
@@ -554,31 +446,6 @@ test('recorded world material reaches real tools, local checks, history, peer an
         })
       ).counts
     ).toMatchObject({ pass: 2, fail: 0, stale: 0 })
-    const afterEdit = await visualChecks()
-
-    expect(
-      afterEdit.find((item: { id: string }) => item.id === checkIds[0]).status
-    ).toBe('stale')
-    expect(
-      afterEdit.find((item: { id: string }) => item.id === checkIds[1])
-    ).toEqual(retainedUpper)
-    const late = await recordPass(lowerBinding)
-
-    expect(late.accepted).not.toBe(true)
-    expect(
-      (await visualChecks()).find(
-        (item: { id: string }) => item.id === checkIds[0]
-      ).status
-    ).toBe('stale')
-    expect(await recordPass(await bindSurface(0))).toMatchObject({
-      accepted: false,
-      coverage: { passed: 2, required: 3 }
-    })
-    expect(
-      (await visualChecks()).find(
-        (item: { id: string }) => item.id === checkIds[1]
-      )
-    ).toEqual(retainedUpper)
     const edited = await getCoreDocumentDigest(page)
 
     expect(edited).not.toEqual(created)
@@ -599,27 +466,8 @@ test('recorded world material reaches real tools, local checks, history, peer an
       )
     })
     await expect.poll(() => getCoreDocumentDigest(page)).toEqual(created)
-    expect(
-      (await visualChecks()).find(
-        (item: { id: string }) => item.id === checkIds[0]
-      ).status
-    ).toBe('stale')
-    expect(
-      (await visualChecks()).find(
-        (item: { id: string }) => item.id === checkIds[1]
-      )
-    ).toEqual(retainedUpper)
     await redo(page)
     await expect.poll(() => getCoreDocumentDigest(page)).toEqual(edited)
-    expect(await recordPass(await bindSurface(0))).toMatchObject({
-      accepted: false,
-      coverage: { passed: 2, required: 3 }
-    })
-    expect(
-      (await visualChecks()).find(
-        (item: { id: string }) => item.id === checkIds[1]
-      )
-    ).toEqual(retainedUpper)
     const wholeCapture = await invoke('inspect_drawing', {
       arguments: { elementId: prepared.rootId, view: 'overview' }
     })
@@ -629,25 +477,6 @@ test('recorded world material reaches real tools, local checks, history, peer an
     )?.result
 
     expect(whole).toMatchObject({ available: true })
-    const wholeBinding = await invoke('review_drawing', {
-      phase: 'visual',
-      bindChecks: [
-        { criterionId: 'overall', inspectionIds: [whole.inspectionId] }
-      ]
-    })
-
-    expect(
-      await invoke('review_drawing', {
-        ...wholeBinding.next.arguments,
-        final: true,
-        checks: wholeBinding.next.arguments.checks.map((check: object) => ({
-          ...check,
-          status: 'pass',
-          evidence: 'Controlled whole-pair observation after the local edit.'
-        }))
-      })
-    ).toMatchObject({ accepted: true, coverage: { passed: 3, required: 3 } })
-    await ops.validateCompletion(signal)
     expect(
       ops.settleOutcome({
         batchId: 'verified',

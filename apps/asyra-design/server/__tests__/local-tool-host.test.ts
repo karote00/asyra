@@ -1,4 +1,4 @@
-import { designEvidenceDefinitions } from '../local-design-review'
+import { designContextDefinitions } from '../local-design-context'
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
 import { evaluationToolStop } from '../evaluation-control'
 import correctablePreparation from '../../test-data/ai-drawing/fixtures/correctable-preparation-20261106.json'
@@ -44,7 +44,7 @@ const recipe = {
     {
       id: 'prepare',
       tool: 'design_preparation.prepare_design',
-      revision: 3,
+      revision: 4,
       input: {
         kind: 'object',
         fields: {
@@ -245,10 +245,10 @@ it.each(['compact', 'full'])(
       )
 
       expect(produced.toolOutcome).toMatchObject({
-        status: 'partial',
+        status: 'success',
         settlement: 'completed'
       })
-      expect(produced.measurementIssues).toHaveLength(1)
+      expect(produced).not.toHaveProperty('measurementIssues')
       expect(produced.artifactId).toEqual(expect.any(String))
       const selected = await invoke(
         'design_preparation.retain_design_targets',
@@ -299,7 +299,7 @@ it.each([false, true])(
         inspection: 'defer'
       })
 
-      expect(result.toolOutcome.status).toBe('partial')
+      expect(result.toolOutcome.status).toBe(stopped ? 'partial' : 'success')
       if (!stopped) {
         expect(result.toolOutcome.settlement).toBe('completed')
       }
@@ -410,10 +410,10 @@ it('delivers real preparation recovery through nested recipes and native library
       input: 17
     })
 
-    // Preparation currently reports unknown settlement; ancestors must preserve it.
+    // Compiled findings rejected before apply preserve safe correction through ancestors.
     expect(result.execution).toMatchObject({
-      status: 'unknown',
-      settlement: 'unknown',
+      status: 'failed',
+      settlement: 'not-started',
       issues: []
     })
     expect(result.storage?.status).not.toBe('saved')
@@ -1481,10 +1481,8 @@ it.each(['direct', 'registered'])(
       )
       const result = route === 'direct' ? reply : reply.execution?.value
 
-      expect(result?.status, JSON.stringify(reply)).toBe('partial')
-      expect(result.measurementIssues[0].recovery).toContain(
-        'Do not replay writes'
-      )
+      expect(result?.status, JSON.stringify(reply)).toBe('complete')
+      expect(result).not.toHaveProperty('measurementIssues')
       expect(result.parts).toHaveLength(2)
       for (const part of result.parts) {
         expect(part.actionResults[0].result).toMatchObject({
@@ -2007,9 +2005,9 @@ it.each(['native', 'registered', 'batch'])(
         const selected = [...(guide.apis ?? []), ...(guide.tools ?? [])][0]
 
         expect(selected.execution).toEqual({
-          kind: 'native-tool',
-          namespace: definition.namespace,
-          tool: definition.name
+          kind: 'host-operation',
+          tool: 'execute_design',
+          operation: definition.registeredName
         })
         expect(
           operationContractIssue(result, selected.usageGuide.results, {
@@ -2389,7 +2387,7 @@ it.each(['repairable', 'decision-required'] as const)(
         next: from('repair', '/levels'),
         maxIterations: 2
       },
-      output: from('verified', '/result/levels')
+      delivery: { fields: { levels: { path: '/levels' } } }
     }
 
     try {
@@ -2442,13 +2440,13 @@ it.each(['repairable', 'decision-required'] as const)(
       }
 
       if (mode === 'repairable') {
-        expect(result.execution, JSON.stringify(result)).toMatchObject({
-          status: 'success',
-          value: [0.5, 1]
-        })
+        expect(result.toolOutcome.status, JSON.stringify(result)).toBe(
+          'success'
+        )
+        expect(result.fields.levels).toEqual([0.5, 1])
         expect(calls).toEqual(['layout', 'reflect', 'check', 'clamp', 'check'])
       } else {
-        expect(result.execution.status).not.toBe('success')
+        expect(result.toolOutcome.status).not.toBe('success')
         expect(calls).toEqual(['layout', 'reflect', 'check'])
       }
 
@@ -2627,7 +2625,7 @@ it.each(['status', 'selected'] as const)(
 )
 
 it.each(['a', 'b', 'c', 'select_design_references'])(
-  'preserves correctable native-only admission for %s without composing the control',
+  'distinguishes request sequence admission from native-only controls for %s',
   async (name) => {
     const recorded = (
       await import('../../test-data/ai-drawing/fixtures/control-admission-20261106.json')
@@ -2635,7 +2633,7 @@ it.each(['a', 'b', 'c', 'select_design_references'])(
     let calls = 0
     const actual = name === 'select_design_references'
     const namespace = actual ? 'design_operations' : 'controls'
-    const reference = designEvidenceDefinitions.find((d) => d.name === name)
+    const reference = designContextDefinitions.find((d) => d.name === name)
 
     if (actual && !reference) {
       throw Error('Missing reference control contract')
@@ -2688,7 +2686,11 @@ it.each(['a', 'b', 'c', 'select_design_references'])(
             call: async () => {
               calls++
 
-              return JSON.stringify({ ready: true })
+              return JSON.stringify(
+                actual
+                  ? { referenceImageIndexes: [1, 0], references: [] }
+                  : { ready: true }
+              )
             }
           }
         }
@@ -2700,19 +2702,25 @@ it.each(['a', 'b', 'c', 'select_design_references'])(
         name: 'design_operations.execute_design',
         callId: 'incorrect-route',
         input: actual
-          ? recorded.input
+          ? { ...recorded.input, operations: recorded.input.operations.map((operation) => ({ ...operation, arguments: { referenceImageIndexes: operation.arguments.referenceImageIndexes } })) }
           : {
               operations: [{ name: namespace + '.' + name, arguments: {} }],
               delivery: 'status'
             }
       })
 
-      expect(calls).toBe(0)
-      expect(JSON.parse(reply.text)).toMatchObject({
-        recovery: 'correct_input',
-        settlement: 'not-started'
-      })
-      expect(reply.text).toContain('native')
+      if (actual) {
+        expect(reply.success, reply.text).toBe(true)
+        expect(calls).toBe(1)
+      } else {
+        expect(calls).toBe(0)
+        expect(JSON.parse(reply.text)).toMatchObject({
+          recovery: 'correct_input',
+          settlement: 'not-started'
+        })
+        expect(reply.text).toContain('native')
+      }
+
       expect(evaluationToolStop(reply)).toBeUndefined()
       if (!actual) {
         const correct = await host.invoke({

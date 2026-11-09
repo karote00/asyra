@@ -377,6 +377,7 @@ const deleteElementsApi = defineBasicApi({
   method: 'deleteElements',
   examples: [{ elementIds: ['example-element'] }],
   effect: 'delete',
+  resultPaths: ['/value/count', '/status'],
   resultKind: 'removed',
   parameters: [{ name: 'elementIds', schema: apiUniqueElementIds }]
 })
@@ -410,9 +411,10 @@ const getElementDataMapApi = defineBasicApi({
 
 const groupElementsApi = defineBasicApi({
   description:
-    'Group the supplied element IDs with App geometry preservation; returns grouping details.',
+    'Group existing elements into a new editable container and preserve their visible positions. Takes the supplied element IDs, preserves App geometry, and returns grouping details.',
   owner: 'hierarchy',
   method: 'groupElements',
+  resultPaths: ['/value/groupId'],
   resultKind: 'grouped',
   effect: 'write',
   parameters: [{ name: 'elementIds', schema: apiElementIds }]
@@ -435,7 +437,7 @@ const moveElementsApi = defineBasicApi({
   effect: 'write',
   parameters: [{ name: 'request', schema: elementMoveRequestSchema }],
   description:
-    'Preserves App group-geometry behavior. For before/after placement prefer hierarchy.moveElementsRelative with an anchor ID, without reading siblings. For indexed placement read children using core.getElementChildren. targetIndex is a zero-based insertion index from 0 through the target child count excluding the moved elements; use that count to append. All moved elements must share a source parent. An oversized index is rejected, not clamped.'
+    'Move existing elements to a parent and insertion index while preserving App group geometry. For before/after placement prefer hierarchy.moveElementsRelative with an anchor ID, without reading siblings. For indexed placement read children using core.getElementChildren. targetIndex is a zero-based insertion index from 0 through the target child count excluding the moved elements; use that count to append. All moved elements must share a source parent. An oversized index is rejected, not clamped.'
 })
 
 const moveElementsRelativeApi = defineBasicApi({

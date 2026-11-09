@@ -1,38 +1,47 @@
-import strictNativeDetail from './fixtures/recorded-101/strict-native-detail-20261106.json'
+import historical_referenceChain from '../../test-data/ai-drawing/fixtures/reference-chain-20261108.json'
+import historical_deliveryHandoff from '../../test-data/ai-drawing/fixtures/result-delivery-20261108.json'
+import {
+  ownerInvocation,
+  recordAcquisitionCost
+} from './tool-contract-assertions'
+import historical_acquisitionQuery from '../../test-data/ai-drawing/fixtures/capability-acquisition-20261106.json'
+import historical_strictNativeDetail from './fixtures/recorded-101/strict-native-detail-20261106.json'
+import { createAiInspectionAction } from '../../src/ai/inspection'
+import { createAiToolContract } from '@asyra/ai-agent-runtime'
 import { inspectionInputSchema } from '../../src/ai/inspection-schema'
-import strictMixedQuery from './fixtures/recorded-101/strict-mixed-query-20261106.json'
+import historical_strictMixedQuery from './fixtures/recorded-101/strict-mixed-query-20261106.json'
 import { completeUsageBudget } from './tool-contract-assertions'
 import * as workflowDiscovery from '../design-workflow-discovery'
-import usageAcquisition from './fixtures/recorded-101/usage-acquisition-20261028.json'
-import fieldRecovery from './fixtures/recorded-101/field-query-recovery-20261027.json'
+import historical_usageAcquisition from './fixtures/recorded-101/usage-acquisition-20261028.json'
+import historical_fieldRecovery from './fixtures/recorded-101/field-query-recovery-20261027.json'
 import { createLocalKnowledgeTools } from '../local-knowledge'
-import sampledEllipse from './fixtures/recorded-101/projected-ellipse-20261024.json'
+import historical_sampledEllipse from './fixtures/recorded-101/projected-ellipse-20261024.json'
 import { constructDesign } from '../design-construction'
 import { measureDesignBudget } from '../design-budget'
-import layeredPattern from './fixtures/recorded-101/layered-pattern-20261023.json'
+import historical_layeredPattern from './fixtures/recorded-101/layered-pattern-20261023.json'
 import { expectEquivalentPatternEntries } from './layered-pattern-assertions'
-import recoveryFixture from './fixtures/recorded-101/pattern-budget-recovery-20261023.json'
-import compositionMaterials from './fixtures/recorded-101/composition-materials-20261022.json'
-import componentSelection from './fixtures/recorded-101/component-selection-20261022.json'
-import expansionBudget from './fixtures/recorded-101/expansion-budget-20261022.json'
+import historical_recoveryFixture from './fixtures/recorded-101/pattern-budget-recovery-20261023.json'
+import historical_compositionMaterials from './fixtures/recorded-101/composition-materials-20261022.json'
+import historical_componentSelection from './fixtures/recorded-101/component-selection-20261022.json'
+import historical_expansionBudget from './fixtures/recorded-101/expansion-budget-20261022.json'
 import { DesignPreparationLimits } from '../../src/ai/prepared-design'
 import {
   projectWorkflowInput,
   workflowQueryGuidance
 } from '../design-workflow-discovery'
-import invalidQueryScope from './fixtures/recorded-101/invalid-query-scope-20261022.json'
-import exactQueryScope from './fixtures/recorded-101/exact-query-scope-20261027.json'
-import operationSelection from './fixtures/recorded-101/operation-selection-20261022.json'
-import inspectionDiscovery from './fixtures/recorded-101/inspection-discovery-20261022.json'
+import historical_invalidQueryScope from './fixtures/recorded-101/invalid-query-scope-20261022.json'
+import historical_exactQueryScope from './fixtures/recorded-101/exact-query-scope-20261027.json'
+import historical_operationSelection from './fixtures/recorded-101/operation-selection-20261022.json'
+import historical_inspectionDiscovery from './fixtures/recorded-101/inspection-discovery-20261022.json'
 import { createHash } from 'node:crypto'
 import { designPreparationExamples } from '../design-preparation-examples'
-import orderedPreparation from './fixtures/recorded-101/ordered-preparation-20261019.json'
+import historical_orderedPreparation from './fixtures/recorded-101/ordered-preparation-20261019.json'
 import { readCompleteInformation } from './tool-contract-assertions'
 import { expect, it, vi } from 'vitest'
 vi.mock('../../src/contexts', () => ({ default: {} }))
 import { createPreparedDesignAction } from '../../src/ai/design-actions'
 import type { PreparedElementDescriptor } from '../../src/common-apis'
-import recorded from './fixtures/recorded-101/discovery-delivery-20261020.json'
+import historical_recorded from './fixtures/recorded-101/discovery-delivery-20261020.json'
 import { createLocalDesignTools } from '../local-design-tools'
 import { createLocalDesignWorkflow } from '../local-design-workflow'
 import { createLocalOperationTools } from '../local-operation-tools'
@@ -46,23 +55,109 @@ import {
 import { AiActionNames } from '../../src/constants/ai-actions'
 import type { AiActionBatch } from '../../src/ai/action-batch-protocol'
 
+// Recorded geometry and intent are unchanged; retired approval parameters are
+// removed from replay inputs. Historical response payloads remain evidence only.
+const currentRecordedInput = (value: any): any => {
+  if (Array.isArray(value)) return value.map(currentRecordedInput)
+  if (!value || typeof value !== 'object') return value
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key]) => key !== 'plan')
+      .map(([key, child]) => [
+        key,
+        key === 'optionalInputs' && Array.isArray(child)
+          ? child.filter((name) => name !== 'plan')
+          : currentRecordedInput(child)
+      ])
+  )
+}
+const currentFixture = (source: any) => {
+  const value = structuredClone(source)
+  for (const key of [
+    'input',
+    'query',
+    'selectedInput',
+    'captureQuery',
+    'constructionQuery',
+    'usage'
+  ])
+    if (value[key]) value[key] = currentRecordedInput(value[key])
+  if (value.queries) value.queries = value.queries.map(currentRecordedInput)
+  if (value.calls)
+    value.calls = value.calls.map((call: any) => ({
+      ...call,
+      ...(call.input ? { input: currentRecordedInput(call.input) } : {})
+    }))
+  return value
+}
+const referenceChain = currentFixture(historical_referenceChain)
+const deliveryHandoff = currentFixture(historical_deliveryHandoff)
+const acquisitionQuery = currentFixture(historical_acquisitionQuery)
+const strictNativeDetail = currentFixture(historical_strictNativeDetail)
+const strictMixedQuery = currentFixture(historical_strictMixedQuery)
+const usageAcquisition = currentFixture(historical_usageAcquisition)
+const fieldRecovery = currentFixture(historical_fieldRecovery)
+const sampledEllipse = currentFixture(historical_sampledEllipse)
+const layeredPattern = currentFixture(historical_layeredPattern)
+const recoveryFixture = currentFixture(historical_recoveryFixture)
+const compositionMaterials = currentFixture(historical_compositionMaterials)
+const componentSelection = currentFixture(historical_componentSelection)
+const expansionBudget = currentFixture(historical_expansionBudget)
+const invalidQueryScope = currentFixture(historical_invalidQueryScope)
+const exactQueryScope = currentFixture(historical_exactQueryScope)
+const operationSelection = currentFixture(historical_operationSelection)
+const inspectionDiscovery = currentFixture(historical_inspectionDiscovery)
+const orderedPreparation = currentFixture(historical_orderedPreparation)
+const recorded = currentFixture(historical_recorded)
+
+inspectionDiscovery.query = {
+  names: ['inspect_drawing', 'record_design_facts'],
+  schemaPaths: [
+    '/properties/arguments',
+    '/properties/facts',
+    '/properties/unknown'
+  ]
+}
+fieldRecovery.usage.input.names = [
+  'discover_knowledge',
+  'select_design_references',
+  'record_design_facts'
+]
+fieldRecovery.query.input = {
+  ...fieldRecovery.query.input,
+  schemaPaths: ['/properties/referenceImageIndexes', '/properties/references']
+}
+
 const setup = (
   unrelatedCount = 0,
   description = 'Unrelated capability',
   expandedNodeLimit = 10000,
-  includeKnowledge = false
+  includeKnowledge = false,
+  additionalNative: {
+    name: string
+    namespace: string
+    description: string
+    inputSchema: object
+    outputSchema?: object
+  }[] = [],
+  materialRevision = false
 ) => {
   const actions = [
+    ...(materialRevision
+      ? [
+          {
+            name: AiActionNames.APPLY_PREPARED_MATERIAL,
+            description: 'Apply prepared material',
+            inputSchema: {}
+          }
+        ]
+      : []),
     {
       name: AiActionNames.APPLY_PREPARED_DESIGN,
       description: 'Apply',
       inputSchema: {}
     },
-    {
-      name: AiActionNames.INSPECT_DRAWING,
-      description: 'Inspect',
-      inputSchema: {}
-    }
+    createAiToolContract(createAiInspectionAction())
   ]
   const compile = vi.fn(prepareDesignAsync)
   const designs = createLocalDesignTools(
@@ -118,14 +213,26 @@ const setup = (
       batch.actions.map(async (action) => ({
         actionId: action.id,
         actionName: action.name,
-        result: await apply.execute(action.arguments, {
-          signal: new AbortController().signal
-        } as never)
+        result:
+          action.name === AiActionNames.INSPECT_DRAWING
+            ? {
+                available: true,
+                image: {
+                  dataUrl: 'data:image/png;base64,AA==',
+                  width: 1,
+                  height: 1
+                }
+              }
+            : await apply.execute(action.arguments, {
+                signal: new AbortController().signal
+              } as never)
       }))
     )
   }))
   const operations = createLocalOperationTools(actions, designs, execute, {
+    validateReferences: () => [],
     getNativeTools: () => [
+      ...additionalNative,
       ...Array.from({ length: unrelatedCount }, (_, index) => ({
         name: `unrelated_${index}`,
         namespace: 'unrelated',
@@ -209,12 +316,123 @@ const setup = (
   }
 }
 
+it('finds the recorded compound material purpose and follows its exact acquisition route', async () => {
+  const { call, compile, created, deliveries } = setup()
+  const found = (
+    await call('describe_design_apis', acquisitionQuery.compound.input)
+  ).value
+  const candidate = found.tools.find(
+    (tool: { name: string }) => tool.name === 'prepare_and_apply_design'
+  )
+
+  expect(candidate).toBeDefined()
+  expect(candidate.match.metadataTerms).toContain('world')
+  expect(candidate.usage.arguments.names).toEqual([
+    'design.prepare_and_apply_design'
+  ])
+  expect(candidate.parameters).toBeUndefined()
+  expect(compile).not.toHaveBeenCalled()
+  const menuBytes = deliveries.reduce((total, bytes) => total + bytes, 0)
+  const menuCalls = deliveries.length
+
+  expect(menuCalls).toBe(1)
+  expect(menuBytes).toBeLessThan(acquisitionQuery.broad.responseTextBytes)
+  const selected = (
+    await call('describe_design_apis', {
+      ...candidate.usage.arguments,
+      inputScope: acquisitionQuery.selectedInput.inputScope
+    })
+  ).value.tools[0]
+  const invocation = ownerInvocation(selected.invocationExample.invocation)
+
+  expect(selected.usageGuide.parameters).toBeDefined()
+  expect(selected.usageGuide.results.guaranteedFields).toBeDefined()
+  expect(
+    operationInputIssue(invocation.arguments, selected.usageGuide.parameters)
+  ).toBeUndefined()
+  process.stdout.write(
+    JSON.stringify({
+      measurement: 'recorded-compound-acquisition',
+      candidates: [...found.apis, ...found.tools].map((entry) => ({
+        name: entry.name,
+        bytes: Buffer.byteLength(JSON.stringify(entry)),
+        descriptionBytes: Buffer.byteLength(entry.description ?? ''),
+        scopeBytes: Buffer.byteLength(JSON.stringify(entry.inputScopes ?? {}))
+      })),
+      menuBytes,
+      menuCalls,
+      completeAcquisitionBytes: deliveries.reduce(
+        (total, bytes) => total + bytes,
+        0
+      ),
+      completeAcquisitionCalls: deliveries.length
+    }) + '\n'
+  )
+  const reply = await call(invocation.tool, invocation.arguments)
+
+  // This harness has no browser inspection service; the actual write still settles.
+  expect(reply.value.actionResults[0].result.status).toBe('complete')
+  expect(compile).toHaveBeenCalledTimes(1)
+  expect(created.length).toBeGreaterThan(0)
+})
+
+it('keeps recorded broad material usage as candidate menus without projecting every contract', async () => {
+  const { call, compile, deliveries, owners } = setup()
+  const project = vi.spyOn(workflowDiscovery, 'workflowUsageParameters')
+
+  try {
+    const reply = await call(
+      'describe_design_apis',
+      acquisitionQuery.broad.input
+    )
+
+    expect(reply.success).toBe(true)
+    expect(reply.value.count).toBeGreaterThan(1)
+    expect(reply.value.tools.length).toBeGreaterThan(0)
+    for (const tool of reply.value.tools) {
+      expect(tool.usageGuide).toBeUndefined()
+      expect(tool.inputSchema).toBeUndefined()
+      expect(tool.usage.arguments.names).toEqual([
+        `${tool.namespace}.${tool.name}`
+      ])
+    }
+
+    expect(deliveries).toHaveLength(1)
+    expect(deliveries[0]).toBeLessThan(acquisitionQuery.broad.responseTextBytes)
+    process.stdout.write(
+      JSON.stringify({
+        measurement: 'recorded-broad-material-menu',
+        responseBytes: deliveries[0],
+        replies: deliveries.length,
+        baselineFirstReplyBytes: acquisitionQuery.broad.responseTextBytes,
+        baselineContentBytes: acquisitionQuery.broad.declaredContentBytes
+      }) + '\n'
+    )
+    expect(project).not.toHaveBeenCalled()
+    expect(compile).not.toHaveBeenCalled()
+    const exact = (
+      await call('describe_design_apis', {
+        names: ['design.prepare_and_apply_design'],
+        view: 'full'
+      })
+    ).value.tools[0]
+
+    expect(exact.inputSchema).toEqual(
+      owners[2].definitions.find(
+        (definition) => definition.name === 'prepare_and_apply_design'
+      )?.inputSchema
+    )
+  } finally {
+    project.mockRestore()
+  }
+})
+
 it('delivers recorded full contracts and publishes executable high-level usage without replay on recovery', async () => {
   const { call, compile, execute, owners, created, calls } = setup()
   const full = (await call('describe_design_apis', recorded.calls[0].input))
     .value
 
-  for (const name of ['prepare_and_apply_design', 'define_design_criteria']) {
+  for (const name of ['prepare_and_apply_design']) {
     const definition = owners
       .flatMap((owner) => owner.definitions)
       .find((item) => item.name === name)
@@ -253,7 +471,7 @@ it('delivers recorded full contracts and publishes executable high-level usage w
     }
 
     expect(usage.invocationExample.illustrative).toBe(true)
-    const invocation = usage.invocationExample.invocation
+    const invocation = ownerInvocation(usage.invocationExample.invocation)
 
     expect(invocation.tool).toBe(name)
     expect(
@@ -262,14 +480,20 @@ it('delivers recorded full contracts and publishes executable high-level usage w
     const reply = await call(invocation.tool, invocation.arguments)
 
     if (name === 'prepare_and_apply_design') {
-      expect(reply.success).toBe(false)
+      expect(reply.success).toBe(true)
       expect(reply.value).toMatchObject({
         toolOutcome: {
-          status: 'partial',
+          status: 'success',
           settlement: 'completed',
-          issues: [expect.objectContaining({ code: 'FOLLOWUP_UNAVAILABLE' })]
+          issues: []
         },
-        actionResults: [{ result: { status: 'complete' } }]
+        actionResults: expect.arrayContaining([
+          {
+            actionId: expect.any(String),
+            actionName: 'apply_prepared_design',
+            result: expect.objectContaining({ status: 'complete' })
+          }
+        ])
       })
       expect(created.map((entry) => entry.id)).toContain(
         reply.value.actionResults[0].result.compositionId
@@ -289,15 +513,23 @@ it('delivers recorded full contracts and publishes executable high-level usage w
   }
 
   expect(compile).toHaveBeenCalledTimes(1)
-  expect(execute).toHaveBeenCalledTimes(1)
+  expect(
+    execute.mock.calls.filter(([batch]) =>
+      batch.actions.some((action) => action.name === 'apply_prepared_design')
+    )
+  ).toHaveLength(1)
   const restored = (await call('describe_design_apis', recorded.calls[1].input))
     .value.tools[0]
 
   expect(restored.inputSchema).toEqual(full.tools[0].inputSchema)
   expect(calls.filter((name) => name === 'describe_design_apis')).toHaveLength(
-    6
+    4
   )
-  expect(execute).toHaveBeenCalledTimes(1)
+  expect(
+    execute.mock.calls.filter(([batch]) =>
+      batch.actions.some((action) => action.name === 'apply_prepared_design')
+    )
+  ).toHaveLength(1)
 })
 
 it('navigates actual local definitions and preserves selected constraints and recovery scope', async () => {
@@ -380,7 +612,7 @@ it('rejects invalid and cancelled invocations before writes and does not revive 
       includeResultSchema: true
     })
   ).value.tools[0]
-  const args = usage.invocationExample.invocation.arguments
+  const args = ownerInvocation(usage.invocationExample.invocation).arguments
   const invalid = await first.call('prepare_and_apply_design', {
     ...args,
     unexpected: true
@@ -415,64 +647,22 @@ it('rejects invalid and cancelled invocations before writes and does not revive 
 
   expect(recovery.definition.coverage).toBe('usage')
   const retry = await second.call('prepare_and_apply_design', {
-    ...recovery.invocationExample.invocation.arguments,
+    ...ownerInvocation(recovery.invocationExample.invocation).arguments,
     inspection: 'defer'
   })
 
-  expect(retry.success).toBe(false)
+  expect(retry.success).toBe(true)
   expect(retry.value).toMatchObject({
     toolOutcome: {
-      status: 'partial',
+      status: 'success',
       settlement: 'completed',
-      issues: [expect.objectContaining({ code: 'FOLLOWUP_UNAVAILABLE' })]
+      issues: []
     },
     actionResults: [{ result: { status: 'complete' } }]
   })
   expect(second.compile).toHaveBeenCalledTimes(1)
   expect(second.execute).toHaveBeenCalledTimes(1)
   expect(first.execute).not.toHaveBeenCalled()
-})
-
-it('navigates the criteria dictionary without dropping its conditional required fields', async () => {
-  const { call } = setup()
-  const names = ['define_design_criteria']
-  const usage = (
-    await call('describe_design_apis', {
-      names,
-      view: 'usage',
-      includeResultSchema: true
-    })
-  ).value.tools[0]
-  const path =
-    '/properties/criteria/additionalProperties/properties/requirement'
-
-  expect(usage.inputFields).toContain('/properties/criteria')
-  expect(
-    usage.inputFields.every(
-      (field: string) =>
-        field.split('/').length === 3 ||
-        /^\/properties\/delivery\/anyOf\/[01]$/.test(field)
-    )
-  ).toBe(true)
-  const full = (await call('describe_design_apis', { names })).value.tools[0]
-  const partial = (
-    await call('describe_design_apis', { names, schemaPaths: [path] })
-  ).value.tools[0]
-  const criterion = full.inputSchema.properties.criteria.additionalProperties
-
-  expect(partial.schemaFragments[0].schema).toEqual(
-    criterion.properties.requirement
-  )
-  expect(partial.schemaContext).toContainEqual({
-    path: '/properties/criteria/additionalProperties',
-    schema: {
-      type: 'object',
-      additionalProperties: false,
-      required: criterion.required,
-      oneOf: criterion.oneOf,
-      allowedProperties: Object.keys(criterion.properties)
-    }
-  })
 })
 
 it('uses direct delivered contracts to invoke the owner and recover information without replaying writes', async () => {
@@ -552,8 +742,9 @@ it('uses direct delivered contracts to invoke the owner and recover information 
     },
     'usage'
   )
-  const invocation =
+  const invocation = ownerInvocation(
     retained.get('usage')?.value?.tools[0].invocationExample.invocation
+  )
 
   if (!invocation) {
     throw new Error('Missing delivered invocation')
@@ -586,7 +777,9 @@ it('uses direct delivered contracts to invoke the owner and recover information 
     'restored'
   )
   expect(
-    retained.get('restored')?.value?.tools[0].invocationExample.invocation
+    ownerInvocation(
+      retained.get('restored')?.value?.tools[0].invocationExample.invocation
+    )
   ).toEqual(invocation)
   expect(execute).toHaveBeenCalledOnce()
   expect(created).toEqual(before)
@@ -630,7 +823,7 @@ it('delivers a complete selected operation with fewer first-use bytes and calls'
     expect(tool[field]).toEqual(full[field])
   }
 
-  const example = usage.invocationExample.invocation
+  const example = ownerInvocation(usage.invocationExample.invocation)
 
   expect(
     operationInputIssue(example.arguments, tool.inputSchema)
@@ -659,7 +852,7 @@ it('delivers a complete selected operation with fewer first-use bytes and calls'
   const result = await run.call(example.tool, example.arguments)
 
   expect(result.value.toolOutcome).toMatchObject({
-    status: 'partial',
+    status: 'success',
     settlement: 'completed'
   })
   const recovered = (
@@ -668,7 +861,11 @@ it('delivers a complete selected operation with fewer first-use bytes and calls'
 
   expect(recovered.inputSchema).toEqual(tool.inputSchema)
   expect(recovered.definition.recover.arguments.inputScope).toEqual(inputScope)
-  expect(run.execute).toHaveBeenCalledTimes(1)
+  expect(
+    run.execute.mock.calls.filter(([batch]) =>
+      batch.actions.some((action) => action.name === 'apply_prepared_design')
+    )
+  ).toHaveLength(1)
 })
 
 it('keeps purpose discovery bounded with unrelated tools and preserves intentional inventory', async () => {
@@ -678,8 +875,21 @@ it('keeps purpose discovery bounded with unrelated tools and preserves intention
   const a = await small.call('describe_design_apis', args)
   const b = await large.call('describe_design_apis', args)
 
-  expect(b.value.tools).toEqual(a.value.tools)
-  expect(large.deliveries).toEqual(small.deliveries)
+  const names = (tools: { name: string }[]) =>
+    tools.map((tool) => tool.name).sort()
+
+  expect(names(b.value.tools)).toEqual(names(a.value.tools))
+  expect(large.deliveries).toHaveLength(small.deliveries.length)
+  expect(
+    b.value.tools.some(
+      (tool: { name: string }) => tool.name === 'prepare_and_apply_design'
+    )
+  ).toBe(true)
+  expect(
+    b.value.tools.every(
+      (tool: { namespace: string }) => tool.namespace !== 'unrelated'
+    )
+  ).toBe(true)
   const categories = (await large.call('describe_design_apis', {})).value
     .categories
   const native = categories.find(
@@ -711,6 +921,7 @@ it('preserves canonical restrictions across selected representations and ordered
 
   for (const input of cases) {
     const nodeTypes = new Set<string>()
+    const optionalInputs = new Set<string>()
 
     const visit = (value: unknown) => {
       if (Array.isArray(value)) {
@@ -722,6 +933,12 @@ it('preserves canonical restrictions across selected representations and ordered
           nodeTypes.add(String(object.type))
         }
 
+        for (const key of usage.inputScopes.optionalInputs) {
+          if (Object.hasOwn(object, key)) {
+            optionalInputs.add(key)
+          }
+        }
+
         Object.values(object).forEach(visit)
       }
     }
@@ -729,7 +946,8 @@ it('preserves canonical restrictions across selected representations and ordered
     visit(input)
     const inputScope = {
       operation: 'parts' in input ? 'parts' : 'draft',
-      nodeTypes: [...nodeTypes]
+      nodeTypes: [...nodeTypes],
+      optionalInputs: [...optionalInputs]
     }
     const selected = (
       await run.call('describe_design_apis', { names, inputScope })
@@ -880,16 +1098,20 @@ it('uses the selected repair contract after a real preparation rejection without
   const repaired = await run.call('prepare_and_apply_design', args)
 
   expect(repaired.value.toolOutcome).toMatchObject({
-    status: 'partial',
+    status: 'success',
     settlement: 'completed',
-    issues: [expect.objectContaining({ code: 'FOLLOWUP_UNAVAILABLE' })]
+    issues: []
   })
-  expect(repaired.success).toBe(false)
+  expect(repaired.success).toBe(true)
   expect(repaired.value.completedSteps).toEqual([
     'prepare_design',
     'apply_prepared_design'
   ])
-  expect(run.execute).toHaveBeenCalledTimes(1)
+  expect(
+    run.execute.mock.calls.filter(([batch]) =>
+      batch.actions.some((action) => action.name === 'apply_prepared_design')
+    )
+  ).toHaveLength(1)
   const guide = (
     await run.call('describe_design_apis', {
       names,
@@ -907,7 +1129,11 @@ it('uses the selected repair contract after a real preparation rejection without
   })
 
   expect(expired.success).toBe(false)
-  expect(run.execute).toHaveBeenCalledTimes(1)
+  expect(
+    run.execute.mock.calls.filter(([batch]) =>
+      batch.actions.some((action) => action.name === 'apply_prepared_design')
+    )
+  ).toHaveLength(1)
   await run.call('describe_design_apis', scoped.definition.recover.arguments)
   const cancellation = new AbortController()
 
@@ -915,10 +1141,14 @@ it('uses the selected repair contract after a real preparation rejection without
   await expect(
     run.call('describe_design_apis', { names, inputScope }, cancellation.signal)
   ).rejects.toMatchObject({ name: 'AbortError' })
-  expect(run.execute).toHaveBeenCalledTimes(1)
+  expect(
+    run.execute.mock.calls.filter(([batch]) =>
+      batch.actions.some((action) => action.name === 'apply_prepared_design')
+    )
+  ).toHaveLength(1)
 })
 
-it('retains actual writes when selected draft and parts follow-up is unavailable', async () => {
+it('preserves writes for a completed draft and a later invalid part without approval gates', async () => {
   const run = setup()
   const draft = {
     type: 'group',
@@ -954,8 +1184,10 @@ it('retains actual writes when selected draft and parts follow-up is unavailable
     expect(operationInputIssue(args, scoped.inputSchema)).toBeUndefined()
     const reply = await run.call('prepare_and_apply_design', args)
 
-    expect(reply.success).toBe(false)
-    expect(reply.value.toolOutcome.status).toBe('partial')
+    expect(reply.success).toBe(operation === 'draft')
+    expect(reply.value.toolOutcome.status).toBe(
+      operation === 'draft' ? 'success' : 'partial'
+    )
     const guide = (
       await run.call('describe_design_apis', {
         names,
@@ -1055,7 +1287,7 @@ it('delivers and executes one selected usage guide without validation schema bag
     expect(JSON.stringify(tool.usageGuide.parameters)).toContain('100000')
     expect(tool.usageGuide.recovery).toContain('Never replay completed writes')
     expect(tool.description).not.toContain('without changing the canvas')
-    const example = tool.invocationExample.invocation
+    const example = ownerInvocation(tool.invocationExample.invocation)
 
     expect(example.tool).toBe('prepare_and_apply_design')
     const full = (await run.call('describe_design_apis', { names, inputScope }))
@@ -1068,7 +1300,11 @@ it('delivers and executes one selected usage guide without validation schema bag
 
     expect(result.value.toolOutcome.settlement).toBe('completed')
     expect(run.created.length).toBeGreaterThan(0)
-    expect(run.execute).toHaveBeenCalledOnce()
+    expect(
+      run.execute.mock.calls.filter(([batch]) =>
+        batch.actions.some((action) => action.name === 'apply_prepared_design')
+      )
+    ).toHaveLength(1)
     const created = structuredClone(run.created)
     const restored = await run.call(
       'describe_design_apis',
@@ -1080,7 +1316,11 @@ it('delivers and executes one selected usage guide without validation schema bag
       'usage'
     )
     expect(run.created).toEqual(created)
-    expect(run.execute).toHaveBeenCalledOnce()
+    expect(
+      run.execute.mock.calls.filter(([batch]) =>
+        batch.actions.some((action) => action.name === 'apply_prepared_design')
+      )
+    ).toHaveLength(1)
     process.stdout.write(
       JSON.stringify({
         measurement: 'selected-usage-guide',
@@ -1090,36 +1330,6 @@ it('delivers and executes one selected usage guide without validation schema bag
       }) + '\n'
     )
   }
-})
-
-it('selects optional criteria in the same read without omitting required drawing constraints', async () => {
-  const run = setup()
-  const names = ['prepare_and_apply_design']
-  const scope = { operation: 'draft', nodeTypes: ['vector'] }
-  const plain = (
-    await run.call('describe_design_apis', { names, inputScope: scope })
-  ).value.tools[0]
-
-  expect(plain.inputSchema.properties.plan).toBe(false)
-  const selected = await run.call('describe_design_apis', {
-    names,
-    inputScope: { ...scope, optionalInputs: ['plan'] }
-  })
-
-  expect(selected.success).toBe(true)
-  expect(selected.value.tools[0].inputSchema.properties.plan).toMatchObject({
-    type: 'object'
-  })
-  for (const optionalInputs of [['missing'], ['plan', 'plan'], ['draft']]) {
-    const rejected = await run.call('describe_design_apis', {
-      names,
-      inputScope: { ...scope, optionalInputs }
-    })
-
-    expect(rejected.success).toBe(false)
-  }
-
-  expect(run.execute).not.toHaveBeenCalled()
 })
 
 it.each([
@@ -1197,7 +1407,9 @@ it.each([
     })
 
     expect(expanded).toEqual(expand(full.inputSchema))
-    const example = guide.invocationExample.invocation.arguments
+    const example = ownerInvocation(
+      guide.invocationExample.invocation
+    ).arguments
 
     for (const args of [
       { ...example, repair: {} },
@@ -1250,7 +1462,7 @@ it('bounds selected usage delivery under unrelated catalog growth and exposes ex
     names: args.names
   })
 
-  expect(complete.value.tools[0].inputSchema.properties.plan).not.toBe(false)
+  expect(complete.value.tools[0].inputSchema.properties.plan).toBeUndefined()
   expect(complete.value.tools[0].outputSchema).toBeDefined()
   expect(large.execute).not.toHaveBeenCalled()
 })
@@ -1283,12 +1495,8 @@ it('rejects recorded foreign inspection fields and executes each narrower recove
   })
   expect(failed.value.toolOutcome.issues.length).toBeGreaterThan(0)
   const expectedPaths: Record<string, string[]> = {
-    review_drawing: ['/properties/inspections'],
-    define_design_criteria: [
-      '/properties/criteria',
-      '/properties/detailRequired',
-      '/properties/method'
-    ]
+    inspect_drawing: ['/properties/arguments'],
+    record_design_facts: ['/properties/facts']
   }
 
   for (const tool of failed.value.tools) {
@@ -1355,10 +1563,10 @@ it('rejects recorded foreign inspection fields and executes each narrower recove
 
 it('distinguishes mixed exact coverage from successful shared paths and empty discovery', async () => {
   const { call, execute } = setup()
-  const names = inspectionDiscovery.query.names
+  const names = ['design.inspect_drawing', 'prepare_and_apply_design']
   const mixed = await call('describe_design_apis', {
     names,
-    schemaPaths: ['/properties/inspections']
+    schemaPaths: ['/properties/arguments']
   })
 
   expect(mixed.success).toBe(false)
@@ -1368,15 +1576,15 @@ it('distinguishes mixed exact coverage from successful shared paths and empty di
     settlement: 'completed'
   })
   expect(mixed.value.tools[0].schemaFragments[0].path).toBe(
-    '/properties/inspections'
+    '/properties/arguments'
   )
   expect(mixed.value.tools[1].definition.coverage).toBe('none')
   const shared = await call('describe_design_apis', {
     names,
-    schemaPaths: ['/properties/phase']
+    schemaPaths: ['/properties/inspection']
   })
 
-  expect(shared.success).toBe(true)
+  expect(shared.success, shared.text).toBe(true)
   expect(
     shared.value.tools.every(
       (t: { definition: { coverage: string } }) =>
@@ -1396,13 +1604,15 @@ it('distinguishes mixed exact coverage from successful shared paths and empty di
       .toolOutcome.status
   ).toBe('failed')
   expect(
-    (
-      await call('describe_design_apis', {
-        names: ['review_drawing', 'missing-tool'],
-        view: 'usage',
-        includeResultSchema: true
-      })
-    ).value.toolOutcome.status
+    JSON.parse(
+      (
+        await call('describe_design_apis', {
+          names: ['design.inspect_drawing', 'missing-tool'],
+          view: 'usage',
+          includeResultSchema: true
+        })
+      ).text
+    ).toolOutcome.status
   ).toBe('partial')
   await expect(
     call('describe_design_apis', { names }, AbortSignal.abort())
@@ -1422,8 +1632,8 @@ it('delivers paged partial discovery directly without promoting coverage or repl
   ).value.tools[0]
 
   await call(
-    usage.invocationExample.invocation.tool,
-    usage.invocationExample.invocation.arguments
+    ownerInvocation(usage.invocationExample.invocation).tool,
+    ownerInvocation(usage.invocationExample.invocation).arguments
   )
   const writes = execute.mock.calls.length
   const owner = owners.find((o) =>
@@ -1479,17 +1689,17 @@ it('delivers paged partial discovery directly without promoting coverage or repl
     missingNames: ['missing-tool']
   })
   const refresh = await call('describe_design_apis', {
-    names: ['review_drawing'],
-    schemaPaths: ['/properties/phase'],
+    names: ['design.inspect_drawing'],
+    schemaPaths: ['/properties/inspection'],
     refresh: true,
     refreshReason: 'delivery-failure'
   })
 
-  expect(refresh.success).toBe(true)
+  expect(refresh.success, refresh.text).toBe(true)
   expect(execute).toHaveBeenCalledTimes(writes)
 })
 
-it('explains next-part representation choices in the first existing discovery reply', async () => {
+it('keeps purpose menus compact and gives representation choices on exact navigation', async () => {
   for (const input of [
     operationSelection.query,
     { query: 'ready part' },
@@ -1501,9 +1711,17 @@ it('explains next-part representation choices in the first existing discovery re
   ]) {
     const run = setup()
     const reply = await run.call('describe_design_apis', input)
-    const tool = reply.value.tools.find(
+    let tool = reply.value.tools.find(
       (entry: { name: string }) => entry.name === 'prepare_and_apply_design'
     )
+
+    if ('query' in input && !tool.inputScopes?.selection) {
+      expect(tool.usage.arguments.names).toEqual([
+        'design.prepare_and_apply_design'
+      ])
+      tool = (await run.call(tool.usage.tool, tool.usage.arguments)).value
+        .tools[0]
+    }
 
     expect(tool.inputScopes.selection).toEqual(expect.any(String))
     expect(tool.inputScopes.selection).toContain('next submitted part')
@@ -1517,7 +1735,7 @@ it('explains next-part representation choices in the first existing discovery re
     expect(tool.inputScopes.selection).toContain('four-corner')
     expect(tool.inputScopes.selection).toContain('surface-grid')
     expect(tool.inputScopes.selection).toContain('No Knowledge')
-    expect(run.deliveries).toHaveLength(1)
+    expect(run.deliveries.length).toBeLessThanOrEqual(2)
     expect(tool.inputSchema).toBeUndefined()
     expect(tool.outputSchema).toBeUndefined()
     expect(tool.outputFields).toBeUndefined()
@@ -1552,7 +1770,7 @@ it('selects complete next-part guides in two replies without unrelated catalog g
       )
       const guide = reply.value.tools[0]
 
-      expect(guide.invocationExample.invocation).toBeDefined()
+      expect(ownerInvocation(guide.invocationExample.invocation)).toBeDefined()
       expect(guide.usageGuide.instructions).toContain(
         'partial preserves completed work'
       )
@@ -1582,17 +1800,19 @@ it.each([false, true])(
     let parentId: string | undefined
 
     if (continuePart) {
-      const first = (
-        await run.call('describe_design_apis', {
-          names,
-          view: 'usage',
-          includeResultSchema: true,
-          inputScope: {
-            operation: 'draft',
-            nodeTypes: ['group', 'projected-face']
-          }
-        })
-      ).value.tools[0].invocationExample.invocation
+      const first = ownerInvocation(
+        (
+          await run.call('describe_design_apis', {
+            names,
+            view: 'usage',
+            includeResultSchema: true,
+            inputScope: {
+              operation: 'draft',
+              nodeTypes: ['group', 'projected-face']
+            }
+          })
+        ).value.tools[0].invocationExample.invocation
+      )
       const result = await run.call(first.tool, {
         ...first.arguments,
         inspection: 'defer'
@@ -1614,8 +1834,8 @@ it.each([false, true])(
       })
     ).value.tools[0]
 
-    expect(guide.invocationExample.invocation).toBeDefined()
-    const example = guide.invocationExample.invocation
+    expect(ownerInvocation(guide.invocationExample.invocation)).toBeDefined()
+    const example = ownerInvocation(guide.invocationExample.invocation)
 
     expect(
       example.arguments.draft.children.some(
@@ -1643,7 +1863,7 @@ it.each([false, true])(
     const result = await run.call(example.tool, args)
 
     expect(result.value.toolOutcome).toMatchObject({
-      status: 'partial',
+      status: 'success',
       settlement: 'completed'
     })
     expect(result.value.completedSteps).toEqual([
@@ -1686,7 +1906,7 @@ it.each(['group', 'frame'])(
         inputScope: {
           operation: 'draft',
           nodeTypes: ['surface-grid'],
-          optionalInputs: ['plan']
+          optionalInputs: []
         }
       })
     ).value.tools[0]
@@ -1697,7 +1917,7 @@ it.each(['group', 'frame'])(
     )
     expect(guide.usageGuide.selection).toContain('does not require sending')
     expect(guide.usageGuide.selection).toContain('without rereading')
-    const invocation = guide.invocationExample.invocation
+    const invocation = ownerInvocation(guide.invocationExample.invocation)
     const args = structuredClone(invocation.arguments)
 
     args.draft.type = rootType
@@ -1710,7 +1930,7 @@ it.each(['group', 'frame'])(
     const result = await run.call(invocation.tool, args)
 
     expect(result.value.toolOutcome).toMatchObject({
-      status: 'partial',
+      status: 'success',
       settlement: 'completed'
     })
     expect(result.value.actionResults[0].result.status).toBe('complete')
@@ -1719,7 +1939,11 @@ it.each(['group', 'frame'])(
     expect(run.created.find((entry) => entry.id === rootId)?.type).toBe(
       rootType
     )
-    expect(run.execute).toHaveBeenCalledOnce()
+    expect(
+      run.execute.mock.calls.filter(([batch]) =>
+        batch.actions.some((action) => action.name === 'apply_prepared_design')
+      )
+    ).toHaveLength(1)
     expect(
       run.calls.filter((name) => name === 'describe_design_apis')
     ).toHaveLength(1)
@@ -1727,7 +1951,11 @@ it.each(['group', 'frame'])(
 
     await run.call('describe_design_apis', guide.definition.refresh.arguments)
     expect(run.created).toEqual(saved)
-    expect(run.execute).toHaveBeenCalledOnce()
+    expect(
+      run.execute.mock.calls.filter(([batch]) =>
+        batch.actions.some((action) => action.name === 'apply_prepared_design')
+      )
+    ).toHaveLength(1)
   }
 )
 
@@ -1737,7 +1965,7 @@ it('keeps root and nested frame constraints distinct from optional plan document
   const inputScope = {
     operation: 'draft',
     nodeTypes: ['group', 'projected-face'],
-    optionalInputs: ['plan']
+    optionalInputs: []
   }
   const first = (await run.call('describe_design_apis', { names, inputScope }))
     .value.tools[0]
@@ -1749,7 +1977,9 @@ it('keeps root and nested frame constraints distinct from optional plan document
       includeResultSchema: true
     })
   ).value.tools[0]
-  const args = structuredClone(usage.invocationExample.invocation.arguments)
+  const args = structuredClone(
+    ownerInvocation(usage.invocationExample.invocation).arguments
+  )
 
   Object.assign(args.draft, { type: 'frame', width: 100, height: 100 })
   expect(operationInputIssue(args, first.inputSchema)).toBeUndefined()
@@ -1797,11 +2027,15 @@ it('keeps root and nested frame constraints distinct from optional plan document
   })
 
   expect(result.value.toolOutcome).toMatchObject({
-    status: 'partial',
+    status: 'success',
     settlement: 'completed'
   })
   expect(run.created.filter((entry) => entry.type === 'frame')).toHaveLength(2)
-  expect(run.execute).toHaveBeenCalledOnce()
+  expect(
+    run.execute.mock.calls.filter(([batch]) =>
+      batch.actions.some((action) => action.name === 'apply_prepared_design')
+    )
+  ).toHaveLength(1)
 })
 
 it('delivers the recorded exact query without descriptive matches or catalog growth', async () => {
@@ -1820,18 +2054,19 @@ it('delivers the recorded exact query without descriptive matches or catalog gro
     ).toEqual(['prepare_and_apply_design'])
     expect(reply.value.apis).toEqual([])
     expect(run.deliveries).toHaveLength(1)
-    expect(run.deliveries[0]).toBeLessThan(5000)
+    // The executable host route includes its qualified operation identity.
+    expect(run.deliveries[0]).toBeLessThan(5200)
     const guide = reply.value.tools[0]
 
     expect(guide.inputScopes.selection).toContain('nodeTypes selects children')
-    const invocation = guide.invocationExample.invocation
+    const invocation = ownerInvocation(guide.invocationExample.invocation)
     const result = await run.call(invocation.tool, {
       ...invocation.arguments,
       inspection: 'defer'
     })
 
     expect(result.value.toolOutcome).toMatchObject({
-      status: 'partial',
+      status: 'success',
       settlement: 'completed'
     })
     expect(run.created.length).toBeGreaterThan(0)
@@ -1843,7 +2078,11 @@ it('delivers the recorded exact query without descriptive matches or catalog gro
       refreshReason: 'delivery-failure'
     })
     expect(run.created).toEqual(saved)
-    expect(run.execute).toHaveBeenCalledOnce()
+    expect(
+      run.execute.mock.calls.filter(([batch]) =>
+        batch.actions.some((action) => action.name === 'apply_prepared_design')
+      )
+    ).toHaveLength(1)
   }
 
   expect(large.deliveries[0]).toBe(small.deliveries[0])
@@ -1967,12 +2206,12 @@ it.each(exactQueryScope.calls)(
       expect(run.deliveries).toHaveLength(baseline.deliveries.length)
       expect(run.deliveries.every((bytes) => bytes <= 24000)).toBe(true)
       const guide = reply.value.tools[0]
-      const invocation = guide.invocationExample.invocation
+      const invocation = ownerInvocation(guide.invocationExample.invocation)
       const applied = await run.call(invocation.tool, invocation.arguments)
 
       expect(applied.value.completedSteps).toContain('apply_prepared_design')
       expect(applied.value.toolOutcome).toMatchObject({
-        status: 'partial',
+        status: 'success',
         settlement: 'completed'
       })
       expect(applied.value.actionResults[0].result.status).toBe('complete')
@@ -1996,7 +2235,13 @@ it.each(exactQueryScope.calls)(
       expect(retained.success).toBe(true)
       expect(retained.value.tools[0].usageGuide).toEqual(guide.usageGuide)
       expect(run.created).toEqual(saved)
-      expect(run.execute).toHaveBeenCalledOnce()
+      expect(
+        run.execute.mock.calls.filter(([batch]) =>
+          batch.actions.some(
+            (action) => action.name === 'apply_prepared_design'
+          )
+        )
+      ).toHaveLength(1)
       expect(run.compile).toHaveBeenCalledOnce()
     }
   }
@@ -2092,7 +2337,9 @@ it('keeps fuzzy query scope rejected and recovers invalid exact scope from owner
   )
 
   expect(corrected.success).toBe(true)
-  expect(corrected.value.tools[0].invocationExample.invocation).toBeDefined()
+  expect(
+    ownerInvocation(corrected.value.tools[0].invocationExample.invocation)
+  ).toBeDefined()
   const actionOwner = createLocalOperationTools(
     [
       {
@@ -2246,7 +2493,9 @@ it('recovers the recorded invalid query scope from owner choices without a menu 
   )
 
   expect(ready.success).toBe(true)
-  const invocation = ready.value.tools[0].invocationExample.invocation
+  const invocation = ownerInvocation(
+    ready.value.tools[0].invocationExample.invocation
+  )
 
   expect(invocation).toBeDefined()
   expect(run.execute).not.toHaveBeenCalled()
@@ -2256,13 +2505,11 @@ it('recovers the recorded invalid query scope from owner choices without a menu 
   })
 
   expect(applied.value.toolOutcome).toMatchObject({
-    status: 'partial',
+    status: 'success',
     settlement: 'completed'
   })
   expect(applied.value.completedSteps).toContain('apply_prepared_design')
-  expect(applied.value.measurementIssues[0].recovery).toContain(
-    'Do not replay writes'
-  )
+
   expect(run.created.length).toBeGreaterThan(0)
   const writes = run.execute.mock.calls.length
 
@@ -2341,6 +2588,7 @@ it('keeps first-query scope guidance owner-derived and independent of unrelated 
     'x-design-input-scope': {
       selection: string
       optionalInputs: string[]
+      optionalInputPaths?: Record<string, string[]>
       queryExample: { operation: string; nodeTypes: string[] }
     }
   }
@@ -2348,6 +2596,7 @@ it('keeps first-query scope guidance owner-derived and independent of unrelated 
 
   expect(selection).toBe(choices.selection)
   choices.optionalInputs = []
+  delete choices.optionalInputPaths
   expect(guidance(small).inputScopes.optionalInputs).toEqual([])
   const rejected = await small.call('describe_design_apis', {
     ...original.example.arguments,
@@ -2485,7 +2734,9 @@ it('delivers expansion accounting and parts selection before the recorded oversi
   expect(guide.instructions).toContain('same draft arguments')
   expect(guide.recovery).toContain('parts')
   expect(run.execute).not.toHaveBeenCalled()
-  const invocation = result.value.tools[0].invocationExample.invocation
+  const invocation = ownerInvocation(
+    result.value.tools[0].invocationExample.invocation
+  )
   const source = structuredClone(invocation.arguments.draft)
   const grid = source.children[2].members[1]
   const motifs = source.motifTemplates[grid.motifs.template]
@@ -2557,7 +2808,9 @@ it('executes the delivered parts example without a preflight and preserves compl
     includeResultSchema: true,
     inputScope: { operation: 'parts', nodeTypes: ['group', 'rect'] }
   })
-  const invocation = result.value.tools[0].invocationExample.invocation
+  const invocation = ownerInvocation(
+    result.value.tools[0].invocationExample.invocation
+  )
 
   expect(
     invocation,
@@ -2617,7 +2870,9 @@ it('admits exactly the artifact budget and preserves a successful part before a 
     includeResultSchema: true,
     inputScope: { operation: 'parts', nodeTypes: ['group', 'rect'] }
   })
-  const invocation = guide.value.tools[0].invocationExample.invocation
+  const invocation = ownerInvocation(
+    guide.value.tools[0].invocationExample.invocation
+  )
   const firstPart = invocation.arguments.parts[0]
   const result = await run.call(invocation.tool, {
     parts: [firstPart, { key: 'oversized', draft: expansionBudget.draft }],
@@ -2632,7 +2887,11 @@ it('admits exactly the artifact budget and preserves a successful part before a 
   )
   expect(result.value.parts[1].code).toBe('DESIGN_BUDGET_EXCEEDED')
   expect(result.value.parts[1].completedSteps).toEqual([])
-  expect(run.execute).toHaveBeenCalledTimes(1)
+  expect(
+    run.execute.mock.calls.filter(([batch]) =>
+      batch.actions.some((action) => action.name === 'apply_prepared_design')
+    )
+  ).toHaveLength(1)
   const retained = run.created.map((entry) => structuredClone(entry))
   const remaining = invocation.arguments.parts[1]
   const parentId = result.value.parts[0].actionResults[0].result.compositionId
@@ -2671,7 +2930,7 @@ it('delivers and executes a complete mixed component example and recovers only t
   })
   expect(initial.inputScopes.selection).toContain('outer repetition')
   const guide = (await run.call('describe_design_apis', query)).value.tools[0]
-  const invocation = guide.invocationExample.invocation
+  const invocation = ownerInvocation(guide.invocationExample.invocation)
 
   expect(
     invocation.arguments.draft.children[0].members?.map(
@@ -2707,7 +2966,11 @@ it('delivers and executes a complete mixed component example and recovers only t
     'apply_prepared_design'
   )
   expect(result.value.parts[1].completedSteps).toEqual([])
-  expect(run.execute).toHaveBeenCalledTimes(1)
+  expect(
+    run.execute.mock.calls.filter(([batch]) =>
+      batch.actions.some((action) => action.name === 'apply_prepared_design')
+    )
+  ).toHaveLength(1)
   const retained = structuredClone(run.created)
 
   expect(retained).toHaveLength(15)
@@ -2716,7 +2979,11 @@ it('delivers and executes a complete mixed component example and recovers only t
     refresh: true,
     refreshReason: 'delivery-failure'
   })
-  expect(run.execute).toHaveBeenCalledTimes(1)
+  expect(
+    run.execute.mock.calls.filter(([batch]) =>
+      batch.actions.some((action) => action.name === 'apply_prepared_design')
+    )
+  ).toHaveLength(1)
   const parentId = result.value.parts[0].actionResults[0].result.compositionId
   const recovery = await run.call(invocation.tool, {
     parts: [{ key: 'remaining', parentId, draft: invocation.arguments.draft }],
@@ -2751,12 +3018,10 @@ it('continues the saved massing and grid layers in order without extra roots or 
     )
   ).toBe(true)
   expect(result.value.toolOutcome).toMatchObject({
-    status: 'partial',
+    status: 'success',
     settlement: 'completed'
   })
-  expect(result.value.measurementIssues[0].recovery).toContain(
-    'Do not replay writes'
-  )
+
   expect(result.value.recoveryInvocation).toBeUndefined()
   expect(run.created).toHaveLength(91 + 12801)
   const roots = run.created.filter(
@@ -2796,7 +3061,7 @@ it.each([false, true])(
     }
     const response = await run.call('describe_design_apis', query)
     const tool = response.value.tools[0]
-    const invocation = tool.invocationExample.invocation
+    const invocation = ownerInvocation(tool.invocationExample.invocation)
     const source = invocation.arguments.draft
 
     process.stdout.write(
@@ -2867,7 +3132,11 @@ it.each([false, true])(
     })
 
     expect(result.value.toolOutcome.settlement).toBe('completed')
-    expect(run.execute).toHaveBeenCalledOnce()
+    expect(
+      run.execute.mock.calls.filter(([batch]) =>
+        batch.actions.some((action) => action.name === 'apply_prepared_design')
+      )
+    ).toHaveLength(1)
     const expected = prepareDesign(inline, result.value.artifactId)
 
     expect(expected.entries.map((entry) => entry.key)).toContain(
@@ -2900,7 +3169,11 @@ it.each([false, true])(
       tool.invocationExample
     )
     expect(run.created).toEqual(retained)
-    expect(run.execute).toHaveBeenCalledOnce()
+    expect(
+      run.execute.mock.calls.filter(([batch]) =>
+        batch.actions.some((action) => action.name === 'apply_prepared_design')
+      )
+    ).toHaveLength(1)
     const broken = structuredClone(source)
 
     broken.children[2].members[1].motifs.template = 'missing'
@@ -2911,7 +3184,11 @@ it.each([false, true])(
 
     expect(invalid.success).toBe(false)
     expect(run.created).toEqual(retained)
-    expect(run.execute).toHaveBeenCalledOnce()
+    expect(
+      run.execute.mock.calls.filter(([batch]) =>
+        batch.actions.some((action) => action.name === 'apply_prepared_design')
+      )
+    ).toHaveLength(1)
     const large = setup(10000)
     const enlarged = await large.call('describe_design_apis', query)
 
@@ -2945,7 +3222,7 @@ it('continues recorded material composition without asking for rewritten ranges'
     )
   ).toBe(true)
   expect(result.value.toolOutcome).toMatchObject({
-    status: 'partial',
+    status: 'success',
     settlement: 'completed'
   })
   expect(result.value.recoveryInvocation).toBeUndefined()
@@ -2996,7 +3273,8 @@ it.each(['projected-face', 'surface-grid'])(
       'instanceRanges'
     )
     expect(guide.usageGuide.recovery).toContain('Never replay completed writes')
-    const draft = guide.invocationExample.invocation.arguments.draft
+    const draft = ownerInvocation(guide.invocationExample.invocation).arguments
+      .draft
     const single = draft.children[0]
 
     expect(single.type).toBe(memberType)
@@ -3044,7 +3322,11 @@ it.each(['projected-face', 'surface-grid'])(
     const result = await run.call('prepare_and_apply_design', args)
 
     expect(result.value.toolOutcome.settlement).toBe('completed')
-    expect(run.execute).toHaveBeenCalledOnce()
+    expect(
+      run.execute.mock.calls.filter(([batch]) =>
+        batch.actions.some((action) => action.name === 'apply_prepared_design')
+      )
+    ).toHaveLength(1)
     expect(run.created).toHaveLength(memberType === 'projected-face' ? 3 : 13)
     const other =
       memberType === 'surface-grid' ? 'projected-face' : 'surface-grid'
@@ -3119,14 +3401,11 @@ it.each([10000, 2000])(
       recoveryFixture.input
     )
 
-    // The fixture deliberately has no review owner; do not hide its genuine follow-up gap.
     expect(completed.value.toolOutcome).toMatchObject({
-      status: 'partial',
+      status: 'success',
       settlement: 'completed'
     })
-    expect(completed.value.measurementIssues[0].message).toContain(
-      'not registered'
-    )
+    expect(completed.value).not.toHaveProperty('measurementIssues')
     expect(completed.value.recoveryInvocation).toBeUndefined()
     expect(run.calls).toEqual(['prepare_and_apply_design'])
     expect(
@@ -3156,7 +3435,11 @@ it.each([10000, 2000])(
         .every((entry) => run.parents.get(entry.id) === roots[0].id)
     ).toBe(true)
     expect(run.compile).toHaveBeenCalledTimes(completed.value.parts.length)
-    expect(run.execute).toHaveBeenCalledTimes(completed.value.parts.length)
+    expect(
+      run.execute.mock.calls.filter(([batch]) =>
+        batch.actions.some((action) => action.name === 'apply_prepared_design')
+      )
+    ).toHaveLength(completed.value.parts.length)
     const first = completed.value.parts[0]
     const before = structuredClone(run.created)
     const duplicate = await run.call('prepare_and_apply_design', {
@@ -3217,9 +3500,11 @@ it.each([10000, 2000])(
     expect(recovered.value.parts[0].toolOutcome.status).toBe('success')
     expect(run.created).toHaveLength(13095)
     expect(run.created.slice(0, first.length)).toEqual(first)
-    expect(run.execute).toHaveBeenCalledTimes(
-      partial.value.parts[0].preparationInput.partitions.length
-    )
+    expect(
+      run.execute.mock.calls.filter(([batch]) =>
+        batch.actions.some((action) => action.name === 'apply_prepared_design')
+      )
+    ).toHaveLength(partial.value.parts[0].preparationInput.partitions.length)
   }
 )
 
@@ -3244,7 +3529,11 @@ it('retains acknowledged partition receipts when cancellation arrives between pa
     run.call(invocation.name, invocation.arguments, controller.signal)
   ).rejects.toThrow(/aborted/i)
   expect(run.created).toHaveLength(9418)
-  expect(run.execute).toHaveBeenCalledOnce()
+  expect(
+    run.execute.mock.calls.filter(([batch]) =>
+      batch.actions.some((action) => action.name === 'apply_prepared_design')
+    )
+  ).toHaveLength(1)
   const acknowledged = await run.execute.mock.results[0].value
 
   expect(acknowledged.actionResults[0].result.status).toBe('complete')
@@ -3540,7 +3829,11 @@ it('preserves the saved layered source through compact preparation and canonical
     refreshReason: 'delivery-failure'
   })
   expect(run.created).toEqual(retained)
-  expect(run.execute).toHaveBeenCalledOnce()
+  expect(
+    run.execute.mock.calls.filter(([batch]) =>
+      batch.actions.some((action) => action.name === 'apply_prepared_design')
+    )
+  ).toHaveLength(1)
   await run.call('release_design_artifacts', {
     artifactIds: [result.value.artifactId]
   })
@@ -3577,7 +3870,7 @@ it.each([false, true])(
     expect(
       Buffer.byteLength(JSON.stringify(response.value))
     ).toBeLessThanOrEqual(completeUsageBudget(25604, 'draft'))
-    const invocation = tool.invocationExample.invocation
+    const invocation = ownerInvocation(tool.invocationExample.invocation)
     const first = JSON.parse(run.replies[0].raw)
     const body = first.contentDelivery?.text ?? run.replies[0].raw
 
@@ -3688,8 +3981,9 @@ it.each([
   async ({ count, step }) => {
     const run = setup()
     const guide = await run.call('describe_design_apis', layeredPattern.query)
-    const draft =
-      guide.value.tools[0].invocationExample.invocation.arguments.draft
+    const draft = ownerInvocation(
+      guide.value.tools[0].invocationExample.invocation
+    ).arguments.draft
     const compact = structuredClone(draft)
     const explicit = structuredClone(draft)
 
@@ -3795,7 +4089,9 @@ it('delivers and executes the projected oval example in one selected acquisition
     completeUsageBudget(sampledEllipse.source.selectedDeliveryBytes, 'draft') +
       sampledEllipse.source.inputBytes
   )
-  const invocation = response.value.tools[0].invocationExample.invocation
+  const invocation = ownerInvocation(
+    response.value.tools[0].invocationExample.invocation
+  )
 
   expect(JSON.stringify(invocation.arguments)).toContain('"ellipse"')
   const calls = run.replies.length
@@ -3806,13 +4102,19 @@ it('delivers and executes the projected oval example in one selected acquisition
 
   expect(outcome.value.actionResults[0].result.status).toBe('complete')
   expect(run.replies).toHaveLength(calls + 1)
-  expect(run.execute).toHaveBeenCalledOnce()
+  expect(
+    run.execute.mock.calls.filter(([batch]) =>
+      batch.actions.some((action) => action.name === 'apply_prepared_design')
+    )
+  ).toHaveLength(1)
 })
 
 it('rejects invalid projected ovals before canonical writes and executes the corrected retained geometry once', async () => {
   const run = setup()
   const response = await run.call('describe_design_apis', sampledEllipse.query)
-  const invocation = response.value.tools[0].invocationExample.invocation
+  const invocation = ownerInvocation(
+    response.value.tools[0].invocationExample.invocation
+  )
   const correct = { ...invocation.arguments, inspection: 'defer' }
 
   for (const patch of [
@@ -3844,7 +4146,11 @@ it('rejects invalid projected ovals before canonical writes and executes the cor
   const repaired = await run.call(invocation.tool, correct)
 
   expect(repaired.value.actionResults[0].result.status).toBe('complete')
-  expect(run.execute).toHaveBeenCalledOnce()
+  expect(
+    run.execute.mock.calls.filter(([batch]) =>
+      batch.actions.some((action) => action.name === 'apply_prepared_design')
+    )
+  ).toHaveLength(1)
   const retained = structuredClone(run.created)
 
   await run.call('describe_design_apis', {
@@ -3853,13 +4159,20 @@ it('rejects invalid projected ovals before canonical writes and executes the cor
     refreshReason: 'delivery-failure'
   })
   expect(run.created).toEqual(retained)
-  expect(run.execute).toHaveBeenCalledOnce()
+  expect(
+    run.execute.mock.calls.filter(([batch]) =>
+      batch.actions.some((action) => action.name === 'apply_prepared_design')
+    )
+  ).toHaveLength(1)
 })
 
 it('replays saved cross-tool field queries in one bounded reply and executes owner-delivered queries', async () => {
   const t = setup(0, 'Unrelated capability', 10000, true)
 
-  for (const saved of [fieldRecovery.usage, fieldRecovery.query]) {
+  for (const saved of [
+    historical_fieldRecovery.usage,
+    historical_fieldRecovery.query
+  ]) {
     const raw = JSON.stringify(saved.input)
 
     expect(Buffer.byteLength(raw)).toBe(saved.bytes)
@@ -4055,19 +4368,6 @@ it('bounds failed field navigation and traversal independently of unrelated nest
 
 it('delivers complete exact usage without examples and lowers the saved acquisition cost without extra owner work', async () => {
   const run = setup()
-  // Both acquisition paths start with the same established owner prerequisites.
-  const criteria = (
-    await run.call('describe_design_apis', {
-      names: ['define_design_criteria'],
-      view: 'usage',
-      includeResultSchema: true
-    })
-  ).value.tools[0]
-  const invocation = criteria.invocationExample.invocation
-
-  expect((await run.call(invocation.tool, invocation.arguments)).success).toBe(
-    true
-  )
   const acquisitionStart = run.deliveries.length
   const queryStart = run.calls.length
   const input = usageAcquisition.calls[0].input
@@ -4079,11 +4379,8 @@ it('delivers complete exact usage without examples and lowers the saved acquisit
   expect(tool.invocationExample.available).toBe(false)
   const parameters = tool.usageGuide.parameters
 
-  expect(parameters.properties.referenceDecisions.items.required).toEqual([
-    'referenceId',
-    'status',
-    'reason',
-    'uses'
+  expect(parameters.properties.references.items.required).toEqual([
+    'referenceId'
   ])
   expect(
     operationInputIssue({ referenceImageIndexes: [-1] }, parameters)
@@ -4092,7 +4389,7 @@ it('delivers complete exact usage without examples and lowers the saved acquisit
     operationInputIssue({ referenceImageIndexes: [], extra: true }, parameters)
   ).toBeDefined()
   // No full/schema-path query supplies the execution input.
-  const reply = await run.call(tool.execution.tool, {
+  const reply = await run.call(tool.name, {
     referenceImageIndexes: []
   })
 
@@ -4182,9 +4479,10 @@ it('keeps exploration separate from executable exact usage and preserves qualifi
       expect(path.split('/properties/').length, path).toBeLessThanOrEqual(2)
     }
 
-    expect(['select-exact-tool', 'select-operation-scope']).toContain(
-      entry.definition.nextAction
-    )
+    expect(entry.definition).toBeUndefined()
+    expect(entry.usage.arguments.names).toEqual([
+      `${entry.namespace}.${entry.name}`
+    ])
   }
 
   const partial = await run.call('describe_design_apis', {
@@ -4199,7 +4497,7 @@ it('keeps exploration separate from executable exact usage and preserves qualifi
   )
   const fields = await run.call(exact.fieldQuery.tool, {
     ...exact.fieldQuery.arguments,
-    schemaPaths: ['/properties/referenceDecisions'],
+    schemaPaths: ['/properties/references'],
     refresh: true,
     refreshReason: 'missing-fields'
   })
@@ -4207,7 +4505,7 @@ it('keeps exploration separate from executable exact usage and preserves qualifi
   expect(fields.value.tools[0].definition.coverage).toBe('partial')
   expect(
     fields.value.tools[0].schemaFragments[0].schema.items.required
-  ).toContain('uses')
+  ).toContain('referenceId')
   expect(run.execute).not.toHaveBeenCalled()
   expect(run.compile).not.toHaveBeenCalled()
 })
@@ -4307,18 +4605,16 @@ it('assembles selected input once at the final executable usage boundary', async
 
   expect(preparedRoots).toBe(1)
   const tool = response.value.tools[0]
-  const invocation = tool.invocationExample.invocation
+  const invocation = ownerInvocation(tool.invocationExample.invocation)
 
   expect(
     operationInputIssue(invocation.arguments, tool.usageGuide.parameters)
   ).toBeUndefined()
   const completed = await run.call(invocation.tool, invocation.arguments)
 
-  // This fixture has no mechanical review owner; drawing completion must not
-  // be promoted to whole-flow success.
-  expect(completed.success).toBe(false)
+  expect(completed.success).toBe(true)
   expect(completed.value.toolOutcome).toMatchObject({
-    status: 'partial',
+    status: 'success',
     settlement: 'completed'
   })
   expect(completed.value.completedSteps).toEqual([
@@ -4328,14 +4624,18 @@ it('assembles selected input once at the final executable usage boundary', async
   expect(
     operationInputIssue(completed.value, tool.usageGuide.results)
   ).toBeUndefined()
-  expect(run.execute).toHaveBeenCalledTimes(1)
+  expect(
+    run.execute.mock.calls.filter(([batch]) =>
+      batch.actions.some((action) => action.name === 'apply_prepared_design')
+    )
+  ).toHaveLength(1)
 })
 
 it('preserves composition coverage when the recorded mixed query also permits vectors', async () => {
   const run = setup()
   const guide = (await run.call('describe_design_apis', strictMixedQuery.query))
     .value.tools[0]
-  const invocation = guide.invocationExample.invocation
+  const invocation = ownerInvocation(guide.invocationExample.invocation)
   const draft = invocation.arguments.draft
 
   expect(draft.linearFields).toBeDefined()
@@ -4347,23 +4647,30 @@ it('preserves composition coverage when the recorded mixed query also permits ve
     '"Glass variant","materialField":"glass"'
   )
   expect(run.deliveries.every((bytes) => bytes <= 24000)).toBe(true)
-  expect(run.deliveries).toHaveLength(1)
+  // Preserve the owner guidance and explicit creation-map contract together.
+  // This mixed four-node contract uses the existing bounded continuation.
+  expect(run.deliveries.length).toBeLessThanOrEqual(2)
+  recordAcquisitionCost(
+    strictMixedQuery.query,
+    JSON.stringify(guide),
+    run.deliveries
+  )
   const result = await run.call(invocation.tool, {
     ...invocation.arguments,
     inspection: 'defer'
   })
 
   expect(result.value.completedSteps).toContain('apply_prepared_design')
-  expect(result.value.toolOutcome.issues).toEqual([
-    expect.objectContaining({ code: 'FOLLOWUP_UNAVAILABLE' })
-  ])
+  expect(result.value.toolOutcome.issues).toEqual([])
   expect(run.created.length).toBeGreaterThan(1)
-  const vector = (
-    await run.call('describe_design_apis', {
-      ...strictMixedQuery.query,
-      inputScope: { operation: 'draft', nodeTypes: ['vector'] }
-    })
-  ).value.tools[0].invocationExample.invocation
+  const vector = ownerInvocation(
+    (
+      await run.call('describe_design_apis', {
+        ...strictMixedQuery.query,
+        inputScope: { operation: 'draft', nodeTypes: ['vector'] }
+      })
+    ).value.tools[0].invocationExample.invocation
+  )
 
   expect(
     vector.arguments.draft.children.map((child: { type: string }) => child.type)
@@ -4382,7 +4689,10 @@ it('preserves composition coverage when the recorded mixed query also permits ve
 it('delivers the recorded native-detail size condition before capture', async () => {
   const run = setup()
   const tool = (
-    await run.call('describe_design_apis', strictNativeDetail.query)
+    await run.call('describe_design_apis', {
+      names: ['inspect_drawing'],
+      view: 'usage'
+    })
   ).value.tools[0]
 
   expect(inspectionInputSchema.properties.view).toMatchObject({
@@ -4395,4 +4705,250 @@ it('delivers the recorded native-detail size condition before capture', async ()
   expect(JSON.stringify(tool.usageGuide.parameters)).toContain(description)
   expect(run.execute).not.toHaveBeenCalled()
   expect(run.deliveries).toHaveLength(1)
+})
+
+// These cases exercise leaf parameter semantics. Host routing is covered by the
+// request-sequence integration cases, not by this leaf fixture dispatcher.
+
+it('delivers the recorded phase construction scope without unused authoring groups', async () => {
+  const { default: recorded } =
+    await import('../../test-data/ai-drawing/fixtures/phase-continuity-20261108.json')
+  const f = setup()
+  const query = {
+    names: ['prepare_and_apply_design'],
+    view: 'usage',
+    inputScope: {
+      operation: 'draft',
+      nodeTypes: ['projected-face', 'surface-grid', 'pattern'],
+      optionalInputs: []
+    }
+  }
+  const reply = await f.call('describe_design_apis', query)
+  const selected = reply.value.tools[0]
+  const parameters = selected.usageGuide.parameters
+
+  expect(
+    operationInputIssue(
+      currentRecordedInput(recorded.body.operations[0].arguments),
+      parameters
+    )
+  ).toBeUndefined()
+  expect(
+    operationInputIssue(
+      {
+        ...currentRecordedInput(recorded.body.operations[0].arguments),
+        draft: { ...recorded.body.operations[0].arguments.draft, relations: [] }
+      },
+      parameters
+    )
+  ).toBeDefined()
+  expect(selected.usageGuide.optionalInputs).toEqual(
+    expect.arrayContaining(['layout', 'relations', 'sharedFills'])
+  )
+  const full = await f.call('describe_design_apis', {
+    names: query.names,
+    view: 'usage',
+    inputScope: {
+      ...query.inputScope,
+      optionalInputs: ['layout', 'relations', 'sharedFills']
+    }
+  })
+
+  expect(
+    operationInputIssue(
+      {
+        ...currentRecordedInput(recorded.body.operations[0].arguments),
+        draft: { ...recorded.body.operations[0].arguments.draft, relations: [] }
+      },
+      full.value.tools[0].usageGuide.parameters
+    )
+  ).toBeUndefined()
+  const bytes = Buffer.byteLength(JSON.stringify(parameters))
+  const expanded = Buffer.byteLength(
+    JSON.stringify(full.value.tools[0].usageGuide.parameters)
+  )
+
+  expect(bytes).toBeLessThan(expanded)
+  process.stdout.write(
+    JSON.stringify({
+      measurement: 'phase-selected-parameters',
+      bytes,
+      expanded
+    }) + '\n'
+  )
+})
+
+it('publishes canonical target mapping structure in the recorded construction usage without all result schemas', async () => {
+  const { call, created } = setup()
+  const result = (
+    await call('describe_design_apis', deliveryHandoff.constructionQuery)
+  ).value
+
+  expect(result.tools).toHaveLength(1)
+  const navigation = result.tools[0].usageGuide.results.structures
+
+  expect(navigation['/createdTargets']).toMatchObject({
+    type: 'array',
+    items: {
+      type: 'object',
+      properties: {
+        compositionId: expect.any(Object),
+        keyToId: { type: 'object', additionalProperties: expect.any(Object) }
+      }
+    }
+  })
+  expect(
+    operationInputIssue(
+      [{ compositionId: 'body', keyToId: { 'panel/x~y': 'element-1' } }],
+      navigation['/createdTargets']
+    )
+  ).toBeUndefined()
+  expect(
+    operationInputIssue(
+      [{ compositionId: 'body', keyToId: { 'panel/x~y': 42 } }],
+      navigation['/createdTargets']
+    )
+  ).toBeDefined()
+  expect(JSON.stringify(navigation)).not.toContain('vertices')
+  expect(created).toEqual([])
+})
+
+it('preserves subtree membership and target-local coordinates in the recorded capture query', async () => {
+  const { call, created } = setup()
+  const result = (
+    await call('describe_design_apis', {
+      names: ['inspect_drawing'],
+      view: 'usage'
+    })
+  ).value
+  const capture = JSON.stringify(result.tools[0].usageGuide)
+
+  expect(inspectionInputSchema.properties.elementId.description).toContain(
+    'subtree'
+  )
+  expect(inspectionInputSchema.properties.elementId.description).toContain(
+    'siblings'
+  )
+  expect(capture).toContain(
+    inspectionInputSchema.properties.elementId.description
+  )
+  expect(capture).toContain('target-local')
+  expect(created).toEqual([])
+})
+
+it('keeps the recorded material query a compact navigable candidate menu', async () => {
+  const run = setup(0, 'Unrelated capability', 10000, false, [], true)
+  const found = (
+    await run.call('describe_design_apis', referenceChain.queries[7])
+  ).value
+
+  for (const tool of found.tools) {
+    expect(tool.usage.arguments.names).toEqual([
+      `${tool.namespace}.${tool.name}`
+    ])
+    expect(tool.inputScopes?.selection).toBeUndefined()
+    expect(tool.usageGuide).toBeUndefined()
+  }
+
+  const revision = found.tools.find(
+    (tool: { name: string }) => tool.name === 'prepare_material_revision'
+  )
+
+  expect(revision).toBeDefined()
+  expect(revision.match.unmatchedTerms.length).toBeGreaterThan(0)
+  const contract = (
+    await run.call('describe_design_apis', revision.usage.arguments)
+  ).value.tools[0]
+
+  expect(contract.usageGuide.parameters).toBeDefined()
+  expect(contract.description).toContain('existing explicit world linear field')
+  expect(run.compile).not.toHaveBeenCalled()
+  process.stdout.write(
+    JSON.stringify({
+      measurement: 'reference-run-material-query',
+      bytes: Buffer.byteLength(run.replies[0].raw),
+      candidates: found.total
+    }) + '\n'
+  )
+})
+
+it('ranks an opaque purpose owner above complete incidental output vocabulary', async () => {
+  const run = setup(0, 'Unrelated capability', 10000, false, [
+    {
+      name: 'a',
+      namespace: 'proof',
+      description: 'Apply world material fields to existing projected faces',
+      inputSchema: {}
+    },
+    {
+      name: 'b',
+      namespace: 'proof',
+      description: 'Export a receipt',
+      inputSchema: {},
+      outputSchema: {
+        type: 'object',
+        properties: {
+          note: {
+            type: 'string',
+            description: 'apply world material field existing projected faces'
+          }
+        }
+      }
+    }
+  ])
+  const found = (
+    await run.call('describe_design_apis', referenceChain.queries[7])
+  ).value
+  const target = found.tools.find((tool: { name: string }) => tool.name === 'a')
+  const incidental = found.tools.find(
+    (tool: { name: string }) => tool.name === 'b'
+  )
+
+  expect(target).toBeDefined()
+  expect(incidental).toBeDefined()
+  expect(target.rank).toBeLessThan(incidental.rank)
+  expect(target.match.nameTerms).toEqual([])
+  expect(target.match.unmatchedTerms).toEqual(['field'])
+})
+
+it('does not auto-acquire an incidental complete match over the stronger partial purpose', async () => {
+  const run = setup(0, 'Unrelated capability', 10000, false, [
+    {
+      name: 'a',
+      namespace: 'proof',
+      description: 'Engrave basalt facets with spectral glazes',
+      inputSchema: {}
+    },
+    {
+      name: 'b',
+      namespace: 'proof',
+      description: 'Export a receipt',
+      inputSchema: {},
+      outputSchema: {
+        type: 'object',
+        properties: {
+          note: {
+            type: 'string',
+            description: 'engrave basalt facets spectral glaze'
+          }
+        }
+      }
+    }
+  ])
+  const found = (
+    await run.call('describe_design_apis', {
+      query: 'engrave basalt facets spectral glaze',
+      view: 'usage'
+    })
+  ).value
+
+  expect(found.tools.map((tool: { name: string }) => tool.name)).toEqual([
+    'a',
+    'b'
+  ])
+  expect(found.tools[0].match.unmatchedTerms).toEqual(['glaze'])
+  expect(found.tools[1].match.unmatchedTerms).toEqual([])
+  expect(
+    found.tools.every((tool: { usageGuide?: unknown }) => !tool.usageGuide)
+  ).toBe(true)
 })

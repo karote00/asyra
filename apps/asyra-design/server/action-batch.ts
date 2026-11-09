@@ -1,3 +1,8 @@
+import {
+  createEvaluationReportSessions,
+  evaluationReportSessionEndpoint
+} from './evaluation-report-sessions'
+import type { EvaluationReportSessions } from './evaluation-report-sessions'
 import type { ExchangeConversationResults } from '../src/ai/conversation-results'
 import { admitsConversationContext } from '../src/ai/conversation-context'
 import {
@@ -183,6 +188,7 @@ export type RequestModelActionBatch = (
     readonly signal?: AbortSignal
     readonly onProgress?: (event: AiToolProgress) => void
     readonly resultContext?: ExchangeConversationResults
+    readonly reportSessions?: EvaluationReportSessions
     readonly executeBatch?: ExecuteAiBatch
   }
 ) => Promise<AiActionBatch>
@@ -205,6 +211,7 @@ export const resolveActionBatchRequest = async (
     readonly requestModelActionBatch?: RequestModelActionBatch
     readonly onProgress?: (event: AiToolProgress) => void
     readonly resultContext?: ExchangeConversationResults
+    readonly reportSessions?: EvaluationReportSessions
     readonly executeBatch?: ExecuteAiBatch
     readonly requestId?: string
     readonly signal?: AbortSignal
@@ -260,6 +267,9 @@ export const resolveActionBatchRequest = async (
       signal: options.signal,
       onProgress: options.onProgress,
       resultContext: options.resultContext,
+      ...(options.reportSessions
+        ? { reportSessions: options.reportSessions }
+        : {}),
       executeBatch: options.executeBatch
     })
   } catch (error) {
@@ -365,6 +375,7 @@ export const createActionBatchMiddleware = (
     readonly requestModelActionBatch?: RequestModelActionBatch
   } = {}
 ) => {
+  const reportSessions = createEvaluationReportSessions()
   const exchange = createBatchExchange()
   const collector = options.createRecordingSink
     ? createRecordCollector({ createSink: options.createRecordingSink })
@@ -379,6 +390,51 @@ export const createActionBatchMiddleware = (
     next: MiddlewareNext
   ): Promise<void> => {
     const url = new URL(request.url ?? '/', 'http://app.local')
+
+    if (url.pathname === evaluationReportSessionEndpoint) {
+      if (request.method !== 'POST' || !admitsLocalProviderRequest(request)) {
+        sendJson(response, 403, { code: 'EVALUATION_REPORT_FORBIDDEN' })
+
+        return
+      }
+
+      try {
+        const command = await readJsonBody(
+          request,
+          new AbortController().signal
+        )
+
+        if (!isRecord(command) || typeof command.sessionId !== 'string') {
+          throw Error('A session identity is required')
+        }
+
+        if (command.operation === 'status') {
+          sendJson(response, 200, reportSessions.status(command.sessionId))
+        } else if (
+          command.operation === 'ask' &&
+          typeof command.question === 'string'
+        ) {
+          // The session retains the answer even if this HTTP reader disconnects.
+          sendJson(
+            response,
+            200,
+            await reportSessions.ask(command.sessionId, command.question)
+          )
+        } else if (command.operation === 'close') {
+          await reportSessions.close(command.sessionId)
+          sendJson(response, 200, reportSessions.status(command.sessionId))
+        } else {
+          throw Error('Invalid evaluation report operation')
+        }
+      } catch (error) {
+        sendJson(response, 409, {
+          code: 'EVALUATION_REPORT_UNAVAILABLE',
+          message: error instanceof Error ? error.message : String(error)
+        })
+      }
+
+      return
+    }
 
     if (url.pathname === AI_EXECUTION_RECORD_ENDPOINT) {
       if (request.method !== 'POST' || !admitsLocalProviderRequest(request)) {
@@ -546,6 +602,7 @@ export const createActionBatchMiddleware = (
             )
           },
 
+          reportSessions,
           requestId: randomUUID(),
           requestModelActionBatch: options.requestModelActionBatch,
           signal: controller.signal
@@ -593,5 +650,10 @@ export const createActionBatchMiddleware = (
     }
   }
 
-  return Object.assign(middleware, { dispose: () => collector.dispose() })
+  return Object.assign(middleware, {
+    async dispose() {
+      await reportSessions.dispose()
+      await collector.dispose()
+    }
+  })
 }

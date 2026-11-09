@@ -1,0 +1,1569 @@
+{
+  "source": "taipei-101-fixed-1793990346469",
+  "usageInput": {
+    "query": "map_retained_fills",
+    "view": "usage"
+  },
+  "usageOutput": {
+    "apis": [
+      {
+        "name": "map_retained_fills",
+        "revision": 8,
+        "description": "Apply position-dependent fill colors from a query or retained read_design_context snapshots without exporting rows or resending IDs. Prefer query={scope:ids,elementIds} or query={scope:region,bounds,filter}; required columns are read and consumed internally before one atomic write. For existing snapshots pass snapshotId and its leaseId; caller-owned leases remain retained until explicit release or request settlement. Internally acquired query leases are released by this action. Request x or y columns with delivery=reference only when that result has another consumer. Coordinates are parent-local; choose an explicit domain in that space. Map normalized positions through ordered color stops. Set kind=solid to apply the mapped color visibly by clearing an existing gradient in the same write; omit kind to preserve the current paint mode and gradient. All mappings must use the same fill index and disjoint targets; one plural canonical fill call preserves shared-property validation and Undo. Mapped fields become selected-owner local overrides. Different owners may use different colors on the same shared source without detaching; unchanged source users remain unaffected.",
+        "operation": "map_retained_fills",
+        "category": "design",
+        "effect": "mutation",
+        "resources": [
+          "document"
+        ],
+        "lifecycle": {
+          "cancellation": "cooperative",
+          "retry": "never",
+          "output": "value"
+        },
+        "composition": "allowed",
+        "execution": {
+          "kind": "batch-action",
+          "tool": "execute_design"
+        },
+        "recipeDependency": {
+          "name": "design_operations.map_retained_fills",
+          "revision": 8,
+          "execution": {
+            "kind": "registered-tool",
+            "namespace": "tool_library",
+            "tool": "invoke_tool",
+            "arguments": {
+              "name": "design_operations.map_retained_fills",
+              "revision": 8
+            }
+          },
+          "definition": {
+            "tool": "describe_design_apis",
+            "arguments": {
+              "names": [
+                "design_operations.map_retained_fills"
+              ]
+            }
+          }
+        },
+        "inputFields": [
+          "/properties/mappings"
+        ],
+        "outputFields": [
+          "/properties/status",
+          "/properties/changed",
+          "/properties/acceptedIds",
+          "/properties/unavailableIds",
+          "/properties/settlement",
+          "/properties/appliedCount",
+          "/properties/coordinateSpace",
+          "/properties/retained",
+          "/properties/delivery",
+          "/properties/toolOutcome"
+        ],
+        "elementBindings": [
+          {
+            "schemaPath": "/properties/mappings/items/properties/query/properties/elementIds",
+            "mode": "all"
+          }
+        ],
+        "invocationExample": {
+          "available": false,
+          "reason": "no-valid-owner-example"
+        },
+        "usageGuide": {
+          "retention": {
+            "inputRoot": "operation.arguments",
+            "scope": "conversation",
+            "wholeResultAllowed": false,
+            "guaranteedResultFields": [
+              "/batchSummary",
+              "/toolOutcome"
+            ],
+            "forbiddenResultFields": [
+              "/actionResults",
+              "/executionResult"
+            ]
+          },
+          "instructions": "[redacted]",
+          "operationParameters": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "mappings"
+            ],
+            "properties": {
+              "mappings": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 32,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "coordinateSpace",
+                    "axis",
+                    "domain",
+                    "index",
+                    "outside",
+                    "stops"
+                  ],
+                  "oneOf": [
+                    {
+                      "required": [
+                        "snapshotId"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "query"
+                      ]
+                    }
+                  ],
+                  "properties": {
+                    "query": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "scope"
+                      ],
+                      "properties": {
+                        "scope": {
+                          "type": "string",
+                          "enum": [
+                            "ids",
+                            "region"
+                          ]
+                        },
+                        "elementIds": {
+                          "x-design-element-binding": "all",
+                          "type": "array",
+                          "minItems": 1,
+                          "uniqueItems": true,
+                          "items": {
+                            "$ref": "#/$defs/1"
+                          }
+                        },
+                        "bounds": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "x",
+                            "y",
+                            "width",
+                            "height"
+                          ],
+                          "properties": {
+                            "x": {
+                              "type": "number"
+                            },
+                            "y": {
+                              "type": "number"
+                            },
+                            "width": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "height": {
+                              "type": "number",
+                              "minimum": 0
+                            }
+                          }
+                        },
+                        "filter": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "name": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "minProperties": 1,
+                              "properties": {
+                                "equals": {
+                                  "$ref": "#/$defs/6"
+                                },
+                                "prefix": {
+                                  "$ref": "#/$defs/6"
+                                },
+                                "suffix": {
+                                  "$ref": "#/$defs/6"
+                                }
+                              }
+                            },
+                            "type": {
+                              "$ref": "#/$defs/6"
+                            },
+                            "parentId": {
+                              "$ref": "#/$defs/1"
+                            },
+                            "ancestorId": {
+                              "$ref": "#/$defs/1"
+                            },
+                            "locked": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      },
+                      "oneOf": [
+                        {
+                          "additionalProperties": false,
+                          "required": [
+                            "scope"
+                          ],
+                          "properties": {
+                            "delivery": {},
+                            "scope": {
+                              "const": "selection"
+                            },
+                            "expectedCount": {},
+                            "result": {
+                              "enum": [
+                                "elements"
+                              ]
+                            },
+                            "fields": {},
+                            "offset": {},
+                            "limit": {}
+                          }
+                        },
+                        {
+                          "additionalProperties": false,
+                          "required": [
+                            "scope",
+                            "result"
+                          ],
+                          "properties": {
+                            "delivery": {},
+                            "scope": {
+                              "const": "selection"
+                            },
+                            "expectedCount": {},
+                            "result": {
+                              "enum": [
+                                "ids"
+                              ]
+                            },
+                            "fields": {
+                              "maxItems": 0
+                            },
+                            "offset": {},
+                            "limit": {}
+                          }
+                        },
+                        {
+                          "additionalProperties": false,
+                          "required": [
+                            "scope"
+                          ],
+                          "properties": {
+                            "delivery": {},
+                            "scope": {
+                              "const": "children"
+                            },
+                            "expectedCount": {},
+                            "result": {
+                              "enum": [
+                                "elements"
+                              ]
+                            },
+                            "fields": {},
+                            "offset": {},
+                            "limit": {},
+                            "parentId": {}
+                          }
+                        },
+                        {
+                          "additionalProperties": false,
+                          "required": [
+                            "scope",
+                            "result"
+                          ],
+                          "properties": {
+                            "delivery": {},
+                            "scope": {
+                              "const": "children"
+                            },
+                            "expectedCount": {},
+                            "result": {
+                              "enum": [
+                                "ids"
+                              ]
+                            },
+                            "fields": {
+                              "maxItems": 0
+                            },
+                            "offset": {},
+                            "limit": {},
+                            "parentId": {}
+                          }
+                        },
+                        {
+                          "additionalProperties": false,
+                          "required": [
+                            "scope",
+                            "elementIds"
+                          ],
+                          "properties": {
+                            "delivery": {},
+                            "scope": {
+                              "const": "ids"
+                            },
+                            "expectedCount": {},
+                            "result": {
+                              "enum": [
+                                "elements"
+                              ]
+                            },
+                            "fields": {},
+                            "offset": {},
+                            "limit": {},
+                            "elementIds": {}
+                          }
+                        },
+                        {
+                          "additionalProperties": false,
+                          "required": [
+                            "scope",
+                            "elementIds",
+                            "result"
+                          ],
+                          "properties": {
+                            "delivery": {},
+                            "scope": {
+                              "const": "ids"
+                            },
+                            "expectedCount": {},
+                            "result": {
+                              "enum": [
+                                "ids"
+                              ]
+                            },
+                            "fields": {
+                              "maxItems": 0
+                            },
+                            "offset": {},
+                            "limit": {},
+                            "elementIds": {}
+                          }
+                        },
+                        {
+                          "additionalProperties": false,
+                          "required": [
+                            "scope",
+                            "bounds"
+                          ],
+                          "properties": {
+                            "delivery": {},
+                            "scope": {
+                              "const": "region"
+                            },
+                            "expectedCount": {},
+                            "result": {
+                              "enum": [
+                                "elements"
+                              ]
+                            },
+                            "fields": {},
+                            "offset": {},
+                            "limit": {},
+                            "bounds": {},
+                            "filter": {},
+                            "allMatches": {
+                              "const": false
+                            }
+                          }
+                        },
+                        {
+                          "additionalProperties": false,
+                          "required": [
+                            "scope",
+                            "bounds",
+                            "result"
+                          ],
+                          "properties": {
+                            "delivery": {},
+                            "scope": {
+                              "const": "region"
+                            },
+                            "expectedCount": {},
+                            "result": {
+                              "enum": [
+                                "ids"
+                              ]
+                            },
+                            "fields": {
+                              "maxItems": 0
+                            },
+                            "offset": {},
+                            "limit": {},
+                            "bounds": {},
+                            "filter": {},
+                            "allMatches": {
+                              "const": false
+                            }
+                          }
+                        },
+                        {
+                          "additionalProperties": false,
+                          "required": [
+                            "scope",
+                            "bounds",
+                            "result",
+                            "allMatches"
+                          ],
+                          "properties": {
+                            "delivery": {},
+                            "scope": {
+                              "const": "region"
+                            },
+                            "expectedCount": {},
+                            "result": {
+                              "enum": [
+                                "ids"
+                              ]
+                            },
+                            "fields": {
+                              "maxItems": 0
+                            },
+                            "offset": false,
+                            "limit": false,
+                            "bounds": {},
+                            "filter": {},
+                            "allMatches": {
+                              "const": true
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "leaseId": {
+                      "$ref": "#/$defs/28"
+                    },
+                    "snapshotId": {
+                      "$ref": "#/$defs/28"
+                    },
+                    "coordinateSpace": {
+                      "type": "string",
+                      "enum": [
+                        "parent-local"
+                      ]
+                    },
+                    "axis": {
+                      "type": "string",
+                      "enum": [
+                        "x",
+                        "y"
+                      ]
+                    },
+                    "domain": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "index": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "kind": {
+                      "const": "solid",
+                      "description": "Convert selected Fill rows to solid paint and clear their gradient during the same color update. Omit to preserve their current paint mode."
+                    },
+                    "outside": {
+                      "type": "string",
+                      "enum": [
+                        "clamp",
+                        "reject"
+                      ]
+                    },
+                    "stops": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 32,
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "at",
+                          "color"
+                        ],
+                        "properties": {
+                          "at": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1
+                          },
+                          "color": {
+                            "type": "string",
+                            "pattern": "^#[0-9a-fA-F]{6}$"
+                          },
+                          "opacity": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "$defs": {
+              "1": {
+                "type": "string",
+                "minLength": 1,
+                "x-runtime-value": "document",
+                "maxLength": 256
+              },
+              "6": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "28": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 160,
+                "x-runtime-value": "request-artifact"
+              }
+            }
+          },
+          "parameters": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "operations"
+            ],
+            "properties": {
+              "operations": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "name",
+                    "arguments"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "enum": [
+                        "map_retained_fills"
+                      ]
+                    },
+                    "arguments": {
+                      "type": "object"
+                    },
+                    "target": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/a"
+                        },
+                        {
+                          "$ref": "#/$defs/m"
+                        },
+                        {
+                          "type": "array",
+                          "minItems": 1,
+                          "maxItems": 32,
+                          "items": {
+                            "anyOf": [
+                              {
+                                "$ref": "#/$defs/a"
+                              },
+                              {
+                                "$ref": "#/$defs/m"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              "inspection": {
+                "enum": [
+                  "immediate",
+                  "defer"
+                ]
+              },
+              "response": {
+                "type": "string",
+                "enum": [
+                  "compact",
+                  "full"
+                ],
+                "default": "compact",
+                "description": "Compact preserves ordered owner receipts and their application, settlement and mutation-scope evidence. Structural group/ungroup/move/deletion receipts return retained snapshot/lease/count references. Pass a retained reference directly into a declared elementIds argument; no model-side expansion. Read its full immutable receipt with read_design_context scope=snapshot delivery=receipt; never replay a mutation for readback. Full preserves workflow diagnostics but never bypasses a registered bounded owner view; use retained receipt readback for original acknowledgements. Uncertain receipts retain their evidence without implying completed application."
+              },
+              "message": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              }
+            },
+            "$defs": {
+              "7": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 32,
+                "description": "Exact registered argument path for nested or repeated fields, e.g. [\"mappings\",0,\"query\",\"elementIds\"]. Array slots must already exist.",
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  ]
+                }
+              },
+              "a": {
+                "type": "object",
+                "additionalProperties": false,
+                "description": "Resolve prepared artifact targets by exact keys. The batch binds the selected elements to the operation argument.",
+                "required": [
+                  "artifactId",
+                  "field"
+                ],
+                "properties": {
+                  "artifactId": {
+                    "type": "string"
+                  },
+                  "targetSetId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "field": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Exact canonical element-identity argument name. Its schema declares all, each or one binding cardinality; for example anchorId is exactly one."
+                  },
+                  "path": {
+                    "$ref": "#/$defs/7"
+                  },
+                  "keys": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "keyPrefix": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "g": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "i": {
+                "type": "string",
+                "minLength": 1,
+                "x-runtime-value": "document",
+                "maxLength": 256
+              },
+              "m": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "field",
+                  "query"
+                ],
+                "properties": {
+                  "field": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "path": {
+                    "$ref": "#/$defs/7"
+                  },
+                  "query": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "scope",
+                      "bounds"
+                    ],
+                    "properties": {
+                      "scope": {
+                        "const": "region"
+                      },
+                      "bounds": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "x",
+                          "y",
+                          "width",
+                          "height"
+                        ],
+                        "properties": {
+                          "x": {
+                            "type": "number"
+                          },
+                          "y": {
+                            "type": "number"
+                          },
+                          "width": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "height": {
+                            "type": "number",
+                            "minimum": 0
+                          }
+                        }
+                      },
+                      "filter": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "name": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "minProperties": 1,
+                            "properties": {
+                              "equals": {
+                                "$ref": "#/$defs/g"
+                              },
+                              "prefix": {
+                                "$ref": "#/$defs/g"
+                              },
+                              "suffix": {
+                                "$ref": "#/$defs/g"
+                              }
+                            }
+                          },
+                          "type": {
+                            "$ref": "#/$defs/g"
+                          },
+                          "parentId": {
+                            "$ref": "#/$defs/i"
+                          },
+                          "ancestorId": {
+                            "$ref": "#/$defs/i"
+                          },
+                          "locked": {
+                            "type": "boolean"
+                          }
+                        }
+                      },
+                      "expectedCount": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "results": {
+            "guaranteedFields": [
+              "/actionResults",
+              "/batchSummary",
+              "/toolOutcome"
+            ],
+            "conditionalFields": [
+              "/available",
+              "/batchFailure",
+              "/batchId",
+              "/checks",
+              "/code",
+              "/executionResult",
+              "/failure",
+              "/inspectionDeferred",
+              "/inspectionIssues",
+              "/measurementDeferred",
+              "/measurementIssues",
+              "/message",
+              "/recoverable",
+              "/recovery",
+              "/settlement",
+              "/stage"
+            ],
+            "interpretation": "Read the owner result and toolOutcome.status with settlement. Completed execution is not visual approval or durable storage. Preserve completed work on partial/failed results; unknown settlement is not permission to replay. Use the owner recovery and returned next arguments. Complete result schemas are available with includeResultSchema=true when a machine consumer needs validation."
+          },
+          "recovery": "Compact preserves ordered owner receipts and their application, settlement and mutation-scope evidence. Structural group/ungroup/move/deletion receipts return retained snapshot/lease/count references. Pass a retained reference directly into a declared elementIds argument; no model-side expansion. Read its full immutable receipt with read_design_context scope=snapshot delivery=receipt; never replay a mutation for readback. Full preserves workflow diagnostics but never bypasses a registered bounded owner view; use retained receipt readback for original acknowledgements. Uncertain receipts retain their evidence without implying completed application. Inspect the retained write receipt and check diagnostics before continuing; do not replay acknowledged mutations."
+        },
+        "fieldQuery": {
+          "tool": "describe_design_apis",
+          "arguments": {
+            "operations": [
+              "map_retained_fills"
+            ],
+            "schemaPaths": [
+              "/properties/mappings"
+            ]
+          }
+        },
+        "definition": {
+          "revision": "26ff49c55862000f6b34766556e33fab09e21a30ae4e788e7cb82d1c235e9da1",
+          "state": "included",
+          "coverage": "usage",
+          "requestedCoverage": "usage",
+          "availableInResponse": true,
+          "deliveryReason": "requested",
+          "nextAction": "execute-with-delivered-contract",
+          "recover": {
+            "tool": "describe_design_apis",
+            "arguments": {
+              "operations": [
+                "map_retained_fills"
+              ],
+              "view": "usage",
+              "refresh": true,
+              "refreshReason": "delivery-failure"
+            }
+          },
+          "refresh": {
+            "tool": "describe_design_apis",
+            "arguments": {
+              "operations": [
+                "map_retained_fills"
+              ],
+              "refresh": true,
+              "refreshReason": "context-loss",
+              "view": "usage"
+            }
+          }
+        }
+      }
+    ],
+    "tools": [],
+    "missingNames": [],
+    "resultKey": "vzyc13K1gOVClzPCx5gqIQ",
+    "toolOutcome": {
+      "status": "success",
+      "settlement": "completed",
+      "issues": []
+    }
+  },
+  "input": {
+    "operations": [
+      {
+        "id": "reflect",
+        "name": "map_retained_fills",
+        "arguments": {
+          "mappings": [
+            {
+              "query": {
+                "scope": "region",
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 18000,
+                  "height": 50000
+                },
+                "filter": {
+                  "ancestorId": "design-af3c332c-c1da-487d-bc05-0a4eeff5e1c9-0",
+                  "name": {
+                    "suffix": "雙層玻璃反射"
+                  }
+                }
+              },
+              "coordinateSpace": "parent-local",
+              "axis": "x",
+              "domain": [
+                0,
+                6967.678661549573
+              ],
+              "index": 0,
+              "kind": "solid",
+              "outside": "clamp",
+              "stops": [
+                {
+                  "at": 0,
+                  "color": "#365F6B"
+                },
+                {
+                  "at": 0.08,
+                  "color": "#507C85"
+                },
+                {
+                  "at": 0.18,
+                  "color": "#5D8A90"
+                },
+                {
+                  "at": 0.26,
+                  "color": "#80AAA9"
+                },
+                {
+                  "at": 0.31,
+                  "color": "#638E95"
+                },
+                {
+                  "at": 0.36,
+                  "color": "#9EBFB6"
+                },
+                {
+                  "at": 0.39,
+                  "color": "#81AAA8"
+                },
+                {
+                  "at": 0.45,
+                  "color": "#537E86"
+                },
+                {
+                  "at": 0.53,
+                  "color": "#355F6D"
+                },
+                {
+                  "at": 0.57,
+                  "color": "#527C80"
+                },
+                {
+                  "at": 0.6,
+                  "color": "#294F60"
+                },
+                {
+                  "at": 0.69,
+                  "color": "#315969"
+                },
+                {
+                  "at": 0.77,
+                  "color": "#49727D"
+                },
+                {
+                  "at": 0.81,
+                  "color": "#355E6E"
+                },
+                {
+                  "at": 0.9,
+                  "color": "#416976"
+                },
+                {
+                  "at": 1,
+                  "color": "#264D60"
+                }
+              ]
+            },
+            {
+              "query": {
+                "scope": "region",
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 18000,
+                  "height": 50000
+                },
+                "filter": {
+                  "ancestorId": "design-f2ec4a1c-8da7-49ae-930e-86371e55580b-0",
+                  "name": {
+                    "suffix": "反射玻璃"
+                  }
+                }
+              },
+              "coordinateSpace": "parent-local",
+              "axis": "x",
+              "domain": [
+                0,
+                8445
+              ],
+              "index": 0,
+              "kind": "solid",
+              "outside": "clamp",
+              "stops": [
+                {
+                  "at": 0,
+                  "color": "#345A64"
+                },
+                {
+                  "at": 0.18,
+                  "color": "#668B8B"
+                },
+                {
+                  "at": 0.32,
+                  "color": "#86A8A2"
+                },
+                {
+                  "at": 0.38,
+                  "color": "#547C80"
+                },
+                {
+                  "at": 0.54,
+                  "color": "#345961"
+                },
+                {
+                  "at": 0.6,
+                  "color": "#426A72"
+                },
+                {
+                  "at": 0.67,
+                  "color": "#2B4E5A"
+                },
+                {
+                  "at": 0.82,
+                  "color": "#496F76"
+                },
+                {
+                  "at": 1,
+                  "color": "#234957"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "roofRibs",
+        "name": "design_workflow.prepare_and_apply_design",
+        "arguments": {
+          "inspection": "defer",
+          "response": "compact",
+          "message": "修補冠部平台缺面並增加立柱與簷下百葉",
+          "draft": {
+            "type": "group",
+            "name": "台北101｜平台修補與金屬稜柱",
+            "projection": {
+              "azimuth": 35,
+              "elevation": 25,
+              "scale": 1,
+              "originX": 8500,
+              "originY": 46500
+            },
+            "children": [
+              {
+                "type": "projected-face",
+                "key": "neckRoofY",
+                "name": "冠部前平台頂面",
+                "fill": "#98ADA2",
+                "vertices": [
+                  {
+                    "x": -1200,
+                    "y": 1500,
+                    "z": 41000
+                  },
+                  {
+                    "x": 1200,
+                    "y": 1500,
+                    "z": 41000
+                  },
+                  {
+                    "x": 950,
+                    "y": 1200,
+                    "z": 41000
+                  },
+                  {
+                    "x": -950,
+                    "y": 1200,
+                    "z": 41000
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "neckRoofX",
+                "name": "冠部側平台頂面",
+                "fill": "#849D96",
+                "vertices": [
+                  {
+                    "x": 1500,
+                    "y": 1200,
+                    "z": 41000
+                  },
+                  {
+                    "x": 1500,
+                    "y": -1200,
+                    "z": 41000
+                  },
+                  {
+                    "x": 1200,
+                    "y": -950,
+                    "z": 41000
+                  },
+                  {
+                    "x": 1200,
+                    "y": 950,
+                    "z": 41000
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "neckRoofC",
+                "name": "冠部切角平台頂面",
+                "fill": "#B1C1AF",
+                "vertices": [
+                  {
+                    "x": 1200,
+                    "y": 1500,
+                    "z": 41000
+                  },
+                  {
+                    "x": 1500,
+                    "y": 1200,
+                    "z": 41000
+                  },
+                  {
+                    "x": 1200,
+                    "y": 950,
+                    "z": 41000
+                  },
+                  {
+                    "x": 950,
+                    "y": 1200,
+                    "z": 41000
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "neckRoofBack",
+                "name": "冠部背側平台頂面",
+                "fill": "#8EA49B",
+                "vertices": [
+                  {
+                    "x": -1200,
+                    "y": -1500,
+                    "z": 41000
+                  },
+                  {
+                    "x": 1200,
+                    "y": -1500,
+                    "z": 41000
+                  },
+                  {
+                    "x": 950,
+                    "y": -1200,
+                    "z": 41000
+                  },
+                  {
+                    "x": -950,
+                    "y": -1200,
+                    "z": 41000
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "neckRoofLeft",
+                "name": "冠部左側平台頂面",
+                "fill": "#A5B8A9",
+                "vertices": [
+                  {
+                    "x": -1500,
+                    "y": 1200,
+                    "z": 41000
+                  },
+                  {
+                    "x": -1500,
+                    "y": -1200,
+                    "z": 41000
+                  },
+                  {
+                    "x": -1200,
+                    "y": -950,
+                    "z": 41000
+                  },
+                  {
+                    "x": -1200,
+                    "y": 950,
+                    "z": 41000
+                  }
+                ]
+              },
+              {
+                "type": "pattern",
+                "key": "ribs",
+                "name": "八段外緣立柱",
+                "origin": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 11200
+                },
+                "axes": [
+                  {
+                    "count": 8,
+                    "step": {
+                      "x": 0,
+                      "y": 0,
+                      "z": 3500
+                    }
+                  }
+                ],
+                "members": [
+                  {
+                    "type": "projected-face",
+                    "key": "Yleft",
+                    "name": "明面左側外緣立柱",
+                    "fill": "#B0C5B6",
+                    "vertices": [
+                      {
+                        "x": -2025,
+                        "y": 2330,
+                        "z": 0
+                      },
+                      {
+                        "x": -1965,
+                        "y": 2330,
+                        "z": 0
+                      },
+                      {
+                        "x": -2215,
+                        "y": 2580,
+                        "z": 3400
+                      },
+                      {
+                        "x": -2275,
+                        "y": 2580,
+                        "z": 3400
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "Yright",
+                    "name": "明面轉角立柱",
+                    "fill": "#A1BAAE",
+                    "vertices": [
+                      {
+                        "x": 1965,
+                        "y": 2330,
+                        "z": 0
+                      },
+                      {
+                        "x": 2025,
+                        "y": 2330,
+                        "z": 0
+                      },
+                      {
+                        "x": 2275,
+                        "y": 2580,
+                        "z": 3400
+                      },
+                      {
+                        "x": 2215,
+                        "y": 2580,
+                        "z": 3400
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "Xright",
+                    "name": "暗面外緣立柱",
+                    "fill": "#819E99",
+                    "vertices": [
+                      {
+                        "x": 2330,
+                        "y": -2025,
+                        "z": 0
+                      },
+                      {
+                        "x": 2330,
+                        "y": -1965,
+                        "z": 0
+                      },
+                      {
+                        "x": 2580,
+                        "y": -2215,
+                        "z": 3400
+                      },
+                      {
+                        "x": 2580,
+                        "y": -2275,
+                        "z": 3400
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "Xfront",
+                    "name": "暗面轉角立柱",
+                    "fill": "#67888B",
+                    "vertices": [
+                      {
+                        "x": 2330,
+                        "y": 1965,
+                        "z": 0
+                      },
+                      {
+                        "x": 2330,
+                        "y": 2025,
+                        "z": 0
+                      },
+                      {
+                        "x": 2580,
+                        "y": 2275,
+                        "z": 3400
+                      },
+                      {
+                        "x": 2580,
+                        "y": 2215,
+                        "z": 3400
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "farChamfer",
+                    "name": "左外緣切角可見面",
+                    "fill": "#628887",
+                    "vertices": [
+                      {
+                        "x": -2325,
+                        "y": 2025,
+                        "z": 0
+                      },
+                      {
+                        "x": -2025,
+                        "y": 2325,
+                        "z": 0
+                      },
+                      {
+                        "x": -2275,
+                        "y": 2575,
+                        "z": 3400
+                      },
+                      {
+                        "x": -2575,
+                        "y": 2275,
+                        "z": 3400
+                      }
+                    ]
+                  },
+                  {
+                    "type": "surface-grid",
+                    "key": "farChamferLines",
+                    "name": "外緣切角窗橫框",
+                    "boundary": {
+                      "face": "farChamfer"
+                    },
+                    "rows": 8,
+                    "columns": 2,
+                    "order": "cell-major",
+                    "motifs": [
+                      {
+                        "key": "line",
+                        "name": "切角層框",
+                        "fill": "#B1C5B6",
+                        "vertices": [
+                          {
+                            "u": 0,
+                            "v": 0.02
+                          },
+                          {
+                            "u": 1,
+                            "v": 0.02
+                          },
+                          {
+                            "u": 1,
+                            "v": 0.05
+                          },
+                          {
+                            "u": 0,
+                            "v": 0.05
+                          }
+                        ]
+                      },
+                      {
+                        "key": "glass",
+                        "name": "切角窄玻璃",
+                        "fill": "#4C777E",
+                        "vertices": [
+                          {
+                            "u": 0.08,
+                            "v": 0.15
+                          },
+                          {
+                            "u": 0.92,
+                            "v": 0.15
+                          },
+                          {
+                            "u": 0.92,
+                            "v": 0.94
+                          },
+                          {
+                            "u": 0.08,
+                            "v": 0.94
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "pattern",
+                "key": "ventsY",
+                "name": "明面簷下百葉",
+                "origin": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 14480
+                },
+                "axes": [
+                  {
+                    "count": 8,
+                    "step": {
+                      "x": 0,
+                      "y": 0,
+                      "z": 3500
+                    }
+                  },
+                  {
+                    "count": 4,
+                    "step": {
+                      "x": 0,
+                      "y": 0,
+                      "z": 28
+                    }
+                  }
+                ],
+                "members": [
+                  {
+                    "type": "projected-face",
+                    "key": "blade",
+                    "name": "金屬百葉亮緣",
+                    "fill": "#72968F",
+                    "vertices": [
+                      {
+                        "x": -2200,
+                        "y": 2590,
+                        "z": 0
+                      },
+                      {
+                        "x": 2200,
+                        "y": 2590,
+                        "z": 0
+                      },
+                      {
+                        "x": 2200,
+                        "y": 2590,
+                        "z": 6
+                      },
+                      {
+                        "x": -2200,
+                        "y": 2590,
+                        "z": 6
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "pattern",
+                "key": "ventsX",
+                "name": "暗面簷下百葉",
+                "origin": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 14480
+                },
+                "axes": [
+                  {
+                    "count": 8,
+                    "step": {
+                      "x": 0,
+                      "y": 0,
+                      "z": 3500
+                    }
+                  },
+                  {
+                    "count": 4,
+                    "step": {
+                      "x": 0,
+                      "y": 0,
+                      "z": 28
+                    }
+                  }
+                ],
+                "members": [
+                  {
+                    "type": "projected-face",
+                    "key": "blade",
+                    "name": "背光百葉亮緣",
+                    "fill": "#57777B",
+                    "vertices": [
+                      {
+                        "x": 2590,
+                        "y": -2200,
+                        "z": 0
+                      },
+                      {
+                        "x": 2590,
+                        "y": 2200,
+                        "z": 0
+                      },
+                      {
+                        "x": 2590,
+                        "y": 2200,
+                        "z": 6
+                      },
+                      {
+                        "x": 2590,
+                        "y": -2200,
+                        "z": 6
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "retain": {
+      "refineIds": {
+        "step": "roofRibs",
+        "path": "/compositionIds"
+      },
+      "refineSource": {
+        "step": "roofRibs",
+        "source": "input",
+        "path": "/draft"
+      }
+    },
+    "delivery": {
+      "fields": {
+        "reflect": {
+          "step": "reflect",
+          "path": "/batchSummary"
+        },
+        "refine": {
+          "step": "roofRibs",
+          "path": "/compositionIds"
+        }
+      }
+    }
+  },
+  "output": {
+    "available": false,
+    "code": "PREPARATION_REJECTED",
+    "stage": "admission",
+    "settlement": "not-started",
+    "recovery": "Inspect the failure and current state, then choose a corrected or alternate operation. Do not automatically replay mutations.",
+    "executionResult": {
+      "batches": []
+    },
+    "recoverable": true,
+    "message": "delivery.fields.reflect (step reflect, path /batchSummary): Source path is absent or not guaranteed to exist",
+    "toolOutcome": {
+      "status": "failed",
+      "settlement": "not-started",
+      "issues": [
+        {
+          "code": "PREPARATION_REJECTED",
+          "message": "delivery.fields.reflect (step reflect, path /batchSummary): Source path is absent or not guaranteed to exist"
+        }
+      ]
+    }
+  }
+}

@@ -381,7 +381,7 @@ export const designPatternSchema = {
         ]
       },
       description:
-        'Flat face/grid members with unique keys and root projection; no nesting/parent. instance/member/grid order; palettes restart, world fields translate per instance. Keys:patternKey-instanceIndex-memberOutputKey; keys/names <=160 chars.'
+        'Flat face/grid members with unique keys and root projection; no nesting/parent. instance/member/grid order; palettes restart, world fields translate per instance. Keys:patternKey-zeroBasedInstanceIndex-memberOutputKey. Names:patternName - oneBasedInstanceIndex - memberName (grid member names include their cell index and motif name). Use full generated names for exact/prefix matching, or suffix for an authored member name; keys/names <=160 chars.'
     },
     faces: {
       type: 'array',

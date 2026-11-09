@@ -1,3 +1,9 @@
+export interface ReferenceIdentity {
+  attachmentIndex: number
+  referenceId: string
+  validation?: { width: number; height: number }
+}
+
 import {
   toolResultBoolean,
   toolResultCount,

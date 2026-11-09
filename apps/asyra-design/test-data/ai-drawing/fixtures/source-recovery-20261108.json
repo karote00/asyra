@@ -1,0 +1,109 @@
+{
+  "sourceRun": "taipei-101-fixed-1794114048516",
+  "input": {
+    "operations": [
+      {
+        "id": "refs",
+        "name": "design_references.import_reference_image",
+        "arguments": {
+          "references": [
+            {
+              "sourceUrl": "https://www.metalocus.es/es/noticias/ganadores-de-los-premios-ctbuh-2016-al-edificio-mas-alto",
+              "imageUrl": "https://www.metalocus.es/sites/default/files/styles/mopis_news_carousel_item_desktop/public/metalocus_ctbuh_tall_2016_06.jpg"
+            },
+            {
+              "sourceUrl": "https://www.skydb.net/file/573338625/taipei-101-taipei/",
+              "imageUrl": "https://media.skydb.net/573338625/d_900-h/taipei-101-taipei-facade-detail.jpg"
+            }
+          ]
+        }
+      },
+      {
+        "id": "facts",
+        "name": "design_operations.record_design_facts",
+        "arguments": {
+          "facts": [
+            {
+              "id": "height",
+              "statement": "Taipei 101 architectural height is 508 m; eight outward-flaring eight-story modules rise above a tapering base.",
+              "scope": "Overall height and primary organization; not detailed fabrication dimensions.",
+              "sources": [
+                "https://www.skyscrapercenter.com/building/taipei-101/117",
+                "https://www.skyscraper.org/supertall/building/taipei-101/"
+              ],
+              "verification": "CTBUH and Skyscraper Museum descriptions agree on 508 m and eight stacked eight-floor units.",
+              "dependencies": [
+                {
+                  "key": "published-tower-dimensions",
+                  "version": "2026-11-08"
+                }
+              ]
+            },
+            {
+              "id": "crown",
+              "statement": "The roof is approximately 448 m with a 60 m spire; the small upper tower contains levels 92\u2013100.",
+              "scope": "Vertical landmarks only; intermediate widths and ornament dimensions estimated from photographs.",
+              "sources": [
+                "https://old.skyscraper.org/EXHIBITIONS/TEN_TOPS/taipei101.php"
+              ],
+              "verification": "Skyscraper Museum identifies 60 m spire and upper levels.",
+              "dependencies": [
+                {
+                  "key": "published-crown-dimensions",
+                  "version": "2026-11-08"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "calc",
+        "name": "design_operations.record_design_calculations",
+        "arguments": {
+          "calculations": [
+            {
+              "id": "cm-scale-height",
+              "value": 50800,
+              "unit": "px before projection",
+              "sourceFactIds": [
+                "height"
+              ],
+              "verification": "508 m \u00d7 100 cm/m \u00d7 1 px/cm = 50,800 world units. All authored geometry uses centimetres and projection scale 1; no fit-to-page scaling."
+            },
+            {
+              "id": "cm-scale-roof",
+              "value": 44800,
+              "unit": "px before projection",
+              "sourceFactIds": [
+                "crown"
+              ],
+              "verification": "448 m \u00d7100 = 44,800 world units; spire rises to 50,800."
+            }
+          ]
+        }
+      }
+    ],
+    "response": "full",
+    "retain": {
+      "taipeiFacts": {
+        "step": "facts",
+        "path": "/facts"
+      }
+    }
+  },
+  "failedSource": {
+    "available": false,
+    "recoverable": true,
+    "code": "REFERENCE_DOWNLOAD_FAILED",
+    "message": "Reference response: http (HTTP 404) Failure stage: REFERENCE_DOWNLOAD_FAILED. Download, 6 MiB byte and decoder resource guards remain active. No image was resized or imported by this failed call. Choose another source or method; do not substitute an invented or inspired drawing for an explicitly requested reproduction without consent.",
+    "failure": {
+      "stage": "response",
+      "reason": "http",
+      "retryable": false,
+      "status": 404,
+      "attempts": 1
+    },
+    "nextStep": "This is a source-local failure, not a task-level blocker. Continue research using a different source, query, or supported acquisition method. Do not retry unchanged rejected input or reduce resolution. Do not ask the user to supply public reference material merely because this source failed. For an explicit reproduction, do not substitute an invented or inspired drawing without consent."
+  }
+}

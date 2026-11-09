@@ -1456,7 +1456,7 @@ for (const width of [360, 1280]) {
         )
       }
 
-      parallel('parallel-review', 'review_drawing', 'Inspect the crown')
+      parallel('parallel-review', 'inspect_drawing', 'Inspect the crown')
       parallel('parallel-edit', 'prepare_design', 'Prepare the entrance')
       await expect(status.locator(':scope > span')).toHaveText([
         'Checking the requested details - Preparing the design - 2 operations'
@@ -1466,7 +1466,7 @@ for (const width of [360, 1280]) {
         'Inspect the crown',
         'Checking the requested details'
       ])
-      parallel('parallel-review', 'review_drawing', 'Inspect the crown', true)
+      parallel('parallel-review', 'inspect_drawing', 'Inspect the crown', true)
       await expect(status.locator(':scope > span')).toHaveText([
         'Prepare the entrance; Inspect the crown',
         'Partially completed operation (2)'

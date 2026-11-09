@@ -427,7 +427,7 @@ describe('typed recipe admission', () => {
       rejected(proposal(), {
         resolve: (name: string) => (name === 'find' ? optional : edit)
       }).issues[0].code
-    ).toBe('binding')
+    ).toBe('reference')
     const opaque = createAiToolContract({ ...find, outputSchema: true })
 
     expect(
@@ -467,7 +467,7 @@ describe('typed recipe admission', () => {
     input.steps[1].id = 'locate'
     input.steps[1].revision = 99
     expect(rejected(input).issues.map((item) => item.code)).toEqual(
-      expect.arrayContaining(['binding', 'step', 'dependency'])
+      expect.arrayContaining(['reference', 'step', 'dependency'])
     )
   })
 
@@ -499,7 +499,7 @@ describe('typed recipe admission', () => {
     input.steps[0].input.fields.query = { kind: 'literal', value: 4 }
     const validate = vi.fn(() => 'Expected string')
 
-    expect(rejected(input, { validate }).issues[0].code).toBe('binding')
+    expect(rejected(input, { validate }).issues[0].code).toBe('value')
     expect(validate).toHaveBeenCalledOnce()
   })
 
@@ -1561,3 +1561,192 @@ it.each([false, true])(
     }
   }
 )
+
+it('admits request-only dependencies exclusively in authored request sequences', () => {
+  const requestOnly = createAiToolContract({ ...find, composition: 'request' })
+  const selected = options({
+    resolve: (name: string) => (name === 'find' ? requestOnly : edit)
+  })
+
+  expect(admitAiRecipe(proposal(), selected, 'sequence')).toMatchObject({
+    ok: true
+  })
+  expect(admitAiRecipe(proposal(), selected, 'registered')).toMatchObject({
+    ok: false
+  })
+  expect(admitAiRecipe(proposal(), selected, 'inline')).toMatchObject({
+    ok: false
+  })
+})
+
+it.each(['missing-field', 'invalid-pointer', 'unknown-step', 'opaque-schema'])(
+  'distinguishes authored reference selections from unavailable schema proof: %s',
+  (mode) => {
+    const recipe = proposal()
+
+    recipe.steps[1].input.fields.target = {
+      kind: 'step',
+      step: mode === 'unknown-step' ? 'absent' : 'locate',
+      path: mode === 'invalid-pointer' ? 'target' : '/missing'
+    }
+    const result = admitAiRecipe(
+      recipe,
+      options({
+        resolve: (name: string) => {
+          if (name === 'edit') {
+            return edit
+          }
+
+          if (mode !== 'opaque-schema') {
+            return find
+          }
+
+          return createAiToolContract({
+            ...find,
+            outputSchema: object({ missing: { allOf: [{ type: 'object' }] } })
+          })
+        }
+      }),
+      'sequence'
+    )
+
+    expect(result.ok).toBe(false)
+    if (result.ok) {
+      throw Error('Unexpected admission')
+    }
+
+    if (mode === 'opaque-schema') {
+      expect(
+        result.issues.some(
+          (issue) => issue.code === 'schema' || issue.code === 'binding'
+        )
+      ).toBe(true)
+      expect(result.issues.some((issue) => issue.code === 'reference')).toBe(
+        false
+      )
+
+      return
+    }
+
+    expect(result.issues).toHaveLength(1)
+    expect(result.issues[0].code).toBe('reference')
+    if (mode === 'missing-field') {
+      expect(result.issues[0].actual).toContain('/missing')
+    }
+  }
+)
+
+it.each(['literal', 'unknown-field', 'missing-field', 'validator-exception'])(
+  'classifies authored value admission without hiding contract failures: %s',
+  (mode) => {
+    const inputSchema =
+      mode === 'literal' || mode === 'validator-exception'
+        ? number
+        : object({ amount: number })
+    const dependency = createAiToolContract({
+      ...edit,
+      name: 'amount',
+      inputSchema
+    })
+    const input =
+      mode === 'literal' || mode === 'validator-exception'
+        ? { kind: 'literal', value: 'wrong' }
+        : {
+            kind: 'object',
+            fields:
+              mode === 'unknown-field'
+                ? {
+                    amount: { kind: 'literal', value: 1 },
+                    extra: { kind: 'literal', value: 2 }
+                  }
+                : {}
+          }
+    const result = admitAiRecipe(
+      {
+        format: 1,
+        name: 'value-admission',
+        revision: 1,
+        description: 'Validate authored inputs.',
+        inputSchema: object({}),
+        outputSchema: number,
+        steps: [
+          {
+            id: 'apply',
+            tool: dependency.name,
+            revision: dependency.revision,
+            input
+          }
+        ],
+        output: { kind: 'step', step: 'apply', path: '' }
+      },
+      options({
+        resolve: () => dependency,
+
+        validate: () => {
+          if (mode === 'validator-exception') {
+            throw Error('Validator unavailable')
+          }
+
+          return mode === 'literal' ? 'Expected a number' : undefined
+        }
+      }),
+      'sequence'
+    )
+
+    expect(result.ok).toBe(false)
+    if (result.ok) {
+      throw Error('Unexpected admission')
+    }
+
+    expect(result.omittedIssues).toBe(0)
+    expect(result.issues).toHaveLength(1)
+    expect(result.issues[0]).toMatchObject({
+      code: mode === 'validator-exception' ? 'binding' : 'value',
+      path: '/steps/0/input'
+    })
+  }
+)
+
+it('validates a selected nested sequence result against the selected union fields, not their source envelopes', () => {
+  const output = {
+    anyOf: [
+      {
+        type: 'object',
+        required: ['kind', 'value'],
+        properties: { kind: { const: 'a' }, value: { type: 'number' } }
+      },
+      {
+        type: 'object',
+        required: ['kind', 'value'],
+        properties: { kind: { const: 'b' }, value: { type: 'number' } }
+      }
+    ]
+  }
+  const dependency = createAiToolContract({
+    ...edit,
+    name: 'union-source',
+    outputSchema: output
+  })
+  const input = {
+    ...proposal(),
+    steps: [
+      {
+        id: 'source',
+        tool: dependency.name,
+        revision: dependency.revision,
+        input: { kind: 'literal', value: 1 }
+      }
+    ]
+  }
+  input.output = { kind: 'step', step: 'source', path: '/value' }
+  const result = admitAiRecipe(
+    input,
+    options({ resolve: () => dependency }),
+    'sequence'
+  )
+  expect(result, JSON.stringify(result)).toMatchObject({ ok: true })
+  if (result.ok)
+    expect(result.value.contract.outputSchema).toEqual({
+      anyOf: [{ type: 'number' }, { type: 'number' }]
+    })
+})

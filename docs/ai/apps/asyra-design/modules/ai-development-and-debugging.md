@@ -46,7 +46,8 @@ After the applicable App validation gates pass, run
 App, document backend and collaboration server first. Keep the source and package
 outputs static throughout recording. The runner reads the App `.env`, refuses
 occupied service ports, starts and tracks its own local services, and stops them
-on exit. No remote publication or new dependency installation is involved.
+on failure before session retention. A retained report session keeps its PID-tracked
+services alive for explicit questions and closure. No remote publication or new dependency installation is involved.
 
 The runner verifies fixture SHA-256
 `25b9ad1aeb523fdb590a39d090a37fdc65ed62ff081a27acfa92d946f9b2ff51`,
@@ -76,6 +77,17 @@ activity, rejected inputs, completion/timeout and unresolved review work from th
 actual records. Keep unmeasured CPU or provider metrics explicitly unmeasured.
 
 ### Drawing agent self-report
+
+User rule - November 8, 2026: while the App AI generates a report or a follow-up
+analysis, the development agent must not edit any files, including source, tests,
+configuration, packages or documentation. Automatic provider/evidence recording
+continues. A completed drawing is not permission to edit while reporting remains
+active. Preserve the existing static-source rule through live evidence collection.
+
+The fixed runner retains the provider after its report as specified in
+[Agent Context and Report Continuity](../plans/agent-context-and-report-continuity-plan.md#5-verify-submitted-dependencies-actual-execution-and-agent-return-reasons).
+Use the retained-session commands below for questions and explicit close.
+Do not describe a new-session reconstruction as a reply from the original agent.
 
 The fixed benchmark uses one App request and the existing native evaluation
 window. After normal completion or deadline interruption acknowledgement and tool
@@ -443,3 +455,31 @@ Navigation classification waits for current settled/rendered geometry. Dispose
 the controller at report entry, after watchdog retirement. Framing failures join evidenceErrors without aborting report collection.
 The permanent drawing-framing browser fixture retains intermediate screenshots and
 video and verifies unchanged canonical data, selection and Undo depth around fit.
+
+### Retained evaluation report sessions
+
+The fixed 101 recorder requests an untimed report and retains its original native
+process after collecting the report, recording and document evidence. It writes
+`report-session.json` with the local service URL, session ID and native thread ID.
+The runner returns; waiting sessions do not issue model calls. The run's services
+remain listed with their PIDs in `run.json`. Keep that service alive until questions
+are complete; changing Vite server sources or restarting the service can lose the
+ephemeral native session. There is no reconstructed-session fallback.
+
+Use the maintained local command after the recorder returns:
+
+```sh
+node apps/asyra-design/test-data/ai-drawing/taipei-101-report-session.mjs RUN_DIRECTORY status
+node apps/asyra-design/test-data/ai-drawing/taipei-101-report-session.mjs RUN_DIRECTORY ask QUESTION_FILE
+node apps/asyra-design/test-data/ai-drawing/taipei-101-report-session.mjs RUN_DIRECTORY close
+```
+
+Questions serialize on the same native thread; each complete public answer retains
+its native turn identity in the run and under `provider-records/REQUEST.followups`.
+The sealed initial execution is unchanged. HTTP disconnect does not discard the
+answer; inspect retained follow-up output before deciding whether to ask again.
+Explicit close cancels active reporting, rejects pending questions and closes the
+provider once. Stop the PID-tracked App services after explicit closure and ownership
+verification. No drawing or research tools are allowed in reports or follow-ups.
+Do not edit any files during App AI report or follow-up generation. Automatic
+recording continues. Normal App requests do not retain provider sessions.

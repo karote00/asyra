@@ -37,7 +37,7 @@ const proposal = {
     {
       id: 'create',
       tool: 'design_operations.api_element_createElements',
-      revision: 8,
+      revision: 9,
       input: {
         kind: 'object',
         fields: {
@@ -66,7 +66,7 @@ const proposal = {
     {
       id: 'select',
       tool: 'design_operations.api_selection_selectElements',
-      revision: 4,
+      revision: 5,
       input: {
         kind: 'object',
         fields: {
@@ -262,12 +262,12 @@ it('composes actual canonical basic operations and hands creation identities thr
 
     expect(semantic.apis[0].recipeDependency).toEqual({
       name: proposal.steps[0].tool,
-      revision: 8,
+      revision: 9,
       execution: {
         kind: 'registered-tool',
         namespace: 'tool_library',
         tool: 'invoke_tool',
-        arguments: { name: proposal.steps[0].tool, revision: 8 }
+        arguments: { name: proposal.steps[0].tool, revision: 9 }
       },
       definition: {
         tool: 'describe_design_apis',
@@ -286,7 +286,7 @@ it('composes actual canonical basic operations and hands creation identities thr
 
     expect(lookup.tools[0]).toMatchObject({
       registeredName: proposal.steps[0].tool,
-      revision: 8,
+      revision: 9,
       composition: 'allowed',
       execution: {
         kind: 'registered-tool',
@@ -302,7 +302,7 @@ it('composes actual canonical basic operations and hands creation identities thr
       kind: 'registered-tool',
       namespace: 'tool_library',
       tool: 'invoke_tool',
-      arguments: { name: proposal.steps[0].tool, revision: 8 }
+      arguments: { name: proposal.steps[0].tool, revision: 9 }
     })
   } finally {
     await app.host.dispose()

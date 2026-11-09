@@ -1,3 +1,4 @@
+import { AiDesignToolIds } from '../../src/constants/ai-design'
 import capacityFixture from './fixtures/recorded-101/pattern-budget-recovery-20261023.json'
 import {
   nativeToolInputSchema,
@@ -390,14 +391,14 @@ describe('local semantic design tools', () => {
       },
       signal()
     )
-    expect(execute).toHaveBeenCalledTimes(3)
+    expect(execute).toHaveBeenCalledTimes(2)
     expect(execute.mock.calls[0][0].actions[0].arguments).toMatchObject({
       design: { version: 3, entries: expect.any(Array) }
     })
     expect(execute.mock.calls[1][0].actions[0].name).toBe(
-      AiActionNames.REVIEW_DESIGN
+      AiActionNames.INSPECT_DRAWING
     )
-    expect(execute.mock.calls[2][0].actions[0].arguments).toEqual({
+    expect(execute.mock.calls[1][0].actions[0].arguments).toEqual({
       elementId: 'actual-root'
     })
   })
@@ -423,8 +424,10 @@ it('returns brief measurements and blocks an unmet requirement before canvas exe
   )
 
   expect(reply).toMatchObject({
-    available: true,
+    available: false,
     applicable: false,
+    settlement: 'not-started',
+    recovery: 'correct_input',
     review: { checks: [{ actual: 360, expected: 400, passed: false }] }
   })
   expect(() => tools.resolveBatch(request(reply.artifactId))).toThrow(
@@ -811,6 +814,7 @@ it('keeps representation examples on their actual geometry and layout owners', a
     const example = designPreparationExamples.find(
       (example) =>
         (type !== 'projected-face' || example.draft.children.length === 1) &&
+        (type !== 'rect' || example.draft.children.length === 2) &&
         example.draft.children.some((child) => child.type === type)
     )
 
@@ -1564,23 +1568,6 @@ it('blocks a contradicted reviewed artifact through both native and batch apply 
   const operations = createLocalOperationTools(registered, tools, execute)
   const signal = new AbortController().signal
 
-  await operations.call(
-    'define_design_criteria',
-    {
-      method: 'Create the requested journal',
-      detailRequired: false,
-      references: [],
-      criteria: {
-        subject: {
-          requirement: 'Only a journal title',
-          description: 'Only a journal title',
-          verification: 'visual',
-          requiredUnits: []
-        }
-      }
-    },
-    signal
-  )
   const reviewed = JSON.parse(
     await operations.call(
       'review_prepared_design',
@@ -1800,48 +1787,6 @@ it('hands a material revision to its material-only consumer and reuses the same 
   const first = JSON.parse(
     await owner.call('prepare_design', { draft: source }, signal())
   )
-  const { createLocalDesignReview } = await import('../local-design-review')
-  const review = createLocalDesignReview()
-
-  review.record({
-    phase: 'plan',
-    method: 'Review the selected surface',
-    references: [],
-    criteria: {
-      surface: {
-        requirement: 'Requested surface',
-        description: 'Inspect its material',
-        verification: 'visual',
-        requiredUnits: []
-      }
-    },
-    structureCriteria: [],
-    detailRequired: false
-  })
-  const image = review.inspect('original-surface', true, true)
-
-  if (!image) {
-    throw new Error('Missing image')
-  }
-
-  const bound = review.bindReview('visual', [
-    { criterionId: 'surface', inspectionIds: [image.inspectionId] }
-  ])
-
-  review.recordBoundReview({
-    ...bound,
-    checks: bound.checks.map((check) => ({
-      ...check,
-      status: 'fail',
-      evidence: 'The chosen field needs a new palette'
-    }))
-  })
-  const guidance = review.correctionContext().discovery
-
-  if (!guidance) {
-    throw new Error('Missing discovery handoff')
-  }
-
   const query = createLocalOperationTools(
     actions,
     owner,
@@ -1858,18 +1803,22 @@ it('hands a material revision to its material-only consumer and reuses the same 
   )
   const found = JSON.parse(
     await query.call(
-      guidance.tool,
-      { ...guidance.arguments, query: materialDefinition.name, view: 'full' },
+      AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+      { query: materialDefinition.name, view: 'full' },
       signal()
     )
   )
 
   expect(found.tools).toHaveLength(1)
   expect(found.tools[0].inputSchema).toEqual(materialDefinition.inputSchema)
-  expect(found.tools[0].execution.kind).toBe('native-tool')
+  expect(found.tools[0].execution).toMatchObject({
+    kind: 'host-operation',
+    tool: 'execute_design',
+    operation: 'design.prepare_material_revision'
+  })
   const revision = JSON.parse(
     await owner.call(
-      found.tools[0].execution.tool,
+      found.tools[0].name,
       {
         artifactId: first.artifactId,
         field: 'glass',

@@ -507,7 +507,7 @@ it('versions selected-owner property semantics separately from read and structur
     let revision = 10
 
     if (name.startsWith('api_core_')) {
-      revision = 8
+      revision = 9
     }
 
     if (name === 'api_element_setElementsVisible') {

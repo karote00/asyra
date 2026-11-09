@@ -76,14 +76,14 @@ Use `prepare_and_apply_design` for ordinary ready parts; the optional standalone
 example does not require an extra preparation step. Mechanics do not judge
 appearance. Retain valid artifacts, partial receipts and independent passes;
 inspect only affected evidence plus the appropriate final overview. Keep decisions
-in existing brief/criteria/fact/check artifacts, not another store or mandatory essay.
+in the existing draft or named conversation results; no separate registration is required.
 
 For a parameter conversion walkthrough and its executable adjacent-surface example,
 select `design.architectural-illustration.materials.method.parameters` only when
 needed. Naming a material is not assigning it: apply the chosen Fill to the actual
 surface, keep structural paint separate, and transform continuous-domain controls
 to each actual basis. Equal local handles on differently oriented faces do not
-establish common lighting. Keep missing geometry/detail as a separate criterion.
+establish common lighting. Keep unfinished geometry/detail separate from the material decision.
 A shared Fill has one value; it cannot encode different per-owner coordinates.
 
 For normalized local handles, part dimensions must be nonzero; handles may lie

@@ -56,3 +56,43 @@ it('preserves runtime lifetimes inside maps and rejects captured references', ()
   )
   expect(recipeCapturesValue({ a: [1] }, read(map()))).toBe(false)
 })
+
+it('forwards mutually exclusive optional fields without allowing forbidden values', () => {
+  const choice = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['name'],
+    properties: {
+      name: { type: 'string' },
+      fill: { type: 'string' },
+      material: { type: 'string' }
+    },
+    anyOf: [
+      { properties: { material: false } },
+      { properties: { fill: false } }
+    ]
+  }
+
+  expect(recipeAssignable(read(map(choice)), read(map(choice)))).toBe(true)
+  const unrestricted = { ...choice }
+
+  Reflect.deleteProperty(unrestricted, 'anyOf')
+  expect(recipeAssignable(read(map(unrestricted)), read(map(choice)))).toBe(
+    false
+  )
+  expect(recipeAssignable(read(false), read(false))).toBe(false)
+})
+
+it('keeps guarded request paths typed while rejecting unknown paths and impossible indices', () => {
+  const schema = read({
+    type: 'object',
+    properties: {
+      ids: { type: 'array', items: { type: 'string' }, maxItems: 1 }
+    }
+  })
+
+  expect(() => recipeSchemaAt(schema, '/ids/0')).toThrow()
+  expect(recipeSchemaAt(schema, '/ids/0', true).type).toBe('string')
+  expect(() => recipeSchemaAt(schema, '/unknown', true)).toThrow()
+  expect(() => recipeSchemaAt(schema, '/ids/1', true)).toThrow()
+})

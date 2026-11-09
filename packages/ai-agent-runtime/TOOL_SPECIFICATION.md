@@ -269,7 +269,8 @@ into a unique selection must guarantee uniqueness; removing or weakening this
 constraint is not an accepted substitute for matching the registered contract.
 
 Only dependencies explicitly marked composition-eligible by their host can enter
-a recipe. Control-plane tools remain ineligible. This is shared contract metadata,
+a recipe. `composition: 'request'` admits a registered operation only in a host request
+sequence, never an authored inline or saved recipe. Control-plane tools remain ineligible. This is shared contract metadata,
 not a tool-name list. Metadata derives from the actual dependency graph; a model
 cannot downgrade mutation/external effects or grant resource access.
 
@@ -278,7 +279,9 @@ homogeneous arrays, primitives, required fields, enums and finite bounds. Regist
 dependencies may also use typed object maps (`additionalProperties` schemas with
 optional `propertyNames`), open objects, omitted optional `required`, primitive
 `const`, homogeneous untyped enums, and disjoint union variants. Dependency fields
-are projected by declared required paths. Unused opaque siblings do not prevent
+are projected by declared required paths. Request-sequence input bindings may
+select declared optional fields/items, with presence and actual input validation
+before the dependent dispatch. Unknown paths and incompatible types still reject. Unused opaque siblings do not prevent
 that projection; opaque values cannot be bound, constructed or silently narrowed.
 Whole-map forwarding proves key/value constraints and nested runtime lifetimes;
 untyped maps cannot satisfy typed destinations, and unknown map keys are never
@@ -391,7 +394,6 @@ not evidence that a saved literal is independent of runtime state. Bind such
 values from fresh typed input; known declared ordinary fields can remain literals.
 This constraint applies to recipe capture only, not direct native invocation.
 
-
 ### Host library management
 
 `createAiToolStoreManagement({ store, capacity })` uses the same saved-record
@@ -408,7 +410,6 @@ reject even if the requested state happens to match. Writes preserve the recipe
 and execution evidence, require the exact durable acknowledgement, and never
 revive retired entries. Runtime persistence delegates its state writes to the
 same owner and updates request registry availability only after acknowledgement.
-
 
 ### Diagnostic outbox control contract
 

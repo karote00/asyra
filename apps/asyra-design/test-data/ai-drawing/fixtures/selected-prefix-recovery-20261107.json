@@ -1,0 +1,3415 @@
+{
+  "source": "taipei-101-fixed-1793987538688",
+  "input": {
+    "operations": [
+      {
+        "id": "base",
+        "name": "design_workflow.prepare_and_apply_design",
+        "arguments": {
+          "draft": {
+            "type": "group",
+            "name": "\u53f0\u5317101\uff5c\u57fa\u5ea7\u8207\u4e0b\u90e8\u5854\u8eab",
+            "projection": {
+              "azimuth": 35,
+              "elevation": 25,
+              "scale": 1,
+              "originX": 6000,
+              "originY": 47000
+            },
+            "brief": {
+              "intent": "Highly detailed editable Taipei101 lower tower, cm world units.",
+              "viewpoint": "Elevated three-quarter orthographic, azimuth35 elevation25.",
+              "sources": [
+                "Architect project: height508m and base ornamentation",
+                "Published schematic base width63.5m; local facade dimensions estimated"
+              ],
+              "assumptions": [
+                "Base tapers from63.5m to46.5m over118m; local floor heights, glass divisions and ornament dimensions illustrative estimates."
+              ]
+            },
+            "fillTemplates": {
+              "glass": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 1
+                  },
+                  {
+                    "x": 0.8,
+                    "y": 0
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#244950",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.45,
+                    "color": "#39727B",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.7,
+                    "color": "#68969B",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#9CB8BA",
+                    "opacity": 1
+                  }
+                ]
+              },
+              "darkglass": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#355C65",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.5,
+                    "color": "#153E48",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#52767A",
+                    "opacity": 1
+                  }
+                ]
+              },
+              "metal": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 0.5
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#D5DFD7",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.25,
+                    "color": "#8AA9A4",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.65,
+                    "color": "#4B6D6B",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#A6BCB5",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            "motifTemplates": {
+              "windows": [
+                {
+                  "key": "glass",
+                  "name": "\u7368\u7acb\u96d9\u5c64\u73bb\u7483\u7a97",
+                  "fill": {
+                    "template": "glass"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.055,
+                      "v": 0.06
+                    },
+                    {
+                      "u": 0.945,
+                      "v": 0.06
+                    },
+                    {
+                      "u": 0.945,
+                      "v": 0.78
+                    },
+                    {
+                      "u": 0.055,
+                      "v": 0.78
+                    }
+                  ]
+                },
+                {
+                  "key": "spandrel",
+                  "name": "\u7a97\u9593\u677f\u8207\u91d1\u5c6c\u6a6b\u6a11",
+                  "fill": "#46706F",
+                  "vertices": [
+                    {
+                      "u": 0.055,
+                      "v": 0.81
+                    },
+                    {
+                      "u": 0.945,
+                      "v": 0.81
+                    },
+                    {
+                      "u": 0.945,
+                      "v": 0.97
+                    },
+                    {
+                      "u": 0.055,
+                      "v": 0.97
+                    }
+                  ]
+                },
+                {
+                  "key": "edge",
+                  "name": "\u7a97\u6846\u53d7\u5149\u908a",
+                  "fill": "#96B5AD",
+                  "vertices": [
+                    {
+                      "u": 0.025,
+                      "v": 0.02
+                    },
+                    {
+                      "u": 0.055,
+                      "v": 0.02
+                    },
+                    {
+                      "u": 0.055,
+                      "v": 0.98
+                    },
+                    {
+                      "u": 0.025,
+                      "v": 0.98
+                    }
+                  ]
+                }
+              ]
+            },
+            "children": [
+              {
+                "type": "projected-face",
+                "key": "plinth-front",
+                "name": "\u5165\u53e3\u77f3\u6750\u57fa\u5ea7\u6b63\u9762",
+                "fill": "#717E7A",
+                "vertices": [
+                  {
+                    "x": -3300,
+                    "y": 3300,
+                    "z": 0
+                  },
+                  {
+                    "x": 3300,
+                    "y": 3300,
+                    "z": 0
+                  },
+                  {
+                    "x": 3300,
+                    "y": 3300,
+                    "z": 120
+                  },
+                  {
+                    "x": -3300,
+                    "y": 3300,
+                    "z": 120
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "plinth-side",
+                "name": "\u5165\u53e3\u77f3\u6750\u57fa\u5ea7\u5074\u9762",
+                "fill": "#535E5C",
+                "vertices": [
+                  {
+                    "x": 3300,
+                    "y": -3300,
+                    "z": 0
+                  },
+                  {
+                    "x": 3300,
+                    "y": 3300,
+                    "z": 0
+                  },
+                  {
+                    "x": 3300,
+                    "y": 3300,
+                    "z": 120
+                  },
+                  {
+                    "x": 3300,
+                    "y": -3300,
+                    "z": 120
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "plinth-top",
+                "name": "\u57fa\u5ea7\u9802\u9762",
+                "fill": "#B3BBB2",
+                "vertices": [
+                  {
+                    "x": -3300,
+                    "y": -3300,
+                    "z": 120
+                  },
+                  {
+                    "x": 3300,
+                    "y": -3300,
+                    "z": 120
+                  },
+                  {
+                    "x": 3300,
+                    "y": 3300,
+                    "z": 120
+                  },
+                  {
+                    "x": -3300,
+                    "y": 3300,
+                    "z": 120
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "base-front",
+                "name": "\u6f38\u7e2e\u57fa\u5ea7\u6b63\u9762\u7a97\u6846\u5e95\u5c64",
+                "fill": "#7F9B95",
+                "vertices": [
+                  {
+                    "x": -3175,
+                    "y": 3175,
+                    "z": 120
+                  },
+                  {
+                    "x": 3175,
+                    "y": 3175,
+                    "z": 120
+                  },
+                  {
+                    "x": 2325,
+                    "y": 2325,
+                    "z": 11800
+                  },
+                  {
+                    "x": -2325,
+                    "y": 2325,
+                    "z": 11800
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "base-front-windows",
+                "name": "\u57fa\u5ea7\u6b63\u9762\u9010\u7a97\u73bb\u7483\u8207\u6846\u6599",
+                "boundary": {
+                  "face": "base-front"
+                },
+                "rows": 26,
+                "columns": 32,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "windows"
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "base-side",
+                "name": "\u6f38\u7e2e\u57fa\u5ea7\u5074\u9762\u7a97\u6846\u5e95\u5c64",
+                "fill": "#4E6E6C",
+                "vertices": [
+                  {
+                    "x": 3175,
+                    "y": -3175,
+                    "z": 120
+                  },
+                  {
+                    "x": 3175,
+                    "y": 3175,
+                    "z": 120
+                  },
+                  {
+                    "x": 2325,
+                    "y": 2325,
+                    "z": 11800
+                  },
+                  {
+                    "x": 2325,
+                    "y": -2325,
+                    "z": 11800
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "base-side-windows",
+                "name": "\u57fa\u5ea7\u5074\u9762\u9010\u7a97\u73bb\u7483\u8207\u6846\u6599",
+                "boundary": {
+                  "face": "base-side"
+                },
+                "rows": 26,
+                "columns": 32,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "windows",
+                  "overrides": {
+                    "glass": {
+                      "fill": {
+                        "template": "darkglass"
+                      }
+                    },
+                    "spandrel": {
+                      "fill": "#285253"
+                    },
+                    "edge": {
+                      "fill": "#6D8981"
+                    }
+                  }
+                }
+              },
+              {
+                "type": "surface-grid",
+                "key": "base-front-piers",
+                "name": "\u57fa\u5ea7\u6b63\u9762\u7d50\u69cb\u8c4e\u6846",
+                "boundary": {
+                  "face": "base-front"
+                },
+                "rows": 1,
+                "columns": 8,
+                "order": "cell-major",
+                "motifs": [
+                  {
+                    "key": "pier",
+                    "name": "\u5bec\u91d1\u5c6c\u7acb\u67f1",
+                    "fill": {
+                      "template": "metal"
+                    },
+                    "vertices": [
+                      {
+                        "u": 0.01,
+                        "v": 0
+                      },
+                      {
+                        "u": 0.07,
+                        "v": 0
+                      },
+                      {
+                        "u": 0.07,
+                        "v": 1
+                      },
+                      {
+                        "u": 0.01,
+                        "v": 1
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "base-side-piers",
+                "name": "\u57fa\u5ea7\u5074\u9762\u7d50\u69cb\u8c4e\u6846",
+                "boundary": {
+                  "face": "base-side"
+                },
+                "rows": 1,
+                "columns": 8,
+                "order": "cell-major",
+                "motifs": [
+                  {
+                    "key": "pier",
+                    "name": "\u5074\u7acb\u67f1",
+                    "fill": "#60837C",
+                    "vertices": [
+                      {
+                        "u": 0.01,
+                        "v": 0
+                      },
+                      {
+                        "u": 0.07,
+                        "v": 0
+                      },
+                      {
+                        "u": 0.07,
+                        "v": 1
+                      },
+                      {
+                        "u": 0.01,
+                        "v": 1
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "pattern",
+                "key": "base-bands",
+                "name": "\u4e0b\u90e8\u4e09\u6bb5\u6c34\u5e73\u5e36",
+                "origin": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                },
+                "axes": [
+                  {
+                    "count": 3,
+                    "step": {
+                      "x": 0,
+                      "y": -250,
+                      "z": 3400
+                    }
+                  }
+                ],
+                "members": [
+                  {
+                    "type": "projected-face",
+                    "key": "band",
+                    "name": "\u6b63\u9762\u91d1\u5c6c\u6a6b\u5e36",
+                    "fill": {
+                      "template": "metal"
+                    },
+                    "vertices": [
+                      {
+                        "x": -2900,
+                        "y": 2940,
+                        "z": 3380
+                      },
+                      {
+                        "x": 2900,
+                        "y": 2940,
+                        "z": 3380
+                      },
+                      {
+                        "x": 2900,
+                        "y": 2940,
+                        "z": 3520
+                      },
+                      {
+                        "x": -2900,
+                        "y": 2940,
+                        "z": 3520
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "entry-front",
+                "name": "\u5165\u53e3\u73bb\u7483\u5e55\u7246",
+                "fill": "#17383E",
+                "vertices": [
+                  {
+                    "x": -1650,
+                    "y": 3190,
+                    "z": 120
+                  },
+                  {
+                    "x": 1650,
+                    "y": 3190,
+                    "z": 120
+                  },
+                  {
+                    "x": 1650,
+                    "y": 3190,
+                    "z": 700
+                  },
+                  {
+                    "x": -1650,
+                    "y": 3190,
+                    "z": 700
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "doors",
+                "name": "\u5165\u53e3\u9580\u7247\u8207\u9580\u6846",
+                "boundary": {
+                  "face": "entry-front"
+                },
+                "rows": 1,
+                "columns": 12,
+                "order": "cell-major",
+                "motifs": [
+                  {
+                    "key": "door",
+                    "name": "\u73bb\u7483\u9580\u7247",
+                    "fill": {
+                      "template": "glass"
+                    },
+                    "vertices": [
+                      {
+                        "u": 0.04,
+                        "v": 0.02
+                      },
+                      {
+                        "u": 0.96,
+                        "v": 0.02
+                      },
+                      {
+                        "u": 0.96,
+                        "v": 0.95
+                      },
+                      {
+                        "u": 0.04,
+                        "v": 0.95
+                      }
+                    ]
+                  },
+                  {
+                    "key": "handle",
+                    "name": "\u91d1\u5c6c\u9580\u628a",
+                    "fill": "#C7D1C2",
+                    "vertices": [
+                      {
+                        "u": 0.82,
+                        "v": 0.35
+                      },
+                      {
+                        "u": 0.85,
+                        "v": 0.35
+                      },
+                      {
+                        "u": 0.85,
+                        "v": 0.6
+                      },
+                      {
+                        "u": 0.82,
+                        "v": 0.6
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "canopy-edge",
+                "name": "\u5165\u53e3\u96e8\u906e\u539a\u5ea6",
+                "fill": "#506B69",
+                "vertices": [
+                  {
+                    "x": -1800,
+                    "y": 3550,
+                    "z": 700
+                  },
+                  {
+                    "x": 1800,
+                    "y": 3550,
+                    "z": 700
+                  },
+                  {
+                    "x": 1800,
+                    "y": 3550,
+                    "z": 760
+                  },
+                  {
+                    "x": -1800,
+                    "y": 3550,
+                    "z": 760
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "canopy",
+                "name": "\u5165\u53e3\u73bb\u7483\u96e8\u906e\u9802\u9762",
+                "fill": "#97B3AF",
+                "vertices": [
+                  {
+                    "x": -1800,
+                    "y": 3050,
+                    "z": 760
+                  },
+                  {
+                    "x": 1800,
+                    "y": 3050,
+                    "z": 760
+                  },
+                  {
+                    "x": 1800,
+                    "y": 3550,
+                    "z": 760
+                  },
+                  {
+                    "x": -1800,
+                    "y": 3550,
+                    "z": 760
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "canopy-bars",
+                "name": "\u96e8\u906e\u91d1\u5c6c\u683c\u67f5",
+                "boundary": {
+                  "face": "canopy"
+                },
+                "rows": 2,
+                "columns": 12,
+                "order": "cell-major",
+                "motifs": [
+                  {
+                    "key": "bar",
+                    "name": "\u96e8\u906e\u6846",
+                    "fill": "#D5DCD0",
+                    "vertices": [
+                      {
+                        "u": 0,
+                        "v": 0
+                      },
+                      {
+                        "u": 0.035,
+                        "v": 0
+                      },
+                      {
+                        "u": 0.035,
+                        "v": 1
+                      },
+                      {
+                        "u": 0,
+                        "v": 1
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "coin-shadow-f",
+                "name": "\u6b63\u9762\u53e4\u9322\u88dd\u98fe\u9670\u5f71",
+                "fill": "#183E43",
+                "ellipse": {
+                  "center": {
+                    "x": 0,
+                    "y": 2560,
+                    "z": 10600
+                  },
+                  "u": {
+                    "x": 710,
+                    "y": 0,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 710
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "coin-f",
+                "name": "\u6b63\u9762\u5713\u5929\u65b9\u5730\u91d1\u5c6c\u5916\u74b0",
+                "fill": {
+                  "template": "metal"
+                },
+                "ellipse": {
+                  "center": {
+                    "x": 0,
+                    "y": 2600,
+                    "z": 10650
+                  },
+                  "u": {
+                    "x": 650,
+                    "y": 0,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 650
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "coin-inner-f",
+                "name": "\u5713\u5f62\u88dd\u98fe\u5167\u74b0",
+                "fill": "#537A73",
+                "ellipse": {
+                  "center": {
+                    "x": 0,
+                    "y": 2610,
+                    "z": 10650
+                  },
+                  "u": {
+                    "x": 510,
+                    "y": 0,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 510
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "coin-center-f",
+                "name": "\u65b9\u5b54\u91d1\u5c6c\u908a\u6846",
+                "fill": "#A6B6A5",
+                "vertices": [
+                  {
+                    "x": -240,
+                    "y": 2620,
+                    "z": 10410
+                  },
+                  {
+                    "x": 240,
+                    "y": 2620,
+                    "z": 10410
+                  },
+                  {
+                    "x": 240,
+                    "y": 2620,
+                    "z": 10890
+                  },
+                  {
+                    "x": -240,
+                    "y": 2620,
+                    "z": 10890
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "coin-hole-f",
+                "name": "\u65b9\u5b54\u6df1\u8272\u4e2d\u5fc3",
+                "fill": "#234C50",
+                "vertices": [
+                  {
+                    "x": -170,
+                    "y": 2630,
+                    "z": 10480
+                  },
+                  {
+                    "x": 170,
+                    "y": 2630,
+                    "z": 10480
+                  },
+                  {
+                    "x": 170,
+                    "y": 2630,
+                    "z": 10820
+                  },
+                  {
+                    "x": -170,
+                    "y": 2630,
+                    "z": 10820
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "coin-s",
+                "name": "\u5074\u9762\u5713\u5929\u65b9\u5730\u91d1\u5c6c\u5916\u74b0",
+                "fill": {
+                  "template": "metal"
+                },
+                "ellipse": {
+                  "center": {
+                    "x": 2600,
+                    "y": 0,
+                    "z": 10650
+                  },
+                  "u": {
+                    "x": 0,
+                    "y": 650,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 650
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "coin-inner-s",
+                "name": "\u5074\u9762\u88dd\u98fe\u5167\u74b0",
+                "fill": "#3E635F",
+                "ellipse": {
+                  "center": {
+                    "x": 2610,
+                    "y": 0,
+                    "z": 10650
+                  },
+                  "u": {
+                    "x": 0,
+                    "y": 510,
+                    "z": 0
+                  },
+                  "v": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 510
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "coin-center-s",
+                "name": "\u5074\u9762\u65b9\u5b54\u91d1\u5c6c\u908a\u6846",
+                "fill": "#91A491",
+                "vertices": [
+                  {
+                    "x": 2620,
+                    "y": -240,
+                    "z": 10410
+                  },
+                  {
+                    "x": 2620,
+                    "y": 240,
+                    "z": 10410
+                  },
+                  {
+                    "x": 2620,
+                    "y": 240,
+                    "z": 10890
+                  },
+                  {
+                    "x": 2620,
+                    "y": -240,
+                    "z": 10890
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "coin-hole-s",
+                "name": "\u5074\u9762\u65b9\u5b54",
+                "fill": "#193C40",
+                "vertices": [
+                  {
+                    "x": 2630,
+                    "y": -170,
+                    "z": 10480
+                  },
+                  {
+                    "x": 2630,
+                    "y": 170,
+                    "z": 10480
+                  },
+                  {
+                    "x": 2630,
+                    "y": 170,
+                    "z": 10820
+                  },
+                  {
+                    "x": 2630,
+                    "y": -170,
+                    "z": 10820
+                  }
+                ]
+              }
+            ]
+          },
+          "inspection": "defer",
+          "message": "\u5efa\u7acb\u57fa\u5ea7\u3001\u4e0b\u90e8\u5e55\u7246\u3001\u5165\u53e3\u53ca\u5713\u5f62\u88dd\u98fe"
+        }
+      },
+      {
+        "id": "tiers",
+        "name": "design_workflow.prepare_and_apply_design",
+        "arguments": {
+          "draft": {
+            "type": "group",
+            "name": "\u53f0\u5317101\uff5c\u516b\u7d44\u7af9\u7bc0\u8207\u9010\u7a97\u7acb\u9762",
+            "projection": {
+              "azimuth": 35,
+              "elevation": 25,
+              "scale": 1,
+              "originX": 6000,
+              "originY": 47000
+            },
+            "brief": {
+              "intent": "Eight projecting bamboo tiers with glass, frames, stepped corners, cornices and ruyi.",
+              "viewpoint": "Same elevated azimuth35 elevation25 world-centimetre projection.",
+              "sources": [
+                "Architect: eight8-storey modules",
+                "Skyscraper Museum facade aerial photograph"
+              ],
+              "assumptions": [
+                "Tier z11800+8\u00d73380cm; widths46.5\u201351.5m estimated from schematic. Ornament sizes illustrative, not measured."
+              ]
+            },
+            "fillTemplates": {
+              "glass": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0.1,
+                    "y": 1
+                  },
+                  {
+                    "x": 0.8,
+                    "y": 0
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#24535D",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.38,
+                    "color": "#3A7781",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.6,
+                    "color": "#699C9F",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.76,
+                    "color": "#44838C",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#8AB1B5",
+                    "opacity": 1
+                  }
+                ]
+              },
+              "sideglass": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#3F737E",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.4,
+                    "color": "#194753",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.75,
+                    "color": "#2B5E69",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#547C82",
+                    "opacity": 1
+                  }
+                ]
+              },
+              "metal": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 0.7
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#D0DCD3",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.18,
+                    "color": "#A0B9B1",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.42,
+                    "color": "#526F6B",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.66,
+                    "color": "#B1C5BB",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#577A76",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            "motifTemplates": {
+              "pane": [
+                {
+                  "key": "glass",
+                  "name": "\u53ef\u7de8\u8f2f\u73bb\u7483\u8207\u7a84\u7a97\u6846",
+                  "fill": {
+                    "template": "glass"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.045,
+                      "v": 0.05
+                    },
+                    {
+                      "u": 0.955,
+                      "v": 0.05
+                    },
+                    {
+                      "u": 0.955,
+                      "v": 0.81
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0.81
+                    }
+                  ]
+                },
+                {
+                  "key": "panel",
+                  "name": "\u6a13\u677f\u7a97\u9593\u677f",
+                  "fill": "#426D70",
+                  "vertices": [
+                    {
+                      "u": 0.045,
+                      "v": 0.84
+                    },
+                    {
+                      "u": 0.955,
+                      "v": 0.84
+                    },
+                    {
+                      "u": 0.955,
+                      "v": 0.98
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0.98
+                    }
+                  ]
+                }
+              ],
+              "ribs": [
+                {
+                  "key": "rib",
+                  "name": "\u52a0\u5f37\u8c4e\u6846\u91d1\u5c6c\u8868\u9762",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.07,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.07,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "children": [
+              {
+                "type": "pattern",
+                "key": "bamboo",
+                "name": "\u516b\u7d44\u5916\u5f35\u7af9\u7bc0",
+                "origin": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 11800
+                },
+                "axes": [
+                  {
+                    "count": 8,
+                    "step": {
+                      "x": 0,
+                      "y": 0,
+                      "z": 3380
+                    }
+                  }
+                ],
+                "members": [
+                  {
+                    "type": "projected-face",
+                    "key": "front",
+                    "name": "\u7af9\u7bc0\u6b63\u9762\u6846\u67b6",
+                    "fill": "#8CAAA4",
+                    "vertices": [
+                      {
+                        "x": -1825,
+                        "y": 2325,
+                        "z": 0
+                      },
+                      {
+                        "x": 1825,
+                        "y": 2325,
+                        "z": 0
+                      },
+                      {
+                        "x": 2075,
+                        "y": 2575,
+                        "z": 3200
+                      },
+                      {
+                        "x": -2075,
+                        "y": 2575,
+                        "z": 3200
+                      }
+                    ]
+                  },
+                  {
+                    "type": "surface-grid",
+                    "key": "front-grid",
+                    "name": "\u6b63\u9762\u516b\u5c64\u9010\u7a97\u7acb\u9762",
+                    "boundary": {
+                      "face": "front"
+                    },
+                    "rows": 8,
+                    "columns": 24,
+                    "order": "cell-major",
+                    "motifs": {
+                      "template": "pane"
+                    }
+                  },
+                  {
+                    "type": "surface-grid",
+                    "key": "front-ribs",
+                    "name": "\u6b63\u9762\u5206\u8de8\u7acb\u67f1",
+                    "boundary": {
+                      "face": "front"
+                    },
+                    "rows": 1,
+                    "columns": 6,
+                    "order": "cell-major",
+                    "motifs": {
+                      "template": "ribs"
+                    }
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "side",
+                    "name": "\u7af9\u7bc0\u5074\u9762\u6846\u67b6",
+                    "fill": "#537A78",
+                    "vertices": [
+                      {
+                        "x": 2325,
+                        "y": -1825,
+                        "z": 0
+                      },
+                      {
+                        "x": 2325,
+                        "y": 1825,
+                        "z": 0
+                      },
+                      {
+                        "x": 2575,
+                        "y": 2075,
+                        "z": 3200
+                      },
+                      {
+                        "x": 2575,
+                        "y": -2075,
+                        "z": 3200
+                      }
+                    ]
+                  },
+                  {
+                    "type": "surface-grid",
+                    "key": "side-grid",
+                    "name": "\u5074\u9762\u516b\u5c64\u9010\u7a97\u7acb\u9762",
+                    "boundary": {
+                      "face": "side"
+                    },
+                    "rows": 8,
+                    "columns": 24,
+                    "order": "cell-major",
+                    "motifs": {
+                      "template": "pane",
+                      "overrides": {
+                        "glass": {
+                          "fill": {
+                            "template": "sideglass"
+                          }
+                        },
+                        "panel": {
+                          "fill": "#28575C"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "surface-grid",
+                    "key": "side-ribs",
+                    "name": "\u5074\u9762\u5206\u8de8\u7acb\u67f1",
+                    "boundary": {
+                      "face": "side"
+                    },
+                    "rows": 1,
+                    "columns": 6,
+                    "order": "cell-major",
+                    "motifs": {
+                      "template": "ribs",
+                      "overrides": {
+                        "rib": {
+                          "fill": "#76948B"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "step1",
+                    "name": "\u9000\u7e2e\u8f49\u89d2\u7b2c\u4e00\u6298\u9762",
+                    "fill": "#486F71",
+                    "vertices": [
+                      {
+                        "x": 1825,
+                        "y": 2325,
+                        "z": 0
+                      },
+                      {
+                        "x": 1825,
+                        "y": 2075,
+                        "z": 0
+                      },
+                      {
+                        "x": 2075,
+                        "y": 2325,
+                        "z": 3200
+                      },
+                      {
+                        "x": 2075,
+                        "y": 2575,
+                        "z": 3200
+                      }
+                    ]
+                  },
+                  {
+                    "type": "surface-grid",
+                    "key": "step1-grid",
+                    "name": "\u8f49\u89d2\u7b2c\u4e00\u6298\u7a97\u683c",
+                    "boundary": {
+                      "face": "step1"
+                    },
+                    "rows": 8,
+                    "columns": 2,
+                    "order": "cell-major",
+                    "motifs": {
+                      "template": "pane",
+                      "overrides": {
+                        "glass": {
+                          "fill": {
+                            "template": "sideglass"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "step2",
+                    "name": "\u9000\u7e2e\u8f49\u89d2\u7b2c\u4e8c\u6298\u9762",
+                    "fill": "#A5BAB1",
+                    "vertices": [
+                      {
+                        "x": 1825,
+                        "y": 2075,
+                        "z": 0
+                      },
+                      {
+                        "x": 2075,
+                        "y": 2075,
+                        "z": 0
+                      },
+                      {
+                        "x": 2325,
+                        "y": 2325,
+                        "z": 3200
+                      },
+                      {
+                        "x": 2075,
+                        "y": 2325,
+                        "z": 3200
+                      }
+                    ]
+                  },
+                  {
+                    "type": "surface-grid",
+                    "key": "step2-grid",
+                    "name": "\u8f49\u89d2\u7b2c\u4e8c\u6298\u7a97\u683c",
+                    "boundary": {
+                      "face": "step2"
+                    },
+                    "rows": 8,
+                    "columns": 2,
+                    "order": "cell-major",
+                    "motifs": {
+                      "template": "pane"
+                    }
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "step3",
+                    "name": "\u9000\u7e2e\u8f49\u89d2\u7b2c\u4e09\u6298\u9762",
+                    "fill": "#426766",
+                    "vertices": [
+                      {
+                        "x": 2075,
+                        "y": 2075,
+                        "z": 0
+                      },
+                      {
+                        "x": 2075,
+                        "y": 1825,
+                        "z": 0
+                      },
+                      {
+                        "x": 2325,
+                        "y": 2075,
+                        "z": 3200
+                      },
+                      {
+                        "x": 2325,
+                        "y": 2325,
+                        "z": 3200
+                      }
+                    ]
+                  },
+                  {
+                    "type": "surface-grid",
+                    "key": "step3-grid",
+                    "name": "\u8f49\u89d2\u7b2c\u4e09\u6298\u7a97\u683c",
+                    "boundary": {
+                      "face": "step3"
+                    },
+                    "rows": 8,
+                    "columns": 2,
+                    "order": "cell-major",
+                    "motifs": {
+                      "template": "pane",
+                      "overrides": {
+                        "glass": {
+                          "fill": {
+                            "template": "sideglass"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "step4",
+                    "name": "\u9000\u7e2e\u8f49\u89d2\u7b2c\u56db\u6298\u9762",
+                    "fill": "#8EA79B",
+                    "vertices": [
+                      {
+                        "x": 2075,
+                        "y": 1825,
+                        "z": 0
+                      },
+                      {
+                        "x": 2325,
+                        "y": 1825,
+                        "z": 0
+                      },
+                      {
+                        "x": 2575,
+                        "y": 2075,
+                        "z": 3200
+                      },
+                      {
+                        "x": 2325,
+                        "y": 2075,
+                        "z": 3200
+                      }
+                    ]
+                  },
+                  {
+                    "type": "surface-grid",
+                    "key": "step4-grid",
+                    "name": "\u8f49\u89d2\u7b2c\u56db\u6298\u7a97\u683c",
+                    "boundary": {
+                      "face": "step4"
+                    },
+                    "rows": 8,
+                    "columns": 2,
+                    "order": "cell-major",
+                    "motifs": {
+                      "template": "pane"
+                    }
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "far-left",
+                    "name": "\u6b63\u9762\u5916\u5074\u6298\u89d2",
+                    "fill": "#719A97",
+                    "vertices": [
+                      {
+                        "x": -2325,
+                        "y": 1825,
+                        "z": 0
+                      },
+                      {
+                        "x": -1825,
+                        "y": 2325,
+                        "z": 0
+                      },
+                      {
+                        "x": -2075,
+                        "y": 2575,
+                        "z": 3200
+                      },
+                      {
+                        "x": -2575,
+                        "y": 2075,
+                        "z": 3200
+                      }
+                    ]
+                  },
+                  {
+                    "type": "surface-grid",
+                    "key": "far-left-grid",
+                    "name": "\u5916\u5074\u6298\u89d2\u7a97\u6846",
+                    "boundary": {
+                      "face": "far-left"
+                    },
+                    "rows": 8,
+                    "columns": 3,
+                    "order": "cell-major",
+                    "motifs": {
+                      "template": "pane"
+                    }
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "far-right",
+                    "name": "\u5074\u9762\u5916\u5074\u6298\u89d2",
+                    "fill": "#345B63",
+                    "vertices": [
+                      {
+                        "x": 2325,
+                        "y": -1825,
+                        "z": 0
+                      },
+                      {
+                        "x": 1825,
+                        "y": -2325,
+                        "z": 0
+                      },
+                      {
+                        "x": 2075,
+                        "y": -2575,
+                        "z": 3200
+                      },
+                      {
+                        "x": 2575,
+                        "y": -2075,
+                        "z": 3200
+                      }
+                    ]
+                  },
+                  {
+                    "type": "surface-grid",
+                    "key": "far-right-grid",
+                    "name": "\u5074\u9762\u5916\u6298\u89d2\u7a97\u6846",
+                    "boundary": {
+                      "face": "far-right"
+                    },
+                    "rows": 8,
+                    "columns": 3,
+                    "order": "cell-major",
+                    "motifs": {
+                      "template": "pane",
+                      "overrides": {
+                        "glass": {
+                          "fill": {
+                            "template": "sideglass"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "cornice-front-shadow",
+                    "name": "\u6b63\u9762\u6311\u7c37\u4e0b\u9670\u5f71",
+                    "fill": "#193F47",
+                    "vertices": [
+                      {
+                        "x": -2075,
+                        "y": 2575,
+                        "z": 3100
+                      },
+                      {
+                        "x": 2075,
+                        "y": 2575,
+                        "z": 3100
+                      },
+                      {
+                        "x": 2150,
+                        "y": 2650,
+                        "z": 3250
+                      },
+                      {
+                        "x": -2150,
+                        "y": 2650,
+                        "z": 3250
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "cornice-side-shadow",
+                    "name": "\u5074\u9762\u6311\u7c37\u4e0b\u9670\u5f71",
+                    "fill": "#15353F",
+                    "vertices": [
+                      {
+                        "x": 2575,
+                        "y": -2075,
+                        "z": 3100
+                      },
+                      {
+                        "x": 2575,
+                        "y": 2075,
+                        "z": 3100
+                      },
+                      {
+                        "x": 2650,
+                        "y": 2150,
+                        "z": 3250
+                      },
+                      {
+                        "x": 2650,
+                        "y": -2150,
+                        "z": 3250
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "cornice-top",
+                    "name": "\u7af9\u7bc0\u53ef\u898b\u9802\u90e8\u5e73\u53f0",
+                    "fill": "#A8B9AF",
+                    "vertices": [
+                      {
+                        "x": -2675,
+                        "y": -2175,
+                        "z": 3380
+                      },
+                      {
+                        "x": -2175,
+                        "y": -2675,
+                        "z": 3380
+                      },
+                      {
+                        "x": 2175,
+                        "y": -2675,
+                        "z": 3380
+                      },
+                      {
+                        "x": 2675,
+                        "y": -2175,
+                        "z": 3380
+                      },
+                      {
+                        "x": 2675,
+                        "y": 2075,
+                        "z": 3380
+                      },
+                      {
+                        "x": 2325,
+                        "y": 2075,
+                        "z": 3380
+                      },
+                      {
+                        "x": 2325,
+                        "y": 2325,
+                        "z": 3380
+                      },
+                      {
+                        "x": 2075,
+                        "y": 2325,
+                        "z": 3380
+                      },
+                      {
+                        "x": 2075,
+                        "y": 2675,
+                        "z": 3380
+                      },
+                      {
+                        "x": -2175,
+                        "y": 2675,
+                        "z": 3380
+                      },
+                      {
+                        "x": -2675,
+                        "y": 2175,
+                        "z": 3380
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "cornice-front-edge",
+                    "name": "\u6b63\u9762\u6311\u7c37\u91d1\u5c6c\u539a\u908a",
+                    "fill": {
+                      "template": "metal"
+                    },
+                    "vertices": [
+                      {
+                        "x": -2175,
+                        "y": 2675,
+                        "z": 3250
+                      },
+                      {
+                        "x": 2075,
+                        "y": 2675,
+                        "z": 3250
+                      },
+                      {
+                        "x": 2075,
+                        "y": 2675,
+                        "z": 3380
+                      },
+                      {
+                        "x": -2175,
+                        "y": 2675,
+                        "z": 3380
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "cornice-side-edge",
+                    "name": "\u5074\u9762\u6311\u7c37\u91d1\u5c6c\u539a\u908a",
+                    "fill": "#7C9990",
+                    "vertices": [
+                      {
+                        "x": 2675,
+                        "y": -2175,
+                        "z": 3250
+                      },
+                      {
+                        "x": 2675,
+                        "y": 2075,
+                        "z": 3250
+                      },
+                      {
+                        "x": 2675,
+                        "y": 2075,
+                        "z": 3380
+                      },
+                      {
+                        "x": 2675,
+                        "y": -2175,
+                        "z": 3380
+                      }
+                    ]
+                  },
+                  {
+                    "type": "surface-grid",
+                    "key": "cornice-front-seams",
+                    "name": "\u6311\u7c37\u677f\u6750\u63a5\u7e2b",
+                    "boundary": {
+                      "face": "cornice-front-edge"
+                    },
+                    "rows": 1,
+                    "columns": 24,
+                    "order": "cell-major",
+                    "motifs": [
+                      {
+                        "key": "seam",
+                        "name": "\u677f\u7e2b",
+                        "fill": "#456965",
+                        "vertices": [
+                          {
+                            "u": 0,
+                            "v": 0
+                          },
+                          {
+                            "u": 0.02,
+                            "v": 0
+                          },
+                          {
+                            "u": 0.02,
+                            "v": 1
+                          },
+                          {
+                            "u": 0,
+                            "v": 1
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "ruyi-front-shadow",
+                    "name": "\u6b63\u9762\u5982\u610f\u88dd\u98fe\u9670\u5f71",
+                    "fill": "#285059",
+                    "vertices": [
+                      {
+                        "x": -440,
+                        "y": 2700,
+                        "z": 3300
+                      },
+                      {
+                        "x": -460,
+                        "y": 2700,
+                        "z": 3160
+                      },
+                      {
+                        "x": -320,
+                        "y": 2700,
+                        "z": 3030
+                      },
+                      {
+                        "x": -180,
+                        "y": 2700,
+                        "z": 3070
+                      },
+                      {
+                        "x": 0,
+                        "y": 2700,
+                        "z": 2800
+                      },
+                      {
+                        "x": 180,
+                        "y": 2700,
+                        "z": 3070
+                      },
+                      {
+                        "x": 320,
+                        "y": 2700,
+                        "z": 3030
+                      },
+                      {
+                        "x": 460,
+                        "y": 2700,
+                        "z": 3160
+                      },
+                      {
+                        "x": 440,
+                        "y": 2700,
+                        "z": 3300
+                      },
+                      {
+                        "x": 210,
+                        "y": 2700,
+                        "z": 3340
+                      },
+                      {
+                        "x": 0,
+                        "y": 2700,
+                        "z": 3240
+                      },
+                      {
+                        "x": -210,
+                        "y": 2700,
+                        "z": 3340
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "ruyi-front",
+                    "name": "\u6b63\u9762\u5982\u610f\u91d1\u5c6c\u6d6e\u96d5",
+                    "fill": {
+                      "template": "metal"
+                    },
+                    "vertices": [
+                      {
+                        "x": -400,
+                        "y": 2720,
+                        "z": 3310
+                      },
+                      {
+                        "x": -420,
+                        "y": 2720,
+                        "z": 3200
+                      },
+                      {
+                        "x": -300,
+                        "y": 2720,
+                        "z": 3090
+                      },
+                      {
+                        "x": -150,
+                        "y": 2720,
+                        "z": 3150
+                      },
+                      {
+                        "x": 0,
+                        "y": 2720,
+                        "z": 2890
+                      },
+                      {
+                        "x": 150,
+                        "y": 2720,
+                        "z": 3150
+                      },
+                      {
+                        "x": 300,
+                        "y": 2720,
+                        "z": 3090
+                      },
+                      {
+                        "x": 420,
+                        "y": 2720,
+                        "z": 3200
+                      },
+                      {
+                        "x": 400,
+                        "y": 2720,
+                        "z": 3310
+                      },
+                      {
+                        "x": 210,
+                        "y": 2720,
+                        "z": 3340
+                      },
+                      {
+                        "x": 0,
+                        "y": 2720,
+                        "z": 3250
+                      },
+                      {
+                        "x": -210,
+                        "y": 2720,
+                        "z": 3340
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "ruyi-front-inset",
+                    "name": "\u5982\u610f\u523b\u69fd",
+                    "fill": "#416A68",
+                    "vertices": [
+                      {
+                        "x": -340,
+                        "y": 2730,
+                        "z": 3260
+                      },
+                      {
+                        "x": -280,
+                        "y": 2730,
+                        "z": 3160
+                      },
+                      {
+                        "x": -130,
+                        "y": 2730,
+                        "z": 3220
+                      },
+                      {
+                        "x": 0,
+                        "y": 2730,
+                        "z": 3010
+                      },
+                      {
+                        "x": 130,
+                        "y": 2730,
+                        "z": 3220
+                      },
+                      {
+                        "x": 280,
+                        "y": 2730,
+                        "z": 3160
+                      },
+                      {
+                        "x": 340,
+                        "y": 2730,
+                        "z": 3260
+                      },
+                      {
+                        "x": 180,
+                        "y": 2730,
+                        "z": 3290
+                      },
+                      {
+                        "x": 0,
+                        "y": 2730,
+                        "z": 3190
+                      },
+                      {
+                        "x": -180,
+                        "y": 2730,
+                        "z": 3290
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "ruyi-side",
+                    "name": "\u5074\u9762\u5982\u610f\u91d1\u5c6c\u6d6e\u96d5",
+                    "fill": {
+                      "template": "metal"
+                    },
+                    "vertices": [
+                      {
+                        "x": 2720,
+                        "y": -400,
+                        "z": 3310
+                      },
+                      {
+                        "x": 2720,
+                        "y": -420,
+                        "z": 3200
+                      },
+                      {
+                        "x": 2720,
+                        "y": -300,
+                        "z": 3090
+                      },
+                      {
+                        "x": 2720,
+                        "y": -150,
+                        "z": 3150
+                      },
+                      {
+                        "x": 2720,
+                        "y": 0,
+                        "z": 2890
+                      },
+                      {
+                        "x": 2720,
+                        "y": 150,
+                        "z": 3150
+                      },
+                      {
+                        "x": 2720,
+                        "y": 300,
+                        "z": 3090
+                      },
+                      {
+                        "x": 2720,
+                        "y": 420,
+                        "z": 3200
+                      },
+                      {
+                        "x": 2720,
+                        "y": 400,
+                        "z": 3310
+                      },
+                      {
+                        "x": 2720,
+                        "y": 210,
+                        "z": 3340
+                      },
+                      {
+                        "x": 2720,
+                        "y": 0,
+                        "z": 3250
+                      },
+                      {
+                        "x": 2720,
+                        "y": -210,
+                        "z": 3340
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "ruyi-side-inset",
+                    "name": "\u5074\u9762\u5982\u610f\u523b\u69fd",
+                    "fill": "#365A59",
+                    "vertices": [
+                      {
+                        "x": 2730,
+                        "y": -340,
+                        "z": 3260
+                      },
+                      {
+                        "x": 2730,
+                        "y": -280,
+                        "z": 3160
+                      },
+                      {
+                        "x": 2730,
+                        "y": -130,
+                        "z": 3220
+                      },
+                      {
+                        "x": 2730,
+                        "y": 0,
+                        "z": 3010
+                      },
+                      {
+                        "x": 2730,
+                        "y": 130,
+                        "z": 3220
+                      },
+                      {
+                        "x": 2730,
+                        "y": 280,
+                        "z": 3160
+                      },
+                      {
+                        "x": 2730,
+                        "y": 340,
+                        "z": 3260
+                      },
+                      {
+                        "x": 2730,
+                        "y": 180,
+                        "z": 3290
+                      },
+                      {
+                        "x": 2730,
+                        "y": 0,
+                        "z": 3190
+                      },
+                      {
+                        "x": 2730,
+                        "y": -180,
+                        "z": 3290
+                      }
+                    ]
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "dragon",
+                    "name": "\u8f49\u89d2\u9f8d\u5f62\u6372\u7d0b\u91d1\u5c6c\u98fe\u4ef6",
+                    "fill": {
+                      "template": "metal"
+                    },
+                    "vertices": [
+                      {
+                        "x": 2325,
+                        "y": 2345,
+                        "z": 2540
+                      },
+                      {
+                        "x": 2325,
+                        "y": 2345,
+                        "z": 2880
+                      },
+                      {
+                        "x": 2375,
+                        "y": 2295,
+                        "z": 3050
+                      },
+                      {
+                        "x": 2500,
+                        "y": 2170,
+                        "z": 3140
+                      },
+                      {
+                        "x": 2580,
+                        "y": 2090,
+                        "z": 3100
+                      },
+                      {
+                        "x": 2590,
+                        "y": 2080,
+                        "z": 3000
+                      },
+                      {
+                        "x": 2540,
+                        "y": 2130,
+                        "z": 2930
+                      },
+                      {
+                        "x": 2480,
+                        "y": 2190,
+                        "z": 2980
+                      },
+                      {
+                        "x": 2510,
+                        "y": 2160,
+                        "z": 3050
+                      },
+                      {
+                        "x": 2460,
+                        "y": 2210,
+                        "z": 3040
+                      },
+                      {
+                        "x": 2400,
+                        "y": 2270,
+                        "z": 2910
+                      },
+                      {
+                        "x": 2390,
+                        "y": 2280,
+                        "z": 2540
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "inspection": "defer",
+          "message": "\u5efa\u7acb\u516b\u7bc0\u7af9\u7bc0\u3001\u96d9\u9762\u9010\u7a97\u5e55\u7246\u3001\u8f49\u89d2\u8207\u91d1\u5c6c\u88dd\u98fe"
+        }
+      },
+      {
+        "id": "crown",
+        "name": "design_workflow.prepare_and_apply_design",
+        "arguments": {
+          "draft": {
+            "type": "group",
+            "name": "\u53f0\u5317101\uff5c\u89c0\u666f\u5c64\u3001\u5854\u51a0\u8207\u5b8c\u6574\u5c16\u5854",
+            "projection": {
+              "azimuth": 35,
+              "elevation": 25,
+              "scale": 1,
+              "originX": 6000,
+              "originY": 47000
+            },
+            "fillTemplates": {
+              "glass": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 1
+                  },
+                  {
+                    "x": 0.8,
+                    "y": 0
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#2C5963",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.5,
+                    "color": "#568A91",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#ABC7C5",
+                    "opacity": 1
+                  }
+                ]
+              },
+              "side": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#577B80",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.5,
+                    "color": "#244F5A",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#60868A",
+                    "opacity": 1
+                  }
+                ]
+              },
+              "silver": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 0.3
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#E0E6DA",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.3,
+                    "color": "#A7B9AB",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.55,
+                    "color": "#526F6B",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 0.8,
+                    "color": "#A3B8AB",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#3E605D",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            "motifTemplates": {
+              "windows": [
+                {
+                  "key": "glass",
+                  "name": "\u5854\u51a0\u73bb\u7483",
+                  "fill": {
+                    "template": "glass"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.055,
+                      "v": 0.06
+                    },
+                    {
+                      "u": 0.945,
+                      "v": 0.06
+                    },
+                    {
+                      "u": 0.945,
+                      "v": 0.82
+                    },
+                    {
+                      "u": 0.055,
+                      "v": 0.82
+                    }
+                  ]
+                },
+                {
+                  "key": "spandrel",
+                  "name": "\u91d1\u5c6c\u7a97\u9593\u677f",
+                  "fill": "#4B7776",
+                  "vertices": [
+                    {
+                      "u": 0.055,
+                      "v": 0.86
+                    },
+                    {
+                      "u": 0.945,
+                      "v": 0.86
+                    },
+                    {
+                      "u": 0.945,
+                      "v": 0.97
+                    },
+                    {
+                      "u": 0.055,
+                      "v": 0.97
+                    }
+                  ]
+                }
+              ]
+            },
+            "brief": {
+              "intent": "Complete upper tower and spire to50800cm.",
+              "viewpoint": "Same projection as all other parts.",
+              "sources": [
+                "CTBUH508m height, roof448m reported by Taiwan Skyscraper Center"
+              ],
+              "assumptions": [
+                "Crown intermediate heights and widths estimated for illustration; roof44800cm and tip50800cm."
+              ]
+            },
+            "children": [
+              {
+                "type": "projected-face",
+                "key": "obs-f",
+                "name": "\u89c0\u666f\u5c64\u6b63\u9762",
+                "fill": "#9AB1A6",
+                "vertices": [
+                  {
+                    "x": -1850,
+                    "y": 1850,
+                    "z": 38840
+                  },
+                  {
+                    "x": 1850,
+                    "y": 1850,
+                    "z": 38840
+                  },
+                  {
+                    "x": 2050,
+                    "y": 2050,
+                    "z": 40800
+                  },
+                  {
+                    "x": -2050,
+                    "y": 2050,
+                    "z": 40800
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "obs-f-grid",
+                "name": "\u89c0\u666f\u5c64\u6b63\u9762\u7a97\u683c",
+                "boundary": {
+                  "face": "obs-f"
+                },
+                "rows": 5,
+                "columns": 24,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "windows"
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "obs-s",
+                "name": "\u89c0\u666f\u5c64\u5074\u9762",
+                "fill": "#6B8C83",
+                "vertices": [
+                  {
+                    "x": 1850,
+                    "y": -1850,
+                    "z": 38840
+                  },
+                  {
+                    "x": 1850,
+                    "y": 1850,
+                    "z": 38840
+                  },
+                  {
+                    "x": 2050,
+                    "y": 2050,
+                    "z": 40800
+                  },
+                  {
+                    "x": 2050,
+                    "y": -2050,
+                    "z": 40800
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "obs-s-grid",
+                "name": "\u89c0\u666f\u5c64\u5074\u9762\u7a97\u683c",
+                "boundary": {
+                  "face": "obs-s"
+                },
+                "rows": 5,
+                "columns": 24,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "windows",
+                  "overrides": {
+                    "glass": {
+                      "fill": {
+                        "template": "side"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "obs-roof",
+                "name": "\u89c0\u666f\u5c64\u9732\u53f0\u9802\u9762",
+                "fill": "#B2C1B3",
+                "vertices": [
+                  {
+                    "x": -2150,
+                    "y": -2150,
+                    "z": 40880
+                  },
+                  {
+                    "x": 2150,
+                    "y": -2150,
+                    "z": 40880
+                  },
+                  {
+                    "x": 2150,
+                    "y": 2150,
+                    "z": 40880
+                  },
+                  {
+                    "x": -2150,
+                    "y": 2150,
+                    "z": 40880
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "obs-edge-f",
+                "name": "\u89c0\u666f\u9732\u53f0\u6b63\u9762\u5973\u5152\u7246",
+                "fill": {
+                  "template": "silver"
+                },
+                "vertices": [
+                  {
+                    "x": -2150,
+                    "y": 2150,
+                    "z": 40750
+                  },
+                  {
+                    "x": 2150,
+                    "y": 2150,
+                    "z": 40750
+                  },
+                  {
+                    "x": 2150,
+                    "y": 2150,
+                    "z": 40920
+                  },
+                  {
+                    "x": -2150,
+                    "y": 2150,
+                    "z": 40920
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "obs-edge-s",
+                "name": "\u89c0\u666f\u9732\u53f0\u5074\u9762\u5973\u5152\u7246",
+                "fill": "#7C9589",
+                "vertices": [
+                  {
+                    "x": 2150,
+                    "y": -2150,
+                    "z": 40750
+                  },
+                  {
+                    "x": 2150,
+                    "y": 2150,
+                    "z": 40750
+                  },
+                  {
+                    "x": 2150,
+                    "y": 2150,
+                    "z": 40920
+                  },
+                  {
+                    "x": 2150,
+                    "y": -2150,
+                    "z": 40920
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "crown-f",
+                "name": "\u5854\u51a0\u6b63\u9762",
+                "fill": "#90A79A",
+                "vertices": [
+                  {
+                    "x": -1350,
+                    "y": 1350,
+                    "z": 40880
+                  },
+                  {
+                    "x": 1350,
+                    "y": 1350,
+                    "z": 40880
+                  },
+                  {
+                    "x": 1450,
+                    "y": 1450,
+                    "z": 43200
+                  },
+                  {
+                    "x": -1450,
+                    "y": 1450,
+                    "z": 43200
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "crown-f-grid",
+                "name": "\u5854\u51a0\u6b63\u9762\u7a97\u683c",
+                "boundary": {
+                  "face": "crown-f"
+                },
+                "rows": 6,
+                "columns": 18,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "windows"
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "crown-s",
+                "name": "\u5854\u51a0\u5074\u9762",
+                "fill": "#608279",
+                "vertices": [
+                  {
+                    "x": 1350,
+                    "y": -1350,
+                    "z": 40880
+                  },
+                  {
+                    "x": 1350,
+                    "y": 1350,
+                    "z": 40880
+                  },
+                  {
+                    "x": 1450,
+                    "y": 1450,
+                    "z": 43200
+                  },
+                  {
+                    "x": 1450,
+                    "y": -1450,
+                    "z": 43200
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "crown-s-grid",
+                "name": "\u5854\u51a0\u5074\u9762\u7a97\u683c",
+                "boundary": {
+                  "face": "crown-s"
+                },
+                "rows": 6,
+                "columns": 18,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "windows",
+                  "overrides": {
+                    "glass": {
+                      "fill": {
+                        "template": "side"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "crown-roof",
+                "name": "\u5854\u51a0\u6311\u7c37\u5e73\u53f0",
+                "fill": "#BCC9BA",
+                "vertices": [
+                  {
+                    "x": -1570,
+                    "y": -1570,
+                    "z": 43300
+                  },
+                  {
+                    "x": 1570,
+                    "y": -1570,
+                    "z": 43300
+                  },
+                  {
+                    "x": 1570,
+                    "y": 1570,
+                    "z": 43300
+                  },
+                  {
+                    "x": -1570,
+                    "y": 1570,
+                    "z": 43300
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "upper-f",
+                "name": "\u6700\u9ad8\u5c64\u6b63\u9762",
+                "fill": "#A9BAA8",
+                "vertices": [
+                  {
+                    "x": -850,
+                    "y": 850,
+                    "z": 43300
+                  },
+                  {
+                    "x": 850,
+                    "y": 850,
+                    "z": 43300
+                  },
+                  {
+                    "x": 950,
+                    "y": 950,
+                    "z": 44800
+                  },
+                  {
+                    "x": -950,
+                    "y": 950,
+                    "z": 44800
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "upper-f-grid",
+                "name": "\u6700\u9ad8\u5c64\u6b63\u9762\u7a97\u683c",
+                "boundary": {
+                  "face": "upper-f"
+                },
+                "rows": 4,
+                "columns": 12,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "windows"
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "upper-s",
+                "name": "\u6700\u9ad8\u5c64\u5074\u9762",
+                "fill": "#718C7F",
+                "vertices": [
+                  {
+                    "x": 850,
+                    "y": -850,
+                    "z": 43300
+                  },
+                  {
+                    "x": 850,
+                    "y": 850,
+                    "z": 43300
+                  },
+                  {
+                    "x": 950,
+                    "y": 950,
+                    "z": 44800
+                  },
+                  {
+                    "x": 950,
+                    "y": -950,
+                    "z": 44800
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "upper-s-grid",
+                "name": "\u6700\u9ad8\u5c64\u5074\u9762\u7a97\u683c",
+                "boundary": {
+                  "face": "upper-s"
+                },
+                "rows": 4,
+                "columns": 12,
+                "order": "cell-major",
+                "motifs": {
+                  "template": "windows",
+                  "overrides": {
+                    "glass": {
+                      "fill": {
+                        "template": "side"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "projected-face",
+                "key": "upper-roof",
+                "name": "\u6700\u9ad8\u5c64\u5c4b\u9802\u5e73\u53f0",
+                "fill": "#C6D0BD",
+                "vertices": [
+                  {
+                    "x": -1050,
+                    "y": -1050,
+                    "z": 44800
+                  },
+                  {
+                    "x": 1050,
+                    "y": -1050,
+                    "z": 44800
+                  },
+                  {
+                    "x": 1050,
+                    "y": 1050,
+                    "z": 44800
+                  },
+                  {
+                    "x": -1050,
+                    "y": 1050,
+                    "z": 44800
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "spire-base-f",
+                "name": "\u5c16\u5854\u57fa\u5ea7\u6b63\u9762",
+                "fill": {
+                  "template": "silver"
+                },
+                "vertices": [
+                  {
+                    "x": -460,
+                    "y": 460,
+                    "z": 44800
+                  },
+                  {
+                    "x": 460,
+                    "y": 460,
+                    "z": 44800
+                  },
+                  {
+                    "x": 360,
+                    "y": 360,
+                    "z": 46200
+                  },
+                  {
+                    "x": -360,
+                    "y": 360,
+                    "z": 46200
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "spire-base-s",
+                "name": "\u5c16\u5854\u57fa\u5ea7\u5074\u9762",
+                "fill": "#657C70",
+                "vertices": [
+                  {
+                    "x": 460,
+                    "y": -460,
+                    "z": 44800
+                  },
+                  {
+                    "x": 460,
+                    "y": 460,
+                    "z": 44800
+                  },
+                  {
+                    "x": 360,
+                    "y": 360,
+                    "z": 46200
+                  },
+                  {
+                    "x": 360,
+                    "y": -360,
+                    "z": 46200
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "spire-base-fins",
+                "name": "\u5c16\u5854\u57fa\u5ea7\u91d1\u5c6c\u808b\u689d",
+                "boundary": {
+                  "face": "spire-base-f"
+                },
+                "rows": 1,
+                "columns": 10,
+                "order": "cell-major",
+                "motifs": [
+                  {
+                    "key": "fin",
+                    "name": "\u8c4e\u808b",
+                    "fill": "#D9E0CC",
+                    "vertices": [
+                      {
+                        "u": 0.15,
+                        "v": 0
+                      },
+                      {
+                        "u": 0.3,
+                        "v": 0
+                      },
+                      {
+                        "u": 0.3,
+                        "v": 1
+                      },
+                      {
+                        "u": 0.15,
+                        "v": 1
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "mast-f",
+                "name": "\u5c16\u5854\u4e3b\u5e79\u53d7\u5149\u9762",
+                "fill": {
+                  "template": "silver"
+                },
+                "vertices": [
+                  {
+                    "x": -270,
+                    "y": 270,
+                    "z": 46200
+                  },
+                  {
+                    "x": 270,
+                    "y": 270,
+                    "z": 46200
+                  },
+                  {
+                    "x": 110,
+                    "y": 110,
+                    "z": 49100
+                  },
+                  {
+                    "x": -110,
+                    "y": 110,
+                    "z": 49100
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "mast-s",
+                "name": "\u5c16\u5854\u4e3b\u5e79\u80cc\u5149\u9762",
+                "fill": "#6D8073",
+                "vertices": [
+                  {
+                    "x": 270,
+                    "y": -270,
+                    "z": 46200
+                  },
+                  {
+                    "x": 270,
+                    "y": 270,
+                    "z": 46200
+                  },
+                  {
+                    "x": 110,
+                    "y": 110,
+                    "z": 49100
+                  },
+                  {
+                    "x": 110,
+                    "y": -110,
+                    "z": 49100
+                  }
+                ]
+              },
+              {
+                "type": "pattern",
+                "key": "spire-collars",
+                "name": "\u5c16\u5854\u74b0\u5f62\u7dad\u4fee\u5e73\u53f0",
+                "origin": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 46200
+                },
+                "axes": [
+                  {
+                    "count": 5,
+                    "step": {
+                      "x": 0,
+                      "y": 0,
+                      "z": 550
+                    }
+                  }
+                ],
+                "members": [
+                  {
+                    "type": "projected-face",
+                    "key": "ring-shadow",
+                    "name": "\u5e73\u53f0\u74b0\u9670\u5f71",
+                    "fill": "#465D53",
+                    "ellipse": {
+                      "center": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                      },
+                      "u": {
+                        "x": 355,
+                        "y": 0,
+                        "z": 0
+                      },
+                      "v": {
+                        "x": 0,
+                        "y": 355,
+                        "z": 0
+                      }
+                    }
+                  },
+                  {
+                    "type": "projected-face",
+                    "key": "ring-top",
+                    "name": "\u5e73\u53f0\u74b0\u9802\u9762",
+                    "fill": "#B6C3AC",
+                    "ellipse": {
+                      "center": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 55
+                      },
+                      "u": {
+                        "x": 355,
+                        "y": 0,
+                        "z": 0
+                      },
+                      "v": {
+                        "x": 0,
+                        "y": 355,
+                        "z": 0
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "needle-f",
+                "name": "\u5c16\u5854\u672b\u7aef\u53d7\u5149\u9762",
+                "fill": "#C9D1BA",
+                "vertices": [
+                  {
+                    "x": -100,
+                    "y": 100,
+                    "z": 48950
+                  },
+                  {
+                    "x": 100,
+                    "y": 100,
+                    "z": 48950
+                  },
+                  {
+                    "x": 12,
+                    "y": 12,
+                    "z": 50450
+                  },
+                  {
+                    "x": 0,
+                    "y": 0,
+                    "z": 50800
+                  },
+                  {
+                    "x": -12,
+                    "y": 12,
+                    "z": 50450
+                  }
+                ]
+              },
+              {
+                "type": "projected-face",
+                "key": "needle-s",
+                "name": "\u5c16\u5854\u672b\u7aef\u80cc\u5149\u9762",
+                "fill": "#6D8374",
+                "vertices": [
+                  {
+                    "x": 100,
+                    "y": -100,
+                    "z": 48950
+                  },
+                  {
+                    "x": 100,
+                    "y": 100,
+                    "z": 48950
+                  },
+                  {
+                    "x": 12,
+                    "y": 12,
+                    "z": 50450
+                  },
+                  {
+                    "x": 0,
+                    "y": 0,
+                    "z": 50800
+                  },
+                  {
+                    "x": 12,
+                    "y": -12,
+                    "z": 50450
+                  }
+                ]
+              }
+            ]
+          },
+          "inspection": "defer",
+          "message": "\u5efa\u7acb\u89c0\u666f\u5c64\u3001\u5c4b\u9802\u5e73\u53f0\u8207508\u516c\u5c3a\u5b8c\u6574\u5c16\u5854"
+        }
+      }
+    ],
+    "retain": {
+      "taipeiBase": {
+        "step": "base",
+        "path": "/compositionIds"
+      },
+      "taipeiBaseSource": {
+        "step": "base",
+        "source": "input",
+        "path": "/draft"
+      },
+      "taipeiTiers": {
+        "step": "tiers",
+        "path": "/compositionIds"
+      },
+      "taipeiTierSource": {
+        "step": "tiers",
+        "source": "input",
+        "path": "/draft"
+      },
+      "taipeiCrown": {
+        "step": "crown",
+        "path": "/compositionIds"
+      },
+      "taipeiCrownSource": {
+        "step": "crown",
+        "source": "input",
+        "path": "/draft"
+      }
+    },
+    "delivery": {
+      "fields": {
+        "base": {
+          "step": "base",
+          "path": "/compositionIds"
+        },
+        "tiers": {
+          "step": "tiers",
+          "path": "/compositionIds"
+        },
+        "crown": {
+          "step": "crown",
+          "path": "/compositionIds"
+        }
+      }
+    },
+    "message": "\u7e6a\u88fd\u5b8c\u6574\u53f0\u5317101\u53ef\u7de8\u8f2f\u5efa\u7bc9\u7acb\u9762"
+  },
+  "runtimeOutput": {
+    "status": "failed",
+    "settlement": "partial",
+    "calls": [
+      {
+        "callId": "a34cd89c-8002-4d44-b510-7903de49ea38",
+        "stepId": "base",
+        "name": "design_workflow.prepare_and_apply_design",
+        "revision": 6,
+        "status": "success",
+        "settlement": "completed"
+      },
+      {
+        "callId": "3d135df5-eef3-49d4-883c-52202e6a3f52",
+        "stepId": "tiers",
+        "name": "design_workflow.prepare_and_apply_design",
+        "revision": 6,
+        "status": "success",
+        "settlement": "completed"
+      },
+      {
+        "callId": "511b86d8-ddb6-4841-93f5-b77c953f06ed",
+        "stepId": "crown",
+        "name": "design_workflow.prepare_and_apply_design",
+        "revision": 6,
+        "status": "failed",
+        "settlement": "not-started"
+      }
+    ],
+    "recovery": [
+      {
+        "callId": "a34cd89c-8002-4d44-b510-7903de49ea38",
+        "stepId": "base",
+        "name": "design_workflow.prepare_and_apply_design",
+        "revision": 6,
+        "status": "success",
+        "settlement": "completed",
+        "value": {
+          "available": true,
+          "artifactId": "a0948b9f-3d30-44fb-9fc7-711e44e2c088",
+          "elementCount": 5077,
+          "findings": [],
+          "applicable": true,
+          "review": {
+            "intent": "Highly detailed editable Taipei101 lower tower, cm world units.",
+            "viewpoint": "Elevated three-quarter orthographic, azimuth35 elevation25.",
+            "sources": [
+              "Architect project: height508m and base ornamentation",
+              "Published schematic base width63.5m; local facade dimensions estimated"
+            ],
+            "assumptions": [
+              "Base tapers from63.5m to46.5m over118m; local floor heights, glass divisions and ornament dimensions illustrative estimates."
+            ],
+            "checks": []
+          },
+          "preparationInput": {
+            "kind": "source"
+          },
+          "toolOutcome": {
+            "status": "success",
+            "settlement": "completed",
+            "issues": []
+          },
+          "actionResults": [
+            {
+              "actionId": "db8bd0cb-4731-4e7a-9d24-73dd1a888caa",
+              "actionName": "apply_prepared_design",
+              "result": {
+                "status": "complete",
+                "compositionId": "design-a0948b9f-3d30-44fb-9fc7-711e44e2c088-0",
+                "appliedElementCount": 5077,
+                "toolOutcome": {
+                  "status": "success",
+                  "settlement": "completed"
+                }
+              }
+            }
+          ],
+          "inspectionDeferred": true,
+          "measurementDeferred": false,
+          "checks": {
+            "countsScope": "selected-checks",
+            "counts": {
+              "pass": 1,
+              "fail": 0,
+              "unverified": 0,
+              "stale": 0
+            },
+            "visitedResults": 1
+          },
+          "receiptScope": "compact",
+          "completedSteps": [
+            "prepare_design",
+            "apply_prepared_design"
+          ],
+          "compositionIds": [
+            "design-a0948b9f-3d30-44fb-9fc7-711e44e2c088-0"
+          ]
+        }
+      },
+      {
+        "callId": "3d135df5-eef3-49d4-883c-52202e6a3f52",
+        "stepId": "tiers",
+        "name": "design_workflow.prepare_and_apply_design",
+        "revision": 6,
+        "status": "success",
+        "settlement": "completed",
+        "value": {
+          "available": true,
+          "artifactId": "13cf6251-76a8-435d-8f73-7c2a9c7edd41",
+          "elementCount": 8377,
+          "findings": [],
+          "applicable": true,
+          "review": {
+            "intent": "Eight projecting bamboo tiers with glass, frames, stepped corners, cornices and ruyi.",
+            "viewpoint": "Same elevated azimuth35 elevation25 world-centimetre projection.",
+            "sources": [
+              "Architect: eight8-storey modules",
+              "Skyscraper Museum facade aerial photograph"
+            ],
+            "assumptions": [
+              "Tier z11800+8\u00d73380cm; widths46.5\u201351.5m estimated from schematic. Ornament sizes illustrative, not measured."
+            ],
+            "checks": []
+          },
+          "preparationInput": {
+            "kind": "source"
+          },
+          "toolOutcome": {
+            "status": "success",
+            "settlement": "completed",
+            "issues": []
+          },
+          "actionResults": [
+            {
+              "actionId": "311aae03-a17c-48e7-b9e2-2d3f571dceb5",
+              "actionName": "apply_prepared_design",
+              "result": {
+                "status": "complete",
+                "compositionId": "design-13cf6251-76a8-435d-8f73-7c2a9c7edd41-0",
+                "appliedElementCount": 8377,
+                "toolOutcome": {
+                  "status": "success",
+                  "settlement": "completed"
+                }
+              }
+            }
+          ],
+          "inspectionDeferred": true,
+          "measurementDeferred": false,
+          "checks": {
+            "countsScope": "selected-checks",
+            "counts": {
+              "pass": 1,
+              "fail": 0,
+              "unverified": 0,
+              "stale": 0
+            },
+            "visitedResults": 1
+          },
+          "receiptScope": "compact",
+          "completedSteps": [
+            "prepare_design",
+            "apply_prepared_design"
+          ],
+          "compositionIds": [
+            "design-13cf6251-76a8-435d-8f73-7c2a9c7edd41-0"
+          ]
+        }
+      },
+      {
+        "callId": "511b86d8-ddb6-4841-93f5-b77c953f06ed",
+        "stepId": "crown",
+        "name": "design_workflow.prepare_and_apply_design",
+        "revision": 6,
+        "status": "failed",
+        "settlement": "not-started",
+        "value": {
+          "available": false,
+          "settlement": "not-started",
+          "recovery": "correct_input",
+          "draftId": "3dd11da9-af1c-4f19-aad3-17d3443267a5",
+          "retainedDraft": {
+            "draftId": "3dd11da9-af1c-4f19-aad3-17d3443267a5",
+            "revision": "3dd11da9-af1c-4f19-aad3-17d3443267a5",
+            "sourceBytes": 7526
+          },
+          "geometryIssue": {
+            "code": "NONPLANAR_FACE",
+            "key": "needle-f",
+            "path": "/children/23/vertices",
+            "deviation": 8.518686213088941,
+            "tolerance": 1.8553975315279474e-05,
+            "unit": "world"
+          },
+          "repairGuide": {
+            "tool": "prepare_and_apply_design",
+            "arguments": {
+              "inspection": "defer",
+              "message": "\u5efa\u7acb\u89c0\u666f\u5c64\u3001\u5c4b\u9802\u5e73\u53f0\u8207508\u516c\u5c3a\u5b8c\u6574\u5c16\u5854",
+              "repair": {
+                "draftId": "3dd11da9-af1c-4f19-aad3-17d3443267a5",
+                "replacements": [
+                  {
+                    "path": "/children/23/vertices"
+                  }
+                ]
+              }
+            },
+            "instructions": "[redacted]"
+          },
+          "message": "Projected face needle-f.vertices: Invalid design construction: nonplanar face. Maximum deviation 8.518686213088941 exceeds tolerance 0.000018553975315279474 in world units. Keep every vertex on the intended plane; split genuinely different planes into separate faces. Reuse the shared camera.",
+          "toolOutcome": {
+            "status": "failed",
+            "settlement": "not-started",
+            "issues": [
+              {
+                "code": "RESULT_UNAVAILABLE",
+                "message": "Projected face needle-f.vertices: Invalid design construction: nonplanar face. Maximum deviation 8.518686213088941 exceeds tolerance 0.000018553975315279474 in world units. Keep every vertex on the intended plane; split genuinely different planes into separate faces. Reuse the shared camera."
+              }
+            ]
+          },
+          "completedSteps": [],
+          "failedStep": "prepare_design"
+        }
+      }
+    ],
+    "issues": [
+      "Projected face needle-f.vertices: Invalid design construction: nonplanar face. Maximum deviation 8.518686213088941 exceeds tolerance 0.000018553975315279474 in world units. Keep every vertex on the intended plane; split genuinely different planes into separate faces. Reuse the shared camera."
+    ]
+  },
+  "output": {
+    "available": false,
+    "code": "TOOL_HANDOFF_FAILED",
+    "settlement": "unknown",
+    "executionResult": {
+      "available": false,
+      "recoverable": true,
+      "code": "TOOL_DELIVERY_INVALID",
+      "message": "output: anyOf mismatch; output.failure: anyOf mismatch; output.failure.execution.recovery[0]: anyOf mismatch; output.failure.execution.recovery[0].value: anyOf mismatch; output.failure.execution.recovery[0].value: allOf mismatch; output.failure.execution.recovery[0].value.checks.visitedResults: required field is missing; output.failure.execution.recovery[0].value.status: required field is missing; output.failure.execution.recovery[0].value.parts: required field is missing; output.failure.execution.recovery[1]: anyOf mismatch; output.failure.execution.recovery[1].value: anyOf mismatch; output.failure.execution.recovery[1].value: allOf mismatch; output.failure.execution.recovery[1].value.checks.visitedResults: required field is missing; output.failure.execution.recovery[1].value.status: required field is missing; output.failure.execution.recovery[1].value.parts: required field is missing; Additional output diagnostics omitted; output.failure.available: required field is missing; output.failure.code: required field is missing; output.failure.message: required field is missing; output.failure.recoverable: required field is missing; output.failure.toolOutcome: required field is missing; output.available: required field is missing; output.recoverable: required field is missing; output.code: required field is missing; output.message: required field is missing; output.settlement: required field is missing; output.toolOutcome.status: unexpected constant Execution must not be replayed.",
+      "settlement": "partial",
+      "toolOutcome": {
+        "status": "partial",
+        "settlement": "partial"
+      },
+      "executionResult": {
+        "saved": [
+          "taipeiBase",
+          "taipeiBaseSource",
+          "taipeiTiers",
+          "taipeiTierSource"
+        ],
+        "fields": {
+          "base": [
+            "design-a0948b9f-3d30-44fb-9fc7-711e44e2c088-0"
+          ],
+          "tiers": [
+            "design-13cf6251-76a8-435d-8f73-7c2a9c7edd41-0"
+          ]
+        },
+        "completed": [
+          "base",
+          "tiers"
+        ],
+        "stopped": [
+          "crown"
+        ],
+        "issues": [
+          "Projected face needle-f.vertices: Invalid design construction: nonplanar face. Maximum deviation 8.518686213088941 exceeds tolerance 0.000018553975315279474 in world units. Keep every vertex on the intended plane; split genuinely different planes into separate faces. Reuse the shared camera."
+        ],
+        "toolOutcome": {
+          "status": "failed",
+          "settlement": "partial",
+          "issues": []
+        },
+        "failure": {}
+      }
+    },
+    "recoverable": true,
+    "message": "output.failure: anyOf mismatch; output.failure.execution.recovery[0]: anyOf mismatch; output.failure.execution.recovery[0].value: anyOf mismatch; output.failure.execution.recovery[0].value: allOf mismatch; output.failure.execution.recovery[0].value.checks.visitedResults: required field is missing; output.failure.execution.recovery[0].value.status: required field is missing; output.failure.execution.recovery[0].value.parts: required field is missing; output.failure.execution.recovery[1]: anyOf mismatch; output.failure.execution.recovery[1].value: anyOf mismatch; output.failure.execution.recovery[1].value: allOf mismatch; output.failure.execution.recovery[1].value.checks.visitedResults: required field is missing; output.failure.execution.recovery[1].value.status: required field is missing; output.failure.execution.recovery[1].value.parts: required field is missing; Additional output diagnostics omitted; output.failure.available: required field is missing; output.failure.code: required fi",
+    "toolOutcome": {
+      "status": "failed",
+      "settlement": "unknown",
+      "issues": [
+        {
+          "code": "TOOL_HANDOFF_FAILED",
+          "message": "output.failure: anyOf mismatch; output.failure.execution.recovery[0]: anyOf mismatch; output.failure.execution.recovery[0].value: anyOf mismatch; output.failure.execution.recovery[0].value: allOf mismatch; output.failure.execution.recovery[0].value.checks.visitedResults: required field is missing; output.failure.execution.recovery[0].value.status: required field is missing; output.failure.execution.recovery[0].value.parts: required field is missing; output.failure.execution.recovery[1]: anyOf mismatch; output.failure.execution.recovery[1].value: anyOf mismatch; output.failure.execution.recovery[1].value: allOf mismatch; output.failure.execution.recovery[1].value.checks.visitedResults: required field is missing; output.failure.execution.recovery[1].value.status: required field is missing; output.failure.execution.recovery[1].value.parts: required field is missing; Additional output diagnostics omitted; output.failure.available: required field is missing; output.failure.code: required fi"
+        }
+      ]
+    }
+  }
+}

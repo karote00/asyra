@@ -125,15 +125,11 @@ full descriptor/path payload. No cross-request cache.
 The local provider advertises `prepare_design` only when `apply_prepared_design`
 is registered. The combined prepare_and_apply_design tool may perform both steps without an
 intermediate model round trip, preserving the same admission and receipt owners.
-When the registered review owner is available, the combined tool also accepts
-optional `plan` using that owner's exact schema. Its executable prompt example
-comes from the same owner. It validates the plan shape, prepares the draft, records
-the criteria, then applies; invalid preparation or plan never writes. Every
-criterion includes requirement, description and visual/data verification. A plan
-is supplied once before the first write; later parts reuse it. Standalone plans
-and direct edits remain available. This removes an unnecessary separate model
-roundtrip for ready drafts without bypassing retained facts, per-part inspections
-or final acceptance. It makes no claim that every task needs no planning.
+The combined tool validates and prepares the draft before applying it. It accepts
+no formal review plan and performs no criteria registration. Explicit capture can
+follow a settled application; mechanical review is optional. Final verification
+belongs to the AI. Invalid preparation cannot write, and a completed prefix is
+never replayed to recover a missing result.
 
 For preparation-only calls, the model supplies a semantic draft, receives a same-request
 artifact ID and findings, and applies that ID without copying native descriptors
@@ -247,14 +243,11 @@ rendered visual review remains necessary for style and brief compliance.
 
 ### Provider review scheduling
 
-When review_design is registered, immediate mutations measure before image review;
-planned intermediate mutations may defer measurement until stage inspection. Concrete text-overflow
-findings return without an image so targeted corrections can happen cheaply.
-Incomplete measurement blocks completed claims; they are not full
-verification. Known unresolved text overflow prevents a completed outcome. There
-is no request-total measurement or image-review count limit; Stop controls request
-cancellation. Ordinary failures retain progress under existing transaction rules. Providers
-without deterministic review retain their existing inspection route.
+The AI may request mechanical review when its findings help a decision or a declared
+repair iteration. Mutations and captures do not automatically schedule quality
+measurements. Findings remain explicit diagnostic results; they do not create an
+App completion gate. Actual input, execution, cancellation and publication errors
+retain their original settlement and recovery owners.
 
 ## Server typography protocol
 
@@ -464,15 +457,10 @@ only missing ranges through normal preparation/application and uses current arti
 IDs; local pattern keys are not cross-artifact canonical element IDs. No hidden full
 instance array, visibility cache, clipping or geometry deletion is introduced.
 
-`define_design_criteria` and `review_drawing` accept incremental `deferredDetails`
-(id, description, reason) in their respective criteria and structure/visual calls. Its existing request-owned review state retains those
-parts across mutations. Final visual `deferredChecks` use current inspection IDs and
-one disposition per retained ID: `omit` with visual evidence, `restored` after drawing
-and checking, or `pending`. Missing/pending decisions block acceptance even when all
-original criteria pass. Mutations invalidate these decisions, not the retained part
-list; a successor request starts empty. The backend validates coverage and freshness,
-not whether the AI's visibility judgment is objectively correct. Per-call additions
-are compact; there is no cumulative deferred-part quota or new orchestration tool.
+The AI may defer unfinished detail while applying coherent ready work. No formal
+criteria, deferred-detail registration or approval step is required. Final
+verification remains against the original request, with limitations reported by
+the AI. Compiler findings and actual input validity remain mandatory.
 
 Formal tests cover selected/restored equivalence, original palette/index preservation,
 work proportional to selected ranges rather than the full Cartesian product, invalid
@@ -496,9 +484,9 @@ not a second geometry compiler or permission owner. Semantic geometry validation
 remains authoritative and may reveal further errors after schema repair; a reported
 list is not a promise that every other property or visual requirement passed.
 
-Failures distinguish `recovery=correct_input` (repair the same draft) from
-`recovery=review_structure` with `nextTool=review_drawing` (inspect the existing
-structure and record current evidence before retrying retained detail). Missing shared
+Correctable authored inputs use `recovery=correct_input` with retained source
+repair information where available. There is no structural-review prerequisite
+or approval operation before retrying corrected preparation. Missing shared
 projection points to the camera and absolute-layout requirement. Nonplanar faces identify
 the face key and vertices; repair/split the plane rather than search again. These
 failures do not imply an unsuitable reference. Preparation still never modifies the
@@ -567,6 +555,6 @@ and construction/admission/compilation durations. Caches expire per preparation.
 
 Repeated checks of unchanged source and attachment semantics reuse mechanical
 assessment across receipt renewal. Fresh receipts must still pass canonical currency
-validation before any pass or apply. Document session, basis, bounds, parent,
-criteria and reference uses remain semantic dependencies. Receipt UUIDs alone are
+validation before any pass or apply. Document session, basis, bounds, parent, immutable recipe and compiler findings
+remain semantic dependencies. Receipt UUIDs alone are
 not changed geometry; they cannot erase an unresolved same-source conflict.

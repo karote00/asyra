@@ -1,3 +1,4 @@
+import type { EvaluationReportSessions } from './evaluation-report-sessions'
 import type { ExchangeConversationResults } from '../src/ai/conversation-results'
 import { captureAiSourceIdentity } from '@asyra/ai-agent-runtime/node'
 import type {
@@ -47,6 +48,7 @@ interface AiModelBackendOptions {
   readonly fetch?: typeof fetch
   readonly onProgress?: (event: AiToolProgress) => void
   readonly resultContext?: ExchangeConversationResults
+  readonly reportSessions?: EvaluationReportSessions
   readonly executeBatch?: ExecuteAiBatch
   readonly signal?: AbortSignal
 }
@@ -178,6 +180,9 @@ export const requestConfiguredAiActionBatch = async (
       signal: options.signal,
       onProgress: options.onProgress,
       resultContext: options.resultContext,
+      ...(options.reportSessions
+        ? { reportSessions: options.reportSessions }
+        : {}),
       executeBatch: options.executeBatch
     })
 

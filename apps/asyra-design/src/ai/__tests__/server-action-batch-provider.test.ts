@@ -997,7 +997,17 @@ it('ignores late progress after the final result without reopening activity', as
 it('acknowledges browser conversation result writes and private reads without invoking a canvas action', async () => {
   const token = '12345678-1234-1234-1234-123456789abc'
   const commands = [
-    { save: { trim: 'private-element-id' } },
+    {
+      save: { trim: 'private-element-id' },
+      origins: {
+        trim: {
+          operation: 'prepare_and_apply_design',
+          step: 'trim',
+          source: 'result',
+          path: '/compositionIds/0'
+        }
+      }
+    },
     { read: { trim: { name: 'trim', path: '' } } },
     { read: { trim: { name: 'trim', path: '' } } }
   ]
@@ -1045,7 +1055,20 @@ it('acknowledges browser conversation result writes and private reads without in
     expect(acks.map((a) => a.context.ok)).toEqual([true, true, false])
     expect(acks[1].context.values).toEqual({ trim: 'private-element-id' })
     expect(requests[1].metadata).toMatchObject({
-      conversationResultNames: ['trim']
+      conversationResultNames: ['trim'],
+      conversationResults: [
+        {
+          name: 'trim',
+          type: 'string',
+          paths: [{ path: '', type: 'string' }],
+          origin: {
+            operation: 'prepare_and_apply_design',
+            step: 'trim',
+            source: 'result',
+            path: '/compositionIds/0'
+          }
+        }
+      ]
     })
     expect(JSON.stringify(requests)).not.toContain('private-element-id')
     expect(executeBatch).not.toHaveBeenCalled()

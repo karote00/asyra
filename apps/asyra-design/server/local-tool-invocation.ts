@@ -1,3 +1,4 @@
+import type { AiBatchReceipt } from '../src/ai/action-batch-protocol'
 import {
   AiActionExecutionError,
   embedAiToolSchema,
@@ -28,6 +29,8 @@ import {
 } from '../src/ai/tool-contract'
 
 export interface LocalToolDefinition extends AiToolContractInput {
+  /** Canonical output subtrees needed to bind downstream operations. */
+  readonly resultPaths?: readonly string[]
   /** Registry-only operations remain available to typed recipes without native function expansion. */
   readonly providerExposure?: 'registry'
 }
@@ -89,7 +92,8 @@ export interface LocalToolOwner {
   /** Control wrappers project the pinned selected contract for reference ownership. */
   invocationSchemas?(
     name: string,
-    args: unknown
+    args: unknown,
+    stage?: 'owner' | 'model'
   ):
     | Pick<
         LocalToolDefinition,
@@ -177,7 +181,7 @@ export const localToolOutcome = (
     : []
   const batchOutcomes = batches.map(localToolOutcome)
   const childOutcomes = [...receiptOutcomes, ...partOutcomes, ...batchOutcomes]
-  const followupIssues = ['measurementIssues', 'inspectionIssues'].flatMap(
+  const followupIssues = ['executionIssues', 'inspectionIssues'].flatMap(
     (key) =>
       Array.isArray(value[key])
         ? value[key].filter(record).map((issue) => ({
@@ -335,6 +339,7 @@ export const localReceiptFailureSchema = toolResultObject(
     actionExecutionMs: toolInternalResult({ type: ['number', 'null'] }),
     settlement: { enum: ['not-started', 'completed', 'partial', 'unknown'] },
     contractStage: { enum: ['registration', 'input', 'output'] },
+    inputIssue: true,
     observedResult: true,
     contextFresh: toolInternalResult({ type: 'boolean' })
   },
@@ -369,9 +374,8 @@ export const localExecutionReceiptSchema: Record<string, unknown> = {
         failure: localReceiptFailureSchema,
         checks: designCheckSummarySchema,
         inspectionDeferred: { type: 'boolean' },
-        measurementDeferred: { type: 'boolean' },
         inspectionIssues: { type: 'array' },
-        measurementIssues: { type: 'array' },
+        executionIssues: { type: 'array' },
         toolOutcome: { type: 'object' }
       },
       []
@@ -413,6 +417,21 @@ export const localToolFailureSchema = toolResultObject(
   },
   ['available', 'code', 'message', 'recoverable', 'toolOutcome']
 )
+
+/** Recovery policy consumes the canonical rejection and independent settlement.
+ * A rollback or generic recoverable flag alone never identifies authored input. */
+export const batchInputRecovery = (receipt?: AiBatchReceipt) => {
+  const failure = receipt?.failure
+
+  if (
+    failure?.code === 'AI_ACTION_INPUT_INVALID' &&
+    failure.inputIssue !== undefined &&
+    failure.contextFresh === true &&
+    failure.settlement === 'not-started'
+  ) {
+    return 'correct_input'
+  }
+}
 
 export const localToolFailureReply = (
   message: string,
@@ -628,6 +647,7 @@ export const invokeLocalTool = async (
               reportedSettlement ??
               'unknown'),
         recovery:
+          batchInputRecovery(batchError?.receipt) ||
           (inputFailure && !hasPriorExecution && error.recovery) ||
           'Inspect the failure and current state, then choose a corrected or alternate operation. Do not automatically replay mutations.',
         ...(batchError ? { batchFailure: batchError.failure } : {}),

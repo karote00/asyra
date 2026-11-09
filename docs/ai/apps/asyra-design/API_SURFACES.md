@@ -932,34 +932,26 @@ available. Scope, conflicts and unsupported inputs follow the preparation spec.
 - `review_design`: bounded current structure/content observations, including native
   text overflow. Incomplete evidence is explicit; complete is not a visual approval.
 
-Ordinary drawing mutations return measurements before rendered captures. Concrete
-text overflow can be corrected before another image is captured; read-only review
-remains available without a cumulative review quota. The model reviews the actual image
-and explains unresolved constraints rather than reporting unconditional success.
+Drawing tools validate their inputs, dependencies and actual results. They do
+not schedule unconditional quality measurements or require a separate approval
+ledger. The AI inspects relevant current images/data and verifies the final result
+against the user request, explaining any unresolved limitations.
 
-The local tools separate criteria declaration (`define_design_criteria`), source
-facts (`record_design_facts`), calculations (`record_design_calculations`), reference
-selection (`select_design_references`) and rendered judgments (`review_drawing`).
-Criteria, facts and calculations are composable through their existing request-state
-owners. Declare criteria before judging; this is not a gate before the first ready drawing.
-Visual criteria require explicit `requiredUnits`: [] means a whole-view obligation;
-nonempty stable IDs mean regional obligations, with a separate overall criterion.
-Data criteria omit that field. Established obligations cannot shrink after review.
+`record_design_facts` stores `{facts:[{id, statement, scope?, sources?, verification?}]}`;
+`record_design_calculations` stores `{calculations:[{id, value, unit, sources?, verification?}]}`.
+Updates are atomic and an existing ID replaces its note. Omit the array to retrieve
+saved notes. Neither tool calculates or independently verifies an authored value;
+no prior source-fact registration is required. The ordinary host retention path
+can save actual step inputs/results across conversation turns.
 
-Capture targets share the `inspect_drawing` schema. Capture-only calls return images,
-pending coverage and the next judgment input, without inventing visual approval.
-Each binding carries requestId, requirementRevision, checkRevision and signature.
-The existing request-local inspection owner retains image dependencies and signs
-and validates them; the model does not return duplicate dependency bodies.
-Failed captures return successful IDs and exact failed targets for retry. Each
-submitted judgment names its own nonempty `inspectionIds` subset of the enclosing
-image menu; omitted bindings are rejected, never inherited. Unused menu images are not dependencies and cannot veto local recovery;
-deferred-detail decisions still depend on their enclosing images. Actual referenced
-images must be current. Independent current passes accumulate; changed image,
-criterion or source dependencies reopen only dependent results. `final=true` checks
-all retained obligations and whole-drawing coverage rather than demanding that
-unchanged passes be resubmitted. Mechanical tool passes do not replace primary-agent
-visual judgment; no extra model performs these checks. Review never mutates canvas.
+`select_design_references` optionally stores existing image indexes and authored
+purpose/region/limitations. Captures and other image consumers take existing
+source identities directly. `inspect_drawing` returns an image with its canonical
+scope/stamp and inspection ID; it is composable after known construction steps.
+Use native registered-tool routing for its `arguments` envelope. Capture success
+is not a visual pass. Invalid targets, source changes, unavailable pixels and
+cancellation retain their real failure semantics. Final settlement describes
+execution/persistence and the AI's conclusion without requiring a verdict call.
 
 Provider commentary supplies stage context, independent of invocation lifetime.
 Individual call completion retires that call's execution claim. Without active
@@ -1011,7 +1003,16 @@ The local backend exposes `describe_design_apis` from the current admitted
 contracts. No arguments returns categories and counts; `category` returns that
 category's purpose/result menu; `operation` resolves an exact `owner.method`
 identity and current schema in one call. `names` resolves exact action names.
-Optional `query` searches descriptions and returns a compact menu by default; request usage/full views explicitly.
+Optional `query` ranks registered descriptions, nested input/output metadata and
+string enum/const choices before names. Lexical terms, field origin and current
+catalog frequency/length prevent shared instruction text from dominating a purpose.
+Menus retain a relevant complete description sentence and shared relevance ranks
+across API/native entries; selected contracts retain the complete description.
+Partial matches disclose unmatched terms rather than claiming the whole purpose.
+Multiple or partial descriptive
+`usage` matches remain menus with exact acquisition routes; a uniquely complete
+match may deliver usage immediately. Explicit full views and exact names/scopes
+retain complete contracts. Examples and defaults are not capability metadata.
 Selectors are mutually exclusive. No lexical match returns the category menu,
 not an unavailable capability or a requirement to scan every API. Existing known
 operations may be executed directly without discovery or a preliminary data read.
@@ -1136,14 +1137,12 @@ assessment requests do not add the entry. Native advertised counts/bytes reflect
 the actual registration. Qualified names, selected usage, scopes and batch/native
 execution envelopes retain their existing contracts.
 
-### Mixed capture recovery
+### Capture recovery
 
-Mixed review capture preserves declared new-image roles in an unsigned
-`next.arguments.bindChecks` template when retained image roles remain unknown.
-Partial capture also retains successful roles while failed targets remain pending.
-Complete explicit roles through the existing binding route; enclosing images
-never become implicit dependencies. Conflicting declarations for the same check
-are rejected before capture, including reference-use and supersession differences.
+Compose independent captures through `execute_design`. Preserve successful
+results when a later capture fails, and retry only the failed observation.
+Canonical source stamps govern freshness; storing a result does not make it
+current. Captures require no criterion IDs, binding step or final approval call.
 
 ### Executable usage result representation
 
@@ -1154,7 +1153,7 @@ validation schema for machine consumers. It requires usage view. Refresh, paging
 and invalid-scope correction retain the chosen mode. Runtime validation and
 internal recipe result schemas remain complete in both modes.
 
-### Canonical data evidence for drawing review
+### Canonical data acquisition
 
 For exact short-name usage, an admitted batch action carries its canonical
 wrapper's qualified dependency reference. Select that qualified name for wrapper
@@ -1162,17 +1161,10 @@ usage. Explicit full and machine-schema selections retain both routes. Names
 shared across native namespaces require qualification. Output navigation exposes
 root fields and branch choices.
 
-Use `review_drawing` with `dataQueries: [{criterionId, fields, elementIds?, artifacts?}]`.
-Supply known IDs, exact `artifacts: [{artifactId, keys}]`, or both in the same query
-for a declared `verification: "data"` criterion. The canonical context field
-registry and page limit govern selection. Read returned `dataEvidence[].values`,
-then submit `next.arguments` with status/evidence. The signed check carries
-`dataEvidenceIds` and `inspectionIds: []`; no screenshot is required. Visual
-criteria still require image evidence. Data values and identity metadata are
-revalidated through canonical reads before judgment/final acceptance. Changed,
-missing or truncated values require a new data query, without replaying edits.
-The context page includes its canonical workspaceId. Query leases are released
-after their values are retained by the request review owner.
+Read selected values through the canonical `read_design_context` tool. Choose
+its actual delivery mode and fields before invoking it; use host target bindings
+for known artifacts or current regions. Preserve complete/truncated semantics.
+No separate evidence protocol or judgment submission is required.
 
 Use describe_design_apis query for owner capability metadata. With exact
 names/operations, optional purpose supplies recovery candidates when an identity
@@ -1182,7 +1174,7 @@ an output for later arguments using {kind:"step",step:"id",path:"/field"}.
 A known operation can specify an artifact or region target; selectAt:"step"
 resolves membership when that step executes. Ready operations share a canvas
 exchange. The host admits dependencies before dispatch, pins revisions and owns
-mechanical iteration. Optional output selects a guaranteed step field. Shared
+mechanical iteration. Optional delivery.fields selects declared step fields; optional values are checked when produced. Shared
 toolOutcome identifies settlement; actionResults or execution.calls identify
 completed work. Keep durable authoring and saving independent.
 
@@ -1198,20 +1190,43 @@ queries. A matching action with a bindable owner example exposes artifactKeyExam
 Replace its illustrative artifactId and keys with current request values and use
 the displayed batch route. Other required arguments retain their actual nesting.
 
+### Recovering captured images
+
+`read_design_inspections` displays request-owned captures without rendering again.
+Select `inspectionIds`, or `elementId` plus `view` (`overview` or `detail`) to
+recover the latest matching capture even when its ID was not delivered. Optional
+`limit` selects the most recent matching captures. The result contains
+`captureState: "saved-snapshot"`, `captures` with target/view/region and original
+inspection IDs, and canonical `actionResults` carrying the original pixels.
+It composes through `execute_design`; ordinary selected image delivery applies.
+These are historical observations. Use `inspect_drawing` for current pixels;
+explicit mechanical comparison still validates currency. Unknown captures reject
+without reconstruction. Request disposal ends access; no image handle is made
+portable through conversation storage.
+
 ### Conversation result delivery
 
 Use ordinary step bindings when the successor is decided. To save public values
 in the current App conversation, add `retain: {alias: {step, path}}` to
-execute_design. The default reply for this request is a status acknowledgement.
+execute_design. Retention adds saved descriptors: name, origin (operation,
+optional step, input/result source and selected path), value type and bounded
+field paths/array lengths. These descriptors never duplicate saved values.
+Delivery independently selects returned work data: omitted delivery preserves
+the final public result and images; explicit status suppresses work data/images.
+The same descriptors accompany the next App turn; binding a known path requires
+no read or registration. Saving without later use is valid.
 A later operation uses `{kind:"named", name:"alias", path:""}` in its arguments
 without model retrieval. Same-call aliases with a producer step compile to step
 bindings. For a decision use `delivery: {fields: {label: {step, path}}}`.
 Omitting step selects the final projected result (the existing receipt on the
 ready canvas route). Read a field of a saved snapshot with no operations and
 `delivery: {fields: {label: {name:"alias", path:"/field"}}}`.
+If the path is unknown, add `view:"shape"` to that selector to return a bounded
+subtree description (paths, types and array lengths), without values. This is
+optional navigation; known paths bind directly without a preliminary read.
 
 Names survive subsequent requests in the same open App document and
-conversation. The browser owns bounded immutable JSON snapshots; only names
+conversation. The browser owns bounded immutable JSON snapshots; bounded names and shape descriptions
 accompany the next model turn. Browser context exchanges do not execute canvas
 actions. Request-only handles cannot become cross-turn references. Named
 document targets remain subject to current validation before writes. A stale
@@ -1267,8 +1282,9 @@ actions, including composition-eligible `apply_prepared_design`; it never guesse
 how arbitrary results should be drawn. The original flat final iteration remains
 available for a single sequence.
 
-Stage requests default to status delivery and return stage states `pending`,
-`prepared`, `applied` or `failed`, plus selected fields and acknowledged names.
+Stage requests preserve the final public result and images unless delivery is
+explicitly selected. They also return stage states `pending`, `prepared`,
+`applied` or `failed`, plus save receipts when requested.
 An applied stage is an execution acknowledgement, not visual acceptance or durable
 storage. Optional save rejection identifies the alias and exact transient paths;
 acknowledged writes and already-bound successors survive that delivery failure.
@@ -1305,16 +1321,14 @@ private lookup or lifetime extension is substituted. Owner model projection and
 internal execution schema remain distinct. Named App snapshots still reject
 request-only handles. Status-only delivery does not export discarded artifacts.
 
-`review_drawing.dataQueries` alternatively accepts `query: {scope: "region",
-bounds, filter?, expectedCount}` with criterionId and fields. It cannot mix the
-region selector with elementIds/artifacts. The canonical read resolves membership
-and selected values once, within one page; expectedCount is required and positive.
-Evidence retains that query and rechecks membership and values before judgments.
-The existing ID/artifact route remains available. Missing, duplicate, truncated or
-changed data cannot certify a criterion; no image is needed for data evidence.
+Canonical `read_design_context` supports existing ID, subtree and region
+selectors. For artifact-backed targets use the host's `target` binding into
+`elementIds`; choose `delivery: "page"` and explicit fields when values are needed.
+Reference-only receipts preserve membership for later operations without returning
+all rows. A data read does not register a judgment or trigger a completion reread.
 
-Explicit evaluation work windows now allow up to eighteen minutes. The Taipei 101
-runner accepts `--minutes=18`, retaining its fifteen-minute default and unchanged
+Explicit evaluation work windows allow up to thirty minutes. The Taipei 101
+runner accepts `--minutes=30`, retaining its fifteen-minute default and unchanged
 prompt checksum. Report duration remains independent; null means no report limit.
 
 The native host catalog publishes the registered owner input contract. Runtime
@@ -1355,16 +1369,30 @@ a binding guarantee. Explicit machine-result schemas remain authoritative; the s
 permissions accompany both concise and machine-schema usage. App/host/workflow guidance distinguishes portable
 continuation data from request handles; retaining an alias never extends a lease.
 
+Result navigation is route-specific. `usageGuide.resultScope=invocation` and
+`results` describe the actual outer reply. `stepResults` describes a named action
+or registered leaf when that differs from its invocation wrapper.
+`retention.resultRoot=named-step` and all retention guarantees derive from the
+canonical named-step model schema. A ready-batch summary is not a named action
+result; an invoke_tool execution envelope is not its leaf output. Native direct
+owners reuse their existing projection. Derive both routes from authoritative
+wrapper constructors and registered schemas, without field-name substitutions.
+Before dispatch, pure authored output/delivery/retain selection errors return
+not-started correct_input recovery. Missing dependencies, saved values, unsupported
+owner schemas, omitted admission issues and post-execution delivery failures do
+not gain that recovery. Corrected input must execute only after a new valid
+admission; no rejected call writes or automatically replays work.
+Failure-specific recovery projection applies only to failure receipts. Successful
+selected ready-batch values have already passed owner projection; dynamic rows
+are not reinterpreted as statically guaranteed named-step bindings at egress.
+
 Recorder-armed evaluation stops on typed App/native execution failures, including
 partial/unknown settlement, and externally confirmed missing or incorrect App data
 that prevents execution. Preserve the first concrete failure across native calls
-and nested host operations before same-thread unlimited reporting. Successful
-review recording remains design feedback even when recordedChecks or check counts
-contain failures: allow normal correction in the original drawing turn. Pending
-coverage, accepted=false, incomplete artwork and arbitrary nested user data do not
-stop drawing. The external control accepts tool-failure, not the superseded
-corrective-rework reason. The drawing deadline and final acceptance requirements
-remain unchanged. Ordinary requests retain normal recovery.
+and nested host operations before same-thread unlimited reporting. Normal visual correction, incomplete artwork and arbitrary nested user data do not
+stop drawing. Explicit not-started correct_input failures may continue. Unknown
+writes, actual tool contract failures and missing required App data remain stopping
+errors; ordinary requests retain normal recovery.
 
 Selected preparation examples are validated against the selected schema first.
 After the existing selected-optional-input priority, rank valid owner-authored
@@ -1389,7 +1417,6 @@ This preserves the native capture constraint in the same-thread report without
 claiming that a captured image was displayed to the AI. Parent call identity,
 bounded message size, first-stop latching and normal-request recovery remain.
 
-
 ### Correctable input and failure delivery
 
 `execute_design` revision 6 preserves a `failure` field when status-only or
@@ -1411,7 +1438,7 @@ to repair; it neither retries automatically nor replays successful parts.
 Independent result-delivery errors, unknown settlement, unavailable App data and
 abnormal interruption still stop. Ordinary visual corrections remain allowed.
 
-Canonical input-schema rejection and a known native control placed in a sequence
+Canonical input-schema rejection and a control-plane-only operation placed in a sequence
 return explicit correct_input before dispatch. The control remains native; its
 receipt identifies the registered direct route without automatically invoking it.
 The host preserves the typed owner recovery through admission wrappers. Missing
@@ -1424,3 +1451,208 @@ the registered binding, issued call identity and terminal status check. Actual
 App receipts and delivery still own blocking failures; unmatched or invalid native
 events retain their existing failure handling. No result cache or automatic retry
 is introduced.
+
+Discovery identity recovery preserves `partial`/`failed` coverage and completed read
+settlement. `IDENTITY_UNRESOLVED` with `recovery.kind=select_identity` permits selecting
+current exact identities while retaining delivered siblings. Known unavailable
+contracts retain `DEFINITION_UNAVAILABLE`; completed transport does not make them
+usable. Content pages and retained refresh preserve the same typed recovery.
+
+Selected execute_design failures retain complete canonical prefix/suffix results
+until invocation validation and resource handoff finish. Model delivery uses the
+matching App owner/revision schema to omit internal fields without requiring them
+in public recovery. Completed IDs, saved names and exact repair remain available;
+Runtime-normalized schemas are not a substitute for App model-delivery schemas.
+
+## Execution recovery and evaluation
+
+Correctable authored input errors return the existing `correct_input` recovery
+before affected writes. The AI may correct the input and continue in the same
+work turn. Completed prefixes remain acknowledged; recovery never replays them.
+Real tool failures, unavailable required data, unknown settlement, failed media
+or persistence delivery remain visible to the recorder. Visual design corrections
+and the absence of a formal judgment are not execution failures.
+
+### Shared contract delivery and review handoffs
+
+Native declarations use the same lossless schema compactor as selected usage,
+after native union normalization. Shared local definitions reduce repeated input
+structure without changing owner admission, exclusive alternatives or reference
+meaning. Provider registration bytes and App usage reply bytes are separate
+measurements; neither establishes model token consumption.
+
+Selected canvas-action usage supplies operationParameters for operation.arguments,
+its executable example when the owner has one, result roots, retention and recovery.
+Generated target-binding examples preserve registered field/path pairs and all
+other required arguments; they reuse the same validated examples as purpose menus.
+Its hostContract selector references the already available execute_design contract;
+it does not repeat the host input envelope or full host instructions. Native and
+registered tools retain their own invocation parameters. Exact full definitions
+remain available. Exploratory candidate menus omit recipeDependency; exact lookup
+retains authoring metadata. Only a canonical same-owner wrapper already represented
+by an admitted action route is suppressed; foreign same-name tools remain distinct.
+
+The AI chooses the views and canonical data needed for its decision and final
+verification. Captures return actual images and identities; data reads return
+selected canonical values. Neither requires registering criteria or posting a
+verdict. Explicit mechanical checks remain available and composable. Their
+results do not certify appearance or create global completion obligations.
+
+### Compiled preparation findings
+
+`prepare_design` revision 4 reports blocking compiled findings as
+`available=false`, `applicable=false`, `settlement=not-started` and
+`recovery=correct_input`. The retained artifact and findings remain inspectable;
+no canvas apply has run. The combined workflow preserves that failure contract,
+including acknowledged earlier parts. Corrected source must pass ordinary admission.
+This changes neither geometry checks nor artifact ownership or strict evaluation.
+An unavailable handle, execution uncertainty or independent delivery failure remains
+blocking; successful compilation alone never authorizes applying failed findings.
+
+### Target admission recovery
+
+Pure registered target field/path/conflict and action-input validation preserve
+`PREPARATION_REJECTED`, `not-started` and `correct_input` through both direct batch
+admission and scheduled host planning. `field` names one identity argument;
+`path` locates its nested slot. Dotted field aliases are not accepted. These
+rejections precede target reads and canvas writes. Missing owners, artifact
+handles/readers, incomplete target data and uncertain execution are not classified
+as correctable input. Existing target cardinality, identity and canonical mutation
+checks remain authoritative; the runner stop policy is unchanged.
+
+### Multiple canonical observations
+
+Use `execute_design` to combine known data reads and captures. Each result keeps
+its own scope, identity and completeness. Bind known next consumers in the same
+call; retain portable inputs or outputs for later stages. The AI interprets the
+observations without a second approval registration or source reread on completion.
+
+### Host request operations
+
+Grouping usage exposes `/actionResults/0/result/value/groupId` under
+`usageGuide.stepResults.structures`, with its canonical document-ID schema and
+conditional presence. Bind this selector to a following context query in the same
+host submission; optional sources are checked against the actual step result.
+Context ID inputs use the same document-reference contract as mutation outputs.
+Select only required geometry fields and the group ID for model decisions.
+`inspection: "defer"` on the host suppresses automatic capture; explicit capture
+steps still run. Select both capture steps in `delivery.fields` when both images
+are needed. A preparation's own defer does not suppress another action's capture.
+
+Routed host action discovery uses the registered wrapper input and output schemas
+for short and qualified identities, usage, full definitions and field selection.
+The usage parameters are the complete `operations[].arguments` shape. Owner
+examples are wrapped at registration and executed unchanged by the host. There is
+no second `argumentField` transformation for host-operation callers; native-only
+routes retain their own explicitly declared invocation envelope.
+
+Discovery execution.kind=host-operation supplies execute_design and the exact
+qualified operation name. Pass usageGuide.parameters as that operation's ordinary
+arguments. Native direct invocation remains supported. Request-only composition
+is admitted only for the current host sequence, never a reusable saved recipe.
+Reference import, explicit reference selection and drawing capture preserve their
+existing owner validation and result/media contracts through this route.
+
+Creation workflows accept includeTargets:true to select createdTargets, an ordered
+array of acknowledged {compositionId,keyToId} records. Omission returns an empty
+array without constructing/copying an additional mapping. Retain /createdTargets
+with status delivery to preserve targets without model transfer; consume a known
+key using a named JSON Pointer such as /0/keyToId/panel. This is historical
+creation identity, not current geometry or live group membership.
+
+A named selector may consume a retain alias declared in the same submission.
+Authored-input aliases resolve the producer's declared ordinary input; result
+aliases compile to existing step dependencies. No preliminary saved-value read
+or model round trip is required. Only successful selected values are committed
+to conversation storage. Missing/cyclic inputs reject before effects.
+
+App request metadata includes conversationResults with name, type and bounded
+JSON Pointer/type navigation alongside conversationResultNames. Metadata is
+derived on save and contains no stored values. Read or bind exact saved fields
+through execute_design; document/conversation isolation is unchanged.
+
+Request sequences may bind a declared optional output field or array item to a
+later operation. Admission proves the value type; execution requires the path to
+exist and validates the actual input before invoking the dependent operation.
+Empty or missing results stop that successor without replaying earlier work.
+Unknown paths, incompatible types and impossible array indices still reject.
+Saved recipes retain the stronger guaranteed-presence admission contract.
+Action wrapper step results retain their declared actionResults/0/result envelope.
+Generated pattern names are patternName - oneBasedInstanceIndex - memberName;
+exact/prefix matching uses that full name, while suffix matches an authored member
+name. A candidate list never implies visual approval of every candidate.
+
+Purpose search normalizes ordinary English query connectors after exact identity
+resolution. It does not modify catalog metadata, discard negative terms or turn a
+connector-only query into an empty query. The strict evaluator distinguishes correctable authored inputs from actual owner,
+execution and delivery failures. It has no review-rebinding exception.
+
+### Host result selection
+
+`execute_design` revision 12 exposes one explicit result selection, `delivery`,
+independent of `retain`. Select an earlier operation through `delivery.fields`
+when its values or images are needed. Omitted delivery returns the final public
+result and its images; retain only adds save receipts and never changes that
+default. Staged execution and direct drawing follow the same rule. Explicit
+status suppresses work values/images; explicit fields deliver only their selections.
+Anonymous ready batches preserve their ordinary batch receipt. When direct
+drawing delegates retain/delivery options to the host, selectors still address
+the drawing owner result; omitted delivery exposes that result at
+`execution.value` in the host receipt, with separate save metadata.
+Public `output` and `response` reject before execution. Runtime recipe output
+and private operation receipt formatting remain internal contracts.
+
+Reference import revision 3 returns `{references, actionResults, available,
+status, settlement, recoverable}` for either input form. Select `/references` for
+metadata or the whole result/`/actionResults` for native images. Acquisition is
+cached independently; explicit redisplay needs no `refresh` argument. Attachment
+indexes and media are request-owned and cannot be saved as portable context.
+`tool_completed.imageCount` measures prepared content; `provider_transport_event` with method `tool-result-submitted`
+records submission to native transport, not model perception or acknowledgement.
+
+Reference selection optionally stores existing attachment indexes and authored
+`references: [{referenceId, purpose?, region?, limitations?}]`. It returns those
+indexes and notes. Explicit pixel crops require valid decoded bounds. No signed
+reference-use receipt or suitability approval is issued. Image consumers receive
+the source identity/crop directly. Attachment indexes remain request-owned;
+authored notes are portable but never make old image access or geometry current.
+
+Purpose discovery ranks the number of matched purpose/input terms before weighted metadata relevance. Only a unique, complete top match can deliver selected usage automatically.
+A full term match in incidental output text does not outrank a stronger purpose
+match solely by matching every word. Match explanations retain missing terms.
+Candidate menus provide operation/type/optional-input choices and exact usage
+routes without repeating the full representation-selection prose for each owner.
+Exact navigation and selected executable contracts preserve that guidance,
+canonical parameter constraints and explicit material-revision preconditions.
+Requested scopes remain complete; smaller scopes are a caller choice, not silent
+server omission. Existing field navigation and bounded pagination remain valid.
+
+
+### Provider-visible host handoffs
+
+`execute_design` revision 11 publishes one valid primary example in the native
+provider schema. Selected usage chooses the same owner example. The example
+retains authored input and uses its alias in another operation of that submission.
+All host step forms expose the canonical target schema, including admitted region
+bounds and filters, rather than an unconstrained target object.
+
+Outer `inspection` defaults to `immediate` for automatic capture of ready canvas
+operations with an available settled target. `defer` suppresses that automatic
+capture; explicit `inspect_drawing` still executes. Registered operations retain
+their own inspection arguments, and `delivery` only controls returned fields/images.
+Deletion selected usage exposes `/actionResults/0/result/value/count` and
+`/actionResults/0/result/status`. Select these for a narrow deletion receipt instead
+of all `actionResults`. A named or dependent target-bound operation retains its registered action
+execution and model result contracts. Its wrapper admits ordinary canonical
+arguments or a target-bearing envelope, resolves targets through the existing
+resolver at dispatch, then validates complete arguments before any mutation.
+Artifact scalar fan-out retains ordered receipts of the same action; region
+selection preserves its all/one cardinality rules. Step-time selection after
+writes can bind groupId directly into later captures. Anonymous independent
+operations retain batching. Missing or failed results never supply a successor. Model delivery is observed separately from
+Runtime execution bindings; neither selected fields nor existing mutations are
+replayed to produce a reply.
+
+### Canonical property input recovery
+
+core.updateElementProperties accepts registered component properties and aliases. Element metadata name/visible/lock uses core.updateElementData. The canonical owner rejects unsupported property keys before apply. The App action adapter forwards the owner diagnostic through Runtime; correct_input requires AI_ACTION_INPUT_INVALID, inputIssue, confirmed not-started settlement and fresh context. Generic rollback, recoverable flags and prose are insufficient. Successful-prefix IDs and receipts reach the provider; the agent may correct only unfinished work. Strict evaluation defers terminal tool interruption until the active host result is delivered, but rejects new calls while stopping; deadlines remain immediate.

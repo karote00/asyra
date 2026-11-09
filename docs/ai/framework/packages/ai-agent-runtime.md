@@ -435,14 +435,27 @@ See [Tool Specification](../../../../packages/ai-agent-runtime/TOOL_SPECIFICATIO
 for the current declarative format and lifecycle.
 
 - `admitAiRecipe(proposal, options)` returns a frozen typed recipe/derived contract
-  or bounded repair issues, without execution. Limits bound bytes and bindings. Registered graphs also have a step budget.
+  or bounded repair issues, without execution. The `value` issue code identifies
+  a canonical authored-value rejection (literal validation, forbidden/unknown or
+  missing object fields, key validation, or array length). It is separate from
+  dependency/schema defects and unclassified binding failures. The `reference`
+  issue identifies an authored source selector that is malformed, names no earlier
+  step, or cannot be established by the registered source schema. Its message
+  includes the requested pointer. It does not make that selector valid or relax
+  projection; source/target type incompatibility and schema parsing failures
+  remain distinct. Hosts may expose
+  input correction only from complete known issue sets; mixed or omitted issues
+  must not be inferred safe from error prose. Validator exceptions remain
+  unclassified failures. This category does not authorize replay or automatic
+  value correction. Limits bound bytes and bindings. Registered graphs also have a step budget.
   Pass mode `inline` to admit an authored single-invocation sequence without that count ceiling. For a host-created one-call sequence, current invocation values are admitted against the destination, secured leaves pin request references, and the host derives the result schema from a guaranteed step output. Saved recipes continue to reject captured runtime references. The deliberately conservative schema subset proves field/type handoffs;
   the host's full validator remains authoritative for actual inputs and outputs.
   Necessary root property constraints may prove an opaque sibling disjoint from a
   guaranteed binding. This never admits an opaque selected branch or guesses an
   optional discriminator; overlaps remain explicit admission failures.
 - Primitive tools opt into composition with `composition: 'allowed'` on their
-  canonical descriptor. Control-plane tools use `composition: 'control-plane'`.
+  canonical descriptor. `composition: 'request'` admits only host request sequences.
+  Control-plane tools use `composition: 'control-plane'`.
   An omitted declaration remains unavailable for composition, while ordinary
   primitive invocation is unchanged. Annotate reference/credential schema values
   with `x-runtime-value` so they can be forwarded but never persisted as literals.
@@ -580,7 +593,6 @@ supplied abort signal and their own I/O deadlines. Runtime rejects oversized or
 wrong-revision results rather than truncating advice. No Agent update, extraction,
 poisoning persistence or approval/evolution workflow is provided.
 
-
 A trusted host may open a Knowledge session with `{ retainResults: true }` for a
 paged informational consumer. The existing session delivery map then retains the
 immutable composed result (at most 64 query results) instead of a reference-only
@@ -589,7 +601,6 @@ generation and context checks; it does not assert that a model read it. Context
 invalidation, revision change and disposal clear the same owner state. Ordinary
 sessions retain their reference-only duplicate behavior. No App tool names or
 provider limits enter the Knowledge content contract.
-
 
 ### Cross-query retained Knowledge references
 
@@ -645,3 +656,30 @@ start alongside a mutation only when the owner allows it and no checkpoint lies
 between them. Other work remains ordered. Both started branches settle before
 failure delivery, with separate receipts and lease ownership. Existing cancellation,
 verification progress, remaining-only recovery and registered recipe budgets apply.
+
+### Request-only sequence dependencies
+
+Tool composition eligibility `request` admits a dependency only in an authored
+request sequence. Registered and reusable inline recipes reject it. The existing
+registry, invocation, schema validation, scheduler and lease owners remain
+authoritative; no automatic persistence or lease extension is implied.
+
+Request-sequence input bindings can use declared optional output paths with
+execution-time presence checks before dependent dispatch. Durable recipes still require guaranteed paths. Request-sequence delivery may
+select a declared optional result and checks its actual presence at execution. Structural assignability
+ignores forbidden optional properties because they cannot carry a value; it does
+not allow a value into a forbidden field or erase runtime-value lifetimes.
+
+Selected result projection uses the selected union alternatives as its validation
+schema; it must not validate a nested result against the original result envelope.
+`registeredRecipeOutputAt(schema, path, requireAtExecution)` admits declared
+optional paths only when the request sequence checks their actual presence before
+the dependent operation. Saved recipes retain guaranteed-presence admission.
+The public `RecipeReferenceError` identifies authored path-selection failures;
+unsupported or malformed owner schemas remain owner-contract errors. Discovery
+annotations are removed by the host boundary, while resource-lifetime constraints
+remain in the shared Runtime schema.
+
+### Authored input diagnostics
+
+AiActionInputError carries an executor-recognized authored-input diagnostic. Prepared batch failure receipts expose AI_ACTION_INPUT_INVALID and detached/redacted inputIssue while preserving independently reported transaction settlement. Runtime never infers no writes or retry permission from this classification. Apps translate their canonical owner errors; arbitrary exceptions and output-contract failures retain their original failure category. Providers consume successful-prefix receipts without replay.

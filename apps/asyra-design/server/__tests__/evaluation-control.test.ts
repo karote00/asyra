@@ -248,3 +248,45 @@ it.each([
     expect(evaluationToolStop(value)).toBeDefined()
   }
 )
+
+it.each(['source-only', 'unknown', 'independent', 'missing-recovery'])(
+  'preserves typed reference recovery without masking other failures: %s',
+  async (mode) => {
+    const { default: recorded } =
+      await import('../../test-data/ai-drawing/fixtures/source-recovery-20261108.json')
+    const source = {
+      ...recorded.failedSource,
+      settlement: 'not-started',
+      recovery: { kind: 'select_reference', settlement: 'not-started' }
+    } as Record<string, unknown>
+
+    if (mode === 'unknown') {
+      source.settlement = 'unknown'
+    }
+
+    if (mode === 'missing-recovery') {
+      delete source.recovery
+    }
+
+    const { localToolOutcome } = await import('../local-tool-invocation')
+    const receipt = {
+      available: true,
+      status: 'partial',
+      references: [
+        { available: true, referenceId: 'reference:kept', attachmentIndex: 0 },
+        source
+      ],
+      actionResults: [{ actionName: 'import_reference_image', result: source }]
+    } as Record<string, unknown>
+
+    receipt.toolOutcome = localToolOutcome(receipt)
+    if (mode === 'independent') {
+      ;(receipt.toolOutcome as { issues: unknown[] }).issues.push({
+        code: 'DELIVERY_FAILED',
+        message: 'Required image delivery failed'
+      })
+    }
+
+    expect(Boolean(evaluationToolStop(receipt))).toBe(mode !== 'source-only')
+  }
+)

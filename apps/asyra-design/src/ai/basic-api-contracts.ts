@@ -53,6 +53,7 @@ const resultDescriptions: Record<BasicApiResultKind, string> = {
 }
 
 export interface BasicApiContract {
+  resultPaths?: readonly string[]
   owner: BasicApiOwner
   category: string
   operation: string
@@ -140,6 +141,7 @@ export interface BasicApiParameterDefinition {
 }
 
 export interface BasicApiDefinition {
+  resultPaths?: readonly string[]
   examples?: readonly Record<string, unknown>[]
   category?: string
   resultKind?: BasicApiResultKind
@@ -180,9 +182,11 @@ export const defineBasicApi = ({
   parameters,
   resultKind,
   resultIdentityPath,
+  resultPaths,
   examples,
   description = ''
 }: BasicApiDefinition): BasicApiContract => ({
+  ...(resultPaths ? { resultPaths } : {}),
   owner,
   category,
   operation: `${owner}.${method}`,

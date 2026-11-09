@@ -1,0 +1,632 @@
+{
+  "source": "taipei-101-fixed-1793992259989",
+  "discoveryBytes": 139041,
+  "nativeReviewSchemaBytes": 87822,
+  "discovery": [
+    {
+      "names": [
+        "prepare_and_apply_design"
+      ],
+      "view": "usage",
+      "inputScope": {
+        "operation": "draft",
+        "nodeTypes": [
+          "projected-face",
+          "surface-grid",
+          "pattern"
+        ],
+        "optionalInputs": [
+          "plan",
+          "retain"
+        ]
+      }
+    },
+    {
+      "names": [
+        "record_design_facts",
+        "record_design_calculations",
+        "define_design_criteria",
+        "review_drawing",
+        "read_design_checks"
+      ],
+      "view": "usage"
+    },
+    {
+      "names": [
+        "review_drawing"
+      ],
+      "view": "usage",
+      "inputScope": {
+        "operation": "capture"
+      }
+    },
+    {
+      "query": "group existing elements preserve positions",
+      "view": "usage"
+    },
+    {
+      "operations": [
+        "hierarchy.groupElements"
+      ],
+      "view": "usage"
+    },
+    {
+      "names": [
+        "review_drawing"
+      ],
+      "view": "usage",
+      "inputScope": {
+        "operation": "data"
+      }
+    },
+    {
+      "names": [
+        "read_design_context"
+      ],
+      "view": "usage"
+    },
+    {
+      "names": [
+        "review_drawing"
+      ],
+      "view": "usage",
+      "inputScope": {
+        "operation": "bind"
+      }
+    },
+    {
+      "operations": [
+        "hierarchy.moveElementsRelative"
+      ],
+      "view": "usage"
+    }
+  ],
+  "review": [
+    {
+      "phase": "visual",
+      "final": false,
+      "inspections": [
+        {
+          "elementId": "workspace",
+          "view": "overview",
+          "checks": [
+            {
+              "criterionId": "whole"
+            }
+          ]
+        },
+        {
+          "elementId": "design-40c6b312-d010-4e59-9e40-e660f0e0710c-0",
+          "view": "overview",
+          "checks": [
+            {
+              "criterionId": "detail",
+              "unitId": "tiers"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "visual",
+      "final": false,
+      "inspectionIds": [
+        "e2e32212-1a9d-4b93-87d8-a533f406f270",
+        "3e4addee-86eb-4e7e-95c8-82a6f4559fc4"
+      ],
+      "checks": [
+        {
+          "criterionId": "whole",
+          "inspectionIds": [
+            "e2e32212-1a9d-4b93-87d8-a533f406f270"
+          ],
+          "binding": {
+            "requestId": "50e44272-f724-4c4e-a19a-636dab241f4b",
+            "requirementRevision": 1,
+            "checkRevision": 1,
+            "signature": "2d22707219d41e4a6fc2ca49ae6afcac19c289dd3f4c9e4e35b41ff4960ed61b"
+          },
+          "status": "fail",
+          "evidence": "完整基座至塔尖及八節輪廓已出現，俯視投影一致。仍缺大型立面裝飾、雙凹角的層次及露臺細節，尚不符合完成要求。"
+        },
+        {
+          "criterionId": "detail",
+          "unitId": "tiers",
+          "inspectionIds": [
+            "3e4addee-86eb-4e7e-95c8-82a6f4559fc4"
+          ],
+          "binding": {
+            "requestId": "50e44272-f724-4c4e-a19a-636dab241f4b",
+            "requirementRevision": 1,
+            "checkRevision": 1,
+            "signature": "d68f349f35fb4499ec96099edad9fe45eff3f742467220175896e4afb16fb141"
+          },
+          "status": "fail",
+          "evidence": "窗框與玻璃有密度及兩面照明差異，但目前轉角太平直，缺少可見龍形卷飾、垂直肋與平台欄杆。"
+        }
+      ]
+    },
+    {
+      "phase": "visual",
+      "final": false,
+      "dataQueries": [
+        {
+          "criterionId": "scale",
+          "elementIds": [
+            "grp-actor-d866a3c0-e510-4733-ac37-5d104609ba2a-5",
+            "design-097d0681-f21e-4800-8fa8-b0ace3135a8a-0",
+            "design-40c6b312-d010-4e59-9e40-e660f0e0710c-0",
+            "design-6252b2d1-45b8-4ada-88b3-cd7e251c8dda-0"
+          ],
+          "fields": [
+            "x",
+            "y",
+            "width",
+            "height"
+          ]
+        },
+        {
+          "criterionId": "editable",
+          "elementIds": [
+            "grp-actor-d866a3c0-e510-4733-ac37-5d104609ba2a-5"
+          ],
+          "fields": []
+        }
+      ]
+    },
+    {
+      "phase": "visual",
+      "final": false,
+      "inspectionIds": [
+        "6f6653d9-113f-4b47-be1c-956fc15311ea"
+      ],
+      "inspections": [
+        {
+          "elementId": "grp-actor-d866a3c0-e510-4733-ac37-5d104609ba2a-5",
+          "view": "detail",
+          "region": {
+            "x": 10100,
+            "y": 36800,
+            "width": 1024,
+            "height": 1024
+          },
+          "checks": [
+            {
+              "criterionId": "detail",
+              "unitId": "base"
+            }
+          ]
+        },
+        {
+          "elementId": "grp-actor-d866a3c0-e510-4733-ac37-5d104609ba2a-5",
+          "view": "detail",
+          "region": {
+            "x": 12100,
+            "y": 24800,
+            "width": 1024,
+            "height": 1024
+          },
+          "checks": [
+            {
+              "criterionId": "detail",
+              "unitId": "tiers",
+              "supersedes": {
+                "revision": 2,
+                "reason": "已新增跨組件轉角裝飾，改以完整組件的塔身原生局部加整體圖覆核，保留所有塔身要求。"
+              }
+            }
+          ]
+        },
+        {
+          "elementId": "grp-actor-d866a3c0-e510-4733-ac37-5d104609ba2a-5",
+          "view": "detail",
+          "region": {
+            "x": 11200,
+            "y": 7900,
+            "width": 1024,
+            "height": 1024
+          },
+          "checks": [
+            {
+              "criterionId": "detail",
+              "unitId": "crown"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "visual",
+      "final": false,
+      "inspections": [
+        {
+          "elementId": "grp-actor-d866a3c0-e510-4733-ac37-5d104609ba2a-5",
+          "view": "overview",
+          "checks": [
+            {
+              "criterionId": "whole"
+            }
+          ]
+        },
+        {
+          "elementId": "grp-actor-d866a3c0-e510-4733-ac37-5d104609ba2a-5",
+          "view": "detail",
+          "region": {
+            "x": 10100,
+            "y": 36800,
+            "width": 1024,
+            "height": 1024
+          },
+          "checks": [
+            {
+              "criterionId": "detail",
+              "unitId": "base"
+            }
+          ]
+        },
+        {
+          "elementId": "grp-actor-d866a3c0-e510-4733-ac37-5d104609ba2a-5",
+          "view": "detail",
+          "region": {
+            "x": 12100,
+            "y": 24800,
+            "width": 1024,
+            "height": 1024
+          },
+          "checks": [
+            {
+              "criterionId": "detail",
+              "unitId": "tiers",
+              "supersedes": {
+                "revision": 2,
+                "reason": "已將跨組件裝飾與連續玻璃反射整合，使用完整組件總覽及原生塔身細節，保留原要求。"
+              }
+            }
+          ]
+        },
+        {
+          "elementId": "grp-actor-d866a3c0-e510-4733-ac37-5d104609ba2a-5",
+          "view": "detail",
+          "region": {
+            "x": 11200,
+            "y": 7900,
+            "width": 1024,
+            "height": 1024
+          },
+          "checks": [
+            {
+              "criterionId": "detail",
+              "unitId": "crown"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "visual",
+      "final": false,
+      "dataQueries": [
+        {
+          "criterionId": "scale",
+          "elementIds": [
+            "grp-actor-d866a3c0-e510-4733-ac37-5d104609ba2a-5",
+            "design-097d0681-f21e-4800-8fa8-b0ace3135a8a-0",
+            "design-40c6b312-d010-4e59-9e40-e660f0e0710c-0",
+            "design-6252b2d1-45b8-4ada-88b3-cd7e251c8dda-0"
+          ],
+          "fields": [
+            "x",
+            "y",
+            "width",
+            "height"
+          ]
+        },
+        {
+          "criterionId": "editable",
+          "query": {
+            "scope": "region",
+            "bounds": {
+              "x": 15500,
+              "y": 26800,
+              "width": 300,
+              "height": 300
+            },
+            "filter": {
+              "type": "vector",
+              "ancestorId": "grp-actor-d866a3c0-e510-4733-ac37-5d104609ba2a-5"
+            },
+            "expectedCount": 21
+          },
+          "fields": []
+        }
+      ]
+    },
+    {
+      "phase": "visual",
+      "final": false,
+      "inspectionIds": [],
+      "checks": [
+        {
+          "criterionId": "scale",
+          "inspectionIds": [],
+          "dataEvidenceIds": [
+            "9fcf6ecd-c691-4524-8bc8-662533bac03b"
+          ],
+          "binding": {
+            "requestId": "50e44272-f724-4c4e-a19a-636dab241f4b",
+            "requirementRevision": 1,
+            "checkRevision": 1,
+            "signature": "da3887e880dabaf909171135233779848880778c92cba03aebe989ea7a71b4ae"
+          },
+          "status": "pass",
+          "evidence": "原生組件寬16554.1157、高48759.8107px；各區維持同一35°方位、22°俯角及scale=1，投影前塔尖z50800cm、底寬6350cm。原生尺寸未縮小；高度包絡包含基座深度投影。其餘局部尺寸為已揭露的插畫估算，並非完整測繪尺寸認證。"
+        },
+        {
+          "criterionId": "editable",
+          "inspectionIds": [],
+          "dataEvidenceIds": [
+            "9b14ee12-9726-497e-a98b-df0e2c3f2972"
+          ],
+          "binding": {
+            "requestId": "50e44272-f724-4c4e-a19a-636dab241f4b",
+            "requirementRevision": 1,
+            "checkRevision": 1,
+            "signature": "acd2ce21ab0f6a4e9276c185470c198628fb3dc031727677455672edb391ef3b"
+          },
+          "status": "pass",
+          "evidence": "目前局部21個匹配元素皆為原生vector，包含獨立玻璃窗片、窗間牆、平台、金屬肋；建立流程全數使用原生投影面與橢圓，未插入點陣圖片。"
+        }
+      ]
+    },
+    {
+      "phase": "visual",
+      "final": false,
+      "bindChecks": [
+        {
+          "criterionId": "whole",
+          "inspectionIds": [
+            "4a84bbd1-7e41-410f-b872-289f638e9802"
+          ]
+        },
+        {
+          "criterionId": "detail",
+          "unitId": "base",
+          "inspectionIds": [
+            "4a84bbd1-7e41-410f-b872-289f638e9802",
+            "28f82cd4-8bc9-439d-9909-2d98930181a4"
+          ]
+        },
+        {
+          "criterionId": "detail",
+          "unitId": "tiers",
+          "supersedes": {
+            "revision": 2,
+            "reason": "新增裝飾與反射已整合，改以完整組件總覽與原生塔身細節驗證所有原始要求。"
+          },
+          "inspectionIds": [
+            "4a84bbd1-7e41-410f-b872-289f638e9802",
+            "6a608def-5a6a-4d0a-b1ef-0140246b32fc"
+          ]
+        },
+        {
+          "criterionId": "detail",
+          "unitId": "crown",
+          "inspectionIds": [
+            "4a84bbd1-7e41-410f-b872-289f638e9802",
+            "eff7d18d-b08e-49d3-8758-9bc12a7dca96"
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "visual",
+      "final": true,
+      "inspectionIds": [
+        "4a84bbd1-7e41-410f-b872-289f638e9802",
+        "28f82cd4-8bc9-439d-9909-2d98930181a4",
+        "6a608def-5a6a-4d0a-b1ef-0140246b32fc",
+        "eff7d18d-b08e-49d3-8758-9bc12a7dca96"
+      ],
+      "checks": [
+        {
+          "criterionId": "whole",
+          "inspectionIds": [
+            "4a84bbd1-7e41-410f-b872-289f638e9802"
+          ],
+          "binding": {
+            "requestId": "50e44272-f724-4c4e-a19a-636dab241f4b",
+            "requirementRevision": 1,
+            "checkRevision": 2,
+            "signature": "6e998ebd18d9d66e57957b3dc87d9b635c0a5eb9b488189a8dce85d216610fac"
+          },
+          "status": "pass",
+          "evidence": "總覽顯示裙樓、完整收分基座、八個外擴竹節、塔冠及塔尖均未裁切；兩面立面與平台頂面保持一致俯視三分之四投影。立面有密集窗框、主肋、轉角卷飾與圓錢，日照及陰面色調和反射分明，無另加天空、街景、標題或背景。"
+        },
+        {
+          "criterionId": "detail",
+          "unitId": "base",
+          "inspectionIds": [
+            "4a84bbd1-7e41-410f-b872-289f638e9802",
+            "28f82cd4-8bc9-439d-9909-2d98930181a4"
+          ],
+          "binding": {
+            "requestId": "50e44272-f724-4c4e-a19a-636dab241f4b",
+            "requirementRevision": 1,
+            "checkRevision": 1,
+            "signature": "898d9f57506d9b873244a70e79296544efa69cc744bf2698428613deda7a217a"
+          },
+          "status": "pass",
+          "evidence": "總覽可見裙樓採光頂、屋頂設備、入口雨遮、基座窗格、如意與兩面圓錢；原生局部顯示銅錢外緣、內凹圈、方孔、金屬光帶及後方獨立窗片與主柱。材質和遮蔽層次清楚，非僅用廣面塊表達基座。"
+        },
+        {
+          "criterionId": "detail",
+          "unitId": "tiers",
+          "supersedes": {
+            "revision": 2,
+            "reason": "新增裝飾與反射已整合，改以完整組件總覽與原生塔身細節驗證所有原始要求。"
+          },
+          "inspectionIds": [
+            "4a84bbd1-7e41-410f-b872-289f638e9802",
+            "6a608def-5a6a-4d0a-b1ef-0140246b32fc"
+          ],
+          "binding": {
+            "requestId": "50e44272-f724-4c4e-a19a-636dab241f4b",
+            "requirementRevision": 1,
+            "checkRevision": 2,
+            "signature": "eb51aa1a6896eb447d4c0c6c94aa52f962a5f6efed529f3fcbe5ef3f71ad3a66"
+          },
+          "status": "pass",
+          "evidence": "八節均有細密八層窗格、外挑檐口、露臺與欄杆。原生局部清楚顯示卷飾金屬環及凹面、雙色轉角暗槽、主肋金屬高光、檐口投影與獨立玻璃；反射已跨窗格連續，兩面光照區分明確。"
+        },
+        {
+          "criterionId": "detail",
+          "unitId": "crown",
+          "inspectionIds": [
+            "4a84bbd1-7e41-410f-b872-289f638e9802",
+            "eff7d18d-b08e-49d3-8758-9bc12a7dca96"
+          ],
+          "binding": {
+            "requestId": "50e44272-f724-4c4e-a19a-636dab241f4b",
+            "requirementRevision": 1,
+            "checkRevision": 1,
+            "signature": "ba231049c2b848d92fc21addb53d22737cf933f900a479a47dc3840d5df8b6e3"
+          },
+          "status": "pass",
+          "evidence": "總覽塔冠保有分層窗格、縮小機房、平台頂面、塔尖環帶至細頂針；原生局部呈現金屬肋、深色柱側投影、細框與連續玻璃反射，與下方塔身照明方向一致。"
+        }
+      ]
+    }
+  ],
+  "regionValues": {
+    "workspaceId": "workspace",
+    "coordinateSpace": "parent-local",
+    "elements": [
+      {
+        "id": "design-2ebe90ac-1bd2-4b14-9531-e125cbeaf24f-514",
+        "type": "vector",
+        "parentId": "design-2ebe90ac-1bd2-4b14-9531-e125cbeaf24f-0",
+        "properties": {}
+      },
+      {
+        "id": "design-2ebe90ac-1bd2-4b14-9531-e125cbeaf24f-515",
+        "type": "vector",
+        "parentId": "design-2ebe90ac-1bd2-4b14-9531-e125cbeaf24f-0",
+        "properties": {}
+      },
+      {
+        "id": "design-40c6b312-d010-4e59-9e40-e660f0e0710c-3155",
+        "type": "vector",
+        "parentId": "design-40c6b312-d010-4e59-9e40-e660f0e0710c-0",
+        "properties": {}
+      },
+      {
+        "id": "design-40c6b312-d010-4e59-9e40-e660f0e0710c-3190",
+        "type": "vector",
+        "parentId": "design-40c6b312-d010-4e59-9e40-e660f0e0710c-0",
+        "properties": {}
+      },
+      {
+        "id": "design-40c6b312-d010-4e59-9e40-e660f0e0710c-3621",
+        "type": "vector",
+        "parentId": "design-40c6b312-d010-4e59-9e40-e660f0e0710c-0",
+        "properties": {}
+      },
+      {
+        "id": "design-40c6b312-d010-4e59-9e40-e660f0e0710c-3622",
+        "type": "vector",
+        "parentId": "design-40c6b312-d010-4e59-9e40-e660f0e0710c-0",
+        "properties": {}
+      },
+      {
+        "id": "design-40c6b312-d010-4e59-9e40-e660f0e0710c-3623",
+        "type": "vector",
+        "parentId": "design-40c6b312-d010-4e59-9e40-e660f0e0710c-0",
+        "properties": {}
+      },
+      {
+        "id": "design-40c6b312-d010-4e59-9e40-e660f0e0710c-3624",
+        "type": "vector",
+        "parentId": "design-40c6b312-d010-4e59-9e40-e660f0e0710c-0",
+        "properties": {}
+      },
+      {
+        "id": "design-40c6b312-d010-4e59-9e40-e660f0e0710c-3625",
+        "type": "vector",
+        "parentId": "design-40c6b312-d010-4e59-9e40-e660f0e0710c-0",
+        "properties": {}
+      },
+      {
+        "id": "design-40c6b312-d010-4e59-9e40-e660f0e0710c-3626",
+        "type": "vector",
+        "parentId": "design-40c6b312-d010-4e59-9e40-e660f0e0710c-0",
+        "properties": {}
+      },
+      {
+        "id": "design-40c6b312-d010-4e59-9e40-e660f0e0710c-3685",
+        "type": "vector",
+        "parentId": "design-40c6b312-d010-4e59-9e40-e660f0e0710c-0",
+        "properties": {}
+      },
+      {
+        "id": "design-40c6b312-d010-4e59-9e40-e660f0e0710c-3687",
+        "type": "vector",
+        "parentId": "design-40c6b312-d010-4e59-9e40-e660f0e0710c-0",
+        "properties": {}
+      },
+      {
+        "id": "design-40c6b312-d010-4e59-9e40-e660f0e0710c-3689",
+        "type": "vector",
+        "parentId": "design-40c6b312-d010-4e59-9e40-e660f0e0710c-0",
+        "properties": {}
+      },
+      {
+        "id": "design-40c6b312-d010-4e59-9e40-e660f0e0710c-4216",
+        "type": "vector",
+        "parentId": "design-40c6b312-d010-4e59-9e40-e660f0e0710c-0",
+        "properties": {}
+      },
+      {
+        "id": "design-40c6b312-d010-4e59-9e40-e660f0e0710c-4218",
+        "type": "vector",
+        "parentId": "design-40c6b312-d010-4e59-9e40-e660f0e0710c-0",
+        "properties": {}
+      },
+      {
+        "id": "design-c013278b-e374-41b6-b38d-d96d3d32bbe6-3416",
+        "type": "vector",
+        "parentId": "design-c013278b-e374-41b6-b38d-d96d3d32bbe6-0",
+        "properties": {}
+      },
+      {
+        "id": "design-c013278b-e374-41b6-b38d-d96d3d32bbe6-3417",
+        "type": "vector",
+        "parentId": "design-c013278b-e374-41b6-b38d-d96d3d32bbe6-0",
+        "properties": {}
+      },
+      {
+        "id": "design-c013278b-e374-41b6-b38d-d96d3d32bbe6-3418",
+        "type": "vector",
+        "parentId": "design-c013278b-e374-41b6-b38d-d96d3d32bbe6-0",
+        "properties": {}
+      },
+      {
+        "id": "design-c013278b-e374-41b6-b38d-d96d3d32bbe6-3448",
+        "type": "vector",
+        "parentId": "design-c013278b-e374-41b6-b38d-d96d3d32bbe6-0",
+        "properties": {}
+      },
+      {
+        "id": "design-c013278b-e374-41b6-b38d-d96d3d32bbe6-3449",
+        "type": "vector",
+        "parentId": "design-c013278b-e374-41b6-b38d-d96d3d32bbe6-0",
+        "properties": {}
+      },
+      {
+        "id": "design-c013278b-e374-41b6-b38d-d96d3d32bbe6-3450",
+        "type": "vector",
+        "parentId": "design-c013278b-e374-41b6-b38d-d96d3d32bbe6-0",
+        "properties": {}
+      }
+    ]
+  }
+}

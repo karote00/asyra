@@ -1,4 +1,5 @@
 import { expect, it, vi } from 'vitest'
+import { evaluationToolStop } from '../evaluation-control'
 import sharp from 'sharp'
 import { createLocalReferenceTools as createOwner } from '../local-reference-tools'
 import { withToolContractAssertions } from './tool-contract-assertions'
@@ -28,7 +29,7 @@ it('imports a native-research URL through the safe downloader once per request',
   const signal = new AbortController().signal
   const result = await tools.call('import_reference_image', args, signal)
 
-  expect(JSON.parse(result).source.url).toBe(args.sourceUrl)
+  expect(JSON.parse(result).references[0].source.url).toBe(args.sourceUrl)
   expect((await localToolContent(result))[1]?.type).toBe('inputImage')
   const repeated = await tools.call('import_reference_image', args, signal)
 
@@ -36,19 +37,15 @@ it('imports a native-research URL through the safe downloader once per request',
     (await localToolContent(repeated)).filter(
       (item) => item.type === 'inputImage'
     )
-  ).toHaveLength(0)
-  expect(JSON.parse(repeated)).toMatchObject({
+  ).toHaveLength(1)
+  expect(JSON.parse(repeated).references[0]).toMatchObject({
     attachmentIndex: 0,
-    delivery: 'reference'
+    acquisition: 'reused'
   })
-  const refreshed = await tools.call(
-    'import_reference_image',
-    { ...args, refresh: true },
-    signal
-  )
+  const redisplayed = await tools.call('import_reference_image', args, signal)
 
   expect(
-    (await localToolContent(refreshed)).filter(
+    (await localToolContent(redisplayed)).filter(
       (item) => item.type === 'inputImage'
     )
   ).toHaveLength(1)
@@ -65,7 +62,7 @@ it('imports a native-research URL through the safe downloader once per request',
     )
   )
 
-  expect(otherSource.source.url).toBe(
+  expect(otherSource.references[0].source.url).toBe(
     'https://brand.example/updated-attribution'
   )
   expect(download).toHaveBeenCalledOnce()
@@ -83,7 +80,7 @@ it('does not authorize an invented approximation after reference import fails', 
   )
 
   expect(result.available).toBe(false)
-  expect(result.message).toContain(
+  expect(result.references[0].message).toContain(
     'do not substitute an invented or inspired drawing'
   )
 })
@@ -104,7 +101,7 @@ it('does not replace an SVG source with a publisher raster thumbnail', async () 
   )
 
   expect(receipt.available).toBe(false)
-  expect(receipt.message).toContain('SVG')
+  expect(receipt.references[0].message).toContain('SVG')
   expect(download).not.toHaveBeenCalled()
 })
 
@@ -175,13 +172,13 @@ it('keeps source failure recoverable and permits a different public source in th
     )
   )
 
-  expect(failed).toMatchObject({
+  expect(failed.references[0]).toMatchObject({
     available: false,
     recoverable: true,
     code: 'REFERENCE_DOWNLOAD_FAILED'
   })
-  expect(failed.nextStep).toContain('different source')
-  expect(failed.message).toContain('HTTP 404')
+  expect(failed.references[0].nextStep).toContain('different source')
+  expect(failed.references[0].message).toContain('HTTP 404')
   expect(addReference).not.toHaveBeenCalled()
   const success = JSON.parse(
     await tools.call(
@@ -194,9 +191,9 @@ it('keeps source failure recoverable and permits a different public source in th
     )
   )
 
-  expect(success.attachmentIndex).toBe(0)
-  expect(success.nextStep).toContain('unsuitable')
-  expect(success.nextStep).toContain('continue research')
+  expect(success.references[0].attachmentIndex).toBe(0)
+  expect(success.references[0].nextStep).toContain('unsuitable')
+  expect(success.references[0].nextStep).toContain('continue research')
 })
 
 it('offers generic reference acquisition without source-specific search tools', () => {
@@ -237,7 +234,7 @@ it('imports and traces an original public reference without source-specific look
     )
   )
 
-  expect(receipt.attachmentIndex).toBe(0)
+  expect(receipt.references[0].attachmentIndex).toBe(0)
   expect(download).toHaveBeenCalledWith(
     'https://publisher.example/original.png',
     signal
@@ -353,7 +350,7 @@ it('rejects corrupt raster data without registering a reference', async () => {
     )
   )
 
-  expect(receipt).toMatchObject({
+  expect(receipt.references[0]).toMatchObject({
     available: false,
     recoverable: true,
     code: 'REFERENCE_DECODE_FAILED'
@@ -389,7 +386,7 @@ it('keeps the imported display orientation through whole-image vector conversion
     await images.call(
       'vtracer',
       {
-        attachmentIndex: imported.attachmentIndex,
+        attachmentIndex: imported.references[0].attachmentIndex,
         plan: {
           strategy: 'preserve-vectors',
           reason: 'Preserve this reference as displayed'
@@ -523,8 +520,13 @@ it('acquires candidates concurrently once per URL and preserves ordered partial 
   expect(receipt.references[2].source.url).toBe(references[2].sourceUrl)
   expect(receipt.references[1]).toMatchObject({
     recoverable: true,
-    code: 'REFERENCE_DOWNLOAD_FAILED'
+    code: 'REFERENCE_DOWNLOAD_FAILED',
+    settlement: 'not-started',
+    recovery: { kind: 'select_reference' }
   })
+  expect(
+    evaluationToolStop({ ...receipt, toolOutcome: localToolOutcome(receipt) })
+  ).toBeUndefined()
   expect(localToolOutcome(receipt)).toMatchObject({
     status: 'partial',
     issues: expect.arrayContaining([
@@ -648,7 +650,7 @@ it('admits batch reference input at the shared native boundary and delivers sour
   expect(download).toHaveBeenCalledOnce()
 })
 
-it('deduplicates image delivery across batch calls and restores it explicitly', async () => {
+it('reuses acquisition while preserving explicit image delivery across batch calls', async () => {
   const bytes = await sharp({
     create: { width: 8, height: 8, channels: 4, background: '#fff' }
   })
@@ -685,14 +687,14 @@ it('deduplicates image delivery across batch calls and restores it explicitly', 
   )
 
   expect(await imageCount(first)).toBe(1)
-  expect(await imageCount(second)).toBe(0)
+  expect(await imageCount(second)).toBe(1)
   expect(JSON.parse(second).references[0]).toMatchObject({
     attachmentIndex: 0,
-    delivery: 'reference'
+    acquisition: 'reused'
   })
   const restored = await tools.call(
     'import_reference_image',
-    { references, refresh: true },
+    { references },
     signal
   )
 
@@ -845,8 +847,12 @@ it('shares concurrent alias decoding and attachment admission, but keeps differe
       )
     )
 
-    expect(receipts[0].attachmentIndex).toBe(receipts[1].attachmentIndex)
-    expect(receipts[2].attachmentIndex).not.toBe(receipts[0].attachmentIndex)
+    expect(receipts[0].references[0].attachmentIndex).toBe(
+      receipts[1].references[0].attachmentIndex
+    )
+    expect(receipts[2].references[0].attachmentIndex).not.toBe(
+      receipts[0].references[0].attachmentIndex
+    )
     expect(decode).toHaveBeenCalledTimes(2)
     expect(add).toHaveBeenCalledTimes(2)
     expect(download).toHaveBeenCalledTimes(3)
@@ -873,7 +879,7 @@ it('preserves page HTTP rejection and format diagnostics instead of a generic do
     )
   )
 
-  expect(rejected).toMatchObject({
+  expect(rejected.references[0]).toMatchObject({
     available: false,
     recoverable: true,
     failure: {
@@ -898,7 +904,7 @@ it('preserves page HTTP rejection and format diagnostics instead of a generic do
     )
   )
 
-  expect(unsupported.failure).toMatchObject({
+  expect(unsupported.references[0].failure).toMatchObject({
     stage: 'response',
     reason: 'unsupported-media',
     retryable: false
@@ -928,9 +934,58 @@ it('retains successful transport retry count when decoding rejects the downloade
     )
   )
 
-  expect(result.failure).toMatchObject({
+  expect(result.references[0].failure).toMatchObject({
     stage: 'decode',
     reason: 'invalid-image-bytes',
     attempts: 2
   })
+})
+
+it('keeps attachment admission failures blocking instead of source-local recovery', async () => {
+  const bytes = await sharp({
+    create: { width: 8, height: 8, channels: 4, background: '#fff' }
+  })
+    .png()
+    .toBuffer()
+  const tools = createLocalReferenceTools(
+    () => {
+      throw Error('Attachment store unavailable')
+    },
+    async () =>
+      new Response(bytes, { headers: { 'content-type': 'image/png' } })
+  )
+  const receipt = JSON.parse(
+    await tools.call(
+      'import_reference_image',
+      {
+        imageUrl: 'https://brand.example/image.png',
+        sourceUrl: 'https://brand.example/'
+      },
+      new AbortController().signal
+    )
+  )
+
+  expect(receipt.settlement).toBe('unknown')
+  expect(receipt.recovery).toBeUndefined()
+  expect(
+    evaluationToolStop({ ...receipt, toolOutcome: localToolOutcome(receipt) })
+  ).toMatchObject({ kind: 'tool-failure' })
+})
+
+it('rejects the retired refresh control before acquiring a source', async () => {
+  const add = vi.fn()
+  const download = vi.fn()
+  const tools = createLocalReferenceTools(add, download)
+  const result = await tools.call(
+    'import_reference_image',
+    { sourceUrl: 'https://example.org/image', refresh: true },
+    new AbortController().signal
+  )
+
+  expect(JSON.parse(result)).toMatchObject({
+    available: false,
+    code: 'REFERENCE_ARGUMENTS_INVALID'
+  })
+  expect(download).not.toHaveBeenCalled()
+  expect(add).not.toHaveBeenCalled()
 })

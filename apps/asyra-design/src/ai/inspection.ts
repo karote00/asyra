@@ -50,7 +50,8 @@ export const createAiInspectionAction = (
       })
     })
   ),
-  revision: 4,
+  composition: 'allowed',
+  revision: 7,
   recoveryOutputSchema: inspectionFailureSchema,
   name: AiActionNames.INSPECT_DRAWING,
   description:
@@ -122,7 +123,7 @@ export const createInspectionValidationAction = (
       ['current', 'validatedAt']
     )
   ),
-  revision: 5,
+  revision: 6,
   name: AiActionNames.VALIDATE_INSPECTION_EVIDENCE,
   description:
     'Check whether an App-issued stamp still has current canonical dependencies. Scoped visual receipts may survive unrelated document edits; unscoped stamps require the original document revision. Read-only validity check; optional requiredIds and overviewIds check canonical containment without rendering or visual judgment. Mechanical receipts validate supported rule inputs at their issuing reviewer and never establish visual containment. Unchanged stamp checks take constant work; pending regions recheck spatial membership. Missing, retired or changed evidence is not current.',

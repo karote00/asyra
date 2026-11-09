@@ -61,6 +61,10 @@ export function localToolImages(value: unknown, path = ''): LocalToolImage[] {
     }
   }
 
+  if (record(value.failure)) {
+    images.push(...localToolImages(value.failure, path + '/failure'))
+  }
+
   if (record(value.executionResult)) {
     images.push(
       ...localToolImages(value.executionResult, path + '/executionResult')

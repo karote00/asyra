@@ -1,3 +1,4 @@
+import { ElementPropertyInputError } from './element-property-input-error.js'
 import { MutationRecoveryError } from '@asyra/utils'
 import type {
   ComputedAttrs,
@@ -1217,9 +1218,7 @@ class SceneTree {
         const definition = definitionsByInputKey.get(requestedKey)
 
         if (!definition) {
-          throw new Error(
-            `[SceneTree] Element "${request.elementId}" has no property target for "${requestedKey}"`
-          )
+          throw new ElementPropertyInputError(request.elementId, requestedKey)
         }
 
         const propertyId = element.props.getPropId(definition.name)

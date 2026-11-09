@@ -12,10 +12,10 @@ import {
   createDocumentContextReleaseAction
 } from '../../src/ai/context-action'
 import { createAiInspectionAction } from '../../src/ai/inspection'
-import { AiDesignToolIds } from '../../src/constants/ai-design'
+import { AiActionNames } from '../../src/constants/ai-actions'
 
-it.each(['ids', 'region'])(
-  'reads real canonical data through %s, binds judgments and revalidates selected values',
+it.each(['ids', 'region', 'discovered-region'])(
+  'reads requested canonical values through %s without an approval protocol or completion reread',
   async (route) => {
     let invalidate: () => void = () => undefined
 
@@ -23,9 +23,9 @@ it.each(['ids', 'region'])(
     const known = new Set(['target'])
     let contextCalls = 0
     let width = 20
-    let name = 'Rectangle'
-    let exists = true
-    let regionIds = ['target']
+    const name = 'Rectangle'
+    const exists = true
+    const regionIds = ['target']
     const contexts = createRetainedDesignContext(
       {
         getCurrentWorkspaceId: () => 'workspace',
@@ -134,216 +134,33 @@ it.each(['ids', 'region'])(
       return JSON.parse(output.text)
     }
 
-    const review = (input: unknown) =>
-      call(AiDesignToolIds.REVIEW_DRAWING, input)
-
-    const idsQuery = {
-      criterionId: 'scale',
-      elementIds: ['target'],
-      fields: ['width']
-    }
-    const query =
-      route === 'ids'
-        ? idsQuery
-        : {
-            criterionId: 'scale',
-            fields: ['width'],
-            query: {
-              scope: 'region',
-              bounds:
-                continuation.regionQueries.input.operations[0].arguments.bounds,
-              filter: { type: 'rect' },
-              expectedCount: 1
-            }
-          }
-
+    const query = route === 'ids'
+      ? { scope: 'ids', elementIds: ['target'], fields: ['width'], delivery: 'page' }
+      : { scope: 'region', bounds: continuation.regionQueries.input.operations[0].arguments.bounds,
+          filter: { type: 'rect' }, fields: ['width'], delivery: 'page', ...(route === 'region' ? { expectedCount: 1 } : {}) }
     try {
-      await call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, {
-        method: 'Compare canonical width',
-        references: [],
-        detailRequired: false,
-        criteria: {
-          scale: {
-            requirement: 'Width 20',
-            description: 'Canonical width equals 20',
-            verification: 'data'
-          }
-        }
-      })
-      expect(
-        (
-          await review({
-            phase: 'visual',
-            dataQueries: [{ ...query, criterionId: 'unknown' }]
-          })
-        ).toolOutcome.status
-      ).toBe('failed')
-      expect(reads).toBe(0)
-      const acquired = await review({ phase: 'visual', dataQueries: [query] })
-
-      expect(acquired.toolOutcome.status, JSON.stringify(acquired)).toBe(
-        'success'
-      )
-      expect(acquired.dataEvidence[0].values.elements[0].properties).toEqual({
-        width: 20
-      })
-      expect(acquired.next.arguments.inspectionIds).toEqual([])
+      const acquired = await call(AiActionNames.READ_DESIGN_CONTEXT, { arguments: query })
+      expect(acquired.toolOutcome.status, JSON.stringify(acquired)).toBe('success')
+      const values = acquired.actionResults[0].result
+      expect(values.elements[0].properties).toEqual({ width: 20 })
+      expect(contextCalls).toBe(1)
       expect(reads).toBe(1)
-      const snapshot = acquired.dataEvidence[0].id
-      const input = {
-        ...acquired.next.arguments,
-        final: true,
-        checks: acquired.next.arguments.checks.map((check: object) => ({
-          ...check,
-          status: 'pass',
-          evidence: 'Canonical width equals the requested 20.'
-        }))
-      }
-      const forged = structuredClone(input)
-
-      forged.checks[0].dataEvidenceIds = ['foreign']
-      expect((await review(forged)).toolOutcome.status).toBe('failed')
-      const recorded = await review(input)
-
-      expect(recorded.toolOutcome.status, JSON.stringify(recorded)).toBe(
-        'success'
-      )
-      expect(recorded.accepted).toBe(true)
-      expect(reads).toBe(2)
-      name = 'Renamed decoration'
-      invalidate()
-      await tools.validateCompletion(signal)
-      expect(reads).toBe(3)
-      const retained = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
-        includePassed: true,
-        view: 'details'
-      })
-
-      expect(JSON.stringify(retained)).toContain('pass')
-      if (route === 'region') {
-        regionIds = ['replacement']
-        known.add('replacement')
-        invalidate()
-        expect((await review(input)).toolOutcome.status).toBe('failed')
-        regionIds = ['target']
-        known.delete('replacement')
-        invalidate()
-      }
-
+      const completed = { batchId: 'completion', actions: [{ id: 'done', name: AiActionNames.REPORT_OUTCOME, arguments: { outcome: 'completed', message: 'Requested width inspected' }, summary: 'Complete' }] }
+      expect(tools.settleOutcome(completed)).toEqual(completed)
+      expect(contextCalls).toBe(1)
+      expect(captures).toBe(0)
       width = 21
       invalidate()
-      const stale = await review(input)
-
-      expect(stale.toolOutcome.status).toBe('failed')
-      expect(JSON.stringify(stale)).toContain('stale')
-      const fresh = await review({ phase: 'visual', dataQueries: [query] })
-
-      expect(fresh.dataEvidence[0].id).not.toBe(snapshot)
-      expect(fresh.dataEvidence[0].values.elements[0].properties.width).toBe(21)
-      const failed = await review({
-        ...fresh.next.arguments,
-        final: true,
-        checks: fresh.next.arguments.checks.map((check: object) => ({
-          ...check,
-          status: 'fail',
-          evidence: 'Width 21 differs from requested 20.'
-        }))
-      })
-
-      expect(failed.accepted).toBe(false)
-      expect(failed.correction.checks[0].inspectionIds).toEqual([])
-      expect(failed.correction.checks[0].dataEvidenceIds).toEqual([
-        fresh.dataEvidence[0].id
-      ])
-      exists = false
-      invalidate()
-      expect(
-        (await review({ phase: 'visual', dataQueries: [query] })).toolOutcome
-          .status
-      ).toBe('failed')
-      exists = true
-      invalidate()
-      const truncated = await review({
-        phase: 'visual',
-        dataQueries: [{ ...query, fields: ['fills'] }]
-      })
-
-      expect(truncated.toolOutcome.status).toBe('failed')
-      expect(JSON.stringify(truncated)).toContain('truncated')
-      const artifacts = ['Crown', 'Base'].map((name) => {
-        const { artifactId } = session.prepare({
-          type: 'frame',
-          name,
-          width: 50,
-          height: 50,
-          children: [
-            { key: 'panel', type: 'rect', name: 'Panel', width: 10, height: 10 }
-          ]
-        })
-        const reference = { artifactId, keys: ['panel'] }
-
-        preparation.resolveTargets(reference).forEach((id) => known.add(id))
-
-        return reference
-      })
-
-      invalidate()
-      const before = contextCalls
-      const withKeys = { ...idsQuery, artifacts }
-
-      for (const invalid of [
-        {
-          ...idsQuery,
-          artifacts: [artifacts[0], { ...artifacts[1], keys: ['missing'] }]
-        },
-        {
-          ...idsQuery,
-          artifacts: [{ ...artifacts[0], artifactId: 'foreign' }]
-        },
-        { ...idsQuery, artifacts: [artifacts[0], artifacts[0]] }
-      ]) {
-        expect(
-          (await review({ phase: 'visual', dataQueries: [invalid] }))
-            .toolOutcome.status
-        ).toBe('failed')
-      }
-
-      expect(contextCalls).toBe(before)
-      const keyed = await review({ phase: 'visual', dataQueries: [withKeys] })
-
-      expect(keyed.toolOutcome.status, JSON.stringify(keyed)).toBe('success')
-      expect(
-        keyed.dataEvidence[0].values.elements.map(
-          (row: { id: string }) => row.id
-        )
-      ).toEqual([...known])
-      expect(contextCalls - before).toBe(1)
-      const keysOnly = await review({
-        phase: 'visual',
-        dataQueries: [{ criterionId: 'scale', artifacts, fields: ['width'] }]
-      })
-
-      expect(keysOnly.dataEvidence[0].values.elements).toHaveLength(2)
-      width++
-      invalidate()
-      const expired = await review({
-        ...keysOnly.next.arguments,
-        checks: keysOnly.next.arguments.checks.map((check: object) => ({
-          ...check,
-          status: 'pass',
-          evidence: 'Prior width'
-        }))
-      })
-
-      expect(expired.toolOutcome.status).toBe('failed')
-      expect(JSON.stringify(expired)).toContain('stale')
-      for (const id of snapshots) {
-        expect(() => contexts.get(id)).toThrow()
-      }
-
-      expect(captures).toBe(0)
-    } finally {
-      contexts.dispose()
-    }
+      const fresh = await call(AiActionNames.READ_DESIGN_CONTEXT, { arguments: query })
+      expect(fresh.actionResults[0].result.elements[0].properties.width).toBe(21)
+      expect(contextCalls).toBe(2)
+      const released = await call(AiActionNames.RELEASE_DESIGN_CONTEXT, { arguments: { snapshotId: values.snapshotId } })
+      expect(released.toolOutcome.status).toBe('success')
+      expect(() => contexts.get(values.snapshotId)).toThrow()
+      const cancelled = new AbortController()
+      cancelled.abort()
+      await expect(tools.call(AiActionNames.READ_DESIGN_CONTEXT, { arguments: query }, cancelled.signal)).rejects.toThrow()
+      expect(contextCalls).toBe(2)
+    } finally { contexts.dispose() }
   }
 )

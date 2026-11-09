@@ -11,6 +11,7 @@ import { requireBatchSuccess } from '../batch-exchange'
 import { expect, it, vi } from 'vitest'
 import {
   localToolOutcome,
+  batchInputRecovery,
   localToolFailureReply,
   localToolResultSchema,
   invokeLocalTool,
@@ -1010,7 +1011,7 @@ it('preserves an owner-declared terminal failure without changing retryable fail
   expect(retryable.recoverable).toBe(true)
 })
 
-it.each(['measurementIssues', 'inspectionIssues'])(
+it.each(['inspectionIssues'])(
   'preserves completed writes but reports failed %s delivery as partial',
   (field) => {
     const outcome = localToolOutcome({
@@ -1113,3 +1114,35 @@ it('keeps ordinary cancellation without an acknowledged owner result', async () 
     )
   ).rejects.toBe(reason)
 })
+
+it.each([
+  ['not-started', 'AI_ACTION_INPUT_INVALID', true, true, 'correct_input'],
+  ['unknown', 'AI_ACTION_INPUT_INVALID', true, true, undefined],
+  ['completed', 'AI_ACTION_INPUT_INVALID', true, true, undefined],
+  ['not-started', 'AI_EXECUTION_FAILED', true, true, undefined],
+  ['not-started', 'AI_ACTION_INPUT_INVALID', false, true, undefined],
+  ['not-started', 'AI_ACTION_INPUT_INVALID', true, false, undefined]
+] as const)(
+  'classifies canonical input recovery independently of settlement %s code %s issue %s context %s',
+  (settlement, code, issue, contextFresh, expected) => {
+    expect(
+      batchInputRecovery({
+        context: {},
+        actionResults: [],
+        failure: {
+          code,
+          message: 'Rejected',
+          stage: 'execution',
+          actionName: 'edit',
+          actionId: 'edit',
+          actionExecutionMs: 1,
+          settlement,
+          contextFresh,
+          ...(issue
+            ? { inputIssue: { elementId: 'group', propertyKey: 'name' } }
+            : {})
+        }
+      })
+    ).toBe(expected)
+  }
+)

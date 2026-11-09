@@ -1,0 +1,400 @@
+{
+  "source": {
+    "run": "taipei-101-fixed-1794165655396",
+    "providerRequest": "69f37a9d-385b-4723-8116-b7e3c57f290c",
+    "call": "E5",
+    "payload": "240-input.json"
+  },
+  "input": {
+    "operations": [
+      {
+        "id": "removebands",
+        "name": "api_element_deleteElements",
+        "arguments": {},
+        "target": {
+          "field": "elementIds",
+          "query": {
+            "scope": "region",
+            "bounds": {
+              "x": 8000,
+              "y": 1500,
+              "width": 2000,
+              "height": 7000
+            },
+            "filter": {
+              "name": {
+                "suffix": "尖塔環箍橢圓頂面"
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "finish",
+        "name": "design_workflow.prepare_and_apply_design",
+        "arguments": {
+          "draft": {
+            "type": "group",
+            "name": "台北101｜精細環箍與平台分縫",
+            "projection": {
+              "azimuth": 38,
+              "elevation": 25,
+              "scale": 1,
+              "originX": 9000,
+              "originY": 47000
+            },
+            "children": [
+              {
+                "type": "surface-grid",
+                "key": "mastjointY",
+                "name": "尖塔貼合環箍正面",
+                "boundary": [
+                  {
+                    "x": -230,
+                    "y": 231,
+                    "z": 44800
+                  },
+                  {
+                    "x": 230,
+                    "y": 231,
+                    "z": 44800
+                  },
+                  {
+                    "x": 90,
+                    "y": 91,
+                    "z": 49400
+                  },
+                  {
+                    "x": -90,
+                    "y": 91,
+                    "z": 49400
+                  }
+                ],
+                "rows": 10,
+                "columns": 1,
+                "order": "cell-major",
+                "motifs": [
+                  {
+                    "key": "shadow",
+                    "name": "細環箍陰影",
+                    "fill": "#6E8070",
+                    "vertices": [
+                      {
+                        "u": 0,
+                        "v": 0.12
+                      },
+                      {
+                        "u": 1,
+                        "v": 0.12
+                      },
+                      {
+                        "u": 1,
+                        "v": 0.18
+                      },
+                      {
+                        "u": 0,
+                        "v": 0.18
+                      }
+                    ]
+                  },
+                  {
+                    "key": "highlight",
+                    "name": "細環箍反光",
+                    "fill": "#D3D6BC",
+                    "vertices": [
+                      {
+                        "u": 0,
+                        "v": 0.18
+                      },
+                      {
+                        "u": 1,
+                        "v": 0.18
+                      },
+                      {
+                        "u": 1,
+                        "v": 0.205
+                      },
+                      {
+                        "u": 0,
+                        "v": 0.205
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "surface-grid",
+                "key": "mastjointX",
+                "name": "尖塔貼合環箍側面",
+                "boundary": [
+                  {
+                    "x": 231,
+                    "y": -230,
+                    "z": 44800
+                  },
+                  {
+                    "x": 231,
+                    "y": 230,
+                    "z": 44800
+                  },
+                  {
+                    "x": 91,
+                    "y": 90,
+                    "z": 49400
+                  },
+                  {
+                    "x": 91,
+                    "y": -90,
+                    "z": 49400
+                  }
+                ],
+                "rows": 10,
+                "columns": 1,
+                "order": "cell-major",
+                "motifs": [
+                  {
+                    "key": "shadow",
+                    "name": "細環箍側陰影",
+                    "fill": "#435A50",
+                    "vertices": [
+                      {
+                        "u": 0,
+                        "v": 0.12
+                      },
+                      {
+                        "u": 1,
+                        "v": 0.12
+                      },
+                      {
+                        "u": 1,
+                        "v": 0.18
+                      },
+                      {
+                        "u": 0,
+                        "v": 0.18
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "pattern",
+                "key": "deckjoints",
+                "name": "八斗平台細節",
+                "origin": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 15254
+                },
+                "axes": [
+                  {
+                    "count": 8,
+                    "step": {
+                      "x": 0,
+                      "y": 0,
+                      "z": 3400
+                    }
+                  }
+                ],
+                "members": [
+                  {
+                    "type": "surface-grid",
+                    "key": "Ytiles",
+                    "name": "正面平台金屬板分縫",
+                    "boundary": [
+                      {
+                        "x": -2760,
+                        "y": 2450,
+                        "z": 0
+                      },
+                      {
+                        "x": 2760,
+                        "y": 2450,
+                        "z": 0
+                      },
+                      {
+                        "x": 2760,
+                        "y": 2820,
+                        "z": 0
+                      },
+                      {
+                        "x": -2760,
+                        "y": 2820,
+                        "z": 0
+                      }
+                    ],
+                    "rows": 1,
+                    "columns": 24,
+                    "order": "cell-major",
+                    "motifs": [
+                      {
+                        "key": "joint",
+                        "name": "平台板接縫",
+                        "fill": "#667E73",
+                        "vertices": [
+                          {
+                            "u": 0,
+                            "v": 0
+                          },
+                          {
+                            "u": 0.035,
+                            "v": 0
+                          },
+                          {
+                            "u": 0.035,
+                            "v": 1
+                          },
+                          {
+                            "u": 0,
+                            "v": 1
+                          }
+                        ]
+                      },
+                      {
+                        "key": "edge",
+                        "name": "排水內沿",
+                        "fill": "#C2CBBA",
+                        "vertices": [
+                          {
+                            "u": 0.04,
+                            "v": 0.9
+                          },
+                          {
+                            "u": 1,
+                            "v": 0.9
+                          },
+                          {
+                            "u": 1,
+                            "v": 0.94
+                          },
+                          {
+                            "u": 0.04,
+                            "v": 0.94
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "surface-grid",
+                    "key": "Xtiles",
+                    "name": "側面平台金屬板分縫",
+                    "boundary": [
+                      {
+                        "x": 2450,
+                        "y": -2760,
+                        "z": 0
+                      },
+                      {
+                        "x": 2450,
+                        "y": 2760,
+                        "z": 0
+                      },
+                      {
+                        "x": 2820,
+                        "y": 2760,
+                        "z": 0
+                      },
+                      {
+                        "x": 2820,
+                        "y": -2760,
+                        "z": 0
+                      }
+                    ],
+                    "rows": 1,
+                    "columns": 24,
+                    "order": "cell-major",
+                    "motifs": [
+                      {
+                        "key": "joint",
+                        "name": "平台板接縫",
+                        "fill": "#61796F",
+                        "vertices": [
+                          {
+                            "u": 0,
+                            "v": 0
+                          },
+                          {
+                            "u": 0.035,
+                            "v": 0
+                          },
+                          {
+                            "u": 0.035,
+                            "v": 1
+                          },
+                          {
+                            "u": 0,
+                            "v": 1
+                          }
+                        ]
+                      },
+                      {
+                        "key": "edge",
+                        "name": "排水沿亮邊",
+                        "fill": "#ADBAA9",
+                        "vertices": [
+                          {
+                            "u": 0.04,
+                            "v": 0.9
+                          },
+                          {
+                            "u": 1,
+                            "v": 0.9
+                          },
+                          {
+                            "u": 1,
+                            "v": 0.94
+                          },
+                          {
+                            "u": 0.04,
+                            "v": 0.94
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "inspection": "defer",
+          "message": "修正尖塔細節並補平台金屬板接縫"
+        }
+      },
+      {
+        "id": "finalview",
+        "name": "design_operations.inspect_drawing",
+        "arguments": {
+          "arguments": {
+            "elementId": "workspace",
+            "view": "overview"
+          },
+          "message": "最終檢視基座至尖塔全貌及透明背景"
+        }
+      }
+    ],
+    "retain": {
+      "detailDraft": {
+        "step": "finish",
+        "source": "input",
+        "path": "/draft"
+      },
+      "detailIds": {
+        "step": "finish",
+        "path": "/compositionIds"
+      }
+    },
+    "delivery": {
+      "fields": {
+        "deleteReceipt": {
+          "step": "removebands",
+          "path": "/actionResults"
+        },
+        "overview": {
+          "step": "finalview",
+          "path": "/actionResults"
+        }
+      }
+    }
+  }
+}

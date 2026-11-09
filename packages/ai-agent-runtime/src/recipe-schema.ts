@@ -1,3 +1,4 @@
+import { embedAiToolSchema } from './tool-contract.js'
 import type { AiJsonValue } from './types.js'
 
 interface RecipeConstraints {
@@ -587,8 +588,16 @@ export const recipeResolve = (schema: RecipeSchema): RecipeSchema => {
   return lifetime ? { ...current, 'x-runtime-value': lifetime } : current
 }
 
-export const recipeValidationSchema = (schema: RecipeSchema): AiJsonValue =>
-  schema.raw ?? (schema as unknown as AiJsonValue)
+export const recipeValidationSchema = (schema: RecipeSchema): AiJsonValue => {
+  const value = schema.raw ?? (schema as unknown as AiJsonValue)
+  const lifetime = schema['x-runtime-value']
+
+  return lifetime && recipeRecord(value)
+    ? { ...value, 'x-runtime-value': lifetime }
+    : value
+}
+
+export class RecipeReferenceError extends Error {}
 
 export const recipePointer = (path: string): readonly string[] => {
   if (path === '') {
@@ -596,7 +605,7 @@ export const recipePointer = (path: string): readonly string[] => {
   }
 
   if (!path.startsWith('/') || /~(?![01])/u.test(path)) {
-    throw new Error('Expected an RFC 6901 JSON Pointer')
+    throw new RecipeReferenceError(`Expected an RFC 6901 JSON Pointer: ${path}`)
   }
 
   return path
@@ -670,7 +679,8 @@ const independentOutputField = (
 
 export const recipeSchemaAt = (
   schema: RecipeSchema,
-  path: string
+  path: string,
+  requireAtExecution = false
 ): RecipeSchema => {
   const visit = (
     current: RecipeSchema,
@@ -692,11 +702,28 @@ export const recipeSchemaAt = (
     }
 
     if (current.type === 'union') {
+      const variants = current.variants.map((variant) =>
+        visit(variant, keys, lifetime)
+      )
+
       return {
         ...current,
-        variants: current.variants.map((variant) =>
-          visit(variant, keys, lifetime)
-        )
+        variants,
+        // Projection removes branch discriminators. Preserve the selected value
+        // contract, not the source envelope or its exclusive branch semantics.
+        ...(keys.length
+          ? {
+              exclusive: false,
+              raw: {
+                anyOf: variants.map((variant, index) =>
+                  embedAiToolSchema(
+                    recipeValidationSchema(variant),
+                    '#/anyOf/' + index
+                  )
+                )
+              }
+            }
+          : {})
       }
     }
 
@@ -708,7 +735,7 @@ export const recipeSchemaAt = (
 
     if (
       current.type === 'object' &&
-      current.required.includes(key) &&
+      (requireAtExecution || current.required.includes(key)) &&
       recipeOwn(current.properties, key)
     ) {
       return visit(current.properties[key], rest, lifetime)
@@ -717,7 +744,8 @@ export const recipeSchemaAt = (
     if (
       current.type === 'array' &&
       /^(0|[1-9][0-9]*)$/u.test(key) &&
-      Number(key) < (current.minItems ?? 0)
+      (Number(key) < (current.minItems ?? 0) ||
+        (requireAtExecution && Number(key) < (current.maxItems ?? Infinity)))
     ) {
       return visit(
         current.prefixItems?.[Number(key)] ?? current.items,
@@ -726,7 +754,9 @@ export const recipeSchemaAt = (
       )
     }
 
-    throw new Error('Source path is absent or not guaranteed to exist')
+    const message = `Source path ${path} is absent or not guaranteed to exist`
+
+    throw new RecipeReferenceError(message)
   }
 
   return visit(schema, recipePointer(path))
@@ -1048,6 +1078,12 @@ export const recipeAssignable = (
     }
 
     return Object.entries(source.properties).every(([key, child]) => {
+      // A forbidden optional property has no value to forward. Required
+      // forbidden properties remain invalid rather than vacuously assignable.
+      if (recipeResolve(child).type === 'never') {
+        return !source.required.includes(key)
+      }
+
       if (
         target.propertyNames &&
         !recipeAssignable(
@@ -1242,16 +1278,22 @@ export const recipeLiteralShape = (value: unknown): RecipeSchema => {
   return { type: 'opaque' }
 }
 
-/** Select a guaranteed field of a registered result using the same proof as step binding. */
+/** Select a registered result field. Request sequences may admit declared optional
+ * paths when their presence is checked against the actual result at execution. */
 export const registeredRecipeOutputAt = (
   schema: unknown,
-  path: string
+  path: string,
+  requireAtExecution = false
 ): AiJsonValue => {
   if (!path) {
     return schema as AiJsonValue
   }
 
-  const selected = recipeSchemaAt(readRegisteredRecipeSchema(schema), path)
+  const selected = recipeSchemaAt(
+    readRegisteredRecipeSchema(schema),
+    path,
+    requireAtExecution
+  )
 
   const materialize = (field: RecipeSchema): AiJsonValue =>
     field.type === 'union'

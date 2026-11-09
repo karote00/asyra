@@ -386,13 +386,9 @@ export const createLocalDesignTools = (
     ['available', 'artifactId', 'applicable', 'elementCount', 'findings']
   )
   const recoveryFields = {
-    preparationInput: preparedOutputSchema.properties.preparationInput,
+    ...preparedOutputSchema.properties,
     available: { type: 'boolean' },
-    applicable: { type: 'boolean' },
-    artifactId: toolRequestReference,
     elementCount: { type: 'integer', minimum: 0 },
-    findings: { type: 'array' },
-    review: { type: 'object' },
     message: { type: 'string' },
     code: { type: 'string' },
     settlement: { type: 'string' },
@@ -803,7 +799,7 @@ export const createLocalDesignTools = (
               ]
             },
             name: AiDesignToolIds.PREPARE_DESIGN,
-            revision: 3,
+            revision: 4,
             executionAccess: LocalToolAccess.INDEPENDENT,
             description:
               designRepresentationGuidance +
@@ -1264,23 +1260,33 @@ export const createLocalDesignTools = (
           })
         }
 
+        const prepared = await session.prepareAsync(
+          draft,
+          signal,
+          record(args.repair) &&
+            typeof args.repair.draftId === 'string' &&
+            typeof args.repair.partition === 'number'
+            ? {
+                draftId: args.repair.draftId,
+                partition: args.repair.partition,
+                ...(typeof args.repair.continueFromArtifact === 'string'
+                  ? { continueFromArtifact: args.repair.continueFromArtifact }
+                  : {})
+              }
+            : undefined
+        )
+
         return JSON.stringify({
-          available: true,
-          ...(await session.prepareAsync(
-            draft,
-            signal,
-            record(args.repair) &&
-              typeof args.repair.draftId === 'string' &&
-              typeof args.repair.partition === 'number'
-              ? {
-                  draftId: args.repair.draftId,
-                  partition: args.repair.partition,
-                  ...(typeof args.repair.continueFromArtifact === 'string'
-                    ? { continueFromArtifact: args.repair.continueFromArtifact }
-                    : {})
-                }
-              : undefined
-          )),
+          available: prepared.applicable,
+          ...prepared,
+          ...(!prepared.applicable
+            ? {
+                settlement: 'not-started',
+                recovery: 'correct_input',
+                message:
+                  'Resolve the reported preparation findings in the source before applying. No canvas operation has started; retain successful earlier parts.'
+              }
+            : {}),
           preparationInput:
             record(args.repair) && typeof args.repair.draftId === 'string'
               ? {
