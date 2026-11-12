@@ -48,7 +48,7 @@
 
           'Prove finite typed bindings and exact eligible dependencies without executing operations.',
           'Admit optional bounded repair iteration only with owner-declared read/prepare verification paths, required typed status/progress, closed state and guaranteed final receipt. Prove every possible repair dependency and worst-case step budget; reject forward/internal-output escape and captured state before writes.',
-          'Project only guaranteed registered output fields; unused opaque siblings do not invalidate known fields. Preserve open-object, union discriminator, ordered prefixItems with minItems presence, uniqueness and runtime-value constraints; reject ambiguous or opaque used bindings before writes. Intersect common object constraints and every closed property set; resolve local $defs lazily within one schema graph, preserve strict bounds and patterns, and reject uncertain recursive proofs. Undeclared fields of open registered objects require fresh typed input; they cannot hide captured literal runtime state.'
+          'Project only guaranteed registered output fields; unused opaque siblings do not invalidate known fields. Whole opaque results may be returned by a request sequence with their exact registered validation schema; they never establish field or typed binding guarantees. Preserve open-object, union discriminator, ordered prefixItems with minItems presence, uniqueness and runtime-value constraints; reject ambiguous or opaque used bindings before writes. Intersect common object constraints and every closed property set; resolve local $defs lazily within one schema graph, intersect reference siblings without reopening closed properties, project selected validation roots with their finite reachable local-reference graph and preserve sibling constraints and runtime lifetimes through retention and delivery, preserve strict bounds and patterns, and reject uncertain recursive proofs. Undeclared fields of open registered objects require fresh typed input; they cannot hide captured literal runtime state.'
         ],
         bypasses: ['Invalid proposals return bounded repair issues.'],
         allowedContributors: [
@@ -327,5 +327,7 @@
 
   freeze(data)
   globalThis.FLOW_INSPECTOR_DATA = data
-  if (typeof module !== 'undefined') {module.exports = data}
+  if (typeof module !== 'undefined') {
+    module.exports = data
+  }
 })()

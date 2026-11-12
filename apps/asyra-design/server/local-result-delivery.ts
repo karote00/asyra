@@ -228,15 +228,16 @@ export function resultDelivery(
       step: string | undefined,
       view: unknown,
       blocked: ReadonlySet<unknown>,
+      outcome: AiToolOutcome,
       input?: { value: unknown; blocked: ReadonlySet<unknown> },
       operation = 'execute_design'
     ) {
-      if (
-        record(view) &&
-        record(view.toolOutcome) &&
-        view.toolOutcome.status !== 'success'
-      ) {
-        issues.push('Selected result was not successfully delivered')
+      if (outcome.status !== 'success') {
+        issues.push(
+          record(view) && typeof view.message === 'string'
+            ? view.message
+            : 'Selected result was not successfully delivered'
+        )
 
         return
       }

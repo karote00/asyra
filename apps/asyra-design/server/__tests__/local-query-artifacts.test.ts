@@ -15,10 +15,11 @@ import {
   basicApiResultSchema,
   basicApiDeliverySchema
 } from '../../src/ai/basic-api-results'
+import type { AiJsonValue } from '@asyra/ai-agent-runtime'
 import { toolRequestReference } from '../../src/ai/tool-contract'
 import { createDesignReviewAction } from '../../src/ai/review-action'
 
-const object = (properties: Record<string, unknown>) => ({
+const object = (properties: Record<string, AiJsonValue>) => ({
   type: 'object',
   properties
 })
@@ -80,6 +81,8 @@ const fixture = () => {
   const leases = createLocalToolLeases({ requestId: 'request', capacity: 20 })
   let callId = 'producer'
   const ownership: LocalToolOwnership = {
+    requestId: 'request',
+
     publish: (handle, release, validate) =>
       leases.publish({ handle, release, validate, callId }),
 
@@ -115,13 +118,24 @@ const fixture = () => {
     })) as never
   })
 
-  const read = () =>
-    queries.read(
+  const read = () => {
+    const receipt = queries.read(
       { scope: 'selection', fields: ['x'], delivery: 'reference' },
       signal
     )
 
-  const publish = async (result: ReturnType<typeof read>) =>
+    if (!receipt.snapshotId || !receipt.leaseId) {
+      throw Error('Missing retained query identity')
+    }
+
+    return {
+      ...receipt,
+      snapshotId: receipt.snapshotId,
+      leaseId: receipt.leaseId
+    }
+  }
+
+  const publish = async (result: ReturnType<typeof queries.read>) =>
     bridge.accept(
       {
         actions: [
@@ -295,6 +309,10 @@ it('recovers a lost browser release acknowledgement without reviving the handle 
       app.signal
     )
 
+    if (!sibling.snapshotId || !sibling.leaseId) {
+      throw Error('Missing sibling handles')
+    }
+
     await app.publish(sibling)
     app.release.mockImplementationOnce(async (snapshotId) => {
       app.queries.read(
@@ -389,7 +407,7 @@ it.each([
       changed: entries.length > 0
     }))
     const measurement = measuredReview()
-    const observed: ReturnType<typeof app.read>[] = []
+    const observed: ReturnType<typeof app.queries.read>[] = []
     const read = createDocumentContextAction((query, signal) => {
       const result = app.queries.read(query, signal)
 
@@ -625,10 +643,7 @@ it.each([
         execution: { status: 'success', value: 1 },
         storage: { status: 'saved' }
       })
-      expect(measurement.review).toHaveBeenCalledExactlyOnceWith(
-        'part',
-        app.signal
-      )
+      expect(measurement.review).not.toHaveBeenCalled()
       expect(update).toHaveBeenCalledExactlyOnceWith([
         { elementId: 'part', fillId: 'fill-part', patch: { color: '#1a1a1a' } }
       ])
@@ -639,7 +654,13 @@ it.each([
         total: 1,
         delivery: 'reference'
       })
-      expect(() => app.queries.get(observed[0].snapshotId)).toThrow(/missing/)
+      if (!observed[0].snapshotId) {
+        throw Error('Missing observed query handle')
+      }
+
+      const observedId = observed[0].snapshotId
+
+      expect(() => app.queries.get(observedId)).toThrow(/missing/)
       const query = JSON.parse(
         (
           await host.invoke({
@@ -648,41 +669,39 @@ it.each([
           })
         ).text
       ).actionResults[0].result
-      const mapped = JSON.parse(
-        (
-          await host.invoke({
-            name: 'design_operations.execute_design',
-            input: {
-              operations: [
-                {
-                  name: AiActionNames.MAP_RETAINED_FILLS,
-                  arguments: {
-                    mappings: [
-                      {
-                        snapshotId: query.snapshotId,
-                        leaseId: query.leaseId,
-                        coordinateSpace: 'parent-local',
-                        axis: 'x',
-                        domain: [0, 100],
-                        index: 0,
-                        outside: 'clamp',
-                        stops: [
-                          { at: 0, color: '#000000' },
-                          { at: 1, color: '#ffffff' }
-                        ]
-                      }
+      const mappedReply = await host.invoke({
+        name: 'design_operations.execute_design',
+        input: {
+          operations: [
+            {
+              name: AiActionNames.MAP_RETAINED_FILLS,
+              arguments: {
+                mappings: [
+                  {
+                    snapshotId: query.snapshotId,
+                    leaseId: query.leaseId,
+                    coordinateSpace: 'parent-local',
+                    axis: 'x',
+                    domain: [0, 100],
+                    index: 0,
+                    outside: 'clamp',
+                    stops: [
+                      { at: 0, color: '#000000' },
+                      { at: 1, color: '#ffffff' }
                     ]
                   }
-                }
-              ],
-              inspection: 'defer'
+                ]
+              }
             }
-          })
-        ).text
-      )
+          ],
+          inspection: 'defer'
+        }
+      })
+      const mapped = JSON.parse(mappedReply.text)
 
-      expect(mapped.toolOutcome, JSON.stringify(mapped)).toMatchObject({
-        status: 'success'
+      expect(mappedReply.outcome).toMatchObject({
+        status: 'success',
+        settlement: 'completed'
       })
       const retained = mapped.actionResults[0].result.retained
 
@@ -838,11 +857,13 @@ it.each(['recipe', 'native', 'partial'] as const)(
               resolveBatch: (batch) => batch
             },
             async (batch) => {
-              const receipt: import('../../src/ai/action-batch-protocol').AiBatchReceipt =
-                {
-                  context: null,
-                  actionResults: []
-                }
+              const receipt: {
+                context: null
+                actionResults: import('../../src/ai/action-batch-protocol').AiBatchReceipt['actionResults'][number][]
+              } = {
+                context: null,
+                actionResults: []
+              }
 
               for (const call of batch.actions) {
                 const action = actions.find((item) => item.name === call.name)
@@ -936,7 +957,7 @@ it.each(['recipe', 'native', 'partial'] as const)(
         {
           id: 'group',
           tool: 'design_operations.api_hierarchy_groupElements',
-          revision: 5,
+          revision: 6,
           input: {
             kind: 'object',
             fields: {
@@ -951,9 +972,13 @@ it.each(['recipe', 'native', 'partial'] as const)(
         {
           id: 'edit',
           tool: 'design_operations.api_element_setElementsVisible',
-          revision: actions.find(
-            (action) => action.name === 'api_element_setElementsVisible'
-          )?.revision,
+          revision: host
+            .definitions()
+            .find(
+              (definition) =>
+                definition.registeredName ===
+                'design_operations.api_element_setElementsVisible'
+            )?.revision,
           input: {
             kind: 'object',
             fields: {
@@ -992,40 +1017,38 @@ it.each(['recipe', 'native', 'partial'] as const)(
 
     try {
       if (mode !== 'recipe') {
-        const invoke = async (name: string, args: unknown) =>
-          JSON.parse(
-            (
-              await host.invoke({
-                name: 'design_operations.execute_design',
-                input: {
-                  operations: [
-                    { name, arguments: args },
-                    ...(mode === 'partial' &&
-                    name === 'api_hierarchy_groupElements'
-                      ? [
-                          {
-                            name: 'api_selection_selectElements',
-                            arguments: { elementIds: ['part'] }
-                          },
-                          {
-                            name: 'api_selection_selectElements',
-                            arguments: { elementIds: ['part'] }
-                          }
-                        ]
-                      : [])
-                  ],
-                  inspection: 'defer'
-                }
-              })
-            ).text
-          )
+        const invoke = (name: string, args: unknown) =>
+          host.invoke({
+            name: 'design_operations.execute_design',
+            input: {
+              operations: [
+                { name, arguments: args },
+                ...(mode === 'partial' && name === 'api_hierarchy_groupElements'
+                  ? [
+                      {
+                        name: 'api_selection_selectElements',
+                        arguments: { elementIds: ['part'] }
+                      },
+                      {
+                        name: 'api_selection_selectElements',
+                        arguments: { elementIds: ['part'] }
+                      }
+                    ]
+                  : [])
+              ],
+              inspection: 'defer'
+            }
+          })
 
-        const produced = await invoke('api_hierarchy_groupElements', {
+        const producedReply = await invoke('api_hierarchy_groupElements', {
           elementIds: ['part']
         })
 
-        expect(produced.toolOutcome, JSON.stringify(produced)).toMatchObject({
-          status: mode === 'partial' ? 'partial' : 'success'
+        const produced = JSON.parse(producedReply.text)
+
+        expect(producedReply.outcome).toMatchObject({
+          status: mode === 'partial' ? 'partial' : 'success',
+          settlement: mode === 'partial' ? 'partial' : 'completed'
         })
         if (mode === 'partial') {
           expect(select).toHaveBeenCalledOnce()
@@ -1036,34 +1059,33 @@ it.each(['recipe', 'native', 'partial'] as const)(
         const delivered =
           mode === 'partial' ? produced.executionResult : produced
         const reference = delivered.actionResults[0].result.retained
-        const read = JSON.parse(
-          (
-            await host.invoke({
-              name: 'design_operations.read_design_context',
-              input: {
-                arguments: {
-                  scope: 'snapshot',
-                  snapshotId: reference.snapshotId,
-                  delivery: 'receipt'
-                }
-              }
-            })
-          ).text
-        )
+        const readReply = await host.invoke({
+          name: 'design_operations.read_design_context',
+          input: {
+            arguments: {
+              scope: 'snapshot',
+              snapshotId: reference.snapshotId,
+              delivery: 'receipt'
+            }
+          }
+        })
+        const read = JSON.parse(readReply.text)
 
-        expect(read.toolOutcome, JSON.stringify(read)).toMatchObject({
-          status: 'success'
+        expect(readReply.outcome).toMatchObject({
+          status: 'success',
+          settlement: 'completed'
         })
         expect(read.actionResults[0].result.receipt.value.elementIds).toEqual([
           'part'
         ])
-        const edited = await invoke('api_element_setElementsVisible', {
+        const editedReply = await invoke('api_element_setElementsVisible', {
           elementIds: reference,
           visible: false
         })
 
-        expect(edited.toolOutcome, JSON.stringify(edited)).toMatchObject({
-          status: 'success'
+        expect(editedReply.outcome).toMatchObject({
+          status: 'success',
+          settlement: 'completed'
         })
         expect(group).toHaveBeenCalledOnce()
         expect(update).toHaveBeenCalledExactlyOnceWith(['part'], false)

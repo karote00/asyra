@@ -1803,19 +1803,29 @@ for (const mode of [
 
           let host = createHost('mechanical-integration')
 
+          const invokeReply = (name: string, input: unknown) =>
+            host.invoke({ name, input })
+
           const invoke = async (name: string, input: unknown) =>
-            JSON.parse((await host.invoke({ name, input })).text)
+            JSON.parse((await invokeReply(name, input)).text)
 
           try {
             const selection = []
 
             for (const root of ids.roots) {
-              const receipt = await invoke('design_operations.review_design', {
-                arguments: { elementId: root }
-              })
+              const reply = await invokeReply(
+                'design_operations.review_design',
+                {
+                  arguments: { elementId: root }
+                }
+              )
+              const receipt = JSON.parse(reply.text)
 
+              expect(reply.outcome).toMatchObject({
+                status: 'success',
+                settlement: 'completed'
+              })
               expect(receipt, JSON.stringify(receipt)).toMatchObject({
-                toolOutcome: { status: 'success' },
                 mechanicalSelection: { requestId: 'mechanical-integration' }
               })
               selection.push(...receipt.mechanicalSelection.checks)
@@ -1850,15 +1860,16 @@ for (const mode of [
               requestId: 'mechanical-integration',
               checks: selection
             }
-            const foreign = await invoke(
+            const foreign = await invokeReply(
               'design_operations.verify_design_checks',
               { ...state, requestId: 'another-request' }
             )
 
-            expect(foreign).toMatchObject({
-              toolOutcome: { status: 'failed', settlement: 'not-started' }
+            expect(foreign.outcome).toMatchObject({
+              status: 'failed',
+              settlement: 'not-started'
             })
-            const invalid = await invoke(
+            const invalid = await invokeReply(
               'design_operations.repair_design_checks',
               {
                 ...state,
@@ -1872,8 +1883,9 @@ for (const mode of [
               }
             )
 
-            expect(invalid, JSON.stringify(invalid)).toMatchObject({
-              toolOutcome: { status: 'failed', settlement: 'not-started' }
+            expect(invalid.outcome).toMatchObject({
+              status: 'failed',
+              settlement: 'not-started'
             })
             expect(dispatched).not.toContain('apply_prescribed_positions')
 
@@ -2040,7 +2052,7 @@ for (const mode of [
                       })
                     ])
                   )
-                  const recovered = await invoke(
+                  const recoveredReply = await invokeReply(
                     'design_operations.verify_design_checks',
                     {
                       requestId: state.requestId,
@@ -2050,8 +2062,13 @@ for (const mode of [
                     }
                   )
 
+                  const recovered = JSON.parse(recoveredReply.text)
+
+                  expect(recoveredReply.outcome).toMatchObject({
+                    status: 'success',
+                    settlement: 'completed'
+                  })
                   expect(recovered, JSON.stringify(recovered)).toMatchObject({
-                    toolOutcome: { status: 'success' },
                     verification: { status: 'repairable' }
                   })
                   const attachment = await invoke(
@@ -2094,7 +2111,7 @@ for (const mode of [
                   expect(JSON.stringify(result.execution.recovery)).toContain(
                     ids.children[2]
                   )
-                  const recovered = await invoke(
+                  const recoveredReply = await invokeReply(
                     'design_operations.verify_design_checks',
                     {
                       requestId: state.requestId,
@@ -2104,8 +2121,13 @@ for (const mode of [
                     }
                   )
 
+                  const recovered = JSON.parse(recoveredReply.text)
+
+                  expect(recoveredReply.outcome).toMatchObject({
+                    status: 'success',
+                    settlement: 'completed'
+                  })
                   expect(recovered, JSON.stringify(recovered)).toMatchObject({
-                    toolOutcome: { status: 'success' },
                     verification: { status: 'pass' }
                   })
                 }
@@ -2207,15 +2229,16 @@ for (const mode of [
                   receiptId: 'expired-receipt'
                 })
               ).toMatchObject({ status: 'unsaved' })
-              const old = await invoke(
+              const old = await invokeReply(
                 'design_operations.verify_design_checks',
                 state
               )
 
-              expect(old).toMatchObject({
-                available: false,
-                toolOutcome: { status: 'failed', settlement: 'not-started' }
+              expect(old.outcome).toMatchObject({
+                status: 'failed',
+                settlement: 'not-started'
               })
+              expect(JSON.parse(old.text)).toMatchObject({ available: false })
               const fresh = await invoke('design_operations.review_design', {
                 arguments: { elementId: ids.roots[2] }
               })
@@ -2671,13 +2694,16 @@ test('server measurement freshness uses the browser mechanical owner through edi
     }
   )
 
-  const check = () =>
-    operations.finishInspection(
-      new Set(fixture.ids),
-      undefined,
-      true,
-      new AbortController().signal
-    )
+  const call = async (name: string, args: unknown = {}) =>
+    JSON.parse(await operations.call(name, args, new AbortController().signal))
+
+  const check = async (targets = fixture.ids) => {
+    for (const elementId of targets) {
+      await call('review_design', { arguments: { elementId } })
+    }
+
+    return { checks: await call('read_design_checks') }
+  }
 
   try {
     expect((await check()).checks.counts).toEqual({
@@ -2700,7 +2726,7 @@ test('server measurement freshness uses the browser mechanical owner through edi
         fillApis.updateFillsAtIndex([ids[0]], 0, { color: '#334455' })
       )
     })
-    expect((await check()).checks.counts.pass).toBe(3)
+    expect((await call('read_design_checks')).counts.pass).toBe(3)
     expect(measured).toEqual([])
     await page.evaluate(async () => {
       const { core, testRuntimeState } =
@@ -2721,18 +2747,21 @@ test('server measurement freshness uses the browser mechanical owner through edi
         ])
       )
     })
-    expect((await check()).checks.counts.pass).toBe(3)
+    expect((await call('read_design_checks')).counts.stale).toBe(1)
+    expect((await check([fixture.ids[0]])).checks.counts.pass).toBe(3)
     expect(measured).toEqual([fixture.ids[0]])
     measured.length = 0
     await undo(page)
-    expect((await check()).checks.counts.pass).toBe(3)
+    expect((await call('read_design_checks')).counts.stale).toBe(1)
+    expect((await check([fixture.ids[0]])).checks.counts.pass).toBe(3)
     expect(measured).toEqual([fixture.ids[0]])
     measured.length = 0
     await redo(page)
-    expect((await check()).checks.counts.pass).toBe(3)
+    expect((await call('read_design_checks')).counts.stale).toBe(1)
+    expect((await check([fixture.ids[0]])).checks.counts.pass).toBe(3)
     expect(measured).toEqual([fixture.ids[0]])
     disconnected = true
-    expect((await check()).checks.counts.pass).toBe(0)
+    await expect(check()).rejects.toThrow('Simulated transport loss')
     disconnected = false
     expect((await check()).checks.counts.pass).toBe(3)
     measured.length = 0
@@ -3185,7 +3214,7 @@ for (const rootType of ['frame', 'group'] as const) {
   )
 }
 
-test('published representative guidance reaches real capture and completion without replaying drawing', async ({
+test('published optional material guidance reaches real capture without approval or replay', async ({
   page
 }) => {
   const { readFileSync } = await import('node:fs')
@@ -3200,20 +3229,8 @@ test('published representative guidance reaches real capture and completion with
     'utf8'
   )
 
-  const example = (label: string) => {
-    const match = text.match(
-      new RegExp('```json ' + label + '\\n([\\s\\S]*?)\\n```')
-    )
-
-    if (!match) {
-      throw new Error(`Missing published ${label}`)
-    }
-
-    return JSON.parse(match[1])
-  }
-
-  const declaration = example('representative-review')
-  const capture = example('representative-capture')
+  expect(text).toContain('there is no\nrequired verdict registration')
+  expect(text).toContain('inspect_drawing')
   const document = createTestDocumentIdentity()
 
   await page.goto(document.url)
@@ -3311,77 +3328,38 @@ test('published representative guidance reaches real capture and completion with
     JSON.parse(await owner.call(name, args, new AbortController().signal))
 
   try {
-    await call(declaration.tool, declaration.arguments)
-    capture.arguments.inspections[0].elementId = fixture.parts[0]
-    const bound = await call(capture.tool, capture.arguments)
-
-    expect(bound.next.arguments.checks).toHaveLength(1)
-    expect(bound.recordedChecks).toEqual([])
-    const local = await call(capture.tool, {
-      ...bound.next.arguments,
-      checks: bound.next.arguments.checks.map((check: object) => ({
-        ...check,
-        status: 'pass',
-        evidence:
-          'Deterministic supplied local observation; actual browser image binding is required.'
-      }))
+    const local = await call('inspect_drawing', {
+      arguments: { elementId: fixture.parts[0] }
+    })
+    const whole = await call('inspect_drawing', {
+      arguments: { elementId: fixture.root }
     })
 
-    expect(local).toMatchObject({
-      accepted: false,
-      recordedChecks: [
-        { status: 'pass', criterionId: 'material', unitId: 'sample-join' }
-      ]
-    })
-    const before = (
-      await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
-        view: 'details',
-        ids: [local.recordedChecks[0].id],
-        includePassed: true
-      })
-    ).items
-    const whole = await call(capture.tool, {
-      phase: 'visual',
-      final: false,
-      inspections: [
-        { elementId: fixture.root, checks: [{ criterionId: 'overall' }] }
-      ]
+    for (const [result, target] of [
+      [local, fixture.parts[0]],
+      [whole, fixture.root]
+    ]) {
+      const capture = result.actionResults.find(
+        (entry: { actionName: string }) =>
+          entry.actionName === 'inspect_drawing'
+      ).result
+
+      expect(capture).toMatchObject({ available: true, elementId: target })
+      expect(capture.image.dataUrl).toMatch(/^data:image\/png;base64,/)
+      expect(capture.image.width).toBeGreaterThan(0)
+      expect(capture.image.height).toBeGreaterThan(0)
+      expect(result).not.toHaveProperty('recordedChecks')
+      expect(result).not.toHaveProperty('next')
+    }
+
+    const checks = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+      view: 'details',
+      includePassed: true
     })
 
-    expect(whole.next.arguments.final).toBe(false)
-    const result = await call(capture.tool, {
-      ...whole.next.arguments,
-      final: true,
-      checks: whole.next.arguments.checks.map((check: object) => ({
-        ...check,
-        status: 'pass',
-        evidence:
-          'Deterministic whole-view observation; this asserts the handoff, not aesthetic quality.'
-      }))
-    })
-
-    expect(result).toMatchObject({
-      accepted: true,
-      coverage: { passed: 2, required: 2 }
-    })
-    expect(
-      (
-        await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
-          view: 'details',
-          ids: [local.recordedChecks[0].id],
-          includePassed: true
-        })
-      ).items
-    ).toEqual(before)
+    expect(checks.items).toEqual([])
     expect(await getCoreDocumentDigest(page)).toEqual(digest)
-    expect(
-      dispatched.every(
-        (name) =>
-          name === 'inspect_drawing' ||
-          name === 'validate_inspection_evidence' ||
-          name === 'review_design'
-      )
-    ).toBe(true)
+    expect(dispatched).toEqual(['inspect_drawing', 'inspect_drawing'])
     await expect
       .poll(() => getPersistedDocumentDigest(document.fileId))
       .toEqual(digest)

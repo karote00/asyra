@@ -741,7 +741,9 @@ it('delivers general architectural advice through the real catalog without impos
   expect(body).toContain('does not change paint order among its children')
   expect(body).toContain('identify the remaining occluder')
   expect(body).toContain('optional advice for ordering uncertainty')
-  expect(body).toContain('select_design_references')
+  expect(body).toContain(
+    'No reference-use approval or criterion registration is needed'
+  )
   expect(body).toContain('contracts.operations')
   expect(body).not.toContain('use `fill.detachFillsAtIndex` on the intended')
   expect(body).not.toContain(
@@ -978,13 +980,13 @@ it('selects real nested catalog leaves without eagerly loading siblings and pres
 })
 
 it.each([
-  ['spatial', ['spatial'], 'An entrance-detail pass does not complete'],
+  ['spatial', ['spatial'], 'An ornament close-up'],
   [
     'materials.method',
     ['materials', 'materials.method'],
     'Do not quantize them merely to reduce bytes'
   ],
-  ['materials.review', ['materials'], 'representative-capture'],
+  ['materials.review', ['materials'], 'does not prescribe a'],
   ['repetition', ['projection', 'repetition'], 'This does not depth-sort']
 ] as const)(
   'reads only the necessary closure for the %s topic',
@@ -1119,11 +1121,15 @@ it('delivers recorded material decision topics in one complete reply without opt
         )
         expect(text).not.toContain('"name": "Continuous material join"')
       } else {
-        expect(text).toContain('Capture/bind with no `recordedChecks`')
-        expect(text.replace(/\s+/g, ' ')).toContain(
-          'broad evidence carries broad invalidation'
+        expect(text).toContain(
+          "Select that capture's result for image delivery."
         )
-        expect(text).toContain('Do not claim the entire request passed')
+        expect(text.replace(/\s+/g, ' ')).toContain(
+          'there is no required verdict registration, evidence binding or fixed image count'
+        )
+        expect(text).toContain(
+          'Review the final result against the user request'
+        )
       }
 
       expect(

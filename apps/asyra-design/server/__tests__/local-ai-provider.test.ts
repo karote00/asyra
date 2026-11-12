@@ -1,4 +1,6 @@
+import * as nativeContent from '../local-operation-tools'
 import canonicalInputRecovery from './fixtures/recorded-101/canonical-input-recovery-20261109.json'
+import positionDiscovery from '../../test-data/ai-drawing/fixtures/position-discovery-20261109.json'
 import independentDelivery from './fixtures/recorded-101/independent-delivery-20261109.json'
 import targetGroupCapture from './fixtures/recorded-101/target-group-capture-20261109.json'
 import { referenceRejection } from '../reference-image-download'
@@ -217,6 +219,23 @@ const nativeToolDefinitions = (thread?: Record<string, unknown>) =>
     }[]
   ).flatMap(({ tools }) => tools ?? [])
 
+const nativeAcknowledgement = (content: { text?: string; type?: string }[]) => {
+  const item = content.at(-1)
+
+  if (item?.type !== 'inputText' || typeof item.text !== 'string') {
+    throw new Error('Missing native acknowledgement content item')
+  }
+
+  const { toolOutcome } = JSON.parse(item.text)
+
+  expect(toolOutcome).toMatchObject({
+    status: expect.any(String),
+    settlement: expect.any(String)
+  })
+
+  return toolOutcome
+}
+
 const fakeServer = (
   options: {
     effectiveConfig?: unknown
@@ -236,7 +255,10 @@ const fakeServer = (
     toolCall?: boolean
     commentary?: string
     repeatedImageCalls?: number
-    followupTool?: (receipt: Record<string, unknown>) => {
+    followupTool?: (
+      receipt: Record<string, unknown>,
+      outcome: unknown
+    ) => {
       name: string
       args: unknown
     }
@@ -344,7 +366,7 @@ const fakeServer = (
       const result = packet.result as
         { contentItems?: { text: string }[] } | undefined
       const text = result?.contentItems?.[0]?.text
-      const fragment = text ? JSON.parse(text).contentDelivery : undefined
+      const fragment = text ? JSON.parse(text)?.contentDelivery : undefined
 
       if (fragment && packet.id !== undefined && result?.contentItems) {
         const previous = fragments.get(packet.id) ?? ''
@@ -416,7 +438,8 @@ const fakeServer = (
               contentItems: { text: string }[]
             }
             const followup = options.followupTool(
-              JSON.parse(response.contentItems[0].text)
+              JSON.parse(response.contentItems[0].text),
+              nativeAcknowledgement(response.contentItems)
             )
 
             setImmediate(() =>
@@ -1218,6 +1241,11 @@ describe('local subscription AI backend', () => {
         const value = JSON.parse(packet.result.contentItems[0].text)
 
         expect(packet.result.success, JSON.stringify(value)).toBe(success)
+        expect(nativeAcknowledgement(packet.result.contentItems)).toMatchObject(
+          success
+            ? { status: 'success', settlement: 'completed' }
+            : { status: 'failed', settlement: 'not-started' }
+        )
 
         return value
       }
@@ -1259,8 +1287,7 @@ describe('local subscription AI backend', () => {
 
           expect(rejected, JSON.stringify(rejected)).toMatchObject({
             ok: false,
-            code: 'admission',
-            toolOutcome: { settlement: 'not-started' }
+            code: 'admission'
           })
           expect(rejected.issues.length).toBeGreaterThan(0)
           expect(
@@ -4223,7 +4250,8 @@ it.each([
         contentItems: [
           expect.objectContaining({
             text: expect.stringContaining('required field is missing')
-          })
+          }),
+          { type: 'inputText', text: expect.any(String) }
         ]
       }
     })
@@ -5680,11 +5708,7 @@ it.each(['execution', 'delivery'] as const)(
           throw new Error('Reference decode failed')
         }
 
-        const broken = structuredClone(receipt)
-
-        broken.actionResults[0].result.image.dataUrl = 'broken'
-
-        return JSON.stringify(broken)
+        return JSON.stringify(receipt)
       })
       .mockResolvedValue(JSON.stringify(receipt))
 
@@ -5692,26 +5716,32 @@ it.each(['execution', 'delivery'] as const)(
       ...original,
       call
     })
-    const followup = vi.fn((receipt: Record<string, unknown>) => {
-      expect(receipt).toMatchObject({
-        recoverable: true,
-        toolOutcome: {
-          status: stage === 'delivery' ? 'partial' : 'failed'
-        }
-      })
-      expect(receipt.message).toEqual(expect.any(String))
-      if (stage === 'delivery') {
-        expect(receipt).toMatchObject({
-          code: 'TOOL_RESULT_DELIVERY_FAILED',
-          executionResult: {
-            actionResults: [{ actionName: 'import_reference_image' }]
-          }
-        })
-        expect(receipt.message).toContain('Do not replay mutations')
-      }
+    if (stage === 'delivery') {
+      vi.spyOn(nativeContent, 'localToolContent').mockRejectedValueOnce(
+        new Error('Image decoding failed during content delivery')
+      )
+    }
 
-      return { name: 'import_reference_image', args }
-    })
+    const followup = vi.fn(
+      (receipt: Record<string, unknown>, outcome: unknown) => {
+        expect(receipt).toMatchObject({ recoverable: true })
+        expect(outcome, JSON.stringify(receipt)).toMatchObject({
+          status: stage === 'delivery' ? 'partial' : 'failed'
+        })
+        expect(receipt.message).toEqual(expect.any(String))
+        if (stage === 'delivery') {
+          expect(receipt).toMatchObject({
+            code: 'TOOL_DELIVERY_INVALID',
+            executionResult: {
+              actionResults: [{ actionName: 'import_reference_image' }]
+            }
+          })
+          expect(receipt.message).toContain('Execution must not be replayed')
+        }
+
+        return { name: 'import_reference_image', args }
+      }
+    )
     const server = fakeServer({
       toolCall: true,
       toolName: 'import_reference_image',
@@ -7029,7 +7059,8 @@ it.each([false, true])(
 
       return {
         success: packet.result.success,
-        value: JSON.parse(packet.result.contentItems[0].text)
+        value: JSON.parse(packet.result.contentItems[0].text),
+        outcome: nativeAcknowledgement(packet.result.contentItems)
       }
     }
 
@@ -7037,7 +7068,10 @@ it.each([false, true])(
       const failed = await call(recorded.input)
 
       expect(
-        evaluationToolStop(failed.value),
+        evaluationToolStop({
+          text: JSON.stringify(failed.value),
+          outcome: failed.outcome
+        }),
         JSON.stringify(failed.value)
       ).toBeUndefined()
       expect(applied).toEqual(['part-1'])
@@ -7053,8 +7087,7 @@ it.each([false, true])(
       expect(rejected.message).toContain('nonplanar face')
       expect(rejected, JSON.stringify(rejected)).toMatchObject({
         recovery: 'correct_input',
-        draftId: expect.any(String),
-        toolOutcome: { status: 'failed', settlement: 'not-started' }
+        draftId: expect.any(String)
       })
       expect(rejected.executionResult?.batches ?? []).toEqual([])
       const failedRepair = await call({
@@ -7068,8 +7101,11 @@ it.each([false, true])(
       expect(failedRepair.success).toBe(false)
       expect(failedRepair.value).toMatchObject({
         recovery: 'correct_input',
-        draftId: expect.any(String),
-        toolOutcome: { status: 'failed', settlement: 'not-started' }
+        draftId: expect.any(String)
+      })
+      expect(failedRepair.outcome).toMatchObject({
+        status: 'failed',
+        settlement: 'not-started'
       })
       expect(failedRepair.value.message).toContain('nonplanar face')
       expect(applied).toEqual(['part-1'])
@@ -7108,7 +7144,7 @@ it.each([false, true])(
       })
 
       expect(repaired.success).toBe(true)
-      expect(repaired.value.toolOutcome).toMatchObject({
+      expect(repaired.outcome).toMatchObject({
         status: 'success',
         settlement: 'completed'
       })
@@ -7225,7 +7261,10 @@ it.each(['malformed', 'unavailable'] as const)(
         result: { contentItems: { text: string }[] }
       }
 
-      return JSON.parse(packet.result.contentItems[0].text)
+      return {
+        value: JSON.parse(packet.result.contentItems[0].text),
+        outcome: nativeAcknowledgement(packet.result.contentItems)
+      }
     }
 
     const draft = {
@@ -7250,15 +7289,24 @@ it.each(['malformed', 'unavailable'] as const)(
       })
       expect(server.packets.some((p) => p.id === 851)).toBe(false)
       release()
-      const rejected = await read(851)
+      const { value: rejected, outcome: rejectedOutcome } = await read(851)
 
       expect(rejected, JSON.stringify(rejected)).toMatchObject({
         available: false,
         recovery: 'correct_input',
-        toolOutcome: { status: 'failed', settlement: 'not-started' }
+        settlement: 'not-started'
+      })
+      expect(rejectedOutcome).toMatchObject({
+        status: 'failed',
+        settlement: 'not-started'
       })
       expect(rejected.executionResult?.batches ?? []).toEqual([])
-      const result = await read(850)
+      const { value: result, outcome: resultOutcome } = await read(850)
+
+      expect(resultOutcome).toMatchObject({
+        status: 'partial',
+        settlement: 'unknown'
+      })
 
       expect(result).toMatchObject({ status: 'partial', settlement: 'unknown' })
       expect(result.parts[1].code).toBe(
@@ -7499,7 +7547,8 @@ it('isolates overlapping provider requests with identical call IDs and cancellat
 
     return {
       success: packet.result.success,
-      value: JSON.parse(packet.result.contentItems[0].text)
+      value: JSON.parse(packet.result.contentItems[0].text),
+      outcome: nativeAcknowledgement(packet.result.contentItems)
     }
   }
 
@@ -7520,8 +7569,11 @@ it('isolates overlapping provider requests with identical call IDs and cancellat
     expect(rejected.success).toBe(false)
     expect(rejected.value, JSON.stringify(rejected.value)).toMatchObject({
       recovery: 'correct_input',
-      draftId: expect.any(String),
-      toolOutcome: { status: 'failed', settlement: 'not-started' }
+      draftId: expect.any(String)
+    })
+    expect(rejected.outcome).toMatchObject({
+      status: 'failed',
+      settlement: 'not-started'
     })
     expect(rejected.value.message).toContain('nonplanar face')
     expect(rejected.value.executionResult).toBeUndefined()
@@ -8008,29 +8060,33 @@ it('delivers the recorded retained crown image through the actual native provide
     {
       environment,
 
-      executeBatch: async (batch) => ({
+      executeBatch: async (batch): Promise<AiBatchReceipt> => ({
         context: {},
-        actionResults: batch.actions.map((action) => {
-          dispatched.push(action.name)
-          if (
-            !['apply_prepared_design', 'inspect_drawing'].includes(action.name)
-          ) {
-            throw Error('Unexpected dispatch: ' + action.name)
-          }
+        actionResults: batch.actions.map(
+          (action): AiBatchReceipt['actionResults'][number] => {
+            dispatched.push(action.name)
+            if (
+              !['apply_prepared_design', 'inspect_drawing'].includes(
+                action.name
+              )
+            ) {
+              throw Error('Unexpected dispatch: ' + action.name)
+            }
 
-          return {
-            actionId: action.id,
-            actionName: action.name,
-            result:
-              action.name === 'apply_prepared_design'
-                ? {
-                    status: 'complete',
-                    compositionId: 'crown',
-                    appliedElementCount: 100
-                  }
-                : { available: true, image: { dataUrl, width: 1, height: 1 } }
+            return {
+              actionId: action.id,
+              actionName: action.name,
+              result:
+                action.name === 'apply_prepared_design'
+                  ? {
+                      status: 'complete',
+                      compositionId: 'crown',
+                      appliedElementCount: 100
+                    }
+                  : { available: true, image: { dataUrl, width: 1, height: 1 } }
+            }
           }
-        })
+        )
       }),
 
       resultContext: async (command) => {
@@ -8438,6 +8494,622 @@ it('delivers and executes the primary input-reuse example through the native pro
   }
 })
 
+it.each([
+  'valid',
+  'invalid-status',
+  'contradictory-settlement',
+  'unsaved-distinct-partial',
+  'hidden-count',
+  'hidden-dependency',
+  'transport-false',
+  'array-result',
+  'array-direct',
+  'null-direct',
+  'scalar-view-direct',
+  'array-partial-direct',
+  'partial-object-projection-direct',
+  'partial-object-projection-registry',
+  'partial-scalar-projection-direct',
+  'partial-scalar-projection-registry',
+  'variant-projection-direct',
+  'variant-projection-registry',
+  'array-projection-error-direct',
+  'media-delivery-error-direct',
+  'non-object-state-direct',
+  'continuity-input-forgery-direct',
+  'continuity-root-view-direct',
+  'continuity-root-view-registry',
+  'continuity-recovery-view-direct',
+  'continuity-composed-prefix-registry'
+])(
+  'validates a repackaged registered receipt before provider delivery: %s',
+  async (mode) => {
+    vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    const constructHost = toolHosts.createLocalToolHost
+    const recoveryView = mode === 'continuity-recovery-view-direct'
+    const composedPrefix = mode === 'continuity-composed-prefix-registry'
+    const inputForgery = mode === 'continuity-input-forgery-direct'
+    const rootViewFailure = mode.startsWith('continuity-root-view-')
+    const stateHandoff = mode === 'non-object-state-direct'
+    const mediaFailure = mode === 'media-delivery-error-direct'
+    const projectionError = mode === 'array-projection-error-direct'
+    const badProjection = mode.startsWith('partial-') || recoveryView
+    const scalarProjection = mode.startsWith('partial-scalar-')
+    const variantProjection = mode.startsWith('variant-')
+    const hidden = mode.startsWith('hidden-')
+    const direct = mode.endsWith('-direct')
+    const nonNullValue = mode.startsWith('array-')
+      ? [1, 2]
+      : { count: 1, ...(hidden ? { work: 7 } : {}) }
+    const nonNullSchema = mode.startsWith('array-')
+      ? { type: 'array', items: { type: 'integer' } }
+      : {
+          type: 'object',
+          properties: {
+            count: { type: 'integer', minimum: 0 },
+            ...(hidden
+              ? {
+                  work: {
+                    type: 'integer',
+                    'x-model-visibility': 'internal'
+                  }
+                }
+              : {})
+          },
+          required: hidden ? ['count', 'work'] : ['count'],
+          additionalProperties: false,
+          ...(mode === 'hidden-count'
+            ? { minProperties: 2, maxProperties: 2 }
+            : {}),
+          ...(mode === 'hidden-dependency'
+            ? { dependentRequired: { count: ['work'] } }
+            : {})
+        }
+    let ownerValue: unknown = mode === 'null-direct' ? null : nonNullValue
+    let ownerSchema: object =
+      mode === 'null-direct' ? { type: 'null' } : nonNullSchema
+
+    if (badProjection) {
+      ownerValue = scalarProjection ? 2 : { remaining: 1 }
+      if (scalarProjection) {
+        ownerSchema = { type: 'integer', minimum: 10 }
+      }
+    }
+
+    if (variantProjection) {
+      ownerValue = { kind: 'one', count: 1 }
+      ownerSchema = {
+        oneOf: ['one', 'two'].map((kind) => ({
+          type: 'object',
+          properties: {
+            kind: { const: kind, 'x-model-visibility': 'internal' },
+            count: { type: 'integer', minimum: 0 }
+          },
+          required: ['kind', 'count'],
+          additionalProperties: false
+        }))
+      }
+    }
+
+    if (stateHandoff) {
+      ownerValue = 2
+      ownerSchema = { type: 'integer', minimum: 10 }
+    }
+
+    if (composedPrefix) {
+      ownerValue = { count: 1, work: 7 }
+    }
+
+    const ownerCall = vi.fn(async () => JSON.stringify(ownerValue))
+    let repackaged: unknown
+
+    vi.spyOn(toolHosts, 'createLocalToolHost').mockImplementation((options) =>
+      constructHost({
+        ...options,
+
+        createGroups: (ownership) => [
+          ...options.createGroups(ownership),
+          {
+            name: 'receipt_review',
+            description: 'Receipt validation owner',
+            owner: {
+              definitions: [
+                {
+                  name: 'receipt_probe',
+                  description: 'Read a count for receipt verification.',
+                  ...(direct ? {} : { providerExposure: 'registry' as const }),
+                  inputSchema: {
+                    type: 'object',
+                    properties: {},
+                    additionalProperties: false,
+                    examples: [{}],
+                    ...(composedPrefix ? { required: [] } : {})
+                  },
+                  ...toolSemantics(ownerSchema, 'read', []),
+                  ...(recoveryView
+                    ? {
+                        delivery: {
+                          path: '/view',
+                          outputSchema: nonNullSchema
+                        },
+                        recoveryOutputSchema: {
+                          type: 'object',
+                          properties: { reason: { type: 'string' } },
+                          required: ['reason'],
+                          additionalProperties: false
+                        }
+                      }
+                    : {}),
+                  ...(composedPrefix
+                    ? {
+                        partialOutputSchema: {
+                          type: 'object',
+                          properties: {
+                            count: { type: 'integer' },
+                            work: {
+                              type: 'integer',
+                              'x-model-visibility': 'internal'
+                            }
+                          },
+                          required: ['count', 'work'],
+                          additionalProperties: false
+                        }
+                      }
+                    : {}),
+                  ...(variantProjection || hidden || rootViewFailure
+                    ? {
+                        delivery: {
+                          path: '',
+                          outputSchema: {
+                            type: 'object',
+                            properties: {
+                              count: {
+                                type: 'integer',
+                                minimum: rootViewFailure ? 10 : 0
+                              }
+                            },
+                            required: ['count'],
+                            additionalProperties: false
+                          }
+                        }
+                      }
+                    : {}),
+                  ...(stateHandoff
+                    ? {
+                        partialOutputSchema: { type: 'integer', minimum: 0 },
+                        recoveryOutputSchema: { type: 'integer', minimum: 0 }
+                      }
+                    : {}),
+                  ...(mode === 'scalar-view-direct'
+                    ? {
+                        delivery: {
+                          path: '/count',
+                          outputSchema: { type: 'integer', minimum: 0 }
+                        }
+                      }
+                    : {}),
+                  ...(mode === 'array-partial-direct'
+                    ? {
+                        outputSchema: {
+                          type: 'array',
+                          items: { type: 'integer' },
+                          minItems: 3
+                        },
+                        partialOutputSchema: {
+                          type: 'array',
+                          items: { type: 'integer' },
+                          maxItems: 2
+                        }
+                      }
+                    : {}),
+                  ...(badProjection
+                    ? {
+                        partialOutputSchema: scalarProjection
+                          ? { type: 'integer', minimum: 0, maximum: 9 }
+                          : {
+                              type: 'object',
+                              properties: {
+                                remaining: { type: 'integer', minimum: 1 }
+                              },
+                              required: ['remaining'],
+                              additionalProperties: false
+                            }
+                      }
+                    : {}),
+                  ...(mode === 'unsaved-distinct-partial'
+                    ? {
+                        partialOutputSchema: {
+                          type: 'object',
+                          properties: {
+                            remaining: { type: 'integer', minimum: 1 }
+                          },
+                          required: ['remaining'],
+                          additionalProperties: false
+                        }
+                      }
+                    : {}),
+                  composition: 'allowed'
+                }
+              ],
+              call: ownerCall,
+              ...(stateHandoff
+                ? {
+                    resultOutcome: () => ({
+                      status:
+                        ownerCall.mock.calls.length === 1
+                          ? ('partial' as const)
+                          : ('failed' as const),
+                      settlement:
+                        ownerCall.mock.calls.length === 1
+                          ? ('partial' as const)
+                          : ('unknown' as const),
+                      issues: []
+                    })
+                  }
+                : {}),
+              ...(projectionError
+                ? {
+                    projectModelResult: () => {
+                      throw new Error('Model view unavailable')
+                    }
+                  }
+                : {}),
+              ...(badProjection
+                ? {
+                    projectModelResult: (
+                      _name: string,
+                      _input: unknown,
+                      value: unknown
+                    ) => {
+                      if (recoveryView) {
+                        return { reason: 'Only valid for failed execution' }
+                      }
+
+                      return scalarProjection
+                        ? 10
+                        : {
+                            count: 1,
+                            toolOutcome: (value as Record<string, unknown>)
+                              .toolOutcome
+                          }
+                    }
+                  }
+                : {}),
+              ...(mode === 'array-partial-direct' ||
+              badProjection ||
+              composedPrefix
+                ? {
+                    resultOutcome: () => ({
+                      status: 'partial' as const,
+                      settlement: 'partial' as const,
+                      issues: []
+                    })
+                  }
+                : {})
+            }
+          }
+        ],
+
+        execute: async (call, work) => {
+          const reply = options.execute
+            ? await options.execute(call, work)
+            : await work()
+
+          if (inputForgery && call.name === 'receipt_review.receipt_probe') {
+            return {
+              ...reply,
+              success: true,
+              outcome: { status: 'success', settlement: 'completed' }
+            }
+          }
+
+          if (mediaFailure && call.name === 'receipt_review.receipt_probe') {
+            return {
+              ...reply,
+              media: [
+                {
+                  path: '/image',
+                  actionName: AiActionNames.INSPECT_DRAWING,
+                  image: { dataUrl: 'invalid' }
+                }
+              ]
+            }
+          }
+
+          if (call.name !== 'tool_library.invoke_tool') {
+            return reply
+          }
+
+          const value = JSON.parse(reply.text)
+
+          if (mode === 'invalid-status') {
+            value.toolOutcome = { status: 'invalid', settlement: 'completed' }
+            Object.assign(reply.outcome, { status: 'invalid' })
+          } else if (mode === 'contradictory-settlement') {
+            value.toolOutcome = { status: 'success', settlement: 'unknown' }
+          } else if (mode === 'unsaved-distinct-partial') {
+            value.toolOutcome = { status: 'partial', settlement: 'completed' }
+            reply.outcome = { status: 'partial', settlement: 'completed' }
+            value.storage = { status: 'unsaved', issue: 'Storage unavailable' }
+          }
+
+          repackaged = value
+
+          return {
+            ...reply,
+            text: JSON.stringify(value),
+            ...(mode === 'transport-false' ? { success: false } : {})
+          }
+        }
+      })
+    )
+    const server = fakeServer({ hold: true, manualToolReplies: true })
+
+    spawn.mockReturnValue(server.child)
+    const request = requestConfiguredAiActionBatch(
+      {
+        ...input,
+        actions: [
+          {
+            name: AiActionNames.APPLY_PREPARED_DESIGN,
+            description: 'Apply',
+            inputSchema: {}
+          }
+        ]
+      },
+      {
+        environment,
+
+        executeBatch: async () => {
+          throw new Error(
+            'Read-only receipt verification must not dispatch drawing actions'
+          )
+        }
+      }
+    )
+
+    await untilTurn(server.packets)
+    let id = 300
+
+    const call = async (tool: string, args: unknown) => {
+      const current = ++id
+      const groups = server.packets.find(
+        (packet) => packet.method === 'thread/start'
+      )?.params.dynamicTools as { name: string; tools: { name: string }[] }[]
+
+      expect(
+        groups.some((group) =>
+          group.tools.some((entry) => entry.name === tool)
+        ),
+        JSON.stringify({
+          tool,
+          args,
+          tools: groups.flatMap((group) =>
+            group.tools.map((entry) => entry.name)
+          )
+        })
+      ).toBe(true)
+
+      server.send({
+        id: current,
+        method: 'item/tool/call',
+        params: {
+          threadId: 'thread-1',
+          turnId: 'turn-1',
+          callId: `receipt-${current}`,
+          tool,
+          arguments: args
+        }
+      })
+      await vi.waitFor(() =>
+        expect(server.packets.some((packet) => packet.id === current)).toBe(
+          true
+        )
+      )
+
+      return server.packets.find(
+        (packet) => packet.id === current
+      ) as unknown as {
+        result: { success: boolean; contentItems: { text: string }[] }
+      }
+    }
+
+    try {
+      const guide = JSON.parse(
+        await readCompleteInformation(
+          async (args) => {
+            const packet = await call('describe_design_apis', args)
+
+            expect(packet.result.success).toBe(true)
+
+            return packet.result.contentItems[0].text
+          },
+          {
+            names: ['receipt_review.receipt_probe'],
+            view: 'usage',
+            includeResultSchema: true
+          }
+        )
+      ).tools[0]
+
+      if (composedPrefix) {
+        const selected = guide.invocationExample.invocation.arguments
+        const submitted = await call('submit_tool', {
+          submissionId: 'provider-partial-prefix',
+          proposal: {
+            format: 1,
+            name: 'provider-partial-prefix',
+            revision: 1,
+            description: 'Read one partial prerequisite.',
+            inputSchema: {
+              type: 'object',
+              properties: {},
+              required: [],
+              additionalProperties: false
+            },
+            outputSchema: { type: 'integer' },
+            steps: [
+              {
+                id: 'source',
+                tool: selected.name,
+                revision: selected.revision,
+                input: { kind: 'input', path: '' }
+              }
+            ],
+            output: { kind: 'step', step: 'source', path: '/count' }
+          }
+        })
+
+        expect(JSON.parse(submitted.result.contentItems[0].text)).toMatchObject(
+          { ok: true }
+        )
+        const packet = await call('invoke_tool', {
+          name: 'provider-partial-prefix',
+          revision: 1,
+          input: {}
+        })
+        const result = JSON.parse(packet.result.contentItems[0].text)
+
+        expect(ownerCall).toHaveBeenCalledOnce()
+        expect(result, JSON.stringify(result)).toMatchObject({
+          execution: {
+            status: 'failed',
+            settlement: 'partial',
+            recovery: [
+              { name: selected.name, status: 'partial', value: { count: 1 } }
+            ]
+          }
+        })
+        expect(JSON.stringify(packet.result)).not.toContain(
+          'TOOL_DELIVERY_INVALID'
+        )
+
+        return
+      }
+
+      const invocation = direct
+        ? {
+            tool: 'receipt_probe',
+            arguments: inputForgery ? { extra: true } : {}
+          }
+        : guide.invocationExample.invocation
+      const packet = await call(invocation.tool, invocation.arguments)
+      const result = JSON.parse(packet.result.contentItems[0].text)
+
+      if (inputForgery) {
+        expect(ownerCall).not.toHaveBeenCalled()
+        expect
+          .soft(packet.result.success, JSON.stringify(packet.result))
+          .toBe(false)
+        const acknowledgement = packet.result.contentItems.at(-1)
+
+        if (!acknowledgement) {
+          throw new Error('Missing acknowledgement')
+        }
+
+        expect(JSON.parse(acknowledgement.text).toolOutcome.status).not.toBe(
+          'success'
+        )
+
+        return
+      }
+
+      if (stateHandoff) {
+        const second = await call(invocation.tool, invocation.arguments)
+
+        expect(ownerCall).toHaveBeenCalledTimes(2)
+        expect(packet.result.success).toBe(false)
+        expect(second.result.success).toBe(false)
+        expect(
+          packet.result,
+          'The model must distinguish partial work from failed work with unknown settlement'
+        ).not.toEqual(second.result)
+
+        return
+      }
+
+      expect(
+        ownerCall,
+        JSON.stringify({ result, invocation })
+      ).toHaveBeenCalledTimes(1)
+      expect
+        .soft(packet.result.success, JSON.stringify(result))
+        .toBe(
+          !badProjection &&
+            !rootViewFailure &&
+            !projectionError &&
+            !mediaFailure &&
+            ![
+              'invalid-status',
+              'contradictory-settlement',
+              'unsaved-distinct-partial',
+              'array-partial-direct'
+            ].includes(mode)
+        )
+      expect
+        .soft(
+          operationInputIssue(result, guide.usageGuide.results),
+          JSON.stringify(result)
+        )
+        .toBeUndefined()
+      if (mediaFailure) {
+        expect(result.toolOutcome.settlement).toBe('completed')
+        expect(result.code).toBe('TOOL_DELIVERY_INVALID')
+        expect(result.executionResult).toEqual(ownerValue)
+        expect(result.executionResult).not.toHaveProperty('toolOutcome')
+      } else if (projectionError) {
+        expect(result.toolOutcome).toMatchObject({
+          status: 'partial',
+          settlement: 'completed'
+        })
+        expect(result.code).toBe('TOOL_DELIVERY_INVALID')
+      } else if (badProjection || rootViewFailure) {
+        expect(JSON.stringify(result)).toContain('TOOL_DELIVERY_INVALID')
+      } else if (variantProjection) {
+        expect(JSON.stringify(result)).not.toContain('TOOL_DELIVERY_INVALID')
+        expect(JSON.stringify(result)).not.toContain('"kind"')
+      } else if (mode === 'unsaved-distinct-partial') {
+        expect
+          .soft(
+            operationInputIssue(
+              {
+                ...(repackaged as object),
+                deliveryOutcome: { status: 'success', settlement: 'completed' }
+              },
+              guide.usageGuide.results
+            )
+          )
+          .toBeUndefined()
+        expect(result.code, JSON.stringify(result)).toBeUndefined()
+        expect(result.execution).toMatchObject({
+          status: 'success',
+          settlement: 'completed',
+          value: { count: 1 }
+        })
+      } else if (
+        !['invalid-status', 'contradictory-settlement'].includes(mode)
+      ) {
+        if (direct) {
+          expect(result).toEqual(mode === 'scalar-view-direct' ? 1 : ownerValue)
+        } else if (mode === 'array-result') {
+          expect(result.execution.value).toEqual([1, 2])
+        } else {
+          expect(result.execution.value).toMatchObject({ count: 1 })
+          expect(result.execution.value).not.toHaveProperty('work')
+        }
+      } else {
+        expect(result.code).toBe('TOOL_HANDOFF_FAILED')
+        expect(
+          operationInputIssue(repackaged, guide.usageGuide.results)
+        ).toBeDefined()
+      }
+    } finally {
+      server.finish()
+      await request
+    }
+  }
+)
+
 it.each(['prepare_design', 'prepare_and_apply_design'])(
   'delivers high-level usage through provider transport and invokes the real %s owner',
   async (name) => {
@@ -8499,6 +9171,16 @@ it.each(['prepare_design', 'prepare_and_apply_design'])(
       const text = response.result.contentItems[0].text
 
       expect(response.result.success, text).toBe(true)
+      const acknowledgement = response.result.contentItems.at(-1)
+
+      if (!acknowledgement) {
+        throw new Error('Missing provider acknowledgement')
+      }
+
+      expect(JSON.parse(acknowledgement.text).toolOutcome).toMatchObject({
+        status: 'success',
+        settlement: 'completed'
+      })
 
       return text
     }
@@ -8530,7 +9212,7 @@ it.each(['prepare_design', 'prepare_and_apply_design'])(
         await call(invocation.tool, invocation.arguments)
       )
 
-      expect(result.toolOutcome).toMatchObject({
+      expect(result.execution).toMatchObject({
         status: 'success',
         settlement: 'completed'
       })
@@ -9062,7 +9744,9 @@ it('correlates interleaved native delivery results with their original calls and
       toolCallId: `delivery-${id}`,
       nativeThreadId: 'thread-1',
       nativeTurnId: 'turn-1',
-      content: [{ value: JSON.parse(response.result.contentItems[0].text) }]
+      content: response.result.contentItems.map((item) => ({
+        value: JSON.parse(item.text)
+      }))
     })
   }
 
@@ -9169,8 +9853,8 @@ it('delivers unavailable field lookup and successful narrow recovery through nat
       schemaPaths: ['/properties/facts', '/properties/unknown']
     },
 
-    followupTool: (reply) => {
-      expect(reply.toolOutcome, JSON.stringify(reply)).toMatchObject({
+    followupTool: (reply, outcome) => {
+      expect(outcome, JSON.stringify(reply)).toMatchObject({
         status: 'failed',
         settlement: 'completed'
       })
@@ -10063,13 +10747,15 @@ it.each([
     vi.spyOn(console, 'info').mockImplementation(() => undefined)
     let sourceId: unknown
     let firstReply: unknown
+    let firstOutcome: unknown
     const server = fakeServer({
       toolCall: true,
       toolName: 'prepare_and_apply_design',
       toolArguments: scenario.arguments,
 
-      followupTool: (reply) => {
+      followupTool: (reply, outcome) => {
         firstReply = reply
+        firstOutcome = outcome
         sourceId = (
           reply.parts as
             { preparationInput?: { draftId?: string } }[] | undefined
@@ -10154,10 +10840,7 @@ it.each([
 
     expect(firstReply, JSON.stringify(firstReply)).toMatchObject({
       status: scenario.captureUnavailable ? 'partial' : 'complete',
-      toolOutcome: {
-        status: scenario.captureUnavailable ? 'partial' : 'success',
-        settlement: 'completed'
-      },
+
       ...(scenario.captureUnavailable
         ? {
             inspectionIssues: [
@@ -10168,14 +10851,25 @@ it.each([
     })
     // This native transport fixture has no browser pixels. Preserve its truthful
     // capture failure after both writes; capacity is not a failed preparation.
-    expect(
-      (firstReply as { parts: { toolOutcome: unknown }[] }).parts.map(
-        (part) => part.toolOutcome
-      )
-    ).toEqual([
-      expect.objectContaining({ status: 'success', settlement: 'completed' }),
-      expect.objectContaining({ status: 'success', settlement: 'completed' })
-    ])
+    expect(firstOutcome).toMatchObject({
+      status: scenario.captureUnavailable ? 'partial' : 'success',
+      settlement: 'completed'
+    })
+    const parts = (firstReply as { parts: unknown[] }).parts
+
+    expect(parts).toHaveLength(2)
+    for (const part of parts) {
+      expect(part).toMatchObject({
+        applicable: true,
+        actionResults: [
+          {
+            actionName: 'apply_prepared_design',
+            result: { status: 'complete' }
+          }
+        ]
+      })
+    }
+
     expect(sourceId).toEqual(expect.any(String))
     expect(packet.result.success, JSON.stringify(packet.result)).toBe(true)
     const prepared = JSON.parse(packet.result.contentItems[0].text)
@@ -10734,7 +11428,7 @@ it('repairs recorded canonical name input in the same strict native turn without
   factory.transact.reset()
   for (const id of ['base', 'tiers', 'finish']) {
     core.createElementInParent(
-      { id, type: 'rect', width: 20, height: 40 },
+      { id, type: 'rect', x: 0, y: 0, width: 20, height: 40 },
       'workspace'
     )
   }
@@ -10882,7 +11576,11 @@ it('repairs recorded canonical name input in the same strict native turn without
       throw new Error('Missing native tool reply text')
     }
 
-    return { ...packet, value: JSON.parse(text) }
+    return {
+      ...packet,
+      value: JSON.parse(text),
+      outcome: nativeAcknowledgement(packet.contentItems)
+    }
   }
 
   try {
@@ -10911,7 +11609,10 @@ it('repairs recorded canonical name input in the same strict native turn without
 
     expect(failed.success, JSON.stringify(failed.value)).toBe(false)
     expect(
-      evaluationToolStop(failed.value),
+      evaluationToolStop({
+        text: JSON.stringify(failed.value),
+        outcome: failed.outcome
+      }),
       JSON.stringify(failed.value)
     ).toBeUndefined()
     expect(JSON.stringify(failed.value)).toContain('correct_input')
@@ -10984,3 +11685,122 @@ it('repairs recorded canonical name input in the same strict native turn without
     vi.unstubAllGlobals()
   }
 }, 15000)
+
+it('delivers purpose and input-field discovery through actual native declarations and replies', async () => {
+  vi.stubGlobal('window', {})
+  const { createBasicApiActions } =
+    await import('../../src/ai/basic-api-actions')
+  const server = fakeServer({ hold: true, manualToolReplies: true })
+  const controller = new AbortController()
+  const running = requestLocalAiActionBatch(
+    {
+      ...input,
+      actions: createBasicApiActions().map(createAiToolContract)
+    },
+    {
+      model: 'selected-model',
+      executable: 'codex',
+      signal: controller.signal,
+
+      executeBatch: async () => {
+        throw Error('Discovery must not dispatch')
+      }
+    }
+  )
+
+  try {
+    await untilTurn(server.packets)
+    const thread = server.packets.find(
+      (p) => p.method === 'thread/start'
+    )?.params
+    const definition = nativeToolDefinitions(thread).find(
+      (t) => t.name === 'describe_design_apis'
+    )
+
+    expect(JSON.stringify(definition?.inputSchema)).toContain('inputFields')
+    let id = 16000
+
+    for (const query of positionDiscovery.queries) {
+      id++
+      server.send({
+        id,
+        method: 'item/tool/call',
+        params: {
+          threadId: 'thread-1',
+          turnId: 'turn-1',
+          callId: `purpose-${id}`,
+          tool: 'describe_design_apis',
+          arguments: { query, inputFields: ['x', 'y'] }
+        }
+      })
+      await vi.waitFor(() =>
+        expect(server.packets.some((p) => p.id === id)).toBe(true)
+      )
+      const packet = server.packets.find((p) => p.id === id)?.result as {
+        success: boolean
+        contentItems: { type: string; text?: string }[]
+      }
+
+      expect(packet.success).toBe(true)
+      const page = JSON.parse(
+        packet.contentItems.find((item) => item.type === 'inputText')?.text ??
+          ''
+      )
+      const candidates = [...page.apis, ...page.tools].sort(
+        (a, b) => a.rank - b.rank
+      )
+
+      expect(candidates[0].operation).toBe('element.setElementPositions')
+      expect(candidates[0].capability.boundaries).toContain(
+        'Absolute parent-local x/y coordinates; compute a new position before applying a delta.'
+      )
+      expect(candidates[0].match.inputFields).toEqual({
+        x: ['positionsById/*/x'],
+        y: ['positionsById/*/y']
+      })
+    }
+
+    const coordinateId = ++id
+
+    server.send({
+      id: coordinateId,
+      method: 'item/tool/call',
+      params: {
+        threadId: 'thread-1',
+        turnId: 'turn-1',
+        callId: 'coordinate-contract',
+        tool: 'describe_design_apis',
+        arguments: { names: ['workspaceToElementLocal'], view: 'full' }
+      }
+    })
+    await vi.waitFor(() =>
+      expect(server.packets.some((packet) => packet.id === coordinateId)).toBe(
+        true
+      )
+    )
+    const coordinatePacket = server.packets.find(
+      (packet) => packet.id === coordinateId
+    )?.result as {
+      success: boolean
+      contentItems: { type: string; text?: string }[]
+    }
+
+    expect(coordinatePacket.success).toBe(true)
+    const coordinate = JSON.parse(
+      coordinatePacket.contentItems.find((item) => item.type === 'inputText')
+        ?.text ?? ''
+    )
+
+    expect(coordinate.apis[0].operation).toBe('core.workspaceToElementLocal')
+    expect(JSON.stringify(coordinate.apis[0].outputSchema)).toContain(
+      '"type":"null"'
+    )
+    expect(JSON.stringify(coordinate.apis[0].outputSchema)).toContain(
+      '"x":{"type":"number"}'
+    )
+  } finally {
+    controller.abort()
+    await running.catch(() => undefined)
+    vi.unstubAllGlobals()
+  }
+}, 10000)

@@ -103,12 +103,13 @@ it.each(
     )
 
     try {
-      const rejected = await f.call(
-        'design_operations.execute_design',
-        independentDelivery.rejected
-      )
+      const rejectedReply = await f.host.invoke({
+        name: 'design_operations.execute_design',
+        input: independentDelivery.rejected
+      })
+      const rejected = JSON.parse(rejectedReply.text)
 
-      expect(rejected.toolOutcome.status).toBe('failed')
+      expect(rejectedReply.outcome.status).toBe('failed')
       const draftId = rejected.failure.execution.recovery[0].value.draftId
       const input = structuredClone(independentDelivery.input)
       const repair = input.operations[0].arguments.repair
@@ -142,9 +143,7 @@ it.each(
       const result = JSON.parse(reply.text)
 
       expect(reply.success, reply.text).toBe(!saveFailure)
-      expect(result.toolOutcome.status).toBe(
-        saveFailure ? 'partial' : 'success'
-      )
+      expect(reply.outcome.status).toBe(saveFailure ? 'partial' : 'success')
       expect(
         (await localToolContent(reply.text, reply.media)).filter(
           (item) => item.type === 'inputImage'
@@ -324,19 +323,23 @@ it.each([false, true])(
     )
 
     try {
-      const result = await f.call('design_workflow.prepare_and_apply_design', {
-        draft: {
-          type: 'group',
-          name: 'Panel',
-          children: [
-            { type: 'rect', key: 'face', name: 'Face', width: 20, height: 30 }
-          ]
-        },
-        inspection: 'defer',
-        ...(retain ? { retain: { root: { path: '/compositionIds/0' } } } : {})
+      const resultReply = await f.host.invoke({
+        name: 'design_workflow.prepare_and_apply_design',
+        input: {
+          draft: {
+            type: 'group',
+            name: 'Panel',
+            children: [
+              { type: 'rect', key: 'face', name: 'Face', width: 20, height: 30 }
+            ]
+          },
+          inspection: 'defer',
+          ...(retain ? { retain: { root: { path: '/compositionIds/0' } } } : {})
+        }
       })
+      const result = JSON.parse(resultReply.text)
 
-      expect(result.toolOutcome.status, JSON.stringify(result)).toBe('success')
+      expect(resultReply.outcome.status, JSON.stringify(result)).toBe('success')
       const drawing = retain ? result.execution.value : result
 
       expect(drawing.compositionIds).toEqual([f.root()])
@@ -356,29 +359,42 @@ it('delivers all three explicitly selected step results independently of saving'
   )
 
   try {
-    const result = await f.call('design_operations.execute_design', {
-      operations: ['a', 'b', 'c'].map((id) => ({
-        id,
-        name: 'prepare_design',
-        arguments: {
-          draft: {
-            type: 'group',
-            name: id,
-            children: [
-              { type: 'rect', key: 'face', name: 'Face', width: 20, height: 30 }
-            ]
+    const resultReply = await f.host.invoke({
+      name: 'design_operations.execute_design',
+      input: {
+        operations: ['a', 'b', 'c'].map((id) => ({
+          id,
+          name: 'prepare_design',
+          arguments: {
+            draft: {
+              type: 'group',
+              name: id,
+              children: [
+                {
+                  type: 'rect',
+                  key: 'face',
+                  name: 'Face',
+                  width: 20,
+                  height: 30
+                }
+              ]
+            }
           }
+        })),
+        retain: { source: { step: 'a', source: 'input', path: '/draft' } },
+        delivery: {
+          fields: Object.fromEntries(
+            ['a', 'b', 'c'].map((step) => [
+              step,
+              { step, path: '/elementCount' }
+            ])
+          )
         }
-      })),
-      retain: { source: { step: 'a', source: 'input', path: '/draft' } },
-      delivery: {
-        fields: Object.fromEntries(
-          ['a', 'b', 'c'].map((step) => [step, { step, path: '/elementCount' }])
-        )
       }
     })
+    const result = JSON.parse(resultReply.text)
 
-    expect(result.toolOutcome.status, JSON.stringify(result)).toBe('success')
+    expect(resultReply.outcome.status, JSON.stringify(result)).toBe('success')
     expect(result.fields).toEqual({ a: 2, b: 2, c: 2 })
     expect(context.names()).toEqual(['source'])
     expect(f.calls).toEqual([])
@@ -398,24 +414,28 @@ it.each([false, true])(
     )
 
     try {
-      const result = await f.call('design_operations.execute_design', {
-        operations: [
-          {
-            name: 'api_hierarchy_groupElements',
-            arguments: { elementIds: [anchor] }
-          }
-        ],
-        inspection: 'defer',
-        ...(retain
-          ? {
-              retain: {
-                group: { path: '/actionResults/0/result/value/groupId' }
-              }
+      const resultReply = await f.host.invoke({
+        name: 'design_operations.execute_design',
+        input: {
+          operations: [
+            {
+              name: 'api_hierarchy_groupElements',
+              arguments: { elementIds: [anchor] }
             }
-          : {})
+          ],
+          inspection: 'defer',
+          ...(retain
+            ? {
+                retain: {
+                  group: { path: '/actionResults/0/result/value/groupId' }
+                }
+              }
+            : {})
+        }
       })
+      const result = JSON.parse(resultReply.text)
 
-      expect(result.toolOutcome.status, JSON.stringify(result)).toBe('success')
+      expect(resultReply.outcome.status, JSON.stringify(result)).toBe('success')
       expect(result.actionResults[0].result.value).toEqual({
         count: 1,
         groupId: expect.any(String)
@@ -531,43 +551,46 @@ it('retains public motif definitions in App context and consumes variants in a n
   )
 
   try {
-    const result = await next.call('design_operations.execute_design', {
-      inspection: 'defer',
-      operations: [
-        {
-          id: 'variant',
-          name: 'prepare_and_apply_design',
-          arguments: {
-            parentId: recorded.create.parentId,
-            draft: {
-              ...draft,
-              motifTemplates: {
-                kind: 'named',
-                name: 'windows',
-                path: '/motifTemplates'
-              },
-              sharedFills: {
-                kind: 'named',
-                name: 'windows',
-                path: '/sharedFills'
-              },
-              children: [
-                {
-                  ...draft.children[0],
-                  motifs: {
-                    template: 'window',
-                    overrides: { frame: { name: 'Variant' } }
+    const resultReply = await next.host.invoke({
+      name: 'design_operations.execute_design',
+      input: {
+        inspection: 'defer',
+        operations: [
+          {
+            id: 'variant',
+            name: 'prepare_and_apply_design',
+            arguments: {
+              parentId: recorded.create.parentId,
+              draft: {
+                ...draft,
+                motifTemplates: {
+                  kind: 'named',
+                  name: 'windows',
+                  path: '/motifTemplates'
+                },
+                sharedFills: {
+                  kind: 'named',
+                  name: 'windows',
+                  path: '/sharedFills'
+                },
+                children: [
+                  {
+                    ...draft.children[0],
+                    motifs: {
+                      template: 'window',
+                      overrides: { frame: { name: 'Variant' } }
+                    }
                   }
-                }
-              ]
+                ]
+              }
             }
           }
-        }
-      ]
+        ]
+      }
     })
 
-    expect(result, JSON.stringify(result)).toMatchObject({
-      toolOutcome: { status: 'success' }
+    expect(resultReply.outcome, resultReply.text).toMatchObject({
+      status: 'success'
     })
     expect(next.count()).toBe(7)
     expect(next.calls).toEqual(['apply_prepared_design'])
@@ -1101,7 +1124,11 @@ it.each([
     }
 
     try {
-      const result = await f.call('design_operations.execute_design', request)
+      const resultReply = await f.host.invoke({
+        name: 'design_operations.execute_design',
+        input: request
+      })
+      const result = JSON.parse(resultReply.text)
 
       expect(f.calls, JSON.stringify(result).slice(0, 1800)).toEqual([
         'apply_prepared_design',
@@ -1110,7 +1137,7 @@ it.each([
       expect(f.count()).toBe(expectedCount)
       expect(f.root()).not.toBe(order.arguments.request.elementIds[0])
       if (failed) {
-        expect(result.toolOutcome.status).not.toBe('success')
+        expect(resultReply.outcome.status).not.toBe('success')
         expect(result.completed).toContain('create')
         expect(f.siblings()).toEqual([anchor, f.root()])
       } else {
@@ -1215,12 +1242,16 @@ it.each([recorded, latest])(
         operation.target.keyPrefix = target.keyPrefix
       }
 
-      const deleted = await f.call('design_operations.' + example.tool, {
-        ...example.arguments,
-        inspection: 'defer'
+      const deletedReply = await f.host.invoke({
+        name: 'design_operations.' + example.tool,
+        input: {
+          ...example.arguments,
+          inspection: 'defer'
+        }
       })
+      const deleted = JSON.parse(deletedReply.text)
 
-      expect(deleted.toolOutcome.status, JSON.stringify(deleted)).toBe(
+      expect(deletedReply.outcome.status, JSON.stringify(deleted)).toBe(
         'success'
       )
       const { default: core } = await import('../../src/contexts')
@@ -1246,13 +1277,17 @@ it('dispatches the recorded three crown deletions together after resolving curre
       target: { ...op.target, artifactId: crown.artifactId }
     }))
     const before = f.exchanges.length
-    const result = await f.call('design_operations.execute_design', {
-      inspection: lastRun.remove.inspection,
-      operations
+    const resultReply = await f.host.invoke({
+      name: 'design_operations.execute_design',
+      input: {
+        inspection: lastRun.remove.inspection,
+        operations
+      }
     })
+    const result = JSON.parse(resultReply.text)
 
     expect(
-      result.toolOutcome,
+      resultReply.outcome,
       JSON.stringify(result).slice(0, 900)
     ).toMatchObject({ status: 'success' })
     expect(
@@ -1279,32 +1314,36 @@ it('resolves the region at its step after moving a real element into it', async 
     'workspace'
   )
   try {
-    const result = await f.call('design_operations.execute_design', {
-      inspection: 'defer',
-      operations: [
-        {
-          name: 'api_element_updateElementProperties',
-          arguments: { elementIds: [id], values: { x: 200 } }
-        },
-        {
-          name: recorded.remove.operations[0].name,
-          arguments: {},
-          selectAt: 'step',
-          target: {
-            field: 'elementIds',
-            query: {
-              scope: 'region',
-              bounds: { x: 190, y: -20, width: 40, height: 40 },
-              filter: { name: { prefix: id } },
-              expectedCount: 1
+    const resultReply = await f.host.invoke({
+      name: 'design_operations.execute_design',
+      input: {
+        inspection: 'defer',
+        operations: [
+          {
+            name: 'api_element_updateElementProperties',
+            arguments: { elementIds: [id], values: { x: 200 } }
+          },
+          {
+            name: recorded.remove.operations[0].name,
+            arguments: {},
+            selectAt: 'step',
+            target: {
+              field: 'elementIds',
+              query: {
+                scope: 'region',
+                bounds: { x: 190, y: -20, width: 40, height: 40 },
+                filter: { name: { prefix: id } },
+                expectedCount: 1
+              }
             }
           }
-        }
-      ]
+        ]
+      }
     })
+    const result = JSON.parse(resultReply.text)
 
     expect(
-      result.toolOutcome,
+      resultReply.outcome,
       JSON.stringify(result).slice(0, 1800)
     ).toMatchObject({ status: 'success' })
     expect(core.getElementMetadata(id)).toBeUndefined()
@@ -1514,9 +1553,13 @@ it('preserves named successful work on a stopped successor without exporting a r
         }
       ]
     }
-    const rejected = await f.call('design_operations.execute_design', request)
+    const rejectedReply = await f.host.invoke({
+      name: 'design_operations.execute_design',
+      input: request
+    })
+    const rejected = JSON.parse(rejectedReply.text)
 
-    expect(rejected.toolOutcome).toMatchObject({
+    expect(rejectedReply.outcome).toMatchObject({
       status: 'failed',
       settlement: 'not-started'
     })
@@ -1591,26 +1634,29 @@ it('resolves an artifact anchor alongside the recorded whole-array step binding'
 
     expect(JSON.stringify(ambiguous)).toMatch(/anchorId.*exactly one.*468/)
     const [producer, move] = operations({ keys: ['baseCentral-0-recess'] })
-    const wrongType = await f.call('design_operations.execute_design', {
-      operations: [
-        producer,
-        {
-          ...move,
-          arguments: {
-            request: {
-              placement: 'before',
-              elementIds: {
-                kind: 'step',
-                step: 'baseFine',
-                path: '/compositionIds/0'
+    const wrongTypeReply = await f.host.invoke({
+      name: 'design_operations.execute_design',
+      input: {
+        operations: [
+          producer,
+          {
+            ...move,
+            arguments: {
+              request: {
+                placement: 'before',
+                elementIds: {
+                  kind: 'step',
+                  step: 'baseFine',
+                  path: '/compositionIds/0'
+                }
               }
             }
           }
-        }
-      ]
+        ]
+      }
     })
 
-    expect(wrongType.toolOutcome).toMatchObject({
+    expect(wrongTypeReply.outcome).toMatchObject({
       status: 'failed',
       settlement: 'not-started'
     })
@@ -1670,24 +1716,28 @@ it('retains the recorded base root across a failed region edit and consumes it w
   const next = await fixture(false, parent, anchor, exchange, false)
 
   try {
-    const result = await next.call('design_operations.execute_design', {
-      inspection: 'defer',
-      delivery: 'status',
-      operations: [
-        {
-          name: baseOrder.order.name,
-          arguments: {
-            request: {
-              elementIds: [{ kind: 'named', name: 'baseRoot' }],
-              placement: 'before',
-              anchorId: anchor
+    const resultReply = await next.host.invoke({
+      name: 'design_operations.execute_design',
+      input: {
+        inspection: 'defer',
+        delivery: 'status',
+        operations: [
+          {
+            name: baseOrder.order.name,
+            arguments: {
+              request: {
+                elementIds: [{ kind: 'named', name: 'baseRoot' }],
+                placement: 'before',
+                anchorId: anchor
+              }
             }
           }
-        }
-      ]
+        ]
+      }
     })
+    const result = JSON.parse(resultReply.text)
 
-    expect(result.toolOutcome.status).toBe('success')
+    expect(resultReply.outcome.status).toBe('success')
     expect(next.siblings()).toEqual([root, anchor])
     expect(next.calls).toEqual([baseOrder.order.name])
     expect(JSON.stringify(result)).not.toContain(root)
@@ -1872,9 +1922,13 @@ it('composes recorded source and calculation inputs before a canonical grouping 
     } as never
     input.retain.taipeiGroupReceipt.path =
       '/actionResults/0/result/value/groupId'
-    const result = await f.call('design_operations.execute_design', input)
+    const resultReply = await f.host.invoke({
+      name: 'design_operations.execute_design',
+      input: input
+    })
+    const result = JSON.parse(resultReply.text)
 
-    expect(result.toolOutcome.status, JSON.stringify(result)).toBe('success')
+    expect(resultReply.outcome.status, JSON.stringify(result)).toBe('success')
     expect(result.saved.map(({ name }: { name: string }) => name)).toEqual([
       'taipeiFactReceipt',
       'taipeiScaleNotes',
@@ -1926,9 +1980,12 @@ it('stops an invalid recorded source before calculations or canonical writes', a
         statement: ''
       }
     ] as never
-    const result = await f.call('design_operations.execute_design', input)
+    const resultReply = await f.host.invoke({
+      name: 'design_operations.execute_design',
+      input: input
+    })
 
-    expect(result.toolOutcome.status).toBe('failed')
+    expect(resultReply.outcome.status).toBe('failed')
     expect(f.calls).toEqual([])
     const calculations = await f.call(
       'design_operations.record_design_calculations',
@@ -1987,12 +2044,16 @@ it.each([false, true])(
         })
       }
 
-      const reply = await f.call('design_operations.execute_design', {
-        operations,
-        delivery: { fields: { result: { step: 'draw', path: '' } } }
+      const replyReply = await f.host.invoke({
+        name: 'design_operations.execute_design',
+        input: {
+          operations,
+          delivery: { fields: { result: { step: 'draw', path: '' } } }
+        }
       })
+      const reply = JSON.parse(replyReply.text)
 
-      expect(reply.toolOutcome.status, JSON.stringify(reply)).toBe('success')
+      expect(replyReply.outcome.status, JSON.stringify(reply)).toBe('success')
       expect(() =>
         f.prep.resolveTargets({
           artifactId: reply.fields.result.artifactId,
@@ -2002,35 +2063,43 @@ it.each([false, true])(
       const before = f.exchanges
         .flat()
         .filter((n) => n === 'read_design_context').length
-      const data = await f.call('design_operations.execute_design', {
-        operations: [
-          {
-            id: 'read',
-            name: 'read_design_context',
-            arguments: { scope: 'ids', fields: ['width'], delivery: 'page' },
-            target: {
-              field: 'elementIds',
-              artifactId: reply.fields.result.artifactId,
-              keys: ['panel']
+      const dataReply = await f.host.invoke({
+        name: 'design_operations.execute_design',
+        input: {
+          operations: [
+            {
+              id: 'read',
+              name: 'read_design_context',
+              arguments: { scope: 'ids', fields: ['width'], delivery: 'page' },
+              target: {
+                field: 'elementIds',
+                artifactId: reply.fields.result.artifactId,
+                keys: ['panel']
+              }
             }
+          ],
+          delivery: {
+            fields: { data: { step: 'read', path: '/actionResults/0/result' } }
           }
-        ],
-        delivery: {
-          fields: { data: { step: 'read', path: '/actionResults/0/result' } }
         }
       })
+      const data = JSON.parse(dataReply.text)
 
-      expect(data.toolOutcome.status, JSON.stringify(data)).toBe('success')
+      expect(dataReply.outcome.status, JSON.stringify(data)).toBe('success')
       expect(data.fields.data.elements[0].properties.width).toBe(20)
-      const reused = await f.call('design_operations.read_design_context', {
-        arguments: {
-          scope: 'snapshot',
-          snapshotId: data.fields.data.snapshotId,
-          delivery: 'page'
+      const reusedReply = await f.host.invoke({
+        name: 'design_operations.read_design_context',
+        input: {
+          arguments: {
+            scope: 'snapshot',
+            snapshotId: data.fields.data.snapshotId,
+            delivery: 'page'
+          }
         }
       })
+      const reused = JSON.parse(reusedReply.text)
 
-      expect(reused.toolOutcome.status, JSON.stringify(reused)).toBe('success')
+      expect(reusedReply.outcome.status, JSON.stringify(reused)).toBe('success')
       expect(reused.actionResults[0].result.elements[0].properties.width).toBe(
         20
       )
@@ -2068,17 +2137,21 @@ it('retains a direct drawing draft and root without an extra delegation', async 
   }
 
   try {
-    const reply = await f.call('design_workflow.prepare_and_apply_design', {
-      draft,
-      inspection: 'defer',
-      retain: {
-        stageDraft: { source: 'input', path: '/draft' },
-        stageRoot: { path: '/compositionIds/0' }
-      },
-      delivery: 'status'
+    const replyReply = await f.host.invoke({
+      name: 'design_workflow.prepare_and_apply_design',
+      input: {
+        draft,
+        inspection: 'defer',
+        retain: {
+          stageDraft: { source: 'input', path: '/draft' },
+          stageRoot: { path: '/compositionIds/0' }
+        },
+        delivery: 'status'
+      }
     })
+    const reply = JSON.parse(replyReply.text)
 
-    expect(reply.toolOutcome.status, JSON.stringify(reply)).toBe('success')
+    expect(replyReply.outcome.status, JSON.stringify(reply)).toBe('success')
     expect(reply.saved.map(({ name }: { name: string }) => name)).toEqual([
       'stageDraft',
       'stageRoot'
@@ -2106,21 +2179,25 @@ it('retains a direct drawing draft and root without an extra delegation', async 
   )
 
   try {
-    const reply = await next.call('design_operations.execute_design', {
-      operations: [
-        {
-          id: 'continue',
-          name: 'prepare_and_apply_design',
-          arguments: {
-            draft: { kind: 'named', name: 'stageDraft', path: '' },
-            inspection: 'defer'
+    const replyReply = await next.host.invoke({
+      name: 'design_operations.execute_design',
+      input: {
+        operations: [
+          {
+            id: 'continue',
+            name: 'prepare_and_apply_design',
+            arguments: {
+              draft: { kind: 'named', name: 'stageDraft', path: '' },
+              inspection: 'defer'
+            }
           }
-        }
-      ],
-      delivery: 'status'
+        ],
+        delivery: 'status'
+      }
     })
+    const reply = JSON.parse(replyReply.text)
 
-    expect(reply.toolOutcome.status, JSON.stringify(reply)).toBe('success')
+    expect(replyReply.outcome.status, JSON.stringify(reply)).toBe('success')
     expect(next.calls).toEqual(['apply_prepared_design'])
     expect(reply).not.toHaveProperty('fields')
   } finally {
@@ -2197,36 +2274,44 @@ it('replays the recorded smooth ornament delivery and subsequent artifact data q
   const { parentId: _parent, ...arguments_ } = operation.arguments
 
   try {
-    const reply = await f.call('design_operations.execute_design', {
-      ...input,
-      operations: [{ ...operation, arguments: arguments_ }]
+    const replyReply = await f.host.invoke({
+      name: 'design_operations.execute_design',
+      input: {
+        ...input,
+        operations: [{ ...operation, arguments: arguments_ }]
+      }
     })
+    const reply = JSON.parse(replyReply.text)
 
-    expect(reply.toolOutcome.status, JSON.stringify(reply)).toBe('success')
+    expect(replyReply.outcome.status, JSON.stringify(reply)).toBe('success')
     expect(reply.saved.map(({ name }: { name: string }) => name)).toEqual([
       'taipeiSmoothDraft',
       'taipeiSmoothRoot'
     ])
     const query = continuation.dataReview.input.dataQueries[1]
-    const data = await f.call('design_operations.execute_design', {
-      operations: [
-        {
-          id: 'read',
-          name: 'read_design_context',
-          arguments: { scope: 'ids', fields: query.fields, delivery: 'page' },
-          target: {
-            field: 'elementIds',
-            ...query.artifacts[2],
-            artifactId: reply.fields.result.artifactId
+    const dataReply = await f.host.invoke({
+      name: 'design_operations.execute_design',
+      input: {
+        operations: [
+          {
+            id: 'read',
+            name: 'read_design_context',
+            arguments: { scope: 'ids', fields: query.fields, delivery: 'page' },
+            target: {
+              field: 'elementIds',
+              ...query.artifacts[2],
+              artifactId: reply.fields.result.artifactId
+            }
           }
+        ],
+        delivery: {
+          fields: { data: { step: 'read', path: '/actionResults/0/result' } }
         }
-      ],
-      delivery: {
-        fields: { data: { step: 'read', path: '/actionResults/0/result' } }
       }
     })
+    const data = JSON.parse(dataReply.text)
 
-    expect(data.toolOutcome.status, JSON.stringify(data)).toBe('success')
+    expect(dataReply.outcome.status, JSON.stringify(data)).toBe('success')
     expect(data.fields.data.elements).toHaveLength(1)
     expect(f.calls).toEqual(['apply_prepared_design'])
   } finally {
@@ -2246,17 +2331,21 @@ it('publishes direct host retention fields in the recorded scoped discovery requ
 
   try {
     for (const optionalInputs of [['retain'], []]) {
-      const reply = await f.call('design_operations.describe_design_apis', {
-        names: ['prepare_and_apply_design'],
-        view: 'usage',
-        inputScope: {
-          operation: 'draft',
-          nodeTypes: ['projected-face', 'surface-grid', 'pattern'],
-          optionalInputs
+      const replyReply = await f.host.invoke({
+        name: 'design_operations.describe_design_apis',
+        input: {
+          names: ['prepare_and_apply_design'],
+          view: 'usage',
+          inputScope: {
+            operation: 'draft',
+            nodeTypes: ['projected-face', 'surface-grid', 'pattern'],
+            optionalInputs
+          }
         }
       })
+      const reply = JSON.parse(replyReply.text)
 
-      expect(reply.toolOutcome.status, JSON.stringify(reply)).toBe('success')
+      expect(replyReply.outcome.status, JSON.stringify(reply)).toBe('success')
       expect(JSON.stringify(reply)).not.toContain(
         'Only optional canonical root inputs'
       )
@@ -2622,12 +2711,16 @@ it('rejects recorded invalid stage input selections before canonical writes', as
       }
     })) as typeof input.operations
     // Preserve all four recorded selectors with small canonical geometry.
-    const result = await f.call('design_operations.execute_design', input)
+    const resultReply = await f.host.invoke({
+      name: 'design_operations.execute_design',
+      input: input
+    })
+    const result = JSON.parse(resultReply.text)
 
-    expect(result.toolOutcome.settlement, JSON.stringify(result)).toBe(
+    expect(resultReply.outcome.settlement, JSON.stringify(result)).toBe(
       'not-started'
     )
-    expect(result.toolOutcome.status).toBe('failed')
+    expect(resultReply.outcome.status).toBe('failed')
     expect(result.message).toContain('Invalid authored input selection')
     expect(f.calls).toEqual([])
   } finally {
@@ -2642,24 +2735,30 @@ it('uses ordinary operation arguments as the shared authored input selection roo
   )
 
   try {
-    const result = await f.call('design_operations.execute_design', {
-      operations: [
-        {
-          id: 'group',
-          name: 'api_hierarchy_groupElements',
-          arguments: { elementIds: [anchor] }
-        }
-      ],
-      retain: {
-        targets: { step: 'group', source: 'input', path: '/elementIds' }
-      },
-      delivery: {
-        fields: { ids: { step: 'group', source: 'input', path: '/elementIds' } }
-      },
-      inspection: 'defer'
+    const resultReply = await f.host.invoke({
+      name: 'design_operations.execute_design',
+      input: {
+        operations: [
+          {
+            id: 'group',
+            name: 'api_hierarchy_groupElements',
+            arguments: { elementIds: [anchor] }
+          }
+        ],
+        retain: {
+          targets: { step: 'group', source: 'input', path: '/elementIds' }
+        },
+        delivery: {
+          fields: {
+            ids: { step: 'group', source: 'input', path: '/elementIds' }
+          }
+        },
+        inspection: 'defer'
+      }
     })
+    const result = JSON.parse(resultReply.text)
 
-    expect(result.toolOutcome.status, JSON.stringify(result)).toBe('success')
+    expect(resultReply.outcome.status, JSON.stringify(result)).toBe('success')
     expect(result.fields).toEqual({ ids: [anchor] })
     expect(
       scope.exchange({ read: { ids: { name: 'targets', path: '' } } })
@@ -2711,15 +2810,19 @@ it.each([false, true])(
         input.retain.tiers.path = '/compositionIds'
       }
 
-      const result = await f.call('design_operations.execute_design', input)
+      const resultReply = await f.host.invoke({
+        name: 'design_operations.execute_design',
+        input: input
+      })
+      const result = JSON.parse(resultReply.text)
 
       if (!portable) {
-        expect(result.toolOutcome.settlement, JSON.stringify(result)).toBe(
+        expect(resultReply.outcome.settlement, JSON.stringify(result)).toBe(
           'not-started'
         )
         expect(f.calls).toEqual([])
       } else {
-        expect(result.toolOutcome.status, JSON.stringify(result)).toBe(
+        expect(resultReply.outcome.status, JSON.stringify(result)).toBe(
           'success'
         )
         expect(
@@ -2793,7 +2896,7 @@ it.each([false, true])(
       ).toContain('/artifactId')
       if (!machine) {
         expect(reply.tools[0].usageGuide.results.guaranteedFields).toContain(
-          '/toolOutcome'
+          '/compositionIds'
         )
         expect(
           reply.tools[0].usageGuide.results.guaranteedFields
@@ -2820,36 +2923,44 @@ it('keeps target-bound action input retention free of the internal host envelope
   )
 
   try {
-    const draw = await f.call('design_workflow.prepare_and_apply_design', {
-      inspection: 'defer',
-      draft: {
-        type: 'group',
-        name: 'Group source',
-        children: [
-          { type: 'rect', key: 'panel', name: 'Panel', width: 10, height: 10 }
-        ]
+    const drawReply = await f.host.invoke({
+      name: 'design_workflow.prepare_and_apply_design',
+      input: {
+        inspection: 'defer',
+        draft: {
+          type: 'group',
+          name: 'Group source',
+          children: [
+            { type: 'rect', key: 'panel', name: 'Panel', width: 10, height: 10 }
+          ]
+        }
       }
     })
+    const draw = JSON.parse(drawReply.text)
 
-    expect(draw.toolOutcome.status).toBe('success')
-    const result = await f.call('design_operations.execute_design', {
-      operations: [
-        {
-          id: 'group',
-          name: 'api_hierarchy_groupElements',
-          arguments: {},
-          target: {
-            field: 'elementIds',
-            artifactId: draw.artifactId,
-            keys: ['panel']
+    expect(drawReply.outcome.status).toBe('success')
+    const resultReply = await f.host.invoke({
+      name: 'design_operations.execute_design',
+      input: {
+        operations: [
+          {
+            id: 'group',
+            name: 'api_hierarchy_groupElements',
+            arguments: {},
+            target: {
+              field: 'elementIds',
+              artifactId: draw.artifactId,
+              keys: ['panel']
+            }
           }
-        }
-      ],
-      retain: { input: { step: 'group', source: 'input', path: '' } },
-      inspection: 'defer'
+        ],
+        retain: { input: { step: 'group', source: 'input', path: '' } },
+        inspection: 'defer'
+      }
     })
+    const result = JSON.parse(resultReply.text)
 
-    expect(result.toolOutcome.status, JSON.stringify(result)).toBe('success')
+    expect(resultReply.outcome.status, JSON.stringify(result)).toBe('success')
     expect(
       scope.exchange({ read: { input: { name: 'input', path: '' } } })
     ).toEqual({ input: {} })
@@ -2874,13 +2985,13 @@ it('matches each recorded delivery path against actual host guarantees', async (
 
     expect(owner.outputSchema).toHaveProperty(
       'required',
-      expect.arrayContaining(['toolOutcome'])
+      expect.arrayContaining(['compositionIds', 'createdTargets'])
     )
     for (const selector of Object.values(strictOutput.input.delivery.fields)) {
       const read = () =>
         registeredRecipeOutputAt(owner.outputSchema, selector.path)
 
-      if (selector.path === '/artifactId') {
+      if (['/artifactId', '/toolOutcome'].includes(selector.path)) {
         expect(read).toThrow(/not guaranteed|absent/)
       } else {
         expect(read, selector.path).not.toThrow()
@@ -2897,50 +3008,55 @@ it.each([false, true])(
     const f = await fixture()
 
     try {
-      const result = await f.call('design_operations.execute_design', {
-        operations: strictOutput.input.operations.map((operation) => ({
-          ...operation,
-          arguments: {
-            inspection: 'defer',
-            draft: {
-              type: 'group',
-              name: operation.id,
-              children: [
-                {
-                  type: 'rect',
-                  key: 'panel',
-                  name: 'Panel',
-                  width: 10,
-                  height: 10
-                }
-              ]
+      const resultReply = await f.host.invoke({
+        name: 'design_operations.execute_design',
+        input: {
+          operations: strictOutput.input.operations.map((operation) => ({
+            ...operation,
+            arguments: {
+              inspection: 'defer',
+              draft: {
+                type: 'group',
+                name: operation.id,
+                children: [
+                  {
+                    type: 'rect',
+                    key: 'panel',
+                    name: 'Panel',
+                    width: 10,
+                    height: 10
+                  }
+                ]
+              }
             }
-          }
-        })),
-        delivery: {
-          fields: Object.fromEntries(
-            Object.entries(strictOutput.input.delivery.fields).filter(
-              ([, selector]) => !portable || selector.path !== '/artifactId'
+          })),
+          delivery: {
+            fields: Object.fromEntries(
+              Object.entries(strictOutput.input.delivery.fields).filter(
+                ([, selector]) =>
+                  selector.path !== '/toolOutcome' &&
+                  (!portable || selector.path !== '/artifactId')
+              )
             )
-          )
+          }
         }
       })
+      const result = JSON.parse(resultReply.text)
 
       if (portable) {
-        expect(result.toolOutcome.status, JSON.stringify(result)).toBe(
+        expect(resultReply.outcome.status, JSON.stringify(result)).toBe(
           'success'
         )
         expect(result.fields).toMatchObject({
           base: expect.any(Array),
-          tiers: expect.any(Array),
-          tierOutcome: { status: 'success', settlement: 'completed' }
+          tiers: expect.any(Array)
         })
         expect(f.calls).toEqual([
           'apply_prepared_design',
           'apply_prepared_design'
         ])
       } else {
-        expect(result.toolOutcome.settlement).toBe('not-started')
+        expect(resultReply.outcome.settlement).toBe('not-started')
         expect(evaluationToolStop(result)).toBeUndefined()
         expect(result.message).toContain('delivery.fields.baseArtifact')
         expect(result.message).toContain('base')
@@ -2967,6 +3083,8 @@ it.each([false, true])(
     try {
       const input = structuredClone(strictWholeResult.input)
 
+      Reflect.deleteProperty(input.delivery.fields, 'status')
+
       if (portable) {
         input.retain.baseReceipt.path = '/compositionIds'
         Reflect.deleteProperty(input.delivery.fields, 'artifact')
@@ -2989,10 +3107,14 @@ it.each([false, true])(
         } as (typeof input.operations)[0]['arguments']
       }
 
-      const result = await f.call('design_operations.execute_design', input)
+      const resultReply = await f.host.invoke({
+        name: 'design_operations.execute_design',
+        input: input
+      })
+      const result = JSON.parse(resultReply.text)
 
       if (!portable) {
-        expect(result.toolOutcome, JSON.stringify(result)).toMatchObject({
+        expect(resultReply.outcome, JSON.stringify(result)).toMatchObject({
           status: 'failed',
           settlement: 'not-started'
         })
@@ -3004,7 +3126,7 @@ it.each([false, true])(
         return
       }
 
-      expect(result.toolOutcome.status, JSON.stringify(result)).toBe('success')
+      expect(resultReply.outcome.status, JSON.stringify(result)).toBe('success')
       expect(result.saved.map(({ name }: { name: string }) => name)).toEqual([
         'baseReceipt',
         'baseAuthored'
@@ -3020,7 +3142,7 @@ it.each([false, true])(
         roots: result.fields.base,
         source: input.operations[0].arguments.draft
       })
-      expect(result.fields.status.status).toBe('success')
+      expect(result.fields).not.toHaveProperty('status')
       expect(f.calls).toEqual(['apply_prepared_design'])
     } finally {
       await f.dispose()
@@ -3045,6 +3167,8 @@ it.each([false, true])(
 
     try {
       const input = structuredClone(strictArtifactRetention.input)
+
+      Reflect.deleteProperty(input.delivery.fields, 'settlement')
 
       for (const op of input.operations) {
         Reflect.deleteProperty(op.arguments, 'plan')
@@ -3072,10 +3196,14 @@ it.each([false, true])(
         ] as typeof draft.children
       }
 
-      const result = await f.call('design_operations.execute_design', input)
+      const resultReply = await f.host.invoke({
+        name: 'design_operations.execute_design',
+        input: input
+      })
+      const result = JSON.parse(resultReply.text)
 
       if (!portable) {
-        expect(result.toolOutcome, JSON.stringify(result)).toMatchObject({
+        expect(resultReply.outcome, JSON.stringify(result)).toMatchObject({
           status: 'failed',
           settlement: 'not-started'
         })
@@ -3087,7 +3215,7 @@ it.each([false, true])(
         return
       }
 
-      expect(result.toolOutcome.status, JSON.stringify(result)).toBe('success')
+      expect(resultReply.outcome.status, JSON.stringify(result)).toBe('success')
       expect(result.saved.map(({ name }: { name: string }) => name)).toEqual([
         'baseRoot',
         'projection',
@@ -3181,12 +3309,13 @@ it('returns recorded result-route rejection to evaluation before any dispatch', 
   )
 
   try {
-    const result = await f.call(
-      'design_operations.execute_design',
-      resultRoute.input
-    )
+    const resultReply = await f.host.invoke({
+      name: 'design_operations.execute_design',
+      input: resultRoute.input
+    })
+    const result = JSON.parse(resultReply.text)
 
-    expect(result.toolOutcome.settlement, JSON.stringify(result)).toBe(
+    expect(resultReply.outcome.settlement, JSON.stringify(result)).toBe(
       'not-started'
     )
     expect(result.message).toContain('delivery.fields.reflect')
@@ -3213,18 +3342,24 @@ it('retains recorded crown source targets across requests without forwarding IDs
     const operation = structuredClone(recorded.crown.operations[0])
 
     delete (operation.arguments as Record<string, unknown>).parentId
-    const created = await f.call('design_operations.execute_design', {
-      operations: [
-        {
-          ...operation,
-          arguments: { ...operation.arguments, includeTargets: true }
-        }
-      ],
-      retain: { crownTargets: { step: operation.id, path: '/createdTargets' } },
-      delivery: 'status'
+    const createdReply = await f.host.invoke({
+      name: 'design_operations.execute_design',
+      input: {
+        operations: [
+          {
+            ...operation,
+            arguments: { ...operation.arguments, includeTargets: true }
+          }
+        ],
+        retain: {
+          crownTargets: { step: operation.id, path: '/createdTargets' }
+        },
+        delivery: 'status'
+      }
     })
+    const created = JSON.parse(createdReply.text)
 
-    expect(created.toolOutcome.status, JSON.stringify(created)).toBe('success')
+    expect(createdReply.outcome.status, JSON.stringify(created)).toBe('success')
     expect(created.saved.map(({ name }: { name: string }) => name)).toEqual([
       'crownTargets'
     ])
@@ -3236,23 +3371,31 @@ it('retains recorded crown source targets across requests without forwarding IDs
   const next = await fixture(false, undefined, anchor, exchange, false)
 
   try {
-    const result = await next.call('design_operations.execute_design', {
-      operations: [
-        {
-          name: 'read_design_context',
-          arguments: {
-            scope: 'ids',
-            elementIds: [
-              { kind: 'named', name: 'crownTargets', path: '/0/keyToId/neck-e' }
-            ],
-            fields: ['width'],
-            delivery: 'columns'
+    const resultReply = await next.host.invoke({
+      name: 'design_operations.execute_design',
+      input: {
+        operations: [
+          {
+            name: 'read_design_context',
+            arguments: {
+              scope: 'ids',
+              elementIds: [
+                {
+                  kind: 'named',
+                  name: 'crownTargets',
+                  path: '/0/keyToId/neck-e'
+                }
+              ],
+              fields: ['width'],
+              delivery: 'columns'
+            }
           }
-        }
-      ]
+        ]
+      }
     })
+    const result = JSON.parse(resultReply.text)
 
-    expect(result.toolOutcome.status, JSON.stringify(result)).toBe('success')
+    expect(resultReply.outcome.status, JSON.stringify(result)).toBe('success')
     expect(result.actionResults[0].result.columns[0].width).toBeGreaterThan(0)
   } finally {
     await next.dispose()
@@ -3280,42 +3423,46 @@ it.each([false, true])(
       save: { towerRoot: empty ? 'empty-query-root' : 'tower' }
     })
     try {
-      const result = await f.call('design_operations.execute_design', {
-        operations: [
-          {
-            id: 'first',
-            name: 'read_design_context',
-            arguments: {
-              scope: 'children',
-              parentId: { kind: 'named', name: 'towerRoot', path: '' },
-              limit: 1,
-              result: 'ids',
-              delivery: 'page'
-            }
-          },
-          {
-            id: 'order',
-            name: order.name,
-            arguments: {
-              request: {
-                ...reuse.call1420.operations[0].arguments.request,
-                placement: 'before',
-                elementIds: ['moving'],
-                anchorId: {
-                  kind: 'step',
-                  step: 'first',
-                  path: '/actionResults/0/result/elementIds/0'
+      const resultReply = await f.host.invoke({
+        name: 'design_operations.execute_design',
+        input: {
+          operations: [
+            {
+              id: 'first',
+              name: 'read_design_context',
+              arguments: {
+                scope: 'children',
+                parentId: { kind: 'named', name: 'towerRoot', path: '' },
+                limit: 1,
+                result: 'ids',
+                delivery: 'page'
+              }
+            },
+            {
+              id: 'order',
+              name: order.name,
+              arguments: {
+                request: {
+                  ...reuse.call1420.operations[0].arguments.request,
+                  placement: 'before',
+                  elementIds: ['moving'],
+                  anchorId: {
+                    kind: 'step',
+                    step: 'first',
+                    path: '/actionResults/0/result/elementIds/0'
+                  }
                 }
               }
             }
-          }
-        ],
-        delivery: 'status',
-        inspection: 'defer'
+          ],
+          delivery: 'status',
+          inspection: 'defer'
+        }
       })
+      const result = JSON.parse(resultReply.text)
 
       if (empty) {
-        expect(result.toolOutcome.status).not.toBe('success')
+        expect(resultReply.outcome.status).not.toBe('success')
         expect(f.exchanges.flat()).toEqual(['read_design_context'])
         expect(f.calls).toEqual([])
         expect(core.getElementChildren('tower', 0, 5).elementIds).toEqual([
@@ -3326,7 +3473,7 @@ it.each([false, true])(
         return
       }
 
-      expect(result.toolOutcome.status, JSON.stringify(result)).toBe('success')
+      expect(resultReply.outcome.status, JSON.stringify(result)).toBe('success')
       expect(core.getElementChildren('tower', 0, 5).elementIds).toEqual([
         'moving',
         anchor
@@ -3366,26 +3513,30 @@ it('chains recorded crown construction and capture in one host submission', asyn
 
   try {
     context.exchange({ save: { taipeiRoot: recorded.create.parentId } })
-    const result = await f.call('design_operations.execute_design', {
-      operations: [
-        ...phaseContinuity.construction.operations,
-        ...[
-          recorded.create.parentId,
-          anchor,
-          { kind: 'step', step: 'crown', path: '/compositionIds/0' }
-        ].map((elementId, i) => ({
-          id: 'capture' + i,
-          name: 'design_operations.inspect_drawing',
-          arguments: { arguments: { elementId, view: 'overview' } }
-        }))
-      ],
-      retain: phaseContinuity.construction.retain,
-      delivery: { fields: { capture: { step: 'capture2', path: '' } } }
+    const resultReply = await f.host.invoke({
+      name: 'design_operations.execute_design',
+      input: {
+        operations: [
+          ...phaseContinuity.construction.operations,
+          ...[
+            recorded.create.parentId,
+            anchor,
+            { kind: 'step', step: 'crown', path: '/compositionIds/0' }
+          ].map((elementId, i) => ({
+            id: 'capture' + i,
+            name: 'design_operations.inspect_drawing',
+            arguments: { arguments: { elementId, view: 'overview' } }
+          }))
+        ],
+        retain: phaseContinuity.construction.retain,
+        delivery: { fields: { capture: { step: 'capture2', path: '' } } }
+      }
     })
+    const result = JSON.parse(resultReply.text)
 
     expect(
-      result.toolOutcome,
-      JSON.stringify(result.toolOutcome)
+      resultReply.outcome,
+      JSON.stringify(resultReply.outcome)
     ).toMatchObject({ status: 'success' })
     const crown = context.exchange({
       read: { crown: { name: 'crownIds', path: '/0' } }
@@ -3480,27 +3631,31 @@ it('consumes recorded body geometry by named fields in a successor host without 
       parent[field] = { kind: 'named', name: 'bodySource', path }
     }
 
-    const result = await next.call('design_operations.execute_design', {
-      operations: [
-        {
-          id: 'details',
-          name: 'design_workflow.prepare_and_apply_design',
-          arguments: {
-            ...phaseContinuity.details.operations[2].arguments,
-            parentId: recorded.create.parentId,
-            draft
+    const resultReply = await next.host.invoke({
+      name: 'design_operations.execute_design',
+      input: {
+        operations: [
+          {
+            id: 'details',
+            name: 'design_workflow.prepare_and_apply_design',
+            arguments: {
+              ...phaseContinuity.details.operations[2].arguments,
+              parentId: recorded.create.parentId,
+              draft
+            }
           }
-        }
-      ],
-      retain: {
-        detailSource: { step: 'details', source: 'input', path: '/draft' }
-      },
-      delivery: 'status'
+        ],
+        retain: {
+          detailSource: { step: 'details', source: 'input', path: '/draft' }
+        },
+        delivery: 'status'
+      }
     })
+    const result = JSON.parse(resultReply.text)
 
     expect(
-      result.toolOutcome,
-      JSON.stringify(result.toolOutcome)
+      resultReply.outcome,
+      JSON.stringify(resultReply.outcome)
     ).toMatchObject({ status: 'success' })
     expect(reads).toHaveLength(1)
     expect(reads[0].map((item) => item.path).sort()).toEqual(
@@ -3531,11 +3686,17 @@ it('repairs recorded tier source paths using the existing retained input in one 
   try {
     const base = structuredClone(recordedInput.base)
 
+    Reflect.deleteProperty(base.delivery.fields, 'outcome')
+
     // Reference selection is established independently in this Core fixture.
     base.operations.splice(0, 1)
-    const first = await f.call('design_operations.execute_design', base)
+    const firstReply = await f.host.invoke({
+      name: 'design_operations.execute_design',
+      input: base
+    })
+    const first = JSON.parse(firstReply.text)
 
-    expect(first.toolOutcome, JSON.stringify(first)).toMatchObject({
+    expect(firstReply.outcome, JSON.stringify(first)).toMatchObject({
       status: 'success'
     })
     const before = await core.save()
@@ -3568,9 +3729,13 @@ it('repairs recorded tier source paths using the existing retained input in one 
       name: 'tierDraft',
       path: '/children/0/members'
     } as never
-    const result = await f.call('design_operations.execute_design', repaired)
+    const resultReply = await f.host.invoke({
+      name: 'design_operations.execute_design',
+      input: repaired
+    })
+    const result = JSON.parse(resultReply.text)
 
-    expect(result.toolOutcome, JSON.stringify(result)).toMatchObject({
+    expect(resultReply.outcome, JSON.stringify(result)).toMatchObject({
       status: 'success'
     })
     expect(f.calls.slice(count)).toEqual([
@@ -3634,6 +3799,8 @@ it.each(['direct', 'sequence', 'status', 'selected'])(
       expect(await core.save()).toEqual(before)
       const corrected = structuredClone(recordedInput.crown)
 
+      Reflect.deleteProperty(corrected.delivery.fields, 'result')
+
       Reflect.deleteProperty(
         corrected.operations[0].arguments.draft.projection,
         'kind'
@@ -3667,9 +3834,13 @@ it.each(['direct', 'sequence', 'status', 'selected'])(
           vertices: indices.map((i) => child.vertices[i])
         }))
       })
-      const reply = await f.call('design_operations.execute_design', corrected)
+      const replyReply = await f.host.invoke({
+        name: 'design_operations.execute_design',
+        input: corrected
+      })
+      const reply = JSON.parse(replyReply.text)
 
-      expect(reply.toolOutcome, JSON.stringify(reply)).toMatchObject({
+      expect(replyReply.outcome, JSON.stringify(reply)).toMatchObject({
         status: 'success',
         settlement: 'completed'
       })
@@ -3725,44 +3896,48 @@ it('selects reference notes and chains construction to capture without model rea
   )
 
   try {
-    const result = await f.call('design_operations.execute_design', {
-      operations: [
-        {
-          id: 'references',
-          name: 'design_operations.select_design_references',
-          arguments: {
-            referenceImageIndexes: selection.referenceImageIndexes,
-            references: decisions.map(({ referenceId }) => ({
-              referenceId,
-              purpose: 'Massing'
-            }))
-          }
-        },
-        ...referenceChain.construction.operations,
-        {
-          id: 'capture',
-          name: 'design_operations.inspect_drawing',
-          arguments: {
+    const resultReply = await f.host.invoke({
+      name: 'design_operations.execute_design',
+      input: {
+        operations: [
+          {
+            id: 'references',
+            name: 'design_operations.select_design_references',
             arguments: {
-              elementId: {
-                kind: 'step',
-                step: 'base',
-                path: '/compositionIds/0'
-              },
-              view: 'overview'
+              referenceImageIndexes: selection.referenceImageIndexes,
+              references: decisions.map(({ referenceId }) => ({
+                referenceId,
+                purpose: 'Massing'
+              }))
+            }
+          },
+          ...referenceChain.construction.operations,
+          {
+            id: 'capture',
+            name: 'design_operations.inspect_drawing',
+            arguments: {
+              arguments: {
+                elementId: {
+                  kind: 'step',
+                  step: 'base',
+                  path: '/compositionIds/0'
+                },
+                view: 'overview'
+              }
             }
           }
-        }
-      ],
-      delivery: {
-        fields: {
-          capture: { step: 'capture', path: '' },
-          references: { step: 'references', path: '/references' }
+        ],
+        delivery: {
+          fields: {
+            capture: { step: 'capture', path: '' },
+            references: { step: 'references', path: '/references' }
+          }
         }
       }
     })
+    const result = JSON.parse(resultReply.text)
 
-    expect(result.toolOutcome, JSON.stringify(result)).toMatchObject({
+    expect(resultReply.outcome, JSON.stringify(result)).toMatchObject({
       status: 'success'
     })
     expect(captures).toHaveLength(1)
@@ -3839,12 +4014,16 @@ it('delivers the actual capture host envelope and executes its acquired example'
       'example-target'
     )
     example.operations[0].arguments.arguments.elementId = 'workspace'
-    const result = await f.call('design_operations.execute_design', {
-      ...example,
-      delivery: { fields: { capture: { path: '' } } }
+    const resultReply = await f.host.invoke({
+      name: 'design_operations.execute_design',
+      input: {
+        ...example,
+        delivery: { fields: { capture: { path: '' } } }
+      }
     })
+    const result = JSON.parse(resultReply.text)
 
-    expect(result.toolOutcome.status, JSON.stringify(result)).toBe('success')
+    expect(resultReply.outcome.status, JSON.stringify(result)).toBe('success')
     expect(result.fields.capture.actionResults[0].actionName).toBe(
       'inspect_drawing'
     )
@@ -3889,12 +4068,13 @@ it('executes the owner example of same-submission input reuse without a saved-va
     const example = examples.find((value) => 'operations' in value)
 
     expect(example).toBeDefined()
-    const reply = await f.call(
-      'design_operations.execute_design',
-      structuredClone(example)
-    )
+    const replyReply = await f.host.invoke({
+      name: 'design_operations.execute_design',
+      input: structuredClone(example)
+    })
+    const reply = JSON.parse(replyReply.text)
 
-    expect(reply.toolOutcome.status, JSON.stringify(reply)).toBe('success')
+    expect(replyReply.outcome.status, JSON.stringify(reply)).toBe('success')
     expect(
       f.calls.filter((name) => name === 'apply_prepared_design')
     ).toHaveLength(2)
@@ -3948,9 +4128,13 @@ it('executes all recorded E1 geometry using one authored-input alias submission'
     }
 
     replace(input.operations)
-    const reply = await f.call('design_operations.execute_design', input)
+    const replyReply = await f.host.invoke({
+      name: 'design_operations.execute_design',
+      input: input
+    })
+    const reply = JSON.parse(replyReply.text)
 
-    expect(reply.toolOutcome.status, JSON.stringify(reply)).toBe('success')
+    expect(replyReply.outcome.status, JSON.stringify(reply)).toBe('success')
     expect(
       f.calls.filter((name) => name === 'apply_prepared_design')
     ).toHaveLength(3)
@@ -4080,7 +4264,7 @@ it.each([
       const result = JSON.parse(reply.text)
 
       if (scenario !== 'success') {
-        expect(result.toolOutcome.status, reply.text).not.toBe('success')
+        expect(reply.outcome.status, reply.text).not.toBe('success')
         if (scenario === 'wrong-count' || scenario === 'empty-region') {
           expect(result.completed).toContain('details')
         }
@@ -4101,7 +4285,7 @@ it.each([
         return
       }
 
-      expect(result.toolOutcome.status, reply.text).toBe('success')
+      expect(reply.outcome.status, reply.text).toBe('success')
       const groupId = result.fields.group[0].result.value.groupId
 
       expect(core.getElementChildren(groupId, 0, 100).elementIds).toHaveLength(
@@ -4154,32 +4338,36 @@ it('exposes a conditional group identity selector and binds it to the recorded b
     expect(usage.stepResults.conditionalFields).toContain(path)
     expect(usage.stepResults.guaranteedFields).not.toContain(path)
     const read = structuredClone(executableHandoffs.calls.E7.operations[0])
-    const reply = await f.call('design_operations.execute_design', {
-      inspection: 'defer',
-      operations: [
-        {
-          id: 'group',
-          name: 'api_hierarchy_groupElements',
-          arguments: { elementIds: [anchor] }
-        },
-        {
-          ...read,
-          id: 'bounds',
-          arguments: {
-            ...read.arguments,
-            elementIds: [{ kind: 'step', step: 'group', path }]
+    const replyReply = await f.host.invoke({
+      name: 'design_operations.execute_design',
+      input: {
+        inspection: 'defer',
+        operations: [
+          {
+            id: 'group',
+            name: 'api_hierarchy_groupElements',
+            arguments: { elementIds: [anchor] }
+          },
+          {
+            ...read,
+            id: 'bounds',
+            arguments: {
+              ...read.arguments,
+              elementIds: [{ kind: 'step', step: 'group', path }]
+            }
           }
-        }
-      ],
-      delivery: {
-        fields: {
-          groupId: { step: 'group', path },
-          bounds: { step: 'bounds', path: '' }
+        ],
+        delivery: {
+          fields: {
+            groupId: { step: 'group', path },
+            bounds: { step: 'bounds', path: '' }
+          }
         }
       }
     })
+    const reply = JSON.parse(replyReply.text)
 
-    expect(reply.toolOutcome.status, JSON.stringify(reply)).toBe('success')
+    expect(replyReply.outcome.status, JSON.stringify(reply)).toBe('success')
     expect(typeof reply.fields.groupId).toBe('string')
     expect(JSON.stringify(reply.fields.bounds)).toContain(reply.fields.groupId)
     expect(
@@ -4256,7 +4444,7 @@ it('defers automatic inspection while delivering both explicitly selected captur
     })
     const result = JSON.parse(reply.text)
 
-    expect(result.toolOutcome.status, reply.text).toBe('success')
+    expect(reply.outcome.status, reply.text).toBe('success')
     expect(captured).toEqual([result.fields.groupId, result.fields.groupId])
     expect(reply.media).toHaveLength(2)
     expect(reply.media?.map((image) => image.path)).toEqual([
@@ -4353,17 +4541,21 @@ it.each(['defer', 'immediate'] as const)(
       expect(countPath).toBeDefined()
       expect(statusPath).toBeDefined()
       if (inspection === 'defer') {
-        const rejected = await f.call('design_operations.execute_design', {
-          ...structuredClone(providerHandoffs.input),
-          inspection,
-          delivery: {
-            fields: {
-              deleted: { step: operation.id, path: countPath + '/unknown' }
+        const rejectedReply = await f.host.invoke({
+          name: 'design_operations.execute_design',
+          input: {
+            ...structuredClone(providerHandoffs.input),
+            inspection,
+            delivery: {
+              fields: {
+                deleted: { step: operation.id, path: countPath + '/unknown' }
+              }
             }
           }
         })
+        const rejected = JSON.parse(rejectedReply.text)
 
-        expect(rejected.toolOutcome.status).toBe('failed')
+        expect(rejectedReply.outcome.status).toBe('failed')
         expect(rejected.settlement).toBe('not-started')
         expect(f.calls).toEqual([])
       }
@@ -4384,7 +4576,7 @@ it.each(['defer', 'immediate'] as const)(
       })
       const result = JSON.parse(reply.text)
 
-      expect(result.toolOutcome.status, reply.text).toBe('success')
+      expect(reply.outcome.status, reply.text).toBe('success')
       expect(result.fields.deleted).toBe(10)
       expect(result.fields.status).toBe('complete')
       expect(reply.media).toHaveLength(1)

@@ -131,36 +131,85 @@ it.each(['ids', 'region', 'discovered-region'])(
 
       const output = await invokeLocalTool(tools, definition, input, signal)
 
-      return JSON.parse(output.text)
+      return { value: JSON.parse(output.text), outcome: output.outcome }
     }
 
-    const query = route === 'ids'
-      ? { scope: 'ids', elementIds: ['target'], fields: ['width'], delivery: 'page' }
-      : { scope: 'region', bounds: continuation.regionQueries.input.operations[0].arguments.bounds,
-          filter: { type: 'rect' }, fields: ['width'], delivery: 'page', ...(route === 'region' ? { expectedCount: 1 } : {}) }
+    const query =
+      route === 'ids'
+        ? {
+            scope: 'ids',
+            elementIds: ['target'],
+            fields: ['width'],
+            delivery: 'page'
+          }
+        : {
+            scope: 'region',
+            bounds:
+              continuation.regionQueries.input.operations[0].arguments.bounds,
+            filter: { type: 'rect' },
+            fields: ['width'],
+            delivery: 'page',
+            ...(route === 'region' ? { expectedCount: 1 } : {})
+          }
+
     try {
-      const acquired = await call(AiActionNames.READ_DESIGN_CONTEXT, { arguments: query })
-      expect(acquired.toolOutcome.status, JSON.stringify(acquired)).toBe('success')
-      const values = acquired.actionResults[0].result
+      const acquired = await call(AiActionNames.READ_DESIGN_CONTEXT, {
+        arguments: query
+      })
+
+      expect(acquired.outcome.status, JSON.stringify(acquired)).toBe('success')
+      const values = acquired.value.actionResults[0].result
+
       expect(values.elements[0].properties).toEqual({ width: 20 })
       expect(contextCalls).toBe(1)
       expect(reads).toBe(1)
-      const completed = { batchId: 'completion', actions: [{ id: 'done', name: AiActionNames.REPORT_OUTCOME, arguments: { outcome: 'completed', message: 'Requested width inspected' }, summary: 'Complete' }] }
+      const completed = {
+        batchId: 'completion',
+        actions: [
+          {
+            id: 'done',
+            name: AiActionNames.REPORT_OUTCOME,
+            arguments: {
+              outcome: 'completed',
+              message: 'Requested width inspected'
+            },
+            summary: 'Complete'
+          }
+        ]
+      }
+
       expect(tools.settleOutcome(completed)).toEqual(completed)
       expect(contextCalls).toBe(1)
       expect(captures).toBe(0)
       width = 21
       invalidate()
-      const fresh = await call(AiActionNames.READ_DESIGN_CONTEXT, { arguments: query })
-      expect(fresh.actionResults[0].result.elements[0].properties.width).toBe(21)
+      const fresh = await call(AiActionNames.READ_DESIGN_CONTEXT, {
+        arguments: query
+      })
+
+      expect(
+        fresh.value.actionResults[0].result.elements[0].properties.width
+      ).toBe(21)
       expect(contextCalls).toBe(2)
-      const released = await call(AiActionNames.RELEASE_DESIGN_CONTEXT, { arguments: { snapshotId: values.snapshotId } })
-      expect(released.toolOutcome.status).toBe('success')
+      const released = await call(AiActionNames.RELEASE_DESIGN_CONTEXT, {
+        arguments: { snapshotId: values.snapshotId }
+      })
+
+      expect(released.outcome.status).toBe('success')
       expect(() => contexts.get(values.snapshotId)).toThrow()
       const cancelled = new AbortController()
+
       cancelled.abort()
-      await expect(tools.call(AiActionNames.READ_DESIGN_CONTEXT, { arguments: query }, cancelled.signal)).rejects.toThrow()
+      await expect(
+        tools.call(
+          AiActionNames.READ_DESIGN_CONTEXT,
+          { arguments: query },
+          cancelled.signal
+        )
+      ).rejects.toThrow()
       expect(contextCalls).toBe(2)
-    } finally { contexts.dispose() }
+    } finally {
+      contexts.dispose()
+    }
   }
 )

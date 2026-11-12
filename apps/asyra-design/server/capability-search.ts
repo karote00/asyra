@@ -5,6 +5,9 @@ interface CapabilitySource {
 }
 
 export interface CapabilityMetadata {
+  summary: string
+  boundaries: string[]
+  fields: string[]
   purpose: Set<string>
   input: Set<string>
   output: Set<string>
@@ -16,6 +19,18 @@ export interface CapabilityCorpus {
   averageLengths: Record<'purpose' | 'input' | 'output', number>
 }
 
+const normalizeWord = (word: string) => {
+  if (word.length > 4 && word.endsWith('ies')) {
+    return word.slice(0, -3) + 'y'
+  }
+
+  if (word.length > 3 && word.endsWith('s') && !/(ss|us|is)$/.test(word)) {
+    return word.slice(0, -1)
+  }
+
+  return word
+}
+
 export const capabilityTerms = (text: string): Set<string> =>
   new Set(
     text
@@ -24,6 +39,7 @@ export const capabilityTerms = (text: string): Set<string> =>
       .toLowerCase()
       .split(/[^\p{L}\p{N}]+/u)
       .filter(Boolean)
+      .map(normalizeWord)
   )
 
 // Query grammar is not capability evidence. Exact identities resolve before this
@@ -58,11 +74,13 @@ const descriptionSentences = (description: string) =>
 export const readCapabilityMetadata = (
   source: CapabilitySource
 ): CapabilityMetadata => {
+  const inputFields = new Set<string>()
+
   const schemaTerms = (root: unknown) => {
     const fields: string[] = []
     const visited = new WeakSet<object>()
 
-    const visit = (schema: unknown) => {
+    const visit = (schema: unknown, path: string[] = [], accepted = true) => {
       if (!schema || typeof schema !== 'object' || Array.isArray(schema)) {
         return
       }
@@ -73,6 +91,23 @@ export const readCapabilityMetadata = (
 
       visited.add(schema)
       const value = schema as Record<string, unknown>
+
+      if (typeof value.$ref === 'string' && value.$ref.startsWith('#/')) {
+        let resolved: unknown = root
+
+        for (const segment of value.$ref.slice(2).split('/')) {
+          const key = segment.replace(/~1/g, '/').replace(/~0/g, '~')
+
+          resolved =
+            resolved &&
+            typeof resolved === 'object' &&
+            Object.hasOwn(resolved, key)
+              ? (resolved as Record<string, unknown>)[key]
+              : undefined
+        }
+
+        visit(resolved, path, accepted)
+      }
 
       for (const text of [value.title, value.description, value.const]) {
         if (typeof text === 'string') {
@@ -101,7 +136,24 @@ export const readCapabilityMetadata = (
             fields.push(...Object.keys(children))
           }
 
-          Object.values(children).forEach(visit)
+          Object.entries(children).forEach(([name, child]) => {
+            const childPath = key === 'properties' ? [...path, name] : path
+
+            if (
+              root === source.inputSchema &&
+              accepted &&
+              key === 'properties' &&
+              child !== false
+            ) {
+              inputFields.add(childPath.join('/'))
+            }
+
+            visit(
+              child,
+              key === 'patternProperties' ? [...path, '*'] : childPath,
+              accepted && !['$defs', 'definitions'].includes(key)
+            )
+          })
         }
       }
 
@@ -114,16 +166,30 @@ export const readCapabilityMetadata = (
         'else',
         'not'
       ]) {
-        visit(value[key])
+        visit(
+          value[key],
+          ['items', 'additionalProperties'].includes(key)
+            ? [...path, '*']
+            : path,
+          accepted && !['not', 'if', 'contains'].includes(key)
+        )
       }
 
       for (const key of ['anyOf', 'oneOf', 'allOf', 'prefixItems']) {
         const children = value[key]
 
         if (Array.isArray(children)) {
-          children.forEach(visit)
+          children.forEach((child, index) =>
+            visit(
+              child,
+              key === 'prefixItems' ? [...path, String(index)] : path,
+              accepted
+            )
+          )
         }
       }
+
+      visited.delete(schema)
     }
 
     visit(root)
@@ -131,11 +197,32 @@ export const readCapabilityMetadata = (
     return capabilityTerms(fields.join(' '))
   }
 
-  const purpose = capabilityTerms(source.description)
+  const root = source.inputSchema as Record<string, unknown> | undefined
+  const declaration = root?.['x-design-discovery'] as
+    { purpose?: string; terms?: string[]; boundaries?: string[] } | undefined
+  const summary =
+    typeof declaration?.purpose === 'string'
+      ? declaration.purpose
+      : (descriptionSentences(source.description)[0] ?? source.description)
+  const purpose = capabilityTerms(
+    [
+      summary,
+      ...(Array.isArray(declaration?.terms)
+        ? declaration.terms.filter((term) => typeof term === 'string')
+        : [])
+    ].join(' ')
+  )
   const input = schemaTerms(source.inputSchema)
   const output = schemaTerms(source.outputSchema)
 
   return {
+    summary,
+    boundaries: Array.isArray(declaration?.boundaries)
+      ? declaration.boundaries.filter(
+          (boundary) => typeof boundary === 'string'
+        )
+      : [],
+    fields: [...inputFields],
     purpose,
     input,
     output,
@@ -225,32 +312,29 @@ export const matchCapability = (
     score,
     match,
     intentMatches: terms.filter(
-      (term) =>
-        metadata.purpose.has(term) ||
-        metadata.input.has(term) ||
-        additional.has(term)
+      (term) => metadata.purpose.has(term) || additional.has(term)
     ).length
   }
 }
 
-/** Return authored prose, not the synthetic "owner.operation." prefix. */
-export const summarizeCapability = (
-  description: string,
-  query: string,
-  corpus: CapabilityCorpus
-) => {
-  const sentences = descriptionSentences(description)
-  const terms = capabilityTerms(query)
+/** Field names are exact schema paths or leaf names, never incidental prose. */
+export const matchCapabilityFields = (
+  metadata: CapabilityMetadata,
+  requested: readonly string[]
+) =>
+  Object.fromEntries(
+    requested.map((field) => [
+      field,
+      metadata.fields.filter(
+        (path) =>
+          path === field.replace(/^\//, '') ||
+          (!field.includes('/') && path.split('/').at(-1) === field)
+      )
+    ])
+  )
 
-  const score = (sentence: string) => {
-    const words = capabilityTerms(sentence)
-
-    return [...terms].reduce(
-      (total, term) =>
-        total + (words.has(term) ? (corpus.weights.get(term) ?? 0) : 0),
-      0
-    )
-  }
-
-  return sentences.sort((a, b) => score(b) - score(a))[0] ?? description
-}
+export const capabilityBoundary = (metadata: CapabilityMetadata) => ({
+  purpose: metadata.summary,
+  boundaries: metadata.boundaries,
+  inputFields: metadata.fields.filter((path) => !path.includes('/'))
+})

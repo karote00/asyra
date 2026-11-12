@@ -1,3 +1,9 @@
+import { toolSemantics } from '../../src/ai/tool-contract'
+import type {
+  LocalToolOwner,
+  LocalToolDefinition
+} from '../local-tool-invocation'
+import type { AiJsonValue } from '@asyra/ai-agent-runtime'
 import historical_referenceChain from '../../test-data/ai-drawing/fixtures/reference-chain-20261108.json'
 import historical_deliveryHandoff from '../../test-data/ai-drawing/fixtures/result-delivery-20261108.json'
 import {
@@ -5,7 +11,6 @@ import {
   recordAcquisitionCost
 } from './tool-contract-assertions'
 import historical_acquisitionQuery from '../../test-data/ai-drawing/fixtures/capability-acquisition-20261106.json'
-import historical_strictNativeDetail from './fixtures/recorded-101/strict-native-detail-20261106.json'
 import { createAiInspectionAction } from '../../src/ai/inspection'
 import { createAiToolContract } from '@asyra/ai-agent-runtime'
 import { inspectionInputSchema } from '../../src/ai/inspection-schema'
@@ -55,69 +60,55 @@ import {
 import { AiActionNames } from '../../src/constants/ai-actions'
 import type { AiActionBatch } from '../../src/ai/action-batch-protocol'
 
-// Recorded geometry and intent are unchanged; retired approval parameters are
-// removed from replay inputs. Historical response payloads remain evidence only.
-const currentRecordedInput = (value: any): any => {
-  if (Array.isArray(value)) return value.map(currentRecordedInput)
-  if (!value || typeof value !== 'object') return value
-  return Object.fromEntries(
-    Object.entries(value)
-      .filter(([key]) => key !== 'plan')
-      .map(([key, child]) => [
-        key,
-        key === 'optionalInputs' && Array.isArray(child)
-          ? child.filter((name) => name !== 'plan')
-          : currentRecordedInput(child)
-      ])
-  )
+const referenceChain = structuredClone(historical_referenceChain)
+const deliveryHandoff = structuredClone(historical_deliveryHandoff)
+const acquisitionQuery = structuredClone(historical_acquisitionQuery)
+const strictMixedQuery = structuredClone(historical_strictMixedQuery)
+const usageAcquisition = structuredClone(historical_usageAcquisition)
+const fieldRecovery = structuredClone(historical_fieldRecovery)
+const sampledEllipse = structuredClone(historical_sampledEllipse)
+const layeredPattern = structuredClone(historical_layeredPattern)
+const recoveryFixture = structuredClone(historical_recoveryFixture)
+const compositionMaterials = structuredClone(historical_compositionMaterials)
+const componentSelection = structuredClone(historical_componentSelection)
+const expansionBudget = structuredClone(historical_expansionBudget)
+const invalidQueryScope = structuredClone(historical_invalidQueryScope)
+const exactQueryScope = structuredClone(historical_exactQueryScope)
+const operationSelection = structuredClone(historical_operationSelection)
+const inspectionDiscovery = {
+  ...historical_inspectionDiscovery,
+  query: {
+    names: ['inspect_drawing', 'record_design_facts'],
+    schemaPaths: [
+      '/properties/arguments',
+      '/properties/facts',
+      '/properties/unknown'
+    ]
+  }
 }
-const currentFixture = (source: any) => {
-  const value = structuredClone(source)
-  for (const key of [
-    'input',
-    'query',
-    'selectedInput',
-    'captureQuery',
-    'constructionQuery',
-    'usage'
-  ])
-    if (value[key]) value[key] = currentRecordedInput(value[key])
-  if (value.queries) value.queries = value.queries.map(currentRecordedInput)
-  if (value.calls)
-    value.calls = value.calls.map((call: any) => ({
-      ...call,
-      ...(call.input ? { input: currentRecordedInput(call.input) } : {})
-    }))
-  return value
-}
-const referenceChain = currentFixture(historical_referenceChain)
-const deliveryHandoff = currentFixture(historical_deliveryHandoff)
-const acquisitionQuery = currentFixture(historical_acquisitionQuery)
-const strictNativeDetail = currentFixture(historical_strictNativeDetail)
-const strictMixedQuery = currentFixture(historical_strictMixedQuery)
-const usageAcquisition = currentFixture(historical_usageAcquisition)
-const fieldRecovery = currentFixture(historical_fieldRecovery)
-const sampledEllipse = currentFixture(historical_sampledEllipse)
-const layeredPattern = currentFixture(historical_layeredPattern)
-const recoveryFixture = currentFixture(historical_recoveryFixture)
-const compositionMaterials = currentFixture(historical_compositionMaterials)
-const componentSelection = currentFixture(historical_componentSelection)
-const expansionBudget = currentFixture(historical_expansionBudget)
-const invalidQueryScope = currentFixture(historical_invalidQueryScope)
-const exactQueryScope = currentFixture(historical_exactQueryScope)
-const operationSelection = currentFixture(historical_operationSelection)
-const inspectionDiscovery = currentFixture(historical_inspectionDiscovery)
-const orderedPreparation = currentFixture(historical_orderedPreparation)
-const recorded = currentFixture(historical_recorded)
+const orderedPreparation = structuredClone(historical_orderedPreparation)
+const recorded = structuredClone(historical_recorded)
 
-inspectionDiscovery.query = {
-  names: ['inspect_drawing', 'record_design_facts'],
-  schemaPaths: [
-    '/properties/arguments',
-    '/properties/facts',
-    '/properties/unknown'
-  ]
+// Use current requests explicitly; recorded geometry and responses stay immutable.
+if (
+  !referenceChain.queries[0].inputScope ||
+  !referenceChain.queries[1].inputScope
+) {
+  throw new Error('Missing recorded reference scope')
 }
+
+referenceChain.queries[0].inputScope.optionalInputs = []
+referenceChain.queries[1].inputScope.optionalInputs = []
+deliveryHandoff.constructionQuery.inputScope.optionalInputs = []
+acquisitionQuery.selectedInput.inputScope.optionalInputs = []
+layeredPattern.query.inputScope.optionalInputs = []
+invalidQueryScope.input.inputScope.optionalInputs = []
+const layeredInput = {
+  draft: historical_layeredPattern.input.draft,
+  inspection: historical_layeredPattern.input.inspection,
+  message: historical_layeredPattern.input.message
+}
+
 fieldRecovery.usage.input.names = [
   'discover_knowledge',
   'select_design_references',
@@ -223,17 +214,25 @@ const setup = (
                   height: 1
                 }
               }
-            : await apply.execute(action.arguments, {
-                signal: new AbortController().signal
-              } as never)
+            : ((await apply.execute(
+                action.arguments as Parameters<typeof apply.execute>[0],
+                {
+                  signal: new AbortController().signal
+                } as never
+              )) as AiJsonValue)
       }))
     )
   }))
   const operations = createLocalOperationTools(actions, designs, execute, {
     validateReferences: () => [],
+
     getNativeTools: () => [
-      ...additionalNative,
+      ...additionalNative.map((definition) => ({
+        ...toolSemantics(definition.outputSchema ?? true, 'read', []),
+        ...definition
+      })),
       ...Array.from({ length: unrelatedCount }, (_, index) => ({
+        ...toolSemantics(true, 'read', []),
         name: `unrelated_${index}`,
         namespace: 'unrelated',
         description,
@@ -249,7 +248,7 @@ const setup = (
   })
   const trace = vi.fn()
   const workflow = createLocalDesignWorkflow(designs, operations, { trace })
-  const owners = [
+  const owners: (LocalToolOwner & { definitions: LocalToolDefinition[] })[] = [
     designs,
     operations,
     workflow,
@@ -308,6 +307,7 @@ const setup = (
     compile,
     execute,
     owners,
+    designs,
     created,
     parents,
     calls,
@@ -481,12 +481,12 @@ it('delivers recorded full contracts and publishes executable high-level usage w
 
     if (name === 'prepare_and_apply_design') {
       expect(reply.success).toBe(true)
+      expect(reply.outcome).toMatchObject({
+        status: 'success',
+        settlement: 'completed',
+        issues: []
+      })
       expect(reply.value).toMatchObject({
-        toolOutcome: {
-          status: 'success',
-          settlement: 'completed',
-          issues: []
-        },
         actionResults: expect.arrayContaining([
           {
             actionId: expect.any(String),
@@ -652,12 +652,12 @@ it('rejects invalid and cancelled invocations before writes and does not revive 
   })
 
   expect(retry.success).toBe(true)
+  expect(retry.outcome).toMatchObject({
+    status: 'success',
+    settlement: 'completed',
+    issues: []
+  })
   expect(retry.value).toMatchObject({
-    toolOutcome: {
-      status: 'success',
-      settlement: 'completed',
-      issues: []
-    },
     actionResults: [{ result: { status: 'complete' } }]
   })
   expect(second.compile).toHaveBeenCalledTimes(1)
@@ -759,7 +759,7 @@ it('uses direct delivered contracts to invoke the owner and recover information 
     inspection: 'defer'
   })
 
-  expect(applied.value.toolOutcome.settlement).toBe('completed')
+  expect(applied.outcome.settlement).toBe('completed')
   expect(execute).toHaveBeenCalledOnce()
   expect(created.length).toBeGreaterThan(0)
   const before = structuredClone(created)
@@ -851,7 +851,7 @@ it('delivers a complete selected operation with fewer first-use bytes and calls'
   )
   const result = await run.call(example.tool, example.arguments)
 
-  expect(result.value.toolOutcome).toMatchObject({
+  expect(result.outcome).toMatchObject({
     status: 'success',
     settlement: 'completed'
   })
@@ -1097,7 +1097,7 @@ it('uses the selected repair contract after a real preparation rejection without
   expect(operationInputIssue(args, scoped.inputSchema)).toBeUndefined()
   const repaired = await run.call('prepare_and_apply_design', args)
 
-  expect(repaired.value.toolOutcome).toMatchObject({
+  expect(repaired.outcome).toMatchObject({
     status: 'success',
     settlement: 'completed',
     issues: []
@@ -1185,7 +1185,7 @@ it('preserves writes for a completed draft and a later invalid part without appr
     const reply = await run.call('prepare_and_apply_design', args)
 
     expect(reply.success).toBe(operation === 'draft')
-    expect(reply.value.toolOutcome.status).toBe(
+    expect(reply.outcome.status).toBe(
       operation === 'draft' ? 'success' : 'partial'
     )
     const guide = (
@@ -1298,7 +1298,7 @@ it('delivers and executes one selected usage guide without validation schema bag
     ).toBeUndefined()
     const result = await run.call(example.tool, example.arguments)
 
-    expect(result.value.toolOutcome.settlement).toBe('completed')
+    expect(result.outcome.settlement).toBe('completed')
     expect(run.created.length).toBeGreaterThan(0)
     expect(
       run.execute.mock.calls.filter(([batch]) =>
@@ -1489,11 +1489,11 @@ it('rejects recorded foreign inspection fields and executes each narrower recove
   expect(failed.success).toBe(false)
   expect(definition.description).toContain('same schemaPaths list')
   expect(definition.description).toContain('independent per-tool queries')
-  expect(failed.value.toolOutcome).toMatchObject({
+  expect(failed.outcome).toMatchObject({
     status: 'failed',
     settlement: 'completed'
   })
-  expect(failed.value.toolOutcome.issues.length).toBeGreaterThan(0)
+  expect(failed.outcome.issues?.length).toBeGreaterThan(0)
   const expectedPaths: Record<string, string[]> = {
     inspect_drawing: ['/properties/arguments'],
     record_design_facts: ['/properties/facts']
@@ -1508,7 +1508,7 @@ it('rejects recorded foreign inspection fields and executes each narrower recove
       tool.schemaResolution.issues.map((issue: { path: string }) => issue.path)
     ).toEqual(
       inspectionDiscovery.query.schemaPaths
-        .filter((path) => !paths.includes(path))
+        .filter((path: string) => !paths.includes(path))
         .sort()
     )
     const narrowed = tool.schemaResolution.narrowerQuery
@@ -1539,7 +1539,10 @@ it('rejects recorded foreign inspection fields and executes each narrower recove
     for (const fragment of corrected.value.tools[0].schemaFragments) {
       const field = fragment.path.split('/').at(-1)
 
-      expect(fragment.schema).toEqual(canonical.inputSchema.properties[field])
+      expect(fragment.schema).toEqual(
+        (canonical.inputSchema as { properties: Record<string, unknown> })
+          .properties[field]
+      )
     }
 
     expect(corrected.value.tools[0].schemaContext.length).toBeGreaterThan(0)
@@ -1557,7 +1560,7 @@ it('rejects recorded foreign inspection fields and executes each narrower recove
 
   const repeated = await call('describe_design_apis', inspectionDiscovery.query)
 
-  expect(repeated.value.toolOutcome.status).toBe('failed')
+  expect(repeated.outcome.status).toBe('failed')
   expect(execute).not.toHaveBeenCalled()
 })
 
@@ -1571,7 +1574,7 @@ it('distinguishes mixed exact coverage from successful shared paths and empty di
 
   expect(mixed.success).toBe(false)
   // Outcome belongs to the actual invocation envelope, including paged results.
-  expect(JSON.parse(mixed.text).toolOutcome).toMatchObject({
+  expect(mixed.outcome).toMatchObject({
     status: 'partial',
     settlement: 'completed'
   })
@@ -1600,19 +1603,17 @@ it('distinguishes mixed exact coverage from successful shared paths and empty di
   }
 
   expect(
-    (await call('describe_design_apis', { names: ['missing-tool'] })).value
-      .toolOutcome.status
+    (await call('describe_design_apis', { names: ['missing-tool'] })).outcome
+      .status
   ).toBe('failed')
   expect(
-    JSON.parse(
-      (
-        await call('describe_design_apis', {
-          names: ['design.inspect_drawing', 'missing-tool'],
-          view: 'usage',
-          includeResultSchema: true
-        })
-      ).text
-    ).toolOutcome.status
+    (
+      await call('describe_design_apis', {
+        names: ['design.inspect_drawing', 'missing-tool'],
+        view: 'usage',
+        includeResultSchema: true
+      })
+    ).outcome.status
   ).toBe('partial')
   await expect(
     call('describe_design_apis', { names }, AbortSignal.abort())
@@ -1669,7 +1670,7 @@ it('delivers paged partial discovery directly without promoting coverage or repl
     const receipt = JSON.parse(reply.text)
 
     expect(reply.success).toBe(false)
-    expect(receipt.toolOutcome).toMatchObject({
+    expect(reply.outcome).toMatchObject({
       status: 'partial',
       settlement: 'completed'
     })
@@ -1862,7 +1863,7 @@ it.each([false, true])(
     expect(run.execute).toHaveBeenCalledTimes(count)
     const result = await run.call(example.tool, args)
 
-    expect(result.value.toolOutcome).toMatchObject({
+    expect(result.outcome).toMatchObject({
       status: 'success',
       settlement: 'completed'
     })
@@ -1915,8 +1916,10 @@ it.each(['group', 'frame'])(
     expect(guide.usageGuide.instructions).toContain(
       'nodeTypes selects children'
     )
-    expect(guide.usageGuide.selection).toContain('does not require sending')
-    expect(guide.usageGuide.selection).toContain('without rereading')
+    expect(guide.usageGuide.selection).toContain(
+      'Select only optional input groups'
+    )
+    expect(guide.usageGuide.selection).not.toContain('plan')
     const invocation = ownerInvocation(guide.invocationExample.invocation)
     const args = structuredClone(invocation.arguments)
 
@@ -1929,7 +1932,7 @@ it.each(['group', 'frame'])(
     expect(args.plan).toBeUndefined()
     const result = await run.call(invocation.tool, args)
 
-    expect(result.value.toolOutcome).toMatchObject({
+    expect(result.outcome).toMatchObject({
       status: 'success',
       settlement: 'completed'
     })
@@ -2026,7 +2029,7 @@ it('keeps root and nested frame constraints distinct from optional plan document
     inspection: 'defer'
   })
 
-  expect(result.value.toolOutcome).toMatchObject({
+  expect(result.outcome).toMatchObject({
     status: 'success',
     settlement: 'completed'
   })
@@ -2065,7 +2068,7 @@ it('delivers the recorded exact query without descriptive matches or catalog gro
       inspection: 'defer'
     })
 
-    expect(result.value.toolOutcome).toMatchObject({
+    expect(result.outcome).toMatchObject({
       status: 'success',
       settlement: 'completed'
     })
@@ -2179,7 +2182,15 @@ it('preserves exact query representations, full constraints and bounded recovery
   expect(run.execute).not.toHaveBeenCalled()
 })
 
-it.each(exactQueryScope.calls)(
+it.each(
+  exactQueryScope.calls as {
+    input: {
+      query: string
+      inputScope: { nodeTypes: string[] }
+      [key: string]: unknown
+    }
+  }[]
+)(
   'executes saved exact query scope $runId without a corrective lookup or replay',
   async ({ input }) => {
     const baseline = setup()
@@ -2210,7 +2221,7 @@ it.each(exactQueryScope.calls)(
       const applied = await run.call(invocation.tool, invocation.arguments)
 
       expect(applied.value.completedSteps).toContain('apply_prepared_design')
-      expect(applied.value.toolOutcome).toMatchObject({
+      expect(applied.outcome).toMatchObject({
         status: 'success',
         settlement: 'completed'
       })
@@ -2476,7 +2487,7 @@ it('recovers the recorded invalid query scope from owner choices without a menu 
   )
 
   expect(rejected.success).toBe(false)
-  expect(rejected.value.toolOutcome).toMatchObject({
+  expect(rejected.outcome).toMatchObject({
     status: 'failed',
     settlement: 'not-started'
   })
@@ -2504,7 +2515,7 @@ it('recovers the recorded invalid query scope from owner choices without a menu 
     inspection: 'defer'
   })
 
-  expect(applied.value.toolOutcome).toMatchObject({
+  expect(applied.outcome).toMatchObject({
     status: 'success',
     settlement: 'completed'
   })
@@ -2634,7 +2645,7 @@ it.each([
       inputScope
     })
 
-    expect(rejected.value.toolOutcome).toMatchObject({
+    expect(rejected.outcome).toMatchObject({
       status: 'failed',
       settlement: 'not-started'
     })
@@ -2773,7 +2784,7 @@ it('delivers expansion accounting and parts selection before the recorded oversi
     inspection: 'defer'
   })
 
-  expect(submitted.value.toolOutcome.settlement).toBe('completed')
+  expect(submitted.outcome.settlement).toBe('completed')
   const expected = prepareDesign(inline, submitted.value.artifactId)
 
   expect(expected.entries).toHaveLength(30)
@@ -2790,7 +2801,7 @@ it('rejects the recorded expansion budget before compilation and explains existi
   expect(rejected.value.budget.observed.expandedNodes).toBe(10078)
   expect(rejected.value.budget.lowerBound).toBe(false)
   expect(rejected.value.completedSteps).toEqual([])
-  expect(rejected.value.toolOutcome).toMatchObject({
+  expect(rejected.outcome).toMatchObject({
     status: 'failed',
     settlement: 'not-started'
   })
@@ -2845,7 +2856,7 @@ it('executes the delivered parts example without a preflight and preserves compl
 it('admits exactly the artifact budget and preserves a successful part before a recorded excess', async () => {
   const run = setup()
   const source = expansionBudget.draft.children.find(
-    (node) => node.type === 'surface-grid'
+    (node: { type: string }) => node.type === 'surface-grid'
   )
 
   if (!source) {
@@ -2879,9 +2890,7 @@ it('admits exactly the artifact budget and preserves a successful part before a 
     inspection: 'defer'
   })
 
-  expect(result.value.toolOutcome.status, JSON.stringify(result.value)).toBe(
-    'partial'
-  )
+  expect(result.outcome.status, JSON.stringify(result.value)).toBe('partial')
   expect(result.value.parts[0].completedSteps).toContain(
     'apply_prepared_design'
   )
@@ -2959,9 +2968,7 @@ it('delivers and executes a complete mixed component example and recovers only t
     inspection: 'defer'
   })
 
-  expect(result.value.toolOutcome.status, JSON.stringify(result.value)).toBe(
-    'partial'
-  )
+  expect(result.outcome.status, JSON.stringify(result.value)).toBe('partial')
   expect(result.value.parts[0].completedSteps).toContain(
     'apply_prepared_design'
   )
@@ -3011,13 +3018,16 @@ it('continues the saved massing and grid layers in order without extra roots or 
   const result = await run.call('prepare_and_apply_design', input)
 
   expect(input).toEqual(original)
-  expect(
-    result.value.parts.every(
-      (part: { toolOutcome: { status: string } }) =>
-        part.toolOutcome.status === 'success'
-    )
-  ).toBe(true)
-  expect(result.value.toolOutcome).toMatchObject({
+  for (const part of result.value.parts) {
+    expect(part).toMatchObject({
+      applicable: true,
+      actionResults: [
+        { actionName: 'apply_prepared_design', result: { status: 'complete' } }
+      ]
+    })
+  }
+
+  expect(result.outcome).toMatchObject({
     status: 'success',
     settlement: 'completed'
   })
@@ -3131,7 +3141,7 @@ it.each([false, true])(
       inspection: 'defer'
     })
 
-    expect(result.value.toolOutcome.settlement).toBe('completed')
+    expect(result.outcome.settlement).toBe('completed')
     expect(
       run.execute.mock.calls.filter(([batch]) =>
         batch.actions.some((action) => action.name === 'apply_prepared_design')
@@ -3215,13 +3225,16 @@ it('continues recorded material composition without asking for rewritten ranges'
     inspection: 'defer'
   })
 
-  expect(
-    result.value.parts.every(
-      (part: { toolOutcome: { status: string } }) =>
-        part.toolOutcome.status === 'success'
-    )
-  ).toBe(true)
-  expect(result.value.toolOutcome).toMatchObject({
+  for (const part of result.value.parts) {
+    expect(part).toMatchObject({
+      applicable: true,
+      actionResults: [
+        { actionName: 'apply_prepared_design', result: { status: 'complete' } }
+      ]
+    })
+  }
+
+  expect(result.outcome).toMatchObject({
     status: 'success',
     settlement: 'completed'
   })
@@ -3321,7 +3334,7 @@ it.each(['projected-face', 'surface-grid'])(
 
     const result = await run.call('prepare_and_apply_design', args)
 
-    expect(result.value.toolOutcome.settlement).toBe('completed')
+    expect(result.outcome.settlement).toBe('completed')
     expect(
       run.execute.mock.calls.filter(([batch]) =>
         batch.actions.some((action) => action.name === 'apply_prepared_design')
@@ -3401,19 +3414,25 @@ it.each([10000, 2000])(
       recoveryFixture.input
     )
 
-    expect(completed.value.toolOutcome).toMatchObject({
+    expect(completed.outcome).toMatchObject({
       status: 'success',
       settlement: 'completed'
     })
     expect(completed.value).not.toHaveProperty('measurementIssues')
     expect(completed.value.recoveryInvocation).toBeUndefined()
     expect(run.calls).toEqual(['prepare_and_apply_design'])
-    expect(
-      completed.value.parts.every(
-        (part: { toolOutcome: { status: string } }) =>
-          part.toolOutcome.status === 'success'
-      )
-    ).toBe(true)
+    for (const part of completed.value.parts) {
+      expect(part).toMatchObject({
+        applicable: true,
+        actionResults: [
+          {
+            actionName: 'apply_prepared_design',
+            result: { status: 'complete' }
+          }
+        ]
+      })
+    }
+
     expect(
       run.trace.mock.calls.filter(([stage]) => stage === 'action_failed')
     ).toEqual([])
@@ -3422,7 +3441,10 @@ it.each([10000, 2000])(
         stage === 'action_completed' && value.result?.retainedDraft?.partitions
     )
 
-    expect(planning?.[1].result.toolOutcome.status).toBe('success')
+    expect(planning?.[1].result).toMatchObject({
+      available: true,
+      retainedDraft: { partitions: expect.any(Array) }
+    })
     expect(run.created).toHaveLength(13095)
     const roots = run.created.filter(
       (entry) => run.parents.get(entry.id) === 'workspace'
@@ -3447,7 +3469,7 @@ it.each([10000, 2000])(
       inspection: 'defer'
     })
 
-    expect(duplicate.value.toolOutcome.status).not.toBe('success')
+    expect(duplicate.outcome.status).not.toBe('success')
     expect(duplicate.value.recoveryInvocation).toBeUndefined()
     expect(run.created).toEqual(before)
     expect(run.compile).toHaveBeenCalledTimes(completed.value.parts.length)
@@ -3461,7 +3483,7 @@ const unstartedCapacityRecovery = async (run: ReturnType<typeof setup>) => {
     recoveryFixture.input
   )
 
-  expect(stopped.value.toolOutcome.settlement).toBe('not-started')
+  expect(stopped.outcome.settlement).toBe('not-started')
   expect(run.created).toHaveLength(0)
   expect(stopped.value.recoveryInvocation).toBeDefined()
   run.compile.mockClear()
@@ -3482,9 +3504,12 @@ it.each([10000, 2000])(
       recoveryFixture.input
     )
 
-    expect(partial.value.toolOutcome.status).toBe('partial')
-    expect(partial.value.parts[0].toolOutcome.status).toBe('success')
-    expect(partial.value.parts[1].toolOutcome.settlement).toBe('not-started')
+    expect(partial.outcome.status).toBe('partial')
+    expect(partial.value.parts[0]).toMatchObject({
+      applicable: true,
+      actionResults: [{ result: { status: 'complete' } }]
+    })
+    expect(partial.value.parts[1].settlement).toBe('not-started')
     const first = structuredClone(run.created)
     const remaining = partial.value.recoveryInvocation
 
@@ -3497,7 +3522,10 @@ it.each([10000, 2000])(
     )
     const recovered = await run.call(remaining.name, remaining.arguments)
 
-    expect(recovered.value.parts[0].toolOutcome.status).toBe('success')
+    expect(recovered.value.parts[0]).toMatchObject({
+      applicable: true,
+      actionResults: [{ result: { status: 'complete' } }]
+    })
     expect(run.created).toHaveLength(13095)
     expect(run.created.slice(0, first.length)).toEqual(first)
     expect(
@@ -3549,7 +3577,7 @@ it('does not offer automatic replay after a lost application acknowledgement or 
   const foreign = setup()
   const unavailable = await foreign.call(invocation.name, invocation.arguments)
 
-  expect(unavailable.value.toolOutcome.status).not.toBe('success')
+  expect(unavailable.outcome.status).not.toBe('success')
   expect(unavailable.value.recoveryInvocation).toBeUndefined()
   expect(foreign.created).toHaveLength(0)
   const execute = run.execute.getMockImplementation()
@@ -3567,7 +3595,7 @@ it('does not offer automatic replay after a lost application acknowledgement or 
   const uncertain = await run.call(invocation.name, invocation.arguments)
 
   expect(run.created).toHaveLength(13095)
-  expect(uncertain.value.toolOutcome.status).not.toBe('success')
+  expect(uncertain.outcome.status).not.toBe('success')
   expect(uncertain.value.recoveryInvocation).toBeUndefined()
   expect(run.execute).toHaveBeenCalledTimes(2)
 })
@@ -3581,18 +3609,21 @@ it('retains backward partition references when the first preparation has not sta
   )
   const stopped = await run.call(invocation.name, invocation.arguments)
 
-  expect(stopped.value.toolOutcome.settlement).toBe('not-started')
+  expect(stopped.outcome.settlement).toBe('not-started')
   expect(run.created).toHaveLength(0)
   const remaining = stopped.value.recoveryInvocation
 
   expect(remaining.arguments.parts).toEqual(invocation.arguments.parts)
   const recovered = await run.call(remaining.name, remaining.arguments)
 
-  expect(
-    recovered.value.parts.map(
-      (part: { toolOutcome: { status: string } }) => part.toolOutcome.status
-    )
-  ).toEqual(['success', 'success'])
+  expect(recovered.value.parts).toHaveLength(2)
+  for (const part of recovered.value.parts) {
+    expect(part).toMatchObject({
+      applicable: true,
+      actionResults: [{ result: { status: 'complete' } }]
+    })
+  }
+
   expect(run.created).toHaveLength(13095)
 })
 
@@ -3617,7 +3648,7 @@ it('does not propose retrying a continuation whose first artifact was released',
     inspection: 'defer'
   })
 
-  expect(stopped.value.toolOutcome.status).not.toBe('success')
+  expect(stopped.outcome.status).not.toBe('success')
   expect(stopped.value.recoveryInvocation).toBeUndefined()
   expect(run.created).toHaveLength(before)
 })
@@ -3653,9 +3684,7 @@ it('recovers only retained capacity work after an earlier independent part', asy
     inspection: 'defer'
   })
 
-  expect(result.value.toolOutcome.status, JSON.stringify(result.value)).toBe(
-    'partial'
-  )
+  expect(result.outcome.status, JSON.stringify(result.value)).toBe('partial')
   expect(run.created).toHaveLength(2)
   expect(result.value.recoveryInvocation).toBeDefined()
   const invocation = result.value.recoveryInvocation
@@ -3738,12 +3767,15 @@ it('preserves explicit parent links and reserved keys across capacity continuati
     'large:partition-1:',
     'large:partition-1'
   ])
-  expect(
-    result.value.parts.every(
-      (part: { toolOutcome: { status: string } }) =>
-        part.toolOutcome.status === 'success'
-    )
-  ).toBe(true)
+  for (const part of result.value.parts) {
+    expect(part).toMatchObject({
+      applicable: true,
+      actionResults: [
+        { actionName: 'apply_prepared_design', result: { status: 'complete' } }
+      ]
+    })
+  }
+
   expect(run.created).toHaveLength(2003)
   expect(run.parents.get(run.created[2001].id)).toBe(run.created[0].id)
   expect(
@@ -3753,19 +3785,22 @@ it('preserves explicit parent links and reserved keys across capacity continuati
 
 it('preserves the saved layered source through compact preparation and canonical target references', async () => {
   const before = structuredClone(layeredPattern)
-  const original = prepareDesign(layeredPattern.input.draft, 'layered')
+  const original = prepareDesign(
+    layeredInput.draft,
+    '00000000-0000-4000-8000-000000000001'
+  )
   const compact = await prepareDesignAsync(
     new AbortController().signal,
     layeredPattern.compact.draft,
-    'layered'
+    '00000000-0000-4000-8000-000000000001'
   )
   const sourceWork = constructDesign(
-    layeredPattern.input.draft,
-    'layered'
+    layeredInput.draft,
+    '00000000-0000-4000-8000-000000000001'
   ).sourceWork
   const compactWork = constructDesign(
     layeredPattern.compact.draft,
-    'layered'
+    '00000000-0000-4000-8000-000000000001'
   ).sourceWork
 
   expect(sourceWork).toMatchObject({ nodes: 103, projectionCalls: 336 })
@@ -3788,7 +3823,10 @@ it('preserves the saved layered source through compact preparation and canonical
     Buffer.byteLength(JSON.stringify(layeredPattern.compact))
   ).toBeLessThanOrEqual(layeredPattern.baseline.inputBytes / 2)
   expect(compact).toEqual(
-    prepareDesign(layeredPattern.compact.draft, 'layered')
+    prepareDesign(
+      layeredPattern.compact.draft,
+      '00000000-0000-4000-8000-000000000001'
+    )
   )
   expect(layeredPattern).toEqual(before)
 
@@ -3808,7 +3846,7 @@ it('preserves the saved layered source through compact preparation and canonical
       { artifactId: result.value.artifactId, keyPrefix: 'window-layer-7-' }
     ]
   })
-  const owner = run.owners[0]
+  const owner = run.designs
 
   if (!('resolveTargets' in owner)) {
     throw new Error('Missing design owner')
@@ -3845,129 +3883,131 @@ it('preserves the saved layered source through compact preparation and canonical
   ).toThrow()
 })
 
-it.each([false, true])(
-  'delivers executable layered order in the first page without extra reading (plan=%s)',
-  async (plan) => {
-    const run = setup()
-    const query = structuredClone(layeredPattern.query)
+it('delivers executable layered order in the first page without extra reading', async () => {
+  const run = setup()
+  const query = structuredClone(layeredPattern.query)
 
-    if (!plan) {
-      query.inputScope.optionalInputs = []
-    }
+  const response = await run.call('describe_design_apis', query)
+  const tool = response.value.tools[0]
 
-    const response = await run.call('describe_design_apis', query)
-    const tool = response.value.tools[0]
+  process.stdout.write(
+    JSON.stringify({
+      measurement: 'layered-usage',
+      bytes: run.deliveries.reduce((a, b) => a + b, 0),
+      bodyBytes: Buffer.byteLength(JSON.stringify(response.value)),
+      replies: run.deliveries.length
+    }) + '\n'
+  )
+  expect(Buffer.byteLength(JSON.stringify(response.value))).toBeLessThanOrEqual(
+    completeUsageBudget(25604, 'draft')
+  )
+  const invocation = ownerInvocation(tool.invocationExample.invocation)
+  const first = JSON.parse(run.replies[0].raw)
+  const body = first.contentDelivery?.text ?? run.replies[0].raw
 
-    process.stdout.write(
-      JSON.stringify({
-        measurement: 'layered-usage',
-        plan,
-        bytes: run.deliveries.reduce((a, b) => a + b, 0),
-        bodyBytes: Buffer.byteLength(JSON.stringify(response.value)),
-        replies: run.deliveries.length
-      }) + '\n'
-    )
-    expect(
-      Buffer.byteLength(JSON.stringify(response.value))
-    ).toBeLessThanOrEqual(completeUsageBudget(25604, 'draft'))
-    const invocation = ownerInvocation(tool.invocationExample.invocation)
-    const first = JSON.parse(run.replies[0].raw)
-    const body = first.contentDelivery?.text ?? run.replies[0].raw
+  expect(body).toContain(JSON.stringify(tool.invocationExample))
+  expect(body.indexOf('"invocationExample"')).toBeLessThan(
+    body.indexOf('"parameters"')
+  )
+  expect(run.calls).toHaveLength(1)
+  expect(run.deliveries.every((bytes) => bytes <= 24000)).toBe(true)
+  expect(Buffer.byteLength(JSON.stringify(response.value))).toBeLessThanOrEqual(
+    completeUsageBudget(20087, 'draft')
+  )
+  const calls = run.replies.length
+  const outcome = await run.call(invocation.tool, {
+    ...invocation.arguments,
+    inspection: 'defer'
+  })
 
-    expect(body).toContain(JSON.stringify(tool.invocationExample))
-    expect(body.indexOf('"invocationExample"')).toBeLessThan(
-      body.indexOf('"parameters"')
-    )
-    expect(run.calls).toHaveLength(1)
-    expect(run.deliveries.every((bytes) => bytes <= 24000)).toBe(true)
-    expect(
-      Buffer.byteLength(JSON.stringify(response.value))
-    ).toBeLessThanOrEqual(completeUsageBudget(plan ? 27702 : 20087, 'draft'))
-    const calls = run.replies.length
-    const outcome = await run.call(invocation.tool, {
-      ...invocation.arguments,
-      inspection: 'defer'
+  expect(outcome.value.actionResults[0].result.status).toBe('complete')
+  expect(run.replies).toHaveLength(calls + 1)
+  const session = createDesignPreparationSession()
+  const prepared = session.prepare(invocation.arguments.draft)
+  const entries = session.resolve(prepared.artifactId).entries
+
+  // The first layer is complete before the independent cap, then the grid layer.
+  expect(entries.slice(1, 4).map((e) => e.key)).toEqual([
+    'unit-0-panel',
+    'unit-1-panel',
+    'cap'
+  ])
+  expect(entries.slice(4).map((e) => e.key)).toEqual(
+    Array.from({ length: 2 }, (_, i) => [
+      `windows-${i}-surface`,
+      ...Array.from(
+        { length: 6 },
+        (_, cell) => `windows-${i}-grid-${cell}-inset`
+      )
+    ]).flat()
+  )
+  expect(run.created.map((e) => e.name)).toEqual(
+    entries.map((e) => e.descriptor.name)
+  )
+  expect(new Set(run.parents.values()).has(run.created[0].id)).toBe(true)
+  const source = invocation.arguments.draft
+
+  expect(
+    source.linearFields[source.children[0].members[0].materialField]
+  ).toBeDefined()
+  const grid = source.children[2].members[1]
+  const motifs = source.motifTemplates[grid.motifs.template]
+
+  expect(motifs).toHaveLength(1)
+  expect(source.fillTemplates[motifs[0].fill.template]).toBeDefined()
+  const inline = structuredClone(source)
+
+  inline.children[2].members[1].motifs = structuredClone(motifs).map(
+    (motif: { key: string }) => ({
+      ...motif,
+      ...(grid.motifs.overrides[motif.key]?.materialField
+        ? { fill: undefined }
+        : {}),
+      ...grid.motifs.overrides[motif.key]
     })
+  )
+  delete inline.motifTemplates
+  const expected = prepareDesign(inline, outcome.value.artifactId)
 
-    expect(outcome.value.actionResults[0].result.status).toBe('complete')
-    expect(run.replies).toHaveLength(calls + 1)
-    const session = createDesignPreparationSession()
-    const prepared = session.prepare(invocation.arguments.draft)
-    const entries = session.resolve(prepared.artifactId).entries
-
-    // The first layer is complete before the independent cap, then the grid layer.
-    expect(entries.slice(1, 4).map((e) => e.key)).toEqual([
-      'unit-0-panel',
-      'unit-1-panel',
-      'cap'
+  expect(prepareDesign(source, outcome.value.artifactId)).toEqual(expected)
+  expect(run.created).toEqual(expected.entries.map((entry) => entry.descriptor))
+  expect([...run.parents]).toEqual(
+    expected.entries.map((entry) => [
+      entry.descriptor.id,
+      entry.parentId ?? 'workspace'
     ])
-    expect(entries.slice(4).map((e) => e.key)).toEqual(
-      Array.from({ length: 2 }, (_, i) => [
-        `windows-${i}-surface`,
-        ...Array.from(
-          { length: 6 },
-          (_, cell) => `windows-${i}-grid-${cell}-inset`
-        )
-      ]).flat()
-    )
-    expect(run.created.map((e) => e.name)).toEqual(
-      entries.map((e) => e.descriptor.name)
-    )
-    expect(new Set(run.parents.values()).has(run.created[0].id)).toBe(true)
-    const source = invocation.arguments.draft
+  )
+  const large = setup(10000)
 
-    expect(
-      source.linearFields[source.children[0].members[0].materialField]
-    ).toBeDefined()
-    const grid = source.children[2].members[1]
-    const motifs = source.motifTemplates[grid.motifs.template]
-
-    expect(motifs).toHaveLength(1)
-    expect(source.fillTemplates[motifs[0].fill.template]).toBeDefined()
-    const inline = structuredClone(source)
-
-    inline.children[2].members[1].motifs = structuredClone(motifs).map(
-      (motif: { key: string }) => ({
-        ...motif,
-        ...(grid.motifs.overrides[motif.key]?.materialField
-          ? { fill: undefined }
-          : {}),
-        ...grid.motifs.overrides[motif.key]
-      })
-    )
-    delete inline.motifTemplates
-    const expected = prepareDesign(inline, outcome.value.artifactId)
-
-    expect(prepareDesign(source, outcome.value.artifactId)).toEqual(expected)
-    expect(run.created).toEqual(
-      expected.entries.map((entry) => entry.descriptor)
-    )
-    expect([...run.parents]).toEqual(
-      expected.entries.map((entry) => [
-        entry.descriptor.id,
-        entry.parentId ?? 'workspace'
-      ])
-    )
-    const large = setup(10000)
-
-    await large.call('describe_design_apis', query)
-    expect(large.deliveries).toEqual(run.deliveries.slice(0, calls))
-  }
-)
+  await large.call('describe_design_apis', query)
+  expect(large.deliveries).toEqual(run.deliveries.slice(0, calls))
+})
 
 it('detects the semantic loss from combining separate saved painter layers', () => {
   const draft = structuredClone(layeredPattern.compact.draft)
-  const face = draft.children.find((child) => child.key === 'tier-layer')
-  const grid = draft.children.find((child) => child.key === 'window-layer')
+  const face = draft.children.find(
+    (child: { key: string }) => child.key === 'tier-layer'
+  )
+  const grid = draft.children.find(
+    (child: { key: string }) => child.key === 'window-layer'
+  )
 
-  if (!face || !grid || !('members' in face) || !('members' in grid)) {
+  if (
+    !face ||
+    !grid ||
+    !Array.isArray(face.members) ||
+    !Array.isArray(grid.members)
+  ) {
     throw new Error('Missing saved layer patterns')
   }
 
   Object.assign(face, { members: [...face.members, ...grid.members] })
-  draft.children = draft.children.filter((child) => child !== grid)
-  const wrong = prepareDesign(draft, 'layered')
-  const expected = prepareDesign(layeredPattern.compact.draft, 'layered')
+  draft.children = draft.children.filter((child: unknown) => child !== grid)
+  const wrong = prepareDesign(draft, '00000000-0000-4000-8000-000000000001')
+  const expected = prepareDesign(
+    layeredPattern.compact.draft,
+    '00000000-0000-4000-8000-000000000001'
+  )
 
   expect(wrong.entries).toHaveLength(expected.entries.length)
   expect(() => expectEquivalentPatternEntries(wrong, expected)).toThrow()
@@ -4048,7 +4088,7 @@ it.each([
       inspection: 'defer'
     })
 
-    expect(result.value.toolOutcome.settlement).toBe('completed')
+    expect(result.outcome.settlement).toBe('completed')
     expect(explicit).toEqual(source)
     expect(run.created.map((entry) => entry.name)).toEqual(
       expected.entries.map((entry) => entry.descriptor.name)
@@ -4193,7 +4233,7 @@ it('replays saved cross-tool field queries in one bounded reply and executes own
   expect(usage.success).toBe(true)
   const mixed = await t.call('describe_design_apis', fieldRecovery.query.input)
 
-  expect(JSON.parse(mixed.text).toolOutcome).toMatchObject({
+  expect(mixed.outcome).toMatchObject({
     status: 'partial',
     settlement: 'completed'
   })
@@ -4311,6 +4351,7 @@ it('bounds failed field navigation and traversal independently of unrelated nest
       {
         getNativeTools: () => [
           {
+            ...toolSemantics(true, 'read', []),
             name: 'nested',
             namespace: 'extension',
             description: 'Nested input',
@@ -4347,7 +4388,7 @@ it('bounds failed field navigation and traversal independently of unrelated nest
         '/properties/unrelated',
         '/properties/requiredToken'
       ])
-      expect(value.toolOutcome.status).toBe('failed')
+      expect(reply.outcome?.status).toBe('failed')
       expect(dispatch).not.toHaveBeenCalled()
 
       return { bytes: Buffer.byteLength(reply.text), traversals }
@@ -4401,7 +4442,8 @@ it('delivers complete exact usage without examples and lowers the saved acquisit
   const bytes = (value: unknown) => Buffer.byteLength(JSON.stringify(value))
 
   const before = usageAcquisition.calls.reduce(
-    (sum, call) => sum + bytes(call.input) + bytes(call.output),
+    (sum: number, call: { input: unknown; output: unknown }) =>
+      sum + bytes(call.input) + bytes(call.output),
     0
   )
   const acquisition = run.replies
@@ -4413,7 +4455,11 @@ it('delivers complete exact usage without examples and lowers the saved acquisit
     )
   const withoutRepeatedUsage = usageAcquisition.calls
     .slice(0, 2)
-    .reduce((sum, call) => sum + bytes(call.input) + bytes(call.output), 0)
+    .reduce(
+      (sum: number, call: { input: unknown; output: unknown }) =>
+        sum + bytes(call.input) + bytes(call.output),
+      0
+    )
 
   expect(acquisition).toBeLessThan(before)
   // The historical two-call reply did not contain the complete result contract.
@@ -4473,17 +4519,12 @@ it('keeps exploration separate from executable exact usage and preserves qualifi
   ).value
 
   expect(menu.tools.length).toBeGreaterThan(0)
-  for (const entry of menu.tools) {
-    expect(entry.usageGuide).toBeUndefined()
-    for (const path of entry.outputFields ?? []) {
-      expect(path.split('/properties/').length, path).toBeLessThanOrEqual(2)
-    }
-
-    expect(entry.definition).toBeUndefined()
-    expect(entry.usage.arguments.names).toEqual([
-      `${entry.namespace}.${entry.name}`
-    ])
-  }
+  expect(menu.tools).toHaveLength(1)
+  expect(menu.tools[0].name).toBe('select_design_references')
+  expect(menu.tools[0].usageGuide).toBeDefined()
+  expect(menu.tools[0].definition.nextAction).toBe(
+    'execute-with-delivered-contract'
+  )
 
   const partial = await run.call('describe_design_apis', {
     names: ['select_design_references', 'missing_tool'],
@@ -4491,7 +4532,7 @@ it('keeps exploration separate from executable exact usage and preserves qualifi
     includeResultSchema: true
   })
 
-  expect(partial.value.toolOutcome.status).toBe('partial')
+  expect(partial.outcome.status).toBe('partial')
   expect(partial.value.tools[0].usageGuide.parameters).toEqual(
     exact.usageGuide.parameters
   )
@@ -4613,7 +4654,7 @@ it('assembles selected input once at the final executable usage boundary', async
   const completed = await run.call(invocation.tool, invocation.arguments)
 
   expect(completed.success).toBe(true)
-  expect(completed.value.toolOutcome).toMatchObject({
+  expect(completed.outcome).toMatchObject({
     status: 'success',
     settlement: 'completed'
   })
@@ -4661,7 +4702,7 @@ it('preserves composition coverage when the recorded mixed query also permits ve
   })
 
   expect(result.value.completedSteps).toContain('apply_prepared_design')
-  expect(result.value.toolOutcome.issues).toEqual([])
+  expect(result.outcome.issues).toEqual([])
   expect(run.created.length).toBeGreaterThan(1)
   const vector = ownerInvocation(
     (
@@ -4727,16 +4768,27 @@ it('delivers the recorded phase construction scope without unused authoring grou
   const selected = reply.value.tools[0]
   const parameters = selected.usageGuide.parameters
 
-  expect(
-    operationInputIssue(
-      currentRecordedInput(recorded.body.operations[0].arguments),
-      parameters
-    )
-  ).toBeUndefined()
+  const sourceArguments = recorded.body.operations[0].arguments
+  const currentArguments = {
+    draft: sourceArguments.draft,
+    inspection: sourceArguments.inspection,
+    includeTargets: sourceArguments.includeTargets,
+    message: sourceArguments.message
+  }
+
+  if (
+    !currentArguments ||
+    typeof currentArguments !== 'object' ||
+    Array.isArray(currentArguments)
+  ) {
+    throw new Error('Missing current recorded operation arguments')
+  }
+
+  expect(operationInputIssue(currentArguments, parameters)).toBeUndefined()
   expect(
     operationInputIssue(
       {
-        ...currentRecordedInput(recorded.body.operations[0].arguments),
+        ...currentArguments,
         draft: { ...recorded.body.operations[0].arguments.draft, relations: [] }
       },
       parameters
@@ -4757,7 +4809,7 @@ it('delivers the recorded phase construction scope without unused authoring grou
   expect(
     operationInputIssue(
       {
-        ...currentRecordedInput(recorded.body.operations[0].arguments),
+        ...currentArguments,
         draft: { ...recorded.body.operations[0].arguments.draft, relations: [] }
       },
       full.value.tools[0].usageGuide.parameters
@@ -4908,10 +4960,10 @@ it('ranks an opaque purpose owner above complete incidental output vocabulary', 
   expect(incidental).toBeDefined()
   expect(target.rank).toBeLessThan(incidental.rank)
   expect(target.match.nameTerms).toEqual([])
-  expect(target.match.unmatchedTerms).toEqual(['field'])
+  expect(target.match.unmatchedTerms).toEqual([])
 })
 
-it('does not auto-acquire an incidental complete match over the stronger partial purpose', async () => {
+it('auto-acquires a complete owner purpose despite incidental output vocabulary', async () => {
   const run = setup(0, 'Unrelated capability', 10000, false, [
     {
       name: 'a',
@@ -4942,13 +4994,10 @@ it('does not auto-acquire an incidental complete match over the stronger partial
     })
   ).value
 
-  expect(found.tools.map((tool: { name: string }) => tool.name)).toEqual([
-    'a',
-    'b'
-  ])
-  expect(found.tools[0].match.unmatchedTerms).toEqual(['glaze'])
-  expect(found.tools[1].match.unmatchedTerms).toEqual([])
-  expect(
-    found.tools.every((tool: { usageGuide?: unknown }) => !tool.usageGuide)
-  ).toBe(true)
+  expect(found.tools.map((tool: { name: string }) => tool.name)).toEqual(['a'])
+  expect(found.tools[0].match.unmatchedTerms).toEqual([])
+  expect(found.tools[0].usageGuide.parameters).toBeDefined()
+  expect(found.tools[0].definition.nextAction).toBe(
+    'execute-with-delivered-contract'
+  )
 })

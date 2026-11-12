@@ -15,9 +15,16 @@ const observationOwner = (failure?: Error) => {
         inputSchema: { type: 'object' }
       })
     ),
-    { modelActions: (actions) => actions, resolveBatch: (batch) => batch },
+    {
+      modelActions: (actions) => actions,
+
+      resolveBatch: (batch) => batch
+    },
     async (batch) => {
-      if (failure) throw failure
+      if (failure) {
+        throw failure
+      }
+
       return {
         context: {},
         actionResults: batch.actions.map((action) => {
@@ -92,6 +99,7 @@ it('returns a capture failure without retrying writes or scheduling measurement'
     false,
     new AbortController().signal
   )
+
   expect(result.inspectionIssues).toEqual([
     { elementId: 'card', message: 'Capture transport failed' }
   ])
@@ -102,6 +110,7 @@ it('returns a capture failure without retrying writes or scheduling measurement'
 it('preserves cancellation instead of presenting it as a capture warning', async () => {
   const { owner, calls } = observationOwner()
   const controller = new AbortController()
+
   controller.abort(new Error('Cancelled by user'))
   await expect(
     owner.finishInspection('card', false, controller.signal)
@@ -111,6 +120,7 @@ it('preserves cancellation instead of presenting it as a capture warning', async
 
 it('saves an authored calculation without registering source facts', () => {
   const facts = createDesignFacts()
+
   expect(
     facts.recordCalculations({
       calculations: [{ id: 'spacing', value: 12, unit: 'px' }]
@@ -129,7 +139,11 @@ it('selects an existing reference without registering design criteria', async ()
         inputSchema: { type: 'object' }
       }
     ],
-    { modelActions: (actions) => actions, resolveBatch: (batch) => batch },
+    {
+      modelActions: (actions) => actions,
+
+      resolveBatch: (batch) => batch
+    },
     async () => ({ context: {}, actionResults: [] }),
     {
       validateReferences: () => [
@@ -148,6 +162,7 @@ it('selects an existing reference without registering design criteria', async ()
       new AbortController().signal
     )
   )
+
   expect(result.referenceImageIndexes).toEqual([0])
   expect(result).not.toHaveProperty('requirementRevision')
 })
@@ -159,6 +174,7 @@ it('checks prepared geometry without registering criteria or reference suitabili
       findings: [],
       elementCount: 1
     }),
+
     resolveAttachment: async () => ({
       workspaceId: 'workspace',
       parentId: 'workspace',
@@ -169,12 +185,14 @@ it('checks prepared geometry without registering criteria or reference suitabili
         { x: 0, y: 1 }
       ]
     }),
+
     attachmentCurrent: async () => true
   })
   const result = await owner.review(
     { artifactId: 'part' },
     new AbortController().signal
   )
+
   expect(result.status).toBe('pass')
   expect(result).not.toHaveProperty('finalCanvasReviewRequired')
 })

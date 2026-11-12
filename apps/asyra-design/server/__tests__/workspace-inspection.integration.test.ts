@@ -142,23 +142,26 @@ it('uses actual native inspection owners and retries only failed captures', asyn
 
     const reply = await invokeLocalTool(tools, definition, input, signal)
 
-    return JSON.parse(reply.text)
+    return { value: JSON.parse(reply.text), outcome: reply.outcome }
   }
 
   try {
     const guide = tools.definitions.find(
       (entry) => entry.name === 'inspect_drawing'
     )
+
     expect(guide).toBeDefined()
     const delivered = await call('describe_design_apis', {
       names: ['inspect_drawing'],
       view: 'usage'
     })
+
     expect(JSON.stringify(delivered)).toContain('workspace')
     const overview = await call('inspect_drawing', {
       arguments: { elementId: 'sheet-a', view: 'overview' }
     })
-    expect(overview.toolOutcome).toMatchObject({
+
+    expect(overview.outcome).toMatchObject({
       status: 'success',
       settlement: 'completed'
     })
@@ -166,7 +169,8 @@ it('uses actual native inspection owners and retries only failed captures', asyn
     const failed = await call('inspect_drawing', {
       arguments: { elementId: 'part-b', view: 'overview' }
     })
-    expect(failed.toolOutcome).toMatchObject({
+
+    expect(failed.outcome).toMatchObject({
       status: 'failed',
       settlement: 'completed'
     })
@@ -175,7 +179,8 @@ it('uses actual native inspection owners and retries only failed captures', asyn
     const recovered = await call('inspect_drawing', {
       arguments: { elementId: 'part-b', view: 'overview' }
     })
-    expect(recovered.toolOutcome).toMatchObject({
+
+    expect(recovered.outcome).toMatchObject({
       status: 'success',
       settlement: 'completed'
     })
@@ -205,13 +210,14 @@ it('uses actual native inspection owners and retries only failed captures', asyn
       const unavailable = await call('inspect_drawing', {
         arguments: inspection
       })
-      expect(unavailable.toolOutcome).toMatchObject({
+
+      expect(unavailable.outcome).toMatchObject({
         status: 'failed',
         settlement: 'completed'
       })
     }
 
-    const prior = overview.actionResults[0].result.evidence
+    const prior = overview.value.actionResults[0].result.evidence
 
     changed?.()
     expect(evidence.validate(prior).current).toBe(false)
@@ -504,16 +510,17 @@ it.each([false, true])(
         throw new Error('Missing tool')
       }
 
-      return JSON.parse(
-        (await invokeLocalTool(owner, definition, input, signal)).text
-      )
+      const reply = await invokeLocalTool(owner, definition, input, signal)
+
+      return { value: JSON.parse(reply.text), outcome: reply.outcome }
     }
 
     try {
       const capture = await call('inspect_drawing', {
         arguments: { elementId: 'scene', view: 'overview' }
       })
-      expect(capture.toolOutcome).toMatchObject({
+
+      expect(capture.outcome).toMatchObject({
         status: 'success',
         settlement: 'completed'
       })
@@ -523,7 +530,8 @@ it.each([false, true])(
       const diagnosis = await call('review_design', {
         arguments: { elementId: 'scene' }
       })
-      const result = diagnosis.actionResults[0].result
+      const result = diagnosis.value.actionResults[0].result
+
       if (unavailable) {
         expect(result.findings).toContainEqual(
           expect.objectContaining({
@@ -535,8 +543,14 @@ it.each([false, true])(
         const retry = await call('review_design', {
           arguments: { elementId: 'scene' }
         })
-        expect(retry.actionResults[0].result.verification.status).toBe('pass')
-      } else expect(result.verification.status).toBe('pass')
+
+        expect(retry.value.actionResults[0].result.verification.status).toBe(
+          'pass'
+        )
+      } else {
+        expect(result.verification.status).toBe('pass')
+      }
+
       expect(snapshot).toHaveBeenCalledTimes(1)
       expect(await core.save()).toEqual(document)
       expect(core.getUndoHistoryDepth()).toBe(history)

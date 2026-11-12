@@ -10,6 +10,62 @@ import {
   evaluationToolStop
 } from '../evaluation-control'
 
+it('continues a correctable part after a completed owner receipt without inline Host metadata', () => {
+  const completed = {
+    applicable: true,
+    completedSteps: ['prepare_design', 'apply_prepared_design'],
+    actionResults: [
+      {
+        actionId: 'draw',
+        actionName: 'apply_prepared_design',
+        result: {
+          status: 'complete',
+          compositionId: 'root',
+          appliedElementCount: 1
+        }
+      }
+    ]
+  }
+  const value = {
+    status: 'partial',
+    settlement: 'partial',
+    parts: [completed, correctablePreparation.owner]
+  }
+  const reply = {
+    success: false,
+    text: JSON.stringify(value),
+    outcome: { status: 'partial', settlement: 'partial', issues: [] }
+  }
+
+  expect(evaluationToolStop(reply)).toBeUndefined()
+  for (const prefix of [
+    {},
+    { ...completed, actionResults: [] },
+    { ...completed, actionResults: [{}] },
+    { ...completed, inspectionIssues: [{ message: 'Capture unavailable' }] },
+    {
+      ...completed,
+      actionResults: [
+        {
+          actionId: 'draw',
+          actionName: 'apply_prepared_design',
+          result: { status: 'failed', settlement: 'unknown' }
+        }
+      ]
+    }
+  ]) {
+    expect(
+      evaluationToolStop({
+        ...reply,
+        text: JSON.stringify({
+          ...value,
+          parts: [prefix, correctablePreparation.owner]
+        })
+      })
+    ).toBeDefined()
+  }
+})
+
 it.each([
   { value: { toolOutcome: { status: 'failed' } }, failed: true },
   {

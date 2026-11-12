@@ -4,7 +4,8 @@ import {
   readCapabilityMetadata,
   buildCapabilityCorpus,
   matchCapability,
-  summarizeCapability,
+  matchCapabilityFields,
+  capabilityBoundary,
   type CapabilityCorpus,
   type CapabilityMetadata
 } from './capability-search'
@@ -61,7 +62,6 @@ import {
   designCheckSummarySchema,
   designCheckInputSchema
 } from './design-check-results'
-import { serializeToolPayload } from '@asyra/ai-agent-runtime/node'
 import { createLocalQueryArtifacts } from './local-query-artifacts'
 import { BrowserBatchExecutionError } from './batch-exchange'
 import type { LocalToolOwnership } from './local-tool-leases'
@@ -69,6 +69,8 @@ import {
   projectToolDelivery,
   projectToolResultFields,
   modelToolResultSchemas,
+  modelToolDeliveryFailureSchema,
+  designActionOutcome,
   toolInternalResult,
   toolResultCount,
   toolResultObject,
@@ -232,7 +234,7 @@ const usageResults = (
       schemas.outputSchema,
       schemas.partialOutputSchema,
       schemas.recoveryOutputSchema,
-      modelToolResultSchemas({ outputSchema: boundary }, 'host').outputSchema
+      modelToolResultSchemas({ outputSchema: boundary }).outputSchema
     ])
   )
 
@@ -304,7 +306,7 @@ const batchToolSemantics = (outputSchema: unknown, resources: unknown) => {
 }
 
 /** Browser execution and any explicitly requested observation have separate receipts. */
-const singleActionSemantics = (
+export const singleActionSemantics = (
   action: AiProviderInput['actions'][number],
   followups: unknown,
   targeted = false
@@ -313,24 +315,24 @@ const singleActionSemantics = (
     toolResultObject({
       actionId: toolResultString,
       actionName: primary ? { const: action.name } : toolResultString,
-      result
+      result: embedAiToolSchema(
+        result as RuntimeJsonValue,
+        '#/properties/result'
+      )
     })
 
   const actionResults = (result: unknown, minItems = 1) => ({
     type: 'array',
     minItems,
     prefixItems: [
-      receipt(
-        embedAiToolSchema(
-          result as RuntimeJsonValue,
-          '#/properties/actionResults/prefixItems/0/properties/result'
-        ),
-        true
+      embedAiToolSchema(
+        receipt(result, true) as RuntimeJsonValue,
+        '#/properties/actionResults/prefixItems/0'
       )
     ],
     items: embedAiToolSchema(
       (targeted
-        ? { anyOf: [receipt(result, true), followups] }
+        ? resultAlternatives([receipt(result, true), followups])
         : followups) as RuntimeJsonValue,
       '#/properties/actionResults/items'
     )
@@ -501,6 +503,7 @@ const discoveryInputIssue = (args: unknown): string | undefined => {
         !selectors.includes(key) &&
         ![
           'purpose',
+          'inputFields',
           'inputScope',
           'includeSchemas',
           'includeResultSchema',
@@ -567,10 +570,17 @@ const discoveryInputIssue = (args: unknown): string | undefined => {
     !hasInvalidPagination &&
     !hasInvalidPresentation &&
     !hasInvalidRefreshOrSchemaOptions &&
-    ((args.purpose !== undefined &&
-      (typeof args.purpose !== 'string' ||
-        !args.purpose.trim() ||
-        !(args.names || args.operations || args.operation))) ||
+    ((args.inputFields !== undefined &&
+      (args.query === undefined ||
+        !Array.isArray(args.inputFields) ||
+        !args.inputFields.length ||
+        args.inputFields.some(
+          (field) => typeof field !== 'string' || !field.trim()
+        ))) ||
+      (args.purpose !== undefined &&
+        (typeof args.purpose !== 'string' ||
+          !args.purpose.trim() ||
+          !(args.names || args.operations || args.operation))) ||
       selectors.filter((key) => args[key] !== undefined).length > 1 ||
       ['query', 'operation', 'category'].some(
         (key) =>
@@ -592,7 +602,7 @@ const discoveryInputIssue = (args: unknown): string | undefined => {
     hasInvalidRefreshOrSchemaOptions ||
     hasInvalidSelector
   ) {
-    return 'Provide one selector: operations, operation, category, names or query; omit selectors for categories. includeSchemas requires category; includeResultSchema is boolean and requires view=usage. view (usage/full) requires a selector; nonempty schemaPaths requires exact names/operations. inputScope requires one exact native tool via names or query and cannot combine with schemaPaths; use owner-published scope choices. Partial views cannot combine with each other. refreshReason requires refresh=true and must be context-loss, delivery-failure or missing-fields.'
+    return 'inputFields requires a descriptive query and nonempty schema field names or paths. Provide one selector: operations, operation, category, names or query; omit selectors for categories. includeSchemas requires category; includeResultSchema is boolean and requires view=usage. view (usage/full) requires a selector; nonempty schemaPaths requires exact names/operations. inputScope requires one exact native tool via names or query and cannot combine with schemaPaths; use owner-published scope choices. Partial views cannot combine with each other. refreshReason requires refresh=true and must be context-loss, delivery-failure or missing-fields.'
   }
 
   return undefined
@@ -1557,6 +1567,7 @@ export const createLocalOperationTools = (
   }
 
   const admittedApisByOperation = new Map<string, (typeof registered)[number]>()
+  const admittedApisByMethod = new Map<string, (typeof registered)[number][]>()
   const admittedApiCategories = new Map<string, typeof registered>()
 
   for (const api of admittedApisByName.values()) {
@@ -1564,6 +1575,13 @@ export const createLocalOperationTools = (
     const category = contract ? contract.category : 'design'
 
     admittedApisByOperation.set(contract ? contract.operation : api.name, api)
+    if (contract) {
+      const methods = admittedApisByMethod.get(contract.method) ?? []
+
+      methods.push(api)
+      admittedApisByMethod.set(contract.method, methods)
+    }
+
     const entries = admittedApiCategories.get(category) ?? []
 
     entries.push(api)
@@ -1604,10 +1622,12 @@ export const createLocalOperationTools = (
             additionalProperties: false,
             required: ['name', 'arguments'],
             properties: {
-              name: {
-                type: 'string',
-                enum: batchActions.map((action) => action.name)
-              },
+              name: batchActions.length
+                ? {
+                    type: 'string',
+                    enum: batchActions.map((action) => action.name)
+                  }
+                : false,
               arguments: { type: 'object' },
               target: {
                 anyOf: [
@@ -1700,10 +1720,7 @@ export const createLocalOperationTools = (
                 batchActionNames.has(admittedAction.name)
               )
             )
-          : modelToolResultSchemas(
-              contract,
-              descriptor.resultStage === 'host' ? 'host' : 'owner'
-            )
+          : modelToolResultSchemas(contract)
     }
 
     const route = descriptor.execution
@@ -1721,7 +1738,9 @@ export const createLocalOperationTools = (
       registeredSelection && args.inputScope === undefined
         ? registeredToolInvocationSchemas(
             { ...modelResults, inputSchema },
-            registeredSelection
+            registeredSelection,
+            undefined,
+            modelToolDeliveryFailureSchema(contract)
           )
         : undefined
 
@@ -2035,7 +2054,9 @@ export const createLocalOperationTools = (
         (registeredSelection
           ? registeredToolInvocationSchemas(
               { ...ownerModelResults, inputSchema: selected },
-              registeredSelection
+              registeredSelection,
+              undefined,
+              modelToolDeliveryFailureSchema(contract)
             )
           : undefined)
       const results = selectedBatchResults
@@ -2238,7 +2259,7 @@ export const createLocalOperationTools = (
                     (path) => !guaranteedFields.includes(path)
                   ),
                   interpretation:
-                    'Read owner result, toolOutcome and settlement. Completion is not visual approval or durable storage. Preserve acknowledged work; follow recovery without replay. For validation request includeResultSchema=true.'
+                    'Read the owner data and the separate toolOutcome acknowledgement. Registered deliveryOutcome describes delivery of execution.value; execution and storage keep their own states. Completion is not visual approval or durable storage. Preserve acknowledged work; follow recovery without replay. For validation request includeResultSchema=true.'
                 },
           recovery: [
             guidance.recovery,
@@ -2586,9 +2607,6 @@ export const createLocalOperationTools = (
       'This catalog does not search subjects, photographs or design reference material. Use native web research for missing external facts/images, then import_reference_image for a selected source. A subject word may be absent from this capability catalog; do not infer a missing drawing capability or automatically repeat it as a tool query.'
   }
 
-  const capabilitySummary = (description: string, query = '') =>
-    summarizeCapability(description, query, searchCorpus)
-
   const nativeMenu = (tool: NativeToolDescriptor, candidate = false) => {
     const inputScopes = workflowInputScopes(tool.inputSchema)
 
@@ -2597,6 +2615,7 @@ export const createLocalOperationTools = (
       namespace: tool.namespace,
       registeredName: tool.registeredName,
       revision: tool.revision,
+      capability: capabilityBoundary(metadataText(tool)),
       description: inputScopes?.selection
         ? 'Select the next ready part with inputScopes for its complete execution guide.'
         : tool.description,
@@ -3850,7 +3869,11 @@ export const createLocalOperationTools = (
           ...entry,
           result:
             definition && 'outputSchema' in definition
-              ? projectToolDelivery(definition, entry.result)
+              ? projectToolDelivery(
+                  definition,
+                  entry.result,
+                  designActionOutcome(entry.result)
+                ).value
               : entry.result
         }
       })
@@ -3991,15 +4014,23 @@ export const createLocalOperationTools = (
                 'read',
                 ['tool-registry']
               ),
-              revision: 13,
+              revision: 14,
               name: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
               executionAccess: LocalToolAccess.INDEPENDENT,
               description:
-                'Choose the smallest missing contract: view=usage for a new operation, inputScope for owner-published branches, or schemaPaths for missing fields of a known contract. Prefer operations=["owner.method", ...] for known semantic operations; operation accepts one. names accepts exact action names, unique semantic identities or native tools (namespace.name disambiguates). Use the returned action name and execution route. With no selector returns categories; category gives a paginated scoped menu (includeSchemas=true includes schemas), query first resolves an exact registered name (including namespace.name or semantic operation); otherwise it ranks registered descriptions and nested input/output schema metadata, including enum/const choices, before name-only matches. Rank uses purpose/input coverage, then weighted relevance. Partial candidates report matched and unmatched query terms; they do not establish support for the whole purpose. Supply purpose alongside a guessed exact name for capability candidates on a miss. Exact hits preserve ambiguity. Ordinary short-name usage delivers the executable batch action and its qualified wrapper reference. Use the qualified name for wrapper usage. Use purpose terms or categories to explore related capabilities, not subjects or external reference material. Use native web research for missing subject facts/images. For a purpose combining an artifact-key target and an operation, artifactKeyExamples shows the existing batch binding with only the supplied slot omitted. A menu explains what is available; exact names retrieve the selected contract. Follow next.arguments while complete=false; exact selectors preserve selection but oversized content still uses bounded contentDelivery. Use only one selector. Selection and representation are independent: view=usage or full works with exact, query and category selectors; query/category default to menus, exact selectors default to full. schemaPaths requires exact identities. The same schemaPaths list applies to EVERY selected identity, not a union across tools. For different fields issue separate independent per-tool queries; copy inputFields only from that entry usage. For field queries use the same-entry fieldQuery example; replace only schemaPaths with needed paths from its inputFields. The example selects one path, not all fields. Never transfer paths or selectors between entries. Exact selected usage delivers complete canonical parameters, owner result fields/meaning and recovery regardless of effect or execution route. Request includeResultSchema=true with view=usage only when a machine consumer needs the complete result validation schema; direct execution needs no extra lookup. Batch usage includes its invocation envelope; no parent contract read is needed. Tools publishing inputScopes remain menus until a scope is selected. Multiple or partial descriptive matches return candidate menus with exact usage routes, even with view=usage. A unique complete match returns usage directly even when partial alternatives exist; multiple complete matches require selection. Exploratory usage lists choices; it is not an executable contract. Usage parameters are standard JSON Schema. Lookup success means all requested definitions were delivered; partial/failed means some/none were delivered, even when the read settlement is completed. IDENTITY_UNRESOLVED with recovery.kind=select_identity means only requested identities are missing or ambiguous: select an exact current identity and keep delivered siblings. DEFINITION_UNAVAILABLE means a known contract was not delivered; inspect its field/scope recovery. A narrowerQuery recovers only valid requested paths, not the rejected scope. Each tool resolves its own paths; schemaResolution reports unavailable paths and compact root/branch navigation without discarding other tools or marking the failed scope delivered. Repeated reads return requested content; prior App output does not prove model receipt. Use refresh=true only to restore missing context or failed delivery, including incomplete field delivery. For missing fields use schemaPaths and refreshReason=missing-fields; refresh preserves that partial scope. Reuse the returned resultKey for selected retained contracts; request only missing fields instead of fetching every definition again. Full inputSchema and constraints remain available. Execute known contracts directly; no discovery prerequisite for every edit. Mutations accept new values and stable IDs. Follow each execution route: batch-action uses execute_design; native-tool uses its namespace/tool. Host-operation parameters are the complete operation.arguments envelope; do not add or remove a wrapper. Native-only routes with argumentField wrap their ordinary parameters in that declared field. Request-eligible review and capture use host-operation routes, never raw canvas batch items. Native-only controls retain native routes. Exact final-response actions use the final response actions array, never a callable tool or batch item. Missing or ambiguous entries preserve unique matches and never select a similar route.',
+                'Choose the smallest missing contract: view=usage for a new operation, inputScope for owner-published branches, or schemaPaths for missing fields of a known contract. Prefer operations=["owner.method", ...] for known semantic operations; operation accepts one. names accepts exact action names, unique semantic identities or native tools (namespace.name disambiguates). Use the returned action name and execution route. With no selector returns categories; category gives a paginated scoped menu (includeSchemas=true includes schemas), query first resolves an exact registered name (including namespace.name or semantic operation); otherwise it ranks owner-declared purpose before input/output field and enum/const evidence, then identity words. Guidance about other operations does not establish a capability. Rank uses purpose coverage, then weighted relevance. Partial candidates report matched and unmatched query terms; they do not establish support for the whole purpose. Supply purpose alongside a guessed exact name for capability candidates on a miss. Exact hits preserve ambiguity. Ordinary short-name usage delivers the executable batch action and its qualified wrapper reference. Use the qualified name for wrapper usage. Use query for the intended action and object; optionally add inputFields for the parameters you need to supply. Candidates expose owner purpose, applicability boundaries and matching declared field paths; field matching is not value validation. Use purpose terms or categories to explore related capabilities, not subjects or external reference material. Use native web research for missing subject facts/images. For a purpose combining an artifact-key target and an operation, artifactKeyExamples shows the existing batch binding with only the supplied slot omitted. A menu explains what is available; exact names retrieve the selected contract. Follow next.arguments while complete=false; exact selectors preserve selection but oversized content still uses bounded contentDelivery. Use only one selector. Selection and representation are independent: view=usage or full works with exact, query and category selectors; query/category default to menus, exact selectors default to full. schemaPaths requires exact identities. The same schemaPaths list applies to EVERY selected identity, not a union across tools. For different fields issue separate independent per-tool queries; copy inputFields only from that entry usage. For field queries use the same-entry fieldQuery example; replace only schemaPaths with needed paths from its inputFields. The example selects one path, not all fields. Never transfer paths or selectors between entries. Exact selected usage delivers complete canonical parameters, owner result fields/meaning and recovery regardless of effect or execution route. Request includeResultSchema=true with view=usage only when a machine consumer needs the complete result validation schema; direct execution needs no extra lookup. Batch usage includes its invocation envelope; no parent contract read is needed. Tools publishing inputScopes remain menus until a scope is selected. Multiple or partial descriptive matches return candidate menus with exact usage routes, even with view=usage. A unique complete match returns usage directly even when partial alternatives exist; multiple complete matches require selection. Exploratory usage lists choices; it is not an executable contract. Usage parameters are standard JSON Schema. Lookup success means all requested definitions were delivered; partial/failed means some/none were delivered, even when the read settlement is completed. IDENTITY_UNRESOLVED with recovery.kind=select_identity means only requested identities are missing or ambiguous: select an exact current identity and keep delivered siblings. DEFINITION_UNAVAILABLE means a known contract was not delivered; inspect its field/scope recovery. A narrowerQuery recovers only valid requested paths, not the rejected scope. Each tool resolves its own paths; schemaResolution reports unavailable paths and compact root/branch navigation without discarding other tools or marking the failed scope delivered. Repeated reads return requested content; prior App output does not prove model receipt. Use refresh=true only to restore missing context or failed delivery, including incomplete field delivery. For missing fields use schemaPaths and refreshReason=missing-fields; refresh preserves that partial scope. Reuse the returned resultKey for selected retained contracts; request only missing fields instead of fetching every definition again. Full inputSchema and constraints remain available. Execute known contracts directly; no discovery prerequisite for every edit. Mutations accept new values and stable IDs. Follow each execution route: batch-action uses execute_design; native-tool uses its namespace/tool. Host-operation parameters are the complete operation.arguments envelope; do not add or remove a wrapper. Native-only routes with argumentField wrap their ordinary parameters in that declared field. Request-eligible review and capture use host-operation routes, never raw canvas batch items. Native-only controls retain native routes. Exact final-response actions use the final response actions array, never a callable tool or batch item. Missing or ambiguous entries preserve unique matches and never select a similar route.',
               inputSchema: {
                 type: 'object',
                 additionalProperties: false,
                 properties: {
+                  inputFields: {
+                    type: 'array',
+                    minItems: 1,
+                    uniqueItems: true,
+                    items: { type: 'string', minLength: 1 },
+                    description:
+                      'Optional required input leaf names or slash-separated schema paths with query. Matches declared inputs only, not output fields or prose. Open records do not prove arbitrary field support. Candidate match.inputFields gives the matching paths; these filters do not validate values.'
+                  },
                   purpose: {
                     type: 'string',
                     minLength: 1,
@@ -4144,7 +4175,11 @@ export const createLocalOperationTools = (
           name: action.name,
           description: action.description,
           inputSchema: (() => {
+            const discovery = isRecord(action.inputSchema)
+              ? action.inputSchema['x-design-discovery']
+              : undefined
             const ordinary = {
+              ...(discovery ? { 'x-design-discovery': discovery } : {}),
               type: 'object',
               additionalProperties: false,
               required: ['arguments'],
@@ -4174,6 +4209,7 @@ export const createLocalOperationTools = (
             }
 
             return {
+              ...(discovery ? { 'x-design-discovery': discovery } : {}),
               ...(ordinary.examples ? { examples: ordinary.examples } : {}),
               anyOf: [
                 ordinary,
@@ -4365,6 +4401,10 @@ export const createLocalOperationTools = (
     },
 
     resultOutcome: (name: string, value: unknown) => {
+      if (isRecord(value) && isRecord(value.toolOutcome)) {
+        return value.toolOutcome as ReturnType<typeof localToolOutcome>
+      }
+
       const outcome = localToolOutcome(
         name === AiDesignToolIds.DESCRIBE_DESIGN_APIS &&
           isRecord(value) &&
@@ -4717,14 +4757,33 @@ export const createLocalOperationTools = (
             metadata: CapabilityMetadata,
             name: string,
             additionalInput = ''
-          ) =>
-            matchCapability(
+          ) => {
+            const matched = matchCapability(
               metadata,
               name,
               terms,
               searchCorpus,
               additionalInput
             )
+            const fields = matchCapabilityFields(
+              metadata,
+              Array.isArray(args.inputFields)
+                ? (args.inputFields as string[])
+                : []
+            )
+
+            return {
+              ...matched,
+              score: Object.values(fields).some((paths) => !paths.length)
+                ? 0
+                : matched.score,
+              capability: capabilityBoundary(metadata),
+              match: {
+                ...matched.match,
+                ...(args.inputFields ? { inputFields: fields } : {})
+              }
+            }
+          }
 
           const matches = apis
             .map((api) => {
@@ -4810,11 +4869,9 @@ export const createLocalOperationTools = (
                 'api' in entry
                   ? {
                       name: entry.api.name,
-                      description: capabilitySummary(
-                        entry.api.description,
-                        String(args.purpose)
-                      ),
+                      description: entry.capability.purpose,
                       rank: entry.rank,
+                      capability: entry.capability,
                       match: entry.match,
                       ...(entry.artifactKeyExamples
                         ? { artifactKeyExamples: entry.artifactKeyExamples }
@@ -4826,11 +4883,9 @@ export const createLocalOperationTools = (
                     }
                   : {
                       ...nativeMenu(entry.tool, true),
-                      description: capabilitySummary(
-                        entry.tool.description,
-                        String(args.purpose)
-                      ),
+                      description: entry.capability.purpose,
                       rank: entry.rank,
+                      capability: entry.capability,
                       match: entry.match
                     }
               )
@@ -4907,7 +4962,10 @@ export const createLocalOperationTools = (
             ...page,
             apis: entries
               .slice(page.offset, page.offset + definitionPageSize)
-              .map((api) => details(api, includeSchema))
+              .map((api) => ({
+                ...details(api, includeSchema),
+                capability: capabilityBoundary(metadataText(api))
+              }))
           }
         }
 
@@ -4917,6 +4975,7 @@ export const createLocalOperationTools = (
           queryName !== undefined &&
           (admittedApisByName.has(queryName) ||
             admittedApisByOperation.has(queryName) ||
+            admittedApisByMethod.has(queryName) ||
             nativeMatches(queryName).length > 0)
 
         if (
@@ -4926,6 +4985,12 @@ export const createLocalOperationTools = (
         ) {
           throw new LocalOperationPreparationError(
             'inputScope requires one exact native tool via names:[name] or query:name. Omit inputScope to search capabilities, then select an exact returned native name; do not apply a scope to fuzzy matches.'
+          )
+        }
+
+        if (exactQuery && args.inputFields !== undefined) {
+          throw new LocalOperationPreparationError(
+            'inputFields selects candidates for a descriptive query; exact identities return their authoritative contract without filtering.'
           )
         }
 
@@ -4949,7 +5014,8 @@ export const createLocalOperationTools = (
               ...new Set(
                 [
                   admittedApisByName.get(name),
-                  admittedApisByOperation.get(name)
+                  admittedApisByOperation.get(name),
+                  ...(admittedApisByMethod.get(name) ?? [])
                 ].filter((api) => api !== undefined)
               )
             ],
@@ -5149,7 +5215,7 @@ export const createLocalOperationTools = (
             ? {}
             : {
                 message:
-                  'No lexical match; this is not evidence of an unavailable capability. Select an operation from its category.',
+                  'No matching declared purpose and input fields; this is not evidence of an unavailable capability. Select an operation from its category.',
                 categories,
                 recovery: {
                   tool: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
@@ -5176,13 +5242,11 @@ export const createLocalOperationTools = (
                     ),
                     ...(!includeDefinition
                       ? {
-                          description: capabilitySummary(
-                            entry.api.description,
-                            String(args.query)
-                          )
+                          description: entry.capability.purpose
                         }
                       : {}),
                     rank: entry.rank,
+                    capability: entry.capability,
                     match: entry.match,
                     ...(entry.artifactKeyExamples
                       ? { artifactKeyExamples: entry.artifactKeyExamples }
@@ -5210,12 +5274,10 @@ export const createLocalOperationTools = (
                         )
                       : {
                           ...nativeMenu(entry.tool, true),
-                          description: capabilitySummary(
-                            entry.tool.description,
-                            String(args.query)
-                          )
+                          description: entry.capability.purpose
                         }),
                     rank: entry.rank,
+                    capability: entry.capability,
                     match: entry.match
                   }
                 ]
@@ -5308,7 +5370,7 @@ export const createLocalOperationTools = (
         )
       }
 
-      const serializeReceipt = <T extends AiBatchReceipt>(value: T) => {
+      const prepareReceipt = <T extends AiBatchReceipt>(value: T) => {
         const submitted = new Map(
           batchActions.map((action) => [action.id, action])
         )
@@ -5346,7 +5408,8 @@ export const createLocalOperationTools = (
           (entry) => !submitted.has(entry.actionId)
         ).length
         const { context: _context, ...rest } = value
-        const output = batchMode
+
+        return batchMode
           ? {
               ...rest,
               batchSummary: {
@@ -5356,6 +5419,10 @@ export const createLocalOperationTools = (
               }
             }
           : value
+      }
+
+      const serializeReceipt = (value: AiBatchReceipt) => {
+        const output = prepareReceipt(value)
         const projected = owner.projectModelResult(name, args, output)
 
         if (!internal) {
@@ -5532,12 +5599,10 @@ export const createLocalOperationTools = (
             value.failure?.code ?? executionFailure.failure.code,
             {
               stage: value.failure?.stage ?? 'execution',
-              settlement: value.failure?.settlement ?? 'unknown',
+              settlement: localToolOutcome(value).settlement,
               recovery: batchInputRecovery(value) ?? batchFailureRecovery,
               batchFailure: executionFailure.failure,
-              executionResult: JSON.parse(
-                serializeToolPayload(value).serialized
-              )
+              executionResult: prepareReceipt(value)
             }
           ).text
         }
@@ -6087,7 +6152,7 @@ export const localToolResultInstructions =
   informationDeliveryInstructions +
   `
 Call registered tools directly with their JSON arguments. Use native tool discovery to obtain a missing callable declaration; use the App's describe_design_apis for its selected usage and constraints. Tool replies directly contain structured receipt text and any images; inspect these results without manually forwarding or transforming them.
-Use existing resultKey/fromResult, artifactId, snapshotId and inspectionId references only where the selected tool advertises them. Missing or stale retained data requires that owner's read/refresh recovery. Never repeat a completed mutation or image capture merely to recover its output. Interpret toolOutcome and partial results independently from transport completion; preserve completed steps and recover only remaining work.
+Use existing resultKey/fromResult, artifactId, snapshotId and inspectionId references only where the selected tool advertises them. Missing or stale retained data requires that owner's read/refresh recovery. Never repeat a completed mutation or image capture merely to recover its output. Interpret the separate toolOutcome acknowledgement and partial results independently from transport completion; preserve completed steps and recover only remaining work.
 For visual decisions inspect the delivered images against the request. read_design_inspections redisplays existing inspectionIds or the latest captured target/view without recapturing; inspect_drawing captures current pixels. Redisplay reuses those image bytes; it does not refresh their captured document state or certify quality.`
 
 /** Separate validated original reference rasters and bounded canvas snapshots from text. */

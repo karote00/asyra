@@ -5,9 +5,11 @@ import {
   createAiToolMiddleware,
   describeAiTool,
   embedAiToolSchema,
+  projectAiToolSchema,
   inspectAiToolResult,
   type AiToolContractInput
 } from '../tool-contract.js'
+import type { AiJsonValue } from '../types.js'
 import { createAiInvoker } from '../invocation.js'
 
 const definition = (): AiToolContractInput => ({
@@ -65,7 +67,6 @@ describe('common tool contracts', () => {
       outputSchema: {},
       receipt: { path: '/retained', owner: 'context', callback: 'unsafe' }
     },
-    { path: '', outputSchema: {} },
     { path: 'summary', outputSchema: {} },
     { path: '/bad~2pointer', outputSchema: {} },
     { path: '/summary', outputSchema: undefined },
@@ -556,4 +557,81 @@ it('supplies validation stage while retaining rejected output without executing 
   })
   expect(stages).toEqual(['input', 'output'])
   expect(execute).toHaveBeenCalledOnce()
+})
+
+it('projects only reachable local constraints without rewriting literal data or expanding cycles', () => {
+  const node: AiJsonValue = {
+    type: 'object',
+    properties: {
+      count: { $ref: '#/properties/count', minimum: 2 },
+      next: { anyOf: [{ type: 'null' }, { $ref: '#/$defs/node' }] }
+    },
+    required: ['count'],
+    additionalProperties: false,
+    'x-runtime-value': 'document',
+    examples: [{ $ref: '#/literal-user-data' }]
+  }
+  const root: AiJsonValue = {
+    type: 'object',
+    properties: {
+      count: { type: 'integer', minimum: 0 },
+      payload: node,
+      unrelated: { description: 'Must not enter the selected contract' }
+    },
+    $defs: { node, unused: { type: 'string' } }
+  }
+  const projected = projectAiToolSchema(node, root)
+
+  expect(projected).toMatchObject({
+    properties: { count: { $ref: '#/$defs/reference0', minimum: 2 } },
+    'x-runtime-value': 'document',
+    examples: [{ $ref: '#/literal-user-data' }],
+    $defs: {
+      reference0: { type: 'integer', minimum: 0 },
+      reference1: {
+        properties: {
+          next: { anyOf: [{ type: 'null' }, { $ref: '#/$defs/reference1' }] }
+        }
+      }
+    }
+  })
+  expect(Object.keys((projected as { $defs: object }).$defs)).toHaveLength(2)
+  expect(JSON.stringify(projected)).not.toContain('Must not enter')
+  expect(JSON.stringify(projected)).not.toContain('unused')
+  expect(node).toMatchObject({
+    properties: { count: { $ref: '#/properties/count' } }
+  })
+  expect(projectAiToolSchema(root, root)).toBe(root)
+})
+
+it('projects escaped pointers and rejects missing reference targets instead of weakening them', () => {
+  const root = { properties: { 'a/b~c': { const: 3 } } }
+
+  expect(projectAiToolSchema({ $ref: '#/properties/a~1b~0c' }, root)).toEqual({
+    $ref: '#/$defs/reference0',
+    $defs: { reference0: { const: 3 } }
+  })
+  expect(() => projectAiToolSchema({ $ref: '#/missing' }, root)).toThrow(
+    'Unknown local schema reference'
+  )
+  expect(() => projectAiToolSchema({ $ref: '#/properties/a~2' }, root)).toThrow(
+    'Invalid local schema reference'
+  )
+})
+
+it('admits an explicitly declared root delivery view without changing the owner schema', () => {
+  const contract = createAiToolContract({
+    name: 'root-view',
+    description: 'Deliver the declared public fields.',
+    revision: 1,
+    inputSchema: {},
+    outputSchema: { const: { count: 1, work: 2 } },
+    effect: 'read',
+    resources: [],
+    lifecycle: { cancellation: 'cooperative', retry: 'never', output: 'value' },
+    delivery: { path: '', outputSchema: { const: { count: 1 } } }
+  })
+
+  expect(contract.outputSchema).toEqual({ const: { count: 1, work: 2 } })
+  expect(contract.delivery?.path).toBe('')
 })

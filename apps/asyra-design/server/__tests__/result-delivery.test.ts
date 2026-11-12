@@ -20,7 +20,8 @@ it('identifies the rejected alias and exact request references without losing a 
   await delivery.capture(
     undefined,
     view,
-    new Set([retained.snapshotId, retained.leaseId])
+    new Set([retained.snapshotId, retained.leaseId]),
+    { status: 'success', settlement: 'completed' }
   )
 
   const receipt = delivery.finish(
@@ -61,6 +62,7 @@ it('retains only public authored input fields after successful execution', async
     'prepare',
     { toolOutcome: { status: 'success' } },
     new Set(),
+    { status: 'success', settlement: 'completed' },
     {
       value: {
         artifactId: 'request-only',
@@ -101,6 +103,7 @@ it('acknowledges saved operation results with reusable provenance and shape with
     'panes',
     { compositionIds: ['private-pane-id'] },
     new Set(),
+    { status: 'success', settlement: 'completed' },
     undefined,
     'design_operations.prepare_and_apply_design'
   )

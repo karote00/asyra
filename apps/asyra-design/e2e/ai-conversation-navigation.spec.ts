@@ -291,6 +291,13 @@ test('ordinary selected-object and multi-object style revisions preserve history
   expect(requests[0].context.selectedElements.map(({ id }) => id)).toEqual([
     ids[0]
   ])
+  // Execution completion does not force the separately scheduled render frame.
+  await expect
+    .poll(async () => (await read())[0])
+    .toMatchObject({
+      fill: '#ff0000',
+      rendered: '#ff0000'
+    })
   const first = await read()
 
   expect(first[0]).toMatchObject({ fill: '#ff0000', rendered: '#ff0000' })
@@ -317,14 +324,18 @@ test('ordinary selected-object and multi-object style revisions preserve history
   expect(
     requests[1].context.selectedElements.map(({ id }) => id).sort()
   ).toEqual(ids.slice(0, 2).sort())
+  await expect
+    .poll(async () =>
+      (await read())
+        .slice(0, 2)
+        .map(({ fill, rendered }) => ({ fill, rendered }))
+    )
+    .toEqual([
+      { fill: '#0000ff', rendered: '#0000ff' },
+      { fill: '#0000ff', rendered: '#0000ff' }
+    ])
   const second = await read()
 
-  expect(
-    second.slice(0, 2).map(({ fill, rendered }) => ({ fill, rendered }))
-  ).toEqual([
-    { fill: '#0000ff', rendered: '#0000ff' },
-    { fill: '#0000ff', rendered: '#0000ff' }
-  ])
   expect(second[2]).toEqual(initial[2])
   expect(await getUndoHistoryDepth(page)).toBe(depth + 2)
   await page.getByRole('button', { name: 'Close Agent panel' }).click()

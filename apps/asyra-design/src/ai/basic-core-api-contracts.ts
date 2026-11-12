@@ -157,6 +157,13 @@ const getElementMetadataApi = defineBasicApi({
 })
 
 const getElementChildrenApi = defineBasicApi({
+  discovery: {
+    purpose: 'Read a page of direct child element IDs.',
+    terms: ['pagination', 'offset', 'limit'],
+    boundaries: [
+      'Offset is a pagination index; this tool never moves elements.'
+    ]
+  },
   owner: 'core',
   method: 'getElementChildren',
   effect: 'read',
@@ -277,6 +284,15 @@ const workspaceToCanvasApi = defineBasicApi({
 })
 
 const workspaceToElementLocalApi = defineBasicApi({
+  resultValueSchema: { anyOf: [apiPosition, { type: 'null' }] },
+  resultPaths: ['/value/x', '/value/y'],
+  discovery: {
+    purpose: 'Convert a workspace point to element-local coordinates.',
+    terms: ['transform', 'position', 'parent'],
+    boundaries: [
+      'Read-only conversion; returns null when the transform is unavailable.'
+    ]
+  },
   description:
     'Convert a workspace position into a known element local coordinate space; returns null if the transform is unavailable.',
   owner: 'core',
@@ -382,6 +398,14 @@ const createElementsInParentApi = defineBasicApi({
 })
 
 const updateElementPropertiesApi = defineBasicApi({
+  discovery: {
+    purpose: 'Update registered element component properties.',
+    terms: ['property', 'values'],
+    boundaries: [
+      'Only registered properties and aliases; arbitrary open-record keys are not supported.',
+      'Element metadata name, visible and lock require the element data operation.'
+    ]
+  },
   owner: 'core',
   method: 'updateElementProperties',
   resultKind: 'property-mutation',

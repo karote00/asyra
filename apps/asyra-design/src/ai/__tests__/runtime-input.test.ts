@@ -307,7 +307,7 @@ it('advertises one complete contract for every browser tool without exposing exe
         true
       )
       if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE) {
-        expect(action.revision).toBe(5)
+        expect(action.revision).toBe(6)
       }
 
       expect(action.lifecycle.retry).not.toBe('read-only')

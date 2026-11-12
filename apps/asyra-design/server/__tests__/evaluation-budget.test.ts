@@ -119,7 +119,7 @@ it('admits the drawing ceiling with explicit timed or untimed reporting', () => 
   const clock = vi.spyOn(Date, 'now').mockReturnValue(now)
 
   try {
-    const policy = { workDeadlineAt: now + 900000, reportTimeoutMs: 60000 }
+    const policy = { workDeadlineAt: now + 1800000, reportTimeoutMs: 60000 }
 
     expect(readEvaluationWindow(policy)).toEqual(policy)
     expect(readEvaluationWindow({ ...policy, reportTimeoutMs: null })).toEqual({
@@ -130,7 +130,7 @@ it('admits the drawing ceiling with explicit timed or untimed reporting', () => 
       readEvaluationWindow({ ...policy, reportTimeoutMs: 300000 })
     ).toEqual({ ...policy, reportTimeoutMs: 300000 })
     expect(() =>
-      readEvaluationWindow({ ...policy, workDeadlineAt: now + 900001 })
+      readEvaluationWindow({ ...policy, workDeadlineAt: now + 1800001 })
     ).toThrow('Invalid evaluation window')
     expect(() =>
       readEvaluationWindow({ ...policy, reportTimeoutMs: 300001 })

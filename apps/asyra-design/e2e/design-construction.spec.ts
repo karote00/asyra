@@ -832,6 +832,7 @@ for (const scenario of [
     const designs: PreparedDesign[] = []
     const exchange = createBatchExchange()
     const controller = new AbortController()
+    let workflowReply: Awaited<ReturnType<typeof invokeLocalTool>> | undefined
     let workflowResult: ReturnType<typeof JSON.parse>
     let serverError: unknown
     const referenced = 'boundaryReferences' in scenario
@@ -908,30 +909,28 @@ for (const scenario of [
           }
         )
         const main = createLocalDesignWorkflow(tools, operations)
-        const result = await invokeLocalTool(
+
+        workflowReply = await invokeLocalTool(
           main,
           main.definitions[0],
           scenario.input,
           controller.signal
         )
 
-        workflowResult = JSON.parse(result.text)
+        workflowResult = JSON.parse(workflowReply.text)
         if (referenced) {
-          expect(workflowResult.toolOutcome.status).toBe('partial')
+          expect(workflowReply.outcome.status).toBe('partial')
           const recovery = workflowResult.recoveryInvocation
 
           expect(recovery.arguments.parts).toHaveLength(1)
           expect(JSON.stringify(recovery.arguments)).not.toContain('vertices')
-          workflowResult = JSON.parse(
-            (
-              await invokeLocalTool(
-                main,
-                main.definitions[0],
-                recovery.arguments,
-                controller.signal
-              )
-            ).text
+          workflowReply = await invokeLocalTool(
+            main,
+            main.definitions[0],
+            recovery.arguments,
+            controller.signal
           )
+          workflowResult = JSON.parse(workflowReply.text)
           expect(attempts).toBe(3)
         }
 
@@ -1028,7 +1027,11 @@ for (const scenario of [
         { timeout: 90000 }
       )
       expect(serverError).toBeUndefined()
-      expect(workflowResult.toolOutcome).toMatchObject({
+      if (!workflowReply) {
+        throw new Error('Missing workflow invocation reply')
+      }
+
+      expect(workflowReply.outcome).toMatchObject({
         status: 'success',
         settlement: 'completed'
       })

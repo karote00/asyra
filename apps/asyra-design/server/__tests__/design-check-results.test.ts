@@ -79,6 +79,7 @@ describe('retained design check results', () => {
 
   it('detaches returned check data and invalidates unknown changes', () => {
     const store = createDesignCheckResults()
+
     store.record({
       id: 'join',
       origin: 'tool',

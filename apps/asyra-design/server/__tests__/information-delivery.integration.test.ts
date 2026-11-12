@@ -1059,14 +1059,17 @@ it('preserves saved discovery scope, partial results, ambiguity and foreign-key 
 
     expect(selected.tools).toEqual([saved.tools[0]])
     expect(selected.tools[0].definition).toEqual(saved.tools[0].definition)
-    const partial = await read({
-      names: ['left.choose', 'absent'],
-      fromResult: saved.resultKey
-    })
+    const partialReply = await invokeLocalTool(
+      owner,
+      definition,
+      { names: ['left.choose', 'absent'], fromResult: saved.resultKey },
+      new AbortController().signal
+    )
+    const partial = JSON.parse(partialReply.text)
 
     expect(partial.tools).toEqual([saved.tools[0]])
     expect(partial.missingNames).toEqual(['absent'])
-    expect(partial.toolOutcome.status).toBe('partial')
+    expect(partialReply.outcome?.status).toBe('partial')
     const ambiguous = await read({
       names: ['choose'],
       fromResult: saved.resultKey

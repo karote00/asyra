@@ -12,7 +12,7 @@ import { operationInputIssue } from '../operation-input-schema'
 import { deliverPreparedDesign } from '../../src/ai/prepared-design'
 import { admitPreparedDesignDelivery } from '../../src/ai/prepared-design-admission'
 import type { PreparedElementDescriptor } from '../../src/common-apis'
-import { invokeLocalTool, localToolOutcome } from '../local-tool-invocation'
+import { invokeLocalTool } from '../local-tool-invocation'
 import {
   describeBasicApiResult,
   basicApiResultSchema,
@@ -92,7 +92,10 @@ vi.mock('../native-provider-config', () => ({
     dispose: vi.fn(async () => undefined)
   }))
 }))
-vi.mock('node:child_process', () => ({ spawn }))
+vi.mock('node:child_process', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('node:child_process')>()),
+  spawn
+}))
 
 it('execution proof resolves batched semantic identities and applies ordered ready parts', async () => {
   const hadWindow = 'window' in globalThis
@@ -334,20 +337,17 @@ it('execution proof repairs rejected source through the same request preparation
     throw new Error('Missing preparation definition')
   }
 
-  const missing = JSON.parse(
-    (
-      await invokeLocalTool(
-        tools,
-        definition,
-        {
-          draft: { type: 'frame', name: 'Frame', height: 40, children: [] }
-        },
-        signal
-      )
-    ).text
+  const missingReply = await invokeLocalTool(
+    tools,
+    definition,
+    {
+      draft: { type: 'frame', name: 'Frame', height: 40, children: [] }
+    },
+    signal
   )
+  const missing = JSON.parse(missingReply.text)
 
-  expect(missing.toolOutcome).toMatchObject({
+  expect(missingReply.outcome).toMatchObject({
     status: 'failed',
     settlement: 'not-started'
   })
@@ -358,11 +358,15 @@ it('execution proof repairs rejected source through the same request preparation
 
   missingCorrection.repair.replacements[0].value = 60
   expect(missingCorrection).not.toHaveProperty('draft')
-  const completed = JSON.parse(
-    (await invokeLocalTool(tools, definition, missingCorrection, signal)).text
+  const completedReply = await invokeLocalTool(
+    tools,
+    definition,
+    missingCorrection,
+    signal
   )
+  const completed = JSON.parse(completedReply.text)
 
-  expect(completed.toolOutcome).toMatchObject({
+  expect(completedReply.outcome).toMatchObject({
     status: 'success',
     settlement: 'completed'
   })
@@ -1284,17 +1288,14 @@ it('execution proof exports compound resources before cleanup', async () => {
   let artifactId: string | undefined
 
   try {
-    const produced = JSON.parse(
-      (
-        await host.invoke({
-          name: 'workflow.prepare_and_apply_design',
-          callId: 'produce',
-          input: { draft: proofDraft, inspection: 'defer' }
-        })
-      ).text
-    )
+    const producedReply = await host.invoke({
+      name: 'workflow.prepare_and_apply_design',
+      callId: 'produce',
+      input: { draft: proofDraft, inspection: 'defer' }
+    })
+    const produced = JSON.parse(producedReply.text)
 
-    expect(produced.toolOutcome).toMatchObject({
+    expect(producedReply.outcome).toMatchObject({
       status: 'success',
       settlement: 'completed'
     })
@@ -1492,10 +1493,9 @@ it('execution proof composes preparation and canonical dispatch without repeated
     'prepare_design',
     'apply_prepared_design'
   ])
-  expect(result.toolOutcome).toMatchObject({
-    status: 'success',
-    settlement: 'completed'
-  })
+  expect(result.actionResults).toMatchObject([
+    { actionName: 'apply_prepared_design', result: { status: 'complete' } }
+  ])
   expect(result).not.toHaveProperty('measurementIssues')
   expect(result.failedStep).toBeUndefined()
   expect(compile).toHaveBeenCalledTimes(1)
@@ -2100,20 +2100,26 @@ it('execution proof recovers a rejected reference through a different original s
   const attach = vi.fn(images.addReference)
   const references = createLocalReferenceTools(attach, download)
   const signal = new AbortController().signal
-  const rejected = JSON.parse(
-    await references.call(
-      'import_reference_image',
-      {
-        imageUrl: 'https://example.org/blocked.png',
-        sourceUrl: 'https://example.org/page'
-      },
-      signal
-    )
+  const referenceDefinition = references.definitions.find(
+    (entry) => entry.name === 'import_reference_image'
   )
 
-  expect(
-    evaluationToolStop({ ...rejected, toolOutcome: localToolOutcome(rejected) })
-  ).toBeUndefined()
+  if (!referenceDefinition) {
+    throw new Error('Missing reference contract')
+  }
+
+  const referenceReply = await invokeLocalTool(
+    references,
+    referenceDefinition,
+    {
+      imageUrl: 'https://example.org/blocked.png',
+      sourceUrl: 'https://example.org/page'
+    },
+    signal
+  )
+  const rejected = JSON.parse(referenceReply.text)
+
+  expect(evaluationToolStop(referenceReply)).toBeUndefined()
   expect(rejected.references[0].failure).toMatchObject({
     stage: 'response',
     reason: 'http',
@@ -3246,8 +3252,8 @@ it('execution proof preserves a rejected mechanical repair as not-started across
       }
     })
 
+    expect(verified.outcome).toMatchObject({ status: 'success' })
     expect(JSON.parse(verified.text)).toMatchObject({
-      toolOutcome: { status: 'success' },
       verification: { status: 'decision-required' }
     })
     const reply = await host.invoke({
@@ -5378,7 +5384,7 @@ it('execution proof preserves owner result distinctions through native contract 
       new AbortController().signal
     )
 
-    expect(JSON.parse(reply.text).toolOutcome.status).toBe(status)
+    expect(reply.outcome.status).toBe(status)
     expect(reply.success).toBe(status === 'success')
     expect(call).toHaveBeenCalledOnce()
     await invokeLocalTool(
@@ -5432,11 +5438,11 @@ it('execution proof preserves owner result distinctions through native contract 
     expect(JSON.parse(reply.text)).toMatchObject({
       status: 'failed',
       settlement: 'completed',
-      value: value ?? null,
-      toolOutcome: {
-        status: 'failed',
-        settlement: 'completed'
-      }
+      value: value ?? null
+    })
+    expect(reply.outcome).toMatchObject({
+      status: 'failed',
+      settlement: 'completed'
     })
     expect(JSON.parse(reply.text).code).toBe('OWNER_RESULT_INVALID')
     expect(call).toHaveBeenCalledOnce()
@@ -5683,8 +5689,11 @@ it('execution proof preserves Core mutation and valid no-op receipts through nat
       const replacedBinding = name === 'shareElementPropertyTargets'
 
       expect(JSON.parse(second.text), name).toMatchObject({
-        status: replacedBinding ? 'complete' : 'no-change',
-        toolOutcome: { status: 'success', settlement: 'completed' }
+        status: replacedBinding ? 'complete' : 'no-change'
+      })
+      expect(second.outcome).toMatchObject({
+        status: 'success',
+        settlement: 'completed'
       })
       if (replacedBinding) {
         expect(after.props).not.toEqual(before.props)
@@ -6025,7 +6034,9 @@ it('execution proof preserves exact submitted inspection pixels and delivery ide
   onTestFinished
 }) => {
   vi.stubGlobal('window', {})
-  onTestFinished(() => vi.unstubAllGlobals())
+  onTestFinished(() => {
+    vi.unstubAllGlobals()
+  })
   for (const mode of [
     'saved',
     'storage-failed',
@@ -7179,7 +7190,7 @@ it('execution proof delivers selected operation contracts without exhaustive dis
   expect(rejected.success).toBe(false)
   const rejection = JSON.parse(rejected.text)
 
-  expect(rejection.toolOutcome).toMatchObject({
+  expect(rejected.outcome).toMatchObject({
     status: 'failed',
     settlement: 'not-started'
   })
@@ -7368,14 +7379,14 @@ it('execution proof distinguishes inspection lookup coverage from completed read
   const failed = await read(['/properties/missing', '/properties/absent'])
 
   expect(failed.success).toBe(false)
-  expect(JSON.parse(failed.text).toolOutcome).toMatchObject({
+  expect(failed.outcome).toMatchObject({
     status: 'failed',
     settlement: 'completed'
   })
   const partial = await read(['/properties/facts'])
 
   expect(partial.success).toBe(false)
-  expect(JSON.parse(partial.text).toolOutcome).toMatchObject({
+  expect(partial.outcome).toMatchObject({
     status: 'partial',
     settlement: 'completed'
   })
@@ -8321,63 +8332,60 @@ const proveBudgetRecovery = async (limit: number, withBrief = false) => {
     }
 
     const signal = new AbortController().signal
-    const result = JSON.parse(
-      (
-        await invokeLocalTool(
-          main,
-          definition,
-          {
-            draft: {
-              type: 'group',
-              name: 'Repeated panels',
-              ...(withBrief
-                ? {
-                    brief: {
-                      intent: 'Repeat facade panels',
-                      viewpoint: 'Oblique',
-                      sources: ['User dimensions'],
-                      assumptions: ['Finish provisional'],
-                      checks: []
-                    }
-                  }
-                : {}),
-              key: 'root',
-              projection: {
-                azimuth: 30,
-                elevation: 30,
-                scale: 1,
-                originX: 0,
-                originY: 0
-              },
-              children: [
+    const resultReply = await invokeLocalTool(
+      main,
+      definition,
+      {
+        draft: {
+          type: 'group',
+          name: 'Repeated panels',
+          ...(withBrief
+            ? {
+                brief: {
+                  intent: 'Repeat facade panels',
+                  viewpoint: 'Oblique',
+                  sources: ['User dimensions'],
+                  assumptions: ['Finish provisional'],
+                  checks: []
+                }
+              }
+            : {}),
+          key: 'root',
+          projection: {
+            azimuth: 30,
+            elevation: 30,
+            scale: 1,
+            originX: 0,
+            originY: 0
+          },
+          children: [
+            {
+              type: 'pattern',
+              key: 'panels',
+              name: 'Panels',
+              origin: { x: 0, y: 0, z: 0 },
+              axes: [{ count: limit, step: { x: 0, y: 0, z: 1 } }],
+              faces: [
                 {
-                  type: 'pattern',
-                  key: 'panels',
-                  name: 'Panels',
-                  origin: { x: 0, y: 0, z: 0 },
-                  axes: [{ count: limit, step: { x: 0, y: 0, z: 1 } }],
-                  faces: [
-                    {
-                      key: 'face',
-                      name: 'Face',
-                      fill: '#123456',
-                      vertices: [
-                        { x: 0, y: 0, z: 0 },
-                        { x: 10, y: 0, z: 0 },
-                        { x: 10, y: 0, z: 10 }
-                      ]
-                    }
+                  key: 'face',
+                  name: 'Face',
+                  fill: '#123456',
+                  vertices: [
+                    { x: 0, y: 0, z: 0 },
+                    { x: 10, y: 0, z: 0 },
+                    { x: 10, y: 0, z: 10 }
                   ]
                 }
               ]
-            },
-            inspection: 'defer',
-            response: 'compact'
-          },
-          signal
-        )
-      ).text
+            }
+          ]
+        },
+        inspection: 'defer',
+        response: 'compact'
+      },
+      signal
     )
+    const result = JSON.parse(resultReply.text)
     const plan = trace.mock.calls.find(
       ([stage, value]) =>
         stage === 'action_completed' && value.result?.retainedDraft?.partitions
@@ -8385,20 +8393,26 @@ const proveBudgetRecovery = async (limit: number, withBrief = false) => {
 
     expect(plan.budget.observed.expandedNodes).toBe(limit + 1)
     expect(plan.budget.allowed.expandedNodes).toBe(limit)
-    expect(plan.toolOutcome.status).toBe('success')
+    expect(plan).toMatchObject({
+      available: true,
+      retainedDraft: { partitions: expect.any(Array) }
+    })
     expect(
       trace.mock.calls.filter(([stage]) => stage === 'action_failed')
     ).toEqual([])
     expect(JSON.stringify(main.definitions)).toContain(
       `${limit} expanded objects`
     )
-    expect(result.toolOutcome.settlement).toBe('completed')
+    expect(resultReply.outcome.settlement).toBe('completed')
     expect(result.recoveryInvocation).toBeUndefined()
-    expect(
-      result.parts.map(
-        (part: { toolOutcome: { status: string } }) => part.toolOutcome.status
-      )
-    ).toEqual(['success', 'success'])
+    expect(result.parts).toHaveLength(2)
+    for (const part of result.parts) {
+      expect(part).toMatchObject({
+        applicable: true,
+        actionResults: [{ result: { status: 'complete' } }]
+      })
+    }
+
     expect(entries.size).toBe(limit + 1)
     expect(
       [...parents.values()].filter((parent) => parent === 'workspace')
@@ -8587,7 +8601,7 @@ it('execution proof delivers layered repetition before parameters with canonical
   )
   const result = JSON.parse(reply.text)
 
-  expect(result.toolOutcome.settlement).toBe('completed')
+  expect(reply.outcome.settlement).toBe('completed')
   expect(applied).toHaveLength(1)
   expect(applied[0].entries).toEqual(
     prepareDesign(invocation.arguments.draft, JSON.parse(reply.text).artifactId)
@@ -8885,18 +8899,17 @@ it('execution proof delivers shared motifs through the main workflow without ext
     signal
   )
 
-  expect(JSON.parse(reply.text).toolOutcome.settlement).toBe('completed')
+  expect(reply.outcome.settlement).toBe('completed')
   expect(applied).toHaveLength(1)
   expect(applied[0].entries).toEqual(
     prepareDesign(invocation.arguments.draft, JSON.parse(reply.text).artifactId)
       .entries
   )
   const input = { draft: fixture.compact.draft, inspection: 'defer' }
-  const recorded = JSON.parse(
-    (await invokeLocalTool(main, definition, input, signal)).text
-  )
+  const recordedReply = await invokeLocalTool(main, definition, input, signal)
+  const recorded = JSON.parse(recordedReply.text)
 
-  expect(recorded.toolOutcome.settlement).toBe('completed')
+  expect(recordedReply.outcome.settlement).toBe('completed')
   expect(applied[1].entries).toEqual(
     prepareDesign(fixture.input.draft, recorded.artifactId).entries
   )
@@ -8955,9 +8968,7 @@ it('execution proof preserves shared motifs geometry budget lifetime and recover
     signal = new AbortController().signal
 
   const invoke = async (input: unknown) =>
-    JSON.parse(
-      (await invokeLocalTool(main, main.definitions[0], input, signal)).text
-    )
+    invokeLocalTool(main, main.definitions[0], input, signal)
 
   const invalid = structuredClone(fixture.compact.draft)
   const invalidGrid = invalid.children.find((c) => c.type === 'surface-grid')
@@ -8969,7 +8980,7 @@ it('execution proof preserves shared motifs geometry budget lifetime and recover
   invalidGrid.motifs = {
     template: 'missing'
   }
-  const result = await invoke({
+  const resultReply = await invoke({
     parts: [
       { key: 'first', draft: fixture.compact.draft },
       { key: 'second', parentPart: 'first', draft: invalid }
@@ -8977,14 +8988,16 @@ it('execution proof preserves shared motifs geometry budget lifetime and recover
     inspection: 'defer'
   })
 
-  expect(result.toolOutcome.status).toBe('partial')
+  const result = JSON.parse(resultReply.text)
+
+  expect(resultReply.outcome?.status).toBe('partial')
   expect(execute).toHaveBeenCalledOnce()
   const rejected = result.parts[1]
 
   expect(rejected.message).toContain('missing')
   expect(rejected.draftId).toEqual(expect.any(String))
   const index = invalid.children.findIndex((c) => c.type === 'surface-grid')
-  const repaired = await invoke({
+  const repairedReply = await invoke({
     repair: {
       draftId: rejected.draftId,
       replacements: [
@@ -8998,7 +9011,7 @@ it('execution proof preserves shared motifs geometry budget lifetime and recover
     inspection: 'defer'
   })
 
-  expect(repaired.toolOutcome.settlement).toBe('completed')
+  expect(repairedReply.outcome?.settlement).toBe('completed')
   expect(execute).toHaveBeenCalledTimes(2)
   expect(applied[1].entries).toHaveLength(13)
 })
@@ -9072,16 +9085,16 @@ it('execution proof follows union entry navigation and valid recovery without re
       new AbortController().signal
     )
 
-    return JSON.parse(reply.text)
+    return { value: JSON.parse(reply.text), outcome: reply.outcome }
   }
 
-  const usage = await read({
+  const { value: usage, outcome: usageOutcome } = await read({
     names: [action.name],
     view: 'usage',
     includeResultSchema: true
   })
 
-  expect(usage.toolOutcome.status, JSON.stringify(usage)).toBe('success')
+  expect(usageOutcome.status, JSON.stringify(usage)).toBe('success')
   for (const entry of [...usage.apis, ...usage.tools]) {
     const path = entry.inputFields.find((value: string) =>
       value.endsWith('/oneOf/0')
@@ -9095,17 +9108,27 @@ it('execution proof follows union entry navigation and valid recovery without re
       refreshReason: _reason,
       ...selector
     } = entry.definition.refresh.arguments
-    const scoped = await read({ ...selector, schemaPaths: [path] })
+    const { value: scoped, outcome: scopedOutcome } = await read({
+      ...selector,
+      schemaPaths: [path]
+    })
 
     expect([...scoped.apis, ...(scoped.tools ?? [])]).toHaveLength(1)
-    expect(scoped.toolOutcome.status).toBe('success')
-    const invalid = await read({ ...selector, schemaPaths: ['/missing'] })
+    expect(scopedOutcome.status).toBe('success')
+    const { value: invalid, outcome: invalidOutcome } = await read({
+      ...selector,
+      schemaPaths: ['/missing']
+    })
+
+    expect(invalidOutcome).toMatchObject({ status: 'failed' })
     const rejected = [...invalid.apis, ...(invalid.tools ?? [])][0]
 
     expect(rejected.definition.coverage).toBe('none')
-    const recovered = await read(rejected.definition.recover.arguments)
+    const { value: recovered, outcome: recoveredOutcome } = await read(
+      rejected.definition.recover.arguments
+    )
 
-    expect(recovered.toolOutcome.status).toBe('success')
+    expect(recoveredOutcome.status).toBe('success')
     expect([...recovered.apis, ...(recovered.tools ?? [])]).toHaveLength(1)
     expect(
       [...recovered.apis, ...(recovered.tools ?? [])][0].definition.coverage
@@ -9380,7 +9403,7 @@ it('execution proof projects compact diagnostics after owner evidence without re
   const result = JSON.parse(reply.text)
 
   // Settled writes require no unrequested quality follow-up.
-  expect(result.toolOutcome).toMatchObject({
+  expect(reply.outcome).toMatchObject({
     status: 'success',
     settlement: 'completed'
   })
@@ -9561,7 +9584,8 @@ it('execution proof preserves retained images during direct response reprojectio
   await delivery.capture(
     'group',
     { actionResults: selected.fields.receipt },
-    new Set()
+    new Set(),
+    { status: 'success', settlement: 'completed' }
   )
   const selectedContent = await localToolContent(
     JSON.stringify(selected),
@@ -9731,18 +9755,16 @@ it('execution proof delivers projected ovals through projection and canonical di
     signal
   )
 
-  expect(JSON.parse(reply.text).toolOutcome.settlement).toBe('completed')
+  expect(reply.outcome.settlement).toBe('completed')
   expect(applied).toHaveLength(1)
   expect(applied[0].entries).toEqual(
     prepareDesign(invocation.arguments.draft, JSON.parse(reply.text).artifactId)
       .entries
   )
   const input = { draft: fixture.compact.draft, inspection: 'defer' }
-  const recorded = JSON.parse(
-    (await invokeLocalTool(main, definition, input, signal)).text
-  )
+  const recordedReply = await invokeLocalTool(main, definition, input, signal)
 
-  expect(recorded.toolOutcome.settlement).toBe('completed')
+  expect(recordedReply.outcome.settlement).toBe('completed')
   expect(applied[1].entries).toHaveLength(9)
   expect(
     applied[1].entries.slice(1).every((e) => e.descriptor.type === 'oval')
@@ -10327,7 +10349,7 @@ it('execution proof delivers complete non-scoped usage without mutation or a ful
   const result = await invokeLocalTool(tools, target, input, signal)
 
   expect(result.success).toBe(true)
-  expect(JSON.parse(result.text).toolOutcome.status).toBe('success')
+  expect(result.outcome.status).toBe('success')
   expect(execute).not.toHaveBeenCalled()
 })
 
@@ -10374,16 +10396,15 @@ it('execution proof follows saved material recovery without reinjecting resolved
   )
   const signal = new AbortController().signal
 
-  const call = async (args: unknown) =>
-    JSON.parse(
-      (await invokeLocalTool(workflow, workflow.definitions[0], args, signal))
-        .text
-    )
+  const call = (args: unknown) =>
+    invokeLocalTool(workflow, workflow.definitions[0], args, signal)
 
-  const rejected = await call({
+  const rejectedReply = await call({
     ...saved.input,
     materialSourceId: seed.artifactId
   })
+
+  const rejected = JSON.parse(rejectedReply.text)
 
   expect(rejected.geometryIssue).toMatchObject({
     code: 'NONPLANAR_FACE',
@@ -10393,19 +10414,19 @@ it('execution proof follows saved material recovery without reinjecting resolved
   const next = structuredClone(rejected.repairGuide.arguments)
 
   next.repair.replacements = saved.replacements
-  const repaired = await call(next)
+  const repairedReply = await call(next)
+  const repaired = JSON.parse(repairedReply.text)
 
-  expect(repaired.toolOutcome, JSON.stringify(repaired)).toMatchObject({
+  expect(repairedReply.outcome, JSON.stringify(repaired)).toMatchObject({
     status: 'success',
     settlement: 'completed'
   })
-  // This boundary fixture intentionally has no browser mechanical reviewer.
-  // Completed writes must remain partial until that independent follow-up exists.
+  // Deferred inspection does not gate acknowledged writes.
   expect(repaired.completedSteps).toEqual([
     'prepare_design',
     'apply_prepared_design'
   ])
-  expect(repaired.toolOutcome.issues).toEqual([])
+  expect(repairedReply.outcome.issues).toEqual([])
   expect(next).not.toHaveProperty('materialSourceId')
   expect(next).not.toHaveProperty('draft')
   expect(execute).toHaveBeenCalledTimes(1)
@@ -10506,7 +10527,9 @@ it('execution proof declares the saved model receipt without internal result fie
         saved.declaredOperation
       )
     ).toBeDefined()
-    expect(operationInputIssue(saved.output, guide.results)).toBeUndefined()
+    expect(guide.results.interpretation).toContain(
+      'separate toolOutcome acknowledgement'
+    )
     expect(Buffer.byteLength(reply.text)).toBeLessThan(saved.baselineReplyBytes)
     expect(execute).not.toHaveBeenCalled()
 
@@ -10688,14 +10711,9 @@ it('execution proof preserves raw browser prefixes at the host failure boundary'
         }
       ).text
   )
-  const project = vi.fn((_name: string, _input: unknown, value: unknown) => {
-    const receipt = value as { executionResult: unknown }
-
-    return {
-      ...receipt,
-      executionResult: projectToolResultFields(receipt.executionResult, schema)
-    }
-  })
+  const project = vi.fn((_name: string, _input: unknown, value: unknown) =>
+    projectToolResultFields(value, schema)
+  )
   const host = createLocalToolHost({
     requestId: 'browser-prefix-proof',
     signal: new AbortController().signal,
@@ -10966,10 +10984,10 @@ it('execution proof retains correctable selected failures for same-host repair',
         }
       })
 
-      expect(
-        JSON.parse(repaired.text).toolOutcome,
-        repaired.text
-      ).toMatchObject({ status: 'success', settlement: 'completed' })
+      expect(repaired.outcome, repaired.text).toMatchObject({
+        status: 'success',
+        settlement: 'completed'
+      })
       expect(evaluationToolStop(repaired)).toBeUndefined()
       expect(writes).toBe(3)
     } finally {
@@ -11109,7 +11127,7 @@ it('execution proof preserves recoverable discovery identity selection without h
     view: 'usage'
   })
 
-  expect(JSON.parse(resolved.text).toolOutcome.status).toBe('success')
+  expect(resolved.outcome.status).toBe('success')
   const unavailable = await call({
     names: ['hierarchy.groupElements', 'missing'],
     schemaPaths: ['/invalidField']
@@ -11266,9 +11284,8 @@ it('execution proof uses named-step result contracts and corrects selectors befo
       { retain: { value: { step: 'a', path: '/handle' } } }
     ]) {
       const reply = await call({ operations, ...selection })
-      const value = JSON.parse(reply.text)
 
-      expect(value.toolOutcome.settlement, reply.text).toBe('not-started')
+      expect(reply.outcome.settlement, reply.text).toBe('not-started')
       expect(evaluationToolStop(reply), reply.text).toBeUndefined()
       expect(calls).toBe(0)
     }
@@ -11371,12 +11388,20 @@ it('execution proof preserves correctable compiled findings before any canvas wr
   try {
     const reply = await host.invoke({
       name: 'design_operations.execute_design',
-      input: preparationFindings.input
+      input: {
+        ...preparationFindings.input,
+        delivery: {
+          fields: {
+            base: preparationFindings.input.delivery.fields.base,
+            tiers: preparationFindings.input.delivery.fields.tiers
+          }
+        }
+      }
     })
     const value = JSON.parse(reply.text)
 
     expect(writes).toBe(0)
-    expect(value.toolOutcome, reply.text).toMatchObject({
+    expect(reply.outcome, reply.text).toMatchObject({
       status: 'failed',
       settlement: 'not-started'
     })
@@ -11691,7 +11716,7 @@ it('execution proof composes request-only reads with guarded successor inputs', 
       const result = JSON.parse(reply.text)
 
       expect(calls).toEqual(empty ? ['read'] : ['read', 'consume'])
-      expect(result.toolOutcome.status).toBe(empty ? 'failed' : 'success')
+      expect(reply.outcome.status).toBe(empty ? 'failed' : 'success')
       if (empty) {
         expect(result.completed).toContain('read')
       }
@@ -11721,11 +11746,12 @@ it('execution proof reuses named result navigation without transferring stored v
       createdTargets: [{ compositionId: 'root', keyToId: { spire: 'element' } }]
     },
     new Set(),
+    { status: 'success', settlement: 'completed' },
     undefined,
     'design_workflow.prepare_and_apply_design'
   )
   const receipt = delivery.finish(
-    { status: 'success', settlement: 'completed', issues: [] },
+    { status: 'success', settlement: 'completed' },
     ['crown'],
     []
   )
@@ -12026,8 +12052,8 @@ it('execution proof delivers observations and authored context without approval 
           summary: 'Finish'
         }
       ]
-    }).actions[0].arguments.outcome
-  ).toBe('completed')
+    }).actions[0].arguments
+  ).toMatchObject({ outcome: 'completed' })
   await owner.finishInspection('card', false, signal, true)
   expect(calls).toEqual([AiActionNames.INSPECT_DRAWING])
   await expect(

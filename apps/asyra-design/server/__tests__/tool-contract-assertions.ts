@@ -230,10 +230,7 @@ export const withToolContractAssertions = <
         ).toEqual(value)
       }
 
-      expect(
-        JSON.parse(reply.text).toolOutcome.status,
-        `${name} public result`
-      ).toBe(outcome.status)
+      expect(reply.outcome.status, `${name} public result`).toBe(outcome.status)
       if (outcome.status === 'success') {
         exercised.add(name)
       }
@@ -387,8 +384,12 @@ export const completeUsageBudget = (
 
 /** Leaf-owner tests unwrap the delivered host envelope; host integration proves actual routing. */
 export function ownerInvocation<
-  T extends { namespace: string; tool: string; arguments: unknown }
->(invocation: T): T {
+  T extends { namespace?: string; tool: string; arguments: unknown }
+>(invocation: T | undefined): T {
+  if (!invocation) {
+    throw Error('Missing delivered invocation')
+  }
+
   if (invocation.tool !== 'execute_design') {
     return invocation
   }

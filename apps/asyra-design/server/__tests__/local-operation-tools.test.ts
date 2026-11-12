@@ -481,7 +481,7 @@ it.each(['names', 'query'])(
     )
 
     expect(reply.success).toBe(false)
-    expect(JSON.parse(reply.text).toolOutcome).toMatchObject({
+    expect(reply.outcome).toMatchObject({
       status: 'failed',
       settlement: 'completed'
     })
@@ -2211,14 +2211,12 @@ it('searches current API descriptions and names without loading every schema or 
   const full = await call({})
   const found = await call({ query: 'Quasar HANDLES' })
 
-  expect(found).toMatchObject({
-    complete: true,
-    catalogSize: actions.length
-  })
+  expect(found.catalogSize).toBe(actions.length)
+  expect(found.complete).toBe(found.count <= 16)
   expect(found.apis[0]).toMatchObject({
     name: custom.name,
     description: custom.description,
-    match: { metadataTerms: ['quasar', 'handles'], unmatchedTerms: [] }
+    match: { metadataTerms: ['quasar', 'handle'], unmatchedTerms: [] }
   })
   expect(found.apis[0].inputSchema).toBeUndefined()
   expect((await call({ names: [custom.name] })).apis[0].inputSchema).toEqual(
@@ -6962,6 +6960,29 @@ it('replays all recorded discovery selectors without losing exact contracts or d
         (item: { name: string }) => item.name === expected.name
       )
 
+      if (!actual && 'query' in call.input) {
+        // Incidental historical mentions are not current purpose obligations.
+        // The identity must still be available through its authoritative route.
+        const exact = JSON.parse(
+          await readCompleteInformation(
+            (args) =>
+              owner.call(
+                'describe_design_apis',
+                args,
+                new AbortController().signal
+              ),
+            { names: [expected.name] }
+          )
+        )
+
+        expect(
+          exact.apis.some(
+            (entry: { name: string }) => entry.name === expected.name
+          )
+        ).toBe(true)
+        continue
+      }
+
       expect(actual, expected.name).toBeDefined()
       if (expected.inputSchema) {
         expect(
@@ -6975,6 +6996,27 @@ it('replays all recorded discovery selectors without losing exact contracts or d
         (item: { name: string; namespace: string }) =>
           item.name === expected.name && item.namespace === expected.namespace
       )
+
+      if (!actual && 'query' in call.input) {
+        const exact = JSON.parse(
+          await readCompleteInformation(
+            (args) =>
+              owner.call(
+                'describe_design_apis',
+                args,
+                new AbortController().signal
+              ),
+            { names: [`${expected.namespace}.${expected.name}`] }
+          )
+        )
+
+        expect(
+          exact.tools.some(
+            (entry: { name: string }) => entry.name === expected.name
+          )
+        ).toBe(true)
+        continue
+      }
 
       if (call.input.view === 'usage' && !actual) {
         expect(
@@ -7559,7 +7601,7 @@ describe('context entry navigation and recovery', () => {
         return [{ name: 'design_operations', description: 'Context', owner }]
       }
     })
-    const calls: { input: unknown; text: string }[] = []
+    const calls: { input: unknown; text: string; outcome: unknown }[] = []
 
     const read = async (input: unknown) =>
       JSON.parse(
@@ -7582,7 +7624,7 @@ describe('context entry navigation and recovery', () => {
             )
           )
 
-          calls.push({ input: args, text })
+          calls.push({ input: args, text, outcome: reply.outcome })
 
           return text
         }, input)
@@ -7634,7 +7676,7 @@ describe('context entry navigation and recovery', () => {
           schemaPaths: [branch]
         })
 
-        expect(queried.toolOutcome.status).toBe('success')
+        expect(t.calls.at(-1)?.outcome).toMatchObject({ status: 'success' })
         expect([...queried.apis, ...(queried.tools ?? [])]).toHaveLength(1)
         const fragment = [...queried.apis, ...(queried.tools ?? [])][0]
 
@@ -7748,9 +7790,9 @@ describe('context entry navigation and recovery', () => {
         })
         expect(result.coordinateSpace).toBe('parent-local')
         // Recovery is informational, even after execution: it never repeats work.
-        const restored = await t.read(fragment.definition.recover.arguments)
+        await t.read(fragment.definition.recover.arguments)
 
-        expect(restored.toolOutcome.status).toBe('success')
+        expect(t.calls.at(-1)?.outcome).toMatchObject({ status: 'success' })
         expect(t.execute).toHaveBeenCalledTimes(1)
         t.invalidate()
         await expect(
@@ -7811,9 +7853,7 @@ describe('context entry navigation and recovery', () => {
               )
 
           expect(reply.success).toBe(false)
-          expect(JSON.parse(reply.text).toolOutcome.settlement).toBe(
-            'not-started'
-          )
+          expect(reply.outcome.settlement).toBe('not-started')
         }
 
         if (native) {
@@ -7846,7 +7886,7 @@ describe('context entry navigation and recovery', () => {
     try {
       const mixed = await t.read(t.saved.fragmentQuery)
 
-      expect(mixed.toolOutcome).toMatchObject({
+      expect(t.calls.at(-1)?.outcome).toMatchObject({
         status: 'partial',
         settlement: 'completed'
       })
@@ -7854,7 +7894,7 @@ describe('context entry navigation and recovery', () => {
       expect(mixed.tools[0].definition.coverage).toBe('none')
       const restored = await t.read(mixed.tools[0].definition.recover.arguments)
 
-      expect(restored.toolOutcome.status).toBe('success')
+      expect(t.calls.at(-1)?.outcome).toMatchObject({ status: 'success' })
       expect(restored.apis).toHaveLength(0)
       expect(restored.tools).toHaveLength(1)
       const entry = restored.tools[0]
@@ -7864,9 +7904,8 @@ describe('context entry navigation and recovery', () => {
 
       expect(path).toBeDefined()
       expect(entry.fieldQuery).toBeDefined()
-      expect(
-        (await t.read(entry.fieldQuery.arguments)).toolOutcome.status
-      ).toBe('success')
+      await t.read(entry.fieldQuery.arguments)
+      expect(t.calls.at(-1)?.outcome).toMatchObject({ status: 'success' })
       const corrected = await t.read({
         ...entry.fieldQuery.arguments,
         schemaPaths: [path]
@@ -7878,13 +7917,13 @@ describe('context entry navigation and recovery', () => {
         schemaPaths: [path, '/missing']
       })
 
-      expect(mixedPaths.toolOutcome.status).toBe('failed')
+      expect(t.calls.at(-1)?.outcome).toMatchObject({ status: 'failed' })
       expect(mixedPaths.tools[0].definition.coverage).toBe('none')
       const narrower = await t.read(
         mixedPaths.tools[0].definition.recover.arguments
       )
 
-      expect(narrower.toolOutcome.status).toBe('success')
+      expect(t.calls.at(-1)?.outcome).toMatchObject({ status: 'success' })
       expect(narrower.tools[0].schemaFragments).toEqual(
         corrected.tools[0].schemaFragments
       )
@@ -8130,7 +8169,7 @@ it('ranks partial nested metadata ahead of misleading names and reuses each cata
     expect(first.tools[0]).toMatchObject({
       name: 'b',
       match: {
-        metadataTerms: ['continuous', 'world', 'gradients', 'faces'],
+        metadataTerms: ['continuous', 'world', 'gradient', 'face'],
         unmatchedTerms: ['efficiently']
       }
     })

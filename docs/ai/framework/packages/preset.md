@@ -214,12 +214,18 @@ recovery policy.
 - The preset-owned UI-context Scene Tree observer derives
   `flattenedElementIds` and `elementDataMap` from canonical Scene Tree state.
   Each exact Core/Factory batch projects once: structural changes update
-  affected entries and hierarchy order, display-property changes replace only
+  affected entries and hierarchy order. Retained subtree sizes allow unchanged
+  flattened subtrees to be copied without another hierarchy walk; ancestry and
+  membership changes invalidate affected sizes, and replacement/disposal retires
+  the preparation. Array copying is counted separately from hierarchy visits.
+  Display-property changes replace only
   affected entries without rebuilding flattened hierarchy, and unrelated
   geometry changes do not republish either projection. Validated file load
   remains the sole full canonical refresh; its depth-first index follows each
   canonical child list regardless of container type (including Frame and custom
   containers), preserving the same descendants and order as incremental updates.
+  The same loaded rows seed retained parent/child order and subtree sizes, so the
+  first structural edit after load does not perform another complete preparation.
   These values are App-facing
   projections only and never validate, repair, reorder, or become a second
   canonical hierarchy.
@@ -229,12 +235,14 @@ recovery policy.
   flattened identity output is still materialized once per structural publication.
   Proven fresh depth-first tail additions consume their admitted delta without
   rediscovering roots or traversing unchanged subtrees. This does not defer
-  publication or mutate earlier snapshots. Interior edits and invalidated or
-  incomplete preparations still require complete ordered derivation. Formal
+  publication or mutate earlier snapshots. Interior edits revisit affected
+  ancestry and copy unchanged intervals; invalidated or incomplete preparations
+  require complete ordered derivation. Formal
   tests distinguish hierarchy work from necessary immutable output copying and
   preserve every intermediate result, observer isolation and replay semantics.
-  Reseeding, load, foreign publication, failure and disposal invalidate retained
-  preparation; incomplete membership is not reused as a complete projection.
+  Reseeding, foreign projection replacement, failure and disposal retire retained
+  preparation; load replaces it with its new complete projection. Incomplete
+  membership is not reused as a complete projection.
 
 Preset must not accept app-provided installers, disposers, dependency objects,
 engine ids, custom providers, extension callbacks, or replace semantics.
@@ -269,7 +277,17 @@ Render projection. Preset also exports the ID-driven Group adapters defined by
   hierarchy or computed data directly.
 - `prepareGroupOperation(...)` and `prepareUngroupOperation(...)` produce
   canonical plans; `groupElements(...)` and `ungroupElement(...)` execute them
-  inside one transaction.
+  inside one transaction. They resolve known IDs through Core local element
+  reads with an invocation-local snapshot; they do not serialize the whole scene.
+  Before-image ancestry for reparenting is acquired before the canonical move,
+  and after-image reads use a new scope. No read cache survives the operation.
+- The official invisible Group uses the engine-neutral independent transform
+  domain. Reparenting a populated Group preserves descendant graphics and
+  geometry, and hands off the existing render group rather than re-registering
+  every descendant. Other Graphics and custom components keep their own policy.
+  This preserves child geometry and avoids descendant transform work; it is not
+  a texture cache or partial-frame renderer. Visible instructions still execute
+  when a frame is requested, and render-group boundaries can split GPU batches.
 - `moveElementsWithGroupGeometry(...)` delegates hierarchy validation/mutation
   to Core and performs coordinate conversion plus derived bounds-cache
   normalization when direct official Group membership is involved.

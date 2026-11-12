@@ -816,7 +816,8 @@ it('projects real observed fill receipts after preserving complete original muta
     for (const receipt of reply.actionResults) {
       expect(receipt.result).toMatchObject({
         changed: true,
-        toolOutcome: { status: 'success', settlement: 'completed' }
+        status: 'complete',
+        settlement: 'completed'
       })
     }
 
@@ -830,12 +831,10 @@ it('projects real observed fill receipts after preserving complete original muta
       })
     }
 
-    expect(reply.checks.counts.unverified).toBe(3072)
+    expect(reply.checks).toBeUndefined()
     expect(localToolOutcome(reply)).toMatchObject({
-      status: 'partial',
-      issues: expect.arrayContaining([
-        expect.objectContaining({ code: 'FOLLOWUP_UNAVAILABLE' })
-      ])
+      status: 'success',
+      issues: []
     })
     expect(
       reply.actionResults.every(

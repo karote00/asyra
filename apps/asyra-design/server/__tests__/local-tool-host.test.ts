@@ -209,14 +209,22 @@ const fixture = (store = memory(), requestId = 'first', workflow = false) => {
   })
   let call = 0
 
-  const invoke = async (name: string, input: unknown) =>
-    JSON.parse(
-      (await host.invoke({ name, input, callId: `native-${++call}` })).text
-    )
+  let acknowledgement: Awaited<ReturnType<typeof host.invoke>>['outcome']
+
+  const invoke = async (name: string, input: unknown) => {
+    const reply = await host.invoke({ name, input, callId: `native-${++call}` })
+
+    acknowledgement = reply.outcome
+
+    return JSON.parse(reply.text)
+  }
 
   return {
     host,
     invoke,
+
+    outcome: () => acknowledgement,
+
     store,
 
     resolve: (id: string) => session.resolve(id)
@@ -226,7 +234,11 @@ const fixture = (store = memory(), requestId = 'first', workflow = false) => {
 it.each(['compact', 'full'])(
   'exports a %s compound artifact to a later native consumer after call cleanup',
   async (response) => {
-    const { host, invoke, resolve } = fixture(memory(), 'compound', true)
+    const { host, invoke, resolve, outcome } = fixture(
+      memory(),
+      'compound',
+      true
+    )
 
     try {
       const produced = await invoke(
@@ -244,7 +256,7 @@ it.each(['compact', 'full'])(
         }
       )
 
-      expect(produced.toolOutcome).toMatchObject({
+      expect(outcome()).toMatchObject({
         status: 'success',
         settlement: 'completed'
       })
@@ -275,7 +287,11 @@ it.each(['compact', 'full'])(
 it.each([false, true])(
   'preserves typed ordered receipts after cleanup (stopped: %s)',
   async (stopped) => {
-    const { host, invoke, resolve } = fixture(memory(), 'ordered', true)
+    const { host, invoke, resolve, outcome } = fixture(
+      memory(),
+      'ordered',
+      true
+    )
     const draft = {
       type: 'group',
       name: 'Part',
@@ -299,9 +315,9 @@ it.each([false, true])(
         inspection: 'defer'
       })
 
-      expect(result.toolOutcome.status).toBe(stopped ? 'partial' : 'success')
+      expect(outcome().status).toBe(stopped ? 'partial' : 'success')
       if (!stopped) {
-        expect(result.toolOutcome.settlement).toBe('completed')
+        expect(outcome().settlement).toBe('completed')
       }
 
       expect(result.parts).toHaveLength(stopped ? 2 : 3)
@@ -335,7 +351,7 @@ it.each([
 ])(
   'retains a typed repair artifact from %s without reporting failed preparation as successful execution',
   async (tool) => {
-    const { host, invoke } = fixture(memory(), 'repair', true)
+    const { host, invoke, outcome } = fixture(memory(), 'repair', true)
 
     try {
       const result = await invoke(tool, {
@@ -351,9 +367,9 @@ it.each([
       })
 
       expect(result).toMatchObject({
-        applicable: false,
-        toolOutcome: { status: 'failed' }
+        applicable: false
       })
+      expect(outcome()).toMatchObject({ status: 'failed' })
       const retained = await invoke(
         'design_preparation.retain_design_targets',
         {
@@ -1306,15 +1322,12 @@ it.each(['partial', 'failed'])(
     })
 
     try {
-      const reply = JSON.parse(
-        (
-          await host.invoke({
-            name: 'example.apply',
-            input: {},
-            callId: 'once'
-          })
-        ).text
-      )
+      const transport = await host.invoke({
+        name: 'example.apply',
+        input: {},
+        callId: 'once'
+      })
+      const reply = JSON.parse(transport.text)
 
       expect(reply).toMatchObject({
         status,
@@ -1322,7 +1335,7 @@ it.each(['partial', 'failed'])(
         completed: ['one'],
         recovery: value.recovery
       })
-      expect(reply.toolOutcome.issues).toContainEqual({
+      expect(transport.outcome.issues).toContainEqual({
         code: value.code,
         message: value.message
       })
@@ -1604,28 +1617,25 @@ it.each(['direct', 'registered'])(
       }
 
       const input = { arguments: {} }
-      const raw = JSON.parse(
-        (
-          await host.invoke(
-            route === 'direct'
-              ? { name: definition.registeredName, input }
-              : {
-                  name: 'tool_library.invoke_tool',
-                  input: {
-                    name: definition.registeredName,
-                    revision: definition.revision,
-                    input
-                  }
-                }
-          )
-        ).text
+      const transport = await host.invoke(
+        route === 'direct'
+          ? { name: definition.registeredName, input }
+          : {
+              name: 'tool_library.invoke_tool',
+              input: {
+                name: definition.registeredName,
+                revision: definition.revision,
+                input
+              }
+            }
       )
+      const raw = JSON.parse(transport.text)
       const result =
         route === 'direct'
           ? raw
           : (raw.execution.value ?? raw.execution.recovery?.[0]?.value)
 
-      expect(result?.toolOutcome.status, JSON.stringify(raw)).toBe('partial')
+      expect(transport.outcome.status, JSON.stringify(raw)).toBe('partial')
       expect(result.recovery, JSON.stringify(raw)).toContain(
         'Do not automatically replay mutations'
       )
@@ -1961,11 +1971,11 @@ it.each(['native', 'registered', 'batch'])(
       )
       const envelope = JSON.parse(reply.text)
       const result =
-        route === 'registered' ? envelope.execution.value : envelope
+        route === 'registered' ? envelope.execution?.value : envelope
 
       expect(result?.actionResults, JSON.stringify(envelope)).toBeDefined()
       expect(reply.success).toBe(false)
-      expect(result.toolOutcome).toMatchObject({
+      expect(reply.outcome).toMatchObject({
         status: 'partial',
         settlement: 'completed'
       })
@@ -2702,7 +2712,16 @@ it.each(['a', 'b', 'c', 'select_design_references'])(
         name: 'design_operations.execute_design',
         callId: 'incorrect-route',
         input: actual
-          ? { ...recorded.input, operations: recorded.input.operations.map((operation) => ({ ...operation, arguments: { referenceImageIndexes: operation.arguments.referenceImageIndexes } })) }
+          ? {
+              ...recorded.input,
+              operations: recorded.input.operations.map((operation) => ({
+                ...operation,
+                arguments: {
+                  referenceImageIndexes:
+                    operation.arguments.referenceImageIndexes
+                }
+              }))
+            }
           : {
               operations: [{ name: namespace + '.' + name, arguments: {} }],
               delivery: 'status'
@@ -2714,7 +2733,7 @@ it.each(['a', 'b', 'c', 'select_design_references'])(
         expect(calls).toBe(1)
       } else {
         expect(calls).toBe(0)
-        expect(JSON.parse(reply.text)).toMatchObject({
+        expect(JSON.parse(reply.text), reply.text).toMatchObject({
           recovery: 'correct_input',
           settlement: 'not-started'
         })

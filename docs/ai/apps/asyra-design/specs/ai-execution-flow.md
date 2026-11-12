@@ -56,6 +56,99 @@ invocation failures alongside native recovery schemas so Runtime can preserve th
 failed child and successful prefix. This internal contract does not duplicate
 failure schemas in model-facing usage or authorize replay/automatic judgment.
 
+### Tool schema support boundary
+
+App tool registration and browser action observation reject unsupported or malformed
+schema constraints before publishing executable definitions. The App validator owns
+its explicit keyword vocabulary; `dependentRequired` is enforced when its trigger
+is present, while unimplemented keywords are errors even in optional properties or
+unselected alternatives. Schema annotations and literal examples/defaults are not
+executable constraints. Local root references retain their original context.
+Input and output validation use that same boundary; no invalid result becomes a
+success binding and failed delivery never replays acknowledged work.
+Registered invocation discovery also describes common invocation failures inside
+`execution.value`. Common boundary failures are complete invocation alternatives:
+the execution cannot claim success, and outer and nested failure settlement must
+agree on unknown or not-started. Acknowledged completed/partial prefixes match the
+selected owner's partial/recovery schemas. Native discovery and invocation use the
+same owner contract projection, not a registry-augmented diagnostic alternative.
+Successful owner data remains valid when saving fails; retry saving without replay.
+Native replies without invocation-bound validation evidence revalidate unchanged
+owner data alongside the explicit acknowledgement. Proof binds the producing call,
+contract, bytes and outcome; foreign or changed replies cannot reuse it.
+Validate the outcome before selecting its result schema or transferring request
+resources. Invalid outcomes fail at the Host handoff; rejected resources release
+once and cannot be acknowledged as usable. Unchanged identity/text/outcome-bound receipts
+reuse completed validation. Success, partial and recovery alternatives discriminate
+the outer status and correlate settlement across layers describing the same
+execution. Independent child recovery entries retain their own settlements, and
+storage failure does not change the completed execution settlement. Discovery and
+invocation enforce these same alternatives; partial output cannot admit a failed
+or unknown acknowledgement through a broader union branch.
+Raw values validate against execution status. Successful execution with failed
+storage still uses the owner's success schema. Model views validate against
+`deliveryOutcome`, which can be partial even after successful execution. Outer
+status, execution, delivery and storage describe their own boundaries;
+same-execution settlement remains correlated. Transport success derives from the
+validated acknowledgement, never an independently supplied boolean.
+
+Accepted result roots include objects, arrays, scalars and null. Raw values pass
+owner validation unchanged; Host acknowledgement is always separate from data.
+Domain-owned receipt fields remain part of their declared data. Library and
+sequence consumers carry explicit execution state; provider content delivers that
+state alongside the value using supported native content fields. Missing or invalid
+state is a handoff failure, never inferred success. Delivery failure preserves the
+known execution settlement and never authorizes replay.
+Provider content failures use the same canonical model-delivery failure contract,
+with evidence validated by the invocation-pinned model schema. Native owner data
+must not be reclassified as browser batch receipts merely because it contains an
+`actionResults` field. Evaluation recognizes completed workflow prefixes from
+canonical action receipts before allowing a later owner-declared input repair;
+missing receipts, unknown settlement and independent delivery failures still stop.
+Interrupted browser batches use the same owner result preparation as completed
+batches before model projection. The outer acknowledgement describes aggregate
+settlement, while the pending action retains its own not-started settlement.
+Public failure projection preserves the validated completed prefix and recovery
+without exposing internal batch diagnostics or replaying completed mutations.
+
+Raw owner schemas are not rewritten to admit Host fields. Structural field
+visibility is an explicit declaration. A semantic shape change
+requires an owner-declared delivery contract; selection must preserve exact literal,
+exclusive-alternative, negation and uniqueness semantics. Registration, discovery,
+selected invocation and final projection retain the same owner and revision.
+Registered/sequence child and recovery projections use their explicit revision,
+never the latest same-name registration.
+Validate the actual delivered value against its status-specific selected contract,
+not a generic wrapper or a union of unrelated success/recovery alternatives.
+Registered model receipts carry `deliveryOutcome` beside `execution`; saving,
+execution and delivery remain independent. The Host pins the model contract before
+effects and never accepts a replacement from invocation middleware. Generic failure
+metadata belongs to the invocation owner; tool projectors only handle its embedded
+result, with validated `executionOutcome` when known. Missing or invalid evidence
+cannot establish completed execution. Child views already selected by their owner
+are not selected again by the enclosing receipt projector; the complete model
+receipt still passes exact status-specific validation.
+Rejected input still passes canonical failure/acknowledgement validation without
+opening a resource scope or executing the owner. Reconstructed delivery failures
+also validate before egress; include only evidence admitted by their declared model
+failure schema, preserving execution settlement when evidence cannot be delivered.
+Partial model views cannot accept recovery-only payloads. Registered composition
+recovery uses selected model child contracts after projection; internal recovery
+keeps raw child contracts. No obsolete result-stage descriptor is published.
+
+Native settlement decodes a reply once. Failure construction uses only decoded
+evidence and never reparses failed bytes. Every opened call scope releases in
+`finally`, including malformed output, validation, handoff and cancellation paths.
+Undecodable post-execution output remains uncertain; it does not authorize replay.
+Cleanup failures retain decoded evidence, and failed resource cleanup remains
+retryable at request disposal under the existing lease owner.
+
+An empty batch capability has a valid rejecting operation schema; it does not
+publish an empty enumeration or prevent unrelated native tools from registering.
+Contract audits compare exact success, partial, recovery and boundary alternatives,
+including the canonical browser observation enrichment. Normalization preserves
+reference intersections and literal data; extra alternatives are failures.
+
 ### Executable phase continuity
 
 The AI plans the task; executable operations and stages carry decided dependencies.
@@ -130,6 +223,25 @@ provider. Historical outcomes do not authorize replay or reuse of request-owned
 evidence. Fresh ephemeral provider threads receive the same admitted context.
 
 ## Capability discovery and composition
+
+Discovery ranks owner-authored purpose separately from actual schema fields and
+secondary identity words. `x-design-discovery` on an operation input schema owns
+its purpose, optional vocabulary and applicability boundaries. Without that
+annotation, the first authored description sentence declares purpose; synthetic
+identity prefixes, subsequent guidance and cross-operation references are not
+positive purpose evidence. Exact identity resolution remains unchanged.
+Descriptive query `inputFields` optionally requires declared leaf names or slash-
+separated paths. Open records do not prove arbitrary property support. Candidates
+return purpose, boundaries, top-level input fields and requested matching paths;
+this navigation is not an executable contract or value validation. Natural-language
+queries remain supported, including custom tools with opaque names. Input enum/const choices and schema descriptions remain secondary search evidence;
+examples and incidental schema prose do not establish purpose or field acceptance. Ordinary plural normalization never rewrites identities.
+
+The coordinate owner declares workspace-to-local conversion as a point or null.
+Request sequences can bind declared point fields to a typed position update,
+checking actual presence before dispatch; a missing conversion never reaches the
+mutation. Persisted recipes retain guaranteed-path admission. Discovery annotations
+remain visible in catalogs and are removed only from execution admission schemas.
 
 Shared instructions state App-wide intent, data authority and completion rules
 once. Image-specific decomposition/conversion/refinement guidance is exposed with
@@ -4537,7 +4649,6 @@ retain their resource lifetime; authored purpose/limitations can be retained as 
 Discovery candidates remain choice metadata; executable usage comes from registered
 owners. Preserve exact identity, requested fields and honest ambiguity.
 
-
 ### Provider-visible handoff contracts
 
 The native thread/start tool packet and selected usage use one valid primary
@@ -4575,7 +4686,6 @@ Regressions inspect actual native packets and replies, execute the delivered
 input-reuse example, and replay the recorded region/suffix deletion followed by
 construction and explicit capture. Count dispatches and captures; raw owner schema
 assertions alone do not prove provider publication.
-
 
 ### Target-bound execution result continuity
 

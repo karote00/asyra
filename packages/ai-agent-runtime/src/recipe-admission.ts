@@ -580,7 +580,10 @@ export const admitAiRecipe = (
 
     try {
       const input = readRegisteredRecipeSchema(contract.inputSchema)
-      const output = readRegisteredRecipeSchema(contract.outputSchema)
+      const output = readRegisteredRecipeSchema(
+        contract.outputSchema,
+        mode === 'sequence' ? 'result' : 'binding'
+      )
       const canonical = createAiToolContract(contract)
       const previous = dependencies.get(contract.name)
 

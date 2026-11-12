@@ -1003,19 +1003,31 @@ The local backend exposes `describe_design_apis` from the current admitted
 contracts. No arguments returns categories and counts; `category` returns that
 category's purpose/result menu; `operation` resolves an exact `owner.method`
 identity and current schema in one call. `names` resolves exact action names.
-Optional `query` ranks registered descriptions, nested input/output metadata and
-string enum/const choices before names. Lexical terms, field origin and current
-catalog frequency/length prevent shared instruction text from dominating a purpose.
-Menus retain a relevant complete description sentence and shared relevance ranks
-across API/native entries; selected contracts retain the complete description.
+Optional descriptive `query` ranks owner purpose before input/output metadata and
+identity words. `x-design-discovery` declares purpose, vocabulary and boundaries;
+otherwise the first authored sentence supplies purpose. Synthetic name prefixes
+and subsequent usage guidance do not establish purpose. Schema fields, enum/const
+choices and descriptions are secondary evidence. Ordinary plurals normalize only
+for search, never for exact identity resolution.
+Optional `inputFields` with a descriptive query requires exact input leaf names or
+slash-separated paths. Candidates return matching paths, top-level fields and
+applicability boundaries. Open records and output fields cannot prove acceptance;
+actual values still undergo ordinary execution validation. Exact names (including unique registered Basic API method names), schemaPaths
+and inputScope retain their distinct selection responsibilities. Ambiguous method
+names require an owner-qualified identity.
 Partial matches disclose unmatched terms rather than claiming the whole purpose.
 Multiple or partial descriptive
 `usage` matches remain menus with exact acquisition routes; a uniquely complete
 match may deliver usage immediately. Explicit full views and exact names/scopes
 retain complete contracts. Examples and defaults are not capability metadata.
-Selectors are mutually exclusive. No lexical match returns the category menu,
+Selectors are mutually exclusive. No purpose/field match returns the category menu,
 not an unavailable capability or a requirement to scan every API. Existing known
 operations may be executed directly without discovery or a preliminary data read.
+
+`core.workspaceToElementLocal` declares a nullable `{x, y}` result. A request
+sequence can bind its coordinate fields directly to `element.setElementPositions`
+in the same `execute_design` call. Missing conversion fails before position writes;
+it never substitutes zero or assumes workspace coordinates are parent-local.
 
 Execute basic operations through `execute_design`, including one-item edits.
 Redundant scalar aliases have explicit batch replacements in dispositions; UI
@@ -1656,3 +1668,18 @@ replayed to produce a reply.
 ### Canonical property input recovery
 
 core.updateElementProperties accepts registered component properties and aliases. Element metadata name/visible/lock uses core.updateElementData. The canonical owner rejects unsupported property keys before apply. The App action adapter forwards the owner diagnostic through Runtime; correct_input requires AI_ACTION_INPUT_INVALID, inputIssue, confirmed not-started settlement and fresh context. Generic rollback, recoverable flags and prose are insufficient. Successful-prefix IDs and receipts reach the provider; the agent may correct only unfinished work. Strict evaluation defers terminal tool interruption until the active host result is delivered, but rejects new calls while stopping; deadlines remain immediate.
+
+### Executable tool schema support
+
+AI tool declarations use the App validator's explicit supported schema vocabulary.
+Registration rejects unsupported or malformed constraints before publication; input
+and output use the same rules, including dependent required fields. Selected result
+schemas are self-contained and preserve reachable references and runtime lifetimes.
+Native discovery and registered invocation validate the same selected owner result
+contracts. Common boundary failures require matching outer/inner unknown or
+not-started settlement and cannot claim successful execution. Acknowledged prefixes
+retain owner validation, and successful work with unsaved storage stays valid.
+Instrumented native replies revalidate the host envelope, not the pre-acknowledgement
+owner payload. Empty batch capabilities reject operation names with a valid false
+schema without disabling other native tools. See
+[AI execution flow](specs/ai-execution-flow.md#tool-schema-support-boundary).

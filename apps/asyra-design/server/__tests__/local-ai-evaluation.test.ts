@@ -538,7 +538,13 @@ it('preserves acknowledged partial work from the actual recoverable failure enve
       stage: 'execution',
       settlement: 'partial',
       executionResult: {
-        actionResults: [{ actionId: 'created', result: { id: 'element' } }]
+        actionResults: [
+          {
+            actionId: 'created',
+            actionName: 'apply_prepared_design',
+            result: { id: 'element' }
+          }
+        ]
       }
     }
   )

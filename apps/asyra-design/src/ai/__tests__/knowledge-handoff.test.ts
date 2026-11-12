@@ -674,7 +674,10 @@ it('routes recorded local material edits through actual discovery and artifact t
       status: 'success',
       issues: []
     })
-    expect(result.actionResults[0].result.toolOutcome.status).toBe('success')
+    expect(result.actionResults[0].result).toMatchObject({
+      status: 'complete',
+      settlement: 'completed'
+    })
     expect(dispatch).toHaveBeenCalledTimes(1)
     const actions = dispatch.mock.calls[0][0].actions
 
@@ -709,9 +712,10 @@ it('routes recorded local material edits through actual discovery and artifact t
       status: 'success',
       issues: []
     })
-    expect(freshResult.actionResults[0].result.toolOutcome.status).toBe(
-      'success'
-    )
+    expect(freshResult.actionResults[0].result).toMatchObject({
+      status: 'complete',
+      settlement: 'completed'
+    })
     expect(dispatch).toHaveBeenCalledTimes(2)
     expect(dispatch.mock.calls[1][0].actions[0].arguments).toEqual(
       fresh.arguments

@@ -85,6 +85,10 @@ const basicApiResources = (effect: BasicApiContract['effect']) => {
 }
 
 const basicApiRevision = (contract: BasicApiContract): number => {
+  if (contract.result.valueSchema) {
+    return 3
+  }
+
   if (contract.result.kind === 'property-mutation') {
     return 9
   }

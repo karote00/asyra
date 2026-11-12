@@ -2211,6 +2211,17 @@
             "apps/asyra-design/src/features/zoom-fit/index.ts",
             "apps/asyra-design/src/common-apis/viewport.ts"
           ]
+        },
+        {
+          "id": "functional.drawing-framing.edf60433de5f",
+          "stepId": "navigate-viewport",
+          "testFile": "apps/asyra-design/e2e/drawing-framing.spec.ts",
+          "testName": "recording resumes after overview navigation and frames later geometry without document edits",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/test-data/ai-drawing/drawing-framing.mjs",
+            "apps/asyra-design/src/common-apis/viewport.ts"
+          ]
         }
       ],
       "handoffs": []
@@ -2451,6 +2462,17 @@
           "implementationPaths": [
             "apps/asyra-design/src/app/ai-conversation-panel.tsx",
             "apps/asyra-design/src/ai/tool-library-management.ts"
+          ]
+        },
+        {
+          "id": "functional.ai-conversation-navigation.942bc1fe13b1",
+          "stepId": "present-conversation",
+          "testFile": "apps/asyra-design/e2e/ai-conversation-navigation.spec.ts",
+          "testName": "delayed attachments return to their originating draft and only that submission",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/app/ai-conversation-panel.tsx",
+            "apps/asyra-design/src/ai/conversation.ts"
           ]
         }
       ],
@@ -2772,6 +2794,30 @@
           "projectName": "chromium",
           "implementationPaths": [
             "apps/asyra-design/src/ai/server-action-batch-provider.ts"
+          ]
+        },
+        {
+          "id": "functional.ai-conversation-navigation.884114132d68",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/ai-conversation-navigation.spec.ts",
+          "testName": "ordinary selected-object and multi-object style revisions preserve history and unrelated content",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/ai-agent/index.ts",
+            "apps/asyra-design/src/ai/transaction.ts",
+            "apps/asyra-design/src/ai/design-actions.ts"
+          ]
+        },
+        {
+          "id": "functional.ai-retained-anchor.4288c2aa1254",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/ai-retained-anchor.spec.ts",
+          "testName": "staged host shows the first application while independent preparation continues",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-tool-host.ts",
+            "apps/asyra-design/server/local-design-workflow.ts",
+            "apps/asyra-design/src/ai/actions.ts"
           ]
         }
       ],
@@ -5624,7 +5670,7 @@
           "id": "functional.ai-repeated-detail.e63adc078df5",
           "stepId": "apply-prepared-design",
           "testFile": "apps/asyra-design/e2e/ai-repeated-detail.spec.ts",
-          "testName": "saved multi-face detail uses current targets and preserves sibling passes through edit, history, peer and durable reload",
+          "testName": "saved multi-face detail uses current targets and preserves independent image currency through edit, history, peer and durable reload",
           "projectName": "chromium",
           "implementationPaths": [
             "apps/asyra-design/src/ai/prepared-design.ts",
@@ -5891,19 +5937,6 @@
           "projectName": "chromium",
           "implementationPaths": [
             "apps/asyra-design/src/common-apis/inspection-evidence.ts",
-            "apps/asyra-design/server/local-design-review.ts",
-            "apps/asyra-design/server/local-operation-tools.ts"
-          ]
-        },
-        {
-          "id": "functional.ai-inspection-evidence.d9ae60878406",
-          "stepId": "inspect-design",
-          "testFile": "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
-          "testName": "public review handoffs retain independent evidence and recover before runtime completion",
-          "projectName": "chromium",
-          "implementationPaths": [
-            "apps/asyra-design/src/common-apis/inspection-evidence.ts",
-            "apps/asyra-design/server/local-design-review.ts",
             "apps/asyra-design/server/local-operation-tools.ts"
           ]
         },
@@ -6048,7 +6081,7 @@
           "id": "functional.ai-inspection-evidence.d885eed9d87f",
           "stepId": "inspect-design",
           "testFile": "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
-          "testName": "published representative guidance reaches real capture and completion without replaying drawing",
+          "testName": "published optional material guidance reaches real capture without approval or replay",
           "projectName": "chromium",
           "implementationPaths": [
             "apps/asyra-design/src/common-apis/inspection.ts",
@@ -6077,6 +6110,28 @@
           "implementationPaths": [
             "apps/asyra-design/src/common-apis/inspection.ts",
             "apps/asyra-design/src/common-apis/inspection-evidence.ts",
+            "apps/asyra-design/src/ai/inspection.ts"
+          ]
+        },
+        {
+          "id": "functional.ai-inspection-evidence.6eb82ab52319",
+          "stepId": "inspect-design",
+          "testFile": "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+          "testName": "regional evidence excludes empty Group extents while preserving real contributors",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/common-apis/inspection-evidence.ts",
+            "apps/asyra-design/src/common-apis/inspection.ts"
+          ]
+        },
+        {
+          "id": "functional.ai-repeated-detail.d4f4c7b60817",
+          "stepId": "inspect-design",
+          "testFile": "apps/asyra-design/e2e/ai-repeated-detail.spec.ts",
+          "testName": "recorded leaf and group capture targets preserve subtree membership and local region pixels",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/common-apis/inspection.ts",
             "apps/asyra-design/src/ai/inspection.ts"
           ]
         }
@@ -6478,6 +6533,27 @@
             "packages/render-engine-pixi/src/mesh-material-batch.ts",
             "packages/render-engine-pixi/src/mesh-material-shader.ts"
           ]
+        },
+        {
+          "id": "functional.hierarchy-projection-updates.7dfdcb92a8ad",
+          "stepId": "render-material",
+          "testFile": "apps/asyra-design/e2e/hierarchy-projection-updates.spec.ts",
+          "testName": "retired GPU owners preserve model restore and surviving ungroup children",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts",
+            "packages/render-engine-pixi/src/mesh-material-batch.ts"
+          ]
+        },
+        {
+          "id": "functional.render-state-observer.3954ba4a7d51",
+          "stepId": "render-material",
+          "testFile": "apps/asyra-design/e2e/render-state-observer.spec.ts",
+          "testName": "observes actual program state and forwards changed and repeated matrices",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/e2e/render-state-observer.ts"
+          ]
         }
       ],
       "handoffs": []
@@ -6519,6 +6595,39 @@
           "implementationPaths": [
             "packages/render-engine-pixi/src/pixi-render-engine.ts",
             "packages/render-engine-pixi/src/pixi-batch-partitions.ts"
+          ]
+        },
+        {
+          "id": "functional.hierarchy-projection-updates.3d65c4337402",
+          "stepId": "retain-navigation",
+          "testFile": "apps/asyra-design/e2e/hierarchy-projection-updates.spec.ts",
+          "testName": "reparented Groups keep live child geometry, style, order, visibility, history and remote replay",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts",
+            "packages/preset/src/subscriptions/data-channel.ts"
+          ]
+        },
+        {
+          "id": "functional.hierarchy-projection-updates.91eec0010c31",
+          "stepId": "retain-navigation",
+          "testFile": "apps/asyra-design/e2e/hierarchy-projection-updates.spec.ts",
+          "testName": "records accepted hierarchy and coordinate batches at immediate read barriers",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "packages/preset/src/subscriptions/data-channel.ts",
+            "packages/render/src/render.ts"
+          ]
+        },
+        {
+          "id": "functional.hierarchy-recorded-scene.72e3060c5d00",
+          "stepId": "retain-navigation",
+          "testFile": "apps/asyra-design/e2e/hierarchy-recorded-scene.spec.ts",
+          "testName": "recorded hierarchy preserves pixels, world geometry, order, history and shared replay with bounded work",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts",
+            "packages/preset/src/subscriptions/data-channel.ts"
           ]
         }
       ],

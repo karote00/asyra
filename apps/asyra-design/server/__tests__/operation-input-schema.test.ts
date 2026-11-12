@@ -206,8 +206,8 @@ it('compacts redundant native choices while preserving overlap and contradictory
   const schema = {
     type: 'object',
     additionalProperties: false,
-    required: ['mode', 'mode'],
-    properties: { mode: { type: ['string', 'string'], enum: ['a', 'b', 'a'] } },
+    required: ['mode'],
+    properties: { mode: { type: 'string', enum: ['a', 'b'] } },
     anyOf: [
       { properties: { mode: { const: 'a' } } },
       { properties: { mode: { const: 'a' } } },
@@ -280,7 +280,6 @@ it('preserves real action schema admission after native conversion', () => {
       )
     }
   }
-
 })
 
 it('materializes common union fields for native declarations without weakening admission', () => {
@@ -381,18 +380,55 @@ it('does not admit extra union fields by merging two independently closed object
 
 it('preserves standalone context admission through native conversion', () => {
   const examples: Record<string, object> = {
-    record_design_facts: { facts: [{ id: 'scale', statement: 'Requested scale', sources: ['current-user-request'] }] },
-    record_design_calculations: { calculations: [{ id: 'length', value: 0.8, unit: 'px' }] },
-    select_design_references: { referenceImageIndexes: [0], references: [{ referenceId: 'source', purpose: 'Massing', region: 'whole' }] }
+    record_design_facts: {
+      facts: [
+        {
+          id: 'scale',
+          statement: 'Requested scale',
+          sources: ['current-user-request']
+        }
+      ]
+    },
+    record_design_calculations: {
+      calculations: [{ id: 'length', value: 0.8, unit: 'px' }]
+    },
+    select_design_references: {
+      referenceImageIndexes: [0],
+      references: [
+        { referenceId: 'source', purpose: 'Massing', region: 'whole' }
+      ]
+    }
   }
-  expect(Object.keys(examples).sort()).toEqual(designContextDefinitions.map((item) => item.name).sort())
+
+  expect(Object.keys(examples).sort()).toEqual(
+    designContextDefinitions.map((item) => item.name).sort()
+  )
   for (const definition of designContextDefinitions) {
     const native = nativeToolInputSchema(definition.inputSchema)
-    for (const input of [examples[definition.name], { ...examples[definition.name], unrelated: true }, null, [], {}]) {
-      expect(operationInputIssue(input, native) === undefined, definition.name).toBe(operationInputIssue(input, definition.inputSchema) === undefined)
+
+    for (const input of [
+      examples[definition.name],
+      { ...examples[definition.name], unrelated: true },
+      null,
+      [],
+      {}
+    ]) {
+      expect(
+        operationInputIssue(input, native) === undefined,
+        definition.name
+      ).toBe(operationInputIssue(input, definition.inputSchema) === undefined)
     }
-    expect(operationInputIssue(examples[definition.name], native), definition.name).toBeUndefined()
-    expect(operationInputIssue({ ...examples[definition.name], unrelated: true }, native)).toContain('unknown field')
+
+    expect(
+      operationInputIssue(examples[definition.name], native),
+      definition.name
+    ).toBeUndefined()
+    expect(
+      operationInputIssue(
+        { ...examples[definition.name], unrelated: true },
+        native
+      )
+    ).toContain('unknown field')
     expect(nativeToolInputSchema(native)).toEqual(native)
   }
 })

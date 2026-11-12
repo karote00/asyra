@@ -1,4 +1,7 @@
-import type { AiToolValidator } from '@asyra/ai-agent-runtime'
+import type {
+  AiToolValidator,
+  AiToolContractInput
+} from '@asyra/ai-agent-runtime'
 import lodash from 'lodash'
 const { isEqual } = lodash
 
@@ -11,6 +14,281 @@ export interface OperationInputIssue {
   readonly message: string
 }
 
+const schemaMaps = ['$defs', 'definitions', 'properties'] as const
+const schemaChildren = [
+  'additionalProperties',
+  'items',
+  'propertyNames',
+  'not'
+] as const
+const schemaArrays = ['allOf', 'anyOf', 'oneOf', 'prefixItems'] as const
+const schemaBounds = [
+  'minimum',
+  'maximum',
+  'exclusiveMinimum',
+  'exclusiveMaximum',
+  'minProperties',
+  'maxProperties',
+  'minItems',
+  'maxItems',
+  'minLength',
+  'maxLength'
+] as const
+const schemaKeywords = new Set<string>([
+  ...schemaMaps,
+  ...schemaChildren,
+  ...schemaArrays,
+  ...schemaBounds,
+  '$ref',
+  '$schema',
+  '$comment',
+  'type',
+  'const',
+  'enum',
+  'required',
+  'dependentRequired',
+  'uniqueItems',
+  'pattern',
+  'title',
+  'description',
+  'default',
+  'examples',
+  'deprecated',
+  'readOnly',
+  'writeOnly'
+])
+
+/** The App supports an explicit schema vocabulary; unknown semantics never mean valid. */
+export const operationSchemaIssue = (
+  schema: unknown,
+  referenceRoot: unknown = schema
+): string | undefined => {
+  const seen = new Set<object>()
+
+  const strings = (value: unknown): value is string[] =>
+    Array.isArray(value) &&
+    value.every((item) => typeof item === 'string') &&
+    new Set(value).size === value.length
+
+  const visit = (node: unknown, path: string): string | undefined => {
+    if (typeof node === 'boolean') {
+      return
+    }
+
+    if (!record(node)) {
+      return path + ': expected an object or boolean schema'
+    }
+
+    if (seen.has(node)) {
+      return
+    }
+
+    seen.add(node)
+    for (const key of Object.keys(node)) {
+      if (!schemaKeywords.has(key) && !key.startsWith('x-')) {
+        return path + ': unsupported schema keyword ' + key
+      }
+    }
+
+    if (node.type !== undefined) {
+      const types = typeof node.type === 'string' ? [node.type] : node.type
+
+      if (
+        !strings(types) ||
+        !types.length ||
+        types.some(
+          (type) =>
+            ![
+              'object',
+              'array',
+              'string',
+              'number',
+              'integer',
+              'boolean',
+              'null'
+            ].includes(type)
+        )
+      ) {
+        return path + ': invalid type constraint'
+      }
+    }
+
+    for (const key of schemaBounds) {
+      if (
+        node[key] !== undefined &&
+        (typeof node[key] !== 'number' ||
+          !Number.isFinite(node[key]) ||
+          (![
+            'minimum',
+            'maximum',
+            'exclusiveMinimum',
+            'exclusiveMaximum'
+          ].includes(key) &&
+            (!Number.isSafeInteger(node[key]) || node[key] < 0)))
+      ) {
+        return path + ': invalid ' + key + ' constraint'
+      }
+    }
+
+    if (node.required !== undefined && !strings(node.required)) {
+      return path + ': invalid required constraint'
+    }
+
+    if (
+      node.dependentRequired !== undefined &&
+      (!record(node.dependentRequired) ||
+        Object.values(node.dependentRequired).some((value) => !strings(value)))
+    ) {
+      return path + ': invalid dependentRequired constraint'
+    }
+
+    if (
+      node.enum !== undefined &&
+      (!Array.isArray(node.enum) || !node.enum.length)
+    ) {
+      return path + ': invalid enum constraint'
+    }
+
+    if (
+      node.uniqueItems !== undefined &&
+      typeof node.uniqueItems !== 'boolean'
+    ) {
+      return path + ': invalid uniqueItems constraint'
+    }
+
+    if (node.pattern !== undefined) {
+      if (typeof node.pattern !== 'string') {
+        return path + ': invalid pattern constraint'
+      }
+
+      try {
+        new RegExp(node.pattern)
+      } catch {
+        return path + ': invalid pattern expression'
+      }
+    }
+
+    if (node.$ref !== undefined) {
+      if (
+        typeof node.$ref !== 'string' ||
+        (node.$ref !== '#' && !node.$ref.startsWith('#/')) ||
+        /~(?![01])/.test(node.$ref)
+      ) {
+        return path + ': unsupported schema reference'
+      }
+
+      let target: unknown = referenceRoot
+
+      for (const part of node.$ref === '#'
+        ? []
+        : node.$ref.slice(2).split('/')) {
+        const key = part.replace(/~1/g, '/').replace(/~0/g, '~')
+
+        if (
+          (!record(target) && !Array.isArray(target)) ||
+          !Object.hasOwn(target, key)
+        ) {
+          return path + ': unknown schema reference'
+        }
+
+        target = (target as Record<string, unknown>)[key]
+      }
+
+      const issue = visit(target, path + '/$ref')
+
+      if (issue) {
+        return issue
+      }
+    }
+
+    for (const key of schemaMaps) {
+      if (node[key] === undefined) {
+        continue
+      }
+
+      if (!record(node[key])) {
+        return path + ': invalid ' + key + ' map'
+      }
+
+      for (const [name, child] of Object.entries(node[key])) {
+        const issue = visit(child, path + '/' + key + '/' + name)
+
+        if (issue) {
+          return issue
+        }
+      }
+    }
+
+    for (const key of schemaChildren) {
+      if (node[key] !== undefined) {
+        const issue = visit(node[key], path + '/' + key)
+
+        if (issue) {
+          return issue
+        }
+      }
+    }
+
+    for (const key of schemaArrays) {
+      const children = node[key]
+
+      if (children === undefined) {
+        continue
+      }
+
+      if (
+        !Array.isArray(children) ||
+        (key !== 'prefixItems' && !children.length)
+      ) {
+        return path + ': invalid ' + key + ' alternatives'
+      }
+
+      for (const [index, child] of children.entries()) {
+        const issue = visit(child, path + '/' + key + '/' + index)
+
+        if (issue) {
+          return issue
+        }
+      }
+    }
+  }
+
+  return visit(schema, 'schema')
+}
+
+/** Registration is the publication boundary, before any owner can execute. */
+export const requireSupportedToolSchemas = (
+  definition: Pick<
+    AiToolContractInput,
+    | 'name'
+    | 'inputSchema'
+    | 'outputSchema'
+    | 'partialOutputSchema'
+    | 'recoveryOutputSchema'
+    | 'delivery'
+  >
+) => {
+  const schemas = {
+    input: definition.inputSchema,
+    output: definition.outputSchema,
+    partial: definition.partialOutputSchema,
+    recovery: definition.recoveryOutputSchema,
+    delivery: definition.delivery?.outputSchema
+  }
+
+  for (const [name, schema] of Object.entries(schemas)) {
+    if (schema === undefined) {
+      continue
+    }
+
+    const issue = operationSchemaIssue(schema)
+
+    if (issue) {
+      throw new TypeError(definition.name + ' ' + name + ': ' + issue)
+    }
+  }
+}
+
 /** Structured diagnostics from the one canonical traversal, also used by recovery. */
 export const operationInputIssues = (
   value: unknown,
@@ -18,6 +296,18 @@ export const operationInputIssues = (
   referenceRoot: unknown = schema,
   rootPath: 'arguments' | 'output' = 'arguments'
 ): OperationInputIssue[] | undefined => {
+  const unsupported = operationSchemaIssue(schema, referenceRoot)
+
+  if (unsupported) {
+    return [
+      {
+        instancePath: '',
+        keyword: 'schema',
+        message: rootPath + ': ' + unsupported
+      }
+    ]
+  }
+
   const visit = (
     v: unknown,
     s: unknown,
@@ -47,13 +337,13 @@ export const operationInputIssues = (
     }
 
     if (typeof s.$ref === 'string') {
-      if (!s.$ref.startsWith('#/')) {
+      if (s.$ref !== '#' && !s.$ref.startsWith('#/')) {
         return [issue(`${path}: unsupported schema reference`)]
       }
 
       let resolved: unknown = referenceRoot
 
-      for (const part of s.$ref.slice(2).split('/')) {
+      for (const part of s.$ref === '#' ? [] : s.$ref.slice(2).split('/')) {
         const key = part.replace(/~1/g, '/').replace(/~0/g, '~')
 
         resolved =
@@ -165,11 +455,11 @@ export const operationInputIssues = (
       }
     }
 
-    if ('const' in s && v !== s.const) {
+    if (Object.hasOwn(s, 'const') && !isEqual(v, s.const)) {
       return [issue(`${path}: unexpected constant`)]
     }
 
-    if (Array.isArray(s.enum) && !s.enum.includes(v)) {
+    if (Array.isArray(s.enum) && !s.enum.some((item) => isEqual(v, item))) {
       return [issue(`${path}: value is outside the allowed choices`)]
     }
 
@@ -229,6 +519,26 @@ export const operationInputIssues = (
                 childPath(k)
               )
             )
+          }
+        }
+      }
+
+      if (record(s.dependentRequired)) {
+        for (const [trigger, required] of Object.entries(s.dependentRequired)) {
+          if (!Object.hasOwn(v, trigger)) {
+            continue
+          }
+
+          for (const key of required as string[]) {
+            if (!Object.hasOwn(v, key)) {
+              errors.push(
+                issue(
+                  `${path}.${key}: required when ${trigger} is present`,
+                  'dependentRequired',
+                  childPath(key)
+                )
+              )
+            }
           }
         }
       }

@@ -202,6 +202,7 @@ describe('stage-owned App guidance', () => {
         (tool) => tool.name === 'select_design_references'
       )
     )
+
     expect(selection.inputSchema).toMatchObject({
       required: ['referenceImageIndexes']
     })
@@ -309,8 +310,10 @@ describe('stage-owned App guidance', () => {
     expect(general).toContain('Read-only advice leaves the canvas unchanged')
   })
   it('offers standalone notes and reference context without prior registration', () => {
-    for (const tool of designContextDefinitions)
+    for (const tool of designContextDefinitions) {
       expect(general).toContain(tool.name)
+    }
+
     expect(general).not.toMatch(
       /define_design_criteria|review_drawing|bindChecks/
     )

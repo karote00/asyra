@@ -210,11 +210,15 @@ it('delivers real Core results through App capture, runtime execution and native
     const changed = await invoke(name, args)
 
     expect(changed.success).toBe(true)
+    expect(changed.outcome).toMatchObject({
+      status: 'success',
+      settlement: 'completed'
+    })
+    expect(JSON.parse(changed.text)).not.toHaveProperty('toolOutcome')
     expect(JSON.parse(changed.text)).toMatchObject({
       status: 'complete',
       value: { acceptedIds: ['a'], changed: true },
-      mutationScope: { complete: true, elementIds: ['a'] },
-      toolOutcome: { status: 'success', settlement: 'completed' }
+      mutationScope: { complete: true, elementIds: ['a'] }
     })
     const saved = {
       props: props.save(),

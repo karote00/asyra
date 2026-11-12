@@ -10,12 +10,14 @@ import {
 import { AiDesignToolIds } from '../../src/constants/ai-design'
 
 const signal = () => new AbortController().signal
+
 const facts = AiDesignToolIds.RECORD_DESIGN_FACTS
 const calculations = AiDesignToolIds.RECORD_DESIGN_CALCULATIONS
 const references = AiDesignToolIds.SELECT_DESIGN_REFERENCES
 
 it('stores and replaces standalone numeric context without prior facts or drawing', async () => {
   const owner = createLocalDesignContext({})
+
   await owner.call(
     calculations,
     { calculations: [{ id: 'pitch', value: 8, unit: 'px' }] },
@@ -26,6 +28,7 @@ it('stores and replaces standalone numeric context without prior facts or drawin
     { calculations: [{ id: 'pitch', value: 12, unit: 'px' }] },
     signal()
   )
+
   expect(updated).toEqual({
     calculations: [{ id: 'pitch', value: 12, unit: 'px' }]
   })
@@ -49,6 +52,7 @@ it('stores source assertions as authored data with optional attribution', async 
     ]
   }
   const result = await owner.call(facts, input, signal())
+
   expect(result).toEqual({
     facts: [{ ...input.facts[0], sources: ['reference:known'] }]
   })
@@ -60,6 +64,7 @@ it('stores source assertions as authored data with optional attribution', async 
 
 it('rejects invalid note updates atomically and returns detached values', async () => {
   const owner = createLocalDesignContext({})
+
   await owner.call(
     facts,
     { facts: [{ id: 'first', statement: 'Original' }] },
@@ -87,6 +92,7 @@ it('rejects invalid note updates atomically and returns detached values', async 
   const value = (await owner.call(facts, {}, signal())) as {
     facts: { statement: string }[]
   }
+
   value.facts[0].statement = 'Foreign change'
   expect(await owner.call(facts, {}, signal())).toEqual({
     facts: [{ id: 'first', statement: 'Original' }]
@@ -96,11 +102,14 @@ it('rejects invalid note updates atomically and returns detached values', async 
 it('does not publish a prefix when source identity resolution fails', async () => {
   const owner = createLocalDesignContext({
     resolveSources: (sources) => {
-      if (sources.includes('attachment:missing'))
+      if (sources.includes('attachment:missing')) {
         throw new Error('Unknown attachment')
+      }
+
       return sources
     }
   })
+
   await expect(
     owner.call(
       facts,
@@ -120,6 +129,7 @@ it('reuses decoded reference bounds and never requires a suitability receipt', a
   let decoded = false
   const prepareReferences = vi.fn(async () => {
     decoded = true
+
     return '{}'
   })
   const owner = createLocalDesignContext({
@@ -129,8 +139,10 @@ it('reuses decoded reference bounds and never requires a suitability receipt', a
         referenceId: 'reference:known',
         ...(decoded ? { validation: { width: 100, height: 80 } } : {})
       })),
+
     prepareReferences
   })
+
   expect(
     await owner.call(references, { referenceImageIndexes: [0] }, signal())
   ).toEqual({
@@ -149,6 +161,7 @@ it('reuses decoded reference bounds and never requires a suitability receipt', a
       }
     ]
   }
+
   expect(await owner.call(references, input, signal())).toEqual(input)
   expect(await owner.call(references, input, signal())).toEqual(input)
   expect(prepareReferences).toHaveBeenCalledTimes(1)
@@ -164,6 +177,7 @@ it('rejects unknown sources and out-of-bounds crops without replacing prior note
       }
     ]
   })
+
   await owner.call(
     references,
     {
@@ -178,7 +192,7 @@ it('rejects unknown sources and out-of-bounds crops without replacing prior note
       referenceId: 'reference:known',
       region: { x: 90, y: 0, width: 20, height: 10 }
     }
-  ])
+  ]) {
     await expect(
       owner.call(
         references,
@@ -186,6 +200,8 @@ it('rejects unknown sources and out-of-bounds crops without replacing prior note
         signal()
       )
     ).rejects.toThrow()
+  }
+
   expect(
     await owner.call(references, { referenceImageIndexes: [0] }, signal())
   ).toMatchObject({ references: [{ purpose: 'Original' }] })
@@ -197,11 +213,14 @@ it('does not retain source notes when decoding is cancelled', async () => {
     validateReferences: () => [
       { attachmentIndex: 0, referenceId: 'reference:known' }
     ],
+
     prepareReferences: async () => {
       controller.abort(new Error('Cancelled'))
+
       return '{}'
     }
   })
+
   await expect(
     owner.call(
       references,
@@ -235,13 +254,16 @@ it('publishes the same strict note contracts to native invocation', async () => 
     [calculations, { calculations: [{ id: 'v', value: 1, unit: 'px' }] }],
     [references, { referenceImageIndexes: [] }]
   ])
+
   for (const definition of designContextDefinitions) {
     const input = inputs.get(definition.name)
+
     expect(operationInputIssue(input, definition.inputSchema)).toBeUndefined()
     expect(
       operationInputIssue(input, nativeToolInputSchema(definition.inputSchema))
     ).toBeUndefined()
     const result = await owner.call(definition.name, input, signal())
+
     expect(operationInputIssue(result, definition.outputSchema)).toBeUndefined()
     expect(
       operationInputIssue(
@@ -252,37 +274,95 @@ it('publishes the same strict note contracts to native invocation', async () => 
   }
 })
 
-
 it('rejects a reference identity changed during pixel comparison without publishing a pass', async () => {
   const { default: sharp } = await import('sharp')
   const { createLocalImageCheck } = await import('../local-image-check')
   const { createDesignCheckResults } = await import('../design-check-results')
-  const bytes = await sharp({ create: { width: 2, height: 2, channels: 3, background: 'white' } }).png().toBuffer()
+  const bytes = await sharp({
+    create: { width: 2, height: 2, channels: 3, background: 'white' }
+  })
+    .png()
+    .toBuffer()
   const dataUrl = 'data:image/png;base64,' + bytes.toString('base64')
   const results = createDesignCheckResults()
   let currentReference = 'original'
   let validations = 0
-  const owner = createLocalImageCheck({ results,
-    inspection: () => ({ target: 'part', dataUrl, imageScope: 'region', background: '#ffffff', region: { x: 0, y: 0, width: 2, height: 2 } }),
-    validate: async () => { if (++validations === 2) currentReference = 'changed'; return true },
+  const owner = createLocalImageCheck({
+    results,
+
+    inspection: () => ({
+      target: 'part',
+      dataUrl,
+      imageScope: 'region',
+      background: '#ffffff',
+      region: { x: 0, y: 0, width: 2, height: 2 }
+    }),
+
+    validate: async () => {
+      if (++validations === 2) {
+        currentReference = 'changed'
+      }
+
+      return true
+    },
+
     reference: () => ({ referenceId: currentReference, dataUrl })
   })
-  await expect(owner.call({ checkId: 'color', inspectionId: 'capture', referenceImageIndex: 0,
-    referenceRegion: { x: 0, y: 0, width: 2, height: 2 }, channelTolerance: 0, maxDifferentFraction: 0
-  }, signal())).rejects.toThrow(/changed/)
+
+  await expect(
+    owner.call(
+      {
+        checkId: 'color',
+        inspectionId: 'capture',
+        referenceImageIndex: 0,
+        referenceRegion: { x: 0, y: 0, width: 2, height: 2 },
+        channelTolerance: 0,
+        maxDifferentFraction: 0
+      },
+      signal()
+    )
+  ).rejects.toThrow(/changed/)
   expect(results.read({ includePassed: true }).items).toEqual([])
 })
 
 it('keeps source-owner failures distinct from correctable authored context inputs', async () => {
   const { createLocalOperationTools } = await import('../local-operation-tools')
   const { invokeLocalTool } = await import('../local-tool-invocation')
-  const owner = createLocalOperationTools([], { modelActions: (v) => v, resolveBatch: (v) => v }, vi.fn(), {
-    resolveSources: () => { throw Error('Source owner unavailable') }
-  })
-  const definition = owner.definitions.find((tool) => tool.name === facts)!
-  const invalid = await invokeLocalTool(owner, definition, { facts: [{ id: 'a' }] }, signal())
+  const owner = createLocalOperationTools(
+    [],
+    {
+      modelActions: (v) => v,
+
+      resolveBatch: (v) => v
+    },
+    vi.fn(),
+    {
+      resolveSources: () => {
+        throw Error('Source owner unavailable')
+      }
+    }
+  )
+  const definition = owner.definitions.find((tool) => tool.name === facts)
+
+  if (!definition) {
+    throw new Error('The design facts tool must be registered')
+  }
+
+  const invalid = await invokeLocalTool(
+    owner,
+    definition,
+    { facts: [{ id: 'a' }] },
+    signal()
+  )
+
   expect(JSON.parse(invalid.text).recovery).toBe('correct_input')
-  const failed = await invokeLocalTool(owner, definition, { facts: [{ id: 'a', statement: 'Assertion', sources: ['source'] }] }, signal())
+  const failed = await invokeLocalTool(
+    owner,
+    definition,
+    { facts: [{ id: 'a', statement: 'Assertion', sources: ['source'] }] },
+    signal()
+  )
+
   expect(failed.success).toBe(false)
   expect(JSON.parse(failed.text).recovery).not.toBe('correct_input')
   expect(await owner.call(facts, {}, signal())).toContain('"facts":[]')

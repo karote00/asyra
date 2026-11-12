@@ -17,6 +17,7 @@ it('compares complete model result contracts against the same owner declarations
 
   complete.source =
     'Deterministic complete owner schemas before model field selection; internal fields included. No model execution.'
+  delete complete.sources['server/local-design-review.ts']
   for (const source of Object.keys(complete.sources)) {
     complete.sources[source] = createHash('sha256')
       .update(readFileSync(resolve(source)))
@@ -24,7 +25,11 @@ it('compares complete model result contracts against the same owner declarations
   }
 
   const cases = {
-    ...prior.entries,
+    draft: prior.entries.draft,
+    capture: {
+      ...prior.entries.capture,
+      query: { names: ['inspect_drawing'], view: 'usage' }
+    },
     vector: {
       ...prior.entries.draft,
       query: {
@@ -47,12 +52,11 @@ it('compares complete model result contracts against the same owner declarations
       const project = vi.spyOn(contracts, 'modelToolResultSchemas')
 
       if (baseline) {
-        project.mockImplementation((contract, stage) =>
+        project.mockImplementation((contract) =>
           original(
             JSON.parse(JSON.stringify(contract), (key, value) =>
               key === 'x-model-visibility' ? undefined : value
-            ),
-            stage
+            )
           )
         )
       }

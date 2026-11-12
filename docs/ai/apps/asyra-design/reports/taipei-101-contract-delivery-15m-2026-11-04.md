@@ -217,13 +217,13 @@ to `self-report.txt`. It contains nine sections, detailed action/failure tables,
 its explanation of long waits, improvement proposals, unused capabilities and
 remaining work. Host corrections above supplement it rather than rewriting it.
 
-- <a href="/Users/asa/Desktop/workspace/asra/.worktrees/ai-conversation-improvements/tmp/conversation-improvements/live/taipei-101-fixed-1793731065236/self-report.md" target="_blank" rel="noopener noreferrer">Complete original AI report</a>
-- <a href="/Users/asa/Desktop/workspace/asra/.worktrees/ai-conversation-improvements/tmp/conversation-improvements/live/taipei-101-fixed-1793731065236/self-report-evidence.json" target="_blank" rel="noopener noreferrer">Same-session report evidence</a>
-- <a href="/Users/asa/Desktop/workspace/asra/.worktrees/ai-conversation-improvements/tmp/conversation-improvements/live/taipei-101-fixed-1793731065236/run.json" target="_blank" rel="noopener noreferrer">Run metadata</a>
-- <a href="/Users/asa/Desktop/workspace/asra/.worktrees/ai-conversation-improvements/tmp/conversation-improvements/live/taipei-101-fixed-1793731065236/run-analysis.json" target="_blank" rel="noopener noreferrer">Selected provider analysis</a>
-- <a href="/Users/asa/Desktop/workspace/asra/.worktrees/ai-conversation-improvements/tmp/conversation-improvements/live/taipei-101-fixed-1793731065236/recording.webm" target="_blank" rel="noopener noreferrer">Process recording</a>
-- <a href="/Users/asa/Desktop/workspace/asra/.worktrees/ai-conversation-improvements/tmp/conversation-improvements/live/taipei-101-fixed-1793731065236/final.png" target="_blank" rel="noopener noreferrer">Final overview</a>
-- <a href="/Users/asa/Desktop/workspace/asra/.worktrees/ai-conversation-improvements/tmp/conversation-improvements/live/taipei-101-fixed-1793731065236/base.png" target="_blank" rel="noopener noreferrer">Base detail</a>
-- <a href="/Users/asa/Desktop/workspace/asra/.worktrees/ai-conversation-improvements/tmp/conversation-improvements/live/taipei-101-fixed-1793731065236/process-210.png" target="_blank" rel="noopener noreferrer">Video at 210 seconds</a>
-- <a href="/Users/asa/Desktop/workspace/asra/.worktrees/ai-conversation-improvements/tmp/conversation-improvements/live/taipei-101-fixed-1793731065236/process-330.png" target="_blank" rel="noopener noreferrer">Video at 330 seconds</a>
-- <a href="/Users/asa/Desktop/workspace/asra/.worktrees/ai-conversation-improvements/tmp/conversation-improvements/live/taipei-101-fixed-1793731065236/process-850.png" target="_blank" rel="noopener noreferrer">Video at 850 seconds</a>
+- <a href="../../../../../tmp/conversation-improvements/live/taipei-101-fixed-1793731065236/self-report.md" target="_blank" rel="noopener noreferrer">Complete original AI report</a>
+- <a href="../../../../../tmp/conversation-improvements/live/taipei-101-fixed-1793731065236/self-report-evidence.json" target="_blank" rel="noopener noreferrer">Same-session report evidence</a>
+- <a href="../../../../../tmp/conversation-improvements/live/taipei-101-fixed-1793731065236/run.json" target="_blank" rel="noopener noreferrer">Run metadata</a>
+- <a href="../../../../../tmp/conversation-improvements/live/taipei-101-fixed-1793731065236/run-analysis.json" target="_blank" rel="noopener noreferrer">Selected provider analysis</a>
+- <a href="../../../../../tmp/conversation-improvements/live/taipei-101-fixed-1793731065236/recording.webm" target="_blank" rel="noopener noreferrer">Process recording</a>
+- <a href="../../../../../tmp/conversation-improvements/live/taipei-101-fixed-1793731065236/final.png" target="_blank" rel="noopener noreferrer">Final overview</a>
+- <a href="../../../../../tmp/conversation-improvements/live/taipei-101-fixed-1793731065236/base.png" target="_blank" rel="noopener noreferrer">Base detail</a>
+- <a href="../../../../../tmp/conversation-improvements/live/taipei-101-fixed-1793731065236/process-210.png" target="_blank" rel="noopener noreferrer">Video at 210 seconds</a>
+- <a href="../../../../../tmp/conversation-improvements/live/taipei-101-fixed-1793731065236/process-330.png" target="_blank" rel="noopener noreferrer">Video at 330 seconds</a>
+- <a href="../../../../../tmp/conversation-improvements/live/taipei-101-fixed-1793731065236/process-850.png" target="_blank" rel="noopener noreferrer">Video at 850 seconds</a>

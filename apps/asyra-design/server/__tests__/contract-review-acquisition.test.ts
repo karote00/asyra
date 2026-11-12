@@ -115,7 +115,8 @@ it('delivers recorded action arguments without repeating the host schema', async
     )
   ).toBe(true)
   for (const entry of [...menu.apis, ...menu.tools]) {
-    expect(entry).not.toHaveProperty('recipeDependency')
+    expect(entry.usageGuide).toBeDefined()
+    expect(entry.definition.nextAction).toBe('execute-with-delivered-contract')
     expect(entry).not.toHaveProperty('inputSchema')
   }
 })

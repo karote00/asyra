@@ -175,7 +175,12 @@ it('executes correction discovery through real owners and recovers only the unfi
     expect(
       partial.actionResults[0]?.result,
       JSON.stringify(partial)
-    ).toMatchObject({ status: 'complete', acceptedCount: 1, unavailableCount: 0, settlement: 'completed' })
+    ).toMatchObject({
+      status: 'complete',
+      acceptedCount: 1,
+      unavailableCount: 0,
+      settlement: 'completed'
+    })
     expect(partial.failure).toMatchObject({ settlement: 'not-started' })
     expect(core.getElementComputedData('part', ['fills'])?.fills).toMatchObject(
       [{ color: '#334455' }]

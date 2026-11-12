@@ -37,6 +37,11 @@ Each action also declares revision, output schema, effect, resources and lifecyc
 registration alone is a declaration. Recording uses `createRecordDeliveryHost()`
 with host-owned durable outbox storage. Diagnostic recovery never replays actions.
 
+Tool delivery declarations use standard JSON Pointers: `delivery.path: ""` selects
+the whole result, while `/field` selects a child. A declared view does not change
+the raw output schema or execution outcome. Hosts validate raw data with its
+execution state, then validate the selected view with its delivery state.
+
 ## Lifecycle, inputs, outputs, and failure
 
 One run obtains bounded context, requests one provider-prepared batch, resolves

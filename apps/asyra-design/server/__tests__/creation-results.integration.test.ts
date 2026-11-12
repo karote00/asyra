@@ -408,7 +408,9 @@ it.each(['compact', 'full'] as const)(
         savedPairs.length
       )
       draft.children.reverse()
-      const source = [{ id: 'later', type: 'rect', width: 2, height: 3 }]
+      const source = [
+        { id: 'later', type: 'rect', x: 0, y: 0, width: 2, height: 3 }
+      ]
       let later: readonly string[] = []
 
       transactionApis.runTransaction(() => {
@@ -437,7 +439,7 @@ it.each(['compact', 'full'] as const)(
         )
       ).toBeNull()
       expect(() =>
-        core.createElementsInParent([{ type: 'rect' }], 'absent')
+        core.createElementsInParent([{ type: 'rect', x: 0, y: 0 }], 'absent')
       ).toThrow()
       expect(await core.save()).toEqual(document)
       expect(work.counts().arrays).toBe(0)
@@ -542,21 +544,21 @@ it('executes the delivered small-part example without criteria or research and p
     const example = (text ? JSON.parse(text) : page).tools[0].invocationExample
       .invocation
 
-    expect(example.arguments.plan).toBeUndefined()
-    const created = JSON.parse(
-      (
-        await invokeLocalTool(
-          main,
-          main.definitions[0],
-          { ...example.arguments, inspection: 'defer' },
-          signal
-        )
-      ).text
+    expect(example.tool).toBe('execute_design')
+    const argumentsForOwner = example.arguments.operations[0].arguments
+
+    expect(argumentsForOwner.plan).toBeUndefined()
+    const createdReply = await invokeLocalTool(
+      main,
+      main.definitions[0],
+      { ...argumentsForOwner, inspection: 'defer' },
+      signal
     )
+    const created = JSON.parse(createdReply.text)
 
     // A headless owner fixture has no pixel projection; follow-up review may be
     // partial, but it cannot gate or undo the acknowledged visible creation.
-    expect(created.toolOutcome.settlement, JSON.stringify(created)).toBe(
+    expect(createdReply.outcome?.settlement, JSON.stringify(created)).toBe(
       'completed'
     )
     expect(created.actionResults[0].result.status).toBe('complete')

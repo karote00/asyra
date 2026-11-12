@@ -1907,9 +1907,10 @@ it.each([10000, 2000])(
     const value = JSON.parse(reply.text)
 
     expect(reply.success).toBe(true)
-    expect(value).toMatchObject({
-      available: true,
-      toolOutcome: { status: 'success', settlement: 'completed' }
+    expect(value).toMatchObject({ available: true })
+    expect(reply.outcome).toMatchObject({
+      status: 'success',
+      settlement: 'completed'
     })
     expect(value.artifactId).toBeUndefined()
     expect(value.applicable).toBeUndefined()
@@ -1956,26 +1957,23 @@ it('keeps exhausted source retention a genuine no-write failure', async () => {
     expect(plan.success).toBe(true)
   }
 
-  const rejected = JSON.parse(
-    (
-      await invokeLocalTool(
-        {
-          ...tools,
+  const rejectedReply = await invokeLocalTool(
+    {
+      ...tools,
 
-          call: (name, args, signal) => tools.call(name, args, signal, true)
-        },
-        { ...definition, outputSchema: tools.capacityOutputSchema },
-        { draft: capacityFixture.input.draft },
-        signal()
-      )
-    ).text
+      call: (name, args, signal) => tools.call(name, args, signal, true)
+    },
+    { ...definition, outputSchema: tools.capacityOutputSchema },
+    { draft: capacityFixture.input.draft },
+    signal()
   )
+  const rejected = JSON.parse(rejectedReply.text)
 
-  expect(rejected).toMatchObject({
-    available: false,
-    retention: 'unavailable',
-    toolOutcome: { status: 'failed', settlement: 'not-started' }
+  expect(rejectedReply.outcome).toMatchObject({
+    status: 'failed',
+    settlement: 'not-started'
   })
+  expect(rejected).toMatchObject({ available: false, retention: 'unavailable' })
   expect(rejected.draftId).toBeUndefined()
   expect(compile).not.toHaveBeenCalled()
 })

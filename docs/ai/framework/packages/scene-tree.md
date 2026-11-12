@@ -222,6 +222,9 @@ mutation, reparent/reorder, and subtree lifecycle behavior.
 - `moveElements(...)` validates the complete request before the first mutation,
   interprets `targetIndex` against the final target child list, and preserves
   canonical source sibling order for contiguous or non-contiguous ids.
+  Local and replay moves validate source/target membership and their ancestor
+  paths before any write, without reading unrelated subtrees. Save/load retains
+  complete-document validation; no global validity cache or repair bypass exists.
 - `removeSubtree(...)`, `restoreSubtree(...)`, and replay through
   `applySubtreeChange(...)` retain exact identity, parent, index, child order,
   and raw Group data. Stale replay evidence fails instead of partially applying.

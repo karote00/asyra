@@ -283,7 +283,14 @@ are projected by declared required paths. Request-sequence input bindings may
 select declared optional fields/items, with presence and actual input validation
 before the dependent dispatch. Unknown paths and incompatible types still reject. Unused opaque siblings do not prevent
 that projection; opaque values cannot be bound, constructed or silently narrowed.
-Whole-map forwarding proves key/value constraints and nested runtime lifetimes;
+In a request sequence, whole registered output forwarding preserves its complete validation schema even
+when implication is opaque; no narrowed field or typed destination is inferred.
+Selected result schemas are self-contained validation roots. Local references
+retain their original meaning through a finite reachable `$defs` graph; reference
+siblings and runtime annotations remain intact. Unrelated definitions are not
+copied and recursive references are not unfolded. Consumers use the projected
+schema as its own root for discovery, retention and envelope validation.
+Input admission remains strict. Whole-map forwarding proves key/value constraints and nested runtime lifetimes;
 untyped maps cannot satisfy typed destinations, and unknown map keys are never
 guaranteed source paths. Object construction validates each declared key and value.
 A path through a union must exist in every branch. Object construction selects a
@@ -296,7 +303,10 @@ requires `minItems` to guarantee presence. Each prefix retains its own schema an
 runtime-value lifetime. Whole-array bindings check all reachable prefix positions
 and the remaining item schema. Common object constraints on unions intersect
 with each alternative, including forbidden properties and each closed property
-set. Local `$defs` references resolve lazily and once per schema graph; recursive
+set. Reference siblings intersect the referenced constraints, including closed
+property sets; unsupported intersections remain unprovable. Selected result
+portability is checked with its original registered schema root. Local schema pointers, including `$defs` and registered envelope paths,
+resolve lazily and once per schema graph; recursive
 schemas do not expand into repeated trees. Unknown, cyclic-only or unsupported
 references remain unusable. Strict numeric endpoints and string patterns remain
 part of implication checks; literals use the original host schema with its local

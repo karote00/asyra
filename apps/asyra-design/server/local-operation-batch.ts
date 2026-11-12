@@ -462,6 +462,9 @@ export const runtimeOperationSchema = <T>(schema: T, recipe = false): T => {
 
     // Discovery branch labels never constrain Runtime inputs or outputs.
     delete result['x-design-operation']
+    if (recipe) {
+      delete result['x-design-discovery']
+    }
 
     delete result['x-design-element-binding']
     delete result['x-model-visibility']

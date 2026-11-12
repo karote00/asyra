@@ -113,7 +113,7 @@ export const createAiToolContract = (
         Object.keys(input.delivery).sort().join(',')
       ) ||
       typeof input.delivery.path !== 'string' ||
-      !/^(?:\/(?:[^~]|~[01])*)+$/.test(input.delivery.path))
+      !/^(?:\/(?:[^~]|~[01])*)*$/.test(input.delivery.path))
   ) {
     throw new TypeError(
       'Delivery requires an exact JSON Pointer and output schema'
@@ -250,15 +250,12 @@ export const selectAiToolResultSchema = (
   return contract.recoveryOutputSchema
 }
 
-/** Preserve local reference scope when a canonical schema enters a receipt envelope. */
-export const embedAiToolSchema = (
+/** Traverse schema positions only; examples, defaults and const values are data. */
+const mapToolSchemaReferences = (
   schema: AiJsonValue,
-  pointer: string
+  reference: (pointer: string) => string,
+  includeDefinitions = true
 ): AiJsonValue => {
-  if (!pointer.startsWith('#/')) {
-    throw new TypeError('Schema embedding requires a local destination pointer')
-  }
-
   const visit = (value: AiJsonValue): AiJsonValue => {
     if (!value || typeof value !== 'object' || Array.isArray(value)) {
       return value
@@ -272,7 +269,12 @@ export const embedAiToolSchema = (
       typeof result.$ref === 'string' &&
       (result.$ref === '#' || result.$ref.startsWith('#/'))
     ) {
-      result.$ref = pointer + result.$ref.slice(1)
+      result.$ref = reference(result.$ref)
+    }
+
+    if (!includeDefinitions) {
+      delete result.$defs
+      delete result.definitions
     }
 
     for (const key of [
@@ -320,6 +322,75 @@ export const embedAiToolSchema = (
   }
 
   return visit(schema)
+}
+
+/** Preserve local reference scope when a canonical schema enters a receipt envelope. */
+export const embedAiToolSchema = (
+  schema: AiJsonValue,
+  pointer: string
+): AiJsonValue => {
+  if (!pointer.startsWith('#/')) {
+    throw new TypeError('Schema embedding requires a local destination pointer')
+  }
+
+  return mapToolSchemaReferences(schema, (ref) => pointer + ref.slice(1))
+}
+
+/** Detach a selected schema with its reachable local reference graph, once per target. */
+export const projectAiToolSchema = (
+  schema: AiJsonValue,
+  root: AiJsonValue
+): AiJsonValue => {
+  if (schema === root) {
+    return schema
+  }
+
+  const pointers = new Map<string, string>()
+  const definitions: Record<string, AiJsonValue> = {}
+
+  const reference = (pointer: string): string => {
+    const existing = pointers.get(pointer)
+
+    if (existing) {
+      return existing
+    }
+
+    let target: AiJsonValue = root
+
+    for (const part of pointer === '#' ? [] : pointer.slice(2).split('/')) {
+      if (/~(?![01])/.test(part)) {
+        throw new TypeError('Invalid local schema reference: ' + pointer)
+      }
+
+      const key = part.replace(/~1/g, '/').replace(/~0/g, '~')
+
+      if (
+        !target ||
+        typeof target !== 'object' ||
+        !Object.prototype.hasOwnProperty.call(target, key)
+      ) {
+        throw new TypeError('Unknown local schema reference: ' + pointer)
+      }
+
+      target = (target as Readonly<Record<string, AiJsonValue>>)[key]
+    }
+
+    const name = 'reference' + pointers.size
+    const local = '#/$defs/' + name
+
+    pointers.set(pointer, local)
+    definitions[name] = mapToolSchemaReferences(target, reference, false)
+
+    return local
+  }
+
+  const projected = mapToolSchemaReferences(schema, reference, false)
+
+  return Object.keys(definitions).length &&
+    projected &&
+    typeof projected === 'object'
+    ? { ...projected, $defs: definitions }
+    : projected
 }
 
 /** Inspects evidence only. It cannot execute, retry, roll back or grant authority. */

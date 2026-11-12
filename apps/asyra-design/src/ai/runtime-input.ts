@@ -6,7 +6,10 @@ import {
   createAiInvoker,
   AiProviderError
 } from '@asyra/ai-agent-runtime'
-import { operationContractIssue } from './tool-schema'
+import {
+  operationContractIssue,
+  requireSupportedToolSchemas
+} from './tool-schema'
 import { designActionOutcome } from './tool-contract'
 import core from '../contexts'
 import { createRetainedDesignContext } from '../common-apis/retained-design-context'
@@ -68,6 +71,8 @@ export const observeAiAction = (
   now: () => number = () => performance.now()
 ): AiActionDefinition => {
   const contract = createAiToolContract(definition)
+
+  requireSupportedToolSchemas(contract)
   const middleware = createAiToolMiddleware({
     resolve: (name) => (name === contract.name ? contract : undefined),
 

@@ -256,6 +256,15 @@ const changeElementGeometryApi = defineBasicApi({
 })
 
 const setElementPositionsApi = defineBasicApi({
+  discovery: {
+    purpose:
+      'Set element position x/y in parent-local coordinates, including groups.',
+    terms: ['translate', 'move', 'offset', 'delta', 'update', 'properties'],
+    boundaries: [
+      'Absolute parent-local x/y coordinates; compute a new position before applying a delta.',
+      'Does not reparent, reorder layers, or edit vector anchors.'
+    ]
+  },
   description:
     'Apply per-element new positions keyed by element ID in one transaction; App group geometry is normalized.',
   owner: 'element',

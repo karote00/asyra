@@ -317,7 +317,10 @@ it('reduces complete selected delivery and saved invocation without another page
   )
   const main = createLocalDesignWorkflow(designs, operations)
   const pageBytes: number[] = []
-  let args: unknown = fixture.query
+  const { optionalInputs: _optionalInputs, ...inputScope } =
+    fixture.query.inputScope
+  const query = { ...fixture.query, inputScope }
+  let args: unknown = query
   let bytes = 0,
     pages = 0,
     text = ''
@@ -345,16 +348,16 @@ it('reduces complete selected delivery and saved invocation without another page
   }
 
   expect(
-    JSON.parse(text).tools[0].invocationExample.invocation.arguments.draft
-      .motifTemplates
+    JSON.parse(text).tools[0].invocationExample.invocation.arguments
+      .operations[0].arguments.draft.motifTemplates
   ).toBeDefined()
-  recordAcquisitionCost(fixture.query, text, pageBytes)
+  recordAcquisitionCost(query, text, pageBytes)
   const { resultKey, ...contract } = JSON.parse(text)
 
   expect(resultKey).toEqual(expect.any(String))
   // Keep the original contract-only budget; the total below still includes the handle.
   const { deliverInformation } = await import('../local-information-delivery')
-  let budgetQuery: Record<string, unknown> = fixture.query
+  let budgetQuery: Record<string, unknown> = query
   let contractBytes = 0
 
   for (;;) {
@@ -437,9 +440,17 @@ it('resolves motif overrides by key before projection and counts replacement ver
   }
   const expected = inline(input)
 
-  expected.children[0].motifs = expected.children[0].motifs.map((item, i) =>
-    i ? item : { ...item, ...patch, fills: undefined }
-  )
+  expected.children[0].motifs = expected.children[0].motifs.map((item, i) => {
+    if (i) {
+      return item
+    }
+
+    const changed = { ...item, ...patch }
+
+    Reflect.deleteProperty(changed, 'fills')
+
+    return changed
+  })
   expect(prepareDesign(input, 'variant')).toEqual(
     prepareDesign(expected, 'variant')
   )

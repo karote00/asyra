@@ -1,5 +1,10 @@
 import { readFileSync, statSync, watchFile, unwatchFile } from 'node:fs'
 import { join } from 'node:path'
+import {
+  localExecutionReceiptSchema,
+  localToolOutcome
+} from './local-tool-invocation'
+import { operationContractIssue } from './operation-input-schema'
 
 export interface EvaluationStopReason {
   kind: 'tool-failure' | 'work-deadline'
@@ -12,12 +17,27 @@ const record = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 
 /** Only owner-declared recoveries permit continuing; never infer them from prose. */
-const correctableInput = (value: unknown): boolean => {
+const correctableInput = (
+  value: unknown,
+  acknowledgement?: Record<string, unknown>
+): boolean => {
   if (!record(value) || value.error) {
     return false
   }
 
-  const outcome = record(value.toolOutcome) ? value.toolOutcome : value
+  const outcome =
+    acknowledgement ?? (record(value.toolOutcome) ? value.toolOutcome : value)
+
+  if (
+    acknowledgement &&
+    ((value.settlement !== undefined &&
+      value.settlement !== acknowledgement.settlement) ||
+      (record(value.toolOutcome) &&
+        (value.toolOutcome.status !== acknowledgement.status ||
+          value.toolOutcome.settlement !== acknowledgement.settlement)))
+  ) {
+    return false
+  }
 
   if (outcome.settlement === 'unknown' || outcome.status === 'unknown') {
     return false
@@ -80,7 +100,7 @@ const correctableInput = (value: unknown): boolean => {
 
     return (
       failures.length > 0 &&
-      failures.every(correctableInput) &&
+      failures.every((entry) => correctableInput(entry)) &&
       references.every(
         (entry) =>
           record(entry) &&
@@ -120,14 +140,33 @@ const correctableInput = (value: unknown): boolean => {
 
     return (
       parts.length === value.parts.length &&
-      parts.some(correctableInput) &&
-      parts.every(
-        (part) =>
-          (record(part.toolOutcome) &&
-            part.toolOutcome.status === 'success' &&
-            part.toolOutcome.settlement === 'completed') ||
-          correctableInput(part)
-      )
+      parts.some((part) => correctableInput(part)) &&
+      parts.every((part) => {
+        if (correctableInput(part)) {
+          return true
+        }
+
+        if (
+          !Array.isArray(part.actionResults) ||
+          !part.actionResults.length ||
+          operationContractIssue(part, localExecutionReceiptSchema, {
+            stage: 'output'
+          })
+        ) {
+          return false
+        }
+
+        try {
+          const completed = localToolOutcome(part)
+
+          return (
+            completed.status === 'success' &&
+            completed.settlement === 'completed'
+          )
+        } catch {
+          return false
+        }
+      })
     )
   }
 
@@ -166,23 +205,11 @@ const correctableInput = (value: unknown): boolean => {
                 return false
               }
 
-              let owner = entry.value
-
-              if (record(owner.execution)) {
-                owner = owner.execution
-              }
-
-              if (record(owner.toolOutcome)) {
-                owner = owner.toolOutcome
-              }
-
               return (
                 entry.callId === call.callId &&
                 entry.status === call.status &&
                 entry.settlement === call.settlement &&
-                owner.status === call.status &&
-                owner.settlement === call.settlement &&
-                correctableInput(entry.value)
+                correctableInput(entry.value, entry)
               )
             })
       )
@@ -205,7 +232,16 @@ export const evaluationToolStop = (
       const parsed: unknown = JSON.parse(value.text)
       const failure = evaluationToolStop(parsed)
 
-      if (failure || correctableInput(parsed)) {
+      if (
+        correctableInput(
+          parsed,
+          record(value.outcome) ? value.outcome : undefined
+        )
+      ) {
+        return undefined
+      }
+
+      if (failure) {
         return failure
       }
     } catch {

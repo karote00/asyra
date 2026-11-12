@@ -62,17 +62,29 @@ it('uses the owner outcome once and avoids failure diagnostics for successful do
 })
 
 it('reuses validation only for the exact unchanged invocation reply', async () => {
+  const invocation = {}
   const reply = await invokeLocalTool(
     { call: async () => JSON.stringify({ ready: true }) },
     definition,
     {},
-    signal()
+    signal(),
+    undefined,
+    undefined,
+    invocation
   )
 
-  expect(localToolResultSchema(reply)).toEqual(definition.outputSchema)
-  expect(localToolResultSchema({ ...reply })).toBeUndefined()
+  expect(localToolResultSchema(reply, definition, invocation)).toEqual(
+    definition.outputSchema
+  )
+  expect(
+    localToolResultSchema({ ...reply }, definition, invocation)
+  ).toBeUndefined()
+  expect(localToolResultSchema(reply, definition, {})).toBeUndefined()
+  expect(
+    localToolResultSchema(reply, { ...definition }, invocation)
+  ).toBeUndefined()
   reply.text = JSON.stringify({ ready: false })
-  expect(localToolResultSchema(reply)).toBeUndefined()
+  expect(localToolResultSchema(reply, definition, invocation)).toBeUndefined()
 })
 
 it('preserves an unknown child result and settlement through the native wrapper', async () => {
@@ -92,9 +104,10 @@ it('preserves an unknown child result and settlement through the native wrapper'
   const call = vi.fn(async () => JSON.stringify(result))
   const reply = await invokeLocalTool({ call }, definition, {}, signal())
 
-  expect(JSON.parse(reply.text)).toMatchObject({
-    ...result,
-    toolOutcome: { status: 'unknown', settlement: 'unknown' }
+  expect(JSON.parse(reply.text)).toEqual(result)
+  expect(reply.outcome).toMatchObject({
+    status: 'unknown',
+    settlement: 'unknown'
   })
   expect(reply.success).toBe(false)
   expect(call).toHaveBeenCalledOnce()
@@ -345,10 +358,8 @@ it.each([
     )
 
     expect(reply.success).toBe(success)
-    expect(JSON.parse(reply.text)).toMatchObject({
-      ...result,
-      toolOutcome: { status }
-    })
+    expect(JSON.parse(reply.text)).toEqual(result)
+    expect(reply.outcome).toMatchObject({ status })
   }
 )
 
@@ -495,7 +506,11 @@ it('returns canonical failure evidence and completed actions without replay', as
 it('does not describe a later compound-input failure as zero prior execution', async () => {
   const executionResult = {
     batches: [
-      { actionResults: [{ actionId: 'created', result: { id: 'shape' } }] }
+      {
+        actionResults: [
+          { actionId: 'created', actionName: 'create', result: { id: 'shape' } }
+        ]
+      }
     ]
   }
   const reply = await invokeLocalTool(
@@ -745,10 +760,8 @@ it('distinguishes usable discovery pages from incomplete mutations through publi
   expect(first.success).toBe(true)
   const page = JSON.parse(first.text)
 
-  expect(page).toMatchObject({
-    complete: false,
-    toolOutcome: { status: 'success' }
-  })
+  expect(page).toMatchObject({ complete: false })
+  expect(first.outcome).toMatchObject({ status: 'success' })
   expect(page.next.arguments.offset).toBe(page.apis.length)
   const next = await invokeLocalTool(
     operations,
@@ -1146,3 +1159,12 @@ it.each([
     ).toBe(expected)
   }
 )
+
+it('rejects malformed boundary evidence at its constructor before any provider delivery', () => {
+  expect(() =>
+    localToolFailureReply('Execution ended.', 'TOOL_HANDOFF_FAILED', {
+      settlement: 'completed',
+      executionResult: { actionResults: [{ actionName: 'draw' }] }
+    })
+  ).toThrow()
+})

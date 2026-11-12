@@ -1,12 +1,20 @@
 import {
+  invocationRecoverySchema,
+  localToolFailureSchema,
+  localToolRecoveryModelContract
+} from './local-tool-invocation'
+import {
   aiRecipeInputSchema,
   embedAiToolSchema,
   type AiInvocation,
   type AiJsonValue,
-  type AiToolOutcome
+  type AiToolOutcome,
+  type AiToolContract
 } from '@asyra/ai-agent-runtime'
 import { AiDesignToolIds } from '../src/constants/ai-design'
 import {
+  modelToolResultSchemas,
+  modelToolDeliveryFailureSchema,
   toolResultObject,
   toolResultString,
   toolSemantics
@@ -63,7 +71,8 @@ const submitted = {
         ok: { const: false },
         code: toolResultString,
         message: toolResultString,
-        issues: { type: 'array' }
+        issues: { type: 'array' },
+        omittedIssues: { type: 'integer', minimum: 0 }
       },
       ['ok', 'code', 'message']
     )
@@ -92,10 +101,22 @@ export const registeredToolInvocationSchemas = (
     recoveryOutputSchema?: unknown
   },
   pinned?: { name: string; revision: number },
-  recovery?: unknown
+  recovery?: unknown,
+  deliveryFailure?: unknown
 ) => {
-  const output = (schema: unknown, requiredValue: boolean) =>
-    toolResultObject(
+  const delivered = (schema: unknown) =>
+    deliveryFailure === undefined
+      ? schema
+      : invocationRecoverySchema(schema, deliveryFailure)
+
+  const output = (
+    schema: unknown,
+    requiredValue: boolean,
+    statuses?: AiToolOutcome['status'][],
+    outcomes = statuses ?? (requiredValue ? ['success'] : ['partial']),
+    deliveries = statuses ?? (requiredValue ? ['success'] : ['partial'])
+  ) => ({
+    ...toolResultObject(
       {
         execution: {
           ...execution,
@@ -103,14 +124,16 @@ export const registeredToolInvocationSchemas = (
             ...execution.properties,
             status: pinned
               ? {
-                  enum: requiredValue
-                    ? ['success']
-                    : [
-                        'failed',
-                        'partial',
-                        'unknown',
-                        ...(schema === undefined ? [] : ['success'])
-                      ]
+                  enum:
+                    statuses ??
+                    (requiredValue
+                      ? ['success']
+                      : [
+                          'failed',
+                          'partial',
+                          'unknown',
+                          ...(schema === undefined ? [] : ['success'])
+                        ])
                 }
               : execution.properties.status,
             ...(schema === undefined
@@ -147,19 +170,62 @@ export const registeredToolInvocationSchemas = (
           ? {
               toolOutcome: toolResultObject({
                 status: {
-                  enum: requiredValue
-                    ? ['success']
-                    : ['partial', 'failed', 'unknown']
+                  enum: outcomes
                 },
                 settlement: execution.properties.settlement
               })
             }
           : {}),
+        ...(deliveryFailure === undefined
+          ? {}
+          : {
+              deliveryOutcome: toolResultObject({
+                status: { enum: deliveries },
+                settlement: execution.properties.settlement
+              })
+            }),
         storage: saved,
         receiptId: toolResultString
       },
       ['execution']
-    )
+    ),
+    // Correlate the receipt layers without copying their potentially large schemas.
+    allOf: [
+      ...(deliveryFailure === undefined
+        ? []
+        : [
+            {
+              anyOf: [
+                { properties: { execution: { not: { required: ['value'] } } } },
+                { required: ['deliveryOutcome'] }
+              ]
+            }
+          ]),
+      {
+        anyOf: ['not-started', 'completed', 'partial', 'unknown'].map(
+          (settlement) => ({
+            properties: {
+              execution: {
+                properties: {
+                  settlement: { const: settlement }
+                }
+              },
+              toolOutcome: {
+                properties: { settlement: { const: settlement } }
+              },
+              ...(deliveryFailure === undefined
+                ? {}
+                : {
+                    deliveryOutcome: {
+                      properties: { settlement: { const: settlement } }
+                    }
+                  })
+            }
+          })
+        )
+      }
+    ]
+  })
 
   return {
     inputSchema: object(
@@ -175,11 +241,61 @@ export const registeredToolInvocationSchemas = (
       ['name', 'revision', 'input']
     ),
     outputSchema: output(selected.outputSchema, true),
-    partialOutputSchema: output(
-      selected.partialOutputSchema ?? selected.outputSchema,
-      false
-    ),
-    recoveryOutputSchema: output(selected.recoveryOutputSchema, false)
+    partialOutputSchema:
+      selected.partialOutputSchema === undefined
+        ? output(
+            delivered(selected.outputSchema),
+            false,
+            ['success', 'partial'],
+            ['partial']
+          )
+        : {
+            anyOf: [
+              output(
+                selected.outputSchema,
+                true,
+                ['success'],
+                ['partial'],
+                ['success']
+              ),
+              output(
+                selected.partialOutputSchema,
+                false,
+                deliveryFailure === undefined
+                  ? ['partial']
+                  : ['success', 'partial'],
+                ['partial'],
+                ['partial']
+              )
+            ].map((schema, index) =>
+              embedAiToolSchema(schema as AiJsonValue, `#/anyOf/${index}`)
+            )
+          },
+    recoveryOutputSchema: output(
+      invocationRecoverySchema(delivered(selected.recoveryOutputSchema), {
+        allOf: [
+          embedAiToolSchema(localToolFailureSchema as AiJsonValue, '#/allOf/0'),
+          {
+            anyOf: ['not-started', 'unknown'].map((settlement) => ({
+              properties: {
+                settlement: { const: settlement },
+                toolOutcome: {
+                  properties: { settlement: { const: settlement } }
+                }
+              }
+            }))
+          }
+        ]
+      }),
+      false,
+      ['failed', 'unknown'],
+      ['failed', 'unknown'],
+      [
+        'failed',
+        'unknown',
+        ...(deliveryFailure === undefined ? [] : ['partial' as const])
+      ]
+    )
   }
 }
 
@@ -190,11 +306,27 @@ export const createLocalToolLibraryTools = (
     AiInvocation,
     'parentCallId' | 'actor' | 'purpose' | 'purposeSource'
   > = () => ({}),
-  project: (name: string, input: unknown, value: unknown) => unknown = (
+  project: (
+    name: string,
+    input: unknown,
+    value: unknown,
+    outcome: AiToolOutcome,
+    revision?: number
+  ) => { value: unknown; outcome: AiToolOutcome } = (
     _name,
     _input,
-    value
-  ) => value
+    value,
+    outcome
+  ) => ({ value, outcome }),
+  selectContract: (
+    name: string,
+    contract: AiToolContract
+  ) => {
+    inputSchema?: unknown
+    outputSchema?: unknown
+    partialOutputSchema?: unknown
+    recoveryOutputSchema?: unknown
+  } = (_name, contract) => contract
 ) => {
   // Keep canonical local references rooted at the native tool schema after nesting.
   const { $defs, ...proposal } = aiRecipeInputSchema as Record<
@@ -219,6 +351,7 @@ export const createLocalToolLibraryTools = (
       executes(name) ? 'mutation' : 'prepare',
       executes(name) ? ['tool-library', 'document'] : ['tool-library']
     ),
+    recoveryOutputSchema: outputSchema,
     composition: 'control-plane' as const,
     executionAccess: LocalToolAccess.COORDINATOR
   })
@@ -271,6 +404,7 @@ export const createLocalToolLibraryTools = (
 
   return {
     definitions,
+    projectedResultPaths: ['/execution/value', '/execution/recovery/*/value'],
 
     projectModelResult(name: string, input: unknown, value: unknown) {
       if (
@@ -288,22 +422,25 @@ export const createLocalToolLibraryTools = (
             status: value.execution.status,
             settlement: value.execution.settlement
           }
-      let projected: unknown
+      let projected: { value: unknown; outcome: AiToolOutcome } | undefined
 
       if (Object.hasOwn(value.execution, 'value')) {
         projected = project(
           String(input.name),
           input.input,
-          value.execution.value
+          value.execution.value,
+          value.execution as unknown as AiToolOutcome,
+          input.revision as number
         )
       }
 
       return {
         ...value,
+        ...(projected ? { deliveryOutcome: projected.outcome } : {}),
         execution: {
           ...value.execution,
           ...(Object.hasOwn(value.execution, 'value')
-            ? { value: projected }
+            ? { value: projected?.value }
             : {}),
           ...(Array.isArray(value.execution.recovery)
             ? {
@@ -313,22 +450,26 @@ export const createLocalToolLibraryTools = (
                   Object.hasOwn(entry, 'value')
                     ? {
                         ...entry,
-                        value: project(entry.name, undefined, entry.value)
+                        value: project(
+                          entry.name,
+                          undefined,
+                          entry.value,
+                          entry as unknown as AiToolOutcome,
+                          entry.revision as number
+                        ).value
                       }
                     : entry
                 )
               }
             : {})
         },
-        ...(record(projected) &&
-        record(projected.toolOutcome) &&
-        projected.toolOutcome.status !== 'success'
+        ...(projected && projected.outcome.status !== 'success'
           ? {
               toolOutcome: {
                 ...originalOutcome,
                 status:
                   originalOutcome.status === 'success'
-                    ? projected.toolOutcome.status
+                    ? projected.outcome.status
                     : originalOutcome.status,
                 settlement: value.execution.settlement
               }
@@ -337,7 +478,11 @@ export const createLocalToolLibraryTools = (
       }
     },
 
-    invocationSchemas(name: string, input: unknown) {
+    invocationSchemas(
+      name: string,
+      input: unknown,
+      stage: 'owner' | 'model' = 'owner'
+    ) {
       if (
         name !== AiDesignToolIds.INVOKE_TOOL ||
         !record(input) ||
@@ -354,9 +499,28 @@ export const createLocalToolLibraryTools = (
       }
 
       return registeredToolInvocationSchemas(
-        selected,
+        stage === 'model'
+          ? {
+              ...selectContract(input.name, selected),
+              ...modelToolResultSchemas(selectContract(input.name, selected))
+            }
+          : selectContract(input.name, selected),
         { name: input.name, revision: input.revision },
-        resolve().describeRecovery(input.name, input.revision)
+        resolve().describeRecovery(
+          input.name,
+          input.revision,
+          undefined,
+          stage === 'model'
+            ? (contract) =>
+                localToolRecoveryModelContract({
+                  ...contract,
+                  ...selectContract(contract.name, contract)
+                } as AiToolContract)
+            : undefined
+        ),
+        stage === 'model'
+          ? modelToolDeliveryFailureSchema(selectContract(input.name, selected))
+          : undefined
       )
     },
 
@@ -371,8 +535,22 @@ export const createLocalToolLibraryTools = (
       }
 
       if (record(value.execution)) {
+        if (record(value.toolOutcome)) {
+          return {
+            ...value.toolOutcome,
+            issues: []
+          } as unknown as AiToolOutcome & {
+            issues: { code: string; message: string }[]
+          }
+        }
+
         return {
-          status: value.execution.status as AiToolOutcome['status'],
+          status:
+            value.execution.status === 'success' &&
+            record(value.storage) &&
+            value.storage.status === 'unsaved'
+              ? 'partial'
+              : (value.execution.status as AiToolOutcome['status']),
           settlement: value.execution.settlement as AiToolOutcome['settlement'],
           issues: []
         }

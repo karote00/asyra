@@ -257,7 +257,7 @@ test('Asyra Design release template retains only active drawing fixtures', () =>
   }
 })
 
-test('Asyra Design keeps the large CRDT fixture out of the generated template', () => {
+test('Asyra Design excludes repository-only fixtures and live benchmarks from the template', () => {
   const config = JSON.parse(
     readFileSync(
       path.join(repositoryRoot, 'release-configs/asyra-design.json'),
@@ -270,6 +270,21 @@ test('Asyra Design keeps the large CRDT fixture out of the generated template', 
   )
 
   assert.equal(existsSync(canonicalFixture), true)
+  const manifest = JSON.parse(
+    readFileSync(
+      path.join(repositoryRoot, 'apps/asyra-design/package.json'),
+      'utf8'
+    )
+  )
+
+  assert.equal(
+    manifest.scripts['test:live:taipei-101'],
+    'node test-data/ai-drawing/taipei-101-live.mjs'
+  )
+  assert.ok(config.cleanFiles.includes('test-data/ai-drawing'))
+  assert.ok(
+    config.cleanFiles.includes('__tests__/taipei-101-live-contract.test.mjs')
+  )
   assert.deepEqual(config.removeScripts, [
     'generate:crdt-7076-document',
     'test:e2e:crdt-7076',
@@ -283,7 +298,8 @@ test('Asyra Design keeps the large CRDT fixture out of the generated template', 
     'test:e2e:ai-crdt-activity:16',
     'test:e2e:ai-crdt-attribution:1280',
     'test:e2e:ai-crdt-attribution:320',
-    'test:e2e:ai-crdt-video'
+    'test:e2e:ai-crdt-video',
+    'test:live:taipei-101'
   ])
   assert.deepEqual(config.removeScriptArguments, {
     'test:server-response-harness': [
@@ -295,7 +311,8 @@ test('Asyra Design keeps the large CRDT fixture out of the generated template', 
     'test:local': [
       '__tests__/prepared-server-response-artifacts.test.mjs',
       '__tests__/playwright-config.test.mjs',
-      'src/common-apis/element/__tests__/vector-parent-creation.test.ts'
+      'src/common-apis/element/__tests__/vector-parent-creation.test.ts',
+      '__tests__/taipei-101-live-contract.test.mjs'
     ]
   })
   assert.equal(

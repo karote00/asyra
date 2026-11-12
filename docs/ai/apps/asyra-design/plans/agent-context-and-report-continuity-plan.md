@@ -2,10 +2,1901 @@
 
 ## Status and task boundary
 
-The completed task is [Canonical input rejection and same-turn recovery](#canonical-input-rejection-and-same-turn-recovery).
+The active follow-up is [Terminal handoff and recovery contracts](#terminal-handoff-and-recovery-contracts).
+The earlier conversion task passed its selected cases but did not establish the
+whole-flow invariant. Upstream review traced the remaining failures to result
+packaging, implicit schema conversion and loss of invocation contract identity.
+Earlier rendering work and immutable live evidence remain unchanged.
+
+## Terminal handoff and recovery contracts
+
+November 11, 2026. Status: implemented; focused checks passed. The dependency
+classification and shared-check follow-ups passed; full-local now stops at the
+Asyra Design result-contract tests described
+below. This approved follow-up supersedes the
+previous closure claim for the complete handoff, while retaining its evidence.
+Work in the existing feature worktree and preserve unrelated dirty changes.
+
+The complete-path review added eleven permanent cases: ten failed and one passed;
+231 existing focused cases passed. `continuity-review-boundaries.log` and
+`continuity-review-provider.log` record the failures and actual provider packets.
+The four defects share terminal ownership gaps: invalid-input early return bypasses
+Host result validation; reconstructed delivery failures escape final validation;
+non-root delivery merges recovery-only payloads into partial results; registered
+composition recovery validates projected child values with raw child contracts.
+`resultStage: host` remains an unused descriptor field, not an active consumer.
+
+### Bounded implementation and review
+
+Scope is App invocation/Host, declared model delivery, library recovery, discovery,
+provider consumers, their formal tests, and owning spec/Inspector documentation.
+Preserve independent execution/delivery/storage, valid partial and failed-prefix
+receipts, exact owner revisions, resource release, correction and no replay. Remove
+superseded metadata and contract alternatives without compatibility or relaxed
+validation. Do not change geometry/rendering, model prompts, live evaluations,
+release flows, dependencies, environment or remote Git state.
+
+1. **Admission and terminal validation - compose.** Route invalid-input replies
+   through Host validation using the canonical admission failure contract and
+   explicit failed/not-started acknowledgement. Do not acquire resources or execute
+   owner work for rejected input. Preserve actionable owner correction diagnostics.
+   Validate diagnostic envelopes and acknowledgement agreement at their owner;
+   middleware flags cannot override evidence. Review copied, mutated and ordinary
+   rejections and verify zero owner calls and unchanged resource counts.
+2. **Declared model results and failure construction - compose/provider handoff.**
+   Keep partial/recovery view alternatives status-specific. A reconstructed delivery
+   failure must itself pass its declared failure schema. Include execution evidence
+   only when it can be delivered under that schema; retain truthful settlement and
+   explicit delivery failure when evidence cannot be projected. Never weaken the
+   successful view or silently turn recovery-only data into partial data. Use the
+   existing delivery-failure owner, not another transport fallback or replay path.
+   Review direct/registered routes, object/scalar roots, missing views and failure
+   reconstruction; verify actual provider content and acknowledgement together.
+3. **Composition recovery and metadata - compose.** Derive model recovery contracts
+   from the same selected child owner/revision used to project recovery values.
+   Raw recovery retains raw schemas. Consume the existing library recovery builder
+   with its projection hook; no second registry/cache or caller-managed schema.
+   Remove unused resultStage metadata and its obsolete assumptions. Review single
+   tools versus composed partial prefixes and failed storage; preserve source-call
+   counts and successful data.
+
+Each step starts from formal red regressions, finishes focused tests and handoff
+review before advancing, and updates old tests without deleting their invariants.
+New internal helper names belong to the existing invocation/delivery owners; no new
+persisted identities. Keep invocation-bound validation reuse; new failure data gets
+its own validation rather than reusing the original result proof.
+
+After all focused checks, review registration -> discovery -> raw inspection ->
+resource handoff -> model projection -> recovery -> native provider packets using
+current contracts. Only then run the repository full-local validation entrypoint,
+with its existing guards. Full test failures are evidence, not permission to widen
+production mutation scope. Release/publication and live 101 remain excluded.
+
+### Implementation and focused review
+
+All three steps are implemented. Rejected input now receives canonical failure
+validation without acquiring resources or executing the owner. Boundary failure
+construction also validates its envelope before any provider delivery. Model
+failure reconstruction validates the new payload and includes only evidence allowed
+by the declared view. Partial and recovery alternatives remain status-specific.
+Composition recovery uses each selected child's model contract, preserving its
+qualified identity and revision; the unused resultStage descriptor is removed.
+
+Self-review added regressions for unknown tools and malformed boundary evidence.
+It also caught a qualified-name overwrite during recovery conversion and a legacy
+test receipt missing its required actionName. The name is preserved, and the test
+now uses a valid receipt without removing its partial-execution assertions. No
+validator or declared schema was weakened.
+
+Focused evidence is under `tmp/conversation-improvements/terminal-handoff-*`:
+246 invocation/Host/result/recovery cases, 26 actual provider-packet cases, 25 image
+delivery cases, and 1,163 discovery/schema audit cases passed. Earlier owner-slice
+checks cover library controls, leases, evaluation stopping and model delivery.
+Flow-proof type checking passed. The bounded whole-path review covers registration,
+discovery, admission, raw inspection, resource handoff, model projection, recovery
+and provider delivery. Formatting, diff checks, naming (15 tests) and Inspector
+checks (2 tests) passed. Scoped lint has zero errors and one existing console
+warning in the provider test.
+
+### Full-local result
+
+Ran `yarn validate:full` after the focused checks and complete-path review.
+Evidence: `tmp/local-validation/20969a4e-ad06-445c-b102-64805f81a527/result.json`.
+Source verification passed. Security audit passed; dependency validation then
+failed and the runner stopped before the other planned checks.
+
+The E2E-only `apps/asyra-design/e2e/hierarchy-handoff-probe.ts` imports
+`@asyra/reactive-events`, which is already declared in the App's devDependencies.
+`scripts/deps-validate.js` recognizes test/spec filenames and tests/mocks
+directories but classifies this probe as production source. Its importing consumer
+is `e2e/hierarchy-projection-updates.spec.ts`. This is a test-helper classification
+gap, not an absent installation or a failed tool-handoff regression. The validator's
+six unit tests passed but do not cover this E2E helper path.
+
+Do not claim full-local success. No validation was bypassed, dependency moved,
+release flow run or unrelated production code changed. Correcting the E2E helper
+classification requires a separately scoped follow-up; preserve production import
+enforcement. The remaining full-local checks have not run.
+
+### E2E helper dependency classification follow-up
+
+The user authorized correcting the dependency classifier and retrying full-local
+validation. Scope: `scripts/deps-validate.js`, its permanent regression tests and
+this plan. Classify the workspace-root `e2e/` test directory, including browser
+helpers, as test source; still inspect every import and require a declared owning
+package. Preserve production dependency requirements outside that directory,
+existing test conventions and nested-workspace ownership. Do not move dependencies,
+skip files, add package exceptions or change App/runtime/Inspector behavior.
+
+First reproduce the real helper failure in a formal regression, then cover nested
+helpers, undeclared imports, public subpaths, similar directory names and production
+paths. Review the bounded diff and run dependency, lint and naming checks before
+retrying `yarn validate:full` with its original guards. Unrelated full-local failures
+remain evidence and do not authorize broader corrections.
+
+The two positive regressions failed before the classifier change while eight
+existing/negative cases passed. After the correction all ten cases passed and the
+formal dependency scan passed across 29 workspaces. Scoped lint and naming (15
+tests) passed. Review confirmed that imports are still parsed and checked against
+their declared workspace owner, no files are skipped, and production paths remain
+strict. Evidence: `tmp/conversation-improvements/e2e-dependency-*`.
+
+The full-local retry completed with failure at shared checks, retaining the
+runner's stop policy. Evidence:
+`tmp/local-validation/b29ae1d7-51ac-44e8-8591-f7b9601ae5e4/result.json` and
+`shared.json`; source verification passed. Security audit, dependencies,
+build-graph and declarations passed. Shared naming passed; lint reported 138
+errors across nine pre-existing App test files, and repository scripts reported
+seven failed tests. None is in the dependency classifier or its tests:
+
+- The generated-template script exclusion expectation omits `test:live:taipei-101`.
+- A tracked November 4 drawing report contains an absolute home path.
+- Four documentation checks reject stale `docs/public/generated/package-reference.json`.
+- The public source-map test rejects an outdated hash for
+  `apps/asyra-design/server/local-operation-tools.ts`.
+
+The full-local retry has not passed; subsequent workspace and E2E gates did not
+run. No unrelated files were reformatted, dependencies moved, validation skipped,
+or compatibility exceptions added. Follow-up corrections to these shared-check
+failures are outside this dependency-classification task.
+
+### Shared-check correction follow-up
+
+The user authorized correcting the 138 lint errors and seven failed tests from
+the full-local run above. Scope is the nine named App test files, the template
+exclusion regression, the authored November 4 report links, current public
+documentation generator outputs and this plan. Preserve test behavior and strict
+validation; remove unused test scaffolding rather than suppressing rules. No
+runtime/Inspector changes, dependency moves, compatibility, publication or live
+drawing runs. Existing failed lint and formal test evidence is the baseline.
+
+Verify the benchmark command and its contract test depend on the excluded
+`test-data/ai-drawing` directory before updating exact template expectations.
+Convert authored artifact links to portable relative paths without touching
+original AI evidence. Regenerate public documentation through its canonical
+generator; retain byte/hash assertions. Review automatic formatting separately
+from unused-code removal and control-flow changes. Run the nine focused App
+test files and affected script/documentation tests, lint and naming, then retry
+full-local with unchanged guards. New unrelated failures require separate scope.
+
+Review found 131 automatically correctable style errors, unused imports and one
+unused helper, a non-null assertion and a nested conditional. Removed unused
+scaffolding, made the missing-tool failure explicit and preserved conditional
+precedence. The nine test files retain all their test declarations.
+
+Executing these files exposed 21 failures in three existing consumer suites:
+they still expected Host acknowledgement inside owner data. Migrate these tests
+to the current separate data/outcome boundary, preserving all fixed status,
+settlement, data, call-count and no-replay assertions. One observed-prefix fixture
+also lacked its required actionId; use a valid receipt, preserve the owner's
+failed application data and assert the invocation's partial/unknown acknowledgement
+separately. No product contract or validation changed. All 133 App cases now pass.
+
+The template test now verifies the real benchmark command and excluded data/test
+paths, while retaining exact exclusion-list assertions. All ten portable report
+links resolve to their original artifacts without rewriting those artifacts.
+Generated package/API/content/source-map outputs were rebuilt from current sources
+using `yarn docs:public`; deterministic checks remain unchanged. All 116 affected
+script/documentation cases, App server type checking and public-documentation
+freshness checks passed. Evidence: `tmp/conversation-improvements/shared-fix-*`.
+Full-local retry follows final lint and naming checks.
+
+The retry finished at
+`tmp/local-validation/0d5f9696-32b8-4dff-84ca-a44bb4ee8704/result.json`.
+Source verification passed. Security audit, dependency validation, build graph,
+declarations, all shared checks and the `@asyra/ai-agent-runtime` workspace passed.
+Full lint reported zero errors (110 warnings); the original seven script failures
+are resolved. No scripts, tests or gates were skipped to obtain those results.
+
+Asyra Design's first AI test stage ran 803 cases: 798 passed and five failed in
+five files outside the nine-file correction above:
+
+- `core-owner-results.integration.test.ts`: real Core result delivery expects a
+  different result envelope.
+- `identity-and-composed-receipts.integration.test.ts`: the test discards the
+  invocation acknowledgement and then reads `native.toolOutcome.status`.
+- `interrupted-design.integration.test.ts`: descriptive brief capacity expects
+  two inline status objects but receives undefined.
+- `non-core-owner-results.integration.test.ts`: real non-Core result delivery
+  disagrees with the expected result envelope.
+- `structural-delivery.test.ts`: observed fill projection disagrees with the
+  expected inline acknowledgement.
+
+These are recorded failures, not an assertion that all five are stale tests.
+Their owner contracts and actual handoffs need review before correction. Full-local
+remains failed; later workspace/E2E checks have not run. The owned runner exited
+with no retained process groups. No runtime behavior, validator, compatibility path,
+remote Git state or release operation changed in this follow-up.
+
+### Native result consumer correction follow-up
+
+The user authorized resolving the five remaining failures, reviewing the actual
+upstream/downstream handoff and iterating without another inspection checkpoint.
+Scope: those five AI integration suites, their result/invocation/projection owners
+if a proven defect requires correction, direct contract regressions and this plan.
+Use the existing spec and Inspector compose/apply contract: unchanged owner data,
+separate invocation acknowledgement, declared model projection and no replay.
+Do not restore inline Host fields, weaken schemas, skip validation or add compatibility.
+Preserve mutation scopes, partial/failed states, resource ownership and undo/redo.
+
+The failed full-local run provides the red baseline. Trace every expected field to
+its owner before edits. Current evidence locates all five mismatches in consumers:
+native tests discard the acknowledgement; compact projection tests demand raw
+metadata after the declared public projection. Preserve expected states explicitly
+at their actual boundary and all data/history/call-count assertions. Review the
+five files and run their focused suites, direct provider-boundary regressions,
+relevant type/lint/naming checks, then full-local. Iterate related result-contract
+failures exposed by these gates within the same owner boundary; do not turn this
+into unrelated runtime, rendering, release, dependency or environment work.
+
+The user's additional review applies to all 20 test files modified in these recent
+handoff, dependency, shared-check and native-consumer corrections. Retention follows
+current behavior, not the age or number of tests. Keep necessary coverage for
+strict admission/projection, failure recovery, saved data, optional reference use,
+absence of mandatory approval, history, dependency ownership and template isolation.
+Negative legacy-field checks prevent reintroduction; historical input fixtures are
+immutable evidence adapted explicitly by test setup, not production compatibility.
+
+Re-review removed the obsolete inline acknowledgement example from the internal-only
+projection test; it now validates the actual empty projected value. Replace the new
+part-outcome helper assertion with independently expected completed steps and real
+application receipts, plus the separate invocation outcome and persisted geometry.
+Raw rejection tests check their declared unavailable/not-started fields directly.
+The underlying current behaviors still need coverage; obsolete field expectations
+and unused scaffolding do not. No dual old/new acceptance or fallback helper is added.
+
+Review confirmed no missing product data: Core/non-Core native replies preserve
+their owner values and explicit outcome; the identity test had discarded the
+reply envelope. Ordered parts are interpreted by the same canonical outcome owner
+used during composition. Compact fill delivery preserves public status/settlement,
+while the original observation retains its internal metadata and mutation scope.
+Tests now assert those separate boundaries, including success, no-change, rejection,
+partial mutation and no replay. Native owner tests explicitly reject reinjected
+Host fields. No product implementation, schema or compatibility behavior changed.
+
+All 35 cases in the five suites and 26 selected actual-provider-packet regressions
+passed. App browser type checking and scoped lint passed; naming and final diff
+review precede full-local. Evidence: `tmp/conversation-improvements/native-consumer-*`.
+
+Full-local `37bd59a2-152d-4ca0-8c8b-723d5fa7850f` passed shared checks,
+runtime checks and all 803 frontend AI tests. Its subsequent server stage exposed
+142 failures in 19 files (3,189 passed, 14 skipped). The next bounded iteration
+groups these by the existing handoff owner, rather than repairing assertions in
+isolation: (1) strict failure construction and selected model contracts, (2) native
+owner values versus separate acknowledgements, (3) immutable recorded scenarios
+expressed as current input and delivery selections, and (4) actual provider content
+items and recovery. Browser-only test dependencies must be isolated explicitly.
+First investigate schema failures and provider interruption before migrating
+consumers. Preserve meaningful execution, resource, history and no-replay oracles.
+Remove generic historical-input normalization and obsolete Host-field selections;
+use explicit current requests with recorded geometry. Do not invent an inline
+acknowledgement helper or a dual-format result decoder. Validate each owner group
+with focused Node/browser suites before another full-local run.
+
+The full red baseline identified four implementation defects, not stale assertions:
+scoped registered discovery omitted its delivery-failure schema; missing-owner
+delivery failure generated an empty `anyOf`; targeted action receipts embedded
+local references at the wrong root; evaluation still required inline Host metadata
+on completed parts before allowing a later input correction. Correct these in
+their existing schema/composition/evaluation owners. Missing evidence uses a false
+schema, not permissive acceptance. Targeted receipts use the existing schema
+embedding utility at every envelope boundary. Evaluation uses canonical action
+outcomes with nonempty receipt evidence; missing, unknown and failed inspection
+prefixes remain stopping conditions. The provider replay and new focused failure
+tests establish the red baseline; preserve their negative controls.
+
+Historical result selectors for `/toolOutcome` are no longer valid data selection.
+Keep recorded geometry, portable IDs and source retention; remove those selectors
+from current requests and assert the independent invocation acknowledgement.
+The provider harness reads value and acknowledgement from separate native content
+items, including follow-up callbacks. A content-delivery failure fixture must pass
+owner schema validation and inject failure at the content adapter, rather than supplying a
+malformed URL that correctly fails earlier admission. No timeout increase or
+validation bypass is used to conceal that distinction.
+
+The native reference replay also exposes a transport-boundary defect: delivery
+repackaging applies the browser batch evidence schema to native reference data,
+which intentionally has no browser action IDs. Reuse the existing canonical
+model-delivery failure constructor and the invocation-pinned model contract at
+the provider content boundary. Retire the separate transport failure code rather
+than accepting both shapes. Validate the retained native value with its own
+contract, preserve execution settlement, and prove actual provider content and
+successful continuation. No synthetic action IDs or broader receipt union.
+
+A sixth defect appears in the real interrupted batch replay: the failure branch
+bypasses the normal owner result preparation, omitting the required batch summary,
+and uses the pending action's not-started settlement for the whole execution.
+Step: operation result handoff; inputs are the original submitted batch and observed
+browser receipt; outputs are the canonical result plus its aggregate settlement.
+Use one preparation path for both completed and interrupted receipts, preserve
+child failure settlement, and validate the delivered prefix against acquired usage.
+The internal batch summary participates in owner validation; public failure
+projection still exposes only declared recovery evidence, not that internal summary.
+The regression must prove one mutation completed, the other remains pending,
+malformed retained data rejects, and recovery executes only the pending suffix.
+No new schema alternative or replay fallback. Run focused batch/invocation/provider
+regressions, bounded review and full-local after all current consumers pass.
+
+The bounded re-review covers 36 App test files and the two previously changed
+script test files. Retained cases still verify current behavior; obsolete inline
+acknowledgement selectors, historical-input normalization and duplicate retired-plan
+variants are removed. Native partial fixtures now carry consistent execution,
+delivery and outer outcomes, with explicit rejection of contradictory states.
+The 22-file consumer run passed 1,246 cases with one batch failure; its corrected
+batch suite now passes all 24. The final operation/invocation/provider/recovery
+regressions pass 526 cases (one existing skipped case). App/server/proof type checks,
+scoped lint, naming and diff review pass. Full-local is the remaining closure gate;
+no completion claim is based on those focused results alone.
+
+Full-local `cc57edfd-8c38-487b-82da-9d70f1bcb91c` passes shared checks,
+Runtime, all 803 frontend AI cases and 3,332 server cases (14 existing skips).
+The later browser ownership suite reveals five stale native acknowledgement
+assertions in `local-query-artifacts.test.ts`. Its query-to-fill and structural
+ownership coverage remains necessary: preserve real owner calls, partial prefix
+handling, lease disposal, retained receipt lookup and exact mutation counts.
+The next consumer-only step retains the actual invocation envelope and checks
+its separate outcome; raw domain receipts stay unchanged. No product schema or
+compatibility change. All 15 cases pass; scoped lint, server type checking and
+bounded diff review pass. Run full-local again on the corrected source.
+
+Full-local `34a94b66-5341-4c69-8a46-6cd313a69904` passes every workspace
+and FieldScope profiles. Control-plane finishes with 617 passes, 57 existing skips
+and 11 failures, all caused by the removed `local-design-review.ts` still listed
+in the current Design functional responsibility manifest/Inspector. Existing
+source-existence and real Playwright-fixture tests detect this upstream defect.
+Revised bounded step: reconcile `inspect-design` responsibility sources and its
+exact executable case inventory against current inspection implementation and
+`functional-failure-responsibilities.md`. Remove retired source/case references;
+keep current observation freshness, mechanical validation and AI final verification.
+Update only the functional manifest, its Inspector, generated workspace bundle and
+this plan, plus directly necessary regression tests. No restored module, missing-file
+skip, relaxed source validation or historical report rewrite. Preserve all 11
+failure/recovery/attachment tests; they remain necessary. Run exact discovery and
+Playwright evidence suites before another full-local run. This source mapping step
+replaces assertion migration as the current failed boundary; no unrelated runtime
+or tooling feature work is authorized.
+
+Exact current Playwright discovery contains 530 cases while the stale manifest
+contains 520: one retired mandatory-review case is removed, two renamed cases
+retain their identities, and eleven additional cases are mapped to their actual
+conversation, execution, inspection, navigation and render owners. Extend only
+those existing responsibility boundaries to include their current producers,
+including recording framing and GPU observation helpers as evidence producers,
+not alternative product owners. Update the functional responsibility spec and
+semantic mapping regression alongside the manifest/Inspector. This is current
+coverage reconciliation, not restoration of the removed review protocol.
+
+Functional mapping regressions pass: 75 tests, no failures, 44 existing opt-in
+skips. Exact discovery and semantic responsibility checks pass after final review.
+The 13 current browser cases first detect a stale live-service boundary: ports
+3045/4145 belong to this worktree but have been running for three days; browser
+Pixi is 8.20.1 while installed/locked and current prebundled files are 8.22.0.
+Keep the version identity assertion. Validate using newly owned test services on
+3057/4157/4257, without modifying persistent `.env` or stopping the retained session.
+Use the same isolated service environment for the final full-local run. Service
+identity and cleanup are test execution requirements, not product compatibility.
+
+All 13 reconciled browser cases pass against newly owned current-version
+services (1.2 minutes); the services are reaped and ports are released. The first
+isolated attempt incorrectly set CI, which disables local server startup in the
+existing config; rerunning in ordinary local mode fixes invocation only. No source,
+assertion or version check was relaxed. Complete the previously unexecuted functional
+E2E gate before another full-local run, to expose remaining current-consumer issues
+without repeatedly traversing already validated expensive owners first.
+
+Functional E2E reaches 234 passes and stops at the referenced partition recovery
+case. Its scripted server reads removed inline Host metadata from unchanged owner
+data, throws inside its own assertion and destroys the stream; App partial status
+correctly reflects that interruption. Retain this real preparation, recovery,
+collaboration, history and durable-reload case, but preserve `invokeLocalTool`'s
+reply envelope and assert its separate outcome. Exact invocation/outcome search
+in E2E finds only this file's two stale reads; host consumers do not read inline
+acknowledgements. No product/timeout/assertion-strength change. Run the whole
+construction E2E file, scoped lint/type checks, then resume the formal functional
+gate before full-local. This is the same current result-consumer correction boundary.
+
+The construction consumer correction preserves the invocation reply separately
+and keeps all native outcome, partition, mutation-count, history and durable reload
+assertions. One focused attempt overlapped test-file lint edits and lost its mounted
+conversation panel; with source frozen the unchanged failing case passes in 28 seconds.
+Keep source frozen throughout browser verification. Scoped lint and App types pass;
+rerun all nine construction cases before continuing the full functional preflight.
+No timeout increase, retry allowance or compatibility acceptance.
+
+The frozen functional preflight passes 491 cases before the mechanical-repair
+consumer demands an inline Host outcome in an object matcher. The earlier
+property-read-only search missed this assertion form. Review complete invocation
+consumers, including matchers, rather than relying on field-access searches.
+Keep all five mechanical modes and their independent checks, recovery, history,
+collaboration and durable reuse. Read invocation outcomes from the real reply and
+owner values from its text; do not inject fields or accept either representation.
+Owner-declared workflow/action/failure outcomes remain valid domain data and must
+not be mechanically removed. Run all five modes and the functional gate before
+the final frozen full-local run.
+
+The remaining provider-prefix E2E preserves correct completed and rejected parts,
+but expects an injected child acknowledgement absent from the current preparation
+owner. Actual recorded output declares `available:false`, `settlement:not-started`,
+`recovery:correct_input`, no completed steps and the retained draft. The deterministic
+provider peer discards the separate final acknowledgement. Retain the test: capture
+that exact provider content item, assert aggregate partial/partial and repaired
+success/completed, and assert the rejected owner's explicit fields. Preserve
+mutation counts, no-prefix-replay, undo/redo and durable reload. No inline-outcome
+fallback or product/schema change is required.
+
+Focused closure before the frozen full-local run: all five mechanical recovery
+modes pass; the provider-prefix, repeated-detail and recording-framing file run
+passes all five cases. The preceding tail run passed the other 27 cases, with two
+existing skips, before exposing the corrected provider consumer. Construction
+passes all nine cases; scoped lint, App types and naming pass. These focused runs
+are diagnosis evidence, not a substitute for one full-local result on the final
+source. Preserve all formal fail-fast and resource guards. Use isolated fresh App
+services so retained user sessions cannot supply an older runtime.
+
+Full-local run `08a0193d-77af-4c33-b46d-10cd4f553f25` verifies its source and
+passes every workspace, profiles, control-plane tests and collaboration E2E. Board
+E2E exposes one stale owner-count assertion: three injected scenarios correctly
+fail the exact manifest case set, including the report case now owned by `settle`.
+The Board therefore marks compose, apply, inspect and settle; the test hardcodes
+three. Re-audit confirms the current settle Inspector owns bounded work/report
+handoff and the executable report proof verifies it. Do not move the case back or
+change product mapping. Revised bounded slice: this Board test and this plan;
+assert the exact failed owner set derived from the manifest's expected cases,
+including history/recovery, instead of a historical count. Existing full-local
+failure is the red baseline. Run the focused Board case, its complete file, lint
+and naming, then rerun full-local on frozen source. Review remains limited to this
+mapping consumer and the prior frozen gates; no new repository-wide cleanup.
+
+The Board correction passes its failing case and all 19 cases in the complete
+localization file, with no skips. Current and historical observations must equal
+the expected manifest owner set; cleared recovery still requires zero failed
+observations. Scoped lint, naming and diff review pass. Freeze this source and
+rerun full-local; earlier full results remain failed evidence, not combined success.
+
+## Canonical result and contract continuity
+
+November 11, 2026. Approved implementation in the existing
+`codex/ai-conversation-improvements` worktree. Preserve the dirty predecessor;
+no branch replacement, compatibility path, remote operation or wider closeout.
+Status: complete with focused validation.
+
+### Upstream findings and task contract
+
+Runtime already inspects a value alongside an explicit outcome. App invocation
+then merges host acknowledgement into object values, uses a separate channel for
+non-objects, and downstream code reconstructs outcomes from those values. This
+breaks exact owner values and loses execution state during projection/failure or
+native delivery. Supported raw-schema vocabulary does not prove automatic
+hidden-field projection preserves its semantics. Discovery pins a selected tool
+contract while model egress can independently rebuild a generic wrapper contract.
+Identity/text-only validation proof also lacks the producing invocation identity.
+
+Evidence: `receipt-boundary-review-*.log` records 434 passing and 27 failing
+focused cases; `upstream-result-contract-*.log` isolates Runtime's correct
+inspection from App conversion and provider state loss. These are permanent
+regressions, not 27 independent defects. Keep the previous 23-case regressions.
+
+Scope: canonical App invocation, Host/registered execution, output declaration and
+projection, provider delivery, direct Runtime/schema/sequence/result/media consumers,
+formal tests, owning App spec/Inspector and direct API guidance. Preserve raw
+input/output validation, partial execution, independent storage, resource ownership,
+images, cancellation, retained results and no replay. Do not modify renderer,
+geometry, live 101/report sessions, release tooling, dependencies or environment.
+Only focused tests; no full-local gate. No prompt-only fix or new mandatory AI step.
+
+### Ordered owner steps and handoffs
+
+1. **Data and execution state - Inspector compose.** App invocation consumes the
+   admitted owner definition, input and call identity; validate unmodified owner
+   data with Runtime's explicit outcome. Keep the acknowledgement alongside every
+   JSON value, never inject Host fields into business data. Existing domain-owned
+   status fields remain domain data. Carry identity/contract/validation proof on
+   this boundary and invalidate reuse for changed bytes, outcome or invocation.
+   Library/sequence/cleanup consumers use that explicit state. Failure reporting
+   preserves known settlement; provider state must be model-visible for every
+   root shape. No old inline-vs-side-channel fallback.
+2. **Raw and delivered contracts - Inspector compose.** Stop rewriting arbitrary
+   owner schemas merely to accommodate Host acknowledgement. Original values use
+   original constraints; changed model views use declared delivery contracts.
+   Internal-field owners must declare their external shape when projection changes
+   semantics; do not silently weaken const/enum, exclusivity, negation or uniqueness.
+   Reuse the current delivery declaration and field selection owners rather than
+   add a second registry. Migrate current declarations and tests together; no
+   compatibility alias for superseded packaging or implicit projection assumptions.
+3. **Invocation contract to provider - Inspector compose/apply consumers.** Resolve
+   the selected tool/revision and owner/model contracts for the invocation, preserve
+   that selection through library projection and final transport, and validate the
+   actual status-specific model value. Execution state, delivery acknowledgement
+   and saving status have different owners; incomplete delivery never reclassifies
+   execution. The native protocol uses supported content fields to deliver value
+   and acknowledgement, without inventing native RPC fields. Discovery and delivery
+   consume the same contract selection. Proof is bound to its producing call and
+   contract; independently authored tests assert actual payload/state semantics.
+
+For each owner step, first verify failing formal cases, implement its upstream and
+direct consumers, review invalid and legal partial cases, and run its focused
+checks before advancing. Update superseded spec/Inspector clauses, not append
+contradictory alternatives. Runtime remains composition/inspection owner; App owns
+publication and delivery; lease/storage owners remain unchanged. Names are internal
+owner-neutral contract names; no new persisted IDs or automatic migration. Reuse
+existing validation evidence only for its exact immutable provenance; no new cache.
+Prove one owner execution and existing resource-release counts on failure/recovery.
+
+### In-scope handoff review and refinement
+
+The implementation review distinguishes execution outcome from delivery outcome.
+A selected registered invocation can execute successfully while its projected child
+is partial, or deliver successfully while saving fails. Its model receipt therefore
+carries `deliveryOutcome` beside `execution`; model-only branches validate the value
+by that delivered state without rewriting the execution state. Raw branches remain
+unchanged and cannot admit the model-only failure alternative as success data.
+Generic invocation diagnostics keep their own outer fields; a tool projector owns
+only its embedded execution result. Known execution evidence carries
+`executionOutcome`, after validation and before resource transfer. Invalid or
+undecodable evidence cannot establish completed execution.
+
+The existing field-visibility annotation remains an explicit structural declaration.
+The removed implicit behavior is semantic schema rewriting: counts, dependencies,
+constants, enums, exclusive/negative alternatives and uniqueness must not be guessed
+after dropping fields. Such declarations require an explicit `delivery` view and
+fail publication when missing. Plain record-field visibility stays supported with
+strict raw validation. A root JSON Pointer selects a declared whole-result view;
+it does not change the original schema. Current declarations and older positive
+tests migrate to explicit views rather than weaker schemas or compatibility rules.
+
+The Host selects the model contract before effects, then attaches that authoritative
+selection after invocation middleware. Middleware cannot substitute a schema.
+Existing formal tests exposed both a copied failure's lost state and a forged model
+contract; the regression cases remain permanent. Invalid sequence admission stays
+with canonical admission; projection cannot replace its correctable-input recovery.
+Provider tests inspect actual native content, including the separate acknowledgement.
+A two-revision regression exposed one remaining name-only lookup: a successful
+revision 1 result was projected with revision 2 fields. Forward the selected
+revision through registered and sequence child projection, including recovery;
+never substitute the latest registration. This is the same invocation-identity
+boundary, not a compatibility route.
+These refinements stay within the same three owners, exclusions and focused gates.
+
+### Required proof and stop conditions
+
+Run the 27 failures plus existing result/projection, Host/invocation/lease/library,
+Runtime contract/recipe, selected provider and exact discovery, retained-result and
+native image tests. Update old inline-result and automatic projection assumptions
+without deleting invalid-input/output, partial-work or no-replay assertions. Test
+model-visible state separately from Host progress. Scoped types, lint, format,
+naming and Inspector checks also apply. A rule cannot expand this scope; unrelated
+prerequisites stop for scope review. Do not claim live AI or full-app validation.
+
+### Implementation and focused validation
+
+All three owner steps are complete. Raw values now travel with an explicit
+acknowledgement for every JSON root. Validation evidence binds the exact call,
+owner, bytes and outcome. Selected model contracts are resolved before effects and
+cannot be replaced by middleware. Registered receipts distinguish execution,
+delivery and storage; child projections retain the selected revision and are not
+selected twice. Original raw validation and final status-specific validation remain.
+
+Removed the Host schema decorator, injected acknowledgement fields, old stage
+arguments and implicit semantic hidden-field rewrites. Structural visibility remains
+an explicit field declaration; semantic views require a declared delivery schema.
+Updated direct consumers and former positive tests; no compatibility path, success
+fallback, new mandatory model step or weakened validation was introduced.
+
+The final self-review covered valid and invalid output, foreign validation proof,
+partial execution, successful execution with failed saving, resource handoff and
+cleanup failure, scalar/null/image delivery, middleware contract substitution and
+two registered revisions. The two-revision case failed before the last correction
+and passed afterward without executing the source twice. It is retained as a formal
+regression, alongside the original 27 failures and the previous 23-case coverage.
+
+Focused evidence is under `tmp/conversation-improvements/` in this worktree:
+
+| Boundary                                                  | Passing cases | Evidence                                  |
+| --------------------------------------------------------- | ------------: | ----------------------------------------- |
+| Whole-result regression, Host and library controls        |           168 | `canonical-revision-after.log`            |
+| Invocation, library, leases and selected-prefix recovery  |           115 | `canonical-lifetime-verified.log`         |
+| Projection, retained handoff and delivered model boundary |            46 | `canonical-projection-verified-final.log` |
+| Runtime contract and recipe checks                        |            79 | `canonical-runtime-final.log`             |
+| Actual native provider result/state packets               |            21 | `canonical-provider-verified-final.log`   |
+| Provider high-level usage and real owner execution        |             2 | `canonical-provider-preparation.log`      |
+| Image delivery and evaluation input correction            |            46 | `canonical-image-evaluation-final.log`    |
+| Opt-in native image interface                             |             3 | `canonical-native-image-final.log`        |
+| Exact discovery audit and supported schema constraints    |            16 | `canonical-audit-recheck-final.log`       |
+| Retained mapping after saving failure                     |             2 | `canonical-remaining-consumers-final.log` |
+| Retained image and named-result execution proofs          |             2 | `canonical-consumer-review-final.log`     |
+| Model delivery cost check                                 |             1 | `canonical-model-boundary-final.log`      |
+
+The retained mapping and execution-proof logs include initial harness/selection
+failures; their named final cases passed. The execution proof mock now preserves
+unmocked Node exports and still substitutes spawn. The cost check shares its log
+with three model-boundary cases already counted above. This table does not count
+excluded tests or sum repeated runs.
+
+Scoped TypeScript, ESLint, formatting, naming and Inspector checks complete the
+bounded gate. ESLint has no errors; four existing console warnings remain in the
+selected provider/proof files. No full-local, live 101, release, remote operation,
+renderer change or report-session mutation was performed. This establishes the
+mechanical handoff contract, not live model behavior or whole-App correctness.
+
+## Complete result conversion and state handoff
+
+November 11, 2026. Approved implementation on the existing
+`codex/ai-conversation-improvements` worktree, preserving its dirty predecessor at
+`036f7f5dc457c6654dfc1eb43b4c3a49d6a65a82`. Status: complete with focused validation.
+
+### Analysis and bounded task contract
+
+The reviewed path is declaration/admission -> discovery -> owner execution ->
+Host acknowledgement -> selected data/storage -> provider transport -> cleanup
+and recovery. Evidence is retained under `tmp/conversation-improvements/` as
+`receipt-flow-audit-*.log`; 376 focused cases passed and 23 failed. The failures
+are five product boundaries, not 23 independent defects:
+
+- Outer partial acknowledgement incorrectly selects the owner's partial payload
+  schema even when execution succeeded and only storage/delivery is incomplete.
+- Native error construction reparses malformed JSON and can bypass call cleanup.
+- Accepted non-object result schemas cannot pass the object-only App packaging.
+- Internal-field projection removes properties but leaves conflicting property
+  counts and dependent requirements in the published schema.
+- Transport success can contradict the validated acknowledgement after wrapping.
+
+The obsolete projection test also expects unsupported pattern/conditional rules
+to validate. Preserve its domain-key projection intent using admitted schemas,
+and explicitly retain unsupported-rule rejection. Equality audits reuse production
+schema generators; keep them for drift detection, not as independent correctness
+oracles. Direct execution and provider tests must assert behavior independently.
+
+Scope: App tool invocation/Host, registered result envelopes, result projection,
+provider transport, their existing runtime consumers and formal tests, and owning
+specification/Inspector/docs. Preserve strict raw input/output validation, legal
+partial work, independent saving, original data shapes, resource lifetime, native
+images, cancellation, selected fields, named reuse and no replay. No compatibility,
+prompt change, new dependency/cache, geometry/rendering work, live model/101,
+full-local test, release work or remote operation. Unrelated required changes stop
+this task for scope review. Final review stays within this complete path.
+
+### Ordered owner execution cards
+
+1. **State handoff - App Inspector `compose`.** Owner: invocation envelope and
+   Host transport. Validate payloads by their actual execution status; separately
+   constrain outer acknowledgement and same-execution settlement. A successful
+   payload remains a success payload when storage fails. Derive transport success
+   from validated outcome rather than a copied flag. Preserve independently settled
+   child recovery and strict invalid-result rejection. Prove the distinct partial
+   shape and flag cases through discovery, internal calls and actual provider RPC.
+2. **Result conversion - App Inspector `compose`.** Owner: raw invocation and
+   canonical result schema/projection. Keep accepted arrays/scalars/null intact
+   through direct and registered routes, with explicit outcome metadata at the
+   Host boundary; do not infer product success before validating owner output.
+   Transform internal-field constraints together with fields, retaining strict raw
+   validation and public field constraints. Use the existing reference/context
+   traversal and resource annotations. Preserve object results and declared views.
+   Prove all admitted shapes, copied/identity replies, hidden field count/dependency
+   cases, references, retained IDs and actual provider bytes. No version fallback.
+3. **Failure settlement - App Inspector `compose`.** Owner: Host lifecycle.
+   Decode once; retain successfully decoded evidence for error acknowledgement.
+   Never parse failed bytes again to build an error. Close every opened scope even
+   if result validation, resource transfer or failure construction fails. Keep
+   original execution evidence, correct no-dispatch/uncertain distinctions,
+   cancellation carriers, cleanup retry and one owner execution. Prove malformed
+   JSON, resource transfer/cleanup faults, continuation and terminal disposal.
+4. **Integrated independent proof - App `compose/apply` consumers.** Preserve
+   existing success/partial/recovery, persistence, named reuse and image tests.
+   Replace the obsolete unsupported positive oracle without relaxing admission.
+   Add independent valid/invalid payload cases at real provider discovery and
+   delivery, including crossed states and field projection. Exact schema equality
+   is supplementary. All 23 baseline cases and affected normal paths must pass.
+
+These steps use existing owner/consumer boundaries: Runtime handles composition
+and result inspection; App owns schema semantics and transport; leases own resource
+lifetime; storage owns saving. No model decision or diagnostic grants validity.
+Reuse identity/text-bound validation only while its evidence is unchanged. Schema
+conversion remains definition/invocation scoped; tests retain owner-call and cleanup
+counts. Local names are owner-neutral internal helpers, with no new persisted ID.
+
+Gates: the 23 failures; focused result, schema, Host, invocation, leases, library,
+Runtime contract/recipe, conversation result and image suites; selected provider
+RPC and exact discovery tests; three pinned offline native image cases; scoped
+types/lint/format/naming and Inspector checks. Review each completed owner and its
+handoffs before advancing. Do not claim whole-plan closeout or live-model coverage.
+
+### Progress
+
+- Baseline and design reviewed against current source, App spec and Inspector
+  `compose` handoffs. The five defects are assigned to canonical owners above;
+  existing invalid-result/no-replay tests remain required negative controls.
+
+- State handoff reviewed: 16 targeted receipt cases and 57 existing library/Host/
+  recovery controls pass. Selected real provider RPC cases pass (10), including
+  distinct partial data, transport flags, non-object data and internal constraints.
+- Result conversion reviewed: admitted JSON root shapes retain their values under
+  identity and copied replies; explicit partial scalar outcomes and corrupted copy
+  rejection pass. Counts/dependencies across inline, allOf and referenced contracts
+  preserve valid output and reject missing/invalid public fields. The combined
+  conversion run passes 93 cases; its sole remaining failure is the separately
+  assigned malformed-JSON cleanup defect. Raw owner validation remains unchanged.
+- Failure settlement begins after checking the existing compose lifecycle contract.
+  Keep decoded evidence separate from undecodable bytes and release in finally.
+
+### Implementation and review outcome
+
+The original failures are retained as regression behavior:
+
+| Boundary                                           | Baseline failures | Correction                                                                                        |
+| -------------------------------------------------- | ----------------: | ------------------------------------------------------------------------------------------------- |
+| Successful data with partial outer acknowledgement |                 2 | Select the payload by execution status; keep outer acknowledgement and storage separate.          |
+| Malformed repackaged JSON                          |                 1 | Decode once, construct failure from decoded evidence only, release every opened scope in finally. |
+| Non-object results                                 |                11 | Preserve raw JSON shape and carry the acknowledgement at the Host boundary.                       |
+| Internal-field counts/dependencies                 |                 4 | Convert constraints with the fields, through composition and reference scopes.                    |
+| Conflicting transport success flags                |                 4 | Derive the flag from the validated acknowledgement.                                               |
+| Unsupported-schema positive test                   |                 1 | Replace with admitted variant/open-value schemas; explicitly reject unsupported constraints.      |
+
+Review followed declarations through both registered and direct provider routes.
+That exposed additional consequences of the non-object defect: direct progress
+still expected inline object metadata, and a scalar delivery view lost its original
+acknowledgement. Permanent regressions first reproduced both; their consumers now
+use the same Host acknowledgement. The fake provider paging reader also assumed
+JSON was never null; its parser now accepts null without changing product validation.
+A nested reference with sibling property counts reproduced a missing projection
+scope; the converter now resolves the original reference context. These are within
+the same conversion/handoff scope, not separate tool capabilities or fallback paths.
+
+Additional negative controls reject corrupted copied scalar data, changed outcome
+metadata under identity/copy packaging, missing public dependent fields and invalid
+public/hidden values. Published artifact cleanup is counted after malformed output;
+resources release once and subsequent calls/disposal work. Successful mutations
+with storage failure and independently settled partial children remain accepted.
+No unsupported keyword is admitted and no owner constraint is bypassed to make a
+model projection pass. Provider tests inspect published usage and actual RPC values,
+not just equality between two calls to the same schema generator.
+
+Final focused evidence is under `tmp/conversation-improvements/receipt-flow-*-final.log`:
+
+| Focused suite                                                    | Passing cases |
+| ---------------------------------------------------------------- | ------------: |
+| Results, whole-result handoff, projection and conversation reuse |           123 |
+| Host, invocation, leases, library, selected recovery and images  |           190 |
+| Runtime tool contracts and recipe execution                      |            79 |
+| Provider discovery, registered/direct RPC and delivered values   |            14 |
+| Exact delivery audit and supported schema rules                  |            16 |
+| Pinned offline native image transport                            |             3 |
+| Total behavior cases                                             |           425 |
+
+The three native image cases initially skipped by the ordinary image suite ran
+separately with its existing explicit binary setting and passed. Other skipped
+cases are intentional title selection, not failed checks. Inspector and naming
+checks are separate from this total. Provider RPC uses the formal controlled backend
+and real production App path; native images use the existing offline native harness.
+This evidence does not claim live-model, 101, whole-app or full-local coverage.
+
+Scoped TypeScript compilation, formatting/diff checks, the 15-case naming gate and
+both Inspector contract cases pass. ESLint reports no errors; its three existing
+console warnings are outside these changes. Final review covered the modified
+conversion boundaries and their direct consumers, retaining strict rejection,
+legal partial completion, saving independence and resource recovery. No commit,
+push, compatibility route or additional mandatory model workflow was introduced.
+This closes the bounded handoff task, not the wider plan.
+
+## Host receipt validation and result branch consistency
+
+November 11, 2026. Approved follow-up in the existing
+`codex/ai-conversation-improvements` worktree, retaining its dirty predecessor at
+`036f7f5dc457c6654dfc1eb43b4c3a49d6a65a82`. Status: complete with focused validation.
+This task does not close the wider plan.
+
+### Evidence and bounded contract
+
+The permanent whole-result review baseline had ten failures: four copied/mutated
+invalid-status replies bypass native handoff validation, one of those paths can
+acknowledge an already released request artifact, and five contradictory outer
+outcomes pass published result contracts (three also pass host invocation).
+The last two pass discovery but fail runtime selection. The recovery-only
+correlation added previously does not protect success/partial branches.
+
+Scope is native Host result validation/resource transfer and registered invocation
+schema generation, their direct consumers/tests, this plan and the owning App
+specification/Inspector. Preserve raw owner validation, valid partial prefixes,
+successful execution with unsaved storage, cancellation, per-child recovery,
+strict domain constraints and no replay. No compatibility, weaker validation,
+prompt change, new cache, renderer change, live 101, full-local test or remote
+operation. An unrelated required owner change stops this task for scope review.
+
+### Ordered execution cards
+
+1. **Host handoff - AI execution `compose`.** Input: owner-validated native
+   reply, possibly reconstructed by execution instrumentation. Output: validated
+   host envelope and transferred request resources, or `TOOL_HANDOFF_FAILED`.
+   Reuse Runtime's existing result inspection to reject invalid outcomes before
+   schema selection. Preserve identity/text-bound validation reuse; revalidate
+   reconstructed envelopes under the projected host contract. Transfer resources
+   only after valid output, release rejected resources once, never replay work.
+   No new public identity or persistent state. Prove the five status/resource
+   failures and valid artifact lifetime, raw output negatives, cancellation and
+   stopped-successor controls before advancing.
+2. **Invocation branches - AI execution `compose`.** Input: selected owner
+   schemas; output: the same result alternatives for discovery and invocation.
+   Discriminate success, partial and recovery branches by their actual outer
+   status; correlate settlement across layers describing the same execution in
+   every branch. Keep independent child recovery settlements and storage status
+   independent. Reuse small schema conditions rather than duplicate owner payload
+   schemas. Remove the recovery-only correlation path. Prove all five contradictory
+   outcomes reject at discovery and invocation; retain valid partial/completed,
+   declared recovery, unsaved storage and exact schema-audit controls.
+
+The existing Inspector `compose` owner publishes and validates these contracts;
+`apply` and provider delivery consume them without repairing receipts or executing
+again. Runtime inspectors classify results; App validators own schema semantics.
+Existing request leases own resource lifetime. Tests and model choices cannot
+grant validity. Definition/invocation-scoped schema derivation and owner execution
+counts remain unchanged; no new cache is authorized.
+
+Gates: all ten permanent failures; focused Host/invocation/library/lease and
+prefix-recovery cases; selected actual provider transport and exact usage audit;
+flow-proof types, scoped lint/format/naming and affected Inspector contract checks.
+Review each step's direct handoffs before advancing, then the bounded final diff.
+
+### Progress
+
+- Review baseline: `receipt-envelope-review-*.log` in the existing
+  `tmp/conversation-improvements/` evidence directory. The previous blanket
+  completion claim does not establish complete receipt validation; this task
+  addresses its two reproduced gaps without undoing valid partial completion.
+- Step 1 reviewed: canonical Runtime inspection validates reconstructed outcomes
+  before selecting their host schema or retaining request resources. Unchanged
+  identity/text-bound validation evidence still reuses completed validation. All
+  five status/resource failures now pass, with 140 Host/invocation/lease/prefix
+  controls passing. The five branch-consistency failures remain for step 2.
+  Evidence: `receipt-handoff-fix-before.log`, `receipt-handoff-fix-step1.log` and
+  `receipt-handoff-fix-step1-controls.log` in the same directory.
+- Step 2 reviewed: every invocation result alternative now correlates settlement
+  across the same execution. Partial output admits only a partial outer outcome;
+  failed/unknown receipts use recovery validation. The old recovery-only condition
+  is removed. The five contradictory combinations reject in both delivered usage
+  and invocation. Successful-work/unsaved-storage, declared partial/recovery and
+  aggregates with independently settled children remain valid.
+- Final bounded verification: all ten original failures pass unchanged. The six
+  result/Host/invocation/library/lease/prefix files pass 196 tests; composition and
+  selected batch usage pass 78; actual provider transport passes five; exact usage
+  and audit negatives pass six. The new provider cases use admitted data-plane
+  fixtures and inspect the delivered contract and real native response, with one
+  owner execution and no drawing dispatch. Flow-proof types, two Inspector checks
+  and 15 naming checks pass. Scoped ESLint has no errors (one existing provider
+  test console warning); formatting passes. No test was removed or weakened.
+  Evidence: `receipt-handoff-fix-*.log` in the same directory. No product fallback,
+  compatibility, prompt change, live-model test, full-local, commit or push.
+
+## Failure receipt consistency and empty operation contracts
+
+November 11, 2026. Approved bounded follow-up on the existing
+`codex/ai-conversation-improvements` worktree and accepted dirty predecessor at
+`036f7f5dc457c6654dfc1eb43b4c3a49d6a65a82`. Status: complete with focused validation.
+This is part of this plan, not whole-plan closeout.
+
+### Evidence and scope
+
+The review's permanent cases reject a contradictory completed receipt in delivered
+usage, reject completed failed/unknown receipts at the real registered handoff,
+and preserve a canonical inspection-only tool set. The existing provider input
+correction case also fails because the operation generator publishes an empty
+name enumeration. These are five failing cases, not five independent defects.
+
+Scope: App invocation envelope generation, native owner/registry contract selection,
+operation contract generation, their direct tests and provider consumer, and owning
+specification/Inspector/docs. Preserve strict input/output validation, valid
+completed results with unsaved storage, partial prefixes, cancellation, retention,
+no replay and tool availability. No compatibility, weaker validation, prompt change,
+new cache, renderer work, dependency change, live 101, full-local test or remote
+operation. Review only these owners, direct consumers and the bounded regressions.
+
+### Ordered execution cards
+
+1. **Receipt consistency - AI execution `compose/apply`.** The App invocation
+   owner publishes and validates the same selected owner result contracts. Keep
+   Runtime's internal diagnostic envelopes distinct from the owner's declared
+   recovery payload; do not feed a registry-added unrestricted failure alternative
+   back into a selected public invocation. Represent common unacknowledged failures
+   as complete invocation alternatives whose execution settlement agrees with the
+   nested failure and cannot claim success/completion. Preserve acknowledged owner
+   partial/recovery validation and successful owner data when storage is unsaved.
+   Reuse existing host schema projection at discovery and invocation; no new wire
+   identity, persistence format or retained state. Prove the three receipt failures,
+   storage recovery without re-execution, invalid-prefix negatives and exact actual
+   usage; review before advancing.
+2. **Empty operation contracts - AI execution `compose`.** The operation owner
+   must describe an empty batch capability with a valid rejecting schema, not an
+   empty enumeration or fabricated operation. Other native tools and supported
+   inspection remain available. Keep malformed/unsupported declaration rejection;
+   arbitrary batch names and empty batches still reject before dispatch. Prove the
+   two startup failures, actual provider correction in one turn, and ordinary
+   nonempty batch usage. Review before final integration.
+
+These cards select the existing App Inspector's registration/compose and canonical
+apply boundaries. Inputs are registered owner contracts and invocation receipts;
+outputs are executable discovery schemas and validated delivery. App owners alone
+compose these envelopes; Runtime scheduling, model choices and tests do not supply
+product validity. Failure ownership stays at admission/handoff with factual
+settlement and no replay. Schema derivation remains invocation/definition scoped;
+there is no new cache or payload scan, and owner execution counts remain unchanged.
+
+Gates: the five review failures, whole-result and batch negatives, schema/host/
+invocation/tool-library tests, selected provider protocol cases, exact schema audit,
+scoped types/lint/naming and affected Inspector contracts. All five failures must
+pass on the same source, with successful-work/unsaved-storage and unsupported-rule
+controls retained. Final review covers the bounded diff and direct consumers only.
+
+### Progress
+
+- Review evidence: `tmp/conversation-improvements/recovery-support-review-*.log`.
+  Four permanent review cases and one existing provider case fail before fixes.
+  The preceding report's blanket recovery-safety conclusion is withdrawn; exact
+  schema equality alone cannot prove valid outcome combinations.
+- Step 1 reviewed: native discovery and invocation now use the same owner result
+  projection. Common failure alternatives correlate outer/inner settlement and
+  exclude successful execution; Runtime diagnostic additions no longer become
+  selected owner recovery. The three original receipt failures and four additional
+  completed-inner variants pass, with valid unsaved results and no-replay controls.
+  Forty result/batch cases, 124 invocation/host/library cases and three exact actual
+  usage routes passed. The first audit also passed 594 cases; its broad native
+  selection took 132.73 seconds. Final envelope construction shares the large
+  result schema and uses small correlation conditions; the affected exact routes
+  were rechecked after that refinement. No throughput claim relies on timings.
+- Step 2 review exposed a direct handoff prerequisite after registration succeeded:
+  an instrumented/copied reply loses its object-identity validation receipt. The
+  host then compared an acknowledged envelope against the raw owner schema,
+  rejecting its own toolOutcome metadata. Reuse the same host contract projection
+  for that validation path, while raw owner validation remains unchanged. The
+  existing read-only regression detects it; additional valid/negative-count/extra-
+  field direct-reply controls preserve strict validation and one owner execution.
+- Step 2 reviewed: empty operation sets use a false name schema; independent native
+  reads remain available. The real owner still rejects arbitrary names and empty
+  batches before dispatch. The original provider correction case passes unchanged.
+- Final bounded review: all five original failures pass on the final source.
+  Twenty whole-result/review cases, 24 batch cases, 170 schema/host/invocation/library
+  cases, 81 composition/prefix-recovery cases, five provider cases and 392 focused
+  declaration/exact-audit cases pass. App flow-proof types, 15 naming checks, two
+  Inspector contract checks and three maintained-test/type-membership checks pass.
+  ESLint has no errors and the existing batch measurement console warning only.
+  Raw owner validation, host acknowledgement validation and diagnostic recovery are
+  distinct; none is bypassed. No compatibility, full-local, live-model run, commit
+  or push. The selected task is complete; the wider plan remains active.
+  See the [detailed follow-up report](../reports/contract-verification-and-current-pixi-2026-11-11.md#follow-up---failure-receipt-consistency-and-empty-operation-contracts).
+
+## Complete result validation and handoff
+
+November 11, 2026. Approved follow-up in the existing
+`codex/ai-conversation-improvements` worktree at base
+`036f7f5dc457c6654dfc1eb43b4c3a49d6a65a82`, including the accepted dirty
+predecessor and the review's permanent failing tests. This is a task within this
+plan, not whole-plan closeout. Status: complete with focused validation.
+
+### Evidence, scope and acceptance
+
+The review reproduced three defects through current host usage and execution:
+selected containers lose their original local-reference root; the App validator
+silently accepts a published `dependentRequired` violation; the delivery audit
+accepts an additional unconstrained union alternative. Whole-root forwarding,
+negative numeric bounds, closed properties and successor stopping are controls.
+
+Scope: Runtime registered-schema projection/admission, the App tool validator
+and registration boundary, the exact delivery-audit oracle and canonical result
+negative tests, their test/type entry points, and directly owning specs/Inspectors.
+Read current owners, their callers and these regressions only. Preserve strict
+inputs/outputs, typed binding proofs, runtime lifetimes, partial settlement,
+no replay, independent retention/delivery and optional review. No compatibility,
+prompt repair, renderer change, dependency addition, live 101, full-local test,
+release work or remote operation. A necessary unrelated owner change stops this
+task for scope review; a failure inside these boundaries requires iteration.
+
+### Ordered owner steps and review gates
+
+1. **Reference handoff - Runtime `admit/invoke`, App `compose`.** Preserve the
+   original reference context when a registered result subtree becomes a new
+   validation root, including siblings, nested/recursive references and runtime
+   annotations. Reuse the existing schema traversal/embedding owner. Materialize
+   only the reachable reference graph, without expanding recursive trees or
+   importing unrelated result payloads. The selected whole-container regression
+   must pass through published usage and actual host delivery. Keep whole-root,
+   invalid-result, downstream binding and no-replay controls. Review discovery,
+   retention and envelope embedding before advancing.
+2. **Validator support - App `compose/apply`.** Enforce published supported
+   constraints, including the reproduced dependent-field rule. Unsupported schema
+   semantics must be rejected explicitly before publication/execution rather than
+   ignored or turned into successful output. Keep schema annotations distinct from
+   constraints; inspect schema locations, not literal examples or arbitrary JSON
+   data. Validate the same supported contract at input and output boundaries.
+   Add unsupported/nested/union cases before implementation and preserve existing
+   built-in declarations, recovery and no-replay behavior. No new validator package.
+3. **Exact audit - App `compose` verification.** Replace subset matching with an
+   exact comparison at the correct owner/observed/model boundary. Normalize only
+   semantically unordered sets and equivalent object defaults. Reject extra union
+   alternatives and dropped constraints. Restore canonical invalid-result runs
+   with well-formed fixtures; do not skip them or restore obsolete envelopes.
+   Register the new review regressions in maintained test/type entry points.
+
+Each step above is its execution card: the existing reusable-tool composition
+`admit/invoke` and AI execution `compose/apply` contracts own inputs, results,
+contributors and failure handling. Changes remain in their schema/validation/test
+boundaries. Re-read these steps before advancing and update their contracts only
+where this follow-up clarifies an actual responsibility. No new cache or lifecycle
+is introduced; reference projection is one finite reachable graph per selected
+schema and owner invocation counts must remain unchanged.
+
+Gates: the three review regressions; relevant Runtime admission/flow/tool-contract
+files; App schema, invocation, host, selected delivery/usage and API audit cases;
+focused provider contract/repair cases; scoped type checks, lint, naming and
+Inspector contract checks. Review each completed slice before the next. Final
+closure requires all three original failures to pass on the same source, retained
+negative controls, and a bounded review of the touched diff/direct consumers.
+
+### Progress
+
+- Step 1 reviewed: selected containers now carry a self-contained reachable
+  reference graph. Removed the old consumer override of the projected root.
+  Replaced the old expected standalone-reference failure with positive value
+  validation and retained document/request/secret portability negatives.
+  Runtime focused files: 142 passing; host reference/control cases and direct
+  lease consumers pass; the current Runtime build supplies App consumer tests.
+- Step 2 reviewed: supported dependent fields are enforced, unsupported/malformed
+  declarations reject before publication, and value validation checks the same
+  vocabulary. Root recursion and literal-data separation have permanent cases.
+  Schema/host/invocation checks: 124 passing. Actual selected usage/publication:
+  205 passing. The normalization fixture now starts from a valid declaration;
+  duplicate type/required declarations have explicit rejection cases instead.
+- Step 3 refinement from restored negative execution: registered invocation
+  discovery omitted common leaf failure values nested under execution. Reuse the
+  invocation failure owner, and limit the added public boundary alternative to
+  unknown/not-started settlement; acknowledged prefixes must still satisfy the
+  selected owner's strict partial/recovery schemas. The existing negative prefix
+  tests detected a too-broad intermediate alternative and remain mandatory.
+  Exact audit compares ordinary operations to registration, and action wrappers to
+  their canonical model result plus the registered observation owner; these are
+  distinct boundaries. Do not mistake capture-owner enrichment for a dropped
+  constraint. Literal JSON and reference siblings must not be normalized away.
+
+All three review counterexamples now pass. The final owner review preserves exact
+success/partial/recovery boundaries and no replay; no compatibility path remains.
+Final focused evidence: 142 Runtime cases, 194 App schema/host/invocation cases,
+24 batch cases (also included in the 36-case final recovery slice), 390 exact
+usage/action audit cases, five provider cases, 42 Inspector/test-membership cases,
+15 naming cases, Runtime build and App flow-proof types. ESLint has no errors and
+one pre-existing console warning in batch measurement output. No full-local,
+new live-model/GPU run, commit or push. Detailed results are in the
+[follow-up report](../reports/contract-verification-and-current-pixi-2026-11-11.md#follow-up---complete-result-validation-and-handoff).
+
+## Current contract verification and SDK proofs
+
+November 11, 2026. Approved follow-up to the expanded Pixi upgrade validation.
+Base: `036f7f5dc457c6654dfc1eb43b4c3a49d6a65a82`, current
+`codex/ai-conversation-improvements` worktree with accepted uncommitted
+predecessor changes. This is a child task of this plan; it does not close the
+entire conversation plan. No remote operation is authorized.
+
+### Evidence and frozen scope
+
+The [SDK report](../reports/pixi-resource-lifetime-upgrade-2026-11-10.md) lists
+the original failed suites. Old-SDK reproduction establishes attribution only,
+not permission to ignore failures. The subsequent review found:
+
+- Eighty API audit failures mix owner and Runtime-delivered schema boundaries
+  or compare unordered `required` sets as ordered arrays. Browser action
+  observation adds `toolOutcome`; owner fixtures must not impersonate it.
+- Three current-version cases expose two real discovery defects: registered
+  reference-plus-sibling constraints become unsupported dependency schemas, and
+  projected registered results lose their reference root during portability
+  analysis. Search fails before any canvas operation.
+- Superseded tests still demand automatic mechanical review/approval, top-level
+  reference receipts, old `plan` inputs, direct execution of host envelopes,
+  old revision identities, old capture-ledger revision and a 15-minute ceiling.
+  Search tests also assume plural forms cannot match and every descriptive
+  query must remain a menu. Do not restore any of those old contracts.
+- Five typing errors are in fixtures/cleanup/result narrowing. Type-check
+  entries omit affected tests and still name removed files.
+- Formal Pixi tests already import the installed SDK, not an old dependency.
+  However, installed-version output directories do not prove browser-loaded
+  identity. App handoff evidence needs the current dependency identity alongside
+  source hashes; old-version evidence must never satisfy a current proof.
+
+Mutation is bounded to these failed App AI tests and their direct production
+owners, schema proof/projection in `ai-agent-runtime` when required, App test and
+type-check entry points, current Pixi browser proof/handoff consumers, and their
+specifications/Inspector contracts. Use the recorded failure inventory, current
+source, exact call sites and focused regressions; no new repository-wide audit.
+Keep admission constraints, resource lifetimes, failure settlement, no replay,
+current host routing, independent retention/delivery, optional explicit review,
+image fidelity, restore data and renderer semantics. No compatibility aliases,
+prompt-only repair, dependency change, new live AI/101 run, full-local suite,
+release gate or unrelated optimization.
+
+### Ordered implementation and acceptance
+
+1. **Audit the correct result boundary.** Under execution `compose/apply`,
+   normalize only unordered schema sets and test owner, observed and model
+   outputs separately. Add negative assertions for omitted required fields,
+   altered types/enums and failed/partial outcomes. Do not remove constraints
+   or accept an internal resource branch as a public success result.
+2. **Repair schema handoff.** Under execution `compose` and reusable-tool
+   `admit/invoke`, use the existing canonical schema/reference owners to preserve
+   reference roots and sibling constraints through discovery, selected results,
+   host routing, retention and downstream binding. The three existing red cases
+   are the initial regression. Add actual successful/failed delivery and no-replay
+   checks before advancing; no caught-error fallback or permissive schema.
+3. **Remove superseded test responsibilities.** Under `compose/inspect/settle`,
+   port current consumer tests to host invocation routes and `references[]`.
+   Delete assertions/fixtures that certify removed automatic review; preserve
+   explicit mechanical analysis, canonical mutation, repair, saved data, image
+   delivery and reuse, cancellation, history and durable-prefix cases. Historical
+   evidence stays immutable; current executable fixtures use the current input.
+4. **Repair types and verification membership.** Correct the five fixture errors
+   without weakening shared types or casting away invalid output. Remove stale
+   type-check paths and include the affected maintained test families so old
+   signatures cannot silently pass through transpilation. Keep scope limited to
+   this App and current contract tests, not all workspace packages.
+5. **Bind GPU proofs to the current SDK.** Under `render-material` and
+   `project-render-hierarchy`, assert browser-loaded Pixi identity against the
+   installed/locked version and carry it through source-verified App handoffs.
+   Keep same-version control policies, current exact image/work/lifetime oracles
+   and source freeze during browser proof. No old SDK installation/execution.
+6. **Bounded closure review.** Run the affected suites and exact browser cases,
+   scoped types/lint/naming, and current native GPU proofs. Recheck each owner and
+   handoff after its slice. A test previously blocked by a stale assertion must
+   complete its remaining assertions before being called verified. Record results
+   and any remaining limitation in a detailed report; never infer App-wide green
+   status from this scoped run.
+
+Each numbered step is its execution card: the cited Inspector owner supplies
+the unchanged inputs/outputs, conditions, allowed contributors and failure owner.
+Step 1 starts with the current failed audit and negative-oracle cases. New
+identifiers are test/proof-local; there is no new persisted or public identity.
+Implementation review: Step 1 review rejected a repeated schema
+compaction in the initial oracle change: re-compacting a resolved recursive
+schema changes its proof representation. Compare each boundary after one
+projection only, add observation metadata only to the primary browser receipt,
+and sort required sets after normalization. Keep compact assertion output so
+large schema failures remain diagnosable. Representative cases must pass before
+the bounded audit group is repeated.
+
+Step 2 review expanded the existing handoff proof through the advertised host
+route. Registered output contracts with unsupported implication keywords were
+rejected before execution even when the sequence merely returned the complete
+result. Preserve the exact output schema for runtime validation and whole-result
+forwarding; opaque fields still cannot supply typed bindings. Input admission
+remains strict. Do not broaden general intersection implication to make this
+pass. Query inability to prove a field is a typed reference issue, not a tool
+execution failure; the complete published contract remains unchanged.
+
+Completion: all six steps are complete for this bounded follow-up. The closing
+[report](../reports/contract-verification-and-current-pixi-2026-11-11.md) records
+real schema defects, removed executable expectations, type coverage, exact
+focused results and current-SDK evidence. No compatibility path, prompt-only
+repair, full-local run or remote operation was added. This closes the child task,
+not the entire conversation plan.
+
+## Local hierarchy work and projection
+
+November 10, 2026. The agent supplied four exact saved root IDs in the
+`assembly` step of run `taipei-101-fixed-1794244803070`. It did not request a
+whole-document search. `api_hierarchy_groupElements` calls the App hierarchy
+adapter, then Preset `groupElements`. Preset's previous read interface exposed
+only `sceneTreeSaveData`; preparation serializes every element to obtain four
+roots and their parent's order. Save validates the complete tree, and the
+subsequent SceneTree move validates it again. Core already exposes metadata,
+children and element reads. The excessive read belongs to the tool's framework
+implementation, not an agent-selected query or provider requirement.
+
+The four roots contain 25,539 drawable descendants. The recorded grouping call
+took 155.726 ms; grouping plus two captures took 613.270 ms. Retained browser
+phases show one new Group strategy, eight direct coordinate updates, no vector
+strategy rebuild, UI flush 29 ms (including 17.7 ms hierarchy projection), and
+one 34.7 ms synchronous render call. These nested measurements are not additive
+or GPU elapsed time. Per-node counters were evicted; exact SDK visit counts are
+not measured by that run. Pixi reparenting walks descendants until a render-group
+boundary; the SDK batch partitions exclude Graphics, which represent design Groups.
+UI flattening also falls outside the tail-addition optimization. Region bounds
+are invalidated lazily; unchanged world bounds require proof before reuse.
+
+### Render boundary acceptance revision
+
+November 10, 2026 - approved follow-up to the small-group regression review.
+The earlier production policy remains the measured candidate, not an accepted
+universal optimization. This task is associated with Local hierarchy work and
+projection and its existing project-render-hierarchy Inspector owner.
+
+Objective: retain useful reparent savings without increasing ordinary rendering
+cost for many small Groups. Preserve world geometry, painter order, element and
+resource identity, queries, snapshots, failure recovery, history and shared replay.
+Same-source comparisons hold all completed Core, Preset and UI corrections fixed.
+The historical 155.726 ms provider call is context, not the rendering baseline.
+
+1. **Same-source measurement.** Extend the permanent local benchmark to the
+   retained 101 fixture, ordinary redraw, camera motion, actual parent translation
+   and compensated reparenting. Keep previous/current Group strategies isolated
+   in the test probe. Record CPU mutation/render, GPU timer/completion, work counts,
+   source and fixture identity. Count decision overhead as well as saved work.
+   Distinguish 25,539 visible leaves from 25,491 leaves under the four retained
+   roots: 48 ornaments were moved out before the immutable fixture was saved.
+2. **Bounded feasibility proof.** Before production edits, use permanent owner
+   tests to verify whether existing public engine/SDK paths can retain native
+   work for a logical-only reparent while preserving bounds, snapshot selection,
+   coordinates, order and subsequent child/parent changes. Explicitly compare
+   ordinary native reparent, isolated render domains, and retained native placement
+   with changed logical ownership. Identity partition containers alone do not
+   prove general transform separation. A failing candidate is evidence, not
+   permission for a renderer rewrite or weakened oracle. Review the whole handoff
+   before selecting a production design.
+3. **Smallest proven owner change.** Only after step 2 passes, update the necessary
+   Render/engine handoff and Group policy together. Preserve complete transaction
+   changes and query-before-frame correctness. Do not infer that every container
+   is invisible, or that equal matrices clear independent descendant dirty work.
+   Update conflicting Preset/Render/Pixi specs, Inspector and tests together;
+   remove superseded behavior rather than retaining compatibility routing.
+4. **Focused integrated acceptance.** Re-run the affected native, shared-engine,
+   region, hierarchy/history/replay and browser cases on the same source. Compare
+   large-subtree and small-group CPU/GPU results in warmed reversed-order blocks,
+   with deterministic work counts and image assertions. Include real parent
+   translation, edits and reorder so savings are not shifted to another operation.
+
+Scope: existing hierarchy/render owner families, their direct contracts and
+permanent tests. The initial slice changes only this plan and local benchmark/
+feasibility tests. No new group-size threshold, dependency, private SDK flag patch,
+texture substitution, duplicate canonical scene, prompt change, full-local suite,
+release gate or new AI drawing. No commit/push is included. Production changes
+remain gated by feasibility; if the bounded candidates cannot meet the complete
+handoff, record the exact failure and revise the design before production work.
+
+Step 1 card: owner project-render-hierarchy; inputs retained fixture/current
+strategies; outputs same-source measurements and validity checks; no production
+semantics change. Reuse the local benchmark and test-only policy probe. New names
+are test-local, non-persisted measurement identities. Gates: naming, scoped lint,
+local benchmark and raw-sample/pixel review.
+Step 2 card: same owner; test the canonical-to-native handoff, including negative
+cases and cost. Native SDK imports stay inside render-engine-pixi. No candidate
+is installed into the live app. Gate: focused permanent native feasibility tests
+and an explicit design review; failure leaves steps 3 and 4 pending.
+Steps 3 and 4 cards must select the proven design and exact contract before edits;
+the current Inspector is not silently reinterpreted as permitting flattened
+native ownership. Existing accepted correctness evidence remains required.
+
+Status: step 1 complete. Step 2's bounded public-SDK candidates are rejected as
+complete solutions: ordinary reparent and RenderLayer still visit descendants;
+RenderGroup retains work but regresses many-small-group frames; retaining native
+placement with an order-only layer loses Group transform/bounds ownership.
+Production steps 3 and 4 are not admitted. See
+[measurement and feasibility evidence](../reports/hierarchy-boundary-feasibility-2026-11-10.md).
+
+Step review: the final seven-case browser matrix and two-case confirmation pass
+measurement integrity. Real-scene reparent completion is 54.30 -> 10.00 ms and
+56.90 -> 10.90 ms, while 1,000-vector-Group redraw CPU is 1.95 -> 2.60 ms and GPU
+0.248 -> 0.592 ms in confirmation. Four new native characterization tests and
+four existing partition tests pass; this reproduces the limitations, not product
+feasibility. No production changes were made.
+
+### Retained projection feasibility revision
+
+November 10, 2026 - approved continuation of step 2. This is a bounded
+experiment, not adoption of a new renderer. The existing independent Group
+policy remains installed. The measured large-scene completion saving (46 ms)
+and small-group steady CPU/GPU costs (0.65/0.344 ms, separate passes) must be
+reported as distinct absolute costs, not a universal net regression.
+
+Scope: this plan, its feasibility report, permanent hierarchy tests and
+engine-owned test probes, and the local browser benchmark configuration.
+No production or public API change is admitted before all four phases pass.
+No size threshold, private SDK state mutation, dependency, texture substitute,
+second canonical scene, AI drawing, full-local gate, commit or push. Preserve
+existing dirty changes and live services. New identifiers are internal,
+non-persisted test identities owned by their test package.
+
+1. **Applied changes and read barriers.** Exercise official grouping in the real
+   App and record applied versus committed events, parent/order and coordinate
+   compensation, and reads before the next frame. Verify rollback, history and
+   shared replay through the existing focused hierarchy case. Applied batches
+   are not whole transactions: retain accepted changes until the next rendering
+   or query barrier, without delaying canonical reads or inventing a transaction.
+2. **Retained drawing and coordinates.** Use an engine-owned, test-only projection
+   probe with explicit logical membership and stable drawable roots. Compare
+   ordinary physical hierarchy, independent render domains and retained placement
+   with public SDK operations. Consume admitted move and position changes together
+   at a read/render barrier. Preserve painter order, resource identity and direct
+   leaf edits. Count classification, native membership, descendant transforms and
+   disposal, including changes to both old and new parents. Native retention alone
+   is not admission; physical-parent lifetime must not leak into logical ownership.
+3. **Logical queries and capture.** Test Group-local bounds and exact membership
+   from the same projection revision. An experimental capture projection may
+   share prepared Graphics contexts but cannot move live objects or crop unrelated
+   screen content. Count its construction, traversal and cleanup, cold and repeated
+   use, after edits. Include overlapping outside content and subsequent parent
+   motion/deletion. Unsupported paint/resource types remain explicit limitations;
+   do not claim complete feasibility from vector-only success.
+4. **Whole-operation cost.** Compare baseline, installed policy and candidate on
+   identical warmed fixtures in reversed order. Include ordinary rendering,
+   compensated reparent, actual parent translation, immediate bounds and capture.
+   Count query/capture work and total completion, not only the cheap mutation.
+   Use small permanent probes first; promote to the retained 101 fixture only if
+   the smaller proof passes the complete handoff. A correctness or deterministic
+   work failure is sufficient to reject a candidate without a costly large run.
+
+Execution cards: phase 1 observes the existing prepare-preset-group-operation,
+normalize-preset-group-geometry and project-render-hierarchy handoff; phases 2-4
+are isolated feasibility evidence for project-render-hierarchy, not replacement
+production semantics. Inputs are accepted canonical changes and current paint
+resources; outputs are exact logical geometry/order, evidence of native work and
+capture completion. Bounds and capture consume the same accepted revision.
+Failure belongs to the projection experiment; never repair canonical state or
+serve stale output. Gates are scoped owner/browser tests, scoped lint/types,
+naming and per-phase self-review. Review the existing Inspector before advancing.
+
+Stop condition: a failed candidate does not authorize a renderer rewrite,
+weakened oracle, new cache heuristic or production installation. Record which
+handoff passed and which cost/correctness contract failed. Revise the bounded
+experiment only where the evidence justifies it. Production admission requires
+all phases plus representative paint types, history/replay and no shifted query
+or capture cost; replace conflicting contracts together only after admission.
+
+Phase 1 review: the real App emits three projection batches (Group addition,
+hierarchy move, computed coordinates) before one committed projection batch.
+Immediate frame barriers match the currently accepted state, including the
+intermediate uncompensated pose. Final placement, rollback after a read,
+undo/redo and native identity pass. The existing live edit/order/visibility and
+remote-publication replay case also passes. Lifecycle/journal notifications are
+not render-projection envelopes; camera transforms must be removed when comparing
+workspace coordinates. The test probe was corrected at those boundaries, not by
+changing product behavior or weakening the oracle.
+
+Phase 2 review: the isolated native probe retains coordinates, root order,
+independent leaf edits and old-parent deletion. Four-root reparent work is
+4,004 memberships/4,000 descendant transforms for ordinary hierarchy, 4/0 for
+installed independent domains, and 0/0 for retained placement. However, actual
+parent translation revisits 4,000 descendants in the retained candidate versus
+zero in the installed policy. This fails an acceptance obligation. Continue
+phases 3-4 only to finish the bounded query/capture cost diagnosis, not to admit
+production or silently accept the translation regression.
+
+Phase 3 review: shared-context capture preserves Group-local bounds, live paint
+identity, later geometry edits and cleanup in the vector probe. It nevertheless
+constructs 4,004 temporary Graphics for each capture, including the second
+unchanged capture. The existing policy needs no such materialization. This is
+another rejection condition, not a request to hide cold work behind a cache.
+Browser review must also account for SDK render/extract promoting its target to
+an independent domain. Verify and restore the selected policy with public APIs,
+including restoration cost. Compare direct rendering of retained roots into the
+ordinary offscreen capture target as the bounded alternative to clone assembly;
+record domain transitions and live-scene equivalence. This is normal capture,
+not a texture replacement for editable live geometry. Replay source-stamped real
+phase-1 observations into the isolated projection before timing synthetic scale.
+Phase 4 is a bounded browser diagnosis on 4,000-leaf fixtures with reversed
+policy order and capture cleanup inside timing. The recorded 101 promotion and
+production admission remain blocked; GPU timer expansion and unsupported paint
+families are unnecessary for rejecting an already-failed candidate.
+
+Phase 4 final review: all 12 reversed-order browser blocks pass pixel, policy
+and accepted-source replay assertions. The 1,728 samples expose the rejected
+tradeoff: four-large-root capture completion is 1.80 ms with independent domains,
+7.75 ms with shared-context assembly and 4.60 ms with direct root capture. Direct
+capture restores policy but registers 8,000 leaf memberships. Neither route
+satisfies the no-shifted-cost condition. Native tests pass 13/13; App browser
+cases pass 2/2; the local engine browser proof passes 1/1. Scoped engine types,
+lint and naming pass; focused App types remain blocked by 29 diagnostics in
+untouched dependency files, with none in changed test/helper/config files.
+
+Status: all four feasibility phases investigated and reviewed; candidate rejected.
+This completes the bounded investigation, not production admission or whole-plan
+closeout. Keep the installed policy. Recorded-101 promotion and production steps
+3-4 remain unadmitted. See [complete handoff follow-up](../reports/hierarchy-boundary-feasibility-2026-11-10.md#complete-handoff-follow-up)
+for producer evidence, candidate limitations, exact timings and reproduction.
+
+### Pixi research revision
+
+November 10, 2026 - external research and documentation only. See
+[Pixi render boundaries - research](../reports/pixi-render-boundary-research-2026-11-10.md)
+for official guidance, maintainer/issue applicability, pinned editor sources,
+installed 8.20.1 implementation and measurement reconciliation.
+
+Keep the installed independent Group domains. Their real-101 benefit is measured;
+the flattened projection fails actual parent translation and capture. The next
+candidate is reduced redundant render-state submission, with native membership
+and capture retained. This is an evidence-backed experiment, not a proven fix.
+Official RenderGroup guidance warns about many domains; RenderLayer and shared
+Graphics contexts do not remove the missing coordinate/capture responsibilities.
+
+Scope of this revision: this plan and the research report only. No code, tests,
+dependency upgrades, production renderer selection, new measurements, commits or
+pushes. The four phases below describe the next implementation/proof task; none
+is executed by this documentation update. Existing Inspector behavior remains
+unchanged until a complete candidate is admitted.
+
+1. **Attribute the actual state cost.** In the existing permanent Pixi/browser
+   probes, distinguish domain entries, instruction rebuilds, uploads by matrix
+   role, equal consecutive values at the same program/location, and buffer/resource
+   work. Hold version, domain policy and source constant. Isolate empty Graphics
+   versus structural carriers without activating `PixiBatchPartitions`' existing
+   128-child heuristic. The measured 2-to-2,000 matrix increase does not establish
+   that all uploads are redundant. Output: an attributed cost and exact proposed
+   SDK/engine owner, reviewed before selecting a change.
+2. **Prove a supported minimal change.** Prioritize eliminating only demonstrated
+   redundant submissions, keeping native domains and prepared geometry. Verify
+   the actual supported insertion point before implementation; extension support
+   in general is insufficient. Account for program/location state, different
+   sibling transforms, nested domains, color, target changes, mutable matrices
+   and context reset. Do not skip updates based only on object dirty flags. If
+   no supported boundary exists, record the upstream requirement and stop that
+   candidate. Same-version WebGPU uniform batching may be compared for attribution,
+   never used to hide a WebGL regression or silently change the app backend.
+3. **Verify accepted changes through capture.** Reuse the applied-batch producer
+   evidence and focused history/replay cases. Reads must observe currently accepted
+   state, including intermediate compensation; equal parent transforms cannot
+   erase independent leaf dirtiness. Test real parent motion, ordering and exact
+   selected-subtree bounds/capture with outside overlap, vector/text/image/effect
+   content, cold/repeated extraction, restoration and the following live frame.
+   Keep one canonical scene and its existing paint resources. Before changing
+   production handoff semantics, reconcile the Inspector's committed-only wording
+   with the measured applied-batch contract and update affected specs/tests together.
+4. **Accept whole-operation improvement.** Compare original, installed and proven
+   candidate on the same retained 101 and small-group fixtures in reversed-order
+   blocks. Keep CPU, GPU and completion measurements distinct. Preserve the
+   four-root reparent/translation savings and improve the identified steady cost
+   beyond noise without extra query/capture, disposal or later-frame work. If
+   evidence does not support this small change, retain the installed policy and
+   report the absolute tradeoff. A custom display-list/batcher requires a separate
+   reviewed design, not an automatic renderer rewrite.
+
+Each future phase uses focused tests and self-review before advancing. No group
+size threshold, raster substitute, private SDK flag patch, clone capture tree or
+AI planning requirement. The upstream InstructionSet destruction fix merged after
+8.20.1 is a relevant resource-lifetime finding, not a demonstrated cause of our
+timings or authorization to upgrade the dependency.
+
+Review: current `project-render-hierarchy` identity, order, independent-domain and
+failure ownership stay intact. The research distinguishes measured results,
+version-confirmed mechanisms and hypotheses. The no-cost-shifting condition covers
+first capture as well as repeated capture and subsequent rendering. Earlier
+rejected prototypes remain isolated evidence; they are not compatibility paths.
+Status: research and plan revision complete; the next proof and production
+admission remain pending. No additional benchmark or runtime validation was run.
+
+Execution scope - approved continuation: first change only permanent browser/native
+measurement probes, their focused tests and this plan/report. Production work is
+conditional on the supported-boundary and whole-operation proof above. Preserve
+all existing dirty changes; no dependency, backend, threshold or remote changes.
+Step 1 card: project-render-hierarchy evidence, implemented by engine/App test
+probes; input is existing native render commands, output is per-program uniform
+attribution with actual GPU values. Observe and forward every submission, never
+suppress calls. Instrumented runs are work evidence, not timings. Names are
+test-local, non-persisted. Gates: observer regression tests, existing small-vector
+and recorded-101 browser cases, naming, scoped lint and source/diff review.
+Step 2 rechecks the SDK public boundary before choosing a candidate. A missing
+supported hook is a bounded feasibility failure, not authorization to fork Pixi.
+
+Step 1 review: observer control and both App cases pass. Small-group isolated
+redraw has 2,000 identical matrix writes and 1,000 distinct native programs per
+frame; the recorded scene has 14 identical and 31 changed writes. These are
+program-local values, not evidence that a shared program can skip all writes.
+`MeshMaterialBatcher` constructs a DefaultShader for every batcher, whereas the
+SDK DefaultBatcher shares one. High-shader compilation creates a new GlProgram
+with a unique debug define, producing distinct native programs. The engine's
+analytic shader already uses the public GlProgram.from source cache.
+
+Step 2 card: same projection evidence owner, engine-only test candidate. Reuse
+the existing ordinary shader bits through GlProgram.from, changing program
+ownership before first bind while keeping per-batcher resources, native domains,
+draw order and capture. No GL suppression or private uniform flags. Compare
+original/candidate native probes, exact images and work counts; test program
+lifetime and texture-capacity separation. This takes priority over a new uniform
+cache because it corrects the upstream program-creation owner. Only a passing
+whole-operation proof admits the production shader factory change.
+
+Step 2/3 review: the candidate keeps exact native-probe images, native domains,
+zero capture clones and zero capture membership-leaf work. App hierarchy/history/
+replay and mixed-material/overflow cases pass. Reversed App blocks reproduce the
+small-group GPU improvement (about 0.59 to 0.28 ms); CPU submission remains about
+2.6 ms. Recorded-101 reparent render CPU remains 0.3 ms. This admits the narrow
+program-sharing change, not a claim that every small-domain overhead is removed.
+One page-reload-interrupted run and one uninjected candidate were excluded.
+
+Production card: `render-material`, owned by `@asyra/render-engine-pixi`, within
+its existing shader/batcher implementation boundary. Inputs are ordinary shader
+bits and effective texture capacity; outputs are independently owned Shader
+bindings backed by Pixi's source-keyed immutable programs. SDK program caches own
+source reuse, renderer shader systems own native context programs, and batcher
+destruction releases its Shader without destroying shared programs. Capacity and
+shader-source changes select different programs; scene/camera changes still
+submit current uniforms. Analytic selection, start-batch rebinding, hierarchy,
+queries and capture stay unchanged. The formal actual-batcher ownership assertion
+fails before implementation (`sameProgram: false`). Gates: that regression, exact
+native pixels/work, current-context recreation, focused App hierarchy/material
+cases, small-group/recorded App measurements, scoped type/lint/naming and review.
+Remove the browser response-injection candidate after admission; keep the old
+independent-program behavior only as an isolated measurement reference.
+
+Execution complete for this bounded shader-program slice. See
+[state attribution and production proof](../reports/render-state-submission-proof-2026-11-10.md).
+Step 3 review additionally covers text, raster content, nested alpha/effect targets,
+selected capture and its following frame; the missing mixed-content coverage was
+added before closure. Context restoration recreates native programs and permits
+later Group edits. The program owner is admitted through the existing
+`render-material` boundary; the `project-render-hierarchy` ownership/identity/order
+contract is unchanged. The earlier applied-versus-committed handoff question was
+not changed or claimed resolved by this shader-only slice.
+
+Step 4 review: production App work counts confirm 1,000 to one ordinary program,
+unchanged draws/matrices and zero steady buffer uploads. Final small-group redraw
+GPU is 0.269 ms versus 0.587 before; CPU improvement is not stable across samples.
+Recorded-101 four-root reparent remains about 10 ms versus 52.6 ms for the same-run
+ordinary-domain control. Native bounds/capture retain zero clone/membership-leaf
+work; all reference images match. Residual small-domain submission overhead is
+reported, not hidden by a threshold. The carrier experiment was not extended:
+attribution selected the concrete duplicated program owner without changing
+carriers, queries or extraction. Only focused tests/build/types/lint/naming were
+run; no full gate, dependency upgrade, commit or push. This closes the approved
+program-reuse implementation, not unrelated work in the surrounding plan.
+
+Follow-up review scope: trace only the shared-program diff, SDK binding/lifetime
+consumers and existing hierarchy/material proofs. Strengthen permanent browser
+tests for live surviving owners, multiple contexts and exact capture pixels;
+record existing SDK lifetime limitations separately from regressions. Production
+behavior, unrelated dirty files and performance policy remain outside this review
+mutation scope. Run only the matching browser cases and focused type/lint/naming.
+
+Review outcome: actual surviving-owner/multi-context rendering and exact capture
+pixels pass, as do the seven existing App handoff/material cases. No new production
+update regression was found. The review reproduced the existing Pixi 8.20.1
+retired-instruction batcher retention: four deleted Groups leave four cached
+Shader owners in both reference and production. This remains an open SDK lifecycle
+issue, not a completed resource cleanup. See the report's follow-up review; no
+dependency change, renderer fix, compatibility path or full test gate was added.
+
+### Approved SDK lifetime implementation - 2026-11-10
+
+Scope: repair retired instruction-owner retention through the official Pixi SDK
+lifecycle. Upgrade 8.20.1 to 8.21.0 first, then verify the current stable 8.22.0
+against the same focused checks before choosing the final dependency. This
+explicitly authorizes the dependency change excluded by the earlier hierarchy
+scope. Mutations are limited to the engine dependency/lockfile, direct adapter
+consumers if required by the current SDK contract, permanent focused tests,
+and these directly affected specifications and reports. No compatibility path,
+SDK monkey patch, independent sweeper, repository-wide test gate or live AI run.
+
+1. **Distinguish lifetime owners before upgrading.** Strengthen the permanent
+   browser regression to require removal of retired instruction entries and
+   destruction of their batchers. Prove it fails on 8.20.1. Separately prove
+   normal RenderGroup pool reset/reuse keeps its usable instruction resources.
+   The owner is `render-material`; SceneTree tombstones, history snapshots and
+   live reparent handles must remain intact. No immediate heap/RSS assertion.
+2. **Use the official SDK destruction handoff.** Install and verify 8.21.0,
+   then 8.22.0, keeping both versioned evidence sets. RenderGroup destruction
+   reaches InstructionSet destruction and the registered batch pipe; the
+   existing material batcher releases its own Shader bindings without destroying
+   shared programs. Update the dependency boundary assertion and docs together.
+   Review each version's API and lifecycle changes; stop advancement on an
+   unexplained correctness regression rather than add a fallback.
+3. **Preserve restore and hierarchy semantics.** Verify real SceneTree
+   tombstone identity across removal/undo/redo, rejected transaction restoration,
+   and hierarchy replay. Exercise native render deletion/recreation through App
+   undo/redo plus surviving children after ungroup. Keep reparent handles and
+   model identities, world geometry and painter order. Restore data is not a
+   retired GPU instruction cache and is not subject to this cleanup.
+4. **Close live rendering and reuse boundaries.** Verify shared program peers,
+   multiple contexts, context restoration, geometry/material edits, repeated
+   target capture and the following frame. Measure the same focused large-root
+   reparent and small-group scenarios; preserve work counts and image oracles.
+   Report pool reuse separately from final destruction, and JS reachability
+   separately from GPU allocation. No group-size threshold or cost shifted to
+   querying/extraction.
+
+Each step includes a bounded diff/direct-consumer review before advancement.
+Existing `render-material` and `project-render-hierarchy` contracts remain
+authoritative. The user subsequently broadened verification for this upgrade:
+run the complete Asyra Design App suites and complete `render`, `render-engine`
+`render-engine-pixi` and `preset` package suites, including applicable App browser and
+large-scene rendering gates. This supersedes the earlier focused-only limit for
+these five workspaces, not for other packages. No release validation, live model
+benchmark, unrelated package-wide gate or compatibility work is authorized by
+this verification expansion. Diagnose failures against the dependency change;
+report unrelated existing failures without silently expanding production edits.
+
+Steps 1-3: 8.20.1 fails the retired-owner oracle; both 8.21.0 and 8.22.0 pass
+native lifetime, pooled reuse, program sharing, capture and context restoration.
+8.22.0 is selected. App deletion/restore/ungroup and the existing hierarchy,
+material, history and remote-replay cases pass against a fresh verified SDK
+bundle. The previously running Vite served an old 8.20.1 bundle; its passing
+consumer run is not upgrade evidence. Step 4 focused performance and image
+checks pass. The complete rendering package suites, collaboration, render-delta,
+7076 and status-notification browser gates pass. Broader App validation is
+complete but not green: existing AI contract failures also reproduce with
+8.20.1, and five unchanged AI test typing errors remain. Do not close the whole
+App plan or claim all App tests pass. The SDK lifetime slice is verified; see
+[the upgrade report](../reports/pixi-resource-lifetime-upgrade-2026-11-10.md)
+for counts, baseline controls and residual small-group costs.
+
+The expanded verification also repaired the App's existing test-entry inventory
+(18 maintained suites omitted, three removed suites still referenced), and a
+browser assertion that read a render snapshot before its scheduled frame.
+Neither correction changes production AI behavior or removes failing cases.
+
+### Contract and four owner steps
+
+Objective: make local hierarchy work proportional to its actual dependency
+scope while preserving canonical identity, world geometry, painter order,
+history, remote replay, capture and hit testing. No AI planning rule, alternate
+execution entry, compatibility path, dependency upgrade or release work.
+Mutation is limited to Preset Group preparation/geometry, SceneTree hierarchy
+admission, Render/Pixi hierarchy projection, UI/region projection, their direct
+tests, fixtures, specifications and Inspector contract. Preserve unrelated dirty
+files. No new live AI drawing is required by this task.
+
+1. **Work-count regression and retained scenario.** Extract the recorded four
+   root IDs, geometry and ordering into permanent test evidence. Establish local
+   read, hierarchy validation, engine traversal, UI and region work counters at
+   owner boundaries. Aggregate counters rather than emitting one event per leaf.
+   Vary unrelated nodes independently of selected descendants. Verify successful
+   group/ungroup/reparent, rejection, one undo, redo and shared replay. Existing
+   identity-only tests do not prove bounded SDK work.
+2. **Preset preparation and SceneTree admission.** Use existing Core local read
+   APIs; keep invocation-local read reuse and invalidate it across mutation.
+   Resolve all before-image ancestry before writes. Replace full-tree move
+   validation with complete affected-parent/ancestry validation; full import/save
+   validation stays authoritative. Local and replay moves share the same checks.
+   Invalid membership, cycles, missing entities and stale replay reject before
+   writes. Do not cache a global validity flag or silently repair corruption.
+3. **Render hierarchy execution.** Keep render handles and immutable geometry;
+   prove actual Pixi traversal/instruction scope before choosing a rendering
+   boundary. Use the existing engine-neutral transform-group capability for
+   semantic containers only if actual SDK tests preserve pixels/order and reduce
+   work. Do not enable all Graphics partitions or alter visible shape semantics.
+   Preserve request coalescing, capture, hit testing and resource disposal.
+4. **UI and region projection.** Consume exact hierarchy deltas and retained
+   parent/order projections instead of rediscovering the whole hierarchy. Count
+   immutable output copying separately from tree traversal. Region geometry may
+   only be reused when the actual transform/membership contract proves validity;
+   otherwise retain correct invalidation and quantify that required work. Review
+   upstream mutation evidence and downstream consumers together.
+
+### Design review, gates and execution cards
+
+Existing Group/hierarchy Inspector owners are prepare-preset-group-operation,
+mutate-canonical-hierarchy, normalize-preset-group-geometry and render projection;
+Preset data-channel owns UI projection and Render owns region queries. Inputs
+are canonical IDs and exact changes, never provider text or Render-derived
+canonical geometry. The same accepted contract applies to local, undo/redo and
+accepted remote operations. Geometry normalization remains explicit; moving
+children must not introduce observer-driven ancestor edits.
+
+Each step first extends permanent focused tests, records the failing work-count
+assertion, implements the owner correction, reviews direct consumers, then runs
+the corresponding tests before advancing. Use Group operation, SceneTree move,
+Core hierarchy transaction, Render hierarchy/region, native Pixi and Preset UI
+projection tests. Real-scene verification must compare before/after world
+geometry, order and rendering, plus history/shared replay; mocks alone cannot
+close it. Scoped type/lint and naming checks accompany changed owners. No full
+local suite. No completion claim while native pixels or replay evidence is
+missing. If an assumed optimization changes semantics, revise this bounded
+design before implementation rather than weakening its oracle.
+
+Step 1 execution card: fixture/evidence and owner tests only; no production edit.
+Step 2 execution card: Preset Group, Core read contracts and SceneTree moves;
+outputs preserve exact hierarchy and coordinate updates, failures belong to
+SceneTree admission, no whole-scene cache. Step 3 execution card: Render/Pixi
+projection only, no canonical mutations, profile actual SDK and verify native
+pixels. Step 4 execution card: Preset UI/Render region derived state only;
+preserve identity/lifetime and account separately for unavoidable output copying.
+
+Status: all four owner steps are implemented and functionally reviewed, but
+render-policy performance acceptance is reopened after the small-group benchmark.
+The 1,000-vector-Group case increases redraw CPU/GPU cost in two independent
+ABBA runs, despite unchanged draw calls. No new production policy was introduced.
+See [Small-group render benchmark](../reports/group-render-domain-benchmark-2026-11-10.md).
+Focused Preset,
+SceneTree, Core, Render, native Pixi and Inspector tests pass; the complete retained
+25,539-element browser fixture passes geometry/order, undo/redo, production
+publication-decoder replay and pixel checks. No live AI drawing was started.
+See [Local hierarchy verification](../reports/local-hierarchy-work-2026-11-10.md)
+for work counts, raster precision differences and remaining costs.
+
+Review found one additional in-scope handoff: file load published UI projections
+without seeding their reusable preparation. The owner now builds both from the
+same loaded rows; the first edit after load is covered by the recorded-scene test.
+Existing load tests expecting two element saves now require one.
+
+The rendering proof separates policy adoption from reparenting. Under the new
+policy, overview and three detail views are byte-identical before/after grouping;
+remote replay also preserves the overview exactly. Switching the old/new render
+domain changes float32 raster composition: 25/132/59/83 pixels differ in the four
+544,000-pixel views, with unchanged source/world geometry. This is recorded, not
+claimed as byte-identical old/new output. The policy comparison bounds changed
+pixels below 0.05%, mean absolute channel error below 0.01/255, and maximum channel
+delta at 64/255. Reparent comparisons retain exact equality. Foreground checks
+prevent empty screenshots from passing. No geometry, image mask or product
+fallback was added to satisfy the oracle.
+
+Final review retains unavoidable full save/load validation, immutable flattened
+ID copying, changed-order traversal and ordinary frame drawing. An additional
+standalone E2E type probe finds existing errors in e2e/test-utils.ts; it reports no
+error in the new scenario. Production owner type checks pass; no out-of-scope
+helper cleanup, full-local suite, commit or push is part of this task.
+
+Follow-up review: added native edited-child/parent-transform checks, retained
+versus fresh region-index comparisons, and a small browser scenario verifying
+child geometry/style/order/visibility after reparent. Each undo/redo and each of
+four production-decoded remote publications is compared against the matching
+pixels, region results and UI order. No new production defect was reproduced;
+only tests and this verification record changed. See the report's follow-up
+section for limitations and artifact locations.
+
+Small-group measurement contract: verify the existing render-domain decision
+without adding production optimization rules. Add only a permanent local browser
+benchmark/config and its report. Hold 4,000 visible elements constant across
+20/200/1,000 Groups, separately for rectangles and closed vector quads; compare disabled/enabled Group transform domains on the same
+canonical scene in ABBA order. Warm each mode before measuring full-canvas redraw,
+viewport pan and production hierarchy reparent. Count WebGL draw entry points in
+separate instrumented samples; time uninstrumented CPU mutation/render submission
+and submission-through-GPU-completion with gl.finish, identifying the actual GPU
+backend. Retain raw samples, images, coordinate/order/identity checks and environment
+metadata. GPU timer queries are sampled separately from CPU timings when
+available; disjoint/unavailable results cannot be presented as GPU measurements.
+The rectangle strategy is already unbatched, so a vector cohort using production
+topology preparation is necessary to expose batching-boundary cost. Vector point,
+segment and network IDs must be unique across the document. Test-only strategy
+restoration runs before the isolated browser context is released.
+No timing threshold becomes a product rule or CI gate. Use focused lint,
+naming and this local benchmark only; preserve all existing sessions and artifacts.
+Baseline preparation review: changing existing node flags alone is insufficient
+because a later official Group strategy invocation restores the candidate flag.
+The test uses a Vite-served, test-only public-registry probe selecting the exact
+previous strategy body or current strategy, outside timed intervals, and verifies
+all Group flags after every phase. Bare browser-evaluate package imports are not
+resolvable; static package imports belong to that test module. A failed baseline
+integrity check invalidates the sample instead of becoming performance evidence.
+The existing project-render-hierarchy owner remains unchanged. Report a slowdown
+as a finding, never conceal it with a new heuristic or change the drawing task.
+
+The latest completed task is [Purpose and parameter discovery](#purpose-and-parameter-discovery).
+The preceding completed task is [Canonical input rejection and same-turn recovery](#canonical-input-rejection-and-same-turn-recovery).
 Its focused validation and live observation are recorded below. This completion
 does not assert that the timed drawing met every visual requirement.
 The target-bound result correction below remains a prior implementation record.
+
+## Purpose and parameter discovery
+
+November 10, 2026 - baseline `036f7f5dc`. Run
+`taipei-101-fixed-1794238899355` used eight position-related lookups (76,302 text
+bytes) among fifteen lookups (161,457 bytes). Actual delivered D3-D10 show
+coordinate queries ranking pagination, hierarchy changes and vector-only edits.
+The matcher merges authored purpose, incidental schema prose and names;
+single/plural words and parameter shape affect ranking. Generic geometry wording
+hides scaling-only scope. These are discovery defects, not execution failures.
+The original-thread follow-up confirms that not paging D8 was an agent choice,
+E3 performed coordinate arithmetic, and E6 omitted an already-known layer-order
+dependency. Thirteen names were saved and five reused; unused saves are valid.
+
+### Bounded contract and reviewed sequence
+
+1. **Compose - purpose and parameter selection.** Replace undifferentiated
+   descriptive matching with owner-authored discovery purpose/terms/boundaries
+   and independently indexed admitted input fields. Optional `inputFields` in a
+   descriptive query selects tools declaring those fields; an open record is not
+   proof it accepts every requested field. Return applicability and matched field
+   paths in candidates. Exact identities keep their existing authoritative route.
+   Normalize ordinary plural words without changing exact identities. Tool names
+   remain secondary evidence; never infer capability from another tool mentioned
+   in guidance. Keep natural-language discovery for custom registrations with
+   ordinary descriptions; no legacy scorer or duplicate execution entry.
+2. **Compose/apply - coordinate handoff.** Use the recorded parent origin and
+   child position to prove workspace-to-local conversion output can feed the
+   existing position mutation in one execute_design request. Verify the actual
+   provider-visible selected contracts, negative/nullable results, no successor
+   write on missing conversion, and canonical geometry. Fix only a demonstrated
+   handoff defect; do not invent an arithmetic tool or relax validation.
+3. **Observe - one live run.** After focused tests, owner review, types, scoped
+   lint/naming and affected flow checks pass, run the immutable prompt once with
+   a thirty-minute drawing allowance. Retain fit-to-content recording, final and
+   reload evidence, unlimited original-thread report and the live report session.
+   No manual file changes during drawing or any AI report/follow-up. Analyze
+   correct candidate selection, acquisition bytes/calls, field matching, bound
+   execution and reasons for model handoffs; do not equate unused saves or visual
+   iteration with failures. Correctable authored input may recover normally.
+
+Allowed owners: App capability discovery/metadata and its basic/native producers,
+coordinate action/result contracts if regression requires correction, directly
+affected provider/host tests and recorded fixtures, current App API/spec/Inspector,
+this plan and observation report. No Framework geometry redesign, dependencies,
+embedding service, mandatory planning/review, compatibility path, full-local/CI,
+release work or remote operation. Discovery is fixed to the recorded queries,
+their production candidate set, coordinate consumers and contrasting purposes.
+
+Review before implementation: metadata is owned by the declaring operation, not
+a name-to-capability table in the search consumer. Parameter matching reads actual
+schema fields, not output prose or example values, and does not replace runtime
+validation. Candidate boundaries disclose vector-only, scaling-only and evidence-
+dependent scope. Existing request-local metadata/corpus reuse retains its identity
+and registry-revision lifetime; test unchanged reads and changed registration.
+Opaque a/b/c identities, paging, exact ambiguity and compound artifact queries
+remain acceptance cases. No precise model-time saving is promised.
+
+Coordinate handoff review: the first draft tried the generic open property map,
+which does not declare individual coordinate bindings. The revised proof uses the
+existing typed per-element position setter. A separate current defect remains:
+workspace conversion declares an untyped value, and Runtime sequence selectors
+reject x/y through a nullable union before observing the conversion. Add the
+owner's nullable point schema and permit only null-branch omission for sequence
+field projection. Actual absent values must stop before the dependent mutation;
+saved recipes still require every branch. This bounded change includes Runtime
+recipe-schema projection and its direct admission tests, not general open-record
+binding or arbitrary union inference. Discovery annotations must be removed only
+at execution schema projection, not from candidate metadata. The failing App and
+Runtime regressions are prerequisites to this correction.
+
+Step execution card - Compose: input is current admitted descriptors plus query
+and optional field requirements; output is ranked candidates with applicability,
+field matches and exact usage routes, or explicit no-match recovery. The App
+discovery owner never executes a candidate. Test the recorded searches first,
+then production/native delivery and existing discovery contracts before advancing.
+
+### Slice review and focused evidence
+
+Compose now indexes declaring-owner purpose separately from incidental guidance,
+returns applicability in query/category/recovery menus, and supports declared
+input-field selection. Unique Basic API method names use the exact identity
+route. The old query-selected summary helper was removed rather than retained as
+an alternate scorer. Recorded queries, opaque identities, explicit vector scope,
+reachable schema fields, existing compound searches and metadata reuse pass their
+focused owner tests. Native provider protocol tests verify actual declarations,
+all four recorded query replies and the nullable conversion contract.
+
+Compose/apply execution card: the existing coordinate owner receives a workspace
+point and parent ID; the typed position owner consumes the resulting x/y. Runtime
+owns reference admission and presence checks, not geometry. The formal proof uses
+the recorded negative local y, real Core/render conversion, production action
+receipts, one Runtime request and request-scoped artifact ownership. It confirms
+one host call completes both operations and actual null prevents position writes.
+The nullable admission regression failed before the Runtime correction. Final
+review retained strict saved-recipe admission and rejected other missing union
+branches. The test harness was corrected to use one request lifecycle and the
+existing receipt/cleanup bridge; no product fallback was added for harness errors.
+
+Observe execution card: use the unchanged prompt fixture and existing recorder,
+with `--minutes=30`, unlimited same-thread reporting, retained session and strict
+stopping only for genuine tool/transport failures. Correctable authored inputs
+continue. Freeze source/document edits until the original AI finishes answering.
+Completed observation: one unchanged-prompt run completed naturally after 549,051 ms.
+Eight discovery calls delivered 88,503 text bytes; eight execution calls delivered
+13,756 bytes, with no input rejection or failed tool. Nine names were saved and
+six reused through 25 named references; no pure saved-value forwarding call was
+observed. The original thread completed its unlimited report and a follow-up, then
+remained waiting. Sequence 812 is durable and reload/document-report parity passed.
+All 24 frozen source/document hashes matched after reporting.
+
+The live agent did not request position edits or use inputFields; those paths are
+proven by the recorded/native regressions, not by this drawing. The follow-up
+withdrew a proposed relative-move tool because that ability already exists and
+D8 explicitly delivered it. Sample overbreadth was a missing ancestor choice;
+repeated facade boundaries contained real offsets/new regions. No additional
+product changes were made from unverified AI suggestions. The final independent
+overview does not replace the AI's omitted post-fix overview.
+
+Focused validation: 197 App owner tests, 88 Runtime admission tests, one actual
+native-provider test and one selected-operation flow proof passed; naming,
+scoped lint, App types and Runtime build passed. No full local suite or CI ran.
+See [the complete observation and corrected recommendations](../reports/taipei-101-purpose-discovery-2026-11-10.md)
+for metrics, original AI report, follow-up, recording and retained-session evidence.
 
 ## Canonical input rejection and same-turn recovery
 
@@ -489,7 +2380,6 @@ snapshots, rather than only structural receipt ownership. Preserve selected
 artifact output and subsequent snapshot reuse. This is a current-contract owner
 correction, not a compatibility path or a requirement for the AI to export data.
 
-
 ### Progress
 
 All three provider-boundary regressions failed on the previous behavior and now
@@ -531,7 +2421,6 @@ and deletion selectors were not used live and remain formally verified rather
 than live-adoption claims. Ten contract replies totaled 101,837 recorded bytes;
 nine execution replies totaled 13,282 bytes and delivered seven App images.
 Different artwork complexity does not establish a speed improvement.
-
 
 ## Executable contracts and decided handoffs
 

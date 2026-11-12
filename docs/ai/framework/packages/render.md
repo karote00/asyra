@@ -401,7 +401,14 @@ The runtime owns a lazy multilevel spatial hash with one cell per node. Extents
 use document coordinates consistent with `elementLocalToWorkspace`, including
 the workspace origin but excluding viewport pan/zoom. Geometry invalidates the
 changed node, ancestors and descendants whose dimension scaling can change;
-transforms also invalidate descendants. Membership/reorder invalidates ordering separately. Queries reuse
+transforms schedule descendant invalidation. At query time, retained exact
+workspace-relative matrices stop traversal through unchanged subtrees, including
+world-position-preserving reparenting. `RenderNode.getTransformRelativeTo(ancestor)`
+returns the same detached affine matrix used by `getBoundsRelativeTo`; an ancestor
+outside the parent chain rejects. Independently changed descendant geometry
+or transforms remain dirty and are processed even under an unchanged ancestor.
+No tolerance-based equality or canonical state is introduced. Membership/reorder
+invalidates ordering separately. Queries reuse
 unchanged extents; disposal/replacement retires the runtime's index. No index is
 serialized and no rendering, resolution or tile policy changes.
 

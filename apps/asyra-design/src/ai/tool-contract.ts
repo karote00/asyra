@@ -1,4 +1,8 @@
-import { AiToolContractError, embedAiToolSchema } from '@asyra/ai-agent-runtime'
+import {
+  AiToolContractError,
+  embedAiToolSchema,
+  selectAiToolResultSchema
+} from '@asyra/ai-agent-runtime'
 import { operationContractIssue, operationInputIssues } from './tool-schema'
 import { AiActionNames } from '../constants/ai-actions'
 import type {
@@ -288,301 +292,262 @@ const toolDeliveryFailureSchema = (executionResult: unknown) =>
     ['available', 'recoverable', 'code', 'message', 'settlement', 'toolOutcome']
   )
 
-/** Admit host metadata only at the result root; business objects stay closed. */
-export const hostToolResultSchema = (
-  schema: unknown,
-  requireOutcome = false
-): unknown => {
-  const record = (value: unknown): value is Record<string, unknown> =>
-    !!value && typeof value === 'object' && !Array.isArray(value)
-
-  const outcome = toolResultObject(
-    {
-      status: { enum: ['success', 'partial', 'failed', 'unknown'] },
-      settlement: { enum: ['not-started', 'completed', 'partial', 'unknown'] },
-      issues: {
-        type: 'array',
-        items: toolResultObject(
-          {
-            actionName: toolResultString,
-            code: toolResultString,
-            message: toolResultString
-          },
-          ['code', 'message']
-        )
-      }
-    },
-    ['status', 'settlement']
-  )
-
-  const visit = (
-    value: unknown,
-    references: readonly string[] = [],
-    root = false
-  ): unknown => {
-    if (!record(value)) {
-      return value
-    }
-
-    const result = { ...value }
-    let referenced: unknown
-
-    if (
-      typeof value.$ref === 'string' &&
-      value.$ref.startsWith('#/') &&
-      !references.includes(value.$ref)
-    ) {
-      let target: unknown = schema
-
-      for (const part of value.$ref.slice(2).split('/')) {
-        const key = part.replace(/~1/g, '/').replace(/~0/g, '~')
-
-        target =
-          record(target) || Array.isArray(target)
-            ? (target as Record<string, unknown>)[key]
-            : undefined
-      }
-
-      if (target !== undefined) {
-        delete result.$ref
-        referenced = visit(target, [...references, value.$ref])
-      }
-    }
-
-    for (const key of ['allOf', 'anyOf', 'oneOf']) {
-      if (Array.isArray(result[key])) {
-        result[key] = result[key].map((branch) => visit(branch, references))
-      }
-    }
-
-    if (Object.hasOwn(result, 'not')) {
-      result.not = visit(result.not, references)
-    }
-
-    const restricted =
-      result.additionalProperties !== undefined &&
-      result.additionalProperties !== true
-    const bounded =
-      typeof result.minProperties === 'number' ||
-      typeof result.maxProperties === 'number'
-
-    if (
-      !root &&
-      !restricted &&
-      !bounded &&
-      result.propertyNames === undefined &&
-      record(result.properties)
-    ) {
-      const { toolOutcome: _outcome, ...properties } = result.properties
-
-      if (Object.keys(properties).length) {
-        result.properties = properties
-      } else {
-        delete result.properties
-      }
-    }
-
-    if (restricted || bounded || result.propertyNames !== undefined || root) {
-      result.properties = {
-        ...(record(result.properties) ? result.properties : {}),
-        // Owner output validation precedes this host-owned acknowledgement.
-        toolOutcome: root ? outcome : true
-      }
-      if (result.propertyNames !== undefined) {
-        result.propertyNames = {
-          anyOf: [result.propertyNames, { const: 'toolOutcome' }]
-        }
-      }
-
-      if (bounded) {
-        const without: Record<string, unknown> = {
-          not: { required: ['toolOutcome'] }
-        }
-        const withOutcome: Record<string, unknown> = {
-          required: ['toolOutcome']
-        }
-
-        for (const key of ['minProperties', 'maxProperties']) {
-          if (typeof result[key] === 'number') {
-            without[key] = result[key]
-            withOutcome[key] = result[key] + 1
-          }
-        }
-
-        delete result.minProperties
-        delete result.maxProperties
-        result.allOf = [
-          ...(Array.isArray(result.allOf) ? result.allOf : []),
-          { anyOf: [without, withOutcome] }
-        ]
-      }
-    }
-
-    if (root && requireOutcome) {
-      result.required = [
-        ...new Set([
-          ...(Array.isArray(result.required) ? result.required : []),
-          'toolOutcome'
-        ])
-      ]
-    }
-
-    if (referenced !== undefined) {
-      result.allOf = [
-        referenced,
-        ...(Array.isArray(result.allOf) ? result.allOf : [])
-      ]
-    }
-
-    return result
-  }
-
-  return visit(schema, [], true)
-}
-
 /** Canonical result alternatives also own acknowledged delivery-failure evidence. */
-const declaredToolResults = (
-  contract: {
-    outputSchema?: unknown
-    partialOutputSchema?: unknown
-    recoveryOutputSchema?: unknown
-  },
-  stage: 'owner' | 'host' = 'owner'
-) => ({
-  anyOf: [
+const declaredToolResults = (contract: {
+  outputSchema?: unknown
+  partialOutputSchema?: unknown
+  recoveryOutputSchema?: unknown
+}) => {
+  const alternatives = [
     contract.outputSchema,
     contract.partialOutputSchema,
     contract.recoveryOutputSchema
   ]
     .filter((schema) => schema !== undefined)
     .map((schema, index) =>
-      embedAiToolSchema(
-        (stage === 'host'
-          ? schema
-          : hostToolResultSchema(schema)) as AiJsonValue,
-        `#/anyOf/${index}`
-      )
+      embedAiToolSchema(schema as AiJsonValue, `#/anyOf/${index}`)
     )
-})
+
+  return alternatives.length ? { anyOf: alternatives } : false
+}
+
+/** Failure evidence has its own delivery contract; it is never success data. */
+export const modelToolDeliveryFailureSchema = (contract: {
+  outputSchema?: unknown
+  partialOutputSchema?: unknown
+  recoveryOutputSchema?: unknown
+  delivery?: AiToolContractInput['delivery']
+}) =>
+  toolDeliveryFailureSchema(
+    contract.delivery?.path === ''
+      ? contract.delivery.outputSchema
+      : modelResultSchema(declaredToolResults(contract))
+  )
 
 /** Discovery and final egress publish the same complete partial-result contract. */
-export const modelToolResultSchemas = (
-  contract: {
-    outputSchema?: unknown
-    partialOutputSchema?: unknown
-    recoveryOutputSchema?: unknown
-    delivery?: AiToolContractInput['delivery']
-  },
-  stage: 'owner' | 'host' = 'owner'
-) => {
-  const annotate = (schema: unknown) =>
-    modelResultSchema(
-      stage === 'host' ? schema : hostToolResultSchema(schema, true)
-    )
+export const modelToolResultSchemas = (contract: {
+  outputSchema?: unknown
+  partialOutputSchema?: unknown
+  recoveryOutputSchema?: unknown
+  delivery?: AiToolContractInput['delivery']
+}) => {
+  const annotate = (schema: unknown) => modelResultSchema(schema)
 
-  const failure = toolDeliveryFailureSchema(
-    modelResultSchema(declaredToolResults(contract, stage))
-  )
+  const rootView = contract.delivery?.path === ''
+
+  const failure = modelToolDeliveryFailureSchema(contract)
 
   return {
     outputSchema: contract.delivery
-      ? modelResultSchema(
-          hostToolResultSchema(contract.delivery.outputSchema, true)
-        )
+      ? modelResultSchema(contract.delivery.outputSchema)
       : annotate(contract.outputSchema),
     partialOutputSchema: {
       anyOf: [
         ...(contract.delivery
-          ? [
-              modelResultSchema(
-                hostToolResultSchema(contract.delivery.outputSchema, true)
-              )
-            ]
+          ? [modelResultSchema(contract.delivery.outputSchema)]
           : []),
-        ...(contract.partialOutputSchema === undefined
+        ...(rootView
           ? []
-          : [annotate(contract.partialOutputSchema)]),
-        ...(contract.delivery && contract.recoveryOutputSchema !== undefined
-          ? [annotate(contract.recoveryOutputSchema)]
-          : []),
+          : [annotate(contract.partialOutputSchema ?? contract.outputSchema)]),
         failure
       ].map((schema, index) =>
         embedAiToolSchema(schema as AiJsonValue, `#/anyOf/${index}`)
       )
     },
-    recoveryOutputSchema: annotate(contract.recoveryOutputSchema)
+    recoveryOutputSchema:
+      contract.delivery?.path === ''
+        ? contract.delivery.outputSchema
+        : annotate(contract.recoveryOutputSchema)
   }
 }
 
 /** Preserve the owner's schema vocabulary while removing declared internal fields. */
-const modelResultSchema = (schema: unknown): unknown => {
+const modelResultSchema = (
+  schema: unknown,
+  inherited?: { omitted: Set<string> },
+  referenceRoot: unknown = schema
+): unknown => {
   if (!schema || typeof schema !== 'object') {
     return schema
   }
 
   if (Array.isArray(schema)) {
-    return schema.map(modelResultSchema)
+    return schema.map((child) =>
+      modelResultSchema(child, inherited, referenceRoot)
+    )
   }
 
   const source = schema as Record<string, unknown>
   const result = { ...source }
-  const properties = source.properties as Record<string, unknown> | undefined
-  const omitted = new Set<string>()
+  const context = {
+    omitted: new Set(inherited?.omitted)
+  }
+  const visited = new Set<unknown>()
 
-  if (properties) {
-    result.properties = Object.fromEntries(
-      Object.entries(properties).flatMap(([key, child]) => {
+  const resolveReference = (reference: unknown): unknown => {
+    if (typeof reference !== 'string' || !reference.startsWith('#/')) {
+      return undefined
+    }
+
+    let target: unknown = referenceRoot
+
+    for (const token of reference.slice(2).split('/')) {
+      const key = token.replace(/~1/g, '/').replace(/~0/g, '~')
+
+      target =
+        target && typeof target === 'object'
+          ? (target as Record<string, unknown>)[key]
+          : undefined
+    }
+
+    return target
+  }
+
+  const collect = (node: Record<string, unknown>) => {
+    if (visited.has(node)) {
+      return
+    }
+
+    visited.add(node)
+    if (typeof node.$ref === 'string' && node.$ref.startsWith('#/')) {
+      const target = resolveReference(node.$ref)
+
+      if (target && typeof target === 'object' && !Array.isArray(target)) {
+        collect(target as Record<string, unknown>)
+      }
+    }
+
+    if (node.properties && typeof node.properties === 'object') {
+      for (const [key, child] of Object.entries(node.properties)) {
         if (
           child &&
           typeof child === 'object' &&
           (child as Record<string, unknown>)['x-model-visibility'] ===
             'internal'
         ) {
-          omitted.add(key)
-
-          return []
+          context.omitted.add(key)
         }
+      }
+    }
 
-        return [[key, modelResultSchema(child)]]
-      })
-    )
-    if (Array.isArray(source.required)) {
-      result.required = source.required.filter((key) => !omitted.has(key))
+    if (Array.isArray(node.allOf)) {
+      for (const child of node.allOf) {
+        if (child && typeof child === 'object' && !Array.isArray(child)) {
+          collect(child)
+        }
+      }
     }
   }
 
-  for (const key of [
-    '$defs',
-    'definitions',
-    'patternProperties',
-    'dependentSchemas'
-  ]) {
+  collect(source)
+  const { omitted } = context
+  // Visibility is a structural field declaration, not permission to transform
+  // semantic constraints. Such owners must supply an explicit external view.
+  const visibilityVisited = new Set<unknown>()
+
+  const hidesFields = (value: unknown): boolean => {
+    if (!value || typeof value !== 'object' || visibilityVisited.has(value)) {
+      return false
+    }
+
+    visibilityVisited.add(value)
+    if (Array.isArray(value)) {
+      return value.some(hidesFields)
+    }
+
+    const node = value as Record<string, unknown>
+
+    if (
+      node['x-model-visibility'] === 'internal' ||
+      hidesFields(resolveReference(node.$ref))
+    ) {
+      return true
+    }
+
+    return [
+      'properties',
+      '$defs',
+      'definitions',
+      'allOf',
+      'anyOf',
+      'oneOf',
+      'items',
+      'prefixItems',
+      'additionalProperties',
+      'not'
+    ].some((key) => {
+      const child = node[key]
+
+      return ['properties', '$defs', 'definitions'].includes(key) &&
+        child &&
+        typeof child === 'object'
+        ? Object.values(child).some(hidesFields)
+        : hidesFields(child)
+    })
+  }
+
+  const localSemantic =
+    omitted.size > 0 &&
+    [
+      'const',
+      'enum',
+      'not',
+      'minProperties',
+      'maxProperties',
+      'dependentRequired'
+    ].some((key) => source[key] !== undefined)
+  const compositeSemantic =
+    ['const', 'enum', 'not', 'oneOf', 'uniqueItems'].some(
+      (key) => source[key] !== undefined
+    ) && hidesFields(source)
+
+  if (localSemantic || compositeSemantic) {
+    throw new TypeError(
+      'Semantic hidden-field projection requires a declared delivery view'
+    )
+  }
+
+  const properties = source.properties as Record<string, unknown> | undefined
+
+  if (properties) {
+    result.properties = Object.fromEntries(
+      Object.entries(properties)
+        .filter(([key]) => !omitted.has(key))
+        .map(([key, child]) => [
+          key,
+          modelResultSchema(child, undefined, referenceRoot)
+        ])
+    )
+  }
+
+  if (Array.isArray(source.required)) {
+    result.required = source.required.filter((key) => !omitted.has(key))
+  }
+
+  for (const key of ['$defs', 'definitions']) {
     const children = source[key]
 
     if (children && typeof children === 'object' && !Array.isArray(children)) {
       result[key] = Object.fromEntries(
         Object.entries(children).map(([name, child]) => [
           name,
-          modelResultSchema(child)
+          modelResultSchema(child, undefined, referenceRoot)
         ])
       )
     }
   }
 
-  for (const key of [
-    'anyOf',
-    'oneOf',
-    'allOf',
-    'prefixItems',
-    'items',
-    'additionalProperties',
-    'not',
-    'if',
-    'then',
-    'else'
-  ]) {
+  // Composition constraints apply to this object; value children start a new
+  // field-count and dependency scope. Never leak a parent's private keys inward.
+  for (const key of ['anyOf', 'oneOf', 'allOf', 'not']) {
     if (source[key] !== undefined) {
-      result[key] = modelResultSchema(source[key])
+      result[key] = modelResultSchema(source[key], context, referenceRoot)
+    }
+  }
+
+  for (const key of ['prefixItems', 'items', 'additionalProperties']) {
+    if (source[key] !== undefined) {
+      result[key] = modelResultSchema(source[key], undefined, referenceRoot)
     }
   }
 
@@ -594,16 +559,26 @@ const modelResultSchema = (schema: unknown): unknown => {
  */
 export const projectToolResultFields = (
   value: unknown,
-  schema: unknown
+  schema: unknown,
+  projectedPaths: readonly string[] = []
 ): unknown => {
+  const projected = new Set(projectedPaths)
+
   const record = (item: unknown): item is Record<string, unknown> =>
     !!item && typeof item === 'object' && !Array.isArray(item)
 
   const project = (
     item: unknown,
     sources: readonly unknown[],
-    depth: number
+    depth: number,
+    path: string
   ): unknown => {
+    // Child owners already selected these views. This skips selection only;
+    // the complete resulting value still undergoes the pinned schema validation.
+    if (projected.has(path)) {
+      return item
+    }
+
     if (depth > 64) {
       throw new Error('Model result projection exceeds schema depth')
     }
@@ -613,7 +588,6 @@ export const projectToolResultFields = (
     let opaque = false
     let envelope = false
     const internal = new Set<string>()
-    const patterns: [RegExp, unknown][] = []
     const visited = new Set<unknown>()
 
     const visit = (source: unknown) => {
@@ -655,28 +629,6 @@ export const projectToolResultFields = (
         }
       }
 
-      if (record(source.patternProperties)) {
-        for (const [pattern, child] of Object.entries(
-          source.patternProperties
-        )) {
-          patterns.push([new RegExp(pattern), child])
-        }
-      }
-
-      if (source.if !== undefined) {
-        const matches = !operationInputIssues(item, source.if, schema, 'output')
-
-        visit(matches ? source.then : source.else)
-      }
-
-      if (record(item) && record(source.dependentSchemas)) {
-        for (const [key, child] of Object.entries(source.dependentSchemas)) {
-          if (Object.hasOwn(item, key)) {
-            visit(child)
-          }
-        }
-      }
-
       if (Array.isArray(source.allOf)) {
         source.allOf.forEach(visit)
       }
@@ -711,7 +663,8 @@ export const projectToolResultFields = (
 
             return part.items === undefined ? [] : [part.items]
           }),
-          depth + 1
+          depth + 1,
+          path + '/*'
         )
       )
     }
@@ -726,7 +679,7 @@ export const projectToolResultFields = (
 
     // An unconstrained value is explicitly opaque. Typed maps still project each
     // value, including maps with no fixed properties and user-authored key names.
-    if (!envelope && !patterns.length && !dynamic.length) {
+    if (!envelope && !dynamic.length) {
       return item
     }
 
@@ -738,24 +691,29 @@ export const projectToolResultFields = (
       }
 
       const named = fields.get(key) ?? []
-      const patterned = patterns
-        .filter(([pattern]) => pattern.test(key))
-        .map(([, child]) => child)
-      const children = [...named, ...patterned]
+      const children = [...named]
 
       if (!children.length) {
         children.push(...dynamic)
       }
 
       if (children.length) {
-        entries.push([key, project(value, children, depth + 1)])
+        entries.push([
+          key,
+          project(
+            value,
+            children,
+            depth + 1,
+            path + '/' + key.replace(/~/g, '~0').replace(/\//g, '~1')
+          )
+        ])
       }
     }
 
     return Object.fromEntries(entries)
   }
 
-  return project(value, [schema], 0)
+  return project(value, [schema], 0, '')
 }
 
 /** External delivery consumes an owner-authored view after complete internal handoff. */
@@ -765,28 +723,31 @@ export const projectToolDelivery = (
     partialOutputSchema?: unknown
     recoveryOutputSchema?: unknown
   },
-  value: unknown
-): unknown => {
+  value: unknown,
+  outcome: AiToolOutcome
+): { value: unknown; outcome: AiToolOutcome } => {
   if (!contract.delivery) {
-    return projectToolResultFields(value, {
-      anyOf: [
-        contract.outputSchema,
-        contract.partialOutputSchema,
-        contract.recoveryOutputSchema
-      ]
-        .filter((entry) => entry !== undefined)
-        .map((entry, index) =>
-          embedAiToolSchema(
-            hostToolResultSchema(entry) as AiJsonValue,
-            `#/anyOf/${index}`
+    return {
+      outcome,
+      value: projectToolResultFields(value, {
+        anyOf: [
+          contract.outputSchema,
+          contract.partialOutputSchema,
+          contract.recoveryOutputSchema
+        ]
+          .filter((entry) => entry !== undefined)
+          .map((entry, index) =>
+            embedAiToolSchema(entry as AiJsonValue, `#/anyOf/${index}`)
           )
-        )
-    })
+      })
+    }
   }
 
   let view: unknown = value
 
-  for (const token of contract.delivery.path.slice(1).split('/')) {
+  for (const token of contract.delivery.path === ''
+    ? []
+    : contract.delivery.path.slice(1).split('/')) {
     const key = token.replace(/~1/g, '/').replace(/~0/g, '~')
 
     view =
@@ -798,32 +759,22 @@ export const projectToolDelivery = (
   // A settled owner failure has no successful delivery view to publish. Select
   // its declared recovery envelope, preserving the failure instead of replacing
   // it with a missing-view error or replaying the successful prefix.
-  const originalValue =
-    value && typeof value === 'object' && !Array.isArray(value)
-      ? (value as Record<string, unknown>)
-      : undefined
-  const reported = designActionOutcome(originalValue?.toolOutcome ?? value)
-
-  if (view === undefined && reported.status !== 'success') {
-    const recovery = [
-      contract.partialOutputSchema,
-      contract.recoveryOutputSchema
-    ].filter((schema) => schema !== undefined)
-    const declared = {
-      anyOf: recovery.map((schema, index) =>
-        embedAiToolSchema(
-          hostToolResultSchema(schema) as AiJsonValue,
-          `#/anyOf/${index}`
-        )
-      )
-    }
+  if (view === undefined && outcome.status !== 'success') {
+    const recovery = selectAiToolResultSchema(
+      contract as Parameters<typeof selectAiToolResultSchema>[0],
+      outcome.status
+    )
 
     if (
-      recovery.length &&
-      !operationContractIssue(value, declared, { stage: 'output' })
+      recovery !== undefined &&
+      !operationContractIssue(value, recovery, { stage: 'output' })
     ) {
-      return projectToolResultFields(value, declared)
+      return { value: projectToolResultFields(value, recovery), outcome }
     }
+  }
+
+  if (view !== undefined) {
+    view = projectToolResultFields(view, contract.delivery.outputSchema)
   }
 
   const issue =
@@ -832,23 +783,21 @@ export const projectToolDelivery = (
       : operationContractIssue(view, contract.delivery.outputSchema, {
           stage: 'output'
         })
-  const original =
-    value && typeof value === 'object' ? (value as Record<string, unknown>) : {}
 
   if (issue) {
-    return toolDeliveryFailure(value, issue, contract)
+    return {
+      value: toolDeliveryFailure(value, issue, contract, outcome),
+      outcome: { status: 'partial', settlement: outcome.settlement }
+    }
   }
 
   if (!view || typeof view !== 'object' || Array.isArray(view)) {
-    return view
+    return { value: view, outcome }
   }
 
   return {
-    ...(projectToolResultFields(view, contract.delivery.outputSchema) as Record<
-      string,
-      unknown
-    >),
-    ...(original.toolOutcome ? { toolOutcome: original.toolOutcome } : {})
+    value: projectToolResultFields(view, contract.delivery.outputSchema),
+    outcome
   }
 }
 
@@ -860,25 +809,47 @@ export const toolDeliveryFailure = (
     outputSchema?: unknown
     partialOutputSchema?: unknown
     recoveryOutputSchema?: unknown
-  }
+    delivery?: AiToolContractInput['delivery']
+  },
+  outcome: AiToolOutcome
 ) => {
-  const original =
-    value && typeof value === 'object' ? (value as Record<string, unknown>) : {}
-  const outcome = designActionOutcome(original.toolOutcome ?? original)
-  const declared = declaredToolResults(contract)
-  const acknowledged = !operationContractIssue(value, declared, {
-    stage: 'output'
-  })
-    ? projectToolResultFields(value, declared)
-    : undefined
-
-  return {
+  const schema = modelToolDeliveryFailureSchema(contract)
+  const declared = selectAiToolResultSchema(
+    contract as Parameters<typeof selectAiToolResultSchema>[0],
+    outcome.status
+  )
+  const failure = {
     available: false,
     recoverable: true,
     code: toolDeliveryFailureCode,
     message: `${issue} Execution must not be replayed.`,
     settlement: outcome.settlement,
-    toolOutcome: { status: 'partial', settlement: outcome.settlement },
-    ...(acknowledged === undefined ? {} : { executionResult: acknowledged })
+    toolOutcome: { status: 'partial', settlement: outcome.settlement }
   }
+
+  // Evidence is optional; an invalid public view is never delivered as evidence.
+  // Canonical owner data remains upstream and settlement still describes its work.
+  if (
+    declared !== undefined &&
+    !operationContractIssue(value, declared, { stage: 'output' })
+  ) {
+    const candidate = {
+      ...failure,
+      executionResult: projectToolResultFields(value, declared)
+    }
+
+    if (!operationContractIssue(candidate, schema, { stage: 'output' })) {
+      return candidate
+    }
+  }
+
+  const failureIssue = operationContractIssue(failure, schema, {
+    stage: 'output'
+  })
+
+  if (failureIssue) {
+    throw new AiToolContractError('output', failureIssue)
+  }
+
+  return failure
 }

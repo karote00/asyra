@@ -5,7 +5,10 @@ import type { LocalToolImage } from '../local-tool-media'
 import { readFileSync } from 'node:fs'
 import { expect, it, vi } from 'vitest'
 import { createAiInspectionAction } from '../../src/ai/inspection'
-import { projectToolDelivery } from '../../src/ai/tool-contract'
+import {
+  projectToolDelivery,
+  designActionOutcome
+} from '../../src/ai/tool-contract'
 
 vi.mock('../../src/common-apis', () => ({ inspectionApis: {} }))
 import {
@@ -53,7 +56,8 @@ it('delivers pixels selected under the recorded host receipt alias without Base6
   await delivery.capture(
     'group',
     { actionResults: receipt.fields.receipt },
-    new Set()
+    new Set(),
+    { status: 'success', settlement: 'completed' }
   )
   const content = await localToolContent(JSON.stringify(receipt), media)
 
@@ -126,7 +130,11 @@ const verifyImageDelivery = async (count: number, native: boolean) => {
         ...entry,
         result:
           entry.actionName === inspection.name
-            ? projectToolDelivery(inspection, entry.result)
+            ? projectToolDelivery(
+                inspection,
+                entry.result,
+                designActionOutcome(entry.result)
+              ).value
             : entry.result
       })
     )
@@ -252,7 +260,11 @@ it.each([
     const ownerResult = await action.execute(args, {
       signal: new AbortController().signal
     } as never)
-    const delivered = projectToolDelivery(action, ownerResult)
+    const delivered = projectToolDelivery(
+      action,
+      ownerResult,
+      designActionOutcome(ownerResult)
+    ).value
     const content = await localToolContent(
       JSON.stringify({
         actionResults: [{ actionName: action.name, result: delivered }]
@@ -457,10 +469,9 @@ it.each(['direct', 'selected', 'full', 'status', 'input'])(
               }
       })
 
-      expect(
-        JSON.parse(reply.text).toolOutcome,
-        reply.text.slice(0, 1000)
-      ).toMatchObject({ status: 'success' })
+      expect(reply.outcome, reply.text.slice(0, 1000)).toMatchObject({
+        status: 'success'
+      })
       const content = await localToolContent(reply.text, reply.media)
       const count = ['status', 'metadata', 'input'].includes(mode) ? 0 : 1
 
@@ -539,10 +550,16 @@ it.each([
     (items) => media.push(...items)
   )
 
-  await delivery.capture(undefined, source, new Set(), {
-    value: source,
-    blocked: new Set()
-  })
+  await delivery.capture(
+    undefined,
+    source,
+    new Set(),
+    { status: 'success', settlement: 'completed' },
+    {
+      value: source,
+      blocked: new Set()
+    }
+  )
   const receipt = delivery.finish(
     { status: 'success', settlement: 'completed' },
     [],
@@ -621,16 +638,46 @@ it('delivers the recorded failure-prefix image through native media without scan
 it('declares and validates the actual capture observation without an approval revision', async () => {
   const { operationInputIssue } = await import('../operation-input-schema')
   const action = createAiInspectionAction()
-  const owner = createLocalOperationTools([createAiToolContract(action)], {
-    modelActions: (actions) => actions,
-    resolveBatch: (batch) => batch
-  }, async (batch) => ({ context: {}, actionResults: batch.actions.map((item) => ({
-    actionId: item.id, actionName: item.name,
-    result: { available: true, image: { dataUrl: uri, width: pixels.readUInt32BE(16), height: pixels.readUInt32BE(20) } }
-  })) }))
-  const definition = owner.definitions.find((tool) => tool.name === action.name)!
-  const result = JSON.parse(await owner.call(action.name, { arguments: { elementId: 'drawing' } }, new AbortController().signal))
+  const owner = createLocalOperationTools(
+    [createAiToolContract(action)],
+    {
+      modelActions: (actions) => actions,
+
+      resolveBatch: (batch) => batch
+    },
+    async (batch) => ({
+      context: {},
+      actionResults: batch.actions.map((item) => ({
+        actionId: item.id,
+        actionName: item.name,
+        result: {
+          available: true,
+          image: {
+            dataUrl: uri,
+            width: pixels.readUInt32BE(16),
+            height: pixels.readUInt32BE(20)
+          }
+        }
+      }))
+    })
+  )
+  const definition = owner.definitions.find((tool) => tool.name === action.name)
+
+  if (!definition) {
+    throw new Error('Missing capture definition')
+  }
+
+  const result = JSON.parse(
+    await owner.call(
+      action.name,
+      { arguments: { elementId: 'drawing' } },
+      new AbortController().signal
+    )
+  )
+
   expect(operationInputIssue(result, definition.outputSchema)).toBeUndefined()
-  expect(result.actionResults[0].result.inspectionId).toEqual(expect.any(String))
+  expect(result.actionResults[0].result.inspectionId).toEqual(
+    expect.any(String)
+  )
   expect(result.actionResults[0].result).not.toHaveProperty('revision')
 })

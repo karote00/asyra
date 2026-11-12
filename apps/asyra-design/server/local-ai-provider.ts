@@ -31,14 +31,15 @@ import {
 import { toolContractDigest } from '@asyra/ai-agent-runtime/node'
 import { createAiInvoker } from '@asyra/ai-agent-runtime'
 import { nativeToolInputSchema } from './operation-input-schema'
+import { toolDeliveryFailure } from '../src/ai/tool-contract'
 import { requireBatchSuccess } from './batch-exchange'
-import { serializeToolPayload } from '@asyra/ai-agent-runtime/node'
 import { createHash, randomUUID } from 'node:crypto'
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { observeActionBatch } from './local-action-observation'
 import {
   localToolFailureReply,
-  localToolErrorMessage
+  localToolErrorMessage,
+  localToolReplyOutcome
 } from './local-tool-invocation'
 import { createLocalToolHost, type LocalToolGroup } from './local-tool-host'
 import {
@@ -1483,7 +1484,13 @@ const runLocalAiProvider = async (
 
               return {
                 ...result,
-                contentItems: await localToolContent(reply.text, media)
+                contentItems: [
+                  ...(await localToolContent(reply.text, media)),
+                  {
+                    type: 'inputText' as const,
+                    text: JSON.stringify({ toolOutcome: reply.outcome })
+                  }
+                ]
               }
             } catch (error) {
               if (toolController.signal.aborted) {
@@ -1491,30 +1498,35 @@ const runLocalAiProvider = async (
 
                 throw new AiExecutionError({
                   result,
-                  settlement: result.toolOutcome.settlement
+                  settlement: localToolReplyOutcome(reply).settlement
                 })
               }
 
               const reason = localToolErrorMessage(error)
 
+              const failure = toolDeliveryFailure(
+                JSON.parse(reply.text),
+                `${reason}. Content delivery failed after execution; inspect current state or use another acquisition method.`,
+                reply.modelContract ?? {},
+                reply.outcome
+              )
+              const rejected = {
+                success: false,
+                text: JSON.stringify(failure),
+                outcome: {
+                  status: 'partial' as const,
+                  settlement: reply.outcome.settlement,
+                  issues: [{ code: failure.code, message: failure.message }]
+                }
+              }
+
               usage?.trace('tool_delivery_failed', {
                 tool: toolName,
                 callId: params.callId,
-                code: 'TOOL_RESULT_DELIVERY_FAILED',
+                code: failure.code,
                 reason,
                 durationMs: performance.now() - toolStartedAt
               })
-              const rejected = localToolFailureReply(
-                `${reason}. The tool returned an execution result but its content could not be delivered. This does not undo completed work. Do not replay mutations; inspect current state or use another acquisition method.`,
-                'TOOL_RESULT_DELIVERY_FAILED',
-                {
-                  stage: 'delivery',
-                  settlement: 'unknown',
-                  executionResult: JSON.parse(
-                    serializeToolPayload(JSON.parse(reply.text)).serialized
-                  )
-                }
-              )
 
               return {
                 ...rejected,
@@ -1522,6 +1534,10 @@ const runLocalAiProvider = async (
                   {
                     type: 'inputText' as const,
                     text: rejected.text
+                  },
+                  {
+                    type: 'inputText' as const,
+                    text: JSON.stringify({ toolOutcome: rejected.outcome })
                   }
                 ]
               }
@@ -1545,7 +1561,13 @@ const runLocalAiProvider = async (
 
             return {
               ...reply,
-              contentItems: [{ type: 'inputText' as const, text: reply.text }]
+              contentItems: [
+                { type: 'inputText' as const, text: reply.text },
+                {
+                  type: 'inputText' as const,
+                  text: JSON.stringify({ toolOutcome: reply.outcome })
+                }
+              ]
             }
           }
         },
@@ -1654,13 +1676,15 @@ const runLocalAiProvider = async (
           signal: toolController.signal,
           actor: 'provider'
         })
-        .then(({ success, contentItems, text }) => {
+        .then((reply) => {
+          const { success, contentItems } = reply
+
           if (terminalError || stopped || workStopped) {
             return
           }
 
           toolTasks.delete(task)
-          const { status, settlement } = JSON.parse(text).toolOutcome
+          const { status, settlement } = localToolReplyOutcome(reply)
 
           reportProgress({
             tool: toolName,

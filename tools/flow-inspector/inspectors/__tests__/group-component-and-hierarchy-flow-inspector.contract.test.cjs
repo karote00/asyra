@@ -104,7 +104,9 @@ test('every owner step has the complete readiness fields', () => {
       assert.ok(item[field].length > 0, `${item.id} empty ${field}`)
     })
     if (item.id === 'project-render-hierarchy') {
-      assert.deepEqual(item.cacheDimensions, ['elementId'])
+      assert.deepEqual(item.cacheDimensions, ['elementId', 'runtime lifetime', 'region inclusion predicate', 'workspace-relative transform', 'geometry and membership invalidation'])
+    } else if (item.id === 'project-preset-hierarchy-ui-context') {
+      assert.deepEqual(item.cacheDimensions, ['observer lifetime', 'published map identity', 'published order identity', 'affected ancestry and membership'])
     } else {
       assert.deepEqual(item.cacheDimensions, [], `${item.id} unjustified cache`)
     }

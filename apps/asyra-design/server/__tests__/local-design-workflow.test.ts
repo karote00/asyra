@@ -1,4 +1,3 @@
-import { ownerInvocation } from './tool-contract-assertions'
 import {
   createLocalToolLeases,
   type LocalToolOwnership
@@ -6,10 +5,7 @@ import {
 import materialRepair from '../../test-data/knowledge-evaluation/__fixtures__/material-repair-20261028.json'
 import nonplanar from './fixtures/recorded-101/nonplanar-recovery-20261026.json'
 import briefFixture from './fixtures/recorded-101/brief-capacity-20261024.json'
-import {
-  projectWorkflowInput,
-  workflowUsageGuide
-} from '../design-workflow-discovery'
+import { workflowUsageGuide } from '../design-workflow-discovery'
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { createAiExecutionProfiler } from '@asyra/ai-agent-runtime'
@@ -21,14 +17,12 @@ import {
   type NativeToolDescriptor
 } from '../local-operation-tools'
 import capacityFixture from './fixtures/recorded-101/pattern-budget-recovery-20261023.json'
-import { AiDesignToolIds } from '../../src/constants/ai-design'
 import { invokeLocalTool, localToolOutcome } from '../local-tool-invocation'
 import { requireBatchSuccess } from '../batch-exchange'
 import {
   nativeToolInputSchema,
   operationInputIssue
 } from '../operation-input-schema'
-import { designPreparationExamples } from '../design-preparation-examples'
 import { describe, expect, it, vi } from 'vitest'
 import { createLocalDesignWorkflow as createOwner } from '../local-design-workflow'
 import { withToolContractAssertions } from './tool-contract-assertions'
@@ -164,8 +158,11 @@ it('preserves unknown application settlement across an ordered part boundary wit
   expect(JSON.parse(reply.text)).toMatchObject({
     status: 'partial',
     failedPart: 'second',
-    remainingParts: ['third'],
-    toolOutcome: { status: 'partial', settlement: 'unknown' }
+    remainingParts: ['third']
+  })
+  expect(reply.outcome).toMatchObject({
+    status: 'partial',
+    settlement: 'unknown'
   })
   expect(execute).toHaveBeenCalledTimes(2)
 })
@@ -299,7 +296,7 @@ describe('ordered ready parts', () => {
       signal()
     )
 
-    expect(JSON.parse(reply.text).toolOutcome.status).toBe('failed')
+    expect(reply.outcome.status).toBe('failed')
     expect(execute).not.toHaveBeenCalled()
   })
   it('reports partial progress inside the first part without replaying it', async () => {
@@ -698,7 +695,7 @@ describe('combined design preparation and application', () => {
     const result = await invokeLocalTool(workflow, definition, input, signal())
 
     expect(result.success).toBe(true)
-    expect(JSON.parse(result.text).toolOutcome).toMatchObject({
+    expect(result.outcome).toMatchObject({
       status: 'success',
       settlement: 'completed'
     })
@@ -872,30 +869,6 @@ it('passes only the known parent identity when extending a prepared part', async
   expect(result).not.toHaveProperty('context')
 })
 
-const reviewedWorkflow = () => {
-  const allActions = [
-    ...actions,
-    {
-      name: AiActionNames.INSPECT_DRAWING,
-      description: 'Inspect',
-      inputSchema: {}
-    }
-  ]
-  const designs = createLocalDesignTools(allActions)
-  const execute = vi.fn(async (batch: AiActionBatch) => ({
-    context: {},
-    actionResults: batch.actions.map((action) => ({
-      actionId: action.id,
-      actionName: action.name,
-      result: { status: 'complete', compositionId: 'retained-composition' }
-    }))
-  }))
-  const operations = createLocalOperationTools(allActions, designs, execute)
-  const workflow = createLocalDesignWorkflow(designs, operations)
-
-  return { workflow, operations, execute }
-}
-
 it('retains preparation and completed handoffs when application fails without replay', async () => {
   const designs = createLocalDesignTools(actions)
   const execute = vi.fn(async () => {
@@ -948,6 +921,7 @@ it('preserves acknowledged writes if a later application handoff fails', async (
       {
         actionResults: [
           {
+            actionId: 'applied',
             actionName: 'apply_prepared_design',
             result: { compositionId: 'already-created' }
           }
@@ -973,7 +947,13 @@ it('preserves acknowledged writes if a later application handoff fails', async (
     executionResult: acknowledged,
     failedStep: 'apply_prepared_design',
     settlement: 'unknown',
-    toolOutcome: { status: 'partial' }
+    toolOutcome: { status: 'failed' }
+  })
+  // The owner's failed application remains intact; the invocation acknowledges
+  // the separately observed successful prefix without replaying it.
+  expect(reply.outcome).toMatchObject({
+    status: 'partial',
+    settlement: 'unknown'
   })
   expect(execute).toHaveBeenCalledOnce()
 })
@@ -1027,7 +1007,7 @@ it('repairs a rejected public part and consumes its retained source without rese
   )
 
   expect(repaired.success, repaired.text).toBe(true)
-  expect(JSON.parse(repaired.text).toolOutcome).toMatchObject({
+  expect(repaired.outcome).toMatchObject({
     status: 'success',
     settlement: 'completed'
   })
@@ -1060,11 +1040,11 @@ it('recovers only the failed public part after an acknowledged earlier mutation'
   const receipt = JSON.parse(response.text)
 
   expect(response.success).toBe(false)
+  expect(response.outcome.status).toBe('partial')
   expect(receipt).toMatchObject({
     status: 'partial',
     failedPart: 'detail',
-    remainingParts: ['later'],
-    toolOutcome: { status: 'partial' }
+    remainingParts: ['later']
   })
   expect(execute).toHaveBeenCalledOnce()
   expect(compile).toHaveBeenCalledTimes(2)
@@ -1087,7 +1067,7 @@ it('recovers only the failed public part after an acknowledged earlier mutation'
   )
 
   expect(repaired.success, repaired.text).toBe(true)
-  expect(JSON.parse(repaired.text).toolOutcome).toMatchObject({
+  expect(repaired.outcome).toMatchObject({
     status: 'success',
     settlement: 'completed'
   })
@@ -1329,6 +1309,7 @@ it.each(['defer', 'immediate'])(
         signal()
       )
     )
+
     expect(result.status).toBe('complete')
     expect(events).toEqual([
       'apply_prepared_design:undefined',
@@ -1351,6 +1332,7 @@ it.each([
     const result = JSON.parse(
       await workflow.call('prepare_and_apply_design', { draft }, signal())
     )
+
     expect(localToolOutcome(result).status).toBe('success')
     expect(events).toEqual([
       'apply_prepared_design:undefined',
@@ -1366,6 +1348,7 @@ it('keeps capture failure separate from acknowledged writes', async () => {
   const result = JSON.parse(
     await workflow.call('prepare_and_apply_design', { draft }, signal())
   )
+
   expect(localToolOutcome(result)).toMatchObject({
     status: 'partial',
     settlement: 'completed'
@@ -1394,6 +1377,7 @@ it('stops dependent parts on partial application without scheduling measurements
       signal()
     )
   )
+
   expect(result.status).toBe('partial')
   expect(result.remainingParts).toEqual(['c'])
   expect(result.parts).toHaveLength(2)
@@ -1423,13 +1407,17 @@ it.each([
         signal()
       )
     )
+
+    let expectedStatus = 'partial'
+
+    if ('unknownApply' in options) {
+      expectedStatus = 'unknown'
+    } else if ('lostApply' in options) {
+      expectedStatus = 'failed'
+    }
+
     expect(localToolOutcome(result)).toMatchObject({
-      status:
-        'unknownApply' in options
-          ? 'unknown'
-          : 'lostApply' in options
-            ? 'failed'
-            : 'partial',
+      status: expectedStatus,
       settlement: 'unknown'
     })
     expect(result.failedPart).toBe('a')
@@ -1456,6 +1444,7 @@ it('preserves a known browser failure prefix without replaying writes', async ()
       signal()
     )
   )
+
   expect(localToolOutcome(result).status).toBe('partial')
   expect(result.failedPart).toBe('a')
   expect(result.parts).toHaveLength(1)
@@ -1501,8 +1490,11 @@ it.each(['compact', 'full'] as const)(
     expect(reply.success).toBe(false)
     expect(result).toMatchObject({
       status: 'partial',
-      complete: false,
-      toolOutcome: { status: 'partial', settlement: 'completed' }
+      complete: false
+    })
+    expect(reply.outcome).toMatchObject({
+      status: 'partial',
+      settlement: 'completed'
     })
     expect(result.parts).toHaveLength(2)
     expect(result.inspectionIssues).toHaveLength(1)
@@ -1621,6 +1613,7 @@ it('delivers the saved compact receipt without diagnostics or loss of any operat
 
   expect(reply.success, reply.text).toBe(true)
   const expected = JSON.parse(JSON.stringify(compactFixture.delivered))
+
   delete expected.measurementDeferred
   expected.completedSteps = expected.completedSteps.filter(
     (name: string) => name !== 'define_design_criteria'
@@ -1721,7 +1714,7 @@ it.each(['compact', 'full'] as const)(
       signal()
     )
 
-    expect(JSON.parse(reply.text).toolOutcome).toMatchObject({
+    expect(reply.outcome).toMatchObject({
       status: 'success',
       settlement: 'completed'
     })
@@ -1977,8 +1970,8 @@ it.each(['whole-design-checks', 'invalid-brief'])(
       )
     )
 
-    expect(result.toolOutcome).toMatchObject({
-      status: 'failed',
+    expect(result).toMatchObject({
+      available: false,
       settlement: 'not-started'
     })
     expect(JSON.stringify(result)).toContain(code)
@@ -2137,17 +2130,16 @@ it.each(['prepare_design', 'prepare_and_apply_design'])(
       throw new Error('Missing preparation definition')
     }
 
-    const call = async (args: unknown) =>
-      JSON.parse(
-        (
-          await invokeLocalTool(
-            owner,
-            definition,
-            args,
-            new AbortController().signal
-          )
-        ).text
+    const call = async (args: unknown) => {
+      const reply = await invokeLocalTool(
+        owner,
+        definition,
+        args,
+        new AbortController().signal
       )
+
+      return { value: JSON.parse(reply.text), outcome: reply.outcome }
+    }
 
     const source = materialRecoverySource()
     const invalid = {
@@ -2160,10 +2152,10 @@ it.each(['prepare_design', 'prepare_and_apply_design'])(
       ...(name === 'prepare_and_apply_design' ? { inspection: 'defer' } : {})
     })
 
-    expect(rejected.toolOutcome.settlement).toBe('not-started')
+    expect(rejected.outcome.settlement).toBe('not-started')
     expect(f.execute).not.toHaveBeenCalled()
     expect(f.compile).not.toHaveBeenCalled()
-    const next = structuredClone(rejected.repairGuide.arguments)
+    const next = structuredClone(rejected.value.repairGuide.arguments)
 
     next.repair.replacements.forEach(
       (replacement: { path: string; value?: unknown }) => {
@@ -2173,20 +2165,20 @@ it.each(['prepare_design', 'prepare_and_apply_design'])(
     )
     const repaired = await call(next)
 
-    expect(repaired.toolOutcome).toMatchObject({
+    expect(repaired.outcome).toMatchObject({
       status: 'success',
       settlement: 'completed'
     })
     if (name === 'prepare_and_apply_design') {
-      expect(repaired.completedSteps).toEqual([
+      expect(repaired.value.completedSteps).toEqual([
         'prepare_design',
         'apply_prepared_design'
       ])
-      expect(repaired.toolOutcome.issues).toEqual([])
+      expect(repaired.outcome.issues).toEqual([])
     }
 
     expect(next.materialSourceId).toBe(seed.artifactId)
-    expect(f.session.recipe(repaired.artifactId).recipe).toEqual({
+    expect(f.session.recipe(repaired.value.artifactId).recipe).toEqual({
       ...source,
       linearFields: materialRepair.linearFields
     })
@@ -2342,7 +2334,10 @@ it('retains material conflicts and source ownership without writes or replay', a
     )
   )
 
-  expect(foreignResult.toolOutcome.settlement).toBe('not-started')
+  expect(foreignResult).toMatchObject({
+    available: false,
+    settlement: 'not-started'
+  })
   expect(foreign.execute).not.toHaveBeenCalled()
   f.session.release([seed.artifactId])
   const repaired = await call(next)
@@ -2356,7 +2351,10 @@ it('retains material conflicts and source ownership without writes or replay', a
   await leases.dispose()
   const expired = await call(next)
 
-  expect(expired.toolOutcome.settlement).toBe('not-started')
+  expect(expired).toMatchObject({
+    available: false,
+    settlement: 'not-started'
+  })
   expect(f.execute).toHaveBeenCalledOnce()
 })
 
@@ -2444,32 +2442,31 @@ it('repairs resolved material directly after the original source expires', async
     throw new Error('Missing preparation definition')
   }
 
-  const call = async (args: unknown) =>
-    JSON.parse(
-      (
-        await invokeLocalTool(
-          f.designs,
-          definition,
-          args,
-          new AbortController().signal
-        )
-      ).text
+  const call = async (args: unknown) => {
+    const reply = await invokeLocalTool(
+      f.designs,
+      definition,
+      args,
+      new AbortController().signal
     )
+
+    return { value: JSON.parse(reply.text), outcome: reply.outcome }
+  }
 
   const rejected = await call({
     draft: invalid,
     materialSourceId: seed.artifactId
   })
 
-  expect(rejected.geometryIssue.code).toBe('NONPLANAR_FACE')
+  expect(rejected.value.geometryIssue.code).toBe('NONPLANAR_FACE')
   f.session.release([seed.artifactId])
-  const next = structuredClone(rejected.repairGuide.arguments)
+  const next = structuredClone(rejected.value.repairGuide.arguments)
 
   next.repair.replacements[0].value = source.children[0].vertices
   const repaired = await call(next)
 
-  expect(repaired.toolOutcome.status).toBe('success')
-  expect(f.session.recipe(repaired.artifactId).recipe).toEqual({
+  expect(repaired.outcome.status).toBe('success')
+  expect(f.session.recipe(repaired.value.artifactId).recipe).toEqual({
     ...source,
     linearFields: materialRepair.linearFields
   })
@@ -2480,7 +2477,7 @@ it('repairs resolved material directly after the original source expires', async
     materialSourceId: seed.artifactId
   })
 
-  expect(rawExpired).toMatchObject({
+  expect(rawExpired.value).toMatchObject({
     available: false,
     settlement: 'not-started'
   })

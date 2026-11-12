@@ -89,6 +89,25 @@ source texture dimensions and canonical geometry are unchanged.
 - non-render packages and apps do not import this package directly in the
   default composition path.
 
+## SDK resource lifetime
+
+The adapter uses Pixi 8.22.0 (manifest range `^8.22.0`, lockfile resolution
+8.22.0). Native RenderGroup destruction destroys its InstructionSet, which
+notifies the registered batch pipe to destroy and remove its per-instruction
+batchers. The existing material batcher destroys its owned Shader bindings and
+geometry; immutable shared programs remain usable by surviving owners.
+This is the official SDK lifecycle, without a private-cache sweep or version
+fallback. Ordinary reset/return to the RenderGroup pool retains reusable
+instruction resources; final destruction releases them. Reparent and capture
+do not destroy live owners.
+
+SceneTree tombstones and history snapshots are separate model-owned restore
+state. Deleting rendered content already destroys its native render objects;
+undo reuses the canonical model and creates the necessary render objects again.
+The SDK cleanup must not clear SceneTree restore data or surviving ungrouped
+children. Release assertions observe owner references and destruction handoffs,
+not immediate JavaScript heap, RSS or GPU-memory reductions.
+
 ## Validation
 
 - the shared `runRenderEngineContract(...)` adapter runs against
@@ -97,6 +116,15 @@ source texture dimensions and canonical geometry are unchanged.
 - Pixi-specific tests cover lifecycle, commands, interactions, mesh/property
   updates, resource translation, application-ticker isolation, explicit
   single-flush rendering, and deterministic cleanup.
+
+Enable native browser proofs with `HIERARCHY_PROBE_BROWSER=1`. Supply
+`HIERARCHY_HANDOFF_EVIDENCE_ROOT` as the absolute output directory from the
+verified App hierarchy handoff tests. The retained-hierarchy proof validates
+the recorded production source hashes before consuming those artifacts; it
+does not default to a historical run. Run native GPU proofs without competing
+browser/performance work and freeze source edits during measurement. Lifecycle
+proofs distinguish reusable pooled owners from final disposal, and verify both
+shutdown with an intervening frame and shutdown immediately after pool return.
 
 ## Retained navigation work
 
@@ -139,9 +167,16 @@ Analytic batches use an engine-owned four-texture capacity instead of treating
 the hardware sampler maximum as a shader-complexity budget. Overflow emits the
 next ordered batch with all geometry and material data intact. The shared
 material evaluator dispatches parameter reads; it is not duplicated per sampler.
-Batches without analytic materials select Pixi's ordinary program. Both programs
-are retained for the batcher's lifetime and released on destruction. Switching
-programs within an instruction sequence must rebind the selected program.
+Batches without analytic materials use Pixi's ordinary shader bits. Identical
+ordinary shader sources and effective texture capacities reuse the SDK's program
+cache, as analytic materials do. Each batcher owns its Shader bindings, not the
+shared immutable program. Destroying one batcher must not destroy another's
+program; native GPU programs remain owned by each renderer/context and are
+recreated after context loss. Changing capacity or source selects a different
+program. Switching programs within an instruction sequence must rebind the
+selected program. Sharing programs never suppresses current camera, group,
+color or capture-target uniforms, changes domain membership, or defers work to
+queries/extraction.
 
 `apps/asyra-design/playwright.software-renderer.config.ts` replays the existing
 material, AI transaction, collaboration and dense-vector product tests on

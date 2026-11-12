@@ -81,7 +81,7 @@ it('reproduces the recorded stop and delivers mixed identity recovery without st
   })
 
   expect(corrected.value.missingOperations).toEqual([])
-  expect(corrected.value.toolOutcome.status).toBe('success')
+  expect(corrected.reply.outcome?.status).toBe('success')
   expect(evaluationToolStop(corrected.reply)).toBeUndefined()
 })
 
@@ -161,17 +161,29 @@ it.each([
   'failed-delivery'
 ])('does not hide %s behind identity recovery', async (failure) => {
   const { call } = setup()
-  const { value } = await call(recorded.input)
+  const { value, reply } = await call(recorded.input)
+  let outcome = structuredClone(reply.outcome)
+
+  if (!outcome) {
+    throw new Error('Missing invocation acknowledgement')
+  }
 
   if (failure === 'unknown-settlement') {
-    value.toolOutcome.settlement = 'unknown'
+    outcome = { ...outcome, settlement: 'unknown' }
   }
 
   if (failure === 'independent-issue') {
-    value.toolOutcome.issues.push({
-      code: 'DELIVERY_FAILED',
-      message: 'Output missing'
-    })
+    if (!outcome.issues) {
+      throw new Error('Missing discovery issues')
+    }
+
+    outcome = {
+      ...outcome,
+      issues: [
+        ...outcome.issues,
+        { code: 'DELIVERY_FAILED', message: 'Output missing' }
+      ]
+    }
   }
 
   if (failure === 'error') {
@@ -182,9 +194,9 @@ it.each([
     value.code = 'DEFINITION_UNAVAILABLE'
   }
 
-  expect(evaluationToolStop({ text: JSON.stringify(value) })?.kind).toBe(
-    'tool-failure'
-  )
+  expect(
+    evaluationToolStop({ ...reply, text: JSON.stringify(value), outcome })?.kind
+  ).toBe('tool-failure')
 })
 
 it.each(

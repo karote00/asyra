@@ -4,8 +4,8 @@ import {
   capabilityTerms,
   capabilityQueryTerms,
   matchCapability,
-  readCapabilityMetadata,
-  summarizeCapability
+  matchCapabilityFields,
+  readCapabilityMetadata
 } from '../capability-search'
 
 describe('capability search metadata', () => {
@@ -85,21 +85,26 @@ describe('capability search metadata', () => {
     }
   )
 
-  it('preserves relevant authored prose beyond an identity or optional-control sentence', () => {
-    for (const description of [
-      'hierarchy.groupElements. Group the supplied element IDs. Uses the existing public API.',
-      'Optional notes record source measurements. Prepare and apply a ready part. Invalid preparation never applies.'
-    ]) {
-      const metadata = readCapabilityMetadata({ description, inputSchema: {} })
-      const corpus = buildCapabilityCorpus([{ name: 'a', metadata }])
-      const query = description.startsWith('hierarchy')
-        ? 'group elements'
-        : 'prepare ready part'
-      const summary = summarizeCapability(description, query, corpus)
+  it('uses authored purpose instead of choosing incidental guidance for the query', () => {
+    const metadata = readCapabilityMetadata({
+      description:
+        'hierarchy.groupElements. Group the supplied element IDs. Use a different tool to move elements.',
+      inputSchema: {}
+    })
 
-      expect(summary).toBe(description.split('. ')[1] + '.')
-      expect(description).toContain(summary)
-    }
+    expect(metadata.summary).toBe('Group the supplied element IDs.')
+    expect(metadata.purpose.has('move')).toBe(false)
+    const declared = readCapabilityMetadata({
+      description: 'Optional notes record source measurements. Prepare a part.',
+      inputSchema: {
+        'x-design-discovery': {
+          purpose: 'Prepare a ready part',
+          boundaries: []
+        }
+      }
+    })
+
+    expect(declared.summary).toBe('Prepare a ready part')
   })
 })
 
@@ -119,4 +124,45 @@ it('normalizes query connectors without altering identities or negative constrai
     'not',
     'delete'
   ])
+})
+
+it('matches only reachable positive input fields, including reused references', () => {
+  const metadata = readCapabilityMetadata({
+    description: 'Move a point',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        first: { $ref: '#/$defs/point' },
+        second: { $ref: '#/$defs/point' },
+        disabled: false
+      },
+      $defs: {
+        point: {
+          type: 'object',
+          properties: { x: { type: 'number' }, y: { type: 'number' } }
+        },
+        unused: { properties: { secret: {} } }
+      },
+      not: { properties: { forbidden: {} } }
+    },
+    outputSchema: { properties: { outputOnly: {} } }
+  })
+
+  expect(
+    matchCapabilityFields(metadata, [
+      'x',
+      'second/y',
+      'secret',
+      'forbidden',
+      'outputOnly',
+      'disabled'
+    ])
+  ).toEqual({
+    x: ['first/x', 'second/x'],
+    'second/y': ['second/y'],
+    secret: [],
+    forbidden: [],
+    outputOnly: [],
+    disabled: []
+  })
 })

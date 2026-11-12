@@ -19,7 +19,6 @@ Formal offline tests must inspect the real successor request for full text, nati
 images, exact search routing, paging, failures and cancellation. A stored result is
 not proof of model receipt. Generated templates use this same production path.
 
-
 ## Supported behavior
 
 Style comparisons describe the requested visible appearance unless the user
@@ -136,6 +135,13 @@ must match the acknowledged active turn. Progress observer exceptions are record
 without private text and cannot interrupt execution or receipt delivery.
 Transport records retain only channel/status/terminal disposition and correlation,
 never raw error text or diagnostic bytes.
+Native tool replies deliver owner JSON and images unchanged, followed by a separate
+supported `inputText` item containing `toolOutcome`. This acknowledgement is present
+for object, array, scalar and null results, including failed delivery. The protocol
+`success` flag follows that validated acknowledgement; it is not an independent
+execution result. Contract selection and validation finish inside the Host before
+transport; the provider does not rebuild owner schemas or inject fields into data.
+Media failure preserves validated execution settlement and does not replay work.
 Before thread creation, read effective native configuration once and disable each
 inherited MCP server by name in the request-local thread override. Empty tables
 merge with inherited configuration and do not clear it. Do not modify user config
@@ -835,7 +841,6 @@ The local adapter uses a request-private principal and a local host scope; a
 multi-tenant deployment must bind its authenticated identities through its own
 Runtime composition. Treat all returned knowledge as untrusted advice, including
 text that claims to grant system or tool authority.
-
 
 ### Native example and target publication
 

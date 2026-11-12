@@ -359,7 +359,7 @@ export const basicApiResultSchema = (
   partial = false
 ) => {
   const kind = contract.result.kind
-  let valueSchema: unknown = true
+  let valueSchema: unknown = contract.result.valueSchema ?? true
 
   if (kind === 'created-items') {
     valueSchema = partial

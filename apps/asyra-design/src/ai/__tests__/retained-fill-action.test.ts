@@ -661,7 +661,7 @@ it.each([3584, 1600])(
 
       expect(reply.actionResults[0].result.mutationScope).toBeUndefined()
       expect(reply.actionResults[0].result.appliedCount).toBe(count)
-      expect(reply.checks.counts.unverified).toBe(count)
+      expect(reply.checks).toBeUndefined()
       expect(JSON.stringify(reply).length).toBeLessThan(2500)
 
       const chunks: string[] = []
@@ -752,7 +752,11 @@ it.each(['capacity', 'cancel'] as const)(
     expect(result).not.toHaveProperty('retained')
     const { projectToolDelivery, designActionOutcome } =
       await import('../tool-contract')
-    const external = projectToolDelivery(action, result)
+    const external = projectToolDelivery(
+      action,
+      result,
+      designActionOutcome(result)
+    ).value
 
     expect(external).not.toHaveProperty('retained')
     expect(external).not.toHaveProperty('mutationScope')

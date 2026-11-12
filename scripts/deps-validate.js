@@ -142,6 +142,8 @@ function isTestFile(relativeFile) {
   const normalized = relativeFile.replaceAll('\\', '/')
 
   return (
+    // Dedicated E2E browser entries and helpers are test sources too.
+    normalized.startsWith('e2e/') ||
     /(^|\/)__(tests|mocks)__(\/|$)/.test(normalized) ||
     /\.(test|spec)\.[cm]?[jt]sx?$/.test(normalized)
   )

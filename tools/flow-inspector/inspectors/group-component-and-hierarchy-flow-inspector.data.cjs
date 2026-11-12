@@ -130,8 +130,9 @@
       outputs: ['artifact:preset-group-operation-plan'],
       conditions: [
         'CONTAINERS already owns the one official GROUP component and no second Group registration is created.',
-        'The plan reads canonical sibling and computed geometry snapshots only to prepare the official operation.',
-        'Group uses canonical sibling order and the first selected sibling slot; ungroup uses the existing Group slot.'
+        'The plan reads selected canonical elements, siblings and required ancestry through public Core local reads; it must not serialize the entire scene to resolve known ids. Invocation-local reads end at mutation.',
+        'Group uses canonical sibling order and the first selected sibling slot; ungroup uses the existing Group slot.',
+        'Before-image ancestry is acquired before reparenting, and after-image reads have a new operation-local lifetime.'
       ],
       bypasses: [
         'Generic reparent, reorder, and subtree removal do not require the Preset Group adapter.',
@@ -187,6 +188,7 @@
         'The target is an existing registered container and targetIndex is bounded against the final target list after moved ids are removed.',
         'Self-parenting, descendant cycles, duplicate membership, missing ids, mixed parents, workspace movement, invalid targets, and invalid indexes reject before mutation.',
         'Moved entities retain their exact instances and ids; no move is implemented as delete plus recreate.',
+        'Local and replay admission validate affected memberships and target ancestry before writing. Unrelated subtrees are not read. Complete load/save validation remains at its own boundary.',
         'Subtree removal is deterministic and descendant-first, while restoration retains exact instances, parent ids, indexes, child order, props references, and Group data.',
         'A same-parent no-op returns success without a transaction event.'
       ],
@@ -315,7 +317,8 @@
       outputs: ['artifact:preset-hierarchy-ui-context'],
       conditions: [
         'ADD_ELEMENT, REMOVE_ELEMENT, MOVE_ELEMENTS, REMOVE_SUBTREE, and RESTORE_SUBTREE all refresh flattenedElementIds and elementDataMap from canonical Scene Tree state.',
-        'Validated replace-style load refreshes both projections from the loaded canonical hierarchy.',
+        'Validated replace-style load reads canonical rows once and seeds both projections plus their retained parent/order/subtree-size preparation. Replacement and disposal retire that preparation.',
+        'Subsequent exact hierarchy deltas reuse unchanged flattened subtrees; immutable array copying is measured separately from hierarchy traversal.',
         'The published order, parent values, child values, additions, and removals exactly reflect canonical Scene Tree state after settlement.'
       ],
       bypasses: [
@@ -334,7 +337,7 @@
         'App or Render repair state',
         'selection, shortcut, menu, hover, click, or conflict policy'
       ],
-      cacheDimensions: [],
+      cacheDimensions: ['observer lifetime', 'published map identity', 'published order identity', 'affected ancestry and membership'],
       implementationBoundary: [
         'packages/preset/src/subscriptions/data-channel.ts',
         'packages/preset/src/__tests__/selection-subscriptions.test.ts'
@@ -518,6 +521,7 @@
       ],
       outputs: ['artifact:identity-safe-render-hierarchy'],
       conditions: [
+        'Official invisible Groups use the existing independent transform domain; grouping retains descendant geometry, handles and world placement without re-registering descendant render membership.',
         'Render consumes canonical parent/index or complete load order and never invents hierarchy.',
         'Reparent and reorder reuse the existing element identity and abstract engine handle.',
         'Hierarchy bookkeeping commits only after append or set-child-index succeeds, preserving retry ownership on failure.',
@@ -540,7 +544,7 @@
         'app-specific visual exception',
         'concrete-engine identity policy'
       ],
-      cacheDimensions: ['elementId'],
+      cacheDimensions: ['elementId', 'runtime lifetime', 'region inclusion predicate', 'workspace-relative transform', 'geometry and membership invalidation'],
       implementationBoundary: [
         'packages/render/src/stores/scene-tree.ts',
         'packages/render/src/render.ts',

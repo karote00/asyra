@@ -631,13 +631,13 @@ it('admits batch reference input at the shared native boundary and delivers sour
   expect(download).toHaveBeenCalledOnce()
   expect(JSON.parse(result.text)).toMatchObject({
     available: false,
-    recoverable: true,
-    toolOutcome: {
-      status: 'failed',
-      issues: expect.arrayContaining([
-        expect.objectContaining({ code: 'REFERENCE_DOWNLOAD_FAILED' })
-      ])
-    }
+    recoverable: true
+  })
+  expect(result.outcome).toMatchObject({
+    status: 'failed',
+    issues: expect.arrayContaining([
+      expect.objectContaining({ code: 'REFERENCE_DOWNLOAD_FAILED' })
+    ])
   })
   const invalid = await invokeLocalTool(
     tools,

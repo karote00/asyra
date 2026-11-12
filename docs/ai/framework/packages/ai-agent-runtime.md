@@ -665,7 +665,10 @@ registry, invocation, schema validation, scheduler and lease owners remain
 authoritative; no automatic persistence or lease extension is implied.
 
 Request-sequence input bindings can use declared optional output paths with
-execution-time presence checks before dependent dispatch. Durable recipes still require guaranteed paths. Request-sequence delivery may
+execution-time presence checks before dependent dispatch. A nullable object may
+also supply a declared field: admission projects the non-null branches, while an
+actual null result fails the binding before dependent dispatch. Other union
+branches must still declare the selected field. Durable recipes still require guaranteed paths. Request-sequence delivery may
 select a declared optional result and checks its actual presence at execution. Structural assignability
 ignores forbidden optional properties because they cannot carry a value; it does
 not allow a value into a forbidden field or erase runtime-value lifetimes.
@@ -683,3 +686,15 @@ remain in the shared Runtime schema.
 ### Authored input diagnostics
 
 AiActionInputError carries an executor-recognized authored-input diagnostic. Prepared batch failure receipts expose AI_ACTION_INPUT_INVALID and detached/redacted inputIssue while preserving independently reported transaction settlement. Runtime never infers no writes or retry permission from this classification. Apps translate their canonical owner errors; arbitrary exceptions and output-contract failures retain their original failure category. Providers consume successful-prefix receipts without replay.
+
+Selected registered result schemas preserve local reference context with a
+self-contained reachable definition graph. Downstream validation, retention and
+delivery consume that projected root; they must not substitute the original
+owner root. Projection preserves sibling constraints, recursive identity and
+runtime lifetimes without copying unrelated schema branches or interpreting
+literal examples as schemas.
+
+Tool delivery declarations use standard JSON Pointers: `delivery.path: ""` selects
+the whole result, while `/field` selects a child. A declared view does not change
+the raw output schema or execution outcome. Hosts validate raw data with its
+execution state, then validate the selected view with its delivery state.

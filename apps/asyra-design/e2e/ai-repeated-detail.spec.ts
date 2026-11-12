@@ -113,7 +113,7 @@ test('saved multi-face detail uses current targets and preserves independent ima
   await waitForAppReady(page)
   await connected(page)
   const { compact, correspondence } = recordedOrnaments()
-  const { designs, signal, invoke, execute, operations } = await runtime(page)
+  const { designs, signal, invoke, execute } = await runtime(page)
   const prepared = JSON.parse(
     await designs.call('prepare_design', { draft: compact }, signal)
   )
@@ -491,17 +491,28 @@ test('actual provider receipt ownership preserves a recorded prefix through repa
   )
 
   expect(report.failure.success).toBe(false)
+  expect(report.failure.outcome).toMatchObject({
+    status: 'partial',
+    settlement: 'partial'
+  })
   expect(report.failure.value).toMatchObject({
     status: 'partial',
     settlement: 'partial'
   })
   expect(report.failure.value.parts[1]).toMatchObject({
     recovery: 'correct_input',
-    toolOutcome: { status: 'failed', settlement: 'not-started' },
+    available: false,
+    settlement: 'not-started',
+    completedSteps: [],
+    failedStep: 'prepare_design',
     draftId: expect.any(String)
   })
   expect(report.failure.value.parts[1].message).toContain('nonplanar face')
   expect(report.repaired.success).toBe(true)
+  expect(report.repaired.outcome).toMatchObject({
+    status: 'success',
+    settlement: 'completed'
+  })
   expect(mutations).toBe(3) // Anchor, successful prefix, repaired part. No prefix replay.
   const crown = report.failure.value.parts[0].actionResults.find(
     (r: { actionName: string }) => r.actionName === 'apply_prepared_design'
@@ -514,7 +525,7 @@ test('actual provider receipt ownership preserves a recorded prefix through repa
     (c) => c.id === `measurement:${crown}`
   )
 
-  expect(original).toMatchObject({ status: 'pass' })
+  expect(original).toBeUndefined()
   expect(
     entries(report.after).find((c) => c.id === `measurement:${crown}`)
   ).toEqual(original)

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import fs from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
@@ -94,6 +95,88 @@ test('allows test imports declared in devDependencies', () => {
     }),
     []
   )
+})
+
+test('validates the real E2E browser helper against its development dependencies', () => {
+  const directory = path.join(repositoryRoot, 'apps/asyra-design')
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(directory, 'package.json'), 'utf8')
+  )
+  const relativeFile = 'e2e/hierarchy-handoff-probe.ts'
+
+  assert.ok(manifest.devDependencies['@asyra/reactive-events'])
+  assert.equal(manifest.dependencies['@asyra/reactive-events'], undefined)
+  assert.deepEqual(
+    validateSourceImports({
+      workspaceName: manifest.name,
+      relativeFile,
+      source: fs.readFileSync(path.join(directory, relativeFile), 'utf8'),
+      dependencies: Object.keys(manifest.dependencies),
+      devDependencies: Object.keys(manifest.devDependencies),
+      workspaceNames
+    }),
+    []
+  )
+})
+
+test('allows declared development imports in workspace-root E2E helpers', () => {
+  for (const relativeFile of [
+    'e2e/browser-probe.ts',
+    'e2e/helpers/browser-entry.mts',
+    'e2e\\helpers\\browser-entry.cjs'
+  ]) {
+    assert.deepEqual(
+      validateSourceImports({
+        workspaceName: '@asyra/preset',
+        relativeFile,
+        source: "export { probe } from '@asyra/render-engine/testing'",
+        dependencies: [],
+        devDependencies: ['@asyra/render-engine'],
+        workspaceNames
+      }),
+      [],
+      relativeFile
+    )
+  }
+})
+
+test('still rejects undeclared and unknown packages in E2E helpers', () => {
+  assert.deepEqual(
+    validateSourceImports({
+      workspaceName: '@asyra/preset',
+      relativeFile: 'e2e/helpers/browser-entry.ts',
+      source: `
+        export { probe } from '@asyra/render-engine/testing'
+        import { missing } from '@asyra/unknown-workspace'
+      `,
+      dependencies: [],
+      devDependencies: ['@asyra/reactive-events'],
+      workspaceNames
+    }),
+    ['@asyra/render-engine', '@asyra/unknown-workspace']
+  )
+})
+
+test('does not classify production paths or similar names as E2E helpers', () => {
+  for (const relativeFile of [
+    'src/e2e/browser-probe.ts',
+    'src/browser-probe.ts',
+    'e2e-support/browser-probe.ts',
+    'e2e.ts'
+  ]) {
+    assert.deepEqual(
+      validateSourceImports({
+        workspaceName: '@asyra/preset',
+        relativeFile,
+        source: "export { EventTypes } from '@asyra/reactive-events'",
+        dependencies: [],
+        devDependencies: ['@asyra/reactive-events'],
+        workspaceNames
+      }),
+      ['@asyra/reactive-events'],
+      relativeFile
+    )
+  }
 })
 
 test('allows a workspace to import one of its own public subpaths', () => {
