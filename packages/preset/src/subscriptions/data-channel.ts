@@ -662,55 +662,6 @@ const syncVectorSelections = (core: PresetCoreAPIs) => {
   )
 }
 
-// Build a depth-first flattened element id index from the scene-tree.
-const collectChildrenIds = (
-  deps: PresetDependencies,
-  elementId: string,
-  ids: string[]
-) => {
-  const element = deps.sceneTree.getElementById(elementId)
-
-  if (!element) {
-    return
-  }
-
-  ids.push(elementId)
-  const elementData = element.save() as GroupRawData
-
-  // Loaded canonical child lists also belong to Frame and registered containers.
-  // Match the incremental projection instead of using a component-name filter.
-  if (Array.isArray(elementData.children)) {
-    const children = elementData.children
-
-    children.forEach((childId: string) => {
-      collectChildrenIds(deps, childId, ids)
-    })
-  }
-}
-
-const getFlattenedElementIds = (deps: PresetDependencies): string[] => {
-  const ids: string[] = []
-  const workspace = deps.sceneTree.currentWorkspace
-
-  if (!workspace) {
-    return ids
-  }
-
-  const workspaceData = workspace.save() as WorkspaceRawData
-  const workspaceChildren = workspaceData.children ?? []
-
-  workspaceChildren.forEach((childId: string) => {
-    collectChildrenIds(deps, childId, ids)
-  })
-
-  return ids
-}
-
-// Publish flattened ids so UI can do fast filtering/lookup without tree traversal.
-const syncFlattenedElementIds = (deps: PresetDependencies): void => {
-  uiContext.set('flattenedElementIds', getFlattenedElementIds(deps))
-}
-
 // Published UI lookup map keyed by element id (used by element row rendering).
 const getElementDataMap = (
   deps: PresetDependencies
@@ -728,8 +679,55 @@ const getElementDataMap = (
   return dataMap
 }
 
-const syncElementDataMap = (deps: PresetDependencies): void => {
-  uiContext.set('elementDataMap', getElementDataMap(deps))
+const syncHierarchyUIContext = (
+  deps: PresetDependencies,
+  lifetime: UIContextSyncLifetime
+): void => {
+  const map = getElementDataMap(deps)
+  const flattenedIds: string[] = []
+  const parents = new Map<string, string | undefined>()
+  const children = new Map<string, string[]>()
+  const subtreeSizes = new Map<string, number>()
+  const workspace = deps.sceneTree.currentWorkspace?.save() as
+    WorkspaceRawData | undefined
+
+  const visit = (elementId: string, parentId: string): void => {
+    const row = map[elementId]
+
+    if (!row || parents.has(elementId)) {
+      throw new Error('Invalid loaded UI hierarchy')
+    }
+
+    const start = flattenedIds.length
+    const childIds = Array.isArray(row.children)
+      ? ([...row.children] as string[])
+      : []
+
+    flattenedIds.push(elementId)
+    parents.set(elementId, parentId)
+    if (childIds.length) {
+      children.set(elementId, childIds)
+    }
+
+    childIds.forEach((childId) => visit(childId, elementId))
+    subtreeSizes.set(elementId, flattenedIds.length - start)
+  }
+
+  if (workspace) {
+    children.set(workspace.id, [...workspace.children])
+    workspace.children.forEach((id) => visit(id, workspace.id))
+  }
+
+  uiContext.set('flattenedElementIds', flattenedIds)
+  uiContext.set('elementDataMap', map)
+  lifetime.hierarchy = {
+    map: uiContext.get<ProjectedElementDataMap>('elementDataMap') ?? map,
+    flattenedIds:
+      uiContext.get<string[]>('flattenedElementIds') ?? flattenedIds,
+    parents,
+    children,
+    subtreeSizes
+  }
 }
 
 type ProjectedElementData = Record<string, unknown>
@@ -1042,6 +1040,7 @@ interface ProjectedHierarchyPreparation {
   flattenedIds: readonly string[]
   parents: Map<string, string | undefined>
   children: Map<string, string[]>
+  subtreeSizes: Map<string, number>
 }
 
 // A terminal ancestry proof is local to this publication, never a second tree.
@@ -1175,6 +1174,7 @@ const projectUIContextSceneTreeBatch = (
     // Re-entrant publication or failure must never consume an in-progress index.
     lifetime.hierarchy = undefined
     const tailAdditions = planProjectedTailAdditions(changes, reusable)
+    const subtreeSizes = reusable?.subtreeSizes ?? new Map<string, number>()
     const mutation = createProjectedElementDataMapMutation(
       current,
       currentFlattenedIds
@@ -1760,6 +1760,7 @@ const projectUIContextSceneTreeBatch = (
           parentIds.set(elementId, getProjectedParentId(row))
         } else {
           parentIds.delete(elementId)
+          subtreeSizes.delete(elementId)
           missingIds.add(elementId)
         }
       })
@@ -1793,41 +1794,102 @@ const projectUIContextSceneTreeBatch = (
           currentFlattenedIds.length
         )
         nextFlattenedIds = currentFlattenedIds.concat(tailAdditions)
+        for (const id of tailAdditions) {
+          subtreeSizes.set(id, 1)
+          let parent = parentIds.get(id)
+
+          while (parent && parentIds.has(parent)) {
+            subtreeSizes.set(parent, (subtreeSizes.get(parent) ?? 1) + 1)
+            parent = parentIds.get(parent)
+          }
+        }
       } else {
-        const currentFlattenedIdSet = new Set(currentFlattenedIds)
-        const orderedCandidates = [
-          ...currentFlattenedIds,
-          ...[...changedElementIds].filter(
-            (elementId) => !currentFlattenedIdSet.has(elementId)
-          )
-        ]
         const rootParentIds: string[] = []
         const rootParentIdSet = new Set<string>()
+        const changedSubtrees = new Set<string>()
 
-        orderedCandidates.forEach((elementId) => {
-          emitDiagnosticCounter('ui-context-hierarchy-root-candidate')
-          if (!hasProjectedRow(elementId)) {
-            return
+        for (const id of dirtyParentIds) {
+          let currentId: string | undefined = id
+
+          while (currentId && !changedSubtrees.has(currentId)) {
+            changedSubtrees.add(currentId)
+            currentId = parentIds.get(currentId)
           }
+        }
 
-          const parentId = parentIds.get(elementId)
-
-          if (
-            parentId &&
-            !rootParentIdSet.has(parentId) &&
-            !hasProjectedRow(parentId)
-          ) {
-            rootParentIdSet.add(parentId)
-            rootParentIds.push(parentId)
+        if (reusable) {
+          for (const parent of childrenByParent.keys()) {
+            if (!parentIds.has(parent)) {
+              rootParentIds.push(parent)
+            }
           }
-        })
+        } else {
+          const currentFlattenedIdSet = new Set(currentFlattenedIds)
+          const orderedCandidates = [
+            ...currentFlattenedIds,
+            ...[...changedElementIds].filter(
+              (id) => !currentFlattenedIdSet.has(id)
+            )
+          ]
+
+          orderedCandidates.forEach((elementId) => {
+            emitDiagnosticCounter('ui-context-hierarchy-root-candidate')
+            if (!hasProjectedRow(elementId)) {
+              return
+            }
+
+            const parentId = parentIds.get(elementId)
+
+            if (
+              parentId &&
+              !rootParentIdSet.has(parentId) &&
+              !hasProjectedRow(parentId)
+            ) {
+              rootParentIdSet.add(parentId)
+              rootParentIds.push(parentId)
+            }
+          })
+        }
+
+        let oldPositions: Map<string, number> | undefined
         const flattenedElementIds: string[] = []
         const visited = new Set<string>()
+        let collectedCount = 0
 
         const collectProjectedChildren = (
           elementId: string,
           parentId: string
         ): void => {
+          if (
+            !visited.has(elementId) &&
+            reusable &&
+            !changedSubtrees.has(elementId) &&
+            subtreeSizes.has(elementId) &&
+            parentIds.get(elementId) === parentId
+          ) {
+            oldPositions ??= new Map(
+              currentFlattenedIds.map((id, index) => [id, index])
+            )
+            const start = oldPositions.get(elementId)
+            const size = subtreeSizes.get(elementId) ?? 0
+
+            if (
+              start !== undefined &&
+              size > 0 &&
+              start + size <= currentFlattenedIds.length
+            ) {
+              visited.add(elementId)
+              for (let index = start; index < start + size; index++) {
+                flattenedElementIds.push(currentFlattenedIds[index])
+              }
+
+              collectedCount += size
+              emitDiagnosticCounter('ui-context-flattened-subtree-copy', size)
+
+              return
+            }
+          }
+
           emitDiagnosticCounter('ui-context-hierarchy-node-visit')
           if (visited.has(elementId) || !hasProjectedRow(elementId)) {
             completeHierarchy = false
@@ -1840,10 +1902,14 @@ const projectUIContextSceneTreeBatch = (
           }
 
           visited.add(elementId)
+          collectedCount++
+          const start = flattenedElementIds.length
+
           flattenedElementIds.push(elementId)
           ;(childrenByParent.get(elementId) ?? []).forEach((childId) =>
             collectProjectedChildren(childId, elementId)
           )
+          subtreeSizes.set(elementId, flattenedElementIds.length - start)
         }
 
         rootParentIds.forEach((parentId) => {
@@ -1851,7 +1917,7 @@ const projectUIContextSceneTreeBatch = (
             collectProjectedChildren(childId, parentId)
           )
         })
-        if (visited.size !== parentIds.size) {
+        if (collectedCount !== parentIds.size) {
           completeHierarchy = false
         }
 
@@ -1902,7 +1968,8 @@ const projectUIContextSceneTreeBatch = (
         map: projected,
         flattenedIds: publishedFlattenedIds,
         parents: parentIds,
-        children: childrenByParent
+        children: childrenByParent,
+        subtreeSizes
       }
     }
   })
@@ -2340,8 +2407,7 @@ export const registerDefaultDataChannelObservers = (
         subscribeToFileLoadComplete(() => {
           if (uiContextEnabled) {
             resetPendingUIContextSync(uiContextSyncLifetime)
-            syncFlattenedElementIds(deps)
-            syncElementDataMap(deps)
+            syncHierarchyUIContext(deps, uiContextSyncLifetime)
             syncElementSelectionAndDerived(core, deps)
           }
 

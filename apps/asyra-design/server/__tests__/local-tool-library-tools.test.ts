@@ -141,6 +141,28 @@ const proposal = {
   output: { kind: 'step', step: 'use', path: '' }
 }
 
+it('keeps recipe guidance within available capabilities and independent save recovery', () => {
+  const { owner } = fixture()
+  const submit = owner.definitions.find(
+    (definition) => definition.name === AiDesignToolIds.SUBMIT_TOOL
+  )
+  const invoke = owner.definitions.find(
+    (definition) => definition.name === AiDesignToolIds.INVOKE_TOOL
+  )
+
+  expect(submit?.description).toContain('no existing direct tool already fits')
+  expect(submit?.description).toContain('cannot invent missing primitives')
+  expect(submit?.description).toContain('task-specific choices in fresh inputs')
+  expect(submit?.description).toContain('only mechanically decidable repairs')
+  expect(invoke?.description).toContain('not visual acceptance')
+  expect(invoke?.description).toContain(
+    'Successful execution attempts saving independently'
+  )
+  expect(invoke?.description).toContain(
+    'never repeat invocation to retry saving'
+  )
+})
+
 it('exposes canonical recursive bindings through native conversion and validates malformed submissions before dispatch', async () => {
   const { owner, call, execute } = fixture()
   const definition = owner.definitions.find(
@@ -180,19 +202,20 @@ it('repairs admission, dispatches exact revisions and keeps durable management s
     ...proposal,
     output: { kind: 'step', step: 'use', path: '/missing' }
   }
-  const rejected = JSON.parse(
-    (
-      await call(AiDesignToolIds.SUBMIT_TOOL, {
-        submissionId: 'bad',
-        proposal: bad
-      })
-    ).text
-  )
+  const rejectedReply = await call(AiDesignToolIds.SUBMIT_TOOL, {
+    submissionId: 'bad',
+    proposal: bad
+  })
+  const rejected = JSON.parse(rejectedReply.text)
+
+  expect(rejectedReply.outcome, rejectedReply.text).toMatchObject({
+    status: 'failed',
+    settlement: 'not-started'
+  })
 
   expect(rejected).toMatchObject({
     ok: false,
-    code: 'admission',
-    toolOutcome: { status: 'failed', settlement: 'not-started' }
+    code: 'admission'
   })
   expect(rejected.issues.length).toBeGreaterThan(0)
   const submitted = JSON.parse(
@@ -257,19 +280,20 @@ it('does not promote a model-authored receipt or accept unknown controls', async
   const { call, execute, owner } = fixture()
 
   await call(AiDesignToolIds.SUBMIT_TOOL, { submissionId: 'one', proposal })
-  const saved = JSON.parse(
-    (
-      await call(AiDesignToolIds.SAVE_TOOL, {
-        name: proposal.name,
-        revision: 1,
-        receiptId: 'invented'
-      })
-    ).text
-  )
+  const savedReply = await call(AiDesignToolIds.SAVE_TOOL, {
+    name: proposal.name,
+    revision: 1,
+    receiptId: 'invented'
+  })
+  const saved = JSON.parse(savedReply.text)
+
+  expect(savedReply.outcome).toMatchObject({
+    status: 'failed',
+    settlement: 'not-started'
+  })
 
   expect(saved).toMatchObject({
-    status: 'unsaved',
-    toolOutcome: { status: 'failed', settlement: 'not-started' }
+    status: 'unsaved'
   })
   expect(execute).not.toHaveBeenCalled()
   await expect(

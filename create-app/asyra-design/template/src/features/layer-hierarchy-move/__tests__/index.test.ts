@@ -146,6 +146,7 @@ describe('Layer hierarchy move feature session', () => {
         }
       ]
     }
+
     mocks.moveElements.mockReturnValue(canonicalResult)
 
     layerHierarchyMoveSession.onEnd?.(
@@ -200,6 +201,7 @@ describe('Layer hierarchy move feature session', () => {
 
   it('surfaces canonical failure before post-selection', () => {
     const failure = new Error('canonical rejection')
+
     mocks.moveElements.mockImplementation(() => {
       throw failure
     })

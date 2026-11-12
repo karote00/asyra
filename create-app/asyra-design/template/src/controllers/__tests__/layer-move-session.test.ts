@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@asyra/core', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@asyra/core')>()),
+
   getSessionManager: () => ({
     handleStart: mocks.handleStart,
     handleUpdate: mocks.handleUpdate,

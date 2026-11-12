@@ -176,6 +176,14 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
       : ''
   let message = 'The request failed. Review the canvas before trying again.'
 
+  if (
+    isPlainObject(turn.result) &&
+    turn.result.code === 'AI_CONVERSATION_CONTEXT_LIMIT'
+  ) {
+    message =
+      'This conversation exceeds the request context limit. Start a new conversation with the needed brief and references. No changes were made.'
+  }
+
   if (isPlainObject(turn.result) && turn.result.stage === 'provider') {
     message = 'Could not complete the AI request. Your drawing is unchanged.'
     if (turn.result.code === 'AI_PROVIDER_INVALID_CONFIGURATION') {
@@ -357,6 +365,10 @@ export const canRetryAiTurn = (turn: AiSettledTurn): boolean => {
   }
 
   if (!isPlainObject(turn.result)) {
+    return false
+  }
+
+  if (turn.result.code === 'AI_CONVERSATION_CONTEXT_LIMIT') {
     return false
   }
 

@@ -2,12 +2,44 @@
   "extends": "./tsconfig.ai-server.json",
   "compilerOptions": {
     "allowJs": true,
-    "lib": ["ES2022", "ES2023.Array", "DOM"],
-    "types": ["node", "vite/client"]
+    "lib": [
+      "ES2022",
+      "ES2023.Array",
+      "DOM"
+    ],
+    "types": [
+      "node",
+      "vite/client"
+    ]
   },
   "include": [
     "server/__tests__/execution-flow-proof.test.ts",
+    "server/__tests__/contract-review-acquisition.test.ts",
+    "server/__tests__/data-review.integration.test.ts",
     "src/types.d.ts",
-    "server/__tests__/local-ai-provider.test.ts"
+    "server/__tests__/local-ai-provider.test.ts",
+    "server/__tests__/capability-search.test.ts",
+    "server/__tests__/discovery-identity-recovery.test.ts",
+    "server/__tests__/selected-prefix-recovery.test.ts",
+    "server/__tests__/phase-continuity.integration.test.ts",
+    "src/ai/__tests__/conversation-results.test.ts",
+    "server/__tests__/api-delivery-audit.integration.test.ts",
+    "server/__tests__/batch-usage.integration.test.ts",
+    "server/__tests__/local-tool-operation-composition.test.ts",
+    "server/__tests__/local-query-artifacts.test.ts",
+    "server/__tests__/mechanical-closure.integration.test.ts",
+    "server/__tests__/mechanical-inspection.integration.test.ts",
+    "server/__tests__/reference-page-images.test.ts",
+    "server/__tests__/face-boundary.test.ts",
+    "server/__tests__/shared-motifs.test.ts",
+    "server/__tests__/discovery-delivery.integration.test.ts",
+    "server/__tests__/model-delivery-cost.test.ts",
+    "server/__tests__/model-delivery-boundary.integration.test.ts",
+    "server/__tests__/creation-results.integration.test.ts",
+    "server/__tests__/local-tool-leases.test.ts",
+    "server/__tests__/evaluation-budget.test.ts",
+    "server/__tests__/whole-result-forwarding-review.test.ts",
+    "server/__tests__/operation-input-schema.test.ts",
+    "src/ai/__tests__/tool-schema.test.ts"
   ]
 }

@@ -77,9 +77,11 @@ const App: React.FC<AppProps> = ({
         preferredTarget?.closest('[data-ai-agent-prompt="true"]')
       )
       let target = getCanvasHost()
+
       if (aiFocusReturnRef.current?.isConnected) {
         target = aiFocusReturnRef.current
       }
+
       if (!promptTriggered && preferredTarget?.isConnected) {
         target = preferredTarget
       }
@@ -103,6 +105,7 @@ const App: React.FC<AppProps> = ({
     (invoker: HTMLElement | null) => {
       if (aiOpen) {
         closeAiPanel({ focusTarget: invoker })
+
         return
       }
 
@@ -116,6 +119,7 @@ const App: React.FC<AppProps> = ({
     () =>
       createAiPanelCommandDescriptor({
         platform: groupCommandPlatform,
+
         execute: () =>
           toggleAiPanel(contextMenu.session?.invoker ?? getCanvasHost())
       }),
@@ -131,14 +135,18 @@ const App: React.FC<AppProps> = ({
     () => [aiPanelCommandDescriptor, ...groupCommandDescriptors],
     [aiPanelCommandDescriptor, groupCommandDescriptors]
   )
+
   useEffect(() => {
     const handleAgentPanelShortcut = (event: KeyboardEvent) => {
-      if (!matchesAiPanelToggleShortcut(event, groupCommandPlatform)) return
+      if (!matchesAiPanelToggleShortcut(event, groupCommandPlatform)) {
+        return
+      }
 
       const root = appRootRef.current
       const eventTarget =
         event.target instanceof HTMLElement ? event.target : null
       const targetIsDocumentBody = eventTarget === document.body
+
       if (
         !root ||
         (eventTarget && !targetIsDocumentBody && !root.contains(eventTarget)) ||
@@ -164,6 +172,7 @@ const App: React.FC<AppProps> = ({
     }
 
     window.addEventListener('keydown', handleAgentPanelShortcut)
+
     return () => window.removeEventListener('keydown', handleAgentPanelShortcut)
   }, [ai, getCanvasHost, groupCommandPlatform, toggleAiPanel])
   const handleCanvasHostTeardown = useCallback(

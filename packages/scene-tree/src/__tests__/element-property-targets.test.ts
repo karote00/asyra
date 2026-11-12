@@ -111,6 +111,44 @@ describe('SceneTree element-property target resolution', () => {
     )
   })
 
+  it('identifies unsupported authored property keys without applying a valid prefix', () => {
+    let failure: unknown
+
+    try {
+      sceneTree.resolveElementPropertyTargets([
+        { kind: 'values', elementId: 'element-1', values: { x: 12 } },
+        { kind: 'values', elementId: 'element-2', values: { name: 'Tower' } }
+      ])
+    } catch (error) {
+      failure = error
+    }
+
+    expect(failure).toMatchObject({
+      name: 'ElementPropertyInputError',
+      elementId: 'element-2',
+      propertyKey: 'name'
+    })
+    expect(propsManagerOwner.changes).toEqual([])
+    expect(sceneTree.changes).toEqual([])
+  })
+
+  it('does not classify broken property ownership as authored input', () => {
+    properties.delete('position-1')
+    let failure: unknown
+
+    try {
+      sceneTree.resolveElementPropertyTargets([
+        { kind: 'values', elementId: 'element-1', values: { x: 12 } }
+      ])
+    } catch (error) {
+      failure = error
+    }
+
+    expect(failure).toBeInstanceOf(Error)
+    expect(failure).not.toHaveProperty('name', 'ElementPropertyInputError')
+    expect(propsManagerOwner.changes).toEqual([])
+  })
+
   it('resolves aliases to exact property ids and owner relations without mutation', () => {
     const values = { x: 12, y: 24, width: 160, height: 90 }
     const elementBefore = sceneTree.getElementById('element-1')

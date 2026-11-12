@@ -116,7 +116,7 @@ it('executes the published identity example through the real Core and uses issue
   const example = invocation.arguments.operations[0].arguments
 
   expect(example).toEqual((contract.inputSchema.examples as unknown[])[0])
-  expect(invocation.tool).toBe('execute_design_batch')
+  expect(invocation.tool).toBe('execute_design')
   const batchDefinition = operations.definitions.find(
     (item) => item.name === invocation.tool
   )
@@ -134,18 +134,19 @@ it('executes the published identity example through the real Core and uses issue
   const before = core.getCanonicalOwnerSnapshot()
   const depth = core.getUndoHistoryDepth()
   const signal = new AbortController().signal
-  const native = JSON.parse(
-    (
-      await invokeLocalTool(
-        operations,
-        batchDefinition,
-        invocation.arguments,
-        signal
-      )
-    ).text
+  const reply = await invokeLocalTool(
+    operations,
+    batchDefinition,
+    invocation.arguments,
+    signal
   )
+  const native = JSON.parse(reply.text)
 
-  expect(native.toolOutcome.status).toBe('success')
+  expect(reply.outcome).toMatchObject({
+    status: 'success',
+    settlement: 'completed'
+  })
+  expect(native).not.toHaveProperty('toolOutcome')
   expect(dispatch).toHaveBeenCalledTimes(1)
   const first = native.actionResults[0].result as {
     value: string[]

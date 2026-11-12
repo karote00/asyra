@@ -1,7 +1,9 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
   evaluationReportExplanation,
-  projectEvaluationReport
+  projectEvaluationReport,
+  readEvaluationWindow
 } from '../evaluation-window'
 
 const admitted = () => ({
@@ -151,3 +153,97 @@ describe('settled evaluation report projection', () => {
     expect(projectEvaluationReport(turn)).toBeUndefined()
   })
 })
+
+describe('detailed evaluation report admission', () => {
+  it('admits an explicitly untimed report without changing the drawing deadline', () => {
+    const value = {
+      workDeadlineAt: Date.now() + 900000,
+      reportTimeoutMs: null,
+      keepReportSession: true
+    }
+
+    expect(readEvaluationWindow(value)).toEqual(value)
+  })
+  it('retains report questions and silent work policy with an independent explicit timeout', () => {
+    const value = {
+      workDeadlineAt: Date.now() + 900000,
+      reportTimeoutMs: 300000,
+      announceWorkDeadline: false,
+      reportInstructions: 'Explain long waits.'
+    }
+
+    expect(readEvaluationWindow(value)).toEqual(value)
+  })
+  it.each([
+    { keepReportSession: 'true' },
+    { reportTimeoutMs: 300001 },
+    { announceWorkDeadline: 'false' },
+    { reportInstructions: '' },
+    { reportInstructions: ' ' },
+    { reportInstructions: 1 }
+  ])('rejects invalid reporting configuration %j', (override) => {
+    expect(() =>
+      readEvaluationWindow({
+        workDeadlineAt: Date.now() + 10000,
+        reportTimeoutMs: 60000,
+        ...override
+      })
+    ).toThrow()
+  })
+})
+
+it('accepts the explicit thirty-minute work window and keeps its ceiling independent from reporting', () => {
+  const now = Date.now()
+
+  expect(
+    readEvaluationWindow({
+      workDeadlineAt: now + 1800000,
+      reportTimeoutMs: null
+    })
+  ).toEqual({ workDeadlineAt: now + 1800000, reportTimeoutMs: null })
+  expect(() =>
+    readEvaluationWindow({
+      workDeadlineAt: Date.now() + 1860000,
+      reportTimeoutMs: null
+    })
+  ).toThrow('Invalid evaluation window')
+})
+
+it('accepts the maintained unlimited report fixture through the production parser', () => {
+  const reportInstructions = readFileSync(
+    new URL(
+      '../../../test-data/ai-drawing/taipei-101-self-report.txt',
+      import.meta.url
+    ),
+    'utf8'
+  )
+
+  expect(
+    readEvaluationWindow({
+      workDeadlineAt: Date.now() + 900000,
+      reportTimeoutMs: null,
+      keepReportSession: true,
+      announceWorkDeadline: false,
+      reportInstructions
+    })
+  ).toMatchObject({
+    reportTimeoutMs: null,
+    keepReportSession: true,
+    reportInstructions
+  })
+})
+
+it.each([8001, 16000])(
+  'preserves all %i report instruction characters without imposing a content ceiling',
+  (length) => {
+    const reportInstructions = 'A'.repeat(length)
+    const value = {
+      workDeadlineAt: Date.now() + 900000,
+      reportTimeoutMs: null,
+      keepReportSession: true,
+      reportInstructions
+    }
+
+    expect(readEvaluationWindow(value)).toEqual(value)
+  }
+)

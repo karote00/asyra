@@ -6,6 +6,7 @@ import { DocumentRecoveryControls } from '../document-recovery-controls'
 it('keeps failed recovery actionable and reopens only after durable preparation settles', async () => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true })
   const host = document.createElement('div')
+
   document.body.append(host)
   const root = createRoot(host)
   const reopen = vi.fn()
@@ -21,13 +22,17 @@ it('keeps failed recovery actionable and reopens only after durable preparation 
           })
       ),
     whenIdle: vi.fn(async () => undefined),
+
     hasUnpersistedChanges: () => false,
+
     getRecoveryDocument: () => ({ version: '1.0.0', props: {}, sceneTree: {} })
   }
+
   await act(async () => {
     root.render(<DocumentRecoveryControls session={session} reopen={reopen} />)
   })
   const retry = host.querySelector('button') as HTMLButtonElement
+
   await act(async () => {
     retry.click()
   })
@@ -50,6 +55,7 @@ it('keeps failed recovery actionable and reopens only after durable preparation 
 it('waits for queued retention before exporting the current recovery document', async () => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true })
   const host = document.createElement('div')
+
   document.body.append(host)
   const root = createRoot(host)
   let finish!: () => void
@@ -62,9 +68,12 @@ it('waits for queued retention before exporting the current recovery document', 
           finish = resolve
         })
     ),
+
     hasUnpersistedChanges: () => false,
+
     getRecoveryDocument
   }
+
   try {
     await act(async () =>
       root.render(
@@ -88,6 +97,7 @@ it('waits for queued retention before exporting the current recovery document', 
 it('keeps a new active edit in the current page until recovery can safely reopen', async () => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true })
   const host = document.createElement('div')
+
   document.body.append(host)
   const root = createRoot(host)
   const reopen = vi.fn()
@@ -101,9 +111,12 @@ it('keeps a new active edit in the current page until recovery can safely reopen
           finish = resolve
         })
     ),
+
     hasUnpersistedChanges: () => editing,
+
     getRecoveryDocument: () => undefined
   }
+
   try {
     await act(async () =>
       root.render(
@@ -111,6 +124,7 @@ it('keeps a new active edit in the current page until recovery can safely reopen
       )
     )
     const retry = host.querySelector('button') as HTMLButtonElement
+
     await act(async () => retry.click())
     editing = true
     await act(async () => finish())

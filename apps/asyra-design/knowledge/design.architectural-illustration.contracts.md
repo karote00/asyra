@@ -41,12 +41,10 @@ failed boundary. Missing effective context permits scoped recovery or full refre
 A previous return is not proof of current model context. Do not look up a complete
 unchanged contract again merely because target values changed.
 
-Review revisions belong to exact checks, not capture counters or document sequence.
-Read the affected current revision before superseding; retain good images and
-independent passes, rebind only affected evidence and never attach a new revision
-to an old judgment. Capture is not a recorded pass, and a local pass is not whole
-request acceptance. Final report_outcome is a final response action, not a native
-invocation/edit batch or a saving acknowledgement.
+The AI owns visual interpretation and final verification. Capture success is an
+observation, not visual approval. Preserve source identity and current target
+scope; acquire another view only when it is needed for a decision. Final
+report_outcome is a final response action, not an edit or saving acknowledgement.
 
 For exact discovery/target examples or reusable recipe routing, select
 `design.architectural-illustration.contracts.operations` from the catalog only when

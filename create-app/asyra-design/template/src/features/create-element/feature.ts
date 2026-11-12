@@ -69,6 +69,7 @@ const api: CreateElementAPI = {
       }
     )
   },
+
   updateElementSizeAndPosition: (
     elementId: string,
     dragStart: PositionData,
@@ -81,11 +82,14 @@ const api: CreateElementAPI = {
       bounds,
       CREATE_GEOMETRY_OPTIONS
     )
+
     return bounds
   },
+
   resetElementSize: (elementId, options) => {
     elementApis.resetElementSize(elementId, options)
   },
+
   hasMovedBeyondThreshold: (
     clientDragStart: PositionData,
     clientCurrentPos: PositionData
@@ -118,7 +122,9 @@ export const createElementSession = {
     ) {
       return null
     }
+
     const parentId = resolveCreateElementParentAtClientPos(snapshot)
+
     if (!parentId) {
       return null
     }
@@ -127,9 +133,11 @@ export const createElementSession = {
       x: snapshot.mousePosition.x,
       y: snapshot.mousePosition.y
     })
+
     if (!dragStartWorkspace) {
       return null
     }
+
     transactionApis.configureSharedDeliverySequence({
       mode: 'atomic',
       batchPublications: false,
@@ -140,6 +148,7 @@ export const createElementSession = {
       primaryTool,
       parentId
     )
+
     if (elementId) {
       selectionApis.selectElements([elementId], {
         sharedDelivery: 'immediate'
@@ -153,6 +162,7 @@ export const createElementSession = {
       latestBounds: null
     } as CreateElementState
   },
+
   onUpdate: (snapshot: SystemContextSnapshot, state: CreateElementState) => {
     if (!state || state.elementId === null || !state.dragStartWorkspacePos) {
       return
@@ -166,9 +176,11 @@ export const createElementSession = {
       x: snapshot.mousePosition.x,
       y: snapshot.mousePosition.y
     })
+
     if (!currentWorkspacePos) {
       return
     }
+
     const dragStartParentPos = elementApis.getPositionInParent(
       state.parentId,
       state.dragStartWorkspacePos
@@ -177,6 +189,7 @@ export const createElementSession = {
       state.parentId,
       currentWorkspacePos
     )
+
     if (!dragStartParentPos || !currentParentPos) {
       return
     }
@@ -191,6 +204,7 @@ export const createElementSession = {
       currentWorkspacePos
     )
   },
+
   onEnd: (snapshot: SystemContextSnapshot, state: CreateElementState) => {
     if (!state || state.elementId === null) {
       return
@@ -217,6 +231,7 @@ export const createElementSession = {
       const dragStartParentPos = dragStartWorkspacePos
         ? elementApis.getPositionInParent(state.parentId, dragStartWorkspacePos)
         : null
+
       if (
         currentWorkspacePos &&
         currentParentPos &&
@@ -227,6 +242,7 @@ export const createElementSession = {
           dragStartWorkspacePos,
           currentWorkspacePos
         )
+
         if (!boundsMatch(finalWorkspaceBounds, state.latestBounds)) {
           api.updateElementSizeAndPosition(
             state.elementId,
@@ -245,6 +261,7 @@ export const createElementSession = {
       systemContextApis.switchPrimaryTool(PrimaryToolType.SELECT)
     }
   },
+
   onCancel: () => undefined
 }
 

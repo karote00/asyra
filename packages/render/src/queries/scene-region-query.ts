@@ -12,6 +12,8 @@ export class SceneRegionQuery {
 
   private order: Map<RenderNode, number> | null = null
 
+  private readonly transforms = new WeakMap<RenderNode, readonly number[]>()
+
   constructor(
     private readonly root: RenderNode,
     readonly includes: (node: RenderNode) => boolean
@@ -105,6 +107,7 @@ export class SceneRegionQuery {
     this.index.delete(node)
     this.dirty.delete(node)
     this.subtrees.delete(node)
+    this.transforms.delete(node)
     if (indexed) {
       this.order = null
     }
@@ -113,39 +116,57 @@ export class SceneRegionQuery {
   query(bounds: RenderBounds): RenderNode[] {
     assertRegionBounds(bounds)
 
-    const visit = (node: RenderNode, fn: (node: RenderNode) => void) => {
-      const pending = [node]
-
-      while (pending.length) {
-        const current = pending.pop()
-
-        if (!current) {
-          break
-        }
-
-        fn(current)
-        for (let i = current.children.length - 1; i >= 0; i--) {
-          pending.push(current.children[i])
-        }
-      }
-    }
+    const visited = new Set<RenderNode>()
 
     for (const root of this.subtrees) {
-      let ancestor = root.parent
+      const pending = [root]
 
-      while (ancestor && !this.subtrees.has(ancestor)) {
-        ancestor = ancestor.parent
-      }
+      while (pending.length) {
+        const node = pending.pop()
 
-      if (ancestor) {
-        continue
-      }
+        if (!node || visited.has(node)) {
+          continue
+        }
 
-      visit(root, (node) => {
+        visited.add(node)
+        const contained = this.contains(node)
+        const previous = this.transforms.get(node)
+        let transform: readonly number[] | undefined
+
+        if (contained) {
+          const matrix = node.getTransformRelativeTo(
+            this.root.parent ?? this.root
+          )
+
+          transform = [
+            matrix.a,
+            matrix.b,
+            matrix.c,
+            matrix.d,
+            matrix.tx,
+            matrix.ty
+          ]
+          this.transforms.set(node, transform)
+        } else {
+          this.transforms.delete(node)
+        }
+
+        // Membership/order may change while workspace extents remain identical.
+        // Independently dirty descendants remain separate work items below.
+        if (
+          transform &&
+          previous &&
+          transform.every((value, index) => value === previous[index])
+        ) {
+          continue
+        }
+
         if (node !== this.root) {
           this.dirty.add(node)
         }
-      })
+
+        pending.push(...node.children)
+      }
     }
 
     this.subtrees.clear()
@@ -158,6 +179,7 @@ export class SceneRegionQuery {
         !this.includes(node)
       ) {
         this.index.delete(node)
+        this.transforms.delete(node)
       } else {
         this.index.set(
           node,

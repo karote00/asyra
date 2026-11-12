@@ -6,6 +6,7 @@ import { resolve } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 vi.mock('node:fs/promises', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs/promises')>()
+
   return { ...actual, writeFile: vi.fn(actual.writeFile) }
 })
 import { createFormalInitialDocument } from '../../src/collaboration/initial-document'
@@ -30,6 +31,7 @@ describe('document backend destructive Reset boundary', () => {
   it('retains the Reset generation when the next publication becomes durable', async () => {
     await mkdir(dataDirectory, { recursive: true })
     const store = createFileDocumentMaterializationStore(dataDirectory)
+
     await expect(store.resetCheckpoint('file/a')).resolves.toBe(1)
     const publication: SharedPublication = {
       publicationId: 'publication-after-reset',
@@ -83,7 +85,9 @@ describe('document backend destructive Reset boundary', () => {
     }).map((frame) => Buffer.from(frame).toString('base64'))
     const materializer = createDocumentMaterializationService({
       store,
+
       authorize: async () => undefined,
+
       applyCanonicalChanges: async (document) => document
     })
 
@@ -113,6 +117,7 @@ describe('document backend destructive Reset boundary', () => {
   it('replaces the stored checkpoint with one formal empty document', async () => {
     await mkdir(dataDirectory, { recursive: true })
     const store = createFileDocumentMaterializationStore(dataDirectory)
+
     await store.transact('file/a', async (current, commit) => {
       commit({
         ...current,
@@ -156,12 +161,14 @@ describe('document backend destructive Reset boundary', () => {
       const unrelatedDelete = await fetch(`${endpoint}/unknown`, {
         method: 'DELETE'
       })
+
       expect(unrelatedDelete.status).toBe(404)
 
       const reset = await fetch(endpoint, { method: 'DELETE' })
 
       expect(reset.status).toBe(200)
       const checkpoint = await fetch(`${endpoint}/bootstrap-checkpoint`)
+
       await expect(checkpoint.json()).resolves.toEqual({
         checkpoint: createFormalInitialDocument(),
         durableSequence: 0,
@@ -169,8 +176,10 @@ describe('document backend destructive Reset boundary', () => {
       })
 
       const secondReset = await fetch(endpoint, { method: 'DELETE' })
+
       expect(secondReset.status).toBe(200)
       const secondCheckpoint = await fetch(`${endpoint}/bootstrap-checkpoint`)
+
       await expect(secondCheckpoint.json()).resolves.toEqual({
         checkpoint: createFormalInitialDocument(),
         durableSequence: 0,
@@ -186,6 +195,7 @@ it('records checkpoint admission, serialization, write and rename in durable ord
   const store = createFileDocumentMaterializationStore(dataDirectory)
   const events: string[] = []
   const details: Record<string, unknown>[] = []
+
   await store.transact(
     'observed',
     async (current, commit) => {
@@ -194,10 +204,12 @@ it('records checkpoint admission, serialization, write and rename in durable ord
     {
       span: (stage) => {
         events.push(`${stage}:start`)
+
         return () => {
           events.push(`${stage}:end`)
         }
       },
+
       detail: (value) => {
         details.push(value)
       }
@@ -222,6 +234,7 @@ it('records checkpoint admission, serialization, write and rename in durable ord
 })
 it('keeps checkpoint durability independent from diagnostic failures', async () => {
   const store = createFileDocumentMaterializationStore(dataDirectory)
+
   await store.transact(
     'observer-failure',
     async (current, commit) => {
@@ -231,6 +244,7 @@ it('keeps checkpoint durability independent from diagnostic failures', async () 
       span: () => {
         throw new Error('observer unavailable')
       },
+
       detail: () => {
         throw new Error('observer unavailable')
       }
@@ -243,6 +257,7 @@ it('keeps checkpoint durability independent from diagnostic failures', async () 
 
 it('keeps the previous cached and on-disk watermark when checkpoint writing fails', async () => {
   const store = createFileDocumentMaterializationStore(dataDirectory)
+
   await store.transact('failed-write', async (current, commit) => {
     commit({ ...current, durableSequence: 1 })
   })
@@ -256,6 +271,7 @@ it('keeps the previous cached and on-disk watermark when checkpoint writing fail
   ).rejects.toThrow('checkpoint write failed')
   expect((await store.readCheckpoint('failed-write')).durableSequence).toBe(1)
   const freshStore = createFileDocumentMaterializationStore(dataDirectory)
+
   expect(
     (await freshStore.readCheckpoint('failed-write')).durableSequence
   ).toBe(1)
@@ -265,12 +281,16 @@ it('retains document changes and retry identity across failed writes, Undo, Redo
   const { applyCanonicalChangesToDocument } =
     await import('../document-canonical-reducer')
   const apply = vi.fn(applyCanonicalChangesToDocument)
+
   const open = () =>
     createDocumentMaterializationService({
       store: createFileDocumentMaterializationStore(dataDirectory),
+
       authorize: async () => undefined,
+
       applyCanonicalChanges: apply
     })
+
   const makeBatch = (
     sequence: number,
     origin: 'action' | 'undo' | 'redo',
@@ -309,6 +329,7 @@ it('retains document changes and retry identity across failed writes, Undo, Redo
         }
       ]
     })
+
     return {
       protocolVersion: 1,
       documentId: 'reload-proof',
@@ -330,7 +351,9 @@ it('retains document changes and retry identity across failed writes, Undo, Redo
       ]
     }
   }
+
   const first = makeBatch(1, 'action', 'Workspace', 'Edited')
+
   vi.mocked(writeFile).mockRejectedValueOnce(
     new Error('checkpoint write failed')
   )
@@ -341,6 +364,7 @@ it('retains document changes and retry identity across failed writes, Undo, Redo
     await createFileDocumentMaterializationStore(dataDirectory).readCheckpoint(
       'reload-proof'
     )
+
   expect(failed.durableSequence).toBe(0)
   expect(failed.document.sceneTree.elements.workspace?.name).toBe('Workspace')
   await open().materialize(first)
@@ -352,13 +376,16 @@ it('retains document changes and retry identity across failed writes, Undo, Redo
     await createFileDocumentMaterializationStore(dataDirectory).readCheckpoint(
       'reload-proof'
     )
+
   expect(undone.document.sceneTree.elements.workspace?.name).toBe('Workspace')
   const redo = makeBatch(3, 'redo', 'Workspace', 'Edited')
+
   await open().materialize(redo)
   const loaded =
     await createFileDocumentMaterializationStore(dataDirectory).readCheckpoint(
       'reload-proof'
     )
+
   expect(loaded.document.sceneTree.elements.workspace?.name).toBe('Edited')
   expect(loaded.durableSequence).toBe(3)
   expect(Object.keys(loaded.publicationDigests ?? {})).toHaveLength(3)
@@ -371,6 +398,7 @@ it('migrates old text fills before applying and persisting new property updates'
   const { applyCanonicalChangesToDocument } =
     await import('../document-canonical-reducer')
   const document = createFormalInitialDocument()
+
   document.sceneTree.elements.text = {
     id: 'text',
     type: 'text',
@@ -393,6 +421,7 @@ it('migrates old text fills before applying and persisting new property updates'
     publicationSequences: {},
     batches: {}
   }
+
   await mkdir(dataDirectory, { recursive: true })
   await writeFile(
     resolve(
@@ -403,6 +432,7 @@ it('migrates old text fills before applying and persisting new property updates'
   )
   const store = createFileDocumentMaterializationStore(dataDirectory)
   const loaded = await store.readCheckpoint('old-text')
+
   expect(loaded.document.props['text-fill']).toMatchObject({
     color: '#314F32',
     opacity: 1
@@ -423,6 +453,7 @@ it('migrates old text fills before applying and persisting new property updates'
     await createFileDocumentMaterializationStore(dataDirectory).readCheckpoint(
       'old-text'
     )
+
   expect(restored.document.props['text-fill']).toMatchObject({
     color: '#314F32',
     opacity: 0.35

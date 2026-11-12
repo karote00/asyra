@@ -813,22 +813,30 @@ it('applies descriptive brief capacity through the main dispatcher into one real
   )
   const result = JSON.parse(reply.text)
 
-  // The headless Core fixture has no App inspection-evidence session. Both
-  // writes complete; retain the real unverified follow-up instead of inventing it.
-  expect(
-    result.parts.map((part: { toolOutcome: unknown }) => part.toolOutcome)
-  ).toEqual([
-    expect.objectContaining({ status: 'success', settlement: 'completed' }),
-    expect.objectContaining({ status: 'success', settlement: 'completed' })
-  ])
-  expect(result.measurementIssues).toHaveLength(1)
-  expect(result.toolOutcome).toMatchObject({
-    status: 'partial',
+  // Deferred inspection does not add a mechanical approval requirement.
+  for (const part of result.parts) {
+    expect(part).toMatchObject({
+      applicable: true,
+      completedSteps: ['prepare_design', 'apply_prepared_design']
+    })
+    expect(part.actionResults).toHaveLength(1)
+    expect(part.actionResults[0]).toMatchObject({
+      actionName: action.name,
+      result: {
+        status: 'complete',
+        compositionId: expect.any(String)
+      }
+    })
+  }
+
+  expect(result.measurementIssues).toBeUndefined()
+  expect(reply.outcome).toMatchObject({
+    status: 'success',
     settlement: 'completed'
   })
   expect(result.parts).toHaveLength(2)
   expect(batches.flat().filter((name) => name === action.name)).toHaveLength(2)
-  expect(batches.flat().filter((name) => name === review.name)).toHaveLength(1)
+  expect(batches.flat().filter((name) => name === review.name)).toHaveLength(0)
   const saved = projectedSnapshot()
 
   expect(Object.keys(saved.sceneTree.elements)).toHaveLength(2002)

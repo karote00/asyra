@@ -126,7 +126,7 @@ const create = async (draft: unknown) => {
   const canonical = preparation.resolve(prepared.artifactId)
 
   await operations.call(
-    AiDesignToolIds.EXECUTE_DESIGN_BATCH,
+    AiDesignToolIds.EXECUTE_DESIGN,
     {
       inspection: 'defer',
       operations: [
@@ -200,7 +200,10 @@ const observeReads = () => {
       childQueries: children.mock.calls.map(([id]) => id),
       copiedPropertyReferences: clone.mock.calls.reduce(
         (n, [value]) =>
-          n + (value?.props ? Object.keys(value.props).length : 0),
+          n +
+          (value && typeof value === 'object' && 'props' in value && value.props
+            ? Object.keys(value.props).length
+            : 0),
         0
       )
     }),
@@ -311,14 +314,22 @@ it.each(saved.cases)(
         throw new Error('Missing canonical root')
       }
 
-      expect(full.children).toEqual(
-        document.sceneTree.elements[canonical.rootId].children
-      )
+      const savedRoot = document.sceneTree.elements[canonical.rootId]
+
+      if (
+        !('children' in full) ||
+        !Array.isArray(full.children) ||
+        !('children' in savedRoot)
+      ) {
+        throw Error('Missing group children')
+      }
+
+      expect(full.children).toEqual(savedRoot.children)
       ;(full.children as string[]).reverse()
       expect(
         core.getElementChildren(canonical.rootId, 0, canonical.entries.length)
           .elementIds
-      ).toEqual(document.sceneTree.elements[canonical.rootId].children)
+      ).toEqual(savedRoot.children)
       console.info(
         JSON.stringify({
           measurement: 'mechanical-structural-reads',
@@ -477,7 +488,10 @@ it('preserves complete membership, local validity and read-only state through un
     const old = await reviewer.capture(root.rootId)
 
     transactionApis.runTransaction(() =>
-      core.createElementInParent({ type: 'rect', width: 3, height: 4 }, group)
+      core.createElementInParent(
+        { type: 'rect', x: 0, y: 0, width: 3, height: 4 },
+        group
+      )
     )
     expect((await reviewer.validate(evidenceOf(old))).current).toBe(false)
     expect((await reviewer.capture(root.rootId)).checkedElements).toBe(
@@ -537,7 +551,7 @@ it('keeps successful mechanical results while retrying an interrupted read witho
   const checks = createDesignCheckResults()
   const dispatched: string[] = []
   const owner = createLocalOperationTools(
-    actions,
+    actions.map(createAiToolContract),
     {
       modelActions: (a) => a,
 
@@ -623,7 +637,7 @@ it('keeps successful mechanical results while retrying an interrupted read witho
   }
 })
 
-it('bounds material follow-up exchange and saved payloads by actual coverage instead of prior targets', async () => {
+it('maps materials without implicit mechanical review and preserves linear payload work', async () => {
   // Saved run 1792955260315: one position-based fill mapping acknowledged 5,908
   // sibling leaves. Each subsequent leaf capture received accumulating siblings
   // but covered none. Smaller generic scenes reproduce that same owner path.
@@ -631,7 +645,6 @@ it('bounds material follow-up exchange and saved payloads by actual coverage ins
     count: number
     bytes: number
     payloadBytes: number
-    legacyBytes: number
   }[] = []
 
   for (const count of [64, 256]) {
@@ -681,7 +694,7 @@ it('bounds material follow-up exchange and saved payloads by actual coverage ins
     })
     const exchanges: { request: AiActionBatch; reply: AiBatchReceipt }[] = []
     const owner = createLocalOperationTools(
-      actions,
+      actions.map(createAiToolContract),
       {
         modelActions: (a) => a,
 
@@ -733,7 +746,7 @@ it('bounds material follow-up exchange and saved payloads by actual coverage ins
       const history = core.getUndoHistoryDepth()
       const response = JSON.parse(
         await owner.call(
-          AiDesignToolIds.EXECUTE_DESIGN_BATCH,
+          AiDesignToolIds.EXECUTE_DESIGN,
           {
             inspection: 'defer',
             operations: [
@@ -777,30 +790,15 @@ it('bounds material follow-up exchange and saved payloads by actual coverage ins
         (e) => e.request.actions[0].name === AiActionNames.REVIEW_DESIGN
       )
 
-      expect(captures).toHaveLength(Math.ceil(count / 64))
+      expect(captures).toHaveLength(0)
       expect(exchanges).toHaveLength(captures.length + 1)
       const outputs = captures
         .flatMap((e) => e.reply.actionResults)
         .map((a) => a.result)
 
-      expect(outputs).toHaveLength(count)
-      for (const result of outputs) {
-        expect(result).toMatchObject({
-          complete: true,
-          checkedElements: 1,
-          findings: [],
-          coveredMeasurementTargets: [],
-          observation: {
-            evaluatedNodes: 1,
-            computedReads: 1,
-            textMeasurements: 0
-          }
-        })
-      }
+      expect(outputs).toHaveLength(0)
 
-      expect(
-        checks.read({ includePassed: true, limit: count }).counts.pass
-      ).toBe(count)
+      expect(checks.read({ includePassed: true }).counts.pass).toBe(0)
       const after = await core.save()
 
       expect(after.sceneTree).toEqual(before.sceneTree)
@@ -823,69 +821,9 @@ it('bounds material follow-up exchange and saved payloads by actual coverage ins
           ),
         0
       )
-      // Compare complete envelopes with the observed cumulative-candidate rule,
-      // keeping identical IDs, results, receipts and material mutation input.
-      const legacy = structuredClone(exchanges)
-      const prior: string[] = []
 
-      for (const exchange of legacy) {
-        if (exchange.request.actions[0].name !== AiActionNames.REVIEW_DESIGN) {
-          continue
-        }
-
-        const batchIds = exchange.request.actions.map((a) =>
-          String(a.arguments.elementId)
-        )
-        const candidates = [...prior, ...batchIds]
-
-        for (const action of exchange.request.actions) {
-          action.arguments.measurementTargets = candidates.filter(
-            (id) => id !== action.arguments.elementId
-          )
-        }
-
-        prior.push(...batchIds)
-      }
-
-      const legacyBytes = Buffer.byteLength(JSON.stringify(legacy))
-      const legacyPayloadBytes = legacy.reduce(
-        (n, e) =>
-          n +
-          e.request.actions.reduce(
-            (sum, a) => sum + serializeToolPayload(a.arguments).bytes,
-            0
-          ) +
-          e.reply.actionResults.reduce(
-            (sum, a) => sum + serializeToolPayload(a.result).bytes,
-            0
-          ),
-        0
-      )
-
-      expect.soft(payloadBytes).toBeLessThan(legacyPayloadBytes)
-      process.stdout.write(
-        JSON.stringify({
-          measurement: 'automatic-mechanical-coverage',
-          count,
-          bytes,
-          payloadBytes,
-          legacyBytes,
-          legacyPayloadBytes,
-          retainedKeyVisits
-        }) + '\n'
-      )
-      samples.push({ count, bytes, payloadBytes, legacyBytes })
-      expect.soft(bytes).toBeLessThan(legacyBytes)
-      expect.soft(retainedKeyVisits).toBeLessThanOrEqual(count)
-      expect
-        .soft(
-          captures
-            .flatMap((e) => e.request.actions)
-            .every(
-              (action) => action.arguments.measurementTargets === 'descendants'
-            )
-        )
-        .toBe(true)
+      samples.push({ count, bytes, payloadBytes })
+      expect(retainedKeyVisits).toBeLessThanOrEqual(count)
     } finally {
       scan.mockRestore()
       queries.dispose()

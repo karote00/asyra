@@ -60,7 +60,15 @@ const proposal = object({
 /** Canonical transport shape; semantic admission is required after schema validation. */
 export const aiRecipeInputSchema = detachAiJsonValue({
   ...proposal,
-  properties: { ...proposal.properties, iteration },
+  properties: {
+    ...proposal.properties,
+    iteration,
+    checkpoints: {
+      type: 'array',
+      minItems: 1,
+      items: object({ after: text, iteration })
+    }
+  },
   $defs: { binding: { oneOf: Object.values(bindingVariants) } }
 })
 
@@ -87,9 +95,12 @@ export const recipeExecutionSteps = (
   weight: number
 }[] => {
   const steps = recipe.steps.map((step) => ({ step, weight: 1 }))
-  const iteration = recipe.iteration
+  const iterations = [
+    ...(recipe.checkpoints ?? []).map((checkpoint) => checkpoint.iteration),
+    ...(recipe.iteration ? [recipe.iteration] : [])
+  ]
 
-  if (iteration) {
+  for (const iteration of iterations) {
     steps.push({ step: iteration.check, weight: iteration.maxIterations + 1 })
     steps.push(
       ...iteration.repairs.map((step) => ({

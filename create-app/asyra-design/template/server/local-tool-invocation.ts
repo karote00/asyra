@@ -36,11 +36,13 @@ const validatedOutputSchemas = new WeakMap<
   object,
   { schema: AiJsonValue; text: string }
 >()
+
 /** Reuse completed boundary validation without trusting reconstructed JSON receipts. */
 export const localToolResultSchema = (reply: {
   text: string
 }): AiJsonValue | undefined => {
   const validated = validatedOutputSchemas.get(reply)
+
   return validated?.text === reply.text ? validated.schema : undefined
 }
 
@@ -54,6 +56,7 @@ export const localToolDeliveryResult = (
     ? original.toolOutcome
     : previous
   const delivered = localToolOutcome(projected)
+
   // Owner-specific successful page/finding semantics remain valid when projection
   // did not introduce a new incomplete child acknowledgement.
   if (
@@ -61,8 +64,10 @@ export const localToolDeliveryResult = (
     delivered.status === 'success' ||
     (delivered.status === previous.status &&
       JSON.stringify(delivered.issues) === JSON.stringify(previous.issues))
-  )
+  ) {
     return projected
+  }
+
   return {
     ...projected,
     toolOutcome: { ...execution, status: 'partial', issues: delivered.issues }
@@ -144,7 +149,10 @@ export const localToolOutcome = (
   settlement: AiToolOutcome['settlement']
   issues: { actionName?: string; code: string; message: string }[]
 } => {
-  if (!record(value)) throw new Error('App tool returned a non-object result')
+  if (!record(value)) {
+    throw new Error('App tool returned a non-object result')
+  }
+
   const results = Array.isArray(value.actionResults) ? value.actionResults : []
   const receipts: Record<string, unknown>[] = results.flatMap((entry) =>
     record(entry) && record(entry.result)
@@ -199,6 +207,7 @@ export const localToolOutcome = (
       const defaultMessage = failed
         ? 'The requested result is unavailable.'
         : 'The result reports incomplete work or coverage; inspect its receipt.'
+
       return {
         ...(typeof issue.actionName === 'string'
           ? { actionName: issue.actionName }
@@ -210,48 +219,68 @@ export const localToolOutcome = (
     })
   let status: AiToolOutcome['status'] =
     value.status === 'unknown' ? 'unknown' : 'success'
-  if (issues.length)
+
+  if (issues.length) {
     status =
       observations.some(incomplete) ||
       hasAcknowledgedActions(value.executionResult) ||
       childOutcomes.some((outcome) => outcome.status === 'success')
         ? 'partial'
         : 'failed'
+  }
+
   if (
     value.status === 'unknown' ||
     childOutcomes.some((outcome) => outcome.status === 'unknown')
-  )
+  ) {
     status = 'unknown'
+  }
+
   let settlement: AiToolOutcome['settlement'] = 'unknown'
-  if (status === 'success') settlement = 'completed'
-  else if (status === 'partial') settlement = 'partial'
+
+  if (status === 'success') {
+    settlement = 'completed'
+  } else if (status === 'partial') {
+    settlement = 'partial'
+  }
+
   if (childOutcomes.length) {
     const settlements = new Set(
       childOutcomes.map((outcome) => outcome.settlement)
     )
-    if (settlements.has('unknown')) settlement = 'unknown'
-    else if (!unavailable(value) && !incomplete(value)) {
-      if (settlements.has('partial') || settlements.size > 1)
+
+    if (settlements.has('unknown')) {
+      settlement = 'unknown'
+    } else if (!unavailable(value) && !incomplete(value)) {
+      if (settlements.has('partial') || settlements.size > 1) {
         settlement = 'partial'
-      else settlement = childOutcomes[0].settlement
+      } else {
+        settlement = childOutcomes[0].settlement
+      }
     }
   }
+
   if (
     ['not-started', 'completed', 'partial', 'unknown'].includes(
       String(value.settlement)
     )
-  )
+  ) {
     settlement = value.settlement as AiToolOutcome['settlement']
+  }
+
   if (record(value.failure)) {
     const failedSettlement = value.failure.settlement
+
     if (
       failedSettlement === 'unknown' ||
       childOutcomes.some((outcome) => outcome.settlement === 'unknown')
-    )
+    ) {
       settlement = 'unknown'
-    else if (failedSettlement === 'completed') settlement = 'completed'
-    else if (failedSettlement === 'partial') settlement = 'partial'
-    else if (failedSettlement === 'not-started') {
+    } else if (failedSettlement === 'completed') {
+      settlement = 'completed'
+    } else if (failedSettlement === 'partial') {
+      settlement = 'partial'
+    } else if (failedSettlement === 'not-started') {
       settlement = childOutcomes.some(
         (outcome) => outcome.settlement !== 'not-started'
       )
@@ -259,13 +288,19 @@ export const localToolOutcome = (
         : 'not-started'
     }
   }
+
   return { status, settlement, issues }
 }
 
 const hasAcknowledgedActions = (value: unknown): boolean => {
-  if (!record(value)) return false
-  if (Array.isArray(value.actionResults) && value.actionResults.length > 0)
+  if (!record(value)) {
+    return false
+  }
+
+  if (Array.isArray(value.actionResults) && value.actionResults.length > 0) {
     return true
+  }
+
   return (
     Array.isArray(value.batches) &&
     value.batches.some(
@@ -423,6 +458,7 @@ export const invokeLocalTool = async (
   signal.throwIfAborted()
   let stage: 'admission' | 'execution' | 'decoding' = 'admission'
   let decodedResult: unknown
+
   const reportPhase = () => {
     try {
       onPhase?.(stage)
@@ -430,12 +466,15 @@ export const invokeLocalTool = async (
       /* Observation does not alter tool execution. */
     }
   }
+
   try {
     reportPhase()
     const contract = createAiToolContract(definition)
     const issues = operationInputIssues(args, contract.inputSchema)
+
     if (issues) {
       const explanation = owner.explainInputIssue?.(definition.name, args)
+
       return localToolFailureReply(
         explanation?.message ?? formatOperationInputIssues(issues),
         explanation?.code ?? 'PREPARATION_REJECTED',
@@ -446,6 +485,7 @@ export const invokeLocalTool = async (
         }
       )
     }
+
     stage = 'execution'
     reportPhase()
     const text = await (owner.callInternal ?? owner.call)(
@@ -453,26 +493,35 @@ export const invokeLocalTool = async (
       args,
       signal
     )
+
     stage = 'decoding'
     reportPhase()
     let value = JSON.parse(text)
+
     decodedResult = value
     signal.throwIfAborted()
     const resultIssue = owner.resultIssue?.(definition.name, value)
-    if (resultIssue) throw new Error(resultIssue)
+
+    if (resultIssue) {
+      throw new Error(resultIssue)
+    }
+
     let toolOutcome =
       owner.resultOutcome?.(definition.name, value) ?? localToolOutcome(value)
+
     if (
       toolOutcome.status !== 'success' &&
       toolOutcome.settlement === 'unknown' &&
       !hasAcknowledgedActions(value.executionResult)
     ) {
       let observed: unknown
+
       try {
         observed = executionEvidence?.()
       } catch {
         // Unavailable diagnostics cannot replace the owner's failure.
       }
+
       if (hasAcknowledgedActions(observed)) {
         value = { ...value, executionResult: observed }
         decodedResult = value
@@ -481,52 +530,68 @@ export const invokeLocalTool = async (
           localToolOutcome(value)
       }
     }
+
     const inspected = inspectAiToolResult(contract, value, {
       outcome: toolOutcome,
       validate: operationContractIssue
     })
-    if (inspected.status === 'invalid') throw new Error(inspected.issue)
+
+    if (inspected.status === 'invalid') {
+      throw new Error(inspected.issue)
+    }
+
     const reply = {
       success: toolOutcome.status === 'success',
       text: JSON.stringify({ ...value, toolOutcome })
     }
     const outputSchema = selectAiToolResultSchema(contract, toolOutcome.status)
-    if (outputSchema !== undefined)
+
+    if (outputSchema !== undefined) {
       validatedOutputSchemas.set(reply, {
         schema: outputSchema,
         text: reply.text
       })
+    }
+
     return reply
   } catch (error) {
     const inputFailure = error instanceof LocalToolInputError
     const batchError =
       error instanceof BrowserBatchExecutionError ? error : undefined
     let observedEvidence: unknown
+
     try {
       observedEvidence = executionEvidence?.()
     } catch {
       /* Optional diagnostics must not prevent delivery of the owner's failure. */
     }
+
     const evidence = [observedEvidence, batchError?.receipt, decodedResult]
     // An empty observer snapshot must not hide an acknowledged owner result.
     const executionResult =
       evidence.find(hasAcknowledgedActions) ??
       evidence.find((value) => value != null) ??
       null
+
     if (signal.aborted) {
       if (
         (error instanceof AiActionExecutionError ||
           error instanceof AiExecutionError) &&
         error.receipt
-      )
+      ) {
         throw error
-      if (hasAcknowledgedActions(executionResult))
+      }
+
+      if (hasAcknowledgedActions(executionResult)) {
         throw new AiExecutionError({
           result: JSON.parse(serializeToolPayload(executionResult).serialized),
           settlement: localToolOutcome(executionResult).settlement
         })
+      }
+
       signal.throwIfAborted()
     }
+
     const hasPriorExecution =
       record(executionResult) &&
       ((Array.isArray(executionResult.batches) &&
@@ -540,6 +605,7 @@ export const invokeLocalTool = async (
       )
         ? (decodedResult.settlement as AiToolOutcome['settlement'])
         : undefined
+
     return localToolFailureReply(
       localToolErrorMessage(error),
       inputFailure
@@ -596,7 +662,9 @@ export const observeLocalToolExecution = async (
 ): Promise<string> => {
   const invoker = createAiInvoker({
     execute: async () => execute(),
+
     middleware,
+
     observe: (event) => {
       const evidence = {
         callId: event.call.callId,
@@ -606,6 +674,7 @@ export const observeLocalToolExecution = async (
         executor: 'app-server',
         timingScope: 'owner-handoff'
       }
+
       observation.progress?.({
         tool,
         callId: event.call.callId,
@@ -624,6 +693,7 @@ export const observeLocalToolExecution = async (
       } else if (event.phase === 'completed') {
         let result: unknown
         let outcome: ReturnType<typeof localToolOutcome>
+
         try {
           result = JSON.parse(event.output as string)
           outcome = localToolOutcome(result)
@@ -634,8 +704,10 @@ export const observeLocalToolExecution = async (
             code: 'RESULT_DECODING_FAILED',
             executionMs: event.durationMs
           })
+
           return
         }
+
         observation.trace?.(
           outcome.status === 'failed' ? 'action_failed' : 'action_completed',
           {
@@ -662,11 +734,13 @@ export const observeLocalToolExecution = async (
     }
   })
   let parentCallId: string | undefined
+
   try {
     parentCallId = observation.parentCallId?.()
   } catch {
     /* Context observation cannot reject execution. */
   }
+
   return invoker.invoke({
     name: tool,
     input: args,

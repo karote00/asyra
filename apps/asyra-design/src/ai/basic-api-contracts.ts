@@ -53,6 +53,7 @@ const resultDescriptions: Record<BasicApiResultKind, string> = {
 }
 
 export interface BasicApiContract {
+  resultPaths?: readonly string[]
   owner: BasicApiOwner
   category: string
   operation: string
@@ -63,6 +64,7 @@ export interface BasicApiContract {
   effect: BasicApiEffect
   result: {
     kind: BasicApiResultKind
+    valueSchema?: Record<string, unknown>
     description: string
     identityPath?: readonly string[]
   }
@@ -140,6 +142,13 @@ export interface BasicApiParameterDefinition {
 }
 
 export interface BasicApiDefinition {
+  resultValueSchema?: Record<string, unknown>
+  discovery?: {
+    purpose: string
+    terms?: readonly string[]
+    boundaries: readonly string[]
+  }
+  resultPaths?: readonly string[]
   examples?: readonly Record<string, unknown>[]
   category?: string
   resultKind?: BasicApiResultKind
@@ -180,9 +189,13 @@ export const defineBasicApi = ({
   parameters,
   resultKind,
   resultIdentityPath,
+  resultValueSchema,
+  resultPaths,
   examples,
-  description = ''
+  description = '',
+  discovery
 }: BasicApiDefinition): BasicApiContract => ({
+  ...(resultPaths ? { resultPaths } : {}),
   owner,
   category,
   operation: `${owner}.${method}`,
@@ -190,12 +203,14 @@ export const defineBasicApi = ({
   effect,
   result: {
     ...describeResultContract(effect, resultKind),
+    ...(resultValueSchema ? { valueSchema: resultValueSchema } : {}),
     ...(resultIdentityPath ? { identityPath: resultIdentityPath } : {})
   },
   name: `api_${owner}_${method}`,
   description: `${owner}.${method}. ${description} Uses the existing public API. Event/history suppression options are not model inputs.${resultKind === 'mutation-receipt' ? ` ${resultDescriptions[resultKind]}` : ''}`,
   parameters: parameters.map((parameter) => parameter.name),
   inputSchema: {
+    ...(discovery ? { 'x-design-discovery': discovery } : {}),
     ...apiObject(
       Object.fromEntries(
         parameters.map((parameter) => [parameter.name, parameter.schema])

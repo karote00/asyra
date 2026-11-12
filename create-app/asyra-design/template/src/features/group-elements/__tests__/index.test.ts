@@ -185,6 +185,7 @@ describe('Group and Ungroup feature transaction', () => {
 
   it('does not write selection when canonical Group mutation throws', () => {
     const failure = new Error('canonical rejection')
+
     mocks.groupElements.mockImplementation(() => {
       throw failure
     })

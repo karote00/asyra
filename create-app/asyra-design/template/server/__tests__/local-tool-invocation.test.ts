@@ -28,6 +28,7 @@ import { createLocalToolLibraryTools } from '../local-tool-library-tools'
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
 
 const signal = () => new AbortController().signal
+
 const definition = {
   ...toolSemantics({ type: 'object' }, 'prepare', ['request-artifacts']),
   description: 'Prepare test data',
@@ -44,6 +45,7 @@ it('uses the owner outcome once and avoids failure diagnostics for successful do
   const reply = await invokeLocalTool(
     {
       call: async () => JSON.stringify({ status: 'unknown', available: false }),
+
       resultOutcome
     },
     definition,
@@ -51,6 +53,7 @@ it('uses the owner outcome once and avoids failure diagnostics for successful do
     signal(),
     executionEvidence
   )
+
   expect(reply.success).toBe(true)
   expect(resultOutcome).toHaveBeenCalledOnce()
   expect(executionEvidence).not.toHaveBeenCalled()
@@ -63,6 +66,7 @@ it('reuses validation only for the exact unchanged invocation reply', async () =
     {},
     signal()
   )
+
   expect(localToolResultSchema(reply)).toEqual(definition.outputSchema)
   expect(localToolResultSchema({ ...reply })).toBeUndefined()
   reply.text = JSON.stringify({ ready: false })
@@ -85,6 +89,7 @@ it('preserves an unknown child result and settlement through the native wrapper'
   }
   const call = vi.fn(async () => JSON.stringify(result))
   const reply = await invokeLocalTool({ call }, definition, {}, signal())
+
   expect(JSON.parse(reply.text)).toMatchObject({
     ...result,
     toolOutcome: { status: 'unknown', settlement: 'unknown' }
@@ -102,7 +107,11 @@ it('retains owner evidence when optional execution observation throws', async ()
   }
   const call = vi.fn(async () => JSON.stringify(result))
   const reply = await invokeLocalTool(
-    { call, resultIssue: () => 'Required output identity is missing' },
+    {
+      call,
+
+      resultIssue: () => 'Required output identity is missing'
+    },
     definition,
     {},
     signal(),
@@ -110,6 +119,7 @@ it('retains owner evidence when optional execution observation throws', async ()
       throw new Error('Observer unavailable')
     }
   )
+
   expect(JSON.parse(reply.text)).toMatchObject({
     code: 'TOOL_RESULT_INVALID',
     settlement: 'completed',
@@ -170,8 +180,11 @@ it('preflights every advertised App tool family before its owner executes', asyn
     actions,
     {
       ...designs,
+
       modelActions: (input) => designs.modelActions(images.modelActions(input)),
+
       resolveBatch: (input) => designs.resolveBatch(images.resolveBatch(input)),
+
       resolveTargets: designs.resolveTargets
     },
     vi.fn(),
@@ -180,6 +193,7 @@ it('preflights every advertised App tool family before its owner executes', asyn
       validateReferences: images.validateReferences
     }
   )
+
   expect(
     operations.definitions.find(
       (tool) => tool.name === AiActionNames.READ_DESIGN_CONTEXT
@@ -211,6 +225,7 @@ it('preflights every advertised App tool family before its owner executes', asyn
       .flatMap((owner) => owner.definitions.map((tool) => tool.name))
       .filter((name) => !browserNames.has(name))
   )
+
   expect([...nativeNames].sort()).toEqual(
     [
       ...Object.values(AiDesignToolIds),
@@ -223,15 +238,18 @@ it('preflights every advertised App tool family before its owner executes', asyn
       owner,
       'callInternal' in owner ? 'callInternal' : 'call'
     )
+
     for (const tool of owner.definitions) {
       expect(() => createAiToolContract(tool), tool.name).not.toThrow()
       const reply = await invokeLocalTool(owner, tool, null, signal())
+
       expect(reply.success, tool.name).toBe(false)
       expect(JSON.parse(reply.text), tool.name).toMatchObject({
         recoverable: true,
         code: 'PREPARATION_REJECTED'
       })
     }
+
     expect(call).not.toHaveBeenCalled()
     // Isolate the post-admission boundary for every actual registered route.
     call.mockRejectedValue(new Error('Owner execution failed'))
@@ -242,6 +260,7 @@ it('preflights every advertised App tool family before its owner executes', asyn
         {},
         signal()
       )
+
       expect(reply.success, tool.name).toBe(false)
       expect(JSON.parse(reply.text), tool.name).toMatchObject({
         code: 'TOOL_EXECUTION_FAILED',
@@ -249,6 +268,7 @@ it('preflights every advertised App tool family before its owner executes', asyn
         settlement: 'unknown'
       })
     }
+
     expect(call).toHaveBeenCalledTimes(owner.definitions.length)
     call.mockRestore()
   }
@@ -259,6 +279,7 @@ it('rejects extra fields without guessing aliases and allows a corrected call', 
     JSON.stringify({ available: true, artifactId: 'prepared' })
   )
   const owner = { call }
+
   expect(
     (
       await invokeLocalTool(
@@ -317,6 +338,7 @@ it.each([
       {},
       signal()
     )
+
     expect(reply.success).toBe(success)
     expect(JSON.parse(reply.text)).toMatchObject({
       ...result,
@@ -330,6 +352,7 @@ it('returns all owner exceptions without retrying uncertain mutations', async ()
     throw new Error('Unknown artifact')
   })
   const reply = await invokeLocalTool({ call }, definition, {}, signal())
+
   expect(JSON.parse(reply.text)).toMatchObject({
     recoverable: true,
     message: expect.stringContaining('Unknown artifact')
@@ -352,6 +375,7 @@ it('keeps explicit pre-dispatch rejections recoverable without a blanket mutatio
     {},
     signal()
   )
+
   expect(JSON.parse(reply.text)).toMatchObject({
     code: 'PREPARATION_REJECTED',
     recoverable: true
@@ -364,6 +388,7 @@ it('preserves cancellation but returns broken output serialization', async () =>
     controller.abort()
     throw new Error('cancelled work')
   })
+
   await expect(
     invokeLocalTool({ call }, definition, {}, controller.signal)
   ).rejects.toThrow()
@@ -388,6 +413,7 @@ it('returns malformed preparation output as a tool failure without ending the re
     {},
     signal()
   )
+
   expect(JSON.parse(reply.text)).toMatchObject({
     recoverable: true,
     code: 'TOOL_RESULT_INVALID'
@@ -399,6 +425,7 @@ it('contains schema explanation failures at the same boundary', async () => {
   const reply = await invokeLocalTool(
     {
       call,
+
       explainInputIssue: () => {
         throw new Error('Explanation failed')
       }
@@ -407,6 +434,7 @@ it('contains schema explanation failures at the same boundary', async () => {
     null,
     signal()
   )
+
   expect(reply.success).toBe(false)
   expect(JSON.parse(reply.text)).toMatchObject({
     stage: 'admission',
@@ -443,6 +471,7 @@ it('returns canonical failure evidence and completed actions without replay', as
     signal(),
     () => ({ batches: [receipt] })
   )
+
   expect(JSON.parse(reply.text)).toMatchObject({
     code: 'AI_EXECUTION_FAILED',
     settlement: 'unknown',
@@ -475,6 +504,7 @@ it('does not describe a later compound-input failure as zero prior execution', a
     signal(),
     () => executionResult
   )
+
   expect(JSON.parse(reply.text)).toMatchObject({
     stage: 'admission',
     settlement: 'unknown',
@@ -492,11 +522,17 @@ it('observes internal input/output once, links the parent and isolates recorder 
     'prepare_design',
     args,
     execute,
-    { parentCallId: () => 'native-parent', trace }
+    {
+      parentCallId: () => 'native-parent',
+
+      trace
+    }
   )
+
   expect(execute).toHaveBeenCalledOnce()
   expect(trace).toHaveBeenCalledTimes(2)
   const start = trace.mock.calls[0][1]
+
   expect(start).toMatchObject({
     parentCallId: 'native-parent',
     arguments: args,
@@ -520,6 +556,7 @@ it('observes internal input/output once, links the parent and isolates recorder 
 
 it('keeps parent-context observation failure outside canonical execution', async () => {
   const execute = vi.fn(async () => '{"available":true}')
+
   await expect(
     observeLocalToolExecution('read', {}, execute, {
       parentCallId: () => {
@@ -532,6 +569,7 @@ it('keeps parent-context observation failure outside canonical execution', async
 
 it('records unusable internal output without changing the returned value or leaving the call open', async () => {
   const trace = vi.fn()
+
   await expect(
     observeLocalToolExecution('read', {}, async () => 'invalid-json', { trace })
   ).resolves.toBe('invalid-json')
@@ -566,6 +604,7 @@ it('retains a rejected draft at public admission and repairs only the incorrect 
     (await invokeLocalTool(designs, definition, { draft: invalid }, signal()))
       .text
   )
+
   expect(failed).toMatchObject({
     available: false,
     settlement: 'not-started',
@@ -583,6 +622,7 @@ it('retains a rejected draft at public admission and repairs only the incorrect 
     },
     signal()
   )
+
   expect(fixed.success).toBe(true)
   expect(JSON.parse(fixed.text)).toMatchObject({
     artifactId: expect.any(String),
@@ -605,6 +645,7 @@ it('rejects a claimed preparation success without its required artifact identity
       inputSchema: {}
     }
   ])
+
   vi.spyOn(designs, 'call').mockResolvedValue(
     JSON.stringify({ available: true })
   )
@@ -614,6 +655,7 @@ it('rejects a claimed preparation success without its required artifact identity
     { draft: { type: 'group', name: 'Building' } },
     signal()
   )
+
   expect(result.success).toBe(false)
   expect(JSON.parse(result.text)).toMatchObject({
     code: 'TOOL_RESULT_INVALID',
@@ -640,12 +682,14 @@ it('rejects missing retained identities at each preparation, image and workflow 
     createLocalReferenceTools(images.addReference),
     createLocalDesignWorkflow(designs, operations)
   ]
+
   for (const owner of owners) {
     const call = vi
       .spyOn(owner, 'callInternal' in owner ? 'callInternal' : 'call')
       .mockResolvedValue(
         JSON.stringify({ available: true, status: 'complete' })
       )
+
     for (const tool of owner.definitions) {
       const reply = await invokeLocalTool(
         owner,
@@ -653,12 +697,14 @@ it('rejects missing retained identities at each preparation, image and workflow 
         {},
         signal()
       )
+
       expect(JSON.parse(reply.text), tool.name).toMatchObject({
         code: 'TOOL_RESULT_INVALID',
         settlement: 'unknown'
       })
       expect(reply.success, tool.name).toBe(false)
     }
+
     call.mockRestore()
   }
 })
@@ -673,15 +719,21 @@ it('distinguishes usable discovery pages from incomplete mutations through publi
   const tool = operations.definitions.find(
     (entry) => entry.name === 'describe_design_apis'
   )
-  if (!tool) throw new Error('Discovery tool is not registered')
+
+  if (!tool) {
+    throw new Error('Discovery tool is not registered')
+  }
+
   const first = await invokeLocalTool(
     operations,
     tool,
     { category: 'fill' },
     signal()
   )
+
   expect(first.success).toBe(true)
   const page = JSON.parse(first.text)
+
   expect(page).toMatchObject({
     complete: false,
     toolOutcome: { status: 'success' }
@@ -693,11 +745,13 @@ it('distinguishes usable discovery pages from incomplete mutations through publi
     page.next.arguments,
     signal()
   )
+
   expect(next.success).toBe(true)
   expect(JSON.parse(next.text).complete).toBe(true)
   const call = vi
     .spyOn(operations, 'callInternal')
     .mockResolvedValue(JSON.stringify({ ...page, next: undefined }))
+
   expect(
     JSON.parse(
       (await invokeLocalTool(operations, tool, { category: 'fill' }, signal()))
@@ -721,6 +775,7 @@ it.each([undefined, () => ({ batches: [] })])(
     }
     const owner = {
       call: async () => JSON.stringify(receipt),
+
       resultIssue: () => 'Missing successor identity'
     }
     const reply = JSON.parse(
@@ -734,6 +789,7 @@ it.each([undefined, () => ({ batches: [] })])(
         )
       ).text
     )
+
     expect(reply).toMatchObject({
       code: 'TOOL_RESULT_INVALID',
       settlement: 'unknown',
@@ -767,6 +823,7 @@ it('validates the declared native output schema even when the owner forgot a res
     {},
     signal()
   )
+
   expect(reply.success).toBe(false)
   expect(JSON.parse(reply.text)).toMatchObject({
     code: 'TOOL_RESULT_INVALID',
@@ -787,6 +844,7 @@ it.each(['not-started', 'completed', 'partial', 'unknown'] as const)(
       settlement,
       message: 'Owner rejected output'
     }
+
     expect(localToolOutcome(receipt)).toMatchObject({
       status: 'failed',
       settlement
@@ -827,6 +885,7 @@ it.each([false, true])(
       {},
       signal()
     )
+
     expect(JSON.parse(reply.text)).toMatchObject({
       code: 'TOOL_RESULT_INVALID',
       settlement: 'partial',
@@ -849,6 +908,7 @@ it('exposes only successful domain fields to recipe proof and keeps partial evid
     ...toolSemantics(schema, 'mutation', ['document']),
     composition: 'allowed'
   })
+
   expect(contract.outputSchema).toEqual(schema)
   const interrupted = {
     available: false,
@@ -858,6 +918,7 @@ it('exposes only successful domain fields to recipe proof and keeps partial evid
     settlement: 'partial',
     executionResult: { actionResults: [{}] }
   }
+
   expect(
     inspectAiToolResult(contract, interrupted, {
       outcome: { status: 'partial', settlement: 'partial' },
@@ -905,6 +966,7 @@ it('exposes only successful domain fields to recipe proof and keeps partial evid
     },
     {
       resolve: () => contract,
+
       validate: operationContractIssue,
       limits: {
         bytes: 10000,
@@ -915,6 +977,7 @@ it('exposes only successful domain fields to recipe proof and keeps partial evid
       }
     }
   )
+
   expect(admitted).toMatchObject({ ok: true })
 })
 
@@ -925,6 +988,7 @@ it('preserves an owner-declared terminal failure without changing retryable fail
       settlement: 'not-started'
     }).text
   )
+
   expect(terminal).toMatchObject({
     recoverable: false,
     toolOutcome: { status: 'failed', settlement: 'not-started' }
@@ -932,6 +996,7 @@ it('preserves an owner-declared terminal failure without changing retryable fail
   const retryable = JSON.parse(
     localToolFailureReply('Correct the input.', 'INVALID_INPUT').text
   )
+
   expect(retryable.recoverable).toBe(true)
 })
 
@@ -954,6 +1019,7 @@ it.each(['measurementIssues', 'inspectionIssues'])(
         }
       ]
     })
+
     expect(outcome).toMatchObject({
       status: 'partial',
       settlement: 'completed'
@@ -998,11 +1064,13 @@ it.each(['partial', 'unknown', 'completed'] as const)(
       ],
       failure: { code: 'AI_EXECUTION_FAILED', settlement }
     }
+
     await expect(
       invokeLocalTool(
         {
           call: async () => {
             controller.abort()
+
             return JSON.stringify(result)
           }
         },
@@ -1019,6 +1087,7 @@ it.each(['partial', 'unknown', 'completed'] as const)(
 it('keeps ordinary cancellation without an acknowledged owner result', async () => {
   const controller = new AbortController()
   const reason = new Error('Cancelled before acknowledgement')
+
   await expect(
     invokeLocalTool(
       {

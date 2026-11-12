@@ -596,7 +596,7 @@ describe('concrete current work', () => {
       {
         attempt: 1,
         phase: 'execution',
-        tool: 'execute_design_batch',
+        tool: 'execute_design',
         summary: 'Removing covered objects',
         activity: {
           kind: 'work',
@@ -707,7 +707,7 @@ it('retains authored work when a real system message arrives and rejects older s
   const work = {
     attempt: 1,
     phase: 'provider' as const,
-    tool: 'execute_design_batch',
+    tool: 'execute_design',
     toolStatus: 'running' as const,
     summary: 'Running a tool',
     message: 'Adding window reflections',
@@ -1866,7 +1866,7 @@ it('shows the live inspection purpose instead of an earlier drawing stage and re
     attempt: 1,
     phase: 'provider' as const,
     summary: 'Inspection',
-    tool: 'review_drawing',
+    tool: 'review_design',
     toolStatus: 'running' as const,
     message: 'Compare crown bands with the selected reference',
     activity: {
@@ -1879,7 +1879,7 @@ it('shows the live inspection purpose instead of an earlier drawing stage and re
   const decision = projection.append(event)
 
   expect(projection.result().current).toEqual({
-    label: 'Checking the requested details',
+    label: 'Checking the layout',
     message: event.message
   })
   expect(decision).toMatchObject({
@@ -1929,7 +1929,7 @@ it('preserves the original history snapshot while recording actual principal tra
 
   for (const [index, tool] of [
     'read_design_context',
-    'review_drawing',
+    'review_design',
     'describe_design_apis'
   ].entries()) {
     projection.append({
@@ -2074,7 +2074,7 @@ it('projects recorded anonymous batch phases through their active named owner wi
   expect(projection.result().current).toEqual(root)
   emit('apply', 'apply_prepared_design', 'applying', 'batch')
   expect(projection.result().current).toEqual(root)
-  emit('sibling', 'review_drawing', 'executing')
+  emit('sibling', 'review_design', 'executing')
   expect(projection.result().current.label).toContain('2 operations')
   emit('apply', 'apply_prepared_design', 'applying', 'batch', true)
   expect(projection.result().current.label).toContain(
@@ -2082,18 +2082,16 @@ it('projects recorded anonymous batch phases through their active named owner wi
   )
   emit('batch', 'app-batch', 'executing', 'root', true)
   emit('root', 'prepare_and_apply_design', 'executing', undefined, true)
-  expect(projection.result().current.label).toBe(
-    'Checking the requested details'
-  )
-  emit('sibling', 'review_drawing', 'executing', undefined, true)
+  expect(projection.result().current.label).toBe('Checking the layout')
+  emit('sibling', 'review_design', 'executing', undefined, true)
   expect(projection.result().current).toEqual({
     label: 'Operation ended - outcome unconfirmed (2)',
-    message: 'Running the planned task; Checking the requested details'
+    message: 'Running the planned task; Checking the layout'
   })
   emit('batch', 'app-batch', 'executing', 'root')
   expect(projection.result().current).toEqual({
     label: 'Operation ended - outcome unconfirmed (2)',
-    message: 'Running the planned task; Checking the requested details'
+    message: 'Running the planned task; Checking the layout'
   })
 })
 
@@ -2119,7 +2117,7 @@ it('does not display queued child intent as its executing parent work', () => {
     attempt: 1,
     phase: 'provider',
     summary: 'Work',
-    tool: 'review_drawing',
+    tool: 'review_design',
     toolStatus: 'running',
     message: 'Check the windows',
     activity: {
@@ -2222,7 +2220,7 @@ it('keeps a principal status through named and authored child work and settlemen
   expect(projection.result().current).toEqual(current)
   send('apply', 'apply_prepared_design', 'principal', undefined, 'completed')
   expect(projection.result().current).toEqual(current)
-  send('peer', 'review_drawing', undefined, 'Check the roof')
+  send('peer', 'review_design', undefined, 'Check the roof')
   expect(projection.result().current.label).toContain('2 operations')
   expect(projection.result().current.message).toBeUndefined()
   send(
@@ -2245,7 +2243,7 @@ it('replays every retained provider input without labeling generic batches as ed
     const update = input as AiRuntimeProgressUpdate
 
     projection.append(update)
-    if (update.tool === 'execute_design_batch') {
+    if (update.tool === 'execute_design') {
       expect(projection.result().current.label).not.toContain(
         'Applying planned edits'
       )
@@ -2287,7 +2285,7 @@ it('projects actual descendant dispatch effects without replacing the principal 
       attempt: 1,
       phase: 'provider',
       summary: 'Operation',
-      tool: callId === 'principal' ? 'execute_design_batch' : 'app-batch',
+      tool: callId === 'principal' ? 'execute_design' : 'app-batch',
       toolStatus: completed ? 'completed' : 'running',
       message: callId === 'principal' ? 'Adjust crown reflections' : undefined,
       activity: {

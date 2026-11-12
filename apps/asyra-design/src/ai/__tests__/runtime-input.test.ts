@@ -121,7 +121,7 @@ it('owns one shared inspection lifetime and disposes canonical subscriptions wit
   core.observeSharedDataChannel = vi.fn(() => stop)
   inspectionApis.inspect = vi.fn(() => ({
     available: true,
-    image: { dataUrl: 'png' }
+    image: { dataUrl: 'png', width: 1, height: 1 }
   })) as typeof originalInspect
   const customDispose = vi.fn()
   const input = createAiRuntimeInput({
@@ -307,7 +307,7 @@ it('advertises one complete contract for every browser tool without exposing exe
         true
       )
       if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE) {
-        expect(action.revision).toBe(5)
+        expect(action.revision).toBe(6)
       }
 
       expect(action.lifecycle.retry).not.toBe('read-only')

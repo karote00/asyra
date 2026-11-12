@@ -8,7 +8,6 @@ import recordedPropertyUndo from '../server/__tests__/fixtures/recorded-101/shar
 import { writeFile } from 'node:fs/promises'
 import recordedClosure from '../server/__tests__/fixtures/recorded-101/whole-flow-closure-20261019.json' with { type: 'json' }
 import recordedMechanics from '../server/__tests__/fixtures/recorded-101/mechanical-validity-20261019.json' with { type: 'json' }
-import recordedScope from '../server/__tests__/fixtures/recorded-101/scope-handoff-20261017.json' with { type: 'json' }
 import { expect, test, type Page, type TestInfo } from '@playwright/test'
 import type { FillAttrs } from '@asyra/utils'
 import type { AiActionBatch, AiProvider } from '@asyra/ai-agent-runtime'
@@ -1246,6 +1245,141 @@ test('saved drawing keeps a complete snapshot after public regrouping', async ({
   }
 })
 
+test('regional evidence excludes empty Group extents while preserving real contributors', async ({
+  page
+}, testInfo) => {
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  const result = await page.evaluate(async () => {
+    const { core } = await import('../src/testing/runtime-access')
+    const { transactionApis, hierarchyApis, historyApis, fillApis } =
+      await import('../src/common-apis')
+    const { createInspectionEvidence } =
+      await import('../src/common-apis/inspection-evidence')
+    const { createAiInspectionAction } = await import('../src/ai/inspection')
+    const frame = transactionApis.runTransaction(() =>
+      core.createElementInParent(
+        { type: 'frame', x: 0, y: 0, width: 800, height: 800 },
+        core.getCurrentWorkspaceId()
+      )
+    )
+    const ids = transactionApis.runTransaction(() =>
+      core.createElementsInParent(
+        [0, 300, 600].map((y) => ({
+          type: 'rect',
+          x: 100,
+          y,
+          width: 80,
+          height: 80
+        })),
+        frame
+      )
+    )
+    const group = hierarchyApis.groupElements([ids[0], ids[2]]).groupId
+    const region = { x: 90, y: 290, width: 100, height: 100 }
+    const owner = createInspectionEvidence()
+    const action = createAiInspectionAction(undefined, owner)
+    let captures = 0
+
+    const capture = async (elementId = frame, crop = true) => {
+      captures++
+      const value = (await action.execute(
+        {
+          elementId,
+          ...(crop ? { region } : {})
+        },
+        { signal: new AbortController().signal } as never
+      )) as {
+        available: boolean
+        evidence: unknown
+        image: { dataUrl: string }
+      }
+
+      if (!value.available || !value.evidence) {
+        throw new Error('Actual regional capture failed')
+      }
+
+      return value
+    }
+
+    try {
+      const initial = await capture()
+      const whole = await capture(frame, false)
+      const boundsBefore = core.getElementComputedData(group, [
+        'x',
+        'y',
+        'width',
+        'height'
+      ])
+
+      hierarchyApis.moveElementsRelative({
+        elementIds: [ids[0]],
+        anchorId: ids[1],
+        placement: 'before'
+      })
+      const currentAfterMove = owner.isCurrent(initial.evidence)
+      const wholeAfterMove = owner.isCurrent(whole.evidence)
+      const boundsAfter = core.getElementComputedData(group, [
+        'x',
+        'y',
+        'width',
+        'height'
+      ])
+      const after = await capture()
+      const checksBefore = captures
+
+      for (let i = 0; i < 10; i++) {
+        owner.isCurrent(after.evidence)
+      }
+
+      const validationCaptures = captures - checksBefore
+
+      // Entry must invalidate even though the empty container was not a member.
+      transactionApis.runTransaction(() =>
+        core.updateElementProperties([{ elementId: group, values: { y: 300 } }])
+      )
+      const afterEntry = owner.isCurrent(after.evidence)
+      const entered = await capture()
+
+      await historyApis.undo()
+      const afterUndo = owner.isCurrent(entered.evidence)
+      const clean = await capture()
+
+      fillApis.updatePrimaryFillColor(ids[1], '#ff0000')
+      const afterPaint = owner.isCurrent(clean.evidence)
+
+      return {
+        currentAfterMove,
+        wholeAfterMove,
+        validationCaptures,
+        identicalPixels: initial.image.dataUrl === after.image.dataUrl,
+        boundsChanged:
+          JSON.stringify(boundsBefore) !== JSON.stringify(boundsAfter),
+        afterEntry,
+        afterUndo,
+        afterPaint
+      }
+    } finally {
+      owner.dispose()
+    }
+  })
+
+  await testInfo.attach('regional-group-evidence', {
+    body: JSON.stringify(result, null, 2),
+    contentType: 'application/json'
+  })
+  expect(result).toEqual({
+    currentAfterMove: true,
+    wholeAfterMove: false,
+    validationCaptures: 0,
+    identicalPixels: true,
+    boundsChanged: true,
+    afterEntry: false,
+    afterUndo: false,
+    afterPaint: false
+  })
+})
+
 test('scoped inspection preserves other tiers and regions through canonical edits and Undo', async ({
   page
 }) => {
@@ -1389,849 +1523,6 @@ test('scoped inspection preserves other tiers and regions through canonical edit
     otherAfterDelete: true,
     afterLoad: false
   })
-})
-
-// The scripted primary agent crosses the real server host and browser runtime.
-// Only the external model and an explicit transport failure are substituted.
-test('public review handoffs retain independent evidence and recover before runtime completion', async ({
-  page
-}, testInfo) => {
-  test.setTimeout(90000)
-  const { default: sharp } = await import('sharp')
-  const { createLocalImageTools } = await import('../server/local-image-tools')
-  const { createLocalDesignTools } =
-    await import('../server/local-design-tools')
-  const { createDesignPreparationSession } =
-    await import('../server/design-preparation')
-  const source = await sharp({
-    create: { width: 24, height: 24, channels: 3, background: '#7799aa' }
-  })
-    .png()
-    .toBuffer()
-  const { createLocalOperationTools } =
-    await import('../server/local-operation-tools')
-  const { createLocalToolHost } = await import('../server/local-tool-host')
-  const { createDesignCheckResults } =
-    await import('../server/design-check-results')
-  const { AiActionNames } = await import('../src/constants/ai-actions')
-  const { AiDesignToolIds } = await import('../src/constants/ai-design')
-
-  type ProviderInput = import('../src/ai/action-batch-protocol').AiProviderInput
-  type Receipt = import('../src/ai/action-batch-protocol').AiBatchReceipt
-  type StoredCheck = import('../server/design-check-results').DesignCheckResult
-  type Entry = import('@asyra/ai-agent-runtime').AiToolStoreEntry
-  await page.goto(createTestDocumentIdentity().url)
-  await waitForAppReady(page)
-  await waitForCollaboration(page)
-  const ids = await page.evaluate(async () => {
-    const { core } = await import('../src/testing/runtime-access')
-    const { transactionApis } = await import('../src/common-apis')
-
-    return transactionApis.runTransaction(() =>
-      core.createElementsInParent(
-        [
-          { type: 'rect', x: 20, y: 20, width: 100, height: 80 },
-          { type: 'rect', x: 220, y: 20, width: 100, height: 80 }
-        ],
-        core.getCurrentWorkspaceId()
-      )
-    )
-  })
-  const [left, right] = ids
-
-  expect(left).toEqual(expect.any(String))
-  expect(right).toEqual(expect.any(String))
-  let before = await getCoreDocumentDigest(page)
-  let exportedDocument: unknown
-  let exportMetadata: { bytes: number; sha256: string } | undefined
-  const downloadPromise = page.waitForEvent('download', { timeout: 90000 })
-
-  void downloadPromise.catch(() => undefined)
-  const attachmentReceipts: unknown[] = []
-  let providerCalls = 0
-  let bridgeFailure: unknown
-  const dispatched: string[] = []
-
-  await page.exposeFunction(
-    'driveReviewHandoff',
-    async (input: ProviderInput) => {
-      providerCalls++
-      const checks = createDesignCheckResults()
-      const entries = new Map<string, Entry>()
-      const controller = new AbortController()
-      let rejectValidation = false
-      let cancelAfterValidation: AbortController | undefined
-      let operations!: ReturnType<typeof createLocalOperationTools>
-      const host = createLocalToolHost({
-        requestId: 'review-handoff',
-        signal: controller.signal,
-        capacity: 32,
-        receiptCapacity: 32,
-        artifactCapacity: 32,
-        limits: {
-          bytes: 24000,
-          steps: 10,
-          bindings: 100,
-          bindingDepth: 32,
-          issues: 10
-        },
-        store: {
-          read: async (key) => entries.get(key),
-
-          list: async () => [...entries.values()],
-
-          write: async (value) => {
-            if (entries.get(value.key)?.version !== value.expectedVersion) {
-              throw new Error('Conflict')
-            }
-
-            const entry = {
-              key: value.key,
-              record: value.record,
-              version: crypto.randomUUID()
-            }
-
-            entries.set(value.key, entry)
-
-            return entry
-          }
-        },
-
-        createGroups: (ownership) => {
-          const images = createLocalImageTools(
-            {
-              metadata: {
-                imageAttachments: [
-                  {
-                    dataUrl: `data:image/png;base64,${source.toString('base64')}`
-                  }
-                ]
-              }
-            },
-            undefined,
-            ownership
-          )
-          const designs = createLocalDesignTools(
-            input.actions,
-            createDesignPreparationSession(undefined, undefined, ownership)
-          )
-
-          operations = createLocalOperationTools(
-            input.actions,
-            {
-              modelActions: designs.modelActions,
-              resolveBatch: designs.resolveBatch,
-              resolveRecipe: designs.resolveRecipe,
-              resolveTargets: designs.resolveTargets,
-              checkResults: checks
-            },
-            async (batch) => {
-              if (
-                rejectValidation &&
-                batch.actions.some(
-                  (action) =>
-                    action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE
-                )
-              ) {
-                rejectValidation = false
-                throw new Error(
-                  'Test transport disconnected before read dispatch'
-                )
-              }
-
-              dispatched.push(...batch.actions.map((action) => action.name))
-              const serializedReceipt = await page.evaluate(
-                async (serialized) => {
-                  const { testRuntimeState } =
-                    await import('../src/testing/runtime-access')
-                  const execute = testRuntimeState.get<
-                    (batch: AiActionBatch) => Promise<Receipt>
-                  >('review-handoff-execute')
-
-                  if (!execute) {
-                    throw new Error('Missing real runtime executor')
-                  }
-
-                  return JSON.stringify(
-                    await execute(JSON.parse(serialized) as AiActionBatch)
-                  )
-                },
-                JSON.stringify(batch)
-              )
-              const receipt = JSON.parse(serializedReceipt) as Receipt
-
-              for (const entry of receipt.actionResults) {
-                if (entry.actionName === AiActionNames.READ_DESIGN_ATTACHMENT) {
-                  attachmentReceipts.push(entry.result)
-                }
-              }
-
-              if (
-                cancelAfterValidation &&
-                batch.actions.some(
-                  (action) =>
-                    action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE
-                )
-              ) {
-                cancelAfterValidation.abort()
-                cancelAfterValidation = undefined
-              }
-
-              return receipt
-            },
-            {
-              ownership,
-              resolveSources: images.resolveSources,
-              referenceImages: images.referenceImages,
-              validateReferences: images.validateReferences,
-              requestSignal: controller.signal,
-
-              getNativeTools: () => host.definitions(),
-
-              getNativeToolsRevision: () => host.revision
-            }
-          )
-
-          return [
-            { name: 'images', description: 'Images', owner: images },
-            { name: 'design', description: 'Prepared design', owner: designs },
-            {
-              name: 'design_operations',
-              description: 'Design operations',
-              owner: operations
-            }
-          ]
-        }
-      })
-      let callId = 0
-
-      const invoke = async (
-        name: string,
-        input: unknown,
-        signal?: AbortSignal
-      ) => {
-        const reply = await host.invoke({
-          name: name.includes('.') ? name : `design_operations.${name}`,
-          input,
-          signal,
-          callId: `call-${++callId}`
-        })
-
-        return JSON.parse(reply.text)
-      }
-
-      const capture = async (elementId: string | null) => {
-        const receipt = await invoke(AiActionNames.INSPECT_DRAWING, {
-          arguments: { elementId, view: 'overview' }
-        })
-        const image = receipt.actionResults?.find(
-          (entry: { result: { inspectionId?: string } }) =>
-            entry.result.inspectionId
-        )?.result
-
-        if (!image) {
-          throw new Error(JSON.stringify({ elementId, receipt }))
-        }
-
-        expect(image).toMatchObject({
-          inspectionId: expect.any(String),
-          available: true
-        })
-        expect(image.image.dataUrl).toMatch(/^data:image\/png;base64,/)
-
-        return image.inspectionId as string
-      }
-
-      let visualUse: unknown
-
-      const judgment = (
-        criterionId: string,
-        inspectionId: string,
-        status = 'pass'
-      ) => ({
-        criterionId,
-        ...(criterionId === 'Left' && visualUse
-          ? { referenceUses: [visualUse] }
-          : {}),
-        inspectionIds: [inspectionId],
-        status,
-        evidence: `${criterionId} ${status} from the delivered target image`
-      })
-
-      const bindReview = async (
-        phase: string,
-        judgments: ReturnType<typeof judgment>[]
-      ) => {
-        const bound = await invoke(AiDesignToolIds.REVIEW_DRAWING, {
-          phase,
-          bindChecks: judgments.map(
-            ({ status: _status, evidence: _evidence, ...selection }) =>
-              selection
-          )
-        })
-
-        if (!bound.next?.arguments?.checks) {
-          return { unavailable: bound }
-        }
-
-        expect(bound).toMatchObject({
-          reviewOperation: 'bind',
-          recordedChecks: []
-        })
-        expect(bound).not.toHaveProperty('readyForDetail')
-
-        return {
-          input: {
-            ...bound.next.arguments,
-            ...(phase === 'visual' ? { final: true } : {}),
-            checks: bound.next.arguments.checks.map(
-              (check: Record<string, unknown>, index: number) => ({
-                ...check,
-                status: judgments[index].status,
-                evidence: judgments[index].evidence
-              })
-            )
-          }
-        }
-      }
-
-      const review = async (
-        phase: string,
-        judgments: ReturnType<typeof judgment>[]
-      ) => {
-        const bound = await bindReview(phase, judgments)
-
-        return bound.input
-          ? invoke(AiDesignToolIds.REVIEW_DRAWING, bound.input)
-          : bound.unavailable
-      }
-
-      const read = async () =>
-        (
-          await invoke(AiDesignToolIds.READ_DESIGN_CHECKS, {
-            view: 'details',
-            includePassed: true
-          })
-        ).items as StoredCheck[]
-
-      const completed: AiActionBatch = {
-        batchId: 'completed',
-        actions: [
-          {
-            id: 'done',
-            name: AiActionNames.REPORT_OUTCOME,
-            arguments: {
-              outcome: 'completed',
-              message: 'Independent checks recovered and completed.'
-            },
-            summary: 'Finish review'
-          }
-        ]
-      }
-
-      const settled = async () => {
-        await operations.validateCompletion(controller.signal)
-
-        return operations.settleOutcome(completed)
-      }
-
-      try {
-        const beforeAdmission = dispatched.length
-        const rejected = await invoke(
-          AiDesignToolIds.DEFINE_DESIGN_CRITERIA,
-          recordedScope.plan
-        )
-
-        expect(rejected).not.toMatchObject({ recorded: true })
-        expect(JSON.stringify(rejected)).toContain('requiredUnits')
-        expect(dispatched).toHaveLength(beforeAdmission)
-        expect(checks.read({ includePassed: true }).items).toEqual([])
-        expect(
-          await invoke(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, {
-            phase: 'plan',
-            method: 'Inspect each independent editable part',
-            references: [],
-            criteria: {
-              Left: {
-                requirement: 'Verify the left part',
-                description: 'Check the left rectangle',
-                verification: 'visual',
-                requiredUnits: []
-              },
-              Prepared: {
-                requirement: 'Verify the prepared source panel',
-                description: 'Inspect the newly applied editable panel',
-                verification: 'visual',
-                requiredUnits: []
-              },
-              Right: {
-                requirement: 'Verify the right part',
-                description: 'Check the right rectangle',
-                verification: 'visual',
-                requiredUnits: []
-              }
-            },
-            structureCriteria: ['Left'],
-            detailRequired: false
-          })
-        ).toMatchObject({ recorded: true })
-        const validated = await invoke('images.validate_reference_images', {
-          attachmentIndexes: [0]
-        })
-
-        expect(JSON.stringify(validated)).toContain('reference:')
-        const selected = await invoke(
-          AiDesignToolIds.SELECT_DESIGN_REFERENCES,
-          {
-            referenceImageIndexes: [0],
-            requirementRevision: 1,
-            referenceDecisions: [
-              {
-                referenceId: validated.references[0].referenceId,
-                status: 'accepted',
-                reason:
-                  'Controlled primary-agent choice for the left surface only',
-                uses: ['preparation', 'visual'].map((purpose) => ({
-                  id: purpose,
-                  criterionId: 'Left',
-                  purpose,
-                  region: 'whole',
-                  limitations: []
-                }))
-              }
-            ]
-          }
-        )
-        const uses = selected.referenceDecisions[0].uses
-
-        visualUse = uses.find(
-          (use: { purpose: string }) => use.purpose === 'visual'
-        ).receipt
-        const prepared = await invoke('design.prepare_design', {
-          draft: {
-            type: 'frame',
-            name: 'Prepared source panel',
-            width: 40,
-            height: 40,
-            children: [
-              {
-                type: 'rect',
-                key: 'surface',
-                name: 'Surface',
-                width: 30,
-                height: 30,
-                fill: '#223344'
-              }
-            ]
-          }
-        })
-
-        expect(prepared, JSON.stringify(prepared)).toMatchObject({
-          available: true
-        })
-        const preparation = {
-          artifactId: prepared.artifactId,
-          criterionIds: ['Left'],
-          referenceUses: [
-            uses.find(
-              (use: { purpose: string }) => use.purpose === 'preparation'
-            ).receipt
-          ]
-        }
-        const firstPreparation = await invoke(
-          AiDesignToolIds.REVIEW_PREPARED_DESIGN,
-          preparation
-        )
-
-        expect(firstPreparation).toMatchObject({
-          status: 'pass',
-          appearance: 'unverified',
-          reused: false
-        })
-        const repeatedPreparation = await invoke(
-          AiDesignToolIds.REVIEW_PREPARED_DESIGN,
-          preparation
-        )
-
-        expect(
-          repeatedPreparation,
-          JSON.stringify({
-            firstPreparation,
-            repeatedPreparation,
-            attachmentReceipts
-          })
-        ).toMatchObject({ status: 'pass', reused: true })
-        const applied = await invoke(AiActionNames.APPLY_PREPARED_DESIGN, {
-          arguments: { artifactId: prepared.artifactId },
-          inspection: 'defer'
-        })
-
-        expect(applied).toMatchObject({
-          toolOutcome: { status: 'success' },
-          inspectionDeferred: true,
-          measurementDeferred: false
-        })
-        expect(JSON.stringify(applied).length).toBeLessThan(8192)
-        before = await getCoreDocumentDigest(page)
-        const appliedRoot = applied.actionResults.find(
-          (entry: { result: { compositionId?: string } }) =>
-            entry.result.compositionId
-        )?.result.compositionId
-
-        expect(appliedRoot).toEqual(expect.any(String))
-        const preparedImage = await capture(appliedRoot)
-
-        expect(
-          await review('visual', [judgment('Prepared', preparedImage)])
-        ).toMatchObject({ accepted: false })
-        let a = await capture(left)
-        const b = await capture(right)
-        const beforeJudgments = checks.read({ includePassed: true })
-        const missingScope = await invoke(AiDesignToolIds.REVIEW_DRAWING, {
-          phase: 'visual',
-          inspectionIds: [a, b],
-          checks: [
-            {
-              criterionId: 'Left',
-              status: 'pass',
-              evidence: 'Missing explicit image dependency'
-            }
-          ]
-        })
-
-        expect(JSON.stringify(missingScope)).toContain('inspectionIds')
-        expect(checks.read({ includePassed: true })).toEqual(beforeJudgments)
-
-        // Existing-content judgments must govern settlement without a synthetic edit.
-        expect(
-          await review('visual', [
-            judgment('Left', a, 'fail'),
-            judgment('Right', b, 'fail')
-          ])
-        ).toMatchObject({ accepted: false })
-        expect((await settled()).actions[0].arguments).toMatchObject({
-          outcome: 'unsupported'
-        })
-        const partial = await review('visual', [judgment('Left', a)])
-
-        expect(partial).toMatchObject({
-          reviewOperation: 'record',
-          accepted: false,
-          recordedChecks: [
-            {
-              id: 'visual:Left',
-              criterionId: 'Left',
-              origin: 'main-agent',
-              status: 'pass',
-              revision: expect.any(Number)
-            }
-          ],
-          results: { countsScope: 'request-checks' }
-        })
-        expect(partial.checks).toEqual([])
-        expect(partial.recordedChecks[0]).not.toHaveProperty('evidence')
-        expect(JSON.stringify(partial)).toContain(
-          'Right fail from the delivered target image'
-        )
-        const completedReview = await review('visual', [judgment('Right', b)])
-
-        expect(completedReview, JSON.stringify(completedReview)).toMatchObject({
-          accepted: true
-        })
-        expect(await settled()).toEqual(completed)
-        const passed = await read()
-        const rightPass = passed.find((check) => check.criterionId === 'Right')
-
-        expect(rightPass).toMatchObject({
-          origin: 'main-agent',
-          status: 'pass'
-        })
-        expect(
-          await review('structure', [judgment('Left', a, 'fail')])
-        ).toMatchObject({ accepted: false })
-        expect((await settled()).actions[0].arguments).toMatchObject({
-          outcome: 'unsupported'
-        })
-        expect(
-          (await read()).find((check) => check.id === rightPass?.id)
-        ).toEqual(rightPass)
-        expect(await review('structure', [judgment('Left', a)])).toMatchObject({
-          accepted: false
-        })
-        expect((await settled()).actions[0].arguments).toMatchObject({
-          outcome: 'unsupported'
-        })
-        expect(await review('visual', [judgment('Left', a)])).toMatchObject({
-          accepted: true
-        })
-        // Reject at the external read boundary, preserving the retained store.
-        const retained = checks.read({ includePassed: true })
-
-        rejectValidation = true
-        const interrupted = await review('visual', [
-          judgment('Left', a, 'fail')
-        ])
-
-        expect(
-          interrupted,
-          'Disconnected validation must not publish a judgment'
-        ).not.toMatchObject({ accepted: true })
-        expect(checks.read({ includePassed: true })).toEqual(retained)
-        expect(await review('visual', [judgment('Left', a)])).toMatchObject({
-          accepted: true
-        })
-        const count = dispatched.length
-        const cancelled = new AbortController()
-
-        cancelled.abort()
-        await expect(
-          invoke(
-            AiActionNames.INSPECT_DRAWING,
-            { arguments: { elementId: left } },
-            cancelled.signal
-          )
-        ).rejects.toThrow()
-        expect(dispatched).toHaveLength(count)
-        expect(checks.read({ includePassed: true })).toEqual(retained)
-        const lateCancel = new AbortController()
-        const lateSubmission = await bindReview('visual', [
-          judgment('Left', a, 'fail')
-        ])
-
-        cancelAfterValidation = lateCancel
-        await expect(
-          invoke(
-            AiDesignToolIds.REVIEW_DRAWING,
-            lateSubmission.input,
-            lateCancel.signal
-          )
-        ).rejects.toThrow()
-        expect(checks.read({ includePassed: true })).toEqual(retained)
-        const unavailable = await invoke(AiDesignToolIds.REVIEW_DRAWING, {
-          phase: 'visual',
-          inspections: [
-            {
-              elementId: 'missing-review-target',
-              view: 'overview',
-              checks: [{ criterionId: 'Left' }]
-            }
-          ]
-        })
-
-        expect(unavailable).toMatchObject({
-          accepted: false,
-          status: 'failed',
-          inspectionIds: [],
-          recordedChecks: [],
-          failedInspections: [
-            expect.objectContaining({
-              code: 'INSPECTION_TARGET_UNAVAILABLE',
-              inspection: expect.objectContaining({
-                elementId: 'missing-review-target'
-              })
-            })
-          ]
-        })
-        expect((await settled()).actions[0].arguments).toMatchObject({
-          outcome: 'unsupported'
-        })
-        a = await capture(left)
-        expect(await review('visual', [judgment('Left', a)])).toMatchObject({
-          accepted: true
-        })
-        await page.evaluate(async () => {
-          const { viewportApis } = await import('../src/common-apis')
-
-          viewportApis.panTo(900, 900)
-          viewportApis.zoomToCenter(0.25, 0, 0)
-        })
-        expect(await settled()).toEqual(completed)
-        expect(
-          (await read()).find((check) => check.id === rightPass?.id)
-        ).toEqual(rightPass)
-        // A real browser edit changes only the left dependency, not the right pass.
-        const beforeMutationDispatch = dispatched.length
-        const mutation = await invoke('api_core_updateElementProperties', {
-          arguments: { updates: [{ elementId: left, values: { width: 120 } }] },
-          inspection: 'defer'
-        })
-
-        expect(mutation, JSON.stringify(mutation)).toMatchObject({
-          toolOutcome: { status: 'success' }
-        })
-        expect(mutation).toMatchObject({
-          inspectionDeferred: true,
-          measurementDeferred: false
-        })
-        expect(dispatched.slice(beforeMutationDispatch)).toContain(
-          AiActionNames.REVIEW_DESIGN
-        )
-        expect(dispatched.slice(beforeMutationDispatch)).not.toContain(
-          AiActionNames.INSPECT_DRAWING
-        )
-        expect(
-          await review('visual', [judgment('Left', a)]),
-          'Changed browser dependency must reject old evidence'
-        ).not.toMatchObject({ accepted: true })
-        const changed = await read()
-
-        expect(changed.find((check) => check.id === rightPass?.id)).toEqual(
-          rightPass
-        )
-        expect(
-          changed.find((check) => check.criterionId === 'Left')?.status
-        ).not.toBe('pass')
-        expect((await settled()).actions[0].arguments).toMatchObject({
-          outcome: 'unsupported'
-        })
-        await invoke('api_core_updateElementProperties', {
-          arguments: { updates: [{ elementId: left, values: { width: 100 } }] },
-          inspection: 'defer'
-        })
-        const retiredLeft = a
-
-        a = await capture(left)
-        const recovery = await bindReview('visual', [judgment('Left', a)])
-
-        expect(
-          await invoke(AiDesignToolIds.REVIEW_DRAWING, {
-            ...recovery.input,
-            inspectionIds: [retiredLeft, a, b]
-          }),
-          'An available-list entry not cited by any judgment cannot reject local recovery'
-        ).toMatchObject({ accepted: true })
-        const recovered = checks.read({ includePassed: true })
-
-        expect(
-          await review('visual', [judgment('Left', retiredLeft)]),
-          'Explicitly citing retired evidence must still be rejected'
-        ).not.toMatchObject({ accepted: true })
-        expect(checks.read({ includePassed: true })).toEqual(recovered)
-        expect(await review('visual', [judgment('Left', a)])).toMatchObject({
-          accepted: true
-        })
-        expect(
-          (await read()).find((check) => check.id === rightPass?.id)
-        ).toEqual(rightPass)
-        expect(
-          dispatched.filter(
-            (name) => name === 'api_core_updateElementProperties'
-          )
-        ).toHaveLength(2)
-        exportedDocument = await page.evaluate(async () =>
-          (await import('../src/testing/runtime-access')).core.save()
-        )
-        const exported = await invoke(AiActionNames.EXPORT_DOCUMENT, {
-          arguments: {}
-        })
-        const artifact = exported.actionResults[0].result.artifact
-
-        exportMetadata = artifact
-        expect(JSON.stringify(exported).length).toBeLessThan(4096)
-        expect(
-          await invoke(AiActionNames.DOWNLOAD_DOCUMENT_EXPORT, {
-            arguments: { artifactId: artifact.artifactId }
-          })
-        ).toMatchObject({ toolOutcome: { status: 'success' } })
-
-        return await settled()
-      } catch (error) {
-        bridgeFailure = error
-        throw error
-      } finally {
-        await host.dispose()
-      }
-    }
-  )
-  const result = await page.evaluate(async () => {
-    const { createAiStartup } = await import('../src/ai/startup')
-    const { createAiConfirmationBroker } =
-      await import('../src/ai/confirmation')
-    const { createAiHistoryProjection } =
-      await import('../src/common-apis/history')
-    const { testRuntimeState } = await import('../src/testing/runtime-access')
-    let providerError: string | undefined
-    const provider: AiProvider = {
-      requestActionBatch: async (input, { executeBatch }) => {
-        try {
-          if (!executeBatch) {
-            throw new Error('Missing runtime executor')
-          }
-
-          testRuntimeState.set('review-handoff-execute', executeBatch)
-
-          return await (
-            window as unknown as {
-              driveReviewHandoff(input: unknown): Promise<AiActionBatch>
-            }
-          ).driveReviewHandoff(JSON.parse(JSON.stringify(input)))
-        } catch (error) {
-          providerError = String(error)
-          throw error
-        }
-      }
-    }
-    const startup = createAiStartup({
-      createProvider: () => provider,
-
-      createConfirmation: createAiConfirmationBroker,
-      createHistory: createAiHistoryProjection
-    })
-    const { runtime } = startup
-
-    try {
-      const outcome = await runtime.run({
-        intent: 'Review and correct the two existing parts.',
-        signal: new AbortController().signal
-      })
-
-      return {
-        status: outcome.status,
-        transaction: 'transaction' in outcome ? outcome.transaction : undefined,
-        final: outcome.audit.actions.at(-1)?.result,
-        providerError
-      }
-    } finally {
-      testRuntimeState.delete('review-handoff-execute')
-      await runtime.dispose()
-      startup.history.dispose()
-      startup.confirmation.dispose()
-    }
-  })
-
-  if (bridgeFailure) {
-    throw bridgeFailure
-  }
-
-  expect(result.providerError).toBeUndefined()
-  expect(result).toMatchObject({
-    status: 'executed',
-    transaction: { status: 'committed' }
-  })
-  expect(result.final).toMatchObject({
-    action: 'report_outcome',
-    outcome: 'completed',
-    persistence: { status: 'durable' }
-  })
-  expect(providerCalls).toBe(1)
-  expect(await getCoreDocumentDigest(page)).toEqual(before)
-  const downloaded = await downloadPromise
-  const path = testInfo.outputPath('handoff-export.json')
-
-  await downloaded.saveAs(path)
-  const { readFile } = await import('node:fs/promises')
-  const { createHash } = await import('node:crypto')
-  const bytes = await readFile(path)
-
-  expect(JSON.parse(bytes.toString())).toEqual(exportedDocument)
-  expect(bytes.byteLength).toBe(exportMetadata?.bytes)
-  expect(createHash('sha256').update(bytes).digest('hex')).toBe(
-    exportMetadata?.sha256
-  )
-  await page.reload()
-  await waitForAppReady(page)
-  await waitForCollaboration(page)
-  expect(await getCoreDocumentDigest(page)).toEqual(before)
 })
 
 // The external model is scripted; registry, finite iteration, browser actions,
@@ -2512,19 +1803,29 @@ for (const mode of [
 
           let host = createHost('mechanical-integration')
 
+          const invokeReply = (name: string, input: unknown) =>
+            host.invoke({ name, input })
+
           const invoke = async (name: string, input: unknown) =>
-            JSON.parse((await host.invoke({ name, input })).text)
+            JSON.parse((await invokeReply(name, input)).text)
 
           try {
             const selection = []
 
             for (const root of ids.roots) {
-              const receipt = await invoke('design_operations.review_design', {
-                arguments: { elementId: root }
-              })
+              const reply = await invokeReply(
+                'design_operations.review_design',
+                {
+                  arguments: { elementId: root }
+                }
+              )
+              const receipt = JSON.parse(reply.text)
 
+              expect(reply.outcome).toMatchObject({
+                status: 'success',
+                settlement: 'completed'
+              })
               expect(receipt, JSON.stringify(receipt)).toMatchObject({
-                toolOutcome: { status: 'success' },
                 mechanicalSelection: { requestId: 'mechanical-integration' }
               })
               selection.push(...receipt.mechanicalSelection.checks)
@@ -2559,15 +1860,16 @@ for (const mode of [
               requestId: 'mechanical-integration',
               checks: selection
             }
-            const foreign = await invoke(
+            const foreign = await invokeReply(
               'design_operations.verify_design_checks',
               { ...state, requestId: 'another-request' }
             )
 
-            expect(foreign).toMatchObject({
-              toolOutcome: { status: 'failed', settlement: 'not-started' }
+            expect(foreign.outcome).toMatchObject({
+              status: 'failed',
+              settlement: 'not-started'
             })
-            const invalid = await invoke(
+            const invalid = await invokeReply(
               'design_operations.repair_design_checks',
               {
                 ...state,
@@ -2581,8 +1883,9 @@ for (const mode of [
               }
             )
 
-            expect(invalid, JSON.stringify(invalid)).toMatchObject({
-              toolOutcome: { status: 'failed', settlement: 'not-started' }
+            expect(invalid.outcome).toMatchObject({
+              status: 'failed',
+              settlement: 'not-started'
             })
             expect(dispatched).not.toContain('apply_prescribed_positions')
 
@@ -2749,7 +2052,7 @@ for (const mode of [
                       })
                     ])
                   )
-                  const recovered = await invoke(
+                  const recoveredReply = await invokeReply(
                     'design_operations.verify_design_checks',
                     {
                       requestId: state.requestId,
@@ -2759,8 +2062,13 @@ for (const mode of [
                     }
                   )
 
+                  const recovered = JSON.parse(recoveredReply.text)
+
+                  expect(recoveredReply.outcome).toMatchObject({
+                    status: 'success',
+                    settlement: 'completed'
+                  })
                   expect(recovered, JSON.stringify(recovered)).toMatchObject({
-                    toolOutcome: { status: 'success' },
                     verification: { status: 'repairable' }
                   })
                   const attachment = await invoke(
@@ -2803,7 +2111,7 @@ for (const mode of [
                   expect(JSON.stringify(result.execution.recovery)).toContain(
                     ids.children[2]
                   )
-                  const recovered = await invoke(
+                  const recoveredReply = await invokeReply(
                     'design_operations.verify_design_checks',
                     {
                       requestId: state.requestId,
@@ -2813,8 +2121,13 @@ for (const mode of [
                     }
                   )
 
+                  const recovered = JSON.parse(recoveredReply.text)
+
+                  expect(recoveredReply.outcome).toMatchObject({
+                    status: 'success',
+                    settlement: 'completed'
+                  })
                   expect(recovered, JSON.stringify(recovered)).toMatchObject({
-                    toolOutcome: { status: 'success' },
                     verification: { status: 'pass' }
                   })
                 }
@@ -2916,15 +2229,16 @@ for (const mode of [
                   receiptId: 'expired-receipt'
                 })
               ).toMatchObject({ status: 'unsaved' })
-              const old = await invoke(
+              const old = await invokeReply(
                 'design_operations.verify_design_checks',
                 state
               )
 
-              expect(old).toMatchObject({
-                available: false,
-                toolOutcome: { status: 'failed', settlement: 'not-started' }
+              expect(old.outcome).toMatchObject({
+                status: 'failed',
+                settlement: 'not-started'
               })
+              expect(JSON.parse(old.text)).toMatchObject({ available: false })
               const fresh = await invoke('design_operations.review_design', {
                 arguments: { elementId: ids.roots[2] }
               })
@@ -3380,13 +2694,16 @@ test('server measurement freshness uses the browser mechanical owner through edi
     }
   )
 
-  const check = () =>
-    operations.finishInspection(
-      new Set(fixture.ids),
-      undefined,
-      true,
-      new AbortController().signal
-    )
+  const call = async (name: string, args: unknown = {}) =>
+    JSON.parse(await operations.call(name, args, new AbortController().signal))
+
+  const check = async (targets = fixture.ids) => {
+    for (const elementId of targets) {
+      await call('review_design', { arguments: { elementId } })
+    }
+
+    return { checks: await call('read_design_checks') }
+  }
 
   try {
     expect((await check()).checks.counts).toEqual({
@@ -3409,7 +2726,7 @@ test('server measurement freshness uses the browser mechanical owner through edi
         fillApis.updateFillsAtIndex([ids[0]], 0, { color: '#334455' })
       )
     })
-    expect((await check()).checks.counts.pass).toBe(3)
+    expect((await call('read_design_checks')).counts.pass).toBe(3)
     expect(measured).toEqual([])
     await page.evaluate(async () => {
       const { core, testRuntimeState } =
@@ -3430,18 +2747,21 @@ test('server measurement freshness uses the browser mechanical owner through edi
         ])
       )
     })
-    expect((await check()).checks.counts.pass).toBe(3)
+    expect((await call('read_design_checks')).counts.stale).toBe(1)
+    expect((await check([fixture.ids[0]])).checks.counts.pass).toBe(3)
     expect(measured).toEqual([fixture.ids[0]])
     measured.length = 0
     await undo(page)
-    expect((await check()).checks.counts.pass).toBe(3)
+    expect((await call('read_design_checks')).counts.stale).toBe(1)
+    expect((await check([fixture.ids[0]])).checks.counts.pass).toBe(3)
     expect(measured).toEqual([fixture.ids[0]])
     measured.length = 0
     await redo(page)
-    expect((await check()).checks.counts.pass).toBe(3)
+    expect((await call('read_design_checks')).counts.stale).toBe(1)
+    expect((await check([fixture.ids[0]])).checks.counts.pass).toBe(3)
     expect(measured).toEqual([fixture.ids[0]])
     disconnected = true
-    expect((await check()).checks.counts.pass).toBe(0)
+    await expect(check()).rejects.toThrow('Simulated transport loss')
     disconnected = false
     expect((await check()).checks.counts.pass).toBe(3)
     measured.length = 0
@@ -3731,39 +3051,6 @@ for (const rootType of ['frame', 'group'] as const) {
         await expect
           .poll(() => getPersistedDocumentDigest(document.fileId))
           .toEqual(edited)
-        // Mechanical closure must not invent the primary agent's missing visual verdict.
-        expect(
-          operations.settleOutcome({
-            batchId: 'final',
-            actions: [
-              {
-                id: 'done',
-                name: 'report_outcome',
-                arguments: { outcome: 'completed', message: 'Done' },
-                summary: 'Finish'
-              }
-            ]
-          }).actions[0].arguments.outcome
-        ).toBe('unsupported')
-        expect(
-          await invoke('define_design_criteria', {
-            phase: 'plan',
-            method:
-              'Verify the edited rectangles within their canonical container.',
-            references: [],
-            detailRequired: false,
-            criteria: {
-              layout: {
-                requirement:
-                  'Retain both editable rectangles in their original container.',
-                description:
-                  'The current whole view preserves the two-part layout.',
-                verification: 'visual',
-                requiredUnits: []
-              }
-            }
-          })
-        ).toMatchObject({ recorded: true })
         const capture = await invoke('inspect_drawing', {
           arguments: { elementId: fixture.root, view: 'overview' }
         })
@@ -3776,29 +3063,7 @@ for (const rootType of ['frame', 'group'] as const) {
           available: true,
           inspectionId: expect.any(String)
         })
-        const binding = await invoke('review_drawing', {
-          phase: 'visual',
-          bindChecks: [
-            { criterionId: 'layout', inspectionIds: [image.inspectionId] }
-          ]
-        })
-
-        expect(binding.next?.arguments?.checks).toHaveLength(1)
-        // Controlled primary-agent verdict: this proves the protocol, not AI visual quality.
-        const judgment = await invoke('review_drawing', {
-          ...binding.next.arguments,
-          final: true,
-          checks: binding.next.arguments.checks.map((check: object) => ({
-            ...check,
-            status: 'pass',
-            evidence:
-              'Both controlled rectangles remain in the captured container.'
-          }))
-        })
-
-        expect(judgment).toMatchObject({ accepted: true })
         await review(fixture.children[1])
-        await operations.validateCompletion(signal)
         const finalBatch: AiActionBatch = {
           batchId: 'complete',
           actions: [
@@ -3949,7 +3214,7 @@ for (const rootType of ['frame', 'group'] as const) {
   )
 }
 
-test('published representative guidance reaches real capture and completion without replaying drawing', async ({
+test('published optional material guidance reaches real capture without approval or replay', async ({
   page
 }) => {
   const { readFileSync } = await import('node:fs')
@@ -3964,20 +3229,8 @@ test('published representative guidance reaches real capture and completion with
     'utf8'
   )
 
-  const example = (label: string) => {
-    const match = text.match(
-      new RegExp('```json ' + label + '\\n([\\s\\S]*?)\\n```')
-    )
-
-    if (!match) {
-      throw new Error(`Missing published ${label}`)
-    }
-
-    return JSON.parse(match[1])
-  }
-
-  const declaration = example('representative-review')
-  const capture = example('representative-capture')
+  expect(text).toContain('there is no\nrequired verdict registration')
+  expect(text).toContain('inspect_drawing')
   const document = createTestDocumentIdentity()
 
   await page.goto(document.url)
@@ -4075,77 +3328,38 @@ test('published representative guidance reaches real capture and completion with
     JSON.parse(await owner.call(name, args, new AbortController().signal))
 
   try {
-    await call(declaration.tool, declaration.arguments)
-    capture.arguments.inspections[0].elementId = fixture.parts[0]
-    const bound = await call(capture.tool, capture.arguments)
-
-    expect(bound.next.arguments.checks).toHaveLength(1)
-    expect(bound.recordedChecks).toEqual([])
-    const local = await call(capture.tool, {
-      ...bound.next.arguments,
-      checks: bound.next.arguments.checks.map((check: object) => ({
-        ...check,
-        status: 'pass',
-        evidence:
-          'Deterministic supplied local observation; actual browser image binding is required.'
-      }))
+    const local = await call('inspect_drawing', {
+      arguments: { elementId: fixture.parts[0] }
+    })
+    const whole = await call('inspect_drawing', {
+      arguments: { elementId: fixture.root }
     })
 
-    expect(local).toMatchObject({
-      accepted: false,
-      recordedChecks: [
-        { status: 'pass', criterionId: 'material', unitId: 'sample-join' }
-      ]
-    })
-    const before = (
-      await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
-        view: 'details',
-        ids: [local.recordedChecks[0].id],
-        includePassed: true
-      })
-    ).items
-    const whole = await call(capture.tool, {
-      phase: 'visual',
-      final: false,
-      inspections: [
-        { elementId: fixture.root, checks: [{ criterionId: 'overall' }] }
-      ]
+    for (const [result, target] of [
+      [local, fixture.parts[0]],
+      [whole, fixture.root]
+    ]) {
+      const capture = result.actionResults.find(
+        (entry: { actionName: string }) =>
+          entry.actionName === 'inspect_drawing'
+      ).result
+
+      expect(capture).toMatchObject({ available: true, elementId: target })
+      expect(capture.image.dataUrl).toMatch(/^data:image\/png;base64,/)
+      expect(capture.image.width).toBeGreaterThan(0)
+      expect(capture.image.height).toBeGreaterThan(0)
+      expect(result).not.toHaveProperty('recordedChecks')
+      expect(result).not.toHaveProperty('next')
+    }
+
+    const checks = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+      view: 'details',
+      includePassed: true
     })
 
-    expect(whole.next.arguments.final).toBe(false)
-    const result = await call(capture.tool, {
-      ...whole.next.arguments,
-      final: true,
-      checks: whole.next.arguments.checks.map((check: object) => ({
-        ...check,
-        status: 'pass',
-        evidence:
-          'Deterministic whole-view observation; this asserts the handoff, not aesthetic quality.'
-      }))
-    })
-
-    expect(result).toMatchObject({
-      accepted: true,
-      coverage: { passed: 2, required: 2 }
-    })
-    expect(
-      (
-        await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
-          view: 'details',
-          ids: [local.recordedChecks[0].id],
-          includePassed: true
-        })
-      ).items
-    ).toEqual(before)
+    expect(checks.items).toEqual([])
     expect(await getCoreDocumentDigest(page)).toEqual(digest)
-    expect(
-      dispatched.every(
-        (name) =>
-          name === 'inspect_drawing' ||
-          name === 'validate_inspection_evidence' ||
-          name === 'review_design'
-      )
-    ).toBe(true)
+    expect(dispatched).toEqual(['inspect_drawing', 'inspect_drawing'])
     await expect
       .poll(() => getPersistedDocumentDigest(document.fileId))
       .toEqual(digest)

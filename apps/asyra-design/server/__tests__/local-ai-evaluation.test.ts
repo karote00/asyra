@@ -52,56 +52,6 @@ const query = (callId: string, args: unknown, revision?: string) => [
 ]
 
 describe('execution evaluation', () => {
-  const planEcho = (
-    callId: string,
-    method: unknown,
-    output: unknown = method
-  ) => [
-    {
-      stage: 'tool_started',
-      tool: 'review_drawing',
-      callId,
-      elapsedMs: 10,
-      evidence: { arguments: { phase: 'plan', method } }
-    },
-    {
-      stage: 'tool_completed',
-      tool: 'review_drawing',
-      callId,
-      elapsedMs: 12,
-      evidence: { result: { phase: 'plan', method: output } }
-    }
-  ]
-
-  it('reports exact retained plan echoes without exposing narrative or inferring model delay', () => {
-    const report = evaluateExecution(
-      run('echo', planEcho('plan', 'Private construction method'))
-    )
-
-    expect(report.findings).toContainEqual(
-      expect.objectContaining({
-        kind: 'input-echo-candidate',
-        callId: 'plan',
-        confidence: 'candidate',
-        repeatedFields: ['method']
-      })
-    )
-    expect(JSON.stringify(report.findings)).not.toContain(
-      'Private construction method'
-    )
-    for (const [input, output] of [
-      ['changed', 'new'],
-      ['[truncated]', '[truncated]'],
-      ['', '']
-    ]) {
-      expect(
-        evaluateExecution(run('no-echo', planEcho('plan', input, output)))
-          .findings
-      ).not.toContainEqual(
-        expect.objectContaining({ kind: 'input-echo-candidate' })
-      )
-    }
-  })
   it('groups investigation evidence by tool and phase within configuration, not generic failure labels', () => {
     const failure = (tool: string, phase: string) => [
       {
@@ -122,9 +72,9 @@ describe('execution evaluation', () => {
 
     const period = createExecutionPeriodReport(
       [
-        run('plan', failure('review_drawing', 'plan')),
-        run('plan-again', failure('review_drawing', 'plan')),
-        run('visual', failure('review_drawing', 'visual')),
+        run('plan', failure('read_design_context', 'plan')),
+        run('plan-again', failure('read_design_context', 'plan')),
+        run('visual', failure('read_design_context', 'visual')),
         run('prepare', failure('prepare_design', ''))
       ],
       { from: '2026-10-01', to: '2026-10-03' }
@@ -136,7 +86,7 @@ describe('execution evaluation', () => {
     )
 
     expect(target).toMatchObject({
-      tool: 'review_drawing',
+      tool: 'read_design_context',
       code: 'INPUT_INVALID',
       occurrences: 2,
       requestIds: ['plan', 'plan-again'],
@@ -153,52 +103,12 @@ describe('execution evaluation', () => {
         .investigationTargets
     ).toEqual([])
   })
-  it('does not pool new revisions with historical failures or turn partial summaries into echo evidence', () => {
-    const before = run('before', planEcho('plan', 'Use the supplied outline'))
-    const after = run('after', planEcho('plan', 'Use the supplied outline'))
-
-    after.metadata.sourceRevision = 'candidate'
-    const period = createExecutionPeriodReport([before, after], {
-      from: '2026-10-01',
-      to: '2026-10-03'
-    })
-
-    expect(period.investigationTargets).toHaveLength(2)
-    expect(
-      period.investigationTargets.map(
-        (target) => target.configuration.sourceRevision
-      )
-    ).toEqual(['abc123', 'candidate'])
-    const partial = { count: 2, items: ['one'], truncated: true }
-
-    expect(
-      evaluateExecution(run('partial', planEcho('plan', partial))).findings
-    ).toEqual([])
-  })
-  it('keeps different dirty source snapshots separate within the same revision', () => {
-    const before = run('before', planEcho('plan', 'Use the supplied outline'))
-    const after = run('after', planEcho('plan', 'Use the supplied outline'))
-
-    before.metadata.sourceFingerprint = 'a'.repeat(64)
-    after.metadata.sourceFingerprint = 'b'.repeat(64)
-    const period = createExecutionPeriodReport([before, after], {
-      from: '2026-10-01',
-      to: '2026-10-03'
-    })
-
-    expect(period.investigationTargets).toHaveLength(2)
-    expect(
-      period.investigationTargets.map(
-        (target) => target.configuration.sourceFingerprint
-      )
-    ).toEqual(['a'.repeat(64), 'b'.repeat(64)])
-  })
   it('keeps child handler timings separate from the parent tool count and duration', () => {
     const report = evaluateExecution(
       run('nested', [
         {
           stage: 'tool_started',
-          tool: 'execute_design_batch',
+          tool: 'execute_design',
           callId: 'outer',
           elapsedMs: 10
         },
@@ -219,7 +129,7 @@ describe('execution evaluation', () => {
         },
         {
           stage: 'tool_completed',
-          tool: 'execute_design_batch',
+          tool: 'execute_design',
           callId: 'outer',
           elapsedMs: 40
         }
@@ -249,7 +159,7 @@ describe('execution evaluation', () => {
       )
 
       usage.trace('tool_started', {
-        tool: 'execute_design_batch',
+        tool: 'execute_design',
         callId: 'batch',
         arguments: {
           operations: [
@@ -268,7 +178,7 @@ describe('execution evaluation', () => {
         }
       })
       usage.trace('tool_completed', {
-        tool: 'execute_design_batch',
+        tool: 'execute_design',
         callId: 'batch'
       })
       usage.finish('completed')
@@ -294,36 +204,6 @@ describe('execution evaluation', () => {
     } finally {
       log.mockRestore()
     }
-  })
-  it('keeps an earlier visual opinion but does not reuse it after later tool work', () => {
-    const review = [
-      {
-        stage: 'tool_started',
-        tool: 'review_drawing',
-        callId: 'review',
-        elapsedMs: 1,
-        evidence: {
-          arguments: {
-            phase: 'visual',
-            inspectionIds: ['i'],
-            checks: [{ requirement: 'Rough', status: 'pass', evidence: 'i' }]
-          }
-        }
-      },
-      {
-        stage: 'tool_completed',
-        tool: 'review_drawing',
-        callId: 'review',
-        elapsedMs: 2
-      }
-    ]
-
-    expect(evaluateExecution(run('a', review)).modelReview.current).toBe(true)
-    expect(
-      evaluateExecution(
-        run('a', [...review, ...query('later', { fields: ['id'] })])
-      ).modelReview
-    ).toMatchObject({ status: 'recorded', current: false })
   })
   it('distinguishes an unavailable tool result from a successful transport call', () => {
     const result = evaluateExecution(
@@ -354,63 +234,6 @@ describe('execution evaluation', () => {
       expect.objectContaining({ kind: 'unavailable-result', callId: 'a' })
     ])
     expect(result.toolCalls[0].status).toBe('completed')
-  })
-  it('reads actual retained array summaries when reusing model review evidence', () => {
-    const lines: string[] = []
-    const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
-
-    try {
-      const usage = createAiExecutionProfiler(
-        { intent: 'private', context: {}, actions: [], attempt: 1 },
-        'gpt-6-astra',
-        {
-          sink: {
-            write: (record) => {
-              lines.push(JSON.stringify(record))
-            },
-
-            flush: async () => ({ status: 'saved', path: null })
-          }
-        }
-      )
-
-      usage.trace('tool_started', {
-        tool: 'review_drawing',
-        callId: 'review',
-        arguments: {
-          phase: 'visual',
-          inspectionIds: ['i-1'],
-          checks: [
-            {
-              requirement: 'Deliberately rough',
-              status: 'pass',
-              evidence: 'Inspection i-1'
-            }
-          ]
-        }
-      })
-      usage.trace('tool_completed', {
-        tool: 'review_drawing',
-        callId: 'review',
-        result: { accepted: true }
-      })
-      usage.finish('completed')
-      const report = evaluateExecution(parseExecutionRecord(lines.join('\n')))
-
-      expect(report.modelReview).toMatchObject({
-        status: 'recorded',
-        inspectionIds: ['i-1'],
-        checks: [
-          {
-            requirement: 'Deliberately rough',
-            status: 'pass',
-            evidence: 'Inspection i-1'
-          }
-        ]
-      })
-    } finally {
-      log.mockRestore()
-    }
   })
   it('keeps overlap, unavailable usage and unknown time distinct from reasoning', () => {
     const result = evaluateExecution(
@@ -460,7 +283,7 @@ describe('execution evaluation', () => {
     const events = [
       ...query('a', { fields: ['id'] }, 'one'),
       ...query('b', { fields: ['id'] }, 'one')
-    ].map((event) => ({ ...event, tool: 'execute_design_batch' }))
+    ].map((event) => ({ ...event, tool: 'execute_design' }))
 
     expect(evaluateExecution(run('a', events)).findings).toEqual([])
   })
@@ -504,123 +327,6 @@ describe('execution evaluation', () => {
     expect(result.toolCalls[1].durationMs).toBeNull()
   })
 
-  it.each([false, true])(
-    'reuses review opinions and criteria without imposing detailRequired=%s',
-    (detailRequired) => {
-      const result = evaluateExecution(
-        run('a', [
-          {
-            stage: 'tool_started',
-            tool: 'review_drawing',
-            callId: 'plan',
-            elapsedMs: 1,
-            evidence: {
-              arguments: {
-                phase: 'plan',
-                detailRequired,
-                criteria: ['Match requested style']
-              }
-            }
-          },
-          {
-            stage: 'tool_completed',
-            tool: 'review_drawing',
-            callId: 'plan',
-            elapsedMs: 2
-          },
-          {
-            stage: 'tool_started',
-            tool: 'review_drawing',
-            callId: 'review',
-            elapsedMs: 90,
-            evidence: {
-              arguments: {
-                phase: 'visual',
-                inspectionIds: ['i-1'],
-                checks: [
-                  {
-                    requirement: 'Match requested style',
-                    status: 'pass',
-                    evidence: 'Inspected i-1'
-                  }
-                ]
-              }
-            }
-          },
-          {
-            stage: 'tool_completed',
-            tool: 'review_drawing',
-            callId: 'review',
-            elapsedMs: 91,
-            evidence: { result: { accepted: true } }
-          }
-        ]),
-        { feedback: 'The shape is wrong.' }
-      )
-
-      expect(result.modelReview).toMatchObject({
-        status: 'recorded',
-        detailRequired,
-        criteria: ['Match requested style'],
-        callId: 'review',
-        accepted: true
-      })
-      expect(result.userFeedback).toBe('The shape is wrong.')
-      expect(result.findings).toEqual([])
-      expect(result.modelReview.certifiesVisuals).toBe(false)
-    }
-  )
-
-  it.each([false, true])(
-    'ignores settlement envelopes but retains later App work as review invalidation (%s)',
-    (laterEdit) => {
-      const events = [
-        { stage: 'lifecycle_started', callId: 'provider-turn', elapsedMs: 0 },
-        {
-          stage: 'tool_started',
-          tool: 'review_drawing',
-          callId: 'review',
-          elapsedMs: 10,
-          evidence: {
-            arguments: { phase: 'visual', checks: [{ status: 'pass' }] }
-          }
-        },
-        {
-          stage: 'tool_completed',
-          tool: 'review_drawing',
-          callId: 'review',
-          elapsedMs: 20,
-          evidence: { result: { accepted: true } }
-        },
-        ...(laterEdit
-          ? [
-              {
-                stage: 'action_started',
-                tool: 'edit',
-                callId: 'edit',
-                elapsedMs: 30
-              },
-              {
-                stage: 'action_completed',
-                tool: 'edit',
-                callId: 'edit',
-                elapsedMs: 40
-              }
-            ]
-          : []),
-        { stage: 'lifecycle_completed', callId: 'provider-turn', elapsedMs: 90 }
-      ]
-
-      expect(
-        evaluateExecution(run('settled', events)).modelReview.current
-      ).toBe(!laterEdit)
-      expect(
-        evaluateExecution(run('unfinished', events, undefined, false))
-          .modelReview.current
-      ).toBe(false)
-    }
-  )
-
   it('keeps native turn and program observations distinct from unavailable model rounds and child links', () => {
     const events = ['exec', 'wait'].flatMap((tool, index) => [
       {
@@ -658,73 +364,12 @@ describe('execution evaluation', () => {
     })
   })
 
-  it.each([true, false, undefined])(
-    'retains and interprets the final canonical freshness receipt (%s)',
-    (current) => {
-      const lines: string[] = []
-      const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
-
-      try {
-        const usage = createAiExecutionProfiler(
-          { actions: [], context: {}, intent: 'Draw', attempt: 1 },
-          'selected-model',
-          {
-            sink: {
-              write: (record) => lines.push(JSON.stringify(record)),
-
-              flush: async () => ({ status: 'saved', path: null })
-            }
-          }
-        )
-
-        usage.trace('tool_started', {
-          tool: 'review_drawing',
-          callId: 'review',
-          arguments: { phase: 'visual', checks: [{ status: 'pass' }] }
-        })
-        usage.trace('tool_completed', {
-          tool: 'review_drawing',
-          callId: 'review',
-          result: { accepted: true }
-        })
-        usage.trace('action_started', {
-          tool: 'validate_inspection_evidence',
-          callId: 'freshness',
-          arguments: {}
-        })
-        usage.trace('action_completed', {
-          tool: 'validate_inspection_evidence',
-          callId: 'freshness',
-          result: { current }
-        })
-        usage.finish('completed')
-        const parsed = parseExecutionRecord(lines.join('\n'))
-
-        expect(parsed.issues).toEqual([])
-        expect(parsed.complete).toBe(true)
-        const receipt = parsed.records.find(
-          (entry) => entry.stage === 'action_completed'
-        )
-
-        expect(
-          (receipt?.evidence as { result: { current?: boolean } }).result
-            .current
-        ).toBe(current)
-        expect(evaluateExecution(parsed).modelReview.current).toBe(
-          current === true
-        )
-      } finally {
-        log.mockRestore()
-      }
-    }
-  )
-
   it('rejects incomplete review reuse instead of treating it as accepted', () => {
     const result = evaluateExecution(
       run('a', [
         {
           stage: 'tool_started',
-          tool: 'review_drawing',
+          tool: 'read_design_context',
           callId: 'review',
           elapsedMs: 1,
           evidence: {
@@ -733,7 +378,7 @@ describe('execution evaluation', () => {
         },
         {
           stage: 'tool_failed',
-          tool: 'review_drawing',
+          tool: 'read_design_context',
           callId: 'review',
           elapsedMs: 2
         }
@@ -893,7 +538,13 @@ it('preserves acknowledged partial work from the actual recoverable failure enve
       stage: 'execution',
       settlement: 'partial',
       executionResult: {
-        actionResults: [{ actionId: 'created', result: { id: 'element' } }]
+        actionResults: [
+          {
+            actionId: 'created',
+            actionName: 'apply_prepared_design',
+            result: { id: 'element' }
+          }
+        ]
       }
     }
   )

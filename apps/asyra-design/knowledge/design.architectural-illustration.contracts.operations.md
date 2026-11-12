@@ -82,7 +82,7 @@ run IDs. Use a ready known edit without a Knowledge-read prerequisite.
 
 ```json
 {
-  "tool": "execute_design_batch",
+  "tool": "execute_design",
   "arguments": {
     "operations": [
       {
@@ -97,7 +97,7 @@ run IDs. Use a ready known edit without a Knowledge-read prerequisite.
 
 ```json
 {
-  "tool": "execute_design_batch",
+  "tool": "execute_design",
   "arguments": {
     "operations": [
       {
@@ -122,16 +122,11 @@ role after its generated prefix). A zero-match receipt is zero edits, not permis
 to broaden the region or predicate. Inspect the naming rule/available metadata and
 choose corrected criteria; the tool must not infer the intended target for you.
 
-Review revisions belong to returned checks, not the capture counter or document
-sequence. Before explicitly superseding a visual unit, use `read_design_checks`
-with its exact ID and `view: details`, then carry that unit's current revision.
-When recording visual decisions, select the materials.review child for the capture/bind/record example and its final-record instruction. Reuse good images through `bindChecks`.
-Do not copy a revision from an earlier decision. A concurrent edit can still make
-that read stale: re-read/rebind only the affected unit, preserving unrelated passes.
-Keep successful images if another capture or binding failed; do not repeat a
-settled edit to recover a review receipt. Never attach a new revision to an old
-judgment. The final `report_outcome` action belongs to the final response actions,
-not native invocation or an edit batch; its proposal does not acknowledge saving.
+Use current captures for visual decisions and canonical data reads for exact values.
+Preserve successful observations if another capture fails; retry only the missing
+observation, never the settled edit. Source identity and coordinate bounds still
+apply when an image is used by a tool. The final `report_outcome` action belongs
+to the final response, not an edit batch; its proposal does not acknowledge saving.
 
 ### Relevant capability handoffs
 

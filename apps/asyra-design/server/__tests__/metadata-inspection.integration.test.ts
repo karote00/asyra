@@ -131,7 +131,7 @@ it.each(
       const canonical = preparation.resolve(prepared.artifactId)
 
       await operations.call(
-        AiDesignToolIds.EXECUTE_DESIGN_BATCH,
+        AiDesignToolIds.EXECUTE_DESIGN,
         {
           inspection: 'defer',
           operations: [

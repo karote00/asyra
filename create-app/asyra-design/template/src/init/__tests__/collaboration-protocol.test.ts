@@ -54,6 +54,7 @@ const createPublication = ({
     orderedIds: [`element-${suffix}`],
     payload
   }
+
   return {
     publicationId: `publication-${suffix}`,
     artifactId,
@@ -97,6 +98,7 @@ const bootstrapTailItem = (
 const createTwoBatchPublication = (): SharedPublication => {
   const first = createPublication({ suffix: 'first', transactionId: 4 })
   const second = createPublication({ suffix: 'second', transactionId: 4 })
+
   return {
     ...first,
     publicationId: 'publication-two-batches',
@@ -116,6 +118,7 @@ const createMultiDeliveryPublication = (
     orderedIds: [`element-${index}`],
     payload
   }))
+
   return {
     publicationId: 'publication-multi',
     artifactId,
@@ -144,6 +147,7 @@ describe('collaboration wire protocol', () => {
       'QVNZUkFQAgFLAAAASAEAAAAAAAABAAAAAAAAAAEAAAAJAAAADgAAAAAAAAAAAAAAAAAAAAByZXRhaW5lZABwdWJsaWNhdGlvbi1hQVNZVQEAAABgAAAAAQAAAEFTWVJBAQQAAAphcnRpZmFjdElkAAANdHJhbnNhY3Rpb25JZAAABm9yaWdpbgAABG1vZGUIBAAFAAoxOmFydGlmYWN0AQQCAgUABmFjdGlvbgMFAAtwcm9ncmVzc2l2ZdQAAABBU1lSQQELAAAFYmF0Y2gFAAJJZAAAB3NsaWNlSWQAAApvcmRlcmVkSWRzAAAHY2hhbm5lbAAACGRlbGl2ZXJ5CAACSWQAAAlldmVudE5hbWUAAAdwYXlsb2FkAAAFdmFsdWUAAAllbGVtZW50LWEIAgAIBAEFAAkxOmJhdGNoOmECBQAJMTpzbGljZTphAwcBBgoEBQAJc2NlbmVUcmVlBQgEBgUADDE6ZGVsaXZlcnk6YQcFABJ1cGRhdGVDb21wdXRlZERhdGEDBwEGCggIAQkEAg==',
       'base64'
     )
+
     expect(decodePublicationMessageFrames([retained])).toEqual({
       type: CollaborationMessageTypes.SEND_PUBLICATION,
       requestId: 'retained',
@@ -167,11 +171,15 @@ describe('collaboration wire protocol', () => {
         publication
       } as const
       const frames = encodePublicationMessageFrames(message)
+
       expect(decodePublicationMessageFrames(frames)).toEqual(message)
+
       return frames.reduce((sum, frame) => sum + frame.byteLength, 0)
     }
+
     const small = encode(64)
     const large = encode(128)
+
     expect(large).toBeLessThan(small * 2.5)
   })
 
@@ -200,6 +208,7 @@ describe('collaboration wire protocol', () => {
       publication: { ...publication, mode: 'atomic' }
     } as const
     const frames = encodePublicationMessageFrames(message)
+
     expect(
       frames.reduce(
         (sum, frame) => sum + Buffer.from(frame).toString('base64').length,
@@ -241,18 +250,40 @@ describe('collaboration wire protocol', () => {
     }
     const slice = metadata.slices[0]
     const batch = slice.batches[0]
-    if (scenario === 'missing-slices') metadata.slices = []
-    if (scenario === 'duplicate-slice') metadata.slices.push(slice)
-    if (scenario === 'duplicate-batch') slice.batches.push(batch)
-    if (scenario === 'duplicate-order')
+
+    if (scenario === 'missing-slices') {
+      metadata.slices = []
+    }
+
+    if (scenario === 'duplicate-slice') {
+      metadata.slices.push(slice)
+    }
+
+    if (scenario === 'duplicate-batch') {
+      slice.batches.push(batch)
+    }
+
+    if (scenario === 'duplicate-order') {
       slice.orderedIds.push(slice.orderedIds[0])
-    if (scenario === 'missing-delivery') batch.deliveryCount = 0
-    if (scenario === 'excess-delivery') batch.deliveryCount = 2
-    if (scenario === 'unbounded-count') batch.deliveryCount = 0xffff_ffff
+    }
+
+    if (scenario === 'missing-delivery') {
+      batch.deliveryCount = 0
+    }
+
+    if (scenario === 'excess-delivery') {
+      batch.deliveryCount = 2
+    }
+
+    if (scenario === 'unbounded-count') {
+      batch.deliveryCount = 0xffff_ffff
+    }
+
     const encoded = new Uint8Array(encodeCompactBinary(metadata))
     const changed = new Uint8Array(
       original.length - metadataLength + encoded.length
     )
+
     changed.set(original.subarray(0, metadataStart))
     changed.set(encoded, metadataStart)
     changed.set(
@@ -260,10 +291,13 @@ describe('collaboration wire protocol', () => {
       metadataStart + encoded.length
     )
     const view = new DataView(changed.buffer)
+
     view.setUint32(12, changed.length - offset, true)
     view.setUint32(offset + 8, encoded.length, true)
-    if (scenario === 'unbounded-count')
+    if (scenario === 'unbounded-count') {
       view.setUint32(offset + 12, 0xffff_ffff, true)
+    }
+
     expect(() => decodePublicationMessageFrames([changed])).toThrow(
       /publication wire/
     )
@@ -326,9 +360,11 @@ describe('collaboration wire protocol', () => {
     const slice = source.slices[0]
     const batch = slice?.batches[0]
     const delivery = batch?.deliveries[0]
+
     if (!slice || !batch || !delivery) {
       throw new Error('Expected a nested publication fixture')
     }
+
     const compensation: SharedPublication = {
       ...source,
       publicationId: `${source.publicationId}:compensation`,
@@ -385,6 +421,7 @@ describe('collaboration wire protocol', () => {
         compensatesPublicationId: 'original'
       }
     }
+
     expect(
       decodePublicationMessageFrames(encodePublicationMessageFrames(request))
     ).toEqual(request)
@@ -400,6 +437,7 @@ describe('collaboration wire protocol', () => {
       }
     }
     const encodedHello = encodeCollaborationMessage(hello)
+
     expect(typeof encodedHello).toBe('string')
     expect(JSON.parse(encodedHello as string)).toEqual(hello)
 
@@ -414,6 +452,7 @@ describe('collaboration wire protocol', () => {
     if (!(encoded instanceof Uint8Array)) {
       throw new Error('Publication messages must use binary frames')
     }
+
     expect(decodeCollaborationMessage(encoded)).toEqual(request)
   })
 
@@ -484,6 +523,7 @@ describe('collaboration wire protocol', () => {
 
     for (const control of controls) {
       const encoded = encodeCollaborationMessage(control)
+
       expect(typeof encoded).toBe('string')
       expect(JSON.parse(encoded as string)).toEqual(control)
     }
@@ -509,7 +549,10 @@ describe('collaboration wire protocol', () => {
     const sentinel = new Error('stringify sentinel')
     const guardedPublication = new Proxy(publication, {
       get: (target, key, receiver) => {
-        if (key === 'toJSON') throw sentinel
+        if (key === 'toJSON') {
+          throw sentinel
+        }
+
         return Reflect.get(target, key, receiver)
       }
     })
@@ -532,6 +575,7 @@ describe('collaboration wire protocol', () => {
       {
         ownKeys: (target) => {
           payloadOwnKeyReads += 1
+
           return Reflect.ownKeys(target)
         }
       }
@@ -556,6 +600,7 @@ describe('collaboration wire protocol', () => {
       opcode: 1,
       payloadData: text
     })
+
     expect(textFrame).toEqual({
       value: { type: 'ready' },
       wireByteLength: new TextEncoder().encode(text).byteLength
@@ -567,6 +612,7 @@ describe('collaboration wire protocol', () => {
       opcode: 2,
       payloadData: Buffer.from(binary).toString('base64')
     })
+
     expect(binaryFrame).toEqual({
       value: binaryValue,
       wireByteLength: binary.byteLength
@@ -616,6 +662,7 @@ describe('collaboration wire protocol', () => {
     if (!(encoded instanceof Uint8Array)) {
       throw new Error('Large collaboration messages must use binary encoding')
     }
+
     expect(encoded.byteLength).toBeLessThan(plain.length * 0.6)
     expect(decoded).toEqual(request)
     expect(parseCollaborationClientMessage(decoded)).toEqual(request)
@@ -692,10 +739,12 @@ describe('collaboration wire protocol', () => {
       fromActorId: 'actor-a',
       sequences: [11, 12]
     })
+
     expect(frames).toHaveLength(2)
 
     const runtime = new PublicationCodecWorkerRuntime()
     const responses: PublicationCodecWorkerResponse[] = []
+
     const post = (response: PublicationCodecWorkerResponse): void => {
       responses.push(response)
     }
@@ -732,6 +781,7 @@ describe('collaboration wire protocol', () => {
       type: 'settle-decoded-publication-delivery',
       jobId: 'settle-first'
     }
+
     runtime.handle(settlementRequest, post)
 
     expect(responses.slice(responseCountBeforeSettlement)).toEqual([
@@ -758,10 +808,14 @@ describe('collaboration wire protocol', () => {
       fromActorId: 'actor-a',
       sequence: 13
     })[0]
-    if (!frame) throw new Error('Expected one publication frame')
+
+    if (!frame) {
+      throw new Error('Expected one publication frame')
+    }
 
     const runtime = new PublicationCodecWorkerRuntime()
     const responses: PublicationCodecWorkerResponse[] = []
+
     const post = (response: PublicationCodecWorkerResponse): void => {
       responses.push(response)
     }
@@ -833,8 +887,12 @@ describe('collaboration wire protocol', () => {
       fromActorId: 'actor-b',
       sequence: 15
     })[0]
+
     expect(oversizedFrames).toHaveLength(2)
-    if (!interleavedFrame) throw new Error('Expected an interleaved frame')
+    if (!interleavedFrame) {
+      throw new Error('Expected an interleaved frame')
+    }
+
     expect(
       oversizedFrames.reduce((total, frame) => total + frame.byteLength, 0)
     ).toBeGreaterThan(PUBLICATION_FRAME_INBOUND_WINDOW_BYTES)
@@ -850,6 +908,7 @@ describe('collaboration wire protocol', () => {
 
     const uniqueAssemblyRuntime = new PublicationCodecWorkerRuntime()
     const uniqueAssemblyResponses: PublicationCodecWorkerResponse[] = []
+
     oversizedFrames.forEach((frame, index) =>
       uniqueAssemblyRuntime.handle(
         {
@@ -868,11 +927,13 @@ describe('collaboration wire protocol', () => {
 
     const interleavedRuntime = new PublicationCodecWorkerRuntime()
     const interleavedResponses: PublicationCodecWorkerResponse[] = []
+
     const postInterleaved = (
       response: PublicationCodecWorkerResponse
     ): void => {
       interleavedResponses.push(response)
     }
+
     interleavedRuntime.handle(
       {
         type: 'decode-publication-frame',
@@ -890,6 +951,7 @@ describe('collaboration wire protocol', () => {
       postInterleaved
     )
     const responseCountBeforeContinuation = interleavedResponses.length
+
     interleavedRuntime.handle(
       {
         type: 'decode-publication-frame',
@@ -902,6 +964,7 @@ describe('collaboration wire protocol', () => {
     const continuationResponses = interleavedResponses.slice(
       responseCountBeforeContinuation
     )
+
     expect(
       continuationResponses.map(({ jobId, type }) => ({ jobId, type }))
     ).toEqual([
@@ -925,6 +988,7 @@ describe('collaboration wire protocol', () => {
     ).toBe(false)
 
     const responseCountBeforeSettlement = interleavedResponses.length
+
     interleavedRuntime.handle(
       {
         type: 'settle-decoded-publication-delivery',
@@ -936,6 +1000,7 @@ describe('collaboration wire protocol', () => {
     const settlementResponses = interleavedResponses.slice(
       responseCountBeforeSettlement
     )
+
     expect(
       settlementResponses.map(({ jobId, type }) => ({ jobId, type }))
     ).toEqual([
@@ -1029,7 +1094,10 @@ describe('collaboration wire protocol', () => {
       requestId: 'a',
       publication: { ...publication, publicationId: 'b:c' }
     })[0]
-    if (!first || !second) throw new Error('Expected publication frames')
+
+    if (!first || !second) {
+      throw new Error('Expected publication frames')
+    }
 
     expect(inspectPublicationFrameHeader(first).frameId).not.toBe(
       inspectPublicationFrameHeader(second).frameId
@@ -1059,6 +1127,7 @@ describe('collaboration wire protocol', () => {
     const secondBatch = secondSlice?.batches[0]
     const firstDelivery = firstBatch?.deliveries[0]
     const secondDelivery = secondBatch?.deliveries[0]
+
     if (
       !firstSlice ||
       !secondSlice ||
@@ -1142,6 +1211,7 @@ describe('collaboration wire protocol', () => {
           {
             getOwnPropertyDescriptor(target, key) {
               descriptorReadCount += 1
+
               return Reflect.getOwnPropertyDescriptor(target, key)
             }
           }
@@ -1157,6 +1227,7 @@ describe('collaboration wire protocol', () => {
       softTargetBytes: Number.MAX_SAFE_INTEGER
     })
     const unsplitDescriptorReads = descriptorReadCount
+
     descriptorReadCount = 0
 
     const splitFrames = encodePublicationMessageFrames(request, {
@@ -1187,6 +1258,7 @@ describe('collaboration wire protocol', () => {
         if (source.byteLength >= 64 * 1024) {
           largeCopyByteLengths.push(source.byteLength)
         }
+
         return originalSet.call(this, source, offset)
       })
 
@@ -1250,8 +1322,13 @@ describe('collaboration wire protocol', () => {
       publication
     }
     const frame = encodePublicationMessageFrames(request)[0]
-    if (!frame) throw new Error('Expected one publication frame')
+
+    if (!frame) {
+      throw new Error('Expected one publication frame')
+    }
+
     const unsupported = frame.slice(0)
+
     new Uint8Array(unsupported)[PUBLICATION_FRAME_VERSION_OFFSET] = 0xff
 
     expect(() => decodePublicationMessageFrames([unsupported])).toThrow(
@@ -1275,6 +1352,7 @@ describe('collaboration wire protocol', () => {
       constructor: 'own-constructor',
       prototype: 'own-prototype'
     }
+
     Object.defineProperty(input, '__proto__', {
       configurable: true,
       enumerable: true,
@@ -1319,14 +1397,17 @@ describe('collaboration wire protocol', () => {
 
   it('rejects non-canonical varints and decodes deeply nested finite arrays', () => {
     const marker = [0x41, 0x53, 0x59, 0x52, 0x41, 0x01]
+
     expect(() =>
       decodeCompactBinary(new Uint8Array([...marker, 0x80, 0x00, 0x00]))
     ).toThrow(TypeError)
 
     const depth = 20_000
     const nested = new Uint8Array(marker.length + 1 + depth * 2 + 1)
+
     nested.set(marker)
     let offset = marker.length
+
     nested[offset] = 0
     offset += 1
     for (let index = 0; index < depth; index += 1) {
@@ -1334,13 +1415,16 @@ describe('collaboration wire protocol', () => {
       nested[offset + 1] = 1
       offset += 2
     }
+
     nested[offset] = 0
 
     let decoded = decodeCompactBinary(nested)
+
     for (let index = 0; index < depth; index += 1) {
       expect(Array.isArray(decoded)).toBe(true)
       decoded = (decoded as unknown[])[0]
     }
+
     expect(decoded).toBeNull()
   })
 
@@ -1348,11 +1432,14 @@ describe('collaboration wire protocol', () => {
     const depth = 20_000
     let payload: unknown = null
     const wrappers: ('array' | 'object')[] = []
+
     for (let index = 0; index < depth; index += 1) {
       const wrapper = index % 2 === 0 ? 'array' : 'object'
+
       wrappers.push(wrapper)
       payload = wrapper === 'array' ? [payload] : { next: payload }
     }
+
     const request: CollaborationRequestMessage = {
       type: CollaborationMessageTypes.SEND_PUBLICATION,
       requestId: 'request-deep',
@@ -1366,14 +1453,17 @@ describe('collaboration wire protocol', () => {
     const decoded = parseCollaborationClientMessage(
       decodeCollaborationMessage(encoded)
     )
+
     if (
       !decoded ||
       decoded.type !== CollaborationMessageTypes.SEND_PUBLICATION
     ) {
       throw new Error('Deep collaboration request changed message type')
     }
+
     let decodedPayload =
       decoded.publication.slices[0]?.batches[0]?.deliveries[0]?.payload
+
     for (let index = wrappers.length - 1; index >= 0; index -= 1) {
       if (wrappers[index] === 'array') {
         expect(Array.isArray(decodedPayload)).toBe(true)
@@ -1384,29 +1474,35 @@ describe('collaboration wire protocol', () => {
         decodedPayload = (decodedPayload as { next: unknown }).next
       }
     }
+
     expect(decodedPayload).toBeNull()
   })
 
   it('accepts shared aliases while rejecting cycles and non-data array shapes without invoking getters', () => {
     const shared = { value: 1 }
     const aliases = { first: shared, second: shared }
+
     expect(isJsonTransportValue(aliases)).toBe(true)
     expect(decodeCompactBinary(encodeCompactBinary(aliases))).toEqual(aliases)
 
     const cycle: { self?: unknown } = {}
+
     cycle.self = cycle
     expect(isJsonTransportValue(cycle)).toBe(false)
     expect(() => encodeCollaborationMessage(cycle)).toThrow(TypeError)
 
     const sparse = new Array<unknown>(2)
+
     sparse[0] = 'present'
     expect(isJsonTransportValue(sparse)).toBe(false)
 
     const extraKey = ['value'] as unknown[] & { extra?: string }
+
     extraKey.extra = 'not-json-array-shape'
     expect(isJsonTransportValue(extraKey)).toBe(false)
 
     const symbolKey = ['value']
+
     Object.defineProperty(symbolKey, Symbol('extra'), {
       enumerable: true,
       value: 'not-json-array-shape'
@@ -1415,6 +1511,7 @@ describe('collaboration wire protocol', () => {
 
     const getter = vi.fn(() => 'not-readable')
     const accessor: Record<string, unknown> = {}
+
     Object.defineProperty(accessor, 'value', {
       enumerable: true,
       get: getter
@@ -1427,22 +1524,26 @@ describe('collaboration wire protocol', () => {
     const depth = 3_000
     const leaf = 'x'.repeat(33_000)
     let value: unknown = leaf
+
     for (let index = 0; index < depth; index += 1) {
       value = [value]
     }
 
     const encoded = encodeCompactBinary(value)
     let decodedValue = decodeCompactBinary(encoded)
+
     for (let index = 0; index < depth; index += 1) {
       expect(Array.isArray(decodedValue)).toBe(true)
       decodedValue = (decodedValue as unknown[])[0]
     }
+
     expect(decodedValue).toBe(leaf)
   })
 
   it('rejects a dictionary prefix chain that crosses a bounded checkpoint', () => {
     const marker = [0x41, 0x53, 0x59, 0x52, 0x41, 0x01]
     const dictionary: number[] = [65]
+
     for (let index = 0; index < 65; index += 1) {
       dictionary.push(index, 0, 1, 0x61)
     }
@@ -1691,9 +1792,11 @@ describe('collaboration wire protocol', () => {
     const slice = publication.slices[0]
     const batch = slice?.batches[0]
     const delivery = batch?.deliveries[0]
+
     if (!slice || !batch || !delivery) {
       throw new Error('Expected a nested publication fixture')
     }
+
     const incompletePublications = [
       { publicationId: 'publication-a', slices: publication.slices },
       { ...publication, origin: 'unsupported-origin' },
@@ -1900,16 +2003,18 @@ it('admits persistence confirmation only with exact nonnegative sequence and gen
     sequence: 7,
     documentGeneration: 2
   }
+
   expect(parseCollaborationClientMessage(message)).toEqual(message)
   for (const patch of [
     { sequence: -1 },
     { sequence: 1.5 },
     { documentGeneration: -1 },
     { documentGeneration: undefined }
-  ])
+  ]) {
     expect(
       parseCollaborationClientMessage({ ...message, ...patch })
     ).toBeUndefined()
+  }
 })
 
 it('accepts only the exact checkpoint preparation control milestone', () => {

@@ -14,8 +14,8 @@
         "./node"
       ],
       "sourceDigests": {
-        "contract": "450b2813e7ddb66ad5a366c39f549348771debf77dcea961606ba27b26c07a65",
-        "guide": "2fd827443c789e040b1912952faed99c3e6ffeb2607216efb62296ad2f1e2620",
+        "contract": "e56cc86b78918c9b913d41748dd0aabf6e56196a8e787385f0cfbdf8913a8767",
+        "guide": "cf8444e4e1a59b845cccd592ea8eed85841bc8530f9aff884f67a20870056e09",
         "manifest": "b7333829a47fb2da53c13255b6ebf741ab7163cfcac0d628f9479d0e9fb2bed0"
       },
       "version": "0.5.1"
@@ -213,7 +213,7 @@
         "./spatial-engine"
       ],
       "sourceDigests": {
-        "contract": "b55ea31877b77cae7c0ba34733f58bbc87756ac006f21da7bf266eccaf4a2ec2",
+        "contract": "de6b4208a20b5ea32e3f363e3840ab9e24a66df2403c1855b47e5c10102b6572",
         "guide": "96d66df52c5f73e156dc28a7b7d354769452d56677ea23a34fb9a38796ab24ff",
         "manifest": "faeadb90e225de890dabcaf27c479aab9d863760855f05712ffe744af93ebd8c"
       },
@@ -284,7 +284,7 @@
         "./canvas-pipeline-debugger"
       ],
       "sourceDigests": {
-        "contract": "cf3300f1b0fdf07637fae83686da2898a263ca9f2c01fa3aa328bf22960e110a",
+        "contract": "d9f86d08db1b7cc18eaefe087ccf197504234a9655d1cef4123aee630297dca5",
         "guide": "4365de7999d88314d240e8240083c3636217fdad4443b515ad7bab85b57c8baf",
         "manifest": "d863f33f404300dfbec8e2cd521d5bf4bfcf76f440cc09c148520eb92150c77e"
       },
@@ -325,9 +325,9 @@
         "."
       ],
       "sourceDigests": {
-        "contract": "dd35edcdf0958f0b5f3a10261bcdd8e827bd240ad7464f2d1fea129c1bf99032",
+        "contract": "a03c25a0b8f378dd4e2322add6ceea8c9a2a915fa36d9d54c3e4758c4524c170",
         "guide": "6b1da10bd572467992694c5e0ae923f7d803b97db81d494b35b37b4c2a69c34f",
-        "manifest": "fb2ed8fd6c93a7bd2353b0253e3dea43cbafb83f52c86386dd92ee5fbbb7030e"
+        "manifest": "31e4a20abff61c9eb28404163dfa7b59830be28df9c3bf57253c1d06f5bf09f8"
       },
       "version": "0.5.2"
     },
@@ -348,7 +348,7 @@
         "."
       ],
       "sourceDigests": {
-        "contract": "b84a90f130ce420cfab63fdb1882a7474324db60915c954456a65f32904a76e7",
+        "contract": "35d9cd27dd041a88d9a0c7aed9226e3cd3a73d47b43fd6501cf888c69e3de0e5",
         "guide": "4f8bc35fd5435934068a2ed81aa578f788edb6d866b2495cf83ba852deb74231",
         "manifest": "e46c47e2ec31a8f1a9405a0dd54e288bd2f27657ff03b13c944eb7cb623e3719"
       },

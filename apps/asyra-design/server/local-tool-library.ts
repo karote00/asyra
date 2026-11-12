@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto'
 import { AiDesignToolIds } from '../src/constants/ai-design'
 import {
   AiToolContractError,
+  admitAiRecipe,
+  type AdmittedAiRecipe,
   createAiToolContract,
   createAiInvoker,
   createAiToolLibrary,
@@ -26,11 +28,12 @@ export interface LocalToolLibraryOptions
   extends
     Pick<
       AiRecipeInvokerOptions,
-      'registry' | 'validate' | 'execute' | 'leases'
+      'registry' | 'validate' | 'execute' | 'leases' | 'canOverlapPreparation'
     >,
     Pick<AiToolLibraryOptions, 'limits' | 'capacity'>,
     Pick<AiToolPersistenceOptions, 'store' | 'check'> {
   readonly requestId: string
+  readonly privateDependency?: string
   readonly receiptCapacity: number
   readonly onPhase?: (call: AiInvocationContext, phase: 'execution') => void
   readonly observe?: (
@@ -94,6 +97,9 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
 
   const library = createAiToolLibrary({
     registry: options.registry,
+
+    allowDependency: (name) => name !== options.privateDependency,
+
     capacity: options.capacity,
     limits: options.limits,
     validate: options.validate,
@@ -122,6 +128,7 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
     recipe: library.recipe,
     validate: options.validate,
     execute: options.execute,
+    canOverlapPreparation: options.canOverlapPreparation,
     leases: options.leases,
     maxSteps: options.limits.steps,
     observe: options.observe
@@ -158,6 +165,70 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
     }
   })
 
+  const verifySaved = async (
+    name: string,
+    revision: number,
+    checked = new Set<string>()
+  ): Promise<void> => {
+    const key = identity(name, revision)
+
+    if (checked.has(key)) {
+      return
+    }
+
+    checked.add(key)
+    const entry = options.registry.registration(name, {
+      requestId: options.requestId,
+      revision
+    })
+
+    if (!entry) {
+      throw new Error(
+        'A recipe dependency is unavailable; refresh discovery before invoking.'
+      )
+    }
+
+    if (entry.kind !== 'composition') {
+      return
+    }
+
+    const requiresSaved =
+      entry.availability === 'eligible' || savedIdentities.has(key)
+    let current: Awaited<ReturnType<typeof management.read>>
+
+    try {
+      current = await management.read(name, revision)
+    } catch {
+      if (requiresSaved) {
+        throw new Error(
+          'Saved tool state could not be verified; retry admission without replaying work.'
+        )
+      }
+    }
+
+    if (
+      (!current && requiresSaved) ||
+      (current &&
+        (entry.availability === 'eligible'
+          ? current.availability !== 'eligible'
+          : !['eligible', 'candidate'].includes(current.availability)))
+    ) {
+      throw new Error(
+        'Saved tool is unavailable; refresh discovery before invoking.'
+      )
+    }
+
+    const recipe = library.recipe(name, revision)
+
+    if (!recipe) {
+      throw new Error('The admitted recipe is unavailable.')
+    }
+
+    for (const dependency of recipe.dependencies) {
+      await verifySaved(dependency.name, dependency.revision, checked)
+    }
+  }
+
   const invoke = (
     input: AiInvocation & { revision?: number }
   ): Promise<LocalToolInvocationResult> =>
@@ -167,7 +238,11 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
         revision: input.revision
       })
 
-      if (!registered || registered.definition.composition !== 'allowed') {
+      if (
+        input.name === options.privateDependency ||
+        !registered ||
+        registered.definition.composition !== 'allowed'
+      ) {
         return rejected(
           'Use an available data-plane tool; library controls cannot be invoked as recipes.'
         )
@@ -178,71 +253,6 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
       const revision = registered.definition.revision
 
       if (composed) {
-        const checked = new Set<string>()
-
-        const verifySaved = async (
-          name: string,
-          revision: number
-        ): Promise<void> => {
-          const key = identity(name, revision)
-
-          if (checked.has(key)) {
-            return
-          }
-
-          checked.add(key)
-          const entry = options.registry.registration(name, {
-            requestId: options.requestId,
-            revision
-          })
-
-          if (!entry) {
-            throw new Error(
-              'A recipe dependency is unavailable; refresh discovery before invoking.'
-            )
-          }
-
-          if (entry.kind !== 'composition') {
-            return
-          }
-
-          const requiresSaved =
-            entry.availability === 'eligible' || savedIdentities.has(key)
-          let current: Awaited<ReturnType<typeof management.read>>
-
-          try {
-            current = await management.read(name, revision)
-          } catch {
-            if (requiresSaved) {
-              throw new Error(
-                'Saved tool state could not be verified; retry admission without replaying work.'
-              )
-            }
-          }
-
-          if (
-            (!current && requiresSaved) ||
-            (current &&
-              (entry.availability === 'eligible'
-                ? current.availability !== 'eligible'
-                : !['eligible', 'candidate'].includes(current.availability)))
-          ) {
-            throw new Error(
-              'Saved tool is unavailable; refresh discovery before invoking.'
-            )
-          }
-
-          const recipe = library.recipe(name, revision)
-
-          if (!recipe) {
-            throw new Error('The admitted recipe is unavailable.')
-          }
-
-          for (const dependency of recipe.dependencies) {
-            await verifySaved(dependency.name, dependency.revision)
-          }
-        }
-
         try {
           await verifySaved(input.name, revision)
         } catch (error) {
@@ -374,7 +384,12 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
       return definition ? createAiToolContract(definition) : undefined
     },
 
-    describeRecovery(name: string, revision: number) {
+    describeRecovery(
+      name: string,
+      revision: number,
+      dependencies?: readonly AiToolContract[],
+      projectContract?: (contract: AiToolContract) => AiToolContract
+    ) {
       const contracts = new Map<string, AiToolContract>()
 
       const collect = (name: string, revision: number) => {
@@ -400,10 +415,65 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
         }
       }
 
-      collect(name, revision)
+      if (dependencies) {
+        for (const dep of dependencies) {
+          collect(dep.name, dep.revision)
+        }
+      } else {
+        collect(name, revision)
+      }
 
-      return createAiRecipeRecoverySchema([...contracts.values()])
+      return createAiRecipeRecoverySchema(
+        [...contracts.values()].map(
+          (contract) => projectContract?.(contract) ?? contract
+        )
+      )
     },
+
+    admitInline: (proposal: unknown, mode: 'inline' | 'sequence' = 'inline') =>
+      admitAiRecipe(
+        proposal,
+        {
+          limits: options.limits,
+          validate: options.validate,
+
+          resolve: (name) =>
+            options.registry.get(name, { requestId: options.requestId })
+        },
+        mode
+      ),
+
+    runInline: (
+      recipe: AdmittedAiRecipe,
+      call: Omit<AiInvocation, 'name'>,
+      onStepResult?: Parameters<typeof invoker.invoke>[2]
+    ) =>
+      track(async () => {
+        try {
+          const checked = new Set<string>()
+
+          for (const dep of recipe.dependencies) {
+            await verifySaved(dep.name, dep.revision, checked)
+          }
+        } catch (error) {
+          return rejected(
+            error instanceof Error ? error.message : String(error)
+          )
+        }
+
+        return {
+          execution: await invoker.invoke(
+            {
+              ...call,
+              name: recipe.contract.name,
+              revision: recipe.contract.revision,
+              requestId: options.requestId
+            },
+            recipe,
+            onStepResult
+          )
+        }
+      }),
 
     submit: (input: Omit<AiRecipeSubmission, 'requestId'>) =>
       changing(async () => {

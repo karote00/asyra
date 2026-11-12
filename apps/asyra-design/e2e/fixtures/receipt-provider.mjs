@@ -36,9 +36,19 @@ const call = (tool, args) =>
         return reject(Error('Missing tool reply'))
       }
 
+      const acknowledgement = result.contentItems.at(-1)
+
+      if (
+        acknowledgement?.type !== 'inputText' ||
+        typeof acknowledgement.text !== 'string'
+      ) {
+        return reject(Error('Missing separate tool acknowledgement'))
+      }
+
       resolve({
         success: result.success,
-        value: JSON.parse(result.contentItems[0].text)
+        value: JSON.parse(result.contentItems[0].text),
+        outcome: JSON.parse(acknowledgement.text).toolOutcome
       })
     })
     send({

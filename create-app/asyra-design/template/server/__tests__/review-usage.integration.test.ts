@@ -14,7 +14,11 @@ import { operationInputIssue } from '../operation-input-schema'
 /** Real App inspection/evidence/review path; only the pixel renderer is substituted. */
 async function verifySelectedReviewFlow() {
   const hadWindow = 'window' in globalThis
-  if (!hadWindow) vi.stubGlobal('window', {})
+
+  if (!hadWindow) {
+    vi.stubGlobal('window', {})
+  }
+
   const { default: core } = await import('../../src/contexts')
   const { applyPreset, PresetProfiles, PresetDefaults } =
     await import('@asyra/preset')
@@ -23,6 +27,7 @@ async function verifySelectedReviewFlow() {
   const { createInspectionEvidence } =
     await import('../../src/common-apis/inspection-evidence')
   const { observeAiAction } = await import('../../src/ai/runtime-input')
+
   applyPreset(core, {
     profile: PresetProfiles.CUSTOM,
     defaults: [PresetDefaults.BASIC_SHAPES, PresetDefaults.CONTAINERS]
@@ -60,7 +65,10 @@ async function verifySelectedReviewFlow() {
     .spyOn(core, 'captureElementSnapshot')
     .mockImplementation((id) => {
       captures.push(id)
-      if (id === failTarget) throw new Error('Injected pixel capture failure')
+      if (id === failTarget) {
+        throw new Error('Injected pixel capture failure')
+      }
+
       return {
         type: 'snapshot',
         width: 1,
@@ -73,6 +81,7 @@ async function verifySelectedReviewFlow() {
   let invalidate: ((change?: InspectionDependencyChange) => void) | undefined
   const evidence = createInspectionEvidence((listener) => {
     invalidate = listener
+
     return () => undefined
   })
   const actions = [
@@ -96,14 +105,22 @@ async function verifySelectedReviewFlow() {
   const dispatched: string[] = []
   const tools = createLocalOperationTools(
     actions.map((definition) => createAiToolContract(definition)),
-    { modelActions: (v) => v, resolveBatch: (v) => v },
+    {
+      modelActions: (v) => v,
+
+      resolveBatch: (v) => v
+    },
     async (batch) => ({
       context: {},
       actionResults: await Promise.all(
         batch.actions.map(async (action) => {
           dispatched.push(action.name)
           const owner = actions.find((entry) => entry.name === action.name)
-          if (!owner) throw new Error('Unexpected mutation dispatch')
+
+          if (!owner) {
+            throw new Error('Unexpected mutation dispatch')
+          }
+
           return {
             actionId: action.id,
             actionName: action.name,
@@ -118,6 +135,7 @@ async function verifySelectedReviewFlow() {
       validateReferences: referenceImages.validateReferences,
       prepareReferences: referenceImages.prepareReferences,
       resolveSources: referenceImages.resolveSources,
+
       getNativeTools: () =>
         tools.definitions.map((definition) => ({
           ...definition,
@@ -130,14 +148,20 @@ async function verifySelectedReviewFlow() {
   let reads = 0
   let queryBytes = 0
   const resultContracts = new Map<string, unknown>()
+
   const call = async (
     name: string,
     input: unknown,
     signal = signals.signal
   ) => {
     const definition = tools.definitions.find((entry) => entry.name === name)
-    if (!definition) throw new Error('Missing tool ' + name)
+
+    if (!definition) {
+      throw new Error('Missing tool ' + name)
+    }
+
     const reply = await invokeLocalTool(tools, definition, input, signal)
+
     bytes +=
       Buffer.byteLength(JSON.stringify(input)) + Buffer.byteLength(reply.text)
     if (name === 'describe_design_apis') {
@@ -145,20 +169,29 @@ async function verifySelectedReviewFlow() {
       queryBytes +=
         Buffer.byteLength(JSON.stringify(input)) + Buffer.byteLength(reply.text)
     }
+
     const value = JSON.parse(reply.text)
+
     if (name === 'review_drawing' && value.reviewOperation) {
       const contract = resultContracts.get(value.reviewOperation)
-      if (contract) expect(operationInputIssue(value, contract)).toBeUndefined()
+
+      if (contract) {
+        expect(operationInputIssue(value, contract)).toBeUndefined()
+      }
     }
+
     return value
   }
+
   const guideReplyBytes: Record<string, number> = {}
+
   const guide = async (operation: string) => {
     const result = await call('describe_design_apis', {
       names: ['review_drawing'],
       view: 'usage',
       inputScope: { operation }
     })
+
     expect(result.toolOutcome?.status, JSON.stringify(result)).toBe('success')
     expect(result.contentDelivery).toBeUndefined()
     guideReplyBytes[operation] = Buffer.byteLength(JSON.stringify(result))
@@ -168,17 +201,27 @@ async function verifySelectedReviewFlow() {
       [guideReplyBytes[operation]]
     )
     const selected = result.tools[0]
+
     resultContracts.set(operation, selected.usageGuide.results)
     const resultProperties: Record<string, unknown>[] = []
+
     const inspect = (value: unknown): void => {
-      if (!value || typeof value !== 'object') return
-      if ('properties' in value)
+      if (!value || typeof value !== 'object') {
+        return
+      }
+
+      if ('properties' in value) {
         resultProperties.push(value.properties as Record<string, unknown>)
+      }
+
       Object.values(value).forEach(inspect)
     }
+
     const inspectInput = (value: Record<string, unknown>): void => {
-      if (value.properties)
+      if (value.properties) {
         resultProperties.push(value.properties as Record<string, unknown>)
+      }
+
       if (typeof value.$ref === 'string') {
         const target = value.$ref
           .slice(2)
@@ -188,14 +231,20 @@ async function verifySelectedReviewFlow() {
               parent[key] as Record<string, unknown>,
             selected.usageGuide.parameters
           )
+
         inspectInput(target)
       }
-      for (const mode of ['oneOf', 'anyOf', 'allOf'])
-        if (Array.isArray(value[mode])) value[mode].forEach(inspectInput)
+
+      for (const mode of ['oneOf', 'anyOf', 'allOf']) {
+        if (Array.isArray(value[mode])) {
+          value[mode].forEach(inspectInput)
+        }
+      }
     }
+
     inspectInput(selected.usageGuide.parameters)
     if (operation === 'capture') {
-      for (const field of ['checks', 'bindChecks'])
+      for (const field of ['checks', 'bindChecks']) {
         expect(
           resultProperties.some(
             (properties) =>
@@ -203,7 +252,9 @@ async function verifySelectedReviewFlow() {
           ),
           `capture input ${field}`
         ).toBe(false)
+      }
     }
+
     resultProperties.length = 0
     inspect(selected.usageGuide.results)
     for (const field of ['results', 'correction', 'structureAccepted']) {
@@ -215,13 +266,19 @@ async function verifySelectedReviewFlow() {
         `${operation} result field ${field}`
       ).toBe(operation === 'record')
     }
-    if (operation !== 'record')
+
+    if (operation !== 'record') {
       expect(selected.invocationExample.invocation).toBeDefined()
-    else expect(selected.usageGuide.instructions).toContain('next.arguments')
+    } else {
+      expect(selected.usageGuide.instructions).toContain('next.arguments')
+    }
+
     expect(selected.usageGuide.instructions).toContain('accepted')
     expect(selected.usageGuide.recovery).toMatch(/replay/i)
+
     return selected
   }
+
   const plan = {
     method: 'Inspect independent parts',
     references: [],
@@ -247,6 +304,7 @@ async function verifySelectedReviewFlow() {
       }
     }
   }
+
   const judge = async (
     next: {
       tool: string
@@ -263,6 +321,7 @@ async function verifySelectedReviewFlow() {
         evidence: 'Explicit fixture visual judgment'
       }))
     })
+
   try {
     const planned = await call('define_design_criteria', plan)
     const referenceGuide = (
@@ -271,6 +330,7 @@ async function verifySelectedReviewFlow() {
         view: 'usage'
       })
     ).tools[0]
+
     expect(referenceGuide.usageGuide.parameters).toBeDefined()
     const reference = referenceImages.validateReferences([0])[0]
     const selection = {
@@ -294,21 +354,26 @@ async function verifySelectedReviewFlow() {
         }
       ]
     }
+
     expect(
       operationInputIssue(selection, referenceGuide.usageGuide.parameters)
     ).toBeUndefined()
     const selected = await call(referenceGuide.execution.tool, selection)
+
     expect(selected.toolOutcome.status, JSON.stringify(selected)).toBe(
       'success'
     )
     const referenceUse = selected.referenceDecisions[0].uses[0].receipt
+
     bytes = 0
     reads = 0
     queryBytes = 0
     const menu = await call('describe_design_apis', { query: 'review_drawing' })
+
     expect(menu.contentDelivery).toBeUndefined()
     expect(menu.tools).toHaveLength(1)
     const choices = menu.tools[0].inputScopes
+
     expect(choices.operations).toEqual(['record', 'capture', 'bind'])
     expect(choices.nodeTypes).toEqual([])
     expect(choices.selection).toContain('reuse retained images')
@@ -318,6 +383,7 @@ async function verifySelectedReviewFlow() {
     )
     const invocation = captureGuide.invocationExample.invocation
     const captureArgs = structuredClone(invocation.arguments)
+
     captureArgs.inspections[0].elementId = ids[0]
     captureArgs.inspections[0].checks = [
       {
@@ -327,6 +393,7 @@ async function verifySelectedReviewFlow() {
       }
     ]
     const first = await call(invocation.tool, captureArgs)
+
     expect(first.next.arguments.checks[0].referenceUses).toEqual([referenceUse])
     expect(
       operationInputIssue(
@@ -350,6 +417,7 @@ async function verifySelectedReviewFlow() {
     expect(first.inspectionIds, JSON.stringify(first)).toHaveLength(1)
     expect(captures).toEqual([ids[0]])
     const recordedLeft = await judge(first.next)
+
     expect(recordedLeft.recordedChecks[0]).toMatchObject({
       criterionId: 'appearance',
       unitId: 'left',
@@ -362,6 +430,7 @@ async function verifySelectedReviewFlow() {
       recorded.savedReviewUsageBytes + recorded.savedFieldPageBytes
     const captureBaselineBytes =
       baselineContractBytes + captureBytes - captureContractBytes
+
     expect(reads).toBe(2)
     expect(captureBytes).toBeLessThan(
       recorded.savedReviewUsageBytes + recorded.savedFieldPageBytes
@@ -377,12 +446,14 @@ async function verifySelectedReviewFlow() {
       choices.operations.find((operation: string) => operation === 'bind')
     )
     const bind = structuredClone(bindGuide.invocationExample.invocation)
+
     bind.arguments.bindChecks[0] = {
       criterionId: 'appearance',
       unitId: 'left',
       inspectionIds: first.inspectionIds
     }
     const rebound = await call(bind.tool, bind.arguments)
+
     expect(rebound.reviewOperation).toBe('bind')
     expect(captures).toEqual([ids[0]])
     const recordExample = rebound.next
@@ -395,6 +466,7 @@ async function verifySelectedReviewFlow() {
       }))
     }
     const committed = await call(recordExample.tool, actualRecord)
+
     expect(committed.reviewOperation).toBe('record')
     expect(committed.accepted).toBe(false)
     expect(captures).toHaveLength(1)
@@ -402,9 +474,11 @@ async function verifySelectedReviewFlow() {
     const reuseContractBytes = queryBytes
     const reuseBaselineBytes =
       baselineContractBytes + reuseBytes - reuseContractBytes
+
     expect(reads).toBe(2)
     expect(reuseBytes).toBeLessThan(reuseBaselineBytes)
     const recordGuide = await guide('record')
+
     expect(recordGuide.invocationExample.available).toBe(false)
     const full = await call('describe_design_apis', {
       names: ['review_drawing']
@@ -412,17 +486,25 @@ async function verifySelectedReviewFlow() {
     // Pagination is legitimate for an explicitly requested full schema.
     let fullValue = full
     let text = ''
+
     while (fullValue.contentDelivery) {
       text += fullValue.contentDelivery.text
-      if (!fullValue.contentDelivery.next) break
+      if (!fullValue.contentDelivery.next) {
+        break
+      }
+
       const next = fullValue.contentDelivery.next
+
       fullValue = await call(next.tool, next.arguments)
     }
+
     const canonical = (text ? JSON.parse(text) : fullValue).tools[0].inputSchema
+
     expect(operationInputIssue(actualRecord, canonical)).toBeUndefined()
 
     // Partial capture keeps the previous successful image and retries only its failed target.
     const beforeRecoveryBytes = bytes
+
     failTarget = ids[1]
     const mixedArgs = {
       ...captureArgs,
@@ -435,6 +517,7 @@ async function verifySelectedReviewFlow() {
       ]
     }
     const mixed = await call(invocation.tool, mixedArgs)
+
     expect(mixed.toolOutcome.status).toBe('partial')
     expect(mixed.inspectionIds).toEqual(first.inspectionIds)
     failTarget = ''
@@ -444,6 +527,7 @@ async function verifySelectedReviewFlow() {
         (entry: { inspection: object }) => entry.inspection
       )
     })
+
     expect(recovered.toolOutcome.status).toBe('success')
     expect(captures.filter((id) => id === ids[0])).toHaveLength(1)
     expect(recovered.next.requiredInputs).toEqual(['bindChecks'])
@@ -460,14 +544,17 @@ async function verifySelectedReviewFlow() {
       ]
     })
     const recordedRight = await judge(recoveredBinding.next)
+
     expect(recordedRight.coverage.passed).toBe(2)
     expect(recordedRight.accepted).toBe(false)
     const recoveryBytes = bytes - beforeRecoveryBytes
+
     expect(captureBytes + recoveryBytes).toBeLessThan(
       captureBaselineBytes + recoveryBytes
     )
     const beforeCancel = captures.length
     const cancelled = new AbortController()
+
     cancelled.abort()
     await expect(
       call(invocation.tool, captureArgs, cancelled.signal)
@@ -484,6 +571,7 @@ async function verifySelectedReviewFlow() {
       ...captureArgs,
       checks: actualRecord.checks
     })
+
     expect(invalid.toolOutcome.status).not.toBe('success')
     expect(captures).toHaveLength(beforeCancel)
     // Projection preserves full schema constraints, both phases and recovery routing.
@@ -494,12 +582,18 @@ async function verifySelectedReviewFlow() {
       })
       let page = selected
       let serialized = ''
+
       while (page.contentDelivery) {
         serialized += page.contentDelivery.text
-        if (!page.contentDelivery.next) break
+        if (!page.contentDelivery.next) {
+          break
+        }
+
         const next = page.contentDelivery.next
+
         page = await call(next.tool, next.arguments)
       }
+
       const contract = (serialized ? JSON.parse(serialized) : page).tools[0]
         .inputSchema
       const examples = {
@@ -508,6 +602,7 @@ async function verifySelectedReviewFlow() {
         record: actualRecord
       }
       const valid = examples[operation as keyof typeof examples]
+
       expect(operationInputIssue(valid, contract)).toBeUndefined()
       expect(
         operationInputIssue(
@@ -516,6 +611,7 @@ async function verifySelectedReviewFlow() {
         )
       ).toBeTruthy()
       const { final: _final, ...structureInput } = valid
+
       expect(
         operationInputIssue({ ...structureInput, phase: 'structure' }, contract)
       ).toBeUndefined()
@@ -523,23 +619,28 @@ async function verifySelectedReviewFlow() {
         operationInputIssue({ ...valid, unknownField: true }, contract)
       ).toBeTruthy()
     }
+
     const field = await call('describe_design_apis', {
       names: ['review_drawing'],
       schemaPaths: ['/properties/final']
     })
+
     expect(field.toolOutcome.status).toBe('success')
     const refreshed = await call(
       'describe_design_apis',
       captureGuide.definition.refresh.arguments
     )
+
     expect(refreshed.tools[0].usageGuide).toEqual(captureGuide.usageGuide)
     const duplicated = await guide('capture')
+
     expect(duplicated.usageGuide).toEqual(captureGuide.usageGuide)
     const invalidScope = await call('describe_design_apis', {
       names: ['review_drawing'],
       view: 'usage',
       inputScope: { operation: 'invalid' }
     })
+
     expect(invalidScope.toolOutcome.status).toBe('failed')
     const correctiveQuery = JSON.parse(
       invalidScope.message.split('Scope guidance: ')[1]
@@ -548,6 +649,7 @@ async function verifySelectedReviewFlow() {
       correctiveQuery.tool,
       correctiveQuery.arguments
     )
+
     expect(corrected.tools[0].usageGuide).toEqual(captureGuide.usageGuide)
     expect(captures).toHaveLength(beforeCancel)
 
@@ -559,15 +661,18 @@ async function verifySelectedReviewFlow() {
         checks: [{ criterionId: 'material', unitId: 'patch' }]
       }))
     })
+
     expect(multiscale.next.arguments.checks[0].inspectionIds).toHaveLength(2)
     expect(
       multiscale.next.arguments.checks[0].binding.dependencies
     ).toHaveLength(2)
     const multiPass = await judge(multiscale.next)
+
     expect(multiPass.recordedChecks[0].status).toBe('pass')
     expect(multiPass.accepted).toBe(false)
     const afterMultiscale = captures.length
     const tampered = structuredClone(multiscale.next.arguments)
+
     tampered.checks = multiPass.recordedChecks.map(() => ({
       ...multiscale.next.arguments.checks[0],
       status: 'pass',
@@ -578,17 +683,21 @@ async function verifySelectedReviewFlow() {
       }
     }))
     const rejected = await call(multiscale.next.tool, tampered)
+
     expect(rejected.toolOutcome.status).not.toBe('success')
     expect(captures).toHaveLength(afterMultiscale)
 
     // Independent local dependencies survive an unrelated target edit.
     invalidate?.({ elementIds: [ids[0]] })
     const staleMulti = await judge(multiscale.next)
+
     expect(staleMulti.toolOutcome.status).not.toBe('success')
     const stale = await call(recordExample.tool, actualRecord)
+
     expect(stale.toolOutcome.status).not.toBe('success')
     expect(captures).toHaveLength(afterMultiscale)
     const surviving = await judge(recoveredBinding.next)
+
     expect(surviving.recordedChecks[0].status).toBe('pass')
     expect(surviving.accepted).toBe(false)
 
@@ -599,6 +708,7 @@ async function verifySelectedReviewFlow() {
       final: false,
       inspections: [{ elementId: ids[1], checks: [{ criterionId: 'overall' }] }]
     })
+
     await judge(stable.next)
     // Saved run 1793014314889 put supersedes on a whole criterion. This must
     // reject before pixel work and return a correction that preserves identity.
@@ -614,6 +724,7 @@ async function verifySelectedReviewFlow() {
         }
       ]
     })
+
     expect(badCapture.toolOutcome.settlement).toBe('not-started')
     expect(captures).toHaveLength(countBeforeInvalid)
     expect(badCapture.next.arguments.inspections[0].checks).toEqual([
@@ -627,6 +738,7 @@ async function verifySelectedReviewFlow() {
       badCapture.next.tool,
       badCapture.next.arguments
     )
+
     expect(fixedCapture.next.arguments.checks[0].binding).toBeDefined()
     const beforeBindCorrection = captures.length
     const badBind = await call(invocation.tool, {
@@ -641,12 +753,14 @@ async function verifySelectedReviewFlow() {
         }
       ]
     })
+
     expect(badBind.toolOutcome.settlement).toBe('not-started')
     expect(badBind.next.arguments.bindChecks[0]).toEqual({
       criterionId: 'overall',
       inspectionIds: stable.inspectionIds
     })
     const fixedBind = await call(badBind.next.tool, badBind.next.arguments)
+
     await judge(fixedBind.next)
     expect(captures).toHaveLength(beforeBindCorrection)
     expect(
@@ -655,8 +769,10 @@ async function verifySelectedReviewFlow() {
       )
     ).toBe(true)
     const invalidRecord = structuredClone(fixedBind.next.arguments)
+
     invalidRecord.checks[0].supersedes = wholeSupersedes
     const badRecord = await call(fixedBind.next.tool, invalidRecord)
+
     expect(badRecord.toolOutcome.settlement).toBe('not-started')
     expect(badRecord.next.arguments.bindChecks[0]).toEqual({
       criterionId: 'overall',
@@ -666,6 +782,7 @@ async function verifySelectedReviewFlow() {
       badRecord.next.tool,
       badRecord.next.arguments
     )
+
     await judge(correctedRecordBinding.next)
     expect(captures).toHaveLength(beforeBindCorrection)
     const unrelatedInvalid = await call(invocation.tool, {
@@ -677,6 +794,7 @@ async function verifySelectedReviewFlow() {
         }
       ]
     })
+
     expect(unrelatedInvalid.toolOutcome.settlement).toBe('not-started')
     expect(unrelatedInvalid.next).toBeUndefined()
     expect(captures).toHaveLength(beforeBindCorrection)
@@ -702,6 +820,7 @@ async function verifySelectedReviewFlow() {
         ]
       }))
     })
+
     expect(changed.toolOutcome.status, JSON.stringify(changed)).toBe('partial')
     expect(changed.recordedChecks).toEqual([])
     expect(
@@ -729,23 +848,30 @@ async function verifySelectedReviewFlow() {
     const recoveryStartBytes = bytes
     const captureCount = captures.length
     const retry = structuredClone(changed.next.arguments)
+
     expect(operationInputIssue(retry, canonical)).toBeTruthy()
-    for (const check of retry.bindChecks)
+    for (const check of retry.bindChecks) {
       check.supersedes.reason = 'Inspect the changed local region explicitly'
+    }
+
     expect(operationInputIssue(retry, canonical)).toBeUndefined()
     const aborted = new AbortController()
+
     aborted.abort()
     await expect(
       call(changed.next.tool, retry, aborted.signal)
     ).rejects.toThrow()
     const retryBinding = await call(changed.next.tool, retry)
+
     expect(retryBinding.reviewOperation).toBe('bind')
     const recoveryCommitted = await judge(retryBinding.next)
+
     expect(recoveryCommitted.recordedChecks).toHaveLength(2)
     expect(captures).toHaveLength(captureCount)
     expect(reads).toBe(readCount)
     // The complete retry plus record costs less than the old extra lookup alone.
     const retryBytes = bytes - recoveryStartBytes
+
     expect(retryBytes).toBeLessThan(lookupBytes)
     // Include the enlarged initial response contract, not only the avoided lookup.
     // The old route also needs the same successful bind/record exchange; omitting
@@ -759,6 +885,7 @@ async function verifySelectedReviewFlow() {
       recordedRecovery.captureUsageReplyBytes +
       recordedRecovery.bindLookupReplyBytes +
       retryBytes
+
     expect(recoveryDeliveryBytes).toBeLessThan(
       completeUsageBudget(recordedRecoveryLowerBoundBytes, 'capture')
     )
@@ -766,6 +893,7 @@ async function verifySelectedReviewFlow() {
       view: 'details',
       includePassed: true
     })
+
     expect(
       afterScopeChange.items.find(
         (item: { criterionId: string }) => item.criterionId === 'overall'
@@ -777,6 +905,7 @@ async function verifySelectedReviewFlow() {
     )
     // A stale reason is not silently reused; each conflicting current revision is delivered.
     const staleRetry = await call(changed.next.tool, retry)
+
     expect(staleRetry.toolOutcome).toMatchObject({
       status: 'failed',
       settlement: 'not-started'
@@ -790,6 +919,7 @@ async function verifySelectedReviewFlow() {
       ...retry,
       bindChecks: [retry.bindChecks[0]]
     })
+
     expect(expired.toolOutcome.status).not.toBe('success')
     expect(captures).toHaveLength(captureCount)
     expect(bytes - beforeScopeBytes).toBeGreaterThan(retryBytes)
@@ -832,7 +962,9 @@ async function verifySelectedReviewFlow() {
   } finally {
     capture.mockRestore()
     evidence.dispose()
-    if (!hadWindow) vi.unstubAllGlobals()
+    if (!hadWindow) {
+      vi.unstubAllGlobals()
+    }
   }
 }
 

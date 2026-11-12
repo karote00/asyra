@@ -1,0 +1,793 @@
+{
+  "source": "taipei-101-fixed-1794058385599",
+  "input": {
+    "operations": [
+      {
+        "id": "capture",
+        "name": "design_operations.review_drawing",
+        "arguments": {
+          "phase": "visual",
+          "final": false,
+          "inspections": [
+            {
+              "elementId": "grp-actor-67f34a1d-17a0-4028-ad17-5ede755dc43a-8",
+              "checks": [
+                {
+                  "criterionId": "whole",
+                  "referenceUses": [
+                    {
+                      "requestId": "64a21587-6c5a-4d01-8d98-42d28b90f793",
+                      "referenceId": "reference:a533706b71fa39e2e12f1aa23b0c658af0e60df9f7fefec8ea244fe9670b40d2",
+                      "useId": "silhouette",
+                      "revision": 1,
+                      "requirementRevision": 1
+                    }
+                  ]
+                },
+                {
+                  "criterionId": "view"
+                },
+                {
+                  "criterionId": "materials"
+                },
+                {
+                  "criterionId": "detail",
+                  "unitId": "base",
+                  "referenceUses": [
+                    {
+                      "requestId": "64a21587-6c5a-4d01-8d98-42d28b90f793",
+                      "referenceId": "reference:a533706b71fa39e2e12f1aa23b0c658af0e60df9f7fefec8ea244fe9670b40d2",
+                      "useId": "base",
+                      "revision": 3,
+                      "requirementRevision": 1
+                    }
+                  ]
+                },
+                {
+                  "criterionId": "detail",
+                  "unitId": "tiers"
+                },
+                {
+                  "criterionId": "detail",
+                  "unitId": "crown",
+                  "referenceUses": [
+                    {
+                      "requestId": "64a21587-6c5a-4d01-8d98-42d28b90f793",
+                      "referenceId": "reference:a533706b71fa39e2e12f1aa23b0c658af0e60df9f7fefec8ea244fe9670b40d2",
+                      "useId": "crown",
+                      "revision": 2,
+                      "requirementRevision": 1
+                    }
+                  ]
+                },
+                {
+                  "criterionId": "detail",
+                  "unitId": "ornaments",
+                  "referenceUses": [
+                    {
+                      "requestId": "64a21587-6c5a-4d01-8d98-42d28b90f793",
+                      "referenceId": "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd",
+                      "useId": "ruyi",
+                      "revision": 4,
+                      "requirementRevision": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "elementId": "grp-actor-67f34a1d-17a0-4028-ad17-5ede755dc43a-8",
+              "view": "detail",
+              "region": {
+                "x": 3300,
+                "y": 33650,
+                "width": 1024,
+                "height": 1024
+              },
+              "checks": [
+                {
+                  "criterionId": "detail",
+                  "unitId": "ornaments",
+                  "referenceUses": [
+                    {
+                      "requestId": "64a21587-6c5a-4d01-8d98-42d28b90f793",
+                      "referenceId": "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd",
+                      "useId": "ruyi",
+                      "revision": 4,
+                      "requirementRevision": 1
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "data",
+        "name": "design_operations.review_drawing",
+        "arguments": {
+          "phase": "visual",
+          "final": false,
+          "dataQueries": [
+            {
+              "criterionId": "native",
+              "elementIds": [
+                "grp-actor-67f34a1d-17a0-4028-ad17-5ede755dc43a-8",
+                "design-fda512c3-9067-4442-ac79-5b6e232d66b9-0",
+                "design-c0a047f0-d8fa-4e5a-a6b2-cd4d02db4d25-0",
+                "design-6329b085-d777-40c5-994e-4b5e75b3210c-0"
+              ],
+              "fields": [
+                "x",
+                "y",
+                "width",
+                "height"
+              ]
+            },
+            {
+              "criterionId": "native",
+              "query": {
+                "scope": "region",
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 30000,
+                  "height": 52000
+                },
+                "filter": {
+                  "name": {
+                    "equals": "508公尺避雷尖端"
+                  }
+                },
+                "expectedCount": 1
+              },
+              "fields": [
+                "x",
+                "y",
+                "width",
+                "height",
+                "fills"
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "delivery": {
+      "fields": {
+        "capture": {
+          "step": "capture",
+          "path": ""
+        },
+        "data": {
+          "step": "data",
+          "path": ""
+        }
+      }
+    }
+  },
+  "owner": {
+    "phase": "visual",
+    "accepted": false,
+    "reviewOperation": "capture",
+    "recordedChecks": [],
+    "inspectionIds": [
+      "41f80503-5ddf-4a27-97f1-8e6643c9f567",
+      "5dc35ca7-a148-461f-b65e-2f1c1c52bbbc"
+    ],
+    "actionResults": [
+      {
+        "actionId": "20e04a49-5fb1-4f87-b077-d44208e0fdb3",
+        "actionName": "inspect_drawing",
+        "result": {
+          "available": true,
+          "settlement": "completed",
+          "elementId": "grp-actor-67f34a1d-17a0-4028-ad17-5ede755dc43a-8",
+          "image": {
+            "type": "snapshot",
+            "dataUrl": "[redacted]",
+            "width": 430,
+            "height": 1024,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 20694,
+              "height": 49244
+            }
+          },
+          "partial": false,
+          "imageScope": "overview",
+          "background": "#ffffff",
+          "evidence": {
+            "sessionId": "55fa83fc-6350-409d-a509-69223f2537e6",
+            "receiptId": "fde58828-0ae2-4d7d-996c-4df92ec5143c",
+            "revision": 2487
+          },
+          "toolOutcome": {
+            "status": "success",
+            "settlement": "completed"
+          },
+          "inspectionId": "41f80503-5ddf-4a27-97f1-8e6643c9f567",
+          "revision": 10
+        }
+      },
+      {
+        "actionId": "3cc0ba72-0453-44f9-b028-44e64b4dec07",
+        "actionName": "inspect_drawing",
+        "result": {
+          "available": true,
+          "settlement": "completed",
+          "elementId": "grp-actor-67f34a1d-17a0-4028-ad17-5ede755dc43a-8",
+          "image": {
+            "type": "snapshot",
+            "dataUrl": "[redacted]",
+            "width": 1024,
+            "height": 1024,
+            "bounds": {
+              "x": 3300,
+              "y": 33650,
+              "width": 1024,
+              "height": 1024
+            }
+          },
+          "partial": true,
+          "imageScope": "region",
+          "background": "#ffffff",
+          "evidence": {
+            "sessionId": "55fa83fc-6350-409d-a509-69223f2537e6",
+            "receiptId": "96293bfd-5174-4280-a6e2-8147ff685e7b",
+            "revision": 2487
+          },
+          "toolOutcome": {
+            "status": "success",
+            "settlement": "completed"
+          },
+          "inspectionId": "5dc35ca7-a148-461f-b65e-2f1c1c52bbbc",
+          "revision": 10
+        }
+      }
+    ],
+    "status": "partial",
+    "settlement": "partial",
+    "code": "REVIEW_SCOPE_CONFLICT",
+    "recovery": {
+      "kind": "rebind_checks",
+      "settlement": "not-started"
+    },
+    "coverage": {
+      "required": 8,
+      "passed": 0,
+      "pending": [
+        {
+          "id": "visual:whole",
+          "criterionId": "whole",
+          "status": "stale"
+        },
+        {
+          "id": "visual:view",
+          "criterionId": "view",
+          "status": "stale"
+        },
+        {
+          "id": "visual-unit:[\"detail\",\"base\"]",
+          "criterionId": "detail",
+          "unitId": "base",
+          "status": "unverified"
+        },
+        {
+          "id": "visual-unit:[\"detail\",\"tiers\"]",
+          "criterionId": "detail",
+          "unitId": "tiers",
+          "status": "unverified"
+        },
+        {
+          "id": "visual-unit:[\"detail\",\"crown\"]",
+          "criterionId": "detail",
+          "unitId": "crown",
+          "status": "unverified"
+        },
+        {
+          "id": "visual-unit:[\"detail\",\"ornaments\"]",
+          "criterionId": "detail",
+          "unitId": "ornaments",
+          "status": "fail"
+        },
+        {
+          "id": "visual:materials",
+          "criterionId": "materials",
+          "status": "stale"
+        },
+        {
+          "id": "visual:native",
+          "criterionId": "native",
+          "status": "stale"
+        }
+      ]
+    },
+    "acceptanceContext": {
+      "method": "以公分為世界單位、scale=1，共同正投影azimuth=35 elevation=25，固定俯視三分之四。508m總高及八組八層依文獻；其餘細節按影像估算。原生投影向量與表面網格，無背景、文字或城市裝飾。",
+      "requirementRevision": 1,
+      "checks": [
+        {
+          "criterionId": "whole",
+          "requirement": "完整台北101由基座至塔尖，保留特徵輪廓，不加無關背景。",
+          "description": "完整構圖、八組竹節、塔冠與塔尖，周圍透明。"
+        },
+        {
+          "criterionId": "view",
+          "requirement": "固定高處三分之四俯視，頂面清楚且透視一致。",
+          "description": "所有可見面使用共同角度與正投影縮短。"
+        },
+        {
+          "criterionId": "materials",
+          "requirement": "真實材質、光線與陰影。",
+          "description": "藍綠反射玻璃、金屬框、高光、轉折陰影及層間遮蔽。"
+        },
+        {
+          "criterionId": "detail",
+          "unitId": "base",
+          "requirement": "高度細緻寫實建築插畫，含窗框、立面、突出竹節與可見裝飾。",
+          "description": "基座、竹節、塔冠塔尖及如意金屬裝飾皆需近看檢查。"
+        },
+        {
+          "criterionId": "detail",
+          "unitId": "tiers",
+          "requirement": "高度細緻寫實建築插畫，含窗框、立面、突出竹節與可見裝飾。",
+          "description": "基座、竹節、塔冠塔尖及如意金屬裝飾皆需近看檢查。"
+        },
+        {
+          "criterionId": "detail",
+          "unitId": "crown",
+          "requirement": "高度細緻寫實建築插畫，含窗框、立面、突出竹節與可見裝飾。",
+          "description": "基座、竹節、塔冠塔尖及如意金屬裝飾皆需近看檢查。"
+        },
+        {
+          "criterionId": "detail",
+          "unitId": "ornaments",
+          "requirement": "高度細緻寫實建築插畫，含窗框、立面、突出竹節與可見裝飾。",
+          "description": "基座、竹節、塔冠塔尖及如意金屬裝飾皆需近看檢查。"
+        }
+      ]
+    },
+    "next": {
+      "tool": "review_drawing",
+      "arguments": {
+        "phase": "visual",
+        "final": false,
+        "inspectionIds": [
+          "41f80503-5ddf-4a27-97f1-8e6643c9f567",
+          "5dc35ca7-a148-461f-b65e-2f1c1c52bbbc"
+        ],
+        "bindChecks": [
+          {
+            "criterionId": "whole",
+            "referenceUses": [
+              {
+                "requestId": "64a21587-6c5a-4d01-8d98-42d28b90f793",
+                "referenceId": "reference:a533706b71fa39e2e12f1aa23b0c658af0e60df9f7fefec8ea244fe9670b40d2",
+                "useId": "silhouette",
+                "revision": 1,
+                "requirementRevision": 1
+              }
+            ],
+            "inspectionIds": [
+              "41f80503-5ddf-4a27-97f1-8e6643c9f567"
+            ]
+          },
+          {
+            "criterionId": "view",
+            "inspectionIds": [
+              "41f80503-5ddf-4a27-97f1-8e6643c9f567"
+            ]
+          },
+          {
+            "criterionId": "materials",
+            "inspectionIds": [
+              "41f80503-5ddf-4a27-97f1-8e6643c9f567"
+            ]
+          },
+          {
+            "criterionId": "detail",
+            "unitId": "base",
+            "referenceUses": [
+              {
+                "requestId": "64a21587-6c5a-4d01-8d98-42d28b90f793",
+                "referenceId": "reference:a533706b71fa39e2e12f1aa23b0c658af0e60df9f7fefec8ea244fe9670b40d2",
+                "useId": "base",
+                "revision": 3,
+                "requirementRevision": 1
+              }
+            ],
+            "inspectionIds": [
+              "41f80503-5ddf-4a27-97f1-8e6643c9f567"
+            ]
+          },
+          {
+            "criterionId": "detail",
+            "unitId": "tiers",
+            "inspectionIds": [
+              "41f80503-5ddf-4a27-97f1-8e6643c9f567"
+            ]
+          },
+          {
+            "criterionId": "detail",
+            "unitId": "crown",
+            "referenceUses": [
+              {
+                "requestId": "64a21587-6c5a-4d01-8d98-42d28b90f793",
+                "referenceId": "reference:a533706b71fa39e2e12f1aa23b0c658af0e60df9f7fefec8ea244fe9670b40d2",
+                "useId": "crown",
+                "revision": 2,
+                "requirementRevision": 1
+              }
+            ],
+            "inspectionIds": [
+              "41f80503-5ddf-4a27-97f1-8e6643c9f567"
+            ]
+          },
+          {
+            "criterionId": "detail",
+            "unitId": "ornaments",
+            "referenceUses": [
+              {
+                "requestId": "64a21587-6c5a-4d01-8d98-42d28b90f793",
+                "referenceId": "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd",
+                "useId": "ruyi",
+                "revision": 4,
+                "requirementRevision": 1
+              }
+            ],
+            "inspectionIds": [
+              "41f80503-5ddf-4a27-97f1-8e6643c9f567",
+              "5dc35ca7-a148-461f-b65e-2f1c1c52bbbc"
+            ],
+            "supersedes": {
+              "revision": 2
+            }
+          }
+        ]
+      },
+      "requiredInputs": [
+        "bindChecks[6].supersedes.reason"
+      ],
+      "instruction": "Keep the returned check identities, image assignments and reference uses. Fill the named missing fields with your explicit redesign reasons, or correct the reported invalid selection, then call this tool with next.arguments. Revalidation is mandatory. Binding records no judgments. Do not recapture images, replay edits or resend unrelated passed checks."
+    },
+    "message": "Check binding failed: Check unit scope changed for detail/ornaments; provide supersedes with the current result revision 2 and redesign reason. No judgments were recorded. No judgments were recorded. Successful images and selected checks are retained in next.arguments; complete requiredInputs before rebinding.",
+    "toolOutcome": {
+      "status": "partial",
+      "settlement": "partial",
+      "issues": [
+        {
+          "code": "REVIEW_SCOPE_CONFLICT",
+          "message": "Check binding failed: Check unit scope changed for detail/ornaments; provide supersedes with the current result revision 2 and redesign reason. No judgments were recorded. No judgments were recorded. Successful images and selected checks are retained in next.arguments; complete requiredInputs before rebinding."
+        }
+      ]
+    }
+  },
+  "execution": {
+    "status": "failed",
+    "settlement": "partial",
+    "calls": [
+      {
+        "callId": "c466266d-4899-4eca-94a5-8287b4b914ec",
+        "stepId": "capture",
+        "name": "design_operations.review_drawing",
+        "revision": 22,
+        "status": "partial",
+        "settlement": "partial"
+      }
+    ],
+    "recovery": [
+      {
+        "callId": "c466266d-4899-4eca-94a5-8287b4b914ec",
+        "stepId": "capture",
+        "name": "design_operations.review_drawing",
+        "revision": 22,
+        "status": "partial",
+        "settlement": "partial",
+        "value": {
+          "phase": "visual",
+          "accepted": false,
+          "reviewOperation": "capture",
+          "recordedChecks": [],
+          "inspectionIds": [
+            "41f80503-5ddf-4a27-97f1-8e6643c9f567",
+            "5dc35ca7-a148-461f-b65e-2f1c1c52bbbc"
+          ],
+          "actionResults": [
+            {
+              "actionId": "20e04a49-5fb1-4f87-b077-d44208e0fdb3",
+              "actionName": "inspect_drawing",
+              "result": {
+                "available": true,
+                "settlement": "completed",
+                "elementId": "grp-actor-67f34a1d-17a0-4028-ad17-5ede755dc43a-8",
+                "image": {
+                  "type": "snapshot",
+                  "dataUrl": "[redacted]",
+                  "width": 430,
+                  "height": 1024,
+                  "bounds": {
+                    "x": 0,
+                    "y": 0,
+                    "width": 20694,
+                    "height": 49244
+                  }
+                },
+                "partial": false,
+                "imageScope": "overview",
+                "background": "#ffffff",
+                "evidence": {
+                  "sessionId": "55fa83fc-6350-409d-a509-69223f2537e6",
+                  "receiptId": "fde58828-0ae2-4d7d-996c-4df92ec5143c",
+                  "revision": 2487
+                },
+                "toolOutcome": {
+                  "status": "success",
+                  "settlement": "completed"
+                },
+                "inspectionId": "41f80503-5ddf-4a27-97f1-8e6643c9f567",
+                "revision": 10
+              }
+            },
+            {
+              "actionId": "3cc0ba72-0453-44f9-b028-44e64b4dec07",
+              "actionName": "inspect_drawing",
+              "result": {
+                "available": true,
+                "settlement": "completed",
+                "elementId": "grp-actor-67f34a1d-17a0-4028-ad17-5ede755dc43a-8",
+                "image": {
+                  "type": "snapshot",
+                  "dataUrl": "[redacted]",
+                  "width": 1024,
+                  "height": 1024,
+                  "bounds": {
+                    "x": 3300,
+                    "y": 33650,
+                    "width": 1024,
+                    "height": 1024
+                  }
+                },
+                "partial": true,
+                "imageScope": "region",
+                "background": "#ffffff",
+                "evidence": {
+                  "sessionId": "55fa83fc-6350-409d-a509-69223f2537e6",
+                  "receiptId": "96293bfd-5174-4280-a6e2-8147ff685e7b",
+                  "revision": 2487
+                },
+                "toolOutcome": {
+                  "status": "success",
+                  "settlement": "completed"
+                },
+                "inspectionId": "5dc35ca7-a148-461f-b65e-2f1c1c52bbbc",
+                "revision": 10
+              }
+            }
+          ],
+          "status": "partial",
+          "settlement": "partial",
+          "code": "REVIEW_SCOPE_CONFLICT",
+          "recovery": {
+            "kind": "rebind_checks",
+            "settlement": "not-started"
+          },
+          "coverage": {
+            "required": 8,
+            "passed": 0,
+            "pending": [
+              {
+                "id": "visual:whole",
+                "criterionId": "whole",
+                "status": "stale"
+              },
+              {
+                "id": "visual:view",
+                "criterionId": "view",
+                "status": "stale"
+              },
+              {
+                "id": "visual-unit:[\"detail\",\"base\"]",
+                "criterionId": "detail",
+                "unitId": "base",
+                "status": "unverified"
+              },
+              {
+                "id": "visual-unit:[\"detail\",\"tiers\"]",
+                "criterionId": "detail",
+                "unitId": "tiers",
+                "status": "unverified"
+              },
+              {
+                "id": "visual-unit:[\"detail\",\"crown\"]",
+                "criterionId": "detail",
+                "unitId": "crown",
+                "status": "unverified"
+              },
+              {
+                "id": "visual-unit:[\"detail\",\"ornaments\"]",
+                "criterionId": "detail",
+                "unitId": "ornaments",
+                "status": "fail"
+              },
+              {
+                "id": "visual:materials",
+                "criterionId": "materials",
+                "status": "stale"
+              },
+              {
+                "id": "visual:native",
+                "criterionId": "native",
+                "status": "stale"
+              }
+            ]
+          },
+          "acceptanceContext": {
+            "method": "以公分為世界單位、scale=1，共同正投影azimuth=35 elevation=25，固定俯視三分之四。508m總高及八組八層依文獻；其餘細節按影像估算。原生投影向量與表面網格，無背景、文字或城市裝飾。",
+            "requirementRevision": 1,
+            "checks": [
+              {
+                "criterionId": "whole",
+                "requirement": "完整台北101由基座至塔尖，保留特徵輪廓，不加無關背景。",
+                "description": "完整構圖、八組竹節、塔冠與塔尖，周圍透明。"
+              },
+              {
+                "criterionId": "view",
+                "requirement": "固定高處三分之四俯視，頂面清楚且透視一致。",
+                "description": "所有可見面使用共同角度與正投影縮短。"
+              },
+              {
+                "criterionId": "materials",
+                "requirement": "真實材質、光線與陰影。",
+                "description": "藍綠反射玻璃、金屬框、高光、轉折陰影及層間遮蔽。"
+              },
+              {
+                "criterionId": "detail",
+                "unitId": "base",
+                "requirement": "高度細緻寫實建築插畫，含窗框、立面、突出竹節與可見裝飾。",
+                "description": "基座、竹節、塔冠塔尖及如意金屬裝飾皆需近看檢查。"
+              },
+              {
+                "criterionId": "detail",
+                "unitId": "tiers",
+                "requirement": "高度細緻寫實建築插畫，含窗框、立面、突出竹節與可見裝飾。",
+                "description": "基座、竹節、塔冠塔尖及如意金屬裝飾皆需近看檢查。"
+              },
+              {
+                "criterionId": "detail",
+                "unitId": "crown",
+                "requirement": "高度細緻寫實建築插畫，含窗框、立面、突出竹節與可見裝飾。",
+                "description": "基座、竹節、塔冠塔尖及如意金屬裝飾皆需近看檢查。"
+              },
+              {
+                "criterionId": "detail",
+                "unitId": "ornaments",
+                "requirement": "高度細緻寫實建築插畫，含窗框、立面、突出竹節與可見裝飾。",
+                "description": "基座、竹節、塔冠塔尖及如意金屬裝飾皆需近看檢查。"
+              }
+            ]
+          },
+          "next": {
+            "tool": "review_drawing",
+            "arguments": {
+              "phase": "visual",
+              "final": false,
+              "inspectionIds": [
+                "41f80503-5ddf-4a27-97f1-8e6643c9f567",
+                "5dc35ca7-a148-461f-b65e-2f1c1c52bbbc"
+              ],
+              "bindChecks": [
+                {
+                  "criterionId": "whole",
+                  "referenceUses": [
+                    {
+                      "requestId": "64a21587-6c5a-4d01-8d98-42d28b90f793",
+                      "referenceId": "reference:a533706b71fa39e2e12f1aa23b0c658af0e60df9f7fefec8ea244fe9670b40d2",
+                      "useId": "silhouette",
+                      "revision": 1,
+                      "requirementRevision": 1
+                    }
+                  ],
+                  "inspectionIds": [
+                    "41f80503-5ddf-4a27-97f1-8e6643c9f567"
+                  ]
+                },
+                {
+                  "criterionId": "view",
+                  "inspectionIds": [
+                    "41f80503-5ddf-4a27-97f1-8e6643c9f567"
+                  ]
+                },
+                {
+                  "criterionId": "materials",
+                  "inspectionIds": [
+                    "41f80503-5ddf-4a27-97f1-8e6643c9f567"
+                  ]
+                },
+                {
+                  "criterionId": "detail",
+                  "unitId": "base",
+                  "referenceUses": [
+                    {
+                      "requestId": "64a21587-6c5a-4d01-8d98-42d28b90f793",
+                      "referenceId": "reference:a533706b71fa39e2e12f1aa23b0c658af0e60df9f7fefec8ea244fe9670b40d2",
+                      "useId": "base",
+                      "revision": 3,
+                      "requirementRevision": 1
+                    }
+                  ],
+                  "inspectionIds": [
+                    "41f80503-5ddf-4a27-97f1-8e6643c9f567"
+                  ]
+                },
+                {
+                  "criterionId": "detail",
+                  "unitId": "tiers",
+                  "inspectionIds": [
+                    "41f80503-5ddf-4a27-97f1-8e6643c9f567"
+                  ]
+                },
+                {
+                  "criterionId": "detail",
+                  "unitId": "crown",
+                  "referenceUses": [
+                    {
+                      "requestId": "64a21587-6c5a-4d01-8d98-42d28b90f793",
+                      "referenceId": "reference:a533706b71fa39e2e12f1aa23b0c658af0e60df9f7fefec8ea244fe9670b40d2",
+                      "useId": "crown",
+                      "revision": 2,
+                      "requirementRevision": 1
+                    }
+                  ],
+                  "inspectionIds": [
+                    "41f80503-5ddf-4a27-97f1-8e6643c9f567"
+                  ]
+                },
+                {
+                  "criterionId": "detail",
+                  "unitId": "ornaments",
+                  "referenceUses": [
+                    {
+                      "requestId": "64a21587-6c5a-4d01-8d98-42d28b90f793",
+                      "referenceId": "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd",
+                      "useId": "ruyi",
+                      "revision": 4,
+                      "requirementRevision": 1
+                    }
+                  ],
+                  "inspectionIds": [
+                    "41f80503-5ddf-4a27-97f1-8e6643c9f567",
+                    "5dc35ca7-a148-461f-b65e-2f1c1c52bbbc"
+                  ],
+                  "supersedes": {
+                    "revision": 2
+                  }
+                }
+              ]
+            },
+            "requiredInputs": [
+              "bindChecks[6].supersedes.reason"
+            ],
+            "instruction": "Keep the returned check identities, image assignments and reference uses. Fill the named missing fields with your explicit redesign reasons, or correct the reported invalid selection, then call this tool with next.arguments. Revalidation is mandatory. Binding records no judgments. Do not recapture images, replay edits or resend unrelated passed checks."
+          },
+          "message": "Check binding failed: Check unit scope changed for detail/ornaments; provide supersedes with the current result revision 2 and redesign reason. No judgments were recorded. No judgments were recorded. Successful images and selected checks are retained in next.arguments; complete requiredInputs before rebinding.",
+          "toolOutcome": {
+            "status": "partial",
+            "settlement": "partial",
+            "issues": [
+              {
+                "code": "REVIEW_SCOPE_CONFLICT",
+                "message": "Check binding failed: Check unit scope changed for detail/ornaments; provide supersedes with the current result revision 2 and redesign reason. No judgments were recorded. No judgments were recorded. Successful images and selected checks are retained in next.arguments; complete requiredInputs before rebinding."
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "issues": [
+      "Check binding failed: Check unit scope changed for detail/ornaments; provide supersedes with the current result revision 2 and redesign reason. No judgments were recorded. No judgments were recorded. Successful images and selected checks are retained in next.arguments; complete requiredInputs before rebinding."
+    ]
+  }
+}

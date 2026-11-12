@@ -442,7 +442,7 @@ const createCompositionActions = (
   const update: AiActionDefinition<UpdateCompositionElementsArgs> =
     Object.freeze({
       description:
-        'Apply bounded geometry, fill-color, or stroke-color updates to existing context-exposed composition elements.',
+        'Scale existing context-exposed composition elements using scaleX/scaleY, or update fill/stroke colors. Does not change x/y position, reparent elements, or reorder layers.',
 
       execute: async (
         args: UpdateCompositionElementsArgs,

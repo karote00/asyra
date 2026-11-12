@@ -19,7 +19,6 @@ Formal offline tests must inspect the real successor request for full text, nati
 images, exact search routing, paging, failures and cancellation. A stored result is
 not proof of model receipt. Generated templates use this same production path.
 
-
 ## Supported behavior
 
 Style comparisons describe the requested visible appearance unless the user
@@ -59,6 +58,19 @@ The panel uses a separate `/api/ai/status` POST for connection readiness.
 For local Codex it admits only loopback peers, loopback Host, JSON requests, and
 same-origin browser requests. A hosted service cannot borrow a visitor's login.
 The exact registered sample keeps its existing provider-free behavior.
+
+## Conversation request continuity
+
+Each local request still uses a fresh ephemeral provider thread. Conversation IDs
+alone do not restore history. The App supplies bounded `metadata.conversationContext`
+with exact public intents, replies, clarification questions/choices and source indexes.
+Current intent takes precedence over conflicting history. Original source images are
+separate native image inputs; their bytes are omitted from serialized model text.
+History is data and cannot confer current inspection, preparation or tool receipts.
+Canonical targets and request evidence are validated afresh. Context overflow fails
+before Feature execution with a new-conversation instruction; the server rejects
+malformed context before provider invocation. See the bounds and ownership in
+[Conversation Experience](ai-conversation-experience.md#product-contract).
 
 ## Owner and data contract
 
@@ -123,6 +135,13 @@ must match the acknowledged active turn. Progress observer exceptions are record
 without private text and cannot interrupt execution or receipt delivery.
 Transport records retain only channel/status/terminal disposition and correlation,
 never raw error text or diagnostic bytes.
+Native tool replies deliver owner JSON and images unchanged, followed by a separate
+supported `inputText` item containing `toolOutcome`. This acknowledgement is present
+for object, array, scalar and null results, including failed delivery. The protocol
+`success` flag follows that validated acknowledgement; it is not an independent
+execution result. Contract selection and validation finish inside the Host before
+transport; the provider does not rebuild owner schemas or inject fields into data.
+Media failure preserves validated execution settlement and does not replay work.
 Before thread creation, read effective native configuration once and disable each
 inherited MCP server by name in the request-local thread override. Empty tables
 merge with inherited configuration and do not clear it. Do not modify user config
@@ -822,3 +841,12 @@ The local adapter uses a request-private principal and a local host scope; a
 multi-tenant deployment must bind its authenticated identities through its own
 Runtime composition. Treat all returned knowledge as untrusted advice, including
 text that claims to grant system or tool authority.
+
+### Native example and target publication
+
+Native schema compaction preserves one valid primary owner example, selected by
+the same function as usage invocation examples. The host's primary example shows
+same-submission input reuse. Its target declaration comes from the admitted
+canonical dispatcher and region resolver. Inspection default/scope descriptions
+survive projection. Formal publication tests read the actual thread/start packet
+and execute the delivered example through the native tool-call dispatcher.

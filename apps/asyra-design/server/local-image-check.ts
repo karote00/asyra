@@ -1,8 +1,3 @@
-import {
-  referenceUseReceiptSchema,
-  referenceUseDependency,
-  type ReferenceUseReceipt
-} from './local-reference-decisions'
 import sharp from 'sharp'
 import { setImmediate as yieldToEventLoop } from 'node:timers/promises'
 import { AiDesignToolIds } from '../src/constants/ai-design'
@@ -33,7 +28,6 @@ export interface ImageCheckInspection {
 interface ImageCheckInput {
   checkId: string
   inspectionId: string
-  referenceUse: ReferenceUseReceipt
   referenceImageIndex: number
   referenceRegion: Region
   channelTolerance: number
@@ -112,7 +106,6 @@ export const imageCheckDefinition = {
     required: [
       'checkId',
       'inspectionId',
-      'referenceUse',
       'referenceImageIndex',
       'referenceRegion',
       'channelTolerance',
@@ -121,7 +114,6 @@ export const imageCheckDefinition = {
     properties: {
       checkId: { type: 'string', minLength: 1, maxLength: 128 },
       inspectionId: { type: 'string', minLength: 1 },
-      referenceUse: referenceUseReceiptSchema,
       referenceImageIndex: { type: 'integer', minimum: 0 },
       referenceRegion: regionSchema,
       channelTolerance: { type: 'integer', minimum: 0, maximum: 255 },
@@ -136,7 +128,6 @@ export const createLocalImageCheck = (options: {
   inspection: (id: string) => ImageCheckInspection | undefined
   reference: (
     index: number,
-    use: ReferenceUseReceipt,
     region: Region
   ) => { referenceId: string; dataUrl: string }
   validate: (id: string, signal: AbortSignal) => Promise<boolean>
@@ -224,10 +215,8 @@ export const createLocalImageCheck = (options: {
       signal.throwIfAborted()
       const reference = options.reference(
         args.referenceImageIndex,
-        args.referenceUse,
         args.referenceRegion
       )
-      const useKey = referenceUseDependency(args.referenceUse)
       const id = `image:${args.checkId}`
       const configKey = `image-config:${args.checkId}`
       const regionKey = `image-region:${args.checkId}`
@@ -264,7 +253,6 @@ export const createLocalImageCheck = (options: {
 
       if (
         previous &&
-        previous.dependencies[useKey] === String(args.referenceUse.revision) &&
         previous.status !== 'stale' &&
         previous.status !== 'unverified' &&
         Object.hasOwn(previous.dependencies, `inspection:${args.inspectionId}`)
@@ -387,11 +375,15 @@ export const createLocalImageCheck = (options: {
       }
 
       signal.throwIfAborted()
-      options.reference(
+      const currentReference = options.reference(
         args.referenceImageIndex,
-        args.referenceUse,
         args.referenceRegion
       )
+
+      if (currentReference.referenceId !== reference.referenceId) {
+        throw new Error('Reference changed during comparison.')
+      }
+
       options.results.record({
         id,
         origin: 'tool',
@@ -399,7 +391,6 @@ export const createLocalImageCheck = (options: {
         evidence: JSON.stringify(result),
         scope: [image.target],
         dependencies: {
-          [useKey]: String(args.referenceUse.revision),
           [configKey]: config,
           ...(regionConfig ? { [regionKey]: regionConfig } : {}),
           [`inspection:${args.inspectionId}`]: args.inspectionId

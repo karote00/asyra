@@ -143,6 +143,7 @@ export const createDesignCheckResults = () => {
   let ledgerRevision = 0
   const pendingIds = new Set<string>()
   const dependents = new Map<string, Set<string>>()
+
   const invalidate = (keys: string[] | undefined, reason: string) => {
     if (!keys) {
       for (const [id, result] of results) {
@@ -150,37 +151,55 @@ export const createDesignCheckResults = () => {
           counts[result.status]--
           counts.stale++
         }
-        if (result.status !== 'stale' || result.reason !== reason)
+
+        if (result.status !== 'stale' || result.reason !== reason) {
           ledgerRevision++
+        }
+
         result.status = 'stale'
         result.reason = reason
         pendingIds.add(id)
       }
+
       return
     }
+
     const pending = [...keys]
     const visited = new Set<string>()
+
     for (const key of pending) {
-      if (visited.has(key)) continue
+      if (visited.has(key)) {
+        continue
+      }
+
       visited.add(key)
       for (const id of dependents.get(key) ?? []) {
         const result = results.get(id)
-        if (!result) continue
+
+        if (!result) {
+          continue
+        }
+
         if (result.status !== 'stale') {
           counts[result.status]--
           counts.stale++
         }
+
         pendingIds.add(id)
-        if (result.status !== 'stale' || result.reason !== reason)
+        if (result.status !== 'stale' || result.reason !== reason) {
           ledgerRevision++
+        }
+
         result.status = 'stale'
         result.reason = reason
         pending.push(`check:${id}`)
       }
     }
   }
+
   const remove = (result: DesignCheckResult, reason: string) => {
     const id = result.id
+
     invalidate([`check:${id}`], reason)
     retiredRevisions.set(id, {
       revision: result.revision,
@@ -193,39 +212,58 @@ export const createDesignCheckResults = () => {
     ledgerRevision++
     for (const key of Object.keys(result.dependencies)) {
       const ids = dependents.get(key)
+
       ids?.delete(id)
-      if (!ids?.size) dependents.delete(key)
+      if (!ids?.size) {
+        dependents.delete(key)
+      }
     }
   }
+
   const owner = {
     invalidate,
+
     selection(ids: readonly string[]): DesignCheckSelection[] {
       return ids.map((checkId) => {
         const record = results.get(checkId) ?? retiredRevisions.get(checkId)
-        if (!record || record.origin !== 'tool')
+
+        if (!record || record.origin !== 'tool') {
           throw new Error('Unknown mechanical check.')
+        }
+
         return { checkId, revision: record.revision }
       })
     },
+
     select(selection: readonly DesignCheckSelection[]) {
-      if (!selection.length)
+      if (!selection.length) {
         throw new Error('Mechanical selection must be nonempty.')
+      }
+
       if (
         new Set(selection.map((item) => item.checkId)).size !== selection.length
-      )
+      ) {
         throw new Error('Mechanical selection must contain unique check IDs.')
+      }
+
       return selection.map(({ checkId, revision }) => {
         const result = results.get(checkId)
         const retired = retiredRevisions.get(checkId)
         const record = result ?? retired
-        if (!record || record.origin !== 'tool')
+
+        if (!record || record.origin !== 'tool') {
           throw new Error('Unknown mechanical check.')
-        if (!Number.isSafeInteger(revision) || record.revision !== revision)
+        }
+
+        if (!Number.isSafeInteger(revision) || record.revision !== revision) {
           throw new Error(
             'Mechanical check revision changed; retrieve the current selection.'
           )
+        }
+
         if (result) {
           const { recheck, ...publicResult } = result
+
           return {
             checkId,
             revision,
@@ -234,7 +272,11 @@ export const createDesignCheckResults = () => {
             recheck: structuredClone(recheck)
           }
         }
-        if (!retired) throw new Error('Mechanical check disappeared.')
+
+        if (!retired) {
+          throw new Error('Mechanical check disappeared.')
+        }
+
         return {
           checkId,
           revision,
@@ -243,20 +285,30 @@ export const createDesignCheckResults = () => {
         }
       })
     },
+
     dependencyKeys(prefix: string): string[] {
       return [...dependents.keys()].filter((key) => key.startsWith(prefix))
     },
+
     summary(ids: Iterable<string>) {
       const selectedCounts = { pass: 0, fail: 0, unverified: 0, stale: 0 }
       let firstPendingId: string | undefined
       let visitedResults = 0
+
       for (const id of ids) {
         visitedResults++
         const result = results.get(id)
-        if (!result) continue
+
+        if (!result) {
+          continue
+        }
+
         selectedCounts[result.status]++
-        if (result.status !== 'pass') firstPendingId ??= id
+        if (result.status !== 'pass') {
+          firstPendingId ??= id
+        }
       }
+
       return {
         countsScope: 'selected-checks' as const,
         counts: selectedCounts,
@@ -264,20 +316,32 @@ export const createDesignCheckResults = () => {
         ...(firstPendingId ? { firstPendingId } : {})
       }
     },
+
     dependencyIds(ids: readonly string[]): string[] {
       const selected = new Set(ids)
-      for (const id of selected)
+
+      for (const id of selected) {
         for (const dependency of Object.keys(
           results.get(id)?.dependencies ?? {}
-        ))
-          if (dependency.startsWith('check:')) selected.add(dependency.slice(6))
+        )) {
+          if (dependency.startsWith('check:')) {
+            selected.add(dependency.slice(6))
+          }
+        }
+      }
+
       return [...selected]
     },
+
     /** Only the pre-drawing plan owner may replace unjudged declarations. */
     discardDeclarations(ids: readonly string[]): void {
       const selected = [...new Set(ids)].flatMap((id) => {
         const result = results.get(id)
-        if (!result) return []
+
+        if (!result) {
+          return []
+        }
+
         if (
           result.origin !== 'main-agent' ||
           !['unverified', 'stale'].includes(result.status) ||
@@ -289,23 +353,35 @@ export const createDesignCheckResults = () => {
               key !== 'coverage:whole-view' &&
               !key.startsWith('criterion:')
           )
-        )
+        ) {
           throw new Error(
             'Only untouched declaration placeholders can be discarded.'
           )
+        }
+
         return [result]
       })
-      for (const result of selected)
+
+      for (const result of selected) {
         remove(result, 'The unjudged declaration was replaced.')
+      }
     },
+
     /** Canonical target removal retires tool work, never a visual obligation. */
     retire(id: string, reason: string) {
       const result = results.get(id)
-      if (!result) return
-      if (result.origin !== 'tool')
+
+      if (!result) {
+        return
+      }
+
+      if (result.origin !== 'tool') {
         throw new Error('Only tool results can be retired.')
+      }
+
       remove(result, reason)
     },
+
     recordPreparedSource(input: {
       artifactId: string
       recipeRevision: string
@@ -316,27 +392,40 @@ export const createDesignCheckResults = () => {
       const previous = previousArtifactId
         ? preparedLineages.get(previousArtifactId)
         : undefined
-      if (previousArtifactId && !previous)
+
+      if (previousArtifactId && !previous) {
         throw new Error('Prepared predecessor has no retained source check.')
+      }
+
       const current = preparedLineages.get(artifactId)
       const lineage = previous ?? current ?? artifactId
-      if (current && current !== artifactId && current !== lineage)
+
+      if (current && current !== artifactId && current !== lineage) {
         throw new Error(
           'Prepared correction already belongs to another lineage.'
         )
-      if (current && latestPrepared.get(current) !== artifactId)
+      }
+
+      if (current && latestPrepared.get(current) !== artifactId) {
         throw new Error('Prepared source has been superseded.')
+      }
+
       if (
         previousArtifactId &&
         latestPrepared.get(lineage) !== previousArtifactId &&
         latestPrepared.get(lineage) !== artifactId
-      )
+      ) {
         throw new Error('Prepared predecessor has been superseded.')
+      }
+
       const id = `prepared:${lineage}:data`
       const dependency = `recipe:${lineage}`
       const prior = results.get(id)
-      if (prior && prior.dependencies[dependency] !== recipeRevision)
+
+      if (prior && prior.dependencies[dependency] !== recipeRevision) {
         invalidate([dependency], 'Prepared source changed.')
+      }
+
       const failures = input.findings.filter(
         (finding) =>
           !finding ||
@@ -344,6 +433,7 @@ export const createDesignCheckResults = () => {
           !('kind' in finding) ||
           finding.kind !== 'text-metrics-required'
       )
+
       owner.record(
         {
           id,
@@ -360,6 +450,7 @@ export const createDesignCheckResults = () => {
       if (current && current !== lineage) {
         const duplicateId = `prepared:${current}:data`
         const duplicate = results.get(duplicateId)
+
         if (duplicate) {
           invalidate(
             [`check:${duplicateId}`],
@@ -371,49 +462,74 @@ export const createDesignCheckResults = () => {
           ledgerRevision++
           for (const key of Object.keys(duplicate.dependencies)) {
             const ids = dependents.get(key)
+
             ids?.delete(duplicateId)
-            if (!ids?.size) dependents.delete(key)
+            if (!ids?.size) {
+              dependents.delete(key)
+            }
           }
         }
+
         latestPrepared.delete(current)
       }
+
       preparedLineages.set(artifactId, lineage)
       latestPrepared.set(lineage, artifactId)
+
       return lineage
     },
+
     record(
       value: Omit<DesignCheckResult, 'revision' | 'reason'>,
       recheck?: DesignCheckRecheck
     ) {
-      if (recheck && value.origin !== 'tool')
+      if (recheck && value.origin !== 'tool') {
         throw new Error('Only mechanical checks have recheck provenance.')
+      }
+
       const previous = results.get(value.id)
-      if (previous && previous.origin !== value.origin)
+
+      if (previous && previous.origin !== value.origin) {
         throw new Error('A result cannot change its origin.')
+      }
+
       const chain = Object.keys(value.dependencies)
       const visited = new Set<string>()
+
       for (const key of chain) {
-        if (visited.has(key) || !key.startsWith('check:')) continue
+        if (visited.has(key) || !key.startsWith('check:')) {
+          continue
+        }
+
         visited.add(key)
-        if (key === `check:${value.id}`)
+        if (key === `check:${value.id}`) {
           throw new Error('Check dependency cycle.')
+        }
+
         chain.push(
           ...Object.keys(results.get(key.slice(6))?.dependencies ?? {})
         )
       }
+
       for (const [dependency, version] of Object.entries(value.dependencies)) {
-        if (!dependency.startsWith('check:')) continue
+        if (!dependency.startsWith('check:')) {
+          continue
+        }
+
         const upstream = results.get(dependency.slice(6))
+
         if (
           !upstream ||
           upstream.id === value.id ||
           upstream.status !== 'pass' ||
           String(upstream.revision) !== version
-        )
+        ) {
           throw new Error(
             'A check dependency must reference a current passed result.'
           )
+        }
       }
+
       if (
         previous &&
         previous.status === value.status &&
@@ -425,21 +541,35 @@ export const createDesignCheckResults = () => {
         JSON.stringify(previous.dependencies) ===
           JSON.stringify(value.dependencies) &&
         JSON.stringify(previous.scope) === JSON.stringify(value.scope)
-      )
+      ) {
         return previous.revision
+      }
+
       invalidate([`check:${value.id}`], 'An upstream check changed.')
       for (const key of Object.keys(previous?.dependencies ?? {})) {
         const ids = dependents.get(key)
+
         ids?.delete(value.id)
-        if (!ids?.size) dependents.delete(key)
+        if (!ids?.size) {
+          dependents.delete(key)
+        }
       }
-      if (previous) counts[previous.status]--
+
+      if (previous) {
+        counts[previous.status]--
+      }
+
       counts[value.status]++
-      if (value.status === 'pass') pendingIds.delete(value.id)
-      else pendingIds.add(value.id)
+      if (value.status === 'pass') {
+        pendingIds.delete(value.id)
+      } else {
+        pendingIds.add(value.id)
+      }
+
       const revision =
         (previous?.revision ?? retiredRevisions.get(value.id)?.revision ?? 0) +
         1
+
       retiredRevisions.delete(value.id)
       ledgerRevision++
       results.set(value.id, {
@@ -449,19 +579,26 @@ export const createDesignCheckResults = () => {
       })
       for (const key of Object.keys(value.dependencies)) {
         const ids = dependents.get(key) ?? new Set<string>()
+
         ids.add(value.id)
         dependents.set(key, ids)
       }
+
       return revision
     },
+
     firstPending(origin?: DesignCheckResult['origin']) {
       for (const id of pendingIds) {
         const result = results.get(id)
-        if (result && (!origin || result.origin === origin))
+
+        if (result && (!origin || result.origin === origin)) {
           return { id, status: result.status }
+        }
       }
+
       return undefined
     },
+
     deliver(options: DesignCheckDeliveryOptions = {}): {
       countsScope: 'request-checks' | 'selected-checks'
       counts: typeof counts
@@ -474,37 +611,46 @@ export const createDesignCheckResults = () => {
       const { ids, view, includePassed, revision } = options
       const offset = options.offset ?? 0
       const limit = options.limit ?? 50
+
       if (
         !Number.isSafeInteger(offset) ||
         offset < 0 ||
         !Number.isSafeInteger(limit) ||
         limit < 1 ||
         limit > 100
-      )
+      ) {
         throw new Error(
           'Invalid check detail page; limit must be 1-100 and offset nonnegative.'
         )
+      }
+
       if (
         (offset > 0 && revision === undefined) ||
         (revision !== undefined && revision !== ledgerRevision)
-      )
+      ) {
         throw new Error(
           'Check result revision changed or is missing; restart the detail read at offset zero.'
         )
+      }
+
       if (
         ids &&
         (view === 'summary' ||
           options.offset !== undefined ||
           options.limit !== undefined)
-      )
+      ) {
         throw new Error(
           'Exact check IDs cannot be combined with summary or page selectors.'
         )
-      if (ids)
+      }
+
+      if (ids) {
         return {
           ...owner.read({ ids, includePassed: true }),
           revision: ledgerRevision
         }
+      }
+
       const firstPendingId = pendingIds.values().next().value
       const summary = {
         countsScope: 'request-checks' as const,
@@ -513,30 +659,50 @@ export const createDesignCheckResults = () => {
         revision: ledgerRevision,
         ...(firstPendingId ? { firstPendingId } : {})
       }
+
       if (view !== 'details') {
-        if (options.offset !== undefined || options.limit !== undefined)
+        if (options.offset !== undefined || options.limit !== undefined) {
           throw new Error('Page selectors require view=details.')
+        }
+
         return summary
       }
+
       const total = includePassed ? results.size : pendingIds.size
-      if (offset > total)
+
+      if (offset > total) {
         throw new Error('Check detail offset exceeds the current selection.')
+      }
+
       const items: DesignCheckResult[] = []
       let index = 0
       let visitedResults = 0
+
       for (const id of includePassed ? results.keys() : pendingIds) {
-        if (index++ < offset) continue
-        if (items.length === limit) break
+        if (index++ < offset) {
+          continue
+        }
+
+        if (items.length === limit) {
+          break
+        }
+
         const result = results.get(id)
+
         visitedResults++
-        if (!result)
+        if (!result) {
           throw new Error(
             'Check selection changed during synchronous projection.'
           )
+        }
+
         const { recheck: _recheck, ...value } = result
+
         items.push(structuredClone(value))
       }
+
       const end = offset + items.length
+
       return {
         ...summary,
         visitedResults,
@@ -544,6 +710,7 @@ export const createDesignCheckResults = () => {
         ...(end < total ? { nextOffset: end } : {})
       }
     },
+
     read(
       options: {
         includePassed?: boolean
@@ -556,20 +723,26 @@ export const createDesignCheckResults = () => {
       const ids =
         options.ids ?? (options.includePassed ? results.keys() : pendingIds)
       let visitedResults = 0
+
       for (const id of ids) {
         const result = results.get(id)
+
         visitedResults++
         if (
           !result ||
           (options.origin !== undefined && result.origin !== options.origin)
-        )
+        ) {
           continue
+        }
+
         selectedCounts[result.status]++
         if (options.includePassed || result.status !== 'pass') {
           const { recheck: _recheck, ...publicResult } = result
+
           items.push(structuredClone(publicResult))
         }
       }
+
       return {
         countsScope:
           options.ids || options.origin !== undefined
@@ -585,5 +758,6 @@ export const createDesignCheckResults = () => {
       }
     }
   }
+
   return owner
 }

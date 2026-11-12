@@ -1,3 +1,4 @@
+import { stopRecordedDrawing } from '../test-data/ai-drawing/stop-recorded-drawing.mjs'
 import { createServer, type ServerResponse } from 'node:http'
 import { writeFile } from 'node:fs/promises'
 import { prepareDesign } from '../server/design-preparation'
@@ -1455,17 +1456,17 @@ for (const width of [360, 1280]) {
         )
       }
 
-      parallel('parallel-review', 'review_drawing', 'Inspect the crown')
+      parallel('parallel-review', 'inspect_drawing', 'Inspect the crown')
       parallel('parallel-edit', 'prepare_design', 'Prepare the entrance')
       await expect(status.locator(':scope > span')).toHaveText([
-        'Checking the requested details - Preparing the design - 2 operations'
+        'Reviewing the drawing - Preparing the design - 2 operations'
       ])
       parallel('parallel-edit', 'prepare_design', 'Prepare the entrance', true)
       await expect(status.locator(':scope > span')).toHaveText([
         'Inspect the crown',
-        'Checking the requested details'
+        'Reviewing the drawing'
       ])
-      parallel('parallel-review', 'review_drawing', 'Inspect the crown', true)
+      parallel('parallel-review', 'inspect_drawing', 'Inspect the crown', true)
       await expect(status.locator(':scope > span')).toHaveText([
         'Prepare the entrance; Inspect the crown',
         'Partially completed operation (2)'
@@ -2479,9 +2480,7 @@ test('streamed AI members stay visible and independent of user Undo, then Stop s
       }) + '\n'
     )
     await expect.poll(() => receipts.length).toBe(2)
-    await page
-      .getByRole('button', { name: 'Cancel request', exact: true })
-      .click()
+    await stopRecordedDrawing(page)
     await expect(message).toHaveAttribute('data-outcome', 'cancelled')
     await expect(message).toContainText(
       'Changes already applied have been kept.'

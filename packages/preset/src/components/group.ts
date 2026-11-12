@@ -4,7 +4,7 @@ import {
   type ComponentDefinition,
   type ElementPropertyValuesUpdate,
   type PropertyMutationReceipt,
-  type RenderStrategy
+  type EngineNeutralRenderStrategy
 } from '@asyra/core'
 import {
   EntityTypes,
@@ -15,7 +15,7 @@ import {
   type MoveHierarchyRequest,
   type MoveHierarchyResult,
   type RemoveSubtreeResult,
-  type SceneTreeRawData
+  type ElementRawData
 } from '@asyra/utils'
 import { DEFAULT_GROUP_STROKES } from './stroke-defaults.js'
 import { PRESET_REGISTRATION } from '../registration.js'
@@ -50,15 +50,19 @@ export const GROUP_COMPONENT_DEFINITION: ComponentDefinition = {
   ]
 }
 
-export const GROUP_RENDER_STRATEGY: RenderStrategy = (graphic, data) => {
+export const GROUP_RENDER_STRATEGY: EngineNeutralRenderStrategy = (
+  graphic,
+  data
+) => {
   graphic.clear()
+  graphic.transformGroup = true
   // No visual rendering for group itself besides updating position
   graphic.x = data.x
   graphic.y = data.y
 }
 
 export interface GroupHierarchyReadCore {
-  sceneTreeSaveData: () => SceneTreeRawData
+  getElementData: (elementId: string) => ElementRawData | undefined
 }
 
 export interface GroupGeometryProjectionCore extends GroupHierarchyReadCore {
@@ -136,6 +140,23 @@ interface ElementRectangle {
   readonly height: number
 }
 
+type GroupHierarchyReader = (elementId: string) => ElementRawData | undefined
+
+// A read scope never crosses a canonical mutation. Do not serialize the scene.
+const createGroupHierarchyReader = (
+  core: GroupHierarchyReadCore
+): GroupHierarchyReader => {
+  const elements = new Map<string, ElementRawData | undefined>()
+
+  return (elementId) => {
+    if (!elements.has(elementId)) {
+      elements.set(elementId, core.getElementData(elementId))
+    }
+
+    return elements.get(elementId)
+  }
+}
+
 interface GroupGeometryProjection {
   readonly core: GroupGeometryProjectionCore
   readonly projectedValues: Map<string, Record<string, unknown>>
@@ -159,10 +180,10 @@ const failGroupPreparation = (message: string): never => {
 }
 
 const getContainerChildren = (
-  data: SceneTreeRawData,
+  data: GroupHierarchyReader,
   parentId: string
 ): readonly string[] => {
-  const parent = data.elements[parentId] as GroupRawData | undefined
+  const parent = data(parentId) as GroupRawData | undefined
 
   if (!parent || !Array.isArray(parent.children)) {
     return failGroupPreparation(
@@ -175,10 +196,10 @@ const getContainerChildren = (
 
 const normalizeGroupBoundsInTransaction = (
   projection: GroupGeometryProjection,
-  data: SceneTreeRawData,
+  data: GroupHierarchyReader,
   groupId: string
 ): NormalizedGroupBounds => {
-  const group = data.elements[groupId] as GroupRawData | undefined
+  const group = data(groupId) as GroupRawData | undefined
 
   if (
     !group ||
@@ -190,7 +211,7 @@ const normalizeGroupBoundsInTransaction = (
 
   const groupRectangle = readRectangle(projection, groupId)
   const childRectangles = group.children.map((elementId) =>
-    readRectangle(projection, elementId, data.elements[elementId]?.type)
+    readRectangle(projection, elementId, data(elementId)?.type)
   )
   const childBounds = deriveGroupBounds(childRectangles)
   const nextBounds =
@@ -349,7 +370,7 @@ const readPosition = (
 
 const getElementWorldPosition = (
   projection: GroupGeometryProjection,
-  data: SceneTreeRawData,
+  data: GroupHierarchyReader,
   elementId: string
 ): Readonly<{ x: number; y: number }> => {
   let currentId = elementId
@@ -363,7 +384,7 @@ const getElementWorldPosition = (
     }
 
     visited.add(currentId)
-    const element = data.elements[currentId]
+    const element = data(currentId)
 
     if (!element) {
       return failGroupGeometry(`element "${currentId}" is missing`)
@@ -384,28 +405,34 @@ const getElementWorldPosition = (
 }
 
 const getHierarchyDepth = (
-  data: SceneTreeRawData,
+  data: GroupHierarchyReader,
   elementId: string
 ): number => {
   let depth = 0
-  let element = data.elements[elementId]
+  let element = data(elementId)
+  const visited = new Set<string>()
 
   while (element?.parentId) {
+    if (visited.has(element.id)) {
+      return failGroupPreparation(`hierarchy cycle reaches "${element.id}"`)
+    }
+
+    visited.add(element.id)
     depth += 1
-    element = data.elements[element.parentId]
+    element = data(element.parentId)
   }
 
   return depth
 }
 
 const getAffectedGroupIds = (
-  data: SceneTreeRawData,
+  data: GroupHierarchyReader,
   elementIds: readonly string[]
 ): readonly string[] => {
   const groupIds = new Set<string>()
 
   elementIds.forEach((elementId) => {
-    let element = data.elements[elementId]
+    let element = data(elementId)
 
     if (!element) {
       return failGroupPreparation(`element "${elementId}" is missing`)
@@ -415,8 +442,15 @@ const getAffectedGroupIds = (
       groupIds.add(element.id)
     }
 
+    const visited = new Set<string>()
+
     while (element.parentId) {
-      const parent = data.elements[element.parentId]
+      if (visited.has(element.id)) {
+        return failGroupPreparation(`hierarchy cycle reaches "${element.id}"`)
+      }
+
+      visited.add(element.id)
+      const parent = data(element.parentId)
 
       if (!parent) {
         return failGroupPreparation(
@@ -522,10 +556,10 @@ export const projectGroupGeometryPropertyUpdates = (
     )
   }
 
-  const data = core.sceneTreeSaveData()
+  const data = createGroupHierarchyReader(core)
 
   groupGeometryElementIds.forEach((elementId) => {
-    if (data.elements[elementId]?.type !== EntityTypes.GROUP) {
+    if (data(elementId)?.type !== EntityTypes.GROUP) {
       return failGroupPreparation(
         `explicit geometry target "${elementId}" is not an official Group`
       )
@@ -559,7 +593,7 @@ export { deriveGroupBounds } from '../group-bounds.js'
 const readGroupOperation = (
   core: GroupHierarchyReadCore,
   elementIds: readonly string[]
-): { operation: PreparedGroupOperation; data: SceneTreeRawData } => {
+): { operation: PreparedGroupOperation; data: GroupHierarchyReader } => {
   if (
     !Array.isArray(elementIds) ||
     elementIds.length === 0 ||
@@ -574,9 +608,9 @@ const readGroupOperation = (
     return failGroupPreparation('element ids must be unique')
   }
 
-  const data = core.sceneTreeSaveData()
+  const data = createGroupHierarchyReader(core)
   const elements = elementIds.map((elementId) => {
-    const element = data.elements[elementId]
+    const element = data(elementId)
 
     if (!element) {
       return failGroupPreparation(`element "${elementId}" is missing`)
@@ -625,8 +659,8 @@ export const prepareUngroupOperation = (
   core: GroupHierarchyReadCore,
   groupId: string
 ): PreparedUngroupOperation => {
-  const data = core.sceneTreeSaveData()
-  const group = data.elements[groupId] as GroupRawData | undefined
+  const data = createGroupHierarchyReader(core)
+  const group = data(groupId) as GroupRawData | undefined
 
   if (
     !group ||
@@ -667,13 +701,8 @@ export const groupElements = (
     elementIds
   )
   const geometryProjection = createGroupGeometryProjection(core)
-  const sourceElements = data.elements
   const rectangles = preparedGroup.elementIds.map((elementId) =>
-    readRectangle(
-      geometryProjection,
-      elementId,
-      sourceElements[elementId]?.type
-    )
+    readRectangle(geometryProjection, elementId, data(elementId)?.type)
   )
   const bounds = deriveGroupBounds(rectangles)
 
@@ -768,7 +797,7 @@ export const normalizeGroupsForElements = (
   elementIds: readonly string[],
   options?: EVENT_OPTIONS
 ): readonly NormalizedGroupBounds[] => {
-  const data = core.sceneTreeSaveData()
+  const data = createGroupHierarchyReader(core)
   const geometryProjection = createGroupGeometryProjection(core)
   const deepestFirstGroupIds = getAffectedGroupIds(data, elementIds)
 
@@ -788,8 +817,27 @@ export const moveElementsWithGroupGeometry = (
   request: MoveHierarchyRequest,
   options?: EVENT_OPTIONS
 ): MoveHierarchyResult => {
-  const beforeData = core.sceneTreeSaveData()
+  const beforeData = createGroupHierarchyReader(core)
   const geometryProjection = createGroupGeometryProjection(core)
+  const beforePositions = new Map<string, Readonly<{ x: number; y: number }>>()
+
+  if (Array.isArray(request?.elementIds)) {
+    request.elementIds.forEach((elementId) => {
+      const element = beforeData(elementId)
+      const sourceIsGroup =
+        element?.parentId &&
+        beforeData(element.parentId)?.type === EntityTypes.GROUP
+      const targetIsGroup =
+        beforeData(request.targetParentId)?.type === EntityTypes.GROUP
+
+      if (element && (sourceIsGroup || targetIsGroup)) {
+        beforePositions.set(
+          elementId,
+          getElementWorldPosition(geometryProjection, beforeData, elementId)
+        )
+      }
+    })
+  }
 
   return runTransaction(() => {
     const result = core.moveElements(request, options)
@@ -800,22 +848,25 @@ export const moveElementsWithGroupGeometry = (
 
     const sourceParentId = result.moves[0].before.parentId
     const targetParentId = result.moves[0].after.parentId
-    const afterData = core.sceneTreeSaveData()
-    const sourceIsGroup =
-      beforeData.elements[sourceParentId]?.type === EntityTypes.GROUP
-    const targetIsGroup =
-      afterData.elements[targetParentId]?.type === EntityTypes.GROUP
+    const afterData = createGroupHierarchyReader(core)
+    const sourceIsGroup = beforeData(sourceParentId)?.type === EntityTypes.GROUP
+    const targetIsGroup = afterData(targetParentId)?.type === EntityTypes.GROUP
 
     if (!sourceIsGroup && !targetIsGroup) {
       return result
     }
 
-    const worldPositions = result.elementIds.map((elementId) => ({
-      elementId,
-      ...getElementWorldPosition(geometryProjection, beforeData, elementId)
-    }))
+    const worldPositions = result.elementIds.map((elementId) => {
+      const position = beforePositions.get(elementId)
+
+      if (!position) {
+        return failGroupGeometry(`missing before position for "${elementId}"`)
+      }
+
+      return { elementId, ...position }
+    })
     const targetOrigin =
-      afterData.elements[targetParentId]?.type === EntityTypes.WORKSPACE
+      afterData(targetParentId)?.type === EntityTypes.WORKSPACE
         ? { x: 0, y: 0 }
         : getElementWorldPosition(geometryProjection, afterData, targetParentId)
 
@@ -830,17 +881,14 @@ export const moveElementsWithGroupGeometry = (
     const affectedParentIds = [sourceParentId, targetParentId]
 
     affectedParentIds.forEach((parentId) => {
-      let element: SceneTreeRawData['elements'][string] | undefined =
-        afterData.elements[parentId]
+      let element: ElementRawData | undefined = afterData(parentId)
 
       while (element) {
         if (element.type === EntityTypes.GROUP) {
           groupIds.add(element.id)
         }
 
-        element = element.parentId
-          ? afterData.elements[element.parentId]
-          : undefined
+        element = element.parentId ? afterData(element.parentId) : undefined
       }
     })
     const deepestFirstGroupIds = [...groupIds].sort(

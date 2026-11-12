@@ -49,6 +49,7 @@ test.describe('Element Selection', () => {
 
     // Verify element is not selected
     let isSelected = await hasSelectedElement(page)
+
     expect(isSelected).toBe(false)
 
     // Click on the rectangle to select it (same position where created)
@@ -74,6 +75,7 @@ test.describe('Element Selection', () => {
 
     // Verify element is selected
     let isSelected = await hasSelectedElement(page)
+
     expect(isSelected).toBe(true)
 
     // Click on empty space (far from the rectangle)
@@ -90,6 +92,7 @@ test.describe('Element Selection', () => {
   }) => {
     await createRectangle(page, 0.5, 0.5)
     const rectangle = await getSelectedElementRect(page)
+
     expect(rectangle).not.toBeNull()
     if (!rectangle) {
       return
@@ -100,6 +103,7 @@ test.describe('Element Selection', () => {
     await page.evaluate(async () => {
       const { startSharedChannelCapture } =
         await import('../src/testing/runtime-access')
+
       startSharedChannelCapture('selection-preview-deliveries', 'selection')
     })
 
@@ -110,6 +114,7 @@ test.describe('Element Selection', () => {
         x: 0,
         y: 0
       }
+
       return {
         start: {
           x: (x - 20) * zoom + viewport.x,
@@ -129,8 +134,10 @@ test.describe('Element Selection', () => {
     await expect.poll(() => hasSelectedElement(page)).toBe(true)
     const previewDeliveries = await page.evaluate(async () => {
       const { readTestCapture } = await import('../src/testing/runtime-access')
+
       return readTestCapture('selection-preview-deliveries')
     })
+
     expect(previewDeliveries).toContainEqual(
       expect.objectContaining({
         options: expect.objectContaining({ sharedDelivery: 'immediate' })
@@ -139,6 +146,7 @@ test.describe('Element Selection', () => {
     await page.mouse.up()
     await page.evaluate(async () => {
       const { stopTestCapture } = await import('../src/testing/runtime-access')
+
       stopTestCapture('selection-preview-deliveries')
     })
   })
@@ -147,6 +155,7 @@ test.describe('Element Selection', () => {
     await createRectangle(page, 0.35, 0.35)
 
     const before = await getSelectedElementRect(page)
+
     expect(before).not.toBeNull()
     if (!before) {
       return
@@ -156,6 +165,7 @@ test.describe('Element Selection', () => {
     await page.waitForTimeout(150)
 
     const after = await getSelectedElementRect(page)
+
     expect(after).not.toBeNull()
     if (!after) {
       return
@@ -172,6 +182,7 @@ test.describe('Element Selection', () => {
     await createRectangle(page, 0.35, 0.35)
 
     const before = await getSelectedElementRect(page)
+
     expect(before).not.toBeNull()
     if (!before) {
       return
@@ -192,6 +203,7 @@ test.describe('Element Selection', () => {
     await page.waitForTimeout(150)
 
     const after = await getSelectedElementRect(page)
+
     expect(after).not.toBeNull()
     if (!after) {
       return
@@ -209,6 +221,7 @@ test.describe('Element Selection', () => {
 
     const selectedId = await page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
+
       return core?.deps?.selection?.getElementSelectionIds?.()?.[0] ?? null
     })
 
@@ -229,17 +242,20 @@ test.describe('Element Selection', () => {
       .poll(async () => {
         return page.evaluate(async () => {
           const core = (await import('../src/testing/runtime-access')).core
+
           return core?.getSystemProperty?.('hoveredElementId') ?? null
         })
       })
       .toBe(selectedId)
 
     const emptyPos = await getCanvasPosition(page, 0.9, 0.9)
+
     await page.mouse.move(emptyPos.x, emptyPos.y)
     await expect
       .poll(async () => {
         return page.evaluate(async () => {
           const core = (await import('../src/testing/runtime-access')).core
+
           return core?.getSystemProperty?.('hoveredElementId') ?? null
         })
       })
@@ -251,6 +267,7 @@ test.describe('Element Selection', () => {
   }) => {
     await createRectangle(page, 0.25, 0.35)
     const dragOwner = await getSelectedElementRect(page)
+
     expect(dragOwner).not.toBeNull()
     if (!dragOwner) {
       return
@@ -258,6 +275,7 @@ test.describe('Element Selection', () => {
 
     await createRectangle(page, 0.65, 0.35)
     const crossedElement = await getSelectedElementRect(page)
+
     expect(crossedElement).not.toBeNull()
     if (!crossedElement) {
       return
@@ -271,6 +289,7 @@ test.describe('Element Selection', () => {
           x: 0,
           y: 0
         }
+
         const toClientCenter = (element: {
           x: number
           y: number
@@ -294,6 +313,7 @@ test.describe('Element Selection', () => {
       .poll(() =>
         page.evaluate(async () => {
           const core = (await import('../src/testing/runtime-access')).core
+
           return core?.getSystemProperty?.('hoveredElementId') ?? null
         })
       )
@@ -303,6 +323,7 @@ test.describe('Element Selection', () => {
     await page.evaluate(async () => {
       const { startSystemPropertyWriteCapture } =
         await import('../src/testing/runtime-access')
+
       startSystemPropertyWriteCapture('drag-hover-writes', {
         propertyName: 'hoveredElementId',
         whileMouseDragging: true
@@ -311,6 +332,7 @@ test.describe('Element Selection', () => {
 
     let dragHoverWrites: (string | null)[] = []
     let hoveredElementIdDuringDrag: string | null = null
+
     await page.mouse.move(centers.dragOwner.x, centers.dragOwner.y)
     await page.mouse.down()
     try {
@@ -323,6 +345,7 @@ test.describe('Element Selection', () => {
       const dragHoverState = await page.evaluate(async () => {
         const { core, readTestCapture } =
           await import('../src/testing/runtime-access')
+
         return {
           writes: readTestCapture('drag-hover-writes').map(
             (entry) => (entry as readonly [string, string | null])[1]
@@ -330,6 +353,7 @@ test.describe('Element Selection', () => {
           hoveredElementId: core.getSystemProperty('hoveredElementId') ?? null
         }
       })
+
       dragHoverWrites = dragHoverState.writes
       hoveredElementIdDuringDrag = dragHoverState.hoveredElementId
     } finally {
@@ -337,6 +361,7 @@ test.describe('Element Selection', () => {
       await page.evaluate(async () => {
         const { stopTestCapture } =
           await import('../src/testing/runtime-access')
+
         stopTestCapture('drag-hover-writes')
       })
     }
@@ -362,6 +387,7 @@ test.describe('Element Selection', () => {
 
     // Verify element is not selected
     let isSelected = await hasSelectedElement(page)
+
     expect(isSelected).toBe(false)
 
     // Find the element in the Contents Panel and click it
@@ -369,6 +395,7 @@ test.describe('Element Selection', () => {
     const rectangleItem = contentsPanel
       .locator('[class*="flex items-center justify-between"]')
       .first()
+
     await rectangleItem.click()
     await page.waitForTimeout(200)
 
@@ -392,11 +419,13 @@ test.describe('Element Selection', () => {
 
     // Verify element is selected
     let isSelected = await hasSelectedElement(page)
+
     expect(isSelected).toBe(true)
 
     // Click on the Contents Panel container (empty area below elements)
     const contentsPanel = getContentsPanel(page)
     const panelBounds = await contentsPanel.boundingBox()
+
     if (panelBounds) {
       // Click at the bottom of the panel where there are no elements
       await page.mouse.click(
@@ -450,6 +479,7 @@ test.describe('Element Selection', () => {
 
     const selectedIds = await page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
+
       return core?.deps?.selection?.getElementSelectionIds?.() ?? []
     })
 

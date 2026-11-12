@@ -11,13 +11,18 @@ import { createBasicApiActions } from '../basic-api-actions'
 import { createAiTransactionRunner } from '../transaction'
 
 const live = vi.hoisted(() => ({ core: undefined as object | undefined }))
+
 vi.mock('../../contexts', () => ({
   default: new Proxy(
     {},
     {
       get: (_target, key) => {
-        if (!live.core) throw new Error('Core fixture not initialized')
+        if (!live.core) {
+          throw new Error('Core fixture not initialized')
+        }
+
         const value = Reflect.get(live.core, key)
+
         return typeof value === 'function' ? value.bind(live.core) : value
       }
     }
@@ -56,6 +61,7 @@ it('delivers real Core results through App capture, runtime execution and native
     persistKeys: ['opacity'],
     valueKeys: ['opacity']
   }
+
   registerPropertySchema({
     type,
     fields: [{ key: 'opacity', kind: 'number', defaultValue: 1 }]
@@ -67,6 +73,7 @@ it('delivers real Core results through App capture, runtime execution and native
     config
   )
   const properties = [{ name: 'material', type, alias: ['opacity'] }]
+
   elementPropertyRegistry.register(properties[0], ownerType)
   componentRegistry.register({
     type: ownerType,
@@ -84,6 +91,7 @@ it('delivers real Core results through App capture, runtime execution and native
   })
   const factory = new Factory()
   const { SharedDataChannelNames } = await import('@asyra/utils')
+
   factory.registerSharedDataChannel(
     SharedDataChannelNames.SCENE_TREE,
     factory.createLocalSharedDataChannel()
@@ -101,6 +109,7 @@ it('delivers real Core results through App capture, runtime execution and native
     selection: {} as never,
     systemContext: {} as never
   })
+
   const reset = () => {
     factory.transact.reset()
     props.reset()
@@ -133,6 +142,7 @@ it('delivers real Core results through App capture, runtime execution and native
       }
     })
   }
+
   live.core = api
   reset()
   const actions = createBasicApiActions(() => ({
@@ -146,14 +156,20 @@ it('delivers real Core results through App capture, runtime execution and native
   }))
   const runner = createAiTransactionRunner({ apis: factory })
   const calls: string[] = []
+
   const invoke = async (
     name: string,
     input: Record<string, unknown>,
     signal = new AbortController().signal
   ) => {
     const action = actions.find((item) => item.name === name)
-    if (!action) throw new Error('Missing Core action')
+
+    if (!action) {
+      throw new Error('Missing Core action')
+    }
+
     const definition = createAiToolContract(action)
+
     return invokeLocalTool(
       {
         call: async (_name, args, requestSignal) => {
@@ -178,6 +194,7 @@ it('delivers real Core results through App capture, runtime execution and native
             (mutate) => executeAiActions(batch, requestSignal, {}, mutate),
             { signal: requestSignal }
           )
+
           return JSON.stringify(result.actionResults[0].result)
         }
       },
@@ -186,10 +203,12 @@ it('delivers real Core results through App capture, runtime execution and native
       signal
     )
   }
+
   try {
     const name = 'api_core_updateElementProperties'
     const args = { updates: [{ elementId: 'a', values: { opacity: 0.4 } }] }
     const changed = await invoke(name, args)
+
     expect(changed.success).toBe(true)
     expect(JSON.parse(changed.text)).toMatchObject({
       status: 'complete',
@@ -203,6 +222,7 @@ it('delivers real Core results through App capture, runtime execution and native
       depth: factory.getUndoHistoryDepth()
     }
     const noop = await invoke(name, args)
+
     expect(JSON.parse(noop.text)).toMatchObject({
       status: 'no-change',
       value: { changed: false },
@@ -219,6 +239,7 @@ it('delivers real Core results through App capture, runtime execution and native
         { elementId: 'missing', values: { opacity: 0.2 } }
       ]
     })
+
     expect(invalid.success).toBe(false)
     expect({
       props: props.save(),
@@ -228,6 +249,7 @@ it('delivers real Core results through App capture, runtime execution and native
     const emptyValues = await invoke(name, {
       updates: [{ elementId: 'a', values: {} }]
     })
+
     expect(JSON.parse(emptyValues.text)).toMatchObject({
       status: 'no-change',
       value: { acceptedIds: ['a'], changed: false }
@@ -242,6 +264,7 @@ it('delivers real Core results through App capture, runtime execution and native
       depth: factory.getUndoHistoryDepth()
     }).toEqual(saved)
     const count = calls.length
+
     await expect(invoke(name, args, AbortSignal.abort())).rejects.toThrow()
     expect(calls).toHaveLength(count)
     expect((await invoke(name, { updates: 'invalid' })).success).toBe(false)
@@ -251,6 +274,7 @@ it('delivers real Core results through App capture, runtime execution and native
       elementId: 'a',
       values: { name: 'Renamed' }
     })
+
     expect(JSON.parse(renamed.text)).toMatchObject({
       status: 'complete',
       value: true,
@@ -260,6 +284,7 @@ it('delivers real Core results through App capture, runtime execution and native
       elementId: 'a',
       values: { name: 'Renamed' }
     })
+
     expect(JSON.parse(sameName.text)).toMatchObject({
       status: 'no-change',
       value: false
@@ -270,16 +295,23 @@ it('delivers real Core results through App capture, runtime execution and native
     expect(api.getElementData('a')?.name).toBe('Renamed')
     expect(calls.filter((call) => call === name)).toHaveLength(5)
     const prefixAction = actions.find((item) => item.name === name)
-    if (!prefixAction) throw new Error('Missing prefix action')
+
+    if (!prefixAction) {
+      throw new Error('Missing prefix action')
+    }
+
     let prefixCalls = 0
+
     await expect(
       runner.run('partial-prefix', async (runMutation) => {
         const context = { signal: new AbortController().signal, runMutation }
+
         prefixCalls++
         const first = await prefixAction.execute(
           { updates: [{ elementId: 'a', values: { opacity: 0.7 } }] },
           context
         )
+
         expect(first).toMatchObject({ status: 'complete' })
         await prefixAction.execute(
           { updates: [{ elementId: 'missing', values: { opacity: 0.1 } }] },
@@ -288,6 +320,7 @@ it('delivers real Core results through App capture, runtime execution and native
       })
     ).rejects.toMatchObject({ status: 'committed' })
     const retainedPrefix = { props: props.save(), scene: scene.save() }
+
     // Recover by reading the original owner; a receipt failure must not rerun the prefix.
     expect(api.getElementComputedData('a')?.opacity).toBe(0.7)
     expect(prefixCalls).toBe(1)
@@ -304,14 +337,17 @@ it('delivers real Core results through App capture, runtime execution and native
     const runtime = createAiAgentRuntime({
       provider: {
         requestActionBatch: async (_input, options) => {
-          if (!options.executeBatch)
+          if (!options.executeBatch) {
             throw new Error('Missing runtime batch dispatcher')
+          }
+
           const missing = {
             id: 'missing',
             name,
             arguments: { updates: [{ elementId: 'missing', values: {} }] },
             summary: 'Reject a missing target'
           }
+
           failures.push(
             await options.executeBatch({
               batchId: 'invalid-owner',
@@ -334,6 +370,7 @@ it('delivers real Core results through App capture, runtime execution and native
               ]
             })
           )
+
           return {
             batchId: 'read-recovery',
             actions: [
@@ -353,6 +390,7 @@ it('delivers real Core results through App capture, runtime execution and native
       confirmationHandler: { confirm: async () => true },
       transactionRunner: runner
     })
+
     try {
       expect(
         (

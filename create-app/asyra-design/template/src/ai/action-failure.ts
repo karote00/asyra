@@ -10,8 +10,9 @@ export const recordActionFailure = (
   actionName: string,
   handlerMs: number
 ): void => {
-  if (error !== null && typeof error === 'object')
+  if (error !== null && typeof error === 'object') {
     handlerFailures.set(error, { actionName, handlerMs })
+  }
 }
 
 export const describeBatchFailure = (

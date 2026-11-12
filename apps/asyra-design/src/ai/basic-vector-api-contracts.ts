@@ -307,6 +307,15 @@ const updateVectorAnchorPointHandlePositionApi = defineBasicApi({
 })
 
 const updateVectorAnchorPointHandlesApi = defineBasicApi({
+  discovery: {
+    purpose:
+      'Shape vector path curves with Bezier anchor handles; forceSmooth couples the opposite handle.',
+    terms: ['smooth'],
+    boundaries: [
+      'Requires authored workspace coordinates; does not infer visual smoothing.',
+      'Null removes the selected handle.'
+    ]
+  },
   owner: 'element',
   category: 'vector',
   method: 'updateVectorAnchorPointHandles',
@@ -331,7 +340,7 @@ const updateVectorAnchorPointHandlesApi = defineBasicApi({
   ],
   description:
     vectorWorkspaceEditingDescription +
-    ' Plural handle updates share one topology commit; null removes the specified handle.'
+    ' Shape vector path curves with explicit Bezier handles; forceSmooth couples the opposite handle for a smooth anchor. Plural handle updates share one topology commit; null removes the specified handle. This edits supplied coordinates, not automatic visual smoothing.'
 })
 
 const appendVectorAnchorPointApi = defineBasicApi({
@@ -471,6 +480,14 @@ const scaleVectorElementAroundCenterApi = defineBasicApi({
 })
 
 const setVectorElementPositionsApi = defineBasicApi({
+  discovery: {
+    purpose: 'Set vector element positions.',
+    terms: ['position', 'move'],
+    boundaries: [
+      'Vector elements only; not groups or vector anchors.',
+      'Absolute parent-local coordinates, not a translation delta.'
+    ]
+  },
   owner: 'element',
   category: 'vector',
   method: 'setVectorElementPositions',

@@ -19,6 +19,7 @@ export const getVisibleRangeSelection = ({
   clickedId
 }: VisibleRangeSelectionInput): VisibleRangeSelectionResult | null => {
   const clickedIndex = visibleIds.indexOf(clickedId)
+
   if (clickedIndex === -1) {
     return null
   }
@@ -35,6 +36,7 @@ export const getVisibleRangeSelection = ({
     const anchorIndex = visibleIds.indexOf(visibleAnchorId)
     const start = Math.min(anchorIndex, clickedIndex)
     const end = Math.max(anchorIndex, clickedIndex)
+
     for (let index = start; index <= end; index += 1) {
       nextSelection.add(visibleIds[index])
     }

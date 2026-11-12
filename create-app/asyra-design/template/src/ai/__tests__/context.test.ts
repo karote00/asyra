@@ -109,6 +109,7 @@ describe('Asyra Design AI context disclosure', () => {
   it('rejects pre-abort before reading any app context', async () => {
     const queries = createQueries()
     const controller = new AbortController()
+
     controller.abort()
 
     await expect(
@@ -142,6 +143,7 @@ describe('Asyra Design AI context disclosure', () => {
     const queries = createQueries({
       getSystemSnapshot: vi.fn(async () => {
         markStarted?.()
+
         return gate
       })
     })

@@ -1,3 +1,4 @@
+import { createAiToolContract } from '@asyra/ai-agent-runtime'
 import recordedClosure from './fixtures/recorded-101/whole-flow-closure-20261019.json'
 import recordedCoverage from './fixtures/recorded-101/mechanical-coverage-20261025.json'
 import { expect, it, vi } from 'vitest'
@@ -72,7 +73,7 @@ it('reconciles real subtree receipts through retained reads, verification and fi
   let dropCoverage = false
   const abort = new AbortController()
   const owner = createLocalOperationTools(
-    actions,
+    actions.map(createAiToolContract),
     {
       modelActions: (a) => a,
 
@@ -87,7 +88,8 @@ it('reconciles real subtree receipts through retained reads, verification and fi
         if (
           dropCoverage &&
           request.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE &&
-          request.arguments.measurementTargets
+          (request.arguments as { measurementTargets?: unknown })
+            .measurementTargets
         ) {
           throw new Error('Coverage delivery interrupted')
         }
@@ -105,7 +107,8 @@ it('reconciles real subtree receipts through retained reads, verification and fi
 
         if (
           request.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE &&
-          request.arguments.measurementTargets
+          (request.arguments as { measurementTargets?: unknown })
+            .measurementTargets
         ) {
           const hook = afterCoverage
 
@@ -223,7 +226,7 @@ it('reconciles real subtree receipts through retained reads, verification and fi
 
   checks.record({
     id: 'visual:right',
-    origin: 'main-agent',
+    origin: 'tool',
     status: 'pass',
     evidence: 'Primary judgment linked to the unchanged measured right scope',
     dependencies: { 'check:measurement:right': String(right.revision) }
@@ -239,9 +242,9 @@ it('reconciles real subtree receipts through retained reads, verification and fi
 
   expect(next.counts).toEqual({ pass: 2, fail: 0, stale: 2, unverified: 0 })
   failObserver = true
-  await owner.finishInspection(new Set(['root']), undefined, true, abort.signal)
+  await owner.finishInspection(undefined, true, abort.signal)
   failObserver = false
-  expect((await call('read_design_checks')).counts.stale).toBe(0)
+  expect((await call('read_design_checks')).counts.stale).toBe(2)
   expect(
     checks.read({ ids: ['visual:right'], includePassed: true }).items[0].status
   ).toBe('pass')
@@ -359,7 +362,7 @@ it('selects recorded mechanical coverage before reconciliation without probing u
   const exchanges: { request: unknown; reply: unknown }[] = []
   const controller = new AbortController()
   const owner = createLocalOperationTools(
-    actions,
+    actions.map(createAiToolContract),
     {
       modelActions: (a) => a,
 
@@ -585,7 +588,7 @@ it('omits automatic scope when only the root is retained but preserves explicit 
   const action = createDesignReviewAction(reviewer.capture, reviewer.isCurrent)
   const inputs: unknown[] = []
   const owner = createLocalOperationTools(
-    [action],
+    [createAiToolContract(action)],
     {
       modelActions: (a) => a,
 
@@ -600,9 +603,13 @@ it('omits automatic scope when only the root is retained but preserves explicit 
           return {
             actionId: item.id,
             actionName: item.name,
-            result: await action.execute(item.arguments as never, {
-              signal: new AbortController().signal
-            })
+            result: JSON.parse(
+              JSON.stringify(
+                await action.execute(item.arguments as never, {
+                  signal: new AbortController().signal
+                })
+              )
+            )
           }
         })
       )
@@ -632,14 +639,9 @@ it('omits automatic scope when only the root is retained but preserves explicit 
 
     // Retain a separate root without permitting it to certify this subtree.
     await call({ arguments: { elementId: 'missing' } })
-    const full = await owner.finishInspection(
-      new Set(['root']),
-      'root',
-      true,
-      new AbortController().signal,
-      false,
-      true
-    )
+    const full = await call({
+      arguments: { elementId: 'root', measurementTargets: 'descendants' }
+    })
 
     expect(full.actionResults[0].result.coveredMeasurementTargets).toEqual([
       'child'

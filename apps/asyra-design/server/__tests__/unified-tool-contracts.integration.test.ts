@@ -74,12 +74,22 @@ it('prepares the saved brief without treating omitted advisory checks as a drawi
   const run = preparation()
 
   expect(saved.output.message).toContain('brief.checks')
-  const reply = await run.call({ draft: saved.input.draft })
+  const receipt = await invokeLocalTool(
+    run.owner,
+    run.definition,
+    { draft: saved.input.draft },
+    new AbortController().signal
+  )
+  const reply = JSON.parse(receipt.text)
+
+  expect(receipt.outcome).toMatchObject({
+    status: 'success',
+    settlement: 'completed'
+  })
 
   expect(reply).toMatchObject({
     available: true,
-    applicable: true,
-    toolOutcome: { status: 'success', settlement: 'completed' }
+    applicable: true
   })
 })
 
@@ -553,10 +563,8 @@ it.each(['single', 'parts', 'parts-failure'])(
     )
     const main = createLocalDesignWorkflow(designs, operations)
 
-    const call = async (input: unknown) =>
-      JSON.parse(
-        (await invokeLocalTool(main, main.definitions[0], input, signal)).text
-      )
+    const call = (input: unknown) =>
+      invokeLocalTool(main, main.definitions[0], input, signal)
 
     try {
       const draft = {
@@ -600,9 +608,10 @@ it.each(['single', 'parts', 'parts-failure'])(
               inspection: 'defer',
               message: 'Create corrected frame'
             }
-      const rejected = await call(request)
+      const rejectedReply = await call(request)
+      const rejected = JSON.parse(rejectedReply.text)
 
-      expect(rejected.toolOutcome).toMatchObject({
+      expect(rejectedReply.outcome).toMatchObject({
         status: 'failed',
         settlement: 'not-started'
       })
@@ -636,10 +645,11 @@ it.each(['single', 'parts', 'parts-failure'])(
         inspection: 'defer',
         message: 'Create corrected frame'
       })
-      let reply = await call(correction)
+      let response = await call(correction)
+      let reply = JSON.parse(response.text)
 
       if (mode === 'parts-failure') {
-        expect(reply.toolOutcome).toMatchObject({
+        expect(response.outcome).toMatchObject({
           status: 'partial',
           settlement: 'partial'
         })
@@ -660,7 +670,8 @@ it.each(['single', 'parts', 'parts-failure'])(
         recovery.parts[0].repair.replacements = [
           { path: '/children/1/key', value: 'second-panel' }
         ]
-        reply = await call(recovery)
+        response = await call(recovery)
+        reply = JSON.parse(response.text)
         expect(
           (await core.save()).sceneTree.elements.workspace.children
         ).toEqual([outerId])
@@ -717,18 +728,14 @@ it.each(['single', 'parts', 'parts-failure'])(
         }
       )
       const freshMain = createLocalDesignWorkflow(freshDesigns, freshOperations)
-      const foreign = JSON.parse(
-        (
-          await invokeLocalTool(
-            freshMain,
-            freshMain.definitions[0],
-            correction,
-            signal
-          )
-        ).text
+      const foreignReply = await invokeLocalTool(
+        freshMain,
+        freshMain.definitions[0],
+        correction,
+        signal
       )
 
-      expect(foreign.toolOutcome).toMatchObject({
+      expect(foreignReply.outcome).toMatchObject({
         status: 'failed',
         settlement: 'not-started'
       })
@@ -814,18 +821,15 @@ it.each(['capacity', 'outer-field', 'parent-order'])(
       ],
       ...(failure === 'outer-field' ? { unknown: true } : {})
     }
-    const reply = JSON.parse(
-      (
-        await invokeLocalTool(
-          main,
-          main.definitions[0],
-          input,
-          new AbortController().signal
-        )
-      ).text
+    const replyReply = await invokeLocalTool(
+      main,
+      main.definitions[0],
+      input,
+      new AbortController().signal
     )
+    const reply = JSON.parse(replyReply.text)
 
-    expect(reply.toolOutcome).toMatchObject({
+    expect(replyReply.outcome).toMatchObject({
       status: 'failed',
       settlement: 'not-started'
     })
@@ -944,18 +948,15 @@ it.each([
       ...(route === 'single' ? { draft } : { parts: [{ key: 'part', draft }] }),
       ...(failure === 'outer' ? { inspection: 'invalid' } : {})
     }
-    const reply = JSON.parse(
-      (
-        await invokeLocalTool(
-          main,
-          main.definitions[0],
-          input,
-          new AbortController().signal
-        )
-      ).text
+    const replyReply = await invokeLocalTool(
+      main,
+      main.definitions[0],
+      input,
+      new AbortController().signal
     )
+    const reply = JSON.parse(replyReply.text)
 
-    expect(reply.toolOutcome).toMatchObject({
+    expect(replyReply.outcome).toMatchObject({
       status: 'failed',
       settlement: 'not-started'
     })
@@ -1140,7 +1141,7 @@ it('compacts repeated result alternatives without changing constraints or addres
   )
 })
 
-it('declares common host outcome constraints once across open result alternatives', () => {
+it('preserves owner alternatives without injecting Host acknowledgement constraints', () => {
   const schema = {
     anyOf: [
       {
@@ -1164,60 +1165,20 @@ it('declares common host outcome constraints once across open result alternative
   const projected = modelToolResultSchemas({
     outputSchema: schema
   }).outputSchema
-  let annotations = 0
 
-  const visit = (value: unknown): void => {
-    if (!value || typeof value !== 'object') {
-      return
-    }
-
-    if (
-      'properties' in value &&
-      value.properties &&
-      typeof value.properties === 'object' &&
-      'toolOutcome' in value.properties
-    ) {
-      annotations++
-    }
-
-    Object.values(value).forEach(visit)
-  }
-
-  visit(projected)
-  expect(annotations).toBe(1)
+  expect(projected).toEqual(schema)
   for (const value of [
     { kind: 'count', count: 1 },
     { kind: 'ids', ids: ['a'] }
   ]) {
-    expect(
-      operationInputIssue(
-        {
-          ...value,
-          toolOutcome: { status: 'success', settlement: 'completed' }
-        },
-        projected
-      )
-    ).toBeUndefined()
-    expect(
-      operationInputIssue(
-        {
-          ...value,
-          toolOutcome: { status: 'invented', settlement: 'completed' }
-        },
-        projected
-      )
-    ).toBeDefined()
+    expect(operationInputIssue(value, projected)).toBeUndefined()
   }
 
   expect(
-    operationInputIssue(
-      {
-        kind: 'count',
-        count: -1,
-        toolOutcome: { status: 'success', settlement: 'completed' }
-      },
-      projected
-    )
+    operationInputIssue({ kind: 'count', count: -1 }, projected)
+  ).toBeDefined()
+  expect(
+    operationInputIssue({ kind: 'ids', ids: [1] }, projected)
   ).toBeDefined()
 })
 

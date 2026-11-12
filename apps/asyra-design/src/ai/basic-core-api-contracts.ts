@@ -157,6 +157,13 @@ const getElementMetadataApi = defineBasicApi({
 })
 
 const getElementChildrenApi = defineBasicApi({
+  discovery: {
+    purpose: 'Read a page of direct child element IDs.',
+    terms: ['pagination', 'offset', 'limit'],
+    boundaries: [
+      'Offset is a pagination index; this tool never moves elements.'
+    ]
+  },
   owner: 'core',
   method: 'getElementChildren',
   effect: 'read',
@@ -277,6 +284,15 @@ const workspaceToCanvasApi = defineBasicApi({
 })
 
 const workspaceToElementLocalApi = defineBasicApi({
+  resultValueSchema: { anyOf: [apiPosition, { type: 'null' }] },
+  resultPaths: ['/value/x', '/value/y'],
+  discovery: {
+    purpose: 'Convert a workspace point to element-local coordinates.',
+    terms: ['transform', 'position', 'parent'],
+    boundaries: [
+      'Read-only conversion; returns null when the transform is unavailable.'
+    ]
+  },
   description:
     'Convert a workspace position into a known element local coordinate space; returns null if the transform is unavailable.',
   owner: 'core',
@@ -382,6 +398,14 @@ const createElementsInParentApi = defineBasicApi({
 })
 
 const updateElementPropertiesApi = defineBasicApi({
+  discovery: {
+    purpose: 'Update registered element component properties.',
+    terms: ['property', 'values'],
+    boundaries: [
+      'Only registered properties and aliases; arbitrary open-record keys are not supported.',
+      'Element metadata name, visible and lock require the element data operation.'
+    ]
+  },
   owner: 'core',
   method: 'updateElementProperties',
   resultKind: 'property-mutation',
@@ -389,7 +413,7 @@ const updateElementPropertiesApi = defineBasicApi({
   effect: 'write',
   parameters: [{ name: 'updates', schema: elementPropertyUpdatesSchema }],
   description:
-    'Plural canonical property value updates. Relationship lists such as fills/strokes contain reference IDs, not expanded computed objects. To edit linked records, use patchElementProperties records (one plural call for all targets), or the App fill/stroke APIs. Use App vector APIs for anchor/handle editing so coordinate and geometry invariants are preserved.'
+    'Update registered component properties and their declared aliases (for example x/y). Element metadata name/visible/lock belongs to core.updateElementData, not values here. Unsupported keys reject before property writes and return an input diagnostic. Plural canonical property value updates. Relationship lists such as fills/strokes contain reference IDs, not expanded computed objects. To edit linked records, use patchElementProperties records (one plural call for all targets), or the App fill/stroke APIs. Use App vector APIs for anchor/handle editing so coordinate and geometry invariants are preserved.'
 })
 
 const patchElementPropertiesApi = defineBasicApi({
@@ -527,7 +551,7 @@ const moveElementsApi = defineBasicApi({
     }
   ],
   description:
-    'Prefer hierarchy.moveElements in this app to maintain automatic group bounds.'
+    'Move elements to a parent and insertion index. Prefer hierarchy.moveElements in this app to maintain automatic container bounds.'
 })
 
 const propertyTargetSchema = apiObject(

@@ -359,7 +359,7 @@ export const basicApiResultSchema = (
   partial = false
 ) => {
   const kind = contract.result.kind
-  let valueSchema: unknown = true
+  let valueSchema: unknown = contract.result.valueSchema ?? true
 
   if (kind === 'created-items') {
     valueSchema = partial
@@ -445,12 +445,12 @@ export const basicApiResultSchema = (
   fields.settlement = {
     enum: ['not-started', 'completed', 'partial', 'unknown']
   }
-  if (['grouped', 'ungrouped', 'moves', 'removed'].includes(kind)) {
+  if (basicApiDeliverySchema(contract)) {
     fields.value = valueSchema
     fields.mutationScope = toolMutationScope
     fields.modelResult = basicApiDeliverySchema(contract)
     fields.retained = retainedElementSetSchema
-    if (!partial) {
+    if (!partial && kind !== 'mutation-receipt') {
       required.push('retained')
     }
 
@@ -493,7 +493,9 @@ export const basicApiResultSchema = (
 /** A model view never substitutes for a complete typed owner result. */
 export const basicApiDeliverySchema = (contract: BasicApiContract) => {
   if (
-    !['grouped', 'ungrouped', 'moves', 'removed'].includes(contract.result.kind)
+    !['grouped', 'ungrouped', 'moves', 'removed', 'mutation-receipt'].includes(
+      contract.result.kind
+    )
   ) {
     return undefined
   }
@@ -501,14 +503,27 @@ export const basicApiDeliverySchema = (contract: BasicApiContract) => {
   return toolResultObject(
     {
       status: toolResultStatus,
-      value: toolResultObject(
-        {
-          count: { type: 'integer', minimum: 0 },
-          groupId: toolDocumentReference,
-          removed: { type: 'boolean' }
-        },
-        ['count']
-      ),
+      ...(contract.result.kind === 'mutation-receipt'
+        ? {
+            changed: { type: 'boolean' },
+            acceptedCount: { type: 'integer', minimum: 0 },
+            unavailableCount: { type: 'integer', minimum: 0 },
+            settlement: {
+              enum: ['not-started', 'completed', 'partial', 'unknown']
+            },
+            code: { type: 'string' },
+            message: { type: 'string' }
+          }
+        : {
+            value: toolResultObject(
+              {
+                count: { type: 'integer', minimum: 0 },
+                groupId: toolDocumentReference,
+                removed: { type: 'boolean' }
+              },
+              ['count']
+            )
+          }),
       mutationScope: toolResultObject({
         complete: { type: 'boolean' },
         elementCount: { type: 'integer', minimum: 0 },
@@ -520,6 +535,8 @@ export const basicApiDeliverySchema = (contract: BasicApiContract) => {
         message: { type: 'string' }
       })
     },
-    ['status', 'value', 'mutationScope']
+    contract.result.kind === 'mutation-receipt'
+      ? ['status', 'mutationScope']
+      : ['status', 'value', 'mutationScope']
   )
 }

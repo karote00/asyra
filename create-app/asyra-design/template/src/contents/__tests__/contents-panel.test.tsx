@@ -82,21 +82,26 @@ vi.mock('../../common-apis/element', () => ({
 vi.mock('@tanstack/react-virtual', async (importOriginal) => {
   const actual =
     await importOriginal<typeof import('@tanstack/react-virtual')>()
+
   const useVirtualizer = (
     options: Parameters<typeof actual.useVirtualizer>[0]
   ) => {
     const realVirtualizer = actual.useVirtualizer(options)
+
     if (mocks.useRealVirtualizer) {
       return realVirtualizer
     }
+
     return {
       getTotalSize: () => options.count * 34,
+
       getVirtualItems: () =>
         Array.from({ length: options.count }, (_, index) => ({
           key: index,
           index,
           start: index * 34
         })),
+
       measureElement: vi.fn()
     }
   }
@@ -109,9 +114,13 @@ vi.mock('@tanstack/react-virtual', async (importOriginal) => {
 
 vi.mock('../../providers', () => ({
   useFlattenedIdsData: () => mocks.flattenedIds,
+
   useElementDataMap: () => mocks.elementDataMap,
+
   useElementSelection: () => mocks.selection,
+
   useHoveredElementId: () => null,
+
   useElementData: (elementId: string) =>
     (
       mocks.elementDataMap as Record<
@@ -119,6 +128,7 @@ vi.mock('../../providers', () => ({
         (typeof mocks.elementDataMap)[keyof typeof mocks.elementDataMap]
       >
     )[elementId],
+
   useVectorIconPathMap: () => null
 }))
 
@@ -149,14 +159,17 @@ vi.mock('../../controllers/layer-move-session', () => ({
 
 vi.mock('@asyra/design-system', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@asyra/design-system')>()
+
   return {
     ...actual,
+
     Icon: ({ name }: { name: string }) => <span>{name}</span>
   }
 })
 
 vi.mock('../layer-hierarchy', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../layer-hierarchy')>()
+
   return {
     ...actual,
     projectVisibleLayerRows: vi.fn(actual.projectVisibleLayerRows)
@@ -182,6 +195,7 @@ describe('Layers pointer hierarchy presentation', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     resetLayerFixture()
+
     class TestPointerEvent extends MouseEvent {
       pointerId: number
 
@@ -198,6 +212,7 @@ describe('Layers pointer hierarchy presentation', () => {
     mocks.cancel.mockResolvedValue(undefined)
     Object.defineProperty(document, 'elementFromPoint', {
       configurable: true,
+
       value: () => mocks.elementAtPoint
     })
   })
@@ -220,6 +235,7 @@ describe('Layers pointer hierarchy presentation', () => {
       mocks.elementDataMap.group.type = containerType
       render(<Contents />)
       const toggle = screen.getByTestId('layers-group-toggle-group')
+
       expect(screen.queryByTestId('element-item-child')).not.toBeNull()
       fireEvent.click(toggle)
       expect(toggle.getAttribute('aria-expanded')).toBe('false')
@@ -272,6 +288,7 @@ describe('Layers pointer hierarchy presentation', () => {
     const targetRow = screen.getByTestId('element-item-group')
     const contentsPanel = screen.getByTestId('contents-panel')
     const setPointerCapture = vi.fn()
+
     contentsPanel.setPointerCapture = setPointerCapture
     targetRow.getBoundingClientRect = () =>
       ({ top: 0, bottom: 30, height: 30 }) as DOMRect
@@ -322,6 +339,7 @@ describe('Layers pointer hierarchy presentation', () => {
     render(<Contents />)
     const sourceRow = screen.getByTestId('element-item-a')
     const lockedTarget = screen.getByTestId('element-item-locked')
+
     lockedTarget.getBoundingClientRect = () =>
       ({ top: 0, bottom: 30, height: 30 }) as DOMRect
     mocks.elementAtPoint = lockedTarget
@@ -370,23 +388,29 @@ describe('Layers pointer hierarchy presentation', () => {
       HTMLElement.prototype,
       'offsetWidth'
     )
+
     Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
       configurable: true,
+
       get() {
         if (this.getAttribute('data-testid') === 'contents-panel') {
           return 400
         }
+
         if (this.getAttribute('data-layer-drop-workspace') === 'true') {
           return 160
         }
+
         if (this.hasAttribute('data-index')) {
           return 32
         }
+
         return 0
       }
     })
     Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
       configurable: true,
+
       get() {
         return 240
       }
@@ -395,6 +419,7 @@ describe('Layers pointer hierarchy presentation', () => {
     const largeIds = Array.from({ length: 128 }, (_, index) => `item-${index}`)
     const groupId = largeIds[0]
     const childIds = largeIds.slice(1, 9)
+
     Object.assign(
       mocks.elementDataMap,
       Object.fromEntries(
@@ -413,6 +438,7 @@ describe('Layers pointer hierarchy presentation', () => {
               }
             ]
           }
+
           return [
             id,
             {
@@ -438,12 +464,14 @@ describe('Layers pointer hierarchy presentation', () => {
       const scrollElement = panel.querySelector<HTMLElement>(
         '[data-layer-drop-workspace="true"]'
       )
+
       expect(scrollElement).not.toBeNull()
 
       await waitFor(() => {
         const mountedRows = panel.querySelectorAll(
           '[data-layer-element="true"]'
         )
+
         expect(mountedRows.length).toBeGreaterThan(0)
         expect(mountedRows.length).toBeLessThan(40)
       })
@@ -454,28 +482,34 @@ describe('Layers pointer hierarchy presentation', () => {
             ?.getAttribute('style')
             ?.match(/height:\s*([0-9.]+)px/)?.[1] ?? '0'
         )
+
       const scrollTo = (scrollTop: number) => {
         act(() => {
           if (!scrollElement) {
             return
           }
+
           scrollElement.scrollTop = scrollTop
           scrollElement.dispatchEvent(new Event('scroll', { bubbles: false }))
         })
       }
+
       const scrollToTail = async (expectedVirtualIndex: number) => {
         scrollTo(getTotalSize() - 160)
         const finalRow = await screen.findByTestId('element-item-item-127')
+
         expect(
           finalRow.closest('[data-index]')?.getAttribute('data-index')
         ).toBe(String(expectedVirtualIndex))
         expect(
           panel.querySelectorAll('[data-layer-element="true"]').length
         ).toBeLessThan(40)
+
         return finalRow
       }
 
       const expandedTotalSize = getTotalSize()
+
       expect(expandedTotalSize).toBeGreaterThan(160)
       await scrollToTail(127)
 
@@ -483,6 +517,7 @@ describe('Layers pointer hierarchy presentation', () => {
       const groupToggle = await screen.findByTestId(
         `layers-group-toggle-${groupId}`
       )
+
       fireEvent.click(groupToggle)
       await waitFor(() =>
         expect(groupToggle.getAttribute('aria-expanded')).toBe('false')
@@ -492,12 +527,14 @@ describe('Layers pointer hierarchy presentation', () => {
         expect(getTotalSize()).toBeLessThan(expandedTotalSize)
       )
       const collapsedTotalSize = getTotalSize()
+
       await scrollToTail(119)
 
       scrollTo(0)
       const collapsedGroupToggle = await screen.findByTestId(
         `layers-group-toggle-${groupId}`
       )
+
       fireEvent.click(collapsedGroupToggle)
       await waitFor(() =>
         expect(collapsedGroupToggle.getAttribute('aria-expanded')).toBe('true')
@@ -506,6 +543,7 @@ describe('Layers pointer hierarchy presentation', () => {
         expect(getTotalSize()).toBeGreaterThan(collapsedTotalSize)
       )
       const finalRow = await scrollToTail(127)
+
       expect(
         panel.querySelectorAll('[data-layer-element="true"]').length
       ).toBeLessThan(40)
@@ -522,6 +560,7 @@ describe('Layers pointer hierarchy presentation', () => {
       } else {
         Reflect.deleteProperty(HTMLElement.prototype, 'offsetHeight')
       }
+
       if (originalOffsetWidth) {
         Object.defineProperty(
           HTMLElement.prototype,

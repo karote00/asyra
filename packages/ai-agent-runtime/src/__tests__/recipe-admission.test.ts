@@ -83,6 +83,76 @@ describe('registered structured contract constraints', () => {
     }
   )
 
+  it('preserves reference sibling constraints and closed property sets', () => {
+    const schema = {
+      $ref: '#/$defs/result',
+      properties: { count: { minimum: 2 } },
+      $defs: { result: object({ count: { type: 'integer' } }) }
+    }
+    const parsed = readRegisteredRecipeSchema(schema)
+
+    expect(recipeSchemaAt(parsed, '/count')).toMatchObject({
+      type: 'integer',
+      minimum: 2
+    })
+    const binding = { kind: 'input', path: '' }
+
+    expect(
+      admitStructured(
+        schema,
+        object({ count: { type: 'integer', minimum: 2 } }),
+        binding
+      ).ok
+    ).toBe(true)
+    expect(
+      admitStructured(
+        schema,
+        object({ count: { type: 'integer', minimum: 1 } }),
+        binding
+      ).ok
+    ).toBe(false)
+    expect(
+      admitStructured(
+        {
+          ...schema,
+          required: ['extra'],
+          properties: { extra: { type: 'string' } }
+        },
+        object({ count: { type: 'integer' }, extra: { type: 'string' } }),
+        binding
+      ).ok
+    ).toBe(false)
+    expect(() => recipeSchemaAt(parsed, '/missing')).toThrow()
+  })
+
+  it('resolves references embedded in the registered envelope without losing bounds or lifetimes', () => {
+    const root = {
+      ...object({
+        source: object({
+          value: { type: 'integer', minimum: 2, 'x-runtime-value': 'document' }
+        }),
+        selected: { $ref: '#/properties/source/properties/value' }
+      })
+    }
+
+    expect(
+      recipeSchemaAt(readRegisteredRecipeSchema(root), '/selected')
+    ).toMatchObject({
+      type: 'integer',
+      minimum: 2,
+      'x-runtime-value': 'document'
+    })
+    expect(() =>
+      recipeSchemaAt(
+        readRegisteredRecipeSchema({
+          ...root,
+          properties: { ...root.properties, selected: { $ref: '#/missing' } }
+        }),
+        '/selected/value'
+      )
+    ).toThrow()
+  })
+
   it('resolves a recursive definition once across repeated guaranteed paths', () => {
     let definitionReads = 0
     const node = object({ value: number, next: { $ref: '#/$defs/node' } })
@@ -427,7 +497,7 @@ describe('typed recipe admission', () => {
       rejected(proposal(), {
         resolve: (name: string) => (name === 'find' ? optional : edit)
       }).issues[0].code
-    ).toBe('binding')
+    ).toBe('reference')
     const opaque = createAiToolContract({ ...find, outputSchema: true })
 
     expect(
@@ -467,7 +537,7 @@ describe('typed recipe admission', () => {
     input.steps[1].id = 'locate'
     input.steps[1].revision = 99
     expect(rejected(input).issues.map((item) => item.code)).toEqual(
-      expect.arrayContaining(['binding', 'step', 'dependency'])
+      expect.arrayContaining(['reference', 'step', 'dependency'])
     )
   })
 
@@ -499,7 +569,7 @@ describe('typed recipe admission', () => {
     input.steps[0].input.fields.query = { kind: 'literal', value: 4 }
     const validate = vi.fn(() => 'Expected string')
 
-    expect(rejected(input, { validate }).issues[0].code).toBe('binding')
+    expect(rejected(input, { validate }).issues[0].code).toBe('value')
     expect(validate).toHaveBeenCalledOnce()
   })
 
@@ -709,7 +779,8 @@ it('publishes the exact submission fields and binding variants used by admission
   expect(schema.required).toEqual(recipeFormatKeys.proposal)
   expect(Object.keys(schema.properties)).toEqual([
     ...recipeFormatKeys.proposal,
-    'iteration'
+    'iteration',
+    'checkpoints'
   ])
   for (const variant of schema.$defs.binding.oneOf) {
     expect(variant.required).toEqual(
@@ -1387,5 +1458,455 @@ it('preserves unique request selections through finite recipe input schemas', ()
       { ...schema, uniqueItems: 'true' },
       { kind: 'input', path: '' }
     ).ok
+  ).toBe(false)
+})
+
+it('requires independent output fields and preserves lifetimes across compound results', () => {
+  const roots = { type: 'array', minItems: 1, items: reference }
+  const base = {
+    type: 'object',
+    required: ['roots'],
+    properties: { roots },
+    anyOf: [
+      { allOf: [{ required: ['a'] }, { required: ['b'] }] },
+      { required: ['c'] }
+    ]
+  }
+
+  expect(
+    recipeSchemaAt(readRegisteredRecipeSchema(base), '/roots/0')
+  ).toMatchObject({ 'x-runtime-value': reference['x-runtime-value'] })
+  const conditional = {
+    ...base,
+    anyOf: [
+      {
+        allOf: [
+          {
+            properties: {
+              roots: { type: 'array', 'x-runtime-value': 'secret' }
+            }
+          }
+        ]
+      },
+      { required: ['c'] }
+    ]
+  }
+
+  expect(() =>
+    recipeSchemaAt(readRegisteredRecipeSchema(conditional), '/roots/0')
+  ).toThrow()
+})
+
+it('checks captures in literal maps nested inside registered objects', () => {
+  const map = {
+    type: 'object',
+    propertyNames: { minLength: 1 },
+    additionalProperties: number
+  }
+
+  const destination = (items: unknown) =>
+    object({
+      section: object({ layout: { ...map, additionalProperties: items } })
+    })
+
+  const binding = (value: unknown) => ({
+    kind: 'object',
+    fields: { section: { kind: 'literal', value: { layout: { left: value } } } }
+  })
+
+  expect(
+    admitStructured(destination(number), number, binding(4))
+  ).toMatchObject({ ok: true })
+  expect(
+    admitStructured(destination(reference), number, binding('captured')).ok
+  ).toBe(false)
+})
+
+it('discharges a nested object negation only for a provably absent required field', () => {
+  const section = {
+    ...object({ x: number, y: number }),
+    required: ['x'],
+    not: { required: ['y'] }
+  }
+  const destination = object({ section })
+
+  const binding = (withY: boolean) => ({
+    kind: 'object',
+    fields: {
+      section: {
+        kind: 'object',
+        fields: {
+          x: { kind: 'literal', value: 1 },
+          ...(withY ? { y: { kind: 'literal', value: 2 } } : {})
+        }
+      }
+    }
+  })
+
+  expect(admitStructured(destination, number, binding(false))).toMatchObject({
+    ok: true
+  })
+  expect(admitStructured(destination, number, binding(true)).ok).toBe(false)
+})
+
+it('derives selected sequence outputs from prior owners and rejects unavailable output bindings', () => {
+  const input = proposal()
+
+  input.output = {
+    kind: 'object',
+    fields: {
+      found: { kind: 'step', step: input.steps[0].id, path: '' },
+      edited: input.output
+    }
+  }
+  const result = admitAiRecipe(input, options(), 'sequence')
+
+  expect(result, JSON.stringify(result)).toMatchObject({ ok: true })
+  if (result.ok) {
+    expect(result.value.contract.outputSchema).toMatchObject({
+      type: 'object',
+      properties: { found: { type: 'object' }, edited: { type: 'number' } }
+    })
+  }
+
+  for (const binding of [
+    { kind: 'step', step: 'future', path: '' },
+    { kind: 'step', step: input.steps[0].id, path: '/missing' },
+    { kind: 'literal', value: 'unowned' }
+  ]) {
+    input.output = {
+      kind: 'object',
+      fields: { invalid: binding as AiRecipeBinding }
+    }
+    expect(admitAiRecipe(input, options(), 'sequence').ok).toBe(false)
+  }
+})
+
+it.each([false, true])(
+  'binds a required outer field across non-narrowing compound branches (unconstrained=%s)',
+  (unconstrained) => {
+    const field = {
+      type: 'object',
+      properties: { state: { type: 'string' } },
+      required: ['state'],
+      additionalProperties: false
+    }
+    const schema = {
+      type: 'object',
+      properties: { receipt: field },
+      required: ['receipt'],
+      allOf: [
+        {
+          type: 'object',
+          properties: { receipt: unconstrained ? true : structuredClone(field) }
+        }
+      ],
+      anyOf: [
+        { type: 'object', properties: { a: { type: 'number' } } },
+        {
+          type: 'object',
+          properties: {
+            receipt: unconstrained ? true : structuredClone(field),
+            b: { type: 'number' }
+          }
+        }
+      ]
+    }
+
+    expect(
+      recipeSchemaAt(readRegisteredRecipeSchema(schema), '/receipt/state').type
+    ).toBe('string')
+    for (const changed of [
+      { ...field, 'x-runtime-value': 'request' },
+      { type: 'string' }
+    ]) {
+      const invalid = {
+        ...schema,
+        allOf: [{ type: 'object', properties: { receipt: changed } }]
+      }
+
+      expect(() =>
+        recipeSchemaAt(readRegisteredRecipeSchema(invalid), '/receipt/state')
+      ).toThrow(/absent|guaranteed/)
+    }
+  }
+)
+
+it('admits request-only dependencies exclusively in authored request sequences', () => {
+  const requestOnly = createAiToolContract({ ...find, composition: 'request' })
+  const selected = options({
+    resolve: (name: string) => (name === 'find' ? requestOnly : edit)
+  })
+
+  expect(admitAiRecipe(proposal(), selected, 'sequence')).toMatchObject({
+    ok: true
+  })
+  expect(admitAiRecipe(proposal(), selected, 'registered')).toMatchObject({
+    ok: false
+  })
+  expect(admitAiRecipe(proposal(), selected, 'inline')).toMatchObject({
+    ok: false
+  })
+})
+
+it.each(['missing-field', 'invalid-pointer', 'unknown-step', 'opaque-schema'])(
+  'distinguishes authored reference selections from unavailable schema proof: %s',
+  (mode) => {
+    const recipe = proposal()
+
+    recipe.steps[1].input.fields.target = {
+      kind: 'step',
+      step: mode === 'unknown-step' ? 'absent' : 'locate',
+      path: mode === 'invalid-pointer' ? 'target' : '/missing'
+    }
+    const result = admitAiRecipe(
+      recipe,
+      options({
+        resolve: (name: string) => {
+          if (name === 'edit') {
+            return edit
+          }
+
+          if (mode !== 'opaque-schema') {
+            return find
+          }
+
+          return createAiToolContract({
+            ...find,
+            outputSchema: object({ missing: { allOf: [{ type: 'object' }] } })
+          })
+        }
+      }),
+      'sequence'
+    )
+
+    expect(result.ok).toBe(false)
+    if (result.ok) {
+      throw Error('Unexpected admission')
+    }
+
+    if (mode === 'opaque-schema') {
+      expect(
+        result.issues.some(
+          (issue) => issue.code === 'schema' || issue.code === 'binding'
+        )
+      ).toBe(true)
+      expect(result.issues.some((issue) => issue.code === 'reference')).toBe(
+        false
+      )
+
+      return
+    }
+
+    expect(result.issues).toHaveLength(1)
+    expect(result.issues[0].code).toBe('reference')
+    if (mode === 'missing-field') {
+      expect(result.issues[0].actual).toContain('/missing')
+    }
+  }
+)
+
+it.each(['literal', 'unknown-field', 'missing-field', 'validator-exception'])(
+  'classifies authored value admission without hiding contract failures: %s',
+  (mode) => {
+    const inputSchema =
+      mode === 'literal' || mode === 'validator-exception'
+        ? number
+        : object({ amount: number })
+    const dependency = createAiToolContract({
+      ...edit,
+      name: 'amount',
+      inputSchema
+    })
+    const input =
+      mode === 'literal' || mode === 'validator-exception'
+        ? { kind: 'literal', value: 'wrong' }
+        : {
+            kind: 'object',
+            fields:
+              mode === 'unknown-field'
+                ? {
+                    amount: { kind: 'literal', value: 1 },
+                    extra: { kind: 'literal', value: 2 }
+                  }
+                : {}
+          }
+    const result = admitAiRecipe(
+      {
+        format: 1,
+        name: 'value-admission',
+        revision: 1,
+        description: 'Validate authored inputs.',
+        inputSchema: object({}),
+        outputSchema: number,
+        steps: [
+          {
+            id: 'apply',
+            tool: dependency.name,
+            revision: dependency.revision,
+            input
+          }
+        ],
+        output: { kind: 'step', step: 'apply', path: '' }
+      },
+      options({
+        resolve: () => dependency,
+
+        validate: () => {
+          if (mode === 'validator-exception') {
+            throw Error('Validator unavailable')
+          }
+
+          return mode === 'literal' ? 'Expected a number' : undefined
+        }
+      }),
+      'sequence'
+    )
+
+    expect(result.ok).toBe(false)
+    if (result.ok) {
+      throw Error('Unexpected admission')
+    }
+
+    expect(result.omittedIssues).toBe(0)
+    expect(result.issues).toHaveLength(1)
+    expect(result.issues[0]).toMatchObject({
+      code: mode === 'validator-exception' ? 'binding' : 'value',
+      path: '/steps/0/input'
+    })
+  }
+)
+
+it('validates a selected nested sequence result against the selected union fields, not their source envelopes', () => {
+  const output = {
+    anyOf: [
+      {
+        type: 'object',
+        required: ['kind', 'value'],
+        properties: { kind: { const: 'a' }, value: { type: 'number' } }
+      },
+      {
+        type: 'object',
+        required: ['kind', 'value'],
+        properties: { kind: { const: 'b' }, value: { type: 'number' } }
+      }
+    ]
+  }
+  const dependency = createAiToolContract({
+    ...edit,
+    name: 'union-source',
+    outputSchema: output
+  })
+  const input = {
+    ...proposal(),
+    steps: [
+      {
+        id: 'source',
+        tool: dependency.name,
+        revision: dependency.revision,
+        input: { kind: 'literal', value: 1 }
+      }
+    ]
+  }
+
+  input.output = { kind: 'step', step: 'source', path: '/value' }
+  const result = admitAiRecipe(
+    input,
+    options({ resolve: () => dependency }),
+    'sequence'
+  )
+
+  expect(result, JSON.stringify(result)).toMatchObject({ ok: true })
+  if (result.ok) {
+    expect(result.value.contract.outputSchema).toEqual({
+      anyOf: [{ type: 'number' }, { type: 'number' }]
+    })
+  }
+})
+
+it('projects nullable result fields only when the request sequence checks their presence at execution', () => {
+  const schema = readRegisteredRecipeSchema({
+    type: 'object',
+    required: ['value'],
+    properties: {
+      value: { anyOf: [object({ x: number, y: number }), { type: 'null' }] }
+    }
+  })
+
+  expect(() => recipeSchemaAt(schema, '/value/x')).toThrow()
+  expect(recipeSchemaAt(schema, '/value/x', true)).toMatchObject({
+    type: 'number'
+  })
+  expect(() => recipeSchemaAt(schema, '/value/z', true)).toThrow()
+  expect(() =>
+    recipeSchemaAt(
+      readRegisteredRecipeSchema({
+        anyOf: [object({ x: number }), object({ y: number }), { type: 'null' }]
+      }),
+      '/x',
+      true
+    )
+  ).toThrow()
+  expect(() =>
+    recipeSchemaAt(
+      readRegisteredRecipeSchema({ anyOf: [{ type: 'null' }] }),
+      '/x',
+      true
+    )
+  ).toThrow()
+})
+
+it('forwards an opaque registered result with its exact validation contract but rejects unproved field bindings', () => {
+  const outputSchema = {
+    type: 'object',
+    minProperties: 1,
+    maxProperties: 1,
+    properties: { count: { type: 'integer', minimum: 0 } },
+    required: ['count'],
+    additionalProperties: false
+  }
+  const dependency = createAiToolContract({
+    ...edit,
+    name: 'bounded-result',
+    inputSchema: number,
+    outputSchema
+  })
+  const proposal = {
+    format: 1,
+    name: 'forward-result',
+    revision: 1,
+    description: 'Forward a validated owner result.',
+    inputSchema: number,
+    outputSchema: number,
+    steps: [
+      {
+        id: 'source',
+        tool: dependency.name,
+        revision: dependency.revision,
+        input: { kind: 'input', path: '' }
+      }
+    ],
+    output: { kind: 'step', step: 'source', path: '' }
+  }
+  const result = admitAiRecipe(
+    proposal,
+    options({ resolve: () => dependency }),
+    'sequence'
+  )
+
+  expect(result).toMatchObject({ ok: true })
+  if (result.ok) {
+    expect(result.value.contract.outputSchema).toEqual(outputSchema)
+  }
+
+  expect(
+    admitAiRecipe(
+      { ...proposal, output: { ...proposal.output, path: '/count' } },
+      options({ resolve: () => dependency }),
+      'sequence'
+    ).ok
+  ).toBe(false)
+  expect(
+    admitAiRecipe(proposal, options({ resolve: () => dependency })).ok
   ).toBe(false)
 })

@@ -57,6 +57,7 @@ test('renders vector gradient holes and preserves pixels through fill undo and r
             [left, top + height]
           ].map(([px, py], point) => {
             const id = `${prefix}-p${ring}-${point}`
+
             return [
               id,
               { id, kind: 'anchor', anchorType: 'sharp', x: px + x, y: py + y }
@@ -68,6 +69,7 @@ test('renders vector gradient holes and preserves pixels through fill undo and r
         rings.flatMap((_, ring) =>
           Array.from({ length: 4 }, (_, point) => {
             const id = `${prefix}-s${ring}-${point}`
+
             return [
               id,
               {
@@ -109,10 +111,16 @@ test('renders vector gradient holes and preserves pixels through fill undo and r
         },
         { undoable: false }
       )
-      if (!id) throw new Error('Vector creation failed')
+
+      if (!id) {
+        throw new Error('Vector creation failed')
+      }
+
       return id
     })
+
     core.selectElements([], { undoable: false })
+
     return ids
   }, fills)
   // A loaded mesh fill must remain an ordinary selectable element. Pixel
@@ -130,30 +138,45 @@ test('renders vector gradient holes and preserves pixels through fill undo and r
       },
       { undoable: false }
     )
-    if (!frameId) throw new Error('Frame creation failed')
+
+    if (!frameId) {
+      throw new Error('Frame creation failed')
+    }
+
     core.moveElements(
       { elementIds: ids, targetParentId: frameId, targetIndex: 0 },
       { undoable: false }
     )
     core.load(await core.save())
+
     return frameId
   }, ids)
   const focus = await getCanvasPosition(page, 0.02, 0.02)
+
   await page.mouse.click(focus.x, focus.y)
   await page.keyboard.press('Meta+1')
+
   const snapshot = async () =>
     page.evaluate(async (ids) => {
       const { core } = await import('../src/testing/runtime-access')
+
       return {
+        hoveredElementId: core.getSystemProperty('hoveredElementId'),
+        selectedIds: core.getSelectedElementIds(),
         zoom: core.getSystemProperty('zoom'),
         viewport: core.getSystemProperty('viewportPosition'),
         elements: ids.map((id) => {
           const element = core.deps.sceneTree.getElementById(id)
-          if (!element) throw new Error('Missing gradient vector')
+
+          if (!element) {
+            throw new Error('Missing gradient vector')
+          }
+
           return { id, ...element.getAllComputedData() }
         })
       }
     }, ids)
+
   await expect
     .poll(async () =>
       (await snapshot()).elements.map(
@@ -165,14 +188,24 @@ test('renders vector gradient holes and preserves pixels through fill undo and r
     const target = await page.evaluate(async (id) => {
       const { core } = await import('../src/testing/runtime-access')
       const element = core.deps.sceneTree.getElementById(id)
-      if (!element) throw new Error('Missing loaded vector')
+
+      if (!element) {
+        throw new Error('Missing loaded vector')
+      }
+
       const data = element.getAllComputedData()
       const point = core.workspaceToCanvas({ x: data.x + 20, y: data.y + 100 })
+
       return { point, hit: core.getElementIdAtClientPos(point) }
     }, id)
+
     expect(target.hit).toBe(id)
     const canvas = await page.locator('canvas').first().boundingBox()
-    if (!canvas) throw new Error('Missing canvas')
+
+    if (!canvas) {
+      throw new Error('Missing canvas')
+    }
+
     if (id === ids[0]) {
       await page.mouse.click(
         canvas.x + target.point.x,
@@ -182,11 +215,13 @@ test('renders vector gradient holes and preserves pixels through fill undo and r
         .poll(() =>
           page.evaluate(async () => {
             const { core } = await import('../src/testing/runtime-access')
+
             return core.getSelectedElementIds()
           })
         )
         .toEqual([frameId])
     }
+
     await page.keyboard.down('Meta')
     await page.mouse.click(canvas.x + target.point.x, canvas.y + target.point.y)
     await page.keyboard.up('Meta')
@@ -194,13 +229,16 @@ test('renders vector gradient holes and preserves pixels through fill undo and r
       .poll(() =>
         page.evaluate(async () => {
           const { core } = await import('../src/testing/runtime-access')
+
           return core.getSelectedElementIds()
         })
       )
       .toEqual([id])
   }
+
   await page.evaluate(async () => {
     const { core } = await import('../src/testing/runtime-access')
+
     core.selectElements([], { undoable: false })
   })
   await page.waitForTimeout(150)
@@ -208,6 +246,7 @@ test('renders vector gradient holes and preserves pixels through fill undo and r
     .locator('canvas')
     .first()
     .screenshot({ path: testInfo.outputPath('vector-gradients.png') })
+
   await writeFile(
     testInfo.outputPath('runtime.json'),
     JSON.stringify(
@@ -223,6 +262,7 @@ test('renders vector gradient holes and preserves pixels through fill undo and r
   )
   await page.evaluate(async (ids) => {
     const { fillApis } = await import('../src/common-apis/fills')
+
     fillApis.updateFillsAtIndex(ids, 0, { opacity: 0.3 })
   }, ids)
   await expect
@@ -232,6 +272,7 @@ test('renders vector gradient holes and preserves pixels through fill undo and r
     .toEqual([0.3, 0.3, 0.3, 0.3])
   await page.waitForTimeout(150)
   const changed = await page.locator('canvas').first().screenshot()
+
   expect(changed.equals(before)).toBe(false)
   await page.keyboard.press('Meta+z')
   await expect
@@ -239,11 +280,23 @@ test('renders vector gradient holes and preserves pixels through fill undo and r
       (await snapshot()).elements.map((element) => element.fills?.[0]?.opacity)
     )
     .toEqual([1, 1, 1, 1])
-  await expect
-    .poll(async () =>
-      (await page.locator('canvas').first().screenshot()).equals(before)
+  try {
+    await expect
+      .poll(async () =>
+        (await page.locator('canvas').first().screenshot()).equals(before)
+      )
+      .toBe(true)
+  } finally {
+    await page
+      .locator('canvas')
+      .first()
+      .screenshot({ path: testInfo.outputPath('after-undo.png') })
+    await writeFile(
+      testInfo.outputPath('after-undo.json'),
+      JSON.stringify(await snapshot(), null, 2)
     )
-    .toBe(true)
+  }
+
   await page.keyboard.press('Meta+Shift+z')
   await expect
     .poll(async () =>

@@ -16,7 +16,9 @@ export const GroupDisclosure = ({
     event.stopPropagation()
     onToggle(groupId)
   }
+
   let iconClassName = 'h-3 w-3 [&>svg]:h-3 [&>svg]:w-3'
+
   if (isExpanded) {
     iconClassName += ' rotate-90'
   }

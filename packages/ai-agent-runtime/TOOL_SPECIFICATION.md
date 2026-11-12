@@ -234,12 +234,16 @@ after child completion, shared lease isolation and terminal request cleanup.
 
 ## Typed recipe admission
 
-A version-1 recipe contains finite ordered steps and an optional bounded repair iteration. Public
+The host admits inline proposals in inline mode. Registered submission and saved graph
+execution retain their configured step budget. Inline execution follows the authored
+sequence and check/repair round count, with byte, binding and safe-integer checks.
+
+A version-1 recipe contains finite ordered steps, optional stage checkpoints and an optional final repair iteration. Public
 parameters/results use JSON Schema. Bindings are literal JSON, a JSON Pointer into
 public input or an earlier step result, or an explicitly constructed object/array.
 There are no arbitrary expressions, unbounded loops, callbacks or dynamic dependency names.
 A proposal names exact registered dependency revisions. Host limits bound encoded
-size, step count, nesting, expansion and repair issues; exceeding them rejects the
+size, binding depth/count and repair issues, plus step count and expansion for registered graphs; exceeding them rejects the
 proposal without partial registration or execution.
 
 An optional `iteration` declares `id`, `stateSchema`, `state` (initial binding),
@@ -265,16 +269,30 @@ into a unique selection must guarantee uniqueness; removing or weakening this
 constraint is not an accepted substitute for matching the registered contract.
 
 Only dependencies explicitly marked composition-eligible by their host can enter
-a recipe. Control-plane tools remain ineligible. This is shared contract metadata,
+a recipe. `composition: 'request'` admits a registered operation only in a host request
+sequence, never an authored inline or saved recipe. Control-plane tools remain ineligible. This is shared contract metadata,
 not a tool-name list. Metadata derives from the actual dependency graph; a model
 cannot downgrade mutation/external effects or grant resource access.
 
 Recipe-authored public schemas use the closed structural subset: objects,
 homogeneous arrays, primitives, required fields, enums and finite bounds. Registered
-dependencies may also use open objects, omitted optional `required`, primitive
+dependencies may also use typed object maps (`additionalProperties` schemas with
+optional `propertyNames`), open objects, omitted optional `required`, primitive
 `const`, homogeneous untyped enums, and disjoint union variants. Dependency fields
-are projected by declared required paths. Unused opaque siblings do not prevent
+are projected by declared required paths. Request-sequence input bindings may
+select declared optional fields/items, with presence and actual input validation
+before the dependent dispatch. Unknown paths and incompatible types still reject. Unused opaque siblings do not prevent
 that projection; opaque values cannot be bound, constructed or silently narrowed.
+In a request sequence, whole registered output forwarding preserves its complete validation schema even
+when implication is opaque; no narrowed field or typed destination is inferred.
+Selected result schemas are self-contained validation roots. Local references
+retain their original meaning through a finite reachable `$defs` graph; reference
+siblings and runtime annotations remain intact. Unrelated definitions are not
+copied and recursive references are not unfolded. Consumers use the projected
+schema as its own root for discovery, retention and envelope validation.
+Input admission remains strict. Whole-map forwarding proves key/value constraints and nested runtime lifetimes;
+untyped maps cannot satisfy typed destinations, and unknown map keys are never
+guaranteed source paths. Object construction validates each declared key and value.
 A path through a union must exist in every branch. Object construction selects a
 union branch only when declared literal or bound discriminators exclude every
 other branch; ambiguous variants reject before execution. Open source objects
@@ -285,7 +303,10 @@ requires `minItems` to guarantee presence. Each prefix retains its own schema an
 runtime-value lifetime. Whole-array bindings check all reachable prefix positions
 and the remaining item schema. Common object constraints on unions intersect
 with each alternative, including forbidden properties and each closed property
-set. Local `$defs` references resolve lazily and once per schema graph; recursive
+set. Reference siblings intersect the referenced constraints, including closed
+property sets; unsupported intersections remain unprovable. Selected result
+portability is checked with its original registered schema root. Local schema pointers, including `$defs` and registered envelope paths,
+resolve lazily and once per schema graph; recursive
 schemas do not expand into repeated trees. Unknown, cyclic-only or unsupported
 references remain unusable. Strict numeric endpoints and string patterns remain
 part of implication checks; literals use the original host schema with its local
@@ -383,7 +404,6 @@ not evidence that a saved literal is independent of runtime state. Bind such
 values from fresh typed input; known declared ordinary fields can remain literals.
 This constraint applies to recipe capture only, not direct native invocation.
 
-
 ### Host library management
 
 `createAiToolStoreManagement({ store, capacity })` uses the same saved-record
@@ -400,7 +420,6 @@ reject even if the requested state happens to match. Writes preserve the recipe
 and execution evidence, require the exact durable acknowledgement, and never
 revive retired entries. Runtime persistence delegates its state writes to the
 same owner and updates request registry availability only after acknowledgement.
-
 
 ### Diagnostic outbox control contract
 
@@ -422,3 +441,28 @@ Repeated use of a leaf retains distinct causal call IDs and recipe steps. Root
 admission failures do not fabricate a pinned revision or recipe step. The host
 forwards these fields with its existing input/output and lifecycle records; they
 do not grant execution authority or change scheduling, retries or settlement.
+
+### Iteration checkpoints and preparation overlap
+
+Recipes may declare `checkpoints: [{after: stepId, iteration}]`. Each checkpoint
+runs after its named ordinary step and before the next step; all checkpoint IDs,
+check/repair IDs and ordinary IDs must be unique. The existing top-level iteration
+runs after the final ordinary step. Admission proves the ordered bindings and
+aggregate iteration budget; future or iteration-private outputs cannot escape their
+scope. The shared invoker pins the full dependency inventory before execution.
+
+Host option `canOverlapPreparation(definition, input)` is an owner capability,
+not model-authored permission. A following preparation with resolved inputs may
+start alongside a mutation only when the owner allows it and no checkpoint lies
+between them. Other work remains ordered. Both started branches settle before
+failure delivery, with separate receipts and lease ownership. Existing cancellation,
+verification progress, remaining-only recovery and registered recipe budgets apply.
+
+### Selected sequence output objects
+
+A host-admitted one-call sequence may return an object of prior step-field
+bindings. Admission derives each field from its registered owner, preserves
+validation and runtime-reference metadata (including nested local references),
+and rejects unknown steps, unavailable paths and non-step leaves. This lets a
+host export selected earlier outputs before intermediate leases close. It does
+not change saved-recipe contracts or permit literal captured request handles.

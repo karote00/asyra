@@ -135,6 +135,22 @@ export class AiExecutionError extends Error {
   }
 }
 
+/** An executor-recognized authored input rejection. Settlement is reported
+ * independently by the transaction host; this error never authorizes a retry. */
+export class AiActionInputError extends Error {
+  readonly code = 'AI_ACTION_INPUT_INVALID' as const
+
+  readonly stage = 'execution' as const
+
+  readonly issue: AiJsonValue
+
+  constructor(publicMessage: string, issue: AiJsonValue) {
+    super(publicMessage)
+    this.name = 'AiActionInputError'
+    this.issue = detachAiJsonValue(issue)
+  }
+}
+
 /** Registered executors may explicitly expose a bounded, safe explanation.
  * Never construct this from raw provider, transport, or canonical exceptions. */
 export class AiActionExecutionError extends Error {
@@ -241,6 +257,7 @@ export type AiRuntimeFailureCode =
   | AiConfirmationErrorCode
   | AiPermissionErrorCode
   | AiProviderRequestFailure['code']
+  | 'AI_ACTION_INPUT_INVALID'
   | 'AI_ACTION_REGISTRY_FAILED'
   | 'AI_AUDIT_FAILED'
   | 'AI_AUDIT_INVALID_INPUT'
@@ -818,6 +835,7 @@ const stableFailure = (
   }
 
   if (
+    error instanceof AiActionInputError ||
     error instanceof AiExecutionError ||
     error instanceof AiActionExecutionError
   ) {
@@ -1862,16 +1880,15 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                               ? Math.max(0, performance.now() - actionStartedAt)
                               : null
                           const actionName = failedAction ?? null
-                          const failure = stableFailure(
+                          const ownerError =
                             error instanceof AiTransactionSettlementError
                               ? error.cause
-                              : error,
-                            {
-                              code: 'AI_EXECUTION_FAILED',
-                              message: 'The batch could not complete.',
-                              stage
-                            }
-                          )
+                              : error
+                          const failure = stableFailure(ownerError, {
+                            code: 'AI_EXECUTION_FAILED',
+                            message: 'The batch could not complete.',
+                            stage
+                          })
 
                           contextStale = true
                           try {
@@ -1919,6 +1936,14 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                             failure: {
                               code: failure.code,
                               message: failure.message,
+                              ...(ownerError instanceof AiActionInputError
+                                ? {
+                                    inputIssue: redactAiValue(
+                                      ownerError.issue,
+                                      this.redactionOptions
+                                    )
+                                  }
+                                : {}),
                               stage,
                               actionName,
                               actionId:

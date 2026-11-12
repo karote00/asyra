@@ -526,7 +526,7 @@ async function verifyPreparedDeliveryHistory(
 
     recordPhase('preparation')
     await operations.call(
-      AiDesignToolIds.EXECUTE_DESIGN_BATCH,
+      AiDesignToolIds.EXECUTE_DESIGN,
       {
         inspection: 'defer',
         operations: [

@@ -37,6 +37,10 @@ export interface AiRecipe {
   readonly inputSchema: AiJsonValue
   readonly outputSchema: AiJsonValue
   readonly steps: readonly AiRecipeStep[]
+  readonly checkpoints?: readonly {
+    readonly after: string
+    readonly iteration: AiRecipeIteration
+  }[]
   readonly iteration?: AiRecipeIteration
   readonly output: AiRecipeBinding
 }
@@ -57,6 +61,8 @@ export interface AiRecipeIssue {
     | 'dependency'
     | 'step'
     | 'binding'
+    | 'value'
+    | 'reference'
     | 'captured-value'
   readonly path: string
   readonly step?: string

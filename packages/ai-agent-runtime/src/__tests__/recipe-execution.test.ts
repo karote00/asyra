@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createAiActionRegistry } from '../action-registry.js'
+import { admitAiRecipe } from '../recipe-admission.js'
 import { createAiToolLibrary } from '../tool-library.js'
 import {
   createAiRecipeInvoker,
@@ -20,7 +21,11 @@ const success = (value: unknown): AiRecipeExecutionResult => ({
 
 const setup = (
   execute?: (call: AiInvocationContext) => Promise<AiRecipeExecutionResult>,
-  maxSteps = 20
+  maxSteps = 20,
+  canOverlapPreparation?: (
+    definition: { name: string },
+    input: unknown
+  ) => boolean
 ) => {
   const registry = createAiActionRegistry()
   const writes: unknown[] = []
@@ -56,7 +61,7 @@ const setup = (
     validate,
     capacity: 20,
     limits: {
-      steps: 20,
+      steps: Math.max(20, maxSteps),
       bindings: 50,
       bindingDepth: 12,
       bytes: 8000,
@@ -77,6 +82,7 @@ const setup = (
     recipe: library.recipe,
     validate,
     execute: host,
+    canOverlapPreparation,
     leases,
     maxSteps,
 
@@ -682,6 +688,103 @@ it('exports validated stopped child values through every ancestor without runnin
   )
 })
 
+it.each([false, true])(
+  'overlaps only owner-approved preparation with resolved inputs (dependent=%s)',
+  async (dependent) => {
+    const events: string[] = []
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const host = setup(
+      async (call) => {
+        events.push(call.name + ':start')
+        if (call.name === 'set') {
+          await gate
+        }
+
+        events.push(call.name + ':end')
+
+        return success(call.input)
+      },
+      20,
+      (definition) => definition.name === 'prepare'
+    )
+
+    const scalar = host.registry.get('set')
+
+    if (!scalar) {
+      throw new Error('Missing test scalar')
+    }
+
+    host.registry.register({
+      ...scalar,
+      name: 'prepare',
+      effect: 'prepare'
+    })
+    const proposal = {
+      format: 1,
+      name: 'overlap',
+      description: 'Apply and prepare independent input.',
+      revision: 1,
+      inputSchema: number,
+      outputSchema: number,
+      steps: [
+        {
+          id: 'apply',
+          tool: 'set',
+          revision: 1,
+          input: { kind: 'input', path: '' }
+        },
+        {
+          id: 'prepare',
+          tool: 'prepare',
+          revision: 1,
+          input: dependent
+            ? { kind: 'step', step: 'apply', path: '' }
+            : { kind: 'literal', value: 7 }
+        }
+      ],
+      output: { kind: 'step', step: 'prepare', path: '' }
+    }
+
+    expect(
+      host.library.submit({
+        requestId: 'author',
+        submissionId: 'overlap',
+        proposal
+      })
+    ).toMatchObject({ ok: true })
+    const running = host.runner.invoke({
+      name: 'overlap',
+      input: 3,
+      requestId: 'author'
+    })
+
+    for (let i = 0; i < 80; i++) {
+      await Promise.resolve()
+    }
+
+    const before = [...events]
+
+    release()
+    const result = await running
+
+    expect(before).toEqual(
+      dependent ? ['set:start'] : ['set:start', 'prepare:start', 'prepare:end']
+    )
+    expect(result).toMatchObject({
+      status: 'success',
+      value: dependent ? 3 : 7
+    })
+    expect(result.calls.map((call) => call.name).sort()).toEqual([
+      'overlap',
+      'prepare',
+      'set'
+    ])
+  }
+)
+
 describe('bounded repair execution', () => {
   const fixture = (mode = 'normal', maxSteps = 20) => {
     const calls: string[] = []
@@ -823,6 +926,92 @@ describe('bounded repair execution', () => {
     }
   }
 
+  it('checks each stage before applying it and continues without replaying the first stage', async () => {
+    const host = fixture('normal', 64)
+    const { iteration, ...base } = host.proposal
+    const proposal = {
+      ...base,
+      name: 'staged',
+      steps: [
+        ...base.steps,
+        ...Array.from({ length: 8 }, (_, i) => ({
+          id: 'a-' + i,
+          tool: 'set',
+          revision: 1,
+          input: { kind: 'literal', value: 2 }
+        })),
+        {
+          id: 'apply-a',
+          tool: 'set',
+          revision: 1,
+          input: { kind: 'step', step: 'verified', path: '/state' }
+        },
+        {
+          id: 'prepare-b',
+          tool: 'set',
+          revision: 1,
+          input: { kind: 'literal', value: 1 }
+        },
+        ...Array.from({ length: 8 }, (_, i) => ({
+          id: 'b-' + i,
+          tool: 'set',
+          revision: 1,
+          input: { kind: 'literal', value: 1 }
+        })),
+        {
+          id: 'apply-b',
+          tool: 'set',
+          revision: 1,
+          input: { kind: 'step', step: 'verified-b', path: '/state' }
+        }
+      ],
+      checkpoints: [
+        { after: 'a-7', iteration },
+        {
+          after: 'b-7',
+          iteration: {
+            ...iteration,
+            id: 'verified-b',
+            state: { kind: 'step', step: 'prepare-b', path: '' },
+            check: { ...iteration.check, id: 'check-b' },
+            repairs: [{ ...iteration.repairs[0], id: 'repair-b' }],
+            next: { kind: 'step', step: 'repair-b', path: '' }
+          }
+        }
+      ],
+      output: { kind: 'step', step: 'apply-b', path: '' }
+    }
+    const admitted = host.library.submit({
+      requestId: 'author',
+      submissionId: 'staged',
+      proposal
+    })
+
+    expect(admitted).toMatchObject({ ok: true })
+    const result = await host.runner.invoke({
+      name: 'staged',
+      input: 2,
+      requestId: 'author'
+    })
+
+    expect(result).toMatchObject({ status: 'success', value: 0 })
+    expect(proposal.steps).toHaveLength(20)
+    expect(host.calls).toEqual([
+      ...Array(9).fill('set'),
+      'check',
+      'repair',
+      'check',
+      'repair',
+      'check',
+      'set',
+      ...Array(9).fill('set'),
+      'check',
+      'repair',
+      'check',
+      'set'
+    ])
+  })
+
   it('checks before repair and completes several rounds without replaying initial work', async () => {
     const host = fixture()
     const result = await host.run(2)
@@ -848,6 +1037,50 @@ describe('bounded repair execution', () => {
       })
     )
   })
+  it.each([
+    [2, 'success', 2],
+    [41, 'failed', 40]
+  ] as const)(
+    'uses the authored inline stopping condition for input %s',
+    async (value, status, repairs) => {
+      const host = fixture()
+      const admitted = admitAiRecipe(
+        {
+          ...host.proposal,
+          iteration: { ...host.proposal.iteration, maxIterations: 40 }
+        },
+        {
+          resolve: (name) => host.registry.get(name),
+
+          validate: () => undefined,
+
+          limits: {
+            bytes: 8000,
+            steps: 20,
+            bindings: 50,
+            bindingDepth: 12,
+            issues: 8
+          }
+        },
+        'inline'
+      )
+
+      if (!admitted.ok) {
+        throw Error(JSON.stringify(admitted.issues))
+      }
+
+      const result = await host.runner.invoke(
+        { name: 'bounded', revision: 1, requestId: 'author', input: value },
+        admitted.value
+      )
+
+      expect(result.status).toBe(status)
+      expect(host.calls.filter((name) => name === 'repair')).toHaveLength(
+        repairs
+      )
+      expect(host.calls.filter((name) => name === 'set')).toHaveLength(1)
+    }
+  )
   it('rejects nested worst-case expansion before initial writes even if input would pass', async () => {
     const host = fixture('normal', 10)
 
@@ -988,4 +1221,29 @@ it('does not advertise stopped resources whose transfer to the caller failed', a
   expect(result.issues.join(' ')).toContain('Caller retention failed')
   expect(result.recovery ?? []).toEqual([])
   expect(result.calls.filter((call) => call.name === 'set')).toHaveLength(2)
+})
+
+it('pins an inline root without a root registration and rejects copied admission or removed leaves before writes', async () => {
+  const host = setup()
+
+  host.register('segment', ['set'])
+  const root = host.library.recipe('segment', 1)
+
+  if (!root) {
+    throw new Error('Missing admitted fixture')
+  }
+
+  host.library.remove('segment', 1)
+  const input = { name: 'segment', revision: 1, requestId: 'author', input: 7 }
+  const forged = await host.runner.invoke(input, structuredClone(root))
+
+  expect(forged.settlement).toBe('not-started')
+  expect(host.writes).toEqual([])
+  expect(await host.runner.invoke(input, root)).toMatchObject({
+    status: 'success',
+    value: 7
+  })
+  host.registry.remove('set', 1)
+  expect((await host.runner.invoke(input, root)).settlement).toBe('not-started')
+  expect(host.writes).toEqual([7])
 })

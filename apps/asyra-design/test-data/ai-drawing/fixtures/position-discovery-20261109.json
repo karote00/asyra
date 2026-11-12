@@ -1,0 +1,21 @@
+{
+  "run": "taipei-101-fixed-1794238899355",
+  "queries": [
+    "set element position x y",
+    "translate elements offset",
+    "move elements delta position",
+    "update properties x y"
+  ],
+  "parentOrigin": {
+    "x": 2078.0870739678794,
+    "y": 35875.22318783384
+  },
+  "workspacePosition": {
+    "x": 2405.3782669182892,
+    "y": 9742.272828842644
+  },
+  "localPosition": {
+    "x": 327.2911929504098,
+    "y": -26132.9503589912
+  }
+}

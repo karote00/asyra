@@ -3,7 +3,8 @@
 ## Direct native tool delivery
 
 Tools expose vendor-independent JSON contracts and owner results. The local adapter
-registers deferred native declarations and delivers text and images directly through
+registers operation discovery and the single host entry eagerly when operations are available,
+keeps domain declarations deferred, and delivers text and images directly through
 the native tool-response channel. No generated JavaScript program, interpreter
 storage or model-authored forwarding step participates. App-owned result handles,
 bounded content continuations and explicit refresh remain the recovery authority;
@@ -25,6 +26,15 @@ for external-tool use or security concerns through request_clarification; it doe
 not turn internal edit effects into confirmation requirements. Schema admission,
 canonical locks and host/external security boundaries remain enforced.
 
+### Native discovery bootstrap
+
+When drawing operations are available, canonical `describe_design_apis` and
+`execute_design` are directly available in the initial native registration. Other native domain
+tools remain deferred. Initial metadata counts and bytes derive from actual
+registration; unrelated catalog growth must not enlarge the bootstrap. No-operation
+and assessment-only requests do not acquire drawing entries. Domain native calls
+and host sequences retain their own contracts; direct availability does not authorize writes.
+
 ## Product contract
 
 A single brief may request creation, refinement, reference tracing, organization
@@ -40,6 +50,163 @@ This contract composes with [local provider](local-ai-provider.md),
 insertion, image generation, new geometry semantics or a different provider.
 The configured App model remains `gpt-6-astra` with `medium` effort.
 
+Capture declaration preflight rejects conflicts before pixel dispatch with typed
+correct_input/not-started recovery. The host registry declares canonical App
+invocation failures alongside native recovery schemas so Runtime can preserve the
+failed child and successful prefix. This internal contract does not duplicate
+failure schemas in model-facing usage or authorize replay/automatic judgment.
+
+### Tool schema support boundary
+
+App tool registration and browser action observation reject unsupported or malformed
+schema constraints before publishing executable definitions. The App validator owns
+its explicit keyword vocabulary; `dependentRequired` is enforced when its trigger
+is present, while unimplemented keywords are errors even in optional properties or
+unselected alternatives. Schema annotations and literal examples/defaults are not
+executable constraints. Local root references retain their original context.
+Input and output validation use that same boundary; no invalid result becomes a
+success binding and failed delivery never replays acknowledged work.
+Registered invocation discovery also describes common invocation failures inside
+`execution.value`. Common boundary failures are complete invocation alternatives:
+the execution cannot claim success, and outer and nested failure settlement must
+agree on unknown or not-started. Acknowledged completed/partial prefixes match the
+selected owner's partial/recovery schemas. Native discovery and invocation use the
+same owner contract projection, not a registry-augmented diagnostic alternative.
+Successful owner data remains valid when saving fails; retry saving without replay.
+Native replies without invocation-bound validation evidence revalidate unchanged
+owner data alongside the explicit acknowledgement. Proof binds the producing call,
+contract, bytes and outcome; foreign or changed replies cannot reuse it.
+Validate the outcome before selecting its result schema or transferring request
+resources. Invalid outcomes fail at the Host handoff; rejected resources release
+once and cannot be acknowledged as usable. Unchanged identity/text/outcome-bound receipts
+reuse completed validation. Success, partial and recovery alternatives discriminate
+the outer status and correlate settlement across layers describing the same
+execution. Independent child recovery entries retain their own settlements, and
+storage failure does not change the completed execution settlement. Discovery and
+invocation enforce these same alternatives; partial output cannot admit a failed
+or unknown acknowledgement through a broader union branch.
+Raw values validate against execution status. Successful execution with failed
+storage still uses the owner's success schema. Model views validate against
+`deliveryOutcome`, which can be partial even after successful execution. Outer
+status, execution, delivery and storage describe their own boundaries;
+same-execution settlement remains correlated. Transport success derives from the
+validated acknowledgement, never an independently supplied boolean.
+
+Accepted result roots include objects, arrays, scalars and null. Raw values pass
+owner validation unchanged; Host acknowledgement is always separate from data.
+Domain-owned receipt fields remain part of their declared data. Library and
+sequence consumers carry explicit execution state; provider content delivers that
+state alongside the value using supported native content fields. Missing or invalid
+state is a handoff failure, never inferred success. Delivery failure preserves the
+known execution settlement and never authorizes replay.
+Provider content failures use the same canonical model-delivery failure contract,
+with evidence validated by the invocation-pinned model schema. Native owner data
+must not be reclassified as browser batch receipts merely because it contains an
+`actionResults` field. Evaluation recognizes completed workflow prefixes from
+canonical action receipts before allowing a later owner-declared input repair;
+missing receipts, unknown settlement and independent delivery failures still stop.
+Interrupted browser batches use the same owner result preparation as completed
+batches before model projection. The outer acknowledgement describes aggregate
+settlement, while the pending action retains its own not-started settlement.
+Public failure projection preserves the validated completed prefix and recovery
+without exposing internal batch diagnostics or replaying completed mutations.
+
+Raw owner schemas are not rewritten to admit Host fields. Structural field
+visibility is an explicit declaration. A semantic shape change
+requires an owner-declared delivery contract; selection must preserve exact literal,
+exclusive-alternative, negation and uniqueness semantics. Registration, discovery,
+selected invocation and final projection retain the same owner and revision.
+Registered/sequence child and recovery projections use their explicit revision,
+never the latest same-name registration.
+Validate the actual delivered value against its status-specific selected contract,
+not a generic wrapper or a union of unrelated success/recovery alternatives.
+Registered model receipts carry `deliveryOutcome` beside `execution`; saving,
+execution and delivery remain independent. The Host pins the model contract before
+effects and never accepts a replacement from invocation middleware. Generic failure
+metadata belongs to the invocation owner; tool projectors only handle its embedded
+result, with validated `executionOutcome` when known. Missing or invalid evidence
+cannot establish completed execution. Child views already selected by their owner
+are not selected again by the enclosing receipt projector; the complete model
+receipt still passes exact status-specific validation.
+Rejected input still passes canonical failure/acknowledgement validation without
+opening a resource scope or executing the owner. Reconstructed delivery failures
+also validate before egress; include only evidence admitted by their declared model
+failure schema, preserving execution settlement when evidence cannot be delivered.
+Partial model views cannot accept recovery-only payloads. Registered composition
+recovery uses selected model child contracts after projection; internal recovery
+keeps raw child contracts. No obsolete result-stage descriptor is published.
+
+Native settlement decodes a reply once. Failure construction uses only decoded
+evidence and never reparses failed bytes. Every opened call scope releases in
+`finally`, including malformed output, validation, handoff and cancellation paths.
+Undecodable post-execution output remains uncertain; it does not authorize replay.
+Cleanup failures retain decoded evidence, and failed resource cleanup remains
+retryable at request disposal under the existing lease owner.
+
+An empty batch capability has a valid rejecting operation schema; it does not
+publish an empty enumeration or prevent unrelated native tools from registering.
+Contract audits compare exact success, partial, recovery and boundary alternatives,
+including the canonical browser observation enrichment. Normalization preserves
+reference intersections and literal data; extra alternatives are failures.
+
+### Executable phase continuity
+
+The AI plans the task; executable operations and stages carry decided dependencies.
+
+Model egress preserves the common invocation-failure alternative registered at
+Runtime, including failures nested in selected sequence recovery. Canonical
+failure execution envelopes preserve image provenance; image data follows native
+media delivery, never arbitrary user-payload scanning. Same-check metadata in one
+capture batch must be identical, and conflicts identify both inspections before
+capture. Successful prefixes are not replayed.
+
+### Canonical input rejection
+
+Canonical property resolution rejects unsupported keys before property application
+with an owner-typed input diagnostic. The App adapter translates only recognized
+input errors; Runtime reports that classification independently of write settlement.
+The App publishes correct_input only for confirmed no-write rejection with fresh context. Unknown
+settlement, broken owner relations and generic execution failures remain blocking.
+Successful prefix receipts and IDs reach the AI without replay. Strict evaluation
+keeps the same drawing turn active for correctable rejection. For terminal tool
+failure it stops successor writes, delivers the settled outer recovery, then
+interrupts drawing. Deadlines and explicit cancellation remain immediate.
+
+### External result selection
+
+`execute_design.delivery` is the sole explicit model-result selection. Retention
+saves portable values independently; `delivery.fields` may select an earlier step
+while later operations continue. `delivery:status` returns no selected values.
+The superseded public `output` and `response` fields reject before execution;
+Runtime recipe outputs and private canvas receipt formatting retain their own
+internal contracts. Omitted delivery returns the final public result and its
+images, including for stages and direct drawing. Retention only adds save receipts;
+it never changes result selection. Explicit status suppresses work data/images;
+explicit fields select only those values/images. Earlier images require explicit
+selection. Anonymous ready batches retain their ordinary batch receipt. Selected failure receipts preserve completed work,
+settlement and recovery without replay.
+
+### Saved target navigation
+
+Selected construction usage publishes the structure of owner-declared resultPaths
+from the canonical named-step output schema. `createdTargets` is an ordered array
+of composition identities and source-key maps, not one universal first entry.
+Discovery does not copy a second mapping schema or fetch runtime values. Consumers
+use JSON Pointer escaping and revalidate current document identity; shape reads
+remain available when the necessary path is unknown.
+
+### Reference result and image delivery
+
+Reference acquisition returns one envelope with ordered `references` metadata
+and `actionResults` media for either singular or plural inputs. Both are declared
+before Runtime composition. Source-local failures retain their settlement and
+recovery; completed imports are not replayed. Acquisition reuses request-owned
+bytes without marking them as shown. Explicit result/media selection displays the
+cached original; status and metadata selection do not. The superseded `refresh`
+input rejects. Deduplication is limited to repeated pixels within one reply.
+Image attachment indexes and pixels are request-owned, not portable conversation
+capabilities. Preserve portable authored source input for later requests.
+
 ## Request and continuity
 
 The existing request carries the brief, attachments, current bounded context,
@@ -48,32 +215,33 @@ state stays in the App. A new request never assumes prior inspection evidence is
 current. Deleted targets, changed document identity and replacement invalidate
 continuity references; no geometry or image cache crosses requests in this slice.
 
-Successor requests also carry bounded prior messages from the selected App
-conversation's existing settled turns: exact request text, original objective
-when distinct, the existing presentation owner's assistant answer and actual
-outcome, with turn identity. These are historical messages, not current document
-facts, tool programs, valid inspection evidence or caller-held Knowledge results.
-Current instructions and corrections take precedence; never replay prior actions
-or infer omitted content. Native threads and Knowledge sessions remain scoped to
-the current request. History interpretation guidance is included only when history
-is present, without increasing first-use instructions.
-
-The App includes the newest contiguous complete turns in chronological order
-within a 32 KiB serialized UTF-8 history envelope and explicitly reports the number
-of omitted older turns. This bounds context cost, not model capacity. No message
-is sliced. An oversized newest pair yields an empty history with an omission count;
-an empty/new conversation omits history. Switching conversations restores only
-that conversation's messages. Raw results, action arguments, progress, image bytes
-and retained session credentials are excluded. Failed, partial and cancelled
-results use the same authoritative presentation as the user sees. Current target
-validation and safe retry rules remain unchanged.
-
-Formal cases must prove controller-to-native-input continuity with the saved
-ordinary consultation answer, isolation, clarification/retry, failure/cancellation,
-whole-turn Unicode bounds and unchanged tool/work-turn counts. They must retain
-session expiry and no-replay protections. Local delivery does not prove adoption.
+Conversation continuity follows the bounded public history contract in
+[conversation experience](ai-conversation-experience.md). Metadata carries exact
+prior user turns and public replies/questions with source-attachment indexes;
+current intent stays separate. The backend validates this data before invoking a
+provider. Historical outcomes do not authorize replay or reuse of request-owned
+evidence. Fresh ephemeral provider threads receive the same admitted context.
 
 ## Capability discovery and composition
+
+Discovery ranks owner-authored purpose separately from actual schema fields and
+secondary identity words. `x-design-discovery` on an operation input schema owns
+its purpose, optional vocabulary and applicability boundaries. Without that
+annotation, the first authored description sentence declares purpose; synthetic
+identity prefixes, subsequent guidance and cross-operation references are not
+positive purpose evidence. Exact identity resolution remains unchanged.
+Descriptive query `inputFields` optionally requires declared leaf names or slash-
+separated paths. Open records do not prove arbitrary property support. Candidates
+return purpose, boundaries, top-level input fields and requested matching paths;
+this navigation is not an executable contract or value validation. Natural-language
+queries remain supported, including custom tools with opaque names. Input enum/const choices and schema descriptions remain secondary search evidence;
+examples and incidental schema prose do not establish purpose or field acceptance. Ordinary plural normalization never rewrites identities.
+
+The coordinate owner declares workspace-to-local conversion as a point or null.
+Request sequences can bind declared point fields to a typed position update,
+checking actual presence before dispatch; a missing conversion never reaches the
+mutation. Persisted recipes retain guaranteed-path admission. Discovery annotations
+remain visible in catalogs and are removed only from execution admission schemas.
 
 Shared instructions state App-wide intent, data authority and completion rules
 once. Image-specific decomposition/conversion/refinement guidance is exposed with
@@ -99,30 +267,42 @@ unconditionally. Batch independent gaps in native research; continue once eviden
 supports the next retained structural part. Further research must answer a specific
 remaining question, recorded briefly in existing progress/decision records without
 private reasoning or per-call chatter. The initial plan contains immediate method,
-constraints and acceptance criteria, not a complete geometry inventory. Emit ready
-coherent retained parts in a shared coordinate system; keep unresolved detail pending
+constraints and acceptance criteria, not a complete geometry inventory. Ready
+coherent retained parts may be emitted in a shared coordinate system; keep unresolved detail pending
 without weakening the final acceptance contract.
 
-Chosen-method advice exposes one executable advisory route: choose the method,
-initially separate local material/join and whole-result obligations, apply a ready
-part, capture its actual representative region, consume the returned binding and
-record a primary-agent judgment before repeating that unresolved shared choice.
-Capture/binding success is not a judgment; record success is not a pass.
-The operation adapter declares and delivers its enriched inspectionId and revision
-with successful standalone captures. Model projection must preserve those handles
-so binding reuses the retained image without another capture. Exact
-`recordedChecks` criterion/unit/status/revision and retained pending obligations
-control interpretation; local pass can coexist with overall pending. Capture/bind
-returns a non-final submission; the primary agent explicitly sets final on the
-record call for completion, with fresh binding of retained images if needed. Correct a
-failed material or missing view at its actual owner, retain unrelated passes, and
-never rewrite judged criteria or replay drawing to repair evidence. Current
-supersession protects replacement judgments. Unknown settlement requires inspection
-of retained state before retry. Discovery uses exact native identities; missing
-fields and lost definitions retain explicit recovery. This route is App advice,
-not a Knowledge admission gate, extra model reviewer or second result store.
-No-Knowledge actions, valid alternative methods and independent ready work remain
-supported. Executable examples prove handoffs, not model adoption or visual quality.
+Always-present App instructions explain Knowledge value before tool names: domain
+principles, common failure modes and mappings to supported App capabilities can
+reduce repeated derivation, exploration and correction attempts, including for
+familiar tasks. Uncertain methods or adjustments that repeatedly miss their target
+are useful occasions to consult relevant advice about a cause or supported tool.
+Native namespace metadata exposes that purpose before deferred tool loading.
+This adds no detail or polish requirement and introduces no lookup gate.
+Domain knowledge is optional reference material, not a default method or an
+additional acceptance standard. Global guidance does not prescribe representative
+sampling, construction order or refinement sequence. Exact tool contracts and
+truthful current-evidence completion remain required. Discovery describes the
+unresolved decisions advice can help resolve. Direct material parameter reads
+include domain and contract constraints without the optional sampling method;
+repetition advice does not require a representative check for known materials.
+Knowledge maps decisions to existing tool computation, not duplicate algorithms.
+
+Always-present instructions assign visual intent, design parameters and final
+appearance judgments to the primary agent. Supported deterministic projection,
+repetition, transforms, material mapping and mechanical checks belong in existing
+registered tools rather than model-expanded values. Prefer a sufficient direct
+tool. When reusable orchestration would reduce manual work, the agent discovers
+exact dependencies, submits a finite recipe and invokes it with fresh inputs.
+Composition connects available primitives; it cannot invent capabilities or make
+artistic decisions. Only registered mechanically decidable checks and repairs
+qualify for bounded iteration. No recipe or tool-count target is required.
+Successful execution attempts saving independently; inspect storage outcomes and
+retry failed saving through save_tool without replaying drawing work. Existing
+selected tool contracts retain exact authorship, admission and recovery authority.
+
+When a new visual decision is needed, inspect the relevant current result. Reuse
+unchanged observations and context, and repair the actual owner without replaying
+acknowledged writes. A screenshot is not an approval token.
 
 Material-correction advice pairs creation with explicit current-target edits.
 Native palette-only replacement supplies complete per-target gradients, preserving
@@ -182,8 +362,8 @@ Unknown subject terms never imply an unavailable drawing capability. Menus omit
 input/output schemas; exact lookup retrieves them. Native/saved results preserve
 namespace, registered identity and current execution route with shared pagination.
 The batch-admitted action set owns both schema admission and advertised batch
-routes. Explicit mechanical review/capture uses the actual native wrapper and
-its argument field, never a batch route. Missing or ambiguous wrapper registration
+routes. Explicit mechanical review/capture uses its registered request owner through
+the host sequence or native invocation; it is never a raw canvas batch item. Missing or ambiguous wrapper registration
 reports unavailable rather than guessing a namespace. Candidate, category,
 query, exact, partial and repeated-definition views obey the same routing owner.
 Use operation selectors for an action schema fragment, or a qualified native name
@@ -389,8 +569,12 @@ Members are explicit projected-face or surface-grid values under the root's shar
 orthographic projection. They repeat through the existing origin, translation axes
 and instanceRanges. No nested patterns/containers, scale, rotation or inferred
 geometry. Pattern fills is exclusive to faces mode; member fills, grid palette/offset
-and face materialField retain their existing semantics. Grid palette restarts per
-component instance; world fields evaluate at translated world positions.
+and face/motif materialField retain their existing semantics. Grid palette restarts per
+component instance; world fields evaluate at translated world positions. Grid
+material planes are solved once per boundary/field, with each emitted vector
+normalized to its own bounds and actual motif/instance world offset. Template
+paint-mode overrides replace inherited alternatives; conflicting explicit modes
+reject. Material provenance includes grid outputs for existing material revision.
 
 Output is ordinary editable siblings in instance-major/member-major order, then the
 grid's declared cell/motif order. Keys prefix each member output with pattern key
@@ -554,12 +738,12 @@ slots from arguments, including empty arrays, null and placeholder values. Valid
 all binding shapes, exact paths and argument conflicts for an operation before
 resolving its retained sources; report independent binding issues with operation,
 target and argument locations together. Never overwrite an explicit caller value.
-Multiple bindings currently require plural elementIds; other scalar arguments such
-as a hierarchy anchor use their ordinary explicit registered input. Target paths
+Each binding declares its actual input slot and cardinality. A plural elementIds
+selection and a scalar anchor may resolve independently in the same operation. Target paths
 cannot invent a new registered slot or broaden the supported binding grammar.
 
 Prepared-check reuse depends on actual parent/workspace identity, basis, bounds,
-document session, recipe, declared criteria and explicit source uses. Fresh capture
+document session, recipe and compiler findings. Fresh capture
 receipt IDs, global observation revisions and transport profiling are not semantic
 content. The operation adapter projects the canonical attachment domain value;
 each renewed receipt is still validated and retained for apply admission. Changed
@@ -661,6 +845,12 @@ receipt is stored with that membership at synchronous mutation settlement, after
 `snapshotId`, `leaseId` and `total`, plus outcome/count/root identity; no expanded
 structural or mutation-scope lists enter the model reply. Internal checking and
 history consume the unchanged receipt first. A deletion has no live target set.
+Canonical mutation-receipt actions use the same retained delivery owner. Their
+model result contains status, changed, settlement, accepted/unavailable counts,
+small mutation-scope counts and the retained receipt reference. Full canonical
+IDs remain available to bindings, checking, recordings and paged receipt readback.
+Partial, failed, no-change and invalid owner results preserve their original
+meaning. Failure to retain a settled receipt is explicit and never replays writes.
 Only declared element-list arguments accept these references; point/segment IDs
 remain ordinary explicit arrays. Resolve all references and validate their exact
 request, lease, workspace and revision inside synchronous mutation admission.
@@ -795,36 +985,14 @@ override reset and detachment are distinct intents. Delivered App advice must us
 these canonical operations and never require detachment for a local correction.
 Portable Knowledge remains advisory and contains no App operation identifiers.
 
-## Main-workflow visual judgment handoff
+## Main-workflow observations
 
-The main drawing workflow accepts optional explicit `reviewChecks` using the existing
-review owner's capture-check identities. Selection applies only to the invocation's
-ordinary automatic image target; it does not assert whole-request coverage. Validate
-selection against current or same-call criteria before writes. Reject selection with
-`inspection=defer`. With no selection, preserve ordinary preview/defer and later binding.
-Do not infer selection from plan prose, force early review or preload all review schemas.
-
-After successful drawing and capture, reuse the existing review owner to validate and
-bind those exact image IDs. Deliver `visualReview` with acceptance context and bound
-`next.arguments`, the registered execution route and owner-derived status/evidence
-constraints. The primary agent views the image and fills those fields, then submits
-through the ordinary dispatcher. Capture and binding record no judgment and cannot
-claim acceptance. Do not recapture or create another review state/registry.
-
-Preserve image and requirement/result revision dependencies, signatures, independent
-passes, multiscale evidence and explicit scope supersession. A failed follow-up retains
-actual writes and successful images, reports partial, and provides review-only recovery.
-Incomplete drawing never silently binds the requested checks to an earlier part's image.
-Retain existing remaining-only recovery and true cancellation. Single/parts and full/
-compact use the same boundary. Independent review capture/binding remain legal.
-
-DoD: execute the actually delivered usage/example and returned next invocation through
-real owners; remove independent model binding and mandatory full review-usage lookup,
-measure total input/output and selected guidance bytes against the same local control,
-retain all restrictions, and prove no repeated writes/captures on failure. Include
-invalid selection, deferred/unselected work, partial drawing, cancellation, stale,
-foreign/tampered/missing evidence, multiscale and independent invalidation. Local
-correctness and byte reduction do not establish live model adoption or latency.
+The workflow prepares and applies admitted parts through their canonical owners.
+When requested, it captures the acknowledged target and returns actual images,
+identity and write receipts. Deferred capture performs no follow-up reads.
+The same call can bind created IDs to a decided edit or capture. Unknown writes
+stop dependent work; capture failure preserves acknowledged edits and allows a
+capture-only retry. No plan registration or review selection is accepted.
 
 ## Compact workflow delivery
 
@@ -848,7 +1016,8 @@ and compact semantic results and image bytes, verify original diagnostics and ca
 correlation in the existing trace, and prove fewer delivered bytes without extra
 calls. Cover no-op, invalid input, partial/failure, cancellation, follow-up failure
 and remaining-only recovery. Saved representative compact text must shrink from
-5,372 to at most 1,938 bytes without deleting any other field. Local evidence proves
+5,372 to at most 1,938 bytes for the original fields. The same receipt with the
+required created-root identity array is bounded at 2,005 bytes. Local evidence proves
 delivery correctness, not model adoption or latency.
 
 ## Document export and persistence delivery
@@ -895,208 +1064,58 @@ byte count and failure boundary, not unbounded HTTP bodies or secrets.
 
 ## Evidence and completion
 
-Declaring review criteria returns a compact storage acknowledgement with criterion
-and deferred-detail IDs and fact validity. It does not echo the submitted method,
-requirements, source statements or references. The review owner retains complete
-criteria, source facts/bindings and explicit reference selection for subsequent
-checks; phase=facts remains the explicit fact retrieval route. Storage success
-does not approve a drawing.
-
-A coherent stage may defer screenshots. Only intermediate parts inside one
-ordered invocation may coalesce mechanical checks until that invocation ends;
-standalone writes check before returning. Visual assessment or completion still
-requires current image evidence at its explicit decision boundary.
-Numeric admission, a successful receipt and a model assertion are not visual
-acceptance. Requested qualities, not a universal detail score, govern review.
-
-Review discovery exposes one self-contained schema per phase. Plan accepts the
-initial criteria and optional facts/bindings; facts retrieves or updates source
-metadata; structure checks planned structure criteria; visual assesses current
-appearance. Only visual accepts final/deferredChecks. Only plan/facts accepts
-facts/bindings/dependencyChanges. Shared field definitions do not expose unrelated
-phase inputs. Tool guidance states conditions before actions and uses the exact
-field names. Cross-field and current-state validation remain at the review owner;
-clearer wording does not authorize automatic argument repair or weaken evidence.
-
-Intermediate visual assessments may select a nonempty subset of planned criteria
-with final=false. They never approve completion and do not require evidence for
-yet-unbuilt detail. Final assessment remains the default and requires all
-criteria, current overall evidence and requested native detail.
+The AI verifies the result against the user's request using the observations it
+needs. Images come from inspect_drawing; values come from read_design_context.
+No criteria registration, signed verdict, data-evidence token, reference-use
+approval or completion-only reread is required. Captures describe an observation,
+not a design approval. Explicit mechanical checks report their findings without
+creating a global quality gate. Operation input/output validation, cancellation,
+unknown write settlement and durable publication acknowledgements remain required.
 
 ### Attachment-to-reference preparation
 
-Initial attachment metadata delivers the existing image owner's retained
-referenceId alongside the unchanged image payload. Available admitted dimensions
-come only from that owner, never caller-supplied validation. Identity availability
-is not evidence of decoding or visual suitability. Initial delivery must not
-fully decode unused attachments or gate first drawing on source selection.
-
-When explicit reference uses require oriented pixel bounds, the existing async
-selection entry prepares those sources through the image owner before the
-synchronous reference/review owner records decisions. Existing in-flight and
-completed validation is reused, including imported images. No new cache,
-reference registry, AI call or required standalone validation is introduced.
-Pending/rejected candidates and source-only facts need identity, not decoding.
-Independent validate_reference_images remains a supported diagnostic/recovery API.
-
-Unknown identities, invalid bytes, decode timeout and cancellation remain honest
-failures; failed preparation does not commit selection or clear prior evidence.
-Successful sibling preparation is retained for retry. Recovery targets failed
-sources only and never repeats drawing or image download. Internal preparation
-uses existing owner observation with actual duration/results. AI alone decides
-subject/viewpoint suitability, accepted/restricted/rejected status, exact uses
-and limitations; decoding cannot approve a source or a visual check.
-
-Formal provider/dispatcher/real-owner tests must prove identity and pixel-use
-continuity, deferred work, failure isolation, reuse work counts and lower total
-handoff bytes/calls including initial metadata and guidance. Live AI adoption and
-first-frame improvement remain unobserved until separately authorized.
-
-### Visual review result selection
-
-Visual coverage, correction context and pending-criterion discovery consume only
-main-agent judgments from the existing request result store. Select that origin
-before cloning result payloads; unrelated mechanical evidence must not be copied
-into these projections. Preserve all main-agent judgments, including non-required
-units and deferred obligations. Do not infer origin from names or ID prefixes.
-
-Full and exact-ID result reads remain available and detached. Selected summaries
-identify their selected population. Pending-only origin selection keeps the existing
-pending candidate scope; full and exact selections retain their respective scope.
-Mechanical failures, stale/unverified evidence,
-whole-view requirements, local passes and dependency invalidation keep their current
-completion authority. Prevalidation and post-commit projections use their own current
-state; no cache, extra model request, capture or mutation replay is introduced.
-
-Formal tests exercise the actual review-to-result-store flow, proving smaller clone
-work with mixed and growing mechanical evidence while preserving output, failure,
-cancellation, isolation and recovery semantics. Source geometry, history and saved
-documents remain unchanged.
+Attachment metadata and imports use the existing image owner's content identity,
+original bytes and admitted dimensions. Consumers select existing images and
+original-pixel regions directly. validate_reference_images decodes requested
+sources when dimensions or diagnostics are needed and reuses admitted results.
+Source identity, access, decoding errors and out-of-image regions remain ordinary
+input/resource validation. No suitability decision or prior criteria is needed.
+AI-authored purpose and limitations are optional context, never permission.
 
 ### Primary-agent visual comparison
 
-The primary drawing agent compares original request, retained criteria, applicable
-original references and current rendered overview/detail images. `review_drawing`
-records its evidenced findings without calling a separate model. When capture
-targets are supplied, the tool returns images and IDs first; it must not accept
-judgments submitted before those new images were delivered. The next ordinary
-agent continuation inspects them and submits findings using current inspection IDs.
+The AI compares delivered images and available data with the request, makes
+visual decisions and performs final verification. It can inspect a ready part
+before other parts exist and combine decided operations with their captures.
+No mandatory construction order, screenshot count or verdict-submission call is
+introduced. Source images do not establish unseen geometry; the AI states material
+limitations. A successful tool call does not itself establish visual quality.
 
-Visual criteria require image judgment; data criteria require canonical/numeric
-evidence and cannot be certified by pixels. User requirements set the threshold;
-optional polish does not block completion. Source applicability, rejected images,
-unknown indexes, current coverage, nonempty evidence, cancellation and final
-whole-request inspection remain enforced. Repeated primary-agent review is allowed.
-Retain failed or unknown findings for correction; changed evidence cannot approve
-completion. No model fallback is installed in the normal tool dispatcher.
-Standalone diagnostic visual-assessment probes remain separate from product tool
-execution and are not invoked by preparation or drawing review.
+### Captured-image recovery
+
+The inspection owner retains original successful capture receipts with its
+request-owned images. `read_design_inspections` selects known IDs or recent
+matching target/view captures and returns them through the ordinary image channel.
+It performs zero canvas captures and no current-document validation. Its explicit
+saved-snapshot label and original target/region/stamp distinguish redisplay from
+fresh capture. Stale images may be redisplayed but cannot pass mechanical checks;
+those consumers retain dependency validation. No cross-request image access or
+mandatory read-before-capture is added.
 
 ### Evidence tool responsibilities
 
-Expose criteria definition, source fact recording, derived calculations,
-reference selection and drawing review as separate discoverable responsibilities.
-Names state the action and object. Their schemas contain only applicable inputs;
-all route through the same registered invocation/admission boundary and existing
-request-owned evidence state. Remove superseded public multipurpose routes
-instead of advertising aliases. Preserve internal reuse and all actual review
-checks. Discovery and recovery link to the exact current registered tool.
-Reference selection returns candidate indexes, applicability decisions, the current
-requirement revision, whether they changed and the current review handoff. It does not record or retransmit source facts or bindings.
-Criteria initialization may include references; subsequent selection uses its
-own owner method. Fact and selection receipts share dependency-repair, reference-applicability, then
-current-review routing. Decisions resolve against all retained images, including
-unselected images being rejected in the same batch. An unchanged accepted selection does not ask for another review.
+record_design_facts stores authored statements with optional provenance and scope.
+record_design_calculations stores authored numeric values and units with optional
+provenance. Both support direct storage without prior facts, criteria or drawing;
+updating an existing id replaces the note. Missing declared output is a tool error.
+select_design_references optionally stores selected attachments and source notes;
+other tools use their own source identity/region inputs directly.
 
-Source facts retain source-attributed assertions with explicit dependencies. Derived
-calculation records cite retained valid fact IDs and concrete verification, keep
-full numerical precision, and may be corrected without changing those facts.
-They are diagnostic calculations, not source authority or canvas validation; they
-cannot be fact-bound to approve visual criteria. User-requested precision remains
-a requirement. Otherwise judge the significance of a proposed drawing correction
-using subject scale, viewing scale and visible impact; avoid reworking large
-illustrations for negligible numerical narration. Do not round stored data or
-silently change verified dimensions.
-
-Identical fact, binding and reference submissions preserve accepted evidence.
-An unrelated new unbound fact does not invalidate the reviewed result. Changes
-to a bound fact or its binding identify exact affected criterion/unit checks; reference-use changes
-invalidate only their dependent checks; canonical drawing changes retain their separate generation
-checks. Unknown impacts and invalid source dependencies remain conservative.
-Fact receipts report acceptance/fresh-review state and current registered recovery
-instructions instead of leaving callers to infer what to do from a success flag.
-An invalid source directs callers to record_design_facts first. Only a valid
-source receipt directs them to review_drawing with the affected checks and current
-inspection evidence. Machine-readable next-tool fields and instructions agree.
-
-### Retained source facts and evidence assessment
-
-When the source has been verified and the user has requested no contrary change,
-preserve its result. Personal aesthetic preference is not a reason to change it.
-The review owner retains compact source facts for one invocation: stable id,
-statement, applicable scope, source references, verification notes and explicit
-source/requirement dependency versions. Estimates and unverified model-generated
-geometry are not verified source facts. Recording is a model's evidence-backed
-assertion, not automatic truth certification or approval of rendered output.
-
-Use `record_design_facts` to record or retrieve these facts,
-or include them in the initial plan at first adoption. Bind reused facts to
-exact planned criteria/units and known canonical element IDs with factBindings; image-backed bindings carry explicit fact-purpose referenceUses. The review owner attaches bound fact IDs to
-criterion checks without requiring callers to repeat the relationship; existing canonical inspection coverage
-validates the bound targets before a visual assessment. A binding is review
-metadata, never proof of geometry or a second model of the document.
-The primary agent can retrieve dependency-current facts with applicable
-image evidence bound to its visual criteria, including source references, model
-verification notes and scope/limitations. Unsupported facts remain explicitly
-unverified. URL citations remain attributed assertions. Reference
-adoption records what the image can support (for example, massing rather than
-finished facade detail). Download success does not establish suitability. Data-only,
-unrelated and invalid facts are excluded. These facts never substitute for current
-canvas evidence or the primary-agent visual verdict.
-Repeated retrieval neither researches nor asks the model to judge them again.
-Ordinary drawing mutations do not alter source facts. A source change, user request
-or concrete contradicting evidence must identify the changed dependency and reason;
-only dependent facts become invalid and require verification. Valid facts cannot
-be overwritten. Invalid facts retain their previous evidence until revalidated.
-Facts never bypass current-image, external-change or final completion validation.
-A new invocation starts without inherited fact authority; persistent diagnostic
-records remain evidence, not a source of current validation. Canvas-dependent
-observations stay in the existing revision-bound inspection owner.
-
-Canonical Scene Tree/Props changes and document load/replacement participate in
-evidence invalidation, including manual, remote and Undo/Redo changes. Inspection
-must reject mixed-generation results. Reuse requires unchanged identity and a
-complete dependency footprint; unknown dependencies invalidate conservatively.
-No target-local cache is admitted merely because the local tool revision matches.
-Final overall inspection and unresolved requirements remain mandatory.
-
-Completion coverage follows the current canonical containment of this request's
-scope, independently of the last target used for an automatic inspection.
-Successful group/ungroup operations preserve that scope through their canonical
-receipts. Adding detail does not discard earlier scope. Current whole-subtree
-images may jointly cover the scope; unrelated roots, regions alone or unresolved
-deleted IDs do not. The existing App inspection validation action verifies an
-optional coverage query through public Scene Tree parent relations. The backend
-supplies its owned scope and recorded overview targets, never a model assertion
-of coverage. Plain generation checks remain constant work; coverage shares
-ancestor reads within a single query and does not render or copy the document.
-
-App inspection and layout measurement attach an ephemeral runtime/generation
-stamp from public canonical change observations. The runtime owns subscription
-cleanup; document load invalidates the generation. The backend compares stamps
-and uses the registered read-only `validate_inspection_evidence` action before
-accepting an assessment and before reporting an accepted completion. Validation
-compares constant-sized values; it does not recapture, walk the document or
-certify appearance. Absent validation or mixed-generation evidence cannot count
-as current. If a capture exposes a newer generation than a successful layout
-measurement, remeasure that target once; unchanged subsequent captures reuse
-its validity, while failed measurements remain unresolved without an immediate
-identical retry. No images or geometry are cached by this validity owner.
-
-A question pauses the current segment and is shown independently. An answer
-starts another segment. Completion, partial work and failure explain the actual
-outcome and retained work. Preserve existing history, local completion time,
-keyboard interaction and user Stop without App-imposed total retry/time quotas.
+Saved notes are data, not independently verified truth. Use ordinary result bindings
+and named retention for decided downstream work or possible later reuse. The App computes a saved descriptor once on storage: name, producing operation,
+input/result selection and bounded shape. Execution receipts and later request
+context reuse that descriptor without values. Saving has no mandatory consumer.
+Retention does not extend request-owned image/query leases or make old geometry current.
 
 ## Ownership and diagnostics
 
@@ -1163,6 +1182,15 @@ status or settlement. No new proxy, database scanner, logging configuration or r
 reasoning/code/diagnostic capture is introduced.
 
 ## Execution recording
+
+Browser streaming admission separates observational activity from execution frames.
+Qualified tool names remain intact. A parsed activity frame with invalid progress
+fields is omitted from presentation without cancelling the stream or executing
+anything; observer callback exceptions are likewise isolated. Activity following
+the final result is ignored without reopening progress or rejecting the result. Existing server
+records retain original tool activity. Unknown frame kinds, malformed JSON or
+operation/result envelopes, receipt failures and explicit errors remain fatal.
+User cancellation and transport cleanup retain their existing semantics.
 
 The Runtime profiler emits a versioned, append-only local record per invocation in
 addition to existing console diagnostics. The record includes request/call and
@@ -1291,8 +1319,32 @@ geometry, order and existing no-replay rules. The runner records both limits and
 never claims recovery coverage when a live submission does not exceed the limit.
 
 An explicitly configured local evaluation window separates the work deadline from
-an independent report timeout (60 seconds). Normal product requests have no such
-window. The browser and provider consume the same absolute work deadline. The
+an independent report policy: `reportTimeoutMs: null` waits for report completion
+without a time limit; an explicit positive timeout is bounded to five minutes.
+The fixed 101 benchmark uses the untimed policy. An optional recorder-owned
+`evaluation-control.json` beside provider evidence arms strict stopping only for
+its exact `workDeadlineAt`. Blocking App/native execution failures, missing
+required data, failed delivery and unknown settlement stop through the same
+interrupt boundary after the active host invocation delivers its settled recovery.
+New calls are rejected while stopping; deadlines still interrupt immediately.
+Canonical authored-value rejection is correct_input when the complete admission
+result establishes no writes, or a typed canonical input rejection carries known
+no-write settlement and fresh context. Direct and
+sequence routes preserve this identity; generic recoverable flags and prose do
+not establish it. Failed visual checks and ordinary corrective rework do not
+stop the task. The first reason is retained and is not deadline expiry.
+Reference import declares `select_reference` and
+known pre-attachment settlement for rejected sources. Partial and all-source
+failures retain their per-source receipts and successful images; the registered
+recovery contract covers both singular and batch forms. Strict evaluation permits
+the original agent to choose another source. Attachment admission failures,
+unknown effects and independent delivery errors remain blocking.
+Control observation ends when work settles. Drawing input remains unchanged;
+ordinary tool recovery is unaffected when this explicit control is absent.
+The recorder transfers complete document/report snapshots in bounded chunks from
+one browser capture and serialization, then disposes both handles. It records
+browser lifecycle events and preserves independent report/video evidence if a
+collector fails. Normal product requests have no such window. The browser and provider consume the same absolute work deadline. The
 browser checks it at the actual synchronous mutation boundary, including queued
 work. A finite mutation already entered may settle; no later mutation enters and
 committed changes are never replayed or undone by the deadline.
@@ -1301,9 +1353,32 @@ At the work cutoff the native provider cancels App tool execution and interrupts
 the active turn. After its terminal acknowledgement it requests a concise public
 report in the same native thread. Reports explain completed work, remaining work,
 first-frame delays and uncertainty without requesting private reasoning. Report
-calls cannot execute App tools or final drawing actions. Early work completion also
+calls cannot execute App tools or final drawing actions. Optional `reportInstructions` accepts a nonblank string without an App-imposed
+character ceiling. It requests detailed public commentary with the existing final
+1000-character summary contract. These host controls are excluded from drawing
+input. `announceWorkDeadline: false` suppresses the otherwise unchanged work
+countdown instruction. Report instructions are delivered only after work settles
+and tools drain. The fixed benchmark submits once and verifies retained work/report
+exchanges share a native thread with distinct turn IDs, then extracts only public
+commentary from that report turn and requires the settled evaluation receipt.
+Its incremental trace observer reads each byte once; canonical content captured at
+report entry must match report settlement. No new-session report fallback. Early work completion also
 enters reporting. Missing interruption, transport failure, cancellation, malformed
 report and report timeout are explicit failures, never artwork completion.
+
+An explicit `keepReportSession: true` evaluation option transfers the original
+native process to the service after report completion. The initial request and
+recording can finish while the session waits without model calls or an idle timer.
+Drawing tools and request artifacts are released at settlement; follow-up questions
+remain report-only in the original thread. Local admitted status, ask and close
+requests use the retained session identity. Questions serialize, public input/output
+is retained separately from the initial execution, and disconnecting a question's
+HTTP response does not discard its answer. Explicit close cancels active reporting,
+drains pending questions and releases the process once. Lost processes are reported
+as lost, never recreated. Service restarts do not promise resume. The recorder
+finalizes video and document evidence while preserving the service for questions;
+explicit closure remains separate from evidence collection. Ordinary requests and
+non-retained evaluations preserve their existing cleanup.
 
 The existing evaluator preserves work outcome separately from model-authored report
 text and observed events. Capture consumes the existing settled conversation result,
@@ -1315,17 +1390,34 @@ request/turn identity; the collector must match the observed request and recheck
 identity and the assistant result text before taking its screenshot. User text or
 work-history text cannot substitute for the displayed report. A raw provider report,
 ordinary outcome, prior turn or failed/cancelled result cannot substitute. Missing
-or ambiguous evidence stays failed; no drawing operation is repeated for capture. It saves report text and its screenshot without recording
-video, then closes the work context before fresh-context reload. On report/capture
-failure it records the missing evidence and attempts bounded cleanup; an external
-watchdog bounds hangs independently. A self-report is not measured
+or ambiguous evidence stays failed; no drawing operation is repeated for capture. The knowledge-evaluation run-101 collector saves report text and its screenshot
+without video, then closes the work context before fresh-context reload. The fixed
+taipei-101-live collector records continuously and reloads the same context after
+retaining report and source evidence. During drawing, canonical changes are
+coalesced until rendered and transaction-idle. When bounds leave the visible
+canvas, the existing viewport API fits the current content. Idle polls do not read
+bounds; same-count geometry changes still trigger inspection. External navigation
+is classified only against settled/rendered geometry: a cropped view pauses
+framing, and navigation exposing all content automatically resumes it through
+the production runner tick. Unchanged paused polls do not read bounds. Ordinary
+fit navigation does not disable tracking. The runner records pause/resume times.
+Framing does not change canonical content, selection or history. Retire the drawing watchdog before framing disposal and
+report evidence. Framing failures are evidence errors and cannot abort native
+report collection. On report/capture failure, retain missing evidence and attempt
+bounded cleanup; an external watchdog bounds hangs independently. A self-report is not measured
 provider reasoning time or a verified cause. Evidence collection has its own bounded
 cleanup after reporting and cannot grant extra drawing time.
 
 DoD: deterministic protocol tests prove same-thread transition and denial of late
 App calls; actual transaction tests prove deferred-write rejection, retained partial
 history and Undo/Redo; capture tests prove report/text/screenshot capture,
-report timeout and failure preservation. Ordinary requests remain unchanged. Live
+explicit report timeout, untimed report continuation, and failure preservation.
+The fixed benchmark retires its drawing watchdog before report-entry evidence,
+retains completed native report text before browser captures, and independently
+collects source, receipt, persistence, checkpoint, screenshots, reload, and video.
+Missing evidence fails explicitly while other collectors continue. Its report has
+no duration watchdog; cancellation and transport errors still terminate normally.
+Ordinary requests remain unchanged. Live
 model compliance and screenshot appearance require a separately authorized run.
 
 ## Execution evaluation
@@ -1400,18 +1492,6 @@ behavior or shared CI requirements. Product cancellation, lifecycle recovery,
 canonical changes and Undo remain covered by the ordinary regression suites.
 Normal App use does not automatically fit the viewport. Final delivery requires
 latest PR CI passing; static flow validation is not runtime completion.
-
-### Request-linked criteria and bounded inspection payloads
-
-Plan criteria are named request-local entries, each retaining original requirement
-text and a concrete observable description. Structure review selects criterion IDs;
-fact bindings and result checks use criterionId. Descriptions can make a requirement
-observable without introducing new user requirements. Every final criterion must
-have current evidence; visual judgment checks deviations and relationships rather
-than feature presence alone. All named criteria remain in the final checklist.
-Image inspection returns current rendered evidence and coverage metadata. It does
-not implicitly query or attach subtree object summaries. Explicit scoped context
-queries own data retrieval; native resolution and overview behavior are unchanged.
 
 ### Prepared target and geometry reuse
 
@@ -1592,61 +1672,16 @@ spans. Reports keep child actions separate from native tool counts and time
 unions. Diagnostic metadata is retained locally and stripped from model-facing
 receipts. Missing handler timing (including an interrupted exchange) stays
 unavailable; it is not estimated from a batch total. Exact native and App action
-contracts are saved once per invocation and linked by content digest. Per-check
-model judgments are distinct from transport/output availability, and an unfinished
-structure review is not a failed final review merely because `accepted` is false.
+contracts are saved once per invocation and linked by content digest. AI design judgments are distinct from transport/output availability.
+Incomplete artwork and ordinary visual correction are not tool execution failures.
 
 ### Whole-result review and revision handoff
 
-The primary drawing agent checks the actual rendered result against the original request as a whole
-as well as each declared visual criterion. Passing a list of individually
-plausible features is insufficient when their combined form contradicts that
-request. The requirement controls realism, roughness, detail and unusual views;
-no preferred angle or universal detail threshold is added. Structural reviews
-do not reject unfinished finish detail. One assessment reports all currently
-visible contradictions within its phase so revisions can address them together.
-
-Review responses provide `correction.checks` from the existing pending result
-store and required coverage, including findings outside the submitted subset.
-Each check retains id, criterionId, optional unitId, status, revision, full evidence,
-optional invalidation reason, exact inspectionIds and `factElementIds` from only
-that criterion/unit. No criterion-level evidence aggregation remains. Passed
-checks stay in the result store and are excluded from correction. Missing checks
-retain their coverage status without invented evidence or scope.
-
-`correction.inspections` resolves the union of these checks' retained image IDs
-once. Each entry identifies its image target and optional target-local region;
-`unavailableInspectionIds` preserves retired/missing image identities. Image
-coverage and fact-bound elements are diagnostic context, never an edit target or
-permission. Do not convert target-local regions into workspace edit queries or
-use an overview root as the inferred defect target. Stale evidence stays a
-question for fresh inspection, not a current visual conclusion.
-
-Optional `correction.discovery` supplies the existing query entry and arguments
-with an explicit caller-filled query. Select a capability intent or exact known
-name; consume the returned execution route and complete contract. Known scoped
-edits need no discovery. The review owner never lists repair tools, selects a
-repair policy, reads Knowledge or guesses values. Existing query, preparation,
-mutation and review owners retain validation, cancellation, partial receipts,
-no-replay recovery and fresh affected-evidence requirements. These diagnostics
-cannot authorize completion. No additional result store or retained cache.
-
-Formal local verification executes the delivered guidance through existing query
-and edit consumers, including world-material and local-property routes and missing
-target decisions. It preserves multi-unit/multiscale identity, unrelated passes,
-whole-view obligations and partial recovery. Measure the whole necessary exchange,
-not a shorter summary that forces missing evidence to be read again.
-
-The request retains unresolved primary-agent findings. A subsequent review receives
-those findings as questions to check, not as accepted facts or construction
-instructions. Fresh passing findings resolve them; stale passes cannot. Source
-facts retain their existing independent dependency/invalidation contract.
-
-If canonical evidence changes during visual analysis, return the completed
-assessment alongside the actual freshness/coverage result as partial evidence.
-Retain its useful findings and explicit next action, but do not approve detail
-or completion. An expired inspection is not a malformed tool input. Transport
-failure, uncovered scope and changed canonical data remain distinguishable.
+Final verification belongs to the AI. It uses current observations where needed,
+preserves acknowledged work, revises actual deviations and reports limitations.
+Capture/data failures describe the missing observation; they never authorize replay
+of completed writes. Tool receipts remain authoritative for actual execution and
+publication, independently of the AI's design judgment.
 
 ### Browser failure handoff
 
@@ -1752,17 +1787,17 @@ content continuation when necessary; explicit refresh remains available. No sepa
 or model-authored substitute is used. Mixed lookups return
 known matches with explicit execution routes and separately identify missing names.
 They neither discard valid matches nor send native tool names to the canvas batch.
-When an action and native wrapper share a short name, the same lookup supplies
+For a batch action and its own registered wrapper, ordinary exact usage supplies
+the executable batch guide and the qualified wrapper reference. Explicit wrapper
+selection retrieves its executable guide. Full and machine-schema reads include
 both actual input contracts with their distinct routes. A flat action schema is
 not the native wrapper schema; no extra qualified lookup is required to discover
 that wrapper. Delivery reuse and explicit recovery remain independent per route.
 
-Once direction and shared coordinates are established, prepare and apply each ready
-coherent part, then review its actual result using phase=visual, final=false.
-Remaining requirements stay pending; repeated geometry is not evidence that the
-whole structure must already be reviewed. Structure review remains an optional
-whole-structure checkpoint. Final acceptance still requires all planned criteria
-and current overview/detail evidence. There is no new rendering or Undo path.
+The AI can apply a coherent ready part and observe it before preparing other parts.
+It chooses the needed checkpoints and final verification against the request. No
+phase registration or stored approval is required. Rendering and Undo retain their
+existing owners.
 
 ### Ready-part continuation and delivery reuse
 
@@ -1776,13 +1811,13 @@ before generating unrelated parts or their detail; final requirements stay intac
 
 Native API lookup can recover complete registered descriptions and schemas when
 native declarations abbreviate them, using the same revision and refresh policy as
-action lookup. Reference imports return original image bytes once per request/attachment;
-later calls return the attachment receipt. Explicit refresh=true redelivers original
-bytes after context loss or failed delivery, without re-downloading. Failed sources
-remain retryable. Recording-only initial fit runs in the browser independently of
+action lookup. Reference imports reuse acquired original bytes within the request.
+Explicit delivery selects images independently of acquisition; repeated selections
+redisplay the cached original without refresh or redownload. Failed sources remain
+recoverable under their typed owner outcome. Recording-only initial fit runs in the browser independently of
 screenshot capture so a slow capture cannot postpone viewport navigation.
 
-### Shared construction and first-write criteria
+### Shared construction
 
 A semantic draft may declare `sharedFills` as draft-local names of solid/gradient
 values and reference them using `fill: {shared: name}`. These names are not saved
@@ -1792,14 +1827,6 @@ definitions do not create records. Equal inline fills remain independent. Unknow
 keys or invalid definitions fail before application. Existing property linking
 and detachment use the same public App APIs as ordinary editing. Saved documents
 and Undo contain ordinary canonical relationships only.
-
-The combined preparation/application tool may accept the exact existing plan
-contract. It prepares the draft, registers the plan before mutation, and applies
-the retained artifact through the existing owners. Invalid preparation or plan
-cannot write. This is optional composition of the current owners, not another
-review system: standalone planning and direct edit routes remain available, and
-post-mutation plan rejection, facts, current evidence and final checks remain.
-All model-facing plan examples must pass the actual advertised schema and owner.
 
 Basic API eligibility excludes host lifecycle notifications, including
 `renderIsReady`: it emits an initialization event and is not a readiness query.
@@ -1814,7 +1841,7 @@ that a model chooses every tool correctly for every user request.
 ## Responsibility-scoped tool execution
 
 The model selects domain intent and judges evidence. The existing Design workflow
-owns deterministic preparation, optional criteria admission, canonical application
+owns deterministic preparation, canonical application
 and inspection handoffs. It sends each owner only its input and returns compact
 outcomes and retained artifact references. A failed handoff preserves completed
 steps and the prepared handle, does not replay mutations, and remains recoverable
@@ -1844,12 +1871,9 @@ Record the actual first-content time (or its absence) as diagnostic evidence;
 latency alone neither accepts nor rejects the task. Explicit user requirements
 and the overall work deadline remain authoritative.
 
-The original user request remains immutable in the invocation and primary-agent
-result review. A ready partial drawing may be applied before model-authored review
-criteria exist. The first criteria record may follow partial drawing but must
-precede primary-agent result review/approval; it does not itself approve any output. Established
-criteria cannot be replaced after mutation. Final assessment still compares all
-requirements, including the original request, with current evidence.
+The original user request remains immutable. The AI may revise its working plan
+and apply partial work without registering criteria. Final verification compares
+the actual result with the request, including any remaining limitations.
 
 Startup guidance exposes immediate choices and stable capability boundaries;
 stage-specific schema and review procedures belong to their registered tools.
@@ -1880,7 +1904,7 @@ are not rewritten to guess original images. The model retains subject selection.
 Acquisition receipts state the actual image dimensions, selected source and
 whether bytes were newly acquired or reused. A later explicit acquisition of a
 known candidate for the same page updates that page's selected asset. Repeating
-or refreshing the page reuses that selected asset; refresh only redisplays it.
+the same page reuses that selected asset; explicit media delivery redisplays it.
 Identical decoded-admitted source bytes share attachment identity. Different
 bytes remain distinct even when names or URLs resemble one another. Protocol
 image delivery is verified independently from download success.
@@ -1897,18 +1921,27 @@ advertised read/redisplay route without invoking the producer again; missing or
 malformed handles fail explicitly. No fallback capture, redraw, automatic retry or
 invented success is allowed. Independent results retain independent identities.
 
+The inspection owner declares `image.dataUrl`, `image.width` and `image.height`
+as required delivery fields. Pixel dimensions are integers from 1 through 1024
+and must match the original PNG header. Registered model projection preserves
+these fields before native image extraction; it must not recapture, resize or
+infer dimensions from document bounds. Overview, native regions and workspace
+overviews share this contract, including multiple images in one reply.
+
+Formal image regressions pass the production inspection declaration through
+model projection and image extraction, with a real host-boundary case. A fixture
+sent directly to image extraction is insufficient to prove the complete handoff.
+
 Formal tests send actual owner output through the native response channel and
 inspect the next outbound request. Zero, one and multiple images preserve bytes
 and order. Fixed offline responses exercise the actual native executable without
 a model. Evidence separates submitted content, native outgoing content, unavailable
 live visibility and model-authored visual judgments.
 
-Image redisplay and criterion binding are independent. Existing inspection IDs
-can be bound with bindChecks after criteria are defined, without recapture; current
-revision, local and multiscale invalidation rules still apply. A forwarding failure
-must not replay writes or discard the original execution result. Native regression
-coverage is part of the existing local consumer gate. An unrecorded historical
-forwarding error remains unconfirmed even after current deterministic tests pass.
+Image redisplay reuses retained native pixels and source identity. Current target
+and crop validation still apply when new work depends on them. Forwarding failure
+never replays writes or discards their acknowledged result. Native regression
+coverage checks actual media delivery independently of the AI's visual judgment.
 
 ### Diagnostic reference recovery
 
@@ -1925,7 +1958,7 @@ continue through the same request-local acquisition owner.
 ### Selected batch-operation usage
 
 A selected admitted batch action queried with view=usage includes the complete
-existing execute_design_batch invocation contract and that action's canonical
+existing execute_design invocation contract and that action's canonical
 arguments, results and recovery, using standard JSON Schema in the usage guide. Derive
 from registered owners: no copied operation allowlist, new executor or state. Name,
 semantic operation and explicit usage queries preserve their existing selection
@@ -2244,22 +2277,9 @@ selection, validation, cooperative yields and orchestration bookkeeping.
 
 ### Reference applicability and source assessment
 
-Mechanical image admission retains original bytes and content identity. It does
-not establish suitability. `select_design_references` retains batched model
-assessments keyed by immutable reference identity and requirement revision.
-Pending and rejected references remain available for investigation but cannot
-enter accepted comparison. Restricted references carry explicit criterion/unit uses, purpose,
-limitations and required original-image whole/region declarations; canvas inspection regions
-remain a separate coordinate space. The tool checks structure and identity, not
-visual truth, and never decides applicability from filenames or site rules.
-
-Facts are source-attributed assertions. Dependency freshness is separate from
-evidence assessment. Every cited image needs current applicable evidence for the
-bound criterion/unit and purpose; one eligible citation cannot bless another ineligible source.
-URL citations remain assertions. Selection and decision changes invalidate only
-affected evidence/review, while unchanged submissions preserve current review.
-Current source limitations travel into local corrections and primary-agent final
-review. Changed requirements expire prior decisions. Original evidence is retained.
+The AI decides how a source helps the task and may save its purpose, region and
+limitations. Tools validate identity, access and pixel bounds. Source selection
+is optional and does not gate capture, preparation, comparison or completion.
 
 ## Completion presentation
 
@@ -2267,23 +2287,6 @@ Settled answers and retained-progress explanations appear in the AI conversation
 Do not repeat them in a canvas-spanning completion/Undo toast. Ordinary toolbar
 and keyboard Undo/Redo retain the existing history contract. Removing the overlay
 does not alter partial outcomes, cancellation, unrelated notifications or history.
-
-### Composed capture-to-review handoff
-
-review_drawing accepts current inspectionIds and/or explicit inspections using the
-registered inspect_drawing target schema. Prefer inspections when fresh captures
-are needed; retained IDs support exact evidence reuse. Both feed the same review
-owner. The total evidence selection is bounded to 24, and existing IDs must be
-unique nonempty strings. Target regions retain native-resolution limits.
-
-The inspection owner captures each requested target once, admits only successful
-stamped image receipts, and forms the review IDs internally. Any unavailable
-capture returns accepted=false, successful inspectionIds and failedInspections
-with the exact target and recovery guidance. It does not run the assessor, filter
-away required failures or substitute an overview for requested native detail.
-Retry may combine successful current IDs with corrected pending targets. Missing,
-stale, mixed-generation or insufficient-coverage evidence still blocks review;
-all original criteria and post-assessment freshness checks remain in effect.
 
 ## Whole-request observation and retained query consumption
 
@@ -2337,12 +2340,15 @@ changes alone do not invalidate parent-local property columns or workspace bound
 
 `map_retained_fills` is a registered batch-only action. It maps x/y parent-local
 columns through a finite increasing domain and explicit piecewise-linear RGB
-stops, with optional opacity and declared clamp/reject endpoint behavior. One
+stops, with optional opacity and declared clamp/reject endpoint behavior.
+Optional `kind: solid` writes the mapped color, solid kind and `gradient: null`
+together; omitting it preserves the current paint mode and gradient. One
 call may combine disjoint mappings at one fill index. It validates every snapshot,
 column and current target inside mutation admission, then calls the public plural
 fill API once. The mapping owner resolves fill identities through the public API
-and rejects conflicting simultaneous values for one shared fill before writing;
-it does not change the public API's ordered-update semantics or detach relationships. Stale or evicted references produce
+and applies selected-owner local overrides. Different owners sharing one Fill
+source may receive different colors without detaching or changing unselected
+source users. Duplicate selected owners reject before writing. Stale or evicted references produce
 an actionable recoverable failure, never an automatic reselection or replay.
 
 ### Scoped discovery and surface grids
@@ -2414,7 +2420,11 @@ net delivery including contract cost; no timing or model-adoption claim follows.
 
 A draft may define `motifTemplates` as a root-local map of names to the existing
 ordered inline motif arrays. Each surface-grid accepts either that inline array or
-`motifs: { template: key }`, with no other fields or overrides. The same definition
+`motifs: { template: key, overrides?: { motifKey: patch } }`. Patches may
+replace supplied `name`, `vertices`, `offset`, `fill` and `fills`; arrays replace
+as complete fields. Explicit `fill` clears the template palette unless `fills`
+is supplied too. Motif identity/order cannot change through an override. Unknown
+keys/fields and invalid effective geometry reject before writes. The same definition
 may be used by grids with different boundaries, orientations, counts and painter
 orders, including pattern members. Templates are generic normalized polygons, not
 semantic presets. Do not infer repeats or require template use.
@@ -2422,13 +2432,22 @@ semantic presets. Do not infer repeats or require template use.
 Every named definition has a nonempty key of at most 160 characters and a nonempty
 array of valid motifs. Missing references, duplicate motif keys, invalid definitions
 and inline/reference conflicts reject before application. Definition validation and
-camera-dependent offsets occur once per construction invocation; each boundary and
-cell mapping remains independent. All definitions count toward source admission;
+camera-dependent offsets are reused within one construction invocation; style-only
+variants reuse original validated vertices and offsets; changed vertices revalidate; each boundary and
+cell mapping remains independent. All definitions and authored patch vertices count toward source admission;
 each use counts its complete expanded output. Existing limits remain unchanged.
 
 Preparation retains definitions in its existing immutable source; repair and parts
-reuse that source. No new canonical property, cache across invocations, registry or
-storage mechanism is introduced. Ordinary vectors retain the inline equivalent's
+reuse that source. `read_design_templates` exports only public `motifTemplates`,
+`fillTemplates`, `linearFields` and `sharedFills` from an owned prepared source. An `execute_design`
+step may retain that value in App conversation context, without delivering the
+geometry to the model; later requests bind its named maps into a new draft.
+Definitions are immutable authoring snapshots, not live SceneTree template
+instances. Reusing sharedFills values creates sources for the new preparation;
+linking existing document sources requires explicit canonical property operations. Native shared Fill source edits/local overrides/reset retain their
+existing Core behavior; a template edit alone never regenerates existing geometry.
+No new canonical property, cache across invocations, registry or storage mechanism
+is introduced. Ordinary vectors retain the inline equivalent's
 geometry, material values, keys, names, parents and painter order. Independent inline
 motifs, current partial receipts and no-replay recovery remain valid.
 
@@ -2483,28 +2502,11 @@ after successful own slices have advanced the document.
 
 ### Retained review results
 
-The primary drawing agent reviews actual current images and records its findings
-with `review_drawing`; normal tool dispatch must not launch a separate assessor.
-Repeated primary-agent visual review is allowed. Store program and primary-agent
-results with distinct provenance, scope, criteria, evidence and dependencies.
-Use pass, fail, unverified and stale states; normal worklists omit passed details
-but retain counts and an explicit retrieval path. A changed dependency reopens
-related passes without deleting objects or erasing previous evidence. Unknown
-scope invalidates conservatively. Browser-issued visual receipts track their actual target subtree or target-local
-region and contributing ancestry. Shared property edits follow canonical owners;
-regional entrants and exits affect membership. Viewport pan/zoom and selection
-never invalidate evidence. Each primary-agent criterion may name a subset of the
-call's current inspection IDs; otherwise it depends on all supplied images.
-Invalidate only dependent judgments, preserving unchanged passes and their original
-evidence. Whole-building judgments still depend on the whole building. Unknown
-impact and document replacement fail closed. Current receipts captured at different
-scene revisions can be combined after individual browser validation. Mutation
-revokes completion immediately; fresh overall/detail coverage is still required.
-Unscoped deterministic and attachment evidence retains its global safety contract.
-Source/reference changes use declared criterion bindings. Unchanged passes may be
-reused only when their dependencies are proven current. A model assertion never
-clears a deterministic failure. Final acceptance still needs current inspection
-coverage and all original requirements; optional polish is not a failure.
+The existing result store retains explicitly requested program checks and compiler
+findings with their actual dependencies. Exact-ID and paged reads remain available.
+Freshness checks belong to consumers that need current computation, not to final
+artistic approval. Images retain canonical capture stamps for explicit pixel checks;
+no model verdict ledger or required-unit obligations exist.
 
 ## Shared tool contract
 
@@ -2741,8 +2743,9 @@ automatically replayed after handoff failure.
 
 Contour review, component analysis and explicit refinement are composable using
 fresh request handles. Relative path and proposal keys remain values interpreted
-within their parent artifact. Attachment acquisition, validation and conversion
-remain control-plane source operations: their numeric provider attachment
+within their parent artifact. Attachment acquisition and explicit reference selection can compose in a request
+sequence, but cannot be stored as recipe dependencies. Other unadmitted source
+controls remain native-only: their numeric provider attachment
 selectors are not persisted recipe identities. All native operations continue
 through the common invocation and outcome contract.
 
@@ -2831,30 +2834,6 @@ checked before returning targets. Reference delivery contains handles and counts
 explicit pages remain available. Freshness, request ownership, cancellation and
 mutation admission apply unchanged. Names are not unique identities.
 
-### Scoped visual check units
-
-A primary-agent check may name a stable unitId within its original criterion.
-Different units retain separate results and image dependencies. The initially cited capture targets and crops define a unit scope; receipt
-revisions do not define its identity. Changing the set of target/crop scopes,
-including adding a broader scope, requires exact revision/reason supersession.
-A regional or cross-region conclusion may cite both an uncropped target image and
-a crop of that same target when both are needed. Every explicitly cited image is
-an actual dependency; changing either invalidates that conclusion. A local-only
-conclusion cites only its required local evidence, never an inherited batch list.
-Broad evidence deliberately carries broad invalidation. An overview attached to a
-regional conclusion does not replace the separately declared whole-view judgment.
-Capture success, a valid binding and a supersession reason do not establish visual
-sufficiency. Retain necessary evidence when recovering; do not narrow the evidence
-merely to obtain a current pass. Independent regional overviews and multi-target
-cross-region checks remain valid.
-Intermediate visual review accepts current local crops without requesting an
-unrelated overall view. Omitted units retain their status, and invalidation follows
-their actual image dependencies. Final review still requires current whole-request
-coverage/detail and original criterion judgments, and cannot complete with a
-retained required unit failed, stale or unverified. Reusing a unit for a different
-scope requires explicit redesign reconciliation rather than silently discarding
-its earlier obligation.
-
 ### Capture and deterministic review responsibility
 
 Mechanical evidence belongs to the browser deterministic reviewer, not the image
@@ -2877,32 +2856,13 @@ promotes a mechanical receipt into visual or attachment coverage. Exact checked
 coverage stays browser-owned behind the receipt; server coverage reconciliation
 is a separate consumer change. Existing image dependency rules remain unchanged.
 
-Capturing an image does not execute deterministic subtree checking. The explicit
-mutation coordinator checks acknowledged targets before returning, even when
-`inspection=defer` suppresses screenshots. Ordered parts collect targets in an
-invocation-local boundary and check each distinct target at the completed or
-partial block boundary, rather than repeatedly checking intermediate states.
-Confirmed delete, ungroup and replacement receipts retire removed targets from
-this invocation's pending checks. Browser batch errors carrying acknowledged
-receipts enter the same check boundary: settled partial writes are checked and
-the original failure is preserved; missing receipts or unknown settlement never
-become successful execution. Current measurement stamps are reused. Check failures preserve acknowledged
-writes and return separate target-specific diagnostics; missing or failed checks
-remain unverified and block completion, including missing checking capability.
-A shared unavailable capability or unknown settlement returns one diagnostic
-with affected count; each target retains its actual check state. Cancellation
-stops new checks and publishes no late verdict. Explicit unknown mutation
-settlement prevents follow-up checks even when execution status is partial or
-failed. Automatic capture waits for current complete mechanical checks without
-findings at the affected targets, including reused results. An explicit capture
-remains image-only and may be requested separately to diagnose findings.
-No model-facing capture option skips these checks. Final assessment
-consumes only an exact single matching mechanical acknowledgement with coherent
-availability, completion and a current canonical stamp. Failed freshness reads
-make that target stale, retire its reusable stamp and retain known evidence;
-failed explicit rechecks cannot leave an earlier pass current. The next coherent
-boundary may recheck once to recover. Incomplete checks retain both prior and
-newly observed findings without treating them as a complete current pass.
+Capturing an image does not execute deterministic subtree checking. A requested
+post-write image may run after acknowledged writes without a mechanical approval
+pass. Deferred capture performs no follow-up quality reads. Explicit mechanical
+analysis remains available and validates its own inputs, scope, freshness and
+outputs; it cannot create an implicit completion prerequisite. Preserve acknowledged
+writes and actual capture failures. Cancellation and unknown write settlement
+prevent dependent capture; neither permits replay of a completed mutation.
 Check tails return `checks` counts and an optional `firstPendingId`, readable
 through `read_design_checks`; they do not retransmit every retained finding.
 Confirmed target removal retires its tool-owned result and makes actual dependent
@@ -2912,11 +2872,8 @@ checks and transitive declared dependencies. Independent preparation freshness
 failures are retained as stale results without preventing other selected reads;
 cancellation still stops the read.
 
-Final assessment
-requires a current complete deterministic result for each overview target. It
-validates retained measurement stamps through the browser owner, computes missing
-or stale results once, and returns incomplete work when checks cannot complete.
-Intermediate local visual findings do not trigger an unrelated subtree scan.
+Final AI verification uses the observations and explicit checks selected for the
+request. It does not automatically measure every previously changed target.
 The browser runtime retains completed deterministic node verdicts under its live
 canonical observer. Known changes invalidate affected nodes and geometry-dependent
 ancestors; parent dimensions and inherited visibility are explicit rule inputs.
@@ -2927,18 +2884,6 @@ Reports count summary aggregation separately from canonical reads, evaluated or
 reused nodes and actual text measurement.
 Completion revalidates both visual and measurement evidence; neither substitutes
 for the other.
-
-### Explicit visual unit redesign
-
-A changed unit scope preserves its criterion/unit identity and requires
-`supersedes: { revision, reason }` naming the exact current result revision. The
-replacement consumes current delivered evidence and remains an outstanding
-obligation until assessed. It cannot erase a finding, rewrite the criterion or
-certify a removed object by transport success. The primary agent explains how the
-new design resolves the old finding; final whole-request coverage is still needed.
-Repeated identical submissions are idempotent; stale revisions cannot overwrite
-newer judgments. Changed results invalidate actual dependent checks. Equivalent
-image scopes are set-valued, independent of capture ordering or duplicate views.
 
 ### Attachment dependency currency
 
@@ -2995,46 +2940,13 @@ Selection consumes completed reviewer coverage without more geometry reads. It
 certifies scope only, not compatible rule context, freshness, findings or visual
 quality. Incomplete/cancelled captures never authorize reconciliation.
 
-The operation owner requests `descendants` for automatic review and omitted
-explicit review selection when retained or same-batch obligations can consume it;
-otherwise it omits scope selection. It never sends an accumulating candidate list. It
-intersects returned identities with current retained obligations by membership,
-without scanning all historical targets, and uses existing bounded validation and
-revision guards. Empty/absent coverage sends no extra exchange and preserves
-unrelated results. Explicit selected review remains legal. Actual traversal alone
-certifies scope: no inferred ancestry, all-target fallback, extra query, new store,
-paint-only bypass or write replay. Scope metadata stays internal to automatic
-checking; ordinary replies omit owner-injected coverage after reconciliation.
-Explicit selections and full diagnostic replies preserve their requested scope.
-
-For disjoint targets, complete request/reply and saved-payload work must grow
-linearly with actual checked targets, even as prior obligations accumulate. Tests
-exercise the material owner through automatic checking and result retention,
-including actual payload serialization. Parent-to-child reconciliation, geometry
-and text findings, independent invalidation, cancellation and no-replay recovery
-remain required; reduced call counts alone do not establish this contract.
-
-Canonical canvas measurement results are retained in the same check store per
-checked target, alongside prepared-source and primary-agent evidence. Complete
-rechecks reconcile existing mechanical obligations proven by their exact
-supported-rule/subtree coverage. Deleted or missing targets are not captured
-coverage: only explicit canonical retirement may retire an obligation; omission
-from coverage never approves or erases it. The browser
-reviewer alone certifies coverage and issues independent target receipts; ancestry
-or an aggregate pass is not sufficient. Partial/uncovered/incompatible results
-remain unresolved. A later sibling edit cannot invalidate a reconciled independent
-target. The validation action accepts `measurementTargets` (1-64 unique IDs) only
-with mechanical evidence and without visual scope; entries contain `elementId`,
-`available`, and, only for complete compatible coverage, `complete`, `findings`
-and `evidence`. Unavailable entries carry a reason. Covered-root normalization
-excludes external parent containment and requires compatible inherited visibility.
-The server commits each acknowledged result only if its selected obligation
-revision and receipt remain unchanged. Late/cancelled results cannot replace newer
-state. Subsequent selected reads, verification and request completion consume the
-same reconciled ledger; selected success never claims whole-request completion. Reads validate actual browser-issued scoped receipts
-without running geometry checks. Invalid receipts stale only their dependent
-units; current unrelated passes remain. Container and text findings both block
-completion. Mechanical passes cover supported rules, never visual acceptance.
+Explicit mechanical review may request descendant coverage. Its results retain
+actual target identities, supported rules, findings and canonical currency. A
+complete recheck may reconcile earlier results within that proven scope; omitted,
+unsupported or stale targets are never reported as passing. Reads validate scoped
+receipts without repeating geometry work. Cancellation prevents late adoption.
+These results support requested diagnostics or declared mechanical iteration; no
+automatic post-write review or task-completion obligation is created.
 
 ### Canonical mutation inspection scope
 
@@ -3064,132 +2976,20 @@ the currently advertised contract. There is no old-output fallback.
 
 ### Mechanical delivery and unresolved write scope
 
-Automatic checks retain complete findings in the existing request-owned check
-store and return a compact summary with the first pending result ID. Default direct review, prepared review and retained-result delivery use the same bounded check summary. `read_design_checks` returns summary by default; explicit IDs or `view: details` provide bounded detail with ledger revision, offset and next offset. Subsequent pages must name that ledger revision and reject a changed version. Internal results remain complete; explicit full batch/workflow responses may include automatic check receipts. Default delivery must not resend
-full findings, including large complete checks with known failures. Screenshot
-receipts and acknowledged product writes keep their existing output contracts.
+Explicit checks retain complete findings in the request-owned check store and
+return bounded summaries. `read_design_checks` provides selected details with
+revision-aware paging. A changed store rejects stale continuation rather than
+silently mixing versions. Check results describe supported measurements; they do
+not certify appearance or control whether the AI can finish the task.
 
-Missing, incomplete or mismatched mutation scope creates one terminal request
-obligation in that same store, not a second state collection. No geometry recheck
-can reconstruct unacknowledged write coverage. Further document writes in this
-request stop before dispatch; read/check/capture and an accurate unsupported
-outcome remain available. Preserve existing document work; never replay it or
-promise a reconciliation tool that does not exist. A subsequent request starts
-from current document state rather than replaying this request. Ordinary failed
-mechanical checks and stale evidence remain retryable through review_design.
+Missing, incomplete or mismatched mutation scope remains an execution failure.
+Further writes stop when the prior write state is unknown. Reads and diagnostic
+captures remain available; no check can reconstruct an unacknowledged write or
+authorize its replay. Preserve successful work and report the actual limitation.
 
-Compact count receipts explicitly distinguish request-wide counts from selected
-checks. Neither count scope asserts visual acceptance or document durability.
-Review replies identify capture, bind or record; only successful recording returns
-compact exact acknowledgements of committed check identities, criterion/unit,
-origin, status and revision, including passes. Failure before recording returns no
-acknowledgement; partial completion after recording preserves committed receipts.
-Capture and binding never pronounce readiness for further drawing. The optional
-structural judgment reports only `structureAccepted`; final `accepted` remains
-whole-request acceptance from the canonical owner. Capture/bind cannot reset a
-current acceptance merely by reporting a different constant; invalid evidence
-still invalidates through the canonical owner. A valid unverified judgment is
-successful recording.
-Full bodies remain available through the existing retained check read. A source
-or reference handoff with current visual acceptance but pending mechanical work
-identifies the exact pending check read; it must not demand another visual
-judgment or leave the next action absent solely because visual work passed.
-
-Multiscale acceptance cases: bind and record a same-target overview plus crop;
-keep an independent local-only pass when only the overview changes; stale the
-combined conclusion when either image changes; recover with current same-scope
-images without drawing replay; reject missing, foreign or tampered evidence and
-unversioned scope changes atomically. Partial capture and cancellation cannot
-publish a pass. A regional overview cannot satisfy an unjudged whole criterion.
-Final acceptance requires all independent obligations and current evidence, and
-is revoked when any required dependency changes. These cases use generic targets,
-not a particular subject, material or crop coordinate.
-
-### Declared regional acceptance coverage
-
-Every visual criterion explicitly declares `requiredUnits`, within the existing
-24-item bound. An empty array intentionally declares a whole-view judgment; a
-nonempty array declares independent regional or cross-region obligations. Missing
-scope is rejected atomically by the declaration call without storing a plan or dispatching canvas mutations. This does not introduce a plan-before-drawing gate. These are stable regional or cross-region judgment identities, not
-geometry or a new tool. A visual criterion with empty requiredUnits remains a whole-criterion
-obligation. Data criteria omit requiredUnits. Partitioned criteria cannot be data criteria or structure checkpoint
-criteria. The first declaration may follow the first ready drawing. Once judgments
-exist, obligations cannot be rewritten; an established plan also retains its lock
-after a drawing mutation. Identical declaration must not reset findings.
-The primary agent submits findings for delivered images; tools do not call an
-additional model or infer visual correctness.
-
-The existing check store accumulates current passes across calls. Final acceptance
-requires every declared unit (including never-submitted units), all whole criteria
-and all retained unresolved findings. The same derivation governs review replies,
-correction instructions and completion settlement. Omission or a whole-criterion pass cannot
-substitute for missing regional work. Every submitted judgment supplies its own nonempty inspectionIds; the enclosing
-image list is availability, not an inherited dependency list. Sparse reviews may supply only changed units;
-unchanged passes retain result revisions and image dependencies. A cross-region
-check names every required image, so editing either dependency invalidates it.
-
-Required unit coverage, image extent and evidence currency are separate facts.
-A regional plan retains an explicit whole-view visual criterion for whole-request
-agreement and canonical requested-target coverage. Unit names and local passes
-cannot establish that crops cover the whole drawing. Local acquisition and recording
-valid local judgments do not require that whole-view condition to be complete yet.
-Incomplete acceptance saves valid judgments with accepted=false; malformed candidate
-submissions overwrite no prior judgments. Requested native detail, source facts,
-references, deferred decisions and mechanical conditions remain independently required.
-
-Evidence validation uses submitted images plus relevant retained results through
-the existing browser owner. Whole-view containment is required for the whole-view
-criterion, not each regional judgment. A genuine change in a whole-view image can
-reopen that judgment without reopening independent local passes. Criterion-scoped
-source/reference changes affect that criterion's units; no finer scope is guessed.
-Pan, zoom and selection are not semantic edits. Final settlement validates the same
-effective accepted evidence, not every historical or superseded inspection.
-
-Unit scope changes require exact revision/reason supersession and never remove the
-required identity. The reason is an explicit primary-agent redesign decision, not
-tool proof of semantic or geometric equivalence. Known findings must be addressed
-with fresh evidence; actual dependent checks reopen and unrelated passes retain
-their revisions. Identical replay does not create a new result revision.
-
-Capture and binding replies expose informational `acceptanceContext` alongside,
-never inside, executable `next.arguments`. Derive the shared method and requirement
-revision from the current canonical plan and project each selected criterion's exact
-requirement, description and optional unitId. Bindings and context share the current
-requirement revision. Unbound recovery exposes no invented selected checks. Context
-neither records judgments nor establishes image completeness or a visual pass.
-For requested realistic reflective materials, primary-agent assessment includes visible
-material/reflection character as well as joins, color continuity and lighting. A smooth
-height grade alone is not realism evidence; deliberately flat styles remain valid.
-
-Replies expose derived coverage counts and pending criterion/unit identities and
-statuses; full evidence remains in the existing check store. Capture and partial
-capture replies retain their own output requirements. Accumulating more than one
-call's image limit does not require model-side retransmission or a limit increase;
-the host validates retained receipts in bounded batches. Stale, unavailable or
-incompletely validated evidence stays unresolved. Cancellation cannot publish a late
-pass; review recovery never replays drawing writes. Request teardown expires evidence.
-
-Accumulated inspection validation includes the browser owner's `validatedAt`
-session/revision. A host validation sequence must use one observation version;
-version drift prevents publication of new judgments and reports partial validation.
-It does not invalidate independent checks: later receipt validation identifies
-actual affected dependencies. Missing, duplicate, failed or malformed validation
-acknowledgements cannot establish currency. Cancellation publishes no new judgment.
-
-Sparse deferred-detail decisions use the same check store as regional judgments,
-including their explicit omit/restored/pending disposition and the submitted image
-dependencies. Valid decisions survive incomplete global acceptance. A changed detail
-definition or actual image dependency reopens only that decision; source/reference
-changes remain conservatively dependent on all criteria because deferred decisions
-have no narrower source binding. Missing decisions remain pending. Redefinition
-cannot silently reuse an earlier pass. Whole-view judgment may be deferred until
-the final candidate without discarding current regional or deferred decisions.
-
-Review acceptance and settlement both remain false while any tool-origin result is
-unresolved. Resolving mechanical work alone preserves and reuses current primary-agent
-judgments. A malformed negative validation response is unavailable evidence, not
-authority to delete retained receipts; only an admitted current=false acknowledgement
-may retire its dependencies. Recovery validates again without replay or recapture.
+Overview and crop captures retain independent identities and canonical stamps.
+Foreign, tampered or stale source identities reject at the actual consumer. No
+criterion, unit count, binding, verdict or multi-image acceptance ledger is required.
 
 ### Primary-agent remaining-work segments
 
@@ -3321,16 +3121,9 @@ selectors accept usage/full views; category/query default to compact menus and
 retain bounded pagination and registry revision. schemaPaths needs exact identities.
 Usage does not consume the full definition; continuation retains its representation.
 
-Capture replies, including partial capture, expose current pending coverage and
-instructions for recording only observed local judgments before the next edit.
-No status is fabricated. Valid passes accumulate in the existing store; subsequent
-reads and final acceptance consume them without retransmission. Each judgment cites
-only images it actually depends on; citing an overview makes it a real dependency. The enclosing
-image list is only a selection menu: unused entries, including retired entries,
-cannot block a submitted judgment or become freshness dependencies. Selection
-must still be a subset of that menu. Capture requests validate all requested
-images; deferred-detail decisions retain their enclosing-image dependencies.
-Final acceptance validates retained passes as well as submitted judgments.
+Capture replies expose requested images, target identities, canonical stamps and
+actual failures. Partial delivery preserves successful observations. The AI decides
+which observations it needs and whether the result satisfies the request.
 
 Current activity uses the live common call purpose before retained stage context.
 Observed operation and authored purpose are separate visible facts. Admission/queue
@@ -3339,20 +3132,18 @@ phases remain diagnostic. With no active call, stage prose is explicitly labeled
 as context. Completion removes call purpose; concurrent ancestry and lifecycle
 precedence remain authoritative. No timeout-based guessing or extra model call.
 
-Capture before criteria returns a definition handoff and retains image identities;
-it does not request an impossible judgment. Current-operation changes do not append
-identical authored subjects to history. Derived history replaces only its current
-projection, never mutates earlier snapshots or suppresses diagnostic events.
+Current-operation changes do not append identical authored subjects to history.
+Derived history replaces only its current projection; it never mutates earlier
+snapshots or suppresses diagnostic events.
 
 A known tool queued or admitted before execution is labeled as preparation for
 that operation; only execution presents the operation as active. Admission repeats
 preserve the existing description. A late preparation phase does not turn an
 already executing call back into a queued operation.
 
-Whole-drawing coverage is a separate check dependency from criterion/source validity.
-A failed overview coverage check reopens whole-view judgments and declarations,
-not independent regional units sharing the criterion. Regional judgments still
-depend on every cited image and their actual criterion/source requirements.
+A capture describes its actual whole-target or target-local region. A regional
+image does not claim to display uncaptured content. The AI chooses any additional
+view needed for its final verification; there is no whole-view certification gate.
 
 Runtime-authored direct action starts have paired completion activity on success and
 failure, before another action or terminal outcome. Abort continues to suppress
@@ -3374,14 +3165,10 @@ judgments. Design tools own deterministic checks and exact dependency invalidati
 Runtime owns admitted finite orchestration, not domain diagnosis or repair invention.
 No drawing or prepared-review route opens another model. Explicit execution-report
 analysis is a separate caller-requested diagnostic service. Remove the independent
-visual-assessor provider/export/options/results. Shared current check data remains
-neutral. Partial judgment replies derive unresolved criteria and their evidence from
-the current shared result store, not only the submitted subset or a second history.
-A later failed/unverified structure judgment revokes earlier final acceptance while
-preserving unrelated passes. A structure-only recovery cannot grant final acceptance;
-a coherent primary-agent final review must close the retained obligations. Validation
-without publication and rejected input do not change those results. Explicit judgments
-of existing content govern completion even when this request made no document edit.
+visual-assessor provider/export/options/results. Shared check data retains tool-origin measurements and currency. The AI owns
+visual decisions and final verification. No formal judgment submission, structure
+approval, pending-coverage ledger or completion veto is retained.
+
 Vector conversion accepts only `componentMappings` with eligible analysis
 receipts; `ovalPathIds` is rejected, never translated or silently ignored.
 
@@ -3453,7 +3240,7 @@ not infer positions, resize ancestors or support arbitrary finding families. A m
 exact unresolved work and no repair writes. Runtime validates registered schemas,
 bindings and budgets; it does not infer dynamic domain coverage from status alone.
 Findings without a declared repair require a primary-agent decision. Empty work after canonical deletion can
-retire only the deleted target's own obligation, not dependent visual criteria.
+retire only the deleted target's own check; unrelated results remain unchanged.
 
 Known admission failures return `not-started` without a fabricated write receipt.
 This includes queue-time read-only preflight rejection before the first write.
@@ -3561,47 +3348,6 @@ regions and target evidence; tools do not infer alignment or subject purpose.
 Changing a selected reference use invalidates its exact dependent checks only; unrelated
 passes remain accumulated. Original bytes and decisions remain reusable.
 
-### Explicit visual judgment bindings
-
-review_drawing capture inputs declare criterion/unit checks on each target. Existing
-images are bound explicitly with bindChecks. The review owner returns per-check
-request-authenticated descriptors with requirement/result revisions and canonical
-image dependencies. The primary agent supplies status/evidence after seeing images;
-submission never infers or changes the declared scope. Tool submissions require
-current bindings and browser currency validation, with atomic mixed rejection and
-unchanged independent passes. Exact current replay is idempotent. Failed capture
-retains successful images but cannot issue a binding for an incomplete check.
-A rejected binding after capture returns a partial handoff with successful image
-receipts and explicit bindChecks recovery. It records no judgments, retains
-independent passes and does not classify settled capture as an unknown canvas
-write. When declared selections are available, recovery returns those ordered
-checks, their exact image assignments and reference uses in next.arguments.bindChecks.
-The canonical scope validator supplies current revisions for recoverable scope
-conflicts together, including stale supersession attempts; requiredInputs identifies
-the missing redesign reasons. Reasons remain the primary agent's decision. The
-template is revalidated through the ordinary bind route and cannot record judgments,
-silently supersede scope, discard independent passes or authorize stale evidence.
-No contract lookup, recapture or edit replay is needed to reconstruct known inputs.
-Capture followed by binding failure is partial; a binding-only rejection remains
-failed/not-started while returning the same recovery template. A retained image
-from an earlier call does not make the new binding successful or partially applied.
-If no complete selection is known, retain explicit bindChecks selection; never infer
-it from successful subsets of incomplete captures. Other errors remain explicit.
-
-### Explicit reference uses
-
-Selected image suitability is a primary-agent assertion. Every accepted/restricted
-source declares uses with stable IDs, exact criterion/unit, purpose, original-pixel
-region (explicit whole is valid), and limitations. The request owner issues immutable
-identity/revision receipts. A criterion-wide decision is not regional permission.
-Visual judgment, fact adoption, preparation and pixel comparison consume explicit
-current receipts for their matching purpose. Reference-free work needs none.
-Only changed use dependencies become stale; selection order and unchanged uses do
-not invalidate independent passes. Missing, foreign or stale uses reject atomically.
-Pixel comparison also needs an explicitly corresponding target crop and alignment;
-source decode/bounds success never establishes semantic suitability. Asynchronous
-consumers revalidate before publication, preserving actual completed effects.
-
 ### Principal-task presentation
 
 The current authored principal purpose is primary; operation state is secondary.
@@ -3615,11 +3361,17 @@ work immediately. No time-based display hold or extra model call is permitted.
 
 ### Knowledge-to-capability adoption
 
+Spatial guidance explains parent-local attachment, retained composition identity,
+relative hierarchy moves and common-ancestor regional inspection. These are
+optional ways to avoid rebuilding or regrouping content. Tool descriptions leave
+the order of drawing, detail work and research to the agent. Stored source facts
+are attributed assertions, not independent source verification.
+
 Relevant advisory knowledge is the default method reference for open design
 choices, subject to user intent and current capability/security contracts. Shared
 Domain Knowledge contains only domain principles; Design owns tool mappings,
 representation limits and operational guidance. Missing/irrelevant advice and
-known-value edits do not block execution. Existing brief, method, criteria and
+known-value edits do not block execution. Existing brief, method and
 fact artifacts retain concise decisions; no new approval gate or knowledge store.
 Only affected decisions are reconsidered after a real dependency change.
 Tools accept valid inputs independently of Knowledge reads or recommendations;
@@ -3629,10 +3381,10 @@ replay may control the agent decision and external evidence to verify those
 contracts and recovery; it cannot establish that a real agent adopts the method
 or improves design quality. Those efficacy claims require real-agent evidence.
 
-Compact query menus and usage views group a canonical basic action with its
+Compact query menus and ordinary exact usage group an admitted batch action with its
 explicit registered wrapper route, retaining the qualified full-definition
 selector. Foreign namespaces and uncertain associations remain separate. Full
-and exact-name lookups retain distinct contracts; a menu is not an executable
+and explicitly qualified lookups retain distinct contracts; a menu is not an executable
 schema. Pagination covers the displayed capabilities, retains selector/view and
 rejects stale catalog revisions. Grouped routes never mark undisclosed full
 contracts as delivered. Invocation and recipe validation remain unchanged.
@@ -3744,7 +3496,7 @@ replaying acknowledged writes or rereading unrelated document data.
 Exploratory usage and unselected owner-scoped tools derive root input paths and
 choices from the canonical descriptor. Exact non-scoped tools deliver their
 complete canonical parameters in usageGuide, regardless of read/prepare/mutation
-effect or native/batch/final-response route. Selected guides retain output paths and element-binding navigation as well as result
+effect or native/batch/final-response route. Selected guides retain root/branch output paths and element-binding navigation as well as result
 constraints, lifecycle and recovery; input paths alone never establish readiness. Owner-authored examples are published only when they validate
 against its current input schema and are wrapped in its actual native, batch or final
 response route. Native conversion retains common examples at the complete union scope,
@@ -3753,7 +3505,7 @@ or invalid examples are explicitly unavailable. Full schemas, exact fragments an
 explicit delivery/context-loss recovery remain authoritative; a returned response is
 not evidence that the model read or understood it.
 
-High-level preparation and criteria tools expose their existing executable owner
+High-level preparation and context tools expose their existing executable owner
 examples in the canonical input schema, not only description prose. Usage publishes
 one validated illustrative invocation through the actual native/batch envelope;
 full retrieval includes the complete contract and examples. Navigation includes
@@ -3771,7 +3523,31 @@ semantic operation, native name or namespace.name). Trim surrounding whitespace;
 otherwise use existing exact case and spelling. An exact hit uses the same identity
 resolution as names, including ambiguous-name rejection and independent action/native
 routes. Descriptions referencing that identity do not add matches. No exact hit keeps
-the existing lexical capability search; category exploration remains available.
+the capability search; category exploration remains available. Purpose ranking
+uses registered purpose descriptions, nested input/output metadata and legal
+string enum/const choices before names. Preserve metadata origin when ranking;
+common instructions and receipt vocabulary must not outweigh the requested
+operation merely by accumulating substring matches. Use normalized lexical terms
+and relevance derived from the current admitted catalog, without subject-specific
+keywords or a second registry. Keep descriptor traversal and corpus derivation
+request-owned and invalidate them with the existing catalog generation.
+Partial matches remain candidates and disclose matched and unmatched query terms;
+they do not certify the whole purpose or automatically select an execution owner.
+Examples/default values are not searchable capability declarations. Metadata is
+traversed once per request-owned descriptor generation and reused until the existing
+native catalog revision replaces that generation; no new registry or cache owner.
+
+Multiple or partially matching descriptive usage results are compact menus with
+exact acquisition routes and shared relevance ranks across API/native entries.
+Descriptions retain meaningful purpose prose; a synthetic operation-name sentence
+is not a capability summary. Prefer a relevant complete description sentence,
+without inventing applicability or treating a menu as an execution contract.
+Do not expand every candidate into full parameters.
+A uniquely complete descriptive match may deliver usage in that same call;
+explicit full requests and exact selection keep their existing complete contracts.
+Known exact tools require no preliminary search. Candidate completeness describes
+the search page, not possession of execution contracts. Preserve current result
+paging, retained refresh, namespace ambiguity and canonical wrapper ownership.
 
 An exact query resolving one unambiguous native tool accepts `inputScope` just
 like the equivalent single `names` selector. Scope selection without `view`
@@ -3867,13 +3643,11 @@ Formal tests execute published examples through the existing dispatcher and owne
 exercise cross-field rejection, partial/cancelled/stale recovery and unrelated-catalog
 growth. No new tool, registry, validator, scheduler or state store is introduced.
 
-Owner-declared optional input groups are selected with inputScope.optionalInputs in
-the same read. The workflow publishes plan as optional: select it only when defining
-criteria in this invocation. Without that selection the scoped contract forbids plan
-and explains how to select it; drawing can proceed without it. Full unscoped queries
-retain all inputs. Only optional canonical root fields can be declared this way;
-unknown or duplicate choices reject. Broader selections may still use existing paging
-and must not claim single-response coverage when continuation is present.
+Owner-declared optional input groups are selected with inputScope.optionalInputs
+in the same read. Only actual optional canonical root fields may be declared;
+unknown or duplicate selections reject. Full queries retain all inputs. Broader
+selections can use existing paging and must not claim single-response coverage
+when continuation is present. Preparation no longer advertises a formal review plan.
 
 ### Inspection discovery field ownership and receipts
 
@@ -3899,8 +3673,8 @@ paths from the same entry. Do not reconstruct selectors from refresh instruction
 transfer paths between entries or automatically fetch every advertised field.
 Unavailable-scope inputFields use the same compact root/branch navigation without
 traversing unrelated nested leaves; issues and exact same-owner recovery remain.
-Refresh/recovery selectors continue to identify only their own entry. Bare exact-name full/usage lookup still returns both
-legitimate routes. Native arguments remain wrapped exactly once; action arguments
+Refresh/recovery selectors continue to identify only their own entry. Bare exact-name full retrieval includes both legitimate routes. Default usage
+represents a canonical batch wrapper through the action dependency reference. Native arguments remain wrapped exactly once; action arguments
 remain direct. Navigation is not an executable validation schema. Fragments retain
 ancestor restrictions and local reference closure; canonical execution validation
 remains unchanged. No extra preliminary request, alias or pointer inference.
@@ -3954,7 +3728,7 @@ These explanations use existing selection/usage fields, without a prerequisite r
 DoD: execute published examples through the registered dispatcher with both legal
 root types, omitted plan and unchanged read counts; separately validate nested-frame
 selection, frame dimensions, group restrictions and supplied-plan validation.
-Preserve criteria-before-review, partial outcomes and recovery without write replay.
+Preserve canonical inputs, partial outcomes and recovery without write replay.
 
 The existing workflow discovery menu and unscoped usage expose owner-authored
 selection conditions alongside inputScopes in the same reply. Choose the types
@@ -4077,7 +3851,7 @@ read-only save/history/shared-publication invariants and actionable failed recov
 
 ### Workspace overview and inspection receipts
 
-The existing inspect_drawing and review_drawing capture routes accept the actual
+The existing inspect_drawing capture route accepts the actual
 current workspace ID for overview. Core.captureElementSnapshot resolves that
 workspace through the existing engine-neutral snapshot owner, using its real
 scene container; no document grouping, reparenting, camera/UI capture or new tool.
@@ -4127,31 +3901,6 @@ Undo/Redo remain strict after planned reload and a new edit. Test the extra-relo
 case deterministically and retain a permanent minimal fixture of the observed
 save-pass/history-failure sequence. Models and private provider internals are not
 needed to prove this contract.
-
-### Selected review usage delivery
-
-The existing review tool exposes owner-defined capture, bind and record operations
-through the existing exact-name inputScope usage query. Review selection requires
-an operation but no construction nodeTypes. The same owner schema remains the
-execution authority for structure and visual phases; selection changes delivery,
-never execution syntax or validation. Full and field queries remain independent.
-Selected usage includes complete branch restrictions, owner invocation guidance
-and actual receipt semantics and no-replay recovery in one bounded reply for
-the ordinary review cases. Known direct calls need no lookup. Examples contain
-illustrative identities only: resolve current target/criterion/image identities
-from retained results, and consume capture/bind next.arguments for signed records.
-Capture and bind have static examples; record uses the delivered next invocation,
-with explicit judgments supplied after observation. It must not publish a static
-example containing invented credentials. Never fabricate a binding signature or a visual pass. Invalid inputs, cancellation,
-partial capture and stale evidence preserve the existing owners and recovery.
-
-Acceptance covers delivered examples through real capture/evidence/review owners,
-phase/branch rejection, independent and multiscale invalidation, partial recovery,
-full/field/refresh preservation and unchanged construction scope selection. Measure
-total bytes and required contract reads through capture/bind and record, including
-pagination, against the retained saved-query case. Do not weaken schema constraints,
-raise delivery limits or add discovery prerequisites. This is not a requirement to
-inspect before first drawing and does not establish model adoption or timing gains.
 
 ### Knowledge source identity delivery
 
@@ -4289,6 +4038,11 @@ coverage; local evidence does not claim model adoption or universal correctness.
 
 ### Unified usage acquisition
 
+Discovery descriptions distinguish complete operation usage, owner-published input
+scopes and missing-field queries. Native callable declarations retain exact names
+and routes independently of App contract lookup. No additional lookup is required
+when the current contract is already known.
+
 Exact selection without owner-declared operation choices is sufficient to obtain
 an executable usage contract. Selected scopes retain the same promise. General
 search/category and unresolved scopes are navigation; their next action selects
@@ -4360,12 +4114,16 @@ and exact next-step restrictions; record owns recorded-result correction details
 Partial execution, admission rejection and retained recovery remain complete for
 every scope. Reject malformed scope declarations rather than guessing fields.
 
-Executable usage uses one standard JSON Schema in usageGuide.results for the
-complete external reply, including execution-boundary rejection without an
-execution receipt. Selected scopes, direct routes, registered routes and selected
-batches follow the same assembly contract. Preserve owner result explanations in
-instructions; do not publish result prose or separately shaped result maps in that
-schema slot. Scope selection cannot change the actual invocation envelope.
+Executable usage defaults to owner-derived result fields and settlement/recovery
+meaning in usageGuide.results. Complete input constraints and owner examples remain
+executable without another lookup. Machine consumers explicitly request
+includeResultSchema=true with view=usage to obtain one standard JSON Schema for
+the complete external reply, including admission rejection. Both modes use the
+same registered model-delivery owners; runtime validation always uses full schemas.
+Refresh, pagination and scope correction preserve the selected mode. Schema
+validation consumers request the explicit mode; direct-execution tests consume
+the default guide and validate real output against the complete canonical schema.
+Scope selection cannot change the actual invocation envelope.
 
 Raw owner values, host-annotated receipts and projected model replies are distinct
 contract stages. Each boundary derives its contract from its authoritative input,
@@ -4409,9 +4167,534 @@ main workflow and ordered parts, and compare corrected output to direct preparat
 
 ### Complete usage cost comparison
 
-Compare total acquisition cost for equally complete input, result and recovery
-contracts. Historical prose-only result budgets remain evidence; supplement them
-only by the exact serialized size delta of the required result schema (including
-JSON escaping when fragmented), without percentage slack. Preserve native page
-limits, real examples, full failure contracts and no-replay recovery. Report the
-actual total and continuation count separately from this adjusted comparator.
+Compare complete default acquisition bytes and continuation calls with explicit
+machine-schema acquisition, using identical input constraints and executable owner
+examples. Preserve native page limits, failure/recovery meaning and no-replay
+behavior. Record both modes separately; historical machine-schema budgets remain
+regression ceilings for that explicit mode, not a reason to enlarge default replies.
+
+### App instruction delivery evidence
+
+The provider adapter assembles ordered App-owned instruction blocks once. The
+exact joined strings form thread/start baseInstructions/developerInstructions.
+The existing advertised-contract payload retains each block's source, role, text
+and SHA-256 alongside native definitions. User intent, conversation history bodies
+and model reasoning are excluded; only the static history-handling rule is retained.
+Generic payload redaction is unchanged. Associate this snapshot with transport
+start/completion evidence: a submission attempt alone does not prove provider
+receipt. Recording failures remain observational and never retry product work.
+
+Correction discovery offers executable usage when a contract is missing. Position-dependent fill mapping resolves query columns internally. Request a standalone snapshot when its values have another consumer.
+
+Canonical data reads accept explicit IDs or current query selections. Host target
+bindings resolve artifact keys into the actual registered target slot before the
+read. One operation may combine independent supported bindings. Requested columns,
+page completeness, coordinate space and source currency remain explicit; no data
+evidence token or verdict submission is needed.
+
+### Purpose discovery and inline recipe execution
+
+Capability queries rank complete matches against the owner's description, root
+schema titles/descriptions and declared input/output field names before matches
+that rely on the tool name. Exact identities retain priority. An exact selector
+may supply purpose to recover candidates from the admitted action/native catalog.
+A candidate does not settle a missing exact selection or authorize execution.
+
+The provider has one design sequence entry, design_operations.execute_design.
+Use the same operations list for a known edit, output-bound dependencies and
+mechanical iteration. The host resolves and pins exact registered capabilities.
+Keep ready edits in a single exchange. selectAt:"step" on a target prevents
+membership lookup before the preceding write. Each scheduled group uses the
+existing region and artifact binding owner. For mechanical iteration supply
+typed initial state, a registered check, repairs, next state and maxIterations.
+The Runtime stops on pass, decision, repeated progress, exhaustion, cancellation
+or uncertain prerequisite settlement. Retain completed receipts without replay.
+The model reports grouped and split calls and the reasons for returning control.
+
+### Created roots and artifact-key operations
+
+The workflow owns compositionIds on successful creation. Collect identities from
+the actual apply acknowledgements, deduplicating continued roots in original
+order across parts. Array position zero is guaranteed only on success. A failed
+order retains the earlier creation receipt. The host never repeats the create.
+
+Runtime proves a source field independently required by an object intersection
+only when no branch changes that field or its lifetime. Known omitted object
+keys may discharge a negation that requires them. Closed argument constraints
+remain active. Literal homogeneous maps are validated with their registered
+key and value schemas and may not capture runtime references. Registered typed
+map outputs may bind directly into subsequent compatible inputs; prove key/value
+constraints and runtime lifetimes, reject untyped narrowing and do not guarantee
+arbitrary keys. Public template exports use the same key contract as preparation.
+
+A batch target supplies one registered element argument. Compound discovery
+matches the key resolver together with the action identity and capability,
+producing candidate examples from valid owner arguments and actual binding
+slots. It preserves unrelated actions, ambiguity and missing-name settlement.
+
+### Conversation result delivery
+
+Use ordinary step bindings when the successor is decided. To save public values
+in the current App conversation, add `retain: {alias: {step, path}}` to
+execute_design. Retention adds save metadata without changing delivery. Omitted
+delivery preserves the final public result and images; use explicit
+`delivery: "status"` when no work values or images are needed.
+A later operation uses `{kind:"named", name:"alias", path:""}` in its arguments
+without model retrieval. Same-call aliases with a producer step compile to step
+bindings. For a decision use `delivery: {fields: {label: {step, path}}}`.
+Omitting step selects the final projected result (the existing receipt on the
+ready canvas route). Read a field of a saved snapshot with no operations and
+`delivery: {fields: {label: {name:"alias", path:"/field"}}}`.
+
+Names survive subsequent requests in the same open App document and
+conversation. The browser owns bounded immutable JSON snapshots; only names
+accompany the next model turn. Browser context exchanges do not execute canvas
+actions. Request-only handles cannot become cross-turn references. Named
+document targets remain subject to current validation before writes. A stale
+document, failed selection or storage error reports actual settlement; never
+replay completed work to recover delivery. App runtime disposal releases storage.
+
+A dependent canvas action can bind a previous output to one argument and a
+request-owned artifact selection to a distinct element slot in the same step.
+The host resolves the artifact's exact membership at admission and type-checks
+the remaining bindings against the registered action. The secured action
+validates current document targets when it runs. Use one concrete expanded key
+for a singleton anchor. Missing keys identify their argument and offer up to
+three matching keys; ambiguous anchors report the match count. Live region
+membership retains its step-time resolution.
+
+Before preparing stage inputs, the agent considers ready actions, common parameters
+and potentially reusable outputs. Known independent drafts and dependent operations
+share execute_design; a selected draft guide supplies the same per-operation
+arguments without a parts lookup. Visual decisions remain actual return boundaries.
+Optional named public outputs may be saved before their later use is certain.
+Selected authored parameters use `retain: {alias: {step, source: "input", path}}`
+after successful execution; paths address ordinary operation arguments for both
+native tools and canvas actions, without internal action wrappers. Same-call input
+aliases bind authored values, and later turns use App snapshots. This grants no
+cross-turn validity to request-scoped artifacts.
+
+## Staged continuation implementation contract
+
+The single execute_design entry accepts either operations or stages. A declared
+stage prepares, mechanically checks/repairs, applies through canonical actions,
+and exports selected App context before continuing. Public values may be retained
+for later continuation even without a known consumer. Retention rejection identifies
+the alias and exact request-lifetime field paths; it does not undo acknowledged
+writes or prevent a successor with an already available direct binding.
+
+Full structural admission precedes effects. Stage iteration checkpoints run before
+the corresponding application, not after the whole request. Independent immutable
+preparation may overlap pending application only under owner-declared access and
+resolved input dependencies. Canvas-dependent work waits for acknowledgement.
+Started work settles before terminal delivery; acknowledged work is never replayed.
+Implementation and focused evidence are tracked in
+[the staged execution plan](../plans/staged-design-execution-plan.md).
+
+### Direct stage continuation and selected reference ownership
+
+`record_design_facts` and `record_design_calculations` are composable under their
+existing source/dependency validation. Ordered facts then calculations require no
+model handoff. Visual capture/judgment retains its native boundary.
+
+The direct `prepare_and_apply_design` entry also accepts optional `retain` and
+`delivery`, with the same selectors as execute_design but no step field. For
+example, `retain: {draft: {source: "input", path: "/draft"}, root: {path:
+"/compositionIds/0"}}` saves useful stage context even without a known later
+consumer. Select these optional inputs in scoped usage. The host lowers the
+direct request into the existing sequence/result owner; there is no second store.
+Inside an execute_design sequence, use its enclosing retain/delivery controls.
+Unselected native calls preserve their existing full decision/recovery receipts.
+Unavailable context rejects before drawing; optional storage failure retains the
+acknowledged write and reports partial delivery without replay.
+
+Selected model-visible result fields preserve their registered request-reference
+lifetimes through runtime output export and host delivery. Runtime sequences may
+assemble multiple prior step fields into a typed output object; no inferred IDs,
+private lookup or lifetime extension is substituted. Owner model projection and
+internal execution schema remain distinct. Named App snapshots still reject
+request-only handles. Status-only delivery does not export discarded artifacts.
+
+Canonical `read_design_context` supports existing ID, subtree and region
+selectors. For artifact-backed targets use the host's `target` binding into
+`elementIds`; choose `delivery: "page"` and explicit fields when values are needed.
+Reference-only receipts preserve membership for later operations without returning
+all rows. A data read does not register a judgment or trigger a completion reread.
+
+Explicit evaluation work windows allow up to thirty minutes. The Taipei 101
+runner accepts `--minutes=30`, retaining its fifteen-minute default and unchanged
+prompt checksum. Report duration remains independent; null means no report limit.
+
+The native host catalog publishes the registered owner input contract. Runtime
+leaf schemas are separate: their removal of direct-only delivery fields must not
+remove those fields from native discovery while retaining the original scope
+declaration. Invalid scopes still fail; nested direct delivery options still fail
+before writes.
+
+The single `execute_design` host entry and `describe_design_apis` are eager native
+declarations. Domain-specific operations remain deferred; acquiring their contracts
+does not require searching again for the host entry. Optional authored facts,
+calculations and reference notes are ordinary composable context. They are not
+prerequisites for drawing or verification.
+Strict evaluation reports retain the first bounded public tool error message in
+addition to tool/call identity and stop kind. Empty-workspace detail captures are
+explicitly not applicable; missing bounds for nonempty documents remain failures.
+
+### Recorder-owned report transport lifetime
+
+Once the work phase is settled and the report phase has started, a recorder-armed
+strict evaluation report survives an HTTP `request closed` cancellation. It stays
+in the original native thread, denies further tool calls, records transport loss,
+and retains its complete public report without a time limit. Explicit cancellation
+with a different reason, ordinary requests, and the drawing phase retain their
+existing cancellation behavior. The recorder waits for the retained provider
+report before cleaning up owned services even if browser evidence fails. The wait
+is scoped to the original provider request observed at report entry. Other App
+lifecycle settlements cannot end it; same-request failure and provider-service
+loss remain explicit failures.
+
+Snapshot transfer keeps serialized text behind an object JSHandle; a primitive
+string handle would transmit its entire value in the protocol initializer before
+chunking. Both initializer and chunk messages are covered by focused tests.
+Missing browser evidence remains a failure and is never replaced with a claim of
+visual or durable acceptance.
+
+Known literal authored-input selectors are checked at structural admission before
+writes. Whole-result selectors that can contain registered request/secret fields
+are likewise rejected before effects; the host does not prune or extend their
+lifetime. Individually selected request-scoped fields are also rejected before
+writes. Usage distinguishes possible, guaranteed, portable and request-scoped
+fields using the registered result and lifetime metadata. The host acknowledges
+every object result with a required toolOutcome; raw owner validation and nested
+action projection occur before that host acknowledgement. Delivery admission
+identifies the failing alias, step and path rather than only the output envelope. Successful writes remain acknowledged when genuinely dynamic selection
+or storage fails afterward; that boundary still reports partial delivery.
+
+Selected usage makes named retention actionable: retention.scope is conversation,
+wholeResultAllowed states whether an entire output can be saved,
+guaranteedResultFields lists guaranteed portable selections, and
+forbiddenResultFields identifies request/secret-bearing selections. Result
+guaranteedFields and conditionalFields are disjoint; conditional presence is not
+a binding guarantee. Explicit machine-result schemas remain authoritative; the same retention
+permissions accompany both concise and machine-schema usage. App/host/workflow guidance distinguishes portable
+continuation data from request handles; retaining an alias never extends a lease.
+
+Result navigation is route-specific. `usageGuide.resultScope=invocation` and
+`results` describe the actual outer reply. `stepResults` describes a named action
+or registered leaf when that differs from its invocation wrapper.
+`retention.resultRoot=named-step` and all retention guarantees derive from the
+canonical named-step model schema. A ready-batch summary is not a named action
+result; an invoke_tool execution envelope is not its leaf output. Native direct
+owners reuse their existing projection. Derive both routes from authoritative
+wrapper constructors and registered schemas, without field-name substitutions.
+Before dispatch, pure authored delivery/retain selection errors return
+not-started correct_input recovery. Missing dependencies, saved values, unsupported
+owner schemas, omitted admission issues and post-execution delivery failures do
+not gain that recovery. Corrected input must execute only after a new valid
+admission; no rejected call writes or automatically replays work.
+Failure-specific recovery projection applies only to failure receipts. Successful
+selected ready-batch values have already passed owner projection; dynamic rows
+are not reinterpreted as statically guaranteed named-step bindings at egress.
+
+Recorder-armed evaluation stops on typed App/native execution failures, including
+partial/unknown settlement, and externally confirmed missing or incorrect App data
+that prevents execution. Preserve the first concrete failure across native calls
+and nested host operations before same-thread unlimited reporting. Public host
+issue strings and structured issue messages are diagnostic sources on failed
+receipts; arbitrary nested value data is not. Normal visual correction, incomplete
+artwork and arbitrary nested user data do not stop drawing. Correctable authored
+input failures with explicit not-started recovery may continue. Actual unknown
+writes, owner contract failures and missing required App data remain stopping
+errors. Ordinary requests retain their normal recovery.
+
+Selected preparation examples are validated against the selected schema first.
+After the existing selected-optional-input priority, rank valid owner-authored
+examples by distinct requested node-kind coverage. Compute coverage once per
+example, using only the owner-declared selection. Widening a face/grid scope to
+permit vector siblings therefore preserves composition coverage; vector-only and
+unscoped discovery retain their existing examples. No inferred style, new material
+behavior or mandatory workflow is introduced. Example selection is guidance, not
+proof of visual acceptance.
+
+Native inspection uses one App-owned maxEdge for schema region bounds, output
+image bounds, capture execution and failure recovery. Selected capture usage
+preserves the view contract: detail without region captures the entire target at
+native resolution only if both dimensions fit the 1024-pixel bound. Larger targets
+need a smaller child or an explicit target-local region. Overview fits the whole
+target into a preview; detail does not silently crop or downscale. Existing partial
+capture receipts and valid-image retention remain unchanged.
+
+Strict evaluation diagnostics inspect only the known actionResults/result receipt
+structure for a concrete child failure before using an aggregate partial message.
+This preserves the native capture constraint in the same-thread report without
+claiming that a captured image was displayed to the AI. Parent call identity,
+bounded message size, first-stop latching and normal-request recovery remain.
+
+### Selected output image delivery
+
+Host output selection preserves canonical inspection/reference-image provenance
+through field aliases and supported execution/recovery envelopes. The provider
+adapter validates selected bytes, emits native image content and removes Base64
+from text while preserving inspection identity. Repeated aliases decode the same
+bytes once per reply; delivery does not recapture or replay a completed mutation.
+Status-only, metadata-only and authored-input selections do not emit images.
+Authored-input selections use the planner's ordinary-argument schema at admission
+and delivery. Private provenance lasts for the invocation and does not establish
+visual approval or create another image store.
+
+### Browser prefix and native acknowledgement boundary
+
+A transport failure may contain a raw browser executionResult with completed
+actions. That prefix has not passed the host acknowledgement boundary. Its existing
+operation failure projector preserves public receipts and removes diagnostics.
+Recursive native result projection applies only to an embedded, acknowledged host
+result, such as cleanup failure after successful owner delivery. Do not add a
+secondary delivery failure solely because a raw App prefix has no toolOutcome.
+The outer native result still requires its current outcome and settlement contract.
+
+### Correctable input and failure delivery
+
+`execute_design` revision 6 preserves a `failure` field when status-only or
+selected-field delivery cannot complete. It contains the existing projected owner
+receipt or sequence execution/recovery, using that invocation's failure schemas.
+Draft references keep their request lifetime; they are not named conversation
+snapshots. Successful delivery remains compact. Missing selected success fields
+do not replace the actual failure or require the model to anticipate its shape.
+
+Complete region target reads enforce expectedCount at the host after reading.
+Empty or wrong-count matches return correct_input with not-started settlement,
+without dispatching mutations. Incomplete, unavailable or unknown reads remain
+blocking failures. Literal selectors stay literal; no fuzzy target substitution.
+
+Strict evaluation allows owner-declared correct_input recovery with known safe
+settlement, including multipart successes followed by a rejected input and the
+inline root's aggregate receipt. It preserves the failed receipt for the same AI
+to repair; it neither retries automatically nor replays successful parts.
+Independent result-delivery errors, unknown settlement, unavailable App data and
+abnormal interruption still stop. Ordinary visual corrections remain allowed.
+
+Canonical input-schema rejection and a control-plane-only operation placed in a sequence
+return explicit correct_input before dispatch. The control remains native; its
+receipt identifies the registered direct route without automatically invoking it.
+The host preserves the typed owner recovery through admission wrappers. Missing
+or ambiguous capabilities, unavailable App context and errors with acknowledged
+prior execution do not receive this safe-input classification.
+
+Correlated native dynamicToolCall completion summarizes the existing App reply;
+it is not a second execution outcome. Evaluation and protocol admission reuse
+the registered binding, issued call identity and terminal status check. Actual
+App receipts and delivery still own blocking failures; unmatched or invalid native
+events retain their existing failure handling. No result cache or automatic retry
+is introduced.
+
+### Recoverable discovery identity selection
+
+A completed discovery read with missing or ambiguous requested identities preserves
+partial/failed coverage and publishes `IDENTITY_UNRESOLVED` with
+`recovery.kind=select_identity` only when all resolved definitions were delivered.
+The model may select a current exact identity without replaying writes. This recovery
+survives retained reads and content pages. The evaluation consumer continues only
+for this typed completed-read outcome with no independent issue; unavailable known
+contracts, failed field scopes, unknown settlement and execution-owner lookup
+failures remain blocking. This is separate from not-started execution admission.
+
+Selected delivery retains canonical sequence failures through invocation validation
+and resource handoff. Only model egress projects successful-prefix and rejected-suffix
+recovery values. Public recovery preserves IDs, save acknowledgements, settlement
+and exact repair while omitting internal fields; do not replay completed writes or
+weaken canonical schemas to accept already projected owner output.
+
+The existing invocation-schema hook distinguishes canonical owner validation from
+model egress. Recovery branches use the matching registered App owner/revision for
+model field visibility, while Runtime normalization and canonical resource schemas
+remain unchanged. A model schema failure must remain a delivery failure; it cannot
+fall back to an unselected generic schema or fabricate required internal fields.
+
+## Execution recovery and evaluation
+
+Correctable authored input errors return the existing `correct_input` recovery
+before affected writes. The AI may correct the input and continue in the same
+work turn. Completed prefixes remain acknowledged; recovery never replays them.
+Real tool failures, unavailable required data, unknown settlement, failed media
+or persistence delivery remain visible to the recorder. Visual design corrections
+and the absence of a formal judgment are not execution failures.
+
+### Shared contract delivery and review handoffs
+
+Native declarations use the same lossless schema compactor as selected usage,
+after native union normalization. Shared local definitions reduce repeated input
+structure without changing owner admission, exclusive alternatives or reference
+meaning. Provider registration bytes and App usage reply bytes are separate
+measurements; neither establishes model token consumption.
+
+Selected canvas-action usage supplies operationParameters for operation.arguments,
+its executable example when the owner has one, result roots, retention and recovery.
+Generated target-binding examples preserve registered field/path pairs and all
+other required arguments; they reuse the same validated examples as purpose menus.
+Its hostContract selector references the already available execute_design contract;
+it does not repeat the host input envelope or full host instructions. Native and
+registered tools retain their own invocation parameters. Exact full definitions
+remain available. Exploratory candidate menus omit recipeDependency; exact lookup
+retains authoring metadata. Only a canonical same-owner wrapper already represented
+by an admitted action route is suppressed; foreign same-name tools remain distinct.
+
+The AI chooses the views and canonical data needed for its decision and final
+verification. Captures return actual images and identities; data reads return
+selected canonical values. Neither requires registering criteria or posting a
+verdict. Explicit mechanical checks remain available and composable. Their
+results do not certify appearance or create global completion obligations.
+
+### Compiled preparation findings
+
+`prepare_design` revision 4 reports blocking compiled findings as
+`available=false`, `applicable=false`, `settlement=not-started` and
+`recovery=correct_input`. The retained artifact and findings remain inspectable;
+no canvas apply has run. The combined workflow preserves that failure contract,
+including acknowledged earlier parts. Corrected source must pass ordinary admission.
+This changes neither geometry checks nor artifact ownership or strict evaluation.
+An unavailable handle, execution uncertainty or independent delivery failure remains
+blocking; successful compilation alone never authorizes applying failed findings.
+
+### Target admission recovery
+
+Pure registered target field/path/conflict and action-input validation preserve
+`PREPARATION_REJECTED`, `not-started` and `correct_input` through both direct batch
+admission and scheduled host planning. `field` names one identity argument;
+`path` locates its nested slot. Dotted field aliases are not accepted. These
+rejections precede target reads and canvas writes. Missing owners, artifact
+handles/readers, incomplete target data and uncertain execution are not classified
+as correctable input. Existing target cardinality, identity and canonical mutation
+checks remain authoritative; the runner stop policy is unchanged.
+
+### Discovery and stage continuity
+
+The existing execute_design sequence consumes registered request-only operations
+as well as reusable operations. Runtime composition `request` permits only
+authored request sequences; registered and reusable inline recipes reject it.
+It does not extend artifact leases or bypass canonical invocation, effects,
+images, cancellation and settlement. Request-only source/review controls use
+exclusive scheduling unless their existing owner proves independent access.
+Usage exposes the registered host input envelope and named-step output contract.
+Short action identities and qualified wrappers share those schemas across usage,
+full and field reads. Owner examples are wrapped once at registration; callers
+submit the delivered parameters without another argumentField transformation.
+Retention describes the same named-step route, not a nonexistent native option.
+Owner-declared result paths expose typed named-step selectors and conditional
+presence without promising optional values. Grouping publishes its group ID at
+`/actionResults/0/result/value/groupId`; context consumers use the canonical
+unbounded document-ID schema, not a consumer-only length cap. Runtime validates
+actual optional values before their consumers run. Same-submission retained input
+aliases resolve authored arguments without a separate read; retained output aliases
+remain ordered step dependencies. No draft echo or compatibility route is added.
+Outer inspection defer controls automatic captures only. Explicit captures still
+run, and selected delivery must carry every caller-selected image.
+
+Purpose lookup orders complete metadata/identity term coverage before partial
+lexical coverage, then uses current corpus relevance within each class. One
+complete candidate can deliver selected usage despite partial alternatives.
+Several complete candidates retain explicit selection. No tool is executed by
+search, and exact identity ambiguity is never resolved by relevance.
+
+Applied creation mapping is portable source-key to acknowledged document-ID
+output selected with includeTargets:true. createdTargets preserves acknowledged
+composition order and each keyToId map; omission returns an empty array. It can be retained in the existing conversation context without returning
+the map to the model. Compact delivery does not remove binding data selected for
+retention. Saved metadata describes bounded shape/navigation, not values; derive
+it once on save. Canonical consumers recheck existence and permissions. Neither
+source drafts nor stored mappings certify current geometry or group membership.
+
+Known roots bind directly into queries; a query result may bind a later sorting
+anchor. Pattern member names follow patternName - oneBasedIndex - memberName.
+Candidate name/identity reads and geometry column reads keep distinct meanings.
+Visual choice among candidates remains an agent decision.
+
+A request sequence may acquire images and canonical data before returning them
+together for judgment. Capture and data remain separate owner operations; their
+shared host does not record approval. Each consumer validates the actual source
+identity, membership or values required for its own operation.
+
+Request sequences may bind a declared optional output field or array item to a
+later operation. Admission proves the value type; execution requires the path to
+exist and validates the actual input before invoking the dependent operation.
+Empty or missing results stop that successor without replaying earlier work.
+Unknown paths, incompatible types and impossible array indices still reject.
+Saved recipes retain the stronger guaranteed-presence admission contract.
+Action wrapper step results retain their declared actionResults/0/result envelope.
+Generated pattern names are patternName - oneBasedInstanceIndex - memberName;
+exact/prefix matching uses that full name, while suffix matches an authored member
+name. A candidate list never implies visual approval of every candidate.
+
+Purpose search normalizes ordinary English query connectors after exact identity
+resolution. It does not modify catalog metadata, discard negative terms or turn a
+connector-only query into an empty query. The strict evaluator preserves explicit
+review rebind continuation through matching causal sequence receipts, including
+successful captures followed by a scope conflict. Unknown outcomes, failed images,
+unrelated delivery failures and mismatched recovery receipts remain stopping errors.
+
+### Capture target membership in selected usage
+
+The inspection owner defines capture membership before cropping: a concrete
+scene target includes only its subtree, excluding overlapping siblings. A group
+region includes its descendants within coordinates local to that group. Selected
+review capture usage derives this meaning from the canonical inspection schema;
+it must not omit it while preserving only native pixel limits. Switching from a
+leaf to its owner group requires region coordinates in the new target space.
+No target promotion, regrouping, mutation or automatic visual judgment occurs.
+
+### Reference receipt navigation and purpose candidates
+
+Reference context exposes selected image identities and authored notes through
+ordinary result schemas. There are no signed use receipts. Request attachment indexes
+retain their resource lifetime; authored purpose/limitations can be retained as data.
+Discovery candidates remain choice metadata; executable usage comes from registered
+owners. Preserve exact identity, requested fields and honest ambiguity.
+
+### Provider-visible handoff contracts
+
+The native thread/start tool packet and selected usage use one valid primary
+owner example. Native schema compaction retains that example once; selected
+usage keeps it in invocationExample. The host primary example performs two
+operations with a same-submission authored-input alias. No model read or prior
+submission is required. This is an available route, not compulsory reuse.
+
+The sequence target declaration comes from its admitted canvas dispatcher, whose
+region schema comes from the canonical region resolver. Ordinary steps, stages,
+apply operations and iteration checks/repairs share that declaration. No region
+resolver means no advertised region route. Invalid filters reject before dispatch.
+
+Outer inspection controls automatic capture for ready canvas operations when a
+settled review target exists. Omitted/immediate retains automatic capture; defer
+omits it. Registered tools keep their own inspection arguments. Explicit capture
+operations still run; delivery independently selects returned images.
+
+Deletion usage publishes count/status selectors from its compact result owner.
+Named or dependent target-bound operations compile to their admitted action
+wrapper, preserving both execution and model output contracts. Target-bearing
+arguments use the canonical selector and existing resolver at dispatch; complete
+canonical arguments are validated before mutation. Anonymous independent work
+retains the private batch. Scalar artifact expansion preserves ordered receipts
+of the same action. Model selection uses the same admitted owner without a
+single-batch substitution and is captured by the existing projected-result observer. Portable model-only fields are not re-exported as Runtime output
+bindings: execution receipts and compact model values may have different shapes.
+Declared execution-field exports preserve request resources. Batch resource
+navigation derives from admitted output lifetime metadata, including structural
+receipts and query snapshots; a selected snapshot remains usable afterward. Unknown selected paths reject
+before writes; missing dynamic fields fail delivery without replay. Runtime step
+dependencies and retained request lifetimes keep their existing validation.
+
+Regressions inspect actual native packets and replies, execute the delivered
+input-reuse example, and replay the recorded region/suffix deletion followed by
+construction and explicit capture. Count dispatches and captures; raw owner schema
+assertions alone do not prove provider publication.
+
+### Target-bound execution result continuity
+
+The recorded E6 sequence must apply details, resolve the current region once,
+group six matching roots and bind its actual groupId into both captures in one
+execute_design call. Existing conditional output admission remains: no-match or
+wrong-count rejects before group mutation; failed or missing group output prevents
+capture without replaying completed construction. Formal proof uses the original
+geometry, selectors, result paths and capture region. jsdom replaces only renderer
+spatial/pixel boundaries; the live run supplies actual rendered-image evidence.
+Native protocol tests acquire the published group result path, submit the recorded
+sequence and receive both images through the real provider dispatcher.

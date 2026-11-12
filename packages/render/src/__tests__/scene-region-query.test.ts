@@ -63,6 +63,128 @@ describe('workspace region query lifetime', () => {
     workspace.queryRegion({ x: 600, y: 0, width: 10, height: 10 })
     expect(bounds).not.toHaveBeenCalled()
   })
+  it('reuses descendant extents after a world-position-preserving reparent', () => {
+    const { workspace } = setup()
+    const group = new RenderContainer({ x: 100, label: 'group' })
+    const child = new RenderContainer({ x: 20, label: 'child' })
+
+    group.addChild(child)
+    workspace.addChild(group)
+    const region = { x: 120, y: 0, width: 10, height: 10 }
+
+    expect(workspace.queryRegion(region)).toEqual([child])
+    const reads = vi.spyOn(child, 'getBoundsRelativeTo')
+    const wrapper = new RenderContainer({ x: 50, label: 'wrapper' })
+
+    workspace.addChild(wrapper)
+    wrapper.addChild(group)
+    group.x = 50
+    expect(workspace.queryRegion(region)).toEqual([child])
+    expect(reads).not.toHaveBeenCalled()
+    child.x = 40
+    expect(workspace.queryRegion(region)).toEqual([])
+    expect(reads).toHaveBeenCalledOnce()
+  })
+
+  it('keeps independent descendant changes when an ancestor keeps its workspace transform', () => {
+    const { workspace } = setup()
+    const group = new RenderContainer({ x: 100 })
+    const nested = new RenderContainer()
+    const stable = new RenderContainer({ x: 20 })
+    const changed = new RenderContainer({ x: 20 })
+
+    nested.addChild(stable)
+    nested.addChild(changed)
+    group.addChild(nested)
+    workspace.addChild(group)
+    const region = { x: 120, y: 0, width: 10, height: 10 }
+
+    expect(workspace.queryRegion(region)).toEqual([stable, changed])
+    const stableReads = vi.spyOn(stable, 'getBoundsRelativeTo')
+    const wrapper = new RenderContainer({ x: 50 })
+
+    workspace.addChild(wrapper)
+    wrapper.addChild(group)
+    group.x = 50
+    changed.x = 40
+    const added = new RenderContainer({ x: 20 })
+
+    nested.addChild(added)
+    expect(workspace.queryRegion(region)).toEqual([stable, added])
+    expect(stableReads).not.toHaveBeenCalled()
+    nested.removeChild(added)
+    expect(workspace.queryRegion(region)).toEqual([stable])
+    nested.addChild(added)
+    expect(workspace.queryRegion(region)).toEqual([stable, added])
+  })
+
+  it('matches a fresh index across nested geometry, visibility, reorder and membership changes', () => {
+    const { workspace } = setup()
+    const group = new RenderGraphics({ x: 100 })
+    const nested = new RenderContainer()
+    const a = new RenderContainer({ x: 20, label: 'a' })
+    const b = new RenderContainer({ x: 40, label: 'b' })
+
+    group.addChild(nested)
+    nested.addChild(a)
+    nested.addChild(b)
+    workspace.addChild(group)
+    const regions = [
+      { x: 0, y: 0, width: 500, height: 500 },
+      { x: 120, y: 0, width: 10, height: 10 },
+      { x: 140, y: 0, width: 10, height: 10 }
+    ]
+
+    const compare = () => {
+      const retained = regions.map((region) =>
+        workspace.queryRegion(region).map((node) => node.label)
+      )
+
+      workspace.releaseRegionQuery()
+      const fresh = regions.map((region) =>
+        workspace.queryRegion(region).map((node) => node.label)
+      )
+
+      expect(retained).toEqual(fresh)
+    }
+
+    compare()
+    const wrapper = new RenderContainer({ x: 50 })
+
+    workspace.addChild(wrapper)
+    wrapper.addChild(group)
+    group.x = 50
+    a.x = 40
+    nested.setChildIndex(a, 1)
+    compare()
+    const geometry = group as RenderGraphics & {
+      __geometryLocalBounds: {
+        x: number
+        y: number
+        width: number
+        height: number
+      }
+    }
+
+    geometry.__geometryLocalBounds = { x: 0, y: 0, width: 10, height: 10 }
+    group.width = 20
+    group.clear().rect(0, 0, 10, 10)
+    compare()
+    group.visible = false
+    compare()
+    group.visible = true
+    geometry.__geometryLocalBounds = { x: 0, y: 0, width: 20, height: 10 }
+    group.clear().rect(0, 0, 20, 10)
+    compare()
+    nested.removeChild(a)
+    compare()
+    nested.addChildAt(a, 0)
+    compare()
+    workspace.addChild(nested)
+    group.destroy()
+    compare()
+  })
+
   it('updates transformed descendants, removal, reparent, order and visibility', () => {
     const { workspace } = setup()
     const group = new RenderContainer({ x: 100, label: 'group' })

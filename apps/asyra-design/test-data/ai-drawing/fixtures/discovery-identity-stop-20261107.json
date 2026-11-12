@@ -1,0 +1,980 @@
+{
+  "source": "taipei-101-fixed-1793985913649",
+  "input": {
+    "operations": [
+      "fill.updateFills",
+      "hierarchy.groupElements",
+      "element.deleteElements"
+    ],
+    "view": "usage"
+  },
+  "output": {
+    "apis": [
+      {
+        "name": "api_hierarchy_groupElements",
+        "revision": 5,
+        "description": "hierarchy.groupElements. Group the supplied element IDs with App geometry preservation; returns grouping details. Uses the existing public API. Event/history suppression options are not model inputs.",
+        "operation": "hierarchy.groupElements",
+        "category": "hierarchy",
+        "effect": "write",
+        "resources": [
+          "document"
+        ],
+        "lifecycle": {
+          "cancellation": "cooperative",
+          "retry": "never",
+          "output": "value"
+        },
+        "composition": "allowed",
+        "execution": {
+          "kind": "batch-action",
+          "tool": "execute_design"
+        },
+        "recipeDependency": {
+          "name": "design_operations.api_hierarchy_groupElements",
+          "revision": 5,
+          "execution": {
+            "kind": "registered-tool",
+            "namespace": "tool_library",
+            "tool": "invoke_tool",
+            "arguments": {
+              "name": "design_operations.api_hierarchy_groupElements",
+              "revision": 5
+            }
+          },
+          "definition": {
+            "tool": "describe_design_apis",
+            "arguments": {
+              "names": [
+                "design_operations.api_hierarchy_groupElements"
+              ]
+            }
+          }
+        },
+        "inputFields": [
+          "/properties/elementIds",
+          "/properties/elementIds/anyOf/0",
+          "/properties/elementIds/anyOf/1"
+        ],
+        "outputFields": [
+          "/properties/status",
+          "/properties/value",
+          "/properties/mutationScope",
+          "/properties/retained",
+          "/properties/delivery",
+          "/properties/toolOutcome"
+        ],
+        "elementBindings": [
+          {
+            "schemaPath": "/properties/elementIds",
+            "mode": "all"
+          }
+        ],
+        "invocationExample": {
+          "available": false,
+          "reason": "no-valid-owner-example"
+        },
+        "usageGuide": {
+          "retention": {
+            "inputRoot": "operation.arguments",
+            "scope": "conversation",
+            "wholeResultAllowed": false,
+            "guaranteedResultFields": [
+              "/batchSummary",
+              "/toolOutcome"
+            ],
+            "forbiddenResultFields": [
+              "/actionResults",
+              "/executionResult"
+            ]
+          },
+          "instructions": "[redacted]",
+          "operationParameters": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "elementIds": {
+                "x-design-element-binding": "all",
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "x-runtime-value": "document"
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "snapshotId": {
+                        "$ref": "#/$defs/1"
+                      },
+                      "leaseId": {
+                        "$ref": "#/$defs/1"
+                      },
+                      "total": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "snapshotId",
+                      "leaseId",
+                      "total"
+                    ]
+                  }
+                ]
+              }
+            },
+            "required": [
+              "elementIds"
+            ],
+            "$defs": {
+              "1": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 160,
+                "x-runtime-value": "request-artifact"
+              }
+            }
+          },
+          "parameters": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "operations"
+            ],
+            "properties": {
+              "operations": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "name",
+                    "arguments"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "enum": [
+                        "api_hierarchy_groupElements"
+                      ]
+                    },
+                    "arguments": {
+                      "type": "object"
+                    },
+                    "target": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/a"
+                        },
+                        {
+                          "$ref": "#/$defs/m"
+                        },
+                        {
+                          "type": "array",
+                          "minItems": 1,
+                          "maxItems": 32,
+                          "items": {
+                            "anyOf": [
+                              {
+                                "$ref": "#/$defs/a"
+                              },
+                              {
+                                "$ref": "#/$defs/m"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              "inspection": {
+                "enum": [
+                  "immediate",
+                  "defer"
+                ]
+              },
+              "response": {
+                "type": "string",
+                "enum": [
+                  "compact",
+                  "full"
+                ],
+                "default": "compact",
+                "description": "Compact preserves ordered owner receipts and their application, settlement and mutation-scope evidence. Structural group/ungroup/move/deletion receipts return retained snapshot/lease/count references. Pass a retained reference directly into a declared elementIds argument; no model-side expansion. Read its full immutable receipt with read_design_context scope=snapshot delivery=receipt; never replay a mutation for readback. Full preserves workflow diagnostics but never bypasses a registered bounded owner view; use retained receipt readback for original acknowledgements. Uncertain receipts retain their evidence without implying completed application."
+              },
+              "message": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              }
+            },
+            "$defs": {
+              "7": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 32,
+                "description": "Exact registered argument path for nested or repeated fields, e.g. [\"mappings\",0,\"query\",\"elementIds\"]. Array slots must already exist.",
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  ]
+                }
+              },
+              "a": {
+                "type": "object",
+                "additionalProperties": false,
+                "description": "Resolve prepared artifact targets by exact keys. The batch binds the selected elements to the operation argument.",
+                "required": [
+                  "artifactId",
+                  "field"
+                ],
+                "properties": {
+                  "artifactId": {
+                    "type": "string"
+                  },
+                  "targetSetId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "field": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Exact canonical element-identity argument name. Its schema declares all, each or one binding cardinality; for example anchorId is exactly one."
+                  },
+                  "path": {
+                    "$ref": "#/$defs/7"
+                  },
+                  "keys": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "keyPrefix": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "g": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "i": {
+                "type": "string",
+                "minLength": 1,
+                "x-runtime-value": "document",
+                "maxLength": 256
+              },
+              "m": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "field",
+                  "query"
+                ],
+                "properties": {
+                  "field": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "path": {
+                    "$ref": "#/$defs/7"
+                  },
+                  "query": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "scope",
+                      "bounds"
+                    ],
+                    "properties": {
+                      "scope": {
+                        "const": "region"
+                      },
+                      "bounds": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "x",
+                          "y",
+                          "width",
+                          "height"
+                        ],
+                        "properties": {
+                          "x": {
+                            "type": "number"
+                          },
+                          "y": {
+                            "type": "number"
+                          },
+                          "width": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "height": {
+                            "type": "number",
+                            "minimum": 0
+                          }
+                        }
+                      },
+                      "filter": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "name": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "minProperties": 1,
+                            "properties": {
+                              "equals": {
+                                "$ref": "#/$defs/g"
+                              },
+                              "prefix": {
+                                "$ref": "#/$defs/g"
+                              },
+                              "suffix": {
+                                "$ref": "#/$defs/g"
+                              }
+                            }
+                          },
+                          "type": {
+                            "$ref": "#/$defs/g"
+                          },
+                          "parentId": {
+                            "$ref": "#/$defs/i"
+                          },
+                          "ancestorId": {
+                            "$ref": "#/$defs/i"
+                          },
+                          "locked": {
+                            "type": "boolean"
+                          }
+                        }
+                      },
+                      "expectedCount": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "results": {
+            "guaranteedFields": [
+              "/actionResults",
+              "/batchSummary",
+              "/toolOutcome"
+            ],
+            "conditionalFields": [
+              "/available",
+              "/batchFailure",
+              "/batchId",
+              "/checks",
+              "/code",
+              "/executionResult",
+              "/failure",
+              "/inspectionDeferred",
+              "/inspectionIssues",
+              "/measurementDeferred",
+              "/measurementIssues",
+              "/message",
+              "/recoverable",
+              "/recovery",
+              "/settlement",
+              "/stage"
+            ],
+            "interpretation": "Read the owner result and toolOutcome.status with settlement. Completed execution is not visual approval or durable storage. Preserve completed work on partial/failed results; unknown settlement is not permission to replay. Use the owner recovery and returned next arguments. Complete result schemas are available with includeResultSchema=true when a machine consumer needs validation."
+          },
+          "recovery": "Compact preserves ordered owner receipts and their application, settlement and mutation-scope evidence. Structural group/ungroup/move/deletion receipts return retained snapshot/lease/count references. Pass a retained reference directly into a declared elementIds argument; no model-side expansion. Read its full immutable receipt with read_design_context scope=snapshot delivery=receipt; never replay a mutation for readback. Full preserves workflow diagnostics but never bypasses a registered bounded owner view; use retained receipt readback for original acknowledgements. Uncertain receipts retain their evidence without implying completed application. Inspect the retained write receipt and check diagnostics before continuing; do not replay acknowledged mutations."
+        },
+        "fieldQuery": {
+          "tool": "describe_design_apis",
+          "arguments": {
+            "operations": [
+              "hierarchy.groupElements"
+            ],
+            "schemaPaths": [
+              "/properties/elementIds"
+            ]
+          }
+        },
+        "definition": {
+          "revision": "8fd8584bd7820923dfdd790ef34547bf12d9fc10a5a638c54819e84f43b52619",
+          "state": "included",
+          "coverage": "usage",
+          "requestedCoverage": "usage",
+          "availableInResponse": true,
+          "deliveryReason": "requested",
+          "nextAction": "execute-with-delivered-contract",
+          "recover": {
+            "tool": "describe_design_apis",
+            "arguments": {
+              "operations": [
+                "hierarchy.groupElements"
+              ],
+              "view": "usage",
+              "refresh": true,
+              "refreshReason": "delivery-failure"
+            }
+          },
+          "refresh": {
+            "tool": "describe_design_apis",
+            "arguments": {
+              "operations": [
+                "hierarchy.groupElements"
+              ],
+              "refresh": true,
+              "refreshReason": "context-loss",
+              "view": "usage"
+            }
+          }
+        }
+      },
+      {
+        "name": "api_element_deleteElements",
+        "revision": 8,
+        "description": "element.deleteElements. Delete one or more non-Workspace elements and their descendants in one canonical batch. Pass all ready target IDs together; preparation and orphan-property work are shared. Overlapping ancestor/descendant targets are removed once. Invalid, duplicate or missing targets reject before writes. Returns removed identities. Uses the existing public API. Event/history suppression options are not model inputs.",
+        "operation": "element.deleteElements",
+        "category": "element",
+        "effect": "delete",
+        "resources": [
+          "document"
+        ],
+        "lifecycle": {
+          "cancellation": "cooperative",
+          "retry": "never",
+          "output": "value"
+        },
+        "composition": "allowed",
+        "execution": {
+          "kind": "batch-action",
+          "tool": "execute_design"
+        },
+        "recipeDependency": {
+          "name": "design_operations.api_element_deleteElements",
+          "revision": 8,
+          "execution": {
+            "kind": "registered-tool",
+            "namespace": "tool_library",
+            "tool": "invoke_tool",
+            "arguments": {
+              "name": "design_operations.api_element_deleteElements",
+              "revision": 8
+            }
+          },
+          "definition": {
+            "tool": "describe_design_apis",
+            "arguments": {
+              "names": [
+                "design_operations.api_element_deleteElements"
+              ]
+            }
+          }
+        },
+        "inputFields": [
+          "/properties/elementIds",
+          "/properties/elementIds/anyOf/0",
+          "/properties/elementIds/anyOf/1"
+        ],
+        "outputFields": [
+          "/properties/status",
+          "/properties/value",
+          "/properties/mutationScope",
+          "/properties/retained",
+          "/properties/delivery",
+          "/properties/toolOutcome"
+        ],
+        "elementBindings": [
+          {
+            "schemaPath": "/properties/elementIds",
+            "mode": "all"
+          }
+        ],
+        "invocationExample": {
+          "illustrative": true,
+          "invocation": {
+            "tool": "execute_design",
+            "arguments": {
+              "operations": [
+                {
+                  "name": "api_element_deleteElements",
+                  "arguments": {
+                    "elementIds": [
+                      "example-element"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "usageGuide": {
+          "retention": {
+            "inputRoot": "operation.arguments",
+            "scope": "conversation",
+            "wholeResultAllowed": false,
+            "guaranteedResultFields": [
+              "/batchSummary",
+              "/toolOutcome"
+            ],
+            "forbiddenResultFields": [
+              "/actionResults",
+              "/executionResult"
+            ]
+          },
+          "instructions": "[redacted]",
+          "operationParameters": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "elementIds": {
+                "x-design-element-binding": "all",
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "x-runtime-value": "document"
+                    },
+                    "uniqueItems": true
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "snapshotId": {
+                        "$ref": "#/$defs/1"
+                      },
+                      "leaseId": {
+                        "$ref": "#/$defs/1"
+                      },
+                      "total": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "snapshotId",
+                      "leaseId",
+                      "total"
+                    ]
+                  }
+                ]
+              }
+            },
+            "required": [
+              "elementIds"
+            ],
+            "$defs": {
+              "1": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 160,
+                "x-runtime-value": "request-artifact"
+              }
+            }
+          },
+          "parameters": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "operations"
+            ],
+            "properties": {
+              "operations": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "name",
+                    "arguments"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "enum": [
+                        "api_element_deleteElements"
+                      ]
+                    },
+                    "arguments": {
+                      "type": "object"
+                    },
+                    "target": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/a"
+                        },
+                        {
+                          "$ref": "#/$defs/m"
+                        },
+                        {
+                          "type": "array",
+                          "minItems": 1,
+                          "maxItems": 32,
+                          "items": {
+                            "anyOf": [
+                              {
+                                "$ref": "#/$defs/a"
+                              },
+                              {
+                                "$ref": "#/$defs/m"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              "inspection": {
+                "enum": [
+                  "immediate",
+                  "defer"
+                ]
+              },
+              "response": {
+                "type": "string",
+                "enum": [
+                  "compact",
+                  "full"
+                ],
+                "default": "compact",
+                "description": "Compact preserves ordered owner receipts and their application, settlement and mutation-scope evidence. Structural group/ungroup/move/deletion receipts return retained snapshot/lease/count references. Pass a retained reference directly into a declared elementIds argument; no model-side expansion. Read its full immutable receipt with read_design_context scope=snapshot delivery=receipt; never replay a mutation for readback. Full preserves workflow diagnostics but never bypasses a registered bounded owner view; use retained receipt readback for original acknowledgements. Uncertain receipts retain their evidence without implying completed application."
+              },
+              "message": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              }
+            },
+            "$defs": {
+              "7": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 32,
+                "description": "Exact registered argument path for nested or repeated fields, e.g. [\"mappings\",0,\"query\",\"elementIds\"]. Array slots must already exist.",
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  ]
+                }
+              },
+              "a": {
+                "type": "object",
+                "additionalProperties": false,
+                "description": "Resolve prepared artifact targets by exact keys. The batch binds the selected elements to the operation argument.",
+                "required": [
+                  "artifactId",
+                  "field"
+                ],
+                "properties": {
+                  "artifactId": {
+                    "type": "string"
+                  },
+                  "targetSetId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "field": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Exact canonical element-identity argument name. Its schema declares all, each or one binding cardinality; for example anchorId is exactly one."
+                  },
+                  "path": {
+                    "$ref": "#/$defs/7"
+                  },
+                  "keys": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "keyPrefix": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "g": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "i": {
+                "type": "string",
+                "minLength": 1,
+                "x-runtime-value": "document",
+                "maxLength": 256
+              },
+              "m": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "field",
+                  "query"
+                ],
+                "properties": {
+                  "field": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "path": {
+                    "$ref": "#/$defs/7"
+                  },
+                  "query": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "scope",
+                      "bounds"
+                    ],
+                    "properties": {
+                      "scope": {
+                        "const": "region"
+                      },
+                      "bounds": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "x",
+                          "y",
+                          "width",
+                          "height"
+                        ],
+                        "properties": {
+                          "x": {
+                            "type": "number"
+                          },
+                          "y": {
+                            "type": "number"
+                          },
+                          "width": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "height": {
+                            "type": "number",
+                            "minimum": 0
+                          }
+                        }
+                      },
+                      "filter": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "name": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "minProperties": 1,
+                            "properties": {
+                              "equals": {
+                                "$ref": "#/$defs/g"
+                              },
+                              "prefix": {
+                                "$ref": "#/$defs/g"
+                              },
+                              "suffix": {
+                                "$ref": "#/$defs/g"
+                              }
+                            }
+                          },
+                          "type": {
+                            "$ref": "#/$defs/g"
+                          },
+                          "parentId": {
+                            "$ref": "#/$defs/i"
+                          },
+                          "ancestorId": {
+                            "$ref": "#/$defs/i"
+                          },
+                          "locked": {
+                            "type": "boolean"
+                          }
+                        }
+                      },
+                      "expectedCount": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "results": {
+            "guaranteedFields": [
+              "/actionResults",
+              "/batchSummary",
+              "/toolOutcome"
+            ],
+            "conditionalFields": [
+              "/available",
+              "/batchFailure",
+              "/batchId",
+              "/checks",
+              "/code",
+              "/executionResult",
+              "/failure",
+              "/inspectionDeferred",
+              "/inspectionIssues",
+              "/measurementDeferred",
+              "/measurementIssues",
+              "/message",
+              "/recoverable",
+              "/recovery",
+              "/settlement",
+              "/stage"
+            ],
+            "interpretation": "Read the owner result and toolOutcome.status with settlement. Completed execution is not visual approval or durable storage. Preserve completed work on partial/failed results; unknown settlement is not permission to replay. Use the owner recovery and returned next arguments. Complete result schemas are available with includeResultSchema=true when a machine consumer needs validation."
+          },
+          "recovery": "Compact preserves ordered owner receipts and their application, settlement and mutation-scope evidence. Structural group/ungroup/move/deletion receipts return retained snapshot/lease/count references. Pass a retained reference directly into a declared elementIds argument; no model-side expansion. Read its full immutable receipt with read_design_context scope=snapshot delivery=receipt; never replay a mutation for readback. Full preserves workflow diagnostics but never bypasses a registered bounded owner view; use retained receipt readback for original acknowledgements. Uncertain receipts retain their evidence without implying completed application. Inspect the retained write receipt and check diagnostics before continuing; do not replay acknowledged mutations."
+        },
+        "fieldQuery": {
+          "tool": "describe_design_apis",
+          "arguments": {
+            "operations": [
+              "element.deleteElements"
+            ],
+            "schemaPaths": [
+              "/properties/elementIds"
+            ]
+          }
+        },
+        "definition": {
+          "revision": "4644ec3d5a10c4f6010a70900e3e1df6f888e2678854f12e23fc39d61e311dc0",
+          "state": "included",
+          "coverage": "usage",
+          "requestedCoverage": "usage",
+          "availableInResponse": true,
+          "deliveryReason": "requested",
+          "nextAction": "execute-with-delivered-contract",
+          "recover": {
+            "tool": "describe_design_apis",
+            "arguments": {
+              "operations": [
+                "element.deleteElements"
+              ],
+              "view": "usage",
+              "refresh": true,
+              "refreshReason": "delivery-failure"
+            }
+          },
+          "refresh": {
+            "tool": "describe_design_apis",
+            "arguments": {
+              "operations": [
+                "element.deleteElements"
+              ],
+              "refresh": true,
+              "refreshReason": "context-loss",
+              "view": "usage"
+            }
+          }
+        }
+      }
+    ],
+    "missingOperations": [
+      "fill.updateFills"
+    ],
+    "message": "2 requested definitions delivered; 1 unavailable. Inspect per-identity resolution and recover only missing contracts; never replay writes. Available categories: design, core, element, hierarchy, selection, viewport, fill, stroke, vector, tools. Select one category for its admitted operation menu. Exact names may also identify native tools; use their returned execution route.",
+    "candidates": [
+      {
+        "name": "api_fill_updateFillsAtIndex",
+        "operation": "fill.updateFillsAtIndex",
+        "execution": {
+          "kind": "batch-action",
+          "tool": "execute_design"
+        }
+      },
+      {
+        "name": "api_fill_updatePrimaryFillColors",
+        "operation": "fill.updatePrimaryFillColors",
+        "execution": {
+          "kind": "batch-action",
+          "tool": "execute_design"
+        }
+      },
+      {
+        "name": "api_fill_addFills",
+        "operation": "fill.addFills",
+        "execution": {
+          "kind": "batch-action",
+          "tool": "execute_design"
+        }
+      },
+      {
+        "name": "api_fill_removeFills",
+        "operation": "fill.removeFills",
+        "execution": {
+          "kind": "batch-action",
+          "tool": "execute_design"
+        }
+      },
+      {
+        "name": "api_fill_detachFillsAtIndex",
+        "operation": "fill.detachFillsAtIndex",
+        "execution": {
+          "kind": "batch-action",
+          "tool": "execute_design"
+        }
+      },
+      {
+        "name": "api_fill_updateFillFieldsBatch",
+        "operation": "fill.updateFillFieldsBatch",
+        "execution": {
+          "kind": "batch-action",
+          "tool": "execute_design"
+        }
+      }
+    ],
+    "status": "partial",
+    "settlement": "completed",
+    "code": "DEFINITION_UNAVAILABLE",
+    "resultKey": "IpmtJ27lMpkt72KpUCX0NQ",
+    "toolOutcome": {
+      "status": "partial",
+      "settlement": "completed",
+      "issues": [
+        {
+          "code": "DEFINITION_UNAVAILABLE",
+          "message": "2 requested definitions delivered; 1 unavailable. Inspect per-identity resolution and recover only missing contracts; never replay writes. Available categories: design, core, element, hierarchy, selection, viewport, fill, stroke, vector, tools. Select one category for its admitted operation menu. Exact names may also identify native tools; use their returned execution route."
+        }
+      ]
+    }
+  }
+}

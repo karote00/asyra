@@ -1,9 +1,14 @@
 import { recipeFormatKeys } from './recipe-format.js'
 import { detachAiJsonValue } from './json-value.js'
-import { createAiToolContract, type AiToolContract } from './tool-contract.js'
+import {
+  createAiToolContract,
+  embedAiToolSchema,
+  type AiToolContract
+} from './tool-contract.js'
 import type { AiJsonValue } from './types.js'
 import type {
   AiRecipe,
+  AdmittedAiRecipe,
   AiRecipeAdmission,
   AiRecipeAdmissionOptions,
   AiRecipeIssue
@@ -20,8 +25,14 @@ import {
   recipeRecord,
   recipeOwn,
   recipeSchemaAt,
+  RecipeReferenceError,
   type RecipeSchema
 } from './recipe-schema.js'
+
+const admitted = new WeakMap<AdmittedAiRecipe, 'registered' | 'inline'>()
+
+export const recipeAdmissionMode = (recipe: AdmittedAiRecipe) =>
+  admitted.get(recipe)
 
 const nonempty = (value: unknown): value is string =>
   typeof value === 'string' && value.trim().length > 0
@@ -36,7 +47,8 @@ const reason = (error: unknown) =>
 /** Admission is inert. Dependencies are descriptors, never invoked implementations. */
 export const admitAiRecipe = (
   input: unknown,
-  options: AiRecipeAdmissionOptions
+  options: AiRecipeAdmissionOptions,
+  mode: 'registered' | 'inline' | 'sequence' = 'registered'
 ): AiRecipeAdmission => {
   if (
     !options.limits ||
@@ -117,7 +129,8 @@ export const admitAiRecipe = (
     !recipeRecord(detached) ||
     !exactKeys(detached, [
       ...recipeFormatKeys.proposal,
-      ...(recipeOwn(detached, 'iteration') ? ['iteration'] : [])
+      ...(recipeOwn(detached, 'iteration') ? ['iteration'] : []),
+      ...(recipeOwn(detached, 'checkpoints') ? ['checkpoints'] : [])
     ]) ||
     detached.format !== 1 ||
     !nonempty(detached.name) ||
@@ -137,7 +150,7 @@ export const admitAiRecipe = (
     return failure()
   }
 
-  if (detached.steps.length > options.limits.steps) {
+  if (mode === 'registered' && detached.steps.length > options.limits.steps) {
     issue('limit', '/steps', 'Finite step budget', 'Step limit exceeded')
 
     return failure()
@@ -194,7 +207,9 @@ export const admitAiRecipe = (
     ) {
       const source = outputs.get(binding.step)
 
-      return source ? recipeSchemaAt(source, binding.path) : { type: 'opaque' }
+      return source
+        ? recipeSchemaAt(source, binding.path, mode === 'sequence')
+        : { type: 'opaque' }
     }
 
     if (binding.kind === 'object' && recipeRecord(binding.fields)) {
@@ -252,13 +267,43 @@ export const admitAiRecipe = (
       issue(code, path, target.type, actual, step)
 
     try {
-      if (target.type === 'never') {
-        reject('The registered contract forbids this value')
+      // An object binding has a fixed set of keys. A negation requiring an
+      // absent key cannot match, independent of any late-bound values.
+      if (
+        binding.kind === 'object' &&
+        recipeRecord(binding.fields) &&
+        recipeRecord(target.raw) &&
+        recipeRecord(target.raw.not) &&
+        Array.isArray(target.raw.not.required) &&
+        target.raw.not.required.some(
+          (key) =>
+            typeof key === 'string' &&
+            !recipeOwn(binding.fields as Record<string, unknown>, key)
+        )
+      ) {
+        const { not: _excluded, ...remaining } = target.raw
+
+        checkBinding(
+          binding,
+          readRegisteredRecipeSchema(remaining),
+          path,
+          step,
+          depth + 1
+        )
 
         return
       }
 
-      if (target.type === 'opaque') {
+      if (target.type === 'never') {
+        reject('The registered contract forbids this value', 'value')
+
+        return
+      }
+
+      if (
+        target.type === 'opaque' &&
+        !(mode === 'sequence' && binding.kind === 'literal')
+      ) {
         reject('Opaque destination requires an explicit supported contract')
 
         return
@@ -268,7 +313,7 @@ export const admitAiRecipe = (
         binding.kind === 'literal' &&
         exactKeys(binding, recipeFormatKeys.bindings.literal)
       ) {
-        if (recipeCapturesValue(binding.value, target)) {
+        if (mode !== 'sequence' && recipeCapturesValue(binding.value, target)) {
           reject(
             'Runtime values must come from current input or prior output',
             'captured-value'
@@ -283,7 +328,7 @@ export const admitAiRecipe = (
         )
 
         if (validation !== undefined) {
-          reject(validation)
+          reject(validation, 'value')
         }
 
         return
@@ -298,7 +343,7 @@ export const admitAiRecipe = (
           exactKeys(binding, recipeFormatKeys.bindings.step))
       ) {
         if (typeof binding.path !== 'string') {
-          reject('Expected JSON Pointer')
+          reject('Expected JSON Pointer', 'reference')
 
           return
         }
@@ -314,12 +359,21 @@ export const admitAiRecipe = (
         }
 
         if (!source) {
-          reject('Output must belong to a valid earlier step')
+          reject('Output must belong to a valid earlier step', 'reference')
 
           return
         }
 
-        if (!recipeAssignable(recipeSchemaAt(source, binding.path), target)) {
+        if (
+          !recipeAssignable(
+            recipeSchemaAt(
+              source,
+              binding.path,
+              mode === 'sequence' && binding.kind === 'step'
+            ),
+            target
+          )
+        ) {
           reject('Source schema does not guarantee the destination contract')
         }
 
@@ -361,19 +415,38 @@ export const admitAiRecipe = (
 
         for (const key of target.required) {
           if (!recipeOwn(fields, key)) {
-            reject(`Missing required field ${key}`)
+            reject(`Missing required field ${key}`, 'value')
           }
         }
 
         for (const [key, child] of Object.entries(fields)) {
-          if (!recipeOwn(target.properties, key)) {
-            reject(`Unknown destination field ${key}`)
+          const extra =
+            typeof target.additionalProperties === 'object'
+              ? target.additionalProperties
+              : undefined
+          const field = recipeOwn(target.properties, key)
+            ? target.properties[key]
+            : extra
+
+          if (!field) {
+            reject(`Unknown destination field ${key}`, 'value')
+            continue
+          }
+
+          if (
+            target.propertyNames &&
+            options.validate(
+              key,
+              recipeValidationSchema(target.propertyNames)
+            ) !== undefined
+          ) {
+            reject(`Invalid destination key ${key}`, 'value')
             continue
           }
 
           checkBinding(
             child,
-            target.properties[key],
+            field,
             `${path}/fields/${key.replace(/~/g, '~0').replace(/\//g, '~1')}`,
             step,
             depth + 1
@@ -393,7 +466,7 @@ export const admitAiRecipe = (
           binding.items.length < (target.minItems ?? 0) ||
           binding.items.length > (target.maxItems ?? Infinity)
         ) {
-          reject('Array length violates the destination contract')
+          reject('Array length violates the destination contract', 'value')
         }
 
         if (target.uniqueItems && binding.items.length > 1) {
@@ -431,7 +504,10 @@ export const admitAiRecipe = (
 
       reject('Unsupported binding shape or destination type')
     } catch (error) {
-      reject(reason(error))
+      reject(
+        reason(error),
+        error instanceof RecipeReferenceError ? 'reference' : 'binding'
+      )
     }
   }
 
@@ -488,7 +564,8 @@ export const admitAiRecipe = (
       !contract ||
       contract.name !== step.tool ||
       contract.revision !== step.revision ||
-      contract.composition !== 'allowed'
+      (contract.composition !== 'allowed' &&
+        !(mode === 'sequence' && contract.composition === 'request'))
     ) {
       issue(
         'dependency',
@@ -503,7 +580,10 @@ export const admitAiRecipe = (
 
     try {
       const input = readRegisteredRecipeSchema(contract.inputSchema)
-      const output = readRegisteredRecipeSchema(contract.outputSchema)
+      const output = readRegisteredRecipeSchema(
+        contract.outputSchema,
+        mode === 'sequence' ? 'result' : 'binding'
+      )
       const canonical = createAiToolContract(contract)
       const previous = dependencies.get(contract.name)
 
@@ -539,10 +619,9 @@ export const admitAiRecipe = (
     }
   }
 
-  detached.steps.forEach((step, index) => checkStep(step, `/steps/${index}`))
-  if (recipeOwn(detached, 'iteration')) {
-    const iteration = detached.iteration
+  let expandedSteps = detached.steps.length
 
+  const checkIteration = (iteration: unknown, path: string) => {
     if (
       !recipeRecord(iteration) ||
       !exactKeys(iteration, recipeFormatKeys.iteration) ||
@@ -555,43 +634,46 @@ export const admitAiRecipe = (
     ) {
       issue(
         'format',
-        '/iteration',
+        path,
         'Unique bounded typed iteration with repairs',
         'Invalid iteration'
       )
 
-      return failure()
+      return
     }
 
     const rounds = iteration.maxIterations as number
-    const expanded =
-      detached.steps.length + 1 + rounds * (iteration.repairs.length + 1)
+    const expanded = expandedSteps + 1 + rounds * (iteration.repairs.length + 1)
 
-    if (!Number.isSafeInteger(expanded) || expanded > options.limits.steps) {
+    if (
+      !Number.isSafeInteger(expanded) ||
+      (mode === 'registered' && expanded > options.limits.steps)
+    ) {
       issue(
         'limit',
-        '/iteration/maxIterations',
+        `${path}/maxIterations`,
         'Worst-case step budget',
         'Expanded iteration exceeds step limit'
       )
 
-      return failure()
+      return
     }
 
+    expandedSteps = expanded
     ids.add(iteration.id)
     const outerOutputs = new Map(outputs)
 
     try {
       const state = readRecipeSchema(iteration.stateSchema)
 
-      checkBinding(iteration.state, state, '/iteration/state')
+      checkBinding(iteration.state, state, `${path}/state`)
       stateSchema = state
-      const checker = checkStep(iteration.check, '/iteration/check')
+      const checker = checkStep(iteration.check, `${path}/check`)
 
       if (!checker?.verification) {
         issue(
           'dependency',
-          '/iteration/check',
+          `${path}/check`,
           'Domain-owned verification capability',
           'Checker lacks verification metadata'
         )
@@ -617,7 +699,7 @@ export const admitAiRecipe = (
         ) {
           issue(
             'schema',
-            '/iteration/check',
+            `${path}/check`,
             'Required typed verification status and nonempty progress',
             'Verification output is not guaranteed'
           )
@@ -625,9 +707,9 @@ export const admitAiRecipe = (
       }
 
       iteration.repairs.forEach((step, index) =>
-        checkStep(step, `/iteration/repairs/${index}`)
+        checkStep(step, `${path}/repairs/${index}`)
       )
-      checkBinding(iteration.next, state, '/iteration/next')
+      checkBinding(iteration.next, state, `${path}/next`)
       stateSchema = undefined
       outputs.clear()
       for (const [id, schema] of outerOutputs) {
@@ -649,14 +731,140 @@ export const admitAiRecipe = (
     } catch (error) {
       issue(
         'schema',
-        '/iteration',
+        path,
         'Closed typed iteration state and check',
         reason(error)
       )
     }
   }
 
-  checkBinding(detached.output, outputSchema, '/output')
+  const checkpoints = new Map<string, { iteration: unknown; path: string }>()
+
+  if (recipeOwn(detached, 'checkpoints')) {
+    if (!Array.isArray(detached.checkpoints) || !detached.checkpoints.length) {
+      issue(
+        'format',
+        '/checkpoints',
+        'Nonempty checkpoint array',
+        'Invalid checkpoints'
+      )
+
+      return failure()
+    }
+
+    for (const [index, checkpoint] of detached.checkpoints.entries()) {
+      if (
+        !recipeRecord(checkpoint) ||
+        !exactKeys(checkpoint, ['after', 'iteration']) ||
+        !nonempty(checkpoint.after) ||
+        checkpoints.has(checkpoint.after) ||
+        !detached.steps.some(
+          (step) => recipeRecord(step) && step.id === checkpoint.after
+        )
+      ) {
+        issue(
+          'format',
+          `/checkpoints/${index}`,
+          'Unique existing preceding step',
+          'Invalid checkpoint boundary'
+        )
+
+        return failure()
+      }
+
+      checkpoints.set(checkpoint.after, {
+        iteration: checkpoint.iteration,
+        path: `/checkpoints/${index}/iteration`
+      })
+    }
+  }
+
+  detached.steps.forEach((step, index) => {
+    checkStep(step, `/steps/${index}`)
+    const checkpoint =
+      recipeRecord(step) && typeof step.id === 'string'
+        ? checkpoints.get(step.id)
+        : undefined
+
+    if (checkpoint) {
+      checkIteration(checkpoint.iteration, checkpoint.path)
+    }
+  })
+  if (recipeOwn(detached, 'iteration')) {
+    checkIteration(detached.iteration, '/iteration')
+  }
+
+  // A one-call sequence returns the declared output of its selected step.
+  // Leaf input validation and request leases still apply to every fresh value.
+  let resultSchema = detached.outputSchema
+
+  if (
+    mode === 'sequence' &&
+    recipeRecord(detached.output) &&
+    ['step', 'object'].includes(String(detached.output.kind))
+  ) {
+    try {
+      const selected = (binding: unknown, depth = 0): RecipeSchema => {
+        if (!recipeRecord(binding) || depth > options.limits.bindingDepth) {
+          throw Error('Invalid selected output binding')
+        }
+
+        if (
+          binding.kind === 'step' &&
+          typeof binding.step === 'string' &&
+          typeof binding.path === 'string'
+        ) {
+          const source = outputs.get(binding.step)
+
+          if (!source) {
+            throw Error('Unknown output step')
+          }
+
+          return recipeSchemaAt(source, binding.path, true)
+        }
+
+        if (binding.kind === 'object' && recipeRecord(binding.fields)) {
+          const properties = Object.fromEntries(
+            Object.entries(binding.fields).map(([key, child]) => [
+              key,
+              selected(child, depth + 1)
+            ])
+          )
+          const raw = {
+            type: 'object',
+            additionalProperties: false,
+            required: Object.keys(properties),
+            properties: Object.fromEntries(
+              Object.entries(properties).map(([key, child]) => [
+                key,
+                embedAiToolSchema(
+                  recipeValidationSchema(child),
+                  '#/properties/' + key.replace(/~/g, '~0').replace(/\//g, '~1')
+                )
+              ])
+            )
+          }
+
+          return {
+            type: 'object',
+            additionalProperties: false,
+            required: Object.keys(properties),
+            properties,
+            raw
+          }
+        }
+
+        throw Error('Selected sequence outputs require prior step fields')
+      }
+
+      resultSchema = recipeValidationSchema(selected(detached.output))
+    } catch (error) {
+      issue('binding', '/output', 'Declared prior step output', reason(error))
+    }
+  } else {
+    checkBinding(detached.output, outputSchema, '/output')
+  }
+
   if (issues.length) {
     return failure()
   }
@@ -687,7 +895,7 @@ export const admitAiRecipe = (
     description: detached.description,
     revision: detached.revision as number,
     inputSchema: detached.inputSchema,
-    outputSchema: detached.outputSchema,
+    outputSchema: resultSchema,
     effect,
     resources: [
       ...new Set(contracts.flatMap((contract) => [...contract.resources]))
@@ -708,12 +916,15 @@ export const admitAiRecipe = (
     }
   })
 
-  return Object.freeze({
-    ok: true,
-    value: Object.freeze({
-      recipe: detached as unknown as AiRecipe,
-      contract,
-      dependencies: Object.freeze(contracts)
-    })
+  const value = Object.freeze({
+    recipe: (mode === 'sequence'
+      ? { ...detached, outputSchema: resultSchema }
+      : detached) as unknown as AiRecipe,
+    contract,
+    dependencies: Object.freeze(contracts)
   })
+
+  admitted.set(value, mode === 'sequence' ? 'inline' : mode)
+
+  return Object.freeze({ ok: true, value })
 }

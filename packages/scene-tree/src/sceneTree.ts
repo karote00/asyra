@@ -1,3 +1,4 @@
+import { ElementPropertyInputError } from './element-property-input-error.js'
 import { MutationRecoveryError } from '@asyra/utils'
 import type {
   ComputedAttrs,
@@ -1217,9 +1218,7 @@ class SceneTree {
         const definition = definitionsByInputKey.get(requestedKey)
 
         if (!definition) {
-          throw new Error(
-            `[SceneTree] Element "${request.elementId}" has no property target for "${requestedKey}"`
-          )
+          throw new ElementPropertyInputError(request.elementId, requestedKey)
         }
 
         const propertyId = element.props.getPropId(definition.name)
@@ -4292,6 +4291,86 @@ class SceneTree {
     }
   }
 
+  private validateHierarchyMoveScope(parentIds: readonly string[]): void {
+    const checkedParents = new Set<string>()
+
+    for (const parentId of parentIds) {
+      if (checkedParents.has(parentId)) {
+        continue
+      }
+
+      checkedParents.add(parentId)
+      const parent = this.getElementById(parentId)
+
+      if (!parent) {
+        throw new Error(
+          `[SceneTree] Invalid canonical hierarchy: missing parent "${parentId}"`
+        )
+      }
+
+      const children = this.getContainerChildren(
+        parent,
+        `Move parent "${parentId}"`
+      )
+      const membership = new Set<string>()
+
+      for (const childId of children) {
+        const child = this.getElementById(childId)
+
+        if (
+          membership.has(childId) ||
+          !child ||
+          child.get('parentId') !== parentId
+        ) {
+          throw new Error(
+            `[SceneTree] Invalid canonical hierarchy: invalid membership for "${childId}"`
+          )
+        }
+
+        membership.add(childId)
+      }
+
+      const ancestors = new Set<string>()
+      let current = parent
+
+      while (current.get('type') !== EntityTypes.WORKSPACE) {
+        const currentId = current.get('id')
+
+        if (ancestors.has(currentId)) {
+          throw new Error(
+            `[SceneTree] Invalid canonical hierarchy: cycle at "${currentId}"`
+          )
+        }
+
+        ancestors.add(currentId)
+        const ancestorId = current.get('parentId')
+        const ancestor = this.getElementById(ancestorId)
+
+        if (!ancestor) {
+          throw new Error(
+            `[SceneTree] Invalid canonical hierarchy: missing parent "${ancestorId}"`
+          )
+        }
+
+        const siblings = this.getContainerChildren(
+          ancestor,
+          `Move ancestor "${ancestorId}"`
+        )
+
+        if (
+          siblings.indexOf(currentId) < 0 ||
+          siblings.indexOf(currentId) !== siblings.lastIndexOf(currentId)
+        ) {
+          throw new Error(
+            `[SceneTree] Invalid canonical hierarchy: invalid membership for "${currentId}"`
+          )
+        }
+
+        current = ancestor
+      }
+    }
+  }
+
   private assertMoveDoesNotCreateCycle(
     elementIds: readonly string[],
     targetParentId: string
@@ -4407,8 +4486,6 @@ class SceneTree {
     request: MoveHierarchyRequest,
     options?: EVENT_OPTIONS
   ): MoveHierarchyResult {
-    this.validateCanonicalHierarchy()
-
     if (
       !request ||
       !Array.isArray(request.elementIds) ||
@@ -4493,6 +4570,8 @@ class SceneTree {
       targetParent,
       `Target "${request.targetParentId}"`
     )
+
+    this.validateHierarchyMoveScope([sourceParentId, request.targetParentId])
     const targetBase = targetChildren.filter(
       (childId) => !requestedIdSet.has(childId)
     )
@@ -4550,7 +4629,6 @@ class SceneTree {
     moves: readonly HierarchyMove[],
     options?: EVENT_OPTIONS
   ): boolean {
-    this.validateCanonicalHierarchy()
     if (!Array.isArray(moves) || moves.length === 0) {
       return false
     }
@@ -4616,6 +4694,7 @@ class SceneTree {
       this.getElementById(targetParentId) as ElementInstanceTypes,
       `Replay target "${targetParentId}"`
     )
+    this.validateHierarchyMoveScope([sourceParentId, targetParentId])
     this.assertMoveDoesNotCreateCycle(elementIds, targetParentId)
 
     const operationChangeStart = this.changes.length

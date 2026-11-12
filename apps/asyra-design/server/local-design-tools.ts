@@ -386,13 +386,9 @@ export const createLocalDesignTools = (
     ['available', 'artifactId', 'applicable', 'elementCount', 'findings']
   )
   const recoveryFields = {
-    preparationInput: preparedOutputSchema.properties.preparationInput,
+    ...preparedOutputSchema.properties,
     available: { type: 'boolean' },
-    applicable: { type: 'boolean' },
-    artifactId: toolRequestReference,
     elementCount: { type: 'integer', minimum: 0 },
-    findings: { type: 'array' },
-    review: { type: 'object' },
     message: { type: 'string' },
     code: { type: 'string' },
     settlement: { type: 'string' },
@@ -465,15 +461,27 @@ export const createLocalDesignTools = (
       if (
         !Array.isArray(value.keys) ||
         !value.keys.length ||
-        value.keys.some(
-          (key) =>
-            typeof key !== 'string' || !Object.hasOwn(design.keyToId, key)
-        )
+        value.keys.some((key) => typeof key !== 'string')
       ) {
         throw new DesignReferenceError()
       }
 
       keys = value.keys as string[]
+      const missing = keys.find((key) => !Object.hasOwn(design.keyToId, key))
+
+      if (missing !== undefined) {
+        const examples = session
+          .selectKeys(value.artifactId, missing)
+          .slice(0, 3)
+
+        throw new LocalToolInputError(
+          `Unknown exact artifact key ${JSON.stringify(missing)}.` +
+            (examples.length
+              ? ` Matching keys include ${examples.join(', ')}.`
+              : ''),
+          'REFERENCE_UNAVAILABLE'
+        )
+      }
     } else {
       if (
         value.keyPrefix !== undefined &&
@@ -557,6 +565,16 @@ export const createLocalDesignTools = (
   }
 
   return {
+    canOverlapPreparation(name: string, input: unknown) {
+      return (
+        name === AiDesignToolIds.PREPARE_DESIGN &&
+        record(input) &&
+        'draft' in input &&
+        !('repair' in input) &&
+        !('materialSourceId' in input)
+      )
+    },
+
     expandedNodeLimit,
     capacityOutputSchema,
     recoveryFields,
@@ -781,6 +799,7 @@ export const createLocalDesignTools = (
               ]
             },
             name: AiDesignToolIds.PREPARE_DESIGN,
+            revision: 4,
             executionAccess: LocalToolAccess.INDEPENDENT,
             description:
               designRepresentationGuidance +
@@ -870,6 +889,34 @@ export const createLocalDesignTools = (
                   items: { ...toolRequestReference, maxLength: 160 }
                 }
               }
+            }
+          },
+          {
+            type: 'function',
+            ...toolSemantics(
+              toolResultObject({
+                motifTemplates: {
+                  ...designConstructionSchema.motifTemplates,
+                  additionalProperties: surfaceMotifsSchema
+                },
+                fillTemplates: designFillTemplatesSchema,
+                linearFields: designConstructionSchema.linearFields,
+                sharedFills: designSharedFillsSchema
+              }),
+              'read',
+              ['request-artifacts']
+            ),
+            composition: 'allowed' as const,
+            name: AiDesignToolIds.READ_DESIGN_TEMPLATES,
+            revision: 3,
+            executionAccess: LocalToolAccess.INDEPENDENT,
+            description:
+              'Read public authoring definitions from an owned prepared artifact. In execute_design, bind artifactId from the preparation step and retain this result under a name in App conversation context. Later drafts bind motifTemplates, fillTemplates, linearFields and sharedFills from that named value; no model transfer is needed. Definitions are immutable value snapshots, not live document links; each preparation creates its own shared Fill sources. Use native shared properties for persistent linkage.',
+            inputSchema: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['artifactId'],
+              properties: { artifactId: toolRequestReference }
             }
           }
         ]
@@ -1003,6 +1050,29 @@ export const createLocalDesignTools = (
     ): Promise<string> => {
       if (signal.aborted) {
         throw new Error('Design preparation cancelled')
+      }
+
+      if (enabled && name === AiDesignToolIds.READ_DESIGN_TEMPLATES) {
+        if (
+          !record(args) ||
+          Object.keys(args).length !== 1 ||
+          typeof args.artifactId !== 'string'
+        ) {
+          throw new LocalToolInputError('Provide artifactId.')
+        }
+
+        const source = session.recipe(args.artifactId).recipe
+
+        if (!record(source)) {
+          throw new DesignReferenceError()
+        }
+
+        return JSON.stringify({
+          motifTemplates: source.motifTemplates ?? {},
+          fillTemplates: source.fillTemplates ?? {},
+          linearFields: source.linearFields ?? {},
+          sharedFills: source.sharedFills ?? {}
+        })
       }
 
       if (enabled && name === AiDesignToolIds.RETAIN_DESIGN_TARGETS) {
@@ -1190,23 +1260,33 @@ export const createLocalDesignTools = (
           })
         }
 
+        const prepared = await session.prepareAsync(
+          draft,
+          signal,
+          record(args.repair) &&
+            typeof args.repair.draftId === 'string' &&
+            typeof args.repair.partition === 'number'
+            ? {
+                draftId: args.repair.draftId,
+                partition: args.repair.partition,
+                ...(typeof args.repair.continueFromArtifact === 'string'
+                  ? { continueFromArtifact: args.repair.continueFromArtifact }
+                  : {})
+              }
+            : undefined
+        )
+
         return JSON.stringify({
-          available: true,
-          ...(await session.prepareAsync(
-            draft,
-            signal,
-            record(args.repair) &&
-              typeof args.repair.draftId === 'string' &&
-              typeof args.repair.partition === 'number'
-              ? {
-                  draftId: args.repair.draftId,
-                  partition: args.repair.partition,
-                  ...(typeof args.repair.continueFromArtifact === 'string'
-                    ? { continueFromArtifact: args.repair.continueFromArtifact }
-                    : {})
-                }
-              : undefined
-          )),
+          available: prepared.applicable,
+          ...prepared,
+          ...(!prepared.applicable
+            ? {
+                settlement: 'not-started',
+                recovery: 'correct_input',
+                message:
+                  'Resolve the reported preparation findings in the source before applying. No canvas operation has started; retain successful earlier parts.'
+              }
+            : {}),
           preparationInput:
             record(args.repair) && typeof args.repair.draftId === 'string'
               ? {

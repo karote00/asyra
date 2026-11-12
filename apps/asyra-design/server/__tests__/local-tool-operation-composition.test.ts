@@ -37,7 +37,7 @@ const proposal = {
     {
       id: 'create',
       tool: 'design_operations.api_element_createElements',
-      revision: 8,
+      revision: 9,
       input: {
         kind: 'object',
         fields: {
@@ -66,7 +66,7 @@ const proposal = {
     {
       id: 'select',
       tool: 'design_operations.api_selection_selectElements',
-      revision: 4,
+      revision: 5,
       input: {
         kind: 'object',
         fields: {
@@ -262,12 +262,12 @@ it('composes actual canonical basic operations and hands creation identities thr
 
     expect(semantic.apis[0].recipeDependency).toEqual({
       name: proposal.steps[0].tool,
-      revision: 8,
+      revision: 9,
       execution: {
         kind: 'registered-tool',
         namespace: 'tool_library',
         tool: 'invoke_tool',
-        arguments: { name: proposal.steps[0].tool, revision: 8 }
+        arguments: { name: proposal.steps[0].tool, revision: 9 }
       },
       definition: {
         tool: 'describe_design_apis',
@@ -286,7 +286,7 @@ it('composes actual canonical basic operations and hands creation identities thr
 
     expect(lookup.tools[0]).toMatchObject({
       registeredName: proposal.steps[0].tool,
-      revision: 8,
+      revision: 9,
       composition: 'allowed',
       execution: {
         kind: 'registered-tool',
@@ -302,7 +302,7 @@ it('composes actual canonical basic operations and hands creation identities thr
       kind: 'registered-tool',
       namespace: 'tool_library',
       tool: 'invoke_tool',
-      arguments: { name: proposal.steps[0].tool, revision: 8 }
+      arguments: { name: proposal.steps[0].tool, revision: 9 }
     })
   } finally {
     await app.host.dispose()
@@ -454,7 +454,9 @@ const inspectionHandoffFixture = () => {
         let result: unknown
 
         if (call.name === AiActionNames.REVIEW_DESIGN) {
-          const target = String(call.arguments.elementId)
+          const target = String(
+            (call.arguments as { elementId: string }).elementId
+          )
 
           checked.push(target)
           if (state.checkFailure) {
@@ -468,7 +470,9 @@ const inspectionHandoffFixture = () => {
             evidence: { sessionId: 'handoff', receiptId: target, revision: 1 }
           }
         } else if (call.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE) {
-          const evidence = call.arguments.evidence as { receiptId: string }
+          const evidence = (
+            call.arguments as { evidence: { receiptId: string } }
+          ).evidence
 
           validated.push(evidence.receiptId)
           if (state.validationFailure) {
@@ -599,8 +603,8 @@ const inspectionHandoffFixture = () => {
       ...(ids ? { ids } : {})
     })
 
-  const done = () =>
-    owner.settleOutcome({
+  const done = () => {
+    const result = owner.settleOutcome({
       batchId: 'done',
       actions: [
         {
@@ -610,7 +614,14 @@ const inspectionHandoffFixture = () => {
           summary: 'Done'
         }
       ]
-    }).actions[0].arguments.outcome
+    }).actions[0].arguments
+
+    if (!result || typeof result !== 'object' || !('outcome' in result)) {
+      throw Error('Missing final outcome')
+    }
+
+    return result.outcome
+  }
 
   return {
     owner,
@@ -708,7 +719,7 @@ it.each([
     ['a']
   ]
 ] as const)(
-  'checks actual canonical %s targets in a fresh request',
+  'preserves canonical %s execution without automatic geometry checks',
   async (name, args, value, targets) => {
     const f = inspectionHandoffFixture()
 
@@ -716,7 +727,8 @@ it.each([
     f.changes.set(name, { elementIds: [...targets] })
     await f.write(name, args)
     expect(f.calls).toContain(name)
-    expect(f.checked).toEqual(expect.arrayContaining([...targets]))
+    expect(f.checked).toEqual([])
+    expect(f.done()).toBe('completed')
   }
 )
 
@@ -729,7 +741,7 @@ it('does not turn a read result field into a mutation inspection target', async 
     id: 'a',
     compositionId: 'unrelated-payload'
   })
-  await f.invoke('execute_design_batch', {
+  await f.invoke('execute_design', {
     inspection: 'defer',
     operations: [
       {
@@ -739,7 +751,7 @@ it('does not turn a read result field into a mutation inspection target', async 
       { name: f.api('core.getElementData'), arguments: { elementId: 'a' } }
     ]
   })
-  expect(f.checked).toEqual(['a'])
+  expect(f.checked).toEqual([])
 })
 
 it('retires an already measured failure when its target is confirmed removed', async () => {
@@ -773,12 +785,7 @@ it('returns existing unresolved findings when a current measurement is reused', 
   f.state.findings = [{ kind: 'text-overflow', elementId: 'a' }]
   await f.review('a')
   f.checked.length = 0
-  const result = await f.owner.finishInspection(
-    new Set(['a']),
-    undefined,
-    true,
-    f.signal
-  )
+  const result = await f.read(['measurement:a'])
 
   expect(f.checked).toEqual([])
   expect(JSON.stringify(result)).toMatch(/text-overflow|measurement:a/)
@@ -791,7 +798,7 @@ it('preserves known evidence as unresolved when a subsequent check is unavailabl
   await f.review('a')
   f.state.current = false
   f.state.checkFailure = true
-  await f.owner.finishInspection(new Set(['a']), undefined, true, f.signal)
+  await expect(f.review('a')).rejects.toThrow('Mechanical service unavailable')
   const result = f.checkResults.read({
     ids: ['measurement:a'],
     includePassed: true
@@ -855,7 +862,11 @@ it('stops before new checks when the invocation is already cancelled', async () 
 
   controller.abort()
   await expect(
-    f.owner.finishInspection(new Set(['a']), undefined, true, controller.signal)
+    f.owner.call(
+      AiActionNames.REVIEW_DESIGN,
+      { arguments: { elementId: 'a' } },
+      controller.signal
+    )
   ).rejects.toThrow()
   expect(f.checked).toEqual([])
 })
@@ -872,7 +883,7 @@ it.each([
   expect(f.done()).toBe('completed')
 })
 
-it('surfaces a missing mechanical service without replaying the acknowledged write', async () => {
+it('does not require a mechanical service for an acknowledged write', async () => {
   const f = inspectionHandoffFixture()
 
   f.state.checkFailure = true
@@ -883,10 +894,11 @@ it('surfaces a missing mechanical service without replaying the acknowledged wri
   })
 
   expect(f.calls).toEqual(['element.createElements'])
-  expect(result.measurementIssues).toEqual([
-    expect.objectContaining({ elementId: 'a' })
-  ])
-  expect(f.done()).toBe('unsupported')
+  expect(result.measurementIssues).toBeUndefined()
+  expect(f.checked).toEqual([])
+  expect(f.done()).toBe('completed')
+  await expect(f.review('a')).rejects.toThrow('Mechanical service unavailable')
+  expect(f.calls).toEqual(['element.createElements'])
 })
 
 it('reuses a current passing measurement without recomputation', async () => {
@@ -894,7 +906,7 @@ it('reuses a current passing measurement without recomputation', async () => {
 
   await f.review('a')
   f.checked.length = 0
-  await f.owner.finishInspection(new Set(['a']), undefined, true, f.signal)
+  await f.read(['measurement:a'])
   expect(f.checked).toEqual([])
   expect(f.validated).toEqual(['a'])
 })
@@ -911,7 +923,7 @@ it('invalidates prior success when an explicit mechanical recheck fails', async 
   ).not.toBe('pass')
 })
 
-it('can recover a stale measurement at the next coherent boundary', async () => {
+it('recovers a stale measurement when explicitly rechecked', async () => {
   const f = inspectionHandoffFixture()
 
   await f.review('a')
@@ -919,7 +931,7 @@ it('can recover a stale measurement at the next coherent boundary', async () => 
   await f.read(['measurement:a'])
   f.state.validationFailure = false
   f.checked.length = 0
-  await f.owner.finishInspection(new Set(['a']), undefined, true, f.signal)
+  await f.review('a')
   expect(
     f.checkResults.read({ ids: ['measurement:a'], includePassed: true })
       .items[0].status
@@ -978,13 +990,8 @@ it.each([
       createOptions: [{ type: 'rect' }]
     })
 
-    expect(first.measurementIssues).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          recovery: expect.stringMatching(/Stop this request/)
-        })
-      ])
-    )
+    expect(first.actionResults).toHaveLength(1)
+    expect(first.checks.firstPendingId).toMatch(/^mutation-scope:/)
     f.state[mode] = false
     await f.review('a')
     const retained = await f.read([first.checks.firstPendingId])
@@ -993,6 +1000,7 @@ it.each([
       origin: 'tool',
       status: 'unverified'
     })
+    expect(retained.items[0].evidence).toContain('Stop this request')
     const blocked = await f.write('element.createElements', {
       createOptions: [{ type: 'rect' }]
     })
@@ -1004,12 +1012,11 @@ it.each([
     })
     expect(f.calls).toEqual(['element.createElements'])
     expect(f.done()).toBe('unsupported')
-    expect(retained.items[0].evidence).toContain('Stop this request')
   }
 )
 
 it.each([false, true])(
-  'keeps large automatic mechanical results retained with compact delivery, findings=%s',
+  'retains explicit mechanical findings without adding automatic checks, findings=%s',
   async (findings) => {
     const f = inspectionHandoffFixture()
 
@@ -1031,9 +1038,11 @@ it.each([false, true])(
         (entry: { actionName: string }) => entry.actionName
       )
     ).toEqual([f.api('element.createElements')])
-    expect(result.checks.counts[findings ? 'fail' : 'pass']).toBe(2)
+    expect(result.checks).toBeUndefined()
     expect(JSON.stringify(result).length).toBeLessThan(3000)
-    expect(f.checked).toEqual(['a', 'b'])
+    expect(f.checked).toEqual([])
+    await f.review('a')
+    await f.review('b')
     const read = await f.read(['measurement:a'])
 
     expect(JSON.parse(read.items[0].evidence).findings).toEqual(
@@ -1044,7 +1053,7 @@ it.each([false, true])(
 
     expect(explicit.actionResults[0].result.findings).toEqual(f.state.findings)
     f.state.current = false
-    const full = await f.invoke('execute_design_batch', {
+    const full = await f.invoke('execute_design', {
       operations: [
         {
           name: f.api('element.createElements'),
@@ -1065,7 +1074,7 @@ it.each([false, true])(
         .map(
           (entry: { result: { findings: unknown[] } }) => entry.result.findings
         )
-    ).toEqual([f.state.findings, f.state.findings])
+    ).toEqual([])
   }
 )
 
@@ -1100,7 +1109,9 @@ it('does not clear unacknowledged write settlement with a later geometry pass or
     createOptions: [{ type: 'rect' }]
   })
 
-  expect(result.checks.counts.pass).toBe(1)
+  expect(result.actionResults).toHaveLength(1)
+  expect(next.done()).toBe('completed')
+  expect(result.checks).toBeUndefined()
   expect(next.calls).toHaveLength(1)
 })
 
@@ -1123,6 +1134,7 @@ it('delivers terminal scope recovery on the first lost mutation acknowledgement'
 
 it.each([
   'repair',
+  'inline',
   'stuck',
   'decision',
   'cancel',
@@ -1177,8 +1189,8 @@ it.each([
     const measured = vi.fn(review)
     const actions = [
       createDesignReviewAction(
-        async (...args) => ({
-          ...(await measured(...args)),
+        async (elementId, signal) => ({
+          ...(await measured(elementId, signal)),
           evidence: { sessionId: 'repair-fixture', revision: 1 }
         }),
         () => true
@@ -1266,8 +1278,10 @@ it.each([
               resolveBatch: (value) => value
             },
             async (batch) => {
-              const receipt: import('../../src/ai/action-batch-protocol').AiBatchReceipt =
-                { context: null, actionResults: [] }
+              const receipt: {
+                context: null
+                actionResults: import('../../src/ai/action-batch-protocol').AiBatchReceipt['actionResults'][number][]
+              } = { context: null, actionResults: [] }
 
               for (const call of batch.actions) {
                 const action = actions.find((item) => item.name === call.name)
@@ -1445,21 +1459,57 @@ it.each([
     }
 
     try {
-      const admitted = await invoke('tool_library.submit_tool', {
-        submissionId: 'repair-container',
-        proposal: recipe
-      })
+      const input = {
+        target: 'frame',
+        elementIds: ['child'],
+        values: { x: 50, y: 10 }
+      }
 
-      expect(admitted, JSON.stringify(admitted)).toMatchObject({ ok: true })
-      const execution = invoke('tool_library.invoke_tool', {
-        name: recipe.name,
-        revision: 1,
-        input: {
-          target: 'frame',
-          elementIds: ['child'],
-          values: { x: 50, y: 10 }
-        }
-      })
+      if (mode !== 'inline') {
+        const admitted = await invoke('tool_library.submit_tool', {
+          submissionId: 'repair-container',
+          proposal: recipe
+        })
+
+        expect(admitted, JSON.stringify(admitted)).toMatchObject({ ok: true })
+      }
+
+      const execution =
+        mode === 'inline'
+          ? invoke('design_operations.execute_design', {
+              operations: [
+                {
+                  name: initialRead.name,
+                  arguments: { elementId: input.target }
+                }
+              ],
+              inspection: 'defer',
+              iteration: {
+                id: 'verified',
+                stateSchema: { type: 'null' },
+                state: null,
+                check: {
+                  name: checker.registeredName,
+                  arguments: { arguments: { elementId: input.target } }
+                },
+                repairs: [
+                  {
+                    name: repair.name,
+                    arguments: {
+                      elementIds: input.elementIds,
+                      values: input.values
+                    }
+                  }
+                ],
+                next: { kind: 'state', path: '' },
+                maxIterations: 2
+              }
+            })
+          : invoke('tool_library.invoke_tool', {
+              name: recipe.name,
+              revision: 1,
+              input
+            })
 
       if (mode === 'cancel') {
         await expect(execution).rejects.toMatchObject({ name: 'AbortError' })
@@ -1477,11 +1527,25 @@ it.each([
       expect(
         calls.filter((name) => name === 'api_core_getElementMetadata')
       ).toHaveLength(1)
-      if (mode === 'repair') {
+      if (mode === 'repair' || mode === 'inline') {
         expect(result, JSON.stringify(result)).toMatchObject({
-          execution: { status: 'success', value: 'pass' },
-          storage: { status: 'saved' }
+          execution: {
+            status: 'success',
+            value:
+              mode === 'inline'
+                ? {
+                    actionResults: [
+                      { result: { verification: { status: 'pass' } } }
+                    ]
+                  }
+                : 'pass'
+          },
+          ...(mode === 'repair' ? { storage: { status: 'saved' } } : {})
         })
+        if (mode === 'inline') {
+          expect(entries.size).toBe(0)
+        }
+
         expect((await review('frame')).findings).toEqual([])
         expect(geometry.child.x).toBe(50)
       } else {
@@ -1641,7 +1705,7 @@ it('continues discovery through a rejected library submission when the actual ca
 
   try {
     const first = await app.invoke('design_operations.describe_design_apis', {
-      category: 'tools'
+      category: 'core'
     })
 
     expect(first.next).toBeDefined()
@@ -1658,20 +1722,17 @@ it('continues discovery through a rejected library submission when the actual ca
     expect(submission).toMatchObject({ ok: false, code: 'admission' })
     expect(app.host.revision).toBeGreaterThan(revision)
     expect(app.host.definitions()).toEqual(catalog)
-    const next = await app.invoke(
-      'design_operations.describe_design_apis',
-      first.next.arguments
-    )
+    const nextReply = await app.host.invoke({
+      name: 'design_operations.describe_design_apis',
+      input: first.next.arguments
+    })
+    const next = JSON.parse(nextReply.text)
 
-    expect(
-      next.toolOutcome,
-      JSON.stringify({
-        code: next.code,
-        message: next.message,
-        outcome: next.toolOutcome
-      })
-    ).toMatchObject({ status: 'success' })
-    expect(next.offset).toBe(first.apis.length + first.tools.length)
+    expect(nextReply.outcome, nextReply.text).toMatchObject({
+      status: 'success'
+    })
+    expect(first.tools).toBeUndefined()
+    expect(next.offset).toBe(first.apis.length)
     expect(next.count).toBe(first.count)
     expect(app.create).not.toHaveBeenCalled()
     expect(app.select).not.toHaveBeenCalled()

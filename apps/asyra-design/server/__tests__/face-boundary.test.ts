@@ -307,23 +307,27 @@ it('delivers and executes the selected boundary example with lower total bytes a
       batch: import('../../src/ai/action-batch-protocol').AiActionBatch
     ) => ({
       context: {},
-      actionResults: batch.actions.map((a) => {
-        const design = admitPreparedDesignDelivery(
-          (a.arguments as { design: unknown }).design
-        )
+      actionResults: batch.actions.map(
+        (
+          a
+        ): import('../../src/ai/action-batch-protocol').AiBatchReceipt['actionResults'][number] => {
+          const design = admitPreparedDesignDelivery(
+            (a.arguments as { design: unknown }).design
+          )
 
-        applied.push(design)
+          applied.push(design)
 
-        return {
-          actionId: a.id,
-          actionName: a.name,
-          result: {
-            status: 'complete',
-            appliedElementCount: design.entries.length,
-            compositionId: design.entries[0].descriptor.id
+          return {
+            actionId: a.id,
+            actionName: a.name,
+            result: {
+              status: 'complete',
+              appliedElementCount: design.entries.length,
+              compositionId: design.entries[0].descriptor.id
+            }
           }
         }
-      })
+      )
     })
   )
   const operations = createLocalOperationTools(actions, designs, execute, {
@@ -351,22 +355,22 @@ it('delivers and executes the selected boundary example with lower total bytes a
   const tool = JSON.parse(raw).tools[0]
 
   expect(JSON.stringify(tool.usageGuide.parameters)).toContain('face')
-  const example = tool.invocationExample.invocation.arguments
+  expect(tool.invocationExample.invocation.tool).toBe('execute_design')
+  const example =
+    tool.invocationExample.invocation.arguments.operations[0].arguments
 
   expect(JSON.stringify(example)).toContain('"boundary":{"face":')
   const definition = main.definitions[0]
 
   expect(
-    JSON.parse(
-      (
-        await invokeLocalTool(
-          main,
-          definition,
-          { ...example, inspection: 'defer' },
-          signal
-        )
-      ).text
-    ).toolOutcome.settlement
+    (
+      await invokeLocalTool(
+        main,
+        definition,
+        { ...example, inspection: 'defer' },
+        signal
+      )
+    ).outcome?.settlement
   ).toBe('completed')
   let baselineBytes =
     fixture.baseline.guideBytes +
@@ -383,9 +387,7 @@ it('delivers and executes the selected boundary example with lower total bytes a
       signal
     )
 
-    expect(JSON.parse(baselineReply.text).toolOutcome.settlement).toBe(
-      'completed'
-    )
+    expect(baselineReply.outcome?.settlement).toBe('completed')
     baselineBytes +=
       Buffer.byteLength(JSON.stringify(baselineInput)) +
       Buffer.byteLength(baselineReply.text)
@@ -396,7 +398,7 @@ it('delivers and executes the selected boundary example with lower total bytes a
       Buffer.byteLength(JSON.stringify(input)) + Buffer.byteLength(reply.text)
     const output = JSON.parse(reply.text)
 
-    expect(output.toolOutcome.settlement).toBe('completed')
+    expect(reply.outcome?.settlement).toBe('completed')
     expect(applied.at(-1)?.entries).toEqual(
       prepareDesign(fixture.inputs[i].draft, output.artifactId).entries
     )
@@ -481,41 +483,45 @@ it('continues only the failed retained part without resending geometry or recrea
       batch: import('../../src/ai/action-batch-protocol').AiActionBatch
     ) => ({
       context: {},
-      actionResults: batch.actions.map((a) => {
-        if (a.name === AiActionNames.REVIEW_DESIGN) {
+      actionResults: batch.actions.map(
+        (
+          a
+        ): import('../../src/ai/action-batch-protocol').AiBatchReceipt['actionResults'][number] => {
+          if (a.name === AiActionNames.REVIEW_DESIGN) {
+            return {
+              actionId: a.id,
+              actionName: a.name,
+              result: {
+                complete: true,
+                findings: [],
+                measuredTextIds: [],
+                evidence: { sessionId: 'test', revision: 1 }
+              }
+            }
+          }
+
+          calls++
+          const design = admitPreparedDesignDelivery(
+            (a.arguments as { design: unknown }).design
+          )
+
+          applied.push(
+            ...design.entries
+              .slice(design.continuation ? 1 : 0)
+              .map((e) => e.descriptor.id)
+          )
+
           return {
             actionId: a.id,
             actionName: a.name,
             result: {
-              complete: true,
-              findings: [],
-              measuredTextIds: [],
-              evidence: { sessionId: 'test', revision: 1 }
+              status: 'complete',
+              appliedElementCount: design.entries.length,
+              compositionId: design.entries[0].descriptor.id
             }
           }
         }
-
-        calls++
-        const design = admitPreparedDesignDelivery(
-          (a.arguments as { design: unknown }).design
-        )
-
-        applied.push(
-          ...design.entries
-            .slice(design.continuation ? 1 : 0)
-            .map((e) => e.descriptor.id)
-        )
-
-        return {
-          actionId: a.id,
-          actionName: a.name,
-          result: {
-            status: 'complete',
-            appliedElementCount: design.entries.length,
-            compositionId: design.entries[0].descriptor.id
-          }
-        }
-      })
+      )
     })
   )
   const main = createLocalDesignWorkflow(designs, operations)
@@ -523,14 +529,12 @@ it('continues only the failed retained part without resending geometry or recrea
   const invoke = async (
     input: unknown,
     signal = new AbortController().signal
-  ) =>
-    JSON.parse(
-      (await invokeLocalTool(main, main.definitions[0], input, signal)).text
-    )
+  ) => invokeLocalTool(main, main.definitions[0], input, signal)
 
-  const first = await invoke({ ...compact(0), inspection: 'defer' })
+  const firstReply = await invoke({ ...compact(0), inspection: 'defer' })
+  const first = JSON.parse(firstReply.text)
 
-  expect(first.toolOutcome.status).toBe('partial')
+  expect(firstReply.outcome?.status).toBe('partial')
   const prefix = [...applied]
 
   expect(first.recoveryInvocation, JSON.stringify(first)).toBeDefined()
@@ -542,7 +546,7 @@ it('continues only the failed retained part without resending geometry or recrea
   expect(applied).toEqual(prefix)
   const result = await invoke(retry)
 
-  expect(result.toolOutcome.settlement).toBe('completed')
+  expect(result.outcome?.settlement).toBe('completed')
   expect(applied.slice(0, prefix.length)).toEqual(prefix)
   expect(new Set(applied).size).toBe(applied.length)
   expect(applied).toHaveLength(2311)
@@ -648,15 +652,15 @@ it('recovers recorded ambiguous face keys through returned field repair without 
   const main = createLocalDesignWorkflow(designs, operations)
   const signal = new AbortController().signal
 
-  const call = async (input: unknown) =>
-    JSON.parse(
-      (await invokeLocalTool(main, main.definitions[0], input, signal)).text
-    )
+  const call = (input: unknown) =>
+    invokeLocalTool(main, main.definitions[0], input, signal)
 
-  const input = { ...collision.input, inspection: 'defer' }
-  const failure = await call(input)
+  const { plan: _plan, ...currentInput } = collision.input
+  const input = { ...currentInput, inspection: 'defer' }
+  const failureReply = await call(input)
+  const failure = JSON.parse(failureReply.text)
 
-  expect(failure.toolOutcome.settlement).toBe('not-started')
+  expect(failureReply.outcome?.settlement).toBe('not-started')
   expect(execute).not.toHaveBeenCalled()
   expect(failure.conflicts, JSON.stringify(failure)).toEqual([
     { key: 'podium-x', paths: ['/children/0/key', '/children/3/key'] },
@@ -673,9 +677,10 @@ it('recovers recorded ambiguous face keys through returned field repair without 
       value: `${item.key}-grid`
     })
   )
-  const result = await call(repair)
+  const resultReply = await call(repair)
+  const result = JSON.parse(resultReply.text)
 
-  expect(result.toolOutcome.settlement).toBe('completed')
+  expect(resultReply.outcome?.settlement).toBe('completed')
   expect(execute).toHaveBeenCalledTimes(1)
   const expected = structuredClone(collision.input.draft)
 

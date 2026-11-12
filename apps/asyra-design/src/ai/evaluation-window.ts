@@ -75,8 +75,12 @@ export const projectEvaluationReport = (turn: {
 /** Explicit local evaluation policy; absent configuration leaves ordinary work unchanged. */
 export interface EvaluationWindow {
   readonly workDeadlineAt: number
-  readonly reportTimeoutMs: number
+  /** Null waits for native report completion without a duration limit. */
+  readonly reportTimeoutMs: number | null
+  readonly keepReportSession?: boolean
   readonly expandedNodeLimit?: 2000
+  readonly announceWorkDeadline?: boolean
+  readonly reportInstructions?: string
 }
 
 export const readEvaluationWindow = (
@@ -90,17 +94,30 @@ export const readEvaluationWindow = (
     throw new Error('Invalid evaluation window')
   }
 
-  const { workDeadlineAt, reportTimeoutMs, expandedNodeLimit } =
-    value as EvaluationWindow
+  const {
+    workDeadlineAt,
+    reportTimeoutMs,
+    keepReportSession,
+    expandedNodeLimit,
+    announceWorkDeadline,
+    reportInstructions
+  } = value as EvaluationWindow
 
   if (
+    (keepReportSession !== undefined &&
+      typeof keepReportSession !== 'boolean') ||
+    (announceWorkDeadline !== undefined &&
+      typeof announceWorkDeadline !== 'boolean') ||
+    (reportInstructions !== undefined &&
+      (typeof reportInstructions !== 'string' || !reportInstructions.trim())) ||
     (expandedNodeLimit !== undefined && expandedNodeLimit !== 2000) ||
     !Number.isSafeInteger(workDeadlineAt) ||
     workDeadlineAt <= 0 ||
-    !Number.isSafeInteger(reportTimeoutMs) ||
-    reportTimeoutMs <= 0 ||
-    reportTimeoutMs > 60000 ||
-    workDeadlineAt > Date.now() + 900000
+    (reportTimeoutMs !== null &&
+      (!Number.isSafeInteger(reportTimeoutMs) ||
+        reportTimeoutMs <= 0 ||
+        reportTimeoutMs > 300000)) ||
+    workDeadlineAt > Date.now() + 30 * 60 * 1000
   ) {
     throw new Error('Invalid evaluation window')
   }
@@ -108,6 +125,9 @@ export const readEvaluationWindow = (
   return {
     workDeadlineAt,
     reportTimeoutMs,
+    ...(keepReportSession === undefined ? {} : { keepReportSession }),
+    ...(announceWorkDeadline === undefined ? {} : { announceWorkDeadline }),
+    ...(reportInstructions === undefined ? {} : { reportInstructions }),
     ...(expandedNodeLimit === undefined ? {} : { expandedNodeLimit })
   }
 }

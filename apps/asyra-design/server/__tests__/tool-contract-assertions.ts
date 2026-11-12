@@ -230,10 +230,7 @@ export const withToolContractAssertions = <
         ).toEqual(value)
       }
 
-      expect(
-        JSON.parse(reply.text).toolOutcome.status,
-        `${name} public result`
-      ).toBe(outcome.status)
+      expect(reply.outcome.status, `${name} public result`).toBe(outcome.status)
       if (outcome.status === 'success') {
         exercised.add(name)
       }
@@ -384,3 +381,33 @@ export const completeUsageBudget = (
   completeResultCost.entries[reference].cost[
     fragmented ? 'fragmented' : 'plain'
   ]
+
+/** Leaf-owner tests unwrap the delivered host envelope; host integration proves actual routing. */
+export function ownerInvocation<
+  T extends { namespace?: string; tool: string; arguments: unknown }
+>(invocation: T | undefined): T {
+  if (!invocation) {
+    throw Error('Missing delivered invocation')
+  }
+
+  if (invocation.tool !== 'execute_design') {
+    return invocation
+  }
+
+  const args = invocation.arguments as {
+    operations: { name: string; arguments: unknown }[]
+  }
+
+  if (args.operations.length !== 1) {
+    throw Error('Expected one owner operation')
+  }
+
+  const operation = args.operations[0]
+  const [namespace, tool] = operation.name.split('.')
+
+  if (!namespace || !tool) {
+    throw Error('Expected qualified owner operation')
+  }
+
+  return { ...invocation, namespace, tool, arguments: operation.arguments }
+}

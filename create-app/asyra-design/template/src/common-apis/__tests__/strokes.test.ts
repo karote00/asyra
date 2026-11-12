@@ -13,10 +13,13 @@ vi.mock('../../contexts', () => ({
   default: {
     changeComputedData: mocks.changeComputedData,
     commitPropertyChanges: mocks.commitPropertyChanges,
+
     getElementComputedData: (elementId: string) =>
       mocks.getElementById(elementId)?.getAllComputedData(),
+
     getElementData: (elementId: string) => {
       const element = mocks.getElementById(elementId)
+
       return element
         ? {
             id: elementId,
@@ -24,6 +27,7 @@ vi.mock('../../contexts', () => ({
           }
         : undefined
     },
+
     patchElementProperties: mocks.patchElementProperties,
     updatePropertyById: mocks.updatePropertyById
   }
@@ -50,6 +54,7 @@ describe('stroke common API primary-color boundary', () => {
     }))
     mocks.getElementById.mockReturnValue({
       get: (key: string) => (key === 'type' ? 'vector' : undefined),
+
       getAllComputedData: () => ({
         strokes: [
           {
@@ -185,6 +190,7 @@ describe('stroke common API primary-color boundary', () => {
     )
     mocks.getElementById.mockReturnValue({
       get: () => 'vector',
+
       getAllComputedData: () => ({ strokes: [] })
     })
 
@@ -198,6 +204,7 @@ describe('stroke common API primary-color boundary', () => {
   it('applies ordered primary stroke colors with one Core patch batch', () => {
     mocks.getElementById.mockImplementation((elementId: string) => ({
       get: (key: string) => (key === 'type' ? 'vector' : undefined),
+
       getAllComputedData: () => ({
         strokes: [
           {
@@ -277,8 +284,10 @@ describe('stroke common API primary-color boundary', () => {
       if (elementId === 'missing') {
         return undefined
       }
+
       return {
         get: (key: string) => (key === 'type' ? 'vector' : undefined),
+
         getAllComputedData: () => ({
           strokes: [
             {
@@ -330,6 +339,7 @@ describe('stroke common API primary-color boundary', () => {
     vi.clearAllMocks()
     mocks.getElementById.mockReturnValue({
       get: (key: string) => (key === 'type' ? 'vector' : undefined),
+
       getAllComputedData: () => ({
         strokes: [
           {
@@ -368,6 +378,7 @@ describe('stroke common API primary-color boundary', () => {
         ? undefined
         : {
             get: () => 'rect',
+
             getAllComputedData: () => ({ strokes: [{ id: 'stroke-1' }] })
           }
     )
@@ -461,8 +472,10 @@ describe('stroke common API primary-color boundary', () => {
       type: 'stroke',
       width: 3
     }
+
     mocks.getElementById.mockReturnValue({
       get: (key: string) => (key === 'type' ? 'vector' : undefined),
+
       getAllComputedData: () => ({
         strokes: [currentStroke],
         height: 999,
@@ -527,6 +540,7 @@ describe('stroke common API primary-color boundary', () => {
 it('retains Stroke creation, unavailable removal and unchanged batch evidence', () => {
   mocks.getElementById.mockReturnValue({
     get: () => 'rect',
+
     getAllComputedData: () => ({ strokes: [{ id: 'stroke-1' }] })
   })
   mocks.patchElementProperties.mockReturnValue({

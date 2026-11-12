@@ -1,3 +1,4 @@
+import sharp from 'sharp'
 import { resolve } from 'node:path'
 import { requestLocalAiActionBatch } from '../server/local-ai-provider'
 import { localToolOutcome } from '../server/local-tool-invocation'
@@ -101,7 +102,7 @@ async function runtime(page: Page) {
   return { actions, designs, operations, workflow, execute, signal, invoke }
 }
 
-test('saved multi-face detail uses current targets and preserves sibling passes through edit, history, peer and durable reload', async ({
+test('saved multi-face detail uses current targets and preserves independent image currency through edit, history, peer and durable reload', async ({
   page,
   context
 }) => {
@@ -112,7 +113,7 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
   await waitForAppReady(page)
   await connected(page)
   const { compact, correspondence } = recordedOrnaments()
-  const { designs, signal, invoke, execute, operations } = await runtime(page)
+  const { designs, signal, invoke, execute } = await runtime(page)
   const prepared = JSON.parse(
     await designs.call('prepare_design', { draft: compact }, signal)
   )
@@ -162,79 +163,42 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
   const peer = await context.newPage()
 
   try {
-    await invoke('define_design_criteria', {
-      phase: 'plan',
-      method: 'Review independent current material regions.',
-      references: [],
-      detailRequired: false,
-      criteria: {
-        overall: {
-          requirement: 'The complete detail composition satisfies the request.',
-          description: 'Separate whole-view acceptance.',
-          verification: 'visual',
-          requiredUnits: []
-        },
-        material: {
-          requirement: 'Preserve intended detail material.',
-          description: 'Review this current region only.',
-          verification: 'visual',
-          requiredUnits: ['changed', 'unrelated']
-        }
-      }
-    })
-
-    const bind = async (id: string, unitId: string) => {
-      const capture = await invoke('inspect_drawing', {
+    const capture = async (id: string) => {
+      const response = await invoke('inspect_drawing', {
         arguments: { elementId: id, view: 'detail' }
       })
-      const image = capture.actionResults.find(
-        (r: { result: { inspectionId?: string } }) => r.result.inspectionId
+      const image = response.actionResults.find(
+        (entry: { result: { inspectionId?: string } }) =>
+          entry.result.inspectionId
       )?.result
 
       expect(image).toMatchObject({ available: true })
 
-      return (
-        await invoke('review_drawing', {
-          phase: 'visual',
-          bindChecks: [
-            {
-              criterionId: 'material',
-              unitId,
-              inspectionIds: [image.inspectionId]
-            }
-          ]
-        })
-      ).next.arguments
+      return image.evidence
     }
 
-    // Controlled observations prove evidence handoff, never visual/model quality.
-    const record = (binding: { checks: object[] }) =>
-      invoke('review_drawing', {
-        ...binding,
-        final: false,
-        checks: binding.checks.map((c) => ({
-          ...c,
-          status: 'pass',
-          evidence: 'Controlled current-region observation.'
-        }))
-      })
+    const stamps = [await capture(localIds[0]), await capture(ids[0])]
 
-    const old = await bind(localIds[0], 'changed')
-    const first = await record(old),
-      sibling = await record(await bind(ids[0], 'unrelated'))
-    const checkIds = [first.recordedChecks[0].id, sibling.recordedChecks[0].id]
+    const currency = async () =>
+      Promise.all(
+        stamps.map(async (evidence) => {
+          const receipt = await execute({
+            batchId: 'currency',
+            actions: [
+              {
+                id: 'validate',
+                name: 'validate_inspection_evidence',
+                arguments: { evidence },
+                summary: 'Validate source currency'
+              }
+            ]
+          })
 
-    const checks = async () =>
-      (
-        await invoke('read_design_checks', {
-          ids: checkIds,
-          includePassed: true
+          return receipt.actionResults[0].result.current
         })
-      ).items
+      )
 
-    const unchanged = (await checks()).find(
-      (c: { id: string }) => c.id === checkIds[1]
-    )
+    expect(await currency()).toEqual([true, true])
     const created = await getCoreDocumentDigest(page)
 
     await expect
@@ -257,7 +221,7 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
     const beforeFills = await fills()
 
     const edit = () =>
-      invoke('execute_design_batch', {
+      invoke('execute_design', {
         inspection: 'defer',
         operations: [
           {
@@ -278,20 +242,7 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
         expect(afterFills[i]).toEqual(beforeFills[i])
       }
     })
-    expect(
-      (await checks()).find((c: { id: string }) => c.id === checkIds[0]).status
-    ).toBe('stale')
-    expect(
-      (await checks()).find((c: { id: string }) => c.id === checkIds[1])
-    ).toEqual(unchanged)
-    await record(old)
-    expect(
-      (await checks()).find((c: { id: string }) => c.id === checkIds[0]).status
-    ).toBe('stale')
-    await record(await bind(localIds[0], 'changed'))
-    expect(
-      (await checks()).every((c: { status: string }) => c.status === 'pass')
-    ).toBe(true)
+    expect(await currency()).toEqual([false, true])
     let edited = await getCoreDocumentDigest(page)
 
     await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(edited)
@@ -303,18 +254,12 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
     await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(created)
     await redo(page)
     await expect.poll(() => getCoreDocumentDigest(page)).toEqual(edited)
-    expect(
-      (await checks()).find((c: { id: string }) => c.id === checkIds[1])
-    ).toEqual(unchanged)
-    expect(
-      (await checks()).find((c: { id: string }) => c.id === checkIds[0]).status
-    ).toBe('stale')
+    expect(await currency()).toEqual([false, true])
     await expect
       .poll(() => getPersistedDocumentDigest(document.fileId))
       .toEqual(edited)
-    const renewed = await bind(localIds[0], 'changed')
-
-    await record(renewed)
+    stamps[0] = await capture(localIds[0])
+    expect(await currency()).toEqual([true, true])
     await peer.evaluate(async (id) => {
       const { fillApis, transactionApis } = await import('../src/common-apis')
 
@@ -326,17 +271,7 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
 
     expect(remoteEdit).not.toEqual(edited)
     await expect.poll(() => getCoreDocumentDigest(page)).toEqual(remoteEdit)
-    expect(
-      (await checks()).find((c: { id: string }) => c.id === checkIds[0]).status
-    ).toBe('stale')
-    expect(
-      (await checks()).find((c: { id: string }) => c.id === checkIds[1])
-    ).toEqual(unchanged)
-    await record(renewed)
-    expect(
-      (await checks()).find((c: { id: string }) => c.id === checkIds[0]).status
-    ).toBe('stale')
-    await record(await bind(localIds[0], 'changed'))
+    expect(await currency()).toEqual([false, true])
     const rootId = (batch.actions[0].arguments.design as { rootId: string })
       .rootId
     const wholeCapture = await invoke('inspect_drawing', {
@@ -347,28 +282,6 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
     )?.result
 
     expect(whole).toMatchObject({ available: true })
-    const wholeBinding = await invoke('review_drawing', {
-      phase: 'visual',
-      bindChecks: [
-        { criterionId: 'overall', inspectionIds: [whole.inspectionId] }
-      ]
-    })
-
-    expect(
-      await invoke('review_drawing', {
-        ...wholeBinding.next.arguments,
-        final: true,
-        checks: wholeBinding.next.arguments.checks.map((check: object) => ({
-          ...check,
-          status: 'pass',
-          evidence: 'Controlled complete-view observation after peer edit.'
-        }))
-      })
-    ).toMatchObject({ accepted: true, coverage: { passed: 3, required: 3 } })
-    await operations.validateCompletion(signal)
-    expect(
-      (await checks()).find((c: { id: string }) => c.id === checkIds[1])
-    ).toEqual(unchanged)
     edited = remoteEdit
     await expect
       .poll(() => getPersistedDocumentDigest(document.fileId))
@@ -578,17 +491,28 @@ test('actual provider receipt ownership preserves a recorded prefix through repa
   )
 
   expect(report.failure.success).toBe(false)
+  expect(report.failure.outcome).toMatchObject({
+    status: 'partial',
+    settlement: 'partial'
+  })
   expect(report.failure.value).toMatchObject({
     status: 'partial',
     settlement: 'partial'
   })
   expect(report.failure.value.parts[1]).toMatchObject({
     recovery: 'correct_input',
-    toolOutcome: { status: 'failed', settlement: 'not-started' },
+    available: false,
+    settlement: 'not-started',
+    completedSteps: [],
+    failedStep: 'prepare_design',
     draftId: expect.any(String)
   })
   expect(report.failure.value.parts[1].message).toContain('nonplanar face')
   expect(report.repaired.success).toBe(true)
+  expect(report.repaired.outcome).toMatchObject({
+    status: 'success',
+    settlement: 'completed'
+  })
   expect(mutations).toBe(3) // Anchor, successful prefix, repaired part. No prefix replay.
   const crown = report.failure.value.parts[0].actionResults.find(
     (r: { actionName: string }) => r.actionName === 'apply_prepared_design'
@@ -601,7 +525,7 @@ test('actual provider receipt ownership preserves a recorded prefix through repa
     (c) => c.id === `measurement:${crown}`
   )
 
-  expect(original).toMatchObject({ status: 'pass' })
+  expect(original).toBeUndefined()
   expect(
     entries(report.after).find((c) => c.id === `measurement:${crown}`)
   ).toEqual(original)
@@ -641,4 +565,126 @@ test('actual provider receipt ownership preserves a recorded prefix through repa
   await page.reload()
   await waitForAppReady(page)
   await expect.poll(() => getCoreDocumentDigest(page)).toEqual(next)
+})
+
+test('recorded leaf and group capture targets preserve subtree membership and local region pixels', async ({
+  page
+}) => {
+  test.setTimeout(90000)
+  const document = createTestDocumentIdentity()
+
+  await page.goto(document.url)
+  await waitForAppReady(page)
+  await connected(page)
+  const { designs, execute, invoke, signal } = await runtime(page)
+  const keys = ['base-y', 'bamboo-3-south', 'crown-taper-y']
+
+  const square = (
+    key: string,
+    x: number,
+    y: number,
+    size: number,
+    fill: string
+  ) => ({
+    type: 'vector',
+    key,
+    name: key,
+    fill,
+    rings: [
+      [
+        { x, y },
+        { x: x + size, y },
+        { x: x + size, y: y + size },
+        { x, y: y + size }
+      ]
+    ]
+  })
+
+  const prepared = JSON.parse(
+    await designs.call(
+      'prepare_design',
+      {
+        draft: {
+          type: 'group',
+          name: 'Capture membership',
+          children: keys.map((key, i) => ({
+            type: 'group',
+            key: `${key}-group`,
+            name: `${key} - Group`,
+            children: [
+              square(key, 200 + i * 140, 300, 100, '#ff0000'),
+              square(`${key}-windows`, 240 + i * 140, 340, 20, '#0000ff')
+            ]
+          }))
+        }
+      },
+      signal
+    )
+  )
+
+  expect(prepared.applicable).toBe(true)
+  await execute(
+    designs.resolveBatch({
+      batchId: 'capture-membership',
+      actions: [
+        {
+          id: 'apply',
+          name: 'apply_prepared_design',
+          arguments: { artifactId: prepared.artifactId },
+          summary: 'Create capture membership fixture'
+        }
+      ]
+    })
+  )
+  const before = await getCoreDocumentDigest(page)
+
+  for (const key of keys) {
+    const [leaf, group] = designs.resolveTargets({
+      artifactId: prepared.artifactId,
+      keys: [key, `${key}-group`]
+    })
+    const images = []
+
+    for (const [name, args] of [
+      ['leaf', { elementId: leaf, view: 'detail' }],
+      [
+        'group',
+        {
+          elementId: group,
+          view: 'detail',
+          region: { x: 20, y: 20, width: 60, height: 60 }
+        }
+      ]
+    ] as const) {
+      const result = await invoke('inspect_drawing', { arguments: args })
+      const captured = result.actionResults[0].result
+
+      expect(captured.available, JSON.stringify(captured)).toBe(true)
+      const bytes = Buffer.from(captured.image.dataUrl.split(',')[1], 'base64')
+
+      await test
+        .info()
+        .attach(`${key}-${name}.png`, { body: bytes, contentType: 'image/png' })
+      const { data, info } = await sharp(bytes)
+        .ensureAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true })
+      const offset =
+        (Math.floor(info.height / 2) * info.width +
+          Math.floor(info.width / 2)) *
+        info.channels
+
+      images.push(Array.from(data.subarray(offset, offset + 4)))
+    }
+
+    expect(images).toEqual([
+      [255, 0, 0, 255],
+      [0, 0, 255, 255]
+    ])
+  }
+
+  expect(await getCoreDocumentDigest(page)).toEqual(before)
+  await page.screenshot({
+    path: test.info().outputPath('capture-membership-app.png')
+  })
 })

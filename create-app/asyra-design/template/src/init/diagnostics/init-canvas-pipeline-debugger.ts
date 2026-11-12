@@ -9,6 +9,7 @@ export const getActiveCanvasPipelineDebugger = ():
 
 const disposeActiveHandle = (): void => {
   const handle = activeHandle
+
   activeHandle = undefined
   delete window.__CanvasPipelineDebugger__
   handle?.dispose()
@@ -20,20 +21,27 @@ export const initCanvasPipelineDebugger = async (): Promise<
   if (!import.meta.env.DEV) {
     return
   }
+
   const requestId = ++initializationId
+
   try {
     disposeActiveHandle()
     const { createCanvasPipelineDebugger } =
       await import('@asyra/core/canvas-pipeline-debugger')
+
     if (requestId !== initializationId) {
       return
     }
+
     const handle = createCanvasPipelineDebugger(core, { enabled: false })
+
     activeHandle = handle
     window.__CanvasPipelineDebugger__ = handle
+
     return handle
   } catch (error) {
     console.error('[canvas-pipeline-debugger] failed to load', error)
+
     return
   }
 }

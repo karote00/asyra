@@ -125,6 +125,7 @@ describe('move canvas hierarchy target handoff', () => {
       mouseDragStart: { x: 110, y: 110 },
       mousePosition: { x: 160, y: 160 }
     }
+
     mocks.getMousePosInWorkspace.mockReturnValue({ x: 410, y: 510 })
     mocks.resolveAtClientPos.mockReturnValue('outer-group')
 
@@ -149,6 +150,7 @@ describe('move canvas hierarchy target handoff', () => {
       mouseDragStart: { x: 50, y: 5 },
       mousePosition: { x: 52, y: 5 }
     }
+
     mocks.getSelectedIds.mockReturnValue(['selected-a', 'selected-b'])
     mocks.getElementClientBounds.mockImplementation((elementId: string) =>
       elementId === 'selected-a'

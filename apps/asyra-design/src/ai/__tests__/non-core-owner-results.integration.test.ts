@@ -112,46 +112,44 @@ it('delivers non-Core owner evidence through real Core, native validation and hi
     status: 'complete',
     changed: true,
     acceptedIds: ['a'],
-    unavailableIds: [],
-    toolOutcome: { status: 'success', settlement: 'completed' }
+    unavailableIds: []
   })
+  expect(lock.outcome).toMatchObject({
+    status: 'success',
+    settlement: 'completed'
+  })
+  expect(lock.receipt).not.toHaveProperty('toolOutcome')
   const depth = core.getUndoHistoryDepth()
 
   expect(
-    (await invoke('api_element_setElementLock', { elementId: 'a', lock: true }))
-      .receipt
+    await invoke('api_element_setElementLock', { elementId: 'a', lock: true })
   ).toMatchObject({
-    status: 'no-change',
-    changed: false,
-    toolOutcome: { status: 'success', settlement: 'completed' }
+    receipt: { status: 'no-change', changed: false },
+    outcome: { status: 'success', settlement: 'completed' }
   })
   expect(core.getUndoHistoryDepth()).toBe(depth)
   expect(
-    (
-      await invoke('api_element_setElementLock', {
-        elementId: 'missing',
-        lock: true
-      })
-    ).receipt
+    await invoke('api_element_setElementLock', {
+      elementId: 'missing',
+      lock: true
+    })
   ).toMatchObject({
-    status: 'failed',
-    unavailableIds: ['missing'],
-    changed: false,
-    toolOutcome: { status: 'failed', settlement: 'not-started' }
+    receipt: { status: 'failed', unavailableIds: ['missing'], changed: false },
+    outcome: { status: 'failed', settlement: 'not-started' }
   })
   await invoke('api_element_setElementLock', { elementId: 'a', lock: false })
   expect(
-    (
-      await invoke('api_element_setElementPositions', {
-        positionsById: { a: { x: 4, y: 5 }, missing: { x: 1, y: 2 } }
-      })
-    ).receipt
+    await invoke('api_element_setElementPositions', {
+      positionsById: { a: { x: 4, y: 5 }, missing: { x: 1, y: 2 } }
+    })
   ).toMatchObject({
-    status: 'partial',
-    acceptedIds: ['a'],
-    unavailableIds: ['missing'],
-    changed: true,
-    toolOutcome: { status: 'partial', settlement: 'partial' }
+    receipt: {
+      status: 'partial',
+      acceptedIds: ['a'],
+      unavailableIds: ['missing'],
+      changed: true
+    },
+    outcome: { status: 'partial', settlement: 'partial' }
   })
   expect(core.getElementComputedData('a')).toMatchObject({ x: 4, y: 5 })
   const fill = await invoke('api_fill_addFills', { elementIds: ['a'] })

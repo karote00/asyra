@@ -41,8 +41,10 @@ vi.mock('../../../contexts', () => {
       if (key === 'type') {
         return 'rect'
       }
+
       return undefined
     },
+
     getAllComputedData: () => ({
       x: 10,
       y: 20,
@@ -55,8 +57,10 @@ vi.mock('../../../contexts', () => {
       if (key === 'type') {
         return 'group'
       }
+
       return undefined
     },
+
     getAllComputedData: () => ({
       x: 10,
       y: 20,
@@ -86,15 +90,18 @@ vi.mock('../../../contexts', () => {
             y: 20
           }
         }
+
         return undefined
       }),
       getElementData: vi.fn((elementId: string) => {
         if (elementId === 'rect-1') {
           return { type: 'rect' }
         }
+
         if (elementId === 'group-1') {
           return { type: 'group' }
         }
+
         return undefined
       }),
       hasProjectedElement: vi.fn(
@@ -109,9 +116,11 @@ vi.mock('../../../contexts', () => {
         if (elementId === 'rect-1') {
           return element
         }
+
         if (elementId === 'group-1') {
           return group
         }
+
         return undefined
       }),
       workspace: 'workspace'
@@ -229,6 +238,7 @@ describe('Group geometry mutation handoff', () => {
 
   it('projects geometry only when an explicit target is an official Group', () => {
     const options = { undoable: true } as const
+
     mocks.projectGroupGeometryPropertyUpdates.mockReturnValue([
       {
         elementId: 'group-1',

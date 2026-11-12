@@ -1,4 +1,9 @@
-import { runAiMutation, type AiActionDefinition } from '@asyra/ai-agent-runtime'
+import { ElementPropertyInputError } from '@asyra/core'
+import {
+  AiActionInputError,
+  runAiMutation,
+  type AiActionDefinition
+} from '@asyra/ai-agent-runtime'
 import core from '../contexts'
 import {
   elementApis,
@@ -80,8 +85,16 @@ const basicApiResources = (effect: BasicApiContract['effect']) => {
 }
 
 const basicApiRevision = (contract: BasicApiContract): number => {
-  if (contract.result.kind === 'mutation-receipt') {
+  if (contract.result.valueSchema) {
+    return 3
+  }
+
+  if (contract.result.kind === 'property-mutation') {
     return 9
+  }
+
+  if (contract.result.kind === 'mutation-receipt') {
+    return 10
   }
 
   if (
@@ -279,7 +292,18 @@ export const createBasicApiActions = (
           })
         }
 
-        return call()
+        try {
+          return call()
+        } catch (error) {
+          if (error instanceof ElementPropertyInputError) {
+            throw new AiActionInputError(error.message, {
+              elementId: error.elementId,
+              propertyKey: error.propertyKey
+            })
+          }
+
+          throw error
+        }
       }
 
       const finish = (value: unknown, atSettlement: boolean) => {
@@ -322,13 +346,14 @@ export const createBasicApiActions = (
         const kind = contract.result.kind
 
         if (
-          !['grouped', 'ungrouped', 'moves', 'removed'].includes(kind) ||
-          !['complete', 'no-change'].includes(result.status)
+          !basicApiDeliverySchema(contract) ||
+          (kind !== 'mutation-receipt' &&
+            !['complete', 'no-change'].includes(result.status))
         ) {
           return receipt
         }
 
-        const structural = value as Record<string, unknown>
+        const structural = (value ?? {}) as Record<string, unknown>
         let count = 0
 
         if (kind === 'removed' && Array.isArray(structural.removed)) {
@@ -341,15 +366,32 @@ export const createBasicApiActions = (
 
         const summary = {
           status: receipt.status,
-          value: {
-            count,
-            ...(typeof structural.groupId === 'string'
-              ? { groupId: structural.groupId }
-              : {}),
-            ...(typeof structural.removed === 'boolean'
-              ? { removed: structural.removed }
-              : {})
-          },
+          ...(kind === 'mutation-receipt'
+            ? {
+                ...('acceptedIds' in result
+                  ? {
+                      changed: result.changed,
+                      acceptedCount: result.acceptedIds.length,
+                      unavailableCount: result.unavailableIds.length
+                    }
+                  : {}),
+                ...('settlement' in receipt
+                  ? { settlement: receipt.settlement }
+                  : {}),
+                ...('code' in result ? { code: result.code } : {}),
+                ...('message' in result ? { message: result.message } : {})
+              }
+            : {
+                value: {
+                  count,
+                  ...(typeof structural.groupId === 'string'
+                    ? { groupId: structural.groupId }
+                    : {}),
+                  ...(typeof structural.removed === 'boolean'
+                    ? { removed: structural.removed }
+                    : {})
+                }
+              }),
           mutationScope: {
             complete,
             elementCount: elementIds.length,
@@ -365,7 +407,7 @@ export const createBasicApiActions = (
           }
 
           if (!queries) {
-            throw new Error('Retained structural delivery is unavailable.')
+            throw new Error('Retained mutation delivery is unavailable.')
           }
 
           let ids: string[] = []
@@ -380,13 +422,17 @@ export const createBasicApiActions = (
             )
           }
 
+          if (kind === 'mutation-receipt' && 'acceptedIds' in result) {
+            ids = result.acceptedIds
+          }
+
           const retained = queries.retainReceipt(ids, receipt, context.signal)
 
           return { ...receipt, retained, modelResult: { ...summary, retained } }
         } catch (error) {
           const delivery = {
             status: 'unavailable',
-            message: `${error instanceof Error ? error.message : 'Structural delivery failed.'} The mutation already settled; do not replay it.`
+            message: `${error instanceof Error ? error.message : 'Mutation delivery failed.'} The mutation already settled; do not replay it.`
           }
 
           return { ...receipt, delivery, modelResult: { ...summary, delivery } }

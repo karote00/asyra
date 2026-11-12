@@ -3,6 +3,7 @@ import { createBatchExchange, type PreparedBatchFrame } from '../batch-exchange'
 
 const batch = { batchId: 'one', actions: [] }
 const receipt = { actionResults: [], context: {} }
+
 describe('request-owned batch receipts', () => {
   it('waits for the matching one-use receipt and rejects foreign or duplicate receipts', async () => {
     const exchange = createBatchExchange()
@@ -14,11 +15,16 @@ describe('request-owned batch receipts', () => {
       })
       .then((value) => {
         settled = true
+
         return value
       })
+
     await Promise.resolve()
     expect(settled).toBe(false)
-    if (!frame) throw new Error('Missing frame')
+    if (!frame) {
+      throw new Error('Missing frame')
+    }
+
     expect(exchange.accept('foreign', receipt)).toBe(false)
     expect(exchange.accept(frame.receiptToken, receipt)).toBe(true)
     expect(await result).toEqual(receipt)
@@ -31,7 +37,11 @@ describe('request-owned batch receipts', () => {
     const result = exchange.execute(batch, controller.signal, (value) => {
       frame = value
     })
-    if (!frame) throw new Error('Missing frame')
+
+    if (!frame) {
+      throw new Error('Missing frame')
+    }
+
     controller.abort()
     await expect(result).rejects.toThrow()
     expect(exchange.accept(frame.receiptToken, receipt)).toBe(false)
@@ -48,7 +58,11 @@ it('accepts an admitted large canonical ID receipt without a smaller hidden tran
       frame = value
     }
   )
-  if (!frame) throw new Error('Missing frame')
+
+  if (!frame) {
+    throw new Error('Missing frame')
+  }
+
   const admitted = {
     actionResults: [
       {
@@ -64,6 +78,7 @@ it('accepts an admitted large canonical ID receipt without a smaller hidden tran
     ],
     context: {}
   }
+
   expect(exchange.accept(frame.receiptToken, admitted)).toBe(true)
   expect(await pending).toBe(admitted)
 })
@@ -87,6 +102,7 @@ it('accepts an exact browser failure and rejects the exchange without waiting fo
     handlerMs: null,
     executionMs: 12
   }
+
   expect(
     exchange.accept(frame.receiptToken, {
       batchFailure: { ...batchFailure, batchId: 'foreign' }

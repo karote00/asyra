@@ -1,3 +1,7 @@
+import { designContextDefinitions } from '../local-design-context'
+import { basicApiContracts } from '../../src/ai/basic-api-catalog'
+import { evaluationToolStop } from '../evaluation-control'
+import correctablePreparation from '../../test-data/ai-drawing/fixtures/correctable-preparation-20261106.json'
 import { expect, it } from 'vitest'
 import { readCompleteInformation } from './tool-contract-assertions'
 import { operationContractIssue } from '../operation-input-schema'
@@ -40,7 +44,7 @@ const recipe = {
     {
       id: 'prepare',
       tool: 'design_preparation.prepare_design',
-      revision: 2,
+      revision: 4,
       input: {
         kind: 'object',
         fields: {
@@ -205,14 +209,22 @@ const fixture = (store = memory(), requestId = 'first', workflow = false) => {
   })
   let call = 0
 
-  const invoke = async (name: string, input: unknown) =>
-    JSON.parse(
-      (await host.invoke({ name, input, callId: `native-${++call}` })).text
-    )
+  let acknowledgement: Awaited<ReturnType<typeof host.invoke>>['outcome']
+
+  const invoke = async (name: string, input: unknown) => {
+    const reply = await host.invoke({ name, input, callId: `native-${++call}` })
+
+    acknowledgement = reply.outcome
+
+    return JSON.parse(reply.text)
+  }
 
   return {
     host,
     invoke,
+
+    outcome: () => acknowledgement,
+
     store,
 
     resolve: (id: string) => session.resolve(id)
@@ -222,7 +234,11 @@ const fixture = (store = memory(), requestId = 'first', workflow = false) => {
 it.each(['compact', 'full'])(
   'exports a %s compound artifact to a later native consumer after call cleanup',
   async (response) => {
-    const { host, invoke, resolve } = fixture(memory(), 'compound', true)
+    const { host, invoke, resolve, outcome } = fixture(
+      memory(),
+      'compound',
+      true
+    )
 
     try {
       const produced = await invoke(
@@ -240,11 +256,11 @@ it.each(['compact', 'full'])(
         }
       )
 
-      expect(produced.toolOutcome).toMatchObject({
-        status: 'partial',
+      expect(outcome()).toMatchObject({
+        status: 'success',
         settlement: 'completed'
       })
-      expect(produced.measurementIssues).toHaveLength(1)
+      expect(produced).not.toHaveProperty('measurementIssues')
       expect(produced.artifactId).toEqual(expect.any(String))
       const selected = await invoke(
         'design_preparation.retain_design_targets',
@@ -271,7 +287,11 @@ it.each(['compact', 'full'])(
 it.each([false, true])(
   'preserves typed ordered receipts after cleanup (stopped: %s)',
   async (stopped) => {
-    const { host, invoke, resolve } = fixture(memory(), 'ordered', true)
+    const { host, invoke, resolve, outcome } = fixture(
+      memory(),
+      'ordered',
+      true
+    )
     const draft = {
       type: 'group',
       name: 'Part',
@@ -295,9 +315,9 @@ it.each([false, true])(
         inspection: 'defer'
       })
 
-      expect(result.toolOutcome.status).toBe('partial')
+      expect(outcome().status).toBe(stopped ? 'partial' : 'success')
       if (!stopped) {
-        expect(result.toolOutcome.settlement).toBe('completed')
+        expect(outcome().settlement).toBe('completed')
       }
 
       expect(result.parts).toHaveLength(stopped ? 2 : 3)
@@ -331,7 +351,7 @@ it.each([
 ])(
   'retains a typed repair artifact from %s without reporting failed preparation as successful execution',
   async (tool) => {
-    const { host, invoke } = fixture(memory(), 'repair', true)
+    const { host, invoke, outcome } = fixture(memory(), 'repair', true)
 
     try {
       const result = await invoke(tool, {
@@ -347,9 +367,9 @@ it.each([
       })
 
       expect(result).toMatchObject({
-        applicable: false,
-        toolOutcome: { status: 'failed' }
+        applicable: false
       })
+      expect(outcome()).toMatchObject({ status: 'failed' })
       const retained = await invoke(
         'design_preparation.retain_design_targets',
         {
@@ -406,10 +426,10 @@ it('delivers real preparation recovery through nested recipes and native library
       input: 17
     })
 
-    // Preparation currently reports unknown settlement; ancestors must preserve it.
+    // Compiled findings rejected before apply preserve safe correction through ancestors.
     expect(result.execution).toMatchObject({
-      status: 'unknown',
-      settlement: 'unknown',
+      status: 'failed',
+      settlement: 'not-started',
       issues: []
     })
     expect(result.storage?.status).not.toBe('saved')
@@ -1302,15 +1322,12 @@ it.each(['partial', 'failed'])(
     })
 
     try {
-      const reply = JSON.parse(
-        (
-          await host.invoke({
-            name: 'example.apply',
-            input: {},
-            callId: 'once'
-          })
-        ).text
-      )
+      const transport = await host.invoke({
+        name: 'example.apply',
+        input: {},
+        callId: 'once'
+      })
+      const reply = JSON.parse(transport.text)
 
       expect(reply).toMatchObject({
         status,
@@ -1318,7 +1335,7 @@ it.each(['partial', 'failed'])(
         completed: ['one'],
         recovery: value.recovery
       })
-      expect(reply.toolOutcome.issues).toContainEqual({
+      expect(transport.outcome.issues).toContainEqual({
         code: value.code,
         message: value.message
       })
@@ -1477,10 +1494,8 @@ it.each(['direct', 'registered'])(
       )
       const result = route === 'direct' ? reply : reply.execution?.value
 
-      expect(result?.status, JSON.stringify(reply)).toBe('partial')
-      expect(result.measurementIssues[0].recovery).toContain(
-        'Do not replay writes'
-      )
+      expect(result?.status, JSON.stringify(reply)).toBe('complete')
+      expect(result).not.toHaveProperty('measurementIssues')
       expect(result.parts).toHaveLength(2)
       for (const part of result.parts) {
         expect(part.actionResults[0].result).toMatchObject({
@@ -1602,30 +1617,30 @@ it.each(['direct', 'registered'])(
       }
 
       const input = { arguments: {} }
-      const raw = JSON.parse(
-        (
-          await host.invoke(
-            route === 'direct'
-              ? { name: definition.registeredName, input }
-              : {
-                  name: 'tool_library.invoke_tool',
-                  input: {
-                    name: definition.registeredName,
-                    revision: definition.revision,
-                    input
-                  }
-                }
-          )
-        ).text
+      const transport = await host.invoke(
+        route === 'direct'
+          ? { name: definition.registeredName, input }
+          : {
+              name: 'tool_library.invoke_tool',
+              input: {
+                name: definition.registeredName,
+                revision: definition.revision,
+                input
+              }
+            }
       )
+      const raw = JSON.parse(transport.text)
       const result =
         route === 'direct'
           ? raw
           : (raw.execution.value ?? raw.execution.recovery?.[0]?.value)
 
-      expect(result?.toolOutcome.status, JSON.stringify(raw)).toBe('partial')
+      expect(transport.outcome.status, JSON.stringify(raw)).toBe('partial')
       expect(result.recovery, JSON.stringify(raw)).toContain(
         'Do not automatically replay mutations'
+      )
+      expect(result.executionResult, JSON.stringify(raw)).toHaveProperty(
+        'actionResults'
       )
       expect(result.executionResult.actionResults[0].result).toEqual({
         available: true,
@@ -1925,8 +1940,7 @@ it.each(['native', 'registered', 'batch'])(
         .definitions()
         .find(
           (entry) =>
-            entry.name ===
-            (route === 'batch' ? 'execute_design_batch' : action.name)
+            entry.name === (route === 'batch' ? 'execute_design' : action.name)
         )
 
       if (!definition?.registeredName) {
@@ -1957,11 +1971,11 @@ it.each(['native', 'registered', 'batch'])(
       )
       const envelope = JSON.parse(reply.text)
       const result =
-        route === 'registered' ? envelope.execution.value : envelope
+        route === 'registered' ? envelope.execution?.value : envelope
 
       expect(result?.actionResults, JSON.stringify(envelope)).toBeDefined()
       expect(reply.success).toBe(false)
-      expect(result.toolOutcome).toMatchObject({
+      expect(reply.outcome).toMatchObject({
         status: 'partial',
         settlement: 'completed'
       })
@@ -1991,15 +2005,19 @@ it.each(['native', 'registered', 'batch'])(
                   input: args
                 })
               ).text,
-            { names: [definition.registeredName], view: 'usage' }
+            {
+              names: [definition.registeredName],
+              view: 'usage',
+              includeResultSchema: true
+            }
           )
         )
         const selected = [...(guide.apis ?? []), ...(guide.tools ?? [])][0]
 
         expect(selected.execution).toEqual({
-          kind: 'native-tool',
-          namespace: definition.namespace,
-          tool: definition.name
+          kind: 'host-operation',
+          tool: 'execute_design',
+          operation: definition.registeredName
         })
         expect(
           operationContractIssue(result, selected.usageGuide.results, {
@@ -2244,6 +2262,502 @@ it.each(['native', 'registered'])(
         executionResult: partial
       })
       expect(calls).toBe(1)
+    } finally {
+      await host.dispose()
+    }
+  }
+)
+
+it.each(['repairable', 'decision-required'] as const)(
+  'runs one window section and reflection handoff through the native host: %s',
+  async (mode) => {
+    const width = { type: 'number' }
+    const panes = { type: 'array', items: { type: 'number' } }
+    const status = {
+      type: 'string',
+      enum: ['pass', 'repairable', 'decision-required']
+    }
+
+    const def = (
+      name: string,
+      inputSchema: unknown,
+      outputSchema: unknown
+    ) => ({
+      name,
+      description: name,
+      inputSchema,
+      ...toolSemantics(outputSchema, 'prepare', []),
+      composition: 'allowed' as const
+    })
+
+    const definitions = [
+      def('layout', object({ width }), object({ centers: panes })),
+      def('reflect', object({ centers: panes }), object({ levels: panes })),
+      {
+        ...def(
+          'check',
+          object({ levels: panes }),
+          object({
+            status,
+            progress: { type: 'string', minLength: 1 },
+            levels: panes
+          })
+        ),
+        verification: { statusPath: '/status', progressPath: '/progress' }
+      },
+      def('clamp', object({ levels: panes }), object({ levels: panes }))
+    ]
+    const calls: string[] = []
+    const store = memory()
+    const host = createLocalToolHost({
+      requestId: 'window-section',
+      signal: new AbortController().signal,
+      store,
+      capacity: 16,
+      receiptCapacity: 8,
+      artifactCapacity: 16,
+      limits: {
+        steps: 12,
+        bindings: 128,
+        bindingDepth: 10,
+        bytes: 16000,
+        issues: 8
+      },
+
+      createGroups: () => [
+        {
+          name: 'section',
+          description: 'Window section test owners',
+          owner: {
+            definitions,
+
+            async call(name, input) {
+              calls.push(name)
+              const args = input as {
+                width: number
+                centers: number[]
+                levels: number[]
+              }
+
+              if (name === 'layout') {
+                return JSON.stringify({
+                  centers: [args.width / 4, (3 * args.width) / 4]
+                })
+              }
+
+              if (name === 'reflect') {
+                return JSON.stringify({
+                  levels: args.centers.map((x) => x / 100)
+                })
+              }
+
+              if (name === 'clamp') {
+                return JSON.stringify({
+                  levels: args.levels.map((v) => Math.min(1, v))
+                })
+              }
+
+              return JSON.stringify({
+                levels: args.levels,
+                status: args.levels.some((v) => v > 1) ? mode : 'pass',
+                progress: JSON.stringify(args.levels)
+              })
+            }
+          }
+        }
+      ]
+    })
+
+    const step = (
+      id: string,
+      tool: string,
+      field: string,
+      binding: unknown
+    ) => ({
+      id,
+      name: 'section.' + tool,
+      revision: 2,
+      arguments: { [field]: binding }
+    })
+
+    const from = (step: string, path: string) => ({ kind: 'step', step, path })
+
+    const state = { kind: 'state', path: '' }
+    const proposal = {
+      operations: [
+        step('windows', 'layout', 'width', 200),
+        step('light', 'reflect', 'centers', from('windows', '/centers'))
+      ],
+      iteration: {
+        id: 'verified',
+        stateSchema: panes,
+        state: from('light', '/levels'),
+        check: step('inspect', 'check', 'levels', state),
+        repairs: [step('repair', 'clamp', 'levels', state)],
+        next: from('repair', '/levels'),
+        maxIterations: 2
+      },
+      delivery: { fields: { levels: { path: '/levels' } } }
+    }
+
+    try {
+      const before = host.definitions().map((d) => d.registeredName)
+      const result = JSON.parse(
+        (
+          await host.invoke({
+            name: 'design_operations.execute_design',
+            input: proposal
+          })
+        ).text
+      )
+
+      if (mode === 'repairable') {
+        const operations = Array.from({ length: 65 }, () => ({
+          name: 'section.layout',
+          arguments: { width: 200 }
+        }))
+        const bad = JSON.parse(
+          (
+            await host.invoke({
+              name: 'design_operations.execute_design',
+              input: {
+                operations: [
+                  ...operations,
+                  {
+                    name: 'section.layout',
+                    revision: 99,
+                    arguments: { width: 0 }
+                  }
+                ]
+              }
+            })
+          ).text
+        )
+
+        expect(bad.toolOutcome.settlement).toBe('not-started')
+        expect(calls.filter((n) => n === 'layout')).toHaveLength(1)
+        const large = JSON.parse(
+          (
+            await host.invoke({
+              name: 'design_operations.execute_design',
+              input: { operations }
+            })
+          ).text
+        )
+
+        expect(large.execution?.status, JSON.stringify(large)).toBe('success')
+        expect(calls.splice(5)).toEqual(Array(65).fill('layout'))
+      }
+
+      if (mode === 'repairable') {
+        expect(result.toolOutcome.status, JSON.stringify(result)).toBe(
+          'success'
+        )
+        expect(result.fields.levels).toEqual([0.5, 1])
+        expect(calls).toEqual(['layout', 'reflect', 'check', 'clamp', 'check'])
+      } else {
+        expect(result.toolOutcome.status).not.toBe('success')
+        expect(calls).toEqual(['layout', 'reflect', 'check'])
+      }
+
+      expect(host.definitions().map((d) => d.registeredName)).toEqual(before)
+      expect(await store.list()).toEqual([])
+    } finally {
+      await host.dispose()
+    }
+  }
+)
+
+it.each(['status', 'selected'] as const)(
+  'preserves recorded preparation recovery with %s delivery',
+  async (mode) => {
+    const { host } = fixture(memory(), 'correctable-selected', true)
+
+    try {
+      const operation = correctablePreparation.input.operations[0]
+      const reply = await host.invoke({
+        callId: 'correctable',
+        name: 'design_operations.execute_design',
+        input: {
+          operations: [
+            { ...operation, name: 'design_workflow.prepare_and_apply_design' }
+          ],
+          delivery:
+            mode === 'status'
+              ? 'status'
+              : {
+                  fields: {
+                    crown: { step: operation.id, path: '/compositionIds' }
+                  }
+                }
+        }
+      })
+      const result = JSON.parse(reply.text)
+
+      expect(result.toolOutcome.status).not.toBe('success')
+      expect(evaluationToolStop(reply), JSON.stringify(result)).toBeUndefined()
+      expect(result.failure.execution.recovery[0].value).toMatchObject({
+        recovery: 'correct_input',
+        settlement: 'not-started',
+        draftId: expect.any(String),
+        geometryIssue: { code: 'NONPLANAR_FACE', key: 'spireY' },
+        repairGuide: {
+          arguments: {
+            repair: { replacements: [{ path: '/children/12/vertices' }] }
+          }
+        }
+      })
+      expect(JSON.stringify(result)).not.toContain('TOOL_DELIVERY_INVALID')
+    } finally {
+      await host.dispose()
+    }
+  }
+)
+
+it.each(['status', 'selected'] as const)(
+  'delivers correctable ready-batch target rejection with %s delivery',
+  async (mode) => {
+    let calls = 0
+    const read = {
+      name: AiActionNames.RESOLVE_DESIGN_TARGETS,
+      description: 'Resolve',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          scope: { type: 'string' },
+          bounds: { type: 'object' },
+          result: { type: 'string' },
+          allMatches: { type: 'boolean' },
+          expectedCount: { type: 'integer' }
+        }
+      }
+    }
+    const host = createLocalToolHost({
+      requestId: 'target-recovery',
+      store: memory(),
+      signal: new AbortController().signal,
+      capacity: 32,
+      receiptCapacity: 8,
+      artifactCapacity: 64,
+      limits: {
+        steps: 16,
+        bindings: 240,
+        bindingDepth: 32,
+        bytes: 24000,
+        issues: 8
+      },
+
+      createGroups: () => [
+        {
+          name: 'design_operations',
+          description: 'Operations',
+          owner: createLocalOperationTools(
+            [
+              read,
+              ...basicApiContracts.filter(
+                (a) => a.name === 'api_element_deleteElements'
+              )
+            ],
+            {
+              modelActions: (a) => a,
+
+              resolveBatch: (b) => b
+            },
+            async (batch) => {
+              calls++
+              expect(batch.actions).toHaveLength(1)
+              expect(batch.actions[0].name).toBe(read.name)
+              expect(batch.actions[0].arguments).not.toHaveProperty(
+                'expectedCount'
+              )
+
+              return {
+                context: {},
+                actionResults: [
+                  {
+                    actionId: batch.actions[0].id,
+                    actionName: read.name,
+                    result: {
+                      available: true,
+                      total: 0,
+                      nextOffset: null,
+                      elementIds: [],
+                      elements: [],
+                      missingIds: []
+                    }
+                  }
+                ]
+              }
+            }
+          )
+        }
+      ]
+    })
+
+    try {
+      const reply = await host.invoke({
+        name: 'design_operations.execute_design',
+        callId: 'target-call',
+        input: {
+          operations: [
+            {
+              name: 'api_element_deleteElements',
+              arguments: {},
+              target: {
+                field: 'elementIds',
+                query: {
+                  scope: 'region',
+                  bounds: { x: 5500, y: 1000, width: 1000, height: 3500 },
+                  expectedCount: 24
+                }
+              }
+            }
+          ],
+          delivery:
+            mode === 'status'
+              ? 'status'
+              : { fields: { receipt: { path: '/actionResults' } } }
+        }
+      })
+      const value = JSON.parse(reply.text)
+
+      expect(value.failure, JSON.stringify(value)).toMatchObject({
+        recovery: 'correct_input',
+        settlement: 'not-started'
+      })
+      expect(evaluationToolStop(reply)).toBeUndefined()
+      expect(JSON.stringify(value)).not.toContain('TOOL_DELIVERY_INVALID')
+      expect(calls).toBe(1)
+    } finally {
+      await host.dispose()
+    }
+  }
+)
+
+it.each(['a', 'b', 'c', 'select_design_references'])(
+  'distinguishes request sequence admission from native-only controls for %s',
+  async (name) => {
+    const recorded = (
+      await import('../../test-data/ai-drawing/fixtures/control-admission-20261106.json')
+    ).default
+    let calls = 0
+    const actual = name === 'select_design_references'
+    const namespace = actual ? 'design_operations' : 'controls'
+    const reference = designContextDefinitions.find((d) => d.name === name)
+
+    if (actual && !reference) {
+      throw Error('Missing reference control contract')
+    }
+
+    const host = createLocalToolHost({
+      requestId: 'control-admission',
+      signal: new AbortController().signal,
+      store: memory(),
+      capacity: 32,
+      receiptCapacity: 8,
+      artifactCapacity: 32,
+      limits: {
+        steps: 16,
+        bindings: 64,
+        bindingDepth: 16,
+        bytes: 24000,
+        issues: 8
+      },
+
+      createGroups: () => [
+        {
+          name: namespace,
+          description: 'Native control',
+          owner: {
+            definitions: [
+              actual && reference
+                ? reference
+                : {
+                    name,
+                    description: 'Change request state',
+                    inputSchema: {
+                      type: 'object',
+                      additionalProperties: false
+                    },
+                    ...toolSemantics(
+                      {
+                        type: 'object',
+                        properties: { ready: { type: 'boolean' } },
+                        required: ['ready'],
+                        additionalProperties: false
+                      },
+                      'prepare',
+                      ['request-artifacts']
+                    ),
+                    composition: 'control-plane'
+                  }
+            ],
+
+            call: async () => {
+              calls++
+
+              return JSON.stringify(
+                actual
+                  ? { referenceImageIndexes: [1, 0], references: [] }
+                  : { ready: true }
+              )
+            }
+          }
+        }
+      ]
+    })
+
+    try {
+      const reply = await host.invoke({
+        name: 'design_operations.execute_design',
+        callId: 'incorrect-route',
+        input: actual
+          ? {
+              ...recorded.input,
+              operations: recorded.input.operations.map((operation) => ({
+                ...operation,
+                arguments: {
+                  referenceImageIndexes:
+                    operation.arguments.referenceImageIndexes
+                }
+              }))
+            }
+          : {
+              operations: [{ name: namespace + '.' + name, arguments: {} }],
+              delivery: 'status'
+            }
+      })
+
+      if (actual) {
+        expect(reply.success, reply.text).toBe(true)
+        expect(calls).toBe(1)
+      } else {
+        expect(calls).toBe(0)
+        expect(JSON.parse(reply.text), reply.text).toMatchObject({
+          recovery: 'correct_input',
+          settlement: 'not-started'
+        })
+        expect(reply.text).toContain('native')
+      }
+
+      expect(evaluationToolStop(reply)).toBeUndefined()
+      if (!actual) {
+        const correct = await host.invoke({
+          name: namespace + '.' + name,
+          input: {},
+          callId: 'correct-route'
+        })
+
+        expect(correct.success, correct.text).toBe(true)
+        expect(calls).toBe(1)
+      }
+
+      const absent = await host.invoke({
+        name: 'design_operations.execute_design',
+        input: { operations: [{ name: 'missing.operation', arguments: {} }] }
+      })
+
+      expect(evaluationToolStop(absent)).toBeDefined()
     } finally {
       await host.dispose()
     }

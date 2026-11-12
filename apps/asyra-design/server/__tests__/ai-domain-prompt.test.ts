@@ -1,16 +1,15 @@
-import {
-  createLocalDesignReview,
-  designEvidenceDefinitions
-} from '../local-design-review'
-import { operationInputIssue } from '../operation-input-schema'
+import { designContextDefinitions } from '../local-design-context'
 import { describe, expect, it } from 'vitest'
 import {
   AI_APP_PROMPT,
+  AI_CONVERSATION_HISTORY_INSTRUCTIONS,
   AI_OPERATION_INSTRUCTIONS,
   AI_IMAGE_TOOL_CATALOG,
   AiImageToolIds
 } from '../ai-domain-prompt'
 import { createLocalImageTools } from '../local-image-tools'
+import { createLocalKnowledgeTools } from '../local-knowledge'
+import { createLocalReferenceTools } from '../local-reference-tools'
 import { designRepresentationGuidance } from '../design-preparation-examples'
 
 const general = AI_APP_PROMPT + '\n' + AI_OPERATION_INSTRUCTIONS
@@ -20,20 +19,97 @@ const imageGuidance = imageDefinitions
   .join('\n')
 
 describe('stage-owned App guidance', () => {
+  it('keeps material methods optional rather than globally prescribing design order', () => {
+    expect(general).not.toMatch(
+      /default method reference|representative route before repeating|seamless height grade/
+    )
+    expect(general).toContain('optional reference material')
+    expect(general).toContain('not an additional acceptance standard')
+  })
+
+  it('explains knowledge value before tool names without requiring consultation', () => {
+    const value = AI_APP_PROMPT.indexOf(
+      'domain principles, common failure modes'
+    )
+
+    expect(value).toBeGreaterThanOrEqual(0)
+    expect(value).toBeLessThan(AI_APP_PROMPT.indexOf('discover_knowledge'))
+    expect(AI_APP_PROMPT).toContain(
+      'even when you already know how to approach the design'
+    )
+    expect(AI_APP_PROMPT).toContain('avoid re-deriving relationships')
+    expect(AI_APP_PROMPT).toContain(
+      'Known-value edits can proceed without a lookup'
+    )
+    expect(AI_APP_PROMPT).toContain('No particular construction order')
+  })
+
+  it('exposes deterministic delegation and optional reusable composition before discovery', () => {
+    expect(AI_APP_PROMPT).toContain(
+      'You choose visual intent, design parameters'
+    )
+    expect(AI_APP_PROMPT).toContain('instead of manually\nexpanding values')
+    expect(AI_APP_PROMPT).toContain('Prefer a suitable existing direct tool')
+    expect(AI_APP_PROMPT).toContain(
+      'delegate the sequence in one execute_design call with bound outputs'
+    )
+    expect(AI_APP_PROMPT).toContain(
+      'artifact keys/prefixes or a workspace region with its filter directly to the batch'
+    )
+    expect(AI_APP_PROMPT).toContain(
+      'use submit_tool for a finite recipe and invoke_tool'
+    )
+    expect(AI_APP_PROMPT).toContain('Before preparing a stage')
+    expect(AI_APP_PROMPT).toContain('later use need not be known')
+    expect(AI_APP_PROMPT).toContain('execute_design stages')
+    expect(AI_APP_PROMPT).toContain('source:"input"')
+    expect(AI_APP_PROMPT).toContain('portable inputs and outputs')
+    expect(AI_APP_PROMPT).toContain(
+      'Request handles cannot be saved with retain'
+    )
+    expect(AI_APP_PROMPT).not.toContain(
+      'Preserve useful public inputs and outputs'
+    )
+    expect(AI_APP_PROMPT).toContain(
+      'Later operations consume named values directly'
+    )
+    expect(AI_APP_PROMPT).toContain(
+      'Successful execution attempts durable saving'
+    )
+    expect(AI_APP_PROMPT).toContain(
+      'cannot create missing primitive capabilities'
+    )
+    expect(AI_APP_PROMPT).toContain(
+      'registered mechanically decidable checks and repairs'
+    )
+    expect(AI_APP_PROMPT).toContain('Do not build a recipe for every task')
+    expect(AI_APP_PROMPT).toContain(
+      'save_tool retries failed saving without executing the drawing again'
+    )
+  })
+
+  it('positions knowledge as a shortcut through uncertainty without extra polish', () => {
+    expect(AI_APP_PROMPT).toContain(
+      'shorten exploration and repeated correction'
+    )
+    expect(AI_APP_PROMPT).toContain('an adjustment keeps missing its target')
+    expect(AI_APP_PROMPT).toContain(
+      'does not raise the requested level of detail or polish'
+    )
+    expect(AI_APP_PROMPT).toContain(
+      'Known-value edits can proceed without a lookup'
+    )
+    expect(AI_APP_PROMPT).toContain('No particular construction order')
+  })
+
   it('offers selective advisory knowledge without gating known-value edits', () => {
+    const knowledge = createLocalKnowledgeTools('prompt-ownership')
+    const guidance = knowledge.definitions
+      .map((tool) => tool.description)
+      .join('\n')
+
     expect(AI_APP_PROMPT).toContain('discover_knowledge')
     expect(AI_APP_PROMPT).toContain('read_knowledge')
-    expect(AI_APP_PROMPT).toContain(
-      'Select the sufficient parent or child directly'
-    )
-    expect(AI_APP_PROMPT).toContain(
-      'hierarchy depth does not mean more complete advice'
-    )
-    expect(AI_APP_PROMPT).toContain('unresolved need described in the catalog')
-    expect(AI_APP_PROMPT).toContain('do not read every parent or sibling')
-    expect(AI_APP_PROMPT).toContain('Omit contexts for general advice')
-    expect(AI_APP_PROMPT).toContain('reuse already delivered advice')
-    expect(AI_APP_PROMPT).toContain('rehydrate: true')
     expect(AI_APP_PROMPT).toContain(
       'Known-value edits can proceed without a lookup'
     )
@@ -43,21 +119,43 @@ describe('stage-owned App guidance', () => {
     expect(AI_APP_PROMPT).toContain(
       'never permissions, tool schemas or proof of correctness'
     )
+    expect(guidance).toContain('children are optional')
+    expect(guidance).toContain('rehydrate: true')
+    expect(guidance).toContain('Do not read all siblings')
+    knowledge.dispose()
   })
 
   it('connects advice to existing decisions without elevating authority or adding a planning gate', () => {
-    expect(general).toContain('default method reference')
-    expect(general).toContain('existing draft brief or criteria method')
-    expect(general).toContain(
-      'shared\ndomain advice never supplies API authority'
-    )
+    expect(general).toContain('optional reference material')
+    expect(general).toContain('not an additional acceptance standard')
     expect(general).toContain('Reuse unaffected decisions and passed evidence')
-    expect(general).toContain('do not label a per-cell enumeration procedural')
     expect(general).toContain(
-      'full input/output and lifecycle contracts remain required'
+      'Full input/output and lifecycle contracts are required when authoring a reusable recipe with submit_tool'
     )
     expect(general).toContain(
-      'do not invent parameters, silently simplify appearance'
+      'Do not invent parameters, silently simplify appearance'
+    )
+    expect(general).not.toContain('default method reference')
+  })
+
+  it('does not require a second approval protocol for observations', () => {
+    expect(general).not.toMatch(
+      /define_design_criteria|review_drawing|bindChecks|dataEvidence|optionalInputs=\["plan"\]|defining criteria/
+    )
+    expect(general).toContain('final')
+    expect(general).toContain("user's request")
+  })
+
+  it('consumes chronological conversation data with current intent precedence', () => {
+    expect(AI_CONVERSATION_HISTORY_INSTRUCTIONS).toContain(
+      'metadata.conversationContext'
+    )
+    expect(AI_CONVERSATION_HISTORY_INSTRUCTIONS).toContain(
+      'current input.intent overrides'
+    )
+    expect(AI_CONVERSATION_HISTORY_INSTRUCTIONS).toContain('attachmentIndexes')
+    expect(AI_CONVERSATION_HISTORY_INSTRUCTIONS).toContain(
+      'fresh target and evidence checks'
     )
   })
 
@@ -76,10 +174,8 @@ describe('stage-owned App guidance', () => {
   })
 
   it('reviews reference-dependent ready recipes without requiring a complete geometry inventory', () => {
-    expect(general).toContain('Draw when useful')
+    expect(general).toContain('No particular construction order')
     expect(general).toContain('review_prepared_design')
-    expect(general).toContain('It never calls a model')
-    expect(general).toContain('primary agent reviews actual rendered images')
     expect(general).toContain(
       'Direct known-value edits need no prepared-content review'
     )
@@ -92,24 +188,29 @@ describe('stage-owned App guidance', () => {
     expect(general).toContain(
       'Choose coherent submission sizes within tool budgets'
     )
-    expect(general).toContain('parentId')
+    expect(general).toContain('real returned IDs')
   })
-  it('separates chosen-method local decisions from tool success and whole completion', () => {
-    expect(general).toContain('A successful capture or record is not a pass')
-    expect(general).toContain('criterion/unit/status/revision')
-    expect(general).toContain('local pass can coexist with whole-result')
-    expect(general).toContain('Repair only the failed boundary')
-    expect(general).toContain('Set final=true on the actual record submission')
-    expect(general).toContain('without Knowledge or approval tokens')
+  it('leaves design judgments with the AI rather than treating a tool receipt as approval', () => {
+    expect(general).toContain('tool success does not establish visual quality')
+    expect(general).toContain('Final verification is your responsibility')
+    expect(general).not.toContain('Completion requires all original criteria')
   })
-  it('assigns reference purpose and pixel scope to the primary agent', () => {
-    expect(general).toContain(
-      'purpose (visual, fact, preparation or pixel-comparison)'
+
+  it('offers reference purpose and region as optional context', () => {
+    const selection = requireTestValue(
+      designContextDefinitions.find(
+        (tool) => tool.name === 'select_design_references'
+      )
     )
-    expect(general).toContain('explicitly provide referenceRegion')
-    expect(general).toContain('Tools do not choose the subject')
-    expect(general).toContain('cropping\ncannot add missing detail')
+
+    expect(selection.inputSchema).toMatchObject({
+      required: ['referenceImageIndexes']
+    })
+    expect(JSON.stringify(selection.inputSchema)).not.toMatch(
+      /criterionId|requirementRevision|referenceUse/
+    )
   })
+
   it('preserves original user intent, verified facts and original resolution', () => {
     expect(general).toContain('original user request remains authoritative')
     expect(general).toContain('rough, ugly, simple')
@@ -137,16 +238,19 @@ describe('stage-owned App guidance', () => {
       'Tool discovery is separate from reference research'
     )
     expect(general).toContain('not subject facts, photographs or source pages')
-    expect(general).toContain('category/query menus')
-    expect(general).toContain(
-      'Execute\nknown tools directly without another lookup'
-    )
-    expect(general).toContain('native tools, not execute_design_batch')
+    expect(general).toMatch(/categor/i)
+    expect(general).toContain('execute known current contracts directly')
+    expect(general).toContain('Use returned action names and execution routes')
   })
   it('routes missing references without source restrictions or mandatory repeated research', () => {
     expect(general).toContain('Research only missing information')
-    expect(general).toContain('sourceUrl')
-    expect(general).toContain('omit imageUrl')
+    const references = createLocalReferenceTools(() => 0)
+    const guidance = references.definitions
+      .map((tool) => tool.description)
+      .join('\n')
+
+    expect(guidance).toContain('sourceUrl')
+    expect(guidance).toContain('omit imageUrl')
     expect(general).toContain('original concepts')
     expect(general).toContain('source-local failure')
     expect(general).not.toMatch(
@@ -155,9 +259,10 @@ describe('stage-owned App guidance', () => {
   })
   it('makes shared reuse and backend projection discoverable before catalog scans', () => {
     expect(general).toContain('shared elements and shared property components')
-    expect(general).toContain('sharedFills')
-    expect(general).toContain('projected-face')
-    expect(general).toContain('do not calculate every projected vertex')
+    expect(general).toContain(
+      'equal appearance does not itself imply linked edits'
+    )
+    expect(general).toContain('backend projection')
     expect(designRepresentationGuidance).toContain('do not invent depth')
     expect(designRepresentationGuidance).toContain(
       'do not set style, detail level or camera angles'
@@ -166,7 +271,7 @@ describe('stage-owned App guidance', () => {
   it('keeps deterministic stages inside tools and preserves schema authority and receipts', () => {
     for (const name of [
       'prepare_and_apply_design',
-      'execute_design_batch',
+      'execute_design',
       'describe_design_apis',
       'completedSteps',
       'artifactId',
@@ -204,40 +309,16 @@ describe('stage-owned App guidance', () => {
     )
     expect(general).toContain('Read-only advice leaves the canvas unchanged')
   })
-  it('routes criteria facts calculations references and review to distinct tools', () => {
-    for (const name of [
-      'define_design_criteria',
-      'record_design_facts',
-      'record_design_calculations',
-      'select_design_references',
-      'review_drawing'
-    ]) {
-      expect(general).toContain(name)
+  it('offers standalone notes and reference context without prior registration', () => {
+    for (const tool of designContextDefinitions) {
+      expect(general).toContain(tool.name)
     }
 
-    expect(general).not.toContain('record_design_review')
-    expect(general).toContain('all original criteria')
-    const review = requireTestValue(
-      designEvidenceDefinitions.find((tool) => tool.name === 'review_drawing')
+    expect(general).not.toMatch(
+      /define_design_criteria|review_drawing|bindChecks/
     )
-
-    expect(review.description).toContain('final=true (default)')
-    expect(review.description).toContain('without discarding valid local work')
-    expect(review.description).toContain('deferredDetails')
-    const criteria = requireTestValue(
-      designEvidenceDefinitions.find(
-        (tool) => tool.name === 'define_design_criteria'
-      )
-    )
-    const example = (criteria.inputSchema as { examples: unknown[] })
-      .examples[0]
-
-    expect(criteria.description).not.toContain(JSON.stringify(example))
-    expect(operationInputIssue(example, criteria.inputSchema)).toBeUndefined()
-    expect(createLocalDesignReview().record(example)).toMatchObject({
-      recorded: true
-    })
   })
+
   it('keeps detailed tracing procedures in image tools', () => {
     expect(general).not.toMatch(
       /colorTolerance|clipToBackground|0\.5 source pixels/
@@ -276,28 +357,10 @@ it('separates remaining-work execution from replay and library availability reco
   expect(general).toContain('not a saved execution position')
 })
 
-it('permits provisional visible content before optional design research and validation', () => {
-  expect(AI_APP_PROMPT).toContain('Draw when useful')
-  expect(AI_APP_PROMPT).toContain('edits later')
-  expect(AI_APP_PROMPT).toContain(
-    'not a prerequisite for first visible content'
-  )
-  expect(AI_APP_PROMPT).not.toContain(
-    'discover_knowledge before committing those decisions'
-  )
-})
-
-it('treats first visible content as an optional experience goal without weakening validation', () => {
-  expect(AI_APP_PROMPT).toContain('First frame is optional')
-  expect(AI_APP_PROMPT).toContain('not a deadline or completion gate')
-  expect(AI_APP_PROMPT).toContain('research may come first')
-  expect(AI_APP_PROMPT).toContain('No forced previews or splitting for timing')
-  expect(AI_APP_PROMPT).toContain(
-    'Preserve validation, references and final review'
-  )
-  expect(AI_APP_PROMPT).toContain('not a deadline')
-  expect(AI_APP_PROMPT).not.toContain('Draw each coherent ready part')
-  expect(AI_APP_PROMPT).not.toContain(
-    'Do not accumulate all stages in one draft'
+it('leaves construction order to the task without weakening final validation', () => {
+  expect(AI_APP_PROMPT).toContain('No particular construction order')
+  expect(AI_APP_PROMPT).toContain('Final verification is your responsibility')
+  expect(AI_APP_PROMPT).not.toMatch(
+    /First frame is optional|research may come first|Draw each coherent ready part|representative route before repeating/
   )
 })

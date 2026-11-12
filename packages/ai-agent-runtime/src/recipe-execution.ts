@@ -1,3 +1,4 @@
+import { recipeAdmissionMode } from './recipe-admission.js'
 import { recipeExecutionSteps } from './recipe-format.js'
 import {
   createAiInvoker,
@@ -136,7 +137,17 @@ export interface AiRecipeInvokerOptions {
   readonly execute: (
     call: AiInvocationContext,
     definition: AiRegisteredActionDefinition
-  ) => Promise<AiToolOutcome & { readonly value?: unknown }>
+  ) => Promise<
+    AiToolOutcome & {
+      readonly value?: unknown
+      readonly issues?: readonly string[]
+    }
+  >
+  /** Host-owned capability; only immutable preparation may overlap a preceding write. */
+  readonly canOverlapPreparation?: (
+    definition: AiToolContract,
+    input: unknown
+  ) => boolean
   readonly leases: AiRecipeLeaseAdapter
   readonly maxSteps: number
   readonly observe?: (event: AiRecipeInvocationEvent) => void | Promise<void>
@@ -154,11 +165,15 @@ export const getRecipeExecutionEvidence = (
   result: AiRecipeExecutionResult
 ): RecipeExecutionEvidence | undefined => executionEvidence.get(result)
 
-interface PinnedNode {
-  readonly definition: AiRegisteredActionDefinition
-  readonly recipe?: AdmittedAiRecipe
+type PinnedNode = {
   readonly children: readonly PinnedNode[]
-}
+} & (
+  | {
+      readonly definition: AiRegisteredActionDefinition
+      readonly recipe?: undefined
+    }
+  | { readonly definition: AiToolContract; readonly recipe: AdmittedAiRecipe }
+)
 
 const message = (error: unknown) =>
   (error instanceof Error ? error.message : String(error)).slice(0, 400)
@@ -223,15 +238,22 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
 
   return {
     async invoke(
-      request: AiInvocation & { requestId: string; revision?: number }
+      request: AiInvocation & { requestId: string; revision?: number },
+      inline?: AdmittedAiRecipe,
+      onStepResult?: (
+        step: AiRecipeStep,
+        input: unknown,
+        value: unknown
+      ) => void | Promise<void>
     ): Promise<AiRecipeExecutionResult> {
-      const records: AiRecipeCallReceipt[] = []
       const exportedSchemas = new WeakMap<
         AiRecipeExecutionResult,
         AiJsonValue
       >()
       const recoverySchemas = new WeakMap<AiRecipeRecovery, AiJsonValue>()
       const signal = request.signal ?? new AbortController().signal
+      const authoredSequence =
+        inline && recipeAdmissionMode(inline) === 'inline'
       let expanded = 0
 
       const pin = (
@@ -241,10 +263,25 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
         multiplier = 1
       ): PinnedNode => {
         signal.throwIfAborted()
-        const entry = options.registry.registration(name, {
-          revision,
-          requestId: request.requestId
-        })
+        const root = ancestors.size === 0 ? inline : undefined
+
+        if (
+          root &&
+          (!recipeAdmissionMode(root) ||
+            root.contract.name !== name ||
+            root.contract.revision !== revision)
+        ) {
+          throw new Error(
+            'Expected an admitted inline root matching the invocation identity'
+          )
+        }
+
+        const entry = root
+          ? { kind: 'composition' as const, definition: root.contract }
+          : options.registry.registration(name, {
+              revision,
+              requestId: request.requestId
+            })
 
         if (!entry) {
           throw new AiToolContractError(
@@ -263,7 +300,7 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
           return { definition: entry.definition, children: [] }
         }
 
-        const recipe = options.recipe(name, entry.definition.revision)
+        const recipe = root ?? options.recipe(name, entry.definition.revision)
 
         if (
           !recipe ||
@@ -279,7 +316,10 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
 
         const pinStep = (step: AiRecipeStep, weight: number) => {
           expanded += weight
-          if (!Number.isSafeInteger(expanded) || expanded > options.maxSteps) {
+          if (
+            !Number.isSafeInteger(expanded) ||
+            (!authoredSequence && expanded > options.maxSteps)
+          ) {
             throw new Error('Expanded composition exceeds the execution budget')
           }
 
@@ -316,7 +356,8 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
         let opened = false
         let dispatched = false
         let observed: AiRecipeExecutionResult | undefined
-        const start = records.length
+        const records: AiRecipeCallReceipt[] = []
+        const start = 0
         const issues: string[] = []
         const children: AiRecipeExecutionResult[] = []
         const recovery: AiRecipeRecovery[] = []
@@ -478,12 +519,14 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
                 settlement: result.settlement,
                 value: result.value,
                 calls: [],
-                issues: []
+                issues: inline ? (result.issues ?? []) : []
               }
 
               return observed
             }
 
+            const collectStep =
+              inline && node.recipe === inline ? onStepResult : undefined
             const parentDefinition = node.definition
             const outputs = new Map<string, unknown>()
 
@@ -494,10 +537,11 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
               iteration?: number
             ) => {
               signal.throwIfAborted()
+              const childInput = bind(step.input, context.input, outputs, state)
               const child = await run(
                 {
                   name: step.tool,
-                  input: bind(step.input, context.input, outputs, state),
+                  input: childInput,
                   parentCallId: context.callId,
                   actor: context.actor,
                   purpose: context.purpose,
@@ -513,6 +557,7 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
                 })
               )
 
+              records.push(...child.calls)
               if (pinned.recipe) {
                 children.push(child)
               }
@@ -538,26 +583,37 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
 
               if (completed(child) && !child.issues.length) {
                 outputs.set(step.id, child.value)
+                if (iteration === undefined) {
+                  if (collectStep) {
+                    await collectStep(step, childInput, child.value)
+                  }
+                }
               }
 
               return child
             }
 
-            for (let i = 0; i < node.recipe.recipe.steps.length; i++) {
-              const child = await executeStep(
-                node.recipe.recipe.steps[i],
-                node.children[i]
+            const recipeNode = node
+            const pinnedSteps = new Map(
+              recipeExecutionSteps(recipeNode.recipe.recipe).map(
+                ({ step }, index) => [step.id, recipeNode.children[index]]
               )
+            )
 
-              if (!completed(child) || child.issues.length) {
-                return aggregateFailure(child.settlement)
+            const pinnedStep = (id: string) => {
+              const pinned = pinnedSteps.get(id)
+
+              if (!pinned) {
+                throw new Error('Missing admitted step: ' + id)
               }
+
+              return pinned
             }
 
-            const iteration = node.recipe.recipe.iteration
-
-            if (iteration) {
-              const checkNode = node.children[node.recipe.recipe.steps.length]
+            const executeIteration = async (
+              iteration: NonNullable<typeof recipeNode.recipe.recipe.iteration>
+            ) => {
+              const checkNode = pinnedStep(iteration.check.id)
               const verification = checkNode.definition.verification
 
               if (!verification) {
@@ -631,10 +687,10 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
                 }
 
                 seen.add(progress)
-                for (let index = 0; index < iteration.repairs.length; index++) {
+                for (const repair of iteration.repairs) {
                   const child = await executeStep(
-                    iteration.repairs[index],
-                    node.children[node.recipe.recipe.steps.length + 1 + index],
+                    repair,
+                    pinnedStep(repair.id),
                     state,
                     round + 1
                   )
@@ -645,6 +701,93 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
                 }
 
                 state = bind(iteration.next, context.input, outputs, state)
+              }
+            }
+
+            const checkpoints = new Map(
+              (node.recipe.recipe.checkpoints ?? []).map((checkpoint) => [
+                checkpoint.after,
+                checkpoint.iteration
+              ])
+            )
+            const steps = node.recipe.recipe.steps
+            const prepared = new Map<
+              string,
+              PromiseSettledResult<AiRecipeExecutionResult>
+            >()
+
+            for (const [index, step] of steps.entries()) {
+              const pinned = pinnedStep(step.id)
+              let ready = prepared.get(step.id)
+
+              if (!ready) {
+                const next = steps[index + 1]
+                const nextNode = next && pinnedSteps.get(next.id)
+                let overlap = false
+
+                if (
+                  nextNode &&
+                  !nextNode.recipe &&
+                  pinned.definition.effect === 'mutation' &&
+                  nextNode.definition.effect === 'prepare' &&
+                  !checkpoints.has(step.id)
+                ) {
+                  try {
+                    const input = bind(next.input, context.input, outputs)
+
+                    overlap =
+                      options.canOverlapPreparation?.(
+                        nextNode.definition,
+                        input
+                      ) === true
+                  } catch {
+                    // Unavailable inputs preserve the ordinary ordered dependency path.
+                  }
+                }
+
+                if (overlap && nextNode) {
+                  const pair = await Promise.allSettled([
+                    executeStep(step, pinned),
+                    executeStep(next, nextNode)
+                  ])
+
+                  ready = pair[0]
+                  prepared.set(next.id, pair[1])
+                } else {
+                  ready = (
+                    await Promise.allSettled([executeStep(step, pinned)])
+                  )[0]
+                }
+              }
+
+              if (ready.status === 'rejected') {
+                throw ready.reason
+              }
+
+              const child = ready.value
+
+              if (!completed(child) || child.issues.length) {
+                return aggregateFailure(child.settlement)
+              }
+
+              const checkpoint = checkpoints.get(step.id)
+
+              if (checkpoint) {
+                const failure = await executeIteration(checkpoint)
+
+                if (failure) {
+                  return failure
+                }
+              }
+            }
+
+            if (node.recipe.recipe.iteration) {
+              const failure = await executeIteration(
+                node.recipe.recipe.iteration
+              )
+
+              if (failure) {
+                return failure
               }
             }
 
@@ -677,6 +820,7 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
 
         const receipt = Object.freeze({
           callId,
+          ...(inline && recipeStep ? { stepId: recipeStep.id } : {}),
           name: call.name,
           revision: node?.definition.revision ?? request.revision ?? 0,
           status: result.status,

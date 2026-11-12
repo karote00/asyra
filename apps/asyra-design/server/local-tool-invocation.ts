@@ -1,5 +1,7 @@
+import type { AiBatchReceipt } from '../src/ai/action-batch-protocol'
 import {
   AiActionExecutionError,
+  AiToolContractError,
   embedAiToolSchema,
   AiExecutionError,
   createAiInvoker,
@@ -9,6 +11,7 @@ import {
   type AiJsonValue,
   type AiToolContractInput,
   type AiToolOutcome,
+  type AiToolContract,
   type AiInvocationMiddleware
 } from '@asyra/ai-agent-runtime'
 import { serializeToolPayload } from '@asyra/ai-agent-runtime/node'
@@ -22,28 +25,70 @@ import {
 } from './operation-input-schema'
 import {
   designActionOutcome,
+  modelToolResultSchemas,
   toolInternalResult,
   toolResultObject,
   toolResultString
 } from '../src/ai/tool-contract'
 
 export interface LocalToolDefinition extends AiToolContractInput {
+  /** Canonical output subtrees needed to bind downstream operations. */
+  readonly resultPaths?: readonly string[]
   /** Registry-only operations remain available to typed recipes without native function expansion. */
   readonly providerExposure?: 'registry'
 }
 
+export type LocalToolAcknowledgement = AiToolOutcome & {
+  issues?: { actionName?: string; code: string; message: string }[]
+}
+
+export interface LocalToolReply {
+  success: boolean
+  text: string
+  /** Invocation acknowledgement, separate from every owner value. */
+  outcome: LocalToolAcknowledgement
+  /** Model contract selected before this invocation executes; never a generic replacement. */
+  modelContract?: Pick<
+    LocalToolDefinition,
+    'outputSchema' | 'partialOutputSchema' | 'recoveryOutputSchema'
+  >
+}
+
+export const localToolReplyOutcome = (
+  reply: LocalToolReply
+): LocalToolAcknowledgement => {
+  if (!reply.outcome) {
+    throw new Error('Tool result has no acknowledgement')
+  }
+
+  return reply.outcome
+}
+
 const validatedOutputSchemas = new WeakMap<
   object,
-  { schema: AiJsonValue; text: string }
+  {
+    schema: AiJsonValue
+    text: string
+    outcome: string
+    definition: LocalToolDefinition
+    invocation: object | undefined
+  }
 >()
 
-/** Reuse completed boundary validation without trusting reconstructed JSON receipts. */
-export const localToolResultSchema = (reply: {
-  text: string
-}): AiJsonValue | undefined => {
+/** Validation evidence belongs to exactly one producer invocation and contract. */
+export const localToolResultSchema = (
+  reply: LocalToolReply,
+  definition: LocalToolDefinition,
+  invocation: object
+): AiJsonValue | undefined => {
   const validated = validatedOutputSchemas.get(reply)
 
-  return validated?.text === reply.text ? validated.schema : undefined
+  return validated?.definition === definition &&
+    validated.invocation === invocation &&
+    validated.text === reply.text &&
+    validated.outcome === JSON.stringify(reply.outcome)
+    ? validated.schema
+    : undefined
 }
 
 /** Delivery can make acknowledgement incomplete, never change execution settlement. */
@@ -86,10 +131,14 @@ export interface LocalToolOwner {
   /** Pure external view after validity and ownership handoff. Never executes. */
   projectModelResult?(name: string, args: unknown, value: unknown): unknown
 
+  /** Child-owner views that must not be selected again; full schema validation still applies. */
+  projectedResultPaths?: readonly string[]
+
   /** Control wrappers project the pinned selected contract for reference ownership. */
   invocationSchemas?(
     name: string,
-    args: unknown
+    args: unknown,
+    stage?: 'owner' | 'model'
   ):
     | Pick<
         LocalToolDefinition,
@@ -122,7 +171,8 @@ export interface LocalToolOwner {
 export class LocalToolInputError extends Error {
   constructor(
     message: string,
-    readonly code = 'PREPARATION_REJECTED'
+    readonly code = 'PREPARATION_REJECTED',
+    readonly recovery?: 'correct_input'
   ) {
     super(message)
   }
@@ -176,7 +226,7 @@ export const localToolOutcome = (
     : []
   const batchOutcomes = batches.map(localToolOutcome)
   const childOutcomes = [...receiptOutcomes, ...partOutcomes, ...batchOutcomes]
-  const followupIssues = ['measurementIssues', 'inspectionIssues'].flatMap(
+  const followupIssues = ['executionIssues', 'inspectionIssues'].flatMap(
     (key) =>
       Array.isArray(value[key])
         ? value[key].filter(record).map((issue) => ({
@@ -334,6 +384,7 @@ export const localReceiptFailureSchema = toolResultObject(
     actionExecutionMs: toolInternalResult({ type: ['number', 'null'] }),
     settlement: { enum: ['not-started', 'completed', 'partial', 'unknown'] },
     contractStage: { enum: ['registration', 'input', 'output'] },
+    inputIssue: true,
     observedResult: true,
     contextFresh: toolInternalResult({ type: 'boolean' })
   },
@@ -368,9 +419,8 @@ export const localExecutionReceiptSchema: Record<string, unknown> = {
         failure: localReceiptFailureSchema,
         checks: designCheckSummarySchema,
         inspectionDeferred: { type: 'boolean' },
-        measurementDeferred: { type: 'boolean' },
         inspectionIssues: { type: 'array' },
-        measurementIssues: { type: 'array' },
+        executionIssues: { type: 'array' },
         toolOutcome: { type: 'object' }
       },
       []
@@ -388,9 +438,13 @@ export const localToolFailureSchema = toolResultObject(
     stage: toolResultString,
     settlement: { enum: ['not-started', 'completed', 'partial', 'unknown'] },
     recovery: { type: ['string', 'object'] },
+    executionOutcome: toolResultObject({
+      status: { enum: ['success', 'partial', 'failed', 'unknown'] },
+      settlement: { enum: ['not-started', 'completed', 'partial', 'unknown'] }
+    }),
     executionResult: {
       anyOf: [
-        { type: 'null' },
+        { type: ['null', 'array', 'string', 'number', 'boolean'] },
         embedAiToolSchema(
           localExecutionReceiptSchema as AiJsonValue,
           '#/properties/executionResult/anyOf/1'
@@ -413,31 +467,96 @@ export const localToolFailureSchema = toolResultObject(
   ['available', 'code', 'message', 'recoverable', 'toolOutcome']
 )
 
+/** Validate a boundary-owned diagnostic and its separate acknowledgement together. */
+export const localToolFailureIssue = (
+  value: unknown,
+  outcome: LocalToolAcknowledgement
+): string | undefined => {
+  const issue = operationContractIssue(value, localToolFailureSchema, {
+    stage: 'output'
+  })
+
+  if (issue) {
+    return issue
+  }
+
+  if (
+    !record(value) ||
+    !record(value.toolOutcome) ||
+    value.toolOutcome.status !== outcome?.status ||
+    value.toolOutcome.settlement !== outcome?.settlement ||
+    (value.settlement !== undefined && value.settlement !== outcome?.settlement)
+  ) {
+    return 'Boundary failure data and acknowledgement disagree'
+  }
+
+  return undefined
+}
+
+/** Recovery entries carry the selected child's model view, not its raw fields. */
+export const localToolRecoveryModelContract = (
+  contract: AiToolContract
+): AiToolContract => {
+  const schemas = modelToolResultSchemas(contract)
+
+  return createAiToolContract({
+    ...contract,
+    ...schemas,
+    recoveryOutputSchema: invocationRecoverySchema(
+      schemas.recoveryOutputSchema,
+      localToolFailureSchema
+    )
+  } as AiToolContract)
+}
+
+/** Recovery policy consumes the canonical rejection and independent settlement.
+ * A rollback or generic recoverable flag alone never identifies authored input. */
+export const batchInputRecovery = (receipt?: AiBatchReceipt) => {
+  const failure = receipt?.failure
+
+  if (
+    failure?.code === 'AI_ACTION_INPUT_INVALID' &&
+    failure.inputIssue !== undefined &&
+    failure.contextFresh === true &&
+    failure.settlement === 'not-started'
+  ) {
+    return 'correct_input'
+  }
+}
+
 export const localToolFailureReply = (
   message: string,
   code: string,
   details: Record<string, unknown> = {}
-) => ({
-  success: false,
-  text: JSON.stringify({
+): LocalToolReply => {
+  const outcome: LocalToolAcknowledgement = {
+    status: hasAcknowledgedActions(details.executionResult)
+      ? 'partial'
+      : 'failed',
+    settlement: ['not-started', 'completed', 'partial', 'unknown'].includes(
+      String(details.settlement)
+    )
+      ? (details.settlement as AiToolOutcome['settlement'])
+      : 'unknown',
+    issues: [{ code, message }]
+  }
+
+  const value = {
     available: false,
     code,
     ...details,
     recoverable: details.recoverable !== false,
     message,
-    toolOutcome: {
-      status: hasAcknowledgedActions(details.executionResult)
-        ? 'partial'
-        : 'failed',
-      settlement: ['not-started', 'completed', 'partial', 'unknown'].includes(
-        String(details.settlement)
-      )
-        ? details.settlement
-        : 'unknown',
-      issues: [{ code, message }]
-    }
-  })
-})
+    toolOutcome: outcome
+  }
+  const issue = localToolFailureIssue(value, outcome)
+
+  if (issue) {
+    throw new AiToolContractError('output', issue)
+  }
+
+  return { success: false, outcome, text: JSON.stringify(value) }
+}
 
 /** Retain actionable diagnostics without forwarding URLs, credentials or stacks. */
 export const localToolErrorMessage = (error: unknown) =>
@@ -453,8 +572,9 @@ export const invokeLocalTool = async (
   args: unknown,
   signal: AbortSignal,
   executionEvidence?: () => unknown,
-  onPhase?: (phase: 'admission' | 'execution' | 'decoding') => void
-) => {
+  onPhase?: (phase: 'admission' | 'execution' | 'decoding') => void,
+  invocation?: object
+): Promise<LocalToolReply> => {
   signal.throwIfAborted()
   let stage: 'admission' | 'execution' | 'decoding' = 'admission'
   let decodedResult: unknown
@@ -479,6 +599,7 @@ export const invokeLocalTool = async (
         explanation?.message ?? formatOperationInputIssues(issues),
         explanation?.code ?? 'PREPARATION_REJECTED',
         {
+          recovery: 'correct_input',
           ...owner.rejectInput?.(definition.name, args, issues),
           stage,
           settlement: 'not-started'
@@ -507,9 +628,17 @@ export const invokeLocalTool = async (
     }
 
     let toolOutcome =
-      owner.resultOutcome?.(definition.name, value) ?? localToolOutcome(value)
+      owner.resultOutcome?.(definition.name, value) ??
+      (record(value)
+        ? localToolOutcome(value)
+        : {
+            status: 'success' as const,
+            settlement: 'completed' as const,
+            issues: []
+          })
 
     if (
+      record(value) &&
       toolOutcome.status !== 'success' &&
       toolOutcome.settlement === 'unknown' &&
       !hasAcknowledgedActions(value.executionResult)
@@ -542,14 +671,18 @@ export const invokeLocalTool = async (
 
     const reply = {
       success: toolOutcome.status === 'success',
-      text: JSON.stringify({ ...value, toolOutcome })
+      text: JSON.stringify(value),
+      outcome: toolOutcome
     }
     const outputSchema = selectAiToolResultSchema(contract, toolOutcome.status)
 
     if (outputSchema !== undefined) {
       validatedOutputSchemas.set(reply, {
         schema: outputSchema,
-        text: reply.text
+        definition,
+        invocation,
+        text: reply.text,
+        outcome: JSON.stringify(reply.outcome)
       })
     }
 
@@ -626,6 +759,8 @@ export const invokeLocalTool = async (
               reportedSettlement ??
               'unknown'),
         recovery:
+          batchInputRecovery(batchError?.receipt) ||
+          (inputFailure && !hasPriorExecution && error.recovery) ||
           'Inspect the failure and current state, then choose a corrected or alternate operation. Do not automatically replay mutations.',
         ...(batchError ? { batchFailure: batchError.failure } : {}),
         executionResult: JSON.parse(
@@ -747,3 +882,15 @@ export const observeLocalToolExecution = async (
     parentCallId
   })
 }
+
+/** Keep Runtime admission and model recovery projection on the same failure contract. */
+export const invocationRecoverySchema = (
+  schema: unknown,
+  failure: unknown
+): AiJsonValue => ({
+  anyOf: [schema, failure]
+    .filter((value) => value !== undefined)
+    .map((value, index) =>
+      embedAiToolSchema(value as AiJsonValue, `#/anyOf/${index}`)
+    )
+})

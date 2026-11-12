@@ -75,8 +75,10 @@ const getWorkspaceId = (
   elementDataMap: LayerDropElementDataMap
 ): string | null => {
   const rootParentIds = new Set<string>()
+
   flattenedIds.forEach((elementId) => {
     const parentId = elementDataMap[elementId]?.parentId
+
     if (
       typeof parentId === 'string' &&
       parentId.length > 0 &&
@@ -85,6 +87,7 @@ const getWorkspaceId = (
       rootParentIds.add(parentId)
     }
   })
+
   return rootParentIds.size === 1 ? [...rootParentIds][0] : null
 }
 
@@ -100,9 +103,11 @@ const wouldTargetDescendant = (
     if (movedIdSet.has(currentId)) {
       return true
     }
+
     visited.add(currentId)
     currentId = elementDataMap[currentId]?.parentId
   }
+
   return false
 }
 
@@ -147,6 +152,7 @@ export const projectLayerDropIntent = ({
 }: ProjectLayerDropIntentInput): LayerDropIntent => {
   const flattenedIdSet = new Set(flattenedIds)
   const movedIdSet = new Set(source.elementIds)
+
   if (
     movedIdSet.size !== source.elementIds.length ||
     source.elementIds.some(
@@ -156,6 +162,7 @@ export const projectLayerDropIntent = ({
     )
   ) {
     const zone = target.kind === 'workspace' ? 'workspace' : target.zone
+
     return invalid(
       zone,
       target.kind === 'row' ? target.elementId : null,
@@ -165,15 +172,18 @@ export const projectLayerDropIntent = ({
 
   if (target.kind === 'workspace') {
     const workspaceId = getWorkspaceId(flattenedIds, elementDataMap)
+
     if (!workspaceId) {
       return invalid('workspace', null, 'invalid-workspace-root')
     }
+
     const targetBase = getDirectChildIds(
       workspaceId,
       flattenedIds,
       elementDataMap,
       movedIdSet
     )
+
     return valid({
       zone: 'workspace',
       targetElementId: null,
@@ -185,6 +195,7 @@ export const projectLayerDropIntent = ({
 
   const { elementId: targetElementId, zone } = target
   const targetElement = elementDataMap[targetElementId]
+
   if (
     !targetElement ||
     targetElement.id !== targetElementId ||
@@ -192,6 +203,7 @@ export const projectLayerDropIntent = ({
   ) {
     return invalid(zone, targetElementId, 'missing-target')
   }
+
   if (movedIdSet.has(targetElementId)) {
     return invalid(zone, targetElementId, 'selected-target')
   }
@@ -200,9 +212,11 @@ export const projectLayerDropIntent = ({
     if (targetElement.type !== EntityTypes.GROUP) {
       return invalid(zone, targetElementId, 'unsupported-container')
     }
+
     if (targetElement.lock === true) {
       return invalid(zone, targetElementId, 'locked-target')
     }
+
     if (wouldTargetDescendant(targetElementId, movedIdSet, elementDataMap)) {
       return invalid(zone, targetElementId, 'descendant-target')
     }
@@ -213,6 +227,7 @@ export const projectLayerDropIntent = ({
       elementDataMap,
       movedIdSet
     )
+
     return valid({
       zone,
       targetElementId,
@@ -226,9 +241,11 @@ export const projectLayerDropIntent = ({
   }
 
   const targetParentId = targetElement.parentId
+
   if (typeof targetParentId !== 'string' || targetParentId.length === 0) {
     return invalid(zone, targetElementId, 'missing-target')
   }
+
   if (wouldTargetDescendant(targetParentId, movedIdSet, elementDataMap)) {
     return invalid(zone, targetElementId, 'descendant-target')
   }
@@ -240,6 +257,7 @@ export const projectLayerDropIntent = ({
     movedIdSet
   )
   const targetBaseIndex = targetBase.indexOf(targetElementId)
+
   if (targetBaseIndex < 0) {
     return invalid(zone, targetElementId, 'invalid-target-index')
   }

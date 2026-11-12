@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { Buffer } from 'node:buffer'
-import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { builtinModules } from 'node:module'
 import path from 'node:path'
 import test from 'node:test'
@@ -419,6 +419,15 @@ test('ordinary validation includes every maintained server regression suite', ()
     [],
     'Maintained server regressions must be in ordinary package validation'
   )
+  const stale = [...new Set(commands.split(/\s+/))]
+    .filter((file) => /^server\/__tests__\/.*\.test\.ts$/.test(file))
+    .filter((file) => !existsSync(path.join(appDirectory, file)))
+
+  assert.deepEqual(
+    stale,
+    [],
+    'Ordinary validation must not reference removed suites'
+  )
 })
 
 test('formal AI suites do not enable live model inference', () => {
@@ -450,4 +459,31 @@ test('formal AI suites do not enable live model inference', () => {
     [],
     'Model inference belongs to explicit manual evaluation, not formal tests'
   )
+})
+
+test('maintained AI contract regressions participate in the scoped type proof', () => {
+  const proof = JSON.parse(
+    readFileSync(path.join(appDirectory, 'tsconfig.flow-proof.json'), 'utf8')
+  )
+
+  for (const file of proof.include) {
+    assert.ok(
+      existsSync(path.join(appDirectory, file)),
+      `Missing type-proof member: ${file}`
+    )
+  }
+
+  for (const file of [
+    'api-delivery-audit.integration',
+    'batch-usage.integration',
+    'local-tool-operation-composition',
+    'reference-page-images',
+    'local-tool-leases',
+    'mechanical-closure.integration'
+  ]) {
+    assert.ok(
+      proof.include.includes(`server/__tests__/${file}.test.ts`),
+      `Missing contract regression: ${file}`
+    )
+  }
 })

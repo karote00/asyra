@@ -8,10 +8,13 @@ import { createTestDocumentIdentity } from './test-utils'
 export async function prepareLargeNavigationDocument(
   baseURL: string | undefined
 ) {
-  if (!baseURL || !process.env.E2E_DOCUMENT_BACKEND_URL)
+  if (!baseURL || !process.env.E2E_DOCUMENT_BACKEND_URL) {
     throw new Error('Isolated test URLs required')
+  }
+
   expect(new URL(baseURL).port).not.toBe('3000')
   const backend = new URL(process.env.E2E_DOCUMENT_BACKEND_URL)
+
   expect(backend.port).not.toBe('4201')
   const fixtureRoot = resolve('e2e/fixtures/large-document')
   const manifest = JSON.parse(
@@ -20,10 +23,12 @@ export async function prepareLargeNavigationDocument(
   const bytes = gunzipSync(
     await readFile(resolve(fixtureRoot, 'document.json.gz'))
   )
+
   expect(createHash('sha256').update(bytes).digest('hex')).toBe(manifest.sha256)
   const document = JSON.parse(bytes.toString('utf8'))
   const identity = createTestDocumentIdentity()
   const storage = resolve('test-results/document-backend')
+
   await mkdir(storage, { recursive: true })
   await writeFile(
     resolve(
