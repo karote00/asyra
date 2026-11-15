@@ -5,6 +5,7 @@ import {
   type SystemContextSnapshot
 } from '@asyra/utils'
 import { elementApis, hierarchyApis, selectionApis } from '../common-apis'
+import core from '../contexts'
 
 export type CanvasHierarchyElementDataMap = Record<
   string,
@@ -135,18 +136,79 @@ const validateHierarchyProjection = (
   }
 }
 
-export const resolveCanvasHierarchyTarget = ({
-  hitElementId,
-  selectedElementIds,
-  bypassParentScope,
-  flattenedIds,
-  elementDataMap
-}: ResolveCanvasHierarchyTargetInput): string | null => {
+type HierarchyInput = Pick<
+  ResolveCanvasHierarchyTargetInput,
+  'flattenedIds' | 'elementDataMap'
+>
+
+let retainedProjection:
+  | {
+      input: HierarchyInput
+      workspaceId: string | undefined
+      projection: ValidHierarchyProjection | null
+    }
+  | undefined
+let releaseProjection: (() => void) | undefined
+
+/** Only owner-published replacement projections may reuse admission. */
+const currentHierarchy = () => {
+  if (!releaseProjection) {
+    releaseProjection = core.registerRuntimeCleanup(
+      'canvas-hierarchy-target',
+      () => {
+        retainedProjection = undefined
+        releaseProjection = undefined
+      }
+    )
+  }
+
+  const flattenedIds = hierarchyApis.getFlattenedElementIds()
+  const elementDataMap = hierarchyApis.getElementDataMap()
+  const workspaceId = hierarchyApis.getWorkspaceId() ?? undefined
+
+  if (
+    retainedProjection?.input.flattenedIds === flattenedIds &&
+    retainedProjection.input.elementDataMap === elementDataMap &&
+    retainedProjection.workspaceId === workspaceId
+  ) {
+    return retainedProjection
+  }
+
+  retainedProjection = {
+    input: { flattenedIds, elementDataMap },
+    workspaceId,
+    projection: validateHierarchyProjection(
+      flattenedIds,
+      elementDataMap,
+      workspaceId
+    )
+  }
+
+  return retainedProjection
+}
+
+export const resolveCanvasHierarchyTarget = (
+  input: ResolveCanvasHierarchyTargetInput
+): string | null =>
+  resolveAdmittedCanvasHierarchyTarget(
+    input,
+    input.hitElementId
+      ? validateHierarchyProjection(input.flattenedIds, input.elementDataMap)
+      : null
+  )
+
+const resolveAdmittedCanvasHierarchyTarget = (
+  {
+    hitElementId,
+    selectedElementIds,
+    bypassParentScope,
+    elementDataMap
+  }: ResolveCanvasHierarchyTargetInput,
+  projection: ValidHierarchyProjection | null
+): string | null => {
   if (!hitElementId) {
     return null
   }
-
-  const projection = validateHierarchyProjection(flattenedIds, elementDataMap)
 
   if (!projection?.flattenedIdSet.has(hitElementId)) {
     return null
@@ -203,19 +265,23 @@ export const resolveCanvasHierarchyTarget = ({
   return null
 }
 
-export const resolveContainerChildTarget = ({
-  hitElementId,
-  containerId,
-  flattenedIds,
-  elementDataMap
-}: Pick<
-  ResolveCanvasHierarchyTargetInput,
-  'hitElementId' | 'flattenedIds' | 'elementDataMap'
-> & {
+type ContainerChildInput = HierarchyInput & {
+  hitElementId: string | null
   containerId: string
-}): string | null => {
-  const projection = validateHierarchyProjection(flattenedIds, elementDataMap)
+}
 
+export const resolveContainerChildTarget = (
+  input: ContainerChildInput
+): string | null =>
+  resolveAdmittedContainerChildTarget(
+    input,
+    validateHierarchyProjection(input.flattenedIds, input.elementDataMap)
+  )
+
+const resolveAdmittedContainerChildTarget = (
+  { hitElementId, containerId, elementDataMap }: ContainerChildInput,
+  projection: ValidHierarchyProjection | null
+): string | null => {
   if (
     !hitElementId ||
     hitElementId === containerId ||
@@ -260,25 +326,36 @@ export const resolveContainerChildTarget = ({
 export const resolveContainerChildAtClientPos = (
   containerId: string,
   clientPosition: PositionData
-): string | null =>
-  resolveContainerChildTarget({
-    containerId,
-    hitElementId: elementApis.getRenderElementIdAtClientPos(clientPosition),
-    flattenedIds: hierarchyApis.getFlattenedElementIds(),
-    elementDataMap: hierarchyApis.getElementDataMap()
-  })
+): string | null => {
+  const { input, projection } = currentHierarchy()
 
-export const resolveCreateElementParent = ({
-  workspaceId,
-  ...targetInput
-}: ResolveCreateElementParentInput): string | null => {
-  const projection = validateHierarchyProjection(
-    targetInput.flattenedIds,
-    targetInput.elementDataMap,
-    workspaceId
+  return resolveAdmittedContainerChildTarget(
+    {
+      ...input,
+      containerId,
+      hitElementId: elementApis.getRenderElementIdAtClientPos(clientPosition)
+    },
+    projection
+  )
+}
+
+export const resolveCreateElementParent = (
+  input: ResolveCreateElementParentInput
+): string | null =>
+  resolveAdmittedCreateParent(
+    input,
+    validateHierarchyProjection(
+      input.flattenedIds,
+      input.elementDataMap,
+      input.workspaceId
+    )
   )
 
-  if (!projection) {
+const resolveAdmittedCreateParent = (
+  { workspaceId, ...targetInput }: ResolveCreateElementParentInput,
+  projection: ValidHierarchyProjection | null
+): string | null => {
+  if (!projection || projection.workspaceId !== workspaceId) {
     return null
   }
 
@@ -286,7 +363,7 @@ export const resolveCreateElementParent = ({
     return projection.workspaceId
   }
 
-  const targetId = resolveCanvasHierarchyTarget(targetInput)
+  const targetId = resolveAdmittedCanvasHierarchyTarget(targetInput, projection)
 
   if (!targetId) {
     return null
@@ -313,14 +390,19 @@ export const resolveCreateElementParent = ({
 export const resolveCurrentCanvasHierarchyTarget = (
   hitElementId: string | null,
   snapshot: Pick<SystemContextSnapshot, 'keyMeta' | 'keyCtrl'>
-): string | null =>
-  resolveCanvasHierarchyTarget({
-    hitElementId,
-    selectedElementIds: selectionApis.getSelectedIds(),
-    bypassParentScope: snapshot.keyMeta || snapshot.keyCtrl,
-    flattenedIds: hierarchyApis.getFlattenedElementIds(),
-    elementDataMap: hierarchyApis.getElementDataMap()
-  })
+): string | null => {
+  const { input, projection } = currentHierarchy()
+
+  return resolveAdmittedCanvasHierarchyTarget(
+    {
+      ...input,
+      hitElementId,
+      selectedElementIds: selectionApis.getSelectedIds(),
+      bypassParentScope: snapshot.keyMeta || snapshot.keyCtrl
+    },
+    projection
+  )
+}
 
 export const resolveCanvasHierarchyTargetAtClientPos = (
   snapshot: Pick<SystemContextSnapshot, 'mousePosition' | 'keyMeta' | 'keyCtrl'>
@@ -333,20 +415,22 @@ export const resolveCanvasHierarchyTargetAtClientPos = (
 export const resolveCreateElementParentAtClientPos = (
   snapshot: Pick<SystemContextSnapshot, 'mousePosition' | 'keyMeta' | 'keyCtrl'>
 ): string | null => {
-  const workspaceId = hierarchyApis.getWorkspaceId()
+  const { input, projection, workspaceId } = currentHierarchy()
 
   if (!workspaceId) {
     return null
   }
 
-  return resolveCreateElementParent({
-    hitElementId: elementApis.getRenderElementIdAtClientPos(
-      snapshot.mousePosition
-    ),
-    selectedElementIds: selectionApis.getSelectedIds(),
-    bypassParentScope: snapshot.keyMeta || snapshot.keyCtrl,
-    workspaceId,
-    flattenedIds: hierarchyApis.getFlattenedElementIds(),
-    elementDataMap: hierarchyApis.getElementDataMap()
-  })
+  return resolveAdmittedCreateParent(
+    {
+      ...input,
+      hitElementId: elementApis.getRenderElementIdAtClientPos(
+        snapshot.mousePosition
+      ),
+      selectedElementIds: selectionApis.getSelectedIds(),
+      bypassParentScope: snapshot.keyMeta || snapshot.keyCtrl,
+      workspaceId
+    },
+    projection
+  )
 }

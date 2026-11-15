@@ -87,10 +87,12 @@ const data = {
         'Route toolbar and keyboard tool selection through the App feature.',
       inputs: [
         'Shortcut or toolbar primaryTool value',
+        'For keyboard input: held phase, changed key, repeat and composition metadata',
         'Current pathEditingMode and path continuation state'
       ],
       outputs: ['artifact:switch-tool-outcome'],
       conditions: [
+        'Admit only a fresh matching tool keydown before session cancellation; ignore repeats and unrelated held changes.',
         'Apply the selected tool and its path-editing transition through system context.'
       ],
       bypasses: ['Missing tool input does not change state.'],
@@ -105,6 +107,7 @@ const data = {
       cacheDimensions: [],
       implementationBoundary: [
         'apps/asyra-design/src/features/switch-primary-tool/index.ts',
+        'apps/asyra-design/src/config/key-combinations.ts',
         'apps/asyra-design/src/common-apis/system-context.ts',
         'apps/asyra-design/src/toolbar/tool-button.tsx'
       ],
@@ -158,7 +161,8 @@ const data = {
       inputs: [
         'Pointer position, area-selection bounds and Shift modifier',
         'Current selection, registered container capabilities and raw render hit',
-        'Canonical hierarchy and locked/hidden state'
+        'Canonical hierarchy and locked/hidden state',
+        'Current viewport projection for workspace marquee endpoints'
       ],
       outputs: ['artifact:select-elements-outcome'],
       conditions: [
@@ -175,9 +179,10 @@ const data = {
         'Observation records or test assertions as canonical product state',
         'Guessed ownership or test-specific runtime output'
       ],
-      cacheDimensions: [],
+      cacheDimensions: ['Projected marquee endpoints and selection presence'],
       implementationBoundary: [
         'apps/asyra-design/src/features/selection/feature.ts',
+        'apps/asyra-design/src/render-layers/area-selection-render-layer.ts',
         'apps/asyra-design/src/common-apis/selection.ts',
         'apps/asyra-design/src/controllers/canvas-hierarchy-target.ts',
         'apps/asyra-design/src/contents/contents-panel.tsx',
@@ -218,6 +223,7 @@ const data = {
       cacheDimensions: [],
       implementationBoundary: [
         'apps/asyra-design/src/features/hover-element/index.ts',
+        'apps/asyra-design/src/controllers/hover-target.ts',
         'apps/asyra-design/src/common-apis/system-context.ts'
       ],
       specRefs: ['#hover-elements'],
@@ -289,6 +295,7 @@ const data = {
       cacheDimensions: [],
       implementationBoundary: [
         'apps/asyra-design/src/features/delete-element/index.ts',
+        'apps/asyra-design/src/controllers/hover-target.ts',
         'apps/asyra-design/src/common-apis/element/apis.ts'
       ],
       specRefs: ['#delete-subtree'],
@@ -543,7 +550,10 @@ const data = {
         'Observation records or test assertions as canonical product state',
         'Guessed ownership or test-specific runtime output'
       ],
-      cacheDimensions: [],
+      cacheDimensions: [
+        'One current Preset-published descriptor map identity, flattened order identity and workspace; released by Core runtime cleanup',
+        'Dynamic hit, selection and modifiers are resolved on each call; mutable explicit inputs are always admitted afresh'
+      ],
       implementationBoundary: [
         'apps/asyra-design/src/controllers/canvas-hierarchy-target.ts',
         'apps/asyra-design/src/features/selection/feature.ts',

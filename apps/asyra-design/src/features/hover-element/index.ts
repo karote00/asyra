@@ -1,41 +1,11 @@
 import { defineFeature, EventTypes } from '@asyra/core'
 import type { RenderPointerPayload, SystemContextSnapshot } from '@asyra/utils'
-import { elementApis, systemContextApis } from '../../common-apis'
+import { systemContextApis } from '../../common-apis'
 import { FeatureNames, InputSystemEvents } from '../../constants'
-import { resolveCurrentCanvasHierarchyTarget } from '../../controllers/canvas-hierarchy-target'
-
-const publishHoveredElementId = (elementId: string | null) => {
-  if (
-    elementId &&
-    !elementApis.isElementLocked(elementId) &&
-    elementApis.isElementVisible(elementId)
-  ) {
-    systemContextApis.updateHoveredElementId(elementId)
-
-    return { hoveredId: elementId }
-  }
-
-  systemContextApis.updateHoveredElementId(null)
-
-  return { hoveredId: null }
-}
-
-const resolveHoveredElementId = (
-  rawElementId: string | null,
-  snapshot: Pick<SystemContextSnapshot, 'keyMeta' | 'keyCtrl'>
-) => {
-  const pathEditingVectorId = systemContextApis.getPathEditingVectorId()
-
-  if (
-    pathEditingVectorId &&
-    rawElementId &&
-    rawElementId !== pathEditingVectorId
-  ) {
-    return null
-  }
-
-  return resolveCurrentCanvasHierarchyTarget(rawElementId, snapshot)
-}
+import {
+  publishHoverTarget,
+  refreshHoverAtPointer
+} from '../../controllers/hover-target'
 
 /**
  * Hover Element Feature
@@ -56,13 +26,7 @@ export const hoverElementFeature = defineFeature(
         return null
       }
 
-      const rawElementId = elementApis.getRenderElementIdAtClientPos(
-        snapshot.mousePosition
-      )
-
-      return publishHoveredElementId(
-        resolveHoveredElementId(rawElementId, snapshot)
-      )
+      return refreshHoverAtPointer(snapshot)
     }
   }
 )
@@ -92,9 +56,7 @@ export const hoverElementRenderHoverFeature = defineFeature(
 
       const rawElementId = payload?.elementId ?? null
 
-      return publishHoveredElementId(
-        resolveHoveredElementId(rawElementId, snapshot)
-      )
+      return publishHoverTarget(rawElementId, snapshot)
     }
   }
 )

@@ -28,15 +28,20 @@ test.describe('Property Management', () => {
     page.evaluate(async () => {
       // Formal E2E reads use the module-owned test bridge, never DevTools globals.
       const core = (await import('../src/testing/runtime-access')).core
-      const selectedId = core?.deps?.selection?.getElementSelectionIds?.()?.[0]
+      const selectedId = core.getSelectedElementIds()[0]
 
       if (!selectedId) {
         return null
       }
 
-      const element = core?.deps?.sceneTree?.getElementById?.(selectedId)
-      const renderElement = core?.deps?.render?.getElementById?.(selectedId)
-      const computed = element?.getAllComputedData?.() ?? {}
+      const renderElement = core
+        .getPresetDependencies()
+        .render.getElementById(selectedId)
+      const computed = core.getElementComputedData(selectedId)
+
+      if (!computed || !renderElement) {
+        throw new Error('Selected element must have canonical and render data')
+      }
 
       return {
         computed: {
@@ -60,21 +65,25 @@ test.describe('Property Management', () => {
     page.evaluate(async () => {
       // Formal E2E reads use the module-owned test bridge, never DevTools globals.
       const core = (await import('../src/testing/runtime-access')).core
-      const selected = core?.getSystemProperty?.('selectedVectorPoint')
-      const element = selected?.elementId
-        ? core?.deps?.sceneTree?.getElementById?.(selected.elementId)
-        : null
-      const computed = element?.getAllComputedData?.() ?? {}
-      const point = selected?.pointId
-        ? computed.points?.[selected.pointId]
-        : null
-      const renderElement = selected?.elementId
-        ? core?.deps?.render?.getElementById?.(selected.elementId)
-        : null
-      const renderBounds = renderElement?.getBounds?.()
+      const { readPenVector, systemContextApis } =
+        await import('../src/testing/pen-observation')
+      const selected = systemContextApis.getSelectedVectorPoint()
 
-      if (!selected?.elementId || !selected?.pointId || !point) {
+      if (!selected) {
         return null
+      }
+
+      const computed = readPenVector(selected.elementId)
+      const point = computed.points[selected.pointId]
+      const renderElement = core
+        .getPresetDependencies()
+        .render.getElementById(selected.elementId)
+      const renderBounds = renderElement?.getBounds()
+
+      if (!point || !renderBounds) {
+        throw new Error(
+          'Selected vector point must have canonical and render geometry'
+        )
       }
 
       return {
@@ -88,7 +97,7 @@ test.describe('Property Management', () => {
         computed: {
           x: point.x,
           y: point.y,
-          type: point.type,
+          kind: point.kind,
           bounds: {
             x: computed.x,
             y: computed.y,
@@ -110,14 +119,13 @@ test.describe('Property Management', () => {
   const getSelectedFillColor = async (page: Page) =>
     page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
-      const selectedId = core?.deps?.selection?.getElementSelectionIds?.()?.[0]
+      const selectedId = core.getSelectedElementIds()[0]
 
       if (!selectedId) {
         return null
       }
 
-      const element = core?.deps?.sceneTree?.getElementById?.(selectedId)
-      const computed = element?.getAllComputedData?.() ?? {}
+      const computed = core.getElementComputedData(selectedId) ?? {}
 
       if (!Array.isArray(computed.fills) || !computed.fills[0]) {
         return null
@@ -129,14 +137,13 @@ test.describe('Property Management', () => {
   const getSelectedFillCount = async (page: Page) =>
     page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
-      const selectedId = core?.deps?.selection?.getElementSelectionIds?.()?.[0]
+      const selectedId = core.getSelectedElementIds()[0]
 
       if (!selectedId) {
         return 0
       }
 
-      const element = core?.deps?.sceneTree?.getElementById?.(selectedId)
-      const computed = element?.getAllComputedData?.() ?? {}
+      const computed = core.getElementComputedData(selectedId) ?? {}
 
       return Array.isArray(computed.fills) ? computed.fills.length : 0
     })
@@ -144,15 +151,16 @@ test.describe('Property Management', () => {
   const getSelectedGradientStopColor = async (page: Page, stopIndex: number) =>
     page.evaluate(async (targetStopIndex) => {
       const core = (await import('../src/testing/runtime-access')).core
-      const selectedId = core?.deps?.selection?.getElementSelectionIds?.()?.[0]
+      const selectedId = core.getSelectedElementIds()[0]
 
       if (!selectedId) {
         return null
       }
 
-      const element = core?.deps?.sceneTree?.getElementById?.(selectedId)
-      const computed = element?.getAllComputedData?.() ?? {}
-      const gradient = computed?.fills?.[0]?.gradient
+      const computed = core.getElementComputedData(selectedId) ?? {}
+      const gradient = Array.isArray(computed.fills)
+        ? computed.fills[0]?.gradient
+        : undefined
       const stop = gradient?.gradientStops?.[targetStopIndex]
 
       return stop?.color ?? null
@@ -164,32 +172,32 @@ test.describe('Property Management', () => {
   ) =>
     page.evaluate(async (targetStopIndex) => {
       const core = (await import('../src/testing/runtime-access')).core
-      const selectedId = core?.deps?.selection?.getElementSelectionIds?.()?.[0]
+      const selectedId = core.getSelectedElementIds()[0]
 
       if (!selectedId) {
         return null
       }
 
-      const element = core?.deps?.sceneTree?.getElementById?.(selectedId)
-      const computed = element?.getAllComputedData?.() ?? {}
+      const computed = core.getElementComputedData(selectedId) ?? {}
 
       return (
-        computed?.fills?.[0]?.gradient?.gradientStops?.[targetStopIndex]
-          ?.position ?? null
+        (Array.isArray(computed.fills)
+          ? computed.fills[0]?.gradient?.gradientStops?.[targetStopIndex]
+              ?.position
+          : undefined) ?? null
       )
     }, stopIndex)
 
   const getSelectedStrokeCount = async (page: Page) =>
     page.evaluate(async () => {
       const core = (await import('../src/testing/runtime-access')).core
-      const selectedId = core?.deps?.selection?.getElementSelectionIds?.()?.[0]
+      const selectedId = core.getSelectedElementIds()[0]
 
       if (!selectedId) {
         return 0
       }
 
-      const element = core?.deps?.sceneTree?.getElementById?.(selectedId)
-      const computed = element?.getAllComputedData?.() ?? {}
+      const computed = core.getElementComputedData(selectedId) ?? {}
 
       return Array.isArray(computed.strokes) ? computed.strokes.length : 0
     })
@@ -504,11 +512,10 @@ test.describe('Property Management', () => {
       .poll(async () => {
         return page.evaluate(async () => {
           const core = (await import('../src/testing/runtime-access')).core
-          const selectedId =
-            core?.deps?.selection?.getElementSelectionIds?.()?.[0]
-          const element =
-            selectedId && core?.deps?.sceneTree?.getElementById?.(selectedId)
-          const computed = element?.getAllComputedData?.() ?? {}
+          const selectedId = core.getSelectedElementIds()[0]
+          const computed = selectedId
+            ? (core.getElementComputedData(selectedId) ?? {})
+            : {}
           const uiStrokes = core?.getUIProperty?.('strokes')
 
           return {
@@ -591,7 +598,7 @@ test.describe('Property Management', () => {
     const during = await getTransactionSnapshot(page)
 
     expect(during.undoCount).toBe(before.undoCount)
-    expect(during.isTransacting).toBeGreaterThan(0)
+    expect(during.isIdle).toBe(false)
     const previewDeliveries = await page.evaluate(async () => {
       const { readTestCapture } = await import('../src/testing/runtime-access')
 
@@ -623,7 +630,7 @@ test.describe('Property Management', () => {
     const after = await getTransactionSnapshot(page)
 
     expect(after.undoCount).toBe(before.undoCount + 1)
-    expect(after.isTransacting).toBe(0)
+    expect(after.isIdle).toBe(true)
   })
 
   test('should show fills section for selected vector element', async ({
@@ -774,7 +781,7 @@ test.describe('Property Management', () => {
     const duringFirstInput = await getTransactionSnapshot(page)
 
     expect(duringFirstInput.undoCount).toBe(before.undoCount)
-    expect(duringFirstInput.isTransacting).toBeGreaterThan(0)
+    expect(duringFirstInput.isIdle).toBe(false)
     const colorDuringDrag = await getSelectedFillColor(page)
 
     expect(colorDuringDrag).not.toBe(initialFillColor)
@@ -791,7 +798,7 @@ test.describe('Property Management', () => {
     const duringDragUpdates = await getTransactionSnapshot(page)
 
     expect(duringDragUpdates.undoCount).toBe(before.undoCount)
-    expect(duringDragUpdates.isTransacting).toBeGreaterThan(0)
+    expect(duringDragUpdates.isIdle).toBe(false)
     const finalColor = await getSelectedFillColor(page)
 
     expect(finalColor).not.toBe(initialFillColor)
@@ -826,7 +833,7 @@ test.describe('Property Management', () => {
     const afterMouseUp = await getTransactionSnapshot(page)
 
     expect(afterMouseUp.undoCount).toBe(before.undoCount + 1)
-    expect(afterMouseUp.isTransacting).toBe(0)
+    expect(afterMouseUp.isIdle).toBe(true)
     expect(await getSelectedFillColor(page)).toBe(finalColor)
 
     await undo(page)
@@ -921,7 +928,7 @@ test.describe('Property Management', () => {
     const during = await getTransactionSnapshot(page)
 
     expect(during.undoCount).toBe(before.undoCount)
-    expect(during.isTransacting).toBeGreaterThan(0)
+    expect(during.isIdle).toBe(false)
     const previewDeliveries = await page.evaluate(async () => {
       const { readTestCapture } = await import('../src/testing/runtime-access')
 
@@ -952,7 +959,7 @@ test.describe('Property Management', () => {
     const after = await getTransactionSnapshot(page)
 
     expect(after.undoCount).toBe(before.undoCount + 1)
-    expect(after.isTransacting).toBe(0)
+    expect(after.isIdle).toBe(true)
 
     await undo(page)
     await page.waitForTimeout(160)
@@ -1020,7 +1027,7 @@ test.describe('Property Management', () => {
     const duringDrag = await getTransactionSnapshot(page)
 
     expect(duringDrag.undoCount).toBe(before.undoCount)
-    expect(duringDrag.isTransacting).toBeGreaterThan(0)
+    expect(duringDrag.isIdle).toBe(false)
     const colorDuringDrag = await getSelectedGradientStopColor(page, 1)
 
     expect(colorDuringDrag).not.toBe(initialStopColor)
@@ -1055,7 +1062,7 @@ test.describe('Property Management', () => {
     const afterMouseUp = await getTransactionSnapshot(page)
 
     expect(afterMouseUp.undoCount).toBe(before.undoCount + 1)
-    expect(afterMouseUp.isTransacting).toBe(0)
+    expect(afterMouseUp.isIdle).toBe(true)
 
     await undo(page)
     await page.waitForTimeout(200)

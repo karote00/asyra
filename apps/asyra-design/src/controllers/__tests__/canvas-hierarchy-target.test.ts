@@ -1,13 +1,15 @@
 import { EntityTypes, type ElementRawData } from '@asyra/utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { elementApis, hierarchyApis, selectionApis } from '../../common-apis'
+import core from '../../contexts'
 import {
   resolveCreateElementParent,
   resolveContainerChildTarget,
   resolveContainerChildAtClientPos,
   resolveCanvasHierarchyTarget,
   resolveCanvasHierarchyTargetAtClientPos,
-  resolveCurrentCanvasHierarchyTarget
+  resolveCurrentCanvasHierarchyTarget,
+  resolveCreateElementParentAtClientPos
 } from '../canvas-hierarchy-target'
 
 type ProjectedElement = Partial<ElementRawData>
@@ -85,6 +87,168 @@ const resolveCreateParent = (
     flattenedIds: overrides.flattenedIds ?? flattenedIds,
     elementDataMap: overrides.elementDataMap ?? elementDataMap
   })
+
+describe('hierarchy admission work and invalidation', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  const counted = () => {
+    const ids = Array.from({ length: 10000 }, (_, index) => `rect-${index}`)
+    const source = Object.fromEntries(
+      ids.map((id) => [id, element(id, 'workspace')])
+    )
+    let reads = 0
+    const map = new Proxy(source, {
+      get(target, key, receiver) {
+        reads++
+
+        return Reflect.get(target, key, receiver)
+      }
+    })
+
+    return {
+      ids,
+      source,
+      map,
+
+      reads: () => reads
+    }
+  }
+
+  const snapshot = {
+    keyMeta: false,
+    keyCtrl: false,
+    mousePosition: { x: 10, y: 20 }
+  }
+
+  it('admits unchanged normal pointer and create inputs once rather than rescanning every query', () => {
+    const input = counted()
+    const cleanup = vi.spyOn(core, 'registerRuntimeCleanup')
+
+    vi.spyOn(hierarchyApis, 'getFlattenedElementIds').mockReturnValue(input.ids)
+    vi.spyOn(hierarchyApis, 'getElementDataMap').mockReturnValue(input.map)
+    vi.spyOn(hierarchyApis, 'getWorkspaceId').mockReturnValue('workspace')
+    vi.spyOn(selectionApis, 'getSelectedIds').mockReturnValue([])
+    vi.spyOn(elementApis, 'getRenderElementIdAtClientPos').mockReturnValue(
+      'rect-0'
+    )
+    expect(resolveCurrentCanvasHierarchyTarget('rect-0', snapshot)).toBe(
+      'rect-0'
+    )
+    const admittedReads = input.reads()
+
+    expect(admittedReads).toBeGreaterThanOrEqual(input.ids.length)
+    expect(resolveCurrentCanvasHierarchyTarget('rect-1', snapshot)).toBe(
+      'rect-1'
+    )
+    expect(resolveCreateElementParentAtClientPos(snapshot)).toBe('workspace')
+    expect(input.reads() - admittedReads).toBeLessThan(10)
+    const registration = cleanup.mock.calls.find(
+      ([key]) => key === 'canvas-hierarchy-target'
+    )
+    const unsubscribe = cleanup.mock.results[0]?.value
+
+    expect(registration).toBeDefined()
+    if (!registration || typeof unsubscribe !== 'function') {
+      throw new Error('Missing lifetime-owned hierarchy admission cleanup')
+    }
+
+    unsubscribe()
+    registration[1]()
+    const releasedReads = input.reads()
+
+    expect(resolveCurrentCanvasHierarchyTarget('rect-0', snapshot)).toBe(
+      'rect-0'
+    )
+    expect(input.reads() - releasedReads).toBeGreaterThanOrEqual(
+      input.ids.length
+    )
+  })
+
+  it('validates explicit create input only once and never caches mutable caller input', () => {
+    const input = counted()
+    const request = {
+      hitElementId: 'rect-0',
+      selectedElementIds: [],
+      bypassParentScope: false,
+      workspaceId: 'workspace',
+      flattenedIds: input.ids,
+      elementDataMap: input.map
+    }
+
+    expect(resolveCreateElementParent(request)).toBe('workspace')
+    expect(input.reads()).toBeLessThan(21000)
+    input.source['rect-1'].parentId = 'rect-1'
+    expect(resolveCreateElementParent(request)).toBeNull()
+    expect(resolveCanvasHierarchyTarget(request)).toBeNull()
+  })
+
+  it('rejects replaced malformed projections and recovers only after a valid replacement', () => {
+    const input = counted()
+
+    vi.spyOn(hierarchyApis, 'getFlattenedElementIds').mockReturnValue(input.ids)
+    const map = vi
+      .spyOn(hierarchyApis, 'getElementDataMap')
+      .mockReturnValue(input.map)
+
+    vi.spyOn(hierarchyApis, 'getWorkspaceId').mockReturnValue('workspace')
+    vi.spyOn(selectionApis, 'getSelectedIds').mockReturnValue([])
+    expect(resolveCurrentCanvasHierarchyTarget('rect-0', snapshot)).toBe(
+      'rect-0'
+    )
+    map.mockReturnValue({
+      ...input.source,
+      'rect-1': element('rect-1', 'rect-1')
+    })
+    expect(resolveCurrentCanvasHierarchyTarget('rect-0', snapshot)).toBeNull()
+    map.mockReturnValue({ ...input.source })
+    expect(resolveCurrentCanvasHierarchyTarget('rect-0', snapshot)).toBe(
+      'rect-0'
+    )
+  })
+
+  it('invalidates order and workspace independently while resolving live selection and modifiers', () => {
+    const order = vi
+      .spyOn(hierarchyApis, 'getFlattenedElementIds')
+      .mockReturnValue(flattenedIds)
+    const workspace = vi
+      .spyOn(hierarchyApis, 'getWorkspaceId')
+      .mockReturnValue('workspace')
+    const selection = vi
+      .spyOn(selectionApis, 'getSelectedIds')
+      .mockReturnValue([])
+
+    vi.spyOn(hierarchyApis, 'getElementDataMap').mockReturnValue(elementDataMap)
+    expect(resolveCurrentCanvasHierarchyTarget('nested-leaf', snapshot)).toBe(
+      'group-1'
+    )
+    selection.mockReturnValue(['rect-2a'])
+    expect(resolveCurrentCanvasHierarchyTarget('nested-leaf', snapshot)).toBe(
+      'nested'
+    )
+    expect(
+      resolveCurrentCanvasHierarchyTarget('nested-leaf', {
+        ...snapshot,
+        keyMeta: true
+      })
+    ).toBe('nested-leaf')
+    order.mockReturnValue([...flattenedIds].reverse())
+    expect(
+      resolveCurrentCanvasHierarchyTarget('nested-leaf', snapshot)
+    ).toBeNull()
+    order.mockReturnValue(flattenedIds)
+    expect(resolveCurrentCanvasHierarchyTarget('nested-leaf', snapshot)).toBe(
+      'nested'
+    )
+    workspace.mockReturnValue('different-workspace')
+    expect(
+      resolveCurrentCanvasHierarchyTarget('nested-leaf', snapshot)
+    ).toBeNull()
+    workspace.mockReturnValue('workspace')
+    expect(resolveCurrentCanvasHierarchyTarget('nested-leaf', snapshot)).toBe(
+      'nested'
+    )
+  })
+})
 
 describe('canvas hierarchy target resolution', () => {
   afterEach(() => {

@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto'
-import type { Locator, Page } from '@playwright/test'
+import { expect, type Locator, type Page } from '@playwright/test'
 import type { Rect } from '@asyra/utils'
 
 /**
@@ -432,17 +432,55 @@ export async function createRectangle(
   relativeX = 0.3,
   relativeY = 0.3
 ) {
-  // Switch to Rectangle tool
+  const previousSelection = await page.evaluate(async () => {
+    const { core } = await import('../src/testing/runtime-access')
+
+    return core.getSelectedElementIds()
+  })
+
   await page.keyboard.press('r')
-  await page.waitForTimeout(100)
+  await expect(page.getByTestId('tool-rectangle')).toHaveAttribute(
+    'data-active',
+    'true'
+  )
 
-  // Click to create rectangle
   await clickCanvas(page, relativeX, relativeY)
-  await page.waitForTimeout(500)
+  await expect
+    .poll(
+      () =>
+        page.evaluate(async (previous) => {
+          const { core } = await import('../src/testing/runtime-access')
+          const selected = core.getSelectedElementIds()
+          const id = selected[0]
 
-  // Switch back to Select tool
-  await page.keyboard.press('v')
-  await page.waitForTimeout(100)
+          return {
+            tool: core.getSystemProperty('primaryTool'),
+            selectedCount: selected.length,
+            newRectangle: Boolean(
+              id &&
+              !previous.includes(id) &&
+              core.getElementMetadata(id)?.type === 'rect'
+            ),
+            transactionIdle: core.isTransactionBoundaryIdle()
+          }
+        }, previousSelection),
+      {
+        message:
+          'Rectangle creation must acknowledge a new canonical selection and finish its transaction'
+      }
+    )
+    .toEqual({
+      tool: 'select',
+      selectedCount: 1,
+      newRectangle: true,
+      transactionIdle: true
+    })
+
+  await expect(page.getByTestId('tool-select')).toHaveAttribute(
+    'data-active',
+    'true'
+  )
+  await expect(getPropertiesPanel(page).getByTestId('prop-x')).toBeVisible()
 }
 
 /**

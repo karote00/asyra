@@ -67,12 +67,22 @@ export const registerAreaSelectionRenderLayer = (
         deps.systemProperties.getSystemProperty<AreaSelectionState | null>(
           'areaSelection'
         ) ?? null
-      const drawSignature = selection
+      const projected = selection
+        ? {
+            start: deps.viewportApis.getCanvasPositionFromWorkspace(
+              selection.dragStart
+            ),
+            current: deps.viewportApis.getCanvasPositionFromWorkspace(
+              selection.dragCurrent
+            )
+          }
+        : null
+      const drawSignature = projected
         ? [
-            selection.dragStart.x,
-            selection.dragStart.y,
-            selection.dragCurrent.x,
-            selection.dragCurrent.y
+            projected.start.x,
+            projected.start.y,
+            projected.current.x,
+            projected.current.y
           ].join('|')
         : 'empty'
 
@@ -83,17 +93,11 @@ export const registerAreaSelectionRenderLayer = (
       lastDrawSignature = drawSignature
 
       canvas.clear()
-      if (!selection) {
+      if (!projected) {
         return true
       }
 
-      const startCanvas = deps.viewportApis.getCanvasPositionFromWorkspace(
-        selection.dragStart
-      )
-      const currentCanvas = deps.viewportApis.getCanvasPositionFromWorkspace(
-        selection.dragCurrent
-      )
-      const rect = rectFromPoints(startCanvas, currentCanvas)
+      const rect = rectFromPoints(projected.start, projected.current)
 
       if (rect.width <= 0 || rect.height <= 0) {
         return true

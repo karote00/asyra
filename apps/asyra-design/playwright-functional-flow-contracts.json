@@ -361,6 +361,138 @@
             "apps/asyra-design/src/features/switch-primary-tool/index.ts",
             "apps/asyra-design/src/common-apis/system-context.ts"
           ]
+        },
+        {
+          "id": "functional.rectangle-handoff.d962d964b216",
+          "stepId": "switch-tool",
+          "testFile": "apps/asyra-design/e2e/rectangle-handoff.spec.ts",
+          "testName": "Rectangle creation handoff holding R beyond 100ms without key repeat preserves drag resizing",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/config/key-combinations.ts",
+            "apps/asyra-design/src/features/switch-primary-tool/index.ts",
+            "apps/asyra-design/src/common-apis/system-context.ts"
+          ]
+        },
+        {
+          "id": "functional.rectangle-handoff.4f9d4fd57b2e",
+          "stepId": "switch-tool",
+          "testFile": "apps/asyra-design/e2e/rectangle-handoff.spec.ts",
+          "testName": "Rectangle creation handoff holding R beyond 100ms with key repeat preserves drag resizing",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/config/key-combinations.ts",
+            "apps/asyra-design/src/features/switch-primary-tool/index.ts",
+            "apps/asyra-design/src/common-apis/system-context.ts"
+          ]
+        },
+        {
+          "id": "functional.rectangle-handoff.9b22090e4492",
+          "stepId": "switch-tool",
+          "testFile": "apps/asyra-design/e2e/rectangle-handoff.spec.ts",
+          "testName": "Rectangle creation handoff a fresh different tool press still finalizes the active rectangle gesture",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/config/key-combinations.ts",
+            "apps/asyra-design/src/features/switch-primary-tool/index.ts",
+            "apps/asyra-design/src/common-apis/system-context.ts"
+          ]
+        },
+        {
+          "id": "functional.tool-shortcut-handoff.6ab31b67fe14",
+          "stepId": "switch-tool",
+          "testFile": "apps/asyra-design/e2e/tool-shortcut-handoff.spec.ts",
+          "testName": "Tool shortcut gesture handoff held O repeats preserve ellipse resizing and one reversible creation",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/config/key-combinations.ts",
+            "apps/asyra-design/src/features/switch-primary-tool/index.ts",
+            "apps/asyra-design/src/common-apis/system-context.ts"
+          ]
+        },
+        {
+          "id": "functional.tool-shortcut-handoff.a9ef9e649d3b",
+          "stepId": "switch-tool",
+          "testFile": "apps/asyra-design/e2e/tool-shortcut-handoff.spec.ts",
+          "testName": "Tool shortcut gesture handoff held V repeats preserve the entire selected-element move",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/config/key-combinations.ts",
+            "apps/asyra-design/src/features/switch-primary-tool/index.ts",
+            "apps/asyra-design/src/common-apis/system-context.ts"
+          ]
+        },
+        {
+          "id": "functional.tool-shortcut-handoff.7bc104ded82d",
+          "stepId": "switch-tool",
+          "testFile": "apps/asyra-design/e2e/tool-shortcut-handoff.spec.ts",
+          "testName": "Tool shortcut gesture handoff held P repeats preserve connected handle dragging while fresh P still disconnects continuation",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/config/key-combinations.ts",
+            "apps/asyra-design/src/features/switch-primary-tool/index.ts",
+            "apps/asyra-design/src/common-apis/system-context.ts"
+          ]
+        },
+        {
+          "id": "functional.tool-shortcut-handoff.a2b3b59c37fd",
+          "stepId": "switch-tool",
+          "testFile": "apps/asyra-design/e2e/tool-shortcut-handoff.spec.ts",
+          "testName": "Tool shortcut gesture handoff held T repeats preserve dragged text width and the editable commit",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/config/key-combinations.ts",
+            "apps/asyra-design/src/features/switch-primary-tool/index.ts",
+            "apps/asyra-design/src/common-apis/system-context.ts"
+          ]
+        },
+        {
+          "id": "functional.tool-shortcut-handoff.6bff4463d471",
+          "stepId": "switch-tool",
+          "testFile": "apps/asyra-design/e2e/tool-shortcut-handoff.spec.ts",
+          "testName": "Tool shortcut gesture handoff fresh O still switches tools and finalizes the active rectangle",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/config/key-combinations.ts",
+            "apps/asyra-design/src/features/switch-primary-tool/index.ts",
+            "apps/asyra-design/src/common-apis/system-context.ts"
+          ]
+        },
+        {
+          "id": "functional.tool-shortcut-handoff.7c90fcdab7f4",
+          "stepId": "switch-tool",
+          "testFile": "apps/asyra-design/e2e/tool-shortcut-handoff.spec.ts",
+          "testName": "Tool shortcut gesture handoff fresh P still switches tools and finalizes the active rectangle",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/config/key-combinations.ts",
+            "apps/asyra-design/src/features/switch-primary-tool/index.ts",
+            "apps/asyra-design/src/common-apis/system-context.ts"
+          ]
+        },
+        {
+          "id": "functional.tool-shortcut-handoff.5f9812c1dfa2",
+          "stepId": "switch-tool",
+          "testFile": "apps/asyra-design/e2e/tool-shortcut-handoff.spec.ts",
+          "testName": "Tool shortcut gesture handoff fresh V still switches tools and finalizes the active rectangle",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/config/key-combinations.ts",
+            "apps/asyra-design/src/features/switch-primary-tool/index.ts",
+            "apps/asyra-design/src/common-apis/system-context.ts"
+          ]
+        },
+        {
+          "id": "functional.tool-shortcut-handoff.c055653a0528",
+          "stepId": "switch-tool",
+          "testFile": "apps/asyra-design/e2e/tool-shortcut-handoff.spec.ts",
+          "testName": "Tool shortcut gesture handoff fresh T still switches tools and finalizes the active rectangle",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/config/key-combinations.ts",
+            "apps/asyra-design/src/features/switch-primary-tool/index.ts",
+            "apps/asyra-design/src/common-apis/system-context.ts"
+          ]
         }
       ],
       "handoffs": []
@@ -371,6 +503,39 @@
       "goal": "Create and update a rectangle or oval in one canonical pointer session.",
       "stepIds": ["create-element"],
       "cases": [
+        {
+          "id": "functional.rectangle-handoff.73e369151d89",
+          "stepId": "create-element",
+          "testFile": "apps/asyra-design/e2e/rectangle-handoff.spec.ts",
+          "testName": "Rectangle creation handoff rectangle creation hands off canonical selection and visible controls on a slow main thread",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/create-element/feature.ts",
+            "apps/asyra-design/src/common-apis/element/apis.ts"
+          ]
+        },
+        {
+          "id": "functional.rectangle-handoff.92c2d3efd194",
+          "stepId": "create-element",
+          "testFile": "apps/asyra-design/e2e/rectangle-handoff.spec.ts",
+          "testName": "Rectangle creation handoff rectangle helper waits for the real interaction queue before handing off selection",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/create-element/feature.ts",
+            "apps/asyra-design/src/common-apis/element/apis.ts"
+          ]
+        },
+        {
+          "id": "functional.rectangle-handoff.90946f270c13",
+          "stepId": "create-element",
+          "testFile": "apps/asyra-design/e2e/rectangle-handoff.spec.ts",
+          "testName": "Rectangle creation handoff rectangle helper rejects when pointer input never creates an element",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/create-element/feature.ts",
+            "apps/asyra-design/src/common-apis/element/apis.ts"
+          ]
+        },
         {
           "id": "functional.element-creation.972c55b3a8a5",
           "stepId": "create-element",
@@ -709,13 +874,38 @@
           ]
         },
         {
-          "id": "functional.delete-element.8a8a15dbb599",
+          "id": "functional.delete-element.8a8a15dbb599-eligible",
           "stepId": "delete-subtree",
           "testFile": "apps/asyra-design/e2e/delete-element.spec.ts",
-          "testName": "Delete Selected Element delete re-evaluates hovered target instead of blindly clearing it",
+          "testName": "Delete Selected Element delete re-evaluates the remaining eligible target with the normal hover policy",
           "projectName": "chromium",
           "implementationPaths": [
             "apps/asyra-design/src/features/delete-element/index.ts",
+            "apps/asyra-design/src/controllers/hover-target.ts",
+            "apps/asyra-design/src/common-apis/element/apis.ts"
+          ]
+        },
+        {
+          "id": "functional.delete-element.8a8a15dbb599-locked",
+          "stepId": "delete-subtree",
+          "testFile": "apps/asyra-design/e2e/delete-element.spec.ts",
+          "testName": "Delete Selected Element delete re-evaluates the remaining locked target with the normal hover policy",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/delete-element/index.ts",
+            "apps/asyra-design/src/controllers/hover-target.ts",
+            "apps/asyra-design/src/common-apis/element/apis.ts"
+          ]
+        },
+        {
+          "id": "functional.delete-element.8a8a15dbb599-hidden",
+          "stepId": "delete-subtree",
+          "testFile": "apps/asyra-design/e2e/delete-element.spec.ts",
+          "testName": "Delete Selected Element delete re-evaluates the remaining hidden target with the normal hover policy",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/delete-element/index.ts",
+            "apps/asyra-design/src/controllers/hover-target.ts",
             "apps/asyra-design/src/common-apis/element/apis.ts"
           ]
         }
@@ -1014,6 +1204,18 @@
           "stepId": "edit-vector-path",
           "testFile": "apps/asyra-design/e2e/pen-tool.spec.ts",
           "testName": "Pen Tool - Editing Flow creates a new vector on empty canvas click",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/pen-tool/feature.ts",
+            "apps/asyra-design/src/features/path-editing-intents.ts",
+            "apps/asyra-design/src/common-apis/element/vector-apis.ts"
+          ]
+        },
+        {
+          "id": "functional.pen-tool.2b1f9ddd8508",
+          "stepId": "edit-vector-path",
+          "testFile": "apps/asyra-design/e2e/pen-tool.spec.ts",
+          "testName": "Pen Tool - Editing Flow canonical selection drives each successive Pen connection before display refresh",
           "projectName": "chromium",
           "implementationPaths": [
             "apps/asyra-design/src/features/pen-tool/feature.ts",

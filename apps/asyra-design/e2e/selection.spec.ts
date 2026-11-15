@@ -413,14 +413,68 @@ test.describe('Element Selection', () => {
    */
   test('should deselect via Contents Panel empty area click', async ({
     page
-  }) => {
-    // Create a rectangle (it will be selected after creation)
-    await createRectangle(page, 0.3, 0.3)
+  }, testInfo) => {
+    await page.evaluate(async () => {
+      const { core, testRuntimeState } =
+        await import('../src/testing/runtime-access')
+      const events: unknown[] = []
+
+      const record = (event: Event) => {
+        events.push({
+          event: event.type,
+          key: event instanceof KeyboardEvent ? event.code : undefined,
+          target: event.target instanceof Element ? event.target.tagName : null,
+          time: performance.now(),
+          tool: core.getSystemProperty('primaryTool'),
+          workspaceId: core.getCurrentWorkspaceId(),
+          selected: core.getSelectedElementIds()
+        })
+      }
+
+      for (const name of ['keydown', 'mousedown', 'mouseup']) {
+        document.addEventListener(name, record, true)
+      }
+
+      testRuntimeState.set('rectangle-input-evidence', events)
+      testRuntimeState.set('rectangle-input-dispose', () => {
+        for (const name of ['keydown', 'mousedown', 'mouseup']) {
+          document.removeEventListener(name, record, true)
+        }
+      })
+    })
+    let evidence: unknown
+
+    try {
+      await createRectangle(page, 0.3, 0.3)
+    } finally {
+      evidence = await page.evaluate(async () => {
+        const { core, testRuntimeState } =
+          await import('../src/testing/runtime-access')
+        const { hierarchyApis } = await import('../src/common-apis/hierarchy')
+        const events = testRuntimeState.get('rectangle-input-evidence')
+
+        testRuntimeState.get<() => void>('rectangle-input-dispose')?.()
+        testRuntimeState.delete('rectangle-input-dispose')
+        testRuntimeState.delete('rectangle-input-evidence')
+
+        return {
+          events,
+          tool: core.getSystemProperty('primaryTool'),
+          workspaceId: core.getCurrentWorkspaceId(),
+          selected: core.getSelectedElementIds(),
+          projected: hierarchyApis.getFlattenedElementIds()
+        }
+      })
+      await testInfo.attach('rectangle-input-selection', {
+        body: JSON.stringify(evidence, null, 2),
+        contentType: 'application/json'
+      })
+    }
 
     // Verify element is selected
     let isSelected = await hasSelectedElement(page)
 
-    expect(isSelected).toBe(true)
+    expect(isSelected, JSON.stringify(evidence)).toBe(true)
 
     // Click on the Contents Panel container (empty area below elements)
     const contentsPanel = getContentsPanel(page)

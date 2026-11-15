@@ -8,6 +8,7 @@ import {
 import { createDocumentCollaborationPublicationSource } from '../collaboration/factory-adapter'
 import { readDocumentPublicationSlices } from '../collaboration/document-publication'
 import core from '../contexts'
+export { getSessionManager } from '@asyra/core'
 import {
   getActiveAiDrawingPerformanceProfile,
   type AiDrawingPerformanceProfile

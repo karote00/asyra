@@ -489,67 +489,72 @@ test.describe('Delete Selected Element', () => {
     ).toBeUndefined()
   })
 
-  test('delete re-evaluates hovered target instead of blindly clearing it', async ({
-    page
-  }) => {
-    const initialCount = await getElementCount(page)
+  for (const state of ['eligible', 'locked', 'hidden'] as const) {
+    test(`delete re-evaluates the remaining ${state} target with the normal hover policy`, async ({
+      page
+    }) => {
+      await createRectangle(page, 0.42, 0.42)
+      const bottom = await page.evaluate(async () => {
+        const { core } = await import('../src/testing/runtime-access')
 
-    await page.keyboard.press('r')
-    await clickCanvas(page, 0.42, 0.42)
-    await page.keyboard.press('r')
-    await clickCanvas(page, 0.42, 0.42)
-    await page.keyboard.press('v')
-    await expect.poll(async () => getElementCount(page)).toBe(initialCount + 2)
-
-    const overlappingPos = await getCanvasPosition(page, 0.42, 0.42)
-    const runtime = await page.evaluate(async () => {
-      const core = (await import('../src/testing/runtime-access')).core
-      const selectedId =
-        core?.deps?.selection?.getElementSelectionIds?.()?.[0] ?? null
-
-      return {
-        selectedId
-      }
-    })
-
-    expect(runtime.selectedId).not.toBeNull()
-    if (!runtime.selectedId) {
-      return
-    }
-
-    await page.evaluate(
-      async ({ deletedId, x, y }) => {
-        const core = (await import('../src/testing/runtime-access')).core
-
-        core.setSystemProperty('mousePosition', { x, y })
-        core.setSystemProperty('mouseDelta', { x: 0, y: 0 })
-        core.setSystemProperty('mouseButton', 'none')
-        core.setSystemProperty('mouseDown', false)
-        core.setSystemProperty('mouseDragging', false)
-        core.setSystemProperty('hoveredElementId', deletedId)
-      },
-      {
-        deletedId: runtime.selectedId,
-        x: overlappingPos.x + 10,
-        y: overlappingPos.y + 10
-      }
-    )
-
-    await page.keyboard.press('Delete')
-    await expect.poll(async () => getElementCount(page)).toBe(initialCount + 1)
-
-    await expect
-      .poll(async () => {
-        return page.evaluate(async (deletedId) => {
-          const core = (await import('../src/testing/runtime-access')).core
-          const hoveredId =
-            core?.getSystemProperty?.('hoveredElementId') ?? null
-
-          return hoveredId !== deletedId
-        }, runtime.selectedId)
+        return core.getSelectedElementIds()[0]
       })
-      .toBe(true)
-  })
+
+      expect(bottom).toBeTruthy()
+      await createRectangle(page, 0.42, 0.42)
+      const top = await page.evaluate(
+        async ({ bottom, state }) => {
+          const { core } = await import('../src/testing/runtime-access')
+          const { elementApis } = await import('../src/common-apis')
+          const id = core.getSelectedElementIds()[0]
+
+          if (state === 'locked') {
+            elementApis.setElementLock(bottom, true)
+          }
+
+          if (state === 'hidden') {
+            elementApis.setElementVisible(bottom, false)
+          }
+
+          await new Promise<void>((done) =>
+            requestAnimationFrame(() => requestAnimationFrame(() => done()))
+          )
+
+          return id
+        },
+        { bottom, state }
+      )
+
+      expect(top).not.toBe(bottom)
+      const position = await getCanvasPosition(page, 0.42, 0.42)
+
+      await page.keyboard.press('v')
+      await page.mouse.move(position.x + 10, position.y + 10)
+      await page.keyboard.press('Delete')
+      await expect
+        .poll(() =>
+          page.evaluate(async () => {
+            const { core } = await import('../src/testing/runtime-access')
+
+            return core.getSystemProperty('hoveredElementId')
+          })
+        )
+        .toBe(state === 'eligible' ? bottom : null)
+      expect(
+        await page.evaluate(
+          async ({ top, bottom }) => {
+            const { core } = await import('../src/testing/runtime-access')
+
+            return {
+              top: Boolean(core.getElementData(top)),
+              bottom: Boolean(core.getElementData(bottom))
+            }
+          },
+          { top, bottom }
+        )
+      ).toEqual({ top: false, bottom: true })
+    })
+  }
 
   test('Delete removes selected anchor in path-editing mode and splits interior path', async ({
     page

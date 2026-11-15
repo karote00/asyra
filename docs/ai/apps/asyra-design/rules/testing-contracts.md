@@ -17,6 +17,16 @@ Keep these stable where possible:
 
 ## Behavior Contract
 
+Rectangle creation helpers must acknowledge the real handoff before returning:
+the requested tool is active before pointer input, a new rectangle is the single
+canonical selection, the creation transaction is idle, the product has restored
+Select, and the position controls are visible. Fixed sleeps and a compensating
+Select shortcut are not completion evidence. Use bounded state assertions; never
+retry a creation mutation to satisfy a wait. Keep delayed-queue and rejected-input
+counterexamples in `e2e/rectangle-handoff.spec.ts`, using the real App runtime.
+An ordinary failure must retain input/tool/identity observations so a missing
+mutation is distinguishable from an incomplete display update.
+
 Behavior coverage source-of-truth:
 
 - `docs/ai/apps/asyra-design/bdd-features/README.md`
