@@ -816,7 +816,7 @@ describe('conversation continuity admission', () => {
       attachmentIndexes: []
     }
   ])(
-    'rejects missing source references, foreign fields, duplicate turns and oversize context before model work',
+    'rejects missing source references, foreign fields, duplicate turns and oversize context before model work - case %#',
     async (conversationContext) => {
       const requestModelActionBatch = vi.fn(async () => ({
         batchId: 'unused',
@@ -849,7 +849,13 @@ it('saves and reads the originating App result context across independent HTTP t
         throw Error('Missing result context')
       }
 
-      if (input.intent === 'save') {
+      if (input.intent === 'missing') {
+        await expect(
+          options.resultContext({
+            read: { root: { name: 'missing', path: '' } }
+          })
+        ).rejects.toMatchObject({ stage: 'input' })
+      } else if (input.intent === 'save') {
         await options.resultContext({ save: { root: 'document-element' } })
       } else {
         expect(
@@ -875,7 +881,7 @@ it('saves and reads the originating App result context across independent HTTP t
   const executeBatch = vi.fn()
 
   try {
-    for (const intent of ['save', 'read']) {
+    for (const intent of ['missing', 'save', 'read']) {
       await expect(
         app.requestActionBatch(
           {

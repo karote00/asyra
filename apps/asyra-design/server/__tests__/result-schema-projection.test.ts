@@ -87,7 +87,7 @@ const discover = (outputSchema: object) => {
 
   return () =>
     owner.call(
-      'describe_design_apis',
+      'read_design_contracts',
       { names: ['numbers.a'], view: 'usage' },
       new AbortController().signal
     )
@@ -184,11 +184,11 @@ it.each(['value', 'optional', 'missing', 'absent', 'broken'] as const)(
         expect(call).toHaveBeenCalledTimes(1)
       } else if (mode === 'missing') {
         expect(reply.success).toBe(false)
-        expect(value.recovery).toBe('correct_input')
+        expect(value.code).toBe('TOOL_INPUT_INVALID')
         expect(call).not.toHaveBeenCalled()
       } else if (mode === 'broken') {
         expect(reply.success).toBe(false)
-        expect(value.recovery).not.toBe('correct_input')
+        expect(value.code).not.toBe('TOOL_INPUT_INVALID')
         expect(call).not.toHaveBeenCalled()
       } else {
         expect(reply.success).toBe(false)

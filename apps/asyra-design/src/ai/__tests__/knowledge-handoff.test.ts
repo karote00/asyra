@@ -1,3 +1,11 @@
+// @vitest-environment node
+import {
+  requiredRecord,
+  requiredArray,
+  requiredNumber,
+  requiredString
+} from '../../__tests__/assert-result'
+import { createAiToolContract } from '@asyra/ai-agent-runtime'
 import { readCompleteInformation } from '../../../server/__tests__/tool-contract-assertions'
 
 import recordedDecisions from '../../../test-data/knowledge-evaluation/evidence/architecture-2026-10-18/decision-evidence-replay.json'
@@ -87,15 +95,23 @@ it('hands App-only method examples from real Knowledge reads to current discover
 
   const actions = [...createBasicApiActions(), createPreparedDesignAction()]
   const session = createDesignPreparationSession()
-  const designs = createLocalDesignTools(actions, session)
+  const designs = createLocalDesignTools(
+    actions.map(createAiToolContract),
+    session
+  )
   const dispatch = vi.fn()
-  const operations = createLocalOperationTools(actions, designs, dispatch, {
-    getNativeTools: () =>
-      workflow.definitions.map((definition) => ({
-        ...definition,
-        namespace: 'design_workflow'
-      }))
-  })
+  const operations = createLocalOperationTools(
+    actions.map(createAiToolContract),
+    designs,
+    dispatch,
+    {
+      getNativeTools: () =>
+        workflow.definitions.map((definition) => ({
+          ...definition,
+          namespace: 'design_workflow'
+        }))
+    }
+  )
   const workflow = createLocalDesignWorkflow(designs, operations)
   const exampleText = [
     app.text,
@@ -148,12 +164,24 @@ it('hands App-only method examples from real Knowledge reads to current discover
       })
 
       expect(
-        panes.map((pane) => pane.fills?.[0].gradient?.gradientType)
+        panes.map(
+          (pane) =>
+            requiredRecord(
+              requiredRecord(requiredArray(pane.fills)[0]).gradient
+            ).gradientType
+        )
       ).toEqual(['linear', 'linear'])
       const worldDomains = panes.map((pane) =>
-        pane.fills?.[0].gradient?.gradientHandles.map((handle) => ({
-          x: Number(pane.x) + handle.x * Number(pane.width),
-          y: Number(pane.y) + handle.y * Number(pane.height)
+        requiredArray(
+          requiredRecord(requiredRecord(requiredArray(pane.fills)[0]).gradient)
+            .gradientHandles
+        ).map((handle) => ({
+          x:
+            Number(pane.x) +
+            requiredNumber(requiredRecord(handle).x) * Number(pane.width),
+          y:
+            Number(pane.y) +
+            requiredNumber(requiredRecord(handle).y) * Number(pane.height)
         }))
       )
 
@@ -167,13 +195,25 @@ it('hands App-only method examples from real Knowledge reads to current discover
           { x: 0, y: 80 }
         ]
       ])
-      expect(panes[0].fills?.[0].id).not.toEqual(panes[1].fills?.[0].id)
-      expect(panes[0].fills?.[0].gradient?.gradientStops).toEqual(
-        panes[1].fills?.[0].gradient?.gradientStops
+      expect(requiredRecord(requiredArray(panes[0].fills)[0]).id).not.toEqual(
+        requiredRecord(requiredArray(panes[1].fills)[0]).id
       )
       expect(
-        prepared.entries.find((item) => item.key === 'mullion')?.descriptor
-          .fills?.[0].gradient
+        requiredRecord(
+          requiredRecord(requiredArray(panes[0].fills)[0]).gradient
+        ).gradientStops
+      ).toEqual(
+        requiredRecord(
+          requiredRecord(requiredArray(panes[1].fills)[0]).gradient
+        ).gradientStops
+      )
+      expect(
+        requiredRecord(
+          requiredArray(
+            prepared.entries.find((item) => item.key === 'mullion')?.descriptor
+              .fills
+          )[0]
+        ).gradient
       ).toBeNull()
 
       const failed = structuredClone(sample.arguments)
@@ -185,7 +225,7 @@ it('hands App-only method examples from real Knowledge reads to current discover
 
       expect(rejected).toMatchObject({
         available: false,
-        recovery: 'correct_input',
+        code: 'TOOL_INPUT_INVALID',
         draftId: expect.any(String),
         message: expect.stringContaining('unknown Fill template')
       })
@@ -214,7 +254,7 @@ it('hands App-only method examples from real Knowledge reads to current discover
         sample.arguments.draft
       )
       expect(session.resolve(result.artifactId)).toEqual(prepared)
-    } else if (sample.arguments.schemaPaths) {
+    } else if (sample.arguments.scopes) {
       expect(result.tools[0].schemaFragments[0].path).toBe('/properties/draft')
       expect(result.tools[0].schemaResolution).toBeUndefined()
     } else {
@@ -341,12 +381,16 @@ it('carries the recorded material decision into initial preparation without chan
 
     const session = createDesignPreparationSession()
     const designs = createLocalDesignTools(
-      [...createBasicApiActions(), createPreparedDesignAction()],
+      [...createBasicApiActions(), createPreparedDesignAction()].map(
+        createAiToolContract
+      ),
       session
     )
     const dispatch = vi.fn()
     const operations = createLocalOperationTools(
-      [...createBasicApiActions(), createPreparedDesignAction()],
+      [...createBasicApiActions(), createPreparedDesignAction()].map(
+        createAiToolContract
+      ),
       designs,
       dispatch,
       {
@@ -359,10 +403,15 @@ it('carries the recorded material decision into initial preparation without chan
     )
     const described = JSON.parse(
       await operations.call(
-        'describe_design_apis',
+        'read_design_contracts',
         {
           names: ['prepare_design'],
-          schemaPaths: ['/properties/draft']
+          scopes: Object.fromEntries(
+            ['prepare_design'].map((name) => [
+              name,
+              { schemaPaths: ['/properties/draft'] }
+            ])
+          )
         },
         signal()
       )
@@ -384,7 +433,7 @@ it('carries the recorded material decision into initial preparation without chan
 
     expect(rejected).toMatchObject({
       available: false,
-      recovery: 'correct_input',
+      code: 'TOOL_INPUT_INVALID',
       draftId: expect.any(String)
     })
     expect(rejected.artifactId).toBeUndefined()
@@ -452,7 +501,7 @@ it('carries the recorded material decision into initial preparation without chan
 it('recovers missing template containers through fully admitted insertion or existing assignment', async () => {
   const session = createDesignPreparationSession()
   const designs = createLocalDesignTools(
-    [createPreparedDesignAction()],
+    [createPreparedDesignAction()].map(createAiToolContract),
     session
   )
   const draft = {
@@ -479,7 +528,7 @@ it('recovers missing template containers through fully admitted insertion or exi
 
   expect(rejected).toMatchObject({
     available: false,
-    recovery: 'correct_input',
+    code: 'TOOL_INPUT_INVALID',
     draftId: expect.any(String)
   })
   const missingContainer = await prepare({
@@ -523,7 +572,7 @@ it('recovers missing template containers through fully admitted insertion or exi
   // A rejected source receipt is request-local. Recover its input in a new
   // request; this does not authorize replay of any completed canvas action.
   const next = createLocalDesignTools(
-    [createPreparedDesignAction()],
+    [createPreparedDesignAction()].map(createAiToolContract),
     createDesignPreparationSession()
   )
   const expired = JSON.parse(
@@ -582,7 +631,9 @@ it('routes recorded local material edits through actual discovery and artifact t
 
     const session = createDesignPreparationSession()
     const designs = createLocalDesignTools(
-      [...createBasicApiActions(), createPreparedDesignAction()],
+      [...createBasicApiActions(), createPreparedDesignAction()].map(
+        createAiToolContract
+      ),
       session
     )
     const prepared = JSON.parse(
@@ -597,50 +648,58 @@ it('routes recorded local material edits through actual discovery and artifact t
     // dispatch, not actual canvas mutation or document persistence.
     const dispatch = vi.fn(
       async (batch: import('../action-batch-protocol').AiActionBatch) => ({
-        actionResults: batch.actions.map((action) => ({
-          actionId: action.id,
-          actionName: action.name,
-          result: {
-            modelResult: {
+        actionResults: batch.actions.map((action) => {
+          const elementIds = requiredArray(
+            requiredRecord(action.arguments).elementIds
+          ).map(requiredString)
+
+          return {
+            actionId: action.id,
+            actionName: action.name,
+            result: {
+              modelResult: {
+                status: 'complete',
+                changed: true,
+                acceptedCount: elementIds.length,
+                unavailableCount: 0,
+                settlement: 'completed',
+                mutationScope: {
+                  complete: true,
+                  elementCount: elementIds.length,
+                  removedElementCount: 0
+                }
+              },
               status: 'complete',
-              changed: true,
-              acceptedCount: action.arguments.elementIds.length,
-              unavailableCount: 0,
               settlement: 'completed',
+              value: { acceptedIds: elementIds, changed: true },
+              acceptedIds: elementIds,
+              unavailableIds: [],
+              changed: true,
+              toolOutcome: { status: 'success', settlement: 'completed' },
               mutationScope: {
                 complete: true,
-                elementCount: action.arguments.elementIds.length,
-                removedElementCount: 0
+                elementIds: elementIds,
+                removedElementIds: []
               }
-            },
-            status: 'complete',
-            settlement: 'completed',
-            value: { acceptedIds: action.arguments.elementIds, changed: true },
-            acceptedIds: action.arguments.elementIds,
-            unavailableIds: [],
-            changed: true,
-            toolOutcome: { status: 'success', settlement: 'completed' },
-            mutationScope: {
-              complete: true,
-              elementIds: action.arguments.elementIds,
-              removedElementIds: []
             }
           }
-        })),
+        }),
         context: {}
       })
     )
     const operations = createLocalOperationTools(
-      [...createBasicApiActions(), createPreparedDesignAction()],
+      [...createBasicApiActions(), createPreparedDesignAction()].map(
+        createAiToolContract
+      ),
       designs,
       dispatch
     )
     const usage = JSON.parse(
       await operations.call(
-        'describe_design_apis',
+        'read_design_contracts',
         {
-          operations: ['fill.updateFillsAtIndex', 'fill.detachFillsAtIndex'],
-          view: 'usage'
+          view: 'usage',
+          names: ['fill.updateFillsAtIndex', 'fill.detachFillsAtIndex']
         },
         signal()
       )
@@ -786,7 +845,7 @@ it('preserves every recorded reflection through template preparation and admissi
   expect(Buffer.byteLength(JSON.stringify(compact))).toBe(423930)
   const session = createDesignPreparationSession()
   const designs = createLocalDesignTools(
-    [createPreparedDesignAction()],
+    [createPreparedDesignAction()].map(createAiToolContract),
     session
   )
   const result = JSON.parse(
@@ -822,7 +881,7 @@ it('preserves every recorded reflection through template preparation and admissi
 
   expect(rejected).toMatchObject({
     available: false,
-    recovery: 'correct_input',
+    code: 'TOOL_INPUT_INVALID',
     draftId: expect.any(String)
   })
   const repaired = JSON.parse(
@@ -872,7 +931,7 @@ it('hands a declared color-only method through exact discovery to retained mappi
   const ids = selected.map((entry) => entry.descriptor.id)
   const original = JSON.stringify(selected)
 
-  let invalidate = () => {
+  let invalidate: () => void = () => {
     throw new Error('Observer not installed')
   }
 
@@ -906,12 +965,16 @@ it('hands a declared color-only method through exact discovery to retained mappi
       }
     }
   )
-  const update = vi.fn((updates: readonly { elementId: string }[]) => ({
-    value: null,
-    changed: updates.length > 0,
-    acceptedIds: updates.map((item) => item.elementId),
-    unavailableIds: []
-  }))
+  const update = vi.fn(
+    (
+      updates: readonly { elementId: string; patch: Record<string, unknown> }[]
+    ) => ({
+      value: null,
+      changed: updates.length > 0,
+      acceptedIds: updates.map((item) => item.elementId),
+      unavailableIds: []
+    })
+  )
   const action = createRetainedFillAction(queries, {
     metadata: (id) => (entries.has(id) ? {} : undefined),
 
@@ -964,8 +1027,8 @@ it('hands a declared color-only method through exact discovery to retained mappi
     )
     const lookup = JSON.parse(
       await operations.call(
-        'describe_design_apis',
-        { operations: [action.name], view: 'full' },
+        'read_design_contracts',
+        { view: 'full', names: [action.name] },
         activeSignal
       )
     )
@@ -1119,12 +1182,16 @@ it('uses the current qualified route across partial, full and recovery retrieval
 
     const session = createDesignPreparationSession()
     const designs = createLocalDesignTools(
-      [...createBasicApiActions(), createPreparedDesignAction()],
+      [...createBasicApiActions(), createPreparedDesignAction()].map(
+        createAiToolContract
+      ),
       session
     )
     const dispatch = vi.fn()
     const operations = createLocalOperationTools(
-      [...createBasicApiActions(), createPreparedDesignAction()],
+      [...createBasicApiActions(), createPreparedDesignAction()].map(
+        createAiToolContract
+      ),
       designs,
       dispatch,
       {
@@ -1138,7 +1205,7 @@ it('uses the current qualified route across partial, full and recovery retrieval
     const workflow = createLocalDesignWorkflow(designs, operations)
 
     const read = (input: unknown) =>
-      operations.call('describe_design_apis', input, signal()).then(JSON.parse)
+      operations.call('read_design_contracts', input, signal()).then(JSON.parse)
 
     const name = 'design_workflow.prepare_and_apply_design'
     const usage = (await read({ names: [name], view: 'usage' })).tools[0]
@@ -1147,7 +1214,12 @@ it('uses the current qualified route across partial, full and recovery retrieval
     expect(usage.inputSchema).toBeUndefined()
     expect(usage.inputFields).toContain('/properties/draft')
     const wrong = (
-      await read({ names: [name], schemaPaths: ['/properties/missing'] })
+      await read({
+        names: [name],
+        scopes: Object.fromEntries(
+          [name].map((name) => [name, { schemaPaths: ['/properties/missing'] }])
+        )
+      })
     ).tools[0]
 
     expect(wrong.definition.state).toBe('unavailable')
@@ -1161,7 +1233,12 @@ it('uses the current qualified route across partial, full and recovery retrieval
 
     expect(recoveredUsage.definition.state).toBe('included')
     const partial = (
-      await read({ names: [name], schemaPaths: ['/properties/draft'] })
+      await read({
+        names: [name],
+        scopes: Object.fromEntries(
+          [name].map((name) => [name, { schemaPaths: ['/properties/draft'] }])
+        )
+      })
     ).tools[0]
 
     expect(partial.schemaFragments[0].path).toBe('/properties/draft')
@@ -1260,7 +1337,7 @@ it('hands one continuous parent-space material domain to independent local fills
   expect(admitPreparedDesign(structuredClone(artifact))).toEqual(artifact)
   const gradients = artifact.entries
     .filter((e) => e.descriptor.type === 'rect')
-    .map((e) => e.descriptor.fills?.[0].gradient)
+    .map((e) => requiredRecord(requiredArray(e.descriptor.fills)[0]).gradient)
 
   expect(gradients).toEqual(source.children.map((c) => c.fill))
   // Parameter continuity at the shared edge; this is not a visual-quality judgment.
@@ -1302,7 +1379,10 @@ it('executes documented exclusive direct and retained target inputs through cano
 
     expect(examples).toHaveLength(2)
     const session = createDesignPreparationSession()
-    const designs = createLocalDesignTools(createBasicApiActions(), session)
+    const designs = createLocalDesignTools(
+      createBasicApiActions().map(createAiToolContract),
+      session
+    )
     const part = session.prepare({
       type: 'group',
       name: 'Example part',
@@ -1334,7 +1414,7 @@ it('executes documented exclusive direct and retained target inputs through cano
       const resolve = vi.fn(designs.resolveTargets)
       const actions = prepareOperationBatch(
         [operation],
-        createBasicApiActions(),
+        createBasicApiActions().map(createAiToolContract),
         resolve
       )
 
@@ -1346,7 +1426,7 @@ it('executes documented exclusive direct and retained target inputs through cano
         expect(() =>
           prepareOperationBatch(
             [{ ...operation, arguments: { elementIds: [] } }],
-            createBasicApiActions(),
+            createBasicApiActions().map(createAiToolContract),
             resolve
           )
         ).toThrow(/conflicting target binding/)
@@ -1366,7 +1446,11 @@ const createLocalKnowledgeTools = (
   const call = owner.call.bind(owner)
 
   owner.call = (name, input, signal) =>
-    readCompleteInformation((next) => call(name, next, signal), input)
+    readCompleteInformation(
+      (next, requestedTool) => call(requestedTool, next, signal),
+      input,
+      name
+    )
 
   return owner
 }
@@ -1378,7 +1462,11 @@ const createLocalOperationTools = (
   const call = owner.call.bind(owner)
 
   owner.call = (name, input, signal) =>
-    readCompleteInformation((next) => call(name, next, signal), input)
+    readCompleteInformation(
+      (next, requestedTool) => call(requestedTool, next, signal),
+      input,
+      name
+    )
 
   return owner
 }

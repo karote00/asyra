@@ -164,14 +164,15 @@ const fixture = (
 
   const usage = async (name = 'fixture.source') => {
     const text = await readCompleteInformation(
-      async (input) =>
+      async (input, requestedTool) =>
         (
           await host.invoke({
-            name: 'design_operations.describe_design_apis',
+            name: 'design_operations.' + requestedTool,
             input
           })
         ).text,
-      { names: [name], view: 'usage', includeResultSchema: true }
+      { names: [name], view: 'usage', includeResultSchema: true },
+      'read_design_contracts'
     )
     const result = JSON.parse(text)
 
@@ -367,7 +368,11 @@ it('rejects a successful completed execution carrying only an unknown failure in
     const unsaved = {
       ...success,
       toolOutcome: { status: 'partial', settlement: 'completed' },
-      storage: { status: 'unsaved', issue: 'Storage unavailable' }
+      storage: {
+        status: 'unsaved',
+        code: 'storage-failed',
+        issue: 'Storage unavailable'
+      }
     }
 
     expect(
@@ -495,7 +500,7 @@ it('keeps a native read tool usable with only a canonical inspection action', as
 
       expect(rejected.success).toBe(false)
       expect(JSON.parse(rejected.text)).toMatchObject({
-        code: 'PREPARATION_REJECTED',
+        code: 'TOOL_INPUT_INVALID',
         toolOutcome: { settlement: 'not-started' }
       })
     }
@@ -561,9 +566,8 @@ it.each(['partial', 'unknown'] as const)(
   'preserves real %s aggregate settlement with individually settled recovery results',
   async (settlement) => {
     const failure = JSON.parse(
-      localToolFailureReply('Correct remaining input', 'INPUT_REJECTED', {
-        settlement: settlement === 'partial' ? 'not-started' : 'unknown',
-        recovery: 'correct_input'
+      localToolFailureReply('Correct remaining input', 'TOOL_INPUT_INVALID', {
+        settlement: settlement === 'partial' ? 'not-started' : 'unknown'
       }).text
     )
     const { host, calls, usage } = fixture(
@@ -629,7 +633,7 @@ it.each(['partial', 'unknown'] as const)(
         count: 1
       })
       expect(result.execution.recovery[1].value).toMatchObject({
-        code: 'INPUT_REJECTED',
+        code: 'TOOL_INPUT_INVALID',
         toolOutcome: { settlement: failure.toolOutcome.settlement }
       })
       expect(
@@ -783,7 +787,11 @@ it('accepts a completed registered result with a partial storage acknowledgement
         ? JSON.stringify({
             ...JSON.parse(text),
             toolOutcome: { status: 'partial', settlement: 'completed' },
-            storage: { status: 'unsaved', issue: 'Storage unavailable' }
+            storage: {
+              status: 'unsaved',
+              code: 'storage-failed',
+              issue: 'Storage unavailable'
+            }
           })
         : text,
     undefined,
@@ -839,7 +847,11 @@ it('preserves successful data with unsaved storage when the owner declares a dis
         ? JSON.stringify({
             ...JSON.parse(text),
             toolOutcome: { status: 'partial', settlement: 'completed' },
-            storage: { status: 'unsaved', issue: 'Storage unavailable' }
+            storage: {
+              status: 'unsaved',
+              code: 'storage-failed',
+              issue: 'Storage unavailable'
+            }
           })
         : text,
     undefined,

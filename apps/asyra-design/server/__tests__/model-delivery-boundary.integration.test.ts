@@ -6,6 +6,8 @@ import { createLocalToolHost } from '../local-tool-host'
 import { createLocalDesignTools } from '../local-design-tools'
 import { createLocalOperationTools } from '../local-operation-tools'
 import { operationContractIssue } from '../operation-input-schema'
+import { localToolFailureSchema } from '../local-tool-invocation'
+
 vi.mock('../../src/contexts', () => ({ default: {} }))
 vi.mock('../../src/common-apis/fills', () => ({ fillApis: {} }))
 import { createDocumentContextAction } from '../../src/ai/context-action'
@@ -142,7 +144,19 @@ it.each(['native', 'registered'])(
             ).text
           )
 
-          expect(refused.execution.status).toBe('failed')
+          expect(
+            operationContractIssue(refused, localToolFailureSchema, {
+              stage: 'output'
+            })
+          ).toBeUndefined()
+          expect(refused).toMatchObject({
+            available: false,
+            code: 'TOOL_INPUT_INVALID',
+            stage: 'admission',
+            settlement: 'not-started',
+            toolOutcome: { status: 'failed', settlement: 'not-started' }
+          })
+
           expect(calls.get(source.tool)).toBeUndefined()
           continue
         }

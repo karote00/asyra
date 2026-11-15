@@ -1,9 +1,11 @@
+import { AiToolContractError } from '../tool-contract.js'
 import { describe, expect, it, vi } from 'vitest'
 import { createAiActionRegistry } from '../action-registry.js'
 import { admitAiRecipe } from '../recipe-admission.js'
 import { createAiToolLibrary } from '../tool-library.js'
 import {
   createAiRecipeInvoker,
+  type AiRecipeInvokerOptions,
   type AiRecipeExecutionResult,
   type AiRecipeLeaseAdapter
 } from '../recipe-execution.js'
@@ -73,7 +75,7 @@ const setup = (
   const events: string[] = []
   const observations: unknown[] = []
   const leases = {
-    open: vi.fn(async () => undefined),
+    open: vi.fn<AiRecipeLeaseAdapter['open']>(async () => undefined),
     retain: vi.fn<AiRecipeLeaseAdapter['retain']>(async () => undefined),
     release: vi.fn(async () => undefined)
   }
@@ -131,6 +133,70 @@ const setup = (
 }
 
 describe('pinned recipe invocation', () => {
+  it.each(['valid', 'input', 'output'])(
+    'uses the invocation contract for admission and lease transfer without changing registration (%s)',
+    async (invalid) => {
+      const host = setup()
+      const execute = vi.fn(async () => success(invalid === 'output' ? 6 : 4))
+      const resolveContract = vi.fn<
+        NonNullable<AiRecipeInvokerOptions['resolveContract']>
+      >((_call, definition) => ({
+        ...definition,
+        inputSchema: {
+          type: 'number',
+          maximum: 5,
+          'x-runtime-value': 'request'
+        },
+        outputSchema: {
+          type: 'number',
+          maximum: 5,
+          'x-runtime-value': 'request'
+        }
+      }))
+      const runner = createAiRecipeInvoker({
+        registry: host.registry,
+        recipe: host.library.recipe,
+
+        validate: (value, schema) => {
+          const bound = schema as { maximum?: number }
+
+          return typeof value !== 'number' ||
+            (bound.maximum !== undefined && value > bound.maximum)
+            ? 'Outside selected bound'
+            : undefined
+        },
+
+        execute,
+        resolveContract,
+        leases: host.leases,
+        maxSteps: 20
+      })
+      const result = await runner.invoke({
+        name: 'set',
+        requestId: 'selected',
+        input: invalid === 'input' ? 6 : 4
+      })
+
+      expect(resolveContract).toHaveBeenCalledOnce()
+      expect(execute).toHaveBeenCalledTimes(invalid === 'input' ? 0 : 1)
+      expect(result.status).toBe(invalid === 'valid' ? 'success' : 'failed')
+      if (invalid === 'valid') {
+        expect(host.leases.open.mock.calls[0][0].inputSchema).toMatchObject({
+          maximum: 5,
+          'x-runtime-value': 'request'
+        })
+        expect(host.leases.retain.mock.calls[0][0].outputSchema).toMatchObject({
+          maximum: 5,
+          'x-runtime-value': 'request'
+        })
+      } else {
+        expect(host.leases.retain).not.toHaveBeenCalled()
+      }
+
+      expect(host.registry.get('set')?.inputSchema).toEqual(number)
+    }
+  )
+
   it('uses one secured leaf scheduler for nested recipes without a parent barrier', async () => {
     let busy = false
     const host = vi.fn(async (call: AiInvocationContext) => {
@@ -319,6 +385,7 @@ describe('pinned recipe invocation', () => {
       input: 5
     })
 
+    expect(result.status).not.toBe('success')
     expect(result.settlement).not.toBe('not-started')
     expect(result.issues.join(' ')).toContain('release unavailable')
   })
@@ -1069,12 +1136,33 @@ describe('bounded repair execution', () => {
         throw Error(JSON.stringify(admitted.issues))
       }
 
+      const collected = vi.fn()
       const result = await host.runner.invoke(
         { name: 'bounded', revision: 1, requestId: 'author', input: value },
-        admitted.value
+        admitted.value,
+        collected
       )
 
       expect(result.status).toBe(status)
+      expect(collected.mock.calls.map(([step]) => step.id)).toEqual(
+        status === 'success' ? ['initial', 'check'] : ['initial']
+      )
+      if (status === 'success') {
+        expect(collected).toHaveBeenLastCalledWith(
+          admitted.value.recipe.iteration?.check,
+          0,
+          { status: 'pass', progress: 'remaining:0' },
+          expect.objectContaining({
+            callId: expect.any(String),
+            status: 'success',
+            settlement: 'completed'
+          })
+        )
+        expect(result.calls).toContainEqual(
+          collected.mock.calls[collected.mock.calls.length - 1][3]
+        )
+      }
+
       expect(host.calls.filter((name) => name === 'repair')).toHaveLength(
         repairs
       )
@@ -1246,4 +1334,98 @@ it('pins an inline root without a root registration and rejects copied admission
   host.registry.remove('set', 1)
   expect((await host.runner.invoke(input, root)).settlement).toBe('not-started')
   expect(host.writes).toEqual([7])
+})
+
+it('retains a rejected resource input cause before dispatch and permits a corrected invocation', async () => {
+  const host = setup()
+
+  host.leases.open.mockRejectedValueOnce(
+    new AiToolContractError('input', 'Select an owned handle')
+  )
+  const rejected = await host.runner.invoke({
+    name: 'set',
+    requestId: 'author',
+    input: 3
+  })
+
+  expect(rejected).toMatchObject({
+    status: 'failed',
+    settlement: 'not-started',
+    failure: { stage: 'input', message: 'Select an owned handle' }
+  })
+  expect(rejected.calls[0]).toMatchObject({ failure: { stage: 'input' } })
+  expect(host.writes).toEqual([])
+  expect(
+    await host.runner.invoke({ name: 'set', requestId: 'author', input: 4 })
+  ).toMatchObject({ status: 'success', value: 4 })
+  expect(host.writes).toEqual([4])
+})
+
+it('preserves a completed prefix and the rejected suffix admission cause', async () => {
+  const host = setup()
+
+  host.register('chain', ['set', 'set'])
+  host.leases.open
+    .mockResolvedValueOnce(undefined)
+    .mockResolvedValueOnce(undefined)
+    .mockRejectedValueOnce(
+      new AiToolContractError('input', 'Invalid next handle')
+    )
+  const result = await host.runner.invoke({
+    name: 'chain',
+    requestId: 'author',
+    input: 5
+  })
+
+  expect(result.settlement).toBe('partial')
+  expect(result.calls).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        status: 'failed',
+        settlement: 'not-started',
+        failure: { stage: 'input', message: 'Invalid next handle' }
+      })
+    ])
+  )
+  expect(host.writes).toEqual([5])
+})
+
+it('keeps a real cleanup defect visible after rejected input', async () => {
+  const host = setup()
+
+  host.leases.open.mockRejectedValueOnce(
+    new AiToolContractError('input', 'Invalid handle')
+  )
+  host.leases.release.mockRejectedValueOnce(new Error('Cleanup failed'))
+  const result = await host.runner.invoke({
+    name: 'set',
+    requestId: 'author',
+    input: 3
+  })
+
+  expect(result.failure).toEqual({
+    stage: 'cleanup',
+    message: 'Cleanup failed'
+  })
+  expect(result.calls[0]).toMatchObject({ failure: { stage: 'cleanup' } })
+  expect(host.writes).toEqual([])
+})
+
+it('does not report a successful direct invocation when its resource cleanup failed', async () => {
+  const host = setup()
+
+  host.leases.release.mockRejectedValueOnce(new Error('Cleanup failed'))
+  const result = await host.runner.invoke({
+    name: 'set',
+    requestId: 'author',
+    input: 8
+  })
+
+  expect(result).toMatchObject({
+    status: 'partial',
+    settlement: 'completed',
+    value: 8,
+    failure: { stage: 'cleanup' }
+  })
+  expect(host.writes).toEqual([8])
 })

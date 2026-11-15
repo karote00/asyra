@@ -1,4 +1,4 @@
-import type { AiJsonValue } from '@asyra/ai-agent-runtime'
+import { AiToolContractError, type AiJsonValue } from '@asyra/ai-agent-runtime'
 
 export interface ConversationResultOrigin {
   operation: string
@@ -182,14 +182,31 @@ export function createConversationResults(documentScope: () => unknown) {
                   const item = entries.get(name)
 
                   if (!item) {
-                    throw Error('Missing conversation result: ' + name)
+                    throw new AiToolContractError(
+                      'input',
+                      'Missing conversation result: ' + name
+                    )
                   }
 
                   if (view !== undefined && view !== 'shape') {
-                    throw Error('Invalid result view')
+                    throw new AiToolContractError(
+                      'input',
+                      'Invalid result view'
+                    )
                   }
 
-                  const selected = resultAt(item.value, path)
+                  let selected: AiJsonValue
+
+                  try {
+                    selected = resultAt(item.value, path)
+                  } catch (error) {
+                    throw new AiToolContractError(
+                      'input',
+                      error instanceof Error
+                        ? error.message
+                        : 'Invalid saved result selection'
+                    )
+                  }
 
                   return [
                     label,

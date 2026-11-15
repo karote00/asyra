@@ -1,3 +1,4 @@
+import { contractReadFixture } from './contract-read-fixture'
 import stageReuse from './fixtures/recorded-101/stage-reuse-20261105.json'
 import {
   completeUsageBudget,
@@ -319,7 +320,10 @@ it('reduces complete selected delivery and saved invocation without another page
   const pageBytes: number[] = []
   const { optionalInputs: _optionalInputs, ...inputScope } =
     fixture.query.inputScope
-  const query = { ...fixture.query, inputScope }
+  const query = contractReadFixture(fixture.query.names, {
+    ...fixture.query,
+    inputScope
+  })
   let args: unknown = query
   let bytes = 0,
     pages = 0,
@@ -327,7 +331,7 @@ it('reduces complete selected delivery and saved invocation without another page
 
   while (args) {
     const raw = await operations.call(
-      'describe_design_apis',
+      'read_design_contracts',
       args,
       new AbortController().signal
     )
@@ -363,7 +367,7 @@ it('reduces complete selected delivery and saved invocation without another page
   for (;;) {
     const pageText = deliverInformation(
       JSON.stringify(contract),
-      'describe_design_apis',
+      'read_design_contracts',
       budgetQuery,
       'contract-budget'
     )

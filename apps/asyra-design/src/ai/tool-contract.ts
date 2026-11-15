@@ -3,7 +3,11 @@ import {
   embedAiToolSchema,
   selectAiToolResultSchema
 } from '@asyra/ai-agent-runtime'
-import { operationContractIssue, operationInputIssues } from './tool-schema'
+import {
+  operationContractIssue,
+  operationInputIssues,
+  resolveLocalSchemaReference
+} from './tool-schema'
 import { AiActionNames } from '../constants/ai-actions'
 import type {
   AiJsonValue,
@@ -79,7 +83,6 @@ export const toolSemantics = (
       embedAiToolSchema(outputSchema as AiJsonValue, '#/anyOf/0'),
       toolResultObject({
         available: { const: false },
-        recoverable: { const: true },
         code: toolResultString,
         message: toolResultString,
         settlement: {
@@ -276,7 +279,6 @@ const toolDeliveryFailureSchema = (executionResult: unknown) =>
   toolResultObject(
     {
       available: { const: false },
-      recoverable: { const: true },
       code: { const: toolDeliveryFailureCode },
       message: toolResultString,
       settlement: { enum: ['not-started', 'completed', 'partial', 'unknown'] },
@@ -289,7 +291,7 @@ const toolDeliveryFailureSchema = (executionResult: unknown) =>
         '#/properties/executionResult'
       )
     },
-    ['available', 'recoverable', 'code', 'message', 'settlement', 'toolOutcome']
+    ['available', 'code', 'message', 'settlement', 'toolOutcome']
   )
 
 /** Canonical result alternatives also own acknowledged delivery-failure evidence. */
@@ -384,24 +386,10 @@ const modelResultSchema = (
   }
   const visited = new Set<unknown>()
 
-  const resolveReference = (reference: unknown): unknown => {
-    if (typeof reference !== 'string' || !reference.startsWith('#/')) {
-      return undefined
-    }
-
-    let target: unknown = referenceRoot
-
-    for (const token of reference.slice(2).split('/')) {
-      const key = token.replace(/~1/g, '/').replace(/~0/g, '~')
-
-      target =
-        target && typeof target === 'object'
-          ? (target as Record<string, unknown>)[key]
-          : undefined
-    }
-
-    return target
-  }
+  const resolveReference = (reference: unknown): unknown =>
+    typeof reference === 'string'
+      ? resolveLocalSchemaReference(referenceRoot, reference)
+      : undefined
 
   const collect = (node: Record<string, unknown>) => {
     if (visited.has(node)) {
@@ -409,7 +397,7 @@ const modelResultSchema = (
     }
 
     visited.add(node)
-    if (typeof node.$ref === 'string' && node.$ref.startsWith('#/')) {
+    if (typeof node.$ref === 'string') {
       const target = resolveReference(node.$ref)
 
       if (target && typeof target === 'object' && !Array.isArray(target)) {
@@ -603,19 +591,8 @@ export const projectToolResultFields = (
 
       visited.add(source)
       parts.push(source)
-      if (typeof source.$ref === 'string' && source.$ref.startsWith('#/')) {
-        let target: unknown = schema
-
-        for (const token of source.$ref.slice(2).split('/')) {
-          const key = token.replace(/~1/g, '/').replace(/~0/g, '~')
-
-          target =
-            record(target) || Array.isArray(target)
-              ? (target as Record<string, unknown>)[key]
-              : undefined
-        }
-
-        visit(target)
+      if (typeof source.$ref === 'string') {
+        visit(resolveLocalSchemaReference(schema, source.$ref))
       }
 
       if (record(source.properties)) {
@@ -820,7 +797,6 @@ export const toolDeliveryFailure = (
   )
   const failure = {
     available: false,
-    recoverable: true,
     code: toolDeliveryFailureCode,
     message: `${issue} Execution must not be replayed.`,
     settlement: outcome.settlement,

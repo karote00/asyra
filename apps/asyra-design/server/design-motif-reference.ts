@@ -1,10 +1,12 @@
+import { DesignInputError } from './design-input-error'
+
 /** Resolve immutable authoring variants; canonical sharing belongs to Core. */
 export const resolveMotifReference = (
   reference: Record<string, unknown>,
   definitions: Record<string, unknown>
 ): unknown[] => {
   const fail = (reason: string): never => {
-    throw new Error(`Invalid design construction: ${reason}`)
+    throw new DesignInputError(`Invalid design construction: ${reason}`)
   }
 
   if (

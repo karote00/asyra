@@ -1,3 +1,4 @@
+import { mutationReceipt } from '../../common-apis/mutation-receipt'
 import { describe, expect, it, vi } from 'vitest'
 import { AiActionNames, createAiActions, type AiActionApis } from '../actions'
 import type { PreparedDrawingArtifact } from '../prepared-drawing-artifact'
@@ -18,7 +19,9 @@ const actionApis = (): AiActionApis => ({
   getElementStrokeColor: vi.fn(),
   getElementType: vi.fn(),
   removeSubtree: vi.fn(() => ({ removed: [] })),
-  scaleVectorElementGeometry: vi.fn(() => true),
+  scaleVectorElementGeometry: vi.fn((id) =>
+    mutationReceipt(true, { acceptedIds: [id], changed: true })
+  ),
   selectElements: vi.fn(),
   setDrawingProgress: vi.fn(),
   setElementsVisible: vi.fn(() => ['changed' as const]),

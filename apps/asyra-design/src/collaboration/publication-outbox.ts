@@ -86,19 +86,25 @@ const createRecord = (
     ...(failureReason === undefined ? {} : { failureReason })
   })
 
+const validateRetainedGeneration = (
+  record: PendingDocumentPublication
+): void => {
+  if (
+    record.documentGeneration !== null &&
+    (!Number.isSafeInteger(record.documentGeneration) ||
+      record.documentGeneration < 0)
+  ) {
+    throw new Error('Invalid retained publication document generation')
+  }
+}
+
 const snapshotRecord = (
   record: PendingDocumentPublication
-): PendingDocumentPublication =>
-  freezeValue({
-    ...structuredClone(record),
-    documentGeneration:
-      record.documentGeneration === null ||
-      (Number.isSafeInteger(record.documentGeneration) &&
-        record.documentGeneration >= 0)
-        ? record.documentGeneration
-        : 0,
-    publication: structuredClone(record.publication)
-  })
+): PendingDocumentPublication => {
+  validateRetainedGeneration(record)
+
+  return freezeValue(structuredClone(record))
+}
 
 const samePublication = (
   first: SharedPublication,
@@ -312,6 +318,7 @@ export class DocumentPublicationOutbox {
       try {
         const records = await this.storage.load(this.fileId)
 
+        records.forEach(validateRetainedGeneration)
         records.forEach((record) => {
           if (
             record.fileId !== this.fileId ||
@@ -597,6 +604,8 @@ export class DocumentPublicationOutbox {
       try {
         if (!this.storageLoaded) {
           const saved = await this.storage.load(this.fileId)
+
+          saved.forEach(validateRetainedGeneration)
           const buffered = this.sortedRecords()
 
           for (const record of saved) {

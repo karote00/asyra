@@ -1,4 +1,5 @@
 import type { AiBatchReceipt } from '../src/ai/action-batch-protocol'
+import { AiToolFailureCodes } from '../src/constants/ai-design'
 import {
   AiActionExecutionError,
   AiToolContractError,
@@ -51,7 +52,7 @@ export interface LocalToolReply {
   modelContract?: Pick<
     LocalToolDefinition,
     'outputSchema' | 'partialOutputSchema' | 'recoveryOutputSchema'
-  >
+  > & { inputSchema?: unknown }
 }
 
 export const localToolReplyOutcome = (
@@ -168,13 +169,13 @@ export interface LocalToolOwner {
 }
 
 /** A known rejection before canonical dispatch; never use for uncertain writes. */
-export class LocalToolInputError extends Error {
+export class LocalToolInputError extends AiToolContractError {
   constructor(
     message: string,
-    readonly code = 'PREPARATION_REJECTED',
-    readonly recovery?: 'correct_input'
+    readonly code: string = AiToolFailureCodes.INPUT_INVALID,
+    readonly inputIssues?: readonly unknown[]
   ) {
-    super(message)
+    super('input', message)
   }
 }
 
@@ -434,10 +435,9 @@ export const localToolFailureSchema = toolResultObject(
     available: { const: false },
     code: toolResultString,
     message: toolResultString,
-    recoverable: { type: 'boolean' },
     stage: toolResultString,
+    inputIssues: { type: 'array' },
     settlement: { enum: ['not-started', 'completed', 'partial', 'unknown'] },
-    recovery: { type: ['string', 'object'] },
     executionOutcome: toolResultObject({
       status: { enum: ['success', 'partial', 'failed', 'unknown'] },
       settlement: { enum: ['not-started', 'completed', 'partial', 'unknown'] }
@@ -464,15 +464,23 @@ export const localToolFailureSchema = toolResultObject(
       }
     })
   },
-  ['available', 'code', 'message', 'recoverable', 'toolOutcome']
+  ['available', 'code', 'message', 'toolOutcome']
 )
+
+/** Public projection keeps the same contract except declared internal fields. */
+export const localToolFailureModelSchema = modelToolResultSchemas({
+  outputSchema: localToolFailureSchema
+}).outputSchema
 
 /** Validate a boundary-owned diagnostic and its separate acknowledgement together. */
 export const localToolFailureIssue = (
   value: unknown,
-  outcome: LocalToolAcknowledgement
+  outcome: LocalToolAcknowledgement,
+  stage: 'owner' | 'model' = 'owner'
 ): string | undefined => {
-  const issue = operationContractIssue(value, localToolFailureSchema, {
+  const schema =
+    stage === 'model' ? localToolFailureModelSchema : localToolFailureSchema
+  const issue = operationContractIssue(value, schema, {
     stage: 'output'
   })
 
@@ -504,14 +512,14 @@ export const localToolRecoveryModelContract = (
     ...schemas,
     recoveryOutputSchema: invocationRecoverySchema(
       schemas.recoveryOutputSchema,
-      localToolFailureSchema
+      localToolFailureModelSchema
     )
   } as AiToolContract)
 }
 
 /** Recovery policy consumes the canonical rejection and independent settlement.
  * A rollback or generic recoverable flag alone never identifies authored input. */
-export const batchInputRecovery = (receipt?: AiBatchReceipt) => {
+export const batchInputFailure = (receipt?: AiBatchReceipt) => {
   const failure = receipt?.failure
 
   if (
@@ -520,7 +528,7 @@ export const batchInputRecovery = (receipt?: AiBatchReceipt) => {
     failure.contextFresh === true &&
     failure.settlement === 'not-started'
   ) {
-    return 'correct_input'
+    return AiToolFailureCodes.INPUT_INVALID
   }
 }
 
@@ -545,7 +553,6 @@ export const localToolFailureReply = (
     available: false,
     code,
     ...details,
-    recoverable: details.recoverable !== false,
     message,
     toolOutcome: outcome
   }
@@ -597,9 +604,8 @@ export const invokeLocalTool = async (
 
       return localToolFailureReply(
         explanation?.message ?? formatOperationInputIssues(issues),
-        explanation?.code ?? 'PREPARATION_REJECTED',
+        explanation?.code ?? AiToolFailureCodes.INPUT_INVALID,
         {
-          recovery: 'correct_input',
           ...owner.rejectInput?.(definition.name, args, issues),
           stage,
           settlement: 'not-started'
@@ -689,6 +695,8 @@ export const invokeLocalTool = async (
     return reply
   } catch (error) {
     const inputFailure = error instanceof LocalToolInputError
+    const registrationFailure =
+      error instanceof AiToolContractError && error.stage === 'registration'
     const batchError =
       error instanceof BrowserBatchExecutionError ? error : undefined
     let observedEvidence: unknown
@@ -739,35 +747,47 @@ export const invokeLocalTool = async (
         ? (decodedResult.settlement as AiToolOutcome['settlement'])
         : undefined
 
-    return localToolFailureReply(
-      localToolErrorMessage(error),
-      inputFailure
-        ? error.code
-        : (batchError?.receipt?.failure?.code ??
-            batchError?.failure.code ??
-            (stage === 'decoding'
-              ? 'TOOL_RESULT_INVALID'
-              : 'TOOL_EXECUTION_FAILED')),
-      {
-        stage: inputFailure
+    let failureCode: string | undefined = batchInputFailure(batchError?.receipt)
+
+    if (!failureCode) {
+      if (inputFailure) {
+        failureCode = error.code
+      } else if (registrationFailure) {
+        failureCode = 'TOOL_CONTRACT_INVALID'
+      } else {
+        failureCode =
+          batchError?.receipt?.failure?.code ??
+          batchError?.failure.code ??
+          (stage === 'decoding'
+            ? 'TOOL_RESULT_INVALID'
+            : 'TOOL_EXECUTION_FAILED')
+      }
+    }
+
+    return localToolFailureReply(localToolErrorMessage(error), failureCode, {
+      stage:
+        inputFailure || registrationFailure
           ? 'admission'
           : (batchError?.receipt?.failure?.stage ?? stage),
-        settlement:
-          (inputFailure || stage === 'admission') && !hasPriorExecution
-            ? 'not-started'
-            : (batchError?.receipt?.failure?.settlement ??
-              reportedSettlement ??
-              'unknown'),
-        recovery:
-          batchInputRecovery(batchError?.receipt) ||
-          (inputFailure && !hasPriorExecution && error.recovery) ||
-          'Inspect the failure and current state, then choose a corrected or alternate operation. Do not automatically replay mutations.',
-        ...(batchError ? { batchFailure: batchError.failure } : {}),
-        executionResult: JSON.parse(
-          serializeToolPayload(executionResult).serialized
-        )
-      }
-    )
+      settlement:
+        (inputFailure || registrationFailure || stage === 'admission') &&
+        !hasPriorExecution
+          ? 'not-started'
+          : (batchError?.receipt?.failure?.settlement ??
+            reportedSettlement ??
+            'unknown'),
+      ...(inputFailure && error.inputIssues
+        ? { inputIssues: error.inputIssues }
+        : {}),
+      ...(batchError ? { batchFailure: batchError.failure } : {}),
+      ...(executionResult == null
+        ? {}
+        : {
+            executionResult: JSON.parse(
+              serializeToolPayload(executionResult).serialized
+            )
+          })
+    })
   }
 }
 

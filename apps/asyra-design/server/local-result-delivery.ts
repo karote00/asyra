@@ -182,14 +182,14 @@ export async function resolveConversationInputs(
 
   if (selections.size) {
     if (!exchange) {
-      throw new LocalToolInputError('App conversation context unavailable')
+      throw new Error('App conversation context unavailable')
     }
 
     const values = await exchange({ read: Object.fromEntries(selections) })
 
     for (const { key, assign } of pending) {
       if (!Object.hasOwn(values, key)) {
-        throw new LocalToolInputError('Missing requested App result')
+        throw new Error('Missing requested App result')
       }
 
       assign(values[key])
@@ -227,9 +227,9 @@ export function resultDelivery(
     async capture(
       step: string | undefined,
       view: unknown,
-      blocked: ReadonlySet<unknown>,
+      blocked: ReadonlySet<string>,
       outcome: AiToolOutcome,
-      input?: { value: unknown; blocked: ReadonlySet<unknown> },
+      input?: { value: unknown; blocked: ReadonlySet<string> },
       operation = 'execute_design'
     ) {
       if (outcome.status !== 'success') {
@@ -270,22 +270,13 @@ export function resultDelivery(
               sel.source === 'input' ? (input?.blocked ?? new Set()) : blocked
 
             if (retain) {
-              const invalidPaths: string[] = []
+              const invalidPaths = [...forbidden].filter(
+                (path) =>
+                  path === sel.path ||
+                  path.startsWith(sel.path + '/') ||
+                  sel.path.startsWith(path + '/')
+              )
 
-              const inspect = (v: AiJsonValue, path: string): void => {
-                if (v !== null && typeof v === 'object') {
-                  for (const [key, child] of Object.entries(v)) {
-                    inspect(
-                      child,
-                      path + '/' + key.replace(/~/g, '~0').replace(/\//g, '~1')
-                    )
-                  }
-                } else if (forbidden.has(v)) {
-                  invalidPaths.push(path || '(root)')
-                }
-              }
-
-              inspect(value, sel.path)
               if (invalidPaths.length) {
                 throw Error(
                   'Request-scoped references cannot be saved across turns: ' +
@@ -413,7 +404,7 @@ export async function readNamedFields(
     !record(request.delivery) ||
     !record(request.delivery.fields)
   ) {
-    throw new LocalToolInputError('App result context unavailable')
+    throw new Error('App result context unavailable')
   }
 
   const fields = await exchange({

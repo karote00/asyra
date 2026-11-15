@@ -5,6 +5,7 @@ import { PresetSystemPropertyKeys } from '@asyra/preset'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AiDrawingProgressState } from '../../common-apis/system-context'
 import * as collaborationLifecycle from '../../collaboration/lifecycle'
+import * as collaborationObservation from '../../collaboration/session-observation'
 import { SystemPropertyKeys } from '../../constants'
 import core from '../../contexts'
 import RenderApp from '../index'
@@ -67,7 +68,7 @@ describe('RenderApp AI drawing progress indicator', () => {
       'createCollaborationDocumentSession'
     ).mockReturnValue(collaborationSession)
     vi.spyOn(
-      collaborationLifecycle,
+      collaborationObservation,
       'getActiveCollaborationHandle'
     ).mockReturnValue({
       getSessionState: () => ({

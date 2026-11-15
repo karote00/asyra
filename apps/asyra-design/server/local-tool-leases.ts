@@ -1,3 +1,5 @@
+import { resolveLocalSchemaReference } from '../src/ai/tool-schema'
+import { LocalToolInputError } from './local-tool-invocation'
 import type { AiRecipeLeaseAdapter } from '@asyra/ai-agent-runtime'
 import { operationInputIssue } from './operation-input-schema'
 
@@ -25,11 +27,16 @@ const record = (value: unknown): value is Record<string, unknown> =>
 export const localToolReferences = (
   value: unknown,
   schema: unknown,
-  nonPortable?: Set<unknown>
+  nonPortable?: Set<string>
 ): string[] => {
   const result = new Set<string>()
 
-  const visit = (item: unknown, shape: unknown, depth: number) => {
+  const visit = (
+    item: unknown,
+    shape: unknown,
+    depth: number,
+    path: string
+  ) => {
     if (depth > 48) {
       throw new Error('Artifact reference schema exceeds its depth budget')
     }
@@ -39,47 +46,23 @@ export const localToolReferences = (
     }
 
     if (typeof shape.$ref === 'string') {
-      if (!shape.$ref.startsWith('#/')) {
-        throw new Error('Artifact reference schema must be local')
-      }
-
-      let target: unknown = schema
-
-      for (const key of shape.$ref
-        .slice(2)
-        .split('/')
-        .map((part) => part.replace(/~1/g, '/').replace(/~0/g, '~'))) {
-        if (
-          (!record(target) && !Array.isArray(target)) ||
-          !Object.hasOwn(target, key)
-        ) {
-          throw new Error('Missing artifact reference schema')
-        }
-
-        target = (target as Record<string, unknown>)[key]
-      }
-
-      visit(item, target, depth + 1)
+      visit(
+        item,
+        resolveLocalSchemaReference(schema, shape.$ref),
+        depth + 1,
+        path
+      )
     }
 
     if (
       nonPortable &&
       ['request', 'secret'].includes(String(shape['x-runtime-value']))
     ) {
-      const collect = (v: unknown): void => {
-        if (v !== null && typeof v === 'object') {
-          Object.values(v).forEach(collect)
-        } else if (v != null) {
-          nonPortable.add(v)
-        }
-      }
-
-      collect(item)
-
-      return
+      nonPortable.add(path)
     }
 
     if (shape['x-runtime-value'] === 'request-artifact') {
+      nonPortable?.add(path)
       if (typeof item === 'string') {
         result.add(item)
 
@@ -107,7 +90,7 @@ export const localToolReferences = (
 
       for (const branch of branches) {
         if (mode === 'allOf' || !operationInputIssue(item, branch, schema)) {
-          visit(item, branch, depth + 1)
+          visit(item, branch, depth + 1, path)
         }
       }
     }
@@ -115,7 +98,12 @@ export const localToolReferences = (
     if (record(item) && record(shape.properties)) {
       for (const [key, child] of Object.entries(shape.properties)) {
         if (Object.hasOwn(item, key)) {
-          visit(item[key], child, depth + 1)
+          visit(
+            item[key],
+            child,
+            depth + 1,
+            path + '/' + key.replace(/~/g, '~0').replace(/\//g, '~1')
+          )
         }
       }
     }
@@ -126,7 +114,12 @@ export const localToolReferences = (
           !record(shape.properties) ||
           !Object.hasOwn(shape.properties, key)
         ) {
-          visit(child, shape.additionalProperties, depth + 1)
+          visit(
+            child,
+            shape.additionalProperties,
+            depth + 1,
+            path + '/' + key.replace(/~/g, '~0').replace(/\//g, '~1')
+          )
         }
       }
     }
@@ -138,19 +131,14 @@ export const localToolReferences = (
           Array.isArray(shape.prefixItems) && index < shape.prefixItems.length
             ? shape.prefixItems[index]
             : shape.items,
-          depth + 1
+          depth + 1,
+          path + '/' + index
         )
       )
     }
   }
 
-  visit(value, schema, 0)
-
-  if (nonPortable) {
-    for (const handle of result) {
-      nonPortable.add(handle)
-    }
-  }
+  visit(value, schema, 0, '')
 
   return [...result]
 }
@@ -229,8 +217,12 @@ export const createLocalToolLeases = (options: {
   const artifact = (handle: string) => {
     const item = artifacts.get(canonical(handle))
 
-    if (!item || item.state !== 'live') {
-      throw new Error('Artifact is unavailable for this request')
+    if (!item) {
+      throw new LocalToolInputError('Artifact is unavailable for this request')
+    }
+
+    if (item.state !== 'live') {
+      throw new Error('Artifact cleanup is incomplete for this request')
     }
 
     item.validate?.()
@@ -296,7 +288,7 @@ export const createLocalToolLeases = (options: {
         const item = artifact(handle)
 
         if (![...item.owners].some((owner) => ancestors.has(owner))) {
-          throw new Error('Artifact is outside caller ownership')
+          throw new LocalToolInputError('Artifact is outside caller ownership')
         }
 
         return item
@@ -456,7 +448,7 @@ export const createLocalToolLeases = (options: {
         !item.owners.has(callId ?? requestOwner) &&
         !item.owners.has(requestOwner)
       ) {
-        throw new Error('Artifact is outside caller ownership')
+        throw new LocalToolInputError('Artifact is outside caller ownership')
       }
     },
 
@@ -478,7 +470,7 @@ export const createLocalToolLeases = (options: {
       }
 
       if (!allowed) {
-        throw new Error('Artifact is outside caller ownership')
+        throw new LocalToolInputError('Artifact is outside caller ownership')
       }
 
       item.owners.add(callId)
@@ -553,10 +545,12 @@ export const createLocalToolLeases = (options: {
   }
 }
 
-/** Possible request/secret fields make a complete value unsuitable for App storage. */
+/** Discovery considers every possible field. Preflight may consider only required
+ * fields; retention still checks all fields present in the validated actual value. */
 export const localToolSchemaIsPortable = (
   schema: unknown,
-  referenceRoot: unknown = schema
+  referenceRoot: unknown = schema,
+  requiredOnly = false
 ): boolean => {
   const seen = new Set<unknown>()
 
@@ -574,44 +568,70 @@ export const localToolSchemaIsPortable = (
       return false
     }
 
-    if (typeof shape.$ref === 'string') {
-      if (!shape.$ref.startsWith('#/')) {
-        throw Error('Artifact reference schema must be local')
-      }
-
-      let target: unknown = referenceRoot
-
-      for (const part of shape.$ref.slice(2).split('/')) {
-        const key = part.replace(/~1/g, '/').replace(/~0/g, '~')
-
-        if (
-          (!record(target) && !Array.isArray(target)) ||
-          !Object.hasOwn(target, key)
-        ) {
-          throw Error('Missing artifact reference schema: ' + shape.$ref)
-        }
-
-        target = (target as Record<string, unknown>)[key]
-      }
-
-      if (!visit(target)) {
-        return false
-      }
+    if (
+      typeof shape.$ref === 'string' &&
+      !visit(resolveLocalSchemaReference(referenceRoot, shape.$ref))
+    ) {
+      return false
     }
 
     for (const key of ['properties', 'patternProperties']) {
-      if (record(shape[key]) && !Object.values(shape[key]).every(visit)) {
+      const fields = shape[key]
+
+      if (!record(fields)) {
+        continue
+      }
+
+      const portable = Object.entries(fields).every(([name, field]) => {
+        if (
+          requiredOnly &&
+          (key !== 'properties' ||
+            !Array.isArray(shape.required) ||
+            !shape.required.includes(name))
+        ) {
+          return true
+        }
+
+        return visit(field)
+      })
+
+      if (!portable) {
         return false
       }
     }
 
     for (const key of ['anyOf', 'oneOf', 'allOf', 'prefixItems']) {
-      if (Array.isArray(shape[key]) && !shape[key].every(visit)) {
+      const fields = shape[key]
+
+      if (!Array.isArray(fields)) {
+        continue
+      }
+
+      const portable =
+        requiredOnly && (key === 'anyOf' || key === 'oneOf')
+          ? fields.some(visit)
+          : fields.every((field, index) => {
+              if (
+                requiredOnly &&
+                key === 'prefixItems' &&
+                index >= Number(shape.minItems ?? 0)
+              ) {
+                return true
+              }
+
+              return visit(field)
+            })
+
+      if (!portable) {
         return false
       }
     }
 
-    return ['items', 'additionalProperties'].every((key) => visit(shape[key]))
+    return ['items', 'additionalProperties'].every((key) =>
+      requiredOnly && (key !== 'items' || Number(shape.minItems ?? 0) === 0)
+        ? true
+        : visit(shape[key])
+    )
   }
 
   return visit(schema)
@@ -629,20 +649,8 @@ export const localToolResultFieldLifetimes = (schema: unknown) => {
     }
 
     seen.add(node)
-    if (typeof node.$ref === 'string' && node.$ref.startsWith('#/')) {
-      let target: unknown = schema
-
-      for (const part of node.$ref.slice(2).split('/')) {
-        const key = part.replace(/~1/g, '/').replace(/~0/g, '~')
-
-        target =
-          (record(target) || Array.isArray(target)) &&
-          Object.hasOwn(target, key)
-            ? (target as Record<string, unknown>)[key]
-            : undefined
-      }
-
-      visit(target)
+    if (typeof node.$ref === 'string') {
+      visit(resolveLocalSchemaReference(schema, node.$ref))
     }
 
     if (record(node.properties)) {

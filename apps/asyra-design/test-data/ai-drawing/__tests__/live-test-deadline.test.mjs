@@ -42,7 +42,7 @@ const fixture = () => {
   }
 }
 
-test('live execution cap is exactly fifteen minutes', () =>
+test('generic live watchdog default is eighteen minutes; callers supply their work deadline', () =>
   assert.equal(LIVE_TEST_LIMIT_MS, 1080000))
 test('stops an owned producer while the driver event loop is blocked', async () => {
   const f = fixture()

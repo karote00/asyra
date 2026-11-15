@@ -3,7 +3,7 @@ import { AiActionExecutionError } from '@asyra/ai-agent-runtime'
 import core from '../contexts'
 import { AiActionNames } from '../constants'
 import { observeDesignChanges } from '../common-apis/design-review'
-import { getActiveCollaborationHandle } from '../collaboration/lifecycle'
+import { getActiveCollaborationHandle } from '../collaboration/session-observation'
 import { toolResultObject, actionToolSemantics } from './tool-contract'
 
 // Separate output-artifact budget; this never enlarges the HTTP receipt limit.

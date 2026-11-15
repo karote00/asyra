@@ -256,44 +256,13 @@ model-authored explanations from measured App/transport events and inferred caus
 This is an incomplete scenario observation, not full quality acceptance. Preserve
 available I/O on forced termination; do not retry or invent unavailable output.
 
-Offline native delivery verification uses `test:native-delivery` with the installed
-Codex 0.160.0 executable and permanent saved-reply fixtures. It starts only a local
-scripted Responses endpoint; no real inference, 101, credentials, refresh changes
-or output-limit overrides. Actual native successor requests and selected completion
-outputs use the existing record sink. Unsupported boundaries remain incomplete.
-
-Run the bounded native gate with `yarn workspace @asyra/asyra-design test:native-delivery`.
-It requires the installed `codex-cli 0.160.0` binary (or `NATIVE_DELIVERY_CODEX`
-pointing to that executable); another version fails without downloading anything.
-Each run retains its evidence under `tmp/native-handoff-*` using the existing
-Runtime sink. Formal raw-text fixtures live in `fixtures/native-delivery`, so tests
-never load prior ignored run directories. Wire-body strings contain synthetic test
-instructions and retained public tool replies; headers and external credentials are
-not captured. Native completed content and the subsequent outbound request are
-separate evidence boundaries. Tests characterize the actual default truncation;
-a passing gate does not mean the reply reached a real model intact. The watchdog's
-intentional cleanup stop receipt is retained unchanged and checked for stop errors.
-
-
-The native gate uses the production adapter's direct model configuration. It scripts
-canonical search and JSON tool calls against fixed loopback responses, preserves
-submitted replies and the real successor requests, and verifies complete canonical
-pages and native image bytes/order. Oversized saved text remains a truncation
-negative control; bounded delivery must preserve every required constraint without
-increasing output limits. Existing retained-result/refresh integration exercises
-read-only recovery without repeating mutations. These tests establish transport
-behavior, not real-model adoption or historical intent.
-
-Unfinished native output visibility is characterized by
-`server/__tests__/native-output-observation.integration.test.ts`, using the same
-native-delivery harness and installed 0.160.0 engine. The local scripted endpoint
-emits 64,000 argument bytes in multiple deltas or withholds them before completing
-the same function call. A separate disconnect leaves the call unfinished. These are
-not real inference or 101 runs. `unfinished-output-probe` records fixture-side bytes
-and public item metadata before completion; those bytes must never be described
-as production-observed generation. The original successor and completion checks
-remain required. The local probe uses HTTP/SSE; it does not measure live WebSocket
-latency or prove a historical stall's cause.
+The old saved-reply native dispatcher and its package gate have been removed.
+Saved raw-text and image fixtures remain immutable inputs, not executable acceptance
+routes. Production-path verification is being rebuilt under the
+[active conversation plan](../../../../docs/ai/apps/asyra-design/plans/agent-context-and-report-continuity-plan.md#spec-derived-conversation-verification).
+The replacement must observe App-produced replies and actual successor requests;
+preconstructed replies cannot certify App handoff. Partial focused results do not
+establish complete feature acceptance. No live inference or 101 is required.
 
 The App records `app/output-visibility` on the existing `provider_notification`
 stage through the Runtime sink.

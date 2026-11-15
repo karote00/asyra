@@ -6,6 +6,7 @@
 - `src/controllers/group-commands.ts`
 - `src/app/group-context-menu.tsx`
 - `src/contents/layer-hierarchy.ts`
+- `src/controllers/canvas-hierarchy-target.ts`
 
 ## Trigger
 
@@ -38,6 +39,13 @@
   and hierarchy validation/mutation owner.
 - Factory owns transaction, rollback, undo/redo, and grouped publication.
 - Render projects the committed canonical hierarchy without fallback state.
+- Canvas target queries admit the current Preset-published hierarchy projection
+  once per descriptor-map identity, flattened-order identity and workspace.
+  Pointer, modifier and selection changes rerun target resolution, not full
+  projection admission. Replacements from edits, load or history invalidate the
+  retained admission; Core teardown releases it. Only one current projection is
+  retained. Explicit caller-supplied mutable projections are validated on each
+  call, including create-parent resolution, without a second redundant pass.
 
 ## Non-Goals
 

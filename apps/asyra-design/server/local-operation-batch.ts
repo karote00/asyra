@@ -1,3 +1,5 @@
+import { resolveLocalSchemaReference } from '../src/ai/tool-schema'
+import { AiToolFailureCodes } from '../src/constants/ai-design'
 import { LocalToolInputError } from './local-tool-invocation'
 import { randomUUID } from 'node:crypto'
 import type {
@@ -74,16 +76,13 @@ const targetSlots = (
       }
     }
 
-    if (typeof value.$ref === 'string' && value.$ref.startsWith('#/')) {
-      let resolved: unknown = schema
-
-      for (const key of value.$ref.slice(2).split('/')) {
-        resolved = record(resolved)
-          ? resolved[key.replace(/~1/g, '/').replace(/~0/g, '~')]
-          : undefined
-      }
-
-      visit(resolved, path, supplied, depth + 1)
+    if (typeof value.$ref === 'string') {
+      visit(
+        resolveLocalSchemaReference(schema, value.$ref),
+        path,
+        supplied,
+        depth + 1
+      )
     }
 
     for (const mode of ['oneOf', 'anyOf', 'allOf']) {
@@ -274,8 +273,7 @@ export const bindOperationTargets = (
     if (!targets.length) {
       throw new LocalToolInputError(
         'Target references cannot be empty.',
-        'PREPARATION_REJECTED',
-        'correct_input'
+        AiToolFailureCodes.INPUT_INVALID
       )
     }
 
@@ -330,8 +328,7 @@ export const bindOperationTargets = (
     if (issues.length) {
       throw new LocalToolInputError(
         issues.join('\n'),
-        'PREPARATION_REJECTED',
-        'correct_input'
+        AiToolFailureCodes.INPUT_INVALID
       )
     }
 
@@ -383,8 +380,7 @@ export const prepareOperationBatch = (
   if (!Array.isArray(operations) || !operations.length) {
     throw new LocalToolInputError(
       'A nonempty operations array is required.',
-      'PREPARATION_REJECTED',
-      'correct_input'
+      AiToolFailureCodes.INPUT_INVALID
     )
   }
 
@@ -400,8 +396,7 @@ export const prepareOperationBatch = (
     ) {
       throw new LocalToolInputError(
         'Invalid batch operation.',
-        'PREPARATION_REJECTED',
-        'correct_input'
+        AiToolFailureCodes.INPUT_INVALID
       )
     }
 
@@ -426,11 +421,7 @@ export const prepareOperationBatch = (
       const issue = operationInputIssue(args, definition.inputSchema)
 
       if (issue) {
-        throw new LocalToolInputError(
-          issue,
-          'PREPARATION_REJECTED',
-          'correct_input'
-        )
+        throw new LocalToolInputError(issue, AiToolFailureCodes.INPUT_INVALID)
       }
 
       actions.push({

@@ -14,7 +14,6 @@ it('keeps missing-owner delivery failures valid without admitting undeclared evi
   const schema = modelToolDeliveryFailureSchema({})
   const failure = {
     available: false,
-    recoverable: true,
     code: 'TOOL_DELIVERY_INVALID',
     message:
       'The selected owner is unavailable; execution must not be replayed.',
@@ -350,4 +349,27 @@ it('retains a completed child view without selecting it again and still rejects 
     operationContractIssue(projected, schema, { stage: 'output' })
   ).toBeDefined()
   expect(reads).toBeGreaterThan(0)
+})
+
+it('preserves root-referenced public fields while excluding nested internal values', () => {
+  const schema = {
+    type: 'object',
+    properties: {
+      label: { type: 'string' },
+      hidden: toolInternalResult({ type: 'string' }),
+      child: { $ref: '#' }
+    },
+    additionalProperties: false
+  }
+
+  expect(
+    projectToolResultFields(
+      {
+        label: 'root',
+        hidden: 'private',
+        child: { label: 'leaf', hidden: 'private' }
+      },
+      schema
+    )
+  ).toEqual({ label: 'root', child: { label: 'leaf' } })
 })

@@ -7,7 +7,7 @@ import { createBasicApiActions } from '../../src/ai/basic-api-actions'
 import { createAiToolContract } from '@asyra/ai-agent-runtime'
 import { createLocalOperationTools } from '../local-operation-tools'
 import { invokeLocalTool } from '../local-tool-invocation'
-import { evaluationToolStop } from '../evaluation-control'
+
 import { toolSemantics } from '../../src/ai/tool-contract'
 
 const setup = () => {
@@ -32,7 +32,7 @@ const setup = () => {
     }
   )
   const definition = owner.definitions.find(
-    (entry) => entry.name === 'describe_design_apis'
+    (entry) => entry.name === 'read_design_contracts'
   )
 
   if (!definition) {
@@ -53,21 +53,27 @@ const setup = () => {
   return { call, dispatch }
 }
 
-it('reproduces the recorded stop and delivers mixed identity recovery without stopping evaluation', async () => {
-  expect(evaluationToolStop(recorded.output)?.kind).toBe('tool-failure')
+it('delivers recorded mixed identity failure and accepts a corrected selection', async () => {
   const { call, dispatch } = setup()
-  const { value, reply } = await call(recorded.input)
+  const { value, reply } = await call({
+    names: recorded.input.operations,
+    view: recorded.input.view
+  })
 
-  expect(value.missingOperations).toEqual(['fill.updateFills'])
+  expect(reply.outcome).toMatchObject({
+    status: 'partial',
+    settlement: 'completed'
+  })
+  expect(value.missingNames).toEqual(['fill.updateFills'])
   expect(value.apis.map((entry: { name: string }) => entry.name)).toEqual(
     recorded.output.apis.map((entry) => entry.name)
   )
   expect(value).toMatchObject({
     status: 'partial',
     settlement: 'completed',
-    recovery: { kind: 'select_identity' }
+    code: 'IDENTITY_UNRESOLVED'
   })
-  expect(evaluationToolStop(reply)).toBeUndefined()
+
   expect(
     value.apis.every(
       (entry: { definition: { availableInResponse: boolean } }) =>
@@ -76,17 +82,16 @@ it('reproduces the recorded stop and delivers mixed identity recovery without st
   ).toBe(true)
   expect(dispatch).not.toHaveBeenCalled()
   const corrected = await call({
-    operations: ['fill.updateFillsAtIndex'],
+    names: ['fill.updateFillsAtIndex'],
     view: 'usage'
   })
 
-  expect(corrected.value.missingOperations).toEqual([])
+  expect(corrected.value.missingNames).toEqual([])
   expect(corrected.reply.outcome?.status).toBe('success')
-  expect(evaluationToolStop(corrected.reply)).toBeUndefined()
 })
 
 it.each([
-  { operations: ['fill.updateFills'], view: 'usage' },
+  { names: ['fill.updateFills'], view: 'usage' },
   { names: ['missing-native'], view: 'usage' },
   { names: ['ambiguous'], view: 'usage' },
   { names: ['hierarchy.groupElements', 'ambiguous'], view: 'usage' }
@@ -98,9 +103,10 @@ it.each([
 
     expect(value).toMatchObject({
       settlement: 'completed',
-      recovery: { kind: 'select_identity' }
+      code: 'IDENTITY_UNRESOLVED'
     })
-    expect(evaluationToolStop(reply)).toBeUndefined()
+
+    expect(reply.outcome.status).toBe(value.status)
     expect(dispatch).not.toHaveBeenCalled()
   }
 )
@@ -108,7 +114,7 @@ it.each([
 it('preserves identity recovery through complete content paging and retained refresh', async () => {
   const { call } = setup()
   const input = {
-    operations: [
+    names: [
       ...basicApiContracts.map((entry) => entry.operation),
       'missing.operation'
     ],
@@ -118,7 +124,6 @@ it('preserves identity recovery through complete content paging and retained ref
   const pages: string[] = []
 
   while (response.value.contentDelivery) {
-    expect(evaluationToolStop(response.reply)).toBeUndefined()
     pages.push(response.value.contentDelivery.text)
     if (!response.value.contentDelivery.next) {
       break
@@ -130,73 +135,41 @@ it('preserves identity recovery through complete content paging and retained ref
   expect(pages.length).toBeGreaterThan(1)
   const full = JSON.parse(pages.join(''))
 
-  expect(full.missingOperations).toEqual(['missing.operation'])
+  expect(full.missingNames).toEqual(['missing.operation'])
   const retained = await call({
     fromResult: full.resultKey,
     names: ['hierarchy.groupElements', 'missing.operation']
   })
 
-  expect(evaluationToolStop(retained.reply)).toBeUndefined()
-  const refreshed = await call({ ...recorded.input, refresh: true })
+  expect(retained.value.missingNames).toEqual(['missing.operation'])
+  expect(retained.reply.outcome.status).toBe('partial')
+  const refreshed = await call({
+    names: recorded.input.operations,
+    view: recorded.input.view,
+    refresh: true
+  })
 
-  expect(evaluationToolStop(refreshed.reply)).toBeUndefined()
+  expect(refreshed.reply.outcome.status).toBe('partial')
 })
 
-it('stops when an unresolved identity accompanies an unavailable known field contract', async () => {
+it('allows correction of unresolved identities and invalid authored schema paths', async () => {
   const { call } = setup()
   const { value, reply } = await call({
     names: ['hierarchy.groupElements', 'missing-native'],
-    schemaPaths: ['/notAnExistingSchemaField']
+    scopes: Object.fromEntries(
+      ['hierarchy.groupElements', 'missing-native'].map((name) => [
+        name,
+        { schemaPaths: ['/notAnExistingSchemaField'] }
+      ])
+    )
   })
 
-  expect(value.code).toBe('DEFINITION_UNAVAILABLE')
-  expect(value.recovery?.kind).not.toBe('select_identity')
-  expect(evaluationToolStop(reply)?.kind).toBe('tool-failure')
-})
-
-it.each([
-  'unknown-settlement',
-  'independent-issue',
-  'error',
-  'failed-delivery'
-])('does not hide %s behind identity recovery', async (failure) => {
-  const { call } = setup()
-  const { value, reply } = await call(recorded.input)
-  let outcome = structuredClone(reply.outcome)
-
-  if (!outcome) {
-    throw new Error('Missing invocation acknowledgement')
-  }
-
-  if (failure === 'unknown-settlement') {
-    outcome = { ...outcome, settlement: 'unknown' }
-  }
-
-  if (failure === 'independent-issue') {
-    if (!outcome.issues) {
-      throw new Error('Missing discovery issues')
-    }
-
-    outcome = {
-      ...outcome,
-      issues: [
-        ...outcome.issues,
-        { code: 'DELIVERY_FAILED', message: 'Output missing' }
-      ]
-    }
-  }
-
-  if (failure === 'error') {
-    value.error = 'Transport failed'
-  }
-
-  if (failure === 'failed-delivery') {
-    value.code = 'DEFINITION_UNAVAILABLE'
-  }
-
-  expect(
-    evaluationToolStop({ ...reply, text: JSON.stringify(value), outcome })?.kind
-  ).toBe('tool-failure')
+  expect(reply.outcome).toMatchObject({
+    status: 'failed',
+    settlement: 'completed'
+  })
+  expect(value.code).toBe('TOOL_INPUT_INVALID')
+  expect(value).not.toHaveProperty('recovery')
 })
 
 it.each(
@@ -210,9 +183,6 @@ it.each(
 )(
   'delivers the recorded complete import purpose through the host for %s',
   async ({ name, query }) => {
-    const fixture = (
-      await import('../../test-data/ai-drawing/fixtures/task-continuity-20261107.json')
-    ).default
     const dispatch = vi.fn()
     const owner = createLocalOperationTools(
       createBasicApiActions().map(createAiToolContract),
@@ -233,7 +203,7 @@ it.each(
       }
     )
     const definition = owner.definitions.find(
-      (d) => d.name === 'describe_design_apis'
+      (d) => d.name === 'search_design_tools'
     )
 
     if (!definition) {
@@ -243,7 +213,7 @@ it.each(
     const reply = await invokeLocalTool(
       owner,
       definition,
-      { ...fixture.query, query },
+      { query },
       new AbortController().signal
     )
     const value = JSON.parse(reply.text)
@@ -251,7 +221,26 @@ it.each(
     expect(reply.success, reply.text).toBe(true)
     expect(value.tools[0].rank).toBe(1)
     expect(value.tools[0].match.unmatchedTerms).toEqual([])
-    expect(value.tools[0].usageGuide.parameters).toBeDefined()
+    expect(value.tools[0].usageGuide).toBeUndefined()
+    const read = owner.definitions.find(
+      (d) => d.name === 'read_design_contracts'
+    )
+
+    if (!read) {
+      throw new Error('Missing contract read owner')
+    }
+
+    const acquired = await invokeLocalTool(
+      owner,
+      read,
+      value.tools[0].usage.arguments,
+      new AbortController().signal
+    )
+
+    expect(acquired.success, acquired.text).toBe(true)
+    expect(
+      JSON.parse(acquired.text).tools[0].usageGuide.parameters
+    ).toBeDefined()
     expect(value.tools[0].execution).toEqual({
       kind: 'host-operation',
       tool: 'execute_design',

@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict'
 import { describe, expect, it } from 'vitest'
 import { FEATURE_MOVEMENT_THRESHOLD } from '../../constants'
 import {
@@ -124,6 +125,7 @@ describe('Layers hierarchy pointer normalization', () => {
       cancellationReason: reason,
       target: null
     })
+    assert.ok(cancelled)
     expect(cancelLayerPointerSession(cancelled, reason)).toBeNull()
   })
 

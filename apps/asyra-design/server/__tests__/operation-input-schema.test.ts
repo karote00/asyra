@@ -347,7 +347,18 @@ it('retains nullable control IDs, definitions and nested array union fields in n
     }
   }
 
-  expect(native.$defs).toEqual(schema.$defs)
+  // Unused definitions need not travel; used constraints must remain equivalent.
+  for (const input of [
+    { items: [{ control: null }] },
+    { items: [{ kind: 'node' }] },
+    { items: [{ control: 7 }] },
+    { items: [{}] }
+  ]) {
+    expect(operationInputIssue(input, native) === undefined).toBe(
+      operationInputIssue(input, schema) === undefined
+    )
+  }
+
   expect(
     native.properties.items.items.oneOf[0].properties.control.type
   ).toEqual(['string', 'null'])
@@ -504,3 +515,117 @@ it.each(['fields', 'items'] as const)(
     expect(issue).not.toContain('[19]')
   }
 )
+
+it('preserves nonempty object semantics across native unions and local references', () => {
+  const cases = [
+    {
+      schema: {
+        type: 'object',
+        minProperties: 1,
+        additionalProperties: { type: 'integer' }
+      },
+      valid: [{ count: 0 }, { a: 1, b: 2 }],
+      invalid: [{}, { count: '0' }, [], null]
+    },
+    {
+      schema: {
+        type: 'object',
+        minProperties: 1,
+        properties: { count: { type: 'integer' } },
+        required: ['count'],
+        additionalProperties: false
+      },
+      valid: [{ count: 0 }],
+      invalid: [{}, { count: 0, extra: 1 }, null]
+    },
+    {
+      schema: {
+        $defs: { value: { type: 'integer' } },
+        type: 'object',
+        minProperties: 1,
+        additionalProperties: { $ref: '#/$defs/value' }
+      },
+      valid: [{ count: 0 }],
+      invalid: [{}, { count: '0' }]
+    },
+    {
+      schema: {
+        type: 'object',
+        minProperties: 1,
+        properties: { a: { type: 'integer' }, b: { type: 'integer' } },
+        anyOf: [{ required: ['a'] }, { required: ['b'] }],
+        additionalProperties: false
+      },
+      valid: [{ a: 0 }, { b: 0 }, { a: 0, b: 0 }],
+      invalid: [{}, { c: 0 }]
+    }
+  ]
+
+  for (const { schema, valid, invalid } of cases) {
+    const original = JSON.stringify(schema)
+    const converted = nativeToolInputSchema(schema)
+
+    for (const value of valid) {
+      expect(operationInputIssue(value, schema)).toBeUndefined()
+      expect(operationInputIssue(value, converted)).toBeUndefined()
+    }
+
+    for (const value of invalid) {
+      expect(operationInputIssue(value, schema)).toBeDefined()
+      expect(operationInputIssue(value, converted)).toBeDefined()
+    }
+
+    expect(JSON.stringify(schema)).toBe(original)
+    expect(nativeToolInputSchema(converted)).toEqual(converted)
+  }
+})
+
+it('preserves root property and union references through native schema relocation', () => {
+  const schemas = [
+    {
+      type: 'object',
+      minProperties: 1,
+      additionalProperties: false,
+      properties: {
+        count: { type: 'number' },
+        copy: { $ref: '#/properties/count' }
+      }
+    },
+    {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        count: { type: 'number' },
+        copy: { $ref: '#/properties/count' }
+      },
+      anyOf: [{ required: ['count'] }, { required: ['copy'] }]
+    },
+    {
+      type: 'object',
+      properties: { child: { $ref: '#' }, count: { type: 'number' } },
+      additionalProperties: false
+    }
+  ]
+
+  for (const schema of schemas) {
+    const before = JSON.stringify(schema)
+    const native = nativeToolInputSchema(schema)
+
+    for (const input of [
+      { copy: 1 },
+      { count: 1 },
+      {},
+      { copy: 'bad' },
+      { child: { count: 2 } },
+      { child: { count: 'bad' } },
+      null
+    ]) {
+      expect(
+        operationInputIssue(input, native) === undefined,
+        JSON.stringify({ schema, input })
+      ).toBe(operationInputIssue(input, schema) === undefined)
+    }
+
+    expect(JSON.stringify(schema)).toBe(before)
+  }
+})

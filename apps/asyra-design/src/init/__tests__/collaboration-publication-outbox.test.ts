@@ -1,3 +1,4 @@
+import { requiredRecord } from '../../__tests__/assert-result'
 import { IDBFactory } from 'fake-indexeddb'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SharedPublication } from '@asyra/factory'
@@ -265,11 +266,12 @@ describe('document publication recovery outbox', () => {
     const records: PendingDocumentPublication[] = [
       {
         fileId: 'file-reset-generation',
+        documentGeneration: 0,
         publicationId: publication.publicationId,
         appendOrder: 1,
         publication,
         status: 'pending'
-      } as PendingDocumentPublication
+      }
     ]
     const storage: PublicationOutboxStorage = {
       load: vi.fn(async () => records),
@@ -514,7 +516,9 @@ describe('document publication recovery outbox', () => {
     )
 
     const record = await outbox.append(publication)
-    const payload = publication.slices[0]?.batches[0]?.deliveries[0]?.payload
+    const payload = requiredRecord(
+      publication.slices[0]?.batches[0]?.deliveries[0]?.payload
+    )
 
     if (!payload || payload.action !== 'updateProperty') {
       throw new Error('expected updateProperty publication payload')
@@ -699,3 +703,44 @@ it('finishes failed generation retirement before retry can release retained publ
   expect(outbox.getState()).toEqual({ status: 'synced', pendingCount: 0 })
   expect(await storage.load('generation-retirement')).toEqual([])
 })
+
+it.each([undefined, -1, 0.5, Number.MAX_SAFE_INTEGER + 1])(
+  'retains invalid generation %s as a storage failure without replay or retirement',
+  async (generation) => {
+    const record: PendingDocumentPublication = {
+      fileId: 'invalid-generation',
+      publicationId: 'invalid',
+      publication: createPublication('invalid', 1),
+      appendOrder: 1,
+      documentGeneration: 0,
+      status: 'pending'
+    }
+
+    if (generation === undefined) {
+      Reflect.deleteProperty(record, 'documentGeneration')
+    } else {
+      Reflect.set(record, 'documentGeneration', generation)
+    }
+
+    const storage: PublicationOutboxStorage = {
+      load: vi.fn(async () => [record]),
+      put: vi.fn(),
+      delete: vi.fn()
+    }
+    const outbox = new DocumentPublicationOutbox({
+      fileId: record.fileId,
+      storage
+    })
+
+    await expect(outbox.initialize()).rejects.toThrow('could not be loaded')
+    expect(outbox.getState().status).toBe('storage-failed')
+    expect(outbox.getRecoverablePublications()).toEqual([])
+    await outbox.bindDocumentGeneration(0)
+    await expect(outbox.retryStorage()).rejects.toThrow(
+      'could not be persisted'
+    )
+    expect(storage.delete).not.toHaveBeenCalled()
+    expect(storage.put).not.toHaveBeenCalled()
+    expect(Reflect.get(record, 'documentGeneration')).toBe(generation)
+  }
+)

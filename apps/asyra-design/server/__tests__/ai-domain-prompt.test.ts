@@ -239,7 +239,7 @@ describe('stage-owned App guidance', () => {
     )
     expect(general).toContain('not subject facts, photographs or source pages')
     expect(general).toMatch(/categor/i)
-    expect(general).toContain('execute known current contracts directly')
+    expect(general).toContain('Execute known current contracts directly')
     expect(general).toContain('Use returned action names and execution routes')
   })
   it('routes missing references without source restrictions or mandatory repeated research', () => {
@@ -272,7 +272,7 @@ describe('stage-owned App guidance', () => {
     for (const name of [
       'prepare_and_apply_design',
       'execute_design',
-      'describe_design_apis',
+      'read_design_contracts',
       'completedSteps',
       'artifactId',
       'new values'
@@ -283,10 +283,10 @@ describe('stage-owned App guidance', () => {
     expect(general).toContain('Do not replay uncertain writes')
     expect(general).toContain('No old snapshot')
   })
-  it('routes local defects to bounded identity queries instead of broad parent enumeration', () => {
-    expect(general).toContain(
-      'query workspace bounds even if the parent spans many other regions'
-    )
+  it('keeps target lookup optional and distinguishes spatial from hierarchy queries', () => {
+    expect(general).not.toContain('For local changes, query workspace bounds')
+    expect(general).toContain('Known-value edits can proceed without a lookup')
+    expect(general).toContain('Use children for hierarchy questions')
     expect(general).toContain('result=ids')
     expect(general).toContain('batch-edit elementIds')
     expect(general).toContain('returned nextOffset')

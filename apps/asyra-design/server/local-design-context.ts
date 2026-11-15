@@ -1,4 +1,5 @@
-import { AiDesignToolIds } from '../src/constants/ai-design'
+import { LocalToolInputError } from './local-tool-invocation'
+import { AiDesignToolIds, AiToolFailureCodes } from '../src/constants/ai-design'
 import { toolSemantics, toolResultObject } from '../src/ai/tool-contract'
 import {
   createDesignFacts,
@@ -106,7 +107,7 @@ export const createLocalDesignContext = (options: {
       const issue = operationInputIssue(input, definition.inputSchema)
 
       if (issue) {
-        throw new Error(issue)
+        throw new LocalToolInputError(issue)
       }
 
       if (name === AiDesignToolIds.RECORD_DESIGN_FACTS) {
@@ -137,7 +138,9 @@ export const createLocalDesignContext = (options: {
         new Set(additions.map((note) => note.referenceId)).size !==
         additions.length
       ) {
-        throw new Error('Reference notes require unique identities.')
+        throw new LocalToolInputError(
+          'Reference notes require unique identities.'
+        )
       }
 
       const required = additions.filter(
@@ -150,7 +153,7 @@ export const createLocalDesignContext = (options: {
             (identity) => identity.referenceId === note.referenceId
           )
         ) {
-          throw new Error(
+          throw new LocalToolInputError(
             'Reference note must identify a selected existing image.'
           )
         }
@@ -177,7 +180,7 @@ export const createLocalDesignContext = (options: {
         )
 
         if (!identity) {
-          throw new Error(
+          throw new LocalToolInputError(
             'Reference note must identify a selected existing image.'
           )
         }
@@ -185,13 +188,19 @@ export const createLocalDesignContext = (options: {
         if (note.region && note.region !== 'whole') {
           const bounds = identity.validation
 
+          if (!bounds) {
+            throw new LocalToolInputError(
+              'Reference crop requires decoded image bounds; the selected source is unavailable.',
+              AiToolFailureCodes.SOURCE_UNAVAILABLE
+            )
+          }
+
           if (
-            !bounds ||
             note.region.x + note.region.width > bounds.width ||
             note.region.y + note.region.height > bounds.height
           ) {
-            throw new Error(
-              'Reference crop requires decoded image bounds and must stay inside them.'
+            throw new LocalToolInputError(
+              'Reference crop must stay inside decoded image bounds.'
             )
           }
         }

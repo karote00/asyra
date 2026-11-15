@@ -1,4 +1,16 @@
 import {
+  readArray,
+  readBoolean,
+  readId,
+  readIds,
+  readNullable,
+  readNumber,
+  readObject,
+  readPosition,
+  readRect,
+  readString
+} from './basic-api-read-schemas'
+import {
   FillColorFormats,
   FillKinds,
   StrokeStyles,
@@ -69,6 +81,7 @@ const getElementTypeApi = defineBasicApi({
   owner: 'element',
   method: 'getElementType',
   effect: 'read',
+  resultValueSchema: readNullable(readString),
   parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
@@ -78,6 +91,7 @@ const isElementLockedApi = defineBasicApi({
   owner: 'element',
   method: 'isElementLocked',
   effect: 'read',
+  resultValueSchema: readBoolean,
   parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
@@ -87,6 +101,7 @@ const isElementVisibleApi = defineBasicApi({
   owner: 'element',
   method: 'isElementVisible',
   effect: 'read',
+  resultValueSchema: readBoolean,
   parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
@@ -96,6 +111,7 @@ const getElementBoundsApi = defineBasicApi({
   owner: 'element',
   method: 'getElementBounds',
   effect: 'read',
+  resultValueSchema: readNullable(readRect),
   parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
@@ -105,6 +121,7 @@ const getElementClientBoundsApi = defineBasicApi({
   owner: 'element',
   method: 'getElementClientBounds',
   effect: 'read',
+  resultValueSchema: readNullable(readRect),
   parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
@@ -114,6 +131,7 @@ const getElementPositionApi = defineBasicApi({
   owner: 'element',
   method: 'getElementPosition',
   effect: 'read',
+  resultValueSchema: readNullable(readPosition),
   parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
@@ -123,6 +141,7 @@ const getElementIdAtWorkspacePosApi = defineBasicApi({
   owner: 'element',
   method: 'getElementIdAtWorkspacePos',
   effect: 'read',
+  resultValueSchema: readNullable(readId),
   parameters: [{ name: 'workspacePos', schema: apiPosition }]
 })
 
@@ -132,6 +151,7 @@ const getElementIdAtClientPosApi = defineBasicApi({
   owner: 'element',
   method: 'getElementIdAtClientPos',
   effect: 'read',
+  resultValueSchema: readNullable(readId),
   parameters: [{ name: 'clientPos', schema: apiPosition }]
 })
 
@@ -141,6 +161,7 @@ const getRenderElementIdAtClientPosApi = defineBasicApi({
   owner: 'element',
   method: 'getRenderElementIdAtClientPos',
   effect: 'read',
+  resultValueSchema: readNullable(readId),
   parameters: [{ name: 'clientPos', schema: apiPosition }]
 })
 
@@ -150,6 +171,7 @@ const getMousePosInWorkspaceApi = defineBasicApi({
   owner: 'element',
   method: 'getMousePosInWorkspace',
   effect: 'read',
+  resultValueSchema: readPosition,
   parameters: [{ name: 'clientPos', schema: apiPosition }]
 })
 
@@ -159,6 +181,7 @@ const getElementIdsInBoundsApi = defineBasicApi({
   owner: 'element',
   method: 'getElementIdsInBounds',
   effect: 'read',
+  resultValueSchema: readIds,
   parameters: [{ name: 'bounds', schema: elementBoundsSchema }]
 })
 
@@ -168,6 +191,7 @@ const isPointInsideElementApi = defineBasicApi({
   owner: 'element',
   method: 'isPointInsideElement',
   effect: 'read',
+  resultValueSchema: readBoolean,
   parameters: [
     { name: 'elementId', schema: apiElementId },
     { name: 'point', schema: apiPosition }
@@ -180,6 +204,7 @@ const getPositionInParentApi = defineBasicApi({
   owner: 'element',
   method: 'getPositionInParent',
   effect: 'read',
+  resultValueSchema: readNullable(readPosition),
   parameters: [
     { name: 'parentId', schema: apiId },
     { name: 'workspacePosition', schema: apiPosition }
@@ -397,6 +422,7 @@ const getWorkspaceIdApi = defineBasicApi({
   owner: 'hierarchy',
   method: 'getWorkspaceId',
   effect: 'read',
+  resultValueSchema: readNullable(readId),
   parameters: []
 })
 
@@ -406,6 +432,7 @@ const getFlattenedElementIdsApi = defineBasicApi({
   owner: 'hierarchy',
   method: 'getFlattenedElementIds',
   effect: 'read',
+  resultValueSchema: readIds,
   parameters: []
 })
 
@@ -415,6 +442,7 @@ const getElementDataMapApi = defineBasicApi({
   owner: 'hierarchy',
   method: 'getElementDataMap',
   effect: 'read',
+  resultValueSchema: { type: 'object', additionalProperties: readObject() },
   parameters: []
 })
 
@@ -482,6 +510,7 @@ const getSelectedIdsApi = defineBasicApi({
   owner: 'selection',
   method: 'getSelectedIds',
   effect: 'read',
+  resultValueSchema: readIds,
   parameters: []
 })
 
@@ -491,6 +520,7 @@ const getVectorPointSelectionIdsApi = defineBasicApi({
   owner: 'selection',
   method: 'getVectorPointSelectionIds',
   effect: 'read',
+  resultValueSchema: readIds,
   parameters: []
 })
 
@@ -500,6 +530,7 @@ const getVectorSegmentSelectionIdsApi = defineBasicApi({
   owner: 'selection',
   method: 'getVectorSegmentSelectionIds',
   effect: 'read',
+  resultValueSchema: readIds,
   parameters: []
 })
 
@@ -509,6 +540,9 @@ const getSelectedVectorPointsApi = defineBasicApi({
   owner: 'selection',
   method: 'getSelectedVectorPoints',
   effect: 'read',
+  resultValueSchema: readArray(
+    readObject({ elementId: readId, pointId: readId, target: readString })
+  ),
   parameters: []
 })
 
@@ -518,6 +552,9 @@ const getSelectedVectorSegmentsApi = defineBasicApi({
   owner: 'selection',
   method: 'getSelectedVectorSegments',
   effect: 'read',
+  resultValueSchema: readArray(
+    readObject({ elementId: readId, segmentId: readId })
+  ),
   parameters: []
 })
 
@@ -594,6 +631,7 @@ const getScaleApi = defineBasicApi({
   owner: 'viewport',
   method: 'getScale',
   effect: 'read',
+  resultValueSchema: readNumber,
   parameters: []
 })
 
@@ -603,6 +641,7 @@ const getPositionApi = defineBasicApi({
   owner: 'viewport',
   method: 'getPosition',
   effect: 'read',
+  resultValueSchema: readPosition,
   parameters: []
 })
 
@@ -612,6 +651,7 @@ const getCanvasPositionFromWorkspaceApi = defineBasicApi({
   owner: 'viewport',
   method: 'getCanvasPositionFromWorkspace',
   effect: 'read',
+  resultValueSchema: readPosition,
   parameters: [{ name: 'workspacePos', schema: apiPosition }]
 })
 
@@ -655,6 +695,14 @@ const getFillByIdApi = defineBasicApi({
   owner: 'fill',
   method: 'getFillById',
   effect: 'read',
+  resultValueSchema: readNullable(
+    readObject({
+      id: readId,
+      color: readString,
+      opacity: readNumber,
+      visible: readBoolean
+    })
+  ),
   parameters: [
     { name: 'elementId', schema: apiElementId },
     { name: 'fillId', schema: apiId }
@@ -667,6 +715,7 @@ const getPrimaryFillColorApi = defineBasicApi({
   owner: 'fill',
   method: 'getPrimaryFillColor',
   effect: 'read',
+  resultValueSchema: readNullable(readString),
   parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
@@ -723,6 +772,7 @@ const getFillTargetsAtIndexApi = defineBasicApi({
   owner: 'fill',
   method: 'getFillTargetsAtIndex',
   effect: 'read',
+  resultValueSchema: apiArray(fillTargetSchema),
   parameters: [
     { name: 'elementIds', schema: apiElementIds },
     { name: 'index', schema: { type: 'integer', minimum: 0 } }
@@ -819,6 +869,9 @@ const getGradientHandleHitAtClientPosApi = defineBasicApi({
   owner: 'fill',
   method: 'getGradientHandleHitAtClientPos',
   effect: 'read',
+  resultValueSchema: readNullable(
+    readObject({ handleIndex: { enum: [0, 1] } })
+  ),
   parameters: [
     { name: 'elementId', schema: apiElementId },
     { name: 'fillId', schema: apiId },
@@ -833,6 +886,7 @@ const getGradientStopHitAtClientPosApi = defineBasicApi({
   owner: 'fill',
   method: 'getGradientStopHitAtClientPos',
   effect: 'read',
+  resultValueSchema: readNullable(readObject({ stopIndex: readNumber })),
   parameters: [
     { name: 'elementId', schema: apiElementId },
     { name: 'fillId', schema: apiId },
@@ -849,6 +903,17 @@ const getCanvasBoundsApi = defineBasicApi({
   owner: 'fill',
   method: 'getCanvasBounds',
   effect: 'read',
+  resultValueFields: [
+    'x',
+    'y',
+    'width',
+    'height',
+    'left',
+    'right',
+    'top',
+    'bottom'
+  ],
+  resultValueSchema: readNullable(readRect),
   parameters: []
 })
 
@@ -858,6 +923,7 @@ const getCanvasPositionFromClientApi = defineBasicApi({
   owner: 'fill',
   method: 'getCanvasPositionFromClient',
   effect: 'read',
+  resultValueSchema: readPosition,
   parameters: [{ name: 'clientPos', schema: apiPosition }]
 })
 
@@ -867,6 +933,16 @@ const getGradientHandleGeometryApi = defineBasicApi({
   owner: 'fill',
   method: 'getGradientHandleGeometry',
   effect: 'read',
+  resultValueSchema: readNullable(
+    readObject({
+      elementId: readId,
+      fillId: readId,
+      fill: readObject(),
+      width: readNumber,
+      height: readNumber,
+      canvasHandles: readArray(readPosition)
+    })
+  ),
   parameters: [
     { name: 'elementId', schema: apiElementId },
     { name: 'fillId', schema: apiId }
@@ -879,6 +955,13 @@ const getNextGradientForHandleAtClientPositionApi = defineBasicApi({
   owner: 'fill',
   method: 'getNextGradientForHandleAtClientPosition',
   effect: 'read',
+  resultValueSchema: readNullable(
+    readObject({
+      gradientHandles: readArray(readPosition),
+      gradientType: readString,
+      gradientStops: readArray(readObject())
+    })
+  ),
   parameters: [
     { name: 'elementId', schema: apiElementId },
     { name: 'fillId', schema: apiId },
@@ -931,6 +1014,7 @@ const getPrimaryStrokeColorApi = defineBasicApi({
   owner: 'stroke',
   method: 'getPrimaryStrokeColor',
   effect: 'read',
+  resultValueSchema: readNullable(readString),
   parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 

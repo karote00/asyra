@@ -442,7 +442,7 @@ it('counts receipt outcomes separately from completed transport and nested actio
     {
       stage: 'admission',
       settlement: 'not-started',
-      code: 'PREPARATION_REJECTED',
+      code: 'TOOL_INPUT_INVALID',
       available: false,
       toolOutcome: { status: 'unavailable' }
     },
@@ -524,7 +524,7 @@ it('counts receipt outcomes separately from completed transport and nested actio
   })
   expect(report.toolCalls[0].execution).toMatchObject({
     stage: 'admission',
-    code: 'PREPARATION_REJECTED',
+    code: 'TOOL_INPUT_INVALID',
     settlement: 'not-started'
   })
   expect(report.actions.filter((a) => a.status === 'failed')).toHaveLength(1)
@@ -574,7 +574,6 @@ it('preserves acknowledged partial work from the actual recoverable failure enve
 
   expect(report.toolCalls[0].execution).toMatchObject({
     status: 'partial',
-    recoverable: true,
     settlement: 'partial'
   })
   expect(report.toolOutcomes.partial).toBe(1)

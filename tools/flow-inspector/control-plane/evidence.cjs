@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
+const { reportCountIssues } = require('./runner-report.cjs')
 const path = require('node:path')
 const { isDeepStrictEqual } = require('node:util')
 const sourceOwner = require('./snapshot.cjs')
@@ -423,6 +424,8 @@ function assessSourceEvidence(
       issues.push('Runner success masks failed assertions')
     }
   }
+
+  issues.push(...reportCountIssues(report))
 
   if (runner.code !== 0 && failedCount === 0) {
     issues.push('Unsuccessful runner exit')

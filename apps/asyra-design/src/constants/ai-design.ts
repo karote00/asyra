@@ -5,7 +5,8 @@ export const AiDesignToolIds = Object.freeze({
   INVOKE_TOOL: 'invoke_tool',
   SAVE_TOOL: 'save_tool',
   MANAGE_TOOL: 'manage_tool',
-  DESCRIBE_DESIGN_APIS: 'describe_design_apis',
+  SEARCH_DESIGN_TOOLS: 'search_design_tools',
+  READ_DESIGN_CONTRACTS: 'read_design_contracts',
   EXECUTE_DESIGN: 'execute_design',
   RETAIN_DESIGN_TARGETS: 'retain_design_targets',
   RELEASE_DESIGN_ARTIFACTS: 'release_design_artifacts',
@@ -26,4 +27,11 @@ export const AiDesignToolIds = Object.freeze({
 
 export const AiInspectionLimits = Object.freeze({
   maxEdge: 1024
+} as const)
+
+export const AiToolFailureCodes = Object.freeze({
+  INPUT_INVALID: 'TOOL_INPUT_INVALID',
+  EXECUTION_FAILED: 'TOOL_EXECUTION_FAILED',
+  IDENTITY_UNRESOLVED: 'IDENTITY_UNRESOLVED',
+  SOURCE_UNAVAILABLE: 'SOURCE_UNAVAILABLE'
 } as const)

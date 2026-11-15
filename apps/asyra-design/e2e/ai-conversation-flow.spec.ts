@@ -82,8 +82,7 @@ for (const count of [16, 320, 1280]) {
               id: 'apply',
               name: 'apply_prepared_design',
               arguments: {
-                design: deliverPreparedDesign(design),
-                response: 'compact'
+                design: deliverPreparedDesign(design)
               },
               summary: 'Create repeated visible vectors'
             }
@@ -162,7 +161,13 @@ for (const count of [16, 320, 1280]) {
     expect(totalCounter('render-projection-outcome-applied')).toBe(count + 1)
     // Complete flat identities are still delivered; prior rows are not decoded
     // again for each prepared member publication.
-    expect(totalCounter('ui-context-membership-prepare')).toBe(1)
+    // The initial document already owns the membership index. New members
+    // extend that index instead of rebuilding it during this measured turn.
+    expect(totalCounter('ui-context-membership-prepare')).toBe(0)
+    expect(totalCounter('ui-context-membership-add-batch-entry')).toBe(
+      count + 1
+    )
+    expect(totalCounter('ui-context-hierarchy-append-entry')).toBe(count)
     expect(totalCounter('ui-context-membership-row-read')).toBeLessThan(
       count * 2 + 8
     )
@@ -1386,11 +1391,14 @@ for (const width of [360, 1280]) {
         .locator('li')
         .count()
 
-      for (const [tool, label] of [
+      const inspectedOperations = [
         ['read_design_context', 'Reading the design'],
         ['inspect_drawing', 'Reviewing the drawing'],
-        ['describe_design_apis', 'Finding available operations']
-      ]) {
+        ['search_design_tools', 'Finding available operations'],
+        ['read_design_contracts', 'Reading operation contracts']
+      ]
+
+      for (const [tool, label] of inspectedOperations) {
         for (const toolStatus of ['running', 'completed']) {
           response.write(
             JSON.stringify({
@@ -1422,7 +1430,7 @@ for (const width of [360, 1280]) {
 
       await expect(
         page.getByLabel('Operational progress').locator('li')
-      ).toHaveCount(stableRows + 9)
+      ).toHaveCount(stableRows + inspectedOperations.length * 3)
 
       // Real stream/controller/panel: unrelated siblings must not borrow one
       // another's purpose or leave an execution label after both settle.

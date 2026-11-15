@@ -205,7 +205,22 @@ export const createDesignAttachmentAction = (
       workspaceId: toolDocumentReference,
       parentId: toolDocumentReference,
       evidence: inspectionEvidenceSchema,
+      bounds: {
+        description:
+          'Null for the workspace. Otherwise x/y are the attachment container origin in its own parent coordinates; width/height are its local dimensions, not a workspace axis-aligned rectangle. Use basis for local-to-workspace conversion.',
+        anyOf: [
+          { type: 'null' },
+          toolResultObject({
+            x: { type: 'number' },
+            y: { type: 'number' },
+            width: { type: 'number' },
+            height: { type: 'number' }
+          })
+        ]
+      },
       basis: {
+        description:
+          'Workspace positions of local (0,0), (1,0), (0,1), in that order. Includes translation and rotation; the workspace basis is the identity.',
         type: 'array',
         minItems: 3,
         maxItems: 3,
@@ -218,6 +233,8 @@ export const createDesignAttachmentAction = (
       }
     })
   ),
+  composition: 'request',
+  revision: 2,
   name: AiActionNames.READ_DESIGN_ATTACHMENT,
   description:
     'Read the actual editable attachment parent, its local bounds and local-to-workspace basis under a canonical scene stamp. Omit parentId for the current workspace. Reads only the ancestor chain, never all children. Use for attachment-dependent preparation; this is geometry evidence, not visual approval.',

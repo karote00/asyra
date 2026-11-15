@@ -839,3 +839,31 @@ test('a nested current action can inherit its outer owned process group', async 
   await new Promise((resolve) => setTimeout(resolve, 100))
   assert.throws(() => process.kill(pid, 0), { code: 'ESRCH' })
 })
+
+test('process owner streams separate evidence without changing exit status', async () => {
+  const { PassThrough } = require('node:stream')
+  const stdout = new PassThrough()
+  const stderr = new PassThrough()
+  let out = '',
+    err = ''
+
+  stdout.on('data', (chunk) => {
+    out += chunk
+  })
+  stderr.on('data', (chunk) => {
+    err += chunk
+  })
+  const result = await execute(
+    "process.stdout.write('structured evidence'); process.stderr.write('diagnostic'); process.exitCode = 7",
+    { stdout, stderr }
+  )
+
+  assert.equal(out, 'structured evidence')
+  assert.equal(err, 'diagnostic')
+  assert.equal(result.code, 7)
+  assert.equal(result.reason, null)
+  assert.match(result.output, /structured evidence/)
+  assert.match(result.output, /diagnostic/)
+  stdout.destroy()
+  stderr.destroy()
+})

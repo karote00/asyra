@@ -3,7 +3,11 @@ import {
   type ResultContextCommand
 } from './conversation-results'
 import { readEvaluationWindow } from './evaluation-window'
-import { isExecutionActivity } from '@asyra/ai-agent-runtime'
+import { AiToolFailureCodes } from '../constants/ai-design'
+import {
+  AiToolContractError,
+  isExecutionActivity
+} from '@asyra/ai-agent-runtime'
 import {
   AiProviderError,
   createGenericHttpAiProvider,
@@ -235,6 +239,10 @@ const readActivityStream = async (
       } catch (error) {
         context = {
           ok: false,
+          code:
+            error instanceof AiToolContractError && error.stage === 'input'
+              ? AiToolFailureCodes.INPUT_INVALID
+              : AiToolFailureCodes.EXECUTION_FAILED,
           error:
             error instanceof Error
               ? error.message

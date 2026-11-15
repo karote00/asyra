@@ -56,9 +56,10 @@ export const GROUP_RENDER_STRATEGY: EngineNeutralRenderStrategy = (
 ) => {
   graphic.clear()
   graphic.transformGroup = true
-  // No visual rendering for group itself besides updating position
+  // Group geometry is non-painting; project its complete canonical pose.
   graphic.x = data.x
   graphic.y = data.y
+  graphic.rotation = data.rotation ?? 0
 }
 
 export interface GroupHierarchyReadCore {

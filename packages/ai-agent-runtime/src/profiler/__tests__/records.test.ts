@@ -25,10 +25,18 @@ it.each([
     {
       toolOutcome: { status: 'unavailable' },
       stage: 'admission',
-      code: 'PREPARATION_REJECTED',
+      code: 'TOOL_INPUT_INVALID',
       settlement: 'not-started'
     },
     'rejected'
+  ],
+  [
+    { available: false, code: 'TOOL_INPUT_INVALID', settlement: 'not-started' },
+    'rejected'
+  ],
+  [
+    { available: false, code: 'TOOL_INPUT_INVALID', settlement: 'unknown' },
+    'failed'
   ],
   [{ available: false, settlement: 'unknown' }, 'failed'],
   [{ status: 'new-contract' }, 'unknown']
@@ -80,6 +88,7 @@ it.each([
     const report = evaluateExecution(run)
 
     expect(report.toolCalls[0].execution.status).toBe(expected)
+    expect(report.toolCalls[0].execution).not.toHaveProperty('recoverable')
     expect(
       report.findings.some((finding) => finding.kind === 'unavailable-result')
     ).toBe(['partial', 'rejected', 'failed'].includes(expected))
@@ -176,7 +185,7 @@ describe('local execution records', () => {
         }
       })
       usage.trace('tool_completed', {
-        tool: 'describe_design_apis',
+        tool: 'search_design_tools',
         callId: 'discovery',
         result: { complete: true, count: 0, catalogSize: 100 }
       })
@@ -266,7 +275,7 @@ describe('local execution records', () => {
 
         time = 10
         usage.trace('tool_started', {
-          tool: 'describe_design_apis',
+          tool: 'search_design_tools',
           callId: 'a',
           arguments: {
             names: ['api_core_getElementComputedData'],
@@ -277,7 +286,7 @@ describe('local execution records', () => {
         })
         time = 20
         usage.trace('tool_completed', {
-          tool: 'describe_design_apis',
+          tool: 'search_design_tools',
           callId: 'a',
           result: { password: 'private secret' }
         })
@@ -575,7 +584,8 @@ it('joins call inputs, rejection feedback, output utility and exclusive observed
       executionMs: 10,
       result: {
         available: false,
-        recovery: 'correct_input',
+        code: 'TOOL_INPUT_INVALID',
+        settlement: 'not-started',
         message: 'arguments.draft.width: expected number'
       }
     })
@@ -616,7 +626,7 @@ it.each([
       available: true,
       toolOutcome: {
         status: 'unavailable',
-        issues: [{ code: 'PREPARATION_REJECTED', message: 'Missing target' }]
+        issues: [{ code: 'TOOL_INPUT_INVALID', message: 'Missing target' }]
       }
     },
     'unusable'

@@ -15,17 +15,19 @@ it('identifies the rejected alias and exact request references without losing a 
     async (request) => context.exchange(request)
   )
   const view = recorded.output.fields.groupReceipt
-  const retained = view.actionResults[0].result.retained
 
   await delivery.capture(
     undefined,
     view,
-    new Set([retained.snapshotId, retained.leaseId]),
+    new Set([
+      '/actionResults/0/result/retained/snapshotId',
+      '/actionResults/0/result/retained/leaseId'
+    ]),
     { status: 'success', settlement: 'completed' }
   )
 
   const receipt = delivery.finish(
-    { status: 'success', settlement: 'completed', issues: [] },
+    { status: 'success', settlement: 'completed' },
     ['group'],
     []
   )
@@ -68,11 +70,11 @@ it('retains only public authored input fields after successful execution', async
         artifactId: 'request-only',
         dimensions: { width: 30, height: 40 }
       },
-      blocked: new Set(['request-only'])
+      blocked: new Set(['/artifactId'])
     }
   )
   const receipt = delivery.finish(
-    { status: 'success', settlement: 'completed', issues: [] },
+    { status: 'success', settlement: 'completed' },
     ['prepare'],
     []
   )
@@ -108,7 +110,7 @@ it('acknowledges saved operation results with reusable provenance and shape with
     'design_operations.prepare_and_apply_design'
   )
   const receipt = delivery.finish(
-    { status: 'success', settlement: 'completed', issues: [] },
+    { status: 'success', settlement: 'completed' },
     ['panes'],
     []
   )

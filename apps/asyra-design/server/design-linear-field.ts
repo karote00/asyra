@@ -1,3 +1,4 @@
+import { DesignInputError } from './design-input-error'
 import {
   isDesignGradient,
   type DesignGradientData
@@ -30,7 +31,7 @@ const record = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value)
 
 const invalid = (reason: string): never => {
-  throw new Error(`Invalid linear material field: ${reason}`)
+  throw new DesignInputError(`Invalid linear material field: ${reason}`)
 }
 
 const point = (value: unknown): Point => {

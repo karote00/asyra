@@ -605,12 +605,11 @@ export const createAiConversationController = (
 
       if (
         typeof actionResult.compositionId === 'string' &&
-        actionResult.compositionId.length > 0 &&
-        roleToElementIds
+        actionResult.compositionId.length > 0
       ) {
         targetHints = freezeTargetHints(
           actionResult.compositionId,
-          roleToElementIds
+          roleToElementIds ?? {}
         )
       }
     }

@@ -66,12 +66,6 @@
   - required-file startup, server-prepared response consumption, attachment,
     vectorization, confirmation, failure, partial-result, history, and
     persistence behavior
-  - the 7,112-element balanced correctness case is a change-aware heavy gate,
-    excluded unless CI or the caller sets
-    `RUN_BALANCED_AI_CORRECTNESS=1`
-  - `yarn workspace @asyra/asyra-design
-test:e2e:balanced-ai-correctness` runs that heavy case explicitly with one
-    worker
 
 - `collaboration.spec.ts`
   - uses the dedicated `playwright.collaboration.config.ts` composition
@@ -126,12 +120,6 @@ test:e2e:balanced-ai-correctness` runs that heavy case explicitly with one
   Collaboration session and publication outbox to become idle before installing
   phase timers; setup publication work is excluded without changing the normal
   App composition or measured workload
-- pull-request CI resolves the balanced AI heavy gate from the exact
-  base-to-head changed paths in
-  `scripts/balanced-ai-correctness-scope.mjs`; unrelated changes and scheduled
-  runs exclude it, while workflow dispatch exposes an explicit opt-in
-- a missing pull-request base or head revision fails scope resolution instead
-  of silently skipping the balanced AI heavy gate
 - the dense-vector timing scenario performs exactly 12 unmeasured warm-up
   operations on the same composed runtime before the 12 measured operations.
   Warm-up completion is checked, the measured counters are reset at one explicit

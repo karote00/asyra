@@ -1,3 +1,4 @@
+import { CommonApiInputError } from './common-api-input-error'
 import type {
   ElementPropertyPatchUpdate,
   ElementPropertyTarget
@@ -63,7 +64,10 @@ const createFillRecordPatch = (
 
 const assertUniqueFillTargets = (elementIds: readonly string[]) => {
   if (new Set(elementIds).size !== elementIds.length) {
-    throw new Error('Fill row targets must contain unique element IDs')
+    throw new CommonApiInputError(
+      'Fill row targets must contain unique element IDs',
+      { field: 'elementIds' }
+    )
   }
 }
 
@@ -74,7 +78,10 @@ const fillPropertyTargetsAtIndex = (
 ): ElementPropertyTarget[] => {
   assertUniqueFillTargets(elementIds)
   if (!Number.isInteger(index) || index < 0) {
-    throw new Error('Fill row index must be a non-negative integer')
+    throw new CommonApiInputError(
+      'Fill row index must be a non-negative integer',
+      { field: 'index' }
+    )
   }
 
   const roots = core.readElementPropertyTargets(
@@ -89,7 +96,10 @@ const fillPropertyTargetsAtIndex = (
     const slot = root.children[index]
 
     if (!slot) {
-      throw new Error(`Missing Fill row ${index} for ${elementIds[offset]}`)
+      throw new CommonApiInputError(
+        `Missing Fill row ${index} for ${elementIds[offset]}`,
+        { field: 'index', index, elementId: elementIds[offset] }
+      )
     }
 
     return {
@@ -106,14 +116,24 @@ const fillPropertyTargetsAtIndex = (
 const fillRowsAtIndex = (elementIds: readonly string[], index: number) => {
   assertUniqueFillTargets(elementIds)
   if (!Number.isSafeInteger(index) || index < 0) {
-    throw new Error('Invalid Fill row index')
+    throw new CommonApiInputError('Invalid Fill row index', {
+      field: 'index',
+      index: Number.isFinite(index) ? index : String(index)
+    })
   }
 
   return elementIds.map((elementId) => {
     const fills = core.getElementComputedData(elementId, ['fills'])?.fills
 
     if (!Array.isArray(fills) || !fills[index]?.id) {
-      throw new Error(`Missing Fill row ${index} on ${elementId}`)
+      throw new CommonApiInputError(
+        `Missing Fill row ${index} on ${elementId}`,
+        {
+          field: 'index',
+          index,
+          elementId
+        }
+      )
     }
 
     return {
@@ -250,7 +270,10 @@ export const fillApis = {
     index: number
   ): FillTarget[] => {
     if (!Number.isInteger(index) || index < 0) {
-      throw new Error('Invalid Fill row index')
+      throw new CommonApiInputError('Invalid Fill row index', {
+        field: 'index',
+        index: Number.isFinite(index) ? index : String(index)
+      })
     }
 
     return [...new Set(elementIds)].map((elementId) => {
@@ -258,7 +281,10 @@ export const fillApis = {
       const fill = Array.isArray(fills) ? fills[index] : undefined
 
       if (!fill?.id) {
-        throw new Error(`Missing Fill row ${index} on ${elementId}`)
+        throw new CommonApiInputError(
+          `Missing Fill row ${index} on ${elementId}`,
+          { field: 'index', index, elementId }
+        )
       }
 
       return { elementId, fillId: fill.id }
@@ -686,7 +712,14 @@ export const fillApis = {
     const aligned = Array.isArray(patch) ? patch : undefined
 
     if (aligned && aligned.length !== elementIds.length) {
-      throw new Error('Fill patches must be aligned with elementIds')
+      throw new CommonApiInputError(
+        'Fill patches must be aligned with elementIds',
+        {
+          field: 'patch',
+          expectedCount: elementIds.length,
+          receivedCount: aligned.length
+        }
+      )
     }
 
     const targets = fillRowsAtIndex(elementIds, index)
@@ -716,8 +749,9 @@ export const fillApis = {
     const [source] = core.readElementPropertyTargets([sourceTarget])
 
     if (source.mode === 'source-backed') {
-      throw new Error(
-        'Choose an independent source or detach the source row before sharing its effective values'
+      throw new CommonApiInputError(
+        'Choose an independent source or detach the source row before sharing its effective values',
+        { field: 'sourceElementId', elementId: sourceElementId, index }
       )
     }
 
@@ -766,14 +800,22 @@ export const fillApis = {
           !Array.isArray(fills) ||
           !fills.some((fill) => fill.id === fillId)
         ) {
-          throw new Error(`Missing Fill ${fillId} on ${elementId}`)
+          throw new CommonApiInputError(
+            `Missing Fill ${fillId} on ${elementId}`,
+            {
+              field: 'fillId',
+              fillId,
+              elementId
+            }
+          )
         }
       }
 
       for (const key of Object.keys(patch)) {
         if (!FILL_PATCH_KEYS.some((allowed) => allowed === key)) {
-          throw new Error(
-            `Unsupported Fill field "${key}". Gradient fields belong inside "gradient".`
+          throw new CommonApiInputError(
+            `Unsupported Fill field "${key}". Gradient fields belong inside "gradient".`,
+            { field: key, elementId, fillId }
           )
         }
       }

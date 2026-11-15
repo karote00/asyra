@@ -162,7 +162,6 @@ test('Asyra Design declares every production import as a direct runtime dependen
 })
 
 test('Asyra Design declares the browser-like test environment used by Vitest', () => {
-  assert.match(packageJson.scripts['test:ai'], /--environment jsdom/)
   assert.match(packageJson.scripts['test:local'], /--environment jsdom/)
   assert.equal(typeof packageJson.devDependencies.jsdom, 'string')
   assert.equal(
@@ -396,37 +395,25 @@ for (const configFileName of [
   })
 }
 
-test('ordinary AI validation includes structural delivery regressions', () => {
-  assert.match(
-    packageJson.scripts['test:ai'],
-    /src\/ai\/__tests__\/structural-delivery\.test\.ts(?:\s|$)/
-  )
-})
+test('removed synthetic verification entry points stay unavailable', () => {
+  const removed = [
+    'scripts/conversation-verification.mjs',
+    'scripts/__tests__/conversation-verification.test.mjs',
+    'test-data/knowledge-evaluation/native-delivery.mjs',
+    'test-data/knowledge-evaluation/__tests__/native-delivery.test.mjs',
+    'test-data/knowledge-evaluation/__tests__/native-discovery.test.mjs'
+  ]
 
-test('ordinary validation includes every maintained server regression suite', () => {
-  const commands = [
-    packageJson.scripts['test:server-response-harness'],
-    packageJson.scripts['test:local']
-  ].join(' ')
-  const missing = readdirSync(path.join(serverDirectory, '__tests__'))
-    .filter((file) => file.endsWith('.test.ts'))
-    .filter(
-      (file) => !commands.split(/\s+/).includes(`server/__tests__/${file}`)
-    )
+  for (const file of removed) {
+    assert.equal(existsSync(path.join(appDirectory, file)), false, file)
+    for (const command of Object.values(packageJson.scripts)) {
+      assert.equal(command.includes(file), false, command)
+    }
+  }
 
-  assert.deepEqual(
-    missing,
-    [],
-    'Maintained server regressions must be in ordinary package validation'
-  )
-  const stale = [...new Set(commands.split(/\s+/))]
-    .filter((file) => /^server\/__tests__\/.*\.test\.ts$/.test(file))
-    .filter((file) => !existsSync(path.join(appDirectory, file)))
-
-  assert.deepEqual(
-    stale,
-    [],
-    'Ordinary validation must not reference removed suites'
+  assert.equal(
+    Object.hasOwn(packageJson.scripts, 'test:native-delivery'),
+    false
   )
 })
 

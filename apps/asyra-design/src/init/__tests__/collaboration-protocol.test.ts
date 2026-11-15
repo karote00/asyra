@@ -978,8 +978,11 @@ describe('collaboration wire protocol', () => {
       }
     ])
     expect(
-      continuationResponses.find(({ type }) => type === 'decoded-publication')
-        ?.publication.publicationId
+      continuationResponses.flatMap((response) =>
+        response.type === 'decoded-publication'
+          ? [response.publication.publicationId]
+          : []
+      )[0]
     ).toBe(oversizedPublication.publicationId)
     expect(
       interleavedResponses.some(
@@ -1014,8 +1017,11 @@ describe('collaboration wire protocol', () => {
       }
     ])
     expect(
-      settlementResponses.find(({ type }) => type === 'decoded-publication')
-        ?.publication.publicationId
+      settlementResponses.flatMap((response) =>
+        response.type === 'decoded-publication'
+          ? [response.publication.publicationId]
+          : []
+      )[0]
     ).toBe(interleavedPublication.publicationId)
   })
 
@@ -1058,7 +1064,7 @@ describe('collaboration wire protocol', () => {
       publication,
       fromActorId: 'actor-a',
       sequence: 7
-    } as unknown as CollaborationServerMessage
+    } satisfies CollaborationServerMessage
 
     const frames = encodePublicationMessageFrames(relay)
 
@@ -1254,8 +1260,8 @@ describe('collaboration wire protocol', () => {
     const largeCopyByteLengths: number[] = []
     const set = vi
       .spyOn(Uint8Array.prototype, 'set')
-      .mockImplementation(function (source, offset) {
-        if (source.byteLength >= 64 * 1024) {
+      .mockImplementation(function (this: Uint8Array, source, offset) {
+        if (source instanceof Uint8Array && source.byteLength >= 64 * 1024) {
           largeCopyByteLengths.push(source.byteLength)
         }
 
@@ -2028,3 +2034,45 @@ it('accepts only the exact checkpoint preparation control milestone', () => {
     })
   ).toBeUndefined()
 })
+
+it.each([undefined, null, -1, 0.5, Number.MAX_SAFE_INTEGER + 1])(
+  'rejects an absent or invalid bootstrap generation %s',
+  (documentGeneration) => {
+    const bootstrap = {
+      checkpoint: {},
+      durableSequence: 0,
+      headSequence: 0,
+      pendingTail: [],
+      documentGeneration
+    }
+
+    if (documentGeneration === undefined) {
+      Reflect.deleteProperty(bootstrap, 'documentGeneration')
+    }
+
+    expect(
+      parseCollaborationServerMessage({
+        type: CollaborationMessageTypes.READY,
+        bootstrap
+      })
+    ).toBeUndefined()
+  }
+)
+
+it.each([0, 3])(
+  'preserves explicit bootstrap generation %s',
+  (documentGeneration) => {
+    const ready = {
+      type: CollaborationMessageTypes.READY,
+      bootstrap: {
+        checkpoint: {},
+        durableSequence: 0,
+        headSequence: 0,
+        pendingTail: [],
+        documentGeneration
+      }
+    }
+
+    expect(parseCollaborationServerMessage(ready)).toEqual(ready)
+  }
+)

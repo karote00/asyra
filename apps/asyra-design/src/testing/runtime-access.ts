@@ -1,10 +1,8 @@
 import { elementApis } from '../common-apis/element'
 import { hierarchyApis } from '../common-apis/hierarchy'
 import { strokeApis } from '../common-apis/strokes'
-import {
-  getActiveCollaborationHandle,
-  type CollaborationDebugHandle
-} from '../collaboration/lifecycle'
+import { getActiveCollaborationHandle } from '../collaboration/session-observation'
+import type { CollaborationDebugHandle } from '../collaboration/lifecycle'
 import { createDocumentCollaborationPublicationSource } from '../collaboration/factory-adapter'
 import { readDocumentPublicationSlices } from '../collaboration/document-publication'
 import core from '../contexts'

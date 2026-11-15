@@ -10,8 +10,6 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { createAiExecutionProfiler } from '@asyra/ai-agent-runtime'
 import { createExecutionRecordSink } from '@asyra/ai-agent-runtime/node'
-import sharp from 'sharp'
-import compactFixture from './fixtures/recorded-101/compact-receipt-20261024.json'
 import {
   localToolContent,
   type NativeToolDescriptor
@@ -24,11 +22,7 @@ import {
   operationInputIssue
 } from '../operation-input-schema'
 import { describe, expect, it, vi } from 'vitest'
-import { createLocalDesignWorkflow as createOwner } from '../local-design-workflow'
-import { withToolContractAssertions } from './tool-contract-assertions'
-
-const createLocalDesignWorkflow = (...args: Parameters<typeof createOwner>) =>
-  withToolContractAssertions(createOwner(...args))
+import { createLocalDesignWorkflow } from '../local-design-workflow'
 
 import { createLocalDesignTools } from '../local-design-tools'
 import { createLocalOperationTools } from '../local-operation-tools'
@@ -93,6 +87,7 @@ const setup = (
           result: {
             compositionId: 'root',
             status: 'complete',
+            appliedElementCount: 2,
             appliedElementIds: ['root', 'face'],
             keyToId: { face: 'face' },
             roleToElementIds: { face: ['face'] }
@@ -524,7 +519,7 @@ describe('ordered ready parts', () => {
       { key: 'next', parentPart: 'first', parentId: 'existing', draft }
     ]
   ])(
-    'rejects invalid sequence references before preparation or writes',
+    'rejects invalid sequence references before preparation or writes - case %#',
     async (...parts) => {
       const { workflow, compile, execute } = setup()
 
@@ -585,15 +580,19 @@ describe('combined design preparation and application', () => {
       ]
     })
     expect(result).not.toHaveProperty('context')
-    expect(JSON.stringify(result)).not.toMatch(
+    expect(result).not.toHaveProperty('receiptScope')
+    expect(result.createdTargets).toEqual([
+      { compositionId: 'root', keyToId: { face: 'face' } }
+    ])
+    expect(JSON.stringify(result.actionResults)).not.toMatch(
       /keyToId|roleToElementIds|appliedElementIds/
     )
     expect(execute.mock.calls[0][0].actions[0].arguments).toHaveProperty(
       'design'
     )
-    expect(execute.mock.calls[0][0].actions[0].arguments).toMatchObject({
-      response: 'compact'
-    })
+    expect(execute.mock.calls[0][0].actions[0].arguments).not.toHaveProperty(
+      'response'
+    )
   })
   it('compiles and dispatches a large compact pattern stage with one tool round trip', async () => {
     const { workflow, compile, execute } = setup()
@@ -711,19 +710,14 @@ describe('combined design preparation and application', () => {
     expect(entries[1011].key).toBe('panes-0-face-1010')
     expect(entries[8088].key).toBe('panes-7-face-1010')
   })
-  it('retains full receipts when code needs IDs, without re-preparing', async () => {
+  it('makes acknowledged source identities available without a second result selector', async () => {
     const { workflow, compile } = setup()
     const result = JSON.parse(
-      await workflow.call(
-        'prepare_and_apply_design',
-        { draft, response: 'full' },
-        signal()
-      )
+      await workflow.call('prepare_and_apply_design', { draft }, signal())
     )
 
     expect(result).toMatchObject({
-      context: { selection: ['root'] },
-      actionResults: [{ result: { keyToId: { face: 'face' } } }]
+      createdTargets: [{ compositionId: 'root', keyToId: { face: 'face' } }]
     })
     expect(compile).toHaveBeenCalledTimes(1)
   })
@@ -762,7 +756,7 @@ describe('combined design preparation and application', () => {
     expect(result.available).toBe(false)
     expect(result).toMatchObject({
       settlement: 'not-started',
-      recovery: 'correct_input'
+      code: 'TOOL_INPUT_INVALID'
     })
     expect(result.applicable).toBe(false)
     expect(execute).not.toHaveBeenCalled()
@@ -831,11 +825,7 @@ it('captures applied work without an implicit quality measurement', async () => 
   )
   const workflow = createLocalDesignWorkflow(designs, operations)
   const result = JSON.parse(
-    await workflow.call(
-      'prepare_and_apply_design',
-      { draft, response: 'full' },
-      signal()
-    )
+    await workflow.call('prepare_and_apply_design', { draft }, signal())
   )
 
   expect(calls).toEqual([
@@ -862,8 +852,7 @@ it('passes only the known parent identity when extending a prepared part', async
   )
 
   expect(execute.mock.calls[0][0].actions[0].arguments).toMatchObject({
-    parentId: 'existing',
-    response: 'compact'
+    parentId: 'existing'
   })
   expect(result.actionResults[0].result.compositionId).toBe('root')
   expect(result).not.toHaveProperty('context')
@@ -1468,58 +1457,54 @@ it('rejects a top-level material source for ordered parts instead of silently ig
   expect(execute).not.toHaveBeenCalled()
 })
 
-it.each(['compact', 'full'] as const)(
-  'keeps %s failed capture partial with completed writes and recovers only capture',
-  async (response) => {
-    const options = { captureUnavailable: true }
-    const { workflow, operations, events } = inspectionBoundaryFixture(options)
-    const reply = await invokeLocalTool(
-      workflow,
-      workflow.definitions[0],
-      {
-        parts: [
-          { key: 'first', draft },
-          { key: 'second', draft }
-        ],
-        response
-      },
+it('keeps failed capture partial with completed writes and recovers only capture', async () => {
+  const options = { captureUnavailable: true }
+  const { workflow, operations, events } = inspectionBoundaryFixture(options)
+  const reply = await invokeLocalTool(
+    workflow,
+    workflow.definitions[0],
+    {
+      parts: [
+        { key: 'first', draft },
+        { key: 'second', draft }
+      ]
+    },
+    signal()
+  )
+  const result = JSON.parse(reply.text)
+
+  expect(reply.success).toBe(false)
+  expect(result).toMatchObject({
+    status: 'partial',
+    complete: false
+  })
+  expect(reply.outcome).toMatchObject({
+    status: 'partial',
+    settlement: 'completed'
+  })
+  expect(result.parts).toHaveLength(2)
+  expect(result.inspectionIssues).toHaveLength(1)
+  options.captureUnavailable = false
+  const recovered = JSON.parse(
+    await operations.call(
+      AiActionNames.INSPECT_DRAWING,
+      { arguments: { elementId: 'part-2' } },
       signal()
     )
-    const result = JSON.parse(reply.text)
+  )
 
-    expect(reply.success).toBe(false)
-    expect(result).toMatchObject({
-      status: 'partial',
-      complete: false
-    })
-    expect(reply.outcome).toMatchObject({
-      status: 'partial',
-      settlement: 'completed'
-    })
-    expect(result.parts).toHaveLength(2)
-    expect(result.inspectionIssues).toHaveLength(1)
-    options.captureUnavailable = false
-    const recovered = JSON.parse(
-      await operations.call(
-        AiActionNames.INSPECT_DRAWING,
-        { arguments: { elementId: 'part-2' } },
-        signal()
-      )
+  expect(localToolOutcome(recovered).status).toBe('success')
+  expect(
+    events.filter((event) =>
+      event.startsWith(AiActionNames.APPLY_PREPARED_DESIGN + ':')
     )
-
-    expect(localToolOutcome(recovered).status).toBe('success')
-    expect(
-      events.filter((event) =>
-        event.startsWith(AiActionNames.APPLY_PREPARED_DESIGN + ':')
-      )
-    ).toHaveLength(2)
-    expect(
-      events.filter((event) =>
-        event.startsWith(AiActionNames.INSPECT_DRAWING + ':')
-      )
-    ).toHaveLength(2)
-  }
-)
+  ).toHaveLength(2)
+  expect(
+    events.filter((event) =>
+      event.startsWith(AiActionNames.INSPECT_DRAWING + ':')
+    )
+  ).toHaveLength(2)
+})
 
 it.each([undefined, 'defer', 'immediate'] as const)(
   'preserves inspection policy across automatic capacity parts: %s',
@@ -1557,44 +1542,30 @@ it.each([undefined, 'defer', 'immediate'] as const)(
   }
 )
 
-it('delivers the saved compact receipt without diagnostics or loss of any operation field', async () => {
-  // Replay captured owner exchanges through the real workflow and invocation.
-  // Artifact identity is provided by this saved boundary, not a live preparation session.
-  const { designs, operations } = setup([
-    ...actions,
-    {
-      name: AiActionNames.INSPECT_DRAWING,
-      description: 'Inspect',
-      inputSchema: {}
-    }
-  ])
+it('forwards workflow receipts with raw diagnostics retained', async () => {
+  const { designs, operations, compile, execute } = setup()
+  const timing = { totalMs: 12, canonicalWork: { counters: { created: 2 } } }
+  const semantic = {
+    timing: 'user detail',
+    sourceWork: 'limit',
+    reuse: 'recovery condition'
+  }
+  const prior = execute.getMockImplementation()
 
-  designs.call = vi.fn(async () => JSON.stringify(compactFixture.prepared))
-  designs.resultIssue = () => undefined
-  const { measurementDeferred: _deferred, ...appliedReceipt } = structuredClone(
-    compactFixture.applied
-  )
-  const imageResult = appliedReceipt.actionResults.find(
-    (entry) => entry.actionName === AiActionNames.INSPECT_DRAWING
-  )?.result.image
-
-  if (!imageResult) {
-    throw new Error('Saved inspection metadata missing')
+  if (!prior) {
+    throw new Error('Missing execution fixture')
   }
 
-  const pixels = await sharp({
-    create: {
-      width: imageResult.width,
-      height: imageResult.height,
-      channels: 4,
-      background: '#123456'
-    }
-  })
-    .png()
-    .toBuffer()
+  execute.mockImplementation(async (...args) => {
+    const receipt = await prior(...args)
 
-  imageResult.dataUrl = 'data:image/png;base64,' + pixels.toString('base64')
-  operations.callInternal = vi.fn(async () => JSON.stringify(appliedReceipt))
+    Object.assign(receipt.actionResults[0].result as object, {
+      timing,
+      recovery: semantic
+    })
+
+    return receipt
+  })
   const observations: { stage: string; [key: string]: unknown }[] = []
   const workflow = createLocalDesignWorkflow(designs, operations, {
     trace: (stage, evidence) =>
@@ -1603,187 +1574,75 @@ it('delivers the saved compact receipt without diagnostics or loss of any operat
   const reply = await invokeLocalTool(
     workflow,
     workflow.definitions[0],
-    {
-      draft: compactFixture.input.draft,
-      inspection: compactFixture.input.inspection,
-      response: compactFixture.input.response
-    },
+    { draft, inspection: 'defer' },
     signal()
   )
 
-  expect(reply.success, reply.text).toBe(true)
-  const expected = JSON.parse(JSON.stringify(compactFixture.delivered))
-
-  delete expected.measurementDeferred
-  expected.completedSteps = expected.completedSteps.filter(
-    (name: string) => name !== 'define_design_criteria'
-  )
-
-  expected.compositionIds = [
-    expected.actionResults.find(
-      (entry: { actionName: string }) =>
-        entry.actionName === AiActionNames.APPLY_PREPARED_DESIGN
-    ).result.compositionId
-  ]
-  expected.createdTargets = []
-  delete expected.reuse
-  delete expected.sourceWork
-  delete expected.actionResults[0].result.timing
-  const content = await localToolContent(reply.text)
-  const delivered = content.find((item) => item.type === 'inputText')
-
-  expect(delivered?.type).toBe('inputText')
-  if (delivered?.type !== 'inputText') {
-    throw new Error('Missing receipt')
-  }
-
-  expect(JSON.parse(delivered.text)).toEqual(expected)
-  expect(content).toContainEqual({
-    type: 'inputImage',
-    imageUrl: imageResult.dataUrl
+  expect(reply.outcome).toMatchObject({
+    status: 'success',
+    settlement: 'completed'
   })
-  expect(Buffer.byteLength(JSON.stringify(compactFixture.delivered))).toBe(5372)
-  const { compositionIds, createdTargets, ...existingFields } = JSON.parse(
-    delivered.text
-  )
+  const value = JSON.parse(reply.text)
+  const action = value.actionResults[0]
 
-  expect(compositionIds).toEqual(expected.compositionIds)
-  expect(createdTargets).toEqual([])
-  expect(Buffer.byteLength(JSON.stringify(existingFields))).toBeLessThanOrEqual(
-    1938
-  )
-  expect(Buffer.byteLength(delivered.text)).toBeLessThanOrEqual(2025)
-  expect(designs.call).toHaveBeenCalledOnce()
-  expect(operations.callInternal).toHaveBeenCalledOnce()
-  const prepared = observations.find(
+  expect(action.result.recovery).toEqual(semantic)
+  expect(action.result.compositionId).toBe('root')
+  expect(action.result.status).toBe('complete')
+  const preparedObservation = observations.find(
     (entry) =>
       entry.stage === 'action_completed' && entry.tool === 'prepare_design'
   )
-  const applied = observations.find(
+  const appliedObservation = observations.find(
     (entry) =>
       entry.stage === 'action_completed' &&
       entry.tool === 'apply_prepared_design'
   )
 
-  if (!prepared || !applied) {
+  if (!preparedObservation || !appliedObservation) {
     throw new Error('Missing owner observation')
   }
 
-  expect(prepared.result).toEqual(compactFixture.prepared)
-  expect(applied.result).toEqual(appliedReceipt)
-  expect(prepared.callId).toEqual(expect.any(String))
-  expect(applied.callId).toEqual(expect.any(String))
-  expect(prepared.callId).not.toBe(applied.callId)
-})
+  const prepared = JSON.parse(JSON.stringify(preparedObservation))
+  const applied = JSON.parse(JSON.stringify(appliedObservation))
 
-it.each(['compact', 'full'] as const)(
-  'forwards real %s workflow receipts through the published example with raw diagnostics retained',
-  async (response) => {
-    const { designs, operations, compile, execute } = setup()
-    const timing = { totalMs: 12, canonicalWork: { counters: { created: 2 } } }
-    const semantic = {
-      timing: 'user detail',
-      sourceWork: 'limit',
-      reuse: 'recovery condition'
+  expect(applied.result.actionResults[0].result.timing).toEqual(timing)
+  expect(prepared.result.sourceWork).toBeDefined()
+  expect(prepared.result.reuse).toBeDefined()
+  expect(action.result).not.toHaveProperty('timing')
+  expect(value).not.toHaveProperty('sourceWork')
+  expect(value).not.toHaveProperty('reuse')
+  expect(value.createdTargets).toEqual([
+    { compositionId: 'root', keyToId: { face: 'face' } }
+  ])
+
+  const png =
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aGioAAAAASUVORK5CYII='
+  const captured = {
+    actionId: 'capture',
+    actionName: AiActionNames.INSPECT_DRAWING,
+    result: {
+      available: true,
+      inspectionId: 'evidence',
+      image: { dataUrl: png, width: 1, height: 1 }
     }
-    const prior = execute.getMockImplementation()
-
-    if (!prior) {
-      throw new Error('Missing execution fixture')
-    }
-
-    execute.mockImplementation(async (...args) => {
-      const receipt = await prior(...args)
-
-      Object.assign(receipt.actionResults[0].result as object, {
-        timing,
-        recovery: semantic
-      })
-
-      return receipt
-    })
-    const observations: { stage: string; [key: string]: unknown }[] = []
-    const workflow = createLocalDesignWorkflow(designs, operations, {
-      trace: (stage, evidence) =>
-        observations.push({ stage, ...structuredClone(evidence) })
-    })
-    const reply = await invokeLocalTool(
-      workflow,
-      workflow.definitions[0],
-      { draft, response, inspection: 'defer' },
-      signal()
-    )
-
-    expect(reply.outcome).toMatchObject({
-      status: 'success',
-      settlement: 'completed'
-    })
-    const value = JSON.parse(reply.text)
-    const action = value.actionResults[0]
-
-    expect(action.result.recovery).toEqual(semantic)
-    expect(action.result.compositionId).toBe('root')
-    expect(action.result.status).toBe('complete')
-    const preparedObservation = observations.find(
-      (entry) =>
-        entry.stage === 'action_completed' && entry.tool === 'prepare_design'
-    )
-    const appliedObservation = observations.find(
-      (entry) =>
-        entry.stage === 'action_completed' &&
-        entry.tool === 'apply_prepared_design'
-    )
-
-    if (!preparedObservation || !appliedObservation) {
-      throw new Error('Missing owner observation')
-    }
-
-    const prepared = JSON.parse(JSON.stringify(preparedObservation))
-    const applied = JSON.parse(JSON.stringify(appliedObservation))
-
-    expect(applied.result.actionResults[0].result.timing).toEqual(timing)
-    expect(prepared.result.sourceWork).toBeDefined()
-    expect(prepared.result.reuse).toBeDefined()
-    if (response === 'compact') {
-      expect(action.result).not.toHaveProperty('timing')
-      expect(value).not.toHaveProperty('sourceWork')
-      expect(value).not.toHaveProperty('reuse')
-    } else {
-      expect(action.result.timing).toEqual(timing)
-      expect(value.sourceWork).toEqual(prepared.result.sourceWork)
-      expect(value.reuse).toEqual(prepared.result.reuse)
-      expect(action.result.appliedElementIds).toEqual(['root', 'face'])
-    }
-
-    const png =
-      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aGioAAAAASUVORK5CYII='
-    const captured = {
-      actionId: 'capture',
-      actionName: AiActionNames.INSPECT_DRAWING,
-      result: {
-        available: true,
-        inspectionId: 'evidence',
-        image: { dataUrl: png, width: 1, height: 1 }
-      }
-    }
-    const content = await localToolContent(
-      JSON.stringify({
-        ...value,
-        actionResults: [...value.actionResults, captured]
-      })
-    )
-    const texts = content.filter((item) => item.type === 'inputText')
-
-    expect(texts).toHaveLength(1)
-    expect(JSON.parse(texts[0].text).actionResults[0]).toEqual(action)
-    expect(content.filter((item) => item.type === 'inputImage')).toEqual([
-      { type: 'inputImage', imageUrl: png }
-    ])
-    expect(JSON.stringify(texts)).not.toContain('base64')
-    expect(compile).toHaveBeenCalledOnce()
-    expect(execute).toHaveBeenCalledOnce()
   }
-)
+  const content = await localToolContent(
+    JSON.stringify({
+      ...value,
+      actionResults: [...value.actionResults, captured]
+    })
+  )
+  const texts = content.filter((item) => item.type === 'inputText')
+
+  expect(texts).toHaveLength(1)
+  expect(JSON.parse(texts[0].text).actionResults[0]).toEqual(action)
+  expect(content.filter((item) => item.type === 'inputImage')).toEqual([
+    { type: 'inputImage', imageUrl: png }
+  ])
+  expect(JSON.stringify(texts)).not.toContain('base64')
+  expect(compile).toHaveBeenCalledOnce()
+  expect(execute).toHaveBeenCalledOnce()
+})
 
 it.each([
   {},
@@ -1954,7 +1813,11 @@ it.each(['whole-design-checks', 'invalid-brief'])(
   'delivers the retained brief limitation before any write: %s',
   async (code) => {
     const { workflow, events } = inspectionBoundaryFixture()
-    const { plan: _plan, ...input } = structuredClone(briefFixture.input)
+    const {
+      plan: _plan,
+      response: _response,
+      ...input
+    } = structuredClone(briefFixture.input)
     const brief = {
       ...input.draft.brief,
       checks:
@@ -2020,7 +1883,7 @@ it.each(['direct', 'faces', 'members'] as const)(
           draft: source,
           parentId: 'existing-parent',
           inspection: 'defer',
-          response: 'full',
+
           message: 'Add fins'
         },
         signal
@@ -2059,7 +1922,7 @@ it.each(['direct', 'faces', 'members'] as const)(
     expect(rejected.repairGuide.arguments).toMatchObject({
       parentId: 'existing-parent',
       inspection: 'defer',
-      response: 'full',
+
       message: 'Add fins'
     })
     expect(rejected.repairGuide.arguments).not.toHaveProperty('draft')
@@ -2349,13 +2212,17 @@ it('retains material conflicts and source ownership without writes or replay', a
   })
   expect(f.execute).toHaveBeenCalledOnce()
   await leases.dispose()
+  const executionsBeforeExpiredRetry = f.execute.mock.calls.length
   const expired = await call(next)
 
   expect(expired).toMatchObject({
     available: false,
-    settlement: 'not-started'
+    code: 'TOOL_EXECUTION_FAILED',
+    settlement: 'not-started',
+    completedSteps: [],
+    failedStep: 'prepare_design'
   })
-  expect(f.execute).toHaveBeenCalledOnce()
+  expect(f.execute).toHaveBeenCalledTimes(executionsBeforeExpiredRetry)
 })
 
 it('preserves material selectors for all raw parts retained by input admission', async () => {
@@ -2483,3 +2350,40 @@ it('repairs resolved material directly after the original source expires', async
   })
   expect(f.execute).not.toHaveBeenCalled()
 })
+
+it.each([
+  { response: 'compact' },
+  { response: 'full' },
+  { includeTargets: true },
+  { includeTargets: false },
+  { parts: [{ key: 'part', draft, delivery: 'status' }] },
+  {
+    parts: [
+      {
+        key: 'part',
+        draft,
+        retain: { part: { source: 'input', path: '/draft' } }
+      }
+    ]
+  }
+])(
+  'rejects controls outside the Host boundary before preparation: %j',
+  async (controls) => {
+    const { workflow, compile, execute } = setup()
+    const input = 'parts' in controls ? controls : { draft, ...controls }
+    const reply = await invokeLocalTool(
+      workflow,
+      workflow.definitions[0],
+      input,
+      signal()
+    )
+
+    expect(reply.outcome).toMatchObject({
+      status: 'failed',
+      settlement: 'not-started'
+    })
+    expect(JSON.parse(reply.text)).toMatchObject({ code: 'TOOL_INPUT_INVALID' })
+    expect(compile).not.toHaveBeenCalled()
+    expect(execute).not.toHaveBeenCalled()
+  }
+)

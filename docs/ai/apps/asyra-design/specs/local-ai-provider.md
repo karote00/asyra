@@ -15,6 +15,13 @@ limits. Missing configuration fails explicitly before model use. Request-owned
 configuration is released on every terminal path. Other providers consume the same
 public owner contracts through their own adapters, without native-runtime dependence.
 
+Native registration lowers nonempty-object constraints into equivalent supported
+intersection/exclusive alternatives before the SDK serializes declarations. Empty
+result selections remain invalid at both model and execution boundaries; valid
+named selections and original owner schemas remain unchanged. Root reference scope
+and union restrictions survive this projection. It is one current public contract,
+not a second input format or a text-only substitute for validation.
+
 Formal offline tests must inspect the real successor request for full text, native
 images, exact search routing, paging, failures and cancellation. A stored result is
 not proof of model receipt. Generated templates use this same production path.
@@ -106,6 +113,15 @@ selected conversion, existing actual-render review and one-request Undo remain.
 Independent analysis calls may be issued concurrently without waiting for earlier
 results, up to 128 calls in flight. There is no cumulative call/path quota.
 Every response is correlated to its own tool call and receipt, and final settlement waits for outstanding work.
+App `delivery` is the only result selector. Process and thread configuration must
+preserve the selected validated text and its separate outcome in native history,
+including large saved values and partial-work recovery. Configure the supported
+`tool_output_token_limit` to `Number.MAX_SAFE_INTEGER`, the largest exactly
+representable JSON integer, instead of inheriting a smaller native per-tool cutoff.
+This does not change model context capacity, native compaction, input/output
+validation or explicit information paging. Actual native successor requests must
+match complete tool content; a transport acknowledgement alone is insufficient.
+
 Other tools, including writes, queue behind prior calls and remain exclusive. Each call admits at most 128 candidates. A request-owned queue runs one bounded
 CPU job of at most 16 candidates at a time and yields between jobs. A whole
 package returns one complete receipt after every job finishes, never a partial
@@ -159,8 +175,11 @@ The configured model is preserved and model fallback remains disabled.
 
 Native tools are grouped by their existing owners: image analysis, reference
 import, design preparation, workflow composition and canvas operations. Each
-function retains its exact App name and schema with `deferLoading: true` inside
-its native namespace. Empty owners are omitted. A request-local binding map
+function retains its exact App name and schema inside its native namespace.
+When drawing operations are available, `search_design_tools`,
+`read_design_contracts` and `execute_design` are eager; other exposed functions
+use `deferLoading: true`. No-operation and assessment-only requests do not gain
+these drawing entries. Empty owners are omitted. A request-local binding map
 routes the exact namespace/name pair to the registered owner; missing, wrong or
 unknown namespaces fail before dispatch. Full schemas remain registered with
 the native service and discoverable as callable functions; initial instructions
@@ -252,12 +271,12 @@ HTTP and exact-sample single-batch providers retain the same ordinary runtime pa
 
 ## Review and native primitives
 
-The domain prompt requires review of the original constraints after each
-acknowledged operation and permits repeated supported corrections in the same
-request. Receipts prove execution, not visual fidelity. Without rendered-image
-feedback the model must state visual uncertainty rather than claim it inspected
-the canvas. Stop if requirements are satisfied, supported edits are exhausted,
-no improvement is obtained, or cancellation/runtime limits are reached.
+The domain prompt asks the AI to inspect relevant rendered results and verify the
+final result against the request. It does not prescribe a review after every
+operation. Receipts prove execution, not visual fidelity; absent image feedback
+must remain visual uncertainty. Supported corrections continue in the same native
+turn without automatic write replay. The AI stops when the request is satisfied,
+useful alternatives leave a concrete blocker, or an explicit stop applies.
 
 Prefer native Oval for intended circles/ellipses, including circular outlines,
 and native Rectangle for rectangles. Preserve deliberately irregular contours.
@@ -287,14 +306,14 @@ Native component mapping remains an explicit supported model selection. Spline
 tracing does not recognize semantic components and does not guarantee exact raster
 reproduction. Formal cases cover mixed straight/cubic segments, closing curves,
 holes, nonuniform scaling, invalid input and retained small reference details.
-Completion requires native controls in canonical App data, one Undo/Redo and
-actual App screenshots plus measured reference comparison; conversion time and
+Formal fidelity acceptance verifies native controls in canonical App data, one
+Undo/Redo and actual App screenshots plus measured reference comparison; conversion time and
 geometry size are reported separately from model latency.
 
-Review has two stages. Before any mutation, AI reviews tool-result summaries
-against user intent: dimensions, bounds, colors, topology summaries, unwanted
-marks, native primitives and resource cost. It iterates supported inputs/options
-and chooses backend preparation parameters first. Identical deterministic tools
+Tool-result summaries expose dimensions, bounds, colors, topology, native
+primitives and resource cost for the AI to use when deciding its next action.
+There is no required two-stage review or pre-mutation approval. The AI chooses
+valid supported preparation inputs for the intended operation. Identical deterministic tools
 are not rerun without changed inputs. VTracer currently has no adjustable trace
 settings; its retained artifact supports bounds, exclusions and componentMappings.
 The backend catalog currently permits whole-path Rectangle/Oval conversion; the
@@ -304,8 +323,8 @@ Every mapping must reference one retained single-contour path and a registered
 target, without duplicates or conflicts. Backend preserves order, mapped bounds,
 fill and role IDs; AI judges semantic suitability using reference/tool evidence.
 Bounds alone do not establish a shape. The obsolete ovalPathIds parameter is rejected before mutation; there is no alias conversion.
-No geometry processing moves into the model. Data review does not prove appearance;
-remaining visual uncertainty must be checked after rendering. The update action
+Tools perform the declared geometry conversion. Data review does not prove
+appearance; the AI chooses relevant rendered observations for visual judgment. The update action
 advertises typed object items with nested geometry/style fields, not an untyped
 array that requires the model to guess its editing protocol.
 
@@ -334,12 +353,13 @@ Up to 200 object
 summaries accompany the whole rendered subtree.
 
 For an already planned stage, operation wrappers accept `inspection: "defer"`.
-This preserves preparation, canonical acknowledgements and deterministic measurement
-checks but omits the intermediate snapshot. The receipt marks `inspectionDeferred`.
+This preserves preparation and canonical acknowledgements while omitting the
+intermediate automatic snapshot. It does not run implicit mechanical review. The receipt marks `inspectionDeferred`.
 The AI can apply ready artifacts consecutively, then inspect the completed stage.
-Every mutation still invalidates old visual evidence; deferred capture cannot bypass
-the final overview/detail assessment or text-overflow checks. No image cache or
-cross-request state is introduced. Existing callers retain automatic capture.
+Relevant mutations invalidate dependent observations. The AI owns final
+verification; deferred capture does not create an evidence or text-overflow gate.
+Explicit captures still run. Request-owned image recovery and named portable
+conversation results retain their separate existing lifetimes.
 Operation dispatch checks declared required and unknown argument fields, including nested batch items,
 against the registered backend-facing schema before sending a batch. A malformed
 argument envelope returns a recoverable preparation error without dispatch or
@@ -348,8 +368,8 @@ permissions or executor checks, nor retry a failed canonical execution.
 
 Local provider tool replies deliver the PNG as native image input plus text
 metadata, not base64 text in the prompt. AI compares the original intent/reference
-with this actual output, identifies differences, makes supported targeted edits,
-and inspects again after the final edit before reporting completion. Unsupported
+with this actual output, identifies differences and makes supported targeted edits.
+It requests current observations when necessary to verify the final result. Unsupported
 edits and lack of improvement end with a concrete limitation, not blind retry.
 The AI makes the visual assessment; App checks object validity and snapshot
 availability, while the user remains the final judge of satisfaction.
@@ -358,9 +378,10 @@ Capture is read-only, keeps camera/selection/document state unchanged, and does
 not add an Undo entry. All edits retain one request-owned Undo group; each finite member publishes before
 subsequent read-only inspection.
 Inspections and measurement cycles have no cumulative quota. Cancellation,
-per-call validation and concurrent admission guards remain. Final model batches cannot contain new mutating drawing operations
-that bypass rendered review. Capture failures downgrade a completed report to an explicit visual
-review limitation; they cannot falsely certify quality.
+per-call validation and concurrent admission guards remain. Final model batches
+use their advertised control-action catalog; they do not bypass ordinary action
+permissions by embedding unadvertised mutations. Capture failures retain explicit
+visual uncertainty and actual delivery status; they cannot falsely certify quality.
 
 The retained `photo-faithful` profile identifier uses poster-color spline fitting,
 cutout hierarchy, speckle threshold 2 and path precision 2. It preserves small
@@ -407,8 +428,8 @@ not claim independent semantic objects or use this for textured/gradient bases.
 
 Actual byte signatures determine PNG/JPEG/WebP decoding even when an accepted
 attachment has a misleading extension or MIME type. Other formats are rejected;
-only submitted bytes are decoded, bounded to 16 MiB and four million
-pixels. Work observes cancellation, yields during pixel scans and has bounded
+only submitted bytes are decoded, bounded to 16 MiB and the decoder safety
+policy, without a separate four-million-pixel ceiling. Work observes cancellation, yields during pixel scans and has bounded
 native decode time. Repeated decompositions permit meaningful parameter refinement
 without a cumulative count limit; unsupported or unchanged separation fails explicitly.
 Transient raster bytes never enter model text, document state or persistence.
@@ -417,24 +438,24 @@ The artifact carries its native background and source frame. Preparation inserts
 that component first, followed by foreground vectors with the same transform;
 foreground exclusions must not stretch the surviving paths. A plain solid image
 may produce a native-only composition. Existing whole-image tracing preserves its
-current retained-path fitting behavior. Both review stages, execution admission,
-replacement and the single-turn Undo boundary remain unchanged. Tests must prove
+current retained-path fitting behavior. Execution admission, replacement and the
+single-turn Undo boundary remain authoritative; no review-stage prerequisite is added. Tests must prove
 region-limited separation, same-color interior appearance, source placement,
 layer order, malformed/oversized input rejection and rendered composition/Undo.
 
 ## Concise decision flow
 
-Ordinary supported requests proceed through tools and the existing two review
-stages without model narration, progress prose, repeated preference questions or
-requests to approve an already-authorized next step. App-authored status remains
+Ordinary supported requests proceed through available tools without mandatory
+review stages or requests to approve already-authorized work. Brief concrete model
+commentary can explain a stage or decision; it is not a prerequisite for execution. App-authored status remains
 English. Model-authored operation descriptions, questions and outcomes retain unrestricted
 language.
 
 Supply native tool definitions once. In operation mode, the text input retains
 only action schemas needed by final-response controls; registered operations use
 their native tool schemas. Provider instructions explicitly distinguish this final
-response list from the complete capabilities, list the actual request's App tool
-names without repeating schemas, and permit tool calls before the final JSON.
+response list from the complete capabilities, name the eager discovery/execution
+entries without enumerating deferred schemas, and permit tool calls before the final JSON.
 Native web research is allowed for public references, concepts and methods;
 App execution remains bounded to registered operations. Finding an external tool
 does not install or authorize it. Unavailable raster generation does not imply
@@ -445,8 +466,8 @@ arguments; a short message is optional for a concrete user-relevant impact.
 Use existing defaults for non-material choices. Ask a single concise question
 only when required input or genuine ambiguity prevents a correct action, with
 short choices when applicable. Required approval remains enforced by runtime.
-Finish with one short factual sentence; include an unmet requirement or next step
-when necessary. Do not expose tool names, model reasoning or technical payloads.
+Finish with a factual explanation of the result, limitations and source attribution;
+include unmet requirements or useful next steps when necessary. Do not expose tool names, model reasoning or technical payloads.
 Conciseness never permits silent failure, hidden partial output, omitted review
 or guesses about destructive targets. These are guidance and payload reductions,
 not a guarantee of model latency or a measured token reduction.
@@ -536,8 +557,8 @@ The provider uses native live web search without App-specific source restriction
 No site-specific search adapter or candidate-ID import path is registered. The
 model chooses research methods and passes original imageUrl/sourceUrl pairs to
 the safe importer; arbitrary public source domains are admitted, not a domain list. Original raster dimensions are preserved through import,
-vectorization input, and native model image delivery. MIME/signature, 6 MiB byte,
-and 4,000,000 pixel admission guards remain; exceeding a guard reports failure,
+vectorization input, and native model image delivery. MIME/signature, byte bounds
+and decoder safety remain; there is no separate four-megapixel source ceiling; exceeding a guard reports failure,
 never resizes the source. SVG input is explicitly unsupported by this raster
 importer and is never replaced by a publisher raster thumbnail. Tool receipts
 report source evidence; the user request determines whether tracing is appropriate.
@@ -559,9 +580,10 @@ The readiness check retains its 10-second deadline; individual network/tool and
 payload/call-count bounds remain unchanged. Generic HTTP providers opt out with
 `timeoutMs: null`; an omitted value retains the Framework default.
 
-For concrete existing subjects the model researches design context first. Original
-or open-ended briefs may start with reimagination; missing suitable context also
-permits an explicitly disclosed creative reconstruction. Exact logos and explicit
+The model first reuses supplied attachments, current canvas context and retained
+source facts, then researches only missing information. Original or open-ended
+briefs need not reproduce an external reference. Missing suitable context permits
+an explicitly disclosed creative reconstruction when consistent with user intent. Exact logos and explicit
 faithful reproductions still require reference fidelity or user acceptance of
 reinterpretation. Subject identity, viewpoint, style and dimensions are separate
 review criteria. Tracing alone cannot transform a reference's camera viewpoint.
@@ -572,9 +594,11 @@ stderr without retaining or exposing diagnostics, and preserves duplicate-call,
 foreign-turn and malformed-message rejection. Connection readiness and individual
 network/decode watchdogs are service guards, not request-total deadlines.
 
-Reference import failure receipts carry `recoverable: true` and a stage-specific
-`code`. They require changing the source/query/method instead of treating an
-unusable asset as a task-wide blocker. Successful receipts also require suitability
+Reference import failures carry `available: false`, the current failure `code`,
+`sourceCode`, message, actual settlement and `nextStep`; acquisition diagnostics
+retain their stage when available. A rejected source permits a different source,
+query or method. Unknown attachment-admission settlement requires observation
+instead of replay. No continuation-permission flag is required. Successful receipts also require suitability
 review; an unrelated, incomplete or wrong-version image triggers further research.
 The model must not demand user-provided public material solely because candidates
 failed. User-only decisions/resources or real capability blockers remain valid
@@ -606,25 +630,28 @@ canvas writes and combined prepare/apply remain barriers. A combined workflow
 overrides the preparation definition's independent access because it also writes.
 The provider's once-per-request namespace binding consumes the declaration and
 does not classify by tool names. Internal access metadata is omitted from native
-schemas. Cancellation or a fatal execution failure prevents queued calls from
-starting. The scheduler introduces no automatic retry and delegates canonical
+schemas. Cancellation or an unusable provider transport prevents queued calls from
+starting. Tool rejections settle their own invocation and remain available to the
+model; they do not poison the scheduler or automatically terminate the task. The scheduler introduces no automatic retry and delegates canonical
 mutation boundaries to the App history-group adapter.
-Retained values belong to the existing request-owned App result stores; no cache
-crosses requests.
+Opaque handles belong to the current request. Explicit named portable values belong
+to the App conversation store and can cross turns in the same document scope. Their
+receipts identify origin and shape; saving does not imply delivery or grant permission.
 
 When design application is registered, prepare_and_apply_design combines semantic
 preparation and application in one tool call. Invalid preparation never dispatches
 an action. Valid artifacts are prepared once, then consumed through the existing
-operation owner, including layout measurement and immediate/deferred inspection.
-Its default response omits duplicated refreshed context, applied-ID lists and
-role mappings; it preserves preparation findings, root identity, inspection and
-measurement results. Full operation receipts can be explicitly requested for
-programmatic ID selection. The adapter delivers selected receipt text and actual image content directly for
+operation owner and its immediate/deferred capture policy. It does not implicitly
+run layout measurement. Its default response omits duplicated refreshed context,
+applied-ID lists and role mappings; it preserves preparation findings, root identity
+and actual capture results. createdTargets carries acknowledged source-key
+mappings for binding, named retention and selected delivery, without a second
+input selector. The adapter delivers selected receipt text and actual image content directly for
 visual judgment.
 
 Formal cases cover ordered concurrent writes, cancellation/failure queues,
 unchanged analysis concurrency, one preparation per combined call, no application
-on invalid input, full/compact receipt equivalence, and native tool-output
+on invalid input, complete owner receipts with independent selected delivery, and native tool-output
 admission without authorizing shell/MCP tools. The live comparison is one headless
 recorded run; timing, tool events and observed quality are reported separately.
 
@@ -651,9 +678,9 @@ string and does not serialize image/document payloads again.
 `capabilities_advertised` reports `toolCount`, `toolDefinitionBytes`,
 `eagerToolCount` and `eagerToolDefinitionBytes` for the native tool-definition JSON
 array. These are protocol sizes, not an estimate of the provider's internal prompt
-or token cost. The current catalog registers namespaced deferred functions, so
-eager function count and schema bytes are zero; namespace/name metadata still
-exists and is not a zero-token claim. Total bytes measure the complete registered
+or token cost. The current catalog registers deferred functions plus the three eager
+entry declarations described above; counts and bytes come from that actual emitted
+array. Deferred namespace metadata is not a zero-token claim. Total bytes measure the complete registered
 namespace JSON, including all deferred schemas. These numeric fields
 are additive to schema version 1; immutable older records remain unchanged.
 No raw request or response content is added to these diagnostics.
@@ -698,11 +725,11 @@ available for ID selection. Fresh permission context remains a Runtime responsib
 
 Rendered inspections and deterministic layout reviews share an App-owned,
 runtime-scoped canonical generation. Scene Tree, Props and file-load notices
-invalidate old stamps, including edits made outside the agent. Before a model
-assessment and an accepted final outcome, the provider verifies the captured
-stamp through the registered read-only `validate_inspection_evidence` action.
-It transfers a compact stamp and boolean, not another screenshot. Missing or
-retired evidence cannot approve completion; already applied work is retained.
+invalidate old stamps, including edits made outside the agent. Consumers that
+depend on current measurements or attachment bases validate those stamps before
+using the data. The optional inspection-validation action checks stamp currency; it is not a
+mandatory completion gate and does not require a completion-only reread. The AI owns final visual verification; saved captures
+may be redisplayed with their original identity and freshness information.
 The validity service stores no image/geometry, and runtime disposal unsubscribes
 its observers. A measurement/capture generation mismatch requires fresh
 measurement; an unchanged stage does not repeat that computation.
@@ -770,15 +797,12 @@ criteria govern evaluation; it does not impose a high-detail drawing style.
 
 ### Narrow API discovery
 
-`describe_design_apis({query: "vector anchors"})` searches current admitted API
-names and descriptions using case-insensitive terms, including camel-case names.
-It returns all lexical matches with compact owner/method/effect metadata and a
-current description, `count`, `catalogSize` and `complete`. It does not retrieve
-scene data. Use exact `names` for full schemas; required schema fields are never
-truncated. Search is a discovery convenience, not semantic authority. Empty
-matches include recovery to `describe_design_apis({})`, which retains the entire
-compact catalog. Query and exact names cannot be combined. Registration and
-mutation permission checks remain unchanged.
+`search_design_tools` searches admitted purpose, category and input-field metadata.
+It returns candidate applicability without schemas or execution. `read_design_contracts`
+retrieves exact qualified identities and selected scopes; search results never imply
+contract acquisition. No-match results preserve truthful coverage and navigation.
+These are separate inputs and owners, not mutually exclusive modes of one tool.
+Registration, contract revision and mutation permission checks remain authoritative.
 
 ### Shared profiler integration
 
@@ -798,9 +822,10 @@ IDs and context labels. Neither executes a browser action or creates an Undo ent
 The HTTP provider protocol remains unchanged; other providers may compose the
 optional Runtime knowledge API separately.
 
-`server/local-knowledge.ts` owns file admission and content. The default catalog
-selects five files from the independent `@asyra/domain-knowledge` workspace and
-App-owned `knowledge/design.docs-page.md`. Fixed catalog IDs resolve exported
+`server/local-knowledge.ts` owns file admission, content and the default catalog:
+selected files from the independent `@asyra/domain-knowledge` workspace,
+App-owned architectural illustration topics and `knowledge/design.docs-page.md`.
+Fixed catalog IDs resolve exported
 package paths; model arguments cannot choose files, credentials or scope.
 This initial loader accepts JSON-compatible YAML frontmatter and rejects other
 syntax, unknown fields and file-defined identity/revision. The Runtime itself
@@ -824,7 +849,7 @@ Request cleanup disposes access and releases the App's
 content map. Files are loaded lazily once per request, so no shared mutable cache
 or cross-tenant retention is introduced.
 
-The current six-entry catalog needs no separate intent-search API. Metadata gives
+Discovery metadata gives
 IDs, descriptions and composition targets; the Agent selects labels from the user's
 intent and target. For "refine a docs-page button", docs discovery includes general
 button advice and the docs composition while excluding landing-page advice. For

@@ -7,7 +7,7 @@ import { referenceRejection } from '../reference-image-download'
 import { createEvaluationReportSessions } from '../evaluation-report-sessions'
 import { operationInputIssue } from '../operation-input-schema'
 import { designContextDefinitions } from '../local-design-context'
-import { evaluationToolStop } from '../evaluation-control'
+
 import {
   mkdirSync,
   mkdtempSync,
@@ -54,10 +54,10 @@ import type {
   AiActionBatch
 } from '../../src/ai/action-batch-protocol'
 import { homedir } from 'node:os'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import { EventEmitter } from 'node:events'
 import { PassThrough, Writable } from 'node:stream'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import {
   createAiExecutionProfiler as createProfiler,
   createAiToolContract
@@ -131,7 +131,11 @@ vi.mock('../local-tool-store', async (importOriginal) => ({
     close: vi.fn()
   }))
 }))
-vi.mock('node:child_process', () => ({ spawn }))
+vi.mock('node:child_process', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:child_process')>()
+
+  return { ...actual, spawn, default: { ...actual, spawn } }
+})
 vi.mock('../../vtracer-tool-server.mjs', () => ({
   convertVTracerBuffer: vi.fn(
     async () =>
@@ -1110,7 +1114,7 @@ describe('local subscription AI backend', () => {
         {
           id: 'prepare',
           tool: 'design_preparation.prepare_design',
-          revision: 4,
+          revision: 5,
           input: {
             kind: 'object',
             fields: {
@@ -1252,7 +1256,7 @@ describe('local subscription AI backend', () => {
 
       try {
         if (submit) {
-          const contract = await call('describe_design_apis', {
+          const contract = await call('read_design_contracts', {
             names: [
               'design_preparation.prepare_design',
               'tool_library.submit_tool'
@@ -1286,10 +1290,11 @@ describe('local subscription AI backend', () => {
           )
 
           expect(rejected, JSON.stringify(rejected)).toMatchObject({
-            ok: false,
-            code: 'admission'
+            available: false,
+            code: 'TOOL_INPUT_INVALID',
+            settlement: 'not-started'
           })
-          expect(rejected.issues.length).toBeGreaterThan(0)
+          expect(rejected.inputIssues.length).toBeGreaterThan(0)
           expect(
             (
               retainedRecords.slice(recordOffset) as {
@@ -1308,7 +1313,7 @@ describe('local subscription AI backend', () => {
           ).toMatchObject({ ok: true })
         }
 
-        const found = await call('describe_design_apis', {
+        const found = await call('read_design_contracts', {
           names: ['prepare-part', 'design_preparation.prepare_design']
         })
 
@@ -1334,7 +1339,7 @@ describe('local subscription AI backend', () => {
               (tool: { name: string }) => tool.name === 'prepare_design'
             ).definition
           ).toMatchObject({ availableInResponse: true })
-          const restored = await call('describe_design_apis', {
+          const restored = await call('read_design_contracts', {
             names: ['design_preparation.prepare_design'],
             refresh: true,
             refreshReason: 'context-loss'
@@ -1428,7 +1433,7 @@ describe('local subscription AI backend', () => {
           record.stage === 'tool_started' &&
           record.evidence?.parentCallId &&
           record.evidence?.tool === 'design_preparation.prepare_design' &&
-          record.evidence?.revision === 4 &&
+          record.evidence?.revision === proposal.steps[0].revision &&
           JSON.stringify(record.evidence?.recipeStep) ===
             JSON.stringify({ name: 'prepare-part', revision: 1, id: 'prepare' })
       )
@@ -1575,6 +1580,203 @@ describe('local subscription AI backend', () => {
       ])
     )
   })
+
+  describe.each(['full-registry', 'native-inputs', 'without-inspection'])(
+    'actual provider contract handoff - %s',
+    (profile) => {
+      const inspection = profile !== 'without-inspection'
+
+      type Definitions = ReturnType<
+        ReturnType<typeof toolHosts.createLocalToolHost>['definitions']
+      >
+      let registered: Definitions = []
+      let audited: Definitions = []
+      let thread: Record<string, unknown> | undefined
+
+      beforeAll(async () => {
+        vi.spyOn(console, 'info').mockImplementation(() => undefined)
+        vi.stubGlobal('window', {})
+        try {
+          const { createAiRuntimeInput } =
+            await import('../../src/ai/runtime-input')
+          const runtime = createAiRuntimeInput({
+            permissionRules: {},
+            provider: { requestActionBatch: vi.fn() }
+          })
+
+          try {
+            const constructHost = toolHosts.createLocalToolHost
+
+            vi.spyOn(toolHosts, 'createLocalToolHost').mockImplementation(
+              (options) => {
+                const host = constructHost(options)
+
+                registered = host.definitions()
+
+                return host
+              }
+            )
+            const server = fakeServer()
+            const executeBatch = vi.fn()
+
+            spawn.mockReturnValue(server.child)
+            await requestConfiguredAiActionBatch(
+              {
+                ...input,
+                actions: runtime.actionDefinitions
+                  .filter(
+                    (action) =>
+                      inspection ||
+                      action.name !== AiActionNames.INSPECT_DRAWING
+                  )
+                  .map(createAiToolContract)
+              },
+              { environment, executeBatch }
+            )
+            thread = server.packets.find(
+              ({ method }) => method === 'thread/start'
+            )?.params
+            expect(executeBatch).not.toHaveBeenCalled()
+            if (profile === 'full-registry') {
+              const actual = registered
+              const { createDeliveryAuditFixture } =
+                await import('./delivery-audit-fixture')
+              const audit = createDeliveryAuditFixture()
+
+              try {
+                audited = audit.host.definitions()
+              } finally {
+                await audit.dispose()
+                registered = actual
+              }
+            }
+          } finally {
+            for (const resource of runtime.ownedResources ?? []) {
+              await resource.dispose()
+            }
+          }
+        } finally {
+          vi.unstubAllGlobals()
+        }
+      })
+
+      it('publishes delivery and retention only at the Host-owned workflow boundary', () => {
+        const schema = nativeToolDefinitions(thread).find(
+          (tool) => tool.name === 'prepare_and_apply_design'
+        )?.inputSchema
+
+        expect(schema).toBeDefined()
+        const draft = {
+          type: 'group',
+          name: 'Panel',
+          children: [
+            { type: 'rect', name: 'Face', key: 'face', width: 10, height: 10 }
+          ]
+        }
+        const part = { key: 'panel', draft }
+        const input = { parts: [part], inspection: 'defer' }
+
+        expect(operationInputIssue(input, schema)).toBeUndefined()
+        for (const control of [
+          { delivery: 'status' },
+          { retain: { panel: { source: 'input', path: '/parts/0/draft' } } }
+        ]) {
+          expect(
+            operationInputIssue({ ...input, ...control }, schema)
+          ).toBeUndefined()
+          expect(
+            operationInputIssue(
+              { ...input, parts: [{ ...part, ...control }] },
+              schema
+            )
+          ).toBeTruthy()
+        }
+
+        for (const response of ['compact', 'full']) {
+          expect(
+            operationInputIssue({ ...input, response }, schema)
+          ).toBeTruthy()
+        }
+      })
+
+      it('preserves complete definitions and admits the published examples', () => {
+        const definition = nativeToolDefinitions(thread).find(
+          (tool) => tool.name === 'check_drawing_image'
+        )
+
+        expect(Boolean(definition)).toBe(inspection)
+        expect(
+          nativeToolDefinitions(thread).some(
+            (tool) => tool.name === 'select_design_references'
+          )
+        ).toBe(true)
+        if (profile === 'full-registry') {
+          expect(audited.map((entry) => entry.registeredName).sort()).toEqual(
+            registered.map((entry) => entry.registeredName).sort()
+          )
+          for (const entry of audited) {
+            expect(entry, entry.registeredName).toEqual(
+              registered.find(
+                (candidate) => candidate.registeredName === entry.registeredName
+              )
+            )
+          }
+        }
+
+        if (profile === 'native-inputs') {
+          const groups = thread?.dynamicTools as {
+            name: string
+            tools: { name: string; inputSchema: { examples?: unknown[] } }[]
+          }[]
+
+          for (const group of groups) {
+            for (const tool of group.tools) {
+              const identity = group.name + '.' + tool.name
+              const owner = registered.find(
+                (entry) => entry.registeredName === identity
+              )
+
+              expect(owner, identity).toBeDefined()
+              for (const invalid of [null, 42, []]) {
+                expect(
+                  operationInputIssue(invalid, tool.inputSchema),
+                  identity
+                ).toBeTruthy()
+              }
+
+              for (const example of tool.inputSchema.examples ?? []) {
+                expect(
+                  operationInputIssue(example, tool.inputSchema),
+                  identity
+                ).toBeUndefined()
+                expect(
+                  operationInputIssue(example, owner?.inputSchema),
+                  identity
+                ).toBeUndefined()
+              }
+            }
+          }
+        }
+
+        if (definition) {
+          expect(operationInputIssue({}, definition.inputSchema)).toBeTruthy()
+          expect(
+            operationInputIssue(
+              {
+                checkId: 'comparison',
+                inspectionId: 'capture',
+                referenceImageIndex: 0,
+                referenceRegion: { x: 0, y: 0, width: 1, height: 1 },
+                channelTolerance: 0,
+                maxDifferentFraction: 0
+              },
+              definition.inputSchema
+            )
+          ).toBeUndefined()
+        }
+      })
+    }
+  )
 
   it('advertises reusable tool controls through the drawing provider', async () => {
     const server = fakeServer()
@@ -1808,7 +2010,7 @@ describe('local subscription AI backend', () => {
           threadId: 'thread-1',
           turnId: 'turn-1',
           callId: 'describe-independent',
-          tool: 'describe_design_apis',
+          tool: 'search_design_tools',
           arguments: {}
         }
       })
@@ -1842,6 +2044,18 @@ describe('local subscription AI backend', () => {
   it.skipIf(!process.env.LOCAL_AI_PROTOCOL_EXECUTABLE)(
     'checks installed native registration without inference',
     async () => {
+      const configOwner = await import('../native-provider-config')
+      const realConfigOwner = await vi.importActual<
+        typeof import('../native-provider-config')
+      >('../native-provider-config')
+
+      vi.mocked(configOwner.createNativeProviderConfig).mockImplementationOnce(
+        realConfigOwner.createNativeProviderConfig
+      )
+      const directory = resolve('tmp/native-registration')
+
+      mkdirSync(directory, { recursive: true })
+      const nativeHome = mkdtempSync(resolve(directory, 'home-'))
       const native =
         await vi.importActual<typeof import('node:child_process')>(
           'node:child_process'
@@ -1849,6 +2063,7 @@ describe('local subscription AI backend', () => {
       const children: import('node:child_process').ChildProcess[] = []
       const requests: Packet[] = []
       const notifications: string[] = []
+      let diagnostics = ''
       let nativeIsolation: unknown
 
       spawn.mockImplementation((...args: Parameters<typeof native.spawn>) => {
@@ -1867,19 +2082,42 @@ describe('local subscription AI backend', () => {
             '-c',
             'mcp_servers.startup_probe.enabled=true'
           ],
-          args[2]
+          { ...args[2], env: { ...process.env, CODEX_HOME: nativeHome } }
         )
 
         if (!child.stdin || !child.stdout) {
           throw new Error('Missing native protocol pipes')
         }
 
+        child.stderr?.on('data', (chunk) => {
+          diagnostics = (diagnostics + String(chunk)).slice(-4096)
+        })
+
         const stdin = child.stdin
         const stdout = child.stdout
         const write = stdin.write.bind(stdin)
 
         stdin.write = ((chunk: string, ...rest: unknown[]) => {
-          requests.push(JSON.parse(String(chunk)))
+          const packet = JSON.parse(String(chunk))
+
+          requests.push(packet)
+          // Registration isolation does not consume personal login credentials.
+          // Account rejection is covered by the provider's separate admission tests.
+          if (packet.method === 'account/read') {
+            queueMicrotask(() =>
+              stdout.emit(
+                'data',
+                Buffer.from(
+                  JSON.stringify({
+                    id: packet.id,
+                    result: { account: { type: 'chatgpt' } }
+                  }) + '\n'
+                )
+              )
+            )
+
+            return true
+          }
 
           return write(chunk, ...(rest as []))
         }) as typeof stdin.write
@@ -1927,6 +2165,11 @@ describe('local subscription AI backend', () => {
           model: 'gpt-6-astra',
           executable,
           signal: AbortSignal.timeout(30_000)
+        }).catch((error: Error) => {
+          throw new Error(
+            `${error.message}\nNative diagnostics: ${diagnostics}\nRequests: ${requests.map((packet) => packet.method).join(', ')}`,
+            { cause: error }
+          )
         })
         expect(requests.some(({ method }) => method === 'turn/start')).toBe(
           false
@@ -1959,6 +2202,8 @@ describe('local subscription AI backend', () => {
             child.kill('SIGKILL')
           }
         }
+
+        rmSync(nativeHome, { recursive: true, force: true })
       }
     },
     35_000
@@ -2258,6 +2503,31 @@ describe('local subscription AI backend', () => {
       }
     }
 
+    for (const [name, args, invalid] of [
+      [
+        'search_design_tools',
+        { query: 'position', inputFields: ['x'] },
+        { names: ['position'] }
+      ],
+      [
+        'read_design_contracts',
+        { names: ['prepare_and_apply_design'] },
+        { query: 'position' }
+      ]
+    ] as const) {
+      const declaration = definitions.find((tool) => tool.name === name)
+
+      expect(declaration).toBeDefined()
+      expect(
+        operationInputIssue(args, declaration?.inputSchema),
+        name
+      ).toBeUndefined()
+      expect(
+        operationInputIssue(invalid, declaration?.inputSchema),
+        name
+      ).toBeDefined()
+    }
+
     const instructions = thread?.developerInstructions as string
 
     expect(instructions).toContain(
@@ -2269,6 +2539,11 @@ describe('local subscription AI backend', () => {
       definitions
     })
 
+    expect(delivered).not.toContain('For local changes, query workspace bounds')
+    expect(delivered).toContain(
+      'Known-value edits can proceed without a lookup'
+    )
+    expect(delivered).toContain('Use children for hierarchy questions')
     expect(delivered).not.toContain('optional criteria')
     expect(delivered).not.toContain('Name steps only to bind their results')
     expect(delivered).toContain(
@@ -2354,8 +2629,14 @@ describe('local subscription AI backend', () => {
     expect(scope.inputScopes.operations).toEqual(['draft', 'repair', 'parts'])
     expect(scope.operationUsage.draft).toContain('10000 expanded objects')
     expect(scope.operationUsage.parts).toContain('each part artifact fits')
-    expect(scope.example.arguments.inputScope.operation).toBe('draft')
-    expect(scope.example.arguments.inputScope.nodeTypes).toEqual(['pattern'])
+    expect(
+      scope.example.arguments.scopes[scope.example.arguments.names[0]]
+        .inputScope.operation
+    ).toBe('draft')
+    expect(
+      scope.example.arguments.scopes[scope.example.arguments.names[0]]
+        .inputScope.nodeTypes
+    ).toEqual(['pattern'])
     const { createLocalDesignWorkflow } =
       await import('../local-design-workflow')
     const { createLocalOperationTools } =
@@ -2391,13 +2672,10 @@ describe('local subscription AI backend', () => {
 
     const selected = JSON.parse(
       await readCompleteInformation(
-        (input) =>
-          operations.call(
-            scope.example.tool,
-            input,
-            new AbortController().signal
-          ),
-        scope.example.arguments
+        (input, requestedTool) =>
+          operations.call(requestedTool, input, new AbortController().signal),
+        scope.example.arguments,
+        scope.example.tool
       )
     )
 
@@ -2435,7 +2713,11 @@ describe('local subscription AI backend', () => {
       'input.actions lists final-response actions, not the complete capability catalog'
     )
     expect(instructions).not.toContain('Available App tool namespaces:')
-    expect(instructions).toContain('Discover tools by operation purpose')
+    expect(instructions).toContain(
+      'Discover tools by operation purpose using search_design_tools query'
+    )
+    expect(instructions).not.toContain('read_design_contracts query')
+    expect(instructions).toContain('read_design_contracts names')
     expect(String(thread?.baseInstructions)).toContain(
       'Use native web research'
     )
@@ -2952,8 +3234,9 @@ describe('local subscription AI backend', () => {
     )
 
     expect(afterEager.map((tool) => tool.name).sort()).toEqual([
-      'describe_design_apis',
-      'execute_design'
+      'execute_design',
+      'read_design_contracts',
+      'search_design_tools'
     ])
     expect(afterEager).toEqual(beforeEager)
   })
@@ -3005,9 +3288,11 @@ describe('local subscription AI backend', () => {
     for (const definition of nativeToolDefinitions(thread)) {
       expect(definition).toMatchObject({
         type: 'function',
-        deferLoading: !['execute_design', 'describe_design_apis'].includes(
-          String(definition.name)
-        ),
+        deferLoading: ![
+          'execute_design',
+          'search_design_tools',
+          'read_design_contracts'
+        ].includes(String(definition.name)),
         name: expect.any(String),
         description: expect.any(String),
         inputSchema: expect.any(Object)
@@ -3362,7 +3647,7 @@ describe('local subscription AI backend', () => {
     {},
     { AI_PROVIDER_MODEL: 'selected-model', AI_PROVIDER_BACKEND: 'unknown' }
   ])(
-    'rejects incomplete or unknown configuration without a process',
+    'rejects incomplete or unknown configuration without a process - case %#',
     async (settings) => {
       await expect(
         requestConfiguredAiActionBatch(input, {
@@ -3376,7 +3661,7 @@ describe('local subscription AI backend', () => {
   )
 
   it.each([null, { type: 'apiKey' }])(
-    'rejects absent or API-key authentication before a model turn',
+    'rejects absent or API-key authentication before a model turn - case %#',
     async (account) => {
       const server = fakeServer({ account })
 
@@ -3396,7 +3681,7 @@ describe('local subscription AI backend', () => {
     'not json',
     '{"actions":[],"batchId":"empty"}',
     '{"error":"unavailable capability"}'
-  ])('rejects malformed or unavailable output', async (output) => {
+  ])('rejects malformed or unavailable output - case %#', async (output) => {
     fakeServer({ output })
     await expect(
       requestConfiguredAiActionBatch(input, { environment })
@@ -3404,7 +3689,7 @@ describe('local subscription AI backend', () => {
   })
 
   it.each(['failed', 'interrupted'])(
-    'rejects a non-completed turn even with valid JSON',
+    'rejects a non-completed turn even with valid JSON - case %#',
     async (status) => {
       fakeServer({ status })
       await expect(
@@ -4154,18 +4439,21 @@ describe('local AI usage accounting', () => {
     { ...total, reasoningOutputTokens: 21 },
     { ...total, inputTokens: Number.MAX_SAFE_INTEGER + 1 },
     { totalTokens: 120 }
-  ])('rejects invalid usage without corrupting earlier evidence', (invalid) => {
-    const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
-    const usage = createAiExecutionProfiler(input, 'selected-model')
+  ])(
+    'rejects invalid usage without corrupting earlier evidence - case %#',
+    (invalid) => {
+      const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+      const usage = createAiExecutionProfiler(input, 'selected-model')
 
-    usage.update({ total })
-    usage.update({ total: invalid })
-    usage.finish('completed')
-    expect(JSON.parse(log.mock.calls[0][0])).toMatchObject({
-      usageStatus: 'partial',
-      tokens: total
-    })
-  })
+      usage.update({ total })
+      usage.update({ total: invalid })
+      usage.finish('completed')
+      expect(JSON.parse(log.mock.calls[0][0])).toMatchObject({
+        usageStatus: 'partial',
+        tokens: total
+      })
+    }
+  )
   it('does not allow the logging sink to break request settlement', () => {
     vi.spyOn(console, 'info').mockImplementation(() => {
       throw new Error('sink closed')
@@ -4604,7 +4892,7 @@ it.each([
     )
 
     expect(reply).toMatchObject({ result: { success: false } })
-    expect(JSON.stringify(reply)).toContain('recoverable')
+    expect(JSON.stringify(reply)).toContain('toolOutcome')
     expect(executeBatch).not.toHaveBeenCalled()
   }
 )
@@ -4679,52 +4967,68 @@ it('accepts cumulative protocol traffic beyond 32 MiB while bounding each messag
   expect(server.child.kill).toHaveBeenCalledOnce()
 })
 
-it('keeps a registered context tool available after rejected input and accepts a corrected call in the same turn', async () => {
-  const failures: Record<string, unknown>[] = []
-  const server = fakeServer({
-    toolCall: true,
-    toolName: 'record_design_calculations',
-    toolArguments: { calculations: [{ id: 'pitch' }] },
+it.each([
+  {
+    case: 'missing required fields',
+    calculations: [{ id: 'pitch' }],
+    message: 'required field is missing'
+  },
+  {
+    case: 'duplicate note identities',
+    calculations: [
+      { id: 'pitch', value: 40, unit: 'px' },
+      { id: 'pitch', value: 60, unit: 'px' }
+    ],
+    message: 'unique'
+  }
+])(
+  'keeps a registered context tool available after rejected input and accepts a corrected call in the same turn - $case',
+  async ({ calculations, message }) => {
+    const failures: Record<string, unknown>[] = []
+    const server = fakeServer({
+      toolCall: true,
+      toolName: 'record_design_calculations',
+      toolArguments: { calculations },
 
-    followupTool: (reply) => {
-      failures.push(reply)
+      followupTool: (reply) => {
+        failures.push(reply)
 
-      return {
-        name: 'record_design_calculations',
-        args: { calculations: [{ id: 'pitch', value: 60, unit: 'px' }] }
+        return {
+          name: 'record_design_calculations',
+          args: { calculations: [{ id: 'pitch', value: 60, unit: 'px' }] }
+        }
       }
-    }
-  })
-
-  spawn.mockReturnValue(server.child)
-  const executeBatch = vi.fn()
-
-  await requestConfiguredAiActionBatch(
-    {
-      ...input,
-      actions: [
-        ...input.actions,
-        { name: 'inspect_drawing', description: 'Inspect', inputSchema: {} }
-      ]
-    },
-    { environment, executeBatch }
-  )
-  expect(failures).toEqual([
-    expect.objectContaining({
-      available: false,
-      code: 'PREPARATION_REJECTED',
-      recoverable: true,
-      message: expect.stringContaining('required field is missing')
     })
-  ])
-  expect(server.packets.find((packet) => packet.id === 99)).toMatchObject({
-    result: { success: false }
-  })
-  expect(server.packets.find((packet) => packet.id === 100)).toMatchObject({
-    result: { success: true }
-  })
-  expect(executeBatch).not.toHaveBeenCalled()
-})
+
+    spawn.mockReturnValue(server.child)
+    const executeBatch = vi.fn()
+
+    await requestConfiguredAiActionBatch(
+      {
+        ...input,
+        actions: [
+          ...input.actions,
+          { name: 'inspect_drawing', description: 'Inspect', inputSchema: {} }
+        ]
+      },
+      { environment, executeBatch }
+    )
+    expect(failures).toEqual([
+      expect.objectContaining({
+        available: false,
+        code: 'TOOL_INPUT_INVALID',
+        message: expect.stringContaining(message)
+      })
+    ])
+    expect(server.packets.find((packet) => packet.id === 99)).toMatchObject({
+      result: { success: false }
+    })
+    expect(server.packets.find((packet) => packet.id === 100)).toMatchObject({
+      result: { success: true }
+    })
+    expect(executeBatch).not.toHaveBeenCalled()
+  }
+)
 
 it('runs prepared checks through the provider without opening another model request', async () => {
   vi.spyOn(console, 'info').mockImplementation(() => undefined)
@@ -5398,7 +5702,7 @@ it('retains exact bounded discovery and field selectors for execution diagnosis'
   try {
     createAiExecutionProfiler(input, 'selected-model').trace('tool_started', {
       callId: 'query',
-      tool: 'describe_design_apis',
+      tool: 'read_design_contracts',
       arguments: {
         names: ['api_core_getElementComputedData'],
         fields: ['bounds'],
@@ -5491,7 +5795,7 @@ it('exposes discovery and the single host entry eagerly with truthful advertised
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   const server = fakeServer({
     toolCall: true,
-    toolName: 'describe_design_apis',
+    toolName: 'search_design_tools',
     toolArguments: { query: 'fill' }
   })
 
@@ -5568,8 +5872,9 @@ it('exposes discovery and the single host entry eagerly with truthful advertised
     )
 
     expect(eager.map((tool) => tool.name).sort()).toEqual([
-      'describe_design_apis',
-      'execute_design'
+      'execute_design',
+      'read_design_contracts',
+      'search_design_tools'
     ])
     const reply = server.packets.find(
       (packet) => packet.id === 99 && packet.result
@@ -5582,7 +5887,7 @@ it('exposes discovery and the single host entry eagerly with truthful advertised
       records.find((record) => record.stage === 'capabilities_advertised')
         ?.evidence
     ).toMatchObject({
-      eagerToolCount: 2,
+      eagerToolCount: 3,
       eagerToolDefinitionBytes: Buffer.byteLength(JSON.stringify(eager), 'utf8')
     })
   } finally {
@@ -5594,7 +5899,7 @@ it('binds the call digest to the schema actually advertised to native discovery'
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   const server = fakeServer({
     toolCall: true,
-    toolName: 'describe_design_apis',
+    toolName: 'search_design_tools',
     toolArguments: { query: 'fill' }
   })
 
@@ -5724,7 +6029,7 @@ it.each(['execution', 'delivery'] as const)(
 
     const followup = vi.fn(
       (receipt: Record<string, unknown>, outcome: unknown) => {
-        expect(receipt).toMatchObject({ recoverable: true })
+        expect(receipt).toHaveProperty('toolOutcome')
         expect(outcome, JSON.stringify(receipt)).toMatchObject({
           status: stage === 'delivery' ? 'partial' : 'failed'
         })
@@ -6393,7 +6698,7 @@ it('delivers attachment identity and prepares selected uses before capture and c
     }
     const text = packet.result.contentItems[0].text
 
-    if (tool === 'describe_design_apis') {
+    if (tool === 'read_design_contracts') {
       discoveryCalls++
       discoveryBytes +=
         Buffer.byteLength(JSON.stringify(args)) + Buffer.byteLength(text)
@@ -6419,7 +6724,7 @@ it('delivers attachment identity and prepares selected uses before capture and c
             ].includes(name)
         )
       }
-      const delivered = await call('describe_design_apis', query)
+      const delivered = await call('read_design_contracts', query)
 
       expect(
         delivered.tools.some(
@@ -6668,11 +6973,24 @@ it.each(['read', 'mutation', 'external', 'mixed', 'unknown'] as const)(
 it('discovers and retrieves both knowledge contexts through the normal provider without document writes', async () => {
   const server = fakeServer({ hold: true, manualToolReplies: true })
   const executeBatch = vi.fn(async () => ({ actionResults: [], context: {} }))
-  const request = requestLocalAiActionBatch(input, {
-    model: 'selected-model',
-    executable: 'codex',
-    executeBatch
-  })
+  const request = requestLocalAiActionBatch(
+    {
+      ...input,
+      actions: [
+        ...input.actions,
+        {
+          name: AiActionNames.APPLY_PREPARED_DESIGN,
+          description: 'Apply prepared design',
+          inputSchema: {}
+        }
+      ]
+    },
+    {
+      model: 'selected-model',
+      executable: 'codex',
+      executeBatch
+    }
+  )
 
   await untilTurn(server.packets)
   const groups = server.packets.find(
@@ -6732,6 +7050,27 @@ it('discovers and retrieves both knowledge contexts through the normal provider 
   }
 
   try {
+    const contracts = JSON.parse(
+      await readCompleteInformation(
+        async (selector, requestedTool) =>
+          JSON.stringify(await call(requestedTool, selector)),
+        { names: ['design_knowledge.read_knowledge'], view: 'full' },
+        'read_design_contracts'
+      )
+    )
+    const contract = contracts.tools[0]
+
+    expect(contract.outputSchema.anyOf[0].properties.contextKey).toMatchObject({
+      type: 'string',
+      'x-runtime-value': 'request'
+    })
+    expect(
+      contract.outputSchema.anyOf[0].properties.documents.items.oneOf[1]
+        .properties.retainedFrom
+    ).toMatchObject({
+      type: 'string',
+      'x-runtime-value': 'request'
+    })
     const architecture = {
       ids: ['design.architectural-illustration'],
       contexts: ['architectural-illustration']
@@ -6742,7 +7081,7 @@ it('discovers and retrieves both knowledge contexts through the normal provider 
       false
     )
 
-    expect(invalid.recoverable).toBe(true)
+    expect(invalid).not.toHaveProperty('recoverable')
     const missing = await call(
       'read_knowledge',
       { ids: ['missing.advice'] },
@@ -6897,49 +7236,25 @@ it('discovers and retrieves both knowledge contexts through the normal provider 
 })
 
 it.each([false, true])(
-  'isolates recorded rejected preparation and repairs only the rejected part with strict evaluation=%s',
-  async (strict) => {
+  'isolates recorded rejected preparation and repairs only the rejected part with evaluation recording=%s',
+  async (recording) => {
     vi.spyOn(console, 'info').mockImplementation(() => undefined)
     const { default: recorded } =
       await import('./fixtures/recorded-101/ordered-preparation-20261019.json')
     const server = fakeServer({ hold: true, manualToolReplies: true })
-    const failures: unknown[] = []
-
-    if (strict) {
-      const create = toolHosts.createLocalToolHost
-
-      vi.spyOn(toolHosts, 'createLocalToolHost').mockImplementationOnce(
-        (options) =>
-          create({
-            ...options,
-
-            observe: (event) => {
-              if (
-                event.phase === 'completed' &&
-                evaluationToolStop(event.output)
-              ) {
-                failures.push({ name: event.call.name, output: event.output })
-              }
-
-              options.observe?.(event)
-            }
-          })
-      )
-    }
-
     const controller = new AbortController()
     const workDeadlineAt = Date.now() + 60000
     const root = join(process.cwd(), 'tmp')
 
     mkdirSync(root, { recursive: true })
-    const recordDirectory = strict
+    const recordDirectory = recording
       ? mkdtempSync(join(root, 'input-repair-'))
       : undefined
 
     if (recordDirectory) {
       writeFileSync(
         join(recordDirectory, 'evaluation-control.json'),
-        JSON.stringify({ workDeadlineAt, stopOnFailure: true })
+        JSON.stringify({ workDeadlineAt })
       )
     }
 
@@ -6949,7 +7264,7 @@ it.each([false, true])(
         context: {},
         actionResults: batch.actions.map(
           (action): AiBatchReceipt['actionResults'][number] => {
-            if (strict && action.name === AiActionNames.REVIEW_DESIGN) {
+            if (recording && action.name === AiActionNames.REVIEW_DESIGN) {
               return {
                 actionId: action.id,
                 actionName: action.name,
@@ -6983,7 +7298,7 @@ it.each([false, true])(
     const request = requestLocalAiActionBatch(
       {
         ...input,
-        ...(strict
+        ...(recording
           ? {
               metadata: {
                 evaluationWindow: { workDeadlineAt, reportTimeoutMs: null }
@@ -6991,7 +7306,7 @@ it.each([false, true])(
             }
           : {}),
         actions: [
-          ...(strict
+          ...(recording
             ? [
                 {
                   name: AiActionNames.REVIEW_DESIGN,
@@ -7036,7 +7351,7 @@ it.each([false, true])(
       await vi.waitFor(() =>
         expect(
           server.packets.some((p) => p.id === current),
-          JSON.stringify(failures).slice(0, 5000)
+          JSON.stringify(server.packets.at(-1))
         ).toBe(true)
       )
       const packet = server.packets.find(
@@ -7065,15 +7380,9 @@ it.each([false, true])(
     }
 
     try {
-      const failed = await call(recorded.input)
+      const { response: _response, ...currentInput } = recorded.input
+      const failed = await call(currentInput)
 
-      expect(
-        evaluationToolStop({
-          text: JSON.stringify(failed.value),
-          outcome: failed.outcome
-        }),
-        JSON.stringify(failed.value)
-      ).toBeUndefined()
       expect(applied).toEqual(['part-1'])
       expect(failed.success).toBe(false)
       expect(failed.value, JSON.stringify(failed.value)).toMatchObject({
@@ -7086,7 +7395,7 @@ it.each([false, true])(
       expect(rejected.message).toContain('buttress-y0.vertices')
       expect(rejected.message).toContain('nonplanar face')
       expect(rejected, JSON.stringify(rejected)).toMatchObject({
-        recovery: 'correct_input',
+        code: 'TOOL_INPUT_INVALID',
         draftId: expect.any(String)
       })
       expect(rejected.executionResult?.batches ?? []).toEqual([])
@@ -7100,7 +7409,7 @@ it.each([false, true])(
 
       expect(failedRepair.success).toBe(false)
       expect(failedRepair.value).toMatchObject({
-        recovery: 'correct_input',
+        code: 'TOOL_INPUT_INVALID',
         draftId: expect.any(String)
       })
       expect(failedRepair.outcome).toMatchObject({
@@ -7154,12 +7463,12 @@ it.each([false, true])(
         server.packets.filter((p) => p.method === 'turn/interrupt')
       ).toHaveLength(0)
     } finally {
-      if (strict) {
+      if (recording) {
         controller.abort()
       }
 
       server.finish()
-      if (strict) {
+      if (recording) {
         await request.catch(() => undefined)
       } else {
         await request
@@ -7293,7 +7602,7 @@ it.each(['malformed', 'unavailable'] as const)(
 
       expect(rejected, JSON.stringify(rejected)).toMatchObject({
         available: false,
-        recovery: 'correct_input',
+        code: 'TOOL_INPUT_INVALID',
         settlement: 'not-started'
       })
       expect(rejectedOutcome).toMatchObject({
@@ -7568,7 +7877,7 @@ it('isolates overlapping provider requests with identical call IDs and cancellat
 
     expect(rejected.success).toBe(false)
     expect(rejected.value, JSON.stringify(rejected.value)).toMatchObject({
-      recovery: 'correct_input',
+      code: 'TOOL_INPUT_INVALID',
       draftId: expect.any(String)
     })
     expect(rejected.outcome).toMatchObject({
@@ -7796,7 +8105,7 @@ it('delivers canonical compact usage through the provider and consumes its actua
   })
   const server = fakeServer({
     toolCall: true,
-    toolName: 'describe_design_apis',
+    toolName: 'read_design_contracts',
     toolArguments: { names: [action.name], view: 'usage' },
     followupTool: followup
   })
@@ -7871,7 +8180,7 @@ it('delivers capture controls and narrow deletion fields through the native prov
   vi.spyOn(console, 'info').mockImplementation(() => undefined)
   const server = fakeServer({
     toolCall: true,
-    toolName: 'describe_design_apis',
+    toolName: 'read_design_contracts',
     toolArguments: { names: ['api_element_deleteElements'], view: 'usage' }
   })
 
@@ -8350,10 +8659,10 @@ it('executes the recorded target-bound group and captures through provider-visib
     ).toBeUndefined()
     const usage = JSON.parse(
       await readCompleteInformation(
-        async (args) =>
-          (await call('describe_design_apis', args)).contentItems[0]
-            .text as string,
-        { names: ['api_hierarchy_groupElements'], view: 'usage' }
+        async (args, requestedTool) =>
+          (await call(requestedTool, args)).contentItems[0].text as string,
+        { names: ['api_hierarchy_groupElements'], view: 'usage' },
+        'read_design_contracts'
       )
     ).apis[0].usageGuide
     const path = '/actionResults/0/result/value/groupId'
@@ -8447,7 +8756,7 @@ it('delivers and executes the primary input-reuse example through the native pro
         threadId: 'thread-1',
         turnId: 'turn-1',
         callId: 'received-host-usage',
-        tool: 'describe_design_apis',
+        tool: 'read_design_contracts',
         arguments: { names: ['execute_design'], view: 'usage' }
       }
     })
@@ -8830,7 +9139,11 @@ it.each([
           } else if (mode === 'unsaved-distinct-partial') {
             value.toolOutcome = { status: 'partial', settlement: 'completed' }
             reply.outcome = { status: 'partial', settlement: 'completed' }
-            value.storage = { status: 'unsaved', issue: 'Storage unavailable' }
+            value.storage = {
+              status: 'unsaved',
+              code: 'storage-failed',
+              issue: 'Storage unavailable'
+            }
           }
 
           repackaged = value
@@ -8917,8 +9230,8 @@ it.each([
     try {
       const guide = JSON.parse(
         await readCompleteInformation(
-          async (args) => {
-            const packet = await call('describe_design_apis', args)
+          async (args, requestedTool) => {
+            const packet = await call(requestedTool, args)
 
             expect(packet.result.success).toBe(true)
 
@@ -8928,7 +9241,8 @@ it.each([
             names: ['receipt_review.receipt_probe'],
             view: 'usage',
             includeResultSchema: true
-          }
+          },
+          'read_design_contracts'
         )
       ).tools[0]
 
@@ -9188,14 +9502,21 @@ it.each(['prepare_design', 'prepare_and_apply_design'])(
     try {
       const guide = JSON.parse(
         await readCompleteInformation(
-          (args) => call('describe_design_apis', args),
+          (args, requestedTool) => call(requestedTool, args),
           {
             names: [name],
             view: 'usage',
             ...(name === 'prepare_and_apply_design'
-              ? { inputScope: { operation: 'draft', nodeTypes: ['rect'] } }
+              ? {
+                  scopes: {
+                    [name]: {
+                      inputScope: { operation: 'draft', nodeTypes: ['rect'] }
+                    }
+                  }
+                }
               : {})
-          }
+          },
+          'read_design_contracts'
         )
       ).tools[0]
       const invocation = guide.invocationExample.invocation
@@ -9298,8 +9619,8 @@ it.each([
       )
       const server = fakeServer({
         toolCall: true,
-        toolName: 'describe_design_apis',
-        toolArguments: { query, view: 'usage' },
+        toolName: 'search_design_tools',
+        toolArguments: { query },
 
         followupTool: (reply) => {
           discovery = reply
@@ -9368,7 +9689,7 @@ it.each([
           ].find((entry) => entry.name === expected)
 
           return {
-            name: 'describe_design_apis',
+            name: 'read_design_contracts',
             args: selected?.usage?.arguments ?? {
               names: [expected],
               view: 'usage'
@@ -9409,8 +9730,8 @@ it.each([
           (discovery.contentDelivery as { text?: string } | undefined)?.text ??
           JSON.stringify(discovery)
 
-        expect(delivered).toContain('"usageGuide"')
-        expect(delivered).toContain('"parameters"')
+        expect(delivered).not.toContain('"usageGuide"')
+        expect(delivered).toContain('"usage"')
         expect(delivered).toContain('"name":"import_reference_image"')
         expect(executeBatch).not.toHaveBeenCalled()
 
@@ -9490,7 +9811,7 @@ it('replays current full discovery and delivery recovery through bounded provide
   await untilTurn(server.packets)
   let id = 200
 
-  const query = async (argumentsValue: unknown) => {
+  const query = async (argumentsValue: unknown, requestedTool: string) => {
     const current = ++id
 
     server.send({
@@ -9500,7 +9821,7 @@ it('replays current full discovery and delivery recovery through bounded provide
         threadId: 'thread-1',
         turnId: 'turn-1',
         callId: `definition-${current}`,
-        tool: 'describe_design_apis',
+        tool: requestedTool,
         arguments: argumentsValue
       }
     })
@@ -9520,14 +9841,19 @@ it('replays current full discovery and delivery recovery through bounded provide
 
   try {
     const selector = { names: ['prepare_and_apply_design'], view: 'full' }
-    const first = JSON.parse(await readCompleteInformation(query, selector))
-      .tools[0]
+    const first = JSON.parse(
+      await readCompleteInformation(query, selector, 'read_design_contracts')
+    ).tools[0]
     const recovered = JSON.parse(
-      await readCompleteInformation(query, {
-        ...selector,
-        refresh: true,
-        refreshReason: 'delivery-failure'
-      })
+      await readCompleteInformation(
+        query,
+        {
+          ...selector,
+          refresh: true,
+          refreshReason: 'delivery-failure'
+        },
+        'read_design_contracts'
+      )
     ).tools[0]
 
     expect(recovered.inputSchema).toEqual(first.inputSchema)
@@ -9608,7 +9934,7 @@ it.each([
         threadId: 'thread-1',
         turnId: 'turn-1',
         callId: 'delivery-1',
-        tool: 'describe_design_apis',
+        tool: 'read_design_contracts',
         arguments: { names: ['create_rectangle'] }
       }
     })
@@ -9619,7 +9945,7 @@ it.each([
       item: {
         type: 'dynamicToolCall',
         id: 'delivery-1',
-        tool: 'describe_design_apis',
+        tool: 'read_design_contracts',
         status: 'completed',
         success: true,
         contentItems
@@ -9682,7 +10008,7 @@ it('correlates interleaved native delivery results with their original calls and
 
   await untilTurn(server.packets)
   for (const [id, tool, args] of [
-    [91, 'describe_design_apis', recordedDiscoveryDelivery.calls[0].input],
+    [91, 'read_design_contracts', recordedDiscoveryDelivery.calls[0].input],
     [
       92,
       'read_knowledge',
@@ -9712,7 +10038,7 @@ it('correlates interleaved native delivery results with their original calls and
   )
   for (const [id, tool] of [
     [92, 'read_knowledge'],
-    [91, 'describe_design_apis']
+    [91, 'read_design_contracts']
   ] as const) {
     const response = server.packets.find((p) => p.id === id) as unknown as {
       result: { contentItems: { type: string; text: string }[] }
@@ -9847,10 +10173,20 @@ it('delivers unavailable field lookup and successful narrow recovery through nat
   vi.spyOn(console, 'info').mockImplementation(() => undefined)
   const server = fakeServer({
     toolCall: true,
-    toolName: 'describe_design_apis',
+    toolName: 'read_design_contracts',
     toolArguments: {
-      names: ['record_design_facts'],
-      schemaPaths: ['/properties/facts', '/properties/unknown']
+      names: ['select_design_references'],
+      scopes: Object.fromEntries(
+        ['select_design_references'].map((name) => [
+          name,
+          {
+            schemaPaths: [
+              '/properties/referenceImageIndexes',
+              '/properties/unknown'
+            ]
+          }
+        ])
+      )
     },
 
     followupTool: (reply, outcome) => {
@@ -9858,6 +10194,9 @@ it('delivers unavailable field lookup and successful narrow recovery through nat
         status: 'failed',
         settlement: 'completed'
       })
+      expect(reply.code).toBe('TOOL_INPUT_INVALID')
+
+      expect(reply.tools, JSON.stringify(reply)).toBeDefined()
       const tools = reply.tools as {
         schemaResolution: {
           narrowerQuery: { tool: string; arguments: unknown }
@@ -9898,13 +10237,14 @@ it('delivers unavailable field lookup and successful narrow recovery through nat
   expect(
     JSON.parse(replies[1].result.contentItems[0].text).tools[0]
       .schemaFragments[0].path
-  ).toBe('/properties/facts')
+  ).toBe('/properties/referenceImageIndexes')
   const thread = server.packets.find((p) => p.method === 'thread/start')?.params
 
   expect(
-    nativeToolDefinitions(thread).find((t) => t.name === 'describe_design_apis')
-      ?.description
-  ).toContain('same schemaPaths list')
+    nativeToolDefinitions(thread).find(
+      (t) => t.name === 'read_design_contracts'
+    )?.description
+  ).toContain('scopes maps each selected identity')
   expect(executeBatch).not.toHaveBeenCalled()
 })
 
@@ -9914,18 +10254,18 @@ describe('bounded evaluation reporting', () => {
     'storage-failed',
     'early-completion',
     'untimed-report',
-    'strict-failure',
-    'strict-app-failure',
-    'strict-input-repair',
-    'strict-sequence-input-repair',
-    'strict-sequence-reference-repair',
-    'strict-source-repair',
-    'strict-source-partial-repair',
-    'strict-identity-repair',
-    'strict-report-disconnect',
-    'strict-report-cancel',
-    'strict-blocked-data',
-    'strict-capture'
+    'recorded-failure',
+    'recorded-app-failure',
+    'recorded-input-repair',
+    'recorded-sequence-input-repair',
+    'recorded-sequence-reference-repair',
+    'recorded-source-repair',
+    'recorded-source-partial-repair',
+    'recorded-identity-repair',
+    'recorded-report-disconnect',
+    'recorded-report-cancel',
+    'recorded-blocked-data',
+    'recorded-capture'
   ])(
     'settles work and reports in the same thread with %s evidence',
     async (mode) => {
@@ -9934,8 +10274,8 @@ describe('bounded evaluation reporting', () => {
       }
 
       const sourceRepair =
-        mode === 'strict-source-repair' ||
-        mode === 'strict-source-partial-repair'
+        mode === 'recorded-source-repair' ||
+        mode === 'recorded-source-partial-repair'
       const sourceFixture = sourceRepair
         ? structuredClone(
             (
@@ -9980,7 +10320,7 @@ describe('bounded evaluation reporting', () => {
           create(
             add,
             async (url) =>
-              mode === 'strict-source-partial-repair' &&
+              mode === 'recorded-source-partial-repair' &&
               url.includes('metalocus')
                 ? new Response(bytes, {
                     headers: { 'content-type': 'image/png' }
@@ -9994,14 +10334,14 @@ describe('bounded evaluation reporting', () => {
         )
       }
 
-      const referenceRepair = mode === 'strict-sequence-reference-repair'
+      const referenceRepair = mode === 'recorded-sequence-reference-repair'
       const referenceFixture = referenceRepair
         ? (
             await import('../../test-data/ai-drawing/fixtures/sequence-reference-recovery-20261108.json')
           ).default
         : undefined
       const sequenceRepair =
-        mode === 'strict-sequence-input-repair' || referenceRepair
+        mode === 'recorded-sequence-input-repair' || referenceRepair
       const { createConversationResults } =
         await import('../../src/ai/conversation-results')
       const referenceContext = createConversationResults(() => 1).open(
@@ -10022,9 +10362,9 @@ describe('bounded evaluation reporting', () => {
             await import('../../test-data/ai-drawing/fixtures/sequence-input-recovery-20261108.json')
           ).default
         : undefined
-      const identityRepair = mode === 'strict-identity-repair'
+      const identityRepair = mode === 'recorded-identity-repair'
       const inputRepair =
-        mode === 'strict-input-repair' ||
+        mode === 'recorded-input-repair' ||
         identityRepair ||
         sequenceRepair ||
         sourceRepair
@@ -10034,11 +10374,18 @@ describe('bounded evaluation reporting', () => {
           ).default
         : undefined
       const identityActions = identityRepair ? await readCanonicalActions() : []
-      const strict = mode.startsWith('strict-')
-      const workDeadlineAt = Date.now() + (strict ? 60000 : 150)
+      const continueAfterFailure =
+        inputRepair ||
+        [
+          'recorded-failure',
+          'recorded-app-failure',
+          'recorded-capture'
+        ].includes(mode)
+      const recording = mode.startsWith('recorded-')
+      const workDeadlineAt = Date.now() + (recording ? 60000 : 150)
       let recordDirectory: string | undefined
 
-      if (strict) {
+      if (recording) {
         const temporaryRoot = join(process.cwd(), 'tmp')
 
         mkdirSync(temporaryRoot, { recursive: true })
@@ -10047,7 +10394,7 @@ describe('bounded evaluation reporting', () => {
         )
         writeFileSync(
           join(recordDirectory, 'evaluation-control.json'),
-          JSON.stringify({ workDeadlineAt, stopOnFailure: true })
+          JSON.stringify({ workDeadlineAt })
         )
       }
 
@@ -10094,13 +10441,9 @@ describe('bounded evaluation reporting', () => {
             const turnId = turns === 1 ? 'turn-1' : 'report-turn'
 
             server.send({ id: packet.id, result: { turn: { id: turnId } } })
-            if (turns === 1 && strict) {
+            if (turns === 1 && recording) {
               setTimeout(() => {
-                if (
-                  mode === 'strict-app-failure' ||
-                  mode === 'strict-report-disconnect' ||
-                  inputRepair
-                ) {
+                if (mode === 'recorded-app-failure' || inputRepair) {
                   server.send({
                     id: 701,
                     method: 'item/tool/call',
@@ -10109,7 +10452,7 @@ describe('bounded evaluation reporting', () => {
                       turnId,
                       callId: 'failed-app-tool',
                       tool: identityRepair
-                        ? 'describe_design_apis'
+                        ? 'read_design_contracts'
                         : 'execute_design',
                       arguments:
                         sourceFixture?.input ??
@@ -10120,12 +10463,17 @@ describe('bounded evaluation reporting', () => {
                           ? { unknownField: true }
                           : {
                               operations: [
-                                { name: 'missing.operation', arguments: {} }
+                                {
+                                  name: 'inspect_drawing',
+                                  arguments: {
+                                    arguments: { elementId: 'drawing' }
+                                  }
+                                }
                               ]
                             })
                     }
                   })
-                } else if (mode === 'strict-capture') {
+                } else if (mode === 'recorded-capture') {
                   server.send({
                     id: 702,
                     method: 'item/tool/call',
@@ -10137,7 +10485,7 @@ describe('bounded evaluation reporting', () => {
                       arguments: { arguments: { elementId: 'drawing' } }
                     }
                   })
-                } else if (mode === 'strict-failure') {
+                } else if (mode === 'recorded-failure') {
                   server.notify('item/completed', {
                     turnId,
                     item: {
@@ -10152,9 +10500,8 @@ describe('bounded evaluation reporting', () => {
                     join(recordDirectory, 'evaluation-control.json'),
                     JSON.stringify({
                       workDeadlineAt,
-                      stopOnFailure: true,
                       stop: {
-                        kind: 'tool-failure',
+                        kind: 'operator-stop',
                         message:
                           'Confirmed App result is missing required target data',
                         callId: 'observed-correction'
@@ -10189,7 +10536,7 @@ describe('bounded evaluation reporting', () => {
                     threadId: 'thread-1',
                     turnId,
                     callId: 'late-tool',
-                    tool: 'describe_design_apis',
+                    tool: 'search_design_tools',
                     arguments: { query: 'create rectangle' }
                   }
                 })
@@ -10207,11 +10554,11 @@ describe('bounded evaluation reporting', () => {
                 })
               }
 
-              if (mode === 'strict-report-disconnect') {
+              if (mode === 'recorded-report-disconnect') {
                 controller.abort('request closed')
               }
 
-              if (mode === 'strict-report-cancel') {
+              if (mode === 'recorded-report-cancel') {
                 controller.abort('user cancelled')
               }
 
@@ -10233,7 +10580,10 @@ describe('bounded evaluation reporting', () => {
       const result = requestLocalAiActionBatch(
         {
           ...input,
-          ...(mode === 'strict-capture' || inputRepair
+          ...(mode === 'recorded-capture' ||
+          mode === 'recorded-app-failure' ||
+          mode === 'recorded-report-disconnect' ||
+          continueAfterFailure
             ? {
                 actions: [
                   ...input.actions,
@@ -10250,7 +10600,9 @@ describe('bounded evaluation reporting', () => {
                   {
                     name: 'inspect_drawing',
                     description: 'Inspect',
-                    inputSchema: {}
+                    inputSchema: {},
+                    ...toolSemantics({ type: 'object' }, 'read', ['document']),
+                    composition: 'request' as const
                   }
                 ]
               }
@@ -10261,7 +10613,8 @@ describe('bounded evaluation reporting', () => {
               : {}),
             evaluationWindow: {
               workDeadlineAt,
-              reportTimeoutMs: mode === 'untimed-report' || strict ? null : 500,
+              reportTimeoutMs:
+                mode === 'untimed-report' || recording ? null : 500,
               announceWorkDeadline: false,
               reportInstructions:
                 'Explain long waits in a detailed public report with tables.'
@@ -10292,13 +10645,19 @@ describe('bounded evaluation reporting', () => {
 
       void result.catch(() => undefined)
       try {
-        if (inputRepair) {
-          await vi.waitFor(() =>
-            expect(
-              server.packets.find((p) => p.id === 701)?.result
-            ).toMatchObject({ success: !inputRepair })
-          )
-          if (mode === 'strict-source-partial-repair') {
+        if (continueAfterFailure) {
+          await vi.waitFor(() => expect(turns).toBe(1))
+          if (mode !== 'recorded-failure') {
+            await vi.waitFor(() =>
+              expect(
+                server.packets.find(
+                  (p) => p.id === (mode === 'recorded-capture' ? 702 : 701)
+                )?.result
+              ).toMatchObject({ success: false })
+            )
+          }
+
+          if (mode === 'recorded-source-partial-repair') {
             const result = server.packets.find((p) => p.id === 701)?.result as {
               contentItems: { type: string }[]
             }
@@ -10312,7 +10671,7 @@ describe('bounded evaluation reporting', () => {
 
           if (inputRepair) {
             const inputTool = identityRepair
-              ? 'describe_design_apis'
+              ? 'read_design_contracts'
               : 'execute_design'
 
             server.notify('item/completed', {
@@ -10335,9 +10694,11 @@ describe('bounded evaluation reporting', () => {
               threadId: 'thread-1',
               turnId: 'turn-1',
               callId: 'continue-after-visual-feedback',
-              tool: 'describe_design_apis',
+              tool: identityRepair
+                ? 'read_design_contracts'
+                : 'search_design_tools',
               arguments: identityRepair
-                ? { operations: ['fill.updateFillsAtIndex'], view: 'usage' }
+                ? { names: ['fill.updateFillsAtIndex'], view: 'usage' }
                 : { query: 'update fill' }
             }
           })
@@ -10360,7 +10721,16 @@ describe('bounded evaluation reporting', () => {
           })
         }
 
-        await vi.waitFor(() => expect(turns).toBe(2), { timeout: 1000 })
+        await vi.waitFor(
+          () =>
+            expect(
+              turns,
+              JSON.stringify(
+                server.packets.find((packet) => packet.id === 701)?.result
+              )
+            ).toBe(2),
+          { timeout: 1000 }
+        )
         if (mode === 'untimed-report') {
           await vi.advanceTimersByTimeAsync(600000)
           expect(server.child.kill).not.toHaveBeenCalled()
@@ -10368,7 +10738,7 @@ describe('bounded evaluation reporting', () => {
           finishReport?.()
         }
 
-        if (mode === 'strict-report-cancel') {
+        if (mode === 'recorded-report-cancel') {
           await expect(result).rejects.toMatchObject({
             code: 'AI_MODEL_BACKEND_ABORTED'
           })
@@ -10395,17 +10765,7 @@ describe('bounded evaluation reporting', () => {
         expect(JSON.stringify(nativeTurns[1].params.input)).toContain(
           'public commentary'
         )
-        if (
-          strict &&
-          ![
-            'strict-input-repair',
-            'strict-sequence-input-repair',
-            'strict-sequence-reference-repair',
-            'strict-source-repair',
-            'strict-source-partial-repair',
-            'strict-identity-repair'
-          ].includes(mode)
-        ) {
+        if (recording && !continueAfterFailure) {
           expect(
             retainedPayloads.find(
               (p) =>
@@ -10415,12 +10775,12 @@ describe('bounded evaluation reporting', () => {
           ).toMatchObject({
             stoppedAtDeadline: false,
             stopReason: {
-              kind: 'tool-failure'
+              kind: 'operator-stop'
             }
           })
         }
 
-        if (inputRepair) {
+        if (continueAfterFailure) {
           expect(
             server.packets.find((p) => p.id === 703)?.result
           ).toMatchObject({
@@ -10441,38 +10801,21 @@ describe('bounded evaluation reporting', () => {
           })
         }
 
-        if (mode === 'strict-capture') {
-          expect(JSON.stringify(nativeTurns[1].params.input)).toContain(
+        if (mode === 'recorded-capture' || mode === 'recorded-app-failure') {
+          const response = server.packets.find(
+            (p) => p.id === (mode === 'recorded-capture' ? 702 : 701)
+          )?.result
+
+          expect(JSON.stringify(response)).toContain(
             'Capture transport unavailable'
           )
-          expect(JSON.stringify(nativeTurns[1].params.input)).toContain(
-            'failed-capture'
-          )
-        }
-
-        if (mode === 'strict-app-failure') {
-          const delivered = server.packets.findIndex((p) => p.id === 701)
-          const interrupted = server.packets.findIndex(
-            (p) => p.method === 'turn/interrupt'
-          )
-
-          expect(delivered).toBeGreaterThanOrEqual(0)
-          expect(interrupted).toBeGreaterThan(delivered)
-          const work = retainedPayloads.find(
-            (p) =>
-              p.callId === 'evaluation-work' &&
-              typeof (p.value as { status?: unknown }).status === 'string'
-          )?.value
-
-          expect(work).toMatchObject({
-            stopReason: {
-              message: expect.stringContaining('missing.operation')
-            }
-          })
+          expect(
+            server.packets.some((p) => p.method === 'turn/interrupt')
+          ).toBe(false)
         }
 
         expect(executeBatch).toHaveBeenCalledTimes(
-          mode === 'strict-capture' ? 1 : 0
+          ['recorded-capture', 'recorded-app-failure'].includes(mode) ? 1 : 0
         )
         expect(
           server.packets.filter((p) => p.method === 'thread/start')
@@ -10531,6 +10874,8 @@ it.each([
   'interrupt-timeout',
   'invalid-report',
   'early-completion',
+  'report-context-compaction',
+  'report-native-tool',
   'cancel-report',
   'startup-timeout'
 ] as const)(
@@ -10548,13 +10893,25 @@ it.each([
           const turnId = turns === 1 ? 'turn-1' : 'report-turn'
 
           server.send({ id: packet.id, result: { turn: { id: turnId } } })
-          if (turns === 1 && mode === 'early-completion') {
+          if (
+            turns === 1 &&
+            [
+              'early-completion',
+              'report-context-compaction',
+              'report-native-tool'
+            ].includes(mode)
+          ) {
             server.finish()
           } else if (turns === 2 && mode === 'cancel-report') {
             queueMicrotask(() => controller.abort())
           } else if (
             turns === 2 &&
-            (mode === 'invalid-report' || mode === 'early-completion')
+            [
+              'invalid-report',
+              'early-completion',
+              'report-context-compaction',
+              'report-native-tool'
+            ].includes(mode)
           ) {
             const report =
               mode === 'invalid-report'
@@ -10574,6 +10931,24 @@ it.each([
                       }
                     ]
                   }
+
+            if (
+              mode === 'report-context-compaction' ||
+              mode === 'report-native-tool'
+            ) {
+              for (const method of ['item/started', 'item/completed']) {
+                server.notify(method, {
+                  turnId,
+                  item: {
+                    id: 'report-lifecycle',
+                    type:
+                      mode === 'report-context-compaction'
+                        ? 'contextCompaction'
+                        : 'webSearch'
+                  }
+                })
+              }
+            }
 
             server.notify('item/completed', {
               turnId,
@@ -10621,7 +10996,7 @@ it.each([
       }
     )
 
-    if (mode === 'early-completion') {
+    if (mode === 'early-completion' || mode === 'report-context-compaction') {
       expect(await result).toMatchObject({
         explanation: 'Evaluation self-report - not artwork acceptance'
       })
@@ -10631,7 +11006,7 @@ it.each([
     } else {
       let code = 'AI_MODEL_BACKEND_TIMEOUT'
 
-      if (mode === 'invalid-report') {
+      if (mode === 'invalid-report' || mode === 'report-native-tool') {
         code = 'AI_MODEL_BACKEND_INVALID_RESPONSE'
       }
 
@@ -10703,11 +11078,16 @@ it('delivers the request-local evaluation budget through actual native discovery
         threadId: 'thread-1',
         turnId: 'turn-1',
         callId: 'budget-delivery',
-        tool: 'describe_design_apis',
+        tool: 'read_design_contracts',
         arguments: {
           names: ['prepare_and_apply_design'],
           view: 'usage',
-          inputScope: { operation: 'draft', nodeTypes: ['rect'] }
+          scopes: Object.fromEntries(
+            ['prepare_and_apply_design'].map((name) => [
+              name,
+              { inputScope: { operation: 'draft', nodeTypes: ['rect'] } }
+            ])
+          )
         }
       }
     })
@@ -10735,7 +11115,7 @@ it.each([
   },
   {
     label: 'saved brief and immediate inspection',
-    arguments: (({ plan: _plan, ...current }) => current)(
+    arguments: (({ plan: _plan, response: _response, ...current }) => current)(
       structuredClone(briefFixture.input)
     ),
     count: 9857,
@@ -11175,7 +11555,6 @@ it('delivers real interrupted Core results through Runtime and the native report
               tool: 'prepare_and_apply_design',
               arguments: {
                 inspection: 'defer',
-                response: 'compact',
                 draft: {
                   type: 'group',
                   name: 'Facade',
@@ -11378,7 +11757,7 @@ it('normal startup supplies request-owned direct model configuration without an 
   )
 })
 
-it('repairs recorded canonical name input in the same strict native turn without replaying grouping', async () => {
+it('repairs recorded canonical name input in the same recorded native turn without replaying grouping', async () => {
   vi.stubGlobal('window', {})
   const { default: core } = await import('@asyra/core')
   const { default: factory } = await import('@asyra/factory')
@@ -11470,11 +11849,15 @@ it('repairs recorded canonical name input in the same strict native turn without
       [
         'api_hierarchy_groupElements',
         'api_core_updateElementProperties',
-        'api_core_updateElementData'
+        'api_core_updateElementData',
+        'api_fill_updateFillsAtIndex',
+        'api_fill_getFillTargetsAtIndex',
+        'api_fill_removeFills'
       ].includes(a.name)
   )
 
   owners.push(
+    (await import('../../src/ai/design-actions')).createPreparedDesignAction(),
     createDocumentContextAction(queries.read),
     createDocumentContextReleaseAction(queries.read)
   )
@@ -11485,7 +11868,7 @@ it('repairs recorded canonical name input in the same strict native turn without
 
   writeFileSync(
     join(directory, 'evaluation-control.json'),
-    JSON.stringify({ workDeadlineAt, stopOnFailure: true })
+    JSON.stringify({ workDeadlineAt })
   )
   const dispatched: string[] = []
   const runtime = createAiAgentRuntime({
@@ -11585,14 +11968,176 @@ it('repairs recorded canonical name input in the same strict native turn without
 
   try {
     await untilTurn(server.packets)
-    const usage = await call('describe_design_apis', {
-      operations: ['core.updateElementProperties', 'core.updateElementData'],
-      view: 'usage'
+    const { fillApis } = await import('../../src/common-apis/fills')
+
+    fillApis.addFills(['base', 'tiers'])
+    const initialFills = ['base', 'tiers'].map((id) => {
+      const fills = core.getElementComputedData(id, ['fills'])?.fills
+
+      if (!Array.isArray(fills)) {
+        throw Error('Missing canonical fills')
+      }
+
+      return fills
+    })
+    const invalidFill = await call('execute_design', {
+      inspection: 'defer',
+      operations: [
+        {
+          id: 'fill',
+          name: 'api_fill_updateFillsAtIndex',
+          arguments: { elementIds: ['base', 'tiers'], index: 0, patch: [] }
+        }
+      ]
+    })
+
+    expect(invalidFill.outcome).toMatchObject({
+      status: 'failed',
+      settlement: 'not-started'
+    })
+    expect(JSON.stringify(invalidFill.value)).toContain(
+      'Fill patches must be aligned'
+    )
+    expect(invalidFill.value).toMatchObject({
+      code: 'TOOL_INPUT_INVALID',
+      executionResult: {
+        failure: {
+          inputIssue: {
+            field: 'patch',
+            expectedCount: 2,
+            receivedCount: 0
+          }
+        }
+      }
+    })
+    expect(JSON.stringify(invalidFill.value)).not.toContain(
+      'TOOL_DELIVERY_INVALID'
+    )
+    expect(
+      ['base', 'tiers'].map(
+        (id) => core.getElementComputedData(id, ['fills'])?.fills
+      )
+    ).toEqual(initialFills)
+    const correctedFill = await call('execute_design', {
+      inspection: 'defer',
+      operations: [
+        {
+          id: 'fill',
+          name: 'api_fill_updateFillsAtIndex',
+          arguments: {
+            elementIds: ['base', 'tiers'],
+            index: 0,
+            patch: { color: '#123456' }
+          }
+        }
+      ]
+    })
+
+    expect(correctedFill.success, JSON.stringify(correctedFill.value)).toBe(
+      true
+    )
+    for (const id of ['base', 'tiers']) {
+      expect(core.getElementComputedData(id, ['fills'])?.fills).toEqual(
+        expect.arrayContaining([expect.objectContaining({ color: '#123456' })])
+      )
+    }
+
+    const rejectedTargets = await call('execute_design', {
+      inspection: 'defer',
+      operations: [
+        {
+          id: 'targets',
+          name: 'api_fill_getFillTargetsAtIndex',
+          arguments: { elementIds: ['base', 'tiers'], index: 999 }
+        }
+      ]
+    })
+
+    expect(rejectedTargets.outcome.status).toBe('failed')
+    // This read has no transaction-host settlement receipt. Preserve its input
+    // diagnosis without inventing the mutation rollback evidence of the write case.
+    expect(rejectedTargets.value).toMatchObject({
+      code: 'AI_ACTION_INPUT_INVALID',
+      executionResult: {
+        batches: [
+          {
+            failure: {
+              settlement: 'unknown',
+              inputIssue: { field: 'index', index: 999, elementId: 'base' }
+            }
+          }
+        ]
+      }
+    })
+    expect(JSON.stringify(rejectedTargets.value)).not.toContain(
+      'TOOL_DELIVERY_INVALID'
+    )
+    const targetUse = await call('execute_design', {
+      inspection: 'defer',
+      operations: [
+        {
+          id: 'targets',
+          name: 'api_fill_getFillTargetsAtIndex',
+          arguments: { elementIds: ['base', 'tiers'], index: 0 }
+        },
+        {
+          id: 'remove',
+          name: 'api_fill_removeFills',
+          arguments: {
+            targets: {
+              kind: 'step',
+              step: 'targets',
+              path: '/actionResults/0/result/value'
+            }
+          }
+        }
+      ]
+    })
+
+    expect(targetUse.success, JSON.stringify(targetUse.value)).toBe(true)
+    for (const [index, id] of ['base', 'tiers'].entries()) {
+      expect(core.getElementComputedData(id, ['fills'])?.fills).toHaveLength(
+        initialFills[index].length - 1
+      )
+    }
+
+    const usage = await call('read_design_contracts', {
+      view: 'usage',
+      names: ['core.updateElementProperties', 'core.updateElementData']
     })
 
     expect(JSON.stringify(usage.value)).toContain(
       'Element metadata name/visible/lock belongs to core.updateElementData'
     )
+    const invalidResource = await call('retain_design_targets', {
+      targets: [{ artifactId: 'not-owned' }]
+    })
+
+    expect(invalidResource.value).toMatchObject({
+      code: 'TOOL_INPUT_INVALID',
+      settlement: 'not-started'
+    })
+    expect(
+      server.packets.filter((p) => p.method === 'turn/interrupt')
+    ).toHaveLength(0)
+    const rejectedSequence = await call('execute_design', {
+      operations: [
+        {
+          id: 'select',
+          name: 'design_preparation.retain_design_targets',
+          arguments: { targets: [{ artifactId: 'not-owned' }] }
+        }
+      ],
+      inspection: 'defer'
+    })
+
+    expect(
+      server.packets.filter((p) => p.method === 'turn/interrupt')
+    ).toHaveLength(0)
+    expect(rejectedSequence.outcome).toMatchObject({
+      status: 'failed',
+      settlement: 'not-started'
+    })
     const failed = await call('execute_design', {
       inspection: 'defer',
       operations: [
@@ -11608,14 +12153,8 @@ it('repairs recorded canonical name input in the same strict native turn without
     })
 
     expect(failed.success, JSON.stringify(failed.value)).toBe(false)
-    expect(
-      evaluationToolStop({
-        text: JSON.stringify(failed.value),
-        outcome: failed.outcome
-      }),
-      JSON.stringify(failed.value)
-    ).toBeUndefined()
-    expect(JSON.stringify(failed.value)).toContain('correct_input')
+
+    expect(JSON.stringify(failed.value)).toContain('TOOL_INPUT_INVALID')
     expect(JSON.stringify(failed.value)).toContain('propertyKey')
     expect(JSON.stringify(failed.value)).toContain('name')
     const groupId = failed.value.fields.assembly[0].result.value.groupId
@@ -11714,7 +12253,7 @@ it('delivers purpose and input-field discovery through actual native declaration
       (p) => p.method === 'thread/start'
     )?.params
     const definition = nativeToolDefinitions(thread).find(
-      (t) => t.name === 'describe_design_apis'
+      (t) => t.name === 'search_design_tools'
     )
 
     expect(JSON.stringify(definition?.inputSchema)).toContain('inputFields')
@@ -11729,7 +12268,7 @@ it('delivers purpose and input-field discovery through actual native declaration
           threadId: 'thread-1',
           turnId: 'turn-1',
           callId: `purpose-${id}`,
-          tool: 'describe_design_apis',
+          tool: 'search_design_tools',
           arguments: { query, inputFields: ['x', 'y'] }
         }
       })
@@ -11769,7 +12308,7 @@ it('delivers purpose and input-field discovery through actual native declaration
         threadId: 'thread-1',
         turnId: 'turn-1',
         callId: 'coordinate-contract',
-        tool: 'describe_design_apis',
+        tool: 'read_design_contracts',
         arguments: { names: ['workspaceToElementLocal'], view: 'full' }
       }
     })

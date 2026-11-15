@@ -18,7 +18,7 @@ import {
   observeDesignChanges
 } from '../common-apis/design-review'
 import { createRetainedFillAction } from './retained-fill-action'
-import { getActiveCollaborationHandle } from '../collaboration/lifecycle'
+import { getActiveCollaborationHandle } from '../collaboration/session-observation'
 import { recordActionFailure } from './action-failure'
 import { createBasicApiActions } from './basic-api-actions'
 import type {

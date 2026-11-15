@@ -137,6 +137,7 @@ export {
   createAiToolMiddleware,
   describeAiTool,
   embedAiToolSchema,
+  normalizeAiToolSchemaReferences,
   inspectAiToolResult,
   selectAiToolResultSchema
 } from './tool-contract.js'
@@ -185,6 +186,7 @@ export {
   createAiRecipeRecoverySchema
 } from './recipe-execution.js'
 export type {
+  AiRecipeFailure,
   AiRecipeCallReceipt,
   AiRecipeExecutionResult,
   AiRecipeRecovery,

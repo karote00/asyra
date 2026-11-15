@@ -52,11 +52,12 @@ Checklist:
 
 ## Phase 3: Implement
 
-Implement in thin slices:
-1. common API/controller boundary
-2. feature behavior
-3. provider/UI wiring
-4. tests (if applicable)
+For a bug or specification mismatch, first establish a formal regression that
+fails on the current behavior, following the project bugfix test-first rule.
+Then implement one owner boundary and its direct handoffs, rerun that regression
+and the related existing behavior tests, and review the slice before advancing.
+Tests are not an optional last implementation step. Common APIs/controllers,
+features and provider/UI wiring retain their respective ownership.
 
 Stop and ask if behavior conflicts with existing contracts.
 
@@ -80,15 +81,33 @@ Quality gates:
 - [ ] no regression in tool switching/selection/property panel for touched area
 - [ ] visual completion claims include synchronized live-app review evidence when applicable
 
-### Maintained server regression coverage
+### AI conversation verification
 
-Every maintained `server/__tests__/*.test.ts` suite must be reachable through
-`test:server-response-harness` or `test:local`; the architecture gate enforces
-this inventory. Standalone convenience commands do not replace ordinary coverage.
-Native delivery cases require the fixture-pinned local Codex version (selected by
-`NATIVE_DELIVERY_CODEX` when needed). They use a loopback fixed-response provider,
-project-local isolated state and cleanup receipts, never a live model. Missing or
-mismatched prerequisites fail explicitly; do not skip cases or relax assertions.
+Run `yarn workspace @asyra/asyra-design verify:conversation --list` to inspect the
+maintained owner test selection and separately authored required handoff selectors.
+Run the same command without `--list` at the completed feature checkpoint. It cleans
+and builds the generated App dependency closure, records loaded-source/export
+identity, then runs App server/UI, Runtime, Knowledge/shared verification and real
+browser tests with structured reports. It does not run a live model or 101.
+
+The [active plan](plans/agent-context-and-report-continuity-plan.md#spec-derived-conversation-verification)
+and current product specs own semantic requirements. The standard Flow-file at
+`test-data/conversation-verification/flow/conversation.flow.json` records required
+handoff criteria independently of file selection. Shared Flow Inspector producers
+admit actual observations. The command cannot accept the separate spec-coverage
+review, infer complete semantics from test counts, or excuse missing evidence.
+
+Evidence is retained under `tmp/conversation-proof-*`. Exit 1 means execution failed
+or evidence was incomplete; exit 2 means executed checks passed but whole-feature
+acceptance remains unproved; exit 0 requires both execution and current Flow-file
+acceptance. Failed, skipped, duplicated, interrupted or mismatched-source evidence
+cannot pass. Inspect individual reports and the independent coverage review before
+claiming whole-conversation correctness.
+
+The former verifier and saved-reply dispatcher remain deleted. There is no fallback,
+forwarding wrapper or old command. Review current specifications using the
+[verification procedure](modules/ai-development-and-debugging.md#conversation-contract-review).
+A focused run establishes only its observed boundary.
 
 ## Phase 5: Docs Sync
 

@@ -59,8 +59,8 @@ const mocks = vi.hoisted(() => ({
   setPathEditingVectorId: vi.fn(),
   setPathEditingStartNewSubpath: vi.fn(),
   setPathEditingContinuation: vi.fn(),
-  setSelectedVectorPoint: vi.fn(),
-  setSelectedVectorSegment: vi.fn(),
+  selectVectorPoints: vi.fn(),
+  selectVectorSegments: vi.fn(),
   setHoveredVectorPoint: vi.fn(),
   setHoveredVectorSegment: vi.fn(),
   setHoveredVectorSegmentInsertPoint: vi.fn(),
@@ -115,14 +115,15 @@ vi.mock('../../../common-apis', () => ({
       mocks.updateVectorAnchorPointHandlePosition,
     updateVectorAnchorPointPosition: mocks.updateVectorAnchorPointPosition
   },
-  selectionApis: {},
+  selectionApis: {
+    selectVectorPoints: mocks.selectVectorPoints,
+    selectVectorSegments: mocks.selectVectorSegments
+  },
   systemContextApis: {
     getSystemContextSnapshot: mocks.getSystemContextSnapshot,
     setPathEditingVectorId: mocks.setPathEditingVectorId,
     setPathEditingStartNewSubpath: mocks.setPathEditingStartNewSubpath,
     setPathEditingContinuation: mocks.setPathEditingContinuation,
-    setSelectedVectorPoint: mocks.setSelectedVectorPoint,
-    setSelectedVectorSegment: mocks.setSelectedVectorSegment,
     setHoveredVectorPoint: mocks.setHoveredVectorPoint,
     setHoveredVectorSegment: mocks.setHoveredVectorSegment,
     setHoveredVectorSegmentInsertPoint: mocks.setHoveredVectorSegmentInsertPoint
@@ -139,8 +140,8 @@ const runtimeBefore = {
   pathEditingVectorId: 'vector-before',
   pathEditingStartNewSubpath: false,
   pathEditingContinuation: null,
-  selectedVectorPoint: null,
-  selectedVectorSegment: null,
+  vectorPointSelectionIds: ['vector-before:anchor:anchor'],
+  vectorSegmentSelectionIds: [],
   hoveredVectorPoint: null,
   hoveredVectorSegment: null,
   hoveredVectorSegmentInsertPoint: null
@@ -165,6 +166,13 @@ describe('Pen Tool transient preview cancellation', () => {
     expect(mocks.discardTransientVectorPreviews).toHaveBeenCalledWith([
       'pen-vector'
     ])
+    expect(mocks.selectVectorPoints).toHaveBeenCalledWith(
+      runtimeBefore.vectorPointSelectionIds,
+      { undoable: false }
+    )
+    expect(mocks.selectVectorSegments).toHaveBeenCalledWith([], {
+      undoable: false
+    })
     expect(
       mocks.discardTransientVectorPreviews.mock.invocationCallOrder[0]
     ).toBeLessThan(mocks.setPathEditingVectorId.mock.invocationCallOrder[0])

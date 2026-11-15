@@ -1,3 +1,4 @@
+import { DesignInputError } from './design-input-error'
 import { resolveMotifReference } from './design-motif-reference'
 import {
   DesignKeyConflictError,
@@ -62,7 +63,7 @@ const record = (v: unknown): v is Node =>
   !!v && typeof v === 'object' && !Array.isArray(v)
 
 const fail = (message: string): never => {
-  throw new Error(`Invalid design construction: ${message}`)
+  throw new DesignInputError(`Invalid design construction: ${message}`)
 }
 
 const fields = (v: Node, allowed: string[], context: string) => {

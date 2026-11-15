@@ -16,6 +16,7 @@ Users need quick, reliable switching between primary tools with clear active-sta
 - Rectangle (`r`)
 - Oval (`o`)
 - Pen (`p`)
+- Text (`t`)
 
 ## Functional Requirements
 

@@ -1141,69 +1141,46 @@ test('render contract E2E uses runner Chrome in CI and locally', () => {
   assert.match(runner, /E2E_SKIP_PERFORMANCE=true yarn test:e2e:asyra-design/)
 })
 
-test('CI runs balanced AI correctness only for related changes or explicit dispatch', async () => {
-  const { isBalancedAiCorrectnessPath, resolveBalancedAiCorrectnessScope } =
-    await import('../balanced-ai-correctness-scope.mjs')
+test('maintained E2E configuration excludes the retired balanced correctness gate', () => {
   const e2e = readText('.github/workflows/e2e.yml')
+  const workflow = yaml.load(e2e)
 
+  assert.doesNotMatch(
+    readText('.github/workflows/main.yml'),
+    /balanced_ai_correctness/
+  )
+  assert.doesNotMatch(
+    readText('scripts/ci-relationships.json'),
+    /balanced-ai-correctness/
+  )
+  assert.doesNotMatch(
+    e2e,
+    /balanced_ai_correctness|BALANCED_AI_CORRECTNESS|balanced-ai-correctness/
+  )
+  assert.doesNotMatch(
+    readText('docs/ai/apps/asyra-design/modules/e2e.md'),
+    /RUN_BALANCED_AI_CORRECTNESS|test:e2e:balanced-ai-correctness|balanced-ai-correctness-scope/
+  )
   assert.equal(
-    isBalancedAiCorrectnessPath(
-      'apps/asyra-design/src/ai/composition-actions.ts'
+    fs.existsSync(
+      path.join(repositoryRoot, 'scripts/balanced-ai-correctness-scope.mjs')
     ),
-    true
-  )
-  assert.equal(
-    isBalancedAiCorrectnessPath('packages/factory/src/data-transact.ts'),
-    true
-  )
-  assert.equal(
-    isBalancedAiCorrectnessPath('apps/asyra-design/vtracer-tool-server.mjs'),
-    true
-  )
-  assert.equal(
-    isBalancedAiCorrectnessPath('docs/ai/apps/asyra-design/README.md'),
     false
   )
-  assert.equal(
-    isBalancedAiCorrectnessPath('apps/asyra-design/e2e/oval.spec.ts'),
-    false
+  for (const trigger of ['workflow_call', 'workflow_dispatch']) {
+    assert.equal(workflow.on[trigger].inputs.selected_suites.type, 'string')
+  }
+
+  const run = workflow.jobs['e2e-tests'].steps.find(
+    (step) => step.name === 'Run E2E Tests'
   )
+
+  assert.equal(run.run, 'bash scripts/run-e2e.sh')
+  assert.equal(run.env.E2E_SUITE, 'functional')
   assert.equal(
-    resolveBalancedAiCorrectnessScope({
-      changedPaths: ['packages/render/src/render.ts'],
-      eventName: 'pull_request',
-      manualRequested: false
-    }),
-    true
+    run.env.FLOW_CI_REPORT,
+    '${{ github.workspace }}/tmp/flow-ci/design.json'
   )
-  assert.equal(
-    resolveBalancedAiCorrectnessScope({
-      changedPaths: ['docs/ai/apps/asyra-design/README.md'],
-      eventName: 'pull_request',
-      manualRequested: false
-    }),
-    false
-  )
-  assert.equal(
-    resolveBalancedAiCorrectnessScope({
-      changedPaths: [],
-      eventName: 'workflow_dispatch',
-      manualRequested: true
-    }),
-    true
-  )
-  assert.equal(
-    resolveBalancedAiCorrectnessScope({
-      changedPaths: [],
-      eventName: 'schedule',
-      manualRequested: false
-    }),
-    false
-  )
-  assert.match(e2e, /fetch-depth: 0/)
-  assert.match(e2e, /node scripts\/balanced-ai-correctness-scope\.mjs/)
-  assert.match(e2e, /run_balanced_ai_correctness/)
-  assert.match(e2e, /RUN_BALANCED_AI_CORRECTNESS/)
 })
 
 test('collaboration follows the shared TypeScript library build convention', () => {

@@ -1,4 +1,8 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
+const {
+  reportCountIssues,
+  completeReportIssues
+} = require('../control-plane/runner-report.cjs')
 const path = require('node:path'),
   { randomUUID } = require('node:crypto')
 const { stripVTControlCharacters } = require('node:util')
@@ -9,7 +13,7 @@ const { dataPath } = require('./project.cjs')
 const { fingerprintPaths } = require('../control-plane/localization.cjs')
 
 function selector(root, value) {
-  if (!value || !['vitest', 'playwright'].includes(value.producer)) {
+  if (!value || !['vitest', 'playwright', 'node'].includes(value.producer)) {
     return null
   }
 
@@ -254,16 +258,22 @@ function publish(project, receipt, records, diagnostic = '', options = {}) {
           at: new Date().toISOString()
         })
       } else {
+        let summary = 'No completed test result for the selected criterion'
+
+        if (changed) {
+          summary = 'Source changed during execution; result not adopted'
+        } else if (diagnostic) {
+          summary = stripVTControlCharacters(diagnostic).slice(0, 600)
+        } else if (matching.length > 1) {
+          summary = 'Ambiguous test result'
+        }
+
         warnings.push({
           id: 'producer-' + c.identity.slice(0, 24),
           nodeId: c.nodeId,
           kind: 'producer',
-          summary: changed
-            ? 'Source changed during execution; result not adopted'
-            : diagnostic ||
-              (matching.length > 1
-                ? 'Ambiguous test result'
-                : 'No completed test result for the selected criterion'),
+          summary,
+          ...(diagnostic ? { details: [diagnostic] } : {}),
           criterionIds: [c.criterionId],
           executionId: receipt.executionId,
           binding: nodeBinding(admitted, doc.flowId, c.nodeId)
@@ -328,7 +338,7 @@ function normalize(project, report, scope) {
   const { producer, config, cwd } = scope
   const records = []
 
-  if (producer === 'vitest') {
+  if (producer === 'vitest' || producer === 'node') {
     if (!report || !Array.isArray(report.testResults)) {
       throw new Error('Invalid Vitest JSON report')
     }
@@ -404,6 +414,12 @@ function normalize(project, report, scope) {
 }
 
 function reportDiagnostic(report, records) {
+  const countIssues = reportCountIssues(report)
+
+  if (countIssues.length) {
+    return countIssues.join('\n')
+  }
+
   if (report.errors?.length) {
     return (
       'Runner reported execution errors: ' +
@@ -425,11 +441,43 @@ function reportDiagnostic(report, records) {
   return ''
 }
 
+// The reviewed required file scope is independent of execution selection. Keep
+// whole-run admission in this shared producer, including stale-success retirement.
+function publishCompleteReport(
+  project,
+  receipt,
+  report,
+  scope,
+  requiredFiles,
+  requiredCases
+) {
+  const issues = completeReportIssues(report, {
+    root: project.root,
+    requiredFiles,
+    requiredCases
+  })
+  let records = []
+
+  try {
+    records = normalize(project, report, scope)
+    const diagnostic = reportDiagnostic(report, records)
+
+    if (diagnostic) {
+      issues.push(diagnostic)
+    }
+  } catch (error) {
+    issues.push(error.message)
+  }
+
+  return publish(project, receipt, records, [...new Set(issues)].join('\n'))
+}
+
 module.exports = {
   selector,
   selection,
   capture,
   publish,
   normalize,
-  reportDiagnostic
+  reportDiagnostic,
+  publishCompleteReport
 }

@@ -1,8 +1,6 @@
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
 import { expect, it, vi } from 'vitest'
 
-const nativeIt = it.runIf(Boolean(process.env.NATIVE_DELIVERY_CODEX))
-
 import { createLocalKnowledgeTools } from '../local-knowledge'
 import { AiDesignToolIds } from '../../src/constants/ai-design'
 import { operationInputIssue } from '../operation-input-schema'
@@ -76,7 +74,7 @@ it('delivers complete advice through bounded same-owner pages without source rel
 import { createLocalOperationTools } from '../local-operation-tools'
 import { toolSemantics } from '../../src/ai/tool-contract'
 
-const verifyPagedDiscovery = async (includeNative: boolean) => {
+const verifyPagedDiscovery = async () => {
   const inputSchema = {
     type: 'object',
     additionalProperties: false,
@@ -119,22 +117,18 @@ const verifyPagedDiscovery = async (includeNative: boolean) => {
 
   for (let index = 0; index < 20; index++) {
     const raw = await owner.call(
-      AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+      'read_design_contracts',
       input,
       new AbortController().signal
     )
 
     expect(Buffer.byteLength(raw)).toBeLessThanOrEqual(24000)
     const declared = owner.definitions.find(
-      (d) => d.name === AiDesignToolIds.DESCRIBE_DESIGN_APIS
+      (d) => d.name === AiDesignToolIds.READ_DESIGN_CONTRACTS
     )
 
     if (!declared) {
       throw new Error('Missing discovery contract')
-    }
-
-    if (includeNative) {
-      await verifyNativePage(owner, declared, input, 'design_operations')
     }
 
     const page = JSON.parse(raw).contentDelivery
@@ -156,7 +150,7 @@ const verifyPagedDiscovery = async (includeNative: boolean) => {
 
   for (let i = 0; i < 63; i++) {
     await owner.call(
-      AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+      'read_design_contracts',
       { names: ['unrelated-' + i] },
       new AbortController().signal
     )
@@ -170,14 +164,14 @@ const verifyPagedDiscovery = async (includeNative: boolean) => {
 
   for (;;) {
     const raw = await owner.call(
-      AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+      'read_design_contracts',
       selectedInput,
       new AbortController().signal
     )
 
     expect(
       await owner.call(
-        AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+        'read_design_contracts',
         selectedInput,
         new AbortController().signal
       )
@@ -204,103 +198,15 @@ const verifyPagedDiscovery = async (includeNative: boolean) => {
   generation++
   native.description = 'Changed declaration.'
   await expect(
-    owner.call(
-      AiDesignToolIds.DESCRIBE_DESIGN_APIS,
-      first,
-      new AbortController().signal
-    )
+    owner.call('read_design_contracts', first, new AbortController().signal)
   ).rejects.toThrow(/stale|changed/i)
   expect(dispatch).not.toHaveBeenCalled()
 }
 
 it('preserves the complete schema and execution route through bounded discovery pages', () =>
-  verifyPagedDiscovery(false))
-nativeIt(
-  'preserves paged discovery through the installed native successor request',
-  () => verifyPagedDiscovery(true),
-  60000
-)
+  verifyPagedDiscovery())
 
 import { invokeLocalTool } from '../local-tool-invocation'
-import { createHash } from 'node:crypto'
-
-nativeIt(
-  'retains every current Knowledge page in real native direct successor requests',
-  async () => {
-    const nativeModule = new URL(
-      '../../test-data/knowledge-evaluation/native-delivery.mjs',
-      import.meta.url
-    ).href
-    const { runNativeDelivery } = await import(/* @vite-ignore */ nativeModule)
-    const owner = createLocalKnowledgeTools(
-      'native-bounded-advice',
-      async () => files
-    )
-    const tool = AiDesignToolIds.READ_KNOWLEDGE
-    const definition = owner.definitions.find((d) => d.name === tool)
-
-    if (!definition) {
-      throw new Error('Missing definition')
-    }
-
-    let input: Record<string, unknown> = { ids: ['test.advice'] },
-      assembled = ''
-
-    try {
-      for (let count = 0; count < 20; count++) {
-        const reply = await invokeLocalTool(
-          owner,
-          definition,
-          input,
-          new AbortController().signal
-        )
-
-        expect(reply.success, reply.text.slice(0, 1200)).toBe(true)
-        expect(Buffer.byteLength(reply.text)).toBeLessThanOrEqual(24000)
-        const fixture = {
-          tool,
-          namespace: 'design_knowledge',
-          input,
-          raw: reply.text,
-          nativeVersion: 'codex-cli 0.160.0',
-          sha256: createHash('sha256').update(reply.text).digest('hex'),
-          declaration: {
-            type: 'namespace',
-            name: 'design_knowledge',
-            description: 'Advisory Knowledge',
-            tools: [
-              {
-                type: 'function',
-                name: tool,
-                description: definition.description,
-                inputSchema: definition.inputSchema,
-                deferLoading: true
-              }
-            ]
-          }
-        }
-        const evidence = await runNativeDelivery({ fixture })
-
-        expect(evidence.comparison.exact).toBe(true)
-        expect(evidence.comparison.truncationMarker).toBe(false)
-        expect(evidence.receipt.status).toBe('saved')
-        const page = JSON.parse(reply.text).contentDelivery
-
-        assembled += page.text
-        if (page.lastPage) {
-          break
-        }
-
-        input = page.next.arguments
-      }
-
-      expect(JSON.parse(assembled).documents[0].text).toBe(advice)
-    } finally {
-      owner.dispose()
-    }
-  },
-  60000
-)
 
 it('preserves cancellation and rehydrate invalidation without repeating source loads', async () => {
   const load = vi.fn(async () => files)
@@ -335,151 +241,7 @@ it('preserves cancellation and rehydrate invalidation without repeating source l
   }
 })
 
-import type {
-  LocalToolOwner,
-  LocalToolDefinition
-} from '../local-tool-invocation'
-
-async function verifyNativePage(
-  owner: LocalToolOwner,
-  definition: LocalToolDefinition,
-  input: Record<string, unknown>,
-  namespace: string
-) {
-  const nativeModule = new URL(
-    '../../test-data/knowledge-evaluation/native-delivery.mjs',
-    import.meta.url
-  ).href
-  const { runNativeDelivery } = await import(/* @vite-ignore */ nativeModule)
-  const reply = await invokeLocalTool(
-    owner,
-    definition,
-    input,
-    new AbortController().signal
-  )
-
-  expect(reply.success, reply.text.slice(0, 1200)).toBe(true)
-  const evidence = await runNativeDelivery({
-    fixture: {
-      tool: definition.name,
-      namespace,
-      input,
-      raw: reply.text,
-      nativeVersion: 'codex-cli 0.160.0',
-      sha256: createHash('sha256').update(reply.text).digest('hex'),
-      declaration: {
-        type: 'namespace',
-        name: namespace,
-        description: 'Canonical read owner',
-        tools: [
-          {
-            type: 'function',
-            name: definition.name,
-            description: definition.description,
-            inputSchema: definition.inputSchema,
-            deferLoading: true
-          }
-        ]
-      }
-    }
-  })
-
-  expect(evidence.comparison.exact).toBe(true)
-  expect(evidence.comparison.truncationMarker).toBe(false)
-  expect(evidence.receipt.status).toBe('saved')
-
-  return evidence.directory as string
-}
-
-nativeIt(
-  'forwards complete selected Knowledge topics through direct owner delivery into native successor requests',
-  async () => {
-    const { default: recorded } =
-      await import('./fixtures/recorded-101/knowledge-topic-selection-20261021.json')
-    const nativeModule = new URL(
-      '../../test-data/knowledge-evaluation/native-delivery.mjs',
-      import.meta.url
-    ).href
-    const { runNativeDelivery } = await import(/* @vite-ignore */ nativeModule)
-    const owner = createLocalKnowledgeTools('native-complete-topics')
-
-    try {
-      const definition = owner.definitions.find(
-        (tool) => tool.name === AiDesignToolIds.READ_KNOWLEDGE
-      )
-
-      if (!definition) {
-        throw new Error('Missing Knowledge read definition')
-      }
-
-      const executions = []
-
-      for (const entry of recorded.cases) {
-        const reply = await invokeLocalTool(
-          owner,
-          definition,
-          entry.input,
-          new AbortController().signal
-        )
-
-        expect(reply.success).toBe(true)
-        const value = JSON.parse(reply.text)
-
-        expect(value.contentDelivery).toBeUndefined()
-        expect(
-          value.documents.some(
-            (doc: { target: string }) => doc.target === entry.input.ids[0]
-          )
-        ).toBe(true)
-        executions.push({
-          input: entry.input,
-          reply: reply.text,
-          expected: reply.text
-        })
-      }
-
-      const first = executions[0]
-      const result = await runNativeDelivery({
-        executions,
-        fixture: {
-          tool: definition.name,
-          namespace: 'design_knowledge',
-          input: first.input,
-          raw: first.reply,
-          sha256: createHash('sha256').update(first.reply).digest('hex'),
-          nativeVersion: 'codex-cli 0.160.0',
-          declaration: {
-            type: 'namespace',
-            name: 'design_knowledge',
-            description: 'Selected advisory topics',
-            tools: [
-              {
-                type: 'function',
-                name: definition.name,
-                description: definition.description,
-                inputSchema: definition.inputSchema,
-                deferLoading: true
-              }
-            ]
-          }
-        }
-      })
-
-      expect(result.nativeReplies).toBe(recorded.cases.length)
-      expect(result.comparisons).toHaveLength(recorded.cases.length)
-      for (const comparison of result.comparisons) {
-        expect(comparison.exact, result.directory).toBe(true)
-        expect(comparison.truncationMarker).toBe(false)
-      }
-
-      expect(result.cleanup.errors).toEqual([])
-      expect(result.receipt.status).toBe('saved')
-    } finally {
-      owner.dispose()
-    }
-  },
-  60000
-)
+import type { LocalToolOwner } from '../local-tool-invocation'
 
 it('rehydrates paged reuse after lost context and executes only the returned read continuation', async () => {
   const load = vi.fn(async () => [
@@ -579,7 +341,7 @@ it('recovers unavailable retained advice by executing the returned same-read exa
 
     expect(invalid.success).toBe(false)
     expect(JSON.parse(invalid.text)).toMatchObject({
-      code: 'KNOWLEDGE_REUSE_UNAVAILABLE',
+      code: 'TOOL_INPUT_INVALID',
       settlement: 'not-started'
     })
     const expression = JSON.parse(invalid.text).message.match(
@@ -683,108 +445,11 @@ it('keeps cross-query pages byte-stable and rejects stale continuation without w
     const stale = await read(firstPage)
 
     expect(stale.success).toBe(false)
-    expect(stale.text).toContain('KNOWLEDGE_REUSE_UNAVAILABLE')
+    expect(stale.text).toContain('TOOL_INPUT_INVALID')
   } finally {
     owner.dispose()
   }
 })
-
-nativeIt(
-  'forwards cross-query held advice and the actual reuse example through native direct calls',
-  async () => {
-    const { default: recorded } =
-      await import('./fixtures/recorded-101/knowledge-dependency-reuse-20261024.json')
-    const nativeModule = new URL(
-      '../../test-data/knowledge-evaluation/native-delivery.mjs',
-      import.meta.url
-    ).href
-    const { runNativeDelivery } = await import(/* @vite-ignore */ nativeModule)
-    const owner = createLocalKnowledgeTools('native-cross-query')
-    const definition = owner.definitions.find(
-      (d) => d.name === AiDesignToolIds.READ_KNOWLEDGE
-    )
-
-    if (!definition) {
-      throw new Error('Missing Knowledge read definition')
-    }
-
-    const signal = new AbortController().signal
-
-    try {
-      const first = await invokeLocalTool(
-        owner,
-        definition,
-        recorded.reads[0],
-        signal
-      )
-
-      expect(first.success).toBe(true)
-      const previous = JSON.parse(first.text)
-      const expression = definition.description.match(
-        /`(read_knowledge\([^`]+\))`/
-      )?.[1]
-
-      expect(expression).toBeDefined()
-      const args = { ...recorded.reads[1], reuseFrom: [previous.contextKey] }
-      const second = await invokeLocalTool(owner, definition, args, signal)
-
-      expect(second.success, second.text).toBe(true)
-      const executions = [
-        {
-          input: recorded.reads[0],
-          reply: first.text,
-          expected: first.text
-        },
-        {
-          input: args,
-          reply: second.text,
-          expected: second.text
-        }
-      ]
-      const result = await runNativeDelivery({
-        executions,
-        fixture: {
-          tool: definition.name,
-          namespace: 'design_knowledge',
-          input: recorded.reads[0],
-          raw: first.text,
-          sha256: createHash('sha256').update(first.text).digest('hex'),
-          nativeVersion: 'codex-cli 0.160.0',
-          declaration: {
-            type: 'namespace',
-            name: 'design_knowledge',
-            description: 'Advisory Knowledge',
-            tools: [
-              {
-                type: 'function',
-                name: definition.name,
-                description: definition.description,
-                inputSchema: definition.inputSchema,
-                deferLoading: true
-              }
-            ]
-          }
-        }
-      })
-
-      expect(result.nativeReplies).toBe(2)
-      expect(result.comparisons).toHaveLength(2)
-      for (const comparison of result.comparisons) {
-        expect(comparison.exact, result.directory).toBe(true)
-        expect(comparison.truncationMarker).toBe(false)
-      }
-
-      expect(JSON.parse(second.text).documents[0]).toMatchObject({
-        retainedFrom: previous.contextKey
-      })
-      expect(result.cleanup.errors).toEqual([])
-      expect(result.receipt.status).toBe('saved')
-    } finally {
-      owner.dispose()
-    }
-  },
-  60000
-)
 
 // Rejected programs are immutable experiment evidence, never production helpers.
 it('redisplays selected retained tool contracts without rebuilding schemas or replaying execution', async () => {
@@ -828,7 +493,7 @@ it('redisplays selected retained tool contracts without rebuilding schemas or re
       getNativeToolsRevision: () => revision
     }
   )
-  const name = AiDesignToolIds.DESCRIBE_DESIGN_APIS
+  const name = AiDesignToolIds.READ_DESIGN_CONTRACTS
   const definition = requiredInformationTool(owner, name)
 
   const read = async (args: Record<string, unknown>) => {
@@ -850,19 +515,12 @@ it('redisplays selected retained tool contracts without rebuilding schemas or re
 
   expect(original.resultKey).toEqual(expect.any(String))
   const count = projections
-  const expression = definition.description
-    .split('`')
-    .find((part) =>
-      part.startsWith('describe_design_apis({ names, fromResult:')
-    )
 
-  expect(expression).toBeDefined()
-  const selected = await new Function(
-    'describe_design_apis',
-    'names',
-    'previous',
-    'return ' + expression
-  )(read, ['retained_test.a', 'retained_test.c'], original)
+  expect(definition.description).toContain('fromResult')
+  const selected = await read({
+    names: ['retained_test.a', 'retained_test.c'],
+    fromResult: original.resultKey
+  })
 
   expect(projections).toBe(count)
   const { resultKey: _key, ...withoutHandle } = original
@@ -1028,7 +686,7 @@ it('preserves saved discovery scope, partial results, ambiguity and foreign-key 
     )
 
   const owner = make()
-  const name = AiDesignToolIds.DESCRIBE_DESIGN_APIS
+  const name = AiDesignToolIds.READ_DESIGN_CONTRACTS
   const definition = requiredInformationTool(owner, name)
 
   const read = async (input: Record<string, unknown>) =>
@@ -1050,7 +708,9 @@ it('preserves saved discovery scope, partial results, ambiguity and foreign-key 
   ]) {
     const saved = await read({
       names: ['left.choose', 'right.choose'],
-      ...scope
+      ...('schemaPaths' in scope
+        ? { scopes: { 'left.choose': scope, 'right.choose': scope } }
+        : scope)
     })
     const selected = await read({
       names: ['left.choose'],
@@ -1122,13 +782,23 @@ it('preserves saved discovery scope, partial results, ambiguity and foreign-key 
     ).rejects.toThrow()
   }
 
-  const menu = await read({ query: 'left.choose' })
+  const menu = JSON.parse(
+    await owner.call(
+      'search_design_tools',
+      { query: 'left.choose' },
+      new AbortController().signal
+    )
+  )
   const selectedMenu = await read({
     names: ['left.choose'],
     fromResult: menu.resultKey
   })
 
-  expect(selectedMenu.tools).toEqual(menu.tools)
+  expect(selectedMenu.tools).toEqual(
+    menu.tools.filter(
+      (tool: { namespace: string }) => tool.namespace === 'left'
+    )
+  )
   expect(selectedMenu.tools[0].inputSchema).toBeUndefined()
   const old = await read({ names: ['left.choose'] })
 
@@ -1216,92 +886,3 @@ function requiredInformationTool(owner: LocalToolOwner, name: string) {
 
   return definition
 }
-
-nativeIt(
-  'delivers native Knowledge search and complete owner content without a forwarding program',
-  async () => {
-    const { runNativeDelivery } = await import(
-      /* @vite-ignore */ new URL(
-        '../../test-data/knowledge-evaluation/native-delivery.mjs',
-        import.meta.url
-      ).href
-    )
-    const owner = createLocalKnowledgeTools(
-      'direct-context-feasibility',
-      async () => [
-        {
-          id: 'test.constraints',
-          revision: 1,
-          markdown:
-            '---\n' +
-            JSON.stringify({
-              description: 'Required advice',
-              provenance: ['Formal fixture']
-            }) +
-            '\n---\n' +
-            'Preserve material order. Never replay completed writes. Advisory text does not authorize operations.'
-        }
-      ]
-    )
-    const definition = requiredInformationTool(
-      owner,
-      AiDesignToolIds.READ_KNOWLEDGE
-    )
-    const input = { ids: ['test.constraints'] }
-
-    try {
-      const reply = await invokeLocalTool(
-        owner,
-        definition,
-        input,
-        new AbortController().signal
-      )
-
-      expect(reply.success).toBe(true)
-      const evidence = await runNativeDelivery({
-        fixture: {
-          tool: definition.name,
-          namespace: 'design_knowledge',
-          input,
-          raw: reply.text,
-          nativeVersion: 'codex-cli 0.160.0',
-          sha256: createHash('sha256').update(reply.text).digest('hex'),
-          declaration: {
-            type: 'namespace',
-            name: 'design_knowledge',
-            description: 'Knowledge',
-            tools: [
-              {
-                type: 'function',
-                name: definition.name,
-                description: definition.description,
-                inputSchema: definition.inputSchema,
-                deferLoading: true
-              }
-            ]
-          }
-        },
-        searches: [
-          {
-            type: 'tool_search_call',
-            id: 'knowledge-search',
-            call_id: 'knowledge-search-call',
-            execution: 'client',
-            status: 'completed',
-            arguments: { query: definition.name, limit: 1 }
-          }
-        ]
-      })
-
-      expect(evidence.requests).toBe(3)
-      expect(evidence.searchResults[0][0].type).toBe('tool_search_output')
-      expect(evidence.nativeReplyExact).toBe(true)
-      expect(evidence.comparison.exact).toBe(true)
-      expect(evidence.comparison.truncationMarker).toBe(false)
-      expect(evidence.cleanup.errors).toEqual([])
-    } finally {
-      owner.dispose()
-    }
-  },
-  60000
-)

@@ -730,6 +730,36 @@ const independentOutputField = (
   )
 }
 
+// Conditional selections validate the complete actual owner result and the
+// destination before dispatch. Do not broaden durable admission normalization.
+const conditionalIntersection = (source: unknown, depth = 0): unknown => {
+  if (!recipeRecord(source) || source.allOf === undefined) {
+    return source
+  }
+
+  if (depth > 32 || !Array.isArray(source.allOf) || !source.allOf.length) {
+    return undefined
+  }
+
+  const { allOf, ...siblings } = source
+  let result: unknown = siblings
+
+  for (const child of allOf) {
+    const selected = conditionalIntersection(child, depth + 1)
+
+    if (selected === undefined) {
+      return undefined
+    }
+
+    result = intersectRegistered(result, selected)
+    if (recipeRecord(result) && result.allOf !== undefined) {
+      return undefined
+    }
+  }
+
+  return result
+}
+
 export const recipeSchemaAt = (
   schema: RecipeSchema,
   path: string,
@@ -742,6 +772,24 @@ export const recipeSchemaAt = (
   ): RecipeSchema => {
     current = recipeResolve(current)
     const lifetime = inherited ?? current['x-runtime-value']
+
+    if (
+      requireAtExecution &&
+      keys.length &&
+      current.type === 'opaque' &&
+      recipeRecord(current.raw) &&
+      current.raw.allOf !== undefined
+    ) {
+      const selected = conditionalIntersection(current.raw)
+
+      if (selected !== undefined) {
+        return visit(
+          readRegisteredRecipeSchema(selected, 'result', current.referenceRoot),
+          keys,
+          lifetime
+        )
+      }
+    }
 
     if (
       keys.length &&
@@ -775,9 +823,32 @@ export const recipeSchemaAt = (
         )
       }
 
-      const variants = sources.map((variant) => visit(variant, keys, lifetime))
+      const variants = sources.flatMap((variant) => {
+        try {
+          return [visit(variant, keys, lifetime)]
+        } catch (error) {
+          if (
+            requireAtExecution &&
+            keys.length &&
+            error instanceof RecipeReferenceError
+          ) {
+            return []
+          }
 
-      if (sources.length !== current.variants.length && variants.length === 1) {
+          throw error
+        }
+      })
+
+      if (!variants.length) {
+        throw new RecipeReferenceError(
+          `Source path ${path} is absent or not guaranteed to exist`
+        )
+      }
+
+      if (
+        variants.length !== current.variants.length &&
+        variants.length === 1
+      ) {
         return variants[0]
       }
 
@@ -915,6 +986,32 @@ export const recipeDisjoint = (
     return true
   }
 
+  if (
+    ['number', 'integer'].includes(source.type) &&
+    ['number', 'integer'].includes(target.type)
+  ) {
+    const before = (left: RecipeSchema, right: RecipeSchema) => {
+      const upper = Math.min(
+        left.maximum ?? Infinity,
+        left.exclusiveMaximum ?? Infinity
+      )
+      const lower = Math.max(
+        right.minimum ?? -Infinity,
+        right.exclusiveMinimum ?? -Infinity
+      )
+
+      return (
+        upper < lower ||
+        (upper === lower &&
+          (left.exclusiveMaximum === upper || right.exclusiveMinimum === lower))
+      )
+    }
+
+    if (before(source, target) || before(target, source)) {
+      return true
+    }
+  }
+
   const targetEnum = target.enum
 
   if (
@@ -993,10 +1090,19 @@ const inheritRecipeLifetime = (
     ? { ...schema, 'x-runtime-value': parent['x-runtime-value'] }
     : schema
 
+/** Request steps may refine numeric values at invocation. Types and resource
+ * lifetimes still match here; the unchanged destination schema validates the
+ * resolved value before dispatch. Persisted recipes require static guarantees. */
+export const recipeRequestAssignable = (
+  source: RecipeSchema,
+  target: RecipeSchema
+): boolean => recipeAssignable(source, target, 0, true)
+
 export const recipeAssignable = (
   source: RecipeSchema,
   target: RecipeSchema,
-  depth = 0
+  depth = 0,
+  requestRefinement = false
 ): boolean => {
   if (depth > 64) {
     return false
@@ -1014,7 +1120,12 @@ export const recipeAssignable = (
 
   if (source.type === 'union') {
     return source.variants.every((item) =>
-      recipeAssignable(inheritRecipeLifetime(item, source), target, depth + 1)
+      recipeAssignable(
+        inheritRecipeLifetime(item, source),
+        target,
+        depth + 1,
+        requestRefinement
+      )
     )
   }
 
@@ -1024,7 +1135,8 @@ export const recipeAssignable = (
         recipeAssignable(
           source,
           inheritRecipeLifetime(item, target),
-          depth + 1
+          depth + 1,
+          requestRefinement
         ) &&
         (!target.exclusive ||
           target.variants.every(
@@ -1043,6 +1155,15 @@ export const recipeAssignable = (
 
   if (source['x-runtime-value'] !== target['x-runtime-value']) {
     return false
+  }
+
+  // Only numeric restrictions may defer to actual-input validation. Structural,
+  // type and lifetime guarantees above and in recursive children stay mandatory.
+  if (
+    requestRefinement &&
+    (source.type === 'number' || source.type === 'integer')
+  ) {
+    return !recipeDisjoint(source, target)
   }
 
   if (
@@ -1122,7 +1243,8 @@ export const recipeAssignable = (
         !recipeAssignable(
           source.propertyNames ?? { type: 'string' },
           target.propertyNames,
-          depth + 1
+          depth + 1,
+          requestRefinement
         )
       ) {
         return false
@@ -1131,7 +1253,12 @@ export const recipeAssignable = (
       if (typeof targetExtras !== 'boolean') {
         if (
           sourceExtras === true ||
-          !recipeAssignable(sourceExtras, targetExtras, depth + 1)
+          !recipeAssignable(
+            sourceExtras,
+            targetExtras,
+            depth + 1,
+            requestRefinement
+          )
         ) {
           return false
         }
@@ -1146,7 +1273,12 @@ export const recipeAssignable = (
         if (
           !recipeOwn(source.properties, key) &&
           (sourceExtras === true ||
-            !recipeAssignable(sourceExtras, child, depth + 1))
+            !recipeAssignable(
+              sourceExtras,
+              child,
+              depth + 1,
+              requestRefinement
+            ))
         ) {
           return false
         }
@@ -1170,18 +1302,29 @@ export const recipeAssignable = (
             maxLength: key.length
           },
           target.propertyNames,
-          depth + 1
+          depth + 1,
+          requestRefinement
         )
       ) {
         return false
       }
 
       if (recipeOwn(target.properties, key)) {
-        return recipeAssignable(child, target.properties[key], depth + 1)
+        return recipeAssignable(
+          child,
+          target.properties[key],
+          depth + 1,
+          requestRefinement
+        )
       }
 
       if (typeof targetExtras !== 'boolean') {
-        return recipeAssignable(child, targetExtras, depth + 1)
+        return recipeAssignable(
+          child,
+          targetExtras,
+          depth + 1,
+          requestRefinement
+        )
       }
 
       return targetExtras && !recipeHasRuntimeValue(child)
@@ -1207,7 +1350,8 @@ export const recipeAssignable = (
         !recipeAssignable(
           source.prefixItems?.[index] ?? source.items,
           target.prefixItems?.[index] ?? target.items,
-          depth + 1
+          depth + 1,
+          requestRefinement
         )
       ) {
         return false
@@ -1216,7 +1360,7 @@ export const recipeAssignable = (
 
     return (
       (source.maxItems ?? Infinity) <= prefixLength ||
-      recipeAssignable(source.items, target.items, depth + 1)
+      recipeAssignable(source.items, target.items, depth + 1, requestRefinement)
     )
   }
 

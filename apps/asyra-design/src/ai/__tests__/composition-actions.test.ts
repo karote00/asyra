@@ -7,6 +7,7 @@ import {
   AiActionError,
   AiActionNames,
   createAiActions,
+  type AiActionApis,
   type AiColorUpdate,
   type AiCompositionItem
 } from '../actions'
@@ -78,7 +79,7 @@ const actionApis = () => ({
     unavailableIds: [],
     changed: true
   })),
-  createCompositionElements: vi.fn(
+  createCompositionElements: vi.fn<AiActionApis['createCompositionElements']>(
     (descriptors: readonly PreparedElementDescriptor[]) =>
       canonicalElementIds(descriptors.map(({ id }) => id))
   ),
@@ -551,8 +552,8 @@ describe('Asyra Design AI composition action execution', () => {
       apis.createCompositionElements.mock.calls.every(
         ([, parent, options]) =>
           parent.id === 'cat-group-id' &&
-          options.sharedDelivery === 'immediate' &&
-          options.undoable === true
+          options?.sharedDelivery === 'immediate' &&
+          options?.undoable === true
       )
     ).toBe(true)
     expect(apis.createCompositionGroup).toHaveBeenCalledOnce()
@@ -974,8 +975,8 @@ describe('Asyra Design AI composition action execution', () => {
       apis.createCompositionElements.mock.calls.every(
         ([, parent, options]) =>
           parent.id === 'cat-group-id' &&
-          options.sharedDelivery === 'immediate' &&
-          options.undoable === true
+          options?.sharedDelivery === 'immediate' &&
+          options?.undoable === true
       )
     ).toBe(true)
   })

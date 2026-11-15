@@ -163,7 +163,7 @@ paint is separate. Values illustrate the contract, not an architectural answer:
 
 ### Existing-target color mapping
 
-For `map_retained_fills`, discover its full input contract through `operations`
+For `map_retained_fills`, discover its full input contract through `names`
 when needed. Prefer an explicit `query` when there is no other query consumer;
 use a caller-owned `snapshotId` plus `leaseId` when intentionally reusing one.
 The mapping samples each element's parent-local `x` or `y` position, not its

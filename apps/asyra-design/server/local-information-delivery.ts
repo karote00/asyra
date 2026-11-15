@@ -5,6 +5,7 @@ import { LocalToolInputError } from './local-tool-invocation'
 export const informationDeliveryBytes = 23000
 export const contentPageSchema = {
   type: 'object',
+  'x-runtime-value': 'request',
   additionalProperties: false,
   required: ['revision', 'offset'],
   properties: {
@@ -36,7 +37,7 @@ export const informationDeliverySchema = {
       ],
       properties: {
         kind: { const: 'json-fragment' },
-        revision: { type: 'string' },
+        revision: { type: 'string', 'x-runtime-value': 'request' },
         startByte: { type: 'integer', minimum: 0 },
         endByte: { type: 'integer', minimum: 1 },
         totalBytes: { type: 'integer', minimum: 1 },
@@ -47,6 +48,7 @@ export const informationDeliverySchema = {
             { type: 'null' },
             {
               type: 'object',
+              'x-runtime-value': 'request',
               required: ['tool', 'arguments'],
               properties: {
                 tool: { type: 'string' },

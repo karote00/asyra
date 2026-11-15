@@ -7,7 +7,7 @@ import { createLocalOperationTools } from '../local-operation-tools'
 import { createDesignPreparationSession } from '../design-preparation'
 import { AiActionNames } from '../../src/constants/ai-actions'
 import type { AiBatchReceipt } from '../../src/ai/action-batch-protocol'
-import { evaluationToolStop } from '../evaluation-control'
+
 import { createConversationResults } from '../../src/ai/conversation-results'
 import { LocalToolLibraryLimits } from '../local-tool-library-limits'
 import {
@@ -69,8 +69,8 @@ it.each(['status', 'selected'] as const)(
               if (name === 'reject') {
                 return localToolFailureReply(
                   'Correct the input',
-                  'INPUT_REJECTED',
-                  { settlement: 'not-started', recovery: 'correct_input' }
+                  'TOOL_INPUT_INVALID',
+                  { settlement: 'not-started' }
                 ).text
               }
 
@@ -112,10 +112,10 @@ it.each(['status', 'selected'] as const)(
       })
       expect(result.failure.execution.recovery[1], reply.text).toBeDefined()
       expect(result.failure.execution.recovery[1].value).toMatchObject({
-        recovery: 'correct_input',
+        code: 'TOOL_INPUT_INVALID',
         settlement: 'not-started'
       })
-      expect(evaluationToolStop(reply), reply.text).toBeUndefined()
+
       expect(reply.text).not.toContain('statistics')
     } finally {
       await host.dispose()
@@ -232,7 +232,7 @@ it.each(['status', 'selected'] as const)(
         status: 'failed',
         settlement: 'partial'
       })
-      expect(evaluationToolStop(reply), reply.text).toBeUndefined()
+
       expect(result.saved.map(({ name }: { name: string }) => name)).toEqual([
         'taipeiBase',
         'taipeiBaseSource',
@@ -258,7 +258,7 @@ it.each(['status', 'selected'] as const)(
           )
       ).toEqual([['applied-0'], ['applied-1']])
       expect(result.failure.execution.recovery[2].value).toMatchObject({
-        recovery: 'correct_input',
+        code: 'TOOL_INPUT_INVALID',
         settlement: 'not-started',
         geometryIssue: { code: 'NONPLANAR_FACE', key: 'needle-f' },
         repairGuide: {

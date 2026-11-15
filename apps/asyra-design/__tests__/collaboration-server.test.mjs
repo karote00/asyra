@@ -58,6 +58,7 @@ before(async () => {
       ) {
         response.end(
           JSON.stringify({
+            documentGeneration: 0,
             checkpoint: request.url.includes(
               '/documents/initial-bootstrap-file/'
             )
@@ -1111,6 +1112,7 @@ test('a closed bootstrap reader cannot reserve the actor after checkpoint loadin
     response.setHeader('content-type', 'application/json')
     response.end(
       JSON.stringify({
+        documentGeneration: 0,
         checkpoint: createTransportCheckpointDocument(),
         durableSequence: 0
       })
@@ -1212,6 +1214,7 @@ for (const { existingRoom, timedOut } of [
     const backend = createHttpBackendServer(async (request, response) => {
       reads++
       const body = JSON.stringify({
+        documentGeneration: 0,
         checkpoint: createTransportCheckpointDocument(),
         durableSequence: 0
       })
@@ -1353,6 +1356,7 @@ test('keeps shared checkpoint initialization while another live waiter remains',
     response.setHeader('content-type', 'application/json')
     response.end(
       JSON.stringify({
+        documentGeneration: 0,
         checkpoint: createTransportCheckpointDocument(),
         durableSequence: 0
       })
@@ -1718,6 +1722,7 @@ test('retains one room while the last peer leaves during a replacement bootstrap
     response.setHeader('content-type', 'application/json')
     response.end(
       JSON.stringify({
+        documentGeneration: 0,
         checkpoint: createTransportCheckpointDocument(),
         durableSequence: 0
       })
@@ -2666,6 +2671,7 @@ test('socket server retries the exact ordered backend batch after a non-success 
       response.writeHead(200, { 'content-type': 'application/json' })
       response.end(
         JSON.stringify({
+          documentGeneration: 0,
           checkpoint: {
             ...createTransportCheckpointDocument()
           },
@@ -2852,6 +2858,7 @@ test('socket server waits for durable persistence capacity without disconnecting
     ) {
       response.end(
         JSON.stringify({
+          documentGeneration: 0,
           checkpoint: createTransportCheckpointDocument(),
           durableSequence: 0
         })

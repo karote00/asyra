@@ -23,7 +23,7 @@ export const createArrangementAction = (
   ),
   name: AiActionNames.ARRANGE_DESIGN,
   description:
-    'Align or evenly distribute current siblings after reading their context. Uses native projected bounds along parent-local horizontal/vertical axes. Align start/center/end within the selection bounds. Distribute in current spatial order: omit gap to preserve outer extent, or specify a nonnegative gap keeping the first edge fixed. Preserves sizes, styles and layer order. Inspect the result.',
+    'Align or evenly distribute known current siblings; read context only when required identities or values are unknown. Uses native projected bounds along parent-local horizontal/vertical axes. Align start/center/end within the selection bounds. Distribute in current spatial order: omit gap to preserve outer extent, or specify a nonnegative gap keeping the first edge fixed. Preserves sizes, styles and layer order. Inspect the result.',
   inputSchema: {
     type: 'object',
     additionalProperties: false,

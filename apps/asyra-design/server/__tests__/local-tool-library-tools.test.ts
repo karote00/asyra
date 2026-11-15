@@ -4,11 +4,7 @@ import {
   type AiToolStoreEntry
 } from '@asyra/ai-agent-runtime'
 import { createLocalToolLibrary } from '../local-tool-library'
-import { createLocalToolLibraryTools as createOwner } from '../local-tool-library-tools'
-import { withToolContractAssertions } from './tool-contract-assertions'
-
-const createLocalToolLibraryTools = (...args: Parameters<typeof createOwner>) =>
-  withToolContractAssertions(createOwner(...args))
+import { createLocalToolLibraryTools } from '../local-tool-library-tools'
 
 import { invokeLocalTool } from '../local-tool-invocation'
 import {
@@ -19,6 +15,7 @@ import {
 import { createLocalToolScheduler } from '../local-tool-scheduler'
 import { toolSemantics } from '../../src/ai/tool-contract'
 import { AiDesignToolIds } from '../../src/constants/ai-design'
+import { localToolReferences } from '../local-tool-leases'
 
 const fixture = () => {
   const registry = createAiActionRegistry()
@@ -214,10 +211,10 @@ it('repairs admission, dispatches exact revisions and keeps durable management s
   })
 
   expect(rejected).toMatchObject({
-    ok: false,
-    code: 'admission'
+    code: 'TOOL_INPUT_INVALID',
+    settlement: 'not-started'
   })
-  expect(rejected.issues.length).toBeGreaterThan(0)
+  expect(rejected.inputIssues.length).toBeGreaterThan(0)
   const submitted = JSON.parse(
     (
       await call(AiDesignToolIds.SUBMIT_TOOL, {
@@ -255,7 +252,7 @@ it('repairs admission, dispatches exact revisions and keeps durable management s
           input: 7
         })
       ).text
-    ).execution.settlement
+    ).settlement
   ).toBe('not-started')
   await call(AiDesignToolIds.MANAGE_TOOL, {
     name: proposal.name,
@@ -271,7 +268,7 @@ it('repairs admission, dispatches exact revisions and keeps durable management s
           input: 7
         })
       ).text
-    ).execution.settlement
+    ).settlement
   ).toBe('not-started')
   expect(execute).toHaveBeenCalledTimes(1)
 })
@@ -293,7 +290,8 @@ it('does not promote a model-authored receipt or accept unknown controls', async
   })
 
   expect(saved).toMatchObject({
-    status: 'unsaved'
+    code: 'TOOL_INPUT_INVALID',
+    settlement: 'not-started'
   })
   expect(execute).not.toHaveBeenCalled()
   await expect(
@@ -305,7 +303,7 @@ it('does not promote a model-authored receipt or accept unknown controls', async
 })
 
 it('retries failed storage through save_tool without repeating successful product work', async () => {
-  const { call, execute, failStorage, entries } = fixture()
+  const { call, execute, failStorage, entries, owner } = fixture()
 
   await call(AiDesignToolIds.SUBMIT_TOOL, {
     submissionId: 'storage-recovery',
@@ -327,6 +325,23 @@ it('retries failed storage through save_tool without repeating successful produc
     storage: { status: 'unsaved' }
   })
   expect(applied.receiptId).toBeTypeOf('string')
+  const outputReferences = new Set<string>()
+  const inputReferences = new Set<string>()
+
+  localToolReferences(
+    applied,
+    owner.definitions.find((d) => d.name === AiDesignToolIds.INVOKE_TOOL)
+      ?.outputSchema,
+    outputReferences
+  )
+  localToolReferences(
+    { name: proposal.name, revision: 1, receiptId: applied.receiptId },
+    owner.definitions.find((d) => d.name === AiDesignToolIds.SAVE_TOOL)
+      ?.inputSchema,
+    inputReferences
+  )
+  expect([...outputReferences]).toContain('/receiptId')
+  expect([...inputReferences]).toContain('/receiptId')
   expect(execute).toHaveBeenCalledTimes(1)
   failStorage(false)
   const saved = JSON.parse(
@@ -347,3 +362,73 @@ it('retries failed storage through save_tool without repeating successful produc
   ).toBe(true)
   expect(execute).toHaveBeenCalledTimes(1)
 })
+
+it('lets the same caller correct a missing tool selection without dispatching or replaying', async () => {
+  const f = fixture()
+  const rejected = await f.call(AiDesignToolIds.INVOKE_TOOL, {
+    name: 'absent-tool',
+    revision: 1,
+    input: 4
+  })
+
+  expect(JSON.parse(rejected.text)).toMatchObject({
+    code: 'TOOL_INPUT_INVALID',
+    settlement: 'not-started'
+  })
+
+  expect(f.execute).not.toHaveBeenCalled()
+  const corrected = await f.call(AiDesignToolIds.INVOKE_TOOL, {
+    name: 'design.number',
+    revision: 2,
+    input: 4
+  })
+
+  expect(corrected.success).toBe(true)
+  expect(f.execute).toHaveBeenCalledOnce()
+  await f.library.dispose()
+})
+
+it('reports rejected recipe semantics as input failure while keeping storage errors distinct', async () => {
+  const f = fixture()
+  const rejected = await f.call(AiDesignToolIds.SUBMIT_TOOL, {
+    submissionId: 'wrong-reference',
+    proposal: {
+      ...proposal,
+      output: { kind: 'step', step: 'missing', path: '' }
+    }
+  })
+
+  expect(JSON.parse(rejected.text)).toMatchObject({
+    code: 'TOOL_INPUT_INVALID',
+    settlement: 'not-started'
+  })
+
+  expect(f.execute).not.toHaveBeenCalled()
+  await f.library.dispose()
+})
+
+it.each([
+  [AiDesignToolIds.SAVE_TOOL, { name: 'missing', revision: 1 }],
+  [
+    AiDesignToolIds.MANAGE_TOOL,
+    { name: 'missing', revision: 1, operation: 'resume' }
+  ],
+  [
+    AiDesignToolIds.MANAGE_TOOL,
+    { name: 'missing', revision: 1, operation: 'retire' }
+  ]
+])(
+  'rejects unavailable selected library identities without blocking the request: %s %j',
+  async (name, input) => {
+    const f = fixture()
+    const reply = await f.call(name, input)
+
+    expect(JSON.parse(reply.text)).toMatchObject({
+      code: 'TOOL_INPUT_INVALID',
+      settlement: 'not-started'
+    })
+
+    expect(f.execute).not.toHaveBeenCalled()
+    await f.library.dispose()
+  }
+)

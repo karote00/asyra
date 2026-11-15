@@ -277,7 +277,7 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
       keysOnly(anchor, ['id', 'x', 'y', 'rotation']) &&
         typeof anchor.id === 'string' &&
         anchor.id.length > 0 &&
-        anchor.id.length <= 256 &&
+        anchor.id.length <= limits.identityLength &&
         finite(anchor.x) &&
         finite(anchor.y) &&
         (anchor.rotation === undefined ||
@@ -306,7 +306,7 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
     check(
       typeof id === 'string' &&
         id.length > 0 &&
-        id.length <= 256 &&
+        id.length <= limits.identityLength &&
         !identities.has(id)
     )
     identities.add(id)

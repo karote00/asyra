@@ -1,4 +1,9 @@
-import type { AiActionBatch, AiProviderInput } from '@asyra/ai-agent-runtime'
+import { requiredRecord } from '../../__tests__/assert-result'
+import type {
+  AiActionBatch,
+  AiProviderInput,
+  AiFetchRequestInit
+} from '@asyra/ai-agent-runtime'
 import { subscribeToBrowserDragPhases } from '@asyra/utils'
 import { describe, expect, it, vi } from 'vitest'
 import {
@@ -34,7 +39,7 @@ describe('server action-batch provider', () => {
     const controller = new AbortController()
     let transport: AbortSignal | undefined
     const provider = createServerActionBatchProvider({
-      fetch: async (_url, init) => {
+      fetch: async (_url: string, init: AiFetchRequestInit) => {
         transport = init.signal
 
         return new Promise<never>(() => undefined)
@@ -202,7 +207,7 @@ it.each([
     JSON.stringify({ type: 'result', batch }) +
     '\n'
 ])(
-  'rejects incomplete or malformed streams without admitting a batch',
+  'rejects incomplete or malformed streams without admitting a batch - case %#',
   async (body) => {
     const provider = createServerActionBatchProvider({
       fetch: (async () =>
@@ -342,7 +347,7 @@ describe('sequential server prepared batch transport', () => {
     const receipt = { actionResults: [], context: { actual: true } }
     const calls: string[] = []
     const provider = createServerActionBatchProvider({
-      fetch: (async (_url, init) => {
+      fetch: (async (_url: string, init: AiFetchRequestInit) => {
         if ((init?.headers as Record<string, string>)?.['x-ai-batch-receipt']) {
           calls.push('receipt')
           expect(JSON.parse(String(init?.body))).toEqual(receipt)
@@ -387,7 +392,7 @@ it('acknowledges a rejected browser batch and keeps the stream open for recovery
     throw error
   })
   const provider = createServerActionBatchProvider({
-    fetch: (async (_url, init) => {
+    fetch: (async (_url: string, init: AiFetchRequestInit) => {
       if ((init.headers as Record<string, string>)['x-ai-batch-receipt']) {
         receipts.push(JSON.parse(String(init.body)))
 
@@ -438,7 +443,7 @@ it.each(['stop', 'lost-ack'])(
     let posts = 0
     let executions = 0
     const provider = createServerActionBatchProvider({
-      fetch: (async (_url, init) => {
+      fetch: (async (_url: string, init: AiFetchRequestInit) => {
         if ((init.headers as Record<string, string>)['x-ai-batch-receipt']) {
           posts++
           throw new Error('ack transport failed')
@@ -486,7 +491,7 @@ it.each(['ACTION_BATCH_INVALID_RECEIPT', 'private body with secrets'])(
     const executeBatch = vi.fn(async () => ({ actionResults: [], context: {} }))
     let posts = 0
     const provider = createServerActionBatchProvider({
-      fetch: (async (_url, init) => {
+      fetch: (async (_url: string, init: AiFetchRequestInit) => {
         if ((init.headers as Record<string, string>)['x-ai-batch-receipt']) {
           posts++
 
@@ -546,7 +551,7 @@ it.each(['activity', 'receipt', 'handoff'])(
       batch
     }
     const provider = createServerActionBatchProvider({
-      fetch: (async (_url, init) => {
+      fetch: (async (_url: string, init: AiFetchRequestInit) => {
         if ((init.headers as Record<string, string>)['x-ai-batch-receipt']) {
           receipts++
           if (phase === 'receipt') {
@@ -674,7 +679,7 @@ describe('evaluation capture and actual provider protocol', () => {
           {
             ...input,
             metadata: {
-              ...input.metadata,
+              ...requiredRecord(input.metadata),
               sourceRequestId: 'real-provider-request'
             }
           },
@@ -732,7 +737,7 @@ it('delivers the exact local evaluation deadline with existing metadata and leav
   history.replaceState(null, '', url)
   const requests: unknown[] = []
   const provider = createServerActionBatchProvider({
-    fetch: async (_url, init) => {
+    fetch: async (_url: string, init: AiFetchRequestInit) => {
       requests.push(JSON.parse(String(init.body)))
 
       return {
@@ -1015,10 +1020,10 @@ it('acknowledges browser conversation result writes and private reads without in
   const acks: AiBatchReceiptLike[] = []
 
   interface AiBatchReceiptLike {
-    context: { ok: boolean; values?: Record<string, unknown> }
+    context: { ok: boolean; code?: string; values?: Record<string, unknown> }
   }
   const provider = createServerActionBatchProvider({
-    fetch: async (_url, init) => {
+    fetch: async (_url: string, init: AiFetchRequestInit) => {
       const value = JSON.parse(init.body)
 
       if ('context' in value && 'actionResults' in value) {
@@ -1054,6 +1059,7 @@ it('acknowledges browser conversation result writes and private reads without in
 
     expect(acks.map((a) => a.context.ok)).toEqual([true, true, false])
     expect(acks[1].context.values).toEqual({ trim: 'private-element-id' })
+    expect(acks[2].context.code).toBe('TOOL_INPUT_INVALID')
     expect(requests[1].metadata).toMatchObject({
       conversationResultNames: ['trim'],
       conversationResults: [
@@ -1071,6 +1077,204 @@ it('acknowledges browser conversation result writes and private reads without in
       ]
     })
     expect(JSON.stringify(requests)).not.toContain('private-element-id')
+    expect(executeBatch).not.toHaveBeenCalled()
+  } finally {
+    provider.dispose()
+  }
+})
+
+it('binds saved input and target through the ordinary browser stream into a successor host without model readback', async () => {
+  const { createLocalToolHost } =
+    await import('../../../server/local-tool-host')
+  const { LocalToolLibraryLimits } =
+    await import('../../../server/local-tool-library-limits')
+  const { toolSemantics } = await import('../tool-contract')
+  const requests: AiProviderInput[] = []
+  const replies: string[] = []
+  const inputs: unknown[] = []
+  let acknowledge: ((value: Record<string, unknown>) => void) | undefined
+  const token = '12345678-1234-1234-1234-123456789abc'
+  const provider = createServerActionBatchProvider({
+    fetch: async (_url: string, init: AiFetchRequestInit) => {
+      const request = JSON.parse(init.body)
+
+      if ('actionResults' in request) {
+        acknowledge?.(request.context)
+
+        return new Response('{}')
+      }
+
+      requests.push(request)
+      const turn = requests.length
+      const stream = new ReadableStream({
+        start(controller) {
+          const send = (value: unknown) =>
+            controller.enqueue(
+              new TextEncoder().encode(JSON.stringify(value) + '\n')
+            )
+
+          const host = createLocalToolHost({
+            requestId: `ordinary-${turn}`,
+            signal: new AbortController().signal,
+            capacity: 32,
+            receiptCapacity: 8,
+            artifactCapacity: 64,
+            limits: LocalToolLibraryLimits.recipe,
+            store: {
+              read: async () => undefined,
+
+              list: async () => [],
+
+              write: async () => {
+                throw Error('No library writes')
+              }
+            },
+
+            resultContext: (command) =>
+              new Promise((resolve, reject) => {
+                acknowledge = (context) =>
+                  context.ok
+                    ? resolve(context.values as never)
+                    : reject(Error(String(context.error)))
+                send({
+                  type: 'conversation-results',
+                  receiptToken: token,
+                  command
+                })
+              }),
+
+            createGroups: () => [
+              {
+                name: 'fixture',
+                description: 'Deterministic owner',
+                owner: {
+                  definitions: [
+                    {
+                      type: 'function',
+                      name: 'apply',
+                      description: 'Use the supplied target and geometry',
+                      ...toolSemantics(
+                        {
+                          type: 'object',
+                          additionalProperties: false,
+                          required: ['id'],
+                          properties: { id: { type: 'string' } }
+                        },
+                        'read',
+                        []
+                      ),
+                      composition: 'allowed',
+                      inputSchema: {
+                        type: 'object',
+                        additionalProperties: false,
+                        required: ['target', 'geometry'],
+                        properties: {
+                          target: { type: 'string' },
+                          geometry: {
+                            type: 'object',
+                            additionalProperties: false,
+                            required: ['width'],
+                            properties: { width: { type: 'number' } }
+                          }
+                        }
+                      }
+                    }
+                  ],
+
+                  call: async (_name, value) => {
+                    inputs.push(value)
+
+                    return JSON.stringify({ id: 'private-root-id' })
+                  }
+                }
+              }
+            ]
+          })
+
+          void (async () => {
+            try {
+              const reply = await host.invoke({
+                name: 'design_operations.execute_design',
+                input: {
+                  operations: [
+                    {
+                      id: 'stage',
+                      name: 'fixture.apply',
+                      arguments:
+                        turn === 1
+                          ? {
+                              target: 'private-root-id',
+                              geometry: { width: 9876 }
+                            }
+                          : {
+                              target: { kind: 'named', name: 'root', path: '' },
+                              geometry: {
+                                kind: 'named',
+                                name: 'source',
+                                path: '/geometry'
+                              }
+                            }
+                    }
+                  ],
+                  ...(turn === 1
+                    ? {
+                        retain: {
+                          root: { step: 'stage', path: '/id' },
+                          source: { step: 'stage', source: 'input', path: '' },
+                          unused: {
+                            step: 'stage',
+                            source: 'input',
+                            path: '/geometry/width'
+                          }
+                        }
+                      }
+                    : {}),
+                  delivery: 'status'
+                }
+              })
+
+              expect(reply.outcome.status, reply.text).toBe('success')
+              replies.push(reply.text)
+              send({ type: 'result', batch })
+              controller.close()
+            } catch (error) {
+              controller.error(error)
+            } finally {
+              await host.dispose()
+            }
+          })()
+        }
+      })
+
+      return new Response(stream, {
+        headers: { 'content-type': 'application/x-ndjson' }
+      })
+    }
+  })
+  const executeBatch = vi.fn()
+
+  try {
+    for (let turn = 0; turn < 2; turn++) {
+      await provider.requestActionBatch(
+        { ...input, metadata: { conversationId: 'ordinary-reuse' } },
+        {
+          signal: new AbortController().signal,
+          executeBatch
+        }
+      )
+    }
+
+    expect(inputs).toEqual([
+      { target: 'private-root-id', geometry: { width: 9876 } },
+      { target: 'private-root-id', geometry: { width: 9876 } }
+    ])
+    expect(requests[1].metadata).toMatchObject({
+      conversationResultNames: ['root', 'source', 'unused']
+    })
+    expect(JSON.stringify(requests)).not.toContain('private-root-id')
+    expect(JSON.stringify(requests)).not.toContain('9876')
+    expect(replies.join('')).not.toContain('private-root-id')
+    expect(replies.join('')).not.toContain('9876')
     expect(executeBatch).not.toHaveBeenCalled()
   } finally {
     provider.dispose()

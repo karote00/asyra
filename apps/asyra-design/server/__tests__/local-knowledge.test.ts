@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { expect, it } from 'vitest'
+import { expect, it, vi } from 'vitest'
 import {
   createLocalKnowledgeTools,
   createDesignKnowledge,
@@ -7,9 +7,52 @@ import {
   projectKnowledgeSources
 } from '../local-knowledge'
 import { AiDesignToolIds } from '../../src/constants/ai-design'
-import { withToolContractAssertions } from './tool-contract-assertions'
+import type { AiKnowledgeResult } from '@asyra/ai-agent-runtime'
 
 const signal = () => new AbortController().signal
+
+const authoredKnowledgeText = (
+  result: Pick<AiKnowledgeResult, 'documents' | 'sources'>
+) =>
+  JSON.stringify({
+    documents: result.documents.map(
+      ({ target, source, replacedSource, text }) => ({
+        target,
+        source,
+        replacedSource,
+        text
+      })
+    ),
+    sources: result.sources
+  })
+
+it.each(['document', 'provenance'])(
+  'detects subject-specific content in Knowledge %s independently of request identities',
+  (location) => {
+    const source = {
+      id: 'general-advice',
+      revision: 1,
+      provenance: [
+        location === 'provenance' ? 'Taipei 101 study' : 'General advice'
+      ]
+    }
+    const result = {
+      documents: [
+        {
+          target: 'general-advice',
+          source,
+          text:
+            location === 'document'
+              ? 'Use the Taipei 101 dimensions: 50800.'
+              : 'Choose units consistently.'
+        }
+      ],
+      sources: [source]
+    }
+
+    expect(authoredKnowledgeText(result)).toMatch(/Taipei|50800|101/)
+  }
+)
 
 it('executes the advertised scoped catalog call and reads a chosen child with external constraints', async () => {
   const files = [
@@ -34,9 +77,7 @@ it('executes the advertised scoped catalog call and reads a chosen child with ex
     revision: 1,
     markdown: `---\n${JSON.stringify({ ...metadata, provenance: ['Test authored advice'] })}\n---\n${id} body`
   }))
-  const owner = withToolContractAssertions(
-    createLocalKnowledgeTools('scoped-contract', async () => files)
-  )
+  const owner = createLocalKnowledgeTools('scoped-contract', async () => files)
   const calls: { name: string; input: unknown }[] = []
 
   try {
@@ -123,9 +164,7 @@ it('executes the advertised scoped catalog call and reads a chosen child with ex
 })
 
 it('preserves full discovery and direct reading while delivering only the chosen registered subtree', async () => {
-  const owner = withToolContractAssertions(
-    createLocalKnowledgeTools('scoped-real-catalog')
-  )
+  const owner = createLocalKnowledgeTools('scoped-real-catalog')
 
   try {
     const contexts = ['architectural-illustration']
@@ -208,9 +247,7 @@ it('continues a large directly selected child with required constraints and expl
     revision: 1,
     markdown: `---\n${JSON.stringify({ description: id, provenance: ['Test authored advice'], ...relations })}\n---\n${id === 'long-topic' ? body : id + ' constraint'}`
   }))
-  const owner = withToolContractAssertions(
-    createLocalKnowledgeTools('scoped-pages', async () => files)
-  )
+  const owner = createLocalKnowledgeTools('scoped-pages', async () => files)
 
   try {
     const catalog = JSON.parse(
@@ -231,12 +268,16 @@ it('continues a large directly selected child with required constraints and expl
     expect(page.contentDelivery.lastPage).toBe(false)
     const continued: Record<string, unknown>[] = []
     const read = JSON.parse(
-      await readCompleteInformation(async (input) => {
-        continued.push(input as Record<string, unknown>)
-        expect((input as Record<string, unknown>).ids).toEqual(query.ids)
+      await readCompleteInformation(
+        async (input, requestedTool) => {
+          continued.push(input as Record<string, unknown>)
+          expect((input as Record<string, unknown>).ids).toEqual(query.ids)
 
-        return owner.call(AiDesignToolIds.READ_KNOWLEDGE, input, signal())
-      }, query)
+          return owner.call(requestedTool, input, signal())
+        },
+        query,
+        AiDesignToolIds.READ_KNOWLEDGE
+      )
     )
 
     expect(continued.length).toBeGreaterThan(1)
@@ -258,8 +299,9 @@ it('continues a large directly selected child with required constraints and expl
     ).rejects.toThrow()
     const recovered = JSON.parse(
       await readCompleteInformation(
-        (input) => owner.call(AiDesignToolIds.READ_KNOWLEDGE, input, signal()),
-        { ...query, rehydrate: true }
+        (input, requestedTool) => owner.call(requestedTool, input, signal()),
+        { ...query, rehydrate: true },
+        AiDesignToolIds.READ_KNOWLEDGE
       )
     )
 
@@ -271,12 +313,8 @@ it('continues a large directly selected child with required constraints and expl
 
 it('delivers parent and detail selection conditions before reading and preserves both direct routes', async () => {
   const { readCompleteInformation } = await import('./tool-contract-assertions')
-  const owner = withToolContractAssertions(
-    createLocalKnowledgeTools('selection-conditions')
-  )
-  const detailOwner = withToolContractAssertions(
-    createLocalKnowledgeTools('direct-detail-conditions')
-  )
+  const owner = createLocalKnowledgeTools('selection-conditions')
+  const detailOwner = createLocalKnowledgeTools('direct-detail-conditions')
   const contexts = ['architectural-illustration']
   const calls: string[] = []
 
@@ -342,16 +380,13 @@ it('delivers parent and detail selection conditions before reading and preserves
 
     const detailed = JSON.parse(
       await readCompleteInformation(
-        (input) => {
+        (input, requestedTool) => {
           expect(input).toMatchObject({ ids: [detail.id] })
 
-          return detailOwner.call(
-            AiDesignToolIds.READ_KNOWLEDGE,
-            input,
-            signal()
-          )
+          return detailOwner.call(requestedTool, input, signal())
         },
-        { ids: [detail.id], contexts }
+        { ids: [detail.id], contexts },
+        AiDesignToolIds.READ_KNOWLEDGE
       )
     )
     const detailedTargets = detailed.documents.map(
@@ -403,7 +438,7 @@ const fixtureFile = (text = 'Button advice', revision = 1) => ({
 })
 
 it('supports docs button refinement and explicit landing CTA comparison through contextual metadata', async () => {
-  const owner = withToolContractAssertions(createLocalKnowledgeTools('task'))
+  const owner = createLocalKnowledgeTools('task')
   const discovery = JSON.parse(
     await owner.call(
       AiDesignToolIds.DISCOVER_KNOWLEDGE,
@@ -688,10 +723,18 @@ it('rejects missing override bodies before changing App registration or content'
   ).toBe('Button advice')
 })
 
-it('delivers general architectural advice through the real catalog without imposing it on flat design', async () => {
-  const tools = withToolContractAssertions(
-    createLocalKnowledgeTools('architecture-admission')
-  )
+it('delivers general architectural advice through the real catalog without imposing it on flat design', async ({
+  onTestFinished
+}) => {
+  const contextKey = 'df533406-0d42-4e56-af26-c8f2e101d536'
+  const randomUUID = vi
+    .spyOn(globalThis.crypto, 'randomUUID')
+    .mockReturnValueOnce(contextKey)
+
+  onTestFinished(() => randomUUID.mockRestore())
+  const tools = createLocalKnowledgeTools('architecture-admission')
+
+  onTestFinished(() => tools.dispose())
   const found = JSON.parse(
     await tools.call(
       AiDesignToolIds.DISCOVER_KNOWLEDGE,
@@ -734,7 +777,9 @@ it('delivers general architectural advice through the real catalog without impos
   }
 
   const read = await readComplete(args)
-  const body = JSON.stringify(read)
+
+  expect(read.contextKey).toBe(contextKey)
+  const body = authoredKnowledgeText(read)
 
   expect(body).toContain('illustration.architecture')
   expect(body).toContain('front-to-back')
@@ -901,9 +946,7 @@ it('maps owner-local and explicit shared-source edits without requiring detachme
 
 it('selects real nested catalog leaves without eagerly loading siblings and preserves material limits', async () => {
   const { readCompleteInformation } = await import('./tool-contract-assertions')
-  const owner = withToolContractAssertions(
-    createLocalKnowledgeTools('selective-catalog')
-  )
+  const owner = createLocalKnowledgeTools('selective-catalog')
 
   try {
     const contexts = ['architectural-illustration']
@@ -939,9 +982,9 @@ it('selects real nested catalog leaves without eagerly loading siblings and pres
     const read = async (ids: string[], rehydrate = false) =>
       JSON.parse(
         await readCompleteInformation(
-          (input) =>
-            owner.call(AiDesignToolIds.READ_KNOWLEDGE, input, signal()),
-          { ids, contexts, ...(rehydrate ? { rehydrate: true } : {}) }
+          (input, requestedTool) => owner.call(requestedTool, input, signal()),
+          { ids, contexts, ...(rehydrate ? { rehydrate: true } : {}) },
+          AiDesignToolIds.READ_KNOWLEDGE
         )
       )
 
@@ -1011,9 +1054,9 @@ it.each([
       ).toBe(true)
       const read = JSON.parse(
         await readCompleteInformation(
-          (input) =>
-            owner.call(AiDesignToolIds.READ_KNOWLEDGE, input, signal()),
-          { ids: [id], contexts }
+          (input, requestedTool) => owner.call(requestedTool, input, signal()),
+          { ids: [id], contexts },
+          AiDesignToolIds.READ_KNOWLEDGE
         )
       )
 
@@ -1184,12 +1227,13 @@ it('selects optional Knowledge walkthroughs explicitly and deduplicates their ma
     let calls = 0
     const value = JSON.parse(
       await readCompleteInformation(
-        (input) => {
+        (input, requestedTool) => {
           calls++
 
-          return owner.call(AiDesignToolIds.READ_KNOWLEDGE, input, signal())
+          return owner.call(requestedTool, input, signal())
         },
-        { ids, contexts }
+        { ids, contexts },
+        AiDesignToolIds.READ_KNOWLEDGE
       )
     )
 
@@ -1221,16 +1265,42 @@ it('selects optional Knowledge walkthroughs explicitly and deduplicates their ma
 it('reduces recorded cross-query dependency bytes through the actual read contract', async () => {
   const { default: recorded } =
     await import('./fixtures/recorded-101/knowledge-dependency-reuse-20261024.json')
-  const { invokeLocalTool } = await import('../local-tool-invocation')
+  const { createLocalToolHost } = await import('../local-tool-host')
+  const { LocalToolLibraryLimits } =
+    await import('../local-tool-library-limits')
 
   const bytes = (value: unknown) =>
     Buffer.byteLength(typeof value === 'string' ? value : JSON.stringify(value))
 
   const createReader = (id: string) => {
     const owner = createLocalKnowledgeTools(id)
-    const definition = owner.definitions.find(
-      (d) => d.name === AiDesignToolIds.READ_KNOWLEDGE
-    )
+    const host = createLocalToolHost({
+      requestId: id,
+      signal: signal(),
+      capacity: 32,
+      receiptCapacity: 8,
+      artifactCapacity: 64,
+      limits: LocalToolLibraryLimits.recipe,
+      store: {
+        read: async () => undefined,
+
+        list: async () => [],
+
+        write: async () => {
+          throw Error('No writes')
+        }
+      },
+
+      createGroups: () => [
+        { name: 'knowledge', description: 'Knowledge owner', owner }
+      ]
+    })
+    const definition = host
+      .definitions()
+      .find(
+        (d) =>
+          d.registeredName === 'knowledge.' + AiDesignToolIds.READ_KNOWLEDGE
+      )
 
     if (!definition) {
       throw new Error('Missing Knowledge read definition')
@@ -1240,11 +1310,15 @@ it('reduces recorded cross-query dependency bytes through the actual read contra
 
     return {
       owner,
+      host,
       definition,
       exchanges,
 
       read: async (input: Record<string, unknown>) => {
-        const reply = await invokeLocalTool(owner, definition, input, signal())
+        const reply = await host.invoke({
+          name: definition.registeredName,
+          input
+        })
 
         expect(reply.success, reply.text).toBe(true)
         exchanges.push({ input, reply: reply.text })
@@ -1299,21 +1373,10 @@ it('reduces recorded cross-query dependency bytes through the actual read contra
       )
     ).toEqual(full.documents)
     expect(delta.sources).toEqual(full.sources)
-    const description = candidate.definition.description
-    const guide = description.slice(
-      description.indexOf('For complete advice'),
-      description.indexOf('Large replies')
-    )
-    const inputSchema = candidate.definition.inputSchema as {
-      properties: Record<string, unknown>
-    }
-    const { reuseFrom: _reuseFrom, ...priorProperties } = inputSchema.properties
-    const guideBytes =
-      bytes({ description, inputSchema }) -
-      bytes({
-        description: description.replace(guide, ''),
-        inputSchema: { ...inputSchema, properties: priorProperties }
-      })
+    // Both strategies receive the same current provider contract. Count it in
+    // both totals instead of constructing a fictional pre-reuse schema.
+    expect(candidate.definition).toEqual(baseline.definition)
+    const contractBytes = bytes(candidate.definition)
 
     const total = (exchanges: typeof candidate.exchanges) =>
       exchanges.reduce(
@@ -1321,8 +1384,8 @@ it('reduces recorded cross-query dependency bytes through the actual read contra
         0
       )
 
-    const before = total(baseline.exchanges),
-      after = total(candidate.exchanges) + guideBytes
+    const before = contractBytes + total(baseline.exchanges),
+      after = contractBytes + total(candidate.exchanges)
 
     expect(after).toBeLessThan(before)
     process.stdout.write(
@@ -1330,7 +1393,7 @@ it('reduces recorded cross-query dependency bytes through the actual read contra
         measurement: 'cross-query-advice',
         before,
         after,
-        guideBytes,
+        contractBytes,
         calls: candidate.exchanges.length,
         duplicatedBodyBytes: bytes(delta.documents[0].text ?? '')
       }) + '\n'
@@ -1342,6 +1405,8 @@ it('reduces recorded cross-query dependency bytes through the actual read contra
     expect(refreshed.documents).toEqual(full.documents)
     expect(refreshed.contextKey).not.toBe(delta.contextKey)
   } finally {
+    await baseline.host.dispose()
+    await candidate.host.dispose()
     baseline.owner.dispose()
     candidate.owner.dispose()
   }
@@ -1721,11 +1786,12 @@ it('delivers optional method advice without making samples an added acceptance s
 
   try {
     const response = await readCompleteInformation(
-      (input) => owner.call(AiDesignToolIds.READ_KNOWLEDGE, input, signal()),
+      (input, requestedTool) => owner.call(requestedTool, input, signal()),
       {
         ids: ['design.architectural-illustration.materials.method'],
         contexts: ['architectural-illustration']
-      }
+      },
+      AiDesignToolIds.READ_KNOWLEDGE
     )
 
     expect(response).toContain(
@@ -1776,8 +1842,9 @@ it('offers problem-oriented advice and reads coordinate parameters without a sam
       'design.architectural-illustration.materials.method.parameters'
     const read = JSON.parse(
       await readCompleteInformation(
-        (input) => owner.call(AiDesignToolIds.READ_KNOWLEDGE, input, signal()),
-        { ids: [selected], contexts }
+        (input, requestedTool) => owner.call(requestedTool, input, signal()),
+        { ids: [selected], contexts },
+        AiDesignToolIds.READ_KNOWLEDGE
       )
     )
     const targets = read.documents.map((doc: { target: string }) => doc.target)
@@ -1797,8 +1864,9 @@ it('offers problem-oriented advice and reads coordinate parameters without a sam
     expect.soft(JSON.stringify(read)).toContain('Never retry a settled drawing')
     const repetition = JSON.parse(
       await readCompleteInformation(
-        (input) => owner.call(AiDesignToolIds.READ_KNOWLEDGE, input, signal()),
-        { ids: ['design.architectural-illustration.repetition'], contexts }
+        (input, requestedTool) => owner.call(requestedTool, input, signal()),
+        { ids: ['design.architectural-illustration.repetition'], contexts },
+        AiDesignToolIds.READ_KNOWLEDGE
       )
     )
     const text = repetition.documents
@@ -1829,12 +1897,8 @@ it('measures complete decision-advice delivery without loading unrelated topics'
       let pages = 0
       let bytes = 0
       const text = await readCompleteInformation(
-        async (input) => {
-          const reply = await owner.call(
-            AiDesignToolIds.READ_KNOWLEDGE,
-            input,
-            signal()
-          )
+        async (input, requestedTool) => {
+          const reply = await owner.call(requestedTool, input, signal())
 
           pages++
           bytes += Buffer.byteLength(reply)
@@ -1844,7 +1908,8 @@ it('measures complete decision-advice delivery without loading unrelated topics'
         {
           ids: [`design.architectural-illustration.${topic}`],
           contexts: ['architectural-illustration']
-        }
+        },
+        AiDesignToolIds.READ_KNOWLEDGE
       )
       const result = JSON.parse(text)
       const targets = result.documents.map(

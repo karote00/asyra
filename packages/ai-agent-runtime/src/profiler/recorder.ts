@@ -559,7 +559,8 @@ const outputDiagnostic = (
 
   if (usability === 'unusable') {
     executionStatus =
-      result.stage === 'admission' || result.code === 'PREPARATION_REJECTED'
+      result.settlement === 'not-started' &&
+      (result.stage === 'admission' || result.code === 'TOOL_INPUT_INVALID')
         ? 'rejected'
         : 'failed'
   }
@@ -580,9 +581,7 @@ const outputDiagnostic = (
       settlement:
         typeof result.settlement === 'string'
           ? result.settlement.slice(0, 128)
-          : null,
-      recoverable:
-        typeof result.recoverable === 'boolean' ? result.recoverable : null
+          : null
     },
     basis,
     feedback: typeof feedback === 'string' ? summarizeEvidence(feedback) : null

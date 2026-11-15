@@ -1,3 +1,5 @@
+import recordedInputRejection from './fixtures/recorded-101/input-rejection-20261112.json'
+import { createLocalKnowledgeTools } from '../local-knowledge'
 import { readCompleteInformation } from './tool-contract-assertions'
 import { expect, it, vi } from 'vitest'
 import {
@@ -171,6 +173,18 @@ const fixture = () => {
 
     createGroups: () => [
       {
+        name: 'design_knowledge',
+        description: 'Advisory read owner',
+        owner: createLocalKnowledgeTools('request', async () => [
+          {
+            id: 'design',
+            revision: 1,
+            markdown:
+              '---\n{"description":"Design advice","provenance":["Test authored advice"]}\n---\nUse current tools.'
+          }
+        ])
+      },
+      {
         name: 'design_operations',
         description: 'Registered design operations',
         owner: createLocalOperationTools(
@@ -256,8 +270,8 @@ it('composes actual canonical basic operations and hands creation identities thr
     ])
     expect(app.select).toHaveBeenCalledExactlyOnceWith(['created-id'])
     const semantic = await app.invoke(
-      'design_operations.describe_design_apis',
-      { operation: 'element.createElements' }
+      'design_operations.read_design_contracts',
+      { names: ['element.createElements'] }
     )
 
     expect(semantic.apis[0].recipeDependency).toEqual({
@@ -270,17 +284,18 @@ it('composes actual canonical basic operations and hands creation identities thr
         arguments: { name: proposal.steps[0].tool, revision: 9 }
       },
       definition: {
-        tool: 'describe_design_apis',
+        tool: 'read_design_contracts',
         arguments: { names: [proposal.steps[0].tool] }
       }
     })
     const lookup = JSON.parse(
       await readCompleteInformation(
-        async (input) =>
+        async (input, requestedTool) =>
           JSON.stringify(
-            await app.invoke('design_operations.describe_design_apis', input)
+            await app.invoke('design_operations.' + requestedTool, input)
           ),
-        { names: [proposal.steps[0].tool] }
+        { names: [proposal.steps[0].tool] },
+        'read_design_contracts'
       )
     )
 
@@ -321,8 +336,11 @@ it('rejects a saved dependency identity replaced by the canonical mutation scope
       proposal: replaced
     })
 
-    expect(result).toMatchObject({ ok: false, code: 'admission' })
-    expect(result.issues).toEqual(
+    expect(result).toMatchObject({
+      code: 'TOOL_INPUT_INVALID',
+      settlement: 'not-started'
+    })
+    expect(result.inputIssues).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ code: 'dependency', path: '/steps/0' })
       ])
@@ -967,7 +985,6 @@ it('does not claim completion after a mutation transport failure with no acknowl
 
   expect(lost).toMatchObject({
     message: 'Transport disconnected',
-    recoverable: false,
     toolOutcome: { settlement: 'unknown' }
   })
   expect(f.done()).toBe('unsupported')
@@ -1007,7 +1024,6 @@ it.each([
 
     expect(blocked).toMatchObject({
       code: 'MUTATION_SCOPE_UNAVAILABLE',
-      recoverable: false,
       toolOutcome: { status: 'failed', settlement: 'not-started' }
     })
     expect(f.calls).toEqual(['element.createElements'])
@@ -1060,8 +1076,7 @@ it.each([false, true])(
           arguments: { createOptions: [{ type: 'rect' }, { type: 'rect' }] }
         }
       ],
-      inspection: 'defer',
-      response: 'full'
+      inspection: 'defer'
     })
 
     expect(full.actionResults[0].result.appliedElementIds).toEqual(['a', 'b'])
@@ -1088,7 +1103,6 @@ it('does not clear unacknowledged write settlement with a later geometry pass or
 
   expect(lost).toMatchObject({
     message: 'Transport disconnected',
-    recoverable: false,
     toolOutcome: { settlement: 'unknown' }
   })
   await f.review('a')
@@ -1097,7 +1111,6 @@ it('does not clear unacknowledged write settlement with a later geometry pass or
   })
 
   expect(blocked).toMatchObject({
-    recoverable: false,
     code: 'MUTATION_SCOPE_UNAVAILABLE'
   })
   expect(f.calls).toHaveLength(1)
@@ -1124,7 +1137,6 @@ it('delivers terminal scope recovery on the first lost mutation acknowledgement'
   })
 
   expect(result).toMatchObject({
-    recoverable: false,
     message: 'Transport disconnected',
     recovery: expect.stringContaining('Stop this request'),
     toolOutcome: { status: 'failed', settlement: 'unknown' }
@@ -1200,7 +1212,12 @@ it.each([
           core: {
             getElementMetadata: (id: string) => ({
               id,
-              type: id === 'frame' ? 'frame' : 'rect'
+              type: id === 'frame' ? 'frame' : 'rect',
+              name: id,
+              parentId: id === 'frame' ? 'workspace' : 'frame',
+              visible: true,
+              lock: false,
+              childCount: id === 'frame' ? 1 : 0
             })
           },
           element: { updateElementProperties: positions },
@@ -1563,8 +1580,8 @@ it.each([
         expect(result.execution.calls).toContainEqual(
           expect.objectContaining({
             name: repair.registeredName,
-            status: 'failed',
-            settlement: 'completed'
+            status: 'partial',
+            settlement: 'unknown'
           })
         )
         expect(geometry.child.x).toBe(50)
@@ -1659,8 +1676,8 @@ it('continues only an unresolved suffix using acknowledged document identities i
       ],
       output: literal(null)
     }
-    const found = await app.invoke('design_operations.describe_design_apis', {
-      operation: 'selection.selectElements'
+    const found = await app.invoke('design_operations.read_design_contracts', {
+      names: ['selection.selectElements']
     })
 
     expect(found.apis[0].recipeDependency).toMatchObject({
@@ -1687,7 +1704,7 @@ it('continues only an unresolved suffix using acknowledged document identities i
     expect(app.select).toHaveBeenCalledTimes(2)
     expect(app.select).toHaveBeenLastCalledWith(['created-id'])
     const available = await app.invoke(
-      'design_operations.describe_design_apis',
+      'design_operations.read_design_contracts',
       { names: [next.name] }
     )
 
@@ -1704,7 +1721,7 @@ it('continues discovery through a rejected library submission when the actual ca
   const app = fixture()
 
   try {
-    const first = await app.invoke('design_operations.describe_design_apis', {
+    const first = await app.invoke('design_operations.search_design_tools', {
       category: 'core'
     })
 
@@ -1719,11 +1736,14 @@ it('continues discovery through a rejected library submission when the actual ca
       proposal: rejected
     })
 
-    expect(submission).toMatchObject({ ok: false, code: 'admission' })
+    expect(submission).toMatchObject({
+      code: 'TOOL_INPUT_INVALID',
+      settlement: 'not-started'
+    })
     expect(app.host.revision).toBeGreaterThan(revision)
     expect(app.host.definitions()).toEqual(catalog)
     const nextReply = await app.host.invoke({
-      name: 'design_operations.describe_design_apis',
+      name: 'design_operations.search_design_tools',
       input: first.next.arguments
     })
     const next = JSON.parse(nextReply.text)
@@ -1825,5 +1845,69 @@ it.each(['not-started', 'unknown'] as const)(
     await call()
     await call()
     expect(attempts).toBe(settlement === 'not-started' ? 2 : 1)
+  }
+)
+
+it.each([false, true])(
+  'composes the recorded ordering lookup and grouping purpose with Knowledge in one request with scoped=%s',
+  async (scoped) => {
+    const app = fixture()
+
+    try {
+      const result = await app.invoke('design_operations.execute_design', {
+        delivery: {
+          fields: {
+            ordering: { step: 'ordering', path: '' },
+            grouping: { step: 'grouping', path: '' },
+            advice: { step: 'advice', path: '' }
+          }
+        },
+        operations: [
+          {
+            id: 'ordering',
+            name: 'design_operations.read_design_contracts',
+            arguments: {
+              names: recordedInputRejection.lookup.operations,
+              ...(scoped
+                ? {
+                    scopes: Object.fromEntries(
+                      recordedInputRejection.lookup.operations.map((name) => [
+                        name,
+                        { schemaPaths: ['/properties/request'] }
+                      ])
+                    )
+                  }
+                : { view: 'usage' })
+            }
+          },
+          {
+            id: 'grouping',
+            name: 'design_operations.search_design_tools',
+            arguments: { query: recordedInputRejection.lookup.query }
+          },
+          {
+            id: 'advice',
+            name: 'design_knowledge.read_knowledge',
+            arguments: { ids: ['design'] }
+          }
+        ]
+      })
+
+      expect(result.toolOutcome).toMatchObject({
+        status: 'success',
+        settlement: 'completed'
+      })
+      expect(Object.keys(result.fields)).toEqual([
+        'ordering',
+        'grouping',
+        'advice'
+      ])
+      expect(JSON.stringify(result)).toContain('hierarchy.moveElementsRelative')
+      expect(JSON.stringify(result)).toContain('untrusted-advice')
+      expect(app.create).not.toHaveBeenCalled()
+      expect(app.select).not.toHaveBeenCalled()
+    } finally {
+      await app.host.dispose()
+    }
   }
 )

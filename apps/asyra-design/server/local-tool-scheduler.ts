@@ -38,8 +38,8 @@ export const createLocalToolScheduler = (signal: AbortSignal) => {
 
       return work()
     })
-    // The caller owns error classification and aborts on fatal execution errors.
-    // Recoverable input errors must not poison the next corrected tool call.
+    // The caller owns error delivery. Only task cancellation or unusable transport
+    // aborts the queue; tool rejection must not poison the next corrected call.
     const settled = task.catch(() => {
       // Error delivery belongs to the caller; keep the queue usable after rejection.
     })

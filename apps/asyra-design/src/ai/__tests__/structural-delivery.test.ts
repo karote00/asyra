@@ -1,3 +1,6 @@
+import { redactAiValue } from '@asyra/ai-agent-runtime'
+import { requiredRecord, requiredString } from '../../__tests__/assert-result'
+import { createAiToolContract } from '@asyra/ai-agent-runtime'
 import { localToolOutcome } from '../../../server/local-tool-invocation'
 import { observeAiAction } from '../runtime-input'
 import { createAiActions } from '../actions'
@@ -70,7 +73,7 @@ const fixture = (count = 1000, maxBytes?: number, fillReceipt?: unknown) => {
   const controller = new AbortController()
   const signal = controller.signal
 
-  let changed = () => undefined
+  let changed: () => void = () => undefined
 
   const ids = Array.from({ length: count }, (_, i) => `child-${i}`)
   const children = vi.fn(() => ({
@@ -249,7 +252,9 @@ it('hands ordered structural output to a plural edit without querying children o
       reader.execute(
         {
           scope: 'snapshot',
-          snapshotId: result.retained.snapshotId,
+          snapshotId: requiredString(
+            requiredRecord(requiredRecord(result).retained).snapshotId
+          ),
           delivery: 'receipt',
           offset
         },
@@ -257,7 +262,9 @@ it('hands ordered structural output to a plural edit without querying children o
       )
     )
 
-    expect(full.receipt.value).toEqual(result.value)
+    expect(requiredRecord(requiredRecord(full).receipt).value).toEqual(
+      requiredRecord(result).value
+    )
     expect(full.current).toBe(true)
   } finally {
     app.queries.dispose()
@@ -290,7 +297,9 @@ it('rejects references made stale while the consumer waits for mutation admissio
       app.queries.read(
         {
           scope: 'snapshot',
-          snapshotId: result.retained.snapshotId,
+          snapshotId: requiredString(
+            requiredRecord(requiredRecord(result).retained).snapshotId
+          ),
           delivery: 'receipt',
           offset
         },
@@ -341,7 +350,7 @@ it('keeps model structural replies bounded while full receipts remain readable w
       resolveBatch: (b) => b
     },
     async (batch) => ({
-      context: null,
+      context: {},
       actionResults: await Promise.all(
         batch.actions.map(async (call) => {
           calls.push(call.name)
@@ -354,7 +363,9 @@ it('keeps model structural replies bounded while full receipts remain readable w
           return {
             actionId: call.id,
             actionName: call.name,
-            result: await action.execute(call.arguments as never, app.context)
+            result: redactAiValue(
+              await action.execute(call.arguments as never, app.context)
+            )
           }
         })
       )
@@ -389,7 +400,9 @@ it('keeps model structural replies bounded while full receipts remain readable w
             {
               arguments: {
                 scope: 'snapshot',
-                snapshotId: result.retained.snapshotId,
+                snapshotId: requiredString(
+                  requiredRecord(requiredRecord(result).retained).snapshotId
+                ),
                 delivery: 'receipt',
                 ...(offset === undefined ? {} : { offset })
               }
@@ -431,11 +444,14 @@ it('does not bless a later document revision when another change occurs after mu
       }
     )
 
-    expect(produced.retained).toBeDefined()
+    expect(requiredRecord(produced).retained).toBeDefined()
     await expect(
       app
         .action('api_element_setElementsVisible')
-        .execute({ elementIds: produced.retained, visible: false }, app.context)
+        .execute(
+          { elementIds: requiredRecord(produced).retained, visible: false },
+          app.context
+        )
     ).rejects.toThrow(/stale/)
     expect(app.edit).not.toHaveBeenCalled()
     expect(app.group).toHaveBeenCalledOnce()
@@ -509,32 +525,47 @@ it.each([
 
       expect(
         app.queries.get(
-          result.retained.snapshotId,
-          result.retained.leaseId,
+          requiredString(
+            requiredRecord(requiredRecord(result).retained).snapshotId
+          ),
+          requiredString(
+            requiredRecord(requiredRecord(result).retained).leaseId
+          ),
           app.context.signal
         ).orderedIds
       ).toEqual(expected)
       const full = app.queries.read(
         {
           scope: 'snapshot',
-          snapshotId: result.retained.snapshotId,
+          snapshotId: requiredString(
+            requiredRecord(requiredRecord(result).retained).snapshotId
+          ),
           delivery: 'receipt'
         },
         app.context.signal
       )
 
-      expect(full.receipt.value).toEqual(result.value)
-      full.receipt.value.changedByReader = true
+      expect(requiredRecord(requiredRecord(full).receipt).value).toEqual(
+        requiredRecord(result).value
+      )
+      requiredRecord(
+        requiredRecord(requiredRecord(full).receipt).value
+      ).changedByReader = true
       const again = app.queries.read(
         {
           scope: 'snapshot',
-          snapshotId: result.retained.snapshotId,
+          snapshotId: requiredString(
+            requiredRecord(requiredRecord(result).retained).snapshotId
+          ),
           delivery: 'receipt'
         },
         app.context.signal
       )
 
-      expect(again.receipt.value.changedByReader).toBeUndefined()
+      expect(
+        requiredRecord(requiredRecord(requiredRecord(again).receipt).value)
+          .changedByReader
+      ).toBeUndefined()
       expect(app.children).not.toHaveBeenCalled()
     } finally {
       app.queries.dispose()
@@ -621,7 +652,10 @@ it('publishes structural output through the real runtime wrapper before a depend
             {
               id: 'edit',
               name: 'api_element_setElementsVisible',
-              arguments: { elementIds: produced.retained, visible: false },
+              arguments: {
+                elementIds: requiredRecord(produced).retained,
+                visible: false
+              },
               summary: 'Hide grouped parts'
             }
           ]
@@ -717,7 +751,7 @@ it('projects real observed fill receipts after preserving complete original muta
         }
 
         const tools = createLocalOperationTools(
-          [action],
+          [action].map(createAiToolContract),
           {
             modelActions: (a) => a,
 
@@ -727,7 +761,7 @@ it('projects real observed fill receipts after preserving complete original muta
             observeActionBatch(
               batch,
               execute,
-              [action],
+              [action].map(createAiToolContract),
               'native-fill',
               (event, value) => {
                 if (event === 'action_completed') {
@@ -879,10 +913,12 @@ it('keeps eight structural recovery receipts without exhausting a subsequent reg
           delivery: 'receipt'
         },
         app.context.signal
-      ) as ReceiptRead
+      )
 
-      expect(recovered.receipt.value).toEqual(receipt.value)
-      expect(recovered.current).toBe(false)
+      expect(requiredRecord(requiredRecord(recovered).receipt).value).toEqual(
+        receipt.value
+      )
+      expect(requiredRecord(recovered).current).toBe(false)
       expect(() =>
         app.queries.get(
           receipt.retained.snapshotId,
@@ -933,7 +969,9 @@ it('retains large canonical fill acknowledgements and delivers counts without co
       read.execute(
         {
           scope: 'snapshot',
-          snapshotId: result.retained.snapshotId,
+          snapshotId: requiredString(
+            requiredRecord(requiredRecord(result).retained).snapshotId
+          ),
           delivery: 'receipt',
           offset
         },
@@ -1018,7 +1056,9 @@ it.each([
         app.queries.read(
           {
             scope: 'snapshot',
-            snapshotId: result.retained.snapshotId,
+            snapshotId: requiredString(
+              requiredRecord(requiredRecord(result).retained).snapshotId
+            ),
             delivery: 'receipt',
             offset
           },

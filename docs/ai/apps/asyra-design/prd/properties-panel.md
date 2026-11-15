@@ -42,8 +42,10 @@ Users need precise property editing that reflects current selection/mode state w
     `style`, `position`, `dash`, `gap`, `joinType`, `capType`, and `miterAngle`
     remain unavailable in the panel until stroke implementation is complete;
     their canonical attributes and mutation support remain intact.
-19. Stroke add/remove writes may replace the top-level `strokes` list through the computed/property runtime.
-20. Single-stroke field edits update the child `STROKE` property directly through the core props bridge with owner metadata.
+19. Stroke add/remove and field edits use canonical plural Core property patches
+    through App common APIs.
+20. Stroke-only edits preserve element placement, dimensions and Vector topology;
+    they do not repair geometry from stored points.
 21. One stroke color-picker drag session must produce exactly one undo commit
     even if many drag-frame color updates occur, without a pointer-up
     restore/final replay pair.
@@ -56,7 +58,8 @@ Users need precise property editing that reflects current selection/mode state w
 ## Data Flow
 
 - UI reads from providers (`useX`, `useY`, `useFills`, `useFill`, `useStrokes`, `useStroke`, `useSelectedVectorPoint`, etc.)
-- UI writes through controllers/common APIs (`changeElementComputedData`, `updateVectorAnchorPointPosition`, direct fill/stroke child update helpers)
+- UI writes through controllers/common APIs backed by plural Core property
+  mutation APIs; computed values remain derived outputs.
 
 ## Success Criteria
 

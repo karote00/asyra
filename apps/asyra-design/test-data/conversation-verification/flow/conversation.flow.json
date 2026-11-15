@@ -1,0 +1,1833 @@
+{
+  "schemaVersion": 1,
+  "projectId": "conversation-verification",
+  "flowId": "conversation",
+  "revision": 511,
+  "definition": {
+    "title": "Spec-derived AI conversation verification",
+    "purpose": "Reconcile independently reviewed handoffs against actual execution; passing selected cases never establish complete feature coverage.",
+    "nodes": [
+      {
+        "id": "request",
+        "title": "Draft, attachment and history submission",
+        "objective": "Draft, attachment and history submission",
+        "owner": "Asyra Design conversation and declared runtime owners",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "case-1",
+            "title": "carries immutable detached image attachments through the active turn, Feature metadata, and settlement",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/conversation.test.ts\",\"title\":\"Asyra Design AI conversation controller carries immutable detached image attachments through the active turn, Feature metadata, and settlement\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "case-2",
+            "title": "rejects missing text and invalid detached image descriptors before Feature execution",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/conversation.test.ts\",\"title\":\"Asyra Design AI conversation controller rejects missing text and invalid detached image descriptors before Feature execution\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "case-3",
+            "title": "retains native design targets and revalidates each distinct object once per follow-up",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/conversation.test.ts\",\"title\":\"retains native design targets and revalidates each distinct object once per follow-up\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "native-draft-clarification",
+            "title": "carries isolated draft images and clarification history through the real App into native requests",
+            "kind": "automated",
+            "selector": {
+              "producer": "playwright",
+              "identity": "{\"file\":\"apps/asyra-design/e2e/conversation-provider-handoff.spec.ts\",\"title\":\"carries isolated draft images and clarification history through the real App into native requests\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/playwright.conversation.config.ts\",\"project\":\"chromium\"}"
+            }
+          },
+          {
+            "id": "native-draft-association-corruption",
+            "title": "detects corrupted attachment association at the actual native consumer",
+            "kind": "automated",
+            "selector": {
+              "producer": "playwright",
+              "identity": "{\"file\":\"apps/asyra-design/e2e/conversation-provider-handoff.spec.ts\",\"title\":\"detects corrupted attachment association at the actual native consumer\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/playwright.conversation.config.ts\",\"project\":\"chromium\"}"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/src/ai/__tests__/conversation.test.ts",
+          "apps/asyra-design/e2e/conversation-provider-handoff.spec.ts",
+          "apps/asyra-design/e2e/fixtures/conversation-app.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "instructions",
+        "title": "Provider instructions and current capability delivery",
+        "objective": "Provider instructions and current capability delivery",
+        "owner": "Asyra Design conversation and declared runtime owners",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "case-1",
+            "title": "hands canonical flat contracts to the host provider and preserves request options and disposal",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/runtime-input.test.ts\",\"title\":\"hands canonical flat contracts to the host provider and preserves request options and disposal\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "case-2",
+            "title": "observes exact instructions and executable restrictions at the native model boundary - undefined",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"observes exact instructions and executable restrictions at the native model boundary - undefined\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "case-3",
+            "title": "observes exact instructions and executable restrictions at the native model boundary - omit-instructions",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"observes exact instructions and executable restrictions at the native model boundary - omit-instructions\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "case-4",
+            "title": "observes exact instructions and executable restrictions at the native model boundary - alter-tool-schema",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"observes exact instructions and executable restrictions at the native model boundary - alter-tool-schema\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "case-5",
+            "title": "preserves invalid empty result selection rejection in the actual native contract",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"preserves invalid empty result selection rejection in the actual native contract\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "frontend-provider-bundle",
+            "title": "frontend production bundle contains only the formal HTTP Agent provider",
+            "kind": "automated",
+            "selector": {
+              "producer": "node",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/action-batch-production-bundle.test.mjs\",\"title\":\"frontend production bundle contains only the formal HTTP Agent provider\",\"cwd\":\".\",\"config\":\"apps/asyra-design/scripts/verify-conversation.mjs\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "native-assessment",
+            "title": "keeps actual native assessment free of App execution capabilities - attempted call false",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"keeps actual native assessment free of App execution capabilities - attempted call false\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "ordinary-no-executor",
+            "title": "ordinary native requests without a browser executor keep Knowledge available and cannot dispatch drawing - attempted call false",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"ordinary native requests without a browser executor keep Knowledge available and cannot dispatch drawing - attempted call false\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "http-real-contract-state",
+            "title": "carries actual HTTP contracts input correction and canonical settlement through later App turns",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/conversation-production-handoff.integration.test.ts\",\"title\":\"carries actual HTTP contracts input correction and canonical settlement through later App turns\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "http-disabled-capability",
+            "title": "rejects an unadvertised mutation through the real HTTP provider and preserves public failure history",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/conversation-production-handoff.integration.test.ts\",\"title\":\"rejects an unadvertised mutation through the real HTTP provider and preserves public failure history\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "single-native-result-selector",
+            "title": "delivers one public result selector to the actual native successor",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/conversation-production-handoff.integration.test.ts\",\"title\":\"delivers one public result selector to the actual native successor\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/local-ai-provider.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/src/ai/__tests__/runtime-input.test.ts",
+          "apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts",
+          "apps/asyra-design/src/ai/__tests__/action-batch-production-bundle.test.mjs"
+        ],
+        "actions": []
+      },
+      {
+        "id": "discovery",
+        "title": "Search and selected callable contracts",
+        "objective": "Search and selected callable contracts",
+        "owner": "Asyra Design conversation and declared runtime owners",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "case-1",
+            "title": "delivers a standard executable schema instead of a separate parameter language",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/unified-tool-contracts.integration.test.ts\",\"title\":\"delivers a standard executable schema instead of a separate parameter language\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "case-2",
+            "title": "hands real Knowledge data and execution state to the native successor request",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"hands real Knowledge data and execution state to the native successor request\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "current-result-controls",
+            "title": "exposes only current result delivery controls across the registered tool inventory",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/api-delivery-audit.integration.test.ts\",\"title\":\"exposes only current result delivery controls across the registered tool inventory\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/ai-execution-flow.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts",
+          "apps/asyra-design/server/__tests__/unified-tool-contracts.integration.test.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "knowledge",
+        "title": "Knowledge sources through the actual native successor",
+        "objective": "Knowledge sources through the actual native successor",
+        "owner": "Asyra Design conversation and declared runtime owners",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "case-1",
+            "title": "detects damaged Knowledge handoff at the real successor consumer: undefined",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"detects damaged Knowledge handoff at the real successor consumer: undefined\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "case-2",
+            "title": "detects damaged Knowledge handoff at the real successor consumer: omit-outcome",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"detects damaged Knowledge handoff at the real successor consumer: omit-outcome\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "case-3",
+            "title": "detects damaged Knowledge handoff at the real successor consumer: alter-data",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"detects damaged Knowledge handoff at the real successor consumer: alter-data\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "case-4",
+            "title": "uses actual native context keys for dependent Knowledge reuse without resending held bodies",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"uses actual native context keys for dependent Knowledge reuse without resending held bodies\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "case-5",
+            "title": "follows actual native Knowledge continuation pages without reloading the source",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"follows actual native Knowledge continuation pages without reloading the source\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "native-compaction",
+            "title": "rehydrates Knowledge after genuine native context compaction",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"rehydrates Knowledge after genuine native context compaction\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "unavailable-library",
+            "title": "native Knowledge remains usable when durable library loading fails and the model receives that limitation",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"native Knowledge remains usable when durable library loading fails and the model receives that limitation\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "portable-advice-continuity",
+            "title": "retains portable Knowledge through the real App exchange and consumes it in the next native turn without rereading - undefined",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/conversation-production-handoff.integration.test.ts\",\"title\":\"retains portable Knowledge through the real App exchange and consumes it in the next native turn without rereading - undefined\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "portable-advice-corruption",
+            "title": "retains portable Knowledge through the real App exchange and consumes it in the next native turn without rereading - alter-saved-advice",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/conversation-production-handoff.integration.test.ts\",\"title\":\"retains portable Knowledge through the real App exchange and consumes it in the next native turn without rereading - alter-saved-advice\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/local-ai-provider.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts",
+          "apps/asyra-design/server/__tests__/conversation-production-handoff.integration.test.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "admission",
+        "title": "Current input, permission and resource admission",
+        "objective": "Current input, permission and resource admission",
+        "owner": "Asyra Design conversation and declared runtime owners",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "case-1",
+            "title": "continues Knowledge recovery with recording armed in the same actual native turn: input",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"continues Knowledge recovery with recording armed in the same actual native turn: input\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "knowledge-owner-recovery",
+            "title": "continues Knowledge recovery with recording armed in the same actual native turn: owner-failure",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"continues Knowledge recovery with recording armed in the same actual native turn: owner-failure\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "case-2",
+            "title": "recipe proof rejects ineligible dependencies before registration",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"packages/ai-agent-runtime/src/__tests__/recipe-flow.test.ts\",\"title\":\"recipe proof rejects ineligible dependencies before registration\",\"cwd\":\"packages/ai-agent-runtime\",\"config\":\"apps/asyra-design/test-data/conversation-verification/runtime.vitest.config.mjs\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "assessment-rejects-invented-call",
+            "title": "keeps actual native assessment free of App execution capabilities - attempted call true",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"keeps actual native assessment free of App execution capabilities - attempted call true\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "browser-denied-write",
+            "title": "repeated-detail execution rejects denied writes before canonical mutation",
+            "kind": "automated",
+            "selector": {
+              "producer": "playwright",
+              "identity": "{\"file\":\"apps/asyra-design/e2e/ai-repeated-detail.spec.ts\",\"title\":\"repeated-detail execution rejects denied writes before canonical mutation\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/playwright.conversation.config.ts\",\"project\":\"chromium\"}"
+            }
+          },
+          {
+            "id": "ordinary-unavailable-drawing",
+            "title": "ordinary native requests without a browser executor keep Knowledge available and cannot dispatch drawing - attempted call true",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"ordinary native requests without a browser executor keep Knowledge available and cannot dispatch drawing - attempted call true\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/ai-execution-flow.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts",
+          "packages/ai-agent-runtime/src/__tests__/recipe-flow.test.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "composition",
+        "title": "Dependent and iterative execution",
+        "objective": "Dependent and iterative execution",
+        "owner": "Asyra Design conversation and declared runtime owners",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "case-1",
+            "title": "recipe proof executes nested tools without scheduler deadlock or lost references",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"packages/ai-agent-runtime/src/__tests__/recipe-flow.test.ts\",\"title\":\"recipe proof executes nested tools without scheduler deadlock or lost references\",\"cwd\":\"packages/ai-agent-runtime\",\"config\":\"apps/asyra-design/test-data/conversation-verification/runtime.vitest.config.mjs\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "case-2",
+            "title": "recipe proof repairs once per unresolved state and returns actual stopped progress",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"packages/ai-agent-runtime/src/__tests__/recipe-flow.test.ts\",\"title\":\"recipe proof repairs once per unresolved state and returns actual stopped progress\",\"cwd\":\"packages/ai-agent-runtime\",\"config\":\"apps/asyra-design/test-data/conversation-verification/runtime.vitest.config.mjs\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "case-3",
+            "title": "recipe proof saves without replay and validates durable reuse",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"packages/ai-agent-runtime/src/__tests__/recipe-flow.test.ts\",\"title\":\"recipe proof saves without replay and validates durable reuse\",\"cwd\":\"packages/ai-agent-runtime\",\"config\":\"apps/asyra-design/test-data/conversation-verification/runtime.vitest.config.mjs\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "native-partial-repair",
+            "title": "actual provider receipt ownership preserves a recorded prefix through repair, history and durable reload",
+            "kind": "automated",
+            "selector": {
+              "producer": "playwright",
+              "identity": "{\"file\":\"apps/asyra-design/e2e/ai-repeated-detail.spec.ts\",\"title\":\"actual provider receipt ownership preserves a recorded prefix through repair, history and durable reload\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/playwright.conversation.config.ts\",\"project\":\"chromium\"}"
+            }
+          },
+          {
+            "id": "native-save-only-recovery",
+            "title": "retries durable storage through the actual native provider without replaying successful preparation",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"retries durable storage through the actual native provider without replaying successful preparation\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "native-staged-template-repair",
+            "title": "executes real staged template reuse and mechanical repair before applying the next part",
+            "kind": "automated",
+            "selector": {
+              "producer": "playwright",
+              "identity": "{\"file\":\"apps/asyra-design/e2e/conversation-provider-handoff.spec.ts\",\"title\":\"executes real staged template reuse and mechanical repair before applying the next part\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/playwright.conversation.config.ts\",\"project\":\"chromium\"}"
+            }
+          },
+          {
+            "id": "native-real-mechanical-iteration",
+            "title": "repairs a current canonical target through a real host iteration without a model round trip",
+            "kind": "automated",
+            "selector": {
+              "producer": "playwright",
+              "identity": "{\"file\":\"apps/asyra-design/e2e/conversation-provider-handoff.spec.ts\",\"title\":\"repairs a current canonical target through a real host iteration without a model round trip\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/playwright.conversation.config.ts\",\"project\":\"chromium\"}"
+            }
+          }
+        ],
+        "specRefs": [
+          "packages/ai-agent-runtime/TOOL_SPECIFICATION.md"
+        ],
+        "implementationRefs": [
+          "packages/ai-agent-runtime/src/__tests__/recipe-flow.test.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "canonical",
+        "title": "Canonical coordinates, rendering and undo redo",
+        "objective": "Canonical coordinates, rendering and undo redo",
+        "owner": "Asyra Design conversation and declared runtime owners",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "case-1",
+            "title": "submits a translated hierarchy through the real App and delivers its actual capture with reversible canonical state",
+            "kind": "automated",
+            "selector": {
+              "producer": "playwright",
+              "identity": "{\"file\":\"apps/asyra-design/e2e/conversation-provider-handoff.spec.ts\",\"title\":\"submits a translated hierarchy through the real App and delivers its actual capture with reversible canonical state\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/playwright.conversation.config.ts\",\"project\":\"chromium\"}"
+            }
+          },
+          {
+            "id": "incremental-stream",
+            "title": "recorded action stream preserves drawable targets during incremental construction",
+            "kind": "automated",
+            "selector": {
+              "producer": "playwright",
+              "identity": "{\"file\":\"apps/asyra-design/e2e/ai-inspection-evidence.spec.ts\",\"title\":\"recorded action stream preserves drawable targets during incremental construction\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/playwright.conversation.config.ts\",\"project\":\"chromium\"}"
+            }
+          },
+          {
+            "id": "saved-regroup",
+            "title": "saved drawing keeps a complete snapshot after public regrouping",
+            "kind": "automated",
+            "selector": {
+              "producer": "playwright",
+              "identity": "{\"file\":\"apps/asyra-design/e2e/ai-inspection-evidence.spec.ts\",\"title\":\"saved drawing keeps a complete snapshot after public regrouping\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/playwright.conversation.config.ts\",\"project\":\"chromium\"}"
+            }
+          },
+          {
+            "id": "native-partial-canonical-result",
+            "title": "preserves the actual native partial receipt after canonical child creation fails",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/conversation-production-handoff.integration.test.ts\",\"title\":\"preserves the actual native partial receipt after canonical child creation fails\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "native-canonical-sequence",
+            "title": "groups and edits created region targets and delivers two captures in one actual native handoff",
+            "kind": "automated",
+            "selector": {
+              "producer": "playwright",
+              "identity": "{\"file\":\"apps/asyra-design/e2e/conversation-provider-handoff.spec.ts\",\"title\":\"groups and edits created region targets and delivers two captures in one actual native handoff\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/playwright.conversation.config.ts\",\"project\":\"chromium\"}"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/design-preparation.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/e2e/conversation-provider-handoff.spec.ts",
+          "apps/asyra-design/server/__tests__/conversation-production-handoff.integration.test.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "results",
+        "title": "Owner values and execution state through projection",
+        "objective": "Owner values and execution state through projection",
+        "owner": "Asyra Design conversation and declared runtime owners",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "case-1",
+            "title": "execution proof preserves owner result distinctions through native contract admission",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/execution-flow-proof.test.ts\",\"title\":\"execution proof preserves owner result distinctions through native contract admission\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "case-2",
+            "title": "maps partial and no-change execution without inventing a successful mutation",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/conversation.test.ts\",\"title\":\"Asyra Design AI conversation controller maps partial and no-change execution without inventing a successful mutation\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "workflow-denied-write",
+            "title": "native workflow preserves Runtime permission rejection without claiming unknown mutation",
+            "kind": "automated",
+            "selector": {
+              "producer": "playwright",
+              "identity": "{\"file\":\"apps/asyra-design/e2e/ai-repeated-detail.spec.ts\",\"title\":\"native workflow preserves Runtime permission rejection without claiming unknown mutation\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/playwright.conversation.config.ts\",\"project\":\"chromium\"}"
+            }
+          },
+          {
+            "id": "native-mechanical-verdict-corruption",
+            "title": "detects a corrupted mechanical verdict at the canonical consumer despite native success",
+            "kind": "automated",
+            "selector": {
+              "producer": "playwright",
+              "identity": "{\"file\":\"apps/asyra-design/e2e/conversation-provider-handoff.spec.ts\",\"title\":\"detects a corrupted mechanical verdict at the canonical consumer despite native success\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/playwright.conversation.config.ts\",\"project\":\"chromium\"}"
+            }
+          },
+          {
+            "id": "retired-application-rejection",
+            "title": "rejects retired application selectors while retaining all prepared identity references",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/local-design-tools.test.ts\",\"title\":\"rejects retired application selectors while retaining all prepared identity references\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "large-native-output",
+            "title": "preserves large selected saved data and outcome in actual native history",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"preserves large selected saved data and outcome in actual native history\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/ai-execution-flow.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+          "apps/asyra-design/src/ai/__tests__/conversation.test.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "retention",
+        "title": "Conversation storage and cross-turn reuse",
+        "objective": "Conversation storage and cross-turn reuse",
+        "owner": "Asyra Design conversation and declared runtime owners",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "case-1",
+            "title": "hands retained stage input through the real controller HTTP exchange native Host and Core into a later turn: undefined",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/conversation-production-handoff.integration.test.ts\",\"title\":\"hands retained stage input through the real controller HTTP exchange native Host and Core into a later turn: undefined\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "case-2",
+            "title": "retains selected snapshots across turns of the same document conversation only",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/conversation-results.test.ts\",\"title\":\"retains selected snapshots across turns of the same document conversation only\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "case-3",
+            "title": "projects from immutable snapshots before transport and atomically refuses oversized replacement",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/conversation-results.test.ts\",\"title\":\"projects from immutable snapshots before transport and atomically refuses oversized replacement\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "altered-saved-transfer",
+            "title": "hands retained stage input through the real controller HTTP exchange native Host and Core into a later turn: alter-saved-input",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/conversation-production-handoff.integration.test.ts\",\"title\":\"hands retained stage input through the real controller HTTP exchange native Host and Core into a later turn: alter-saved-input\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "unconditional-created-targets",
+            "title": "combined design preparation and application makes acknowledged source identities available without a second result selector",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/local-design-workflow.test.ts\",\"title\":\"combined design preparation and application makes acknowledged source identities available without a second result selector\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/ai-execution-flow.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/server/__tests__/conversation-production-handoff.integration.test.ts",
+          "apps/asyra-design/src/ai/__tests__/conversation-results.test.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "media",
+        "title": "Selected original pixels through native delivery",
+        "objective": "Selected original pixels through native delivery",
+        "owner": "Asyra Design conversation and declared runtime owners",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "case-1",
+            "title": "checks all reference images at the real native successor: undefined",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"checks all reference images at the real native successor: undefined\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "case-2",
+            "title": "checks all reference images at the real native successor: omit-image",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"checks all reference images at the real native successor: omit-image\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "native-canonical-media-corruption",
+            "title": "detects loss of two captured images after a real canonical sequence",
+            "kind": "automated",
+            "selector": {
+              "producer": "playwright",
+              "identity": "{\"file\":\"apps/asyra-design/e2e/conversation-provider-handoff.spec.ts\",\"title\":\"detects loss of two captured images after a real canonical sequence\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/playwright.conversation.config.ts\",\"project\":\"chromium\"}"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/ai-execution-flow.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "lifecycle",
+        "title": "Progress, cancellation and report continuity",
+        "objective": "Progress, cancellation and report continuity",
+        "owner": "Asyra Design conversation and declared runtime owners",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "case-1",
+            "title": "contains presentation observer failures without changing turn execution",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/conversation.test.ts\",\"title\":\"Asyra Design AI conversation controller contains presentation observer failures without changing turn execution\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "case-2",
+            "title": "routes cancellation through Feature System and contains late settlement after disposal",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/src/ai/__tests__/conversation.test.ts\",\"title\":\"Asyra Design AI conversation controller routes cancellation through Feature System and contains late settlement after disposal\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "case-3",
+            "title": "observes actual native progressive arguments before production App dispatch",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-output-observation.integration.test.ts\",\"title\":\"observes actual native progressive arguments before production App dispatch\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "case-4",
+            "title": "observes actual native silent arguments before production App dispatch",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-output-observation.integration.test.ts\",\"title\":\"observes actual native silent arguments before production App dispatch\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "case-5",
+            "title": "observes actual native interrupted arguments before production App dispatch",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-output-observation.integration.test.ts\",\"title\":\"observes actual native interrupted arguments before production App dispatch\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "native-report-continuity",
+            "title": "keeps actual native reporting and later questions in the original session without replay",
+            "kind": "automated",
+            "selector": {
+              "producer": "vitest",
+              "identity": "{\"file\":\"apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts\",\"title\":\"keeps actual native reporting and later questions in the original session without replay\",\"cwd\":\"apps/asyra-design\",\"config\":\"apps/asyra-design/vite.config.ts\",\"project\":\"\"}"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/ai-conversation-experience.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/server/__tests__/native-output-observation.integration.test.ts",
+          "apps/asyra-design/src/ai/__tests__/conversation.test.ts",
+          "apps/asyra-design/server/__tests__/native-provider-handoff.integration.test.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "evidence",
+        "title": "Complete and non-contradictory execution observations",
+        "objective": "Complete and non-contradictory execution observations",
+        "owner": "Asyra Design conversation and declared runtime owners",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "case-1",
+            "title": "complete runner evidence admits all independently required files",
+            "kind": "automated",
+            "selector": {
+              "producer": "node",
+              "identity": "{\"file\":\"tools/flow-inspector/control-plane/__tests__/runner-report.test.cjs\",\"title\":\"complete runner evidence admits all independently required files\",\"cwd\":\".\",\"config\":\"apps/asyra-design/scripts/verify-conversation.mjs\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "case-2",
+            "title": "declared handoffs require complete shared producer identity and successful observations",
+            "kind": "automated",
+            "selector": {
+              "producer": "node",
+              "identity": "{\"file\":\"apps/asyra-design/scripts/__tests__/conversation-scope.test.mjs\",\"title\":\"declared handoffs require complete shared producer identity and successful observations\",\"cwd\":\".\",\"config\":\"apps/asyra-design/scripts/verify-conversation.mjs\",\"project\":\"\"}"
+            }
+          },
+          {
+            "id": "cli-interruption",
+            "title": "actual verification interruption cannot become success or dispatch a successor",
+            "kind": "automated",
+            "selector": {
+              "producer": "node",
+              "identity": "{\"file\":\"apps/asyra-design/scripts/__tests__/conversation-cli.test.mjs\",\"title\":\"actual verification interruption cannot become success or dispatch a successor\",\"cwd\":\".\",\"config\":\"apps/asyra-design/scripts/verify-conversation.mjs\",\"project\":\"\"}"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-design/specs/ai-execution-flow.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/scripts/__tests__/conversation-scope.test.mjs",
+          "tools/flow-inspector/control-plane/__tests__/runner-report.test.cjs"
+        ],
+        "actions": []
+      }
+    ],
+    "criteria": [
+      {
+        "id": "spec-coverage-review",
+        "title": "All current spec clauses and capability profiles have reviewed complete handoff evidence, without unresolved product defects or authority conflicts",
+        "kind": "manual"
+      }
+    ]
+  },
+  "current": {
+    "observations": [
+      {
+        "nodeId": "instructions",
+        "criterionId": "case-5",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "e54721a6924043565f73a74debd445cbfa8d66b98159fe48744f89f15a79da7d",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "b1e5bd214d1ac33d627d4c95f1cbd1e4a5b452c16d943673b41a751d4ecaa110",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.826Z"
+      },
+      {
+        "nodeId": "admission",
+        "criterionId": "case-2",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "067319d4f00276bae59d0f220a196a3262318c4824159c129bdb34b591f8102a",
+        "actor": "vitest",
+        "executionId": "a0b3fc55-dee1-4d0f-aa05-4a009d79daa0",
+        "caseId": "fb49b708d3abfed93de391993db169f40def9655f436194fcf3825e1ccc2ec2c",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:28:55.509Z"
+      },
+      {
+        "nodeId": "composition",
+        "criterionId": "case-1",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "d17a73bab43d300d930f4860f45cae0ed4bc004ef0d4ca69c0a61c40c7afa2a4",
+        "actor": "vitest",
+        "executionId": "a0b3fc55-dee1-4d0f-aa05-4a009d79daa0",
+        "caseId": "42844a8129d30d9f7a3ce8e67147c86723c13f681dcbc7868f51204bd40638d3",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:28:55.509Z"
+      },
+      {
+        "nodeId": "composition",
+        "criterionId": "case-2",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "d17a73bab43d300d930f4860f45cae0ed4bc004ef0d4ca69c0a61c40c7afa2a4",
+        "actor": "vitest",
+        "executionId": "a0b3fc55-dee1-4d0f-aa05-4a009d79daa0",
+        "caseId": "6700bcf80526bcea0ffdbbff2ee7e90d8414696bda11e168622eb4e97b16e5c4",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:28:55.509Z"
+      },
+      {
+        "nodeId": "composition",
+        "criterionId": "case-3",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "d17a73bab43d300d930f4860f45cae0ed4bc004ef0d4ca69c0a61c40c7afa2a4",
+        "actor": "vitest",
+        "executionId": "a0b3fc55-dee1-4d0f-aa05-4a009d79daa0",
+        "caseId": "64d9c12e4ad029be4b9cd72cd21a1e6ec0488053d0202965c541c66f85dcb509",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:28:55.509Z"
+      },
+      {
+        "nodeId": "request",
+        "criterionId": "case-1",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "2e86bacc760e6cc3ef28254d67149ec752d2928104c26717e74efecfcd18b46a",
+        "actor": "vitest",
+        "executionId": "f6dd256a-ac2f-4154-b0ba-2b332645f5f5",
+        "caseId": "6a1612ae653c7df5eb620a3a6daa5810495385521d91a5841a5459a4913d86df",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:28:45.481Z"
+      },
+      {
+        "nodeId": "request",
+        "criterionId": "case-2",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "2e86bacc760e6cc3ef28254d67149ec752d2928104c26717e74efecfcd18b46a",
+        "actor": "vitest",
+        "executionId": "f6dd256a-ac2f-4154-b0ba-2b332645f5f5",
+        "caseId": "a39fe6f68d202719053fe2a55ffbedfa0cc88a89e0b11c26dc7fa260ed1869c8",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:28:45.481Z"
+      },
+      {
+        "nodeId": "request",
+        "criterionId": "case-3",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "2e86bacc760e6cc3ef28254d67149ec752d2928104c26717e74efecfcd18b46a",
+        "actor": "vitest",
+        "executionId": "f6dd256a-ac2f-4154-b0ba-2b332645f5f5",
+        "caseId": "cd376916c05f838aa5647b9e6813fbfd4eab05d18c4ee0b854affaf4582dae7c",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:28:45.481Z"
+      },
+      {
+        "nodeId": "instructions",
+        "criterionId": "case-1",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "e54721a6924043565f73a74debd445cbfa8d66b98159fe48744f89f15a79da7d",
+        "actor": "vitest",
+        "executionId": "f6dd256a-ac2f-4154-b0ba-2b332645f5f5",
+        "caseId": "1c0693c109f5b60fd36d2b141fdebafc4448c6835bd16239941375cb8f13dc42",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:28:45.481Z"
+      },
+      {
+        "nodeId": "results",
+        "criterionId": "case-2",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c7534468d016c8849ae042a42852a44c7b838666347f7d3f9a8762b2d31996bb",
+        "actor": "vitest",
+        "executionId": "f6dd256a-ac2f-4154-b0ba-2b332645f5f5",
+        "caseId": "b773358a9549c8ebbc46f53906d0b5d67f540658375b4d4c6a290e554b974800",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:28:45.481Z"
+      },
+      {
+        "nodeId": "retention",
+        "criterionId": "case-2",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "8b28079d0a3592cbc4511e53932e4a845b3c315daacde3d4e327fb0145ac4820",
+        "actor": "vitest",
+        "executionId": "f6dd256a-ac2f-4154-b0ba-2b332645f5f5",
+        "caseId": "36168b2f2df63dd0d041764d11452dc967340ac46196d8e12ce689872144e710",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:28:45.481Z"
+      },
+      {
+        "nodeId": "retention",
+        "criterionId": "case-3",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "8b28079d0a3592cbc4511e53932e4a845b3c315daacde3d4e327fb0145ac4820",
+        "actor": "vitest",
+        "executionId": "f6dd256a-ac2f-4154-b0ba-2b332645f5f5",
+        "caseId": "5cb2b41695f40825dab09fa75e924743ff239b25ccbacd0d727471ecebafdde8",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:28:45.481Z"
+      },
+      {
+        "nodeId": "lifecycle",
+        "criterionId": "case-1",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "903fcde7a130f24553c132183e31dc51c416d3557770d2f77bdf791d3b1859c4",
+        "actor": "vitest",
+        "executionId": "f6dd256a-ac2f-4154-b0ba-2b332645f5f5",
+        "caseId": "f0424b22f136c60d5667b5bf4f25715ccaaf9f7fa5693d9f83593bf2e670f0c8",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:28:45.481Z"
+      },
+      {
+        "nodeId": "lifecycle",
+        "criterionId": "case-2",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "903fcde7a130f24553c132183e31dc51c416d3557770d2f77bdf791d3b1859c4",
+        "actor": "vitest",
+        "executionId": "f6dd256a-ac2f-4154-b0ba-2b332645f5f5",
+        "caseId": "cdf959cb4039ddf7f2441b15d2ec52e92e4b234f74e47c501ca50f2c42c24d58",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:28:45.481Z"
+      },
+      {
+        "nodeId": "composition",
+        "criterionId": "native-partial-repair",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "d17a73bab43d300d930f4860f45cae0ed4bc004ef0d4ca69c0a61c40c7afa2a4",
+        "actor": "playwright",
+        "executionId": "5f695e15-7bbd-45d5-9f24-25e0d88d73cb",
+        "caseId": "bc0b22b749d4624b2f05c7d5ed133bc0a3dc3a1c12f947f457b742a5f7614810",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:54:50.586Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "case-1",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "7361ab88cb41555ccb370a05f0d38842253256ab2cae63a3d1c0ac8a1b4a8538",
+        "actor": "playwright",
+        "executionId": "5f695e15-7bbd-45d5-9f24-25e0d88d73cb",
+        "caseId": "c81bd9b6ba8cd0f5f85d8c8bc699794b93f082f4b66001982a9ad19eaad90028",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:54:50.586Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "incremental-stream",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "7361ab88cb41555ccb370a05f0d38842253256ab2cae63a3d1c0ac8a1b4a8538",
+        "actor": "playwright",
+        "executionId": "5f695e15-7bbd-45d5-9f24-25e0d88d73cb",
+        "caseId": "69f72a5ae9a252e93ff1f62b06ebda5ebc76947d18281a238f58ba6f914cb0b6",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:54:50.586Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "saved-regroup",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "7361ab88cb41555ccb370a05f0d38842253256ab2cae63a3d1c0ac8a1b4a8538",
+        "actor": "playwright",
+        "executionId": "5f695e15-7bbd-45d5-9f24-25e0d88d73cb",
+        "caseId": "6e907b6e693421c617cdaaf025a77c00c9cc52bd213e914ab0b4075161bfd2ed",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:54:50.586Z"
+      },
+      {
+        "nodeId": "instructions",
+        "criterionId": "frontend-provider-bundle",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "e54721a6924043565f73a74debd445cbfa8d66b98159fe48744f89f15a79da7d",
+        "actor": "node",
+        "executionId": "24abec41-34d2-400d-8b46-1a982e01ef71",
+        "caseId": "b6b80a237e24f2751d2cbce3663f791d50fdb3a107ade1977f2472ddb2b5524f",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:35:33.350Z"
+      },
+      {
+        "nodeId": "evidence",
+        "criterionId": "case-1",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "bcdd272a342b8e6903a86b2e2a7b9e1064bfa37b572d05d6df120ff7827e131c",
+        "actor": "node",
+        "executionId": "24abec41-34d2-400d-8b46-1a982e01ef71",
+        "caseId": "866a234c9d1693edfda90220ba74c6d05fc4cc14cbb8f916c44e45b1799355bb",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:35:33.350Z"
+      },
+      {
+        "nodeId": "evidence",
+        "criterionId": "case-2",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "bcdd272a342b8e6903a86b2e2a7b9e1064bfa37b572d05d6df120ff7827e131c",
+        "actor": "node",
+        "executionId": "24abec41-34d2-400d-8b46-1a982e01ef71",
+        "caseId": "419a0a2e519a6675b4e76fa73f7909a0bdc83afafaf36c69e4d424bdd26af664",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:35:33.350Z"
+      },
+      {
+        "nodeId": "evidence",
+        "criterionId": "cli-interruption",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "bcdd272a342b8e6903a86b2e2a7b9e1064bfa37b572d05d6df120ff7827e131c",
+        "actor": "node",
+        "executionId": "24abec41-34d2-400d-8b46-1a982e01ef71",
+        "caseId": "989ed903d374029f3f9a49a0df0bad54dbe801b9d627d1ff477b45a9d32ee8ea",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:35:33.350Z"
+      },
+      {
+        "nodeId": "results",
+        "criterionId": "workflow-denied-write",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c7534468d016c8849ae042a42852a44c7b838666347f7d3f9a8762b2d31996bb",
+        "actor": "playwright",
+        "executionId": "5f695e15-7bbd-45d5-9f24-25e0d88d73cb",
+        "caseId": "3dac2440ab2af9418b9d82d3569f396e2e0478cb8f20035c61c8f71cf9924813",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:54:50.586Z"
+      },
+      {
+        "nodeId": "admission",
+        "criterionId": "browser-denied-write",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "067319d4f00276bae59d0f220a196a3262318c4824159c129bdb34b591f8102a",
+        "actor": "playwright",
+        "executionId": "5f695e15-7bbd-45d5-9f24-25e0d88d73cb",
+        "caseId": "d090eef4a902cbfbb60fb537b2e2c94e3ce663a81eeef578b9a1879cc527ba11",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:54:50.586Z"
+      },
+      {
+        "nodeId": "request",
+        "criterionId": "native-draft-clarification",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "2e86bacc760e6cc3ef28254d67149ec752d2928104c26717e74efecfcd18b46a",
+        "actor": "playwright",
+        "executionId": "5f695e15-7bbd-45d5-9f24-25e0d88d73cb",
+        "caseId": "5c869acd5edfe3a1cdf503c84676715f394e5fb6890cf0bd197862b4fa9fa0c6",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:54:50.586Z"
+      },
+      {
+        "nodeId": "request",
+        "criterionId": "native-draft-association-corruption",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "2e86bacc760e6cc3ef28254d67149ec752d2928104c26717e74efecfcd18b46a",
+        "actor": "playwright",
+        "executionId": "5f695e15-7bbd-45d5-9f24-25e0d88d73cb",
+        "caseId": "1e8b1c8c19ff0088923178a7eebab6bb61a1aa759912c8efe6c470a130f6244f",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:54:50.586Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "native-partial-canonical-result",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "7361ab88cb41555ccb370a05f0d38842253256ab2cae63a3d1c0ac8a1b4a8538",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "cd223818709fca97524f1eab4446c506c7d674f3528efbaef092223cdf5eb63e",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.827Z"
+      },
+      {
+        "nodeId": "composition",
+        "criterionId": "native-staged-template-repair",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "d17a73bab43d300d930f4860f45cae0ed4bc004ef0d4ca69c0a61c40c7afa2a4",
+        "actor": "playwright",
+        "executionId": "5f695e15-7bbd-45d5-9f24-25e0d88d73cb",
+        "caseId": "a73df0e29459657a801d37429f1cb24bf347dab1f0fa849334f7e58484f18ff0",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:54:50.586Z"
+      },
+      {
+        "nodeId": "instructions",
+        "criterionId": "case-2",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "e54721a6924043565f73a74debd445cbfa8d66b98159fe48744f89f15a79da7d",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "2cc1ef9f1e30b7d4a6a0175fce4108ddadc8b660f41121cd3bc5e23f81d7a51f",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.826Z"
+      },
+      {
+        "nodeId": "instructions",
+        "criterionId": "case-3",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "e54721a6924043565f73a74debd445cbfa8d66b98159fe48744f89f15a79da7d",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "9f6bb77a1aad49501a7f5efec96c0f87dcaca91b905c20d48b22ac648afe70ea",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.826Z"
+      },
+      {
+        "nodeId": "instructions",
+        "criterionId": "case-4",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "e54721a6924043565f73a74debd445cbfa8d66b98159fe48744f89f15a79da7d",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "9058f6fa18bf911d1d768b8d912529a0fdb6b239c50ba825ab7ecff6a587e48a",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.826Z"
+      },
+      {
+        "nodeId": "instructions",
+        "criterionId": "native-assessment",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "e54721a6924043565f73a74debd445cbfa8d66b98159fe48744f89f15a79da7d",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "c513092f01bb90aa5089a11442ebc4e9830034c60515c375e2156cb6b6e35544",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.826Z"
+      },
+      {
+        "nodeId": "instructions",
+        "criterionId": "ordinary-no-executor",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "e54721a6924043565f73a74debd445cbfa8d66b98159fe48744f89f15a79da7d",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "a70556fa37472f332831f46d9cd5b5508dd125374a5cabdec7c0feddfa797fb1",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.826Z"
+      },
+      {
+        "nodeId": "instructions",
+        "criterionId": "http-real-contract-state",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "e54721a6924043565f73a74debd445cbfa8d66b98159fe48744f89f15a79da7d",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "217866053a50c640bcb8b808e703f275703d1b19ccacfe49182f6ed3096726bd",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.826Z"
+      },
+      {
+        "nodeId": "instructions",
+        "criterionId": "http-disabled-capability",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "e54721a6924043565f73a74debd445cbfa8d66b98159fe48744f89f15a79da7d",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "c4e73213488b6bf8709ebb66b07d2147ed5eb4a4d9c9c0a29fefff6e4b194223",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.826Z"
+      },
+      {
+        "nodeId": "discovery",
+        "criterionId": "case-1",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "80e4a2434d3ad554e6b238c66180f8baee549df6c7ccb17f016631523d0b4156",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "8bcec80aceeb5a6c079aa613386a23a5ab5032090868e532413c144aafadb881",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.826Z"
+      },
+      {
+        "nodeId": "discovery",
+        "criterionId": "case-2",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "80e4a2434d3ad554e6b238c66180f8baee549df6c7ccb17f016631523d0b4156",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "9cf35a048ed3bbfb8c37b4debf848aef838c28ba4c555e961674265783b078c0",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.826Z"
+      },
+      {
+        "nodeId": "knowledge",
+        "criterionId": "case-1",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "4e468d0d6bb16a3219025005eeea4909a67e90035ec77e2f48e93a90d96fb4cc",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "5b3d774333f9f1b1a678070e9d800b794df4b3d387630c6453c6816b04c3b078",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.826Z"
+      },
+      {
+        "nodeId": "knowledge",
+        "criterionId": "case-2",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "4e468d0d6bb16a3219025005eeea4909a67e90035ec77e2f48e93a90d96fb4cc",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "05ecb8576daa46781ee8094387ac34652923fbb2f6d6879dbfdff04d4342e1d9",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.827Z"
+      },
+      {
+        "nodeId": "knowledge",
+        "criterionId": "case-3",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "4e468d0d6bb16a3219025005eeea4909a67e90035ec77e2f48e93a90d96fb4cc",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "8158708741a2a48cc91a972432db3ef01488ba99518a2ccbcddece1b5510f6bb",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.827Z"
+      },
+      {
+        "nodeId": "knowledge",
+        "criterionId": "case-4",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "4e468d0d6bb16a3219025005eeea4909a67e90035ec77e2f48e93a90d96fb4cc",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "5d8086d9b8808aae48134349c83f3a4e0e2d80eaf20135ca7558a8dd47e9571c",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.827Z"
+      },
+      {
+        "nodeId": "knowledge",
+        "criterionId": "case-5",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "4e468d0d6bb16a3219025005eeea4909a67e90035ec77e2f48e93a90d96fb4cc",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "afe52b2eef35e6007708c2d3f523bc5409472fbcd176280f61d758a04bad7137",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.827Z"
+      },
+      {
+        "nodeId": "knowledge",
+        "criterionId": "native-compaction",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "4e468d0d6bb16a3219025005eeea4909a67e90035ec77e2f48e93a90d96fb4cc",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "75eb67f8ee3bb58e19f7bb40b8d14888091e78e6aa6056c92b54ce7cfe501cf1",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.827Z"
+      },
+      {
+        "nodeId": "knowledge",
+        "criterionId": "unavailable-library",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "4e468d0d6bb16a3219025005eeea4909a67e90035ec77e2f48e93a90d96fb4cc",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "f3ebc318855c6a77535acc93f32f338c8dbc531d7c793da589b42ed4f27eef4e",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.827Z"
+      },
+      {
+        "nodeId": "knowledge",
+        "criterionId": "portable-advice-continuity",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "4e468d0d6bb16a3219025005eeea4909a67e90035ec77e2f48e93a90d96fb4cc",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "abd3fce73d0cbe02e6d7f75280f8e8ede21d7053f6d182eaa718bf85ea6ad86d",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.827Z"
+      },
+      {
+        "nodeId": "knowledge",
+        "criterionId": "portable-advice-corruption",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "4e468d0d6bb16a3219025005eeea4909a67e90035ec77e2f48e93a90d96fb4cc",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "ab36b3c3fa8fdffb181790b30536b9bd19970335803e9a5ef42b6f1ef057f6b0",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.827Z"
+      },
+      {
+        "nodeId": "admission",
+        "criterionId": "case-1",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "067319d4f00276bae59d0f220a196a3262318c4824159c129bdb34b591f8102a",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "c845e7cabf92085c5943847011115acc060c8865db4163073142a900cb8bed77",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.827Z"
+      },
+      {
+        "nodeId": "admission",
+        "criterionId": "assessment-rejects-invented-call",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "067319d4f00276bae59d0f220a196a3262318c4824159c129bdb34b591f8102a",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "f1b2141fa73f59f3b93842042d512c0491a8231ade5ff629f1cd0a91300c3486",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.827Z"
+      },
+      {
+        "nodeId": "admission",
+        "criterionId": "ordinary-unavailable-drawing",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "067319d4f00276bae59d0f220a196a3262318c4824159c129bdb34b591f8102a",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "61d66dcc3c6e82821261cc8af6ffece219f53e95c48cb0dfe6b3f2253dc03b05",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.827Z"
+      },
+      {
+        "nodeId": "composition",
+        "criterionId": "native-save-only-recovery",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "d17a73bab43d300d930f4860f45cae0ed4bc004ef0d4ca69c0a61c40c7afa2a4",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "41943c41cc60f6e1dedc73a3f786096d6e890f4cd37891baf5c0c2a7d3fba469",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.827Z"
+      },
+      {
+        "nodeId": "results",
+        "criterionId": "case-1",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c7534468d016c8849ae042a42852a44c7b838666347f7d3f9a8762b2d31996bb",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "4d0fce426707cce369b0a93bdd9a200600a248d1044f8e119c3b03083f34a633",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.827Z"
+      },
+      {
+        "nodeId": "retention",
+        "criterionId": "case-1",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "8b28079d0a3592cbc4511e53932e4a845b3c315daacde3d4e327fb0145ac4820",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "a6cc58d7ed54ed0c76bd28bfde29752f51ff5ca30578600ce74c4c6aa13398e2",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.827Z"
+      },
+      {
+        "nodeId": "retention",
+        "criterionId": "altered-saved-transfer",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "8b28079d0a3592cbc4511e53932e4a845b3c315daacde3d4e327fb0145ac4820",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "26add57069b2b61d5abd4b662d44b86737263122f4b4c805526d88dc245975c2",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.827Z"
+      },
+      {
+        "nodeId": "media",
+        "criterionId": "case-1",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "e963a4649093471d78b6deaf4d4ed7e4fb590275b976b5da770629c1863bc3bf",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "1621bffcc6bbbc168e23ee1b549cd89a48cb6a434e681b91acf474c5b57aa3cf",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.828Z"
+      },
+      {
+        "nodeId": "media",
+        "criterionId": "case-2",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "e963a4649093471d78b6deaf4d4ed7e4fb590275b976b5da770629c1863bc3bf",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "dcab9aa02bc3623f56638aaac44bd67c782289e8bab250599b9b601f3f9213b9",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.828Z"
+      },
+      {
+        "nodeId": "lifecycle",
+        "criterionId": "case-3",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "903fcde7a130f24553c132183e31dc51c416d3557770d2f77bdf791d3b1859c4",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "a35a7ed68ac7ef9c1e3348adf34ab8a0cc73b131ce60fb728edb36a422df60fa",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.828Z"
+      },
+      {
+        "nodeId": "lifecycle",
+        "criterionId": "case-4",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "903fcde7a130f24553c132183e31dc51c416d3557770d2f77bdf791d3b1859c4",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "9ee2e6e09b93d93792e420b54f48665124add2f255fdb3ed4640db44b1a8bb0e",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.828Z"
+      },
+      {
+        "nodeId": "lifecycle",
+        "criterionId": "case-5",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "903fcde7a130f24553c132183e31dc51c416d3557770d2f77bdf791d3b1859c4",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "f3fdf29a97c25504d355e1e054ebcab93d6dbb5b3661dd35b3b0b634f10338ca",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.828Z"
+      },
+      {
+        "nodeId": "lifecycle",
+        "criterionId": "native-report-continuity",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "903fcde7a130f24553c132183e31dc51c416d3557770d2f77bdf791d3b1859c4",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "72bbf811f4d547226a6717dbf765b24585ea87bea04d8e3181d2f89bd93313e1",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.828Z"
+      },
+      {
+        "nodeId": "composition",
+        "criterionId": "native-real-mechanical-iteration",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "d17a73bab43d300d930f4860f45cae0ed4bc004ef0d4ca69c0a61c40c7afa2a4",
+        "actor": "playwright",
+        "executionId": "5f695e15-7bbd-45d5-9f24-25e0d88d73cb",
+        "caseId": "f7e686c29091b7b8c560bcf6c89427b1023f2786c3f77ebb0ca8f4d29bf9b58a",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:54:50.586Z"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "native-canonical-sequence",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "7361ab88cb41555ccb370a05f0d38842253256ab2cae63a3d1c0ac8a1b4a8538",
+        "actor": "playwright",
+        "executionId": "5f695e15-7bbd-45d5-9f24-25e0d88d73cb",
+        "caseId": "fc92e9391965bb06ba6bc62059b5ebb0eb59ae3c1e988b05f2fdb7958b238219",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:54:50.586Z"
+      },
+      {
+        "nodeId": "results",
+        "criterionId": "native-mechanical-verdict-corruption",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c7534468d016c8849ae042a42852a44c7b838666347f7d3f9a8762b2d31996bb",
+        "actor": "playwright",
+        "executionId": "5f695e15-7bbd-45d5-9f24-25e0d88d73cb",
+        "caseId": "2be8ec02acc03abbac3c5ecc6bdab5e870ab0347e1fe9d706169c7087bdf17f8",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:54:50.586Z"
+      },
+      {
+        "nodeId": "media",
+        "criterionId": "native-canonical-media-corruption",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "e963a4649093471d78b6deaf4d4ed7e4fb590275b976b5da770629c1863bc3bf",
+        "actor": "playwright",
+        "executionId": "5f695e15-7bbd-45d5-9f24-25e0d88d73cb",
+        "caseId": "725180f4f30c4f27ccf9f88661c8c43cad9651952a3d232a0c9132d8b3384a2e",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:54:50.586Z"
+      },
+      {
+        "nodeId": "admission",
+        "criterionId": "knowledge-owner-recovery",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "067319d4f00276bae59d0f220a196a3262318c4824159c129bdb34b591f8102a",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "685532aee4e54ba04d9dc2a712fa2bc1a094483c5d7cd1c18a42293a31232c0a",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.827Z"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "spec-coverage-review",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "5ea41525cf299aa7138bc0b22cb92fb4b4d2c8bea6d75b209950b3a7b0fc14bc",
+        "actor": "codex",
+        "summary": "Reviewed current handoffs against the prior independent specification review, the fourteen-finding cleanup and completed ten-finding App review, then reconciled checkpoint generation, malformed completed receipts, canonical session observation imports, final/named selection, Knowledge lifetime and actual native delivery. No product changes, compatibility exports or relaxed validation in the final test repair. Current execution: tmp/conversation-proof-ZB57xy, 6808 independently collected cases across 364 files, no issues/skips/flakes; source, compiled exports and definition snapshots unchanged. Follow-up reasoning and failed iterations: docs/ai/apps/asyra-design/reports/conversation-spec-coverage-review-2026-11-14.md. This bounded review preserves the separate historical rectangle failure as cause-unconfirmed; no 101 or full repository local test.",
+        "at": "2026-11-15T16:58:07.244Z"
+      },
+      {
+        "nodeId": "instructions",
+        "criterionId": "single-native-result-selector",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "e54721a6924043565f73a74debd445cbfa8d66b98159fe48744f89f15a79da7d",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "0af9140a64afedb6fca9302a3dc5938ad47f854b6cd289a413ea1e9c650e29e0",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.826Z"
+      },
+      {
+        "nodeId": "discovery",
+        "criterionId": "current-result-controls",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "80e4a2434d3ad554e6b238c66180f8baee549df6c7ccb17f016631523d0b4156",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "5a688db7683bfe31f5b90b974f72118fcc48b769718a2db72591a605783d1bde",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.826Z"
+      },
+      {
+        "nodeId": "results",
+        "criterionId": "retired-application-rejection",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c7534468d016c8849ae042a42852a44c7b838666347f7d3f9a8762b2d31996bb",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "35e15323031218fdb94b3dff0c8c8b08153fcefbc4f89455d1c5ff1316afb220",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.827Z"
+      },
+      {
+        "nodeId": "retention",
+        "criterionId": "unconditional-created-targets",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "8b28079d0a3592cbc4511e53932e4a845b3c315daacde3d4e327fb0145ac4820",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "e5010e9ba029d527b8983d158594da10c482d140ae5c31d62cbe866233e10644",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.828Z"
+      },
+      {
+        "nodeId": "results",
+        "criterionId": "large-native-output",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c7534468d016c8849ae042a42852a44c7b838666347f7d3f9a8762b2d31996bb",
+        "actor": "vitest",
+        "executionId": "78f26c41-642e-42d4-9046-6c9003a7c554",
+        "caseId": "81222ec6b49c6de9b54df836675403b49665e4542d0eb15763a8f59ef69ada84",
+        "summary": "Test passed",
+        "details": [],
+        "at": "2026-11-15T16:25:39.827Z"
+      }
+    ],
+    "notes": [],
+    "progress": [],
+    "sources": [
+      {
+        "nodeId": "request",
+        "revision": "2c52e20fbd4a6df7eb9bbcd777c8b63f08d9f18b1506b34ea60d2ef53d20ff56"
+      },
+      {
+        "nodeId": "instructions",
+        "revision": "2c52e20fbd4a6df7eb9bbcd777c8b63f08d9f18b1506b34ea60d2ef53d20ff56"
+      },
+      {
+        "nodeId": "discovery",
+        "revision": "2c52e20fbd4a6df7eb9bbcd777c8b63f08d9f18b1506b34ea60d2ef53d20ff56"
+      },
+      {
+        "nodeId": "knowledge",
+        "revision": "2c52e20fbd4a6df7eb9bbcd777c8b63f08d9f18b1506b34ea60d2ef53d20ff56"
+      },
+      {
+        "nodeId": "admission",
+        "revision": "2c52e20fbd4a6df7eb9bbcd777c8b63f08d9f18b1506b34ea60d2ef53d20ff56"
+      },
+      {
+        "nodeId": "composition",
+        "revision": "2c52e20fbd4a6df7eb9bbcd777c8b63f08d9f18b1506b34ea60d2ef53d20ff56"
+      },
+      {
+        "nodeId": "canonical",
+        "revision": "2c52e20fbd4a6df7eb9bbcd777c8b63f08d9f18b1506b34ea60d2ef53d20ff56"
+      },
+      {
+        "nodeId": "results",
+        "revision": "2c52e20fbd4a6df7eb9bbcd777c8b63f08d9f18b1506b34ea60d2ef53d20ff56"
+      },
+      {
+        "nodeId": "retention",
+        "revision": "2c52e20fbd4a6df7eb9bbcd777c8b63f08d9f18b1506b34ea60d2ef53d20ff56"
+      },
+      {
+        "nodeId": "media",
+        "revision": "2c52e20fbd4a6df7eb9bbcd777c8b63f08d9f18b1506b34ea60d2ef53d20ff56"
+      },
+      {
+        "nodeId": "lifecycle",
+        "revision": "2c52e20fbd4a6df7eb9bbcd777c8b63f08d9f18b1506b34ea60d2ef53d20ff56"
+      },
+      {
+        "nodeId": "evidence",
+        "revision": "2c52e20fbd4a6df7eb9bbcd777c8b63f08d9f18b1506b34ea60d2ef53d20ff56"
+      }
+    ],
+    "warnings": []
+  }
+}

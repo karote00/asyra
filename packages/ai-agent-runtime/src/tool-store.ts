@@ -51,7 +51,15 @@ export type AiToolSaveResult =
       readonly availability: AiActionAvailability
       readonly version: string
     }
-  | { readonly status: 'unsaved'; readonly issue: string }
+  | {
+      readonly status: 'unsaved'
+      readonly code: 'input-invalid' | 'storage-failed'
+      readonly issue: string
+    }
+
+/** Invalid selected identity or requested store transition, before a write. */
+class ToolStoreInputError extends Error {}
+
 export interface AiToolPersistenceOptions {
   readonly registry: AiVersionedActionRegistry
   readonly library: ReturnType<typeof createAiToolLibrary>
@@ -277,7 +285,7 @@ export const createAiToolStoreManagement = (options: {
           !input.expectedVersion?.trim() ||
           !['suspended', 'retired'].includes(input.availability)
         ) {
-          throw new Error(
+          throw new ToolStoreInputError(
             'An observed version and suspend or retire state are required'
           )
         }
@@ -286,11 +294,13 @@ export const createAiToolStoreManagement = (options: {
         const prior = await options.store.read(key)
 
         if (!prior) {
-          throw new Error('Saved revision is unavailable')
+          throw new ToolStoreInputError('Saved revision is unavailable')
         }
 
         if (prior.version !== input.expectedVersion) {
-          throw new Error('Saved revision changed; refresh before updating')
+          throw new ToolStoreInputError(
+            'Saved revision changed; refresh before updating'
+          )
         }
 
         const record = readStored(prior)
@@ -299,7 +309,7 @@ export const createAiToolStoreManagement = (options: {
           record.availability === 'retired' &&
           input.availability !== 'retired'
         ) {
-          throw new Error('Retired revisions cannot be revived')
+          throw new ToolStoreInputError('Retired revisions cannot be revived')
         }
 
         const ack = await commitStored(
@@ -315,7 +325,14 @@ export const createAiToolStoreManagement = (options: {
           version: ack.version
         }
       } catch (error) {
-        return { status: 'unsaved', issue: message(error) }
+        return {
+          status: 'unsaved',
+          code:
+            error instanceof ToolStoreInputError
+              ? 'input-invalid'
+              : 'storage-failed',
+          issue: message(error)
+        }
       }
     }
   }
@@ -457,7 +474,9 @@ export const createAiToolPersistence = (options: AiToolPersistenceOptions) => {
         const admitted = options.library.recipe(input.name, input.revision)
 
         if (!registered || registered.kind !== 'composition' || !admitted) {
-          throw new Error('Current admitted candidate is unavailable')
+          throw new ToolStoreInputError(
+            'Current admitted candidate is unavailable'
+          )
         }
 
         let evidence: StoredRecipe['evidence'] = null
@@ -520,7 +539,7 @@ export const createAiToolPersistence = (options: AiToolPersistenceOptions) => {
             !same(stored.body, record.body) ||
             !same(stored.dependencies, record.dependencies)
           ) {
-            throw new Error(
+            throw new ToolStoreInputError(
               'An immutable saved revision conflicts with this definition'
             )
           }
@@ -529,7 +548,7 @@ export const createAiToolPersistence = (options: AiToolPersistenceOptions) => {
             stored.availability === 'retired' ||
             stored.availability === 'suspended'
           ) {
-            throw new Error(
+            throw new ToolStoreInputError(
               'Unavailable saved revisions cannot be republished by save'
             )
           }
@@ -619,7 +638,14 @@ export const createAiToolPersistence = (options: AiToolPersistenceOptions) => {
           version: ack.version
         }
       } catch (error) {
-        return { status: 'unsaved', issue: message(error) }
+        return {
+          status: 'unsaved',
+          code:
+            error instanceof ToolStoreInputError
+              ? 'input-invalid'
+              : 'storage-failed',
+          issue: message(error)
+        }
       }
     })
   }
@@ -635,24 +661,31 @@ export const createAiToolPersistence = (options: AiToolPersistenceOptions) => {
           )
 
           if (!entry) {
-            throw new Error('Saved candidate is unavailable')
+            throw new ToolStoreInputError('Saved candidate is unavailable')
           }
 
           const record = readStored(entry)
 
           if (record.availability !== 'candidate') {
-            throw new Error('Only saved candidates can be explicitly resumed')
+            throw new ToolStoreInputError(
+              'Only saved candidates can be explicitly resumed'
+            )
           }
 
           if (!(await dependenciesCurrent(record))) {
-            throw new Error('Candidate dependencies require correction')
+            throw new ToolStoreInputError(
+              'Candidate dependencies require correction'
+            )
           }
 
           return await restore(entry, record, input.requestId)
         } catch (error) {
           return {
             ok: false as const,
-            code: 'admission' as const,
+            code:
+              error instanceof ToolStoreInputError
+                ? ('input-invalid' as const)
+                : ('storage-failed' as const),
             message: message(error)
           }
         }
@@ -670,7 +703,7 @@ export const createAiToolPersistence = (options: AiToolPersistenceOptions) => {
           const prior = await options.store.read(key)
 
           if (!prior) {
-            throw new Error('Saved revision is unavailable')
+            throw new ToolStoreInputError('Saved revision is unavailable')
           }
 
           const result = await management.setState({
@@ -692,7 +725,14 @@ export const createAiToolPersistence = (options: AiToolPersistenceOptions) => {
 
           return result
         } catch (error) {
-          return { status: 'unsaved', issue: message(error) }
+          return {
+            status: 'unsaved',
+            code:
+              error instanceof ToolStoreInputError
+                ? 'input-invalid'
+                : 'storage-failed',
+            issue: message(error)
+          }
         }
       })
     },

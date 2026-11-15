@@ -25,16 +25,24 @@ describe('production Feature initialization', () => {
     mocks.registerAiAgentFeature.mockReset()
   })
 
-  it('always registers the one App-owned Agent runtime', () => {
+  it('registers the App runtime without repeating Core-owned feature initialization', () => {
     const runtime = {
       run: vi.fn()
     }
 
-    initFeatures({
-      aiRuntime: runtime
-    })
+    const registration = {
+      api: { execute: vi.fn(), cancel: vi.fn() },
+      dispose: vi.fn()
+    }
 
-    expect(mocks.initFeatureSystem).toHaveBeenCalledOnce()
+    mocks.registerAiAgentFeature.mockReturnValueOnce(registration)
+    const initialized = initFeatures({ aiRuntime: runtime })
+
+    expect(initialized.ai).toBe(registration)
+    initialized.ai.dispose()
+    expect(registration.dispose).toHaveBeenCalledOnce()
+
+    expect(mocks.initFeatureSystem).not.toHaveBeenCalled()
     expect(mocks.registerAiAgentFeature).toHaveBeenCalledOnce()
     expect(mocks.registerAiAgentFeature).toHaveBeenCalledWith(runtime)
   })

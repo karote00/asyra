@@ -1,3 +1,4 @@
+import { LocalToolInputError } from './local-tool-invocation'
 import { randomUUID } from 'node:crypto'
 import { AiDesignToolIds } from '../src/constants/ai-design'
 import {
@@ -28,7 +29,12 @@ export interface LocalToolLibraryOptions
   extends
     Pick<
       AiRecipeInvokerOptions,
-      'registry' | 'validate' | 'execute' | 'leases' | 'canOverlapPreparation'
+      | 'registry'
+      | 'validate'
+      | 'execute'
+      | 'leases'
+      | 'canOverlapPreparation'
+      | 'resolveContract'
     >,
     Pick<AiToolLibraryOptions, 'limits' | 'capacity'>,
     Pick<AiToolPersistenceOptions, 'store' | 'check'> {
@@ -128,6 +134,7 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
     recipe: library.recipe,
     validate: options.validate,
     execute: options.execute,
+    resolveContract: options.resolveContract,
     canOverlapPreparation: options.canOverlapPreparation,
     leases: options.leases,
     maxSteps: options.limits.steps,
@@ -243,7 +250,7 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
         !registered ||
         registered.definition.composition !== 'allowed'
       ) {
-        return rejected(
+        throw new LocalToolInputError(
           'Use an available data-plane tool; library controls cannot be invoked as recipes.'
         )
       }
@@ -262,13 +269,13 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
         }
 
         if (pending.has(callId)) {
-          return rejected(
+          throw new LocalToolInputError(
             'An active or unsaved invocation already owns this call identity.'
           )
         }
 
         if (pending.size >= options.receiptCapacity) {
-          return rejected(
+          throw new LocalToolInputError(
             'Save outstanding receipts before starting another composition.'
           )
         }
@@ -513,6 +520,7 @@ export const createLocalToolLibrary = (options: LocalToolLibraryOptions) => {
         ) {
           return {
             status: 'unsaved',
+            code: 'input-invalid',
             issue:
               'A genuine completed receipt for this request and exact revision is required.'
           }

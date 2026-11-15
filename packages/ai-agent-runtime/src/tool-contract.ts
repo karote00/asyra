@@ -393,6 +393,17 @@ export const projectAiToolSchema = (
     : projected
 }
 
+/** Stabilize local reference targets before a consumer relocates schema branches. */
+export const normalizeAiToolSchemaReferences = (
+  schema: unknown
+): AiJsonValue => {
+  const root = detachAiJsonValue(schema)
+
+  return root && typeof root === 'object' && !Array.isArray(root)
+    ? projectAiToolSchema({ ...root }, root)
+    : root
+}
+
 /** Inspects evidence only. It cannot execute, retry, roll back or grant authority. */
 export const inspectAiToolResult = (
   contract: AiToolContract,

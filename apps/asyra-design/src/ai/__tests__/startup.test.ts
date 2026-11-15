@@ -96,9 +96,7 @@ it('allows every registered App action without confirmation while denying unknow
           action: {
             id: definition.name,
             name: definition.name,
-            arguments: {},
-            summary: {},
-            execute: definition.execute
+            arguments: {}
           },
           context: {}
         })
@@ -111,10 +109,7 @@ it('allows every registered App action without confirmation while denying unknow
         action: {
           id: 'unknown',
           name: 'unregistered_external_action',
-          arguments: {},
-          summary: {},
-
-          execute: async () => null
+          arguments: {}
         },
         context: {}
       })

@@ -52,9 +52,22 @@ const saved = {
       availability: { enum: ['candidate', 'eligible', 'suspended', 'retired'] },
       version: toolResultString
     }),
-    toolResultObject({ status: { const: 'unsaved' }, issue: toolResultString })
+    toolResultObject({
+      status: { const: 'unsaved' },
+      code: { enum: ['input-invalid', 'storage-failed'] },
+      issue: toolResultString
+    })
   ]
 }
+
+const libraryControlResult = (result: unknown): string => {
+  if (record(result) && result.code === 'input-invalid') {
+    throw new LocalToolInputError(String(result.message ?? result.issue))
+  }
+
+  return JSON.stringify(result)
+}
+
 const submitted = {
   oneOf: [
     toolResultObject(
@@ -83,6 +96,12 @@ const execution = toolResultObject(
     status: { enum: ['success', 'partial', 'failed', 'unknown'] },
     settlement: { enum: ['not-started', 'completed', 'partial', 'unknown'] },
     calls: { type: 'array' },
+    failure: toolResultObject({
+      stage: {
+        enum: ['registration', 'input', 'output', 'execution', 'cleanup']
+      },
+      message: toolResultString
+    }),
     issues: { type: 'array', items: { type: 'string' } },
     recovery: { type: 'array' }
   },
@@ -185,7 +204,7 @@ export const registeredToolInvocationSchemas = (
               })
             }),
         storage: saved,
-        receiptId: toolResultString
+        receiptId: { ...toolResultString, 'x-runtime-value': 'request' }
       },
       ['execution']
     ),
@@ -351,6 +370,9 @@ export const createLocalToolLibraryTools = (
       executes(name) ? 'mutation' : 'prepare',
       executes(name) ? ['tool-library', 'document'] : ['tool-library']
     ),
+    ...(executes(name) || name === AiDesignToolIds.SAVE_TOOL
+      ? { revision: 3 }
+      : {}),
     recoveryOutputSchema: outputSchema,
     composition: 'control-plane' as const,
     executionAccess: LocalToolAccess.COORDINATOR
@@ -362,7 +384,7 @@ export const createLocalToolLibraryTools = (
   })[] = [
     definition(
       AiDesignToolIds.SUBMIT_TOOL,
-      'Submit a reusable finite recipe when orchestrating available operations would reduce repeated manual work and no existing direct tool already fits. Composition connects registered capabilities; it cannot invent missing primitives or decide visual intent. Keep task-specific choices in fresh inputs rather than captured document identities. Optional iteration declares typed state, one registered verification check, repair steps and a finite round budget; use only mechanically decidable repairs. First get exact dependency contracts through describe_design_apis and use each registeredName and revision as the recipe dependency identity; bind fresh inputs and earlier successful outputs. The proposal schema is the canonical Runtime format. Admission checks every field and dependency revision without executing. Repair returned issues with a new submissionId; never send JavaScript, callbacks, permissions or captured request IDs. Registration is private until a genuine successful invocation and durable save. Storage failure does not undo admission; retry save_tool without replay.',
+      'Submit a reusable finite recipe when orchestrating available operations would reduce repeated manual work and no existing direct tool already fits. Composition connects registered capabilities; it cannot invent missing primitives or decide visual intent. Keep task-specific choices in fresh inputs rather than captured document identities. Optional iteration declares typed state, one registered verification check, repair steps and a finite round budget; use only mechanically decidable repairs. First get exact dependency contracts through read_design_contracts and use each registeredName and revision as the recipe dependency identity; bind fresh inputs and earlier successful outputs. The proposal schema is the canonical Runtime format. Admission checks every field and dependency revision without executing. Repair returned issues with a new submissionId; never send JavaScript, callbacks, permissions or captured request IDs. Registration is private until a genuine successful invocation and durable save. Storage failure does not undo admission; retry save_tool without replay.',
       {
         ...object(
           {
@@ -385,10 +407,13 @@ export const createLocalToolLibraryTools = (
     definition(
       AiDesignToolIds.SAVE_TOOL,
       'Retry storage only, without executing product work. Supply a receiptId returned by invoke_tool to promote that exact successful revision. Without receiptId, save candidate metadata only; this does not prove usability. Invented, foreign or mismatched receipts are rejected.',
-      object({ ...identity, receiptId: toolResultString }, [
-        'name',
-        'revision'
-      ]),
+      object(
+        {
+          ...identity,
+          receiptId: { ...toolResultString, 'x-runtime-value': 'request' }
+        },
+        ['name', 'revision']
+      ),
       saved
     ),
     definition(
@@ -581,7 +606,7 @@ export const createLocalToolLibraryTools = (
       const selected = definitions.find((item) => item.name === name)
 
       if (!selected) {
-        throw new LocalToolInputError('Unknown library control')
+        throw new Error('Unknown library control')
       }
 
       const issue = operationInputIssue(input, selected.inputSchema)
@@ -595,16 +620,26 @@ export const createLocalToolLibraryTools = (
       const library = resolve()
 
       switch (name) {
-        case AiDesignToolIds.SUBMIT_TOOL:
-          return JSON.stringify(
-            await library.submit({
-              submissionId: input.submissionId as string,
-              proposal: input.proposal,
-              ...(input.expectedRevision === undefined
-                ? {}
-                : { expectedRevision: input.expectedRevision as number })
-            })
-          )
+        case AiDesignToolIds.SUBMIT_TOOL: {
+          const result = await library.submit({
+            submissionId: input.submissionId as string,
+            proposal: input.proposal,
+            ...(input.expectedRevision === undefined
+              ? {}
+              : { expectedRevision: input.expectedRevision as number })
+          })
+
+          if (!result.ok) {
+            throw new LocalToolInputError(
+              result.message,
+              undefined,
+              'issues' in result ? result.issues : undefined
+            )
+          }
+
+          return JSON.stringify(result)
+        }
+
         case AiDesignToolIds.INVOKE_TOOL:
           return JSON.stringify(
             await library.invoke({
@@ -619,7 +654,7 @@ export const createLocalToolLibraryTools = (
             })
           )
         case AiDesignToolIds.SAVE_TOOL:
-          return JSON.stringify(
+          return libraryControlResult(
             await library.save({
               name: input.name as string,
               revision: input.revision as number,
@@ -629,7 +664,7 @@ export const createLocalToolLibraryTools = (
             })
           )
         case AiDesignToolIds.MANAGE_TOOL:
-          return JSON.stringify(
+          return libraryControlResult(
             input.operation === 'resume'
               ? await library.resume(
                   input.name as string,
@@ -642,7 +677,7 @@ export const createLocalToolLibraryTools = (
                 )
           )
         default:
-          throw new LocalToolInputError('Unknown library control')
+          throw new Error('Unknown library control')
       }
     }
   }

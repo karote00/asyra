@@ -64,6 +64,7 @@ export interface BasicApiContract {
   effect: BasicApiEffect
   result: {
     kind: BasicApiResultKind
+    valueFields?: readonly string[]
     valueSchema?: Record<string, unknown>
     description: string
     identityPath?: readonly string[]
@@ -142,6 +143,7 @@ export interface BasicApiParameterDefinition {
 }
 
 export interface BasicApiDefinition {
+  resultValueFields?: readonly string[]
   resultValueSchema?: Record<string, unknown>
   discovery?: {
     purpose: string
@@ -190,6 +192,7 @@ export const defineBasicApi = ({
   resultKind,
   resultIdentityPath,
   resultValueSchema,
+  resultValueFields,
   resultPaths,
   examples,
   description = '',
@@ -204,6 +207,7 @@ export const defineBasicApi = ({
   result: {
     ...describeResultContract(effect, resultKind),
     ...(resultValueSchema ? { valueSchema: resultValueSchema } : {}),
+    ...(resultValueFields ? { valueFields: resultValueFields } : {}),
     ...(resultIdentityPath ? { identityPath: resultIdentityPath } : {})
   },
   name: `api_${owner}_${method}`,

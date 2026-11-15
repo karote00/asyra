@@ -1,0 +1,20 @@
+{
+  "run": "taipei-101-fixed-1794482034291",
+  "sourcePayloads": [
+    "192-output.json",
+    "201-output.json",
+    "229-input.json"
+  ],
+  "parentOrigin": {
+    "x": 5578.087073967879,
+    "y": 34920.10644240931
+  },
+  "workspacePosition": {
+    "x": 6135.178466223895,
+    "y": 9799.762615203406
+  },
+  "localPosition": {
+    "x": 557.0913922560158,
+    "y": -25120.343827205907
+  }
+}

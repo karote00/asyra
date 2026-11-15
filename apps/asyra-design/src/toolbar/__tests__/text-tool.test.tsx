@@ -17,7 +17,7 @@ describe('Text toolbar entry', () => {
 
   it('shows a T SVG and switches through the existing tool controller', () => {
     const view = render(<ToolButton />)
-    const button = screen.getByRole('button', { name: 'Text', exact: true })
+    const button = screen.getByRole('button', { name: 'Text' })
 
     expect(button.querySelector('svg')).not.toBeNull()
     expect(button.getAttribute('aria-pressed')).toBe('false')

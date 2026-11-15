@@ -4,6 +4,18 @@ Never record completed plans here.
 
 ## Current Status
 
+- Implemented with focused verification: [Pen handoff type diagnostics](plans/pen-handoff-type-diagnostics-plan.md).
+  Resolved the 152 scoped review diagnostics without casts or weakened checks;
+  all 27 focused Pen/property browser scenarios pass.
+
+- Implemented with focused verification: [App review - five handoff fixes](plans/app-review-five-handoff-fixes-plan.md).
+  Bounded follow-up for Pen continuation, obsolete renderer exports, test entry
+  coverage, conflicting current docs and native test admission. No 101 or full suite.
+
+- Implemented with scoped verification: [App contract cleanup - fourteen findings](plans/app-contract-cleanup-fourteen-findings-plan.md).
+  Independent scope limited to the fourteen November 15 App review findings;
+  follow-up consumer and test-entry corrections are recorded in the five-fix plan. Full App
+  acceptance and unrelated inherited type diagnostics remain outside this scope.
 
 - Full-building Taipei 101 testing uses the
   [fixed user-approved prompt](modules/ai-development-and-debugging.md#fixed-full-building-taipei-101-test-prompt).
@@ -19,10 +31,21 @@ Never record completed plans here.
   recording first, then evaluation, retrieval, efficiency and local validation.
 - Active: [Editable Design Agent](plans/ai-design-agent-plan.md), including the
   accepted [AI Conversation Experience](plans/ai-conversation-experience-plan.md) contracts.
-  Active design follow-up: [Predictable tools without mandatory review ceremonies](plans/agent-context-and-report-continuity-plan.md#predictable-tools-without-mandatory-review-ceremonies) -
-  remove compulsory evidence/approval procedures and completion gates; preserve
-  fixed tool contracts, staged reuse and AI final verification. Documentation and
-  review only; implementation is pending. Earlier observations remain in that plan.
+  Active replacement: [Spec-derived conversation verification](plans/agent-context-and-report-continuity-plan.md#spec-derived-conversation-verification) -
+  remove the old verifier, synthetic reply dispatcher and current callers first;
+  then derive and prove whole-conversation handoffs independently of test selection.
+  Shared evidence and production-path proofs are in progress, not full acceptance.
+  The previous 5,734-test result remains historical execution evidence.
+  Implemented correction: [Complete handoff corrections](plans/agent-context-and-report-continuity-plan.md#complete-handoff-corrections) -
+  field lifetime through projection/storage, equivalent structural numeric bindings,
+  known-target instruction consistency and canonical parent/coordinate proof.
+  Earlier adapter rotation tests did not prove canonical rotation propagation.
+  Focused handoff validation passed; live model adoption and GPU pixels remain unclaimed.
+  Implemented design follow-up: [Tool outcomes, evaluation stopping and composable discovery](plans/agent-context-and-report-continuity-plan.md#tool-outcomes-evaluation-stopping-and-composable-discovery) -
+  unified failure meaning, corrected evaluation interruption and separated
+  request-composable search from exact contract reads. Focused checks and the
+  [complete November 12 observation](reports/tool-outcomes-discovery-15m-2026-11-12.md)
+  pass; original report sessions remain open. Earlier observations remain in the plan.
   Implemented task: [Staged Design Execution and Conversation Context](plans/staged-design-execution-plan.md) -
   preserve useful stage results in App context, apply each ready stage, continue
   through the host and overlap independent preparation; consolidate recorded

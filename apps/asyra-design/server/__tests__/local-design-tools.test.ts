@@ -1,4 +1,3 @@
-import { AiDesignToolIds } from '../../src/constants/ai-design'
 import capacityFixture from './fixtures/recorded-101/pattern-budget-recovery-20261023.json'
 import {
   nativeToolInputSchema,
@@ -12,11 +11,7 @@ import {
   admitPreparedDesign,
   admitPreparedDesignDelivery
 } from '../../src/ai/prepared-design-admission'
-import { createLocalDesignTools as createOwner } from '../local-design-tools'
-import { withToolContractAssertions } from './tool-contract-assertions'
-
-const createLocalDesignTools = (...args: Parameters<typeof createOwner>) =>
-  withToolContractAssertions(createOwner(...args))
+import { createLocalDesignTools } from '../local-design-tools'
 
 import {
   createDesignPreparationSession,
@@ -77,6 +72,34 @@ const request = (artifactId: string) => ({
 })
 
 describe('local semantic design tools', () => {
+  it('preserves the existing-parent document reference in model-facing application inputs', () => {
+    const tools = createLocalDesignTools(actions)
+    const [apply] = tools.modelActions(actions)
+
+    expect(apply.inputSchema).toMatchObject({
+      properties: {
+        artifactId: { 'x-runtime-value': 'request-artifact' },
+        parentId: {
+          type: 'string',
+          minLength: 1,
+          'x-runtime-value': 'document'
+        }
+      }
+    })
+    expect(
+      operationInputIssue(
+        { artifactId: 'prepared', parentId: '' },
+        apply.inputSchema
+      )
+    ).toBeDefined()
+    expect(
+      operationInputIssue(
+        { artifactId: 'prepared', parentId: 'existing' },
+        apply.inputSchema
+      )
+    ).toBeUndefined()
+  })
+
   it('declares composable preparation with exact request reference lifetimes', () => {
     const tools = createLocalDesignTools(actions)
     const prepare = tools.definitions.find(
@@ -174,7 +197,7 @@ describe('local semantic design tools', () => {
 
     expect(invalid).toMatchObject({
       available: false,
-      recovery: 'correct_input'
+      code: 'TOOL_INPUT_INVALID'
     })
     expect(source.children[1].key).toBe('same')
   })
@@ -427,7 +450,7 @@ it('returns brief measurements and blocks an unmet requirement before canvas exe
     available: false,
     applicable: false,
     settlement: 'not-started',
-    recovery: 'correct_input',
+    code: 'TOOL_INPUT_INVALID',
     review: { checks: [{ actual: 360, expected: 400, passed: false }] }
   })
   expect(() => tools.resolveBatch(request(reply.artifactId))).toThrow(
@@ -644,7 +667,7 @@ it('reports all independent input mistakes with paths before compiling geometry'
     expect(result.message).toContain(path)
   }
 
-  expect(result.recovery).toBe('correct_input')
+  expect(result.code).toBe('TOOL_INPUT_INVALID')
   expect(compile).not.toHaveBeenCalled()
 })
 
@@ -682,7 +705,7 @@ it('identifies missing shared projection as a local input repair, not a referenc
   )
 
   expect(result.message).toContain('draft.projection')
-  expect(result.recovery).toBe('correct_input')
+  expect(result.code).toBe('TOOL_INPUT_INVALID')
   expect(compile).not.toHaveBeenCalled()
 })
 
@@ -708,7 +731,7 @@ it('reports malformed repeated geometry as input recovery even while structure i
     )
   )
 
-  expect(result.recovery).toBe('correct_input')
+  expect(result.code).toBe('TOOL_INPUT_INVALID')
   expect(result.message).toContain('draft.children[0]')
   expect(compile).not.toHaveBeenCalled()
 })
@@ -763,7 +786,7 @@ it('reports only the selected construction type when repairing a malformed proje
     )
   )
 
-  expect(result.recovery).toBe('correct_input')
+  expect(result.code).toBe('TOOL_INPUT_INVALID')
   expect(result.message).toContain('gradientStops[0].opacity')
   expect(result.message).toContain('gradientStops[1].opacity')
   expect(result.message).not.toMatch(/width|height|rings|unexpected constant/)
@@ -896,7 +919,7 @@ it('repairs representative live input failures without research, compilation ret
 
     expect(failure).toMatchObject({
       available: false,
-      recovery: 'correct_input'
+      code: 'TOOL_INPUT_INVALID'
     })
     expect(compile).not.toHaveBeenCalled()
     const repaired = JSON.parse(
@@ -992,20 +1015,18 @@ it('uses retained semantic identities for repeated edits without rebuilding or a
   }
 })
 
-it('defaults application to compact receipts while retaining all prepared identity references', async () => {
+it('rejects retired application selectors while retaining all prepared identity references', async () => {
   const tools = createLocalDesignTools(actions)
   const prepared = JSON.parse(
     await tools.call('prepare_design', { draft: draft() }, signal())
   )
   const compact = tools.resolveBatch(request(prepared.artifactId))
 
-  expect(compact.actions[0].arguments).toMatchObject({ response: 'compact' })
+  expect(compact.actions[0].arguments).not.toHaveProperty('response')
   const fullRequest = request(prepared.artifactId)
 
   Object.assign(fullRequest.actions[0].arguments, { response: 'full' })
-  const full = tools.resolveBatch(fullRequest)
-
-  expect(full.actions[0].arguments).toMatchObject({ response: 'full' })
+  expect(() => tools.resolveBatch(fullRequest)).toThrow()
   const design = (
     compact.actions[0].arguments as { design: PreparedDesignDelivery }
   ).design
@@ -1172,7 +1193,7 @@ it('retains expanded geometry ceilings before compiling and rejects indivisible 
 
   expect(result).toMatchObject({
     available: false,
-    code: 'DESIGN_BUDGET_EXCEEDED'
+    code: 'TOOL_INPUT_INVALID'
   })
   expect(result.message).toContain('sourceNodes=10001 > 10000')
   expect(compile).not.toHaveBeenCalled()
@@ -1192,7 +1213,7 @@ it('retains expanded geometry ceilings before compiling and rejects indivisible 
   }
 
   expect(inspectDesignBudget(primitive)).toMatchObject({
-    code: 'DESIGN_BUDGET_EXCEEDED'
+    code: 'TOOL_INPUT_INVALID'
   })
 })
 
@@ -1434,7 +1455,7 @@ it('admits a declarative surface grid through native and public schemas without 
 
   expect(JSON.parse(rejected.text)).toMatchObject({
     available: false,
-    code: 'DESIGN_BUDGET_EXCEEDED'
+    code: 'TOOL_INPUT_INVALID'
   })
   for (const issue of ['nonplanar', 'crossed', 'degenerate', 'uv'] as const) {
     const invalid = structuredClone(input)
@@ -1803,8 +1824,8 @@ it('hands a material revision to its material-only consumer and reuses the same 
   )
   const found = JSON.parse(
     await query.call(
-      AiDesignToolIds.DESCRIBE_DESIGN_APIS,
-      { query: materialDefinition.name, view: 'full' },
+      'read_design_contracts',
+      { names: [materialDefinition.name], view: 'full' },
       signal()
     )
   )
@@ -1885,7 +1906,7 @@ it.each([10000, 2000])(
       undefined,
       limit
     )
-    const tools = createOwner(actions, session)
+    const tools = createLocalDesignTools(actions, session)
     const definition = tools.definitions.find(
       (tool) => tool.name === 'prepare_design'
     )
@@ -1922,7 +1943,7 @@ it.each([10000, 2000])(
       value.retainedDraft
     )
     expect(compile).not.toHaveBeenCalled()
-    const forged = createOwner(actions)
+    const forged = createLocalDesignTools(actions)
 
     expect(forged.resultIssue('prepare_design', value)).toMatch(
       /unavailable|owned/i
@@ -1933,7 +1954,7 @@ it.each([10000, 2000])(
 it('keeps exhausted source retention a genuine no-write failure', async () => {
   const compile = vi.fn(prepareDesignAsync)
   const session = createDesignPreparationSession(prepareDesign, compile)
-  const tools = createOwner(actions, session)
+  const tools = createLocalDesignTools(actions, session)
   const definition = tools.definitions.find(
     (tool) => tool.name === 'prepare_design'
   )

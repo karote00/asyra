@@ -233,13 +233,6 @@ export const systemContextApis = {
     )
   },
 
-  setSelectedVectorPoint: (point: SelectedVectorPointState | null) => {
-    core.setSystemProperty(
-      PresetSystemPropertyKeys.SELECTED_VECTOR_POINT,
-      point
-    )
-  },
-
   getHoveredVectorPoint: (): SelectedVectorPointState | null => {
     return (
       core.getSystemProperty<SelectedVectorPointState | null>(
@@ -257,13 +250,6 @@ export const systemContextApis = {
       core.getSystemProperty<SelectedVectorSegmentState | null>(
         PresetSystemPropertyKeys.SELECTED_VECTOR_SEGMENT
       ) ?? null
-    )
-  },
-
-  setSelectedVectorSegment: (segment: SelectedVectorSegmentState | null) => {
-    core.setSystemProperty(
-      PresetSystemPropertyKeys.SELECTED_VECTOR_SEGMENT,
-      segment
     )
   },
 
@@ -301,9 +287,9 @@ export const systemContextApis = {
   },
 
   clearVectorPointState: () => {
-    systemContextApis.setSelectedVectorPoint(null)
+    selectionApis.clearVectorPointSelection({ undoable: false })
     systemContextApis.setHoveredVectorPoint(null)
-    systemContextApis.setSelectedVectorSegment(null)
+    selectionApis.clearVectorSegmentSelection({ undoable: false })
     systemContextApis.setHoveredVectorSegment(null)
     systemContextApis.setHoveredVectorSegmentInsertPoint(null)
   },
@@ -416,8 +402,6 @@ export const systemContextApis = {
     systemContextApis.setPathEditingStartNewSubpath(
       options.startNewSubpath ?? true
     )
-    selectionApis.clearVectorPointSelection({ undoable: false })
-    selectionApis.clearVectorSegmentSelection({ undoable: false })
     systemContextApis.clearVectorPointState()
   },
 
@@ -425,8 +409,6 @@ export const systemContextApis = {
     systemContextApis.setPathEditingMode(false)
     systemContextApis.setPathEditingVectorId(null)
     systemContextApis.setPathEditingStartNewSubpath(false)
-    selectionApis.clearVectorPointSelection({ undoable: false })
-    selectionApis.clearVectorSegmentSelection({ undoable: false })
     systemContextApis.clearVectorPointState()
     systemContextApis.switchPrimaryTool(PrimaryToolType.SELECT)
   },

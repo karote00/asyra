@@ -22,7 +22,7 @@ export const createOrganizationAction = (
   ),
   name: AiActionNames.ORGANIZE_DESIGN,
   description:
-    'Organize current layers after reading their hierarchy. Group siblings with an optional name, ungroup one official Group while preserving its children, or reorder siblings using an insertion index in the remaining sibling list. Uses native coordinate and stacking behavior. Structural receipt confirms the result; explicitly inspect if stacking changes need visual review. Does not delete artwork, reparent across containers or create reusable component instances.',
+    'Organize known current layers; read hierarchy only when required identities or relationships are unknown. Group siblings with an optional name, ungroup one official Group while preserving its children, or reorder siblings using an insertion index in the remaining sibling list. Uses native coordinate and stacking behavior. Structural receipt confirms the result; explicitly inspect if stacking changes need visual review. Does not delete artwork, reparent across containers or create reusable component instances.',
   inputSchema: {
     type: 'object',
     additionalProperties: false,

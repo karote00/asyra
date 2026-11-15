@@ -12,10 +12,9 @@
 
 ## Property Panel Rule
 
-- When element is selected: show element layout + fills properties.
 - When element is selected: show element layout + fills + strokes properties.
-- Single Text selection instead shows geometry and supported Typography fields;
-  its solid text color is not a Fill/Stroke list.
+- Single Text selection shows geometry, Typography and the complete Fill panel;
+  unsupported Text Stroke controls remain hidden.
 - When vector point is selected in path-editing context: show point properties.
 - Fill and stroke add/remove replace the complete canonical field once through
   plural `core.updateElementProperties(...)`.
@@ -83,7 +82,8 @@
 
 ## Aggregation Rule
 
-- Aggregate values (`x/y/width/height/rotation`) are app-registered UI properties.
+- Aggregate values (`x/y/width/height/rotation`) are Preset-owned UI properties;
+  the App consumes the official registrations.
 - `fills` is a custom computed UI property, not a provider-local adapter.
 - `strokes` is a custom computed UI property, not a provider-local adapter.
 - Current `fills` contract returns `FillRowAttrs[]` for single selection and `MIX` for non-single selection.

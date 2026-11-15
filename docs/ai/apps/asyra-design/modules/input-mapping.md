@@ -65,6 +65,7 @@ Define how raw keyboard/pointer/wheel input is normalized into app events and sy
   - `V` -> select
   - `O` -> oval
   - `P` -> pen
+  - `T` -> text
 
 - `input.shortcut.cancel`
 

@@ -1,3 +1,4 @@
+import { getActiveCollaborationHandle } from '../collaboration/session-observation'
 import React, { useEffect, useRef, useState } from 'react'
 import core from '../contexts'
 import {
@@ -110,7 +111,9 @@ const RenderApp: React.FC<RenderAppProps> = ({
           return
         }
 
-        const handle = collaborationLifecycle?.getActiveCollaborationHandle()
+        const handle = collaborationMode
+          ? getActiveCollaborationHandle()
+          : undefined
 
         if (collaborationMode && !handle) {
           throw new Error(

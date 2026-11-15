@@ -56,7 +56,7 @@ const setup = () => {
   const workflow = createLocalDesignWorkflow(designs, operations)
   const owners = [designs, operations, workflow]
   const definition = operations.definitions.find(
-    (tool) => tool.name === 'describe_design_apis'
+    (tool) => tool.name === 'search_design_tools'
   )
 
   if (!definition) {
@@ -93,7 +93,7 @@ describe('purpose and parameter discovery', () => {
     'finds the coordinate owner for recorded query %s',
     async (query) => {
       const run = setup()
-      const page = await run.query({ query, view: 'usage' })
+      const page = await run.query({ query })
       const candidates = [...page.apis, ...page.tools].sort(
         (a, b) => a.rank - b.rank
       )
@@ -189,11 +189,8 @@ describe('purpose and parameter discovery', () => {
     )
     const page = JSON.parse(
       await owner.call(
-        'describe_design_apis',
-        {
-          query: 'translate elements offset',
-          inputFields: ['x', 'y']
-        },
+        'search_design_tools',
+        { query: 'translate elements offset', inputFields: ['x', 'y'] },
         new AbortController().signal
       )
     )

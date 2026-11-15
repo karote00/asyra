@@ -29,7 +29,7 @@ const receiptSchema = object({
   leaseId: toolRequestReference
 })
 
-// These recipe fixtures include the current mandatory mechanical follow-up.
+// These recipe fixtures explicitly request a mechanical follow-up.
 // Geometry correctness belongs to the review owner tests; this fixture supplies
 // an explicit measurement and stamp, never infers completion from a write.
 const measuredReview = () => {
@@ -334,7 +334,7 @@ it('recovers a lost browser release acknowledgement without reviving the handle 
         input: receipt,
         inputSchema: receiptSchema
       })
-    ).rejects.toThrow(/unavailable/)
+    ).rejects.toThrow('Artifact cleanup is incomplete for this request')
     expect(
       app.queries.get(sibling.snapshotId, sibling.leaseId, app.signal)
         .orderedIds
@@ -611,8 +611,12 @@ it.each([
         ).text
       )
 
-      expect(rejected).toMatchObject({ ok: false, code: 'admission' })
-      expect(rejected.issues).toEqual(
+      expect(rejected).toMatchObject({
+        available: false,
+        code: 'TOOL_INPUT_INVALID',
+        settlement: 'not-started'
+      })
+      expect(rejected.inputIssues).toEqual(
         expect.arrayContaining([
           expect.objectContaining({ code: 'dependency', path: '/steps/0' }),
           expect.objectContaining({ code: 'dependency', path: '/steps/1' })

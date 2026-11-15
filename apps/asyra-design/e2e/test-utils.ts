@@ -512,14 +512,18 @@ export async function getSelectedElementRect(
 ): Promise<ElementRect | null> {
   return page.evaluate(async () => {
     const core = (await import('../src/testing/runtime-access')).core
-    const selectedId = core?.deps?.selection?.getElementSelectionIds?.()?.[0]
+    const selectedId = core.getSelectedElementIds()[0]
 
     if (!selectedId) {
       return null
     }
 
-    const element = core?.deps?.sceneTree?.getElementById?.(selectedId)
-    const computed = element?.getAllComputedData?.() ?? {}
+    const computed = core.getElementComputedData(selectedId)
+
+    if (!computed) {
+      throw new Error('Selected element data is unavailable')
+    }
+
     const x = typeof computed.x === 'number' ? computed.x : null
     const y = typeof computed.y === 'number' ? computed.y : null
     const width = typeof computed.width === 'number' ? computed.width : null
@@ -545,11 +549,8 @@ export async function getElementRectClientCenter(
 ): Promise<{ x: number; y: number }> {
   return page.evaluate(async ({ x, y, width, height }) => {
     const core = (await import('../src/testing/runtime-access')).core
-    const zoom = core?.getSystemProperty?.('zoom') ?? 1
-    const viewport = core?.getSystemProperty?.('viewportPosition') ?? {
-      x: 0,
-      y: 0
-    }
+    const zoom = core.getViewportScale()
+    const viewport = core.getViewportPosition()
 
     return {
       x: (x + width / 2) * zoom + viewport.x,
@@ -618,28 +619,18 @@ export async function dragSelectedElementBy(
 
 export const getUndoHistoryDepth = async (page: Page): Promise<number> =>
   page.evaluate(async () => {
-    const performanceProfile = (
-      await import('../src/testing/runtime-access')
-    ).getActiveAiDrawingPerformanceProfile()
-
-    if (performanceProfile) {
-      return performanceProfile.readHistoryDepth()
-    }
-
     const core = (await import('../src/testing/runtime-access')).core
 
-    return core?.deps?.factory?.transact?.undoStack?.length ?? 0
+    return core.getUndoHistoryDepth()
   })
 
 export const getTransactionSnapshot = async (page: Page) =>
   page.evaluate(async () => {
     const core = (await import('../src/testing/runtime-access')).core
-    const transact = core?.deps?.factory?.transact
-    const undoStack = transact?.undoStack ?? []
 
     return {
-      undoCount: undoStack.length,
-      isTransacting: transact?.isTransacting ?? 0
+      undoCount: core.getUndoHistoryDepth(),
+      isIdle: core.isTransactionBoundaryIdle()
     }
   })
 
@@ -649,18 +640,30 @@ export const setSelectedGradient = async (
 ): Promise<void> => {
   await page.evaluate(async (nextGradient) => {
     const core = (await import('../src/testing/runtime-access')).core
-    const selectedId = core?.deps?.selection?.getElementSelectionIds?.()?.[0]
+    const selectedId = core.getSelectedElementIds()[0]
 
     if (!selectedId) {
       return
     }
 
-    const element = core?.deps?.sceneTree?.getElementById?.(selectedId)
-    const computed = element?.getAllComputedData?.() ?? {}
-    const fill = computed?.fills?.[0]
+    const computed = core.getElementComputedData(selectedId)
 
-    if (!fill?.id || !nextGradient) {
-      return
+    if (!computed) {
+      throw new Error('Selected element data is unavailable')
+    }
+
+    const fill: unknown = Array.isArray(computed.fills)
+      ? computed.fills[0]
+      : undefined
+
+    if (
+      !fill ||
+      typeof fill !== 'object' ||
+      !('id' in fill) ||
+      typeof fill.id !== 'string' ||
+      !nextGradient
+    ) {
+      throw new Error('Selected fill or gradient is unavailable')
     }
 
     if (typeof core?.patchElementProperties !== 'function') {
@@ -676,7 +679,6 @@ export const setSelectedGradient = async (
               key: 'fills',
               set: {
                 [fill.id]: {
-                  ...fill,
                   gradient: nextGradient
                 }
               }

@@ -1,3 +1,5 @@
+import { AiToolFailureCodes } from '../src/constants/ai-design'
+import { LocalToolInputError } from './local-tool-invocation'
 import { directResultDeliveryProperties } from './local-design-sequence'
 import {
   designRepresentationGuidance,
@@ -28,10 +30,7 @@ import { AiActionNames } from '../src/constants/ai-actions'
 import { LocalToolAccess } from './local-tool-scheduler'
 import { AiDesignToolIds } from '../src/constants/ai-design'
 import type { createLocalDesignTools } from './local-design-tools'
-import {
-  LocalOperationPreparationError,
-  type createLocalOperationTools
-} from './local-operation-tools'
+import { type createLocalOperationTools } from './local-operation-tools'
 
 /** Compose existing owners; never create a second preparation or execution path. */
 export const createLocalDesignWorkflow = (
@@ -84,9 +83,7 @@ export const createLocalDesignWorkflow = (
       []
     ),
     key: { type: 'string' },
-    recoverable: { type: 'boolean' },
     stage: { type: 'string' },
-    receiptScope: { enum: ['compact', 'full'] },
     context: toolInternalResult({}),
     status: { type: 'string' },
     settlement: { type: 'string' },
@@ -282,7 +279,7 @@ export const createLocalDesignWorkflow = (
             {
               ...preparation,
               ...semantics,
-              revision: 9,
+              revision: 10,
               partialOutputSchema: {
                 anyOf: [semantics.partialOutputSchema, stoppedOutputSchema]
               },
@@ -290,7 +287,7 @@ export const createLocalDesignWorkflow = (
               name: AiDesignToolIds.PREPARE_AND_APPLY_DESIGN,
               executionAccess: LocalToolAccess.EXCLUSIVE,
               description:
-                'Prepare and apply one ready retained part, through existing validation and canvas operations. Optional parentId attaches this part to an existing container in parent-local coordinates. The successful compositionIds list contains acknowledged roots in creation order. Bind /compositionIds/0 for a single created part; the same ID can anchor later parts; no full ID map is needed for continuation. Invalid preparation never applies. Safe capacity plans execute through ordered retained parts in this call; only actual receipts prove writes. Returns preparation findings, actual root identity and requested captures. Default compact response omits duplicated context, ID maps and pure work/timing diagnostics; full retains them. Operation results, limitations and recovery remain complete. Use inspection=defer when no immediate visual decision is needed, then inspect at the next visual decision boundary. Does not replace existing objects or retry failures. ' +
+                'Prepare and apply one ready retained part, through existing validation and canvas operations. Optional parentId attaches this part to an existing container in parent-local coordinates. The successful compositionIds list contains acknowledged roots in creation order. Bind /compositionIds/0 for a single created part; the same ID can anchor later parts; no full ID map is needed for continuation. Invalid preparation never applies. Safe capacity plans execute through ordered retained parts in this call; only actual receipts prove writes. Returns preparation findings, actual root identity and requested captures. The owner result omits duplicated context and pure work/timing diagnostics. createdTargets always carries acknowledged source-key mappings for binding and retention; select delivery fields or status when the model does not need these values. Host retain and delivery independently control storage and model output. Operation results, limitations and recovery remain complete. Use inspection=defer when no immediate visual decision is needed, then inspect at the next visual decision boundary. Does not replace existing objects or retry failures. ' +
                 designRepresentationGuidance,
               inputSchema: {
                 ...preparation.inputSchema,
@@ -302,13 +299,7 @@ export const createLocalDesignWorkflow = (
                       'Existing editable container for this ready part; coordinates are parent-local. Omit for workspace insertion.'
                   },
                   message: { type: 'string', minLength: 1, maxLength: 1000 },
-                  inspection: { type: 'string', enum: ['immediate', 'defer'] },
-                  response: { type: 'string', enum: ['compact', 'full'] },
-                  includeTargets: {
-                    type: 'boolean',
-                    description:
-                      'Select portable source-key to applied-element mappings in createdTargets. For later edits retain /createdTargets with status delivery; no map is returned by default. Consumers revalidate current document IDs.'
-                  }
+                  inspection: { type: 'string', enum: ['immediate', 'defer'] }
                 }
               }
             }
@@ -331,9 +322,7 @@ export const createLocalDesignWorkflow = (
         typeof args !== 'object' ||
         Array.isArray(args)
       ) {
-        throw new LocalOperationPreparationError(
-          'Combined preparation/application is unavailable.'
-        )
+        throw new Error('Combined preparation/application is unavailable.')
       }
 
       const input = args as Record<string, unknown>
@@ -352,15 +341,11 @@ export const createLocalDesignWorkflow = (
               'delivery',
               'message',
               'inspection',
-              'response',
-              'includeTargets',
               'parentId'
             ].includes(key)
         ) ||
         (input.parentId !== undefined &&
           (typeof input.parentId !== 'string' || !input.parentId.trim())) ||
-        (input.response !== undefined &&
-          !['compact', 'full'].includes(String(input.response))) ||
         (input.inspection !== undefined &&
           !['immediate', 'defer'].includes(String(input.inspection))) ||
         (input.message !== undefined &&
@@ -368,8 +353,8 @@ export const createLocalDesignWorkflow = (
             !input.message.trim() ||
             input.message.length > 1000))
       ) {
-        throw new LocalOperationPreparationError(
-          'Provide draft or repair, and optional parentId, message, inspection, response only.'
+        throw new LocalToolInputError(
+          'Provide draft or repair, and optional parentId, message, inspection only.'
         )
       }
 
@@ -415,10 +400,6 @@ export const createLocalDesignWorkflow = (
       }
 
       const deliver = (value: Record<string, unknown>) => {
-        if (input.response === 'full') {
-          return JSON.stringify(value)
-        }
-
         // Inner owner observations already retained the original diagnostic values.
         const { reuse: _reuse, sourceWork: _sourceWork, ...delivered } = value
 
@@ -536,10 +517,6 @@ export const createLocalDesignWorkflow = (
       const receipt = await runStep(operations, apply, {
         arguments: {
           artifactId: prepared.artifactId,
-          response:
-            input.includeTargets === true
-              ? 'full'
-              : (input.response ?? 'compact'),
           ...(input.parentId === undefined ? {} : { parentId: input.parentId })
         },
         ...(input.message === undefined ? {} : { message: input.message }),
@@ -564,26 +541,23 @@ export const createLocalDesignWorkflow = (
         completedSteps.push(apply.name)
       }
 
-      receipt.createdTargets =
-        input.includeTargets === true
-          ? (receipt.actionResults ?? []).flatMap(
-              (entry: {
-                actionName: string
-                result?: { compositionId?: unknown; keyToId?: unknown }
-              }) =>
-                entry.actionName === AiActionNames.APPLY_PREPARED_DESIGN &&
-                entry.result?.keyToId
-                  ? [
-                      {
-                        compositionId: entry.result.compositionId,
-                        keyToId: entry.result.keyToId
-                      }
-                    ]
-                  : []
-            )
-          : []
+      receipt.createdTargets = (receipt.actionResults ?? []).flatMap(
+        (entry: {
+          actionName: string
+          result?: { compositionId?: unknown; keyToId?: unknown }
+        }) =>
+          entry.actionName === AiActionNames.APPLY_PREPARED_DESIGN &&
+          entry.result?.keyToId
+            ? [
+                {
+                  compositionId: entry.result.compositionId,
+                  keyToId: entry.result.keyToId
+                }
+              ]
+            : []
+      )
 
-      if (input.response !== 'full') {
+      {
         delete receipt.context
         for (const entry of receipt.actionResults ?? []) {
           if (entry.actionName !== AiActionNames.APPLY_PREPARED_DESIGN) {
@@ -592,14 +566,10 @@ export const createLocalDesignWorkflow = (
 
           const result = entry.result
 
-          result.appliedElementCount =
-            result.appliedElementIds?.length ?? prepared.elementCount
           delete result.appliedElementIds
           delete result.keyToId
           delete result.roleToElementIds
         }
-
-        receipt.receiptScope = 'compact'
       }
 
       return deliver({ ...prepared, ...receipt, completedSteps })
@@ -619,7 +589,6 @@ export const createLocalDesignWorkflow = (
     properties: {
       key: { type: 'string', minLength: 1, maxLength: 160 },
       materialSourceId: definition.inputSchema.properties.materialSourceId,
-      ...directResultDeliveryProperties,
       draft: { $ref: '#/$defs/readyDraft' },
       repair: { $ref: '#/$defs/draftRepair' },
       parentId: definition.inputSchema.properties.parentId,
@@ -809,7 +778,7 @@ export const createLocalDesignWorkflow = (
         hasInvalidContinuation ||
         hasInvalidParentReference
       ) {
-        throw new LocalOperationPreparationError(
+        throw new LocalToolInputError(
           'Parts require unique nonempty keys and either parentId or an earlier parentPart.'
         )
       }
@@ -1002,7 +971,7 @@ export const createLocalDesignWorkflow = (
 
       return rejectedParts.length
         ? {
-            recovery: 'correct_input',
+            code: AiToolFailureCodes.INPUT_INVALID,
             rejectedParts,
             ...(complete
               ? {
@@ -1034,7 +1003,7 @@ export const createLocalDesignWorkflow = (
         typeof args === 'object' &&
         ('retain' in args || 'delivery' in args)
       ) {
-        throw new LocalOperationPreparationError(
+        throw new LocalToolInputError(
           'Result delivery is handled at the host entry. Inside execute_design select retain/delivery on that enclosing call.'
         )
       }
@@ -1058,26 +1027,20 @@ export const createLocalDesignWorkflow = (
               input.parentId
             ),
             ...(input.message === undefined ? {} : { message: input.message }),
-            inspection: input.inspection ?? 'immediate',
-            response: input.response ?? 'compact',
-            ...(input.includeTargets === undefined
-              ? {}
-              : { includeTargets: input.includeTargets })
+            inspection: input.inspection ?? 'immediate'
           },
           signal
         )
       }
 
       if (name !== AiDesignToolIds.PREPARE_AND_APPLY_DESIGN) {
-        throw new LocalOperationPreparationError(
-          'Combined preparation/application is unavailable.'
-        )
+        throw new Error('Combined preparation/application is unavailable.')
       }
 
       const issue = operationInputIssue(args, inputSchema)
 
       if (issue) {
-        throw new LocalOperationPreparationError(issue)
+        throw new LocalToolInputError(issue)
       }
 
       const input = args as Record<string, unknown>
@@ -1231,11 +1194,7 @@ export const createLocalDesignWorkflow = (
           arguments: {
             parts: remaining,
             ...(input.message === undefined ? {} : { message: input.message }),
-            inspection: input.inspection ?? 'defer',
-            response: input.response ?? 'compact',
-            ...(input.includeTargets === undefined
-              ? {}
-              : { includeTargets: input.includeTargets })
+            inspection: input.inspection ?? 'defer'
           }
         }
       }
@@ -1285,12 +1244,6 @@ export const createLocalDesignWorkflow = (
               ...(input.message === undefined
                 ? {}
                 : { message: input.message }),
-              ...(input.includeTargets === undefined
-                ? {}
-                : { includeTargets: input.includeTargets }),
-              ...(input.response === undefined
-                ? {}
-                : { response: input.response }),
               inspection:
                 index === parts.length - 1
                   ? (input.inspection ?? 'immediate')

@@ -36,7 +36,7 @@
   - repeatable appearance-property mutations
   - first-canonical-fill and first-canonical-stroke color query/update
     boundaries for bounded feature actions
-  - gradient geometry and stroke-related vector-bounds repair
+  - gradient geometry and canonical Stroke field patches without element-geometry repair
 
 - `property-patch.ts`
 

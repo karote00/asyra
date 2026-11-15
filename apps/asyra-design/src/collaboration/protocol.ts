@@ -163,8 +163,8 @@ export interface DocumentSessionBootstrapPublication {
 
 export interface DocumentSessionBootstrap {
   readonly checkpoint: unknown
-  /** Reset generation; absent only on legacy protocol peers. */
-  readonly documentGeneration?: number
+  /** Backend-owned destructive Reset generation. */
+  readonly documentGeneration: number
   readonly durableSequence: number
   readonly headSequence: number
   readonly pendingTail: readonly DocumentSessionBootstrapPublication[]
@@ -2118,8 +2118,7 @@ const parseDocumentSessionBootstrap = (
     !isRecord(value) ||
     !Object.prototype.hasOwnProperty.call(value, 'checkpoint') ||
     value.checkpoint == null ||
-    (Object.prototype.hasOwnProperty.call(value, 'documentGeneration') &&
-      !isNonNegativeSafeInteger(value.documentGeneration)) ||
+    !isNonNegativeSafeInteger(value.documentGeneration) ||
     !isNonNegativeSafeInteger(value.durableSequence) ||
     !isNonNegativeSafeInteger(value.headSequence) ||
     value.headSequence < value.durableSequence ||
@@ -2156,7 +2155,7 @@ const parseDocumentSessionBootstrap = (
 
   return {
     checkpoint: value.checkpoint,
-    documentGeneration: Number(value.documentGeneration ?? 0),
+    documentGeneration: value.documentGeneration,
     durableSequence: value.durableSequence,
     headSequence: value.headSequence,
     pendingTail

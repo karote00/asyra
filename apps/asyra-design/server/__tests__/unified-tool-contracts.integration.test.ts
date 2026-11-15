@@ -98,7 +98,7 @@ it.each([
   ['checks', [{ key: 'body', property: 'width', expected: -1, tolerance: 0 }]],
   ['checks', [{ key: 'body', property: 'height', expected: -1, tolerance: 0 }]]
 ])(
-  'rejects invalid brief %s at the declared input boundary',
+  'rejects invalid brief %s at the declared input boundary - case %#',
   async (field, value) => {
     const run = preparation()
     const draft = {

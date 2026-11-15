@@ -8,6 +8,7 @@ import {
   operationInputIssue
 } from '../operation-input-schema'
 import { AiDesignToolIds } from '../../src/constants/ai-design'
+import { LocalToolInputError } from '../local-tool-invocation'
 
 const signal = () => new AbortController().signal
 
@@ -76,7 +77,7 @@ it('rejects invalid note updates atomically and returns detached values', async 
       { facts: [{ id: 'first', statement: 'Changed' }, { id: 'broken' }] },
       signal()
     )
-  ).rejects.toThrow()
+  ).rejects.toBeInstanceOf(LocalToolInputError)
   await expect(
     owner.call(
       facts,
@@ -88,7 +89,7 @@ it('rejects invalid note updates atomically and returns detached values', async 
       },
       signal()
     )
-  ).rejects.toThrow('unique')
+  ).rejects.toBeInstanceOf(LocalToolInputError)
   const value = (await owner.call(facts, {}, signal())) as {
     facts: { statement: string }[]
   }
@@ -99,11 +100,42 @@ it('rejects invalid note updates atomically and returns detached values', async 
   })
 })
 
+it('replaces authored facts without an evidence gate and rejects retired correction input', async () => {
+  const owner = createLocalDesignContext({})
+
+  await owner.call(
+    facts,
+    { facts: [{ id: 'view', statement: 'Initial estimate' }] },
+    signal()
+  )
+  const note = {
+    id: 'view',
+    statement: 'Revised estimate',
+    scope: 'Visible surface',
+    sources: ['https://example.com/reference'],
+    verification: 'Authored estimate'
+  }
+  const updated = await owner.call(facts, { facts: [note] }, signal())
+
+  expect(updated).toEqual({ facts: [note] })
+  await expect(
+    owner.call(
+      facts,
+      {
+        sourceCorrections: [{ id: 'view', reason: 'Retired input' }]
+      },
+      signal()
+    )
+  ).rejects.toBeInstanceOf(LocalToolInputError)
+  expect(await owner.call(facts, {}, signal())).toEqual(updated)
+})
+
 it('does not publish a prefix when source identity resolution fails', async () => {
+  const failure = new Error('Unknown attachment')
   const owner = createLocalDesignContext({
     resolveSources: (sources) => {
       if (sources.includes('attachment:missing')) {
-        throw new Error('Unknown attachment')
+        throw failure
       }
 
       return sources
@@ -121,7 +153,7 @@ it('does not publish a prefix when source identity resolution fails', async () =
       },
       signal()
     )
-  ).rejects.toThrow('Unknown attachment')
+  ).rejects.toBe(failure)
   expect(await owner.call(facts, {}, signal())).toEqual({ facts: [] })
 })
 
@@ -355,7 +387,7 @@ it('keeps source-owner failures distinct from correctable authored context input
     signal()
   )
 
-  expect(JSON.parse(invalid.text).recovery).toBe('correct_input')
+  expect(JSON.parse(invalid.text).code).toBe('TOOL_INPUT_INVALID')
   const failed = await invokeLocalTool(
     owner,
     definition,
@@ -364,6 +396,45 @@ it('keeps source-owner failures distinct from correctable authored context input
   )
 
   expect(failed.success).toBe(false)
-  expect(JSON.parse(failed.text).recovery).not.toBe('correct_input')
+  expect(JSON.parse(failed.text).code).not.toBe('TOOL_INPUT_INVALID')
   expect(await owner.call(facts, {}, signal())).toContain('"facts":[]')
+})
+
+it('distinguishes rejected crop input from unavailable source bounds without storing notes', async () => {
+  for (const decoded of [true, false]) {
+    const owner = createLocalDesignContext({
+      validateReferences: () => [
+        {
+          referenceId: 'reference:known',
+          attachmentIndex: 0,
+          ...(decoded ? { validation: { width: 8, height: 5 } } : {})
+        }
+      ]
+    })
+
+    await expect(
+      owner.call(
+        references,
+        {
+          referenceImageIndexes: [0],
+          references: [
+            {
+              referenceId: 'reference:known',
+              region: { x: 7, y: 1, width: 3, height: 2 }
+            }
+          ]
+        },
+        signal()
+      )
+    ).rejects.toMatchObject({
+      stage: 'input',
+      code: decoded ? 'TOOL_INPUT_INVALID' : 'SOURCE_UNAVAILABLE'
+    })
+    expect(
+      await owner.call(references, { referenceImageIndexes: [0] }, signal())
+    ).toEqual({
+      referenceImageIndexes: [0],
+      references: [{ referenceId: 'reference:known' }]
+    })
+  }
 })

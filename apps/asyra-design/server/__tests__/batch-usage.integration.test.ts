@@ -23,14 +23,12 @@ const loadBatchRuntime = async () => {
     await import('../../src/ai/basic-api-actions')
   const { observeAiAction } = await import('../../src/ai/runtime-input')
 
-  return {
-    core,
-    applyPreset,
-    PresetProfiles,
-    PresetDefaults,
-    createBasicApiActions,
-    observeAiAction
-  }
+  applyPreset(core, {
+    profile: PresetProfiles.CUSTOM,
+    defaults: [PresetDefaults.BASIC_SHAPES, PresetDefaults.CONTAINERS]
+  })
+
+  return { core, createBasicApiActions, observeAiAction }
 }
 
 let batchRuntime: Awaited<ReturnType<typeof loadBatchRuntime>>
@@ -50,35 +48,35 @@ beforeAll(async () => {
       vi.unstubAllGlobals()
     }
 
-    console.info(
+    process.stdout.write(
       JSON.stringify({
         measurement: 'batch-usage-module-initialization',
         durationMs: performance.now() - startedAt
-      })
+      }) + '\n'
     )
   }
 })
 
-it('delivers selected batch usage independent of unrelated inventory and executes its real owner example', async () => {
+it.each([
+  {
+    title:
+      'executes selected batch usage through real owners with recovery and history',
+    inventoryOnly: false
+  },
+  {
+    title:
+      'keeps selected batch usage unchanged with 10000 unrelated catalog entries',
+    inventoryOnly: true
+  }
+])('$title', async ({ inventoryOnly }) => {
   const hadWindow = 'window' in globalThis
 
   if (!hadWindow) {
     vi.stubGlobal('window', {})
   }
 
-  const {
-    core,
-    applyPreset,
-    PresetProfiles,
-    PresetDefaults,
-    createBasicApiActions,
-    observeAiAction
-  } = batchRuntime
+  const { core, createBasicApiActions, observeAiAction } = batchRuntime
 
-  applyPreset(core, {
-    profile: PresetProfiles.CUSTOM,
-    defaults: [PresetDefaults.BASIC_SHAPES, PresetDefaults.CONTAINERS]
-  })
   core.load({
     version: '1.0.0',
     props: {},
@@ -265,11 +263,11 @@ it('delivers selected batch usage independent of unrelated inventory and execute
   try {
     const { call, invoke, host } = setup()
     const query = {
-      operations: ['element.deleteElements'],
+      names: ['element.deleteElements'],
       view: 'usage',
       includeResultSchema: true
     }
-    const concise = await call('describe_design_apis', {
+    const concise = await call('read_design_contracts', {
       ...query,
       includeResultSchema: false
     })
@@ -281,7 +279,7 @@ it('delivers selected batch usage independent of unrelated inventory and execute
     expect(concise.apis[0].usageGuide.results.interpretation).toContain(
       'separate toolOutcome acknowledgement'
     )
-    const reply = await call('describe_design_apis', {
+    const reply = await call('read_design_contracts', {
       ...query,
       includeResultSchema: true
     })
@@ -305,12 +303,12 @@ it('delivers selected batch usage independent of unrelated inventory and execute
       }) + '\n'
     )
     for (const invalid of [
-      { operations: query.operations, includeResultSchema: true },
+      { operations: query.names, includeResultSchema: true },
       { ...query, view: 'full' },
       { ...query, includeResultSchema: 'true' }
     ]) {
       expect(
-        (await invoke('describe_design_apis', invalid)).outcome.status
+        (await invoke('read_design_contracts', invalid)).outcome.status
       ).toBe('failed')
     }
 
@@ -327,7 +325,7 @@ it('delivers selected batch usage independent of unrelated inventory and execute
     expect(api.usageGuide.instructions).toContain('Omit target-supplied')
     expect(api.usageGuide.parameters).toBeUndefined()
     expect(api.usageGuide.hostContract).toEqual({
-      tool: 'describe_design_apis',
+      tool: 'read_design_contracts',
       arguments: { names: ['design_operations.execute_design'], view: 'usage' }
     })
     expect(JSON.stringify(api.usageGuide.operationParameters)).toContain(
@@ -340,29 +338,43 @@ it('delivers selected batch usage independent of unrelated inventory and execute
     expect(api.usageGuide.recovery).toMatch(/replay/i)
     expect(api.inputSchema).toBeUndefined()
     expect(api.outputSchema).toBeUndefined()
-    const large = setup(10000)
-    const inventory = await large.call('describe_design_apis', {
-      query: 'Unrelated capability'
-    })
+    if (inventoryOnly) {
+      const large = setup(10000)
+      const inventory = await large.call('search_design_tools', {
+        query: 'Unrelated capability'
+      })
 
-    const baselineInventory = await call('describe_design_apis', {
-      query: 'Unrelated capability'
-    })
+      const baselineInventory = await call('search_design_tools', {
+        query: 'Unrelated capability'
+      })
 
-    expect(inventory.count - baselineInventory.count).toBe(10000)
-    const expanded = await large.call('describe_design_apis', query)
+      expect(inventory.count - baselineInventory.count).toBe(10000)
+      const expanded = await large.call('read_design_contracts', query)
 
-    expect(expanded.resultKey).toEqual(expect.any(String))
-    expect(reply.resultKey).toEqual(expect.any(String))
-    expect(expanded.resultKey).not.toBe(reply.resultKey)
-    expect({ ...expanded, resultKey: undefined }).toEqual({
-      ...reply,
-      resultKey: undefined
-    })
+      expect(expanded.resultKey).toEqual(expect.any(String))
+      expect(reply.resultKey).toEqual(expect.any(String))
+      expect(expanded.resultKey).not.toBe(reply.resultKey)
+      expect({ ...expanded, resultKey: undefined }).toEqual({
+        ...reply,
+        resultKey: undefined
+      })
+      expect(dispatched).toEqual([])
+      process.stdout.write(
+        JSON.stringify({
+          measurement: 'selected-usage-catalog-growth',
+          unrelatedOperations: inventory.count - baselineInventory.count,
+          replyBytes: Buffer.byteLength(JSON.stringify(reply)),
+          expandedReplyBytes: Buffer.byteLength(JSON.stringify(expanded))
+        }) + '\n'
+      )
+
+      return
+    }
+
     const replyBytes = Buffer.byteLength(JSON.stringify(reply))
 
     expect(replyBytes).toBeLessThan(recorded.baselineReplyBytes)
-    const menu = await call('describe_design_apis', {
+    const menu = await call('search_design_tools', {
       query: 'element.deleteElements'
     })
     const selected = menu.apis.find(
@@ -371,8 +383,8 @@ it('delivers selected batch usage independent of unrelated inventory and execute
     )
 
     expect(selected.usage).toEqual({
-      tool: 'describe_design_apis',
-      arguments: { operations: query.operations, view: 'usage' }
+      tool: 'read_design_contracts',
+      arguments: { view: 'usage', names: query.names }
     })
     const again = await call(
       api.definition.refresh.tool,
@@ -526,7 +538,7 @@ it('delivers selected batch usage independent of unrelated inventory and execute
       settlement: 'not-started',
       actionName: 'api_element_deleteElements'
     })
-    expect(partial.recovery).toContain('do not replay acknowledged mutations')
+    expect(partial).not.toHaveProperty('recovery')
     expect(operationInputIssue(partial, api.usageGuide.results)).toBeUndefined()
     expect(partial.executionResult, JSON.stringify(partial)).toHaveProperty(
       'actionResults'
@@ -565,16 +577,14 @@ it('delivers selected batch usage independent of unrelated inventory and execute
     expect(core.getElementMetadata(pendingIds[1])).toBeUndefined()
     const multiple = JSON.parse(
       await readCompleteInformation(
-        async (input) =>
-          JSON.stringify(await call('describe_design_apis', input)),
+        async (input, requestedTool) =>
+          JSON.stringify(await call(requestedTool, input)),
         {
-          operations: [
-            'element.deleteElements',
-            'element.updateElementProperties'
-          ],
+          names: ['element.deleteElements', 'element.updateElementProperties'],
           view: 'usage',
           includeResultSchema: true
-        }
+        },
+        'read_design_contracts'
       )
     )
 
@@ -586,9 +596,10 @@ it('delivers selected batch usage independent of unrelated inventory and execute
     // Independent full schema remains available through the existing paged read.
     const full = JSON.parse(
       await readCompleteInformation(
-        async (input) =>
-          JSON.stringify(await call('describe_design_apis', input)),
-        { operations: query.operations, view: 'full' }
+        async (input, requestedTool) =>
+          JSON.stringify(await call(requestedTool, input)),
+        { names: query.names, view: 'full' },
+        'read_design_contracts'
       )
     )
 
@@ -602,9 +613,10 @@ it('delivers selected batch usage independent of unrelated inventory and execute
     }
     const nativeUsage = JSON.parse(
       await readCompleteInformation(
-        async (input) =>
-          JSON.stringify(await call('describe_design_apis', input)),
-        nativeQuery
+        async (input, requestedTool) =>
+          JSON.stringify(await call(requestedTool, input)),
+        nativeQuery,
+        'read_design_contracts'
       )
     ).tools[0]
     const nativeInput = {
@@ -714,9 +726,10 @@ it('delivers selected batch usage independent of unrelated inventory and execute
     )
     const dependency = JSON.parse(
       await readCompleteInformation(
-        async (input) =>
-          JSON.stringify(await call('describe_design_apis', input)),
-        { names: nativeQuery.names, view: 'full' }
+        async (input, requestedTool) =>
+          JSON.stringify(await call(requestedTool, input)),
+        { names: nativeQuery.names, view: 'full' },
+        'read_design_contracts'
       )
     ).tools[0]
 
@@ -724,7 +737,7 @@ it('delivers selected batch usage independent of unrelated inventory and execute
     expect(dependency.delivery.outputSchema).toBeDefined()
     expect(operationInputIssue(noChange, dependency.outputSchema)).toBeDefined()
     const fieldReply = await invoke(
-      'describe_design_apis',
+      'read_design_contracts',
       api.fieldQuery.arguments
     )
 
@@ -732,16 +745,17 @@ it('delivers selected batch usage independent of unrelated inventory and execute
     for (const selection of [
       { names: [api.name], view: 'usage', includeResultSchema: true },
       {
-        query: 'element.deleteElements',
+        names: ['element.deleteElements'],
         view: 'usage',
         includeResultSchema: true
       }
     ]) {
       const selected = JSON.parse(
         await readCompleteInformation(
-          async (input) =>
-            JSON.stringify(await call('describe_design_apis', input)),
-          selection
+          async (input, requestedTool) =>
+            JSON.stringify(await call(requestedTool, input)),
+          selection,
+          'read_design_contracts'
         )
       )
 
@@ -757,13 +771,14 @@ it('delivers selected batch usage independent of unrelated inventory and execute
     )[0]
     const editGuide = JSON.parse(
       await readCompleteInformation(
-        async (input) =>
-          JSON.stringify(await call('describe_design_apis', input)),
+        async (input, requestedTool) =>
+          JSON.stringify(await call(requestedTool, input)),
         {
-          operations: ['element.setElementPositions'],
+          names: ['element.setElementPositions'],
           view: 'usage',
           includeResultSchema: true
-        }
+        },
+        'read_design_contracts'
       )
     ).apis[0]
     const editedReply = await invoke('execute_design', {
@@ -811,7 +826,7 @@ it('delivers selected batch usage independent of unrelated inventory and execute
           replyBytes,
           baselineReplyBytes: modelDelivery.baselineReplyBytes,
           pages: 1,
-          unrelatedOperations: 10000
+          unrelatedOperations: 0
         }
       }) + '\n'
     )
@@ -1005,7 +1020,6 @@ it.each(
                 if (view === 'interrupted') {
                   return JSON.stringify({
                     available: false,
-                    recoverable: true,
                     code: 'OWNER_INTERRUPTED',
                     message: 'Read completed evidence; do not replay.',
                     settlement: 'partial',
@@ -1042,19 +1056,27 @@ it.each(
         view: 'usage',
         includeResultSchema: true,
         ...(shape === 'scoped'
-          ? { inputScope: { operation: 'draft', nodeTypes: ['pattern'] } }
+          ? {
+              scopes: {
+                'fixture.retained_source': {
+                  inputScope: { operation: 'draft', nodeTypes: ['pattern'] }
+                }
+              }
+            }
           : {})
       }
 
-      const read = async (input: unknown) =>
+      const read = async (input: unknown, requestedTool: string) =>
         (
           await host.invoke({
-            name: 'design_operations.describe_design_apis',
+            name: 'design_operations.' + requestedTool,
             input
           })
         ).text
 
-      const discovered = JSON.parse(await readCompleteInformation(read, query))
+      const discovered = JSON.parse(
+        await readCompleteInformation(read, query, 'read_design_contracts')
+      )
 
       expect(discovered.tools, JSON.stringify(discovered)).toBeDefined()
       expect(wrapper).toHaveBeenCalledTimes(exposure === 'registry' ? 1 : 0)
@@ -1136,7 +1158,11 @@ it.each(
       if (exposure === 'registry') {
         const savedFailure = {
           ...success,
-          storage: { status: 'unsaved', issue: 'Injected storage outage' },
+          storage: {
+            status: 'unsaved',
+            code: 'storage-failed',
+            issue: 'Injected storage outage'
+          },
           toolOutcome: { status: 'partial', settlement: 'completed' }
         }
 
@@ -1223,9 +1249,7 @@ it.each(
             toolOutcome: { status: 'failed', settlement: 'unknown' }
           })
           expect(valueOf(result).message).toContain('output')
-          expect(valueOf(result).recovery).toContain(
-            'Do not automatically replay'
-          )
+          expect(valueOf(result)).not.toHaveProperty('recovery')
         } else {
           // A valid internal receipt followed by invalid model delivery preserves settlement.
           expect(valueOf(result)).toMatchObject({
@@ -1242,7 +1266,11 @@ it.each(
 
       expect(calls).toBe(3)
       const refreshed = JSON.parse(
-        await readCompleteInformation(read, entry.definition.refresh.arguments)
+        await readCompleteInformation(
+          read,
+          entry.definition.refresh.arguments,
+          'read_design_contracts'
+        )
       ).tools[0]
 
       expect(refreshed.usageGuide).toEqual(entry.usageGuide)
@@ -1267,28 +1295,16 @@ it.each(
       const rejected = JSON.parse(invalid.text)
 
       expect(invalid.success).toBe(false)
-      if (exposure === 'registry') {
-        expect(rejected.execution).toMatchObject({
-          status: 'failed',
-          settlement: 'not-started',
-          calls: [
-            {
-              name: invocation.arguments.name,
-              status: 'failed',
-              settlement: 'not-started'
-            }
-          ]
-        })
-        expect(rejected.execution.issues.join(' ')).toContain('unknown')
-        expect(
-          operationInputIssue(rejected, entry.usageGuide.results)
-        ).toBeUndefined()
-      } else {
-        expect(rejected).toMatchObject({
-          stage: 'admission',
-          settlement: 'not-started'
-        })
-      }
+      expect(rejected).toMatchObject({
+        code: 'TOOL_INPUT_INVALID',
+        stage: 'admission',
+        settlement: 'not-started'
+      })
+      expect(rejected.message).toContain('unknown')
+      expect(rejected).not.toHaveProperty('execution')
+      expect(
+        operationInputIssue(rejected, entry.usageGuide.results)
+      ).toBeUndefined()
 
       await expect(
         host.invoke({
@@ -1311,8 +1327,11 @@ it.each(
           ).text
         )
 
-        expect(stale.execution.status).toBe('failed')
-        expect(stale.execution.settlement).toBe('not-started')
+        expect(stale).toMatchObject({
+          code: 'TOOL_INPUT_INVALID',
+          settlement: 'not-started'
+        })
+        expect(stale).not.toHaveProperty('execution')
         expect(
           operationInputIssue(stale, entry.usageGuide.results)
         ).toBeUndefined()
@@ -1385,15 +1404,19 @@ it('bounds the recorded fill and context short-name queries while retaining qual
     ]
   })
 
-  const read = async (query: Record<string, unknown>) => {
+  const read = async (toolName: string, query: Record<string, unknown>) => {
     let pages = 0
     const body = await readCompleteInformation(
-      async (args) => {
+      async (args, requestedTool) => {
         pages++
 
-        return ops.call('describe_design_apis', args, signal)
+        return ops.call(requestedTool, args, signal)
       },
-      { ...query, view: 'usage' }
+      {
+        ...query,
+        ...(toolName === 'read_design_contracts' ? { view: 'usage' } : {})
+      },
+      toolName
     )
 
     return { ...JSON.parse(body), pages, bytes: Buffer.byteLength(body) }
@@ -1408,7 +1431,7 @@ it('bounds the recorded fill and context short-name queries while retaining qual
       ],
       [['read_design_context'], 20000, 1]
     ] as const) {
-      const short = await read({ names })
+      const short = await read('read_design_contracts', { names })
 
       expect(short.missingNames).toEqual([])
       expect(short.tools.map((entry: { name: string }) => entry.name)).toEqual(
@@ -1416,25 +1439,30 @@ it('bounds the recorded fill and context short-name queries while retaining qual
       )
       expect(short.apis[0].usageGuide.operationParameters).toBeDefined()
       const qualified = short.apis[0].recipeDependency.name
-      const byQuery = await read({ query: names[0] })
+      const byQuery = await read('read_design_contracts', { names: [names[0]] })
 
       expect(byQuery.tools).toEqual([])
       expect(byQuery.apis[0].recipeDependency.name).toBe(qualified)
-      const machine = await read({
+      const machine = await read('read_design_contracts', {
         names: [names[0]],
         includeResultSchema: true
       })
 
-      expect(machine.tools[0].registeredName).toBe(qualified)
+      expect(machine.apis[0].recipeDependency.name).toBe(qualified)
+      expect(machine.tools).toEqual([])
 
-      const alternative = await read({ query: qualified })
+      const alternative = await read('read_design_contracts', {
+        names: [qualified]
+      })
 
       expect(alternative.tools[0].registeredName).toBe(qualified)
       expect(alternative.tools[0].usageGuide.parameters).toBeDefined()
       expect(alternative.tools[0].outputFields.length).toBeLessThan(40)
       expect(short.bytes).toBeLessThan(budget)
       expect(short.pages).toBeLessThanOrEqual(pages)
-      const explicit = await read({ names: [names[0], qualified] })
+      const explicit = await read('read_design_contracts', {
+        names: [names[0], qualified]
+      })
 
       expect(
         explicit.tools.map(

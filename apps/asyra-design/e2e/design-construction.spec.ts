@@ -727,7 +727,7 @@ test('artifact-targeted mixed batch uses normal actions and one Undo/Redo bounda
       operations: [
         {
           name: AiActionNames.APPLY_PREPARED_DESIGN,
-          arguments: { artifactId: prepared.artifactId, response: 'compact' }
+          arguments: { artifactId: prepared.artifactId }
         },
         {
           name: AiActionNames.UPDATE_DESIGN_ELEMENT,

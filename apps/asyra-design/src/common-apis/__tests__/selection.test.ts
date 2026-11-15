@@ -24,7 +24,7 @@ beforeEach(() => {
 })
 describe('element selection admission', () => {
   it.each([['missing'], ['valid', 'missing'], ['missing', 'valid']])(
-    'preserves the complete previous selection for invalid IDs: %j',
+    'preserves the complete previous selection for invalid IDs: %j - case %#',
     (...ids) => {
       expect(() => selectionApis.selectElements(ids)).toThrow(
         'Selection target does not exist: missing'

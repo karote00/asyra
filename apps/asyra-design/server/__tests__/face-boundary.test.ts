@@ -1,3 +1,4 @@
+import { contractReadFixture } from './contract-read-fixture'
 import { readCompleteInformation } from './tool-contract-assertions'
 import { completeUsageBudget } from './tool-contract-assertions'
 import { recordAcquisitionCost } from './tool-contract-assertions'
@@ -337,13 +338,17 @@ it('delivers and executes the selected boundary example with lower total bytes a
   const main = createLocalDesignWorkflow(designs, operations)
   const signal = new AbortController().signal
   const pages: number[] = []
-  const raw = await readCompleteInformation(async (input) => {
-    const text = await operations.call('describe_design_apis', input, signal)
+  const raw = await readCompleteInformation(
+    async (input, requestedTool) => {
+      const text = await operations.call(requestedTool, input, signal)
 
-    pages.push(Buffer.byteLength(text))
+      pages.push(Buffer.byteLength(text))
 
-    return text
-  }, fixture.query)
+      return text
+    },
+    contractReadFixture(fixture.query.names, fixture.query),
+    'read_design_contracts'
+  )
 
   process.stdout.write(
     JSON.stringify({
@@ -655,7 +660,7 @@ it('recovers recorded ambiguous face keys through returned field repair without 
   const call = (input: unknown) =>
     invokeLocalTool(main, main.definitions[0], input, signal)
 
-  const { plan: _plan, ...currentInput } = collision.input
+  const { plan: _plan, response: _response, ...currentInput } = collision.input
   const input = { ...currentInput, inspection: 'defer' }
   const failureReply = await call(input)
   const failure = JSON.parse(failureReply.text)

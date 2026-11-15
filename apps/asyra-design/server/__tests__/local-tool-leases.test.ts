@@ -244,7 +244,7 @@ it('keeps failed cleanup retryable and rejects use while cleanup is incomplete',
     'temporary IO'
   )
   await expect(open(host, 'b', undefined, 'local', reference)).rejects.toThrow(
-    'unavailable'
+    'cleanup is incomplete'
   )
   await host.release({ requestId: 'r', callId: 'a' })
   await host.release({ requestId: 'r', callId: 'a' })
@@ -474,4 +474,80 @@ it('classifies retained result lifetime from schema metadata rather than names o
   expect(
     localToolSchemaIsPortable({ type: 'string', 'x-runtime-value': 'secret' })
   ).toBe(false)
+})
+
+it('tracks nonportable paths without tainting equal portable values', () => {
+  const schema = {
+    type: 'object',
+    $defs: { stamp: { type: 'object', 'x-runtime-value': 'request' } },
+    properties: {
+      stamp: { $ref: '#/$defs/stamp' },
+      'points/list': {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            x: { type: 'number' },
+            token: { type: 'string', 'x-runtime-value': 'secret' }
+          }
+        }
+      },
+      choice: {
+        anyOf: [
+          { type: 'number' },
+          { type: 'string', 'x-runtime-value': 'request' }
+        ]
+      },
+      handle: reference
+    }
+  }
+  const paths = new Set<string>()
+
+  expect(
+    localToolReferences(
+      {
+        stamp: { revision: 0 },
+        'points/list': [{ x: 0, token: 'zero' }],
+        choice: 0,
+        handle: 'live'
+      },
+      schema,
+      paths
+    )
+  ).toEqual(['live'])
+  expect([...paths].sort()).toEqual([
+    '/handle',
+    '/points~1list/0/token',
+    '/stamp'
+  ])
+})
+
+it('retains root-referenced portable values and finds recursive artifact lifetimes', () => {
+  const portable = {
+    type: 'object',
+    properties: { label: { type: 'string' }, child: { $ref: '#' } },
+    additionalProperties: false
+  }
+
+  expect(localToolSchemaIsPortable(portable)).toBe(true)
+  expect(
+    localToolReferences({ label: 'root', child: { label: 'leaf' } }, portable)
+  ).toEqual([])
+  const ephemeral = {
+    ...portable,
+    properties: { ...portable.properties, handle: reference }
+  }
+
+  expect(localToolSchemaIsPortable(ephemeral)).toBe(false)
+  expect(
+    localToolReferences({ child: { handle: 'nested-handle' } }, ephemeral)
+  ).toEqual(['nested-handle'])
+  for (const $ref of [
+    'https://invalid.test/schema',
+    '#/missing',
+    '#/properties/a~2b'
+  ]) {
+    expect(() => localToolSchemaIsPortable({ $ref })).toThrow()
+    expect(() => localToolReferences({}, { $ref })).toThrow()
+  }
 })

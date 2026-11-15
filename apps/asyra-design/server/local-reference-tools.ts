@@ -1,3 +1,4 @@
+import { AiToolFailureCodes } from '../src/constants/ai-design'
 import {
   toolResultBoolean,
   toolResultCount,
@@ -33,21 +34,24 @@ const unavailableReference = (
   message: string,
   failure?: ReferenceFailure,
   beforeAdmission = true
-) =>
-  JSON.stringify({
+) => {
+  const failureCode =
+    code === 'REFERENCE_ARGUMENTS_INVALID'
+      ? AiToolFailureCodes.INPUT_INVALID
+      : AiToolFailureCodes.SOURCE_UNAVAILABLE
+
+  return JSON.stringify({
     available: false,
-    recoverable: true,
-    code,
+    code: beforeAdmission ? failureCode : code,
+    sourceCode: code,
     message,
     settlement: beforeAdmission ? 'not-started' : 'unknown',
-    ...(beforeAdmission
-      ? { recovery: { kind: 'select_reference', settlement: 'not-started' } }
-      : {}),
     ...(failure ? { failure } : {}),
     nextStep: !beforeAdmission
       ? 'Attachment admission has unknown settlement. Inspect the App failure; do not replay this import.'
       : 'This is a source-local failure, not a task-level blocker. Continue research using a different source, query, or supported acquisition method. Do not retry unchanged rejected input or reduce resolution. Do not ask the user to supply public reference material merely because this source failed. For an explicit reproduction, do not substitute an invented or inspired drawing without consent.'
   })
+}
 
 const readBytes = async (
   response: Response,
@@ -162,7 +166,6 @@ export const createLocalReferenceTools = (
     return JSON.stringify({
       available,
       status,
-      recoverable: failed,
       settlement,
       references,
       actionResults
@@ -526,7 +529,7 @@ export const createLocalReferenceTools = (
         attempts.push({
           imageUrl,
           available: receipt.available === true,
-          ...(receipt.code ? { code: receipt.code } : {}),
+          ...(receipt.sourceCode ? { code: receipt.sourceCode } : {}),
           ...(receipt.failure ? { failure: receipt.failure } : {})
         })
         if (receipt.settlement === 'unknown') {
@@ -730,15 +733,11 @@ export const createLocalReferenceTools = (
     sourceResolution: toolResultString,
     pageAcquisition: { type: 'object' },
     actionResults: { type: 'array' },
-    recoverable: toolResultBoolean,
     code: toolResultString,
+    sourceCode: toolResultString,
     message: toolResultString,
     failure: { type: 'object' },
-    settlement: { enum: ['not-started', 'unknown'] },
-    recovery: toolResultObject({
-      kind: { const: 'select_reference' },
-      settlement: { const: 'not-started' }
-    })
+    settlement: { enum: ['not-started', 'unknown'] }
   }
 
   const referenceBatchSchema = toolResultObject(
@@ -746,7 +745,6 @@ export const createLocalReferenceTools = (
       available: toolResultBoolean,
       status: { enum: ['complete', 'partial', 'unavailable'] },
       settlement: { enum: ['completed', 'partial', 'not-started', 'unknown'] },
-      recoverable: toolResultBoolean,
       actionResults: { type: 'array', 'x-runtime-value': 'request' },
       references: {
         type: 'array',
@@ -754,14 +752,7 @@ export const createLocalReferenceTools = (
         items: toolResultObject(referenceResultFields, ['available'])
       }
     },
-    [
-      'references',
-      'actionResults',
-      'available',
-      'status',
-      'settlement',
-      'recoverable'
-    ]
+    ['references', 'actionResults', 'available', 'status', 'settlement']
   )
 
   return {

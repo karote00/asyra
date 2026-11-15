@@ -47,7 +47,13 @@ export const documentContextProperties = {
           suffix: { type: 'string', minLength: 1, maxLength: 256 }
         }
       },
-      type: { type: 'string', minLength: 1, maxLength: 256 },
+      type: {
+        type: 'string',
+        minLength: 1,
+        maxLength: 256,
+        description:
+          'Exact case-sensitive registered element type, as returned in element metadata (for example group, not the display name Group). Custom registered identities remain valid; no match returns an empty result.'
+      },
       parentId: toolDocumentReference,
       ancestorId: toolDocumentReference,
       locked: { type: 'boolean' }

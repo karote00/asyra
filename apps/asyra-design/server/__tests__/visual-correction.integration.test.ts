@@ -105,15 +105,12 @@ it('executes correction discovery through real owners and recovers only the unfi
   try {
     const selection = {
       view: 'usage',
-      query: 'fill.updateFillsAtIndex'
+      names: ['fill.updateFillsAtIndex']
     }
     const missing = JSON.parse(
       await tools.call(
-        'describe_design_apis',
-        {
-          view: 'usage',
-          query: 'unregistered-correction-capability'
-        },
+        'search_design_tools',
+        { query: 'unregistered-correction-capability' },
         signal
       )
     )
@@ -121,7 +118,7 @@ it('executes correction discovery through real owners and recovers only the unfi
     expect(missing.apis).toEqual([])
     expect(invoked).toHaveLength(0)
     const lookup = JSON.parse(
-      await tools.call('describe_design_apis', selection, signal)
+      await tools.call('read_design_contracts', selection, signal)
     )
 
     expect(lookup.missingNames).toEqual([])

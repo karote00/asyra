@@ -1,3 +1,5 @@
+import { AiToolContractError } from '@asyra/ai-agent-runtime'
+import { AiToolFailureCodes } from '../src/constants/ai-design'
 import {
   createEvaluationReportSessions,
   evaluationReportSessionEndpoint
@@ -559,6 +561,15 @@ export const createActionBatchMiddleware = (
                       })
                   )
                   const context = receipt.context
+
+                  if (
+                    isRecord(context) &&
+                    context.ok === false &&
+                    context.code === AiToolFailureCodes.INPUT_INVALID &&
+                    typeof context.error === 'string'
+                  ) {
+                    throw new AiToolContractError('input', context.error)
+                  }
 
                   if (
                     !isRecord(context) ||

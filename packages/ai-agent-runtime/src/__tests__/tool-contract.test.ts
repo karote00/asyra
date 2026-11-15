@@ -6,6 +6,7 @@ import {
   describeAiTool,
   embedAiToolSchema,
   projectAiToolSchema,
+  normalizeAiToolSchemaReferences,
   inspectAiToolResult,
   type AiToolContractInput
 } from '../tool-contract.js'
@@ -634,4 +635,33 @@ it('admits an explicitly declared root delivery view without changing the owner 
 
   expect(contract.outputSchema).toEqual({ const: { count: 1, work: 2 } })
   expect(contract.delivery?.path).toBe('')
+})
+
+it('normalizes local schema graphs before structural transforms without accepting non-JSON data', () => {
+  const source = {
+    type: 'object',
+    properties: {
+      count: { type: 'number' },
+      copy: { $ref: '#/properties/count' },
+      next: { $ref: '#' }
+    },
+    examples: [{ $ref: '#/literal' }]
+  }
+  const normalized = normalizeAiToolSchemaReferences(source)
+
+  expect(normalized).toMatchObject({
+    properties: {
+      copy: { $ref: '#/$defs/reference0' },
+      next: { $ref: '#/$defs/reference1' }
+    },
+    $defs: { reference0: { type: 'number' } },
+    examples: [{ $ref: '#/literal' }]
+  })
+  expect(source.properties.copy.$ref).toBe('#/properties/count')
+  for (const value of [
+    { $ref: '#/missing' },
+    { properties: { count: undefined } }
+  ]) {
+    expect(() => normalizeAiToolSchemaReferences(value)).toThrow()
+  }
 })

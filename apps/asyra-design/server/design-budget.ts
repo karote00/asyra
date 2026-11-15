@@ -1,3 +1,4 @@
+import { AiToolFailureCodes } from '../src/constants/ai-design'
 import { resolveMotifReference } from './design-motif-reference'
 import { facePointCount, resolveSurfaceBoundaries } from './design-face'
 import { designConstructionSchema } from './design-construction-schema'
@@ -282,8 +283,7 @@ export const inspectDesignBudget = (
 
   return {
     available: false,
-    code: 'DESIGN_BUDGET_EXCEEDED',
-    recovery: 'correct_input',
+    code: AiToolFailureCodes.INPUT_INVALID,
     budget: { observed, allowed, lowerBound },
     message: `Construction budgets exceeded before geometry compilation: ${exceeded.map((key) => `${key}=${observed[key]} > ${allowed[key]}`).join('; ')}${lowerBound ? ' (observations are lower bounds)' : ''}. Source work is partitioned automatically; this input exceeds an expanded artifact, depth or indivisible primitive guard. Template compression does not reduce expanded output. Use existing ordered parts for independent ready artifacts that each fit, preserving geometry, painter order, keys and relationships. Do not replay completed parts. No canvas changes were made.`
   }

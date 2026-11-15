@@ -139,7 +139,7 @@ it.each(
               name: action.name,
               arguments: {
                 artifactId: prepared.artifactId,
-                response: 'full',
+
                 ...(parentId ? { parentId } : {})
               }
             }

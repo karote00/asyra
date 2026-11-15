@@ -1,3 +1,4 @@
+import { CommonApiInputError } from '../common-apis/common-api-input-error'
 import { ElementPropertyInputError } from '@asyra/core'
 import {
   AiActionInputError,
@@ -252,17 +253,33 @@ export const createBasicApiActions = (
       }
 
       const call = () => {
-        // Resolve in the admitted callback, never before the idle-boundary wait.
-        resolvedArgs = resolve(args, contract.inputSchema) as Record<
-          string,
-          unknown
-        >
+        try {
+          // Resolve only at admitted execution; semantic input diagnostics apply
+          // to read and mutation owners alike, without changing settlement.
+          resolvedArgs = resolve(args, contract.inputSchema) as Record<
+            string,
+            unknown
+          >
 
-        return Reflect.apply(
-          method,
-          owner,
-          contract.parameters.map((name) => resolvedArgs[name])
-        )
+          return Reflect.apply(
+            method,
+            owner,
+            contract.parameters.map((name) => resolvedArgs[name])
+          )
+        } catch (error) {
+          if (error instanceof CommonApiInputError) {
+            throw new AiActionInputError(error.message, error.details)
+          }
+
+          if (error instanceof ElementPropertyInputError) {
+            throw new AiActionInputError(error.message, {
+              elementId: error.elementId,
+              propertyKey: error.propertyKey
+            })
+          }
+
+          throw error
+        }
       }
 
       const documentMutation = ['write', 'delete'].includes(contract.effect)
@@ -292,18 +309,7 @@ export const createBasicApiActions = (
           })
         }
 
-        try {
-          return call()
-        } catch (error) {
-          if (error instanceof ElementPropertyInputError) {
-            throw new AiActionInputError(error.message, {
-              elementId: error.elementId,
-              propertyKey: error.propertyKey
-            })
-          }
-
-          throw error
-        }
+        return call()
       }
 
       const finish = (value: unknown, atSettlement: boolean) => {

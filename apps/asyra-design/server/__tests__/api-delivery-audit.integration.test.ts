@@ -1,3 +1,6 @@
+import { isRecord } from '@asyra/utils'
+import { createDeliveryAuditFixture } from './delivery-audit-fixture'
+
 import { AiActionNames } from '../../src/constants/ai-actions'
 import lodash from 'lodash'
 const { isEqual } = lodash
@@ -10,7 +13,6 @@ import {
   toolResultObject,
   toolResultString
 } from '../../src/ai/tool-contract'
-import { createLocalToolHost } from '../local-tool-host'
 import {
   workflowInputScopes,
   projectWorkflowInput,
@@ -18,28 +20,15 @@ import {
 } from '../design-workflow-discovery'
 import { readCompleteInformation } from './tool-contract-assertions'
 // @vitest-environment jsdom
+import { registeredToolInvocationSchemas } from '../local-tool-library-tools'
+import { afterAll, afterEach, expect, it } from 'vitest'
 import {
-  createLocalToolLibraryTools,
-  registeredToolInvocationSchemas
-} from '../local-tool-library-tools'
-import { createLocalReferenceTools } from '../local-reference-tools'
-import { createLocalKnowledgeTools } from '../local-knowledge'
-import { afterAll, afterEach, expect, it, vi } from 'vitest'
-import {
-  createAiToolContract,
   registeredRecipeOutputAt,
   embedAiToolSchema,
   type AiJsonValue
 } from '@asyra/ai-agent-runtime'
-import { createAiRuntimeInput } from '../../src/ai/runtime-input'
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
-import { createLocalDesignTools } from '../local-design-tools'
-import {
-  createLocalOperationTools,
-  singleActionSemantics
-} from '../local-operation-tools'
-import { createLocalDesignWorkflow } from '../local-design-workflow'
-import { createLocalImageTools } from '../local-image-tools'
+import { singleActionSemantics } from '../local-operation-tools'
 import {
   invokeLocalTool,
   localToolFailureSchema
@@ -55,67 +44,235 @@ import { resolve } from 'node:path'
 // Keep the runner timeout and every contract/work-count assertion unchanged.
 afterEach(() => setImmediate())
 
-const runtime = createAiRuntimeInput({
-  permissionRules: {},
-  provider: { requestActionBatch: vi.fn() }
-})
-const actions = runtime.actionDefinitions.map(createAiToolContract)
-const designs = createLocalDesignTools(actions)
-const execute = vi.fn(async () => {
-  throw new Error('Invalid input reached browser dispatch')
-})
-const operations = createLocalOperationTools(actions, designs, execute, {
-  getNativeTools: () => host.definitions()
-})
-const main = createLocalDesignWorkflow(designs, operations)
-const images = createLocalImageTools({})
-const signal = new AbortController().signal
-const references = createLocalReferenceTools(() => {
-  throw new Error('Invalid reference admission')
-})
-const knowledge = createLocalKnowledgeTools('api-delivery-audit')
-const library = createLocalToolLibraryTools(() => {
-  throw new Error('Invalid library admission reached its owner')
-})
-const owners = [
-  designs,
-  operations,
-  main,
-  images,
-  references,
-  knowledge,
-  library
-]
-const host = createLocalToolHost({
-  requestId: 'api-delivery-audit',
-  signal,
-  capacity: 1024,
-  receiptCapacity: 32,
-  artifactCapacity: 128,
-  limits: {
-    steps: 32,
-    bindings: 128,
-    bindingDepth: 32,
-    bytes: 24000,
-    issues: 8
-  },
-  store: {
-    read: async () => undefined,
+const fixture = createDeliveryAuditFixture()
+const { runtime, actions, preparation, execute, operations, signal, host } =
+  fixture
 
-    list: async () => [],
-
-    write: async () => {
-      throw new Error('No recipe write in discovery audit')
+// Canonical input rejection is a continuation contract, not merely a thrown error.
+it.each(
+  [
+    {
+      name: 'record_design_facts',
+      key: 'facts',
+      note: { statement: 'Original' }
+    },
+    {
+      name: 'record_design_calculations',
+      key: 'calculations',
+      note: { value: 12, unit: 'px' }
     }
-  },
-
-  createGroups: () =>
-    owners.map((owner) => ({
-      name: owner === operations ? 'design_operations' : 'design',
-      description: 'Registered audit owner',
-      owner
+  ].flatMap((entry) =>
+    ['native', 'registered', 'sequence', 'staged'].map((route) => ({
+      ...entry,
+      route
     }))
-})
+  )
+)(
+  '$name keeps duplicate note IDs correctable through $route Host delivery',
+  async ({ name, key, note, route }) => {
+    const current = createDeliveryAuditFixture()
+
+    try {
+      const qualifiedName = 'design_operations.' + name
+      const input = {
+        [key]: [
+          { id: 'same', ...note },
+          { id: 'same', ...note }
+        ]
+      }
+      const definition = current.host
+        .definitions()
+        .find((entry) => entry.registeredName === qualifiedName)
+
+      if (!definition) {
+        throw new Error('Missing registered note owner: ' + qualifiedName)
+      }
+
+      expect(operationInputIssue(input, definition.inputSchema)).toBeUndefined()
+
+      const call = (value: unknown) => {
+        if (route === 'registered') {
+          return current.host.invoke({
+            name: 'tool_library.invoke_tool',
+            input: {
+              name: qualifiedName,
+              revision: definition.revision,
+              input: value
+            }
+          })
+        }
+
+        if (route === 'sequence' || route === 'staged') {
+          const operations = [
+            { id: 'notes', name: qualifiedName, arguments: value }
+          ]
+
+          return current.host.invoke({
+            name: 'design_operations.execute_design',
+            input:
+              route === 'sequence'
+                ? { operations }
+                : {
+                    stages: [
+                      {
+                        id: 'notes',
+                        operations,
+                        apply: [
+                          {
+                            id: 'read-notes',
+                            name: qualifiedName,
+                            arguments: {}
+                          }
+                        ]
+                      }
+                    ]
+                  }
+          })
+        }
+
+        return current.host.invoke({ name: qualifiedName, input: value })
+      }
+
+      const rejected = await call(input)
+
+      expect.soft(rejected.text).toContain('TOOL_INPUT_INVALID')
+      expect
+        .soft(rejected.outcome.settlement, rejected.text)
+        .toBe('not-started')
+
+      const unchanged = await current.host.invoke({
+        name: qualifiedName,
+        input: {}
+      })
+
+      expect(JSON.parse(unchanged.text)[key]).toEqual([])
+      const corrected = await call({ [key]: [{ id: 'same', ...note }] })
+
+      expect(corrected.success, corrected.text).toBe(true)
+      const stored = await current.host.invoke({
+        name: qualifiedName,
+        input: {}
+      })
+
+      expect(JSON.parse(stored.text)[key]).toEqual([{ id: 'same', ...note }])
+      expect(current.execute).not.toHaveBeenCalled()
+    } finally {
+      await current.dispose()
+    }
+  }
+)
+it.each(['sequence', 'staged'])(
+  'preserves completed note updates when a later %s update needs correction',
+  async (route) => {
+    const current = createDeliveryAuditFixture()
+    const name = 'design_operations.record_design_facts'
+
+    const writes = () =>
+      current.operationCalls.mock.calls.filter(
+        ([operation, input]) =>
+          operation === 'record_design_facts' &&
+          Object.hasOwn(input as object, 'facts')
+      ).length
+
+    try {
+      const first = { id: 'first', statement: 'Keep this completed note' }
+      const second = { id: 'second', statement: 'Correct this note' }
+      const operations = [
+        { id: 'first', name, arguments: { facts: [first] } },
+        { id: 'second', name, arguments: { facts: [second, second] } }
+      ]
+      const rejected = await current.host.invoke({
+        name: 'design_operations.execute_design',
+        input:
+          route === 'sequence'
+            ? { operations }
+            : {
+                stages: [
+                  {
+                    id: 'notes',
+                    operations: [operations[0]],
+                    apply: [operations[1]]
+                  }
+                ]
+              }
+      })
+
+      expect(rejected.success).toBe(false)
+      expect(rejected.outcome.settlement, rejected.text).toBe('partial')
+
+      expect(writes()).toBe(2)
+      const retained = await current.host.invoke({ name, input: {} })
+
+      expect(JSON.parse(retained.text).facts).toEqual([first])
+      const corrected = await current.host.invoke({
+        name: 'design_operations.execute_design',
+        input: {
+          operations: [{ id: 'second', name, arguments: { facts: [second] } }]
+        }
+      })
+
+      expect(corrected.success, corrected.text).toBe(true)
+      expect(writes()).toBe(3)
+      const result = await current.host.invoke({ name, input: {} })
+
+      expect(JSON.parse(result.text).facts).toEqual([first, second])
+      expect(current.execute).not.toHaveBeenCalled()
+    } finally {
+      await current.dispose()
+    }
+  }
+)
+
+it.each([false, true])(
+  'keeps native-only lookup rejection and native correction consistent with a known sibling: %s',
+  async (includeKnown) => {
+    const current = createDeliveryAuditFixture()
+    const definition = current.host
+      .definitions()
+      .find(
+        (tool) =>
+          tool.registeredName === 'design_operations.read_design_contracts'
+      )
+
+    if (!definition) {
+      throw new Error('Missing contract lookup registration')
+    }
+
+    try {
+      const input = {
+        names: [
+          ...(includeKnown ? ['design_operations.record_design_facts'] : []),
+          'design_operations.missing_note_owner'
+        ],
+        view: 'usage'
+      }
+      const rejected = await current.host.invoke({
+        name: 'tool_library.invoke_tool',
+        input: {
+          name: definition.registeredName,
+          revision: definition.revision,
+          input
+        }
+      })
+
+      expect(rejected.outcome.settlement, rejected.text).toBe('not-started')
+      expect(rejected.text).toContain('TOOL_INPUT_INVALID')
+
+      const reply = await current.host.invoke({
+        name: definition.registeredName,
+        input
+      })
+
+      expect(reply.outcome.settlement, reply.text).toBe('completed')
+      expect(reply.text).toContain('IDENTITY_UNRESOLVED')
+
+      expect(current.execute).not.toHaveBeenCalled()
+    } finally {
+      await current.dispose()
+    }
+  }
+)
+
 const observerActions = actions
   .filter((action) =>
     [AiActionNames.REVIEW_DESIGN, AiActionNames.INSPECT_DRAWING].includes(
@@ -161,21 +318,14 @@ const observerResults = {
   })
 }
 
-const native = owners.flatMap((owner) =>
-  owner.definitions.map((definition) => ({ owner, definition }))
+const native = host.groups.flatMap(({ name: namespace, owner }) =>
+  owner.definitions.map((definition) => ({ namespace, owner, definition }))
 )
 
-afterAll(async () => {
-  await host.dispose()
-  for (const owner of runtime.ownedResources ?? []) {
-    await owner.dispose()
-  }
-
-  knowledge.dispose()
-})
+afterAll(() => fixture.dispose())
 
 it.each(runtime.actionDefinitions)(
-  '$name rejects malformed input at its real App boundary',
+  '$name rejects malformed input at its real App boundary - case %#',
   async (action) => {
     expect(operationInputIssue(null, action.inputSchema)).toBeTruthy()
     await expect(action.execute(null as never, { signal })).rejects.toThrow()
@@ -193,7 +343,7 @@ it.each(runtime.actionDefinitions)(
 )
 
 it.each(native)(
-  '$definition.name rejects malformed input without dispatch',
+  '$definition.name rejects malformed input without dispatch - case %#',
   async ({ owner, definition }) => {
     const reply = JSON.parse(
       (await invokeLocalTool(owner, definition, null, signal)).text
@@ -213,10 +363,10 @@ it.each(native)(
 )
 
 it.each(basicApiContracts)(
-  '$name delivers the same owner parameters and an executable batch route',
+  '$name delivers the same owner parameters and an executable batch route - case %#',
   async (contract) => {
     const definition = operations.definitions.find(
-      (d) => d.name === 'describe_design_apis'
+      (d) => d.name === 'read_design_contracts'
     )
 
     if (!definition) {
@@ -571,35 +721,31 @@ it('rejects an extra permissive result branch in the delivered contract audit', 
 })
 
 it.each(native)(
-  '$definition.name delivers a complete exact usage or explicit owner scope menu',
-  async ({ definition }) => {
+  '$definition.name delivers a complete exact usage or explicit owner scope menu - case %#',
+  async ({ definition, namespace }) => {
     const query = operations.definitions.find(
-      (d) => d.name === 'describe_design_apis'
+      (d) => d.name === 'read_design_contracts'
     )
 
     if (!query) {
       throw new Error('Missing discovery definition')
     }
 
-    const namespace = operations.definitions.some(
-      (entry) => entry === definition
-    )
-      ? 'design_operations'
-      : 'design'
     const args = {
       names: [`${namespace}.${definition.name}`],
       view: 'usage',
       includeResultSchema: true
     }
     const text = await readCompleteInformation(
-      async (input) =>
+      async (input, requestedTool) =>
         (
           await host.invoke({
-            name: 'design_operations.describe_design_apis',
+            name: 'design_operations.' + requestedTool,
             input
           })
         ).text,
-      args
+      args,
+      'read_design_contracts'
     )
     const entry = JSON.parse(text).tools[0]
 
@@ -624,14 +770,20 @@ it.each(native)(
         }
         const selected = JSON.parse(
           await readCompleteInformation(
-            async (input) =>
+            async (input, requestedTool) =>
               (
                 await host.invoke({
-                  name: 'design_operations.describe_design_apis',
+                  name: 'design_operations.' + requestedTool,
                   input
                 })
               ).text,
-            { ...args, inputScope }
+            {
+              ...args,
+              scopes: Object.fromEntries(
+                args.names.map((name) => [name, { inputScope }])
+              )
+            },
+            'read_design_contracts'
           )
         ).tools[0]
         const invocation = selected.invocationExample?.invocation
@@ -753,10 +905,10 @@ it.each(native)(
 )
 
 it.each(runtime.actionDefinitions)(
-  '$name selected action usage retains parameters independently of its effect',
+  '$name selected action usage retains parameters independently of its effect - case %#',
   async (action) => {
     const query = operations.definitions.find(
-      (d) => d.name === 'describe_design_apis'
+      (d) => d.name === 'read_design_contracts'
     )
 
     if (!query) {
@@ -769,20 +921,21 @@ it.each(runtime.actionDefinitions)(
       includeResultSchema: true
     }
     const text = await readCompleteInformation(
-      async (input) =>
+      async (input, requestedTool) =>
         (
           await host.invoke({
-            name: 'design_operations.describe_design_apis',
+            name: 'design_operations.' + requestedTool,
             input
           })
         ).text,
-      args
+      args,
+      'read_design_contracts'
     )
     const entry = JSON.parse(text).apis[0]
 
     expect(entry, text.slice(0, 1000)).toBeDefined()
     expect(entry.usageGuide).toBeDefined()
-    const admitted = designs
+    const admitted = preparation
       .modelActions(actions)
       .find((entry) => entry.name === action.name)
 
@@ -852,7 +1005,7 @@ it.each(runtime.actionDefinitions)(
 
 it('executes a delivered final-response contract through its real control owner without a batch', async () => {
   const definition = operations.definitions.find(
-    (d) => d.name === 'describe_design_apis'
+    (d) => d.name === 'read_design_contracts'
   )
 
   if (!definition) {
@@ -865,9 +1018,21 @@ it('executes a delivered final-response contract through its real control owner 
     includeResultSchema: true
   }
   const text = await readCompleteInformation(
-    async (input) =>
-      (await invokeLocalTool(operations, definition, input, signal)).text,
-    args
+    async (input, requestedTool) =>
+      (
+        await invokeLocalTool(
+          operations,
+          definition.name === requestedTool
+            ? definition
+            : (() => {
+                throw new Error('Unknown continuation tool: ' + requestedTool)
+              })(),
+          input,
+          signal
+        )
+      ).text,
+    args,
+    definition.name
   )
   const tool = JSON.parse(text).apis[0]
 
@@ -902,8 +1067,80 @@ it('executes a delivered final-response contract through its real control owner 
   expect(execute).not.toHaveBeenCalled()
 })
 
+it.each(['export_document', 'api_core_getCurrentWorkspaceId'])(
+  '%s rejects null ordinary arguments consistently before dispatch',
+  async (name) => {
+    const registration = host.definitions().find((tool) => tool.name === name)
+
+    if (!registration) {
+      throw new Error('Missing audit registration: ' + name)
+    }
+
+    expect(
+      operationInputIssue({ arguments: null }, registration.inputSchema)
+    ).toBeTruthy()
+    const before = execute.mock.calls.length
+    const reply = await host.invoke({
+      name: 'design_operations.execute_design',
+      input: {
+        operations: [
+          { id: 'invalid', name: registration.registeredName, arguments: null }
+        ]
+      }
+    })
+
+    expect(execute.mock.calls.length, reply.text).toBe(before)
+    expect(reply.outcome.settlement, reply.text).toBe('not-started')
+    expect(reply.outcome.status, reply.text).toBe('failed')
+  }
+)
+
 it.each(host.definitions())(
-  '$registeredName declares its actual admission failure without dispatch',
+  '$registeredName rejects invalid library input and enforces its composition boundary - case %#',
+  async (registration) => {
+    const invoked = await host.invoke({
+      name: 'tool_library.invoke_tool',
+      input: {
+        name: registration.registeredName,
+        revision: registration.revision,
+        input: null
+      }
+    })
+
+    expect(invoked.success, registration.registeredName).toBe(false)
+    expect(invoked.outcome.settlement).toBe('not-started')
+    const composable =
+      registration.composition === 'allowed' ||
+      registration.composition === 'request'
+    const canonicalAction = runtime.actionDefinitions.some(
+      (action) => action.name === registration.name
+    )
+    const controlOnly = !composable && !canonicalAction
+    const composed = await host.invoke({
+      name: 'design_operations.execute_design',
+      input: {
+        operations: [
+          {
+            id: 'probe',
+            name: registration.registeredName,
+            arguments: controlOnly ? {} : 42
+          }
+        ]
+      }
+    })
+
+    expect(composed.success, registration.registeredName).toBe(false)
+    expect(composed.outcome.settlement).toBe('not-started')
+    if (controlOnly) {
+      expect(composed.text).toMatch(/compos|native control|recipe/i)
+    }
+
+    expect(execute).not.toHaveBeenCalled()
+  }
+)
+
+it.each(host.definitions())(
+  '$registeredName declares its actual admission failure without dispatch - case %#',
   async (registration) => {
     const scopes = workflowInputScopes(registration.inputSchema)
     const inputScope = scopes
@@ -916,18 +1153,21 @@ it.each(host.definitions())(
       names: [registration.registeredName],
       view: 'usage',
       includeResultSchema: true,
-      ...(inputScope ? { inputScope } : {})
+      ...(inputScope
+        ? { scopes: { [registration.registeredName]: { inputScope } } }
+        : {})
     }
     const entry = JSON.parse(
       await readCompleteInformation(
-        async (input) =>
+        async (input, requestedTool) =>
           (
             await host.invoke({
-              name: 'design_operations.describe_design_apis',
+              name: 'design_operations.' + requestedTool,
               input
             })
           ).text,
-        query
+        query,
+        'read_design_contracts'
       )
     ).tools[0]
     const registered = entry.execution.kind === 'registered-tool'
@@ -950,3 +1190,55 @@ it.each(host.definitions())(
     expect(execute).not.toHaveBeenCalled()
   }
 )
+
+it('exposes only current result delivery controls across the registered tool inventory', async () => {
+  const current = createDeliveryAuditFixture()
+  const retiredTools = [
+    'run_recipe',
+    'execute_design_batch',
+    'describe_design_apis'
+  ]
+
+  const inspect = (value: unknown, path: string): void => {
+    if (!isRecord(value)) {
+      return
+    }
+
+    if (isRecord(value.properties)) {
+      expect(value.properties, path).not.toHaveProperty('response')
+      expect(value.properties, path).not.toHaveProperty('includeTargets')
+      inspect(value.properties.arguments, path + '/arguments')
+    }
+
+    for (const key of ['anyOf', 'oneOf', 'allOf']) {
+      if (Array.isArray(value[key])) {
+        value[key].forEach((child, index) =>
+          inspect(child, path + '/' + key + '/' + index)
+        )
+      }
+    }
+  }
+
+  const deliveryOwners = new Set([
+    'execute_design',
+    'prepare_and_apply_design',
+    'apply_prepared_design'
+  ])
+
+  try {
+    for (const definition of current.host.definitions()) {
+      expect(retiredTools).not.toContain(definition.name)
+      if (deliveryOwners.has(definition.name)) {
+        inspect(definition.inputSchema, definition.registeredName)
+      }
+    }
+
+    for (const action of current.designs.modelActions(current.actions)) {
+      if (deliveryOwners.has(action.name)) {
+        inspect(action.inputSchema, action.name)
+      }
+    }
+  } finally {
+    await current.dispose()
+  }
+})

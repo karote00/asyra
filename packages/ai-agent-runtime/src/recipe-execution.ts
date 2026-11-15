@@ -28,12 +28,20 @@ import type {
 } from './recipe-types.js'
 import { recipeOwn, recipePointer, recipeRecord } from './recipe-schema.js'
 
+/** Failure at this invocation's own boundary, independent of descendant work. */
+export interface AiRecipeFailure {
+  readonly stage: 'registration' | 'input' | 'output' | 'execution' | 'cleanup'
+  readonly message: string
+}
+
 export interface AiRecipeCallReceipt extends AiToolOutcome {
+  readonly failure?: AiRecipeFailure
   readonly callId: string
   readonly name: string
   readonly revision: number
 }
 export interface AiRecipeExecutionResult extends AiToolOutcome {
+  readonly failure?: AiRecipeFailure
   readonly value?: unknown
   readonly calls: readonly AiRecipeCallReceipt[]
   readonly issues: readonly string[]
@@ -133,6 +141,17 @@ export interface AiRecipeInvokerOptions {
     revision: number
   ) => AdmittedAiRecipe | undefined
   readonly validate: AiToolValidator
+  /** Resolve a leaf's current schemas before admission and resource acquisition. */
+  readonly resolveContract?: (
+    call: AiInvocationContext,
+    definition: AiRegisteredActionDefinition
+  ) => Pick<
+    AiToolContract,
+    | 'inputSchema'
+    | 'outputSchema'
+    | 'partialOutputSchema'
+    | 'recoveryOutputSchema'
+  >
   /** This is the host's existing permission, freshness and scheduler boundary. */
   readonly execute: (
     call: AiInvocationContext,
@@ -243,7 +262,8 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
       onStepResult?: (
         step: AiRecipeStep,
         input: unknown,
-        value: unknown
+        value: unknown,
+        receipt: AiRecipeCallReceipt
       ) => void | Promise<void>
     ): Promise<AiRecipeExecutionResult> {
       const exportedSchemas = new WeakMap<
@@ -356,6 +376,16 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
         let opened = false
         let dispatched = false
         let observed: AiRecipeExecutionResult | undefined
+        let ownFailure: AiRecipeFailure | undefined
+
+        const recordFailure = (error: unknown) => {
+          ownFailure ??= {
+            stage:
+              error instanceof AiToolContractError ? error.stage : 'execution',
+            message: message(error)
+          }
+        }
+
         const records: AiRecipeCallReceipt[] = []
         const start = 0
         const issues: string[] = []
@@ -383,6 +413,7 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
 
           return {
             status: combined === 'unknown' ? 'unknown' : 'failed',
+            ...(ownFailure ? { failure: ownFailure } : {}),
             settlement: combined,
             calls: descendants,
             ...(recovery.length ? { recovery: [...recovery] } : {}),
@@ -417,9 +448,31 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
 
               try {
                 try {
+                  if (!node.recipe && options.resolveContract) {
+                    const selected = options.resolveContract(
+                      context,
+                      node.definition
+                    )
+
+                    node = {
+                      ...node,
+                      definition: {
+                        ...node.definition,
+                        ...createAiToolContract({
+                          ...node.definition,
+                          inputSchema: selected.inputSchema,
+                          outputSchema: selected.outputSchema,
+                          partialOutputSchema: selected.partialOutputSchema,
+                          recoveryOutputSchema: selected.recoveryOutputSchema
+                        })
+                      }
+                    }
+                  }
+
                   value = await next()
                   validatedValue = true
                 } catch (error) {
+                  recordFailure(error)
                   issues.push(message(error))
                   let settlement =
                     observed?.settlement ??
@@ -476,6 +529,7 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
                       callId: context.callId
                     })
                   } catch (error) {
+                    ownFailure = { stage: 'cleanup', message: message(error) }
                     issues.push(`Artifact cleanup: ${message(error)}`)
                   }
                 }
@@ -483,6 +537,15 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
 
               return {
                 ...value,
+                ...(ownFailure
+                  ? {
+                      failure: ownFailure,
+                      status:
+                        value.status === 'success'
+                          ? ('partial' as const)
+                          : value.status
+                    }
+                  : {}),
                 issues: [...new Set([...value.issues, ...issues])]
               }
             },
@@ -585,7 +648,12 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
                 outputs.set(step.id, child.value)
                 if (iteration === undefined) {
                   if (collectStep) {
-                    await collectStep(step, childInput, child.value)
+                    await collectStep(
+                      step,
+                      childInput,
+                      child.value,
+                      child.calls[child.calls.length - 1]
+                    )
                   }
                 }
               }
@@ -666,6 +734,20 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
                 }
 
                 if (status === 'pass') {
+                  if (collectStep) {
+                    await collectStep(
+                      iteration.check,
+                      bind(
+                        iteration.check.input,
+                        context.input,
+                        outputs,
+                        state
+                      ),
+                      check.value,
+                      check.calls[check.calls.length - 1]
+                    )
+                  }
+
                   outputs.set(iteration.id, {
                     state,
                     result: check.value,
@@ -807,6 +889,7 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
         try {
           result = await invoker.invoke({ ...call, signal })
         } catch (error) {
+          recordFailure(error)
           issues.push(message(error))
           let settlement =
             observed?.settlement ?? (dispatched ? 'unknown' : 'not-started')
@@ -824,7 +907,8 @@ export const createAiRecipeInvoker = (options: AiRecipeInvokerOptions) => {
           name: call.name,
           revision: node?.definition.revision ?? request.revision ?? 0,
           status: result.status,
-          settlement: result.settlement
+          settlement: result.settlement,
+          ...(result.failure ? { failure: result.failure } : {})
         })
 
         records.push(receipt)

@@ -11,6 +11,75 @@ import {
   type AiConversationFeature
 } from '../conversation'
 import { createDeferred } from './deferred'
+import { createAiActions } from '../actions'
+import { observeAiAction } from '../runtime-input'
+import { isRecord } from '@asyra/utils'
+
+const observedCreation = async (result: Record<string, unknown>) => {
+  const definition = createAiActions().find(
+    (action) => action.name === 'insert_vector_composition'
+  )
+
+  if (!definition) {
+    throw Error('Missing registered creation owner')
+  }
+
+  const descriptor = (id: string, type: string) => ({
+    id,
+    type,
+    name: id,
+    x: 0,
+    y: 0,
+    width: 10,
+    height: 10,
+    props: {
+      position: id + '-position',
+      dimension: id + '-dimension',
+      fills: id + '-fills',
+      strokes: id + '-strokes'
+    },
+    fills: [],
+    strokes: [],
+    visible: true,
+    lock: false,
+    children: []
+  })
+
+  const execute = vi.fn(async () => result)
+  const action = observeAiAction({ ...definition, execute })
+
+  try {
+    const observed = await action.execute(
+      {
+        artifactVersion: 1,
+        compositionRole: 'shape',
+        elementCount: 1,
+        groupBounds: { x: 0, y: 0, width: 10, height: 10 },
+        groupDescriptor: descriptor('group', 'group'),
+        parent: 'workspace',
+        pointCount: 0,
+        roleToElementIds: { shape: ['shape'] },
+        skipped: [],
+        slices: [
+          {
+            descriptors: [descriptor('shape', 'rect')],
+            pointCount: 0,
+            roles: ['shape']
+          }
+        ]
+      },
+      { signal: new AbortController().signal }
+    )
+
+    if (!isRecord(observed)) {
+      throw Error('Expected observed creation receipt')
+    }
+
+    return observed
+  } finally {
+    expect(execute).toHaveBeenCalledTimes(1)
+  }
+}
 
 const executed = (
   result: Record<string, unknown>,
@@ -1072,6 +1141,7 @@ it('reads current activity without replaying old progress and preserves point-in
       return 'execution' as const
     },
 
+    summary: 'Preparing windows',
     message: 'Preparing windows'
   }
 
@@ -1084,6 +1154,7 @@ it('reads current activity without replaying old progress and preserves point-in
     request?.progressObserver({
       phase: 'execution',
       attempt: 1,
+      summary: `Preparing part ${i}`,
       message: `Preparing part ${i}`
     })
     const activity = controller.getActivity(id, { purpose: 'Draw the tower' })
@@ -1562,3 +1633,71 @@ describe('settled conversation context delivery', () => {
     }
   })
 })
+
+it.each(
+  ['detail-child', 'independent-root'].flatMap((root) =>
+    ['complete', 'partial'].map((status) => ({ root, status }))
+  )
+)(
+  'updates the latest creation hint from a validated $status $root receipt without retaining old roles',
+  async ({ root: nextRoot, status }) => {
+    const feature = createFeature(async (request) =>
+      executed(
+        await observedCreation(
+          request.intent === 'initial'
+            ? {
+                compositionId: 'building',
+                appliedElementIds: ['body'],
+                roleToElementIds: { body: ['body'] },
+                skipped: [],
+                status: 'complete'
+              }
+            : {
+                compositionId: nextRoot,
+                appliedElementIds: [nextRoot, 'detail'],
+                roleToElementIds: {},
+                skipped: [],
+                status
+              }
+        )
+      )
+    )
+    const controller = createAiConversationController({
+      createConversationId: () => 'target-counterexample',
+
+      feature,
+
+      getElementType: () => 'group'
+    })
+
+    await controller.submit('initial')
+    await controller.submit('detail')
+    await controller.submit('follow-up')
+    expect(feature.execute).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          aiTargets: {
+            compositionId: nextRoot,
+            roleToElementIds: {}
+          }
+        })
+      })
+    )
+  }
+)
+
+it.each([
+  {
+    compositionId: 'building',
+    roleToElementIds: { body: ['body'] },
+    status: 'complete'
+  },
+  { compositionId: 'detail', appliedElementCount: 3, status: 'complete' }
+])(
+  'rejects an incomplete successful creation receipt at the registered boundary - case %#',
+  async (result) => {
+    await expect(observedCreation(result)).rejects.toMatchObject({
+      stage: 'output'
+    })
+  }
+)

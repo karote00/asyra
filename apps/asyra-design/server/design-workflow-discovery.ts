@@ -1,3 +1,4 @@
+import { contractReadArguments } from './design-discovery-contract'
 import { AiDesignToolIds } from '../src/constants/ai-design'
 import { operationInputIssue } from './operation-input-schema'
 
@@ -1144,8 +1145,12 @@ export const workflowQueryGuidance = (name: string, input: unknown) => {
       choices.operations.map((key) => [key, meanings[key]])
     ),
     example: {
-      tool: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
-      arguments: { names: [name], view: 'usage', inputScope: example }
+      tool: AiDesignToolIds.READ_DESIGN_CONTRACTS,
+      arguments: contractReadArguments({
+        names: [name],
+        view: 'usage',
+        inputScope: example
+      })
     }
   }
 }

@@ -395,8 +395,7 @@ test('recorded world material reaches real tools, local checks, history, peer an
 
     expect(missingReceipt).toMatchObject({
       code: 'MUTATION_SCOPE_UNAVAILABLE',
-      settlement: 'unknown',
-      recoverable: false
+      settlement: 'unknown'
     })
     expect(await getCoreDocumentDigest(page)).toEqual(created)
     const refusedRetry = JSON.parse(

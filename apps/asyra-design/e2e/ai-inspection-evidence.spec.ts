@@ -1,3 +1,5 @@
+import { prepareDesign } from '../server/design-preparation'
+import { deliverPreparedDesign } from '../src/ai/prepared-design'
 import { captureAiSourceIdentity } from '@asyra/ai-agent-runtime/node'
 import { resolve } from 'node:path'
 import {
@@ -236,14 +238,6 @@ test('recorded action stream preserves drawable targets during incremental const
 }, testInfo) => {
   const manifestPath = process.env.E2E_INSPECTION_REPLAY
 
-  test.skip(
-    !manifestPath,
-    'Provide a project-local recorded action replay manifest.'
-  )
-  if (!manifestPath) {
-    return
-  }
-
   test.setTimeout(300_000)
   const { readFile, appendFile, writeFile } = await import('node:fs/promises')
   const { resolve, relative } = await import('node:path')
@@ -259,19 +253,58 @@ test('recorded action stream preserves drawable targets during incremental const
     return resolved
   }
 
-  const manifest: {
-    actionsPath: string
-    groupResults: Record<string, string>
-    traceHierarchy?: boolean
-  } = JSON.parse(await readFile(localPath(manifestPath), 'utf8'))
-  const batches: AiActionBatch[] = (
-    await readFile(localPath(manifest.actionsPath), 'utf8')
-  )
-    .trim()
-    .split('\n')
-    .map((line) => JSON.parse(line))
-    .filter((frame) => frame.type === 'batch')
-    .map((frame) => frame.batch)
+  const manifest:
+    | {
+        actionsPath: string
+        groupResults: Record<string, string>
+        traceHierarchy?: boolean
+      }
+    | undefined = manifestPath
+    ? JSON.parse(await readFile(localPath(manifestPath), 'utf8'))
+    : undefined
+  // The maintained baseline uses real preparation. A supplied recording tests
+  // additional historical geometry, without being required for routine coverage.
+  const batches: AiActionBatch[] = manifest
+    ? (await readFile(localPath(manifest.actionsPath), 'utf8'))
+        .trim()
+        .split('\n')
+        .map((line) => JSON.parse(line))
+        .filter((frame) => frame.type === 'batch')
+        .map((frame) => frame.batch)
+    : [0, 1].map((index) => ({
+        batchId: `inspection-replay-${index}`,
+        actions: [
+          {
+            id: `apply-${index}`,
+            name: 'apply_prepared_design',
+            arguments: {
+              design: deliverPreparedDesign(
+                prepareDesign(
+                  {
+                    type: 'group',
+                    name: `Visible group - ${index}`,
+                    x: index * 80,
+                    children: [
+                      {
+                        type: 'rect',
+                        key: `rect-${index}`,
+                        name: 'Visible rectangle',
+                        x: 0,
+                        y: 0,
+                        width: 50,
+                        height: 40,
+                        fill: '#3388aa'
+                      }
+                    ]
+                  },
+                  `inspection-replay-${index}`
+                )
+              )
+            },
+            summary: 'Create one drawable group'
+          }
+        ]
+      }))
 
   expect(batches.length).toBeGreaterThan(0)
   const eventsPath = testInfo.outputPath('replay-events.ndjson')
@@ -635,8 +668,8 @@ test('recorded action stream preserves drawable targets during incremental const
     },
     {
       batches,
-      groupResults: manifest.groupResults,
-      traceHierarchy: manifest.traceHierarchy
+      groupResults: manifest?.groupResults ?? {},
+      traceHierarchy: manifest?.traceHierarchy
     }
   )
 
@@ -951,24 +984,18 @@ test('saved drawing keeps a complete snapshot after public regrouping', async ({
   })
   const documentPath = process.env.E2E_INSPECTION_DOCUMENT
 
-  test.skip(
-    !documentPath,
-    'Provide a retained project-local document for deterministic inspection replay.'
-  )
-  if (!documentPath) {
-    return
-  }
-
   const { readFile } = await import('node:fs/promises')
   const { resolve, relative } = await import('node:path')
   const projectRoot = resolve(process.cwd(), '../..')
-  const filePath = resolve(documentPath)
+  const filePath = documentPath ? resolve(documentPath) : undefined
 
-  if (relative(projectRoot, filePath).startsWith('..')) {
+  if (filePath && relative(projectRoot, filePath).startsWith('..')) {
     throw new Error('Replay document must be inside this project')
   }
 
-  const document = JSON.parse(await readFile(filePath, 'utf8'))
+  let document = filePath
+    ? JSON.parse(await readFile(filePath, 'utf8'))
+    : undefined
   const actionPath = process.env.E2E_INSPECTION_ACTIONS
   const fillChanges: {
     elementId: string
@@ -1008,6 +1035,38 @@ test('saved drawing keeps a complete snapshot after public regrouping', async ({
 
   await page.goto(createTestDocumentIdentity().url)
   await waitForAppReady(page)
+  if (!filePath) {
+    await createRectangle(page, 0.25, 0.3)
+    await createRectangle(page, 0.45, 0.3)
+    await createRectangle(page, 0.55, 0.5)
+    document = await page.evaluate(async () => {
+      const { core } = await import('../src/testing/runtime-access')
+      const { hierarchyApis } = await import('../src/common-apis/hierarchy')
+      const workspace = hierarchyApis.getWorkspaceId()
+
+      if (!workspace) {
+        throw new Error('Missing fixture workspace')
+      }
+
+      const ids = core.getElementData(workspace)?.children ?? []
+
+      if (ids.length !== 3) {
+        throw new Error('Expected three authored fixture rectangles')
+      }
+
+      const body = hierarchyApis.groupElements(ids.slice(0, 2))
+      const detail = hierarchyApis.groupElements([ids[2]])
+
+      hierarchyApis.groupElements([body.groupId, detail.groupId])
+
+      return core.save()
+    })
+    await writeFile(
+      testInfo.outputPath('saved-input.json'),
+      JSON.stringify(document)
+    )
+  }
+
   const result = await page.evaluate(
     async ({ document, fillChanges }) => {
       const stage = (name: string) =>
@@ -2228,7 +2287,14 @@ for (const mode of [
                   revision: 1,
                   receiptId: 'expired-receipt'
                 })
-              ).toMatchObject({ status: 'unsaved' })
+              ).toMatchObject({
+                available: false,
+                code: 'TOOL_INPUT_INVALID',
+                stage: 'admission',
+                settlement: 'not-started',
+                toolOutcome: { status: 'failed', settlement: 'not-started' }
+              })
+              expect(await getCoreDocumentDigest(page)).toEqual(beforeReuse)
               const old = await invokeReply(
                 'design_operations.verify_design_checks',
                 state

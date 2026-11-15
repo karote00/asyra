@@ -8,7 +8,12 @@ const {
   criterionBinding,
   gateSummary
 } = require('./policy.cjs')
-const { capture, publish, normalize } = require('./adapters.cjs')
+const {
+  capture,
+  publish,
+  normalize,
+  publishCompleteReport
+} = require('./adapters.cjs')
 const { exportCurrent, importCurrent } = require('./bundles.cjs')
 
 module.exports = {
@@ -23,6 +28,7 @@ module.exports = {
   capture,
   publish,
   normalize,
+  publishCompleteReport,
   exportCurrent,
   importCurrent
 }

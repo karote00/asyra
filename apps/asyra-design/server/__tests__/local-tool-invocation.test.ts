@@ -1,7 +1,10 @@
-import { evaluationToolStop } from '../evaluation-control'
 import { createLocalKnowledgeTools } from '../local-knowledge'
-import { toolSemantics } from '../../src/ai/tool-contract'
 import {
+  toolSemantics,
+  projectToolResultFields
+} from '../../src/ai/tool-contract'
+import {
+  AiToolContractError,
   createAiToolContract,
   inspectAiToolResult,
   admitAiRecipe
@@ -11,8 +14,10 @@ import { requireBatchSuccess } from '../batch-exchange'
 import { expect, it, vi } from 'vitest'
 import {
   localToolOutcome,
-  batchInputRecovery,
+  batchInputFailure,
   localToolFailureReply,
+  localToolFailureIssue,
+  localToolFailureSchema,
   localToolResultSchema,
   invokeLocalTool,
   LocalToolInputError,
@@ -30,6 +35,42 @@ import { createLocalToolLibraryTools } from '../local-tool-library-tools'
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
 
 const signal = () => new AbortController().signal
+
+it('validates canonical and public failure views without weakening either boundary', () => {
+  const reply = localToolFailureReply('Denied.', 'AI_PERMISSION_DENIED', {
+    settlement: 'not-started',
+    executionResult: {
+      actionResults: [],
+      checks: {
+        countsScope: 'selected-checks',
+        counts: { pass: 0, fail: 0, unverified: 1, stale: 0 },
+        visitedResults: 1
+      }
+    }
+  })
+  const original = JSON.parse(reply.text)
+  const projected = projectToolResultFields(original, localToolFailureSchema)
+
+  expect(localToolFailureIssue(original, reply.outcome)).toBeUndefined()
+  expect(localToolFailureIssue(projected, reply.outcome)).toContain(
+    'visitedResults'
+  )
+  expect(
+    localToolFailureIssue(projected, reply.outcome, 'model')
+  ).toBeUndefined()
+  const missingCounts = JSON.parse(JSON.stringify(projected))
+
+  delete missingCounts.executionResult.checks.counts
+  expect(
+    localToolFailureIssue(missingCounts, reply.outcome, 'model')
+  ).toBeDefined()
+  const inconsistent = JSON.parse(JSON.stringify(projected))
+
+  inconsistent.toolOutcome.status = 'partial'
+  expect(localToolFailureIssue(inconsistent, reply.outcome, 'model')).toContain(
+    'disagree'
+  )
+})
 
 const definition = {
   ...toolSemantics({ type: 'object' }, 'prepare', ['request-artifacts']),
@@ -260,8 +301,7 @@ it('preflights every advertised App tool family before its owner executes', asyn
 
       expect(reply.success, tool.name).toBe(false)
       expect(JSON.parse(reply.text), tool.name).toMatchObject({
-        recoverable: true,
-        code: 'PREPARATION_REJECTED'
+        code: 'TOOL_INPUT_INVALID'
       })
     }
 
@@ -304,10 +344,10 @@ it('rejects extra fields without guessing aliases and allows a corrected call', 
 
   expect(rejected.success).toBe(false)
   expect(JSON.parse(rejected.text)).toMatchObject({
-    recovery: 'correct_input',
+    code: 'TOOL_INPUT_INVALID',
     settlement: 'not-started'
   })
-  expect(evaluationToolStop(rejected)).toBeUndefined()
+
   expect(call).not.toHaveBeenCalled()
   expect((await invokeLocalTool(owner, definition, {}, signal())).success).toBe(
     true
@@ -370,7 +410,6 @@ it('returns all owner exceptions without retrying uncertain mutations', async ()
   const reply = await invokeLocalTool({ call }, definition, {}, signal())
 
   expect(JSON.parse(reply.text)).toMatchObject({
-    recoverable: true,
     message: expect.stringContaining('Unknown artifact')
   })
   expect(call).toHaveBeenCalledOnce()
@@ -393,8 +432,8 @@ it('keeps explicit pre-dispatch rejections recoverable without a blanket mutatio
   )
 
   expect(JSON.parse(reply.text)).toMatchObject({
-    code: 'PREPARATION_REJECTED',
-    recoverable: true
+    code: 'TOOL_INPUT_INVALID',
+    settlement: 'not-started'
   })
 })
 
@@ -431,7 +470,6 @@ it('returns malformed preparation output as a tool failure without ending the re
   )
 
   expect(JSON.parse(reply.text)).toMatchObject({
-    recoverable: true,
     code: 'TOOL_RESULT_INVALID'
   })
 })
@@ -518,8 +556,7 @@ it('does not describe a later compound-input failure as zero prior execution', a
       call: async () => {
         throw new LocalToolInputError(
           'Inspection target rejected',
-          'PREPARATION_REJECTED',
-          'correct_input'
+          'TOOL_INPUT_INVALID'
         )
       }
     },
@@ -534,8 +571,7 @@ it('does not describe a later compound-input failure as zero prior execution', a
     settlement: 'unknown',
     executionResult
   })
-  expect(JSON.parse(reply.text).recovery).not.toBe('correct_input')
-  expect(evaluationToolStop(reply)).toBeDefined()
+  expect(JSON.parse(reply.text)).not.toHaveProperty('recovery')
 })
 
 it('observes internal input/output once, links the parent and isolates recorder failure', async () => {
@@ -743,7 +779,7 @@ it('distinguishes usable discovery pages from incomplete mutations through publi
     vi.fn()
   )
   const tool = operations.definitions.find(
-    (entry) => entry.name === 'describe_design_apis'
+    (entry) => entry.name === 'search_design_tools'
   )
 
   if (!tool) {
@@ -936,7 +972,6 @@ it('exposes only successful domain fields to recipe proof and keeps partial evid
   expect(contract.outputSchema).toEqual(schema)
   const interrupted = {
     available: false,
-    recoverable: true,
     code: 'INTERRUPTED',
     message: 'Stopped after one write',
     settlement: 'partial',
@@ -1005,23 +1040,30 @@ it('exposes only successful domain fields to recipe proof and keeps partial evid
   expect(admitted).toMatchObject({ ok: true })
 })
 
-it('preserves an owner-declared terminal failure without changing retryable failures', () => {
-  const terminal = JSON.parse(
-    localToolFailureReply('Stop this request.', 'MUTATION_SCOPE_UNAVAILABLE', {
-      recoverable: false,
+it('derives continuation from failure reason and settlement without permission flags', () => {
+  const terminal = localToolFailureReply(
+    'Context unavailable.',
+    'MUTATION_SCOPE_UNAVAILABLE',
+    {
       settlement: 'not-started'
-    }).text
+    }
+  )
+  const rejected = localToolFailureReply(
+    'Correct the input.',
+    'TOOL_INPUT_INVALID',
+    {
+      settlement: 'not-started'
+    }
   )
 
-  expect(terminal).toMatchObject({
-    recoverable: false,
-    toolOutcome: { status: 'failed', settlement: 'not-started' }
-  })
-  const retryable = JSON.parse(
-    localToolFailureReply('Correct the input.', 'INVALID_INPUT').text
-  )
-
-  expect(retryable.recoverable).toBe(true)
+  for (const reply of [terminal, rejected]) {
+    expect(JSON.parse(reply.text)).not.toHaveProperty('recoverable')
+    expect(JSON.parse(reply.text)).not.toHaveProperty('recovery')
+    expect(reply.outcome).toMatchObject({
+      status: 'failed',
+      settlement: 'not-started'
+    })
+  }
 })
 
 it.each(['inspectionIssues'])(
@@ -1129,7 +1171,7 @@ it('keeps ordinary cancellation without an acknowledged owner result', async () 
 })
 
 it.each([
-  ['not-started', 'AI_ACTION_INPUT_INVALID', true, true, 'correct_input'],
+  ['not-started', 'AI_ACTION_INPUT_INVALID', true, true, 'TOOL_INPUT_INVALID'],
   ['unknown', 'AI_ACTION_INPUT_INVALID', true, true, undefined],
   ['completed', 'AI_ACTION_INPUT_INVALID', true, true, undefined],
   ['not-started', 'AI_EXECUTION_FAILED', true, true, undefined],
@@ -1139,7 +1181,7 @@ it.each([
   'classifies canonical input recovery independently of settlement %s code %s issue %s context %s',
   (settlement, code, issue, contextFresh, expected) => {
     expect(
-      batchInputRecovery({
+      batchInputFailure({
         context: {},
         actionResults: [],
         failure: {
@@ -1168,3 +1210,45 @@ it('rejects malformed boundary evidence at its constructor before any provider d
     })
   ).toThrow()
 })
+
+it.each([false, true])(
+  'preserves registration failure settlement with acknowledged prefix %s',
+  async (hasPrefix) => {
+    const prefix = {
+      actionResults: [
+        {
+          actionId: 'created',
+          actionName: 'create',
+          result: { id: 'existing' }
+        }
+      ]
+    }
+    const reply = await invokeLocalTool(
+      {
+        call: async () => {
+          throw new AiToolContractError(
+            'registration',
+            'Required owner context unavailable'
+          )
+        }
+      },
+      definition,
+      {},
+      signal(),
+      () => (hasPrefix ? prefix : undefined)
+    )
+    const value = JSON.parse(reply.text)
+
+    expect(value).toMatchObject({
+      code: 'TOOL_CONTRACT_INVALID',
+      stage: 'admission',
+      settlement: hasPrefix ? 'unknown' : 'not-started'
+    })
+    expect(reply.outcome.status).toBe(hasPrefix ? 'partial' : 'failed')
+    if (hasPrefix) {
+      expect(value.executionResult).toEqual(prefix)
+    } else {
+      expect(value).not.toHaveProperty('executionResult')
+    }
+  }
+)

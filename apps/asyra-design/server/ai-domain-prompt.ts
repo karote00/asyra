@@ -89,7 +89,7 @@ No particular construction order, representative sample or refinement sequence i
 Do not invent parameters, silently simplify appearance or add quality demands beyond the request.
 
 Research only missing information after reusing attachments, canvas context and retained source facts.
-Tool discovery is separate from reference research: describe_design_apis finds capabilities,
+Tool discovery is separate from reference research: search_design_tools finds capabilities,
 not subject facts, photographs or source pages. Use native web research for missing external information;
 original concepts need not reproduce an existing reference. A source-local failure is not a task-level blocker;
 try useful alternatives. Never reduce source-image resolution or document dimensions.
@@ -98,7 +98,7 @@ requires revision. Aesthetic preference alone is insufficient. Retain attributio
 Optional record_design_facts, record_design_calculations and select_design_references save authored context.
 They do not authorize other tools or require prior registrations; source identity and crop belong to the image consumer.
 
-Discover missing contracts through describe_design_apis; execute known current contracts directly.
+Search missing capabilities with search_design_tools; read exact contracts with read_design_contracts. Execute known current contracts directly.
 Tools own exact arguments, execution routes, returned identities and recovery. Use prepare_and_apply_design
 for a single new design, or execute_design to hand off a sequence of workflows and edits. Its request-local sequence also dispatches registered reference and observation operations; these request-only operations cannot be saved as recipe dependencies. Supply known element IDs,
 artifact keys/prefixes or a workspace region with its filter directly to the batch. Read candidates only if you must choose among them.
@@ -165,14 +165,14 @@ Read-only advice leaves the canvas unchanged.
 `.trim()
 
 export const AI_OPERATION_INSTRUCTIONS = `
-Discover only missing schemas. For known semantic operations use describe_design_apis with operations=["owner.method", ...].
+Discover only missing schemas. For known identities use read_design_contracts with names=["owner.method", ...].
 Use returned action names and execution routes rather than translating names. Use names for known native tools;
-qualify ambiguous names by namespace. If the operation is unknown, query by operation purpose first. Categories and their continuations support intentional complete inventory for complex requests, not a default prerequisite.
+qualify ambiguous names by namespace. If the operation is unknown, use search_design_tools with query describing the purpose. Categories and their continuations support intentional complete inventory for complex requests, not a default prerequisite.
 Use registered tools directly when the current contract is already known.
-For prepare_and_apply_design direct execution, request view=usage together with inputScope={operation,nodeTypes}; the Main tool scope below supplies owner-defined choices and an executable query example before lookup. inputScope.operation selects a branch, not an intent verb or the outer semantic-operation selector. Adapt the example to the current part using only those choices; no menu prerequisite. The query selector is not an execution argument: execute with the returned branch fields. Include only owner-published optionalInputs needed by this operation. This selected guide includes complete parameter restrictions, a matching executable example when available, result interpretation and no-replay recovery. Execute from that guide without acquiring full validation schemas. Widen the scope before using additional types; full schemas remain available for machine recipe composition.
+For prepare_and_apply_design direct execution, request view=usage and scopes={"prepare_and_apply_design":{inputScope:{operation,nodeTypes}}} with the matching name; the Main tool scope below supplies owner-defined choices and an executable query example before lookup. inputScope.operation selects a branch, not an intent verb or the outer semantic-operation selector. Adapt the example to the current part using only those choices; no menu prerequisite. The query selector is not an execution argument: execute with the returned branch fields. Include only owner-published optionalInputs needed by this operation. This selected guide includes complete parameter restrictions, a matching executable example when available, result interpretation and no-replay recovery. Execute from that guide without acquiring full validation schemas. Widen the scope before using additional types; full schemas remain available for machine recipe composition.
 For missing information, exact view=usage supplies complete parameters, results and recovery for tools without inputScopes.
-Select an owner's inputScopes in the same query; exploratory usage is a menu.
-Parameters use standard JSON Schema. Use schemaPaths for missing fields, or full definitions for full contracts;
+Select each owner's inputScope under its exact name in scopes; exploratory usage is a menu.
+Parameters use standard JSON Schema. Use scopes keyed by exact names with schemaPaths for missing fields, or full definitions for full contracts;
 Full input/output and lifecycle contracts are required when authoring a reusable recipe with submit_tool. Compact menus
 retain the qualified recipeDependency route without duplicating its full wrapper contract.
 For missing fields recover those paths; refresh preserves that scope. Give refreshReason when known; restore the full schema
@@ -182,7 +182,6 @@ calculation needs it. read_design_context supports selection, children, known ID
 Each result includes a revision-bound snapshotId. Reuse scope=snapshot for later pages;
 delivery=columns returns only requested fields and IDs. A stale or evicted reference requires reading the current scope again; do not retry
 the same stale reference. Release snapshots when they are no longer needed.
-For local changes, query workspace bounds even if the parent spans many other regions; do not enumerate its children.
 Filter candidates for the task; use result=ids when only targets are needed, then batch-edit elementIds.
 Use children for hierarchy questions. Follow the returned nextOffset and the advertised page limit.
 Use hierarchy.moveElementsRelative for before/after placement without reading all siblings. Reuse returned IDs.

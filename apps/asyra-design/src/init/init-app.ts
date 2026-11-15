@@ -7,7 +7,6 @@ import { initGradientFillEditing } from './capabilities/init-gradient-fill-editi
 import { initVectorIconData } from './capabilities/init-vector-icon-data'
 import { initLoadDiagnostics } from './diagnostics/init-load-diagnostics'
 import { initCanvasPipelineDebugger } from './diagnostics/init-canvas-pipeline-debugger'
-import { initSelectionCompatibility } from './derived-state/init-selection-compatibility'
 import { initPathEditingContinuation } from './derived-state/init-path-editing-continuation'
 import { initFeatures } from './foundation/init-features'
 import { initInputSystem } from './foundation/init-input-system'
@@ -66,8 +65,7 @@ export const initApp = (): AppInitialization => {
   initLoadDiagnostics()
 
   // Derived-state syncs.
-  // Keep selectedVectorPoint mirrored from SelectionManager-driven UI state.
-  initSelectionCompatibility()
+  // Derive Pen continuation from canonical selection and topology.
   initPathEditingContinuation()
 
   // Capability init.

@@ -4,7 +4,9 @@ import { EntityTypes } from '@asyra/utils'
 import {
   CONTAINER_COMPONENT_DEFINITIONS,
   GROUP_COMPONENT_DEFINITION,
-  GROUP_RENDER_STRATEGY
+  GROUP_RENDER_STRATEGY,
+  FRAME_RENDER_STRATEGY,
+  RECTANGLE_RENDER_STRATEGY
 } from '../components/index.js'
 import { RenderGraphics } from '@asyra/render'
 import * as presetPublicApi from '../index.js'
@@ -125,6 +127,39 @@ describe('official Preset Group operation planning', () => {
     expect(graphic.x).toBe(12)
     expect(graphic.y).toBe(24)
   })
+
+  it.each([
+    GROUP_RENDER_STRATEGY,
+    FRAME_RENDER_STRATEGY,
+    RECTANGLE_RENDER_STRATEGY
+  ])(
+    'projects canonical rotation on creation and resets it on a later snapshot (%#)',
+    (strategy) => {
+      const graphic = new RenderGraphics()
+      const data = {
+        id: 'group',
+        type: 'group',
+        x: 12,
+        y: 24,
+        width: 20,
+        height: 40,
+        fills: [],
+        rotation: Math.PI / 2
+      }
+
+      strategy(graphic, data as never)
+      expect(graphic.rotation).toBe(Math.PI / 2)
+      expect(graphic.toGlobal({ x: 3, y: 4 })).toMatchObject({ x: 8, y: 27 })
+      strategy(graphic, { ...data, rotation: 0 } as never)
+      expect(graphic.rotation).toBe(0)
+      expect(graphic.toGlobal({ x: 3, y: 4 })).toMatchObject({ x: 15, y: 28 })
+      strategy(graphic, data as never)
+      strategy(graphic, { ...data, rotation: undefined } as never)
+      expect(graphic.rotation).toBe(0)
+      expect(graphic.toGlobal({ x: 3, y: 4 })).toMatchObject({ x: 15, y: 28 })
+      graphic.destroy()
+    }
+  )
 
   it('plans known group IDs without reading unrelated scene elements', () => {
     const snapshot = createSnapshot()

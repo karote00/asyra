@@ -1,5 +1,3 @@
-import { resetCollaborationDocument } from '../collaboration/lifecycle'
-
 interface ResetStoredDocumentOptions {
   readonly reload?: () => void
   readonly resetDocument?: (fileId: string) => Promise<void>
@@ -24,7 +22,11 @@ export const resetStoredDocument = async (
   const reload = options.reload ?? (() => window.location.reload())
 
   try {
-    await (options.resetDocument ?? resetCollaborationDocument)(fileId)
+    const resetDocument =
+      options.resetDocument ??
+      (await import('../collaboration/lifecycle')).resetCollaborationDocument
+
+    await resetDocument(fileId)
   } finally {
     reload()
   }

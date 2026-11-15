@@ -14,6 +14,24 @@ const record = (receipt, status) => ({
   details: status === 'failed' ? ['Expected 5, received 6'] : []
 })
 
+test('publication preserves complete long diagnostics without putting them in a summary field', (t) => {
+  const project = initialize(directory(t), 'vitest')
+  const receipt = capture(project)
+  const diagnostic = Array.from(
+    { length: 200 },
+    (_, index) =>
+      'Unsuccessful boundary ' + index + ': ' + 'evidence '.repeat(30)
+  ).join('\n')
+
+  publish(project, receipt, [record(receipt, 'passed')], diagnostic)
+  const snapshot = openProject(project.directory).snapshot()
+  const warning = snapshot.documents[0].current.warnings[0]
+
+  assert.notEqual(snapshot.evaluation.flows[0].nodes[0].status, 'done')
+  assert.equal(warning.details.join('\n'), diagnostic)
+  assert.ok(warning.summary.length <= 8192)
+})
+
 test('offline publication preserves failures through empty reports and retires exact warnings on repair', (t) => {
   const project = initialize(directory(t), 'vitest'),
     store = openProject(project.directory)
@@ -278,4 +296,308 @@ test('native watch admits an unmapped file without inventing mapped test results
       assert.equal(warnings[0].nodeId, 'integration')
     }
   }
+})
+
+for (const field of ['numFailedTests', 'numPendingTests', 'numTodoTests']) {
+  test('current flow publication rejects contradictory ' + field, (t) => {
+    const { normalize, reportDiagnostic } = require('../adapters.cjs')
+    const project = initialize(directory(t), 'vitest')
+    const receipt = capture(project)
+    const selected = receipt.cases[0].selector
+    const report = {
+      success: true,
+      [field]: 1,
+      testResults: [
+        {
+          name: path.join(project.root, selected.file),
+          status: 'passed',
+          assertionResults: [
+            { fullName: selected.title, status: 'passed', failureMessages: [] }
+          ]
+        }
+      ]
+    }
+    const records = normalize(project, report, selected)
+
+    publish(project, receipt, records, reportDiagnostic(report, records))
+    assert.notEqual(
+      openProject(project.directory).snapshot().evaluation.flows[0].nodes[0]
+        .status,
+      'done'
+    )
+  })
+}
+
+test('Node observations use the same current criterion and source-bound publication', (t) => {
+  const { normalize } = require('../adapters.cjs')
+  const project = initialize(directory(t), 'vitest')
+  const file = path.join(project.directory, 'checkout.flow.json')
+  const doc = JSON.parse(fs.readFileSync(file, 'utf8'))
+
+  doc.definition.nodes[0].criteria[0].selector.producer = 'node'
+  fs.writeFileSync(file, JSON.stringify(doc))
+  const receipt = capture(project)
+  const selected = receipt.cases[0].selector
+  const records = normalize(
+    project,
+    {
+      success: true,
+      testResults: [
+        {
+          name: path.join(project.root, selected.file),
+          assertionResults: [{ fullName: selected.title, status: 'passed' }]
+        }
+      ]
+    },
+    selected
+  )
+
+  publish(project, receipt, records)
+  assert.equal(
+    openProject(project.directory).snapshot().evaluation.flows[0].nodes[0]
+      .status,
+    'done'
+  )
+})
+
+test('real selected Node execution publishes only the requested criterion', async (t) => {
+  const { runSelected } = require('../portable-runner.cjs')
+  const repository = path.resolve(__dirname, '../../../..')
+  const project = { ...initialize(directory(t), 'vitest'), root: repository }
+  const file = path.join(project.directory, 'checkout.flow.json')
+  const doc = JSON.parse(fs.readFileSync(file, 'utf8'))
+  const criterion = doc.definition.nodes[0].criteria[0]
+
+  criterion.selector = {
+    producer: 'node',
+    identity: JSON.stringify({
+      config: 'tools/flow-inspector/control-plane/node-test-reporter.mjs',
+      cwd: '.',
+      file: 'scripts/__tests__/domain-knowledge.test.mjs',
+      project: '',
+      title: 'shared knowledge is a flat data-only root workspace'
+    })
+  }
+  doc.definition.nodes[0].actions = []
+  fs.writeFileSync(file, JSON.stringify(doc))
+  const result = await runSelected(project, { criterionId: criterion.id })
+
+  assert.equal(result.code, 0, JSON.stringify(result))
+  assert.equal(
+    openProject(project.directory).snapshot().evaluation.flows[0].nodes[0]
+      .status,
+    'done'
+  )
+})
+
+for (const scenario of [
+  'passed',
+  'failed',
+  'skipped',
+  'empty',
+  'interrupted'
+]) {
+  test(
+    'selected Node evidence preserves real ' + scenario + ' execution',
+    async (t) => {
+      const { runSelected } = require('../portable-runner.cjs')
+      const project = {
+        ...initialize(directory(t), 'vitest'),
+        root: path.resolve(__dirname, '../../../..')
+      }
+      const file = path.join(project.directory, 'checkout.flow.json')
+      const doc = JSON.parse(fs.readFileSync(file, 'utf8'))
+      const criterion = doc.definition.nodes[0].criteria[0]
+
+      criterion.selector = {
+        producer: 'node',
+        identity: JSON.stringify({
+          config: 'tools/flow-inspector/control-plane/node-test-reporter.mjs',
+          cwd: '.',
+          file: 'tools/flow-inspector/control-plane/__tests__/fixtures/runner-events.mjs',
+          project: '',
+          title:
+            scenario === 'interrupted'
+              ? 'process termination'
+              : 'first parent same child name'
+        })
+      }
+      doc.definition.nodes[0].actions = []
+      fs.writeFileSync(file, JSON.stringify(doc))
+      const previous = process.env.FLOW_TEST_SCENARIO
+
+      process.env.FLOW_TEST_SCENARIO = scenario
+      t.after(() => {
+        if (previous === undefined) {
+          delete process.env.FLOW_TEST_SCENARIO
+        } else {
+          process.env.FLOW_TEST_SCENARIO = previous
+        }
+      })
+      const result = await runSelected(project, { criterionId: criterion.id })
+      const state = openProject(project.directory).snapshot()
+
+      assert.equal(
+        result.code,
+        scenario === 'passed' ? 0 : 1,
+        JSON.stringify(state.documents[0].current.warnings)
+      )
+      if (scenario === 'passed') {
+        assert.equal(state.evaluation.flows[0].nodes[0].status, 'done')
+      } else {
+        assert.notEqual(state.evaluation.flows[0].nodes[0].status, 'done')
+      }
+
+      if (scenario === 'failed') {
+        assert.ok(
+          state.documents[0].current.observations.some(
+            (item) => item.status === 'failed'
+          )
+        )
+      }
+    }
+  )
+}
+
+test('whole-run publication cannot hide a missing owner behind a previously passing criterion', (t) => {
+  const { publishCompleteReport } = require('../adapters.cjs')
+  const project = initialize(directory(t), 'vitest')
+  const receipt = capture(project)
+  const selected = receipt.cases[0].selector
+  const report = {
+    success: true,
+    testResults: [
+      {
+        name: path.join(project.root, selected.file),
+        assertionResults: [{ fullName: selected.title, status: 'passed' }]
+      }
+    ]
+  }
+
+  publishCompleteReport(
+    project,
+    receipt,
+    report,
+    selected,
+    [selected.file],
+    [selected]
+  )
+  assert.equal(
+    openProject(project.directory).snapshot().evaluation.flows[0].nodes[0]
+      .status,
+    'done'
+  )
+  const next = capture(project)
+
+  publishCompleteReport(
+    project,
+    next,
+    report,
+    selected,
+    [selected.file, 'other-owner.test.ts'],
+    [selected, { file: 'other-owner.test.ts', title: 'other behavior' }]
+  )
+  const current = openProject(project.directory).snapshot()
+
+  assert.notEqual(current.evaluation.flows[0].nodes[0].status, 'done')
+  assert.match(
+    current.documents[0].current.warnings[0].summary,
+    /Missing required test file/
+  )
+})
+
+test('whole-run publication rejects unselected pending assertions and malformed reports', (t) => {
+  const { publishCompleteReport } = require('../adapters.cjs')
+  const project = initialize(directory(t), 'vitest')
+  const selected = capture(project).cases[0].selector
+
+  for (const report of [
+    {
+      success: true,
+      testResults: [
+        {
+          name: path.join(project.root, selected.file),
+          assertionResults: [
+            { fullName: selected.title, status: 'passed' },
+            { fullName: 'Unmapped required behavior', status: 'pending' }
+          ]
+        }
+      ]
+    },
+    {
+      success: true,
+      testResults: [{ name: path.join(project.root, selected.file) }]
+    }
+  ]) {
+    publishCompleteReport(
+      project,
+      capture(project),
+      report,
+      selected,
+      [selected.file],
+      [selected, { file: selected.file, title: 'Unmapped required behavior' }]
+    )
+    assert.notEqual(
+      openProject(project.directory).snapshot().evaluation.flows[0].nodes[0]
+        .status,
+      'done'
+    )
+  }
+})
+
+test('whole-run publication retires a prior pass when an unselected case disappears within the same file', (t) => {
+  const { publishCompleteReport } = require('../adapters.cjs')
+  const project = initialize(directory(t), 'vitest')
+  const receipt = capture(project)
+  const selected = receipt.cases[0].selector
+  const requiredCases = [
+    selected,
+    { file: selected.file, title: 'independently required sibling' }
+  ]
+  const report = {
+    success: true,
+    numTotalTests: 2,
+    numPassedTests: 2,
+    testResults: [
+      {
+        name: selected.file,
+        assertionResults: requiredCases.map((item) => ({
+          fullName: item.title,
+          status: 'passed'
+        }))
+      }
+    ]
+  }
+
+  publishCompleteReport(
+    project,
+    receipt,
+    report,
+    selected,
+    [selected.file],
+    requiredCases
+  )
+  assert.equal(
+    openProject(project.directory).snapshot().evaluation.flows[0].nodes[0]
+      .status,
+    'done'
+  )
+  report.testResults[0].assertionResults.pop()
+  report.numTotalTests--
+  report.numPassedTests--
+  publishCompleteReport(
+    project,
+    capture(project),
+    report,
+    selected,
+    [selected.file],
+    requiredCases
+  )
+  const current = openProject(project.directory).snapshot()
+
+  assert.notEqual(current.evaluation.flows[0].nodes[0].status, 'done')
+  assert.match(
+    current.documents[0].current.warnings[0].summary,
+    /Missing required test case/
+  )
 })

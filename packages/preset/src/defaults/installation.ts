@@ -20,6 +20,7 @@ import {
 } from '../events/preset-event-names.js'
 import { registerEvents } from '../events/register-events.js'
 import { registerDefaultSharedDataChannels } from '../subscriptions/shared-channels.js'
+import { registerVectorSelectionProjection } from '../subscriptions/vector-selection.js'
 import { registerDefaultDataChannelObservers } from '../subscriptions/data-channel.js'
 import type { PresetRenderStrategyRegistration } from '../components/index.js'
 import type { PresetDefaultInstallContext } from './types.js'
@@ -141,6 +142,9 @@ export const acquireVectorEditingProjection = (
       undefined,
       { vectorEditing: true }
     )
+  )
+  context.privatePrerequisites.acquire('projection:vector-selection', () =>
+    registerVectorSelectionProjection(context.core, context.dependencies)
   )
 }
 

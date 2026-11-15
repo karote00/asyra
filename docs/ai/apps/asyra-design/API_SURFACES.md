@@ -498,7 +498,9 @@ Unregistered scalar conveniences such as `setElementVisible`, `addFill`,
     Undo, shared publication, CRDT, or persistence evidence
 - `appendVectorAnchorPoint(elementId: string, point: VectorAnchorPoint, options?: AppendVectorAnchorPointOptions): MutationReceipt<{ point: VectorAnchorPoint; index: number } | null>`
   - `AppendVectorAnchorPointOptions` combines subpath/continuation/structural
-    intent inputs with ordinary `EVENT_OPTIONS`
+    intent inputs and the shared explicit `transientPreview` option with ordinary
+    `EVENT_OPTIONS`. Preview routing still requires the active path-editing drag
+    and `undoable: false`; it cannot produce canonical persistence evidence
   - structural intent validation owns the final `undoable` value while preserving
     caller-selected `sharedDelivery`, `shared`, and `rollbackable` mutation
     options
@@ -603,12 +605,13 @@ Unregistered scalar conveniences such as `setElementVisible`, `addFill`,
 - `setPathEditingVectorId(elementId: string | null): void`
 - `getPathEditingStartNewSubpath(): boolean`
 - `setPathEditingStartNewSubpath(value: boolean): void`
+- Selected point/segment getters read Preset projections of canonical selection
+  channels. Select identities through `selectionApis`; there are no independent
+  selected-view setters. Hover state remains App-owned.
 - `getSelectedVectorPoint(): SelectedVectorPointState | null`
-- `setSelectedVectorPoint(point: SelectedVectorPointState | null): void`
 - `getHoveredVectorPoint(): SelectedVectorPointState | null`
 - `setHoveredVectorPoint(point: SelectedVectorPointState | null): void`
 - `getSelectedVectorSegment(): { elementId: string; segmentId: string } | null`
-- `setSelectedVectorSegment(segment: { elementId: string; segmentId: string } | null): void`
 - `getHoveredVectorSegment(): { elementId: string; segmentId: string } | null`
 - `setHoveredVectorSegment(segment: { elementId: string; segmentId: string } | null): void`
 - `getHoveredVectorSegmentInsertPoint(): { elementId: string; segmentId: string; x: number; y: number } | null`
@@ -624,14 +627,13 @@ Unregistered scalar conveniences such as `setElementVisible`, `addFill`,
   - `target: 'anchor' | 'inHandle' | 'outHandle'`
 - `clearVectorPointState(): void`
 - selection ownership note:
-  - `selectedVectorPoint` is compatibility mirror state derived from `vectorPointSelection`
-  - `selectedVectorSegment` is compatibility mirror state derived from `vectorSegmentSelection`
+  - `selectedVectorPoint` is a Preset-owned read-only, frame-aligned display projection of `vectorPointSelection`
+  - `selectedVectorSegment` is a Preset-owned read-only display projection of `vectorSegmentSelection`
 - source-of-truth for selected vector points/segments is SelectionManager channel state
+- Pen continuation, connection and cancellation use `selectionApis.getSelectedVectorPoints()`
+  to read current identities independently of delayed display coordinates
 - `enterPathEditingMode(elementId: string): void`
 - `exitPathEditingMode(): void`
-- compatibility aliases:
-  - `getPenEditingVectorId()`
-  - `setPenEditingVectorId(...)`
 
 `viewportApis` (`src/common-apis/viewport.ts`)
 
@@ -756,9 +758,6 @@ Unregistered scalar conveniences such as `setElementVisible`, `addFill`,
 
 `controllers/app.ts`
 
-- `destroyRenderApp(): void`
-- `setupInputSystem(canvas: HTMLElement): void`
-- `renderIsReady(): void`
 - `switchPrimaryTool(primaryTool: PrimaryToolType): void`
 
 `controllers/element-selection.ts`
@@ -999,35 +998,45 @@ const getElementComputedDataApi = defineBasicApi({
 })
 ```
 
-The local backend exposes `describe_design_apis` from the current admitted
-contracts. No arguments returns categories and counts; `category` returns that
-category's purpose/result menu; `operation` resolves an exact `owner.method`
-identity and current schema in one call. `names` resolves exact action names.
-Optional descriptive `query` ranks owner purpose before input/output metadata and
-identity words. `x-design-discovery` declares purpose, vocabulary and boundaries;
-otherwise the first authored sentence supplies purpose. Synthetic name prefixes
-and subsequent usage guidance do not establish purpose. Schema fields, enum/const
-choices and descriptions are secondary evidence. Ordinary plurals normalize only
-for search, never for exact identity resolution.
-Optional `inputFields` with a descriptive query requires exact input leaf names or
-slash-separated paths. Candidates return matching paths, top-level fields and
-applicability boundaries. Open records and output fields cannot prove acceptance;
-actual values still undergo ordinary execution validation. Exact names (including unique registered Basic API method names), schemaPaths
-and inputScope retain their distinct selection responsibilities. Ambiguous method
-names require an owner-qualified identity.
-Partial matches disclose unmatched terms rather than claiming the whole purpose.
-Multiple or partial descriptive
-`usage` matches remain menus with exact acquisition routes; a uniquely complete
-match may deliver usage immediately. Explicit full views and exact names/scopes
-retain complete contracts. Examples and defaults are not capability metadata.
-Selectors are mutually exclusive. No purpose/field match returns the category menu,
-not an unavailable capability or a requirement to scan every API. Existing known
-operations may be executed directly without discovery or a preliminary data read.
+The local backend publishes two discovery owners from the admitted registry.
+`search_design_tools` accepts an intended capability in `query`, optional declared
+`inputFields` and a category filter. Omit query/category for the category index.
+Search returns paginated candidate metadata and exact read routes, never acquired
+execution contracts. A unique match remains a candidate. Empty results disclose
+coverage and category navigation; they do not prove a capability is unavailable.
+
+`read_design_contracts` accepts exact `names` (action names, semantic operations
+or qualified native identities). `view: "usage"` returns actionable parameters and
+results; full view returns validation schemas. `scopes` maps each selected name
+to its own `schemaPaths` or owner-published `inputScope`. Schema paths return
+fragments, not full validation schemas. Different tools never inherit another
+selected tool's paths. Short/semantic action identities resolve the primary action;
+use a namespace-qualified identity for its wrapper. Genuine ambiguity returns
+choices without substituting another tool. A short action identity selects the primary action even when an unrelated native tool shares its name; select that other owner only through its qualified identity. No retired selector aliases remain.
+
+Saved contract reads accept names, fromResult and optional contentPage only. A new view or scope requires an ordinary exact read. Per-identity reads preserve missing-name candidates alongside successfully delivered contracts.
+
+Purpose ranking uses owner-declared vocabulary/boundaries before input/output
+metadata and identity words. Ordinary plurals normalize for search only. Open
+records and output fields do not establish input-field acceptance. Values still
+undergo the ordinary executor's validation. Both discovery tools and read-only
+Knowledge compose as request operations in `execute_design`; durable recipes
+cannot depend on these request-scoped reads. Lifecycle controls remain separate.
+Use delivery.fields to select several step results, or bind a known successor
+without returning intermediate values. Known operations need no discovery call.
 
 `core.workspaceToElementLocal` declares a nullable `{x, y}` result. A request
 sequence can bind its coordinate fields directly to `element.setElementPositions`
 in the same `execute_design` call. Missing conversion fails before position writes;
 it never substitutes zero or assumes workspace coordinates are parent-local.
+
+`read_design_attachment` composes within the current request. It declares `bounds`
+(null for workspace; otherwise parent-relative x/y and local width/height) and
+`basis` (workspace positions of local origin and unit axes). Bind selected numeric
+fields through the wrapper's `/actionResults/0/result` output. A missing parent,
+transform or null field cannot start dependent writes. The evidence stamp remains
+request-local and cannot be retained across turns. Creation IDs identify objects;
+local bounds and basis identify their geometry frame, not a task's main target.
 
 Execute basic operations through `execute_design`, including one-item edits.
 Redundant scalar aliases have explicit batch replacements in dispositions; UI
@@ -1142,7 +1151,7 @@ and `bdd-features/text-canvas.feature` for lifecycle and accepted behavior.
 
 ### Native discovery entry
 
-With drawing operations enabled, `describe_design_apis` and the single
+With drawing operations enabled, `search_design_tools`, `read_design_contracts` and the single
 `execute_design` host entry are eagerly available native tools. Its declaration and dispatch still come from
 the existing operation owner. Domain tools remain deferred; no-operation and
 assessment requests do not add the entry. Native advertised counts/bytes reflect
@@ -1158,7 +1167,7 @@ current. Captures require no criterion IDs, binding step or final approval call.
 
 ### Executable usage result representation
 
-`describe_design_apis` with `view: "usage"` returns complete selected input
+`read_design_contracts` with `view: "usage"` returns complete selected input
 constraints, owner examples, result fields and settlement/recovery meaning.
 `includeResultSchema: true` explicitly includes the full model-facing result
 validation schema for machine consumers. It requires usage view. Refresh, paging
@@ -1169,7 +1178,7 @@ internal recipe result schemas remain complete in both modes.
 
 For exact short-name usage, an admitted batch action carries its canonical
 wrapper's qualified dependency reference. Select that qualified name for wrapper
-usage. Explicit full and machine-schema selections retain both routes. Names
+usage. Full, scoped and machine-schema selections use the same primary identity; request the qualified wrapper explicitly when needed. Names
 shared across native namespaces require qualification. Output navigation exposes
 root fields and branch choices.
 
@@ -1178,9 +1187,7 @@ its actual delivery mode and fields before invoking it; use host target bindings
 for known artifacts or current regions. Preserve complete/truncated semantics.
 No separate evidence protocol or judgment submission is required.
 
-Use describe_design_apis query for owner capability metadata. With exact
-names/operations, optional purpose supplies recovery candidates when an identity
-is missing. design_operations.execute_design accepts one ordered operations array.
+Use search_design_tools for owner capability metadata and read_design_contracts for selected exact identities. Missing identities retain their successful siblings; purpose search is a separate request step. design_operations.execute_design accepts one ordered operations array.
 Each operation specifies a name and ordinary arguments. Optional id identifies
 an output for later arguments using {kind:"step",step:"id",path:"/field"}.
 A known operation can specify an artifact or region target; selectAt:"step"
@@ -1263,6 +1270,10 @@ To save selected authored parameters after a successful operation, use
 `retain: {alias: {step, source: "input", path: "/draft"}}`. Paths address the
 ordinary operation arguments for native tools and canvas actions; internal
 registered action wrappers are not exposed as selection roots.
+Omitting `step` selects the final successful producer using the same validated
+public input, producer identity and lifetime exclusions as an explicit step.
+Input selection never reconstructs arguments from output or re-executes work.
+
 Same-call consumers bind those authored values without a dummy tool; later turns
 read the App snapshot. Request-scoped references still cannot cross turns.
 
@@ -1390,7 +1401,7 @@ result; an invoke_tool execution envelope is not its leaf output. Native direct
 owners reuse their existing projection. Derive both routes from authoritative
 wrapper constructors and registered schemas, without field-name substitutions.
 Before dispatch, pure authored output/delivery/retain selection errors return
-not-started correct_input recovery. Missing dependencies, saved values, unsupported
+`TOOL_INPUT_INVALID` with not-started settlement. Missing dependencies, saved values, unsupported
 owner schemas, omitted admission issues and post-execution delivery failures do
 not gain that recovery. Corrected input must execute only after a new valid
 admission; no rejected call writes or automatically replays work.
@@ -1402,7 +1413,7 @@ Recorder-armed evaluation stops on typed App/native execution failures, includin
 partial/unknown settlement, and externally confirmed missing or incorrect App data
 that prevents execution. Preserve the first concrete failure across native calls
 and nested host operations before same-thread unlimited reporting. Normal visual correction, incomplete artwork and arbitrary nested user data do not
-stop drawing. Explicit not-started correct_input failures may continue. Unknown
+stop drawing. Validated not-started `TOOL_INPUT_INVALID` failures may continue. Unknown
 writes, actual tool contract failures and missing required App data remain stopping
 errors; ordinary requests retain normal recovery.
 
@@ -1439,11 +1450,11 @@ snapshots. Successful delivery remains compact. Missing selected success fields
 do not replace the actual failure or require the model to anticipate its shape.
 
 Complete region target reads enforce expectedCount at the host after reading.
-Empty or wrong-count matches return correct_input with not-started settlement,
+Empty or wrong-count matches return `TOOL_INPUT_INVALID` with not-started settlement,
 without dispatching mutations. Incomplete, unavailable or unknown reads remain
 blocking failures. Literal selectors stay literal; no fuzzy target substitution.
 
-Strict evaluation allows owner-declared correct_input recovery with known safe
+Strict evaluation uses the canonical input failure reason with known safe
 settlement, including multipart successes followed by a rejected input and the
 inline root's aggregate receipt. It preserves the failed receipt for the same AI
 to repair; it neither retries automatically nor replays successful parts.
@@ -1451,7 +1462,7 @@ Independent result-delivery errors, unknown settlement, unavailable App data and
 abnormal interruption still stop. Ordinary visual corrections remain allowed.
 
 Canonical input-schema rejection and a control-plane-only operation placed in a sequence
-return explicit correct_input before dispatch. The control remains native; its
+return `TOOL_INPUT_INVALID` before dispatch. The control remains native; its
 receipt identifies the registered direct route without automatically invoking it.
 The host preserves the typed owner recovery through admission wrappers. Missing
 or ambiguous capabilities, unavailable App context and errors with acknowledged
@@ -1465,7 +1476,7 @@ events retain their existing failure handling. No result cache or automatic retr
 is introduced.
 
 Discovery identity recovery preserves `partial`/`failed` coverage and completed read
-settlement. `IDENTITY_UNRESOLVED` with `recovery.kind=select_identity` permits selecting
+settlement. `IDENTITY_UNRESOLVED` permits selecting
 current exact identities while retaining delivered siblings. Known unavailable
 contracts retain `DEFINITION_UNAVAILABLE`; completed transport does not make them
 usable. Content pages and retained refresh preserve the same typed recovery.
@@ -1478,7 +1489,7 @@ Runtime-normalized schemas are not a substitute for App model-delivery schemas.
 
 ## Execution recovery and evaluation
 
-Correctable authored input errors return the existing `correct_input` recovery
+Rejected authored inputs return `TOOL_INPUT_INVALID` and actual settlement
 before affected writes. The AI may correct the input and continue in the same
 work turn. Completed prefixes remain acknowledged; recovery never replays them.
 Real tool failures, unavailable required data, unknown settlement, failed media
@@ -1514,7 +1525,7 @@ results do not certify appearance or create global completion obligations.
 
 `prepare_design` revision 4 reports blocking compiled findings as
 `available=false`, `applicable=false`, `settlement=not-started` and
-`recovery=correct_input`. The retained artifact and findings remain inspectable;
+`TOOL_INPUT_INVALID`. The retained artifact and findings remain inspectable;
 no canvas apply has run. The combined workflow preserves that failure contract,
 including acknowledged earlier parts. Corrected source must pass ordinary admission.
 This changes neither geometry checks nor artifact ownership or strict evaluation.
@@ -1524,7 +1535,7 @@ blocking; successful compilation alone never authorizes applying failed findings
 ### Target admission recovery
 
 Pure registered target field/path/conflict and action-input validation preserve
-`PREPARATION_REJECTED`, `not-started` and `correct_input` through both direct batch
+`TOOL_INPUT_INVALID` and `not-started` through both direct batch
 admission and scheduled host planning. `field` names one identity argument;
 `path` locates its nested slot. Dotted field aliases are not accepted. These
 rejections precede target reads and canvas writes. Missing owners, artifact
@@ -1615,7 +1626,7 @@ Public `output` and `response` reject before execution. Runtime recipe output
 and private operation receipt formatting remain internal contracts.
 
 Reference import revision 3 returns `{references, actionResults, available,
-status, settlement, recoverable}` for either input form. Select `/references` for
+status, settlement, sourceCode}` for either input form. Select `/references` for
 metadata or the whole result/`/actionResults` for native images. Acquisition is
 cached independently; explicit redisplay needs no `refresh` argument. Attachment
 indexes and media are request-owned and cannot be saved as portable context.
@@ -1638,7 +1649,6 @@ Exact navigation and selected executable contracts preserve that guidance,
 canonical parameter constraints and explicit material-revision preconditions.
 Requested scopes remain complete; smaller scopes are a caller choice, not silent
 server omission. Existing field navigation and bounded pagination remain valid.
-
 
 ### Provider-visible host handoffs
 
@@ -1667,7 +1677,7 @@ replayed to produce a reply.
 
 ### Canonical property input recovery
 
-core.updateElementProperties accepts registered component properties and aliases. Element metadata name/visible/lock uses core.updateElementData. The canonical owner rejects unsupported property keys before apply. The App action adapter forwards the owner diagnostic through Runtime; correct_input requires AI_ACTION_INPUT_INVALID, inputIssue, confirmed not-started settlement and fresh context. Generic rollback, recoverable flags and prose are insufficient. Successful-prefix IDs and receipts reach the provider; the agent may correct only unfinished work. Strict evaluation defers terminal tool interruption until the active host result is delivered, but rejects new calls while stopping; deadlines remain immediate.
+core.updateElementProperties accepts registered component properties and aliases. Element metadata name/visible/lock uses core.updateElementData. The canonical owner rejects unsupported property keys before apply. The App action adapter forwards the owner diagnostic through Runtime; TOOL_INPUT_INVALID preserves the canonical AI_ACTION_INPUT_INVALID cause, inputIssue, confirmed not-started settlement and fresh context. Generic rollback, recoverable flags and prose are insufficient. Successful-prefix IDs and receipts reach the provider; the agent may correct only unfinished work. Strict evaluation defers terminal tool interruption until the active host result is delivered, but rejects new calls while stopping; deadlines remain immediate.
 
 ### Executable tool schema support
 

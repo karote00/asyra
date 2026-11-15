@@ -412,3 +412,26 @@ it('combines literal name predicates before paging and enforces the complete mat
   ).toThrow(/name filter/)
   expect(source.getElementMetadata).not.toHaveBeenCalled()
 })
+
+it('matches canonical type identities exactly, including custom types and valid empty results', () => {
+  const { read, records } = fixture()
+
+  records.a.type = 'group'
+  records.b.type = 'custom.editor.Part'
+  for (const [type, ids] of [
+    ['group', ['a']],
+    ['Group', []],
+    ['custom.editor.Part', ['b']],
+    ['custom.editor.part', []]
+  ] as const) {
+    const result = read({
+      scope: 'region',
+      bounds: { x: 0, y: 0, width: 100, height: 100 },
+      filter: { type },
+      limit: 20
+    })
+
+    expect(result.available).toBe(true)
+    expect(result.elements.map((element) => element.id)).toEqual(ids)
+  }
+})

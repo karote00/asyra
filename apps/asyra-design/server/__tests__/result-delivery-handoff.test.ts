@@ -405,7 +405,7 @@ it('publishes portable authored reference notes separately from request indexes'
   try {
     const output = JSON.parse(
       await owner.call(
-        'describe_design_apis',
+        'read_design_contracts',
         {
           names: ['design_operations.select_design_references'],
           view: 'usage'
@@ -453,8 +453,8 @@ it('recovers the omitted recorded overview through the host without recapturing 
   try {
     const discovery = JSON.parse(
       await owner.call(
-        'describe_design_apis',
-        { query: 'display existing inspection image', view: 'usage' },
+        'search_design_tools',
+        { query: 'display existing inspection image' },
         new AbortController().signal
       )
     )

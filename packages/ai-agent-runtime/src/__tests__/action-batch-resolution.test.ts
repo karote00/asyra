@@ -109,7 +109,7 @@ describe('complete server-prepared AiActionBatch resolution', () => {
       'AI_ACTION_BATCH_DUPLICATE_ACTION_ID'
     ]
   ] as const)(
-    'rejects an invalid complete envelope before downstream work',
+    'rejects an invalid complete envelope before downstream work - case %#',
     async (providerOutput, code) => {
       const execute = vi.fn(async () => null)
       const evidence = await runBatch(providerOutput, action(execute))
@@ -186,7 +186,7 @@ describe('complete server-prepared AiActionBatch resolution', () => {
       batchId: 'batch-1'
     }
   ] as const)(
-    'contains malformed action-batch envelopes without downstream work',
+    'contains malformed action-batch envelopes without downstream work - case %#',
     async (providerOutput) => {
       const execute = vi.fn(async () => null)
       const evidence = await runBatch(

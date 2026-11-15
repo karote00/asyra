@@ -110,8 +110,8 @@ it('does not interpret scripts, comments or arbitrary body images as representat
 
     expect(result).toMatchObject({
       available: false,
-      recoverable: true,
-      code: 'REFERENCE_PAGE_IMAGES_UNAVAILABLE'
+      code: 'SOURCE_UNAVAILABLE',
+      sourceCode: 'REFERENCE_PAGE_IMAGES_UNAVAILABLE'
     })
   }
 
@@ -229,7 +229,7 @@ it('does not downgrade a failed linked resource to its preview', async () => {
     await tools.call('import_reference_image', { sourceUrl }, signal())
   ).references[0]
 
-  expect(result).toMatchObject({ available: false, recoverable: true })
+  expect(result).toMatchObject({ available: false, code: 'SOURCE_UNAVAILABLE' })
   expect(download).toHaveBeenCalledOnce()
   expect(result.pageAcquisition.attempts[0].imageUrl).toBe(
     'https://publisher.example/original.jpg'

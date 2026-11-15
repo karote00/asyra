@@ -1,3 +1,4 @@
+import { captureSources } from '../knowledge-evaluation/capture-source.mjs'
 import { readBrowserSnapshot } from './browser-snapshot.mjs'
 /* global document, window, requestAnimationFrame, AbortSignal, fetch, performance, console */
 /** Fixed drawing benchmark followed by the user-authorized report-only turn. */
@@ -23,7 +24,9 @@ import { createLiveTestDeadline } from './live-test-deadline.mjs'
 import { saveRemoteRecording } from './remote-recording.mjs'
 import {
   readTaipei101Prompt,
+  taipei101EvidenceFailure,
   assertTaipei101Submission,
+  assertLiveCollaborationEndpoint,
   waitForRecordedDocument,
   readTaipei101Deadline,
   shouldCaptureDrawingDetails
@@ -38,6 +41,9 @@ if (!env.APP_URL || env.AI_PROVIDER_BACKEND !== 'local-codex') {
 }
 
 const configured = resolveEnvironment(env)
+
+assertLiveCollaborationEndpoint(env, configured)
+
 const backendURL = env.DOCUMENT_PERSISTENCE_BACKEND_URL
 
 if (!backendURL) {
@@ -59,14 +65,11 @@ const meta = {
     cwd: root,
     encoding: 'utf8'
   }).trim(),
+  sourceManifest: captureSources(root),
   startedAt: new Date().toISOString(),
   url: `${configured.appURL}/?fileId=${id}&aiPerformance=profile`,
   deadlineMs,
-  strictStop: process.env.TAIPEI_101_STRICT_STOP === '1',
-  failurePolicy:
-    process.env.TAIPEI_101_STRICT_STOP === '1'
-      ? 'tool-failures-only'
-      : 'deadline-only',
+  failurePolicy: 'deadline-or-operator',
   viewport: { width: 1920, height: 1080 },
   services,
   errors: [],
@@ -335,15 +338,15 @@ try {
   })
   meta.sentAt = Date.now()
   meta.evaluationWindow = createReportWindow(meta.sentAt, deadlineMs)
-  if (meta.strictStop) {
+
+  {
     const controls = path.join(directory, 'provider-records')
 
     fs.mkdirSync(controls, { recursive: true })
     fs.writeFileSync(
       path.join(controls, 'evaluation-control.json'),
       JSON.stringify({
-        workDeadlineAt: meta.evaluationWindow.workDeadlineAt,
-        stopOnFailure: true
+        workDeadlineAt: meta.evaluationWindow.workDeadlineAt
       })
     )
   }
@@ -593,31 +596,6 @@ try {
       workElapsedMs: workEnd?.elapsedMs,
       reportElapsedMs: reportEnd?.elapsedMs - workEnd?.elapsedMs
     }
-    if (meta.strictStop) {
-      if (
-        !records.some(
-          (record) =>
-            record.stage === 'host_observation' &&
-            record.evidence?.callId === 'evaluation-control-armed'
-        )
-      ) {
-        meta.evidenceErrors.push({
-          stage: 'strict-policy',
-          error: 'Strict evaluation control was not armed'
-        })
-      }
-
-      if (
-        report.work.stopReason &&
-        report.work.stopReason.kind !== 'work-deadline'
-      ) {
-        meta.strictFailure = report.work.stopReason
-        meta.failure =
-          'Strict drawing attempt stopped; original-session report retained'
-        process.exitCode = 1
-      }
-    }
-
     fs.writeFileSync(path.join(directory, 'self-report.txt'), report.text)
     fs.writeFileSync(
       path.join(directory, 'self-report-evidence.json'),
@@ -798,10 +776,6 @@ try {
       throw new Error('Reload canonical document changed')
     }
   })
-  if (meta.evidenceErrors.length) {
-    meta.failure = 'Evidence collection incomplete; see evidenceErrors'
-    process.exitCode = 1
-  }
 } catch (error) {
   meta.failure = error.message
   process.exitCode = 1
@@ -857,6 +831,25 @@ try {
         meta.errors.push(error.message)
       }
     }
+  }
+
+  try {
+    const finalSources = captureSources(root)
+
+    meta.sourceUnchanged = finalSources.digest === meta.sourceManifest.digest
+    if (!meta.sourceUnchanged) {
+      meta.evidenceErrors.push({
+        stage: 'source',
+        error: 'Source or build changed during the run'
+      })
+    }
+  } catch (error) {
+    meta.evidenceErrors.push({ stage: 'source', error: error.message })
+  }
+
+  meta.failure = taipei101EvidenceFailure(meta)
+  if (meta.failure) {
+    process.exitCode = 1
   }
 
   save()

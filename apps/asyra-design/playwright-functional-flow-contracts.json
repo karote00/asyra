@@ -3021,6 +3021,136 @@
             "apps/asyra-design/server/local-design-workflow.ts",
             "apps/asyra-design/src/ai/actions.ts"
           ]
+        },
+        {
+          "id": "functional.ai-repeated-detail.c794a75a6920",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/ai-repeated-detail.spec.ts",
+          "testName": "native workflow preserves Runtime permission rejection without claiming unknown mutation",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/ai-agent/index.ts",
+            "apps/asyra-design/src/ai/runtime-input.ts",
+            "apps/asyra-design/src/ai/transaction.ts",
+            "apps/asyra-design/server/local-tool-host.ts"
+          ]
+        },
+        {
+          "id": "functional.ai-repeated-detail.8eebedd16ede",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/ai-repeated-detail.spec.ts",
+          "testName": "repeated-detail execution rejects denied writes before canonical mutation",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/ai-agent/index.ts",
+            "apps/asyra-design/src/ai/runtime-input.ts",
+            "apps/asyra-design/src/ai/transaction.ts",
+            "apps/asyra-design/server/local-tool-host.ts"
+          ]
+        },
+        {
+          "id": "functional.conversation-provider-handoff.1a64d4864b98",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/conversation-provider-handoff.spec.ts",
+          "testName": "carries isolated draft images and clarification history through the real App into native requests",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/ai-agent/index.ts",
+            "apps/asyra-design/src/ai/runtime-input.ts",
+            "apps/asyra-design/src/ai/transaction.ts",
+            "apps/asyra-design/server/local-tool-host.ts"
+          ]
+        },
+        {
+          "id": "functional.conversation-provider-handoff.73995c5f906a",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/conversation-provider-handoff.spec.ts",
+          "testName": "detects corrupted attachment association at the actual native consumer",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/ai-agent/index.ts",
+            "apps/asyra-design/src/ai/runtime-input.ts",
+            "apps/asyra-design/src/ai/transaction.ts",
+            "apps/asyra-design/server/local-tool-host.ts"
+          ]
+        },
+        {
+          "id": "functional.conversation-provider-handoff.3aba03d27442",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/conversation-provider-handoff.spec.ts",
+          "testName": "submits a translated hierarchy through the real App and delivers its actual capture with reversible canonical state",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/ai-agent/index.ts",
+            "apps/asyra-design/src/ai/runtime-input.ts",
+            "apps/asyra-design/src/ai/transaction.ts",
+            "apps/asyra-design/server/local-tool-host.ts"
+          ]
+        },
+        {
+          "id": "functional.conversation-provider-handoff.4f96d8928973",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/conversation-provider-handoff.spec.ts",
+          "testName": "groups and edits created region targets and delivers two captures in one actual native handoff",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/ai-agent/index.ts",
+            "apps/asyra-design/src/ai/runtime-input.ts",
+            "apps/asyra-design/src/ai/transaction.ts",
+            "apps/asyra-design/server/local-tool-host.ts"
+          ]
+        },
+        {
+          "id": "functional.conversation-provider-handoff.ceccbe8b0882",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/conversation-provider-handoff.spec.ts",
+          "testName": "detects loss of two captured images after a real canonical sequence",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/ai-agent/index.ts",
+            "apps/asyra-design/src/ai/runtime-input.ts",
+            "apps/asyra-design/src/ai/transaction.ts",
+            "apps/asyra-design/server/local-tool-host.ts"
+          ]
+        },
+        {
+          "id": "functional.conversation-provider-handoff.43d6acbfe7f8",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/conversation-provider-handoff.spec.ts",
+          "testName": "executes real staged template reuse and mechanical repair before applying the next part",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/ai-agent/index.ts",
+            "apps/asyra-design/src/ai/runtime-input.ts",
+            "apps/asyra-design/src/ai/transaction.ts",
+            "apps/asyra-design/server/local-tool-host.ts"
+          ]
+        },
+        {
+          "id": "functional.conversation-provider-handoff.10e628624bb9",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/conversation-provider-handoff.spec.ts",
+          "testName": "repairs a current canonical target through a real host iteration without a model round trip",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/ai-agent/index.ts",
+            "apps/asyra-design/src/ai/runtime-input.ts",
+            "apps/asyra-design/src/ai/transaction.ts",
+            "apps/asyra-design/server/local-tool-host.ts"
+          ]
+        },
+        {
+          "id": "functional.conversation-provider-handoff.d85ad0e5049e",
+          "stepId": "execute-agent-request",
+          "testFile": "apps/asyra-design/e2e/conversation-provider-handoff.spec.ts",
+          "testName": "detects a corrupted mechanical verdict at the canonical consumer despite native success",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/ai-agent/index.ts",
+            "apps/asyra-design/src/ai/runtime-input.ts",
+            "apps/asyra-design/src/ai/transaction.ts",
+            "apps/asyra-design/server/local-tool-host.ts"
+          ]
         }
       ],
       "handoffs": []

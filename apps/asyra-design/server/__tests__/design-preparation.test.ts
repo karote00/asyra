@@ -193,9 +193,12 @@ describe('semantic design preparation', () => {
     { ...draft(), children: [...draft().children, draft().children[0]] },
     { ...draft(), children: [{ ...draft().children[0], fontSize: -1 }] },
     { ...draft(), children: [{ ...draft().children[0], x: 2 }] }
-  ])('rejects an invalid draft before producing an artifact', (input) => {
-    expect(() => prepareDesign(input, 'invalid')).toThrow()
-  })
+  ])(
+    'rejects an invalid draft before producing an artifact - case %#',
+    (input) => {
+      expect(() => prepareDesign(input, 'invalid')).toThrow()
+    }
+  )
 
   it('bounds the whole request, including nested nodes and combined text', () => {
     expect(() =>

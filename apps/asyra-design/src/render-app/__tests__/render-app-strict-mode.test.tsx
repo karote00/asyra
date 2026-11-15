@@ -1,3 +1,4 @@
+import * as collaborationObservation from '../../collaboration/session-observation'
 import React, { StrictMode, act } from 'react'
 import { createRoot } from 'react-dom/client'
 import type {
@@ -61,6 +62,13 @@ const collaborationHandle = {
 
   hasUnpersistedChanges: () => false,
 
+  confirmPersistence: async () => ({
+    documentId: 'file-1',
+    documentGeneration: 1,
+    sequence: 0,
+    durableSequence: 0
+  }),
+
   whenIdle: async () => undefined,
 
   observePublicationOutcomes: () => () => undefined,
@@ -121,7 +129,7 @@ describe('RenderApp StrictMode lifecycle', () => {
       'createCollaborationDocumentSession'
     ).mockReturnValue(coreCollaborationSession)
     vi.spyOn(
-      collaborationLifecycle,
+      collaborationObservation,
       'getActiveCollaborationHandle'
     ).mockImplementation(() =>
       coreCollaborationSession.activate.mock.calls.length > 0

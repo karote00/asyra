@@ -35,7 +35,13 @@ const fixture = () => {
     { isCurrent },
     { isAttachmentCurrent },
     {
-      read: (id) => records[id],
+      read: (id) => {
+        const record = records[id]
+
+        return record
+          ? { id, name: id, visible: true, lock: false, ...record }
+          : undefined
+      },
 
       prepare,
 
@@ -59,7 +65,13 @@ const fixture = () => {
   const context = {
     signal: new AbortController().signal,
 
-    runMutation: async (work: () => unknown) => work()
+    runMutation: async <T>(work: () => T, settled?: (value: T) => void) => {
+      const value = work()
+
+      settled?.(value)
+
+      return value
+    }
   }
 
   return {
@@ -73,13 +85,22 @@ const fixture = () => {
   }
 }
 
+it('rejects an unavailable target before any canonical write', async () => {
+  const f = fixture()
+
+  delete f.records.b
+  await expect(f.action.execute(f.input, f.context)).rejects.toMatchObject({
+    name: 'AiToolContractError',
+    stage: 'input'
+  })
+  expect(f.properties).not.toHaveBeenCalled()
+})
+
 it('preflights every canonical edit before the first write and rejects queue-time changes', async () => {
   const f = fixture()
 
   f.records.b.lock = true
-  await expect(f.action.execute(f.input, f.context as never)).rejects.toThrow(
-    /locked/
-  )
+  await expect(f.action.execute(f.input, f.context)).rejects.toThrow(/locked/)
   expect(f.properties).not.toHaveBeenCalled()
   f.records.b.lock = false
   f.context.runMutation = async (work) => {
@@ -88,9 +109,7 @@ it('preflights every canonical edit before the first write and rejects queue-tim
     return work()
   }
 
-  await expect(f.action.execute(f.input, f.context as never)).rejects.toThrow(
-    /expired/
-  )
+  await expect(f.action.execute(f.input, f.context)).rejects.toThrow(/expired/)
   expect(f.properties).not.toHaveBeenCalled()
 })
 
@@ -98,12 +117,10 @@ it('requires the exact parent basis and reports acknowledged edits without certi
   const f = fixture()
 
   f.records.b.parentId = 'workspace'
-  await expect(f.action.execute(f.input, f.context as never)).rejects.toThrow(
-    /parent/
-  )
+  await expect(f.action.execute(f.input, f.context)).rejects.toThrow(/parent/)
   expect(f.properties).not.toHaveBeenCalled()
   f.records.b.parentId = 'parent'
-  expect(await f.action.execute(f.input, f.context as never)).toMatchObject({
+  expect(await f.action.execute(f.input, f.context)).toMatchObject({
     status: 'complete',
     appliedElementIds: ['a', 'b']
   })
@@ -117,9 +134,7 @@ it('reports preflight rejection as not-started but never classifies a writer fai
   const f = fixture()
 
   f.records.b.lock = true
-  await expect(
-    f.action.execute(f.input, f.context as never)
-  ).rejects.toMatchObject({
+  await expect(f.action.execute(f.input, f.context)).rejects.toMatchObject({
     name: 'AiToolContractError',
     stage: 'input'
   })
@@ -130,9 +145,7 @@ it('reports preflight rejection as not-started but never classifies a writer fai
   f.properties.mockImplementation(() => {
     throw failure
   })
-  await expect(f.action.execute(f.input, f.context as never)).rejects.toBe(
-    failure
-  )
+  await expect(f.action.execute(f.input, f.context)).rejects.toBe(failure)
 })
 
 it('consumes real mechanical receipts independently of the attachment owner and refuses retired receipts before writing', async () => {
@@ -162,7 +175,13 @@ it('consumes real mechanical receipts independently of the attachment owner and 
   const write = vi.fn(() => ({ appliedElementIds: ['a'] }))
   const prepare = vi.fn(() => write)
   const action = createPrescribedPositionAction(reviewer, attachmentOwner, {
-    read: (id) => f.records[id],
+    read: (id) => {
+      const record = f.records[id]
+
+      return record
+        ? { id, name: id, visible: true, lock: false, ...record }
+        : undefined
+    },
 
     workspace: () => 'workspace',
 
@@ -183,9 +202,7 @@ it('consumes real mechanical receipts independently of the attachment owner and 
 
     expect(reviewer.isCurrent(captured.evidence)).toBe(true)
     expect(attachmentOwner.isCurrent(captured.evidence)).toBe(false)
-    await expect(
-      action.execute(input, f.context as never)
-    ).resolves.toMatchObject({
+    await expect(action.execute(input, f.context)).resolves.toMatchObject({
       status: 'complete',
       appliedElementIds: ['a']
     })
@@ -197,16 +214,16 @@ it('consumes real mechanical receipts independently of the attachment owner and 
       evidence: [{ ...captured.evidence, sessionId: 'foreign' }]
     }
 
-    await expect(action.execute(foreign, f.context as never)).rejects.toThrow(
+    await expect(action.execute(foreign, f.context)).rejects.toThrow(
       /Mechanical check evidence expired/
     )
     attachmentOwner.isAttachmentCurrent.mockReturnValue(false)
-    await expect(action.execute(input, f.context as never)).rejects.toThrow(
+    await expect(action.execute(input, f.context)).rejects.toThrow(
       /attachment evidence expired/
     )
     attachmentOwner.isAttachmentCurrent.mockReturnValue(true)
     changed?.()
-    await expect(action.execute(input, f.context as never)).rejects.toThrow(
+    await expect(action.execute(input, f.context)).rejects.toThrow(
       /Mechanical check evidence expired/
     )
     expect(prepare).not.toHaveBeenCalled()
@@ -225,7 +242,7 @@ it('rejects attachment changes and cancellation inside mutation admission withou
     return work()
   }
 
-  await expect(f.action.execute(f.input, f.context as never)).rejects.toThrow(
+  await expect(f.action.execute(f.input, f.context)).rejects.toThrow(
     /attachment evidence expired/
   )
   expect(f.isCurrent).toHaveBeenCalled()
@@ -240,9 +257,9 @@ it('rejects attachment changes and cancellation inside mutation admission withou
     return work()
   }
 
-  await expect(
-    f.action.execute(f.input, f.context as never)
-  ).rejects.toBeInstanceOf(AiExecutionError)
+  await expect(f.action.execute(f.input, f.context)).rejects.toBeInstanceOf(
+    AiExecutionError
+  )
   expect(f.isAttachmentCurrent).not.toHaveBeenCalled()
   expect(f.properties).not.toHaveBeenCalled()
 })

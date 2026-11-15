@@ -201,10 +201,15 @@ clears path-editing transient state and makes Select the active primary tool.
 - `pathEditingVectorId`
 - `pathEditingStartNewSubpath`
 - `vectorPointSelection` / `vectorSegmentSelection` (selection channels)
-- `selectedVectorPoint` (compatibility mirror derived from `vectorPointSelection`)
-- `selectedVectorSegment` (compatibility mirror derived from `vectorSegmentSelection`)
+- `selectedVectorPoint` (Preset-owned read-only display projection of `vectorPointSelection`)
+- `selectedVectorSegment` (Preset-owned read-only display projection of `vectorSegmentSelection`)
 - `hoveredVectorPoint`
 - `hoveredVectorSegment`
 - `hoveredVectorSegmentInsertPoint`
 
-These are managed through `systemContextApis` helpers.
+App mode and hover intent use `systemContextApis`. Selection identities use
+`selectionApis`; continuation, connection and cancellation read
+`getSelectedVectorPoints()` for the current vector. They never use delayed
+selected-point display data to choose a canonical edit. Preset alone publishes
+the selected point/segment views; geometry changes refresh frame-aligned after
+Render completion, preserving property-panel Undo/Redo without delaying intent.

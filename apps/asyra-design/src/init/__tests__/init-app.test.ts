@@ -9,7 +9,6 @@ import * as vectorIconData from '../capabilities/init-vector-icon-data'
 import * as canvasPipelineDebugger from '../diagnostics/init-canvas-pipeline-debugger'
 import * as loadDiagnostics from '../diagnostics/init-load-diagnostics'
 import * as pathEditingContinuation from '../derived-state/init-path-editing-continuation'
-import * as selectionCompatibility from '../derived-state/init-selection-compatibility'
 import * as features from '../foundation/init-features'
 import * as inputSystem from '../foundation/init-input-system'
 import { viewportApis } from '../../common-apis/viewport'
@@ -67,12 +66,6 @@ describe('initApp preset composition', () => {
       calls.push('diagnostics')
     })
     vi.spyOn(
-      selectionCompatibility,
-      'initSelectionCompatibility'
-    ).mockImplementation(() => {
-      calls.push('selection-compatibility')
-    })
-    vi.spyOn(
       pathEditingContinuation,
       'initPathEditingContinuation'
     ).mockImplementation(() => {
@@ -93,9 +86,13 @@ describe('initApp preset composition', () => {
     )
     vi.spyOn(vectorIconData, 'initVectorIconData').mockImplementation(() => {
       calls.push('vector-icon-data')
+
+      return () => undefined
     })
     vi.spyOn(inputSystem, 'initInputSystem').mockImplementation(() => {
       calls.push('input-system')
+
+      return () => undefined
     })
     vi.spyOn(features, 'initFeatures').mockImplementation(() => {
       calls.push('features')
@@ -138,7 +135,6 @@ describe('initApp preset composition', () => {
       'text',
       'canvas-pipeline-debugger',
       'diagnostics',
-      'selection-compatibility',
       'path-editing-continuation',
       'area-selection',
       'ai-drawing-progress',
@@ -168,10 +164,15 @@ describe('initApp preset composition', () => {
       ai: {
         api: {
           cancel: vi.fn(() => false),
-          execute: vi.fn(async () => ({
+          execute: vi.fn<
+            import('../../features/ai-agent').AiAgentFeatureApi['execute']
+          >(async () => ({
             code: 'AI_PROVIDER_INVALID_CONFIGURATION',
             stage: 'provider',
-            status: 'failed'
+            status: 'failed',
+            message: 'Provider is not configured',
+            retryCount: 0,
+            audit: { actions: [], outcome: 'failed', retryCount: 0 }
           }))
         },
         dispose: disposeFeature

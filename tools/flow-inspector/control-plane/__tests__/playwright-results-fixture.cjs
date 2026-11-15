@@ -1,5 +1,6 @@
 /* global AbortController, fetch */
 /* eslint-disable @typescript-eslint/no-require-imports */
+const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const path = require('node:path')
 const net = require('node:net')
@@ -598,4 +599,74 @@ async function playwrightFixture(t, options = {}) {
   }
 }
 
-module.exports = { playwrightFixture, settleFixtureProcesses }
+function verifyOriginalFunctionalOutcomes(observation) {
+  assert.deepEqual(observation.issues, [])
+  const expected = []
+
+  const walk = (suite) => {
+    for (const spec of suite.specs ?? []) {
+      for (const item of spec.tests ?? []) {
+        assert.ok(['expected', 'skipped'].includes(item.status), spec.title)
+        assert.ok(item.results.length > 0)
+        const failed = item.results.some((result) =>
+          ['failed', 'timedOut', 'interrupted'].includes(result.status)
+        )
+
+        if (failed) {
+          assert.equal(item.expectedStatus, 'failed', spec.title)
+        }
+
+        let status = 'passed'
+
+        if (failed) {
+          status = 'failed'
+        } else if (
+          item.results.every((result) => result.status === 'skipped')
+        ) {
+          status = 'skipped'
+        }
+
+        expected.push(status)
+      }
+    }
+
+    for (const child of suite.suites ?? []) {
+      walk(child)
+    }
+  }
+
+  for (const suite of observation.report.suites) {
+    walk(suite)
+  }
+
+  assert.deepEqual(
+    observation.cases.map((item) => item.status).sort(),
+    expected.sort()
+  )
+  for (const item of observation.cases.filter(
+    (item) => item.status === 'failed'
+  )) {
+    assert.equal(item.resolution, 'mapped')
+    assert.ok(item.failures.length)
+  }
+}
+
+function verifyDeclaredFunctionalCases(observation, source) {
+  const expected = sourceManifestPaths(source).flatMap((file) =>
+    loadContract(root, undefined, file).cases.map((item) =>
+      JSON.stringify([item.testFile, item.projectName ?? '', item.testName])
+    )
+  )
+  const actual = observation.cases.map((item) =>
+    JSON.stringify([item.file, item.projectName, item.testName])
+  )
+
+  assert.deepEqual(actual.sort(), expected.sort())
+}
+
+module.exports = {
+  playwrightFixture,
+  settleFixtureProcesses,
+  verifyOriginalFunctionalOutcomes,
+  verifyDeclaredFunctionalCases
+}

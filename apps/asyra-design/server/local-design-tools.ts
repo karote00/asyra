@@ -1,6 +1,9 @@
+import { DesignInputError } from './design-input-error'
+import { AiToolFailureCodes } from '../src/constants/ai-design'
 import { isReservedDraftRepairKey } from './design-draft-repair'
 import {
   toolInternalResult,
+  toolDocumentReference,
   toolResultBoolean,
   toolResultIds,
   toolResultObject,
@@ -315,17 +318,9 @@ const referenceSchema = {
   properties: {
     artifactId: toolRequestReference,
     parentId: {
-      type: 'string',
-      minLength: 1,
+      ...toolDocumentReference,
       description:
         'Existing editable container ID. Draft coordinates are local to this parent; omit for workspace insertion.'
-    },
-    response: {
-      type: 'string',
-      enum: ['compact', 'full'],
-      default: 'compact',
-      description:
-        'Compact receipts keep identity mappings in the prepared artifact. Use artifactId with target keys/keyPrefix for later edits. Request full only when the full mapping is needed.'
     }
   },
   description: 'Use the artifactId returned by prepare_design in this request.'
@@ -335,7 +330,7 @@ export class DesignReferenceError extends LocalToolInputError {
   constructor() {
     super(
       'Use a valid artifactId returned by prepare_design in this request. Do not send raw design descriptors. No changes were applied by this operation.',
-      'REFERENCE_UNAVAILABLE'
+      AiToolFailureCodes.INPUT_INVALID
     )
     this.name = 'DesignReferenceError'
   }
@@ -371,7 +366,7 @@ export const createLocalDesignTools = (
       preparationInput: toolResultObject(
         {
           kind: { enum: ['source', 'retained-repair'] },
-          draftId: { type: 'string', minLength: 1 },
+          draftId: toolRequestReference,
           revision: { type: 'string' },
           partitions: { type: 'array' },
           partitionLimitation: { type: 'object' },
@@ -479,7 +474,7 @@ export const createLocalDesignTools = (
             (examples.length
               ? ` Matching keys include ${examples.join(', ')}.`
               : ''),
-          'REFERENCE_UNAVAILABLE'
+          AiToolFailureCodes.INPUT_INVALID
         )
       }
     } else {
@@ -598,7 +593,7 @@ export const createLocalDesignTools = (
       const budget = inspectDesignBudget(args.draft, expandedNodeLimit)?.budget
 
       return {
-        recovery: 'correct_input',
+        code: AiToolFailureCodes.INPUT_INVALID,
         ...retainInputFailure(
           args.draft,
           issues,
@@ -799,7 +794,7 @@ export const createLocalDesignTools = (
               ]
             },
             name: AiDesignToolIds.PREPARE_DESIGN,
-            revision: 4,
+            revision: 5,
             executionAccess: LocalToolAccess.INDEPENDENT,
             description:
               designRepresentationGuidance +
@@ -993,11 +988,8 @@ export const createLocalDesignTools = (
             !enabled ||
             !record(args) ||
             Object.keys(args).some(
-              (key) => !['artifactId', 'response', 'parentId'].includes(key)
+              (key) => !['artifactId', 'parentId'].includes(key)
             ) ||
-            (args.response !== undefined &&
-              args.response !== 'compact' &&
-              args.response !== 'full') ||
             (args.parentId !== undefined &&
               (typeof args.parentId !== 'string' || !args.parentId.trim())) ||
             typeof args.artifactId !== 'string'
@@ -1032,7 +1024,6 @@ export const createLocalDesignTools = (
             arguments: {
               design: deliverPreparedDesign(design),
               ...(materialElementIds.length ? { materialElementIds } : {}),
-              response: args.response ?? 'compact',
               ...(args.parentId === undefined
                 ? {}
                 : { parentId: args.parentId })
@@ -1169,6 +1160,8 @@ export const createLocalDesignTools = (
       if (!hasExactlyOnePreparationSource || hasInvalidMaterialSource) {
         return JSON.stringify({
           available: false,
+          settlement: 'not-started',
+          code: AiToolFailureCodes.INPUT_INVALID,
           message:
             'Provide one semantic draft or a rejected-draft repair. No canvas changes were made.'
         })
@@ -1232,7 +1225,7 @@ export const createLocalDesignTools = (
           return JSON.stringify({
             available: false,
             settlement: 'not-started',
-            recovery: 'correct_input',
+            code: AiToolFailureCodes.INPUT_INVALID,
             ...retainInputFailure(draft, inputIssues),
             message: `${formatOperationInputIssues(inputIssues)}. Correct the listed fields; use the retained repair guide when provided. Geometry has not been compiled.`
           })
@@ -1254,7 +1247,7 @@ export const createLocalDesignTools = (
           return JSON.stringify({
             available: false,
             settlement: 'not-started',
-            recovery: 'correct_input',
+            code: AiToolFailureCodes.INPUT_INVALID,
             message:
               'arguments.draft.projection: provide one shared camera (azimuth, elevation, scale, originX, originY); arguments.draft.layout: projected faces and patterns require absolute layout. Reuse the chosen viewpoint; no new reference search is needed.'
           })
@@ -1282,7 +1275,7 @@ export const createLocalDesignTools = (
           ...(!prepared.applicable
             ? {
                 settlement: 'not-started',
-                recovery: 'correct_input',
+                code: AiToolFailureCodes.INPUT_INVALID,
                 message:
                   'Resolve the reported preparation findings in the source before applying. No canvas operation has started; retain successful earlier parts.'
               }
@@ -1300,12 +1293,19 @@ export const createLocalDesignTools = (
         })
       } catch (error) {
         signal.throwIfAborted()
+        const invalidInput =
+          error instanceof DesignInputError ||
+          error instanceof DesignGeometryError ||
+          error instanceof DesignKeyConflictError ||
+          error instanceof LocalToolInputError
         const retained = draft === undefined ? undefined : retainDraft(draft)
 
         return JSON.stringify({
           available: false,
           settlement: 'not-started',
-          recovery: 'correct_input',
+          code: invalidInput
+            ? AiToolFailureCodes.INPUT_INVALID
+            : AiToolFailureCodes.EXECUTION_FAILED,
           ...retained,
           ...(error instanceof DesignGeometryError
             ? {

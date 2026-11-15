@@ -439,8 +439,7 @@ for (const [name, draft] of Object.entries({
               id: 'create',
               name: 'apply_prepared_design',
               arguments: {
-                design: deliverPreparedDesign(design),
-                ...(name === 'vectorGradients' ? { response: 'compact' } : {})
+                design: deliverPreparedDesign(design)
               },
               summary: `Create ${name} design`
             }

@@ -10,12 +10,25 @@ const {
 } = require('./adapters.cjs')
 const { dataPath, readJson } = require('./project.cjs')
 const { runProcess } = require('../control-plane/runner.cjs')
+const { normalizeNodeEvents } = require('../control-plane/node-results.cjs')
 
 const escape = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 function resolveRunner(project, selected) {
   const cwd =
     selected.cwd === '.' ? project.root : dataPath(project.root, selected.cwd)
+
+  if (selected.producer === 'node') {
+    if (
+      selected.project !== '' ||
+      Number(process.versions.node.split('.')[0]) !== 24
+    ) {
+      throw new Error('Node criteria require Node 24 and an empty project name')
+    }
+
+    return { cwd }
+  }
+
   const name = selected.producer === 'vitest' ? 'vitest' : '@playwright/test'
   const request = createRequire(path.join(cwd, 'package.json'))
   let manifest
@@ -89,7 +102,7 @@ async function runSelected(project, filter, options = {}) {
   const report = path.join(temporary, 'result.json')
   const file = dataPath(project.root, selected.file),
     config = dataPath(project.root, selected.config)
-  const args =
+  let args =
     selected.producer === 'vitest'
       ? [
           runner.cli,
@@ -129,7 +142,24 @@ async function runSelected(project, filter, options = {}) {
           '--no-deps'
         ]
 
-  args.push('--project', selected.project)
+  if (selected.producer === 'node') {
+    args = [
+      '--test',
+      '--test-name-pattern',
+      '^' + escape(selected.title) + '$',
+      '--test-reporter',
+      config,
+      '--test-reporter-destination',
+      report,
+      file
+    ]
+  } else {
+    args.push('--project', selected.project)
+  }
+
+  const environment = { ...process.env, PLAYWRIGHT_JSON_OUTPUT_FILE: report }
+
+  delete environment.NODE_TEST_CONTEXT
   try {
     if (selected.producer === 'vitest') {
       const discovery = await runProcess({
@@ -259,7 +289,7 @@ async function runSelected(project, filter, options = {}) {
       executable: process.execPath,
       args,
       cwd: runner.cwd,
-      env: { ...process.env, PLAYWRIGHT_JSON_OUTPUT_FILE: report },
+      env: environment,
       signal: options.signal,
       timeoutMs: 110000,
       inheritProcessGroup: Boolean(process.env.FLOW_PARENT_EXECUTION),
@@ -270,7 +300,30 @@ async function runSelected(project, filter, options = {}) {
 
     if (fs.existsSync(report)) {
       try {
-        const raw = readJson(report, 32 * 1024 * 1024)
+        let raw
+
+        if (selected.producer === 'node') {
+          const stat = fs.lstatSync(report)
+
+          if (!stat.isFile() || stat.size > 32 * 1024 * 1024) {
+            throw new Error('Invalid Node report file or size')
+          }
+
+          const events = fs
+            .readFileSync(report, 'utf8')
+            .split('\n')
+            .filter(Boolean)
+            .map(JSON.parse)
+          const normalized = normalizeNodeEvents(events, {
+            files: [file],
+            cwd: runner.cwd
+          })
+
+          raw = normalized.report
+          diagnostic ||= normalized.errors.join('\n')
+        } else {
+          raw = readJson(report, 32 * 1024 * 1024)
+        }
 
         records = normalize(project, raw, selected)
         diagnostic ||= reportDiagnostic(raw, records)

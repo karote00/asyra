@@ -206,25 +206,20 @@ See `../SECURITY.md`.
 
 ## Asyra Design Integration
 
-Asyra Design composes one formal provider during App startup. Its bounded
-action catalog contains only:
+Asyra Design composes its provider and registered actions through the App startup
+and action-catalog owners. The current catalog includes Common-API wrappers and
+App design, inspection, export and conversation actions; it is not a fixed six-action
+subset. The App's permission map is explicit and default-deny. Current context is
+refreshed for permission decisions before each subsequent batch.
 
-- `request_drawing_detail_choice`
-- `insert_vector_composition`
-- `update_composition_elements`
-- `remove_ai_composition`
-- `set_element_visibility`
-- `select_elements`
-
-The backend prepares the insert action's compact transferable geometry and
-bounded summary before the provider returns its `AiActionBatch`; Runtime does
-not redo that model work. The executor materializes only the current ordered
-progressive slice on the main thread. Executors use app common APIs with
-`undoable: true`; their declared transaction-end or progressive shared
-delivery remains inside one outer App transaction. Factory, canonical state
-owners, Render, and optional Collaboration therefore receive the same route as
-ordinary app actions. The Asyra Design permission map is explicit and
-default-deny; confirmation defaults to cancellation.
+Backend preparation supplies transferable geometry and summaries without moving
+canonical execution to the server. Registered App executors call common APIs/Core
+through the Feature-owned invocation and mutation executor. The current grouped
+host commits finite mutation members and combines them into one intended Undo entry
+at request settlement; it does not hold a physical transaction across model waits.
+Factory, canonical state, Render and optional Collaboration retain their ordinary
+owners. Failed tools return truthful receipts to a continuing native model turn;
+final-batch HTTP rejection has no automatic model continuation.
 
 ## Validation
 
@@ -251,8 +246,8 @@ registered tool name and `running` or `completed` status. Runtime forwards it as
 provider-phase progress with `tool` and `toolStatus`; invalid names/statuses, aborted
 work and callbacks after request settlement are ignored. Activity is observational:
 consumer exceptions cannot alter execution. It must not contain raw tool arguments,
-model reasoning, credentials or account data. The final batch remains the only
-input to action resolution and permission.
+model reasoning, credentials or account data. Both provider callback batches and the final returned batch use the same action
+resolution and permission owners; progress events never execute actions.
 
 ### Optional failure retention
 
@@ -278,6 +273,13 @@ only the elapsed-time deadline. Caller abort and provider disposal still abort
 the transport and release request resources, including during body parsing.
 
 ### Safe execution failure explanations
+
+Recipe invocation and call receipts retain an optional `failure` containing the
+owning stage and message independently of execution settlement. Cleanup failure
+cannot be replaced by an earlier input rejection; acknowledged descendant results
+remain available without replay. Tool store results with `status: unsaved` include
+`code: input-invalid | storage-failed`, distinguishing rejected selections from
+actual persistence failures. Saving failure never reruns completed execution.
 
 Registered executors can throw `AiActionExecutionError` with a static, bounded
 public explanation and recovery guidance. Runtime preserves that message with
@@ -443,13 +445,25 @@ for the current declarative format and lifecycle.
   step, or cannot be established by the registered source schema. Its message
   includes the requested pointer. It does not make that selector valid or relax
   projection; source/target type incompatibility and schema parsing failures
-  remain distinct. Hosts may expose
-  input correction only from complete known issue sets; mixed or omitted issues
-  must not be inferred safe from error prose. Validator exceptions remain
+  remain distinct. Hosts may classify an input rejection only from complete known
+  issue sets; mixed or omitted issues must not be inferred safe from error prose.
+  This classification is not permission for the model to continue: every valid
+  failed receipt can be delivered without replay or weakened validation. Validator exceptions remain
   unclassified failures. This category does not authorize replay or automatic
   value correction. Limits bound bytes and bindings. Registered graphs also have a step budget.
   Pass mode `inline` to admit an authored single-invocation sequence without that count ceiling. For a host-created one-call sequence, current invocation values are admitted against the destination, secured leaves pin request references, and the host derives the result schema from a guaranteed step output. Saved recipes continue to reject captured runtime references. The deliberately conservative schema subset proves field/type handoffs;
   the host's full validator remains authoritative for actual inputs and outputs.
+  In `sequence` mode, numeric values in a prior step output may bind same-type
+  numeric inputs (or integer to number), whether selected individually or inside
+  compatible objects, arrays, tuples and declared alternatives. Numeric value
+  restrictions are checked at invocation; container structure stays statically
+  checked. Equivalent whole-value and fieldwise bindings use the same comparator.
+  Lifetimes must match, provably disjoint contracts reject, and the unchanged full
+  destination schema validates the resolved value before the dependent executor.
+  This permits coordinate conversion into bounded geometry without a model
+  readback. Invalid values preserve completed predecessors and stop successors.
+  It does not admit unknown fields, opaque bindings, numeric-to-integer coercion,
+  or weaker range guarantees in registered/inline reusable recipes.
   Necessary root property constraints may prove an opaque sibling disjoint from a
   guaranteed binding. This never admits an opaque selected branch or guesses an
   optional discriminator; overlaps remain explicit admission failures.
@@ -475,11 +489,24 @@ for the current declarative format and lifecycle.
   invocation. The invoker verifies admission identity, pins every registered
   dependency and applies ordinary validation, leases,
   settlement and finite repair loop. The inline root has invocation lifetime.
+  Its optional step-result observer receives successful ordinary steps and the
+  passing check of each completed mechanical iteration, with resolved input and
+  validated output and the exact completed invocation receipt as its fourth
+  argument. Hosts use its call identity to retain the input and pinned model
+  contract through delivery, including repeated iteration checks. Intermediate repairable checks and repairs are not published
+  as stable selections. Failed iterations do not produce a final check selection.
 - `createAiRecipeInvoker({ registry, recipe, validate, execute, leases, maxSteps })`
   pins the admitted graph before dispatch. Only `execute` for primitive leaves
   reaches the existing host scheduler/security/transaction boundary; every node
   emits ordinary invocation events. Validate live permissions and references there.
   A parent never holds a scheduling barrier while waiting for a child.
+  An optional Host `resolveContract(call, definition)` supplies the current leaf
+  input/output/partial/recovery schemas before admission and resource acquisition.
+  The same selected schemas validate output and govern resource transfer before
+  dependent execution. Selection cannot change the pinned identity, effect,
+  lifecycle or admitted recipe; it never mutates registration. Static owners
+  continue using their registered schemas. Hosts reuse the selected invocation
+  evidence through model delivery rather than choosing a different contract later.
 - A recipe may declare one bounded `iteration` with typed state, a registered
   verification check, declared repairs, next-state binding and `maxIterations`.
   Initial steps run once. Only the check's `pass` completes mechanical iteration;
@@ -525,6 +552,13 @@ retain their immutable graph. Lease `release` must tolerate partially initialize
 scopes so failed `open` never leaves owned artifacts behind.
 
 ## Optional knowledge access
+
+Knowledge failures preserve an owned `stage` (`input` or `execution`) alongside
+their existing `code`. Invalid queries and missing/inapplicable requested roots
+are input failures. Missing registered dependencies, unavailable content,
+authorization, lifecycle and catalog defects remain execution failures. Hosts may
+translate the input stage to their canonical rejected-input receipt; they must
+not classify every Knowledge exception as a model-authored mistake.
 
 `createAiKnowledgeAccess({ tenantId, scopeId, authorize, read })` is an inert,
 independently composed passive-content controller. It does not create tools,

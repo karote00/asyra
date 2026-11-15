@@ -170,7 +170,7 @@ export const createDocumentBackendServer = ({
         sendJson(response, 200, {
           checkpoint: record.document,
           durableSequence: record.durableSequence,
-          documentGeneration: record.documentGeneration ?? 0
+          documentGeneration: record.documentGeneration
         })
 
         return

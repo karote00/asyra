@@ -404,6 +404,55 @@ sample.
 
 ## Formal Test Ladder
 
+### Conversation contract review
+
+For a full feature review, scope comes from current specifications and actual
+registration, not the last patch or the list of failures from the last run.
+The existing plan's full-flow boundary table is the review scope. Read and compare
+the current conversation/provider/execution specifications and Inspector before
+tracing implementations. A contradiction is an unresolved contract finding; do
+not pick whichever document makes a test pass.
+
+Follow every registered family, including Knowledge, through provider-visible
+instructions and discovery; input and selected-contract admission; direct and
+composed execution; owner output validation; projection and image delivery;
+retention and cross-turn reuse; and partial completion, correction and cleanup.
+Include conversation draft/attachment ownership, cancellation and report sessions.
+For each handoff, identify the producer's actual output and the consumer's actual
+input, status, identity, coordinates and resource lifetime. Test their connection,
+not just each endpoint's schema in isolation. Unsupported routes must reject at
+their specified boundary rather than disappear from the review.
+
+Owner unit tests call the owner directly and retain their domain assertions. They
+do not substitute for Host or provider evidence. Host fixtures construct the real
+Host and owner resource lifecycle; no decorator independently repeats admission,
+selects a static contract, projects results or reconstructs failure replies.
+Continuation readers dispatch the returned tool identity and arguments; a fixed
+leaf fixture explicitly rejects a different identity rather than repairing its route.
+
+Use independently specified legal, illegal and equivalent inputs. Observe real
+owner work, consumer acceptance and whether acknowledged actions execute again.
+Exercise independent execution, delivery and save outcomes, not only success and
+total failure. A regression must fail before its product correction. A test with
+a mocked consumer establishes only the mocked boundary; pair it with actual-owner
+and provider-received evidence before claiming that handoff works.
+
+The old feature command is removed; the replacement remains in progress as
+documented in [App Workflow](../WORKFLOW.md#ai-conversation-verification). Focused
+tests and file inventories cannot establish whole-feature acceptance. Null-input rejection, valid schema examples, structural Inspector checks
+and successful selected cases must never stand in for legal behavior across all
+tools. Preserve the exact failed and unexecuted cases. Classify old assertions
+against the current specification before changing or removing them.
+
+The review conclusion must separate: observed passing behavior, confirmed defects,
+conflicting authorities and missing evidence. Use the existing review report;
+do not add a second registry, scoring system or completion checklist. Declare the
+whole review passed only when its defined boundaries have evidence and no unresolved
+finding. An unknown path is unverified, not a pass. Closing a bounded correction or
+repairing this test runner does not close the full conversation feature.
+
+### Owner development gates
+
 Use the smallest gate that proves the changed owner:
 
 1. owner package unit/integration tests;
@@ -444,6 +493,12 @@ Evaluation report instructions require unsupported; that classification is host
 policy, not the model independently rejecting the drawing. Native work completion,
 report success and ordinary completed-action durability are separate assertions.
 The fixed run does not replace focused ordinary completion/presentation tests.
+Normal context compaction is allowed during reporting; tool execution is not.
+Submission/environment errors and evidence-stage failures both invalidate final
+benchmark closure, preserving the original failure. Start/end source manifests
+include dirty sources and ignored App/package builds, excluding secrets and run
+artifacts. Manifest differences invalidate continuity without requiring clean Git.
+The drawing watchdog retires on observed report entry; it does not limit reporting.
 
 The fixed recorder fits after settled/rendered document changes only when content
 leaves the visible drawing area, including movement with unchanged element count.

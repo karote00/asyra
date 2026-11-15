@@ -20,7 +20,6 @@
 - `src/init/capabilities/init-gradient-fill-editing.ts`
 - `src/init/capabilities/init-vector-icon-data.ts`
 - `src/init/derived-state/init-path-editing-continuation.ts`
-- `src/init/derived-state/init-selection-compatibility.ts`
 - `src/render-app/index.tsx`
 - `src/contexts/data-change.tsx`
 
@@ -54,7 +53,8 @@
   unregister/define APIs after `applyPreset(core)` and before the remaining init
   steps
 - diagnostics: `initLoadDiagnostics()`
-- derived-state sync: `initSelectionCompatibility()`, `initPathEditingContinuation()`
+- derived-state sync: `initPathEditingContinuation()`; Preset derives selected
+  Vector point/segment views from canonical selection channels
 - capability init: `initAreaSelection()`, `initGradientFillEditing()`, `initVectorIconData()`
 - foundation: `initInputSystem()`, `initFeatures()`
 - AI composition is evaluated immediately before `initFeatures()`:
@@ -84,9 +84,8 @@
 - local-only startup supplies the existing canonical empty document through
   one read-only `LocalOnlyDocument` load source; it does not register autosave,
   browser persistence, a recovery outbox, or a second canonical state owner
-- the collaboration lifecycle opens the checkpoint/tail handshake before Core
-  startup and RenderApp supplies that checkpoint through
-  `core.setLoadSource(...)`
+- RenderApp registers the neutral collaboration session with Core; Core prepares
+  its checkpoint/tail handshake and loads the returned read-only checkpoint
 - after Core load, the lifecycle applies the bootstrap tail through the
   ordinary remote canonical processor and activates Factory publication
   transport; immediate publications may occur during an outer pointer
@@ -98,8 +97,8 @@
   the app does not call `setRenderer()`
 - if renderer/engine initialization rejects, Core stops before observers,
   persistence load, features, and render-ready publication
-- effect cleanup calls `core.destroyRenderer()` and the app-owned collaboration
-  disposer; teardown is idempotent, does not reopen composition, and an
+- effect cleanup calls `core.destroy()`; Core disposes the registered session
+  before the renderer. Teardown is idempotent, does not reopen composition, and an
   unmount/aborted startup cannot later activate collaboration
 - collaboration disposal detaches publication and Awareness observers, clears
   timers/store state, and destroys only owned collaboration resources
@@ -137,8 +136,8 @@ Authority:
 
 4. DataContexts effects
 
-- on render-ready: publish `fileLoadComplete()`
-- on file-load-complete: trigger `zoomFit` feature API
+- observe Core file-load-complete and trigger the `zoomFit` feature API
+- do not synthesize file-load-complete from render-ready
 
 ## Rules
 
@@ -168,10 +167,10 @@ Authority:
   `src/features/*` or `src/common-apis/*`.
 - Current implementation: Core owns load and explicit serialization only; do
   not restore automatic complete-document save orchestration.
-- Do not add another App autosave route. The mandatory socket session replaces
-  Core autosave; frontend startup keeps only the authoritative load handshake,
-  and the App publication outbox remains distinct from canonical document
-  persistence.
+- Do not add another App autosave route. Configured collaboration uses the
+  authoritative load handshake and publication outbox; explicit local-only mode
+  creates neither a session nor an outbox. Neither mode restores Core autosave.
+  The recovery outbox remains distinct from canonical document persistence.
 - Keep startup side effects explicit in init modules.
 - Keep app startup concrete-engine-neutral; Preset owns default provider
   selection/diagnostics, `Render` owns reversible provider state, the concrete
@@ -181,3 +180,15 @@ Authority:
 - Keep AI activation explicit and default-off. Model/provider selection,
   credentials, permission, confirmation, and app action definitions do not
   belong in Core or Preset startup.
+
+
+### Session observations in local startup
+
+Synchronous consumers read the active collaboration handle and document scope
+from `src/collaboration/session-observation.ts`. Lifecycle registers these reads
+when its deferred module is loaded; the observer does not construct a session,
+copy recovery state or import transport implementations. RenderApp reads the
+handle only in configured collaboration mode. Explicit toolbar Reset loads its
+collaboration dependency on demand. The local-only production entry's complete
+static import closure must exclude session, Provider and publication-outbox
+implementations; the explicit action keeps those deferred modules available.

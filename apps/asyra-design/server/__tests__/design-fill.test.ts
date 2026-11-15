@@ -114,7 +114,7 @@ describe('AI gradient fill contract', () => {
         { position: 1, color: '#445566', opacity: 1 }
       ]
     }
-  ])('rejects malformed fill without producing a drawing', (fill) => {
+  ])('rejects malformed fill without producing a drawing - case %#', (fill) => {
     expect(() => prepareDesign(draft(fill))).toThrow()
   })
   it('rejects tampered prepared gradients and retains existing solid compatibility', () => {

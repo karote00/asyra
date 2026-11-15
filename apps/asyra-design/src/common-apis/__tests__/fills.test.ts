@@ -1,7 +1,8 @@
+import type core from '../../contexts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
-  readElementPropertyTargets: vi.fn(),
+  readElementPropertyTargets: vi.fn<typeof core.readElementPropertyTargets>(),
   shareElementPropertyTargets: vi.fn(),
   detachElementPropertyTargets: vi.fn(),
   commitPropertyChanges: vi.fn(),
@@ -439,10 +440,38 @@ describe('Fill property reuse', () => {
       targets.map((target) =>
         target.path.length
           ? {
+              target: {
+                root: {
+                  ownerElementId: target.elementId,
+                  ownerElementType: 'rect',
+                  ownerPropertyName: 'fills',
+                  componentId: `root-${target.elementId}`
+                },
+                sharedRoot: false,
+                path: target.path
+              },
+              type: 'fill',
+              overrides: {},
+              effective: {},
+              children: [],
               propertyId: `fill-${target.elementId}`,
               mode: 'independent'
             }
           : {
+              target: {
+                root: {
+                  ownerElementId: target.elementId,
+                  ownerElementType: 'rect',
+                  ownerPropertyName: 'fills',
+                  componentId: `root-${target.elementId}`
+                },
+                sharedRoot: false,
+                path: target.path
+              },
+              type: 'fills',
+              mode: 'independent',
+              overrides: {},
+              effective: {},
               propertyId: `root-${target.elementId}`,
               children:
                 target.elementId === 'missing'
@@ -725,3 +754,76 @@ it('preserves canonical changed evidence and validates empty-patch targets', () 
     ])
   ).toThrow()
 })
+
+it('preserves the real aligned-patch diagnosis through the registered action before mutation', async () => {
+  vi.clearAllMocks()
+  const { createBasicApiActions } = await import('../../ai/basic-api-actions')
+  const action = createBasicApiActions(
+    () => ({
+      core: {},
+      element: {},
+      fill: fillApis,
+      stroke: {},
+      selection: {},
+      hierarchy: {},
+      viewport: {}
+    }),
+    {
+      observe: () => () => undefined,
+
+      resolve: () => 'live'
+    }
+  ).find((entry) => entry.name === 'api_fill_updateFillsAtIndex')
+
+  if (!action) {
+    throw Error('Missing fill action')
+  }
+
+  await expect(
+    action.execute(
+      { elementIds: ['a', 'b'], index: 0, patch: [] },
+      {
+        signal: new AbortController().signal,
+
+        runMutation: async (work) => work()
+      }
+    )
+  ).rejects.toMatchObject({
+    name: 'AiActionInputError',
+    code: 'AI_ACTION_INPUT_INVALID',
+    message: 'Fill patches must be aligned with elementIds',
+    issue: { field: 'patch', expectedCount: 2, receivedCount: 0 }
+  })
+  expect(mocks.patchElementProperties).not.toHaveBeenCalled()
+  expect(mocks.runTransaction).not.toHaveBeenCalled()
+})
+
+it.each([NaN, Infinity, -Infinity])(
+  'keeps nonfinite input rejection diagnostic JSON-safe: %s',
+  async (index) => {
+    const { createBasicApiActions } = await import('../../ai/basic-api-actions')
+    const action = createBasicApiActions(() => ({
+      core: {},
+      element: {},
+      fill: fillApis,
+      stroke: {},
+      selection: {},
+      hierarchy: {},
+      viewport: {}
+    })).find((entry) => entry.name === 'api_fill_getFillTargetsAtIndex')
+
+    if (!action) {
+      throw Error('Missing fill read action')
+    }
+
+    await expect(
+      action.execute(
+        { elementIds: ['a'], index },
+        { signal: new AbortController().signal }
+      )
+    ).rejects.toMatchObject({
+      name: 'AiActionInputError',
+      issue: { field: 'index', index: String(index) }
+    })
+  }
+)

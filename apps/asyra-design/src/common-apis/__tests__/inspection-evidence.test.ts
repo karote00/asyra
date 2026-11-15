@@ -307,12 +307,11 @@ describe('canonical inspection scope coverage', () => {
 it('captures only the canonical parent chain and transformed local basis for preparation review', async () => {
   const { evidence, change } = setup()
 
-  observed.getElementMetadata.mockImplementation(
-    (id) =>
-      ({
-        group: { type: 'group', parentId: 'outer' },
-        outer: { type: 'group', parentId: 'workspace' }
-      })[id]
+  observed.getElementMetadata.mockImplementation((id: string) =>
+    new Map([
+      ['group', { type: 'group', parentId: 'outer' }],
+      ['outer', { type: 'group', parentId: 'workspace' }]
+    ]).get(id)
   )
   observed.getElementMetadata.mockClear()
   const result = await evidence.attachment('group')

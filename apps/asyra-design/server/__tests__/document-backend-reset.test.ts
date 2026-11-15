@@ -1,7 +1,7 @@
 import { prepareDocumentPublication } from '../../src/collaboration/document-publication'
 import type { SharedPublication } from '@asyra/factory'
 import { Buffer } from 'node:buffer'
-import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 vi.mock('node:fs/promises', async (importOriginal) => {
@@ -28,6 +28,22 @@ afterEach(async () => {
 })
 
 describe('document backend destructive Reset boundary', () => {
+  it('rejects an exhausted generation without replacing the durable checkpoint', async () => {
+    const store = createFileDocumentMaterializationStore(dataDirectory)
+
+    await store.transact('generation-limit', async (current, commit) => {
+      commit({ ...current, documentGeneration: Number.MAX_SAFE_INTEGER })
+    })
+    const before = await store.readCheckpoint('generation-limit')
+
+    await expect(store.resetCheckpoint('generation-limit')).rejects.toThrow(
+      /generation/i
+    )
+    await expect(store.readCheckpoint('generation-limit')).resolves.toEqual(
+      before
+    )
+  })
+
   it('retains the Reset generation when the next publication becomes durable', async () => {
     await mkdir(dataDirectory, { recursive: true })
     const store = createFileDocumentMaterializationStore(dataDirectory)
@@ -462,3 +478,32 @@ it('migrates old text fills before applying and persisting new property updates'
   expect(restored.documentGeneration).toBe(3)
   expect(restored.durableSequence).toBe(7)
 })
+
+it.each([undefined, -1, 0.5, Number.MAX_SAFE_INTEGER + 1])(
+  'rejects stored generation %s without inferring or replacing the checkpoint',
+  async (generation) => {
+    await mkdir(dataDirectory, { recursive: true })
+    const file = resolve(
+      dataDirectory,
+      `${Buffer.from('invalid').toString('base64url')}.json`
+    )
+    const content = JSON.stringify({
+      protocolVersion: 1,
+      documentId: 'invalid',
+      record: {
+        document: createFormalInitialDocument(),
+        documentGeneration: generation,
+        durableSequence: 0,
+        publicationSequences: {},
+        batches: {}
+      }
+    })
+
+    await writeFile(file, content)
+    const store = createFileDocumentMaterializationStore(dataDirectory)
+
+    await expect(store.readCheckpoint('invalid')).rejects.toThrow('is invalid')
+    await expect(store.resetCheckpoint('invalid')).rejects.toThrow('is invalid')
+    expect(await readFile(file, 'utf8')).toBe(content)
+  }
+)

@@ -4,10 +4,51 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import {
   readTaipei101Prompt,
+  taipei101EvidenceFailure,
   readTaipei101Deadline,
   assertTaipei101Submission,
   TAIPEI_101_DEADLINE_MS
 } from '../test-data/ai-drawing/taipei-101-live-contract.mjs'
+
+test('live recording rejects a browser endpoint from a different retained service', async () => {
+  const { assertLiveCollaborationEndpoint } =
+    await import('../test-data/ai-drawing/taipei-101-live-contract.mjs')
+  const { resolveEnvironment } = await import('../app-environment.mjs')
+  const environment = {
+    APP_URL: 'http://127.0.0.1:3058',
+    COLLABORATION_WS_HOST: '127.0.0.1',
+    COLLABORATION_WS_PORT: '4158',
+    VITE_COLLABORATION_WS_URL: 'ws://127.0.0.1:4145/collaboration'
+  }
+  const configured = resolveEnvironment(environment)
+
+  assert.throws(
+    () => assertLiveCollaborationEndpoint(environment, configured),
+    /browser collaboration endpoint must match the owned service/
+  )
+  for (const endpoint of ['', 'ws://127.0.0.1:4158/other']) {
+    assert.throws(() =>
+      assertLiveCollaborationEndpoint(
+        { ...environment, VITE_COLLABORATION_WS_URL: endpoint },
+        configured
+      )
+    )
+  }
+
+  assert.doesNotThrow(() =>
+    assertLiveCollaborationEndpoint(
+      {
+        ...environment,
+        VITE_COLLABORATION_WS_URL: 'ws://127.0.0.1:4158/collaboration'
+      },
+      configured
+    )
+  )
+  assert.equal(
+    environment.VITE_COLLABORATION_WS_URL,
+    'ws://127.0.0.1:4145/collaboration'
+  )
+})
 
 test('fixed benchmark removes only the fixture final newline and keeps the fifteen minute recording guard', () => {
   const fixture = readFileSync(
@@ -418,4 +459,36 @@ test('waits for retained report completion after browser loss without a report d
   } finally {
     rmSync(directory, { recursive: true, force: true })
   }
+})
+
+test('invalid submission cannot pass after successful report and evidence collection', () => {
+  const { prompt } = readTaipei101Prompt()
+  const meta = {
+    errors: [],
+    evidenceErrors: [],
+    settlement: { outcome: 'completed' }
+  }
+
+  try {
+    assertTaipei101Submission({ intent: `${prompt} changed` }, prompt)
+  } catch (error) {
+    meta.errors.push(error.message)
+  }
+
+  assert.equal(meta.errors.length, 1)
+  assert.ok(taipei101EvidenceFailure(meta))
+  assert.equal(
+    taipei101EvidenceFailure({ errors: [], evidenceErrors: [] }),
+    undefined
+  )
+  assert.equal(
+    taipei101EvidenceFailure({ ...meta, failure: 'Original work failure' }),
+    'Original work failure'
+  )
+  assert.ok(
+    taipei101EvidenceFailure({
+      errors: [],
+      evidenceErrors: [{ stage: 'video', error: 'missing' }]
+    })
+  )
 })

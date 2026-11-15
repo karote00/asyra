@@ -1,4 +1,4 @@
-import { getActiveCollaborationHandle } from '../../collaboration/lifecycle'
+import { getActiveCollaborationHandle } from '../../collaboration/session-observation'
 import { RuntimeDiagnosticEvents } from '../../constants'
 import { getActiveAiDrawingPerformanceProfile } from '../performance/ai-drawing-performance-profile'
 

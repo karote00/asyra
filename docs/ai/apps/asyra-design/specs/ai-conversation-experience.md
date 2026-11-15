@@ -127,7 +127,7 @@ reminder that earlier changes are kept or that Undo is available. Retry is admit
 failure or cancellation; partial/unknown outcomes require review. An explicit image
 tracing request uses registered VTracer or fails honestly, never a fabricated trace.
 Replacement accepts the referenced native Frame or traced Group, prepares new content before removing only that root and executes in one
-request-owned history group. Each finite mutation member commits independently; failure rolls back its active member, and Stop or failure seals prior successful members into one Undo entry. Target ambiguity
+request-owned history group. Each finite mutation member commits independently; failure rolls back its active member. Tool failure is returned to the AI within that request; only request settlement, cancellation or terminal transport failure seals prior successful members into one Undo entry. Target ambiguity
 requires clarification, never deleting unrelated objects.
 
 The controller is document-scoped. Closing the panel hides it; reopening retains
@@ -195,7 +195,7 @@ Normal settlement commits all completed batches into one Undo entry. Capability
 limits are normal settlement: explain the unsupported remainder and whether any
 changes were made, with no Try again. A limitation of one tool requires checking
 other registered operations before declaring App capability unavailable. Never
-invent a tool or silently claim an incomplete request is complete. Ordinary executor/provider failures stop further work and commit applied progress in the same Undo entry. The partial result names the failed activity, never offers blind replay, and does not claim every operation completed. Each failed synchronous member rolls back its own writes. Explicit cancellation preserves completed members and seals their single Undo entry; pending members cannot start after cancellation. Settlement failures report unknown state rather than claiming retained progress.
+invent a tool or silently claim an incomplete request is complete. An executor failure stops unsafe dependent operations and returns its diagnostic, settlement and acknowledged progress to the same AI; it does not by itself end the conversation. The AI may correct input or reconcile state before further authorized work. An unusable provider transport or explicit task cancellation ends the invocation and commits applied progress in the same Undo entry. The partial result names the failed activity, never offers blind replay, and does not claim every operation completed. Each failed synchronous member rolls back its own writes. Explicit cancellation preserves completed members and seals their single Undo entry; pending members cannot start after cancellation. Settlement failures report unknown state rather than claiming retained progress.
 Questions before drawing remain non-mutating clarification; a new user request
 never silently joins an already settled history group. Each modifying user request appends its own Undo entry; replacing canvas objects never overwrites previous History. Confirmation explains that prior steps remain undoable. Known executor failures include a bounded App-authored cause and recovery guidance, not raw exceptions.
 
@@ -246,6 +246,10 @@ rectangles and native text, not just traced vector/oval roles. Revalidate each
 distinct referenced ID once per submission against current canonical existence;
 discard deleted and workspace IDs. The hints do not grant an editing capability
 or override current selection/permissions. No cross-request existence cache.
+Completed or partially completed creation receipts update the composition identity
+even when compact delivery omits role mappings. A new identity replaces prior
+roles with the supplied mappings, or an empty mapping when none was delivered;
+missing identity and failed actions do not invent a new target.
 
 ### Conversation navigation
 
@@ -295,26 +299,19 @@ requested. Criteria must preserve those choices. Detail views are conditional on
 the requested result needing local inspection; overview-only acceptance is valid
 for simple work. Never impose photorealism or beautification as a global policy.
 
-The local server operation owner records a request-local design review plan
-(method, reference sources, explicit acceptance criteria and whether detail views
-are required). Freeze these criteria before the first mutation. Existing concrete
-subjects require researched or attached references when fidelity is requested;
-research results alone are not imported image evidence. A chosen native geometry
-method must address silhouette, proportions, viewpoint and requested detail before
-ornament. Unsupported photorealistic requirements must remain explicit.
+The AI owns task planning, visual judgment and final verification against user
+intent. Tools validate their declared input/output and report execution status,
+requested inspection images, limitations and recoverable failures. No mandatory plan registration or signed completion gate is required. Reference selection and
+Knowledge remain available when the AI needs them; they do not authorize writes
+or block completion. A larger task may use retained stage inputs/results and Host
+dependencies without registering a separate review plan.
 
-Every mutation invalidates prior visual verdicts. Successful inspections issue
-opaque, request-local evidence IDs for the current mutation revision. Completion
-requires a model-authored assessment of every planned criterion against current
-rendered evidence; screenshot availability alone does not constitute review.
-Detailed work requires both the composition overview and a separate detail target or
-explicit native-resolution region. Region receipts never certify an overview.
-Repeated captures of the same target and region retain their evidence identity
-within one mutation revision; every call still captures fresh rendered content.
-The backend validates receipt identity, revision and criterion coverage; the model
-remains responsible for semantic visual judgment. Missing, failed or unverified
-criteria prevent a completed claim; preserve applied changes and explain the gap.
-No cumulative review count or duration limit is introduced.
+A capture reports its actual target, bounds and current rendered content. A local
+view is not a composition overview. The AI selects the views needed for its final
+judgment and explains gaps; the backend does not certify aesthetic quality or
+require criterion assessments. Changed geometry must be inspected again when a
+current visual decision depends on it. Unavailable capture preserves acknowledged
+edits and permits capture-only recovery; it never authorizes replaying writes.
 
 Structured `ai_request_trace` records share the usage request ID and carry sequence,
 elapsed time, tool call IDs, bounded allowlisted input/result summaries, reference

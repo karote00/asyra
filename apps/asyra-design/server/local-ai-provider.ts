@@ -6,7 +6,6 @@ import {
 } from './evaluation-report-sessions'
 import {
   createEvaluationControl,
-  evaluationToolStop,
   type EvaluationStopReason
 } from './evaluation-control'
 import type { ExchangeConversationResults } from '../src/ai/conversation-results'
@@ -94,7 +93,11 @@ const assessmentInstructions =
 
 // Apply before process initialization as well as thread creation: some native
 // services initialize at process scope, independently of registered App tools.
-const localProviderIsolationConfig = Object.freeze({
+const localProviderConfig = Object.freeze({
+  // Delivery has already selected and validated App output. Native history must
+  // not truncate it again or omit the separate outcome. Context management is
+  // still native; this only disables its implicit per-tool text cutoff.
+  tool_output_token_limit: Number.MAX_SAFE_INTEGER,
   'features.shell_tool': false,
   'features.unified_exec': false,
   'features.apply_patch_freeform': false,
@@ -544,9 +547,7 @@ const runLocalAiProvider = async (
             if (
               phase !== 'cleanup' &&
               evaluation &&
-              (workStopped ||
-                pendingToolStop ||
-                Date.now() >= evaluation.workDeadlineAt)
+              (workStopped || Date.now() >= evaluation.workDeadlineAt)
             ) {
               throw new Error(
                 'The evaluation work deadline has expired; do not replay completed work.'
@@ -680,9 +681,11 @@ const runLocalAiProvider = async (
           designs,
           operations,
           ownerObservation,
-          () => ({
-            batches: callContext.getStore()?.receipts ?? []
-          }),
+          () => {
+            const batches = callContext.getStore()?.receipts
+
+            return batches?.length ? { batches } : undefined
+          },
           executeInCallContext
         )
       : undefined
@@ -786,9 +789,11 @@ const runLocalAiProvider = async (
         return executeInCallContext(call, work)
       },
 
-      executionEvidence: () => ({
-        batches: callContext.getStore()?.receipts ?? []
-      }),
+      executionEvidence: () => {
+        const batches = callContext.getStore()?.receipts
+
+        return batches?.length ? { batches } : undefined
+      },
 
       onPhase: (call, phase) => {
         let observedPhase: 'admission' | 'preparing' | 'executing' = 'executing'
@@ -856,26 +861,8 @@ const runLocalAiProvider = async (
         }
 
         usage?.trace(stage, evidence)
-        const toolStop =
-          evaluationControl && event.phase === 'completed'
-            ? evaluationToolStop(event.output)
-            : undefined
-
-        if (
-          evaluationControl &&
-          !workStopped &&
-          event.phase !== 'started' &&
-          (event.phase !== 'completed' || toolStop)
-        ) {
-          queueEvaluationStop({
-            ...(toolStop ?? {
-              kind: 'tool-failure' as const,
-              message: localToolErrorMessage(event.error)
-            }),
-            callId: call.callId,
-            tool: call.name
-          })
-        }
+        // Internal observations can precede the Host's normalization and cleanup.
+        // The validated final native reply owns evaluation settlement and stopping.
 
         reportProgress({
           tool: toolBindings.get(call.name)?.definition.name ?? call.name,
@@ -971,7 +958,8 @@ const runLocalAiProvider = async (
                       ...(example ? { examples: [example] } : {})
                     },
                     deferLoading:
-                      name !== AiDesignToolIds.DESCRIBE_DESIGN_APIS &&
+                      name !== AiDesignToolIds.READ_DESIGN_CONTRACTS &&
+                      name !== AiDesignToolIds.SEARCH_DESIGN_TOOLS &&
                       name !== AiDesignToolIds.EXECUTE_DESIGN
                   }
                 })
@@ -1089,9 +1077,10 @@ const runLocalAiProvider = async (
         '--listen',
         'stdio://',
         ...nativeConfig.arguments,
-        ...Object.entries(localProviderIsolationConfig).flatMap(
-          ([key, value]) => ['-c', `${key}=${JSON.stringify(value)}`]
-        )
+        ...Object.entries(localProviderConfig).flatMap(([key, value]) => [
+          '-c',
+          `${key}=${JSON.stringify(value)}`
+        ])
       ],
       {
         stdio: ['pipe', 'pipe', 'pipe'],
@@ -1260,14 +1249,6 @@ const runLocalAiProvider = async (
     }, evaluation.reportTimeoutMs)
   }
 
-  let pendingToolStop: EvaluationStopReason | undefined
-
-  const queueEvaluationStop = (reason: EvaluationStopReason) => {
-    // Stop admitting new work, but let the active host invocation settle and
-    // deliver its acknowledged prefix before interrupting the drawing turn.
-    pendingToolStop ??= reason
-  }
-
   const stopEvaluationWork = (
     reason: EvaluationStopReason = {
       kind: 'work-deadline',
@@ -1278,7 +1259,7 @@ const runLocalAiProvider = async (
       return
     }
 
-    const stopReason = pendingToolStop ?? reason
+    const stopReason = reason
 
     workStopped = true
     workStopReason = stopReason
@@ -1320,9 +1301,7 @@ const runLocalAiProvider = async (
         evaluation &&
         isRecord(params) &&
         params.threadId === threadId &&
-        (workStopped ||
-          pendingToolStop ||
-          Date.now() >= evaluation.workDeadlineAt)
+        (workStopped || Date.now() >= evaluation.workDeadlineAt)
       ) {
         usage?.trace('host_observation', {
           kind: 'evaluation-tool-rejected',
@@ -1598,18 +1577,6 @@ const runLocalAiProvider = async (
               expectationSource: 'registered-contract'
             })
           } else if (event.phase === 'completed') {
-            const toolStop = evaluationControl
-              ? evaluationToolStop(event.output)
-              : undefined
-
-            if (evaluationControl && !workStopped && toolStop) {
-              queueEvaluationStop({
-                ...toolStop,
-                callId: String(params.callId),
-                tool: toolName
-              })
-            }
-
             const { contentItems } = event.output
             const textContent = contentItems.find(
               (item) => item.type === 'inputText'
@@ -1642,15 +1609,6 @@ const runLocalAiProvider = async (
                   : undefined
             })
           } else {
-            if (evaluationControl && !workStopped) {
-              queueEvaluationStop({
-                kind: 'tool-failure',
-                message: localToolErrorMessage(event.error),
-                callId: String(params.callId),
-                tool: toolName
-              })
-            }
-
             usage?.trace('tool_failed', {
               tool: toolName,
               callId: params.callId,
@@ -1747,14 +1705,6 @@ const runLocalAiProvider = async (
         })
         .finally(() => {
           toolTasks.delete(task)
-          if (
-            pendingToolStop &&
-            toolTasks.size === 0 &&
-            !terminalError &&
-            !workStopped
-          ) {
-            evaluationControl?.stop(pendingToolStop)
-          }
         })
 
       toolTasks.set(task, toolName)
@@ -1885,9 +1835,13 @@ const runLocalAiProvider = async (
       (options.assessmentOnly || reportPhase) &&
       (value.method === 'item/started' || value.method === 'item/completed') &&
       isRecord(params.item) &&
-      !['agentMessage', 'userMessage', 'reasoning', 'plan'].includes(
-        String(params.item.type)
-      )
+      ![
+        'agentMessage',
+        'userMessage',
+        'reasoning',
+        'plan',
+        'contextCompaction'
+      ].includes(String(params.item.type))
     ) {
       return protocolFailure('Unexpected tool item in diagnostic assessment')
     }
@@ -1930,34 +1884,6 @@ const runLocalAiProvider = async (
       toolCalls.has(params.item.id) &&
       ['completed', 'failed'].includes(String(params.item.status))
 
-    const nativeEvaluationStop =
-      evaluationControl &&
-      value.method === 'item/completed' &&
-      !appToolCompletion
-        ? evaluationToolStop(params.item)
-        : undefined
-
-    if (
-      evaluationControl &&
-      !workStopped &&
-      value.method === 'item/completed' &&
-      isRecord(params.item) &&
-      ![
-        'agentMessage',
-        'userMessage',
-        'reasoning',
-        'plan',
-        'contextCompaction'
-      ].includes(String(params.item.type)) &&
-      nativeEvaluationStop
-    ) {
-      evaluationControl.stop({
-        ...nativeEvaluationStop,
-        callId: String(params.item.id),
-        tool: String(params.item.type)
-      })
-    }
-
     if (
       (value.method === 'item/started' || value.method === 'item/completed') &&
       isRecord(params.item) &&
@@ -1991,9 +1917,11 @@ const runLocalAiProvider = async (
           executor: 'native-provider',
           ...(value.method === 'item/completed' &&
           appToolCompletion &&
-          ['describe_design_apis', 'read_knowledge'].includes(
-            String(params.item.tool)
-          )
+          [
+            'search_design_tools',
+            'read_design_contracts',
+            'read_knowledge'
+          ].includes(String(params.item.tool))
             ? {
                 tool: params.item.tool,
                 nativeOutput: {
@@ -2425,7 +2353,7 @@ const runLocalAiProvider = async (
             (operations
               ? ' input.actions lists final-response actions, not the complete capability catalog. Drawing operations are supplied separately as callable tools; their absence from input.actions does not mean drawing is unavailable. Use backend operation tools to apply changes, inspect actual receipts, and continue with registered operations. Do not repeat an executed operation in the final batch. End with report_outcome: {outcome:"completed"|"unsupported",message:string}.'
               : ' Return the prepared action batch without invoking backend operation tools. Use report_outcome only for an unsupported request.') +
-            ` ${libraryUnavailable ? 'Saved tools could not be loaded. Native tools remain available; saving returns explicit status, and save-only retry must not repeat document edits.' : ''} The describe_design_apis and execute_design entries are available directly when drawing operations are enabled; domain tools use native deferred discovery. Discover tools by operation purpose using describe_design_apis query; use exact names for known capabilities. Categories and their continuations remain available when an intentional complete inventory is useful. Native discovery provides callable declarations. Read bounded tool results directly, preserving complete selected restrictions and following returned continuations when needed. Reuse App-owned artifacts, target references and recipes for intermediate geometry and data binding. Runtime owns admitted finite iteration; do not coordinate each deterministic check/repair through a new model turn. Use compact mutation receipts and prepared artifact target references when individual acknowledgements are unnecessary. Known current contracts need no lookup. Use execute_design for decided sequences. Name steps for binding, retention or selected delivery, including earlier images. Use the returned action names and current target selectors. ${localToolResultInstructions}`
+            ` ${libraryUnavailable ? 'Saved tools could not be loaded. Native tools remain available; saving returns explicit status, and save-only retry must not repeat document edits.' : ''} The ${AiDesignToolIds.SEARCH_DESIGN_TOOLS}, ${AiDesignToolIds.READ_DESIGN_CONTRACTS} and ${AiDesignToolIds.EXECUTE_DESIGN} entries are available directly when drawing operations are enabled; domain tools use native deferred discovery. Discover tools by operation purpose using ${AiDesignToolIds.SEARCH_DESIGN_TOOLS} query; read exact contracts using ${AiDesignToolIds.READ_DESIGN_CONTRACTS} names. Categories and their continuations remain available when an intentional complete inventory is useful. Native discovery provides callable declarations. Read bounded tool results directly, preserving complete selected restrictions and following returned continuations when needed. Reuse App-owned artifacts, target references and recipes for intermediate geometry and data binding. Runtime owns admitted finite iteration; do not coordinate each deterministic check/repair through a new model turn. Use compact mutation receipts and prepared artifact target references when individual acknowledgements are unnecessary. Known current contracts need no lookup. Use execute_design for decided sequences. Name steps for binding, retention or selected delivery, including earlier images. Use the returned action names and current target selectors. ${localToolResultInstructions}`
       }
     ].map((block) => ({
       ...block,
@@ -2475,7 +2403,7 @@ const runLocalAiProvider = async (
         developerInstructions,
         config: {
           model_reasoning_effort: 'medium',
-          ...localProviderIsolationConfig,
+          ...localProviderConfig,
           web_search: options.assessmentOnly ? 'disabled' : 'live',
           mcp_servers: disabledServers
         }

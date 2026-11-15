@@ -21,6 +21,7 @@ import {
   recipeSelectVariant,
   recipeLiteralShape,
   recipeAssignable,
+  recipeRequestAssignable,
   recipeCapturesValue,
   recipeRecord,
   recipeOwn,
@@ -364,8 +365,13 @@ export const admitAiRecipe = (
           return
         }
 
+        const assignable =
+          mode === 'sequence' && binding.kind === 'step'
+            ? recipeRequestAssignable
+            : recipeAssignable
+
         if (
-          !recipeAssignable(
+          !assignable(
             recipeSchemaAt(
               source,
               binding.path,

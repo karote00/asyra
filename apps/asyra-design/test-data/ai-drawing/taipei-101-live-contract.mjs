@@ -9,6 +9,19 @@ export const TAIPEI_101_PROMPT_SHA256 =
   '25b9ad1aeb523fdb590a39d090a37fdc65ed62ff081a27acfa92d946f9b2ff51'
 export const TAIPEI_101_DEADLINE_MS = 15 * 60 * 1000
 
+/** A retained service must never receive another recording's document writes. */
+export const assertLiveCollaborationEndpoint = (environment, configured) => {
+  const expected = new URL(configured.collaborationHealthURL)
+
+  expected.protocol = 'ws:'
+  expected.pathname = '/collaboration'
+  if (environment.VITE_COLLABORATION_WS_URL?.trim() !== expected.href) {
+    throw new Error(
+      `The browser collaboration endpoint must match the owned service: ${expected.href}`
+    )
+  }
+}
+
 /** Explicit per-run override; the default drawing budget remains fifteen minutes. */
 export const readTaipei101Deadline = (args = []) => {
   if (!args.length) {
@@ -107,3 +120,20 @@ export const waitForRecordedDocument = async (page, expectedCount) => {
 /** Missing bounds remain an error unless the captured document is proven empty. */
 export const shouldCaptureDrawingDetails = (counts) =>
   !(counts && Object.keys(counts).length === 1 && counts.workspace >= 1)
+
+/** Preserve the original failure while closing independent evidence stages. */
+export const taipei101EvidenceFailure = (meta) => {
+  if (meta.failure) {
+    return meta.failure
+  }
+
+  if (meta.errors.length) {
+    return 'Benchmark environment or submission invalid; see errors'
+  }
+
+  if (meta.evidenceErrors.length) {
+    return 'Evidence collection incomplete; see evidenceErrors'
+  }
+
+  return undefined
+}

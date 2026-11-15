@@ -1,10 +1,6 @@
 import sharp from 'sharp'
 import { describe, expect, it, vi } from 'vitest'
-import { createLocalImageTools as createOwner } from '../local-image-tools'
-import { withToolContractAssertions } from './tool-contract-assertions'
-
-const createLocalImageTools = (...args: Parameters<typeof createOwner>) =>
-  withToolContractAssertions(createOwner(...args))
+import { createLocalImageTools } from '../local-image-tools'
 
 import { AiImageToolIds } from '../ai-domain-prompt'
 import * as analysis from '../local-vector-component-analysis'
@@ -75,7 +71,7 @@ describe('local provider image tools', () => {
     ],
     ['vtracer', { attachmentIndex: 0, path: '/private/file.png' }]
   ])(
-    'rejects unregistered capability or attachment input',
+    'rejects unregistered capability or attachment input - case %#',
     async (name, args) => {
       const convert = vi.fn()
       const tools = createLocalImageTools(

@@ -7,7 +7,7 @@ import { operationInputIssue } from '../operation-input-schema'
 import referenceChain from '../../test-data/ai-drawing/fixtures/reference-chain-20261108.json'
 import phaseContinuity from '../../test-data/ai-drawing/fixtures/phase-continuity-20261108.json'
 import resultRoute from '../../test-data/ai-drawing/fixtures/result-route-stop-20261107.json'
-import { evaluationToolStop } from '../evaluation-control'
+
 import { modelToolResultSchemas } from '../../src/ai/tool-contract'
 import strictArtifactRetention from './fixtures/recorded-101/strict-artifact-retention-20261106.json'
 import strictWholeResult from './fixtures/recorded-101/strict-whole-result-20261106.json'
@@ -1073,7 +1073,6 @@ it.each([false, true])(
         expect(result.execution.recovery[0].value.artifactId).toEqual(
           expect.any(String)
         )
-        expect(evaluationToolStop(result)).toBeUndefined()
       }
 
       expect(result.stages).toEqual([
@@ -1199,28 +1198,26 @@ it.each([recorded, latest])(
         artifactId: source.artifactId,
         keys: ['keys' in target ? 'untouched' : 'needle']
       })
-      const lookup = await f.call(
-        'design_operations.describe_design_apis',
-        sample.lookup
-      )
+      const lookup = await f.call('design_operations.search_design_tools', {
+        query: sample.lookup.query
+      })
       const entry = lookup.apis?.find(
         (item: { name: string }) =>
           item.name === recorded.remove.operations[0].name
       )
 
       expect(entry, JSON.stringify(lookup).slice(0, 600)).toBeDefined()
-      const recovered = await f.call('design_operations.describe_design_apis', {
-        names: ['absent-operation'],
-        purpose: sample.lookup.query
+      const recovered = await f.call('design_operations.search_design_tools', {
+        query: sample.lookup.query
       })
 
-      expect(recovered.missingNames).toEqual(['absent-operation'])
+      expect(recovered.apis).toBeDefined()
       expect(
-        recovered.candidates.find(
+        recovered.apis.find(
           (candidate: { name: string }) => candidate.name === entry.name
         )?.artifactKeyExamples
       ).toEqual(entry.artifactKeyExamples)
-      const other = await f.call('design_operations.describe_design_apis', {
+      const other = await f.call('design_operations.search_design_tools', {
         query: 'move elements relative by artifact keys'
       })
 
@@ -1268,10 +1265,16 @@ it('dispatches the recorded three crown deletions together after resolving curre
   const f = await fixture()
 
   try {
+    const { response: _response, ...currentCrown } = lastRun.crown
     const crown = await f.call(
       'design_workflow.prepare_and_apply_design',
-      lastRun.crown
+      currentCrown
     )
+
+    expect(crown).toMatchObject({
+      available: true,
+      artifactId: expect.any(String)
+    })
     const operations = lastRun.remove.operations.map((op) => ({
       ...op,
       target: { ...op.target, artifactId: crown.artifactId }
@@ -1514,6 +1517,25 @@ it('delivers selected dimension data and retains the other recorded columns in t
     expect(JSON.stringify(ack).length).toBeLessThan(
       JSON.stringify(ordinary).length
     )
+    const completedReads = f.calls.length
+    const missing = await f.host.invoke({
+      name: 'design_operations.execute_design',
+      input: {
+        ...args,
+        delivery: {
+          fields: {
+            missing: {
+              path: '/actionResults/0/result/columns/0/undeclaredValue'
+            }
+          }
+        }
+      }
+    })
+
+    expect(missing.outcome.status).not.toBe('success')
+    expect(missing.outcome.settlement).toBe('completed')
+    expect(f.calls.length).toBe(completedReads)
+    expect(scope.names()).toEqual([id])
   } finally {
     await f.dispose()
   }
@@ -1656,7 +1678,7 @@ it('resolves an artifact anchor alongside the recorded whole-array step binding'
       }
     })
 
-    expect(wrongTypeReply.outcome).toMatchObject({
+    expect(wrongTypeReply.outcome, wrongTypeReply.text).toMatchObject({
       status: 'failed',
       settlement: 'not-started'
     })
@@ -2332,15 +2354,22 @@ it('publishes direct host retention fields in the recorded scoped discovery requ
   try {
     for (const optionalInputs of [['retain'], []]) {
       const replyReply = await f.host.invoke({
-        name: 'design_operations.describe_design_apis',
+        name: 'design_operations.read_design_contracts',
         input: {
           names: ['prepare_and_apply_design'],
           view: 'usage',
-          inputScope: {
-            operation: 'draft',
-            nodeTypes: ['projected-face', 'surface-grid', 'pattern'],
-            optionalInputs
-          }
+          scopes: Object.fromEntries(
+            ['prepare_and_apply_design'].map((name) => [
+              name,
+              {
+                inputScope: {
+                  operation: 'draft',
+                  nodeTypes: ['projected-face', 'surface-grid', 'pattern'],
+                  optionalInputs
+                }
+              }
+            ])
+          )
         }
       })
       const reply = JSON.parse(replyReply.text)
@@ -2854,15 +2883,22 @@ it.each([false, true])(
     const f = await fixture()
 
     try {
-      let reply = await f.call('design_operations.describe_design_apis', {
+      let reply = await f.call('design_operations.read_design_contracts', {
         names: ['prepare_and_apply_design'],
         view: 'usage',
         includeResultSchema: machine,
-        inputScope: {
-          operation: 'draft',
-          nodeTypes: ['rect'],
-          optionalInputs: ['retain']
-        }
+        scopes: Object.fromEntries(
+          ['prepare_and_apply_design'].map((name) => [
+            name,
+            {
+              inputScope: {
+                operation: 'draft',
+                nodeTypes: ['rect'],
+                optionalInputs: ['retain']
+              }
+            }
+          ])
+        )
       })
 
       if (reply.contentDelivery) {
@@ -2870,7 +2906,7 @@ it.each([false, true])(
 
         while (!reply.contentDelivery.lastPage) {
           reply = await f.call(
-            'design_operations.describe_design_apis',
+            'design_operations.read_design_contracts',
             reply.contentDelivery.next.arguments
           )
           text += reply.contentDelivery.text
@@ -3003,7 +3039,7 @@ it('matches each recorded delivery path against actual host guarantees', async (
 })
 
 it.each([false, true])(
-  'admits guaranteed recorded delivery and locates conditional rejection (portable=%s)',
+  'delivers recorded guaranteed and actually present conditional fields (portable=%s)',
   async (portable) => {
     const f = await fixture()
 
@@ -3043,25 +3079,39 @@ it.each([false, true])(
       })
       const result = JSON.parse(resultReply.text)
 
-      if (portable) {
-        expect(resultReply.outcome.status, JSON.stringify(result)).toBe(
-          'success'
-        )
+      expect(resultReply.outcome.status, JSON.stringify(result)).toBe('success')
+      expect(result.fields).toMatchObject({
+        base: expect.any(Array),
+        tiers: expect.any(Array)
+      })
+      expect(f.calls).toEqual([
+        'apply_prepared_design',
+        'apply_prepared_design'
+      ])
+      if (!portable) {
         expect(result.fields).toMatchObject({
-          base: expect.any(Array),
-          tiers: expect.any(Array)
+          baseArtifact: expect.any(String),
+          tiersArtifact: expect.any(String)
         })
-        expect(f.calls).toEqual([
-          'apply_prepared_design',
-          'apply_prepared_design'
-        ])
-      } else {
-        expect(resultReply.outcome.settlement).toBe('not-started')
-        expect(evaluationToolStop(result)).toBeUndefined()
-        expect(result.message).toContain('delivery.fields.baseArtifact')
-        expect(result.message).toContain('base')
-        expect(result.message).toContain('/artifactId')
-        expect(f.calls).toEqual([])
+        const update = await f.host.invoke({
+          name: 'design_operations.execute_design',
+          input: {
+            inspection: 'defer',
+            operations: [
+              {
+                name: 'read_design_context',
+                arguments: { scope: 'ids', fields: ['width'] },
+                target: {
+                  field: 'elementIds',
+                  artifactId: result.fields.baseArtifact,
+                  keys: ['panel']
+                }
+              }
+            ]
+          }
+        })
+
+        expect(update.outcome.status, update.text).toBe('success')
       }
     } finally {
       await f.dispose()
@@ -3250,7 +3300,7 @@ it.each(['map_retained_fills', 'design_operations.map_retained_fills'])(
     const f = await fixture()
 
     try {
-      let reply = await f.call('design_operations.describe_design_apis', {
+      let reply = await f.call('design_operations.read_design_contracts', {
         names: [name],
         view: 'usage'
       })
@@ -3258,7 +3308,7 @@ it.each(['map_retained_fills', 'design_operations.map_retained_fills'])(
 
       while (reply.contentDelivery && !reply.contentDelivery.lastPage) {
         reply = await f.call(
-          'design_operations.describe_design_apis',
+          'design_operations.read_design_contracts',
           reply.contentDelivery.next.arguments
         )
         text += reply.contentDelivery.text
@@ -3311,7 +3361,15 @@ it('returns recorded result-route rejection to evaluation before any dispatch', 
   try {
     const resultReply = await f.host.invoke({
       name: 'design_operations.execute_design',
-      input: resultRoute.input
+      input: {
+        ...resultRoute.input,
+        operations: resultRoute.input.operations.map((operation) => {
+          const { response: _response, ...arguments_ } =
+            operation.arguments as Record<string, unknown>
+
+          return { ...operation, arguments: arguments_ }
+        })
+      }
     })
     const result = JSON.parse(resultReply.text)
 
@@ -3321,7 +3379,6 @@ it('returns recorded result-route rejection to evaluation before any dispatch', 
     expect(result.message).toContain('delivery.fields.reflect')
     expect(result.message).toContain('/batchSummary')
     expect(f.exchanges).toEqual([])
-    expect(evaluationToolStop(result)).toBeUndefined()
   } finally {
     await f.dispose()
   }
@@ -3348,7 +3405,7 @@ it('retains recorded crown source targets across requests without forwarding IDs
         operations: [
           {
             ...operation,
-            arguments: { ...operation.arguments, includeTargets: true }
+            arguments: { ...operation.arguments }
           }
         ],
         retain: {
@@ -3517,7 +3574,16 @@ it('chains recorded crown construction and capture in one host submission', asyn
       name: 'design_operations.execute_design',
       input: {
         operations: [
-          ...phaseContinuity.construction.operations,
+          ...phaseContinuity.construction.operations.map((operation) => ({
+            id: operation.id,
+            name: operation.name,
+            arguments: {
+              parentId: operation.arguments.parentId,
+              message: operation.arguments.message,
+              inspection: operation.arguments.inspection,
+              draft: operation.arguments.draft
+            }
+          })),
           ...[
             recorded.create.parentId,
             anchor,
@@ -3567,9 +3633,17 @@ it('consumes recorded body geometry by named fields in a successor host without 
   const first = await fixture(false, recorded.create.parentId, anchor, exchange)
 
   try {
-    const operation = structuredClone(phaseContinuity.body.operations[1])
-
-    operation.arguments.parentId = recorded.create.parentId as never
+    const source = phaseContinuity.body.operations[1]
+    const operation = {
+      id: source.id,
+      name: source.name,
+      arguments: {
+        parentId: recorded.create.parentId,
+        message: source.arguments.message,
+        inspection: source.arguments.inspection,
+        draft: structuredClone(source.arguments.draft)
+      }
+    }
     const result = await first.call('design_operations.execute_design', {
       operations: [operation],
       retain: { bodySource: { step: 'body', source: 'input', path: '/draft' } },
@@ -3639,7 +3713,9 @@ it('consumes recorded body geometry by named fields in a successor host without 
             id: 'details',
             name: 'design_workflow.prepare_and_apply_design',
             arguments: {
-              ...phaseContinuity.details.operations[2].arguments,
+              message: phaseContinuity.details.operations[2].arguments.message,
+              inspection:
+                phaseContinuity.details.operations[2].arguments.inspection,
               parentId: recorded.create.parentId,
               draft
             }
@@ -3684,12 +3760,37 @@ it('repairs recorded tier source paths using the existing retained input in one 
   const { default: core } = await import('../../src/contexts')
 
   try {
-    const base = structuredClone(recordedInput.base)
+    const baseOperation = recordedInput.base.operations[1]
+    const base = {
+      ...structuredClone(recordedInput.base),
+      operations: [
+        {
+          id: baseOperation.id,
+          name: baseOperation.name,
+          arguments: {
+            message: baseOperation.arguments.message,
+            inspection: baseOperation.arguments.inspection,
+            draft: structuredClone(baseOperation.arguments.draft)
+          }
+        }
+      ]
+    }
+    const tiers = {
+      ...structuredClone(recordedInput.tiers),
+      operations: recordedInput.tiers.operations.map((operation) => ({
+        id: operation.id,
+        name: operation.name,
+        arguments: {
+          message: operation.arguments.message,
+          inspection: operation.arguments.inspection,
+          draft: structuredClone(operation.arguments.draft)
+        }
+      }))
+    }
 
     Reflect.deleteProperty(base.delivery.fields, 'outcome')
 
     // Reference selection is established independently in this Core fixture.
-    base.operations.splice(0, 1)
     const firstReply = await f.host.invoke({
       name: 'design_operations.execute_design',
       input: base
@@ -3701,22 +3802,19 @@ it('repairs recorded tier source paths using the existing retained input in one 
     })
     const before = await core.save()
     const count = f.calls.length
-    const rejected = await f.call(
-      'design_operations.execute_design',
-      recordedInput.tiers
-    )
+    const rejected = await f.call('design_operations.execute_design', tiers)
 
     expect(rejected, JSON.stringify(rejected)).toMatchObject({
-      recovery: 'correct_input',
+      code: 'TOOL_INPUT_INVALID',
       settlement: 'not-started'
     })
     expect(JSON.stringify(rejected)).toContain(
       '/preparationInput/draft/linearFields'
     )
-    expect(evaluationToolStop(rejected)).toBeUndefined()
+
     expect(f.calls).toHaveLength(count)
     expect(await core.save()).toEqual(before)
-    const repaired = structuredClone(recordedInput.tiers)
+    const repaired = structuredClone(tiers)
     const draft = repaired.operations[1].arguments.draft
 
     draft.linearFields = {
@@ -3756,7 +3854,23 @@ it.each(['direct', 'sequence', 'status', 'selected'])(
     const { default: recordedInput } =
       await import('../../test-data/ai-drawing/fixtures/sequence-input-recovery-20261108.json')
     const scope = createConversationResults(() => 1).open('input-recovery')
-    const parent = recordedInput.crown.operations[0].arguments.parentId
+    const source = recordedInput.crown.operations[0]
+    const crown = {
+      ...structuredClone(recordedInput.crown),
+      operations: [
+        {
+          id: source.id,
+          name: source.name,
+          arguments: {
+            parentId: source.arguments.parentId,
+            message: source.arguments.message,
+            inspection: source.arguments.inspection,
+            draft: structuredClone(source.arguments.draft)
+          }
+        }
+      ]
+    }
+    const parent = crown.operations[0].arguments.parentId
     const f = await fixture(false, parent, anchor, async (request) =>
       scope.exchange(request)
     )
@@ -3764,9 +3878,7 @@ it.each(['direct', 'sequence', 'status', 'selected'])(
 
     try {
       const before = await core.save()
-      const input: Record<string, unknown> = structuredClone(
-        recordedInput.crown
-      )
+      const input: Record<string, unknown> = structuredClone(crown)
 
       if (mode === 'sequence') {
         delete input.delivery
@@ -3782,22 +3894,19 @@ it.each(['direct', 'sequence', 'status', 'selected'])(
           mode === 'direct'
             ? 'design_workflow.prepare_and_apply_design'
             : 'design_operations.execute_design',
-        input:
-          mode === 'direct'
-            ? recordedInput.crown.operations[0].arguments
-            : input
+        input: mode === 'direct' ? crown.operations[0].arguments : input
       })
 
       expect(JSON.parse(rejected.text)).toMatchObject({
         available: false,
-        recovery: 'correct_input',
+        code: 'TOOL_INPUT_INVALID',
         settlement: 'not-started'
       })
       expect(rejected.text).toContain('projection.kind')
-      expect(evaluationToolStop(rejected)).toBeUndefined()
+
       expect(f.calls).toEqual([])
       expect(await core.save()).toEqual(before)
-      const corrected = structuredClone(recordedInput.crown)
+      const corrected = structuredClone(crown)
 
       Reflect.deleteProperty(corrected.delivery.fields, 'result')
 
@@ -3810,7 +3919,6 @@ it.each(['direct', 'sequence', 'status', 'selected'])(
         corrected
       )
 
-      expect(evaluationToolStop(geometry)).toBeUndefined()
       expect(JSON.stringify(geometry)).toContain('nonplanar')
       expect(f.calls).toEqual([])
       // The caller corrects the two recorded nonplanar quadrilaterals into
@@ -3911,7 +4019,15 @@ it('selects reference notes and chains construction to capture without model rea
               }))
             }
           },
-          ...referenceChain.construction.operations,
+          ...referenceChain.construction.operations.map((operation) => ({
+            id: operation.id,
+            name: operation.name,
+            arguments: {
+              draft: operation.arguments.draft,
+              inspection: operation.arguments.inspection,
+              message: operation.arguments.message
+            }
+          })),
           {
             id: 'capture',
             name: 'design_operations.inspect_drawing',
@@ -3974,14 +4090,15 @@ it('delivers the actual capture host envelope and executes its acquired example'
   const read = async (query: Record<string, unknown>) =>
     JSON.parse(
       await readCompleteInformation(
-        async (input) =>
+        async (input, requestedTool) =>
           (
             await f.host.invoke({
-              name: 'design_operations.describe_design_apis',
+              name: 'design_operations.' + requestedTool,
               input
             })
           ).text,
-        query
+        query,
+        'read_design_contracts'
       )
     )
 
@@ -4035,7 +4152,12 @@ it('delivers the actual capture host envelope and executes its acquired example'
     expect(full.apis[0].inputSchema).toEqual(owner.inputSchema)
     const selected = await read({
       names: ['inspect_drawing'],
-      schemaPaths: ['/properties/arguments/properties/elementId']
+      scopes: Object.fromEntries(
+        ['inspect_drawing'].map((name) => [
+          name,
+          { schemaPaths: ['/properties/arguments/properties/elementId'] }
+        ])
+      )
     })
 
     expect(selected.apis[0].definition.state).toBe('included')
@@ -4322,14 +4444,15 @@ it('exposes a conditional group identity selector and binds it to the recorded b
 
   try {
     const text = await readCompleteInformation(
-      async (input) =>
+      async (input, requestedTool) =>
         (
           await f.host.invoke({
-            name: 'design_operations.describe_design_apis',
+            name: 'design_operations.' + requestedTool,
             input
           })
         ).text,
-      { names: ['api_hierarchy_groupElements'], view: 'usage' }
+      { names: ['api_hierarchy_groupElements'], view: 'usage' },
+      'read_design_contracts'
     )
     const usage = JSON.parse(text).apis[0].usageGuide
     const path = '/actionResults/0/result/value/groupId'
@@ -4524,14 +4647,15 @@ it.each(['defer', 'immediate'] as const)(
       }
 
       const text = await readCompleteInformation(
-        async (input) =>
+        async (input, requestedTool) =>
           (
             await f.host.invoke({
-              name: 'design_operations.describe_design_apis',
+              name: 'design_operations.' + requestedTool,
               input
             })
           ).text,
-        { names: [operation.name], view: 'usage' }
+        { names: [operation.name], view: 'usage' },
+        'read_design_contracts'
       )
       const usage = JSON.parse(text).apis[0].usageGuide
       const paths = Object.keys(usage.stepResults.structures ?? {})
@@ -4599,3 +4723,75 @@ it.each(['defer', 'immediate'] as const)(
   },
   60000
 )
+
+it('retains ordered-part source at the outer boundary and reuses it in a new request without readback', async () => {
+  const context = createConversationResults(() => 1).open('ordered-parts')
+
+  const exchange: ExchangeConversationResults = (command) =>
+    context.exchange(command)
+
+  const parts = ['first', 'second'].map((key) => ({
+    key,
+    draft: {
+      type: 'group',
+      name: key,
+      children: [
+        { type: 'rect', key: 'face', name: 'Face', width: 20, height: 30 }
+      ]
+    }
+  }))
+  const first = await fixture(false, undefined, undefined, exchange)
+
+  try {
+    const reply = await first.host.invoke({
+      name: 'design_workflow.prepare_and_apply_design',
+      input: {
+        parts,
+        inspection: 'defer',
+        retain: { nextPart: { source: 'input', path: '/parts/1/draft' } },
+        delivery: 'status'
+      }
+    })
+
+    expect(reply.outcome.status, reply.text).toBe('success')
+    expect(JSON.parse(reply.text).saved).toEqual([
+      expect.objectContaining({ name: 'nextPart' })
+    ])
+    expect(Object.keys(JSON.parse(reply.text)).sort()).toEqual([
+      'saved',
+      'toolOutcome'
+    ])
+    expect(first.calls).toEqual([
+      'apply_prepared_design',
+      'apply_prepared_design'
+    ])
+  } finally {
+    await first.dispose()
+  }
+
+  const second = await fixture(false, undefined, undefined, exchange)
+
+  try {
+    const reply = await second.host.invoke({
+      name: 'design_operations.execute_design',
+      input: {
+        operations: [
+          {
+            name: 'prepare_and_apply_design',
+            arguments: {
+              draft: { kind: 'named', name: 'nextPart' },
+              inspection: 'defer'
+            }
+          }
+        ],
+        delivery: 'status'
+      }
+    })
+
+    expect(reply.outcome.status, reply.text).toBe('success')
+    expect(second.calls).toEqual(['apply_prepared_design'])
+    expect(context.names()).toEqual(['nextPart'])
+  } finally {
+    await second.dispose()
+  }
+})

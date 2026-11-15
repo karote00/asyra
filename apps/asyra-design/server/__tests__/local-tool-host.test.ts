@@ -1,8 +1,15 @@
 import { designContextDefinitions } from '../local-design-context'
+import recordedInputRejection from './fixtures/recorded-101/input-rejection-20261112.json'
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
-import { evaluationToolStop } from '../evaluation-control'
+
+import {
+  LocalToolInputError,
+  localToolFailureReply,
+  localToolFailureSchema
+} from '../local-tool-invocation'
 import correctablePreparation from '../../test-data/ai-drawing/fixtures/correctable-preparation-20261106.json'
-import { expect, it } from 'vitest'
+import { expect, it, vi } from 'vitest'
+import * as libraryOwner from '../local-tool-library'
 import { readCompleteInformation } from './tool-contract-assertions'
 import { operationContractIssue } from '../operation-input-schema'
 import { BrowserBatchExecutionError } from '../batch-exchange'
@@ -13,11 +20,13 @@ import { createLocalDesignWorkflow } from '../local-design-workflow'
 import { createLocalOperationTools } from '../local-operation-tools'
 import { createDesignPreparationSession } from '../design-preparation'
 import { AiActionNames } from '../../src/constants/ai-actions'
+import { createConversationResults } from '../../src/ai/conversation-results'
 import {
   toolRequestReference,
   toolSemantics,
   toolResultObject,
-  toolInternalResult
+  toolInternalResult,
+  projectToolResultFields
 } from '../../src/ai/tool-contract'
 
 const object = (properties: Record<string, unknown>) => ({
@@ -28,6 +37,751 @@ const object = (properties: Record<string, unknown>) => ({
 })
 
 const literal = (value: unknown) => ({ kind: 'literal', value })
+
+it.each(['direct', 'registered'])(
+  'keeps canonical and public failure contracts distinct through %s delivery',
+  async (route) => {
+    const result = localToolFailureReply(
+      'Denied before writes.',
+      'AI_PERMISSION_DENIED',
+      {
+        settlement: 'not-started',
+        executionResult: {
+          actionResults: [],
+          checks: {
+            countsScope: 'selected-checks',
+            counts: { pass: 0, fail: 0, unverified: 1, stale: 0 },
+            visitedResults: 1,
+            firstPendingId: 'known-check'
+          }
+        }
+      }
+    )
+    const call = vi.fn(async () => result.text)
+    const host = createLocalToolHost({
+      requestId: 'failure-views',
+      signal: new AbortController().signal,
+      store: memory(),
+      capacity: 16,
+      receiptCapacity: 8,
+      artifactCapacity: 16,
+      limits: {
+        steps: 8,
+        bindings: 32,
+        bindingDepth: 16,
+        bytes: 24000,
+        issues: 8
+      },
+
+      createGroups: () => [
+        {
+          name: 'boundary',
+          description: 'Failure view owner',
+          owner: {
+            definitions: [
+              {
+                name: 'reject',
+                description: 'Reject a request before writes',
+                inputSchema: object({}),
+                ...toolSemantics(object({}), 'read', []),
+                composition: 'allowed',
+                recoveryOutputSchema: localToolFailureSchema
+              }
+            ],
+            call,
+
+            projectModelResult: (_name, _input, value) =>
+              projectToolResultFields(value, localToolFailureSchema)
+          }
+        }
+      ]
+    })
+
+    try {
+      const definition = host
+        .definitions()
+        .find((entry) => entry.name === 'reject')
+
+      if (!definition?.registeredName) {
+        throw Error('Missing failure view owner')
+      }
+
+      const reply = await host.invoke(
+        route === 'direct'
+          ? { name: definition.registeredName, input: {} }
+          : {
+              name: 'tool_library.invoke_tool',
+              input: {
+                name: definition.registeredName,
+                revision: definition.revision,
+                input: {}
+              }
+            }
+      )
+      const value = JSON.parse(reply.text)
+
+      if (route === 'registered') {
+        expect(value.execution, reply.text).toBeDefined()
+      }
+
+      const failure = route === 'direct' ? value : value.execution.value
+
+      expect(failure).toMatchObject({
+        code: 'AI_PERMISSION_DENIED',
+        toolOutcome: { status: 'failed', settlement: 'not-started' },
+        executionResult: { checks: { firstPendingId: 'known-check' } }
+      })
+      expect(failure.executionResult.checks).not.toHaveProperty(
+        'visitedResults'
+      )
+      expect(
+        JSON.parse(result.text).executionResult.checks.visitedResults
+      ).toBe(1)
+      expect(reply.text).not.toContain('TOOL_DELIVERY_INVALID')
+      expect(call).toHaveBeenCalledOnce()
+    } finally {
+      await host.dispose()
+    }
+  }
+)
+
+it.each(['present', 'absent', 'invalid'])(
+  'validates actual conditional output before its dependent consumer: %s',
+  async (mode) => {
+    const writes = vi.fn(async () => JSON.stringify({ value: 3 }))
+    const host = createLocalToolHost({
+      requestId: 'conditional-result',
+      signal: new AbortController().signal,
+      store: memory(),
+      capacity: 8,
+      receiptCapacity: 8,
+      artifactCapacity: 8,
+      limits: {
+        steps: 8,
+        bindings: 64,
+        bindingDepth: 16,
+        bytes: 24000,
+        issues: 8
+      },
+
+      createGroups: () => [
+        {
+          name: 'conditional',
+          description: 'Conditional result owner',
+          owner: {
+            definitions: [
+              {
+                name: 'read',
+                description: 'Read a conditional number',
+                revision: 1,
+                composition: 'allowed',
+                inputSchema: object({}),
+                ...toolSemantics(
+                  {
+                    anyOf: [
+                      object({ value: { type: 'number' } }),
+                      object({ empty: { const: true } })
+                    ]
+                  },
+                  'read',
+                  []
+                )
+              },
+              {
+                name: 'write',
+                description: 'Consume a number',
+                revision: 1,
+                composition: 'allowed',
+                inputSchema: object({ value: { type: 'number' } }),
+                ...toolSemantics(
+                  object({ value: { type: 'number' } }),
+                  'mutation',
+                  ['document']
+                )
+              }
+            ],
+
+            call: async (name) =>
+              name === 'write'
+                ? writes()
+                : JSON.stringify(
+                    mode === 'absent'
+                      ? { empty: true }
+                      : { value: mode === 'invalid' ? 'wrong' : 3 }
+                  )
+          }
+        }
+      ]
+    })
+
+    try {
+      const reply = await host.invoke({
+        name: 'design_operations.execute_design',
+        input: {
+          operations: [
+            { id: 'source', name: 'conditional.read', arguments: {} },
+            {
+              id: 'sink',
+              name: 'conditional.write',
+              arguments: {
+                value: { kind: 'step', step: 'source', path: '/value' }
+              }
+            }
+          ]
+        }
+      })
+
+      expect(reply.outcome.status === 'success', reply.text).toBe(
+        mode === 'present'
+      )
+      expect(writes).toHaveBeenCalledTimes(mode === 'present' ? 1 : 0)
+    } finally {
+      await host.dispose()
+    }
+  }
+)
+
+it('owns rejection artifacts without borrowing references from invalid input', async () => {
+  const release = vi.fn()
+  const execute = vi.fn(async () => JSON.stringify({ value: 'done' }))
+  const host = createLocalToolHost({
+    requestId: 'rejection-scope',
+    signal: new AbortController().signal,
+    store: memory(),
+    capacity: 8,
+    receiptCapacity: 8,
+    artifactCapacity: 8,
+    limits: {
+      steps: 8,
+      bindings: 64,
+      bindingDepth: 16,
+      bytes: 24000,
+      issues: 8
+    },
+
+    createGroups: (ownership) => [
+      {
+        name: 'guarded',
+        description: 'Admission resource owner',
+        owner: {
+          definitions: [
+            {
+              name: 'prepare',
+              description: 'Admit source and count',
+              revision: 1,
+              composition: 'allowed',
+              inputSchema: object({
+                source: toolRequestReference,
+                count: { type: 'integer', minimum: 1 }
+              }),
+              ...toolSemantics(
+                object({ value: { type: 'string' } }),
+                'prepare',
+                ['request-artifacts']
+              )
+            }
+          ],
+
+          rejectInput: () => {
+            ownership.publish('repair-source', release, undefined, 'request')
+
+            return {}
+          },
+
+          call: execute
+        }
+      }
+    ]
+  })
+
+  try {
+    const rejected = await host.invoke({
+      name: 'guarded.prepare',
+      input: { source: 'foreign-source', count: 0 }
+    })
+
+    expect(JSON.parse(rejected.text)).toMatchObject({
+      code: 'TOOL_INPUT_INVALID',
+      settlement: 'not-started'
+    })
+
+    expect(execute).not.toHaveBeenCalled()
+    const corrected = await host.invoke({
+      name: 'guarded.prepare',
+      input: { source: 'repair-source', count: 1 }
+    })
+
+    expect(corrected.outcome.status).toBe('success')
+    expect(execute).toHaveBeenCalledTimes(1)
+    expect(release).not.toHaveBeenCalled()
+  } finally {
+    await host.dispose()
+  }
+
+  expect(release).toHaveBeenCalledTimes(1)
+})
+
+it.each(
+  ['native', 'registered', 'sequence', 'staged'].flatMap((route) =>
+    [true, false].map((created) => ({ route, created }))
+  )
+)(
+  'exports only request resources owned by the current call (%j)',
+  async ({ route, created }) => {
+    const release = vi.fn()
+    const host = createLocalToolHost({
+      requestId: 'request-resource-creator',
+      signal: new AbortController().signal,
+      store: memory(),
+      capacity: 16,
+      receiptCapacity: 8,
+      artifactCapacity: 16,
+      limits: {
+        steps: 16,
+        bindings: 64,
+        bindingDepth: 16,
+        bytes: 24000,
+        issues: 8
+      },
+
+      createGroups: (ownership) => {
+        if (!created) {
+          ownership.publish('source', release, () => undefined, 'request')
+        }
+
+        return [
+          {
+            name: 'owned',
+            description: 'Request resource',
+            owner: {
+              definitions: [
+                {
+                  name: 'publish',
+                  description: 'Publish a retained source',
+                  inputSchema: object({}),
+                  ...toolSemantics(
+                    object({ handle: toolRequestReference }),
+                    'prepare',
+                    ['request-artifacts']
+                  ),
+                  revision: 1,
+                  composition: 'allowed' as const
+                },
+                {
+                  name: 'keep',
+                  description: 'Return an admitted resource',
+                  inputSchema: object({ handle: toolRequestReference }),
+                  ...toolSemantics(
+                    object({ handle: toolRequestReference }),
+                    'read',
+                    ['request-artifacts']
+                  ),
+                  revision: 1,
+                  composition: 'allowed' as const
+                }
+              ],
+
+              call: async (name, input) => {
+                if (name === 'keep') {
+                  return JSON.stringify(input)
+                }
+
+                if (created) {
+                  ownership.publish(
+                    'source',
+                    release,
+                    () => undefined,
+                    'request'
+                  )
+                }
+
+                return JSON.stringify({ handle: 'source' })
+              }
+            }
+          }
+        ]
+      }
+    })
+    const operation = { id: 'source', name: 'owned.publish', arguments: {} }
+
+    try {
+      let call: { name: string; input: unknown } = {
+        name: 'owned.publish',
+        input: {}
+      }
+
+      if (route === 'registered') {
+        call = {
+          name: 'tool_library.invoke_tool',
+          input: { name: 'owned.publish', revision: 1, input: {} }
+        }
+      } else if (route === 'sequence') {
+        call = {
+          name: 'design_operations.execute_design',
+          input: { operations: [operation] }
+        }
+      } else if (route === 'staged') {
+        call = {
+          name: 'design_operations.execute_design',
+          input: {
+            stages: [
+              {
+                id: 'source',
+                operations: [operation],
+                apply: [
+                  {
+                    id: 'keep',
+                    name: 'owned.keep',
+                    arguments: {
+                      handle: { kind: 'step', step: 'source', path: '/handle' }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+
+      const reply = await host.invoke(call)
+
+      if (created) {
+        expect(reply.outcome.status, reply.text).toBe('success')
+        expect(reply.text).toContain('"handle":"source"')
+      } else {
+        expect(reply.outcome.status, reply.text).toBe('failed')
+        expect(reply.text).toContain(
+          'Cannot export an artifact outside local ownership'
+        )
+      }
+
+      expect(release).not.toHaveBeenCalled()
+    } finally {
+      await host.dispose()
+    }
+
+    expect(release).toHaveBeenCalledOnce()
+  }
+)
+
+it.each(
+  ['native', 'registered', 'sequence', 'staged'].flatMap((route) =>
+    ['valid', 'invalid-input', 'selector-input-error', 'invalid-output'].map(
+      (condition) => ({
+        route,
+        condition
+      })
+    )
+  )
+)(
+  'enforces the selected execution contract before dependent work (%j)',
+  async ({ route, condition }) => {
+    const inputSchema = object({
+      amount: { type: 'number' },
+      limit: { type: 'number' }
+    })
+    const outputSchema = object({ amount: { type: 'number' } })
+    const calls: string[] = []
+    const selections: string[] = []
+    const host = createLocalToolHost({
+      requestId: 'execution-contract-review',
+      signal: new AbortController().signal,
+      store: memory(),
+      capacity: 16,
+      receiptCapacity: 8,
+      artifactCapacity: 16,
+      limits: {
+        steps: 16,
+        bindings: 64,
+        bindingDepth: 16,
+        bytes: 24000,
+        issues: 8
+      },
+
+      createGroups: () => [
+        {
+          name: 'owned',
+          description: 'Invocation constraints',
+          owner: {
+            definitions: ['produce', 'consume'].map((name) => ({
+              name,
+              description: name,
+              inputSchema: name === 'produce' ? inputSchema : outputSchema,
+              ...toolSemantics(outputSchema, 'mutation', []),
+              revision: 1,
+              composition: 'allowed' as const
+            })),
+
+            invocationSchemas: (name, input, stage) => {
+              if (name !== 'produce') {
+                return
+              }
+
+              selections.push(stage ?? 'owner')
+              if (condition === 'selector-input-error') {
+                throw new LocalToolInputError(
+                  'The requested input combination is not supported'
+                )
+              }
+
+              const limit = (input as { limit: number }).limit
+
+              return {
+                inputSchema: object({
+                  amount: { type: 'number', maximum: limit },
+                  limit: { type: 'number' }
+                }),
+                outputSchema: object({
+                  amount: { type: 'number', maximum: limit }
+                })
+              }
+            },
+
+            call: async (name, input) => {
+              calls.push(name)
+
+              return JSON.stringify({
+                amount:
+                  condition === 'invalid-output' && name === 'produce'
+                    ? 6
+                    : (input as { amount: number }).amount
+              })
+            }
+          }
+        }
+      ]
+    })
+    const input = { amount: condition === 'invalid-input' ? 6 : 4, limit: 5 }
+    const operations = [
+      { id: 'produce', name: 'owned.produce', arguments: input },
+      {
+        id: 'consume',
+        name: 'owned.consume',
+        arguments: {
+          amount: { kind: 'step', step: 'produce', path: '/amount' }
+        }
+      }
+    ]
+
+    try {
+      let call = { name: 'owned.produce', input: input as unknown }
+
+      if (route === 'registered') {
+        call = {
+          name: 'tool_library.invoke_tool',
+          input: { name: 'owned.produce', revision: 1, input }
+        }
+      }
+
+      if (route === 'sequence') {
+        call = {
+          name: 'design_operations.execute_design',
+          input: { operations }
+        }
+      }
+
+      if (route === 'staged') {
+        call = {
+          name: 'design_operations.execute_design',
+          input: {
+            stages: [
+              {
+                id: 'phase',
+                operations: [operations[0]],
+                apply: [operations[1]]
+              }
+            ]
+          }
+        }
+      }
+
+      const reply = await host.invoke(call)
+
+      if (condition === 'valid') {
+        expect(reply.outcome.status, reply.text).toBe('success')
+        expect(reply.text).toContain('"amount":4')
+      } else {
+        expect(reply.outcome.status, reply.text).not.toBe('success')
+        expect(calls).not.toContain('consume')
+      }
+
+      expect(calls.filter((name) => name === 'produce')).toHaveLength(
+        condition === 'invalid-input' || condition === 'selector-input-error'
+          ? 0
+          : 1
+      )
+      expect(selections.filter((stage) => stage === 'owner')).toHaveLength(1)
+      expect(selections.filter((stage) => stage === 'model')).toHaveLength(
+        condition === 'selector-input-error' ? 0 : 1
+      )
+    } finally {
+      await host.dispose()
+    }
+  }
+)
+
+it.each(
+  [
+    'native',
+    'default',
+    'selected',
+    'retained',
+    'registered',
+    'recovery'
+  ].flatMap((route) => [false, true].map((invalid) => ({ route, invalid })))
+)(
+  'pins the resolved model contract through result delivery (%j)',
+  async ({ route, invalid }) => {
+    const events: string[] = []
+    const inputSchema = object({ amount: { type: 'number' } })
+    const outputSchema = object({ raw: { type: 'number' } })
+    const publicSchema = object({ coordinate: { type: 'number' } })
+    const resultContext = createConversationResults(() => 'document').open(
+      'handoff'
+    )
+    const host = createLocalToolHost({
+      requestId: 'invocation-handoff',
+      signal: new AbortController().signal,
+      store: memory(),
+      capacity: 16,
+      receiptCapacity: 8,
+      artifactCapacity: 16,
+      limits: {
+        steps: 16,
+        bindings: 240,
+        bindingDepth: 32,
+        bytes: 24000,
+        issues: 8
+      },
+
+      resultContext: async (command) => resultContext.exchange(command),
+
+      createGroups: () => [
+        {
+          name: 'owned',
+          description: 'Invocation-specific owner',
+          owner: {
+            definitions: [
+              {
+                name: 'project',
+                description: 'Project a coordinate',
+                inputSchema,
+                ...toolSemantics(outputSchema, 'read', []),
+                partialOutputSchema: outputSchema,
+                revision: 1,
+                composition: 'allowed',
+                delivery: { path: '', outputSchema: publicSchema }
+              }
+            ],
+
+            invocationSchemas: (_name, input, stage) => {
+              if (stage !== 'model') {
+                return {
+                  inputSchema,
+                  outputSchema,
+                  partialOutputSchema: outputSchema
+                }
+              }
+
+              events.push('model')
+              if (!input || typeof input !== 'object' || !('amount' in input)) {
+                throw Error('Resolved projection input was lost')
+              }
+
+              return {
+                inputSchema,
+                outputSchema: object({ coordinate: { const: input.amount } }),
+                partialOutputSchema: object({
+                  coordinate: { const: input.amount }
+                })
+              }
+            },
+
+            call: async (_name, input) => {
+              events.push('execute')
+
+              return JSON.stringify({
+                raw: (input as { amount: number }).amount
+              })
+            },
+
+            resultOutcome: () =>
+              route === 'recovery'
+                ? { status: 'partial', settlement: 'partial' }
+                : { status: 'success', settlement: 'completed' },
+
+            projectModelResult: (_name, input, value) => {
+              events.push('project')
+              if (!input || typeof input !== 'object' || !('amount' in input)) {
+                throw Error('Resolved projection input was lost')
+              }
+
+              return {
+                coordinate: (value as { raw: number }).raw + (invalid ? 1 : 0)
+              }
+            }
+          }
+        }
+      ]
+    })
+
+    try {
+      let name = 'owned.project'
+      let input: Record<string, unknown> = { amount: 12 }
+
+      if (route === 'registered') {
+        name = 'tool_library.invoke_tool'
+        input = { name: 'owned.project', revision: 1, input }
+      } else if (route !== 'native') {
+        name = 'design_operations.execute_design'
+        input = {
+          operations: [
+            { id: 'point', name: 'owned.project', arguments: input }
+          ],
+          ...(route === 'selected'
+            ? { delivery: { fields: { point: { step: 'point', path: '' } } } }
+            : {}),
+          ...(route === 'retained'
+            ? { retain: { point: { step: 'point', path: '' } } }
+            : {})
+        }
+      }
+
+      const reply = await host.invoke({ name, input })
+
+      let expectedStatus = invalid ? 'partial' : 'success'
+
+      if (route === 'recovery') {
+        expectedStatus = 'failed'
+        expect(reply.outcome.settlement).toBe('partial')
+        expect(JSON.parse(reply.text).execution.recovery[0]).toMatchObject({
+          name: 'owned.project',
+          status: 'partial',
+          settlement: 'partial'
+        })
+      }
+
+      expect(reply.outcome.status, reply.text).toBe(expectedStatus)
+      if (invalid) {
+        expect(reply.text).toContain(
+          route === 'selected' ? 'RESULT_DELIVERY' : 'TOOL_DELIVERY_INVALID'
+        )
+        expect(reply.text).not.toContain('"coordinate":13')
+        expect(resultContext.names()).toEqual([])
+      } else {
+        expect(reply.text).toContain('"coordinate":12')
+        expect(reply.text).not.toContain('"raw"')
+      }
+
+      expect(events.filter((event) => event === 'execute')).toHaveLength(1)
+      expect(events.indexOf('model')).toBeLessThan(events.indexOf('execute'))
+      expect(events.filter((event) => event === 'model')).toHaveLength(1)
+      expect(events.filter((event) => event === 'project')).toHaveLength(1)
+    } finally {
+      await host.dispose()
+    }
+  }
+)
 
 const recipe = {
   format: 1,
@@ -44,7 +798,7 @@ const recipe = {
     {
       id: 'prepare',
       tool: 'design_preparation.prepare_design',
-      revision: 4,
+      revision: 5,
       input: {
         kind: 'object',
         fields: {
@@ -144,9 +898,15 @@ const memory = () => {
   }
 }
 
-const fixture = (store = memory(), requestId = 'first', workflow = false) => {
+const fixture = (
+  store = memory(),
+  requestId = 'first',
+  workflow = false,
+  resultContext?: Parameters<typeof createLocalToolHost>[0]['resultContext']
+) => {
   let session: ReturnType<typeof createDesignPreparationSession>
   const host = createLocalToolHost({
+    resultContext,
     requestId,
     store,
     signal: new AbortController().signal,
@@ -231,58 +991,74 @@ const fixture = (store = memory(), requestId = 'first', workflow = false) => {
   }
 }
 
-it.each(['compact', 'full'])(
-  'exports a %s compound artifact to a later native consumer after call cleanup',
-  async (response) => {
-    const { host, invoke, resolve, outcome } = fixture(
-      memory(),
-      'compound',
-      true
+it('does not project empty execution observations as completed work after recorded source rejection', async () => {
+  const { host, invoke, outcome } = fixture(
+    memory(),
+    'recorded-input-rejection',
+    true,
+    async () => ({})
+  )
+
+  try {
+    const result = await invoke(
+      'design_operations.execute_design',
+      recordedInputRejection.sequence
     )
 
-    try {
-      const produced = await invoke(
-        'design_workflow.prepare_and_apply_design',
-        {
-          draft: {
-            type: 'group',
-            name: 'Part',
-            children: [
-              { type: 'rect', key: 'face', name: 'Face', width: 17, height: 20 }
-            ]
-          },
-          response,
-          inspection: 'defer'
-        }
-      )
-
-      expect(outcome()).toMatchObject({
-        status: 'success',
-        settlement: 'completed'
-      })
-      expect(produced).not.toHaveProperty('measurementIssues')
-      expect(produced.artifactId).toEqual(expect.any(String))
-      const selected = await invoke(
-        'design_preparation.retain_design_targets',
-        {
-          targets: [{ artifactId: produced.artifactId, keys: ['face'] }]
-        }
-      )
-
-      expect(selected).toMatchObject({
-        available: true,
-        targets: [{ artifactId: produced.artifactId, count: 1 }]
-      })
-      expect(() => resolve(produced.artifactId)).not.toThrow()
-      await invoke('design_preparation.release_design_artifacts', {
-        artifactIds: [produced.artifactId]
-      })
-      expect(() => resolve(produced.artifactId)).toThrow()
-    } finally {
-      await host.dispose()
-    }
+    expect(result, JSON.stringify(result)).toMatchObject({
+      code: 'TOOL_INPUT_INVALID',
+      settlement: 'not-started'
+    })
+    expect(JSON.stringify(result)).not.toContain('TOOL_DELIVERY_INVALID')
+    expect(result.executionResult).toBeUndefined()
+    expect(outcome()).toMatchObject({
+      status: 'failed',
+      settlement: 'not-started'
+    })
+  } finally {
+    await host.dispose()
   }
-)
+})
+
+it('exports a compound artifact to a later native consumer after call cleanup', async () => {
+  const { host, invoke, resolve, outcome } = fixture(memory(), 'compound', true)
+
+  try {
+    const produced = await invoke('design_workflow.prepare_and_apply_design', {
+      draft: {
+        type: 'group',
+        name: 'Part',
+        children: [
+          { type: 'rect', key: 'face', name: 'Face', width: 17, height: 20 }
+        ]
+      },
+
+      inspection: 'defer'
+    })
+
+    expect(outcome()).toMatchObject({
+      status: 'success',
+      settlement: 'completed'
+    })
+    expect(produced).not.toHaveProperty('measurementIssues')
+    expect(produced.artifactId).toEqual(expect.any(String))
+    const selected = await invoke('design_preparation.retain_design_targets', {
+      targets: [{ artifactId: produced.artifactId, keys: ['face'] }]
+    })
+
+    expect(selected).toMatchObject({
+      available: true,
+      targets: [{ artifactId: produced.artifactId, count: 1 }]
+    })
+    expect(() => resolve(produced.artifactId)).not.toThrow()
+    await invoke('design_preparation.release_design_artifacts', {
+      artifactIds: [produced.artifactId]
+    })
+    expect(() => resolve(produced.artifactId)).toThrow()
+  } finally {
+    await host.dispose()
+  }
+})
 
 it.each([false, true])(
   'preserves typed ordered receipts after cleanup (stopped: %s)',
@@ -583,12 +1359,13 @@ it('keeps native artifacts usable by a composition and excludes resource control
       submissionId: 'release',
       proposal: invalid
     })
-  ).toMatchObject({ ok: false })
+  ).toMatchObject({ code: 'TOOL_INPUT_INVALID', settlement: 'not-started' })
   await host.dispose()
 })
 
 it('returns cleanup failure with execution evidence and retries actual cleanup at shutdown', async () => {
   let releaseCalls = 0
+  const contractSelections: string[] = []
   const host = createLocalToolHost({
     requestId: 'cleanup',
     store: memory(),
@@ -603,6 +1380,12 @@ it('returns cleanup failure with execution evidence and retries actual cleanup a
         name: 'fixture',
         description: 'Cleanup owner',
         owner: {
+          invocationSchemas: (_name, _input, stage) => {
+            contractSelections.push(stage ?? 'owner')
+
+            return undefined
+          },
+
           definitions: [
             {
               name: 'execute',
@@ -645,6 +1428,7 @@ it('returns cleanup failure with execution evidence and retries actual cleanup a
     executionResult: { status: 'complete' }
   })
   expect(result.executionResult).not.toHaveProperty('work')
+  expect(contractSelections).toEqual(['owner', 'model'])
   await host.dispose()
   expect(releaseCalls).toBe(2)
 })
@@ -1353,6 +2137,7 @@ it.each(['direct', 'registered'])(
   async (route) => {
     let writes = 0
     const observed: unknown[] = []
+    const ownerObserved: unknown[] = []
     const host = createLocalToolHost({
       requestId: 'nested-delivery',
       signal: new AbortController().signal,
@@ -1405,7 +2190,10 @@ it.each(['direct', 'registered'])(
               result: {
                 status: 'complete',
                 compositionId: 'root',
+                appliedElementCount: 1,
                 appliedElementIds: ['root'],
+                keyToId: { root: 'root' },
+                roleToElementIds: { root: ['root'] },
                 timing: { ownerMs: 17 }
               }
             }))
@@ -1423,7 +2211,10 @@ it.each(['direct', 'registered'])(
           {
             name: 'design',
             description: 'Workflow',
-            owner: createLocalDesignWorkflow(designs, operations)
+            owner: createLocalDesignWorkflow(designs, operations, {
+              trace: (stage, evidence) =>
+                ownerObserved.push({ stage, ...evidence })
+            })
           }
         ]
       }
@@ -1473,7 +2264,6 @@ it.each(['direct', 'registered'])(
             }
           }
         ],
-        response: 'full',
         inspection: 'defer'
       }
       const reply = JSON.parse(
@@ -1500,13 +2290,17 @@ it.each(['direct', 'registered'])(
       for (const part of result.parts) {
         expect(part.actionResults[0].result).toMatchObject({
           compositionId: 'root',
-          appliedElementIds: ['root']
+          appliedElementCount: 1
         })
         expect(part.actionResults[0].result).not.toHaveProperty('timing')
         expect(part).not.toHaveProperty('context')
       }
 
-      expect(JSON.stringify(observed)).toContain('ownerMs')
+      expect(observed.length).toBeGreaterThan(0)
+      expect(JSON.stringify(ownerObserved).includes('ownerMs')).toBe(true)
+      expect(JSON.stringify(ownerObserved).includes('appliedElementIds')).toBe(
+        true
+      )
       expect(writes).toBe(2)
     } finally {
       await host.dispose()
@@ -1636,9 +2430,8 @@ it.each(['direct', 'registered'])(
           : (raw.execution.value ?? raw.execution.recovery?.[0]?.value)
 
       expect(transport.outcome.status, JSON.stringify(raw)).toBe('partial')
-      expect(result.recovery, JSON.stringify(raw)).toContain(
-        'Do not automatically replay mutations'
-      )
+      expect(result, JSON.stringify(raw)).not.toHaveProperty('recovery')
+
       expect(result.executionResult, JSON.stringify(raw)).toHaveProperty(
         'actionResults'
       )
@@ -1990,7 +2783,7 @@ it.each(['native', 'registered', 'batch'])(
       if (route === 'registered') {
         const discovery = host
           .definitions()
-          .find((entry) => entry.name === 'describe_design_apis')
+          .find((entry) => entry.name === 'read_design_contracts')
 
         if (!discovery?.registeredName) {
           throw new Error('Missing discovery route')
@@ -1998,10 +2791,10 @@ it.each(['native', 'registered', 'batch'])(
 
         const guide = JSON.parse(
           await readCompleteInformation(
-            async (args) =>
+            async (args, requestedTool) =>
               (
                 await host.invoke({
-                  name: discovery.registeredName,
+                  name: discovery.namespace + '.' + requestedTool,
                   input: args
                 })
               ).text,
@@ -2009,7 +2802,8 @@ it.each(['native', 'registered', 'batch'])(
               names: [definition.registeredName],
               view: 'usage',
               includeResultSchema: true
-            }
+            },
+            'read_design_contracts'
           )
         )
         const selected = [...(guide.apis ?? []), ...(guide.tools ?? [])][0]
@@ -2098,7 +2892,9 @@ it('rejects a conflicting recipe revision without changing the first revision re
       })
 
       expect(JSON.parse(submitted.text), submitted.text).toMatchObject(
-        revision === 1 ? { ok: true } : { ok: false, code: 'registration' }
+        revision === 1
+          ? { ok: true }
+          : { code: 'TOOL_INPUT_INVALID', settlement: 'not-started' }
       )
     }
 
@@ -2268,9 +3064,13 @@ it.each(['native', 'registered'])(
   }
 )
 
-it.each(['repairable', 'decision-required'] as const)(
-  'runs one window section and reflection handoff through the native host: %s',
-  async (mode) => {
+it.each(
+  (['repairable', 'decision-required'] as const).flatMap((mode) =>
+    [false, true].map((defaultDelivery) => ({ mode, defaultDelivery }))
+  )
+)(
+  'runs one window section and reflection handoff through the native host: %j',
+  async ({ mode, defaultDelivery }) => {
     const width = { type: 'number' }
     const panes = { type: 'array', items: { type: 'number' } }
     const status = {
@@ -2330,6 +3130,16 @@ it.each(['repairable', 'decision-required'] as const)(
           description: 'Window section test owners',
           owner: {
             definitions,
+
+            projectModelResult(name, input, value) {
+              if (name === 'check') {
+                expect(input).toMatchObject({
+                  levels: (value as { levels: number[] }).levels
+                })
+              }
+
+              return value
+            },
 
             async call(name, input) {
               calls.push(name)
@@ -2397,7 +3207,9 @@ it.each(['repairable', 'decision-required'] as const)(
         next: from('repair', '/levels'),
         maxIterations: 2
       },
-      delivery: { fields: { levels: { path: '/levels' } } }
+      ...(defaultDelivery
+        ? {}
+        : { delivery: { fields: { levels: { path: '/levels' } } } })
     }
 
     try {
@@ -2450,13 +3262,18 @@ it.each(['repairable', 'decision-required'] as const)(
       }
 
       if (mode === 'repairable') {
-        expect(result.toolOutcome.status, JSON.stringify(result)).toBe(
-          'success'
-        )
-        expect(result.fields.levels).toEqual([0.5, 1])
+        expect(
+          result.toolOutcome?.status ?? result.execution?.status,
+          JSON.stringify(result)
+        ).toBe('success')
+        expect(
+          defaultDelivery ? result.execution.value.levels : result.fields.levels
+        ).toEqual([0.5, 1])
         expect(calls).toEqual(['layout', 'reflect', 'check', 'clamp', 'check'])
       } else {
-        expect(result.toolOutcome.status).not.toBe('success')
+        expect(result.toolOutcome?.status ?? result.execution?.status).not.toBe(
+          'success'
+        )
         expect(calls).toEqual(['layout', 'reflect', 'check'])
       }
 
@@ -2495,9 +3312,9 @@ it.each(['status', 'selected'] as const)(
       const result = JSON.parse(reply.text)
 
       expect(result.toolOutcome.status).not.toBe('success')
-      expect(evaluationToolStop(reply), JSON.stringify(result)).toBeUndefined()
+
       expect(result.failure.execution.recovery[0].value).toMatchObject({
-        recovery: 'correct_input',
+        code: 'TOOL_INPUT_INVALID',
         settlement: 'not-started',
         draftId: expect.any(String),
         geometryIssue: { code: 'NONPLANAR_FACE', key: 'spireY' },
@@ -2622,10 +3439,10 @@ it.each(['status', 'selected'] as const)(
       const value = JSON.parse(reply.text)
 
       expect(value.failure, JSON.stringify(value)).toMatchObject({
-        recovery: 'correct_input',
+        code: 'TOOL_INPUT_INVALID',
         settlement: 'not-started'
       })
-      expect(evaluationToolStop(reply)).toBeUndefined()
+
       expect(JSON.stringify(value)).not.toContain('TOOL_DELIVERY_INVALID')
       expect(calls).toBe(1)
     } finally {
@@ -2734,13 +3551,12 @@ it.each(['a', 'b', 'c', 'select_design_references'])(
       } else {
         expect(calls).toBe(0)
         expect(JSON.parse(reply.text), reply.text).toMatchObject({
-          recovery: 'correct_input',
+          code: 'TOOL_INPUT_INVALID',
           settlement: 'not-started'
         })
         expect(reply.text).toContain('native')
       }
 
-      expect(evaluationToolStop(reply)).toBeUndefined()
       if (!actual) {
         const correct = await host.invoke({
           name: namespace + '.' + name,
@@ -2757,9 +3573,181 @@ it.each(['a', 'b', 'c', 'select_design_references'])(
         input: { operations: [{ name: 'missing.operation', arguments: {} }] }
       })
 
-      expect(evaluationToolStop(absent)).toBeDefined()
+      expect(JSON.parse(absent.text)).toMatchObject({
+        code: 'TOOL_INPUT_INVALID',
+        settlement: 'not-started'
+      })
     } finally {
       await host.dispose()
     }
   }
 )
+
+it('keeps a rejected artifact selector correctable before native resource admission', async () => {
+  const f = fixture()
+
+  try {
+    const value = await f.invoke('design_preparation.retain_design_targets', {
+      targets: [{ artifactId: 'not-owned' }]
+    })
+
+    expect(value).toMatchObject({
+      code: 'TOOL_INPUT_INVALID',
+      settlement: 'not-started'
+    })
+  } finally {
+    await f.host.dispose()
+  }
+})
+
+it('keeps incomplete Host contract admission distinct from authored input rejection', async () => {
+  const create = libraryOwner.createLocalToolLibrary
+  const replacement = vi
+    .spyOn(libraryOwner, 'createLocalToolLibrary')
+    .mockImplementation((options) => {
+      const library = create(options)
+
+      return {
+        ...library,
+
+        admitInline: () => ({
+          ok: false as const,
+          issues: [],
+          omittedIssues: 1
+        })
+      }
+    })
+  const f = fixture()
+
+  try {
+    const owner = f.host.groups.find((group) =>
+      group.owner.definitions.some(
+        (definition) => definition.name === 'execute_design'
+      )
+    )?.owner
+
+    if (!owner) {
+      throw new Error('Missing registered Host executor')
+    }
+
+    await expect(
+      owner.call(
+        'execute_design',
+        {
+          operations: [
+            {
+              name: 'design_preparation.prepare_design',
+              arguments: {
+                draft: {
+                  type: 'frame',
+                  name: 'Part',
+                  width: 100,
+                  height: 100,
+                  children: [
+                    {
+                      type: 'rect',
+                      key: 'surface',
+                      name: 'Surface',
+                      width: 10,
+                      height: 10
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        new AbortController().signal
+      )
+    ).rejects.toMatchObject({ stage: 'registration' })
+    const reply = await f.host.invoke({
+      name: 'design_operations.execute_design',
+      input: {
+        operations: [
+          {
+            name: 'design_preparation.prepare_design',
+            arguments: {
+              draft: {
+                type: 'frame',
+                name: 'Part',
+                width: 100,
+                height: 100,
+                children: [
+                  {
+                    type: 'rect',
+                    key: 'surface',
+                    name: 'Surface',
+                    width: 10,
+                    height: 10
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    })
+
+    expect(reply.success).toBe(false)
+  } finally {
+    replacement.mockRestore()
+    await f.host.dispose()
+  }
+})
+
+it('preserves authored named-reference rejection before Host planning and allows correction', async () => {
+  const f = fixture()
+
+  try {
+    const rejected = await f.host.invoke({
+      name: 'design_operations.execute_design',
+      input: {
+        operations: [
+          {
+            name: 'design_preparation.prepare_design',
+            arguments: {
+              draft: { kind: 'named', name: 'draft', path: 'not-a-pointer' }
+            }
+          }
+        ]
+      }
+    })
+
+    expect(JSON.parse(rejected.text)).toMatchObject({
+      code: 'TOOL_INPUT_INVALID',
+      settlement: 'not-started'
+    })
+
+    const corrected = await f.host.invoke({
+      name: 'design_operations.execute_design',
+      input: {
+        operations: [
+          {
+            name: 'design_preparation.prepare_design',
+            arguments: {
+              draft: {
+                type: 'frame',
+                name: 'Part',
+                width: 100,
+                height: 100,
+                children: [
+                  {
+                    type: 'rect',
+                    key: 'surface',
+                    name: 'Surface',
+                    width: 10,
+                    height: 10
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    })
+
+    expect(corrected.success, corrected.text).toBe(true)
+  } finally {
+    await f.host.dispose()
+  }
+})

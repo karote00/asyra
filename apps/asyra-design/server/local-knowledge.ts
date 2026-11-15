@@ -1,3 +1,4 @@
+import { AiToolFailureCodes } from '../src/constants/ai-design'
 import {
   contentPageSchema,
   deliverInformation,
@@ -244,7 +245,11 @@ const loadFiles = async (): Promise<readonly KnowledgeFile[]> => {
         }
 
         if (suffix === '.materials.method.parameters') {
-          revision = 3
+          revision = 4
+        }
+
+        if (suffix === '.contracts.operations') {
+          revision = 2
         }
 
         if (['.spatial', '.repetition', '.materials'].includes(suffix)) {
@@ -299,28 +304,57 @@ const contextsSchema = {
   items: { enum: ['docs-page', 'landing-page', 'architectural-illustration'] }
 }
 
-const inputSchema = (read: boolean) => ({
-  type: 'object',
-  properties: {
+const inputSchema = (read: boolean) => {
+  const common = {
     ids: { ...idsSchema, minItems: 1 },
-    ...(read
-      ? {
-          fromResult: { type: 'string', minLength: 1, maxLength: 128 },
-          rehydrate: { type: 'boolean' },
-          reuseFrom: {
-            type: 'array',
-            maxItems: 32,
-            uniqueItems: true,
-            items: { type: 'string', minLength: 1, maxLength: 128 }
+    contexts: contextsSchema
+  }
+  const reuseFrom = {
+    type: 'array',
+    maxItems: 32,
+    uniqueItems: true,
+    items: {
+      type: 'string',
+      minLength: 1,
+      maxLength: 128,
+      'x-runtime-value': 'request'
+    }
+  }
+
+  const branch = (
+    properties: Record<string, unknown>,
+    required: string[] = ['ids']
+  ) => ({ type: 'object', additionalProperties: false, properties, required })
+
+  if (!read) {
+    return branch(common, [])
+  }
+
+  return {
+    anyOf: [
+      branch({ ...common, rehydrate: { type: 'boolean' }, reuseFrom }),
+      branch({
+        ...common,
+        contentPage: contentPageSchema,
+        rehydrate: { const: false },
+        reuseFrom
+      }),
+      branch(
+        {
+          ...common,
+          fromResult: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 128,
+            'x-runtime-value': 'request'
           },
           contentPage: contentPageSchema
-        }
-      : {}),
-    contexts: contextsSchema
-  },
-  required: read ? ['ids'] : [],
-  additionalProperties: false
-})
+        },
+        ['ids', 'fromResult']
+      )
+    ]
+  }
+}
 
 /** Only same-reply, unambiguous, exact sources can replace repeated metadata. */
 export const projectKnowledgeSources = (result: AiKnowledgeResult) => {
@@ -374,14 +408,14 @@ export const createLocalKnowledgeTools = (
 
   const initialize = () => {
     if (disposed) {
-      throw new LocalToolInputError('Knowledge session is closed')
+      throw new Error('Knowledge session is closed')
     }
 
     if (!pending) {
       pending = load()
         .then((files) => {
           if (disposed) {
-            throw new LocalToolInputError('Knowledge session is closed')
+            throw new Error('Knowledge session is closed')
           }
 
           const candidate = createDesignKnowledge(taskId, true)
@@ -424,7 +458,7 @@ export const createLocalKnowledgeTools = (
         []
       ),
       revision: 4,
-      composition: 'control-plane',
+      composition: 'request',
       executionAccess: LocalToolAccess.INDEPENDENT
     },
     {
@@ -442,9 +476,36 @@ export const createLocalKnowledgeTools = (
             toolResultObject({
               trust: { const: 'untrusted-advice' },
               generation: { type: 'integer' },
-              contextKey: { type: 'string' },
+              contextKey: { type: 'string', 'x-runtime-value': 'request' },
               alreadyDelivered: { type: 'boolean' },
-              documents: { type: 'array', items: { type: 'object' } },
+              documents: {
+                type: 'array',
+                items: {
+                  oneOf: [
+                    toolResultObject(
+                      {
+                        target: { type: 'string' },
+                        source: { type: 'object' },
+                        replacedSource: { type: 'object' },
+                        text: { type: 'string' }
+                      },
+                      ['target', 'source', 'text']
+                    ),
+                    toolResultObject(
+                      {
+                        target: { type: 'string' },
+                        source: { type: 'object' },
+                        replacedSource: { type: 'object' },
+                        retainedFrom: {
+                          type: 'string',
+                          'x-runtime-value': 'request'
+                        }
+                      },
+                      ['target', 'source', 'retainedFrom']
+                    )
+                  ]
+                }
+              },
               sources: { type: 'array', items: { type: 'object' } }
             }),
             informationDeliverySchema
@@ -453,8 +514,8 @@ export const createLocalKnowledgeTools = (
         'read',
         []
       ),
-      revision: 5,
-      composition: 'control-plane',
+      revision: 7,
+      composition: 'request',
       executionAccess: LocalToolAccess.INDEPENDENT
     }
   ]
@@ -471,7 +532,7 @@ export const createLocalKnowledgeTools = (
       const definition = definitions.find((item) => item.name === name)
 
       if (!definition) {
-        throw new LocalToolInputError('Unknown knowledge operation')
+        throw new Error('Unknown knowledge operation')
       }
 
       const issue = operationInputIssue(args, definition.inputSchema)
@@ -516,13 +577,17 @@ export const createLocalKnowledgeTools = (
           taskId
         )
       } catch (error) {
+        if (error instanceof AiKnowledgeError && error.stage === 'input') {
+          throw new LocalToolInputError(error.message)
+        }
+
         if (
           error instanceof AiKnowledgeError &&
           error.code === 'KNOWLEDGE_REUSE_UNAVAILABLE'
         ) {
           throw new LocalToolInputError(
             'Retained advice or selected targets are unavailable in this session. Repeat only this read as `read_knowledge({ ids, contexts })` without fromResult/reuseFrom; use rehydrate: true after context loss. Never replay completed writes or captures.',
-            error.code
+            AiToolFailureCodes.INPUT_INVALID
           )
         }
 
@@ -532,7 +597,7 @@ export const createLocalKnowledgeTools = (
 
     invalidateContext() {
       if (disposed) {
-        throw new LocalToolInputError('Knowledge session is closed')
+        throw new Error('Knowledge session is closed')
       }
 
       owner?.session.invalidateContext()

@@ -6,7 +6,11 @@ This specification is owned by `@asyra/ai-agent-runtime` and applies equally to
 primitive and composed tools. The remaining implementation is tracked by the
 [Reusable Tool Composition plan](../../docs/ai/framework/plans/reusable-tool-composition-plan.md).
 Exported types and formal tests are the authority for the implemented foundation.
-The model-acquisition section applies to the current host integration; Design exposes the canonical proposal through submit_tool and exact dependency contracts through describe_design_apis.
+The model-acquisition section applies to the host integration. Runtime owns generic
+registered-tool contracts. Design exposes purpose discovery through
+`search_design_tools`, exact contract acquisition through `read_design_contracts`,
+and reusable tool proposals through `submit_tool`; these App routes do not define
+Runtime API names.
 
 ## One canonical contract
 
@@ -466,3 +470,13 @@ validation and runtime-reference metadata (including nested local references),
 and rejects unknown steps, unavailable paths and non-step leaves. This lets a
 host export selected earlier outputs before intermediate leases close. It does
 not change saved-recipe contracts or permit literal captured request handles.
+
+
+### Reference-preserving adapter conversion
+
+`normalizeAiToolSchemaReferences` detaches a JSON schema and relocates reachable
+local reference targets into a stable root definitions graph before a consumer
+moves structural branches. Recursive references remain references; literal example
+or constant data is not rewritten. The adapter must preserve that root scope when
+projecting descendants. This conversion does not replace input/output validation,
+weaken constraints or make producer and consumer shapes identical.

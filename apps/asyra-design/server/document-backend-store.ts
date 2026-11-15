@@ -39,29 +39,6 @@ const createInitialRecord = (
   batches: {}
 })
 
-const formalInitialDocumentJson = JSON.stringify(createFormalInitialDocument())
-
-const inferLegacyDocumentGeneration = (
-  record: Record<string, unknown>
-): number => {
-  if (
-    record.durableSequence === 0 &&
-    isRecord(record.document) &&
-    JSON.stringify(record.document) === formalInitialDocumentJson &&
-    isRecord(record.publicationSequences) &&
-    Object.keys(record.publicationSequences).length === 0 &&
-    isRecord(record.batches) &&
-    Object.keys(record.batches).length === 0
-  ) {
-    // Before document generations existed, the backend wrote an explicit
-    // sequence-zero file only for Reset. A never-persisted document has no
-    // file and remains generation zero.
-    return 1
-  }
-
-  return 0
-}
-
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
@@ -76,9 +53,8 @@ const parseStoredRecord = (
     !isRecord(input.record) ||
     !Number.isSafeInteger(input.record.durableSequence) ||
     Number(input.record.durableSequence) < 0 ||
-    (Object.prototype.hasOwnProperty.call(input.record, 'documentGeneration') &&
-      (!Number.isSafeInteger(input.record.documentGeneration) ||
-        Number(input.record.documentGeneration) < 0)) ||
+    !Number.isSafeInteger(input.record.documentGeneration) ||
+    Number(input.record.documentGeneration) < 0 ||
     !isRecord(input.record.document) ||
     !isRecord(input.record.publicationSequences) ||
     !isRecord(input.record.batches)
@@ -93,9 +69,7 @@ const parseStoredRecord = (
 
   return {
     ...record,
-    document: migrateTextFills(record.document) as unknown as AppDocumentData,
-    documentGeneration:
-      record.documentGeneration ?? inferLegacyDocumentGeneration(input.record)
+    document: migrateTextFills(record.document) as unknown as AppDocumentData
   }
 }
 
@@ -200,7 +174,11 @@ export const createFileDocumentMaterializationStore = (
 
     resetCheckpoint: async (documentId) => {
       return store.transact(documentId, async (current, commit) => {
-        const documentGeneration = (current.documentGeneration ?? 0) + 1
+        const documentGeneration = current.documentGeneration + 1
+
+        if (!Number.isSafeInteger(documentGeneration)) {
+          throw new Error('Document generation is exhausted')
+        }
 
         commit(createInitialRecord(documentGeneration))
 

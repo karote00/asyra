@@ -13,7 +13,8 @@ import { AiActionNames } from '../constants'
 export const activityToolLabels: Readonly<Record<string, string>> =
   Object.freeze({
     vtracer: 'Converting artwork to vectors',
-    [AiDesignToolIds.DESCRIBE_DESIGN_APIS]: 'Finding available operations',
+    [AiDesignToolIds.SEARCH_DESIGN_TOOLS]: 'Finding available operations',
+    [AiDesignToolIds.READ_DESIGN_CONTRACTS]: 'Reading operation contracts',
     [AiDesignToolIds.READ_DESIGN_CHECKS]: 'Reading unresolved checks',
     [AiDesignToolIds.CHECK_DRAWING_IMAGE]: 'Comparing image regions',
     [AiDesignToolIds.PREPARE_AND_APPLY_DESIGN]: 'Running the planned task',

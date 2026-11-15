@@ -1,3 +1,4 @@
+import { contractReadFixture } from './contract-read-fixture'
 import { expect, it, vi } from 'vitest'
 import { writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -84,10 +85,10 @@ it('compares complete model result contracts against the same owner declarations
         let pages = 0
         let input = 0
         const text = await readCompleteInformation(
-          async (args) => {
+          async (args, requestedTool) => {
             input += Buffer.byteLength(JSON.stringify(args))
             const reply = await operations.call(
-              'describe_design_apis',
+              requestedTool,
               args,
               new AbortController().signal
             )
@@ -97,7 +98,11 @@ it('compares complete model result contracts against the same owner declarations
 
             return reply
           },
-          { ...entry.query, includeResultSchema: true }
+          contractReadFixture(entry.query.names, {
+            ...entry.query,
+            includeResultSchema: true
+          }),
+          'read_design_contracts'
         )
 
         acquisition.push({ body: Buffer.byteLength(text), wire, pages, input })

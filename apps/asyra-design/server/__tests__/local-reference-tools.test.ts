@@ -1,11 +1,7 @@
 import { expect, it, vi } from 'vitest'
-import { evaluationToolStop } from '../evaluation-control'
-import sharp from 'sharp'
-import { createLocalReferenceTools as createOwner } from '../local-reference-tools'
-import { withToolContractAssertions } from './tool-contract-assertions'
 
-const createLocalReferenceTools = (...args: Parameters<typeof createOwner>) =>
-  withToolContractAssertions(createOwner(...args))
+import sharp from 'sharp'
+import { createLocalReferenceTools } from '../local-reference-tools'
 
 import { createLocalImageTools } from '../local-image-tools'
 import { localToolContent } from '../local-operation-tools'
@@ -174,8 +170,7 @@ it('keeps source failure recoverable and permits a different public source in th
 
   expect(failed.references[0]).toMatchObject({
     available: false,
-    recoverable: true,
-    code: 'REFERENCE_DOWNLOAD_FAILED'
+    sourceCode: 'REFERENCE_DOWNLOAD_FAILED'
   })
   expect(failed.references[0].nextStep).toContain('different source')
   expect(failed.references[0].message).toContain('HTTP 404')
@@ -352,8 +347,7 @@ it('rejects corrupt raster data without registering a reference', async () => {
 
   expect(receipt.references[0]).toMatchObject({
     available: false,
-    recoverable: true,
-    code: 'REFERENCE_DECODE_FAILED'
+    sourceCode: 'REFERENCE_DECODE_FAILED'
   })
   expect(add).not.toHaveBeenCalled()
 })
@@ -519,18 +513,15 @@ it('acquires candidates concurrently once per URL and preserves ordered partial 
   expect(receipt.references[0].source.url).toBe(references[0].sourceUrl)
   expect(receipt.references[2].source.url).toBe(references[2].sourceUrl)
   expect(receipt.references[1]).toMatchObject({
-    recoverable: true,
-    code: 'REFERENCE_DOWNLOAD_FAILED',
+    sourceCode: 'REFERENCE_DOWNLOAD_FAILED',
     settlement: 'not-started',
-    recovery: { kind: 'select_reference' }
+    code: 'SOURCE_UNAVAILABLE'
   })
-  expect(
-    evaluationToolStop({ ...receipt, toolOutcome: localToolOutcome(receipt) })
-  ).toBeUndefined()
+
   expect(localToolOutcome(receipt)).toMatchObject({
     status: 'partial',
     issues: expect.arrayContaining([
-      expect.objectContaining({ code: 'REFERENCE_DOWNLOAD_FAILED' })
+      expect.objectContaining({ code: 'SOURCE_UNAVAILABLE' })
     ])
   })
   expect(add).toHaveBeenCalledOnce()
@@ -631,12 +622,12 @@ it('admits batch reference input at the shared native boundary and delivers sour
   expect(download).toHaveBeenCalledOnce()
   expect(JSON.parse(result.text)).toMatchObject({
     available: false,
-    recoverable: true
+    settlement: 'not-started'
   })
   expect(result.outcome).toMatchObject({
     status: 'failed',
     issues: expect.arrayContaining([
-      expect.objectContaining({ code: 'REFERENCE_DOWNLOAD_FAILED' })
+      expect.objectContaining({ code: 'SOURCE_UNAVAILABLE' })
     ])
   })
   const invalid = await invokeLocalTool(
@@ -646,7 +637,7 @@ it('admits batch reference input at the shared native boundary and delivers sour
     signal
   )
 
-  expect(JSON.parse(invalid.text).code).toBe('PREPARATION_REJECTED')
+  expect(JSON.parse(invalid.text).code).toBe('TOOL_INPUT_INVALID')
   expect(download).toHaveBeenCalledOnce()
 })
 
@@ -881,7 +872,6 @@ it('preserves page HTTP rejection and format diagnostics instead of a generic do
 
   expect(rejected.references[0]).toMatchObject({
     available: false,
-    recoverable: true,
     failure: {
       stage: 'response',
       reason: 'http',
@@ -967,9 +957,6 @@ it('keeps attachment admission failures blocking instead of source-local recover
 
   expect(receipt.settlement).toBe('unknown')
   expect(receipt.recovery).toBeUndefined()
-  expect(
-    evaluationToolStop({ ...receipt, toolOutcome: localToolOutcome(receipt) })
-  ).toMatchObject({ kind: 'tool-failure' })
 })
 
 it('rejects the retired refresh control before acquiring a source', async () => {
@@ -984,7 +971,7 @@ it('rejects the retired refresh control before acquiring a source', async () => 
 
   expect(JSON.parse(result)).toMatchObject({
     available: false,
-    code: 'REFERENCE_ARGUMENTS_INVALID'
+    sourceCode: 'REFERENCE_ARGUMENTS_INVALID'
   })
   expect(download).not.toHaveBeenCalled()
   expect(add).not.toHaveBeenCalled()

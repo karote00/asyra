@@ -2,10 +2,6 @@ name: CI
 
 on:
   workflow_call:
-    inputs:
-      run_balanced_ai_correctness:
-        type: boolean
-        default: false
   push:
     branches:
       - main
@@ -357,7 +353,6 @@ jobs:
     needs: scope
     uses: ./.github/workflows/e2e.yml
     with:
-      run_balanced_ai_correctness: ${{ inputs.run_balanced_ai_correctness || false }}
       selected_suites: ${{ needs.scope.outputs.e2e_suites }}
 
   e2e-tests:

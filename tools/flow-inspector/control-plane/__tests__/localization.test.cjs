@@ -721,3 +721,28 @@ test('corrected invocation retires discovery warning through persisted intended 
   assert.equal(reader.list().currentCases[0].status, 'failed')
   assert.equal(reader.get(old.id).issues[0], 'No Playwright cases recorded')
 })
+
+for (const field of ['numFailedTests', 'numPendingTests', 'numTodoTests']) {
+  test('retains contradictory ' + field + ' as an execution issue', () => {
+    const input = {
+      success: true,
+      [field]: 1,
+      testResults: [
+        {
+          name: path.join(root, contract.testFile),
+          status: 'passed',
+          assertionResults: [
+            {
+              fullName: contract.cases[0].testName,
+              status: 'passed',
+              failureMessages: []
+            }
+          ]
+        }
+      ]
+    }
+    const observed = localizeReport(root, context(), input)
+
+    assert.match(observed.issues.join('\n'), /summary|count/i)
+  })
+}

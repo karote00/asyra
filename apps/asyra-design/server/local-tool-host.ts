@@ -1,3 +1,4 @@
+import { AiToolFailureCodes } from '../src/constants/ai-design'
 import { requireSupportedToolSchemas } from '../src/ai/tool-schema'
 import type { LocalToolImage } from './local-tool-media'
 import type { ExchangeConversationResults } from '../src/ai/conversation-results'
@@ -10,6 +11,7 @@ import {
 import { runtimeOperationSchema } from './local-operation-batch'
 import { AsyncLocalStorage } from 'node:async_hooks'
 import {
+  AiToolContractError,
   createAiActionRegistry,
   createAiInvoker,
   createAiToolContract,
@@ -56,6 +58,7 @@ import {
   LocalToolInputError,
   localToolFailureReply,
   localToolFailureSchema,
+  localToolFailureModelSchema,
   localToolFailureIssue,
   localToolRecoveryModelContract,
   localToolErrorMessage,
@@ -97,6 +100,7 @@ export interface LocalToolGroup {
 }
 type Reply = Awaited<ReturnType<typeof invokeLocalTool>> & {
   media?: LocalToolImage[]
+  executionContract?: AiToolContract
 }
 
 /** One request host: registered metadata, guarded leaves and actual store ownership. */
@@ -126,6 +130,20 @@ export const createLocalToolHost = (options: {
 }) => {
   const context = new AsyncLocalStorage<AiInvocationContext>()
   const selectedImages = new WeakMap<AiInvocationContext, LocalToolImage[]>()
+  // Invocation evidence lives only through one outer call's public delivery.
+  // Inputs/contracts are shared references; no second saved-result store exists.
+  const completedInvocations = new AsyncLocalStorage<
+    Map<
+      string,
+      {
+        input: unknown
+        contract: LocalToolDefinition & AiToolContract
+        inputIssue?: string
+        modelContract: Reply['modelContract']
+        projection?: ReturnType<typeof project>
+      }
+    >
+  >()
   const registry = createAiActionRegistry()
   const leases = createLocalToolLeases({
     requestId: options.requestId,
@@ -135,13 +153,20 @@ export const createLocalToolHost = (options: {
   const ownership: LocalToolOwnership = {
     requestId: options.requestId,
 
-    publish: (handle, release, validate, lifetime) =>
+    publish: (handle, release, validate, lifetime) => {
+      const callId = context.getStore()?.callId
+
       leases.publish({
         handle,
         release,
         validate,
-        callId: lifetime === 'request' ? undefined : context.getStore()?.callId
-      }),
+        callId: lifetime === 'request' ? undefined : callId
+      })
+      // Request lifetime and the creator's right to export are independent.
+      if (lifetime === 'request' && callId !== undefined) {
+        leases.borrow(handle, callId)
+      }
+    },
 
     publishAliases: leases.publishAliases,
 
@@ -169,7 +194,88 @@ export const createLocalToolHost = (options: {
   let closing: Promise<void> | undefined
   let closed = false
 
-  const leaf = async (call: AiInvocationContext): Promise<Reply> => {
+  const selectInvocation = (call: AiInvocationContext) => {
+    const retained = completedInvocations.getStore()?.get(call.callId)
+
+    if (retained) {
+      return retained
+    }
+
+    const binding = bindings.get(call.name)
+
+    if (!binding) {
+      throw new Error('Missing registered invocation owner')
+    }
+
+    const staticIssue = operationInputIssue(
+      call.input,
+      binding.definition.inputSchema
+    )
+    const admissionContract = staticIssue
+      ? {
+          inputSchema: binding.definition.inputSchema,
+          outputSchema: false,
+          partialOutputSchema: false,
+          recoveryOutputSchema: localToolFailureSchema
+        }
+      : undefined
+    const selected = staticIssue
+      ? undefined
+      : context.run(call, () =>
+          binding.owner.invocationSchemas?.(
+            binding.definition.name,
+            call.input,
+            'owner'
+          )
+        )
+    const schemas =
+      admissionContract ??
+      selected ??
+      invocationContract(call.name, binding.definition)
+    const contract = {
+      ...binding.definition,
+      ...schemas,
+      recoveryOutputSchema: invocationRecoverySchema(
+        schemas.recoveryOutputSchema,
+        localToolFailureSchema
+      )
+    } as LocalToolDefinition & AiToolContract
+
+    requireSupportedToolSchemas(contract)
+    const model =
+      admissionContract ??
+      context.run(call, () =>
+        binding.owner.invocationSchemas?.(
+          binding.definition.name,
+          call.input,
+          'model'
+        )
+      ) ??
+      modelToolResultSchemas(binding.definition)
+    const handoff = {
+      input: call.input,
+      contract,
+      inputIssue:
+        staticIssue ?? operationInputIssue(call.input, contract.inputSchema),
+      modelContract: {
+        ...model,
+        recoveryOutputSchema: invocationRecoverySchema(
+          model.recoveryOutputSchema,
+          localToolFailureSchema
+        )
+      }
+    }
+
+    requireSupportedToolSchemas({ ...contract, ...handoff.modelContract })
+    completedInvocations.getStore()?.set(call.callId, handoff)
+
+    return handoff
+  }
+
+  const leaf = async (
+    call: AiInvocationContext,
+    selected?: LocalToolDefinition
+  ): Promise<Reply> => {
     const binding = bindings.get(call.name)
 
     if (!binding) {
@@ -185,7 +291,7 @@ export const createLocalToolHost = (options: {
           const work = () =>
             invokeLocalTool(
               binding.owner,
-              binding.definition,
+              selected ?? binding.definition,
               call.input,
               call.signal ?? options.signal,
               options.executionEvidence,
@@ -206,7 +312,14 @@ export const createLocalToolHost = (options: {
         throw new Error('Duplicate native tool identity')
       }
 
-      const definition = createAiToolContract(source)
+      const ownerContract = createAiToolContract(source)
+      const definition = createAiToolContract({
+        ...ownerContract,
+        recoveryOutputSchema: invocationRecoverySchema(
+          ownerContract.recoveryOutputSchema,
+          localToolFailureSchema
+        )
+      })
 
       requireSupportedToolSchemas(definition)
       modelToolResultSchemas(definition)
@@ -229,12 +342,7 @@ export const createLocalToolHost = (options: {
               (key) => [
                 key,
                 runtimeOperationSchema(
-                  key === 'recoveryOutputSchema'
-                    ? invocationRecoverySchema(
-                        definition.recoveryOutputSchema,
-                        localToolFailureSchema
-                      )
-                    : definition[key as keyof typeof definition]
+                  definition[key as keyof typeof definition]
                 )
               ]
             )
@@ -312,8 +420,28 @@ export const createLocalToolHost = (options: {
     validate: operationContractIssue,
     leases,
 
+    resolveContract: (call) => {
+      const { contract } = selectInvocation(call)
+
+      return {
+        inputSchema: runtimeOperationSchema(
+          contract.inputSchema,
+          true
+        ) as AiJsonValue,
+        outputSchema: runtimeOperationSchema(
+          contract.outputSchema
+        ) as AiJsonValue,
+        partialOutputSchema: runtimeOperationSchema(
+          contract.partialOutputSchema
+        ) as AiJsonValue | undefined,
+        recoveryOutputSchema: runtimeOperationSchema(
+          contract.recoveryOutputSchema
+        ) as AiJsonValue | undefined
+      }
+    },
+
     execute: async (call) => {
-      const reply = await leaf(call)
+      const reply = await leaf(call, selectInvocation(call).contract)
       const value = JSON.parse(reply.text)
 
       const outcome = localToolReplyOutcome(reply)
@@ -337,8 +465,8 @@ export const createLocalToolHost = (options: {
     })
   })
 
-  // Discovery and selected invocation consume owner contracts, not Runtime's
-  // additional generic diagnostic alternatives registered for leaf failures.
+  // Discovery, selected invocation and Runtime share the owner's contract and
+  // the same canonical admission-failure alternative.
   const invocationContract = <T extends LocalToolDefinition>(
     name: string,
     contract: T
@@ -371,8 +499,24 @@ export const createLocalToolHost = (options: {
       purpose: context.getStore()?.purpose,
       purposeSource: context.getStore()?.purposeSource
     }),
-    (name, input, value, outcome, revision) =>
-      project(name, input, value, outcome, undefined, revision),
+    (name, input, value, outcome, revision) => {
+      const execution = outcome as AiToolOutcome & {
+        callId?: string
+        calls?: { name: string; revision: number; callId: string }[]
+      }
+      const receipt = execution.callId
+        ? execution
+        : execution.calls?.findLast(
+            (c) => c.name === name && c.revision === revision
+          )
+
+      return projectCompleted(
+        { name, revision, callId: receipt?.callId },
+        input,
+        value,
+        outcome
+      )
+    },
     invocationContract
   )
   const operationNames = new Map<string, string[]>()
@@ -413,26 +557,37 @@ export const createLocalToolHost = (options: {
 
   const admissionError = (
     failure: Extract<ReturnType<typeof library.admitInline>, { ok: false }>
-  ) =>
-    new LocalToolInputError(
-      failure.issues.map((i) => i.path + ' ' + i.actual).join('; '),
-      'PREPARATION_REJECTED',
+  ) => {
+    const message = failure.issues
+      .map((i) => i.path + ' ' + i.actual)
+      .join('; ')
+    const authoredInput =
       failure.omittedIssues === 0 &&
-        failure.issues.length > 0 &&
-        failure.issues.every(
-          (issue) =>
-            issue.code === 'value' ||
-            issue.code === 'reference' ||
-            (issue.code === 'binding' &&
-              (issue.path === '/output' || issue.path.startsWith('/output/')))
+      failure.issues.length > 0 &&
+      failure.issues.every(
+        (issue) =>
+          issue.code === 'value' ||
+          issue.code === 'reference' ||
+          (issue.code === 'binding' &&
+            (issue.path === '/output' ||
+              issue.path.startsWith('/output/') ||
+              /^\/steps\/\d+\/input(?:\/|$)/.test(issue.path)))
+      )
+
+    return authoredInput
+      ? new LocalToolInputError(message)
+      : new AiToolContractError(
+          'registration',
+          message || 'Host contract admission did not return complete issues'
         )
-        ? 'correct_input'
-        : undefined
-    )
+  }
 
   const prepare = (args: unknown) => {
     if ((args as DeliveryRequest).retain && !options.resultContext) {
-      throw new LocalToolInputError('No active App conversation context')
+      throw new AiToolContractError(
+        'registration',
+        'No active App conversation context'
+      )
     }
 
     const prepared = planSequence(args as Record<string, unknown>)
@@ -468,13 +623,12 @@ export const createLocalToolHost = (options: {
         try {
           registeredRecipeOutputAt(runtimeOperationSchema(schema), path, true)
         } catch (error) {
-          throw new LocalToolInputError(
-            localToolErrorMessage(error),
-            error instanceof RecipeReferenceError
-              ? 'PREPARATION_REJECTED'
-              : 'TOOL_CONTRACT_INVALID',
-            error instanceof RecipeReferenceError ? 'correct_input' : undefined
-          )
+          throw error instanceof RecipeReferenceError
+            ? new LocalToolInputError(localToolErrorMessage(error))
+            : new AiToolContractError(
+                'registration',
+                localToolErrorMessage(error)
+              )
         }
       }
     }
@@ -503,8 +657,7 @@ export const createLocalToolHost = (options: {
         if (!source) {
           throw new LocalToolInputError(
             'Selected result requires a step output',
-            'PREPARATION_REJECTED',
-            'correct_input'
+            AiToolFailureCodes.INPUT_INVALID
           )
         }
 
@@ -545,22 +698,19 @@ export const createLocalToolHost = (options: {
                 }
               }
             } catch (error) {
-              throw new LocalToolInputError(
+              const message =
                 'delivery.fields.' +
-                  name +
-                  ' (step ' +
-                  source.step +
-                  ', path ' +
-                  source.path +
-                  '): ' +
-                  localToolErrorMessage(error),
-                error instanceof RecipeReferenceError
-                  ? 'PREPARATION_REJECTED'
-                  : 'TOOL_CONTRACT_INVALID',
-                error instanceof RecipeReferenceError
-                  ? 'correct_input'
-                  : undefined
-              )
+                name +
+                ' (step ' +
+                source.step +
+                ', path ' +
+                source.path +
+                '): ' +
+                localToolErrorMessage(error)
+
+              throw error instanceof RecipeReferenceError
+                ? new LocalToolInputError(message)
+                : new AiToolContractError('registration', message)
             }
           }
         }
@@ -611,9 +761,9 @@ export const createLocalToolHost = (options: {
         throw error
       }
 
-      throw new LocalToolInputError(
-        localToolErrorMessage(error),
-        'TOOL_CONTRACT_INVALID'
+      throw new AiToolContractError(
+        'registration',
+        localToolErrorMessage(error)
       )
     }
 
@@ -622,6 +772,30 @@ export const createLocalToolHost = (options: {
     }
 
     return plan
+  }
+
+  function sequenceFinalStep(args: unknown) {
+    const request = args as {
+      operations?: { name: string; id?: string }[]
+      iteration?: { id: string; check?: { id?: string } }
+      stages?: {
+        id: string
+        apply: { id?: string }[]
+        iteration?: { id: string; check?: { id?: string } }
+      }[]
+    }
+    const lastStage = request.stages?.at(-1)
+    const loop = request?.iteration
+    const stepId = loop
+      ? (loop.check?.id ?? loop.id + '-check')
+      : ((lastStage
+          ? (lastStage.apply.at(-1)?.id ??
+            lastStage.id + '-apply-' + lastStage.apply.length)
+          : undefined) ??
+        request.operations?.at(-1)?.id ??
+        'step-' + request.operations?.length)
+
+    return stepId
   }
 
   const sequenceOwner = {
@@ -725,8 +899,7 @@ export const createLocalToolHost = (options: {
 
         {
           return {
-            inputSchema:
-              plan.batch && batch ? batch.inputSchema : sequence.inputSchema,
+            inputSchema: sequence.inputSchema,
             ...(() => {
               const selected =
                 typeof (args as DeliveryRequest).delivery === 'object'
@@ -767,23 +940,27 @@ export const createLocalToolHost = (options: {
                       ? fallback.path
                       : ''
                   const path = basePath + selector.path
-                  const schema = owner
-                    ? registeredRecipeOutputAt(
-                        selector.source === 'input'
-                          ? registeredRecipeOutputAt(
-                              runtimeOperationSchema(owner.inputSchema),
-                              planSequence.publicInputSchemaPath(
-                                step?.tool ?? operationGroupName,
-                                selectedStep
+                  // Ready batch rows depend on the admitted query. Their owner
+                  // validates the complete receipt; capture checks the actual
+                  // selected path. They are not guaranteed named-step bindings.
+                  const schema =
+                    owner && !plan.batch
+                      ? registeredRecipeOutputAt(
+                          selector.source === 'input'
+                            ? registeredRecipeOutputAt(
+                                runtimeOperationSchema(owner.inputSchema),
+                                planSequence.publicInputSchemaPath(
+                                  step?.tool ?? operationGroupName,
+                                  selectedStep
+                                )
                               )
-                            )
-                          : runtimeOperationSchema(
-                              modelToolResultSchemas(owner).outputSchema
-                            ),
-                        path,
-                        true
-                      )
-                    : {}
+                            : runtimeOperationSchema(
+                                modelToolResultSchemas(owner).outputSchema
+                              ),
+                          path,
+                          true
+                        )
+                      : {}
 
                   return [
                     name,
@@ -854,13 +1031,9 @@ export const createLocalToolHost = (options: {
         !(args as Record<string, unknown>).operations &&
         !(args as Record<string, unknown>).stages
       ) {
-        try {
-          return JSON.stringify(
-            await readNamedFields(args, options.resultContext)
-          )
-        } catch (error) {
-          throw new LocalToolInputError(localToolErrorMessage(error))
-        }
+        return JSON.stringify(
+          await readNamedFields(args, options.resultContext)
+        )
       }
 
       const plan = preparedFor(args)
@@ -887,13 +1060,29 @@ export const createLocalToolHost = (options: {
             })
           : undefined
 
+      let finalSelectionData:
+        | {
+            projected: ReturnType<typeof project>
+            input: { value: unknown; blocked: ReadonlySet<string> }
+            blocked: ReadonlySet<string>
+            name: string
+          }
+        | undefined
+
       const capture = async (
         step: string | undefined,
         name: string,
         input: unknown,
-        value: unknown
+        value: unknown,
+        receipt?: { callId: string; revision: number }
       ) => {
-        if (!delivery?.selects(step)) {
+        const finalSelection = Boolean(
+          delivery?.selects(undefined) &&
+          step &&
+          step === sequenceFinalStep(args)
+        )
+
+        if (!delivery || (!delivery.selects(step) && !finalSelection)) {
           return
         }
 
@@ -905,29 +1094,62 @@ export const createLocalToolHost = (options: {
             throw Error('Missing result owner')
           }
 
-          const blocked = new Set<unknown>()
+          const projected = projectCompleted(
+            { name, ...receipt },
+            input,
+            value,
+            {
+              status: 'success',
+              settlement: 'completed'
+            }
+          )
 
-          if (delivery.retains(step)) {
-            localToolReferences(value, descriptor.outputSchema, blocked)
+          const blocked = new Set<string>()
+          const blockedInput = new Set<string>()
+
+          if (
+            delivery.retains(step) ||
+            (finalSelection && delivery.retains(undefined))
+          ) {
+            localToolReferences(projected.value, projected.schema, blocked)
+            const inputPaths = new Set<string>()
+
+            localToolReferences(input, projected.inputSchema, inputPaths)
+            const prefix = planSequence.publicInputSchemaPath(name, step)
+
+            for (const path of inputPaths) {
+              if (path === prefix || path.startsWith(prefix + '/')) {
+                blockedInput.add(path.slice(prefix.length))
+              } else if (prefix.startsWith(path + '/')) {
+                blockedInput.add('')
+              }
+            }
           }
 
-          const blockedInput = new Set<unknown>()
+          const publicInput = {
+            value: planSequence.publicInput(name, input, step),
+            blocked: blockedInput
+          }
 
-          localToolReferences(input, descriptor.inputSchema, blockedInput)
-          const projected = project(name, input, value, {
-            status: 'success',
-            settlement: 'completed'
-          })
+          if (finalSelection) {
+            finalSelectionData = {
+              projected,
+              input: publicInput,
+              blocked,
+              name
+            }
+          }
+
+          if (!delivery.selects(step)) {
+            return
+          }
 
           await delivery.capture(
             step,
             projected.value,
             blocked,
             projected.outcome,
-            {
-              value: planSequence.publicInput(name, input, step),
-              blocked: blockedInput
-            },
+            publicInput,
             name
           )
         } catch (error) {
@@ -982,7 +1204,7 @@ export const createLocalToolHost = (options: {
       }
 
       if (!plan.recipe) {
-        throw new LocalToolInputError('Missing sequence')
+        throw new Error('Missing sequence')
       }
 
       let report = await library.runInline(
@@ -996,7 +1218,8 @@ export const createLocalToolHost = (options: {
           purposeSource: call?.purposeSource
         },
         delivery
-          ? (step, input, value) => capture(step.id, step.tool, input, value)
+          ? (step, input, value, receipt) =>
+              capture(step.id, step.tool, input, value, receipt)
           : undefined
       )
 
@@ -1019,31 +1242,19 @@ export const createLocalToolHost = (options: {
         delivery.selects(undefined)
       ) {
         try {
-          const view = sequenceOwner.projectModelResult(
-            '',
-            args,
-            report
-          ) as typeof report
-          const blocked = new Set<unknown>()
+          const selected = finalSelectionData
 
-          if (delivery.retains(undefined)) {
-            localToolReferences(
-              report.execution.value,
-              plan.deliveryEnvelope
-                ? registeredRecipeOutputAt(
-                    plan.recipe.contract.outputSchema,
-                    '/value'
-                  )
-                : plan.recipe.contract.outputSchema,
-              blocked
-            )
+          if (!selected) {
+            throw Error('Missing final result projection')
           }
 
           await delivery.capture(
             undefined,
-            view.execution.value,
-            blocked,
-            sequenceOwner.resultOutcome('', view)
+            selected.projected.value,
+            selected.blocked,
+            selected.projected.outcome,
+            selected.input,
+            selected.name
           )
         } catch (error) {
           delivery.failed(localToolErrorMessage(error))
@@ -1137,44 +1348,35 @@ export const createLocalToolHost = (options: {
       const receipt = value.execution as {
         status: AiToolOutcome['status']
         settlement: AiToolOutcome['settlement']
-        calls?: { name: string; revision: number; stepId?: string }[]
+        calls?: {
+          name: string
+          revision: number
+          stepId?: string
+          callId: string
+        }[]
         value?: unknown
         recovery?: ({
           name: string
+          callId: string
           revision: number
           value?: unknown
         } & AiToolOutcome)[]
       }
-      const request = args as {
-        operations?: { name: string; id?: string }[]
-        iteration?: { id: string; check?: { id?: string } }
-        stages?: {
-          id: string
-          apply: { id?: string }[]
-          iteration?: { id: string; check?: { id?: string } }
-        }[]
-      }
-      const lastStage = request.stages?.at(-1)
-      const loop = request?.iteration
-      const stepId = loop
-        ? (loop.check?.id ?? loop.id + '-check')
-        : ((lastStage
-            ? (lastStage.apply.at(-1)?.id ??
-              lastStage.id + '-apply-' + lastStage.apply.length)
-            : undefined) ??
-          request.operations?.at(-1)?.id ??
-          'step-' + request.operations?.length)
-      const selectedCall = receipt.calls?.find((c) => c.stepId === stepId)
+      const selectedCall = receipt.calls?.findLast(
+        (call) => call.stepId === sequenceFinalStep(args)
+      )
       const name = selectedCall?.name
       const projectFinal = name && receipt.value !== undefined
       const finalValue = projectFinal
-        ? project(
-            name,
+        ? projectCompleted(
+            {
+              name,
+              revision: selectedCall.revision,
+              callId: selectedCall.callId
+            },
             undefined,
             receipt.value,
-            receipt,
-            undefined,
-            selectedCall?.revision
+            receipt
           )
         : undefined
 
@@ -1200,14 +1402,7 @@ export const createLocalToolHost = (options: {
             ? {
                 recovery: receipt.recovery.map((r) => ({
                   ...r,
-                  value: project(
-                    r.name,
-                    undefined,
-                    r.value,
-                    r,
-                    undefined,
-                    r.revision
-                  ).value
+                  value: projectCompleted(r, undefined, r.value, r).value
                 }))
               }
             : {})
@@ -1261,51 +1456,21 @@ export const createLocalToolHost = (options: {
         )
       }
 
-      const inputIssue = operationInputIssue(
-        call.input,
-        binding.definition.inputSchema
-      )
-
-      const admissionContract = inputIssue
-        ? {
-            inputSchema: binding.definition.inputSchema,
-            outputSchema: false,
-            partialOutputSchema: false,
-            recoveryOutputSchema: localToolFailureSchema
-          }
-        : undefined
-      const projection = inputIssue
-        ? undefined
-        : context.run(call, () =>
-            binding.owner.invocationSchemas?.(
-              binding.definition.name,
-              call.input
-            )
-          )
-      const schemas =
-        admissionContract ??
-        projection ??
-        invocationContract(call.name, binding.definition)
-      let modelContract: Reply['modelContract']
+      let selection: ReturnType<typeof selectInvocation>
 
       try {
-        modelContract =
-          admissionContract ??
-          (projection
-            ? binding.owner.invocationSchemas?.(
-                binding.definition.name,
-                call.input,
-                'model'
-              )
-            : undefined) ??
-          modelToolResultSchemas(binding.definition)
+        selection = selectInvocation(call)
       } catch (error) {
         return localToolFailureReply(
           localToolErrorMessage(error),
-          'TOOL_CONTRACT_INVALID',
+          error instanceof LocalToolInputError
+            ? error.code
+            : 'TOOL_CONTRACT_INVALID',
           { stage: 'admission', settlement: 'not-started' }
         )
       }
+
+      const { inputIssue, contract, modelContract } = selection
 
       let opened = false
       let reply: Reply | undefined
@@ -1330,17 +1495,19 @@ export const createLocalToolHost = (options: {
         })
 
       try {
-        if (!inputIssue) {
-          await leases.open({
-            requestId: options.requestId,
-            callId: call.callId,
-            input: call.input,
-            inputSchema: schemas.inputSchema as AiJsonValue
-          })
-          opened = true
-        }
+        // Rejection diagnostics may publish repair resources. They still own a
+        // call scope, but unadmitted arguments cannot borrow any input resource.
+        await leases.open({
+          requestId: options.requestId,
+          callId: call.callId,
+          input: inputIssue ? null : call.input,
+          inputSchema: inputIssue
+            ? { type: 'null' }
+            : (contract.inputSchema as AiJsonValue)
+        })
+        opened = true
 
-        reply = await leaf(call)
+        reply = await leaf(call, contract)
         const value = JSON.parse(reply.text)
 
         decodedResult = value
@@ -1362,19 +1529,9 @@ export const createLocalToolHost = (options: {
           }
         }
 
-        const validatedSchema =
-          projection || inputIssue
-            ? undefined
-            : localToolResultSchema(reply, binding.definition, call)
-        const contract = {
-          ...binding.definition,
-          inputSchema: schemas.inputSchema as AiJsonValue,
-          outputSchema: schemas.outputSchema as AiJsonValue,
-          partialOutputSchema: schemas.partialOutputSchema as
-            AiJsonValue | undefined,
-          recoveryOutputSchema: schemas.recoveryOutputSchema as
-            AiJsonValue | undefined
-        }
+        const validatedSchema = inputIssue
+          ? undefined
+          : localToolResultSchema(reply, contract, call)
 
         if (validatedSchema === undefined) {
           const inspected = inspectAiToolResult(contract, value, {
@@ -1408,7 +1565,12 @@ export const createLocalToolHost = (options: {
           abortError = error
           aborted = true
         } else {
-          output = interrupted(error, 'TOOL_HANDOFF_FAILED')
+          output = interrupted(
+            error,
+            !opened && error instanceof LocalToolInputError
+              ? error.code
+              : 'TOOL_HANDOFF_FAILED'
+          )
         }
       } finally {
         if (opened) {
@@ -1434,6 +1596,7 @@ export const createLocalToolHost = (options: {
       }
 
       output.modelContract = modelContract
+      output.executionContract = contract
       const media = selectedImages.get(call)
 
       if (media?.length) {
@@ -1477,8 +1640,14 @@ export const createLocalToolHost = (options: {
     value: unknown,
     outcome: AiToolOutcome,
     selectedModelContract?: Reply['modelContract'],
-    selectedRevision?: number
-  ): { value: unknown; outcome: AiToolOutcome } {
+    selectedRevision?: number,
+    selectedExecutionContract?: AiToolContract
+  ): {
+    value: unknown
+    outcome: AiToolOutcome
+    schema?: unknown
+    inputSchema?: unknown
+  } {
     const candidate = bindings.get(name)
     const binding =
       selectedRevision === undefined ||
@@ -1514,13 +1683,8 @@ export const createLocalToolHost = (options: {
           }
 
           const execution = failure.executionOutcome as AiToolOutcome
-          const schemas = binding?.owner.invocationSchemas?.(
-            binding.definition.name,
-            input,
-            'owner'
-          )
           const inspected = inspectAiToolResult(
-            { ...contract, ...schemas } as AiToolContract,
+            selectedExecutionContract ?? contract,
             failure.executionResult,
             {
               outcome: execution,
@@ -1539,36 +1703,31 @@ export const createLocalToolHost = (options: {
               input,
               failure.executionResult,
               execution,
-              undefined,
-              selectedRevision
+              selectedModelContract,
+              selectedRevision,
+              selectedExecutionContract
             ).value
           }
-        } else if (
-          binding?.owner.projectModelResult &&
-          failure.executionResult &&
-          typeof failure.executionResult === 'object' &&
-          !Array.isArray(failure.executionResult)
-        ) {
-          view = {
-            ...failure,
-            executionResult: binding.owner.projectModelResult(
-              binding.definition.name,
-              input,
-              failure.executionResult
-            )
-          }
+        } else if (binding?.owner.projectModelResult) {
+          // The owner projects its complete failure envelope. Its executionResult
+          // is evidence within that envelope, not another invocation result.
+          view = binding.owner.projectModelResult(
+            binding.definition.name,
+            input,
+            value
+          )
         }
 
-        const issue = operationContractIssue(view, localToolFailureSchema, {
-          stage: 'output'
-        })
+        const publicView = projectToolResultFields(view, localToolFailureSchema)
+        const issue = localToolFailureIssue(publicView, outcome, 'model')
 
         if (issue) {
           throw new Error(issue)
         }
 
         return {
-          value: projectToolResultFields(view, localToolFailureSchema),
+          value: publicView,
+          schema: localToolFailureModelSchema,
           outcome
         }
       }
@@ -1653,7 +1812,12 @@ export const createLocalToolHost = (options: {
         throw new Error(inspected.issue)
       }
 
-      return { value: projected, outcome: deliveredOutcome }
+      return {
+        value: projected,
+        outcome: deliveredOutcome,
+        schema: selected,
+        inputSchema: activeContract.inputSchema
+      }
     } catch (error) {
       return {
         value: toolDeliveryFailure(
@@ -1667,117 +1831,164 @@ export const createLocalToolHost = (options: {
     }
   }
 
+  function projectCompleted(
+    receipt: { name: string; revision?: number; callId?: string },
+    input: unknown,
+    value: unknown,
+    outcome: AiToolOutcome
+  ) {
+    const handoff = receipt.callId
+      ? completedInvocations.getStore()?.get(receipt.callId)
+      : undefined
+
+    if (handoff?.projection) {
+      return handoff.projection
+    }
+
+    const projected = project(
+      receipt.name,
+      handoff ? handoff.input : input,
+      value,
+      outcome,
+      handoff?.modelContract,
+      receipt.revision,
+      handoff?.contract
+    )
+
+    if (handoff) {
+      handoff.projection = projected
+    }
+
+    return projected
+  }
+
   function invoke(call: AiInvocation, internal = false): Promise<Reply> {
-    return track(async () => {
-      if (!internal && call.name === operationGroupName) {
-        return localToolFailureReply(
-          'Private dispatch is unavailable.',
-          'UNKNOWN_TOOL',
-          { settlement: 'not-started' }
-        )
-      }
+    return track(() => {
+      const invocations: NonNullable<
+        ReturnType<typeof completedInvocations.getStore>
+      > = new Map()
 
-      if (
-        !internal &&
-        call.name ===
-          'design_workflow.' + AiDesignToolIds.PREPARE_AND_APPLY_DESIGN &&
-        call.input &&
-        typeof call.input === 'object' &&
-        ('retain' in call.input || 'delivery' in call.input)
-      ) {
-        const definition = bindings.get(call.name)?.definition
-        const issue =
-          definition && operationInputIssue(call.input, definition.inputSchema)
-
-        if (!definition || issue) {
-          return localToolFailureReply(
-            issue ?? 'Missing drawing owner',
-            'PREPARATION_REJECTED',
-            { settlement: 'not-started' }
-          )
-        }
-
-        const { retain, delivery, ...arguments_ } = call.input as Record<
-          string,
-          unknown
-        > &
-          DeliveryRequest
-
-        const selections = (value: DeliveryRequest['retain']) =>
-          value &&
-          Object.fromEntries(
-            Object.entries(value).map(([key, selector]) => [
-              key,
-              { ...selector, step: 'draw' }
-            ])
-          )
-
-        call = {
-          ...call,
-          name: 'design_operations.' + AiDesignToolIds.EXECUTE_DESIGN,
-          input: {
-            operations: [
-              { id: 'draw', name: call.name, arguments: arguments_ }
-            ],
-            ...(retain ? { retain: selections(retain) } : {}),
-            ...(delivery
-              ? {
-                  delivery:
-                    typeof delivery === 'object'
-                      ? { fields: selections(delivery.fields) }
-                      : delivery
-                }
-              : {})
-          }
-        }
-      }
-
-      if (
-        call.name === 'design_operations.' + AiDesignToolIds.EXECUTE_DESIGN &&
-        call.input &&
-        typeof call.input === 'object'
-      ) {
+      return completedInvocations.run(invocations, async () => {
         try {
-          call = {
-            ...call,
-            input: await resolveConversationInputs(
-              call.input as Record<string, unknown>,
-              options.resultContext,
-              planSequence.authoredInput
+          if (!internal && call.name === operationGroupName) {
+            return localToolFailureReply(
+              'Private dispatch is unavailable.',
+              'UNKNOWN_TOOL',
+              { settlement: 'not-started' }
             )
           }
-        } catch (error) {
-          return localToolFailureReply(
-            localToolErrorMessage(error),
-            'RESULT_CONTEXT_UNAVAILABLE',
-            { settlement: 'not-started' }
+
+          if (
+            !internal &&
+            call.name ===
+              'design_workflow.' + AiDesignToolIds.PREPARE_AND_APPLY_DESIGN &&
+            call.input &&
+            typeof call.input === 'object' &&
+            ('retain' in call.input || 'delivery' in call.input)
+          ) {
+            const definition = bindings.get(call.name)?.definition
+            const issue =
+              definition &&
+              operationInputIssue(call.input, definition.inputSchema)
+
+            if (!definition || issue) {
+              return localToolFailureReply(
+                issue ?? 'Missing drawing owner',
+                AiToolFailureCodes.INPUT_INVALID,
+                { settlement: 'not-started' }
+              )
+            }
+
+            const { retain, delivery, ...arguments_ } = call.input as Record<
+              string,
+              unknown
+            > &
+              DeliveryRequest
+
+            const selections = (value: DeliveryRequest['retain']) =>
+              value &&
+              Object.fromEntries(
+                Object.entries(value).map(([key, selector]) => [
+                  key,
+                  { ...selector, step: 'draw' }
+                ])
+              )
+
+            call = {
+              ...call,
+              name: 'design_operations.' + AiDesignToolIds.EXECUTE_DESIGN,
+              input: {
+                operations: [
+                  { id: 'draw', name: call.name, arguments: arguments_ }
+                ],
+                ...(retain ? { retain: selections(retain) } : {}),
+                ...(delivery
+                  ? {
+                      delivery:
+                        typeof delivery === 'object'
+                          ? { fields: selections(delivery.fields) }
+                          : delivery
+                    }
+                  : {})
+              }
+            }
+          }
+
+          if (
+            call.name ===
+              'design_operations.' + AiDesignToolIds.EXECUTE_DESIGN &&
+            call.input &&
+            typeof call.input === 'object'
+          ) {
+            try {
+              call = {
+                ...call,
+                input: await resolveConversationInputs(
+                  call.input as Record<string, unknown>,
+                  options.resultContext,
+                  planSequence.authoredInput
+                )
+              }
+            } catch (error) {
+              return localToolFailureReply(
+                localToolErrorMessage(error),
+                error instanceof AiToolContractError && error.stage === 'input'
+                  ? AiToolFailureCodes.INPUT_INVALID
+                  : 'RESULT_CONTEXT_UNAVAILABLE',
+                { stage: 'admission', settlement: 'not-started' }
+              )
+            }
+          }
+
+          const reply = await native.invoke({
+            ...call,
+            signal: call.signal ?? options.signal
+          })
+
+          if (internal) {
+            return reply
+          }
+
+          const delivered = project(
+            call.name,
+            call.input,
+            JSON.parse(reply.text),
+            reply.outcome,
+            reply.modelContract,
+            undefined,
+            reply.executionContract
           )
+
+          return {
+            ...reply,
+            success: delivered.outcome.status === 'success',
+            outcome: delivered.outcome,
+            text: JSON.stringify(delivered.value)
+          }
+        } finally {
+          invocations.clear()
         }
-      }
-
-      const reply = await native.invoke({
-        ...call,
-        signal: call.signal ?? options.signal
       })
-
-      if (internal) {
-        return reply
-      }
-
-      const delivered = project(
-        call.name,
-        call.input,
-        JSON.parse(reply.text),
-        reply.outcome,
-        reply.modelContract
-      )
-
-      return {
-        ...reply,
-        success: delivered.outcome.status === 'success',
-        outcome: delivered.outcome,
-        text: JSON.stringify(delivered.value)
-      }
     })
   }
 

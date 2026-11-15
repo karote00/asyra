@@ -1,3 +1,4 @@
+import { LocalToolInputError } from './local-tool-invocation'
 export interface ReferenceIdentity {
   attachmentIndex: number
   referenceId: string
@@ -86,7 +87,6 @@ const oversizedVectorResult = (svg: string, attachmentIndex: number) => {
   return observedBytes > vectorArtifactByteLimit
     ? JSON.stringify({
         available: false,
-        recoverable: true,
         code: 'VECTOR_ARTIFACT_BYTE_LIMIT',
         attachmentIndex,
         observedBytes,
@@ -172,7 +172,9 @@ export const createLocalImageTools = (
       typeof attachment.dataUrl !== 'string' ||
       !/^data:image\/(png|jpeg|webp);base64,/.test(attachment.dataUrl)
     ) {
-      throw new Error('Select an existing reference attachment index.')
+      throw new LocalToolInputError(
+        'Select an existing reference attachment index.'
+      )
     }
 
     let identity = identities.get(index)
@@ -224,7 +226,9 @@ export const createLocalImageTools = (
         const index = source.slice('attachment:'.length)
 
         if (!/^(0|[1-9][0-9]*)$/.test(index)) {
-          throw new Error('Invalid reference attachment identity.')
+          throw new LocalToolInputError(
+            'Invalid reference attachment identity.'
+          )
         }
 
         return referenceIdentity(Number(index)).referenceId
@@ -246,7 +250,9 @@ export const createLocalImageTools = (
         const url = new URL(source)
 
         if (url.username || url.password) {
-          throw new Error('Source URLs cannot contain credentials.')
+          throw new LocalToolInputError(
+            'Source URLs cannot contain credentials.'
+          )
         }
       }
 
@@ -749,7 +755,9 @@ export const createLocalImageTools = (
           !isRecord(attachment) ||
           typeof attachment.dataUrl !== 'string'
         ) {
-          throw new Error('Select an existing reference attachment index.')
+          throw new LocalToolInputError(
+            'Select an existing reference attachment index.'
+          )
         }
 
         return { role: 'reference' as const, dataUrl: attachment.dataUrl }
@@ -847,7 +855,7 @@ export const createLocalImageTools = (
           const args = action.arguments
 
           if (!isRecord(args)) {
-            throw new Error('Invalid image reference')
+            throw new LocalToolInputError('Invalid image reference')
           }
 
           const reference = replacing ? args.drawing : args
@@ -857,7 +865,7 @@ export const createLocalImageTools = (
           }
 
           if (typeof reference.imageArtifactId !== 'string') {
-            throw new Error('Invalid image reference')
+            throw new LocalToolInputError('Invalid image reference')
           }
 
           const artifact = artifacts.get(reference.imageArtifactId)
@@ -874,13 +882,13 @@ export const createLocalImageTools = (
                 (key) => !['compositionId', 'drawing'].includes(key)
               ))
           ) {
-            throw new Error('Invalid replacement')
+            throw new LocalToolInputError('Invalid replacement')
           }
 
           const mappings = reference.componentMappings ?? []
 
           if (!Array.isArray(mappings)) {
-            throw new Error('Invalid component selection')
+            throw new LocalToolInputError('Invalid component selection')
           }
 
           if (mappings.length || reference.analysisIds !== undefined) {
@@ -984,7 +992,7 @@ export const createLocalImageTools = (
           args.attachmentIndexes.length > 24 ||
           new Set(args.attachmentIndexes).size !== args.attachmentIndexes.length
         ) {
-          throw new Error(
+          throw new LocalToolInputError(
             'Provide unique existing reference attachmentIndexes.'
           )
         }
@@ -1003,7 +1011,7 @@ export const createLocalImageTools = (
           new Set(args.pathIds).size !== args.pathIds.length ||
           args.pathIds.some((id) => typeof id !== 'string')
         ) {
-          throw new Error('Invalid contour review request')
+          throw new LocalToolInputError('Invalid contour review request')
         }
 
         const artifact = artifacts.get(args.imageArtifactId)
@@ -1095,7 +1103,7 @@ export const createLocalImageTools = (
           !Array.isArray(args.proposalIds) ||
           args.proposalIds.some((id) => typeof id !== 'string')
         ) {
-          throw new Error('Invalid contour refinement request')
+          throw new LocalToolInputError('Invalid contour refinement request')
         }
 
         const review = contourReviews.get(args.reviewId)
@@ -1156,7 +1164,7 @@ export const createLocalImageTools = (
           !Array.isArray(args.pathIds) ||
           args.pathIds.some((id) => typeof id !== 'string')
         ) {
-          throw new Error('Invalid component analysis request')
+          throw new LocalToolInputError('Invalid component analysis request')
         }
 
         const artifact = artifacts.get(args.imageArtifactId)
@@ -1170,7 +1178,7 @@ export const createLocalImageTools = (
           args.pathIds.length > limits.pathsPerCall ||
           new Set(args.pathIds).size !== args.pathIds.length
         ) {
-          throw new Error('Invalid analysis selection')
+          throw new LocalToolInputError('Invalid analysis selection')
         }
 
         const pathIds = [...args.pathIds] as string[]
@@ -1230,7 +1238,7 @@ export const createLocalImageTools = (
         !isRecord(args) ||
         !Number.isSafeInteger(args.attachmentIndex)
       ) {
-        throw new Error('Invalid image tool request')
+        throw new LocalToolInputError('Invalid image tool request')
       }
 
       let representationPlan: Record<string, unknown> | undefined

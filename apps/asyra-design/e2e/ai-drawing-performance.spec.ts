@@ -203,11 +203,9 @@ const runProfiledTurn = async (
     exactSnapshot.phases.some(({ name }) => name === 'ui-context:flush')
   ).toBe(true)
   expectProfileOwnerPhases(exactSnapshot, [
-    'ai-app:prepare-composition-bulk-request',
+    'ai-app:create-composition-group',
     'ai-app:create-composition-batch',
-    'factory:finalize-mutation-batch-artifact',
     'factory:flush-shared-channels',
-    'factory:select-delivery-sequence-boundaries',
     'factory:create-shared-publication',
     'render:flush-frame',
     'ui-context:flush'

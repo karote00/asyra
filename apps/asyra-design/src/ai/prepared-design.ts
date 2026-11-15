@@ -16,6 +16,7 @@ export const isDesignContainerType = (type: unknown): boolean =>
 
 export const PREPARED_DESIGN_VERSION = 1 as const
 export const DesignPreparationLimits = Object.freeze({
+  identityLength: 256,
   nodes: 1000,
   expandedNodes: 10000,
   expandedPathCommands: 200000,

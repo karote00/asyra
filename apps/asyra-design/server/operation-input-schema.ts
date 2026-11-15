@@ -1,3 +1,4 @@
+import { normalizeAiToolSchemaReferences } from '@asyra/ai-agent-runtime'
 import lodash from 'lodash'
 
 const { isEqual } = lodash
@@ -86,7 +87,10 @@ const intersectSchemas = (left: unknown, right: unknown): unknown => {
   return result
 }
 
-export const nativeToolInputSchema = (schema: unknown): unknown => {
+export const nativeToolInputSchema = (schema: unknown): unknown =>
+  projectNativeSchema(normalizeAiToolSchemaReferences(schema))
+
+const projectNativeSchema = (schema: unknown): unknown => {
   if (!record(schema)) {
     return schema
   }
@@ -116,7 +120,7 @@ export const nativeToolInputSchema = (schema: unknown): unknown => {
       result[key] = Object.fromEntries(
         Object.entries(result[key]).map(([name, child]) => [
           name,
-          nativeToolInputSchema(child)
+          projectNativeSchema(child)
         ])
       )
     }
@@ -124,12 +128,12 @@ export const nativeToolInputSchema = (schema: unknown): unknown => {
 
   for (const key of ['items', 'additionalProperties'] as const) {
     if (record(result[key])) {
-      result[key] = nativeToolInputSchema(result[key])
+      result[key] = projectNativeSchema(result[key])
     }
   }
 
   if (Array.isArray(result.prefixItems)) {
-    result.prefixItems = result.prefixItems.map(nativeToolInputSchema)
+    result.prefixItems = result.prefixItems.map(projectNativeSchema)
   }
 
   for (const mode of ['oneOf', 'anyOf', 'allOf'] as const) {
@@ -155,7 +159,7 @@ export const nativeToolInputSchema = (schema: unknown): unknown => {
         [mode]: compactNativeAlternatives(
           mode,
           branches.map((branch) =>
-            nativeToolInputSchema(intersectSchemas(common, branch))
+            projectNativeSchema(intersectSchemas(common, branch))
           )
         )
       }
@@ -163,7 +167,7 @@ export const nativeToolInputSchema = (schema: unknown): unknown => {
 
     result[mode] = compactNativeAlternatives(
       mode,
-      branches.map(nativeToolInputSchema)
+      branches.map(projectNativeSchema)
     )
   }
 
@@ -177,6 +181,28 @@ export const nativeToolInputSchema = (schema: unknown): unknown => {
           (Array.isArray(result.required) && result.required.includes(name))
       )
     )
+  }
+
+  // Native declarations retain exclusive unions but omit object property counts.
+  // An object matches both alternatives only when empty. Intersect this exact
+  // nonempty constraint with the owner's remaining schema, preserving root refs.
+  if (result.type === 'object' && result.minProperties === 1) {
+    delete result.minProperties
+    const { $defs, definitions, ...constraints } = result
+
+    return {
+      ...($defs ? { $defs } : {}),
+      ...(definitions ? { definitions } : {}),
+      allOf: [
+        constraints,
+        {
+          oneOf: [
+            { type: 'object', additionalProperties: true },
+            { type: 'object', properties: {}, additionalProperties: false }
+          ]
+        }
+      ]
+    }
   }
 
   return result

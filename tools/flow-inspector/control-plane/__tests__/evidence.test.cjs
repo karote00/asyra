@@ -1550,3 +1550,28 @@ test(
     assert.equal(recovery.captured.digest, baseline.captured.digest)
   }
 )
+
+for (const field of ['numPendingTests', 'numTodoTests']) {
+  test('rejects a hidden unexecuted case in ' + field, () => {
+    const runner = result()
+
+    runner.report[field] = 1
+    const evidence = assess(runner)
+
+    assert.notEqual(evidence.status, 'passed')
+    assert.match(evidence.issues.join('\n'), /summary|unexecuted/i)
+  })
+}
+
+for (const field of [
+  'numPendingTests',
+  'numTodoTests',
+  'numRuntimeErrorTestSuites'
+]) {
+  test('rejects malformed runner count ' + field, () => {
+    const runner = result()
+
+    runner.report[field] = -1
+    assert.notEqual(assess(runner).status, 'passed')
+  })
+}

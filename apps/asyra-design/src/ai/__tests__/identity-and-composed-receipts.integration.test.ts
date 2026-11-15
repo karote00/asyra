@@ -1,3 +1,4 @@
+import { createAiToolContract } from '@asyra/ai-agent-runtime'
 // @vitest-environment jsdom
 import { beforeAll, expect, it, vi } from 'vitest'
 import { createLocalOperationTools } from '../../../server/local-operation-tools'
@@ -83,7 +84,7 @@ it('executes the published identity example through the real Core and uses issue
     })
   )
   const operations = createLocalOperationTools(
-    actions,
+    actions.map(createAiToolContract),
     {
       modelActions: (actions) => actions,
 
@@ -92,7 +93,7 @@ it('executes the published identity example through the real Core and uses issue
     dispatch
   )
   const definition = operations.definitions.find(
-    (item) => item.name === 'describe_design_apis'
+    (item) => item.name === 'read_design_contracts'
   )
 
   if (!definition) {
@@ -129,7 +130,10 @@ it('executes the published identity example through the real Core and uses issue
     operationInputIssue(invocation.arguments, batchDefinition.inputSchema)
   ).toBeUndefined()
   expect(
-    prepareOperationBatch(invocation.arguments.operations, actions)[0]
+    prepareOperationBatch(
+      invocation.arguments.operations,
+      actions.map(createAiToolContract)
+    )[0]
   ).toMatchObject({ name: action.name, arguments: example })
   const before = core.getCanonicalOwnerSnapshot()
   const depth = core.getUndoHistoryDepth()

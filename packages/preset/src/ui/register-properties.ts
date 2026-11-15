@@ -517,10 +517,12 @@ export const registerVectorEditingProperties = (core: PresetCoreAPIs): void => {
     PresetSystemPropertyKeys.HOVERED_VECTOR_POINT,
     null
   )
-  core.defineSystemProperty<SelectedVectorSegmentState | null>(
-    PresetSystemPropertyKeys.SELECTED_VECTOR_SEGMENT,
-    null
-  )
+  const selectedSegmentObservable =
+    core.defineSystemProperty<SelectedVectorSegmentState | null>(
+      PresetSystemPropertyKeys.SELECTED_VECTOR_SEGMENT,
+      null
+    )
+
   core.defineSystemProperty<SelectedVectorSegmentState | null>(
     PresetSystemPropertyKeys.HOVERED_VECTOR_SEGMENT,
     null
@@ -553,7 +555,8 @@ export const registerVectorEditingProperties = (core: PresetCoreAPIs): void => {
   defineUIProperty<SelectedVectorSegmentState | null>(
     PresetSystemPropertyKeys.SELECTED_VECTOR_SEGMENT,
     {
-      defaultValue: null
+      defaultValue: null,
+      source$: selectedSegmentObservable
     }
   )
 

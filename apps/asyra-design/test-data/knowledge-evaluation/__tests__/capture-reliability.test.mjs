@@ -169,6 +169,7 @@ test('source freeze includes dirty/untracked execution owners and builds but exc
 
   try {
     execFileSync('git', ['init', '-q', folder])
+    write('.gitignore', '**/dist/')
     write('apps/asyra-design/src/owner.ts', 'original')
     execFileSync('git', ['add', '.'], { cwd: folder })
     write('apps/asyra-design/src/owner.ts', 'dirty')
@@ -176,6 +177,7 @@ test('source freeze includes dirty/untracked execution owners and builds but exc
     write('apps/asyra-design/.env', 'SECRET=private')
     write('apps/asyra-design/tmp/output.json', 'changing')
     write('packages/runtime/dist/index.js', 'executing-build')
+    write('apps/asyra-design/dist/document-backend/index.js', 'app-build')
     write('domain-knowledge/example.md', 'advisory')
     const archive = path.join(folder, 'source.gz')
     const first = captureSources(folder, archive)
@@ -190,6 +192,7 @@ test('source freeze includes dirty/untracked execution owners and builds but exc
     )
     assert.ok(first.files['apps/asyra-design/server/new.ts'])
     assert.ok(first.files['packages/runtime/dist/index.js'])
+    assert.ok(first.files['apps/asyra-design/dist/document-backend/index.js'])
     assert.equal(first.files['apps/asyra-design/.env'], undefined)
     write('apps/asyra-design/tmp/output.json', 'different')
     assert.equal(captureSources(folder).digest, first.digest)

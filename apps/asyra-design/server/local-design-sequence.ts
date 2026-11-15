@@ -1,7 +1,5 @@
-import {
-  localToolSchemaIsPortable,
-  localToolResultFieldLifetimes
-} from './local-tool-leases'
+import { AiToolFailureCodes } from '../src/constants/ai-design'
+import { localToolSchemaIsPortable } from './local-tool-leases'
 import {
   runtimeOperationSchema,
   operationInspectionSchema
@@ -10,6 +8,7 @@ import { modelToolResultSchemas } from '../src/ai/tool-contract'
 import {
   embedAiToolSchema,
   registeredRecipeOutputAt,
+  RecipeReferenceError,
   type AiJsonValue,
   type AiRecipeBinding,
   type AiToolContract
@@ -549,8 +548,7 @@ export function createDesignSequencePlanner(
         if (typeof selector.step !== 'string' || !ids.includes(selector.step)) {
           throw new LocalToolInputError(
             'Unknown selected step',
-            'PREPARATION_REJECTED',
-            'correct_input'
+            AiToolFailureCodes.INPUT_INVALID
           )
         }
 
@@ -568,8 +566,7 @@ export function createDesignSequencePlanner(
                   (error instanceof Error
                     ? error.message
                     : 'Unavailable field'),
-                'PREPARATION_REJECTED',
-                'correct_input'
+                AiToolFailureCodes.INPUT_INVALID
               )
             }
           }
@@ -589,21 +586,27 @@ export function createDesignSequencePlanner(
         const operation = operations[ids.indexOf(selector.step)]
         const owner = operation && resolve(String(operation.name))
 
-        if (
-          owner &&
-          (localToolResultFieldLifetimes(
-            modelToolResultSchemas(owner).outputSchema
-          ).requestScopedFields.includes(selector.path) ||
-            !localToolSchemaIsPortable(
-              registeredRecipeOutputAt(
-                runtimeOperationSchema(
-                  modelToolResultSchemas(owner).outputSchema
-                ),
-                selector.path,
-                true
-              )
-            ))
-        ) {
+        let selected: unknown
+
+        try {
+          if (owner) {
+            selected = registeredRecipeOutputAt(
+              runtimeOperationSchema(
+                modelToolResultSchemas(owner).outputSchema
+              ),
+              selector.path,
+              true
+            )
+          }
+        } catch (error) {
+          if (!(error instanceof RecipeReferenceError)) {
+            throw error
+          }
+          // Conditional fields are checked against the validated public value
+          // at capture, just like final-result selections. Never guess a value.
+        }
+
+        if (selected && !localToolSchemaIsPortable(selected, selected, true)) {
           throw new LocalToolInputError(
             'Nonportable result selection: ' +
               alias +
@@ -613,8 +616,7 @@ export function createDesignSequencePlanner(
               selector.path +
               ')' +
               '. Select portable output fields or authored source input; request handles cannot be saved across turns.',
-            'PREPARATION_REJECTED',
-            'correct_input'
+            AiToolFailureCodes.INPUT_INVALID
           )
         }
       }
@@ -639,8 +641,7 @@ export function createDesignSequencePlanner(
           'Operation ' +
             dep.name +
             ' is a native control. Call its registered native tool directly with the same ordinary arguments; do not compose it or replay completed work.',
-          'PREPARATION_REJECTED',
-          'correct_input'
+          AiToolFailureCodes.INPUT_INVALID
         )
       }
 
@@ -661,7 +662,7 @@ export function createDesignSequencePlanner(
       const dep = batchContract()
 
       if (!dep || !batch) {
-        throw new LocalToolInputError('Canvas operations unavailable')
+        throw new Error('Canvas operations unavailable')
       }
 
       const members = group.map(raw)
@@ -673,8 +674,7 @@ export function createDesignSequencePlanner(
         ) {
           throw new LocalToolInputError(
             'Invalid target selector',
-            'PREPARATION_REJECTED',
-            'correct_input'
+            AiToolFailureCodes.INPUT_INVALID
           )
         }
       }
@@ -723,8 +723,7 @@ export function createDesignSequencePlanner(
           if (operationInputIssue(s.target, item?.target)) {
             throw new LocalToolInputError(
               'Invalid target selector',
-              'PREPARATION_REJECTED',
-              'correct_input'
+              AiToolFailureCodes.INPUT_INVALID
             )
           }
 

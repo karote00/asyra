@@ -18,14 +18,14 @@
 ### Retrieve the contract for the chosen method
 
 Use compact category/query menus when the capability is unknown. For known
-operations use `operations`; for known native tools use `names`. `view: usage`
+operations and native tools use `names`. `view: usage`
 returns purpose, the actual invocation route, a validated illustrative owner example
 when available, and canonical nested field/definition paths. Examples do not replace
 executable validation schemas or supply live credentials.
 A canonical action's `recipeDependency` identifies its qualified composition
 route; foreign tools with similar names are separate choices. Select that route
-before obtaining the full recipe contract. The semantic `operations` selector
-(such as `fill.updateFillsAtIndex`) is for discovery; batch `operations[].name`
+before obtaining the full recipe contract. A semantic name
+(such as `fill.updateFillsAtIndex`) belongs in discovery `names`; execution `operations[].name`
 uses the returned registered action `name`. Follow its `execution.tool` and
 argument envelope. Do not invent an action name by copying the search term. Use the following ordinary selectors,
 not a second registry. Choose the smallest missing information for the next action:
@@ -33,7 +33,7 @@ not a second registry. Choose the smallest missing information for the next acti
 | Current state | Retrieval/action | Keep for the next handoff |
 | ------------------------------------------------------------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | Capability is unknown | Compact category/query menu; follow its pagination if needed | Returned operation, exact selector and execution route |
-| Route is chosen; a few argument fields are unknown | Exact `operations` or qualified `names` with `schemaPaths` | Field fragments plus included local references; other required inputs still apply |
+| Route is chosen; a few argument fields are unknown | Exact `names` with per-name `scopes[name].schemaPaths` | Field fragments plus included local references; other required inputs still apply |
 | Current complete contract is already available | Invoke directly with the required values | Result identities, settlement and scoped dependencies |
 | A finite recipe needs a dependency contract | Exact full definition for the returned `recipeDependency` or native route | Complete input/output, partial outcome, effects and lifecycle; a usage menu/fragment is insufficient |
 | Delivered content is absent from effective context | Returned scoped recovery or explicit full refresh when necessary | Current recovered content/revision; do not retry the drawing write |
@@ -50,17 +50,17 @@ Examples use current public selectors:
 
 ```json
 {
-  "tool": "describe_design_apis",
-  "arguments": { "operations": ["fill.updateFillsAtIndex"], "view": "usage" }
+  "tool": "read_design_contracts",
+  "arguments": { "names": ["fill.updateFillsAtIndex"], "view": "usage" }
 }
 ```
 
 ```json
 {
-  "tool": "describe_design_apis",
+  "tool": "read_design_contracts",
   "arguments": {
     "names": ["design_workflow.prepare_and_apply_design"],
-    "schemaPaths": ["/properties/draft"]
+    "scopes": { "design_workflow.prepare_and_apply_design": { "schemaPaths": ["/properties/draft"] } }
   }
 }
 ```

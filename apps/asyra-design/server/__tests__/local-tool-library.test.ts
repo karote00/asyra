@@ -302,10 +302,9 @@ it('repairs bad bindings without execution and rejects control-plane composition
       proposal: recipe('forbidden', 'design.manage')
     })
   ).toMatchObject({ ok: false })
-  expect(
-    (await host.invoke({ name: 'design.manage', input: 1 })).execution
-      .settlement
-  ).toBe('not-started')
+  await expect(
+    host.invoke({ name: 'design.manage', input: 1 })
+  ).rejects.toMatchObject({ code: 'TOOL_INPUT_INVALID' })
 })
 
 it('keeps save failure independent and retries only durable storage', async () => {
@@ -389,10 +388,9 @@ it('preserves saved candidates and suspends or retires durable revisions through
   expect(
     await next.host.setState('double-write', 1, 'suspended')
   ).toMatchObject({ status: 'saved' })
-  expect(
-    (await next.host.invoke({ name: 'double-write', input: 4 })).execution
-      .settlement
-  ).toBe('not-started')
+  await expect(
+    next.host.invoke({ name: 'double-write', input: 4 })
+  ).rejects.toMatchObject({ code: 'TOOL_INPUT_INVALID' })
   expect(await next.host.setState('double-write', 1, 'retired')).toMatchObject({
     status: 'saved'
   })
@@ -448,14 +446,12 @@ it('reserves bounded receipt ownership before mutation and frees it after save-o
     throw new Error('No space')
   })
   await host.invoke({ name: 'double-write', input: 1, callId: 'pending' })
-  expect(
-    (await host.invoke({ name: 'double-write', input: 2, callId: 'pending' }))
-      .execution.settlement
-  ).toBe('not-started')
-  expect(
-    (await host.invoke({ name: 'double-write', input: 2, callId: 'new' }))
-      .execution.settlement
-  ).toBe('not-started')
+  await expect(
+    host.invoke({ name: 'double-write', input: 2, callId: 'pending' })
+  ).rejects.toMatchObject({ code: 'TOOL_INPUT_INVALID' })
+  await expect(
+    host.invoke({ name: 'double-write', input: 2, callId: 'new' })
+  ).rejects.toMatchObject({ code: 'TOOL_INPUT_INVALID' })
   expect(execute).toHaveBeenCalledTimes(2)
   expect(
     await host.save({ name: 'double-write', revision: 2, receiptId: 'pending' })

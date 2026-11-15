@@ -1930,7 +1930,7 @@ it('preserves the original history snapshot while recording actual principal tra
   for (const [index, tool] of [
     'read_design_context',
     'review_design',
-    'describe_design_apis'
+    'read_design_contracts'
   ].entries()) {
     projection.append({
       attempt: 1,
@@ -2155,6 +2155,7 @@ it('replays saved operation admission without public phase churn before executio
       ...start,
       attempt: 1,
       summary: 'Recorded start phase',
+      tool: 'search_design_tools',
       toolStatus: 'running'
     } as AiRuntimeProgressUpdate)
 

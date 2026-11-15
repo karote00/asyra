@@ -924,3 +924,14 @@ it.each([
     }
   }
 )
+
+it('declares stable or explicitly registration-dependent values for every public read', () => {
+  const reads = basicApiContracts.filter(
+    (contract) => contract.effect === 'read'
+  )
+
+  expect(reads.length).toBeGreaterThan(0)
+  for (const contract of reads) {
+    expect(contract.result.valueSchema, contract.name).toBeDefined()
+  }
+})

@@ -1,4 +1,4 @@
-import { getActiveDocumentScope } from '../collaboration/lifecycle'
+import { getActiveDocumentScope } from '../collaboration/session-observation'
 import { createBrowserRecordOutbox } from './record-outbox'
 import { AI_EXECUTION_RECORD_ENDPOINT } from './action-batch-endpoint'
 import { basicApiPermissionRules } from './basic-api-catalog'

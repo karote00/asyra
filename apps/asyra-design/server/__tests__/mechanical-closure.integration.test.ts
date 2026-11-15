@@ -539,8 +539,8 @@ it('selects recorded mechanical coverage before reconciliation without probing u
     )
   )
 
-  expect(parentReply.actionResults[0].result).not.toHaveProperty(
-    'coveredMeasurementTargets'
+  expect(parentReply.actionResults[0].result.coveredMeasurementTargets).toEqual(
+    [...descendants, ...descendants.map((id) => `${id}:child`)]
   )
   expect(exchanges).toHaveLength(roots.length + 74)
   expect(exchanges.at(-2)?.request).toMatchObject({

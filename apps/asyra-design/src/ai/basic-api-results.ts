@@ -100,6 +100,45 @@ export const requireMutationReceipt = (
   return result
 }
 
+// JavaScript read owners may explicitly contain optional undefined properties.
+// JSON object omission preserves absence; array slots and non-JSON values remain
+// invalid and are never converted to fabricated nulls or string values.
+const readJsonValue = (
+  value: unknown,
+  ancestors = new Set<object>()
+): unknown => {
+  if (!value || typeof value !== 'object') {
+    return value
+  }
+
+  const prototype = Object.getPrototypeOf(value)
+
+  if (
+    !Array.isArray(value) &&
+    prototype !== Object.prototype &&
+    prototype !== null
+  ) {
+    return value
+  }
+
+  if (ancestors.has(value)) {
+    throw new TypeError('Read value must not contain cycles')
+  }
+
+  ancestors.add(value)
+  try {
+    return Array.isArray(value)
+      ? value.map((item) => readJsonValue(item, ancestors))
+      : Object.fromEntries(
+          Object.entries(value)
+            .filter(([, item]) => item !== undefined)
+            .map(([key, item]) => [key, readJsonValue(item, ancestors)])
+        )
+  } finally {
+    ancestors.delete(value)
+  }
+}
+
 /** Interpret only declared owner return contracts. Never reread the document or invent before/after data. */
 export const describeBasicApiResult = (
   contract: BasicApiContract,
@@ -107,7 +146,19 @@ export const describeBasicApiResult = (
   targetElementIds?: unknown
 ) => {
   const kind = contract.result.kind
-  const raw = { value: value ?? null }
+  const projected =
+    contract.result.valueFields && value !== null && typeof value === 'object'
+      ? Object.fromEntries(
+          contract.result.valueFields
+            .filter((field) => field in value)
+            .map((field) => [field, Reflect.get(value, field)])
+        )
+      : value
+  const raw = {
+    value:
+      (contract.effect === 'read' ? readJsonValue(projected) : projected) ??
+      null
+  }
 
   if (kind === 'allocated-ids') {
     if (

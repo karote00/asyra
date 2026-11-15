@@ -8,6 +8,36 @@ const { isEqual } = lodash
 const record = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === 'object' && !Array.isArray(v)
 
+/** Resolve one local JSON Pointer with the same rules for all App adapters. */
+export const resolveLocalSchemaReference = (
+  root: unknown,
+  reference: string
+): unknown => {
+  if (
+    (reference !== '#' && !reference.startsWith('#/')) ||
+    /~(?![01])/.test(reference)
+  ) {
+    throw new TypeError('Unsupported local schema reference: ' + reference)
+  }
+
+  let target = root
+
+  for (const token of reference === '#' ? [] : reference.slice(2).split('/')) {
+    const key = token.replace(/~1/g, '/').replace(/~0/g, '~')
+
+    if (
+      (!record(target) && !Array.isArray(target)) ||
+      !Object.hasOwn(target, key)
+    ) {
+      throw new TypeError('Unknown local schema reference: ' + reference)
+    }
+
+    target = Reflect.get(target, key)
+  }
+
+  return target
+}
+
 export interface OperationInputIssue {
   readonly instancePath: string
   readonly keyword: string
@@ -177,21 +207,12 @@ export const operationSchemaIssue = (
         return path + ': unsupported schema reference'
       }
 
-      let target: unknown = referenceRoot
+      let target: unknown
 
-      for (const part of node.$ref === '#'
-        ? []
-        : node.$ref.slice(2).split('/')) {
-        const key = part.replace(/~1/g, '/').replace(/~0/g, '~')
-
-        if (
-          (!record(target) && !Array.isArray(target)) ||
-          !Object.hasOwn(target, key)
-        ) {
-          return path + ': unknown schema reference'
-        }
-
-        target = (target as Record<string, unknown>)[key]
+      try {
+        target = resolveLocalSchemaReference(referenceRoot, node.$ref)
+      } catch {
+        return path + ': unknown schema reference'
       }
 
       const issue = visit(target, path + '/$ref')
@@ -341,19 +362,11 @@ export const operationInputIssues = (
         return [issue(`${path}: unsupported schema reference`)]
       }
 
-      let resolved: unknown = referenceRoot
+      let resolved: unknown
 
-      for (const part of s.$ref === '#' ? [] : s.$ref.slice(2).split('/')) {
-        const key = part.replace(/~1/g, '/').replace(/~0/g, '~')
-
-        resolved =
-          (record(resolved) || Array.isArray(resolved)) &&
-          Object.hasOwn(resolved, key)
-            ? (resolved as Record<string, unknown>)[key]
-            : undefined
-      }
-
-      if (resolved === undefined) {
+      try {
+        resolved = resolveLocalSchemaReference(referenceRoot, s.$ref)
+      } catch {
         return [issue(`${path}: unknown schema reference`)]
       }
 

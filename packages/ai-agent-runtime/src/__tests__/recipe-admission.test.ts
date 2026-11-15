@@ -3,7 +3,84 @@ import type { AiRecipeBinding } from '../recipe-types.js'
 import { detachAiJsonValue } from '../json-value.js'
 import { admitAiRecipe } from '../recipe-admission.js'
 import { createAiToolContract } from '../tool-contract.js'
-import { readRegisteredRecipeSchema, recipeSchemaAt } from '../recipe-schema.js'
+import {
+  readRegisteredRecipeSchema,
+  recipeSchemaAt,
+  registeredRecipeOutputAt
+} from '../recipe-schema.js'
+
+it('selects declared alternative fields only with execution-time presence checks and preserves lifetimes', () => {
+  const schema = {
+    anyOf: [
+      {
+        type: 'object',
+        properties: {
+          status: { const: 'ready' },
+          handle: { type: 'string', 'x-runtime-value': 'request-artifact' }
+        },
+        required: ['status', 'handle'],
+        additionalProperties: false
+      },
+      {
+        type: 'object',
+        properties: { status: { const: 'empty' } },
+        required: ['status'],
+        additionalProperties: false
+      }
+    ]
+  }
+
+  expect(registeredRecipeOutputAt(schema, '/handle', true)).toMatchObject({
+    type: 'string',
+    'x-runtime-value': 'request-artifact'
+  })
+  expect(() => registeredRecipeOutputAt(schema, '/handle')).toThrow(
+    /absent|guaranteed/
+  )
+  expect(() => registeredRecipeOutputAt(schema, '/unknown', true)).toThrow(
+    /absent|guaranteed/
+  )
+})
+
+it('preserves intersection constraints and request lifetimes during conditional field selection', () => {
+  const schema = {
+    anyOf: [
+      {
+        allOf: [
+          {
+            type: 'object',
+            properties: {
+              handle: { type: 'string', 'x-runtime-value': 'request-artifact' },
+              count: { type: 'number', minimum: 0 }
+            },
+            required: ['handle', 'count']
+          },
+          {
+            type: 'object',
+            properties: { count: { type: 'number', maximum: 5 } }
+          }
+        ]
+      },
+      {
+        type: 'object',
+        properties: { empty: { const: true } },
+        required: ['empty'],
+        additionalProperties: false
+      }
+    ]
+  }
+
+  expect(registeredRecipeOutputAt(schema, '/handle', true)).toMatchObject({
+    type: 'string',
+    'x-runtime-value': 'request-artifact'
+  })
+  expect(registeredRecipeOutputAt(schema, '/count', true)).toMatchObject({
+    type: 'number',
+    minimum: 0,
+    maximum: 5
+  })
+  expect(() => registeredRecipeOutputAt(schema, '/handle')).toThrow()
+})
 
 const admitStructured = (
   schema: unknown,
@@ -1838,15 +1915,14 @@ it('projects nullable result fields only when the request sequence checks their 
     type: 'number'
   })
   expect(() => recipeSchemaAt(schema, '/value/z', true)).toThrow()
-  expect(() =>
-    recipeSchemaAt(
-      readRegisteredRecipeSchema({
-        anyOf: [object({ x: number }), object({ y: number }), { type: 'null' }]
-      }),
-      '/x',
-      true
-    )
-  ).toThrow()
+  const alternatives = readRegisteredRecipeSchema({
+    anyOf: [object({ x: number }), object({ y: number }), { type: 'null' }]
+  })
+
+  expect(recipeSchemaAt(alternatives, '/x', true)).toMatchObject({
+    type: 'number'
+  })
+  expect(() => recipeSchemaAt(alternatives, '/x')).toThrow()
   expect(() =>
     recipeSchemaAt(
       readRegisteredRecipeSchema({ anyOf: [{ type: 'null' }] }),
@@ -1910,3 +1986,73 @@ it('forwards an opaque registered result with its exact validation contract but 
     admitAiRecipe(proposal, options({ resolve: () => dependency })).ok
   ).toBe(false)
 })
+
+it.each([
+  {
+    source: { type: 'number' },
+    target: { type: 'number', minimum: -100, maximum: 100 },
+    allowed: true
+  },
+  {
+    source: { type: 'number' },
+    target: { type: 'integer', minimum: -100 },
+    allowed: false
+  },
+  {
+    source: { type: 'number', enum: [1] },
+    target: { type: 'number', enum: [2] },
+    allowed: false
+  },
+  { source: { type: 'string' }, target: { type: 'number' }, allowed: false },
+  {
+    source: { type: 'number', 'x-runtime-value': 'request' },
+    target: { type: 'number' },
+    allowed: false
+  }
+])(
+  'checks numeric request refinements at execution without weakening durable admission: %j',
+  ({ source, target, allowed }) => {
+    const produce = createAiToolContract({
+      ...edit,
+      name: 'produce-number',
+      inputSchema: number,
+      outputSchema: source
+    })
+    const consume = createAiToolContract({
+      ...edit,
+      name: 'consume-number',
+      inputSchema: target,
+      outputSchema: number
+    })
+    const plan = {
+      format: 1,
+      name: 'numeric-handoff',
+      revision: 1,
+      description: 'Bind current numeric owner output.',
+      inputSchema: number,
+      outputSchema: number,
+      steps: [
+        {
+          id: 'produce',
+          tool: produce.name,
+          revision: produce.revision,
+          input: { kind: 'input', path: '' }
+        },
+        {
+          id: 'consume',
+          tool: consume.name,
+          revision: consume.revision,
+          input: { kind: 'step', step: 'produce', path: '' }
+        }
+      ],
+      output: { kind: 'step', step: 'consume', path: '' }
+    }
+    const environment = options({
+      resolve: (name: string) => (name === produce.name ? produce : consume)
+    })
+
+    expect(admitAiRecipe(plan, environment, 'sequence').ok).toBe(allowed)
+    expect(admitAiRecipe(plan, environment, 'registered').ok).toBe(false)
+    expect(admitAiRecipe(plan, environment, 'inline').ok).toBe(false)
+  }
+)

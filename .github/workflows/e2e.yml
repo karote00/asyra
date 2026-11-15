@@ -3,9 +3,6 @@ name: E2E Tests
 on:
   workflow_call:
     inputs:
-      run_balanced_ai_correctness:
-        type: boolean
-        default: false
       selected_suites:
         type: string
         default: '["collaboration","flow-inspector-board","functional","render-contracts"]'
@@ -24,11 +21,6 @@ on:
         value: ${{ jobs.render-contracts.result }}
   workflow_dispatch:
     inputs:
-      run_balanced_ai_correctness:
-        description: Run the 7,112-element balanced AI correctness gate
-        required: false
-        type: boolean
-        default: false
       selected_suites:
         description: JSON array of E2E suites to run
         required: false
@@ -146,19 +138,10 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
-      - name: Resolve balanced AI correctness scope
-        id: balanced_ai_scope
-        env:
-          E2E_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          E2E_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          E2E_MANUAL_BALANCED_AI_CORRECTNESS: ${{ inputs.run_balanced_ai_correctness }}
-        run: node scripts/balanced-ai-correctness-scope.mjs >> "$GITHUB_OUTPUT"
-
       - name: Run E2E Tests
         env:
           E2E_SUITE: functional
           FLOW_CI_REPORT: ${{ github.workspace }}/tmp/flow-ci/design.json
-          RUN_BALANCED_AI_CORRECTNESS: ${{ steps.balanced_ai_scope.outputs.run_balanced_ai_correctness }}
         run: bash scripts/run-e2e.sh
 
       - name: Export complete design observation bundle

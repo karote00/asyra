@@ -40,6 +40,9 @@
     "server/__tests__/evaluation-budget.test.ts",
     "server/__tests__/whole-result-forwarding-review.test.ts",
     "server/__tests__/operation-input-schema.test.ts",
-    "src/ai/__tests__/tool-schema.test.ts"
+    "src/ai/__tests__/tool-schema.test.ts",
+    "server/__tests__/native-provider-handoff.integration.test.ts",
+    "server/__tests__/conversation-production-handoff.integration.test.ts",
+    "server/__tests__/native-output-observation.integration.test.ts"
   ]
 }

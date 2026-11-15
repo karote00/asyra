@@ -477,7 +477,7 @@ it('retains activity identity while dropping duplicate and stale producer events
       provider: {
         requestActionBatch: async (_input, options) => {
           const event = {
-            tool: 'execute_design_batch',
+            tool: 'vectorizer',
             status: 'running' as const,
             message: 'Adding windows',
             activity: {

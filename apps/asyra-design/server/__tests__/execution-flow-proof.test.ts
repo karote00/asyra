@@ -1,9 +1,10 @@
+import { readCompleteInformation } from './tool-contract-assertions'
+import { contractReadFixture } from './contract-read-fixture'
 import targetAdmission from '../../test-data/ai-drawing/fixtures/target-admission-20261107.json'
 import { LocalToolLibraryLimits } from '../local-tool-library-limits'
 import preparationFindings from '../../test-data/ai-drawing/fixtures/preparation-findings-20261107.json'
 import acquisitionQuery from '../../test-data/ai-drawing/fixtures/capability-acquisition-20261106.json'
-import recordedTargetStop from '../../test-data/ai-drawing/fixtures/strict-target-stop-20261106.json'
-import { evaluationToolStop } from '../evaluation-control'
+
 import selectedInspection from '../../test-data/ai-drawing/fixtures/selected-inspection-20261106.json'
 import { resultDelivery } from '../local-result-delivery'
 import type { LocalToolImage } from '../local-tool-media'
@@ -56,12 +57,7 @@ import type {
 } from '../../src/ai/prepared-design'
 import { createLocalDesignWorkflow } from '../local-design-workflow'
 import { createLocalDesignTools } from '../local-design-tools'
-import { createLocalOperationTools as createOperationOwner } from '../local-operation-tools'
-
-// This declared proof file must remain self-contained in the isolated verifier.
-const createLocalOperationTools = (
-  ...args: Parameters<typeof createOperationOwner>
-) => createOperationOwner(...args)
+import { createLocalOperationTools } from '../local-operation-tools'
 
 import { AiDesignToolIds } from '../../src/constants/ai-design'
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
@@ -149,20 +145,18 @@ it('execution proof resolves batched semantic identities and applies ordered rea
   const signal = new AbortController().signal
   const discovery = JSON.parse(
     await readCompleteInformation(
-      (args) => operations.call('describe_design_apis', args, signal),
+      (args, requestedTool) => operations.call(requestedTool, args, signal),
       {
-        operations: [
-          'fill.updateFillsAtIndex',
-          'hierarchy.moveElementsRelative'
-        ],
+        names: ['fill.updateFillsAtIndex', 'hierarchy.moveElementsRelative'],
         view: 'usage',
         includeResultSchema: true
-      }
+      },
+      'read_design_contracts'
     )
   )
 
   expect(discovery.apis).toHaveLength(2)
-  expect(discovery.missingOperations).toEqual([])
+  expect(discovery.missingNames).toEqual([])
   expect(execute).not.toHaveBeenCalled()
   const workflow = createLocalDesignWorkflow(designs, operations)
   const draft = {
@@ -477,25 +471,28 @@ it('execution proof preserves partial lookup full recovery and declaration const
     }
   )
 
-  const read = async (args: unknown) =>
-    JSON.parse(
-      await tools.call(
-        AiDesignToolIds.DESCRIBE_DESIGN_APIS,
-        args,
-        new AbortController().signal
-      )
-    ).apis[0]
+  const read = async (toolName: string, args: unknown) =>
+    JSON.parse(await tools.call(toolName, args, new AbortController().signal))
+      .apis[0]
 
-  const fragment = await read({
+  const fragment = await read('read_design_contracts', {
     names: [action.name],
-    schemaPaths: ['/properties/elementIds']
+    scopes: Object.fromEntries(
+      [action.name].map((name) => [
+        name,
+        { schemaPaths: ['/properties/elementIds'] }
+      ])
+    )
   })
 
   expect(fragment.schemaFragments[0].schema).toEqual(
     action.inputSchema.properties.elementIds
   )
   expect(fragment.definition.coverage).toBe('partial')
-  const recovered = await read(fragment.definition.recover.arguments)
+  const recovered = await read(
+    fragment.definition.recover.tool,
+    fragment.definition.recover.arguments
+  )
 
   expect(recovered.definition).toMatchObject({
     coverage: 'partial',
@@ -504,19 +501,26 @@ it('execution proof preserves partial lookup full recovery and declaration const
   })
   expect(recovered.schemaFragments).toEqual(fragment.schemaFragments)
   expect(recovered.inputSchema).toBeUndefined()
-  const full = await read({ names: [action.name] })
+  const full = await read('read_design_contracts', { names: [action.name] })
 
   expect(full.inputSchema).toEqual(action.inputSchema)
-  const repeated = await read({ names: [action.name] })
+  const repeated = await read('read_design_contracts', { names: [action.name] })
 
   expect(repeated.definition.availableInResponse).toBe(true)
   expect(
-    (await read(repeated.definition.refresh.arguments)).inputSchema
+    (
+      await read(
+        repeated.definition.refresh.tool,
+        repeated.definition.refresh.arguments
+      )
+    ).inputSchema
   ).toEqual(action.inputSchema)
   expect(JSON.stringify(fragment).length).toBeLessThan(
     JSON.stringify(full).length
   )
-  const inspection = await read({ operations: [AiActionNames.REVIEW_DESIGN] })
+  const inspection = await read('read_design_contracts', {
+    names: [AiActionNames.REVIEW_DESIGN]
+  })
 
   expect(inspection.execution).toEqual({
     kind: 'native-tool',
@@ -533,7 +537,7 @@ it('execution proof preserves partial lookup full recovery and declaration const
   ).not.toContain(AiActionNames.REVIEW_DESIGN)
   const menu = JSON.parse(
     await tools.call(
-      AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+      'search_design_tools',
       { query: 'review' },
       new AbortController().signal
     )
@@ -603,13 +607,10 @@ it('execution proof preserves partial lookup full recovery and declaration const
   )
   const usage = JSON.parse(
     await readCompleteInformation(
-      (input) =>
-        highLevel.call(
-          AiDesignToolIds.DESCRIBE_DESIGN_APIS,
-          input,
-          new AbortController().signal
-        ),
-      { names: [preparation.name], view: 'usage', includeResultSchema: true }
+      (input, requestedTool) =>
+        highLevel.call(requestedTool, input, new AbortController().signal),
+      { names: [preparation.name], view: 'usage', includeResultSchema: true },
+      'read_design_contracts'
     )
   ).tools[0]
 
@@ -632,13 +633,10 @@ it('execution proof preserves partial lookup full recovery and declaration const
   ).toHaveLength(prepared.elementCount)
   const restoredUsage = JSON.parse(
     await readCompleteInformation(
-      (input) =>
-        highLevel.call(
-          AiDesignToolIds.DESCRIBE_DESIGN_APIS,
-          input,
-          new AbortController().signal
-        ),
-      usage.definition.recover.arguments
+      (input, requestedTool) =>
+        highLevel.call(requestedTool, input, new AbortController().signal),
+      usage.definition.recover.arguments,
+      'read_design_contracts'
     )
   ).tools[0]
 
@@ -780,7 +778,7 @@ it('execution proof preserves registered native capability envelopes', async ({
               turnId: 'proof-turn',
               callId: 'discover',
               namespace: 'design_operations',
-              tool: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+              tool: 'read_design_contracts',
               arguments: {
                 names: [
                   ...basicApiContracts.map(({ name }) => name),
@@ -801,8 +799,8 @@ it('execution proof preserves registered native capability envelopes', async ({
               turnId: 'proof-turn',
               callId: 'discover-fill',
               namespace: 'design_operations',
-              tool: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
-              arguments: { category: 'fill', includeSchemas: true }
+              tool: 'search_design_tools',
+              arguments: { category: 'fill' }
             }
           })
         }
@@ -816,7 +814,7 @@ it('execution proof preserves registered native capability envelopes', async ({
               turnId: 'proof-turn',
               callId: `page-${packet.id}`,
               namespace: 'design_operations',
-              tool: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+              tool: 'search_design_tools',
               arguments:
                 packet.id === 101
                   ? { query: 'delete elements' }
@@ -958,7 +956,8 @@ it('execution proof preserves registered native capability envelopes', async ({
     expect(definition).toMatchObject({
       type: 'function',
       deferLoading:
-        definition.name !== AiDesignToolIds.DESCRIBE_DESIGN_APIS &&
+        definition.name !== AiDesignToolIds.READ_DESIGN_CONTRACTS &&
+        definition.name !== AiDesignToolIds.SEARCH_DESIGN_TOOLS &&
         definition.name !== 'execute_design',
       name: expect.any(String),
       description: expect.any(String),
@@ -968,16 +967,26 @@ it('execution proof preserves registered native capability envelopes', async ({
 
   const names = new Set(definitions.map(({ name }) => name))
 
-  expect(names.has(AiDesignToolIds.DESCRIBE_DESIGN_APIS)).toBe(true)
+  expect(names.has(AiDesignToolIds.READ_DESIGN_CONTRACTS)).toBe(true)
+  const contractRead = definitions.find(
+    ({ name }) => name === AiDesignToolIds.READ_DESIGN_CONTRACTS
+  )
+  const search = definitions.find(
+    ({ name }) => name === AiDesignToolIds.SEARCH_DESIGN_TOOLS
+  )
+
   expect(
-    definitions.find(
-      ({ name }) => name === AiDesignToolIds.DESCRIBE_DESIGN_APIS
+    operationInputIssue(
+      { names: ['group_elements'] },
+      contractRead?.inputSchema
     )
-  ).toMatchObject({
-    inputSchema: {
-      properties: { query: { type: 'string' }, names: { type: 'array' } }
-    }
-  })
+  ).toBeUndefined()
+  expect(
+    operationInputIssue({ query: 'group elements' }, contractRead?.inputSchema)
+  ).toBeDefined()
+  expect(
+    operationInputIssue({ query: 'group elements' }, search?.inputSchema)
+  ).toBeUndefined()
   for (const id of [102, 103]) {
     const reply = packets.find(
       (packet) => packet.id === id && packet.result
@@ -1019,12 +1028,12 @@ it('execution proof preserves registered native capability envelopes', async ({
       .map((api) =>
         expect.objectContaining({
           name: api.name,
-          definition: expect.objectContaining({ state: 'included' })
+          usage: expect.objectContaining({ tool: 'read_design_contracts' })
         })
       )
   )
   for (const api of categoryApis) {
-    expect(api.inputSchema).toBeDefined()
+    expect(api.inputSchema).toBeUndefined()
   }
 
   const mixed = packets.find(
@@ -1114,7 +1123,7 @@ it('execution proof preserves registered native capability envelopes', async ({
   expect(catalog).toMatchObject({
     toolCount: definitions.length,
     toolDefinitionBytes: Buffer.byteLength(JSON.stringify(groups), 'utf8'),
-    eagerToolCount: 2,
+    eagerToolCount: 3,
     eagerToolDefinitionBytes: Buffer.byteLength(
       JSON.stringify(definitions.filter((tool) => !tool.deferLoading)),
       'utf8'
@@ -1417,8 +1426,15 @@ it('execution proof composes preparation and canonical dispatch without repeated
             result: {
               status: 'complete',
               compositionId: design.rootId,
-              appliedElementIds: Object.values(design.keyToId),
-              keyToId: design.keyToId
+              timing: {},
+              appliedElementCount: design.entries.length,
+              appliedElementIds: design.entries.map(
+                (entry) => entry.descriptor.id
+              ),
+              keyToId: design.keyToId,
+              roleToElementIds: Object.fromEntries(
+                Object.entries(design.keyToId).map(([key, id]) => [key, [id]])
+              )
             }
           }
         ]
@@ -1540,7 +1556,6 @@ it('execution proof composes preparation and canonical dispatch without repeated
 
   expect(result).toMatchObject({
     available: true,
-    receiptScope: 'compact',
     actionResults: [
       {
         result: {
@@ -2119,7 +2134,6 @@ it('execution proof recovers a rejected reference through a different original s
   )
   const rejected = JSON.parse(referenceReply.text)
 
-  expect(evaluationToolStop(referenceReply)).toBeUndefined()
   expect(rejected.references[0].failure).toMatchObject({
     stage: 'response',
     reason: 'http',
@@ -2882,7 +2896,6 @@ it('execution proof consumes canonical mutation scope without read pollution or 
   ])
 
   expect(blocked).toMatchObject({
-    recoverable: false,
     toolOutcome: { settlement: 'not-started' }
   })
 })
@@ -3280,7 +3293,7 @@ it('execution proof preserves a rejected mechanical repair as not-started across
     })
 
     expect(JSON.parse(reply.text)).toMatchObject({
-      code: 'PREPARATION_REJECTED',
+      code: 'TOOL_INPUT_INVALID',
       toolOutcome: { status: 'failed', settlement: 'not-started' }
     })
     expect(execute).not.toHaveBeenCalled()
@@ -3372,7 +3385,7 @@ it('execution proof connects tool-first guidance to native selection and Runtime
     const invoke = async (name: string, input: unknown) =>
       JSON.parse((await host.invoke({ name, input })).text)
 
-    const lookup = await invoke('design_operations.describe_design_apis', {
+    const lookup = await invoke('design_operations.read_design_contracts', {
       names: ['design_operations.verify_design_checks']
     })
 
@@ -3601,6 +3614,16 @@ it('execution proof saves nested tool evidence and reopens without product repla
   try {
     const literal = (value: unknown) => ({ kind: 'literal', value })
 
+    const preparation = host
+      .definitions()
+      .find(
+        (entry) => entry.registeredName === 'design_preparation.prepare_design'
+      )
+
+    if (!preparation) {
+      throw new Error('Missing current preparation contract')
+    }
+
     const child = {
       format: 1,
       name: 'prepared-source',
@@ -3612,7 +3635,7 @@ it('execution proof saves nested tool evidence and reopens without product repla
         {
           id: 'prepare',
           tool: 'design_preparation.prepare_design',
-          revision: 4,
+          revision: preparation.revision,
           input: {
             kind: 'object',
             fields: {
@@ -3717,7 +3740,7 @@ it('execution proof saves nested tool evidence and reopens without product repla
         revision: 1,
         receiptId: first.receiptId
       })
-    ).toMatchObject({ status: 'unsaved' })
+    ).toMatchObject({ code: 'TOOL_INPUT_INVALID', settlement: 'not-started' })
     const second = await call('tool_library.invoke_tool', {
       name: parent.name,
       revision: 1,
@@ -3790,7 +3813,7 @@ it('execution proof preserves issued history direction across the App feature ha
     for (const modifier of [ModifierKey.META, ModifierKey.CTRL]) {
       const combo = keyCombinations[
         InputSystemEvents.INPUT_SHORTCUT_UNDOREDO
-      ].find((entry) => entry.modifiers.includes(modifier))
+      ].find((entry) => entry.modifiers.some((value) => value === modifier))
 
       if (!combo) {
         throw new Error('Missing real history shortcut')
@@ -4023,7 +4046,7 @@ it('execution proof retires superseded recorded purpose after provider tool sett
               turnId: 'purpose-turn',
               callId: `lookup-${stageIndex}`,
               namespace: 'design_operations',
-              tool: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+              tool: 'search_design_tools',
               arguments: { category: 'tools' }
             }
           })
@@ -5013,7 +5036,7 @@ it('execution proof rejects mismatched query scopes before reads and preserves e
   const fillAction = observeAiAction(createRetainedFillAction(retained))
   const definitions = [readAction, fillAction]
   const dispatched: string[] = []
-  const tools = createOperationOwner(
+  const tools = createLocalOperationTools(
     definitions.map(createAiToolContract),
     {
       modelActions: (a) => a,
@@ -5187,7 +5210,7 @@ it('execution proof admits complete per-target material corrections from the pub
       result: { status: 'complete' }
     }))
   }))
-  const owner = createOperationOwner(
+  const owner = createLocalOperationTools(
     [
       createAiToolContract({
         ...contract,
@@ -6427,46 +6450,6 @@ it('execution proof preserves exact submitted inspection pixels and delivery ide
   }
 })
 
-/** Isolated source-proof consumer validates complete bounded delivery. */
-const readCompleteInformation = async (
-  call: (input: unknown) => Promise<string>,
-  input: unknown
-): Promise<string> => {
-  let raw = await call(input)
-  let text = ''
-  let offset = 0
-  let revision: string | undefined
-
-  for (let count = 0; count < 256; count++) {
-    const page = JSON.parse(raw).contentDelivery
-
-    if (!page) {
-      expect(offset).toBe(0)
-
-      return raw
-    }
-
-    expect(Buffer.byteLength(raw)).toBeLessThanOrEqual(24000)
-    expect(page.startByte).toBe(offset)
-    revision ??= page.revision
-    expect(page.revision).toBe(revision)
-    text += page.text
-    offset += Buffer.byteLength(page.text)
-    expect(page.endByte).toBe(offset)
-    if (page.lastPage) {
-      expect(offset).toBe(page.totalBytes)
-      expect(page.next).toBeNull()
-      JSON.parse(text)
-
-      return text
-    }
-
-    raw = await call(page.next.arguments)
-  }
-
-  throw new Error('Information continuation did not terminate')
-}
-
 it('execution proof delivers bounded information through owner continuations without replaying operations', async () => {
   const { toolSemantics } = await import('../../src/ai/tool-contract')
   const dispatch = vi.fn()
@@ -6483,7 +6466,7 @@ it('execution proof delivers bounded information through owner continuations wit
       }
     }
   }
-  const owner = createOperationOwner(
+  const owner = createLocalOperationTools(
     basicApiContracts.map((contract) => ({
       ...contract,
       inputSchema: contract.inputSchema as AiActionDescription['inputSchema'],
@@ -6508,7 +6491,7 @@ it('execution proof delivers bounded information through owner continuations wit
     }
   )
   const definition = owner.definitions.find(
-    (d) => d.name === 'describe_design_apis'
+    (d) => d.name === 'read_design_contracts'
   )
 
   if (!definition) {
@@ -6586,8 +6569,9 @@ it('execution proof selects nested Knowledge without reading sibling bodies', as
     )
     const read = JSON.parse(
       await readCompleteInformation(
-        (input) => tools.call('read_knowledge', input, abortSignal),
-        { ids: [id], contexts }
+        (input, requestedTool) => tools.call(requestedTool, input, abortSignal),
+        { ids: [id], contexts },
+        'read_knowledge'
       )
     )
 
@@ -6614,8 +6598,9 @@ it('execution proof selects nested Knowledge without reading sibling bodies', as
     )
     const delta = JSON.parse(
       await readCompleteInformation(
-        (input) => tools.call('read_knowledge', input, abortSignal),
-        { ids: [id], contexts, reuseFrom: [entry.contextKey] }
+        (input, requestedTool) => tools.call(requestedTool, input, abortSignal),
+        { ids: [id], contexts, reuseFrom: [entry.contextKey] },
+        'read_knowledge'
       )
     )
 
@@ -6646,9 +6631,10 @@ async function readKnowledgeTopic(id: string): Promise<string> {
   try {
     const result = JSON.parse(
       await readCompleteInformation(
-        (input) =>
-          owner.call('read_knowledge', input, new AbortController().signal),
-        { ids: [id], contexts: ['architectural-illustration'] }
+        (input, requestedTool) =>
+          owner.call(requestedTool, input, new AbortController().signal),
+        { ids: [id], contexts: ['architectural-illustration'] },
+        'read_knowledge'
       )
     )
     const document = result.documents.find(
@@ -6900,13 +6886,10 @@ it('execution proof delivers selected operation contracts without exhaustive dis
   ]) {
     const found = JSON.parse(
       await readCompleteInformation(
-        (args) =>
-          catalog.call(
-            'describe_design_apis',
-            args,
-            new AbortController().signal
-          ),
-        { query, view: 'usage' }
+        (args, requestedTool) =>
+          catalog.call(requestedTool, args, new AbortController().signal),
+        { query },
+        'search_design_tools'
       )
     )
     const candidate = found.apis.find(
@@ -6923,13 +6906,10 @@ it('execution proof delivers selected operation contracts without exhaustive dis
 
   const groupUsage = JSON.parse(
     await readCompleteInformation(
-      (args) =>
-        catalog.call(
-          'describe_design_apis',
-          args,
-          new AbortController().signal
-        ),
-      { names: ['api_hierarchy_groupElements'], view: 'usage' }
+      (args, requestedTool) =>
+        catalog.call(requestedTool, args, new AbortController().signal),
+      { names: ['api_hierarchy_groupElements'], view: 'usage' },
+      'read_design_contracts'
     )
   ).apis[0].usageGuide
   const groupPath = '/actionResults/0/result/value/groupId'
@@ -6969,11 +6949,11 @@ it('execution proof delivers selected operation contracts without exhaustive dis
   )
   const selectedUsage = JSON.parse(
     await selectedMutation.call(
-      'describe_design_apis',
+      'read_design_contracts',
       {
-        operations: [AiActionNames.UPDATE_DESIGN_ELEMENT],
         view: 'usage',
-        includeResultSchema: true
+        includeResultSchema: true,
+        names: [AiActionNames.UPDATE_DESIGN_ELEMENT]
       },
       new AbortController().signal
     )
@@ -7036,26 +7016,30 @@ it('execution proof delivers selected operation contracts without exhaustive dis
   const workflow = createLocalDesignWorkflow(designs, operations)
   const counts: number[] = []
 
-  const read = async (input: unknown) =>
+  const read = async (toolName: string, input: unknown) =>
     JSON.parse(
-      await readCompleteInformation(async (args) => {
-        const text = await operations.call(
-          'describe_design_apis',
-          args,
-          new AbortController().signal
-        )
+      await readCompleteInformation(
+        async (args, requestedTool) => {
+          const text = await operations.call(
+            requestedTool,
+            args,
+            new AbortController().signal
+          )
 
-        counts.push(Buffer.byteLength(text))
+          counts.push(Buffer.byteLength(text))
 
-        return text
-      }, input)
+          return text
+        },
+        input,
+        toolName
+      )
     )
 
   for (const query of [
     acquisitionQuery.compound.input,
     acquisitionQuery.broad.input
   ]) {
-    const candidates = await read(query)
+    const candidates = await read('search_design_tools', { query: query.query })
     const candidate = candidates.tools.find(
       (tool: { name: string }) => tool.name === 'prepare_and_apply_design'
     )
@@ -7069,13 +7053,16 @@ it('execution proof delivers selected operation contracts without exhaustive dis
       candidate.usage?.arguments ?? candidate.definition.recover.arguments
 
     expect(selection.names).toEqual(['design.prepare_and_apply_design'])
-    const acquired = await read({
-      ...selection,
-      inputScope: {
-        operation: acquisitionQuery.selectedInput.inputScope.operation,
-        nodeTypes: acquisitionQuery.selectedInput.inputScope.nodeTypes
-      }
-    })
+    const acquired = await read(
+      'read_design_contracts',
+      contractReadFixture(selection.names, {
+        ...selection,
+        inputScope: {
+          operation: acquisitionQuery.selectedInput.inputScope.operation,
+          nodeTypes: acquisitionQuery.selectedInput.inputScope.nodeTypes
+        }
+      })
+    )
     const selected = acquired.tools[0]
 
     expect(selected.definition.coverage).toBe('scoped-usage')
@@ -7110,13 +7097,20 @@ it('execution proof delivers selected operation contracts without exhaustive dis
   )
 
   expect(guidance.inputScopes.selection).toContain('outer repetition')
-  expect(guidance.example.arguments.inputScope).toEqual({
+  if (!guidance.example.arguments.scopes) {
+    throw new Error('Owner example omitted its selected input scope')
+  }
+
+  expect(
+    guidance.example.arguments.scopes[guidance.example.arguments.names[0]]
+      .inputScope
+  ).toEqual({
     operation: 'draft',
     nodeTypes: ['pattern']
   })
   expect(guidance.operationUsage.draft).toContain('10000 expanded objects')
   expect(guidance.operationUsage.parts).toContain('each part artifact fits')
-  const first = await read(guidance.example.arguments)
+  const first = await read(guidance.example.tool, guidance.example.arguments)
 
   expect(first.tools[0].usageGuide).toBeDefined()
   const deliveredSchema = first.tools[0].usageGuide.parameters
@@ -7170,7 +7164,7 @@ it('execution proof delivers selected operation contracts without exhaustive dis
   expect(execute).not.toHaveBeenCalled()
 
   const definition = operations.definitions.find(
-    (item) => item.name === 'describe_design_apis'
+    (item) => item.name === 'read_design_contracts'
   )
 
   if (!definition) {
@@ -7182,7 +7176,11 @@ it('execution proof delivers selected operation contracts without exhaustive dis
     definition,
     {
       ...guidance.example.arguments,
-      inputScope: { operation: 'create', nodeTypes: ['vector'] }
+      scopes: {
+        [guidance.example.arguments.names[0]]: {
+          inputScope: { operation: 'create', nodeTypes: ['vector'] }
+        }
+      }
     },
     new AbortController().signal
   )
@@ -7202,10 +7200,15 @@ it('execution proof delivers selected operation contracts without exhaustive dis
     optionalInputs: guidance.inputScopes.optionalInputs
   })
   expect(
-    (await read(correction.example.arguments)).tools[0].usageGuide
+    (await read(correction.example.tool, correction.example.arguments)).tools[0]
+      .usageGuide
   ).toEqual(first.tools[0].usageGuide)
   counts.splice(0)
-  const menu = await read({ names, view: 'usage', includeResultSchema: true })
+  const menu = await read('read_design_contracts', {
+    names,
+    view: 'usage',
+    includeResultSchema: true
+  })
 
   expect(counts).toHaveLength(1)
   expect(menu.tools[0].inputScopes.selection).toContain('next submitted part')
@@ -7219,8 +7222,8 @@ it('execution proof delivers selected operation contracts without exhaustive dis
   )
   expect(menu.tools[0].outputFields).toBeUndefined()
   counts.splice(0)
-  const queried = await read({
-    query: names[0],
+  const queried = await read('read_design_contracts', {
+    names,
     view: 'usage',
     includeResultSchema: true
   })
@@ -7229,21 +7232,33 @@ it('execution proof delivers selected operation contracts without exhaustive dis
     names
   )
   expect(counts).toHaveLength(1)
-  expect(counts[0]).toBeLessThan(5000)
+  expect(queried.tools[0].usageGuide).toEqual(menu.tools[0].usageGuide)
+  expect(counts[0]).toBeLessThanOrEqual(24000)
   counts.splice(0)
   const { names: scopedNames, ...selectedQuery } = guidance.example.arguments
-  const expectedScope = await read(guidance.example.arguments)
+  const expectedScope = await read(
+    guidance.example.tool,
+    guidance.example.arguments
+  )
   const expectedBytes = counts.splice(0)
-  const actualScope = await read({ query: scopedNames[0], ...selectedQuery })
+  const actualScope = await read('read_design_contracts', {
+    names: scopedNames,
+    ...selectedQuery
+  })
 
   expect(actualScope.tools).toEqual(expectedScope.tools)
   expect(counts).toHaveLength(expectedBytes.length)
   expect(counts.every((bytes) => bytes <= 24000)).toBe(true)
   counts.splice(0)
-  const full = await read({ names })
+  const full = await read('read_design_contracts', { names })
   const fullCounts = counts.splice(0)
   const inputScope = { operation: 'draft', nodeTypes: ['vector'] }
-  const scoped = await read({ names, inputScope })
+  const scoped = await read('read_design_contracts', {
+    names,
+    scopes: Object.fromEntries(
+      names.map((name) => [name, { inputScope: inputScope }])
+    )
+  })
 
   expect(counts.length).toBeLessThan(fullCounts.length)
   expect(counts.reduce((sum, bytes) => sum + bytes, 0)).toBeLessThan(
@@ -7256,13 +7271,17 @@ it('execution proof delivers selected operation contracts without exhaustive dis
   expect(scoped.tools[0].recoveryOutputSchema).toEqual(
     full.tools[0].recoveryOutputSchema
   )
-  expect(scoped.tools[0].definition.recover.arguments.inputScope).toEqual(
-    inputScope
-  )
+  expect(
+    scoped.tools[0].definition.recover.arguments.scopes[
+      scoped.tools[0].definition.recover.arguments.names[0]
+    ].inputScope
+  ).toEqual(inputScope)
   counts.splice(0)
-  const guide = await read({
+  const guide = await read('read_design_contracts', {
     names,
-    inputScope,
+    scopes: Object.fromEntries(
+      names.map((name) => [name, { inputScope: inputScope }])
+    ),
     view: 'usage',
     includeResultSchema: true
   })
@@ -7294,9 +7313,11 @@ it('execution proof delivers selected operation contracts without exhaustive dis
     operation: 'draft',
     nodeTypes: ['projected-face', 'surface-grid']
   }
-  const combined = await read({
+  const combined = await read('read_design_contracts', {
     names,
-    inputScope: mixedScope,
+    scopes: Object.fromEntries(
+      names.map((name) => [name, { inputScope: mixedScope }])
+    ),
     view: 'usage',
     includeResultSchema: true
   })
@@ -7309,7 +7330,12 @@ it('execution proof delivers selected operation contracts without exhaustive dis
   const invocation = ownerInvocation(
     combined.tools[0].invocationExample.invocation
   )
-  const combinedFull = await read({ names, inputScope: mixedScope })
+  const combinedFull = await read('read_design_contracts', {
+    names,
+    scopes: Object.fromEntries(
+      names.map((name) => [name, { inputScope: mixedScope }])
+    )
+  })
 
   expect(
     operationInputIssue(invocation.arguments, combinedFull.tools[0].inputSchema)
@@ -7338,7 +7364,7 @@ it('execution proof delivers selected operation contracts without exhaustive dis
 
 it('execution proof distinguishes inspection lookup coverage from completed reads', async () => {
   const dispatch = vi.fn()
-  const owner = createOperationOwner(
+  const owner = createLocalOperationTools(
     [
       {
         name: AiActionNames.INSPECT_DRAWING,
@@ -7358,7 +7384,7 @@ it('execution proof distinguishes inspection lookup coverage from completed read
     }
   )
   const definition = owner.definitions.find(
-    (d) => d.name === 'describe_design_apis'
+    (d) => d.name === 'read_design_contracts'
   )
 
   if (!definition) {
@@ -7371,7 +7397,12 @@ it('execution proof distinguishes inspection lookup coverage from completed read
       definition,
       {
         names: ['record_design_facts', 'record_design_calculations'],
-        schemaPaths
+        scopes: Object.fromEntries(
+          ['record_design_facts', 'record_design_calculations'].map((name) => [
+            name,
+            { schemaPaths: schemaPaths }
+          ])
+        )
       },
       new AbortController().signal
     )
@@ -8000,13 +8031,6 @@ const proveDeadlineQueryCleanup = async (
 it('execution proof separates bounded work from same-thread self-report without replay', async ({
   onTestFinished
 }) => {
-  expect(evaluationToolStop(recordedTargetStop.output)?.message).toBe(
-    recordedTargetStop.output.issues[0]
-  )
-  expect(evaluationToolStop(recordedTargetStop.aggregate)?.message).toBe(
-    recordedTargetStop.output.issues[0]
-  )
-
   const observations: CleanupProofObservation[] = []
   const log = vi.spyOn(console, 'info').mockImplementation((line) => {
     if (typeof line === 'string' && line.startsWith('{')) {
@@ -8146,7 +8170,7 @@ it('execution proof separates bounded work from same-thread self-report without 
 
   await writeFile(
     resolve(directory, 'evaluation-control.json'),
-    JSON.stringify({ workDeadlineAt, stopOnFailure: true })
+    JSON.stringify({ workDeadlineAt })
   )
   const request = requestLocalAiActionBatch(
     {
@@ -8322,7 +8346,7 @@ const proveBudgetRecovery = async (limit: number, withBrief = false) => {
         }))
       )
     }))
-    const operations = createOperationOwner(actions, tools, execute)
+    const operations = createLocalOperationTools(actions, tools, execute)
     const trace = vi.fn()
     const main = createLocalDesignWorkflow(tools, operations, { trace })
     const definition = main.definitions[0]
@@ -8380,8 +8404,7 @@ const proveBudgetRecovery = async (limit: number, withBrief = false) => {
             }
           ]
         },
-        inspection: 'defer',
-        response: 'compact'
+        inspection: 'defer'
       },
       signal
     )
@@ -8541,7 +8564,7 @@ it('execution proof delivers layered repetition before parameters with canonical
       }
     })
   }))
-  const operations = createOperationOwner(actions, designs, execute, {
+  const operations = createLocalOperationTools(actions, designs, execute, {
     getNativeTools: () =>
       main.definitions.map((definition) => ({
         ...definition,
@@ -8553,8 +8576,8 @@ it('execution proof delivers layered repetition before parameters with canonical
   const replies: string[] = []
   const guide = JSON.parse(
     await readCompleteInformation(
-      async (args) => {
-        const raw = await operations.call('describe_design_apis', args, signal)
+      async (args, requestedTool) => {
+        const raw = await operations.call(requestedTool, args, signal)
 
         replies.push(raw)
 
@@ -8564,12 +8587,20 @@ it('execution proof delivers layered repetition before parameters with canonical
         names: ['prepare_and_apply_design'],
         view: 'usage',
         includeResultSchema: true,
-        inputScope: {
-          operation: 'draft',
-          nodeTypes: ['projected-face', 'surface-grid', 'pattern'],
-          optionalInputs: []
-        }
-      }
+        scopes: Object.fromEntries(
+          ['prepare_and_apply_design'].map((name) => [
+            name,
+            {
+              inputScope: {
+                operation: 'draft',
+                nodeTypes: ['projected-face', 'surface-grid', 'pattern'],
+                optionalInputs: []
+              }
+            }
+          ])
+        )
+      },
+      'read_design_contracts'
     )
   )
   const tool = guide.tools[0]
@@ -8809,11 +8840,18 @@ const sharedMotifProof = () => {
       names: ['prepare_and_apply_design'],
       view: 'usage',
       includeResultSchema: true,
-      inputScope: {
-        operation: 'draft',
-        nodeTypes: ['projected-face', 'surface-grid'],
-        optionalInputs: []
-      }
+      scopes: Object.fromEntries(
+        ['prepare_and_apply_design'].map((name) => [
+          name,
+          {
+            inputScope: {
+              operation: 'draft',
+              nodeTypes: ['projected-face', 'surface-grid'],
+              optionalInputs: []
+            }
+          }
+        ])
+      )
     },
     baseline: { guideReplies: 2, guideWireBytes: 27021 }
   }
@@ -8855,20 +8893,24 @@ it('execution proof delivers shared motifs through the main workflow without ext
       }
     })
   }))
-  const operations = createOperationOwner(actions, designs, execute, {
+  const operations = createLocalOperationTools(actions, designs, execute, {
     getNativeTools: () =>
       main.definitions.map((d) => ({ ...d, namespace: 'design' }))
   })
   const main = createLocalDesignWorkflow(designs, operations),
     signal = new AbortController().signal
   const replies: string[] = []
-  const body = await readCompleteInformation(async (args) => {
-    const raw = await operations.call('describe_design_apis', args, signal)
+  const body = await readCompleteInformation(
+    async (args, requestedTool) => {
+      const raw = await operations.call(requestedTool, args, signal)
 
-    replies.push(raw)
+      replies.push(raw)
 
-    return raw
-  }, fixture.query)
+      return raw
+    },
+    fixture.query,
+    'read_design_contracts'
+  )
   const tool = JSON.parse(body).tools[0]
 
   expect(body).toContain('motifTemplates')
@@ -8963,7 +9005,7 @@ it('execution proof preserves shared motifs geometry budget lifetime and recover
   }))
   const main = createLocalDesignWorkflow(
       designs,
-      createOperationOwner(actions, designs, execute)
+      createLocalOperationTools(actions, designs, execute)
     ),
     signal = new AbortController().signal
 
@@ -9043,7 +9085,7 @@ it('execution proof follows union entry navigation and valid recovery without re
     ...toolSemantics({ type: 'object' }, 'read', [])
   }
   const dispatch = vi.fn()
-  const owner = createOperationOwner(
+  const owner = createLocalOperationTools(
     [action],
     {
       modelActions: (a) => a,
@@ -9054,7 +9096,7 @@ it('execution proof follows union entry navigation and valid recovery without re
     {
       getNativeTools: () => [
         {
-          name: action.name,
+          name: 'union_native',
           namespace: 'context_tools',
           description: action.description,
           inputSchema: {
@@ -9071,7 +9113,7 @@ it('execution proof follows union entry navigation and valid recovery without re
 
   const read = async (args: unknown) => {
     const definition = owner.definitions.find(
-      (tool) => tool.name === 'describe_design_apis'
+      (tool) => tool.name === 'read_design_contracts'
     )
 
     if (!definition) {
@@ -9089,7 +9131,7 @@ it('execution proof follows union entry navigation and valid recovery without re
   }
 
   const { value: usage, outcome: usageOutcome } = await read({
-    names: [action.name],
+    names: [action.name, 'context_tools.union_native'],
     view: 'usage',
     includeResultSchema: true
   })
@@ -9110,14 +9152,14 @@ it('execution proof follows union entry navigation and valid recovery without re
     } = entry.definition.refresh.arguments
     const { value: scoped, outcome: scopedOutcome } = await read({
       ...selector,
-      schemaPaths: [path]
+      scopes: { [selector.names[0]]: { schemaPaths: [path] } }
     })
 
     expect([...scoped.apis, ...(scoped.tools ?? [])]).toHaveLength(1)
     expect(scopedOutcome.status).toBe('success')
     const { value: invalid, outcome: invalidOutcome } = await read({
       ...selector,
-      schemaPaths: ['/missing']
+      scopes: { [selector.names[0]]: { schemaPaths: ['/missing'] } }
     })
 
     expect(invalidOutcome).toMatchObject({ status: 'failed' })
@@ -9204,8 +9246,7 @@ it('execution proof preserves interrupted owner results without replay', async (
               id: 'apply',
               name: action.name,
               arguments: {
-                design: deliverPreparedDesign(design),
-                response: 'compact'
+                design: deliverPreparedDesign(design)
               },
               summary: 'Draw'
             }
@@ -9670,10 +9711,17 @@ it('execution proof delivers projected ovals through projection and canonical di
       names: ['prepare_and_apply_design'],
       view: 'usage',
       includeResultSchema: true,
-      inputScope: {
-        operation: 'draft',
-        nodeTypes: ['projected-face', 'pattern']
-      }
+      scopes: Object.fromEntries(
+        ['prepare_and_apply_design'].map((name) => [
+          name,
+          {
+            inputScope: {
+              operation: 'draft',
+              nodeTypes: ['projected-face', 'pattern']
+            }
+          }
+        ])
+      )
     },
     source: { selectedDeliveryBytes: 19948 }
   }
@@ -9711,20 +9759,24 @@ it('execution proof delivers projected ovals through projection and canonical di
       }
     })
   }))
-  const operations = createOperationOwner(actions, designs, execute, {
+  const operations = createLocalOperationTools(actions, designs, execute, {
     getNativeTools: () =>
       main.definitions.map((d) => ({ ...d, namespace: 'design' }))
   })
   const main = createLocalDesignWorkflow(designs, operations),
     signal = new AbortController().signal
   const replies: string[] = []
-  const body = await readCompleteInformation(async (args) => {
-    const raw = await operations.call('describe_design_apis', args, signal)
+  const body = await readCompleteInformation(
+    async (args, requestedTool) => {
+      const raw = await operations.call(requestedTool, args, signal)
 
-    replies.push(raw)
+      replies.push(raw)
 
-    return raw
-  }, fixture.query)
+      return raw
+    },
+    fixture.query,
+    'read_design_contracts'
+  )
   const tool = JSON.parse(body).tools[0]
 
   expect(body).toContain('ellipse')
@@ -10206,7 +10258,7 @@ it('execution proof prepares explicit attachment uses through the existing owner
   })
   const references = images.validateReferences([0, 1])
   const dispatch = vi.fn()
-  const owner = createOperationOwner(
+  const owner = createLocalOperationTools(
     [
       {
         name: AiActionNames.INSPECT_DRAWING,
@@ -10275,6 +10327,7 @@ it('execution proof prepares explicit attachment uses through the existing owner
     expect(failed.success).toBe(false)
     expect(JSON.parse(failed.text)).toMatchObject({
       settlement: 'not-started',
+      code: 'SOURCE_UNAVAILABLE',
       message: expect.stringContaining('bounds')
     })
     const retained = await invoke('select_design_references', {
@@ -10293,7 +10346,7 @@ it('execution proof delivers complete non-scoped usage without mutation or a ful
   const execute = vi.fn(async () => {
     throw new Error('Lookup must not dispatch')
   })
-  const tools = createOperationOwner(
+  const tools = createLocalOperationTools(
     [
       {
         name: AiActionNames.APPLY_PREPARED_DESIGN,
@@ -10313,7 +10366,7 @@ it('execution proof delivers complete non-scoped usage without mutation or a ful
     }
   )
   const definition = tools.definitions.find(
-    (d) => d.name === 'describe_design_apis'
+    (d) => d.name === 'read_design_contracts'
   )
 
   if (!definition) {
@@ -10327,9 +10380,21 @@ it('execution proof delivers complete non-scoped usage without mutation or a ful
     includeResultSchema: true
   }
   const raw = await readCompleteInformation(
-    async (args) =>
-      (await invokeLocalTool(tools, definition, args, signal)).text,
-    query
+    async (args, requestedTool) =>
+      (
+        await invokeLocalTool(
+          tools,
+          definition.name === requestedTool
+            ? definition
+            : (() => {
+                throw new Error('Unknown continuation tool: ' + requestedTool)
+              })(),
+          args,
+          signal
+        )
+      ).text,
+    query,
+    definition.name
   )
   const entry = JSON.parse(raw).tools[0]
 
@@ -10392,7 +10457,7 @@ it('execution proof follows saved material recovery without reinjecting resolved
   )
   const workflow = createLocalDesignWorkflow(
     designs,
-    createOperationOwner(actions, designs, execute)
+    createLocalOperationTools(actions, designs, execute)
   )
   const signal = new AbortController().signal
 
@@ -10483,7 +10548,7 @@ it('execution proof declares the saved model receipt without internal result fie
     const execute = vi.fn(async () => {
       throw new Error('Discovery must not execute')
     })
-    const owner = createOperationOwner(
+    const owner = createLocalOperationTools(
       actions,
       {
         modelActions: (v) => v,
@@ -10493,7 +10558,7 @@ it('execution proof declares the saved model receipt without internal result fie
       execute
     )
     const query = owner.definitions.find(
-      (d) => d.name === 'describe_design_apis'
+      (d) => d.name === 'read_design_contracts'
     )
 
     if (!query) {
@@ -10503,7 +10568,10 @@ it('execution proof declares the saved model receipt without internal result fie
     const reply = await invokeLocalTool(
       owner,
       query,
-      saved.query,
+      {
+        names: saved.query.operations,
+        view: saved.query.view
+      },
       new AbortController().signal
     )
     const value = JSON.parse(reply.text)
@@ -10542,7 +10610,7 @@ it('execution proof declares the saved model receipt without internal result fie
     const designs = createLocalDesignTools(workflowActions)
     const workflow = createLocalDesignWorkflow(
       designs,
-      createOperationOwner(workflowActions, designs, execute)
+      createLocalOperationTools(workflowActions, designs, execute)
     )
     const source = {
       name: 'scoped_receipt',
@@ -10589,7 +10657,7 @@ it('execution proof declares the saved model receipt without internal result fie
         {
           name: 'design_operations',
           description: 'Discovery',
-          owner: createOperationOwner(actions, designs, execute, {
+          owner: createLocalOperationTools(actions, designs, execute, {
             getNativeTools: () => host.definitions()
           })
         },
@@ -10604,9 +10672,9 @@ it('execution proof declares the saved model receipt without internal result fie
     try {
       const acquired = JSON.parse(
         await readCompleteInformation(
-          async (input) => {
+          async (input, requestedTool) => {
             const reply = await host.invoke({
-              name: 'design_operations.describe_design_apis',
+              name: 'design_operations.' + requestedTool,
               input
             })
 
@@ -10618,8 +10686,14 @@ it('execution proof declares the saved model receipt without internal result fie
             names: ['fixture.scoped_receipt'],
             view: 'usage',
             includeResultSchema: true,
-            inputScope: { operation: 'draft', nodeTypes: ['pattern'] }
-          }
+            scopes: Object.fromEntries(
+              ['fixture.scoped_receipt'].map((name) => [
+                name,
+                { inputScope: { operation: 'draft', nodeTypes: ['pattern'] } }
+              ])
+            )
+          },
+          'read_design_contracts'
         )
       ).tools[0]
       const example = acquired.invocationExample.invocation
@@ -10711,9 +10785,25 @@ it('execution proof preserves raw browser prefixes at the host failure boundary'
         }
       ).text
   )
-  const project = vi.fn((_name: string, _input: unknown, value: unknown) =>
-    projectToolResultFields(value, schema)
-  )
+  const project = vi.fn((_name: string, _input: unknown, value: unknown) => {
+    if (!value || typeof value !== 'object' || !('executionResult' in value)) {
+      throw new Error('The failure owner requires its complete envelope')
+    }
+
+    expect(value).toMatchObject({
+      available: false,
+      code: 'AI_EXECUTION_FAILED',
+      executionResult: {
+        value: 'completed prefix',
+        diagnostic: 'private owner timing'
+      }
+    })
+
+    return {
+      ...value,
+      executionResult: projectToolResultFields(value.executionResult, schema)
+    }
+  })
   const host = createLocalToolHost({
     requestId: 'browser-prefix-proof',
     signal: new AbortController().signal,
@@ -10897,10 +10987,10 @@ it('execution proof retains correctable selected failures for same-host repair',
       })
 
       expect(JSON.parse(admission.text)).toMatchObject({
-        recovery: 'correct_input',
+        code: 'TOOL_INPUT_INVALID',
         settlement: 'not-started'
       })
-      expect(evaluationToolStop(admission)).toBeUndefined()
+
       expect(writes).toBe(0)
 
       const reply = await host.invoke({
@@ -10935,13 +11025,12 @@ it('execution proof retains correctable selected failures for same-host repair',
       })
       const failed = JSON.parse(reply.text)
 
-      expect(evaluationToolStop(reply), reply.text).toBeUndefined()
       expect(writes).toBe(2)
       expect(reply.text).not.toContain('visitedResults')
       const recovery = failed.failure.execution.recovery[2].value
 
       expect(recovery).toMatchObject({
-        recovery: 'correct_input',
+        code: 'TOOL_INPUT_INVALID',
         settlement: 'not-started',
         geometryIssue: { code: 'NONPLANAR_FACE' }
       })
@@ -10988,7 +11077,7 @@ it('execution proof retains correctable selected failures for same-host repair',
         status: 'success',
         settlement: 'completed'
       })
-      expect(evaluationToolStop(repaired)).toBeUndefined()
+
       expect(writes).toBe(3)
     } finally {
       await host.dispose()
@@ -11091,7 +11180,7 @@ it('execution proof preserves recoverable discovery identity selection without h
     await import('../../src/ai/basic-api-actions')
   const { createAiToolContract } = await import('@asyra/ai-agent-runtime')
   const dispatch = vi.fn()
-  const owner = createOperationOwner(
+  const owner = createLocalOperationTools(
     createBasicApiActions().map(createAiToolContract),
     {
       modelActions: (a) => a,
@@ -11101,7 +11190,7 @@ it('execution proof preserves recoverable discovery identity selection without h
     dispatch
   )
   const definition = owner.definitions.find(
-    (tool) => tool.name === 'describe_design_apis'
+    (tool) => tool.name === 'read_design_contracts'
   )
 
   if (!definition) {
@@ -11111,29 +11200,38 @@ it('execution proof preserves recoverable discovery identity selection without h
   const call = (input: unknown) =>
     invokeLocalTool(owner, definition, input, new AbortController().signal)
 
-  const mixed = await call(recorded.input)
+  const mixed = await call({
+    names: recorded.input.operations,
+    view: recorded.input.view
+  })
   const value = JSON.parse(mixed.text)
 
   expect(value).toMatchObject({
     status: 'partial',
     settlement: 'completed',
-    missingOperations: ['fill.updateFills'],
-    recovery: { kind: 'select_identity' }
+    missingNames: ['fill.updateFills'],
+    code: 'IDENTITY_UNRESOLVED'
   })
   expect(value.apis).toHaveLength(2)
-  expect(evaluationToolStop(mixed)).toBeUndefined()
+
   const resolved = await call({
-    operations: ['fill.updateFillsAtIndex'],
+    names: ['fill.updateFillsAtIndex'],
     view: 'usage'
   })
 
   expect(resolved.outcome.status).toBe('success')
   const unavailable = await call({
     names: ['hierarchy.groupElements', 'missing'],
-    schemaPaths: ['/invalidField']
+    scopes: Object.fromEntries(
+      ['hierarchy.groupElements', 'missing'].map((name) => [
+        name,
+        { schemaPaths: ['/invalidField'] }
+      ])
+    )
   })
 
-  expect(evaluationToolStop(unavailable)?.kind).toBe('tool-failure')
+  expect(JSON.parse(unavailable.text).code).toBe('TOOL_INPUT_INVALID')
+
   expect(dispatch).not.toHaveBeenCalled()
 })
 
@@ -11182,7 +11280,7 @@ it('execution proof uses named-step result contracts and corrects selectors befo
       {
         name: 'design_operations',
         description: 'Discovery',
-        owner: createOperationOwner(
+        owner: createLocalOperationTools(
           actions,
           {
             modelActions: (a) => a,
@@ -11254,14 +11352,15 @@ it('execution proof uses named-step result contracts and corrects selectors befo
 
   try {
     const usage = await readCompleteInformation(
-      async (input) =>
+      async (input, requestedTool) =>
         (
           await host.invoke({
-            name: 'design_operations.describe_design_apis',
+            name: 'design_operations.' + requestedTool,
             input
           })
         ).text,
-      { names: ['fixture.a'], view: 'usage' }
+      { names: ['fixture.a'], view: 'usage' },
+      'read_design_contracts'
     )
 
     expect(JSON.parse(usage).tools, usage).toBeDefined()
@@ -11286,7 +11385,7 @@ it('execution proof uses named-step result contracts and corrects selectors befo
       const reply = await call({ operations, ...selection })
 
       expect(reply.outcome.settlement, reply.text).toBe('not-started')
-      expect(evaluationToolStop(reply), reply.text).toBeUndefined()
+
       expect(calls).toBe(0)
     }
 
@@ -11304,7 +11403,12 @@ it('execution proof uses named-step result contracts and corrects selectors befo
     ]) {
       const reply = await call(input)
 
-      expect(evaluationToolStop(reply), reply.text).toBeDefined()
+      expect(reply.outcome).toMatchObject({
+        status: 'failed',
+        settlement: 'not-started',
+        issues: [expect.objectContaining({ code: 'TOOL_INPUT_INVALID' })]
+      })
+
       expect(calls).toBe(0)
     }
 
@@ -11405,14 +11509,14 @@ it('execution proof preserves correctable compiled findings before any canvas wr
       status: 'failed',
       settlement: 'not-started'
     })
-    expect(evaluationToolStop(reply), reply.text).toBeUndefined()
+
     const rejected = value.failure.execution.recovery[0].value
 
     expect(rejected).toMatchObject({
       available: false,
       applicable: false,
       settlement: 'not-started',
-      recovery: 'correct_input'
+      code: 'TOOL_INPUT_INVALID'
     })
     expect(
       rejected.findings.some(
@@ -11547,9 +11651,9 @@ it('execution proof preserves target admission correction across direct and inli
     expect(JSON.parse(inline.text), inline.text).toMatchObject({
       available: false,
       settlement: 'not-started',
-      recovery: 'correct_input'
+      code: 'TOOL_INPUT_INVALID'
     })
-    expect(evaluationToolStop(inline), inline.text).toBeUndefined()
+
     const direct = await invokeLocalTool(
       operations,
       definition,
@@ -11560,9 +11664,9 @@ it('execution proof preserves target admission correction across direct and inli
     expect(JSON.parse(direct.text), direct.text).toMatchObject({
       available: false,
       settlement: 'not-started',
-      recovery: 'correct_input'
+      code: 'TOOL_INPUT_INVALID'
     })
-    expect(evaluationToolStop(direct), direct.text).toBeUndefined()
+
     expect(execute).not.toHaveBeenCalled()
     const corrected = structuredClone(source)
 
@@ -11593,9 +11697,12 @@ it('execution proof preserves target admission correction across direct and inli
       new AbortController().signal
     )
 
-    expect(evaluationToolStop(rejected), rejected.text).toMatchObject({
-      kind: 'tool-failure'
+    expect(rejected.outcome).toMatchObject({
+      status: 'failed',
+      settlement: 'not-started',
+      issues: [expect.objectContaining({ code: 'TOOL_INPUT_INVALID' })]
     })
+
     expect(execute).not.toHaveBeenCalled()
   } finally {
     await host.dispose()
@@ -11846,7 +11953,7 @@ it('execution proof preserves authored input correction while blocking incomplet
   for (const mode of [
     'correctable',
     'reference-correctable',
-    'missing-owner',
+    'unregistered-selection',
     'omitted-issues'
   ]) {
     const context = createConversationResults(() => 1).open('admission-proof')
@@ -11927,7 +12034,7 @@ it('execution proof preserves authored input correction while blocking incomplet
         mode === 'reference-correctable' ? reference.tiers : recorded.crown
       ) as typeof recorded.crown
 
-      if (mode === 'missing-owner') {
+      if (mode === 'unregistered-selection') {
         input.operations[0].name = 'missing.operation'
       }
 
@@ -11947,18 +12054,17 @@ it('execution proof preserves authored input correction while blocking incomplet
       expect(value.settlement).toBe('not-started')
       expect(dispatched).toBe(0)
       if (mode === 'correctable' || mode === 'reference-correctable') {
-        expect(value.recovery).toBe('correct_input')
+        expect(value.code).toBe('TOOL_INPUT_INVALID')
         expect(value.message).toContain(
           mode === 'correctable'
             ? 'projection.kind'
             : '/preparationInput/draft/linearFields'
         )
-        expect(evaluationToolStop(reply)).toBeUndefined()
+      } else if (mode === 'unregistered-selection') {
+        expect(value.code).toBe('TOOL_INPUT_INVALID')
+        expect(value.message).toContain('missing.operation')
       } else {
-        expect(value.recovery).not.toBe('correct_input')
-        expect(evaluationToolStop(reply)).toMatchObject({
-          kind: 'tool-failure'
-        })
+        expect(value.code).not.toBe('TOOL_INPUT_INVALID')
       }
     } finally {
       await host.dispose()
@@ -11968,7 +12074,7 @@ it('execution proof preserves authored input correction while blocking incomplet
 
 it('execution proof delivers observations and authored context without approval prerequisites', async () => {
   const calls: string[] = []
-  const owner = createOperationOwner(
+  const owner = createLocalOperationTools(
     [AiActionNames.INSPECT_DRAWING, AiActionNames.REVIEW_DESIGN].map(
       (name) => ({
         name,

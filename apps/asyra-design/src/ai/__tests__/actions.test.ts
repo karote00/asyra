@@ -1,3 +1,4 @@
+import { mutationReceipt } from '../../common-apis/mutation-receipt'
 import { AiExecutionError } from '@asyra/ai-agent-runtime'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import core from '../../contexts'
@@ -23,7 +24,6 @@ afterEach(() => {
 
 const actionApis = (): AiActionApis => ({
   changeElementGeometry: vi.fn(),
-  createCompositionElement: vi.fn(),
   createCompositionElements: vi.fn(),
   createCompositionGroup: vi.fn(),
   getElementBounds: vi.fn(),
@@ -31,7 +31,9 @@ const actionApis = (): AiActionApis => ({
   getElementStrokeColor: vi.fn(),
   getElementType: vi.fn(),
   removeSubtree: vi.fn(() => ({ removed: [] })),
-  scaleVectorElementGeometry: vi.fn(() => true),
+  scaleVectorElementGeometry: vi.fn((id) =>
+    mutationReceipt(true, { acceptedIds: [id], changed: true })
+  ),
   selectElements: vi.fn(),
   setDrawingProgress: vi.fn(),
   setElementsVisible: vi.fn(() => ['changed' as const]),
@@ -279,7 +281,7 @@ describe('Asyra Design AI actions', () => {
   })
 
   it.each([['missing'], ['shape-1', 'missing'], ['missing', 'shape-1']])(
-    'rejects unavailable selection targets atomically: %j',
+    'rejects unavailable selection targets atomically: %j - case %#',
     async (...ids) => {
       const apis = actionApis()
       let selected = ['previous']
@@ -589,7 +591,7 @@ it.each([
     }
   ]
 ])(
-  'executes control %s through public admission without document writes',
+  'executes control %s through public admission without document writes - case %#',
   async (name, input, expected) => {
     const apis = actionApis()
     const action = observeAiAction(actionByName(name as string, apis))

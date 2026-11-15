@@ -59,7 +59,7 @@ const reset = () => {
 }
 
 // Reuse the official preparation, dispatcher, Runtime and transaction owners.
-const create = async (draft: unknown, response: 'compact' | 'full') => {
+const create = async (draft: unknown) => {
   const action = createPreparedDesignAction(undefined, async () => undefined)
   const definitions = [createAiToolContract(action)]
   const preparation = createDesignPreparationSession()
@@ -117,7 +117,7 @@ const create = async (draft: unknown, response: 'compact' | 'full') => {
         operations: [
           {
             name: action.name,
-            arguments: { artifactId: prepared.artifactId, response }
+            arguments: { artifactId: prepared.artifactId }
           }
         ]
       },
@@ -300,14 +300,14 @@ it.each(saved.cases)(
     const work = observeResults()
 
     try {
-      const { canonical, result } = await create(input.draft, 'compact')
+      const { canonical, result } = await create(input.draft)
       const ids = canonical.entries.map((entry) => entry.descriptor.id)
 
       expect(result).toMatchObject({
         status: 'complete',
-        appliedElementCount: ids.length
+        appliedElementCount: ids.length,
+        appliedElementIds: ids
       })
-      expect(result).not.toHaveProperty('appliedElementIds')
       expect(work.pairs.flatMap(({ owner }) => [...owner])).toEqual(ids)
       const document = await core.save()
 
@@ -370,88 +370,81 @@ it.each(saved.cases)(
   60000
 )
 
-it.each(['compact', 'full'] as const)(
-  'preserves %s receipts and old result snapshots across later creation, history and reload',
-  async (response) => {
-    reset()
-    const work = observeResults()
+it('preserves complete receipts and immutable result snapshots across later creation, history and reload', async () => {
+  reset()
+  const work = observeResults()
 
-    try {
-      const draft = {
-        type: 'group',
-        name: 'Independent results',
-        children: [
-          { key: 'first', type: 'rect', name: 'First', width: 10, height: 20 },
-          {
-            key: 'second',
-            type: 'oval',
-            name: 'Second',
-            x: 20,
-            width: 10,
-            height: 20
-          }
-        ]
-      }
-      const { canonical, result } = await create(draft, response)
-      const expected = canonical.entries.map((entry) => entry.descriptor.id)
-
-      if (response === 'full') {
-        expect(result).toMatchObject({ appliedElementIds: expected })
-      } else {
-        expect(result).toMatchObject({ appliedElementCount: expected.length })
-      }
-
-      const savedPairs = work.pairs.slice()
-      const snapshots = savedPairs.map(({ owner }) => [...owner])
-
-      expect(new Set(savedPairs.map(({ owner }) => owner)).size).toBe(
-        savedPairs.length
-      )
-      draft.children.reverse()
-      const source = [
-        { id: 'later', type: 'rect', x: 0, y: 0, width: 2, height: 3 }
+  try {
+    const draft = {
+      type: 'group',
+      name: 'Independent results',
+      children: [
+        { key: 'first', type: 'rect', name: 'First', width: 10, height: 20 },
+        {
+          key: 'second',
+          type: 'oval',
+          name: 'Second',
+          x: 20,
+          width: 10,
+          height: 20
+        }
       ]
-      let later: readonly string[] = []
-
-      transactionApis.runTransaction(() => {
-        later = core.createElementsInParent(source, canonical.rootId)
-      })
-      source[0].id = 'changed-input'
-      expect(later).toEqual(['later'])
-      expect(Object.isFrozen(later)).toBe(true)
-      expect(() => (later as string[]).push('forbidden')).toThrow()
-      const document = await core.save()
-
-      await factory.undo()
-      expect(core.getElementMetadata('later')).toBeUndefined()
-      await factory.redo()
-      expect(core.getElementMetadata('later')).toBeDefined()
-      core.load(document)
-      expect((await core.save()).sceneTree).toEqual(document.sceneTree)
-      expect(savedPairs.map(({ owner }) => [...owner])).toEqual(snapshots)
-      expect(savedPairs.map(({ app }) => [...(app ?? [])])).toEqual(snapshots)
-      expect(later).toEqual(['later'])
-      expect(elementApis.createElementsInParent([], '')).toEqual([])
-      expect(
-        elementApis.createElementsInParent(
-          [canonical.entries[0].descriptor],
-          ''
-        )
-      ).toBeNull()
-      expect(() =>
-        core.createElementsInParent([{ type: 'rect', x: 0, y: 0 }], 'absent')
-      ).toThrow()
-      expect(await core.save()).toEqual(document)
-      expect(work.counts().arrays).toBe(0)
-      for (const { owner, app } of savedPairs) {
-        expect(app).toBe(owner)
-      }
-    } finally {
-      work.restore()
-      factory.transact.reset()
     }
+    const { canonical, result } = await create(draft)
+    const expected = canonical.entries.map((entry) => entry.descriptor.id)
+
+    expect(result).toMatchObject({
+      appliedElementIds: expected,
+      appliedElementCount: expected.length
+    })
+
+    const savedPairs = work.pairs.slice()
+    const snapshots = savedPairs.map(({ owner }) => [...owner])
+
+    expect(new Set(savedPairs.map(({ owner }) => owner)).size).toBe(
+      savedPairs.length
+    )
+    draft.children.reverse()
+    const source = [
+      { id: 'later', type: 'rect', x: 0, y: 0, width: 2, height: 3 }
+    ]
+    let later: readonly string[] = []
+
+    transactionApis.runTransaction(() => {
+      later = core.createElementsInParent(source, canonical.rootId)
+    })
+    source[0].id = 'changed-input'
+    expect(later).toEqual(['later'])
+    expect(Object.isFrozen(later)).toBe(true)
+    expect(() => (later as string[]).push('forbidden')).toThrow()
+    const document = await core.save()
+
+    await factory.undo()
+    expect(core.getElementMetadata('later')).toBeUndefined()
+    await factory.redo()
+    expect(core.getElementMetadata('later')).toBeDefined()
+    core.load(document)
+    expect((await core.save()).sceneTree).toEqual(document.sceneTree)
+    expect(savedPairs.map(({ owner }) => [...owner])).toEqual(snapshots)
+    expect(savedPairs.map(({ app }) => [...(app ?? [])])).toEqual(snapshots)
+    expect(later).toEqual(['later'])
+    expect(elementApis.createElementsInParent([], '')).toEqual([])
+    expect(
+      elementApis.createElementsInParent([canonical.entries[0].descriptor], '')
+    ).toBeNull()
+    expect(() =>
+      core.createElementsInParent([{ type: 'rect', x: 0, y: 0 }], 'absent')
+    ).toThrow()
+    expect(await core.save()).toEqual(document)
+    expect(work.counts().arrays).toBe(0)
+    for (const { owner, app } of savedPairs) {
+      expect(app).toBe(owner)
+    }
+  } finally {
+    work.restore()
+    factory.transact.reset()
   }
-)
+})
 
 it('executes the delivered small-part example without criteria or research and permits later adjustment', async () => {
   reset()
@@ -504,7 +497,7 @@ it('executes the delivered small-part example without criteria or research and p
     const main = createLocalDesignWorkflow(source, operations)
     const signal = new AbortController().signal
     const discovery = operations.definitions.find(
-      (d) => d.name === 'describe_design_apis'
+      (d) => d.name === 'read_design_contracts'
     )
 
     if (!discovery) {
@@ -519,7 +512,12 @@ it('executes the delivered small-part example without criteria or research and p
           {
             names: ['prepare_and_apply_design'],
             view: 'usage',
-            inputScope: { operation: 'draft', nodeTypes: ['vector'] }
+            scopes: Object.fromEntries(
+              ['prepare_and_apply_design'].map((name) => [
+                name,
+                { inputScope: { operation: 'draft', nodeTypes: ['vector'] } }
+              ])
+            )
           },
           signal
         )

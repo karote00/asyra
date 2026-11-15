@@ -41,7 +41,7 @@ const createPanelHarness = () => {
   const pending = createDeferred<Record<string, unknown>>()
   const feature = {
     cancel: vi.fn(() => true),
-    execute: vi.fn(() => pending.promise)
+    execute: vi.fn((_request: AiConversationFeatureRequest) => pending.promise)
   }
   const confirmation = createAiConfirmationBroker()
   let conversationIndex = 0
@@ -94,8 +94,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     await act(async () => {
       void harness.conversation.submit('Refine the tower')
     })
-    const request = harness.feature.execute.mock
-      .calls[0][0] as AiConversationFeatureRequest
+    const request = harness.feature.execute.mock.calls[0][0]
 
     openHistory(screen.getByLabelText('Work history'))
     let sequence = 0
@@ -183,8 +182,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     await act(async () => {
       void harness.conversation.submit('Refine the tower')
     })
-    const request = harness.feature.execute.mock
-      .calls[0][0] as AiConversationFeatureRequest
+    const request = harness.feature.execute.mock.calls[0][0]
 
     await act(async () => {
       request.progressObserver({
@@ -337,9 +335,7 @@ describe('AI Agent conversation panel intent boundary', () => {
         fireEvent.click(
           screen.getByRole('button', { name: 'Toggle conversation history' })
         )
-        fireEvent.click(
-          screen.getByRole('button', { name: 'First design', exact: true })
-        )
+        fireEvent.click(screen.getByRole('button', { name: 'First design' }))
         if (completion === 'load') {
           expect(screen.getByAltText('late.png')).toBeTruthy()
         } else {
@@ -502,9 +498,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     fireEvent.click(
       screen.getByRole('button', { name: 'Toggle conversation history' })
     )
-    fireEvent.click(
-      screen.getByRole('button', { name: 'First design', exact: true })
-    )
+    fireEvent.click(screen.getByRole('button', { name: 'First design' }))
     expect(
       screen.queryByRole('region', { name: 'Conversation history' })
     ).toBeNull()
@@ -519,7 +513,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     fireEvent.click(
       within(
         screen.getByRole('region', { name: 'Conversation history' })
-      ).getByRole('button', { name: 'New conversation', exact: true })
+      ).getByRole('button', { name: 'New conversation' })
     )
     expect(screen.getByLabelText('Message Agent')).toHaveProperty(
       'value',
@@ -540,6 +534,7 @@ describe('AI Agent conversation panel intent boundary', () => {
 
     harness.conversation.getActivity.mockReturnValue({
       entries,
+      mode: 'operation',
       current: entries[1]
     })
     act(() => {
@@ -697,7 +692,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     ['no-change', 'No changes']
   ] as const)(
     'shows the recorded local completion time for a %s outcome',
-    async (outcome) => {
+    async (outcome, _label) => {
       const harness = createPanelHarness()
       const request = harness.conversation.submit('Draw')
 
@@ -1003,7 +998,7 @@ describe('AI Agent conversation panel intent boundary', () => {
       target: { value: 'One cm per pixel' }
     })
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Send', exact: true }))
+      fireEvent.click(screen.getByRole('button', { name: 'Send' }))
     })
     expect(
       screen.getAllByRole('list', {
@@ -1535,7 +1530,7 @@ describe('AI Agent conversation panel intent boundary', () => {
         ] as const
     )
   )(
-    'submits the %s choice with original context (attachment: %s)',
+    'submits the %s choice with original context (attachment: %s) - case %#',
     async (label, expectedIntent, withAttachment) => {
       const referenceAttachment = Object.freeze({
         dataUrl: 'data:image/png;base64,cmV0YWluZWQtcmVmZXJlbmNl',

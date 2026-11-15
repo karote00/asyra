@@ -282,7 +282,9 @@ Render projection. Preset also exports the ID-driven Group adapters defined by
   Before-image ancestry for reparenting is acquired before the canonical move,
   and after-image reads use a new scope. No read cache survives the operation.
 - The official invisible Group uses the engine-neutral independent transform
-  domain. Reparenting a populated Group preserves descendant graphics and
+  domain. Official Group, Frame and Rectangle strategies project canonical
+  x/y/rotation on creation and reload consistently with property updates; omitted
+  rotation resets to zero. Reparenting a populated Group preserves descendant graphics and
   geometry, and hands off the existing render group rather than re-registering
   every descendant. Other Graphics and custom components keep their own policy.
   This preserves child geometry and avoids descendant transform work; it is not

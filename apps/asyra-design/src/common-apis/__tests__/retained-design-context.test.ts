@@ -1,3 +1,4 @@
+import { requiredString } from '../../__tests__/assert-result'
 import {
   createAiInvoker,
   createAiToolContract,
@@ -114,11 +115,15 @@ describe('retained current document queries', () => {
         computedReadCount: 0
       }
     })
-    expect(second.snapshotId).toBe(first.snapshotId)
+    expect(requiredString(second.snapshotId)).toBe(
+      requiredString(first.snapshotId)
+    )
     expect(second.elements[0].id).toBe('b')
     expect(source.getElementIdsInBounds).toHaveBeenCalledTimes(1)
     expect(source.getElementComputedData).toHaveBeenCalledTimes(3)
-    expect(store.get(first.snapshotId).coordinateSpace).toBe('parent-local')
+    expect(store.get(requiredString(first.snapshotId)).coordinateSpace).toBe(
+      'parent-local'
+    )
     store.dispose()
   })
   it.each(['change', 'enter', 'replace'] as const)(
@@ -128,7 +133,9 @@ describe('retained current document queries', () => {
       const first = item.store.read(item.query)
 
       item[operation]()
-      expect(() => item.store.get(first.snapshotId)).toThrow(/stale/)
+      expect(() => item.store.get(requiredString(first.snapshotId))).toThrow(
+        /stale/
+      )
       item.store.dispose()
     }
   )
@@ -136,8 +143,8 @@ describe('retained current document queries', () => {
     const { store, query, source, stop } = fixture()
     const first = store.read(query)
 
-    store.release(first.snapshotId)
-    expect(() => store.get(first.snapshotId)).toThrow(/missing/)
+    store.release(requiredString(first.snapshotId))
+    expect(() => store.get(requiredString(first.snapshotId))).toThrow(/missing/)
     expect(source.getElementIdsInBounds).toHaveBeenCalledTimes(1)
     store.dispose()
     expect(stop).toHaveBeenCalledTimes(1)
@@ -153,7 +160,8 @@ it('reads only the requested retained page rather than revisiting every row', ()
   const first = store.read(query)
   let visits = 0
 
-  for (const row of store.get(first.snapshotId).result.elements) {
+  for (const row of store.get(requiredString(first.snapshotId)).result
+    .elements) {
     const id = row.id
 
     Object.defineProperty(row, 'id', {
@@ -169,7 +177,7 @@ it('reads only the requested retained page rather than revisiting every row', ()
 
   const page = store.read({
     scope: 'snapshot',
-    snapshotId: first.snapshotId,
+    snapshotId: requiredString(first.snapshotId),
     offset: 1,
     limit: 1
   })
@@ -183,7 +191,8 @@ it('returns an opaque reference without materializing retained rows', () => {
   const { store, query } = fixture()
   const first = store.read(query)
 
-  for (const row of store.get(first.snapshotId).result.elements) {
+  for (const row of store.get(requiredString(first.snapshotId)).result
+    .elements) {
     Object.defineProperty(row, 'id', {
       get: () => {
         throw new Error('Unexpected row transfer')
@@ -196,11 +205,11 @@ it('returns an opaque reference without materializing retained rows', () => {
   expect(
     store.read({
       scope: 'snapshot',
-      snapshotId: first.snapshotId,
+      snapshotId: requiredString(first.snapshotId),
       delivery: 'reference'
     })
   ).toMatchObject({
-    snapshotId: first.snapshotId,
+    snapshotId: requiredString(first.snapshotId),
     total: 3,
     elements: [],
     elementIds: []
@@ -230,7 +239,9 @@ it('refuses new retained handoffs under pressure instead of evicting accepted co
     )
   ).toThrow(/capacity/)
   for (const receipt of receipts) {
-    expect(store.get(receipt.snapshotId).orderedIds).toHaveLength(1)
+    expect(
+      store.get(requiredString(receipt.snapshotId)).orderedIds
+    ).toHaveLength(1)
   }
 
   const firstLease = receipts[0].leaseId
@@ -265,9 +276,11 @@ it('releases request leases on settlement but still rejects stale values', () =>
   )
 
   change()
-  expect(() => store.get(receipt.snapshotId)).toThrow(/stale/)
+  expect(() => store.get(requiredString(receipt.snapshotId))).toThrow(/stale/)
   store.releaseFor(signal)
-  expect(() => store.get(receipt.snapshotId, receipt.leaseId)).toThrow(/lease/)
+  expect(() =>
+    store.get(requiredString(receipt.snapshotId), receipt.leaseId)
+  ).toThrow(/lease/)
   store.dispose()
 })
 
@@ -279,11 +292,13 @@ it('can explicitly release a stale lease without returning a newly invalid consu
   expect(
     store.read({
       scope: 'snapshot',
-      snapshotId: receipt.snapshotId,
+      snapshotId: requiredString(receipt.snapshotId),
       release: true
     })
   ).toMatchObject({ available: true, released: true })
-  expect(() => store.get(receipt.snapshotId, receipt.leaseId)).toThrow(/lease/)
+  expect(() =>
+    store.get(requiredString(receipt.snapshotId), receipt.leaseId)
+  ).toThrow(/lease/)
   store.dispose()
 })
 
@@ -294,30 +309,44 @@ it('rejects another request reading, releasing or consuming a same-workspace sna
   const receipt = store.read({ ...query, delivery: 'reference' }, first)
 
   expect(() =>
-    store.read({ scope: 'snapshot', snapshotId: receipt.snapshotId }, second)
-  ).toThrow('request')
-  expect(() =>
     store.read(
-      { scope: 'snapshot', snapshotId: receipt.snapshotId, release: true },
+      { scope: 'snapshot', snapshotId: requiredString(receipt.snapshotId) },
       second
     )
   ).toThrow('request')
-  expect(() => store.get(receipt.snapshotId, receipt.leaseId, second)).toThrow(
-    'request'
-  )
+  expect(() =>
+    store.read(
+      {
+        scope: 'snapshot',
+        snapshotId: requiredString(receipt.snapshotId),
+        release: true
+      },
+      second
+    )
+  ).toThrow('request')
+  expect(() =>
+    store.get(requiredString(receipt.snapshotId), receipt.leaseId, second)
+  ).toThrow('request')
   expect(
-    store.get(receipt.snapshotId, receipt.leaseId, first).orderedIds
+    store.get(requiredString(receipt.snapshotId), receipt.leaseId, first)
+      .orderedIds
   ).toHaveLength(3)
   const independent = store.read({ ...query, delivery: 'reference' }, second)
 
-  expect(independent.snapshotId).not.toBe(receipt.snapshotId)
+  expect(requiredString(independent.snapshotId)).not.toBe(
+    requiredString(receipt.snapshotId)
+  )
   expect(
     store.read({ ...query, delivery: 'reference' }, first).snapshotId
-  ).toBe(receipt.snapshotId)
+  ).toBe(requiredString(receipt.snapshotId))
   store.releaseFor(first)
-  expect(() => store.get(receipt.snapshotId)).toThrow('missing')
+  expect(() => store.get(requiredString(receipt.snapshotId))).toThrow('missing')
   expect(
-    store.get(independent.snapshotId, independent.leaseId, second).orderedIds
+    store.get(
+      requiredString(independent.snapshotId),
+      independent.leaseId,
+      second
+    ).orderedIds
   ).toHaveLength(3)
   store.dispose()
 })
@@ -332,14 +361,17 @@ it('checks request identity before releasing an individual lease', () => {
     throw new Error('Expected a retained lease')
   }
 
-  expect(() => store.releaseLease(receipt.leaseId, second)).toThrow('request')
+  expect(() =>
+    store.releaseLease(requiredString(receipt.leaseId), second)
+  ).toThrow('request')
   expect(
-    store.get(receipt.snapshotId, receipt.leaseId, first).orderedIds
+    store.get(requiredString(receipt.snapshotId), receipt.leaseId, first)
+      .orderedIds
   ).toHaveLength(3)
-  store.releaseLease(receipt.leaseId, first)
-  expect(() => store.get(receipt.snapshotId, receipt.leaseId, first)).toThrow(
-    'lease'
-  )
+  store.releaseLease(requiredString(receipt.leaseId), first)
+  expect(() =>
+    store.get(requiredString(receipt.snapshotId), receipt.leaseId, first)
+  ).toThrow('lease')
   store.dispose()
 })
 
@@ -366,7 +398,8 @@ it.each(['page', 'columns'] as const)(
     for (const receipt of receipts) {
       expect(receipt.leaseId).toEqual(expect.any(String))
       expect(
-        store.get(receipt.snapshotId, receipt.leaseId, signal).orderedIds
+        store.get(requiredString(receipt.snapshotId), receipt.leaseId, signal)
+          .orderedIds
       ).toHaveLength(1)
     }
 
@@ -374,7 +407,11 @@ it.each(['page', 'columns'] as const)(
       receipts.length + 1
     )
     store.read(
-      { scope: 'snapshot', snapshotId: receipts[0].snapshotId, release: true },
+      {
+        scope: 'snapshot',
+        snapshotId: requiredString(receipts[0].snapshotId),
+        release: true
+      },
       signal
     )
     expect(() =>
@@ -382,7 +419,9 @@ it.each(['page', 'columns'] as const)(
     ).not.toThrow()
     store.releaseFor(signal)
     for (const receipt of receipts) {
-      expect(() => store.get(receipt.snapshotId)).toThrow(/missing/)
+      expect(() => store.get(requiredString(receipt.snapshotId))).toThrow(
+        /missing/
+      )
     }
 
     store.dispose()
@@ -407,7 +446,7 @@ it('refines 2736 retained candidates to 24 targets without another spatial query
   source.getElementComputedData.mockClear()
   const refine = {
     scope: 'snapshot' as const,
-    snapshotId: first.snapshotId,
+    snapshotId: requiredString(first.snapshotId),
     filter: { name: { prefix: 'crown-roof', suffix: '-edge' } },
     expectedCount: 24,
     delivery: 'reference' as const
@@ -424,13 +463,17 @@ it('refines 2736 retained candidates to 24 targets without another spatial query
       candidateCount: 2736
     }
   })
-  expect(store.get(result.snapshotId).orderedIds).toEqual(ids.slice(0, 24))
+  expect(store.get(requiredString(result.snapshotId)).orderedIds).toEqual(
+    ids.slice(0, 24)
+  )
   expect(source.getElementIdsInBounds).toHaveBeenCalledTimes(1)
   expect(source.getElementMetadata).toHaveBeenCalledTimes(2736)
   expect(source.getElementComputedData).not.toHaveBeenCalled()
   const again = store.read(refine, request.signal)
 
-  expect(again.snapshotId).toBe(result.snapshotId)
+  expect(requiredString(again.snapshotId)).toBe(
+    requiredString(result.snapshotId)
+  )
   expect(again.observation).toMatchObject({
     refinementExecutions: 0,
     metadataReadCount: 0
@@ -447,14 +490,14 @@ it('refines 2736 retained candidates to 24 targets without another spatial query
     request.signal
   )
 
-  expect(store.get(empty.snapshotId).orderedIds).toEqual([])
-  store.release(first.snapshotId)
+  expect(store.get(requiredString(empty.snapshotId)).orderedIds).toEqual([])
+  store.release(requiredString(first.snapshotId))
   expect(
     store
       .read(
         {
           scope: 'snapshot',
-          snapshotId: result.snapshotId,
+          snapshotId: requiredString(result.snapshotId),
           delivery: 'page',
           limit: 2
         },
@@ -463,7 +506,7 @@ it('refines 2736 retained candidates to 24 targets without another spatial query
       .elements.map((row) => row.id)
   ).toEqual(ids.slice(0, 2))
   change()
-  expect(() => store.get(result.snapshotId)).toThrow(/stale/)
+  expect(() => store.get(requiredString(result.snapshotId))).toThrow(/stale/)
   store.dispose()
 })
 
@@ -502,7 +545,8 @@ it('serves transient region IDs without reserving capacity or changing borrowed 
   expect(source.getElementIdsInBounds).toHaveBeenCalledTimes(reads + 16)
   for (const snapshot of retained) {
     expect(
-      store.get(snapshot.snapshotId, snapshot.leaseId, signal).orderedIds
+      store.get(requiredString(snapshot.snapshotId), snapshot.leaseId, signal)
+        .orderedIds
     ).toEqual(['a', 'b', 'c'])
   }
 
@@ -606,7 +650,7 @@ it('counts filtered structural targets as queries without copying mutation recei
     store.read(
       {
         scope: 'snapshot',
-        snapshotId: parent.snapshotId,
+        snapshotId: requiredString(parent.snapshotId),
         filter: { name: { equals: `missing-${index}` } },
         delivery: 'reference'
       },
@@ -618,12 +662,14 @@ it('counts filtered structural targets as queries without copying mutation recei
 
     expect(() => refine(results.length)).toThrow(/capacity/)
     for (const result of results) {
-      expect(store.get(result.snapshotId).orderedIds).toEqual([])
+      expect(store.get(requiredString(result.snapshotId)).orderedIds).toEqual(
+        []
+      )
       expect(() =>
         store.read(
           {
             scope: 'snapshot',
-            snapshotId: result.snapshotId,
+            snapshotId: requiredString(result.snapshotId),
             delivery: 'receipt'
           },
           signal
@@ -632,15 +678,15 @@ it('counts filtered structural targets as queries without copying mutation recei
     }
 
     source.getElementMetadata.mockClear()
-    expect(refine(0).snapshotId).toBe(results[0].snapshotId)
+    expect(refine(0).snapshotId).toBe(requiredString(results[0].snapshotId))
     expect(source.getElementMetadata).not.toHaveBeenCalled()
-    store.release(results[0].snapshotId)
+    store.release(requiredString(results[0].snapshotId))
     expect(() => refine(results.length)).not.toThrow()
     expect(
       store.read(
         {
           scope: 'snapshot',
-          snapshotId: parent.snapshotId,
+          snapshotId: requiredString(parent.snapshotId),
           delivery: 'receipt'
         },
         signal
@@ -671,7 +717,8 @@ it('retains many small query handoffs within the byte budget without an entry qu
 
     for (const [index, result] of results.entries()) {
       expect(
-        store.get(result.snapshotId, result.leaseId, signal).orderedIds
+        store.get(requiredString(result.snapshotId), result.leaseId, signal)
+          .orderedIds
       ).toEqual([`small-${index}`])
     }
 
@@ -682,7 +729,7 @@ it('retains many small query handoffs within the byte budget without an entry qu
         { scope: 'ids', elementIds: ['small-0'], delivery: 'reference' },
         signal
       ).snapshotId
-    ).toBe(results[0].snapshotId)
+    ).toBe(requiredString(results[0].snapshotId))
     expect(source.getElementMetadata).toHaveBeenCalledTimes(reads)
   } finally {
     store.dispose()
@@ -716,22 +763,28 @@ it('recovers mixed-request byte pressure without releasing sibling pins or refre
     const retry = read('retry', second.signal)
 
     expect(
-      store.get(sibling.snapshotId, sibling.leaseId, second.signal).orderedIds
+      store.get(
+        requiredString(sibling.snapshotId),
+        sibling.leaseId,
+        second.signal
+      ).orderedIds
     ).toEqual(['sibling'])
     for (const item of crowded) {
-      expect(() => store.get(item.snapshotId, item.leaseId)).toThrow(/lease/)
+      expect(() =>
+        store.get(requiredString(item.snapshotId), item.leaseId)
+      ).toThrow(/lease/)
     }
 
     store.releaseFor(first.signal)
     change()
     expect(() =>
-      store.get(retry.snapshotId, retry.leaseId, second.signal)
+      store.get(requiredString(retry.snapshotId), retry.leaseId, second.signal)
     ).toThrow(/stale/)
     expect(
       store.read(
         {
           scope: 'snapshot',
-          snapshotId: historical.snapshotId,
+          snapshotId: requiredString(historical.snapshotId),
           delivery: 'receipt'
         },
         second.signal
@@ -744,9 +797,15 @@ it('recovers mixed-request byte pressure without releasing sibling pins or refre
     const third = new AbortController()
     const current = read('retry', third.signal)
 
-    expect(current.snapshotId).not.toBe(retry.snapshotId)
+    expect(requiredString(current.snapshotId)).not.toBe(
+      requiredString(retry.snapshotId)
+    )
     expect(
-      store.get(current.snapshotId, current.leaseId, third.signal).orderedIds
+      store.get(
+        requiredString(current.snapshotId),
+        current.leaseId,
+        third.signal
+      ).orderedIds
     ).toEqual(['retry'])
   } finally {
     store.dispose()
@@ -775,7 +834,7 @@ it('pages immutable receipt text without repeated serialization or live query re
     const page = store.read(
       {
         scope: 'snapshot',
-        snapshotId: handle.snapshotId,
+        snapshotId: requiredString(handle.snapshotId),
         delivery: 'receipt',
         offset
       },
@@ -800,14 +859,22 @@ it('pages immutable receipt text without repeated serialization or live query re
   expect(source.getElementMetadata).not.toHaveBeenCalled()
   expect(() =>
     store.read(
-      { scope: 'snapshot', snapshotId: handle.snapshotId, delivery: 'receipt' },
+      {
+        scope: 'snapshot',
+        snapshotId: requiredString(handle.snapshotId),
+        delivery: 'receipt'
+      },
       new AbortController().signal
     )
   ).toThrow(/request/)
   store.releaseFor(signal)
   expect(() =>
     store.read(
-      { scope: 'snapshot', snapshotId: handle.snapshotId, delivery: 'receipt' },
+      {
+        scope: 'snapshot',
+        snapshotId: requiredString(handle.snapshotId),
+        delivery: 'receipt'
+      },
       signal
     )
   ).toThrow()
@@ -837,38 +904,60 @@ it.each(['reference', 'page', 'columns'] as const)(
         new Set([first.leaseId, request.leaseId, sibling.leaseId]).size
       ).toBe(3)
       expect(
-        new Set([first.snapshotId, request.snapshotId, sibling.snapshotId]).size
+        new Set([
+          requiredString(first.snapshotId),
+          requiredString(request.snapshotId),
+          requiredString(sibling.snapshotId)
+        ]).size
       ).toBe(1)
       expect(source.getElementComputedData).toHaveBeenCalledTimes(3)
       if (!first.leaseId) {
         throw new Error('Expected consuming lease')
       }
 
-      store.releaseLease(first.leaseId, controller.signal)
+      store.releaseLease(requiredString(first.leaseId), controller.signal)
       expect(
-        store.get(request.snapshotId, request.leaseId, controller.signal)
-          .orderedIds
+        store.get(
+          requiredString(request.snapshotId),
+          request.leaseId,
+          controller.signal
+        ).orderedIds
       ).toEqual(['a', 'b', 'c'])
       expect(
-        store.get(sibling.snapshotId, sibling.leaseId, controller.signal)
-          .orderedIds
+        store.get(
+          requiredString(sibling.snapshotId),
+          sibling.leaseId,
+          controller.signal
+        ).orderedIds
       ).toEqual(['a', 'b', 'c'])
       expect(
         store.read({ ...query, delivery }, controller.signal).leaseId
       ).toBe(request.leaseId)
       change()
       expect(() =>
-        store.get(request.snapshotId, request.leaseId, controller.signal)
+        store.get(
+          requiredString(request.snapshotId),
+          request.leaseId,
+          controller.signal
+        )
       ).toThrow(/stale/)
       expect(() =>
-        store.get(sibling.snapshotId, sibling.leaseId, controller.signal)
+        store.get(
+          requiredString(sibling.snapshotId),
+          sibling.leaseId,
+          controller.signal
+        )
       ).toThrow(/stale/)
       const fresh = store.read({ ...query, delivery }, controller.signal)
 
-      expect(fresh.snapshotId).not.toBe(request.snapshotId)
+      expect(requiredString(fresh.snapshotId)).not.toBe(
+        requiredString(request.snapshotId)
+      )
       expect(source.getElementComputedData).toHaveBeenCalledTimes(6)
       controller.abort()
-      expect(() => store.get(fresh.snapshotId, fresh.leaseId)).toThrow(/lease/)
+      expect(() =>
+        store.get(requiredString(fresh.snapshotId), fresh.leaseId)
+      ).toThrow(/lease/)
     } finally {
       store.dispose()
     }
@@ -883,14 +972,16 @@ it('isolates consuming refinement and receipt leases without rebuilding their so
     const original = store.read(query, signal)
     const refined = {
       scope: 'snapshot' as const,
-      snapshotId: original.snapshotId,
+      snapshotId: requiredString(original.snapshotId),
       filter: { name: { equals: 'a' } },
       delivery: 'reference' as const
     }
     const held = store.read(refined, signal)
     const consumed = store.read(refined, signal, 'consumer')
 
-    expect(consumed.snapshotId).toBe(held.snapshotId)
+    expect(requiredString(consumed.snapshotId)).toBe(
+      requiredString(held.snapshotId)
+    )
     expect(consumed.observation).toMatchObject({
       refinementExecutions: 0,
       computedReadCount: 0
@@ -899,14 +990,15 @@ it('isolates consuming refinement and receipt leases without rebuilding their so
       throw new Error('Expected consuming lease')
     }
 
-    store.releaseLease(consumed.leaseId, signal)
-    expect(store.get(held.snapshotId, held.leaseId, signal).orderedIds).toEqual(
-      ['a']
-    )
+    store.releaseLease(requiredString(consumed.leaseId), signal)
+    expect(
+      store.get(requiredString(held.snapshotId), held.leaseId, signal)
+        .orderedIds
+    ).toEqual(['a'])
     const saved = store.retainReceipt(['a'], { status: 'complete' }, signal)
     const receiptInput = {
       scope: 'snapshot' as const,
-      snapshotId: saved.snapshotId,
+      snapshotId: requiredString(saved.snapshotId),
       delivery: 'receipt' as const
     }
     const internal = store.read(receiptInput, signal, 'consumer')
@@ -915,15 +1007,19 @@ it('isolates consuming refinement and receipt leases without rebuilding their so
       throw new Error('Expected consuming receipt lease')
     }
 
-    store.releaseLease(internal.leaseId, signal)
+    store.releaseLease(requiredString(internal.leaseId), signal)
     const delivered = store.read(receiptInput, signal)
 
     expect(delivered.leaseId).toBe(saved.leaseId)
     expect(delivered).toMatchObject({ receipt: { status: 'complete' } })
     expect(source.getElementComputedData).toHaveBeenCalledTimes(3)
     store.releaseFor(signal)
-    expect(() => store.get(held.snapshotId, held.leaseId)).toThrow(/lease/)
-    expect(() => store.get(saved.snapshotId, saved.leaseId)).toThrow(/lease/)
+    expect(() =>
+      store.get(requiredString(held.snapshotId), held.leaseId)
+    ).toThrow(/lease/)
+    expect(() =>
+      store.get(requiredString(saved.snapshotId), saved.leaseId)
+    ).toThrow(/lease/)
   } finally {
     store.dispose()
   }
@@ -948,46 +1044,61 @@ it('protects internal-only pins under pressure and frees capacity after consumpt
       throw new Error('Expected leases')
     }
 
-    store.releaseLease(caller.leaseId, owner.signal)
+    store.releaseLease(requiredString(caller.leaseId), owner.signal)
     const others = fillByteBudget((index) =>
       store.read({ ...query, elementIds: [`other-${index}`] }, other.signal)
     )
 
     expect(
-      store.get(consumer.snapshotId, consumer.leaseId, owner.signal).orderedIds
+      store.get(
+        requiredString(consumer.snapshotId),
+        consumer.leaseId,
+        owner.signal
+      ).orderedIds
     ).toEqual(['a'])
-    expect(() => store.releaseLease(consumer.leaseId, other.signal)).toThrow(
-      /request/
-    )
+    expect(() =>
+      store.releaseLease(requiredString(consumer.leaseId), other.signal)
+    ).toThrow(/request/)
     const reads = source.getElementComputedData.mock.calls.length
     const again = store.read(query, owner.signal, 'consumer')
 
-    expect(again.snapshotId).toBe(consumer.snapshotId)
+    expect(requiredString(again.snapshotId)).toBe(
+      requiredString(consumer.snapshotId)
+    )
     expect(source.getElementComputedData).toHaveBeenCalledTimes(reads)
     expect(again.leaseId).not.toBe(consumer.leaseId)
     if (!again.leaseId) {
       throw new Error('Expected second consuming lease')
     }
 
-    store.releaseLease(again.leaseId, owner.signal)
+    store.releaseLease(requiredString(again.leaseId), owner.signal)
     expect(() =>
       store.read({ ...query, elementIds: ['replacement'] }, other.signal)
     ).toThrow(/capacity/)
-    store.releaseLease(consumer.leaseId, owner.signal)
+    store.releaseLease(requiredString(consumer.leaseId), owner.signal)
     const replacement = store.read(
       { ...query, elementIds: ['replacement'] },
       other.signal
     )
 
     expect(
-      store.get(replacement.snapshotId, replacement.leaseId, other.signal)
-        .orderedIds
+      store.get(
+        requiredString(replacement.snapshotId),
+        replacement.leaseId,
+        other.signal
+      ).orderedIds
     ).toEqual(['replacement'])
-    expect(() => store.get(consumer.snapshotId)).toThrow(/missing|evicted/)
+    expect(() => store.get(requiredString(consumer.snapshotId))).toThrow(
+      /missing|evicted/
+    )
     owner.abort()
     for (const receipt of others) {
       expect(
-        store.get(receipt.snapshotId, receipt.leaseId, other.signal).orderedIds
+        store.get(
+          requiredString(receipt.snapshotId),
+          receipt.leaseId,
+          other.signal
+        ).orderedIds
       ).toHaveLength(1)
     }
 
@@ -996,7 +1107,7 @@ it('protects internal-only pins under pressure and frees capacity after consumpt
       /disposed/
     )
     expect(() =>
-      store.get(replacement.snapshotId, replacement.leaseId)
+      store.get(requiredString(replacement.snapshotId), replacement.leaseId)
     ).toThrow(/lease|disposed/)
   } finally {
     store.dispose()
@@ -1021,7 +1132,7 @@ it('rejects the recorded scope mismatch before reading or reserving resources, t
   const subset = store.read(
     {
       scope: 'snapshot',
-      snapshotId: parent.snapshotId,
+      snapshotId: requiredString(parent.snapshotId),
       filter: { name: { equals: 'b' } },
       delivery: 'page'
     },
@@ -1030,15 +1141,13 @@ it('rejects the recorded scope mismatch before reading or reserving resources, t
 
   expect(subset.elements.map((row) => row.id)).toEqual(['b'])
   expect(children).toHaveBeenCalledTimes(1)
-  expect(store.get(parent.snapshotId, undefined, signal).orderedIds).toEqual([
-    'a',
-    'b',
-    'c'
-  ])
+  expect(
+    store.get(requiredString(parent.snapshotId), undefined, signal).orderedIds
+  ).toEqual(['a', 'b', 'c'])
   expect(() => store.read(recordedQuery as never, signal)).toThrow(/filter/)
-  expect(store.get(subset.snapshotId, undefined, signal).orderedIds).toEqual([
-    'b'
-  ])
+  expect(
+    store.get(requiredString(subset.snapshotId), undefined, signal).orderedIds
+  ).toEqual(['b'])
   store.dispose()
 })
 
@@ -1052,13 +1161,17 @@ it.each([{ offset: -1 }, { offset: null }, { expectedCount: -1 }])(
     expect(() =>
       store.read({
         scope: 'snapshot',
-        snapshotId: parent.snapshotId,
+        snapshotId: requiredString(parent.snapshotId),
         filter: { type: 'rectangle' },
         ...patch
       } as never)
     ).toThrow()
     expect(source.getElementMetadata).not.toHaveBeenCalled()
-    expect(store.get(parent.snapshotId).orderedIds).toEqual(['a', 'b', 'c'])
+    expect(store.get(requiredString(parent.snapshotId)).orderedIds).toEqual([
+      'a',
+      'b',
+      'c'
+    ])
     store.dispose()
   }
 )
@@ -1097,7 +1210,7 @@ it.each(['elements', 'ids'] as const)(
         limit: 2
       })
 
-      if (!parent.snapshotId) {
+      if (!requiredString(parent.snapshotId)) {
         throw new Error('Expected retained parent identity')
       }
 
@@ -1106,7 +1219,7 @@ it.each(['elements', 'ids'] as const)(
       for (const delivery of ['page', 'columns'] as const) {
         const selected = await read({
           scope: 'snapshot',
-          snapshotId: parent.snapshotId,
+          snapshotId: requiredString(parent.snapshotId),
           filter: { type: 'rectangle' },
           delivery,
           limit: 2
@@ -1122,7 +1235,7 @@ it.each(['elements', 'ids'] as const)(
 
         const tail = await read({
           scope: 'snapshot',
-          snapshotId: selected.snapshotId,
+          snapshotId: requiredString(selected.snapshotId),
           delivery,
           offset: 2,
           limit: 2
@@ -1139,7 +1252,7 @@ it.each(['elements', 'ids'] as const)(
 
         const empty = await read({
           scope: 'snapshot',
-          snapshotId: parent.snapshotId,
+          snapshotId: requiredString(parent.snapshotId),
           filter: { type: 'missing-type' },
           delivery
         })
@@ -1161,7 +1274,8 @@ it.each(['elements', 'ids'] as const)(
       )
       expect(h.source.getElementIdsInBounds).not.toHaveBeenCalled()
       expect(
-        h.store.get(parent.snapshotId, undefined, signal).orderedIds
+        h.store.get(requiredString(parent.snapshotId), undefined, signal)
+          .orderedIds
       ).toEqual(['a', 'b', 'c'])
     } finally {
       h.store.dispose()
