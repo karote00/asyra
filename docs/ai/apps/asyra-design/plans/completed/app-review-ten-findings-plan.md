@@ -2,15 +2,25 @@
 
 ## Bounded task
 
-Status: R1-R10 and the authorized rectangle handoff follow-up are implemented
-and accepted within the bounded focused checks below. Historical failure limits
-remain recorded. The original scope is R1-R10 from
-[the November 15 review](../reports/app-wide-contract-review-2026-11-15.md).
+Status: DONE - bounded focused acceptance and user-authorized closeout.
+Completed: 2026-11-15.
+Canonical record: `/docs/ai/apps/asyra-design/plans/completed/app-review-ten-findings-plan.md`.
+
+Final decision: close R1-R10 and the authorized rectangle/tool-shortcut follow-ups.
+The 84-case combined browser run and 16-case shortcut follow-up passed, together
+with the recorded owner, type, lint, naming and discovery checks. Scope excludes
+whole-App/full-local acceptance, 101, release work and unrelated conversation fixes.
+The first untraced selection failure remains cause-unconfirmed. Subsequent proven
+helper/admission defects are not retrospective proof of that run's cause.
+Implementation was isolated in commit `81d77fb26`; the original review is
+[the November 15 review](../../reports/app-wide-contract-review-2026-11-15.md).
 The conversation owns implementation and review. Work in the existing
 `codex/ai-conversation-improvements` worktree at HEAD
 `bd5fcee28cdb9ad58659071b3899016d85505796` plus inherited changes; preserve them.
-No 101, full local/App/conversation suite, dependency change, generated template,
-compatibility path, broader audit, commit or push is included.
+The original implementation scope excluded 101, full local/App/conversation suites,
+dependency changes, generated templates, compatibility and broader audits. The
+subsequent user instruction authorizes closeout, commits and pushing this existing
+worktree branch to PR #365; it does not authorize release or merge operations.
 
 Allowed changes are the ten finding owners, their direct callers, current
 documents, formal regressions and test selection. Current specs govern behavior;
@@ -233,7 +243,7 @@ projection, capture cost or group-size rule was introduced. Evidence:
 `tmp/ten-step5-*`, `tmp/ten-final-app-types.log`,
 `tmp/ten-final-pen-types.log`, `tmp/ten-final-naming.log`.
 
-## Final bounded verification and remaining limit
+## Initial bounded verification - preserved historical failure
 
 - R1-R7: entry, independent observation, real input ordering, companion compiler,
   current documentation, static declaration evidence and strict receipt admission
@@ -256,8 +266,9 @@ projection, capture cost or group-size rule was introduced. Evidence:
   failed run or claim clean combined browser acceptance. Logs:
   `tmp/ten-final-browser.log`, `tmp/ten-selection-followup.log`.
 - No product behavior or test assertion was changed to hide that failure. Its
-  relationship to the hierarchy change remains unproven. Keep task integration
-  acceptance open rather than use the passing retry as evidence of a fix.
+  relationship to the hierarchy change remains unproven. At that checkpoint task integration
+  acceptance remained open; the passing retry was not evidence of a fix. Later
+  acceptance and its distinct counterexamples are recorded below.
 
 No full local/App/conversation suite, GPU/frame latency benchmark or 101 ran.
 These findings do not establish correctness of every App interaction. No commit

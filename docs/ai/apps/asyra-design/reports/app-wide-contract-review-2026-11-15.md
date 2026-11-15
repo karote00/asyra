@@ -292,7 +292,7 @@ findings into a passing App acceptance.
 ## Authorized R1-R10 implementation follow-up
 
 The subsequent user-authorized work is recorded separately in
-[App Review Ten Findings](../plans/app-review-ten-findings-plan.md). The original
+[App Review Ten Findings](../plans/completed/app-review-ten-findings-plan.md). The original
 findings above remain the pre-fix evidence. All ten received bounded repairs and
 focused verification, including independent oracle corruption, real frame
 ordering, eligible hover, viewport invalidation and hierarchy work/lifetime

@@ -1,4 +1,3 @@
-
 ## 2026-11-02 - Reviewed plan closeout
 
 Context: The user approved closing the reviewed implementation scopes after confirming merged delivery and acceptance evidence on main cb66b095f6ad55d2793ca3cd7b950c13f478dcbb.
@@ -31,3 +30,22 @@ change. The parent Editable Design Agent and independent improvement plans remai
 open. This decision supersedes this task's awaiting-user-review status only.
 No new model run, release validation, Changeset, version bump, tag, publication or
 merge is part of closeout. PR integration checks remain distinct from release work.
+
+## 2026-11-15 - App review ten findings closeout
+
+Context: The user authorized closing the ten-finding App review and its rectangle
+and tool-shortcut follow-ups, then pushing the current worktree to existing PR
+#365. The implementation was isolated in `81d77fb26` before closeout.
+
+Decision: Accept the bounded R1-R10 repairs and browser handoff regressions.
+The [completed plan](/docs/ai/apps/asyra-design/plans/completed/app-review-ten-findings-plan.md)
+retains owner corrections, failed counterexamples, 84/84 combined browser cases,
+16/16 shortcut follow-up cases, focused checks and explicit limitations.
+
+Consequences: Remove this plan from the active index. Preserve the initial
+untraced selection-precondition failure as cause-unconfirmed; unchanged passing
+retries and later distinct defects do not establish its historical cause. This
+supersedes the plan's open integration checkpoint only. Other plans, including
+AI conversation work, are not closed by this decision. No full App correctness,
+101 result, release readiness, Changeset, version bump, tag, publication or merge
+is claimed or authorized by this closeout.

@@ -4,12 +4,6 @@ Never record completed plans here.
 
 ## Current Status
 
-- Implemented - focused integration accepted: [App review - ten findings](plans/app-review-ten-findings-plan.md).
-  R1-R10 and the authorized rectangle/shortcut follow-ups are complete.
-  The combined browser handoff run passed 84/84; the additional O/P/V/T and
-  related R/Pen/text cases passed 16/16. The first untraced selection failure
-  remains cause-unconfirmed; later counterexamples do not establish its cause.
-  No full App acceptance or 101 is claimed.
 
 - Full-building Taipei 101 testing uses the
   [fixed user-approved prompt](modules/ai-development-and-debugging.md#fixed-full-building-taipei-101-test-prompt).
