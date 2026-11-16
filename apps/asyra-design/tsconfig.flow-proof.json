@@ -14,6 +14,7 @@
     ]
   },
   "include": [
+    "server/__tests__/batch-exchange.test.ts",
     "server/__tests__/knowledge-contract-corpus.test.ts",
     "server/__tests__/action-batch.test.ts",
     "server/__tests__/execution-flow-proof.test.ts",

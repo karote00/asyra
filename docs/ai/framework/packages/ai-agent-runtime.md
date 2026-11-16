@@ -286,7 +286,11 @@ remain available without replay. Tool store results with `status: unsaved` inclu
 actual persistence failures. Saving failure never reruns completed execution.
 
 Registered executors can throw `AiActionExecutionError` with a static, bounded
-public explanation and recovery guidance. Runtime preserves that message with
+public explanation and recovery guidance. The 1,000-character bound counts Unicode
+code points, including on the browser failure receipt boundary. Error construction
+replaces blank or over-limit explanations with the generic failure message; it does
+not truncate them. Browser receipts with empty or over-limit messages are rejected,
+not rewritten. Runtime preserves an admitted message with
 `AI_EXECUTION_FAILED` and stage `execution`; ordinary errors still receive the
 generic execution-failure message. Never wrap raw provider/transport/canonical
 exception text in this class. An executor may attach an owner-issued receipt

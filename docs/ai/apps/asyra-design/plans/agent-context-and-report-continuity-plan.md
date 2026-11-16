@@ -703,3 +703,51 @@ attempt are not passing evidence. The final selection covers every caller of the
 changed audit assertion; unchanged checks in the same file were not rerun in the
 final gate. Review stayed within this diff and its direct consumers. No whole
 AI conversation acceptance, 101, full local test, commit or push is claimed.
+
+### Public execution error Unicode follow-up
+
+November 17, 2026. Base: 321afadfbbb65723b76525417f2f74971b63f866.
+The bounded review found that the public execution error constructor still counts
+UTF-16 units; its browser failure receipt consumer has the same mismatch.
+The earlier correction did not prove this failure-message branch.
+
+Execution card - settle owner: preserve an explicitly public executor explanation
+through Runtime settlement, browser failure receipt admission and App presentation.
+Inputs are safe public messages and their existing failure metadata; outputs retain
+the same message, execution failure identity and settlement. Count the existing
+1,000-character limit by Unicode code points. Keep blank-message handling, private
+exception isolation, invalid receipt rejection and one-use receipt tokens unchanged.
+No new recovery, retry, compatibility, truncation or fallback path is authorized.
+
+First extend the formal Runtime lifecycle and browser exchange regressions with
+ASCII, supplementary-plane and combining-character boundary inputs. Prove failure
+on the current owner and independently on the receipt consumer before changing
+production guards. Then replace only those two guards, recheck the settle flow and
+run focused Runtime lifecycle, App receipt/presentation and transport tests, scoped
+types/lint, naming and diff review. The safe failure spec may clarify its existing
+character rule. Exclude unrelated diagnostic truncation, schema audit changes,
+whole-feature/repository runs, 101, commits and pushes. Completion is scoped to
+this handoff; it does not reopen the parent acceptance.
+
+
+Scoped result: completed. Permanent regressions first failed twice in Runtime and
+three times at the App handoff (tmp/public-error-runtime-red.json and
+tmp/public-error-app-red.json). Production changes are only the constructor and
+receipt consumer character-count guards. The same registered error reaches Runtime
+settlement; the browser serializer, JSON receipt, real exchange and presentation
+preserve the public text. Independent receipt inputs prove the consumer rejects
+1,001 code points and empty messages without consuming a valid token. ASCII and
+combining-character controls preserve code-point rather than grapheme semantics.
+
+Final focused evidence: 26 Runtime lifecycle/interrupted-result cases and 134 App
+exchange/transport/presentation cases passed with none skipped
+(tmp/public-error-runtime-green.json and tmp/public-error-app-final.json).
+The first App rerun still consumed the previous package build and failed two new
+cases; rebuilding Runtime through its existing TypeScript package build resolved
+that source/artifact mismatch without changing imports or assertions. That failed
+run remains in tmp/public-error-app-green.json, not passing evidence.
+Runtime compilation, the App flow-proof type project (now explicitly including the
+changed exchange tests), four-file lint, naming and diff checks pass. Review was
+limited to these guards, their direct consumers, the permanent regressions and the
+existing settle flow. No compatibility, validation relaxation, new retry behavior,
+101, whole-feature/repository test, commit or push was introduced.

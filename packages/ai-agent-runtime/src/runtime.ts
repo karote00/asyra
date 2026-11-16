@@ -166,7 +166,7 @@ export class AiActionExecutionError extends Error {
     }
   ) {
     super(
-      publicMessage.trim() && publicMessage.length <= 1000
+      publicMessage.trim() && Array.from(publicMessage).length <= 1000
         ? publicMessage
         : 'AI action execution failed.'
     )
