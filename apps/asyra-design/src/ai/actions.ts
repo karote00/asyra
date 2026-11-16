@@ -1230,7 +1230,7 @@ export const createAiActions = (
         if (
           typeof args.question !== 'string' ||
           !args.question.trim() ||
-          args.question.length > 1000
+          Array.from(args.question).length > 1000
         ) {
           throw new AiActionError()
         }
@@ -1298,7 +1298,7 @@ export const createAiActions = (
         !['completed', 'unsupported'].includes(args.outcome) ||
         typeof args.message !== 'string' ||
         !args.message.trim() ||
-        args.message.length > 1000
+        Array.from(args.message).length > 1000
       ) {
         throw new AiActionError()
       }

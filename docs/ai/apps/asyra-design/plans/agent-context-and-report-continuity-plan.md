@@ -630,3 +630,76 @@ No source was changed to manufacture that result. There is no known remaining
 implementation or proof gap in this task; future changes must renew the same
 review, and automated selection never substitutes for semantic interpretation.
 No 101, live-model inference, whole-repository test, commit or push ran.
+
+## Delivered contract audit and Unicode handoff correction
+
+November 17, 2026. Base: 633eabd2607c1a8c945819314f5f7c036dac809f.
+The subsequent blind review invalidated the preceding claim of no known proof
+gap. This bounded follow-up addresses only the two demonstrated findings.
+
+1. Compose owner: the usage audit must compare the actual delivered schema with
+   its canonical source, independently of the production compactor. Producer
+   lineage alone is insufficient. Add fault controls for the real calculation
+   contract, then apply the same check to all existing native, registered and
+   action usage cases. Preserve local references, intersection constraints,
+   literal values and exclusive alternatives; legal compaction must still pass.
+2. Control/action and provider presentation owners: published character limits
+   count Unicode code points. Prove equivalent ASCII/supplementary-character
+   inputs across admission, control execution, provider activity and presentation;
+   remove conflicting UTF-16 checks on those same message/question paths. Keep
+   the existing limits, whitespace policy, cancellation and byte budgets intact.
+
+Step execution: first add permanent failing regressions, then change the selected
+owner, review its direct consumers and rerun the focused owner suites. Use the
+existing compose/request/settle contracts; no flow semantics or new tools are
+introduced. Internal test helper names carry no persisted/wire identity.
+Required gates: changed audit and text handoff tests, both existing verification
+type projects, scoped lint, naming and diff checks. Do not rerun whole-feature or
+repository validation, perform 101, push, or expand discovery beyond these two
+findings. Completion is scoped to these corrections, not whole-feature acceptance.
+
+Audit implementation adjustment: the first complete file run passed 1,379 cases
+and rejected three legal recursive schemas. The old structural helper labels
+recursion by reference traversal index; compression introduces extra references,
+so those indices are not semantic identities. Replace that comparison at the
+delivered-schema boundary with an independent pairwise graph comparison. Revisit
+only an already-compared schema pair, preserve reference siblings and exclusive
+branches, and normalize only the documented inclusive regrouping. Permanent
+small recursive controls and these three existing registration cases must pass
+before all affected audit consumers are rerun. No production schema change is justified.
+The comparison's reverse membership check repeated successful nested comparisons
+exponentially (4,096 leaf reads at depth 12). Retain matched branch indices only
+for the current comparison, then check unmatched alternatives. The permanent
+work-count case requires one leaf comparison without global memoization or any
+change to validation, source schemas, runner timeouts or tool coverage.
+
+### Scoped correction result
+
+Both findings are corrected. The actual delivered-schema assertion now covers
+all 208 existing native usage cases and 182 action usage cases, plus ten focused
+fault/equivalence/control cases: 400 passed in
+tmp/delivery-audit-consumers-final.json. Compactor inputs remain lineage evidence,
+not a substitute for checking the delivered contract. The graph comparator is
+test-owned and does not call production schema transforms. Regressions preserve
+recursive constraints, reference siblings, exclusive multiplicity, literal order,
+and the one-leaf work bound; no validation timeout was increased.
+
+Unicode controls now count code points at action, workflow, provider, Runtime
+and presentation boundaries. The 501/1,000-character supplementary-plane inputs
+execute and display correctly; 1,001 characters remain rejected or omitted under
+the existing boundary policy. Limits, whitespace handling, wire identities and
+byte budgets are unchanged. The six focused App owner files passed 284 cases
+(tmp/unicode-owner-regressions.json), provider dispatch passed eight
+(tmp/unicode-provider-regressions.json), and Runtime progress passed 24
+(tmp/unicode-runtime-green.json). Runtime compilation, both verification type
+projects (including the changed App tests), naming and seven documentation cases
+pass. Scoped lint has no errors and three pre-existing console warnings.
+
+RED evidence remains in tmp/delivery-audit-red-reached.json,
+tmp/unicode-handoffs-red.json, tmp/unicode-workflow-red-reached.json,
+tmp/unicode-runtime-red.json and tmp/delivery-audit-work-red.json. Runs that did
+not reach the fault, the interrupted whole-file runs, and the timed-out consumer
+attempt are not passing evidence. The final selection covers every caller of the
+changed audit assertion; unchanged checks in the same file were not rerun in the
+final gate. Review stayed within this diff and its direct consumers. No whole
+AI conversation acceptance, 101, full local test, commit or push is claimed.

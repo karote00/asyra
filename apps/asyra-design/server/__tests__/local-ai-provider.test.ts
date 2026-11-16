@@ -6877,6 +6877,65 @@ it('delivers attachment identity and prepares selected uses before capture and c
   }
 })
 
+it('preserves a Unicode operation message from native dispatch through presentation', async () => {
+  const message = '\u{2000B}'.repeat(1000)
+  const child = fakeServer({
+    toolCall: true,
+    toolName: 'select_elements',
+    toolArguments: { arguments: { elementIds: [] }, message }
+  })
+
+  spawn.mockReturnValue(child.child)
+  const projection = createAiActivityProjection()
+  const dispatched: unknown[] = []
+  const executeBatch = vi.fn(
+    async (batch: AiActionBatch): Promise<AiBatchReceipt> => {
+      dispatched.push(projection.result().current)
+
+      return {
+        context: {},
+        actionResults: batch.actions.map((action) => ({
+          actionId: action.id,
+          actionName: action.name,
+          result: { status: 'complete' }
+        }))
+      }
+    }
+  )
+
+  await requestConfiguredAiActionBatch(
+    {
+      ...input,
+      actions: [
+        {
+          name: 'select_elements',
+          description: 'Select',
+          inputSchema: {},
+          effect: 'read'
+        }
+      ]
+    },
+    {
+      environment,
+      executeBatch,
+
+      onProgress: (event) =>
+        projection.append({
+          attempt: 1,
+          phase: 'provider',
+          summary: 'Operation',
+          tool: event.tool,
+          toolStatus: event.status,
+          message: event.message,
+          activity: event.activity
+        })
+    }
+  )
+  expect(executeBatch).toHaveBeenCalledOnce()
+  expect(dispatched).toEqual([{ label: 'Reading data', message }])
+  expect(spawn).toHaveBeenCalledOnce()
+})
+
 it.each(['read', 'mutation', 'external', 'mixed', 'unknown'] as const)(
   'projects actual %s dispatch through the real provider and reducer',
   async (effect) => {

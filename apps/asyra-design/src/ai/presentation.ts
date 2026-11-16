@@ -170,7 +170,7 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
     turn.result.stage === 'execution' &&
     turn.result.code === 'AI_EXECUTION_FAILED' &&
     typeof turn.result.message === 'string' &&
-    turn.result.message.length <= 1000 &&
+    Array.from(turn.result.message).length <= 1000 &&
     turn.result.message !== 'AI action execution failed.'
       ? ` ${turn.result.message}`
       : ''
@@ -288,7 +288,7 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
     isPlainObject(reported) &&
     isPlainObject(reported.result) &&
     typeof reported.result.message === 'string' &&
-    reported.result.message.length <= 1000
+    Array.from(reported.result.message).length <= 1000
   ) {
     if (
       reported.result.outcome === 'completed' &&
@@ -337,7 +337,7 @@ export const summarizeAiTurn = (turn: AiSettledTurn): AiTurnSummary => {
       isPlainObject(turn.result) &&
       isPlainObject(turn.result.preview) &&
       typeof turn.result.preview.explanation === 'string' &&
-      turn.result.preview.explanation.length <= 1000
+      Array.from(turn.result.preview.explanation).length <= 1000
     ) {
       message = `${turn.result.preview.explanation}\n\n${message}`
     }
@@ -429,7 +429,7 @@ export const projectAiQuestion = (
     kind !== 'question' ||
     typeof question !== 'string' ||
     !question.trim() ||
-    question.length > 1000
+    Array.from(question).length > 1000
   ) {
     return null
   }

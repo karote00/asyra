@@ -64,7 +64,7 @@ const boundedActivityMessage = (
 ): string | undefined => {
   const message = value?.trim()
 
-  if (message && message.length <= 1000) {
+  if (message && Array.from(message).length <= 1000) {
     return message
   }
 }

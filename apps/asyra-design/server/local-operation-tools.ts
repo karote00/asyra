@@ -4911,7 +4911,7 @@ export const createLocalOperationTools = (
         (args.message !== undefined &&
           (typeof args.message !== 'string' ||
             !args.message.trim() ||
-            args.message.length > 1000)) ||
+            Array.from(args.message).length > 1000)) ||
         (args.inspection !== undefined &&
           args.inspection !== 'immediate' &&
           args.inspection !== 'defer') ||

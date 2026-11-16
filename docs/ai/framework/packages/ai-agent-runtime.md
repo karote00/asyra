@@ -179,6 +179,10 @@ never retains complete item, path, point, geometry, or other action-argument
 graphs. The runtime does not require an app to render its low-level actions or
 provide a visual preview to the user.
 
+Provider progress message character limits count Unicode code points, not UTF-16
+storage units. The existing 1,000-character limit is unchanged; over-limit text
+is omitted without stopping the provider operation.
+
 An invocation-local progress observer receives ordered frozen updates for
 context, provider attempts, resolution, permission, confirmation wait when
 required, execution, and non-abort settlement. Updates contain only stable

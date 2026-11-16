@@ -41,6 +41,19 @@ const admitted = () => ({
 })
 
 describe('settled evaluation report projection', () => {
+  it.each([501, 1000, 1001])(
+    'uses code-point limits for the acknowledged report - %s',
+    (length) => {
+      const turn = admitted()
+      const message = '\u{2000B}'.repeat(length)
+
+      turn.result.actionResults[1].result.message = message
+      expect(projectEvaluationReport(turn)?.text).toBe(
+        length <= 1000 ? message : undefined
+      )
+    }
+  )
+
   it('uses the final acknowledged report and preserves earlier successful work', () => {
     const turn = admitted()
     const before = structuredClone(turn)

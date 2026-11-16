@@ -103,6 +103,42 @@ const phases = (updates: readonly AiRuntimeProgressUpdate[]) =>
   updates.map((update) => update.phase)
 
 describe('AI runtime operational progress', () => {
+  it.each([1000, 1001])(
+    'forwards provider message code points without changing the limit - %s',
+    async (length) => {
+      const message = '\u{2000B}'.repeat(length)
+      const updates: AiRuntimeProgressUpdate[] = []
+      const runtime = createAiAgentRuntime(
+        runtimeInput({
+          provider: {
+            requestActionBatch: async (_input, options) => {
+              options.onProgress?.({
+                tool: 'prepare_design',
+                status: 'running',
+                message
+              })
+
+              return candidateActionBatch()
+            }
+          }
+        })
+      )
+
+      await runtime.run({
+        intent: 'Apply the requested change',
+        signal: new AbortController().signal,
+
+        progressObserver: (update) => updates.push(update)
+      })
+      const activity = updates.find(
+        (update) => update.tool === 'prepare_design'
+      )
+
+      expect(activity).toBeDefined()
+      expect(activity?.message).toBe(length === 1000 ? message : undefined)
+    }
+  )
+
   it('reports the specific action summary when that action starts executing', async () => {
     const updates: AiRuntimeProgressUpdate[] = []
     const batch = candidateActionBatch()

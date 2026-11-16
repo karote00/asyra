@@ -59,7 +59,7 @@ export const projectEvaluationReport = (turn: {
       (outcome.status !== 'success' || outcome.settlement !== 'completed')) ||
     typeof value.message !== 'string' ||
     !value.message.trim() ||
-    value.message.length > 1000
+    Array.from(value.message).length > 1000
   ) {
     return
   }

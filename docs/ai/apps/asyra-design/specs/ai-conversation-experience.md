@@ -84,6 +84,10 @@ Public commentary cannot prove that geometry is being computed or applied.
 Internal resolution/permission events do not erase active purpose. Duplicate
 phase/purpose pairs are suppressed, but completion is a real transition.
 Blank or over-1000-character authored descriptions do not replace valid purpose.
+Character limits use Unicode code points, consistent with JSON Schema, rather
+than UTF-16 storage units. Control questions/replies and their provider, Runtime
+and presentation handoffs use the same counting rule. Preserve the existing
+limits and whitespace rules; transport byte budgets remain byte budgets.
 The panel displays both phase and purpose, so a finished drawing verb is never
 presented alone as current execution. Stop, approval and settlement override work.
 The App activity state machine owns legal lifecycle transitions. Saving and

@@ -334,7 +334,8 @@ const readActivityStream = async (
           ...(activity ? { activity } : {}),
           tool: event.tool,
           status: event.status,
-          ...(typeof event.message === 'string' && event.message.length <= 1000
+          ...(typeof event.message === 'string' &&
+          Array.from(event.message).length <= 1000
             ? { message: event.message }
             : {})
         })

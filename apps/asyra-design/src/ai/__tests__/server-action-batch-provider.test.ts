@@ -226,6 +226,44 @@ it.each([
 )
 
 describe('sequential server prepared batch transport', () => {
+  it.each([1000, 1001])(
+    'preserves the code-point message boundary over NDJSON - %s',
+    async (length) => {
+      const message = '\u{2000B}'.repeat(length)
+      const provider = createServerActionBatchProvider({
+        fetch: async () =>
+          new Response(
+            JSON.stringify({
+              type: 'activity',
+              tool: 'prepare_design',
+              status: 'running',
+              message
+            }) +
+              '\n' +
+              JSON.stringify({ type: 'result', batch }) +
+              '\n',
+            { headers: { 'content-type': 'application/x-ndjson' } }
+          )
+      })
+      const onProgress = vi.fn()
+
+      try {
+        await expect(
+          provider.requestActionBatch(input, {
+            signal: new AbortController().signal,
+            onProgress
+          })
+        ).resolves.toEqual(batch)
+        expect(onProgress).toHaveBeenCalledOnce()
+        expect(onProgress.mock.calls[0][0].message).toBe(
+          length === 1000 ? message : undefined
+        )
+      } finally {
+        provider.dispose()
+      }
+    }
+  )
+
   it('decodes split UTF-8 and multiple frames in a single chunk in order', async () => {
     const frame = JSON.stringify({
       type: 'activity',

@@ -1395,7 +1395,7 @@ const runLocalAiProvider = async (
       } else if (
         isRecord(params.arguments) &&
         typeof params.arguments.message === 'string' &&
-        params.arguments.message.length <= 1000
+        Array.from(params.arguments.message).length <= 1000
       ) {
         message = params.arguments.message
       }
@@ -1404,7 +1404,7 @@ const runLocalAiProvider = async (
         isRecord(params.arguments) &&
         typeof params.arguments.message === 'string' &&
         params.arguments.message.trim().length > 0 &&
-        params.arguments.message.length <= 1000
+        Array.from(params.arguments.message).length <= 1000
           ? params.arguments.message
           : undefined
 
@@ -2010,7 +2010,7 @@ const runLocalAiProvider = async (
         if (
           typeof item.text === 'string' &&
           item.text.trim() &&
-          item.text.length <= 1000
+          Array.from(item.text).length <= 1000
         ) {
           reportProgress({
             tool: 'public-progress',
@@ -2668,7 +2668,7 @@ const runLocalAiProvider = async (
         report.actions[0].arguments.outcome !== 'unsupported' ||
         typeof report.actions[0].arguments.message !== 'string' ||
         !report.actions[0].arguments.message.trim() ||
-        report.actions[0].arguments.message.length > 1000
+        Array.from(report.actions[0].arguments.message).length > 1000
       ) {
         throw failure('AI_MODEL_BACKEND_INVALID_RESPONSE')
       }

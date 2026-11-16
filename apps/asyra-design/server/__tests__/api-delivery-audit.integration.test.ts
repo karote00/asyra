@@ -1,3 +1,4 @@
+import { equivalentDeliveredSchema } from './schema-equivalence'
 import { isRecord } from '@asyra/utils'
 import { createDeliveryAuditFixture } from './delivery-audit-fixture'
 
@@ -568,9 +569,9 @@ const exactResultAlternatives = (schema: unknown) => {
 
 // Authority: ai-execution-flow.md, Selected operation contract delivery; and
 // ai-conversation-verification.md, Required proof for every verification method.
-// Observe the actual discovery producer once. These checks prove transport and
-// source lineage, not owner semantics or arbitrary schema equivalence. Independent
-// semantic controls below and the formal owner/provider suites remain required.
+// Observe the actual discovery producer and compare its delivered schema using
+// the independent structural oracle. Lineage alone cannot prove preservation.
+// Independent semantic controls and formal owner/provider suites remain required.
 const originalUsageProjection = workflowOwner.workflowUsageParameters
 const usageProjection = vi.spyOn(workflowOwner, 'workflowUsageParameters')
 const scopeProjection = vi.spyOn(workflowOwner, 'projectWorkflowInput')
@@ -606,7 +607,14 @@ const observedUsageSource = (delivered: unknown): unknown => {
     'Delivered schema must be an actual producer output'
   ).toBeGreaterThanOrEqual(0)
 
-  return usageProjection.mock.calls[index][0]
+  const source = usageProjection.mock.calls[index][0]
+
+  expect(
+    equivalentDeliveredSchema(delivered, source),
+    'Delivered schema must preserve source constraints'
+  ).toBe(true)
+
+  return source
 }
 
 const observedScopedInput = (input: unknown, scope: unknown): unknown => {
@@ -624,6 +632,93 @@ const observedScopedInput = (input: unknown, scope: unknown): unknown => {
 
   return result.value
 }
+
+it.each(['parameters', 'results'])(
+  'rejects corrupted calculation %s in the shared delivered-contract audit',
+  async (field) => {
+    const current = createDeliveryAuditFixture()
+    const corruptedFixture = createDeliveryAuditFixture()
+
+    const read = async (selectedHost: typeof current.host) => {
+      const text = await readCompleteInformation(
+        async (input, tool) =>
+          (
+            await selectedHost.invoke({
+              name: 'design_operations.' + tool,
+              input
+            })
+          ).text,
+        {
+          names: ['design_operations.record_design_calculations'],
+          view: 'usage',
+          includeResultSchema: true
+        },
+        'read_design_contracts'
+      )
+
+      return JSON.parse(text).tools[0].usageGuide
+    }
+
+    const rewrite = (value: unknown): unknown => {
+      if (Array.isArray(value)) {
+        return value.map(rewrite)
+      }
+
+      if (!isRecord(value)) {
+        return value
+      }
+
+      return Object.fromEntries(
+        Object.entries(value).map(([key, child]) => [
+          key,
+          key === 'maxLength' && child === 1000 ? 2000 : rewrite(child)
+        ])
+      )
+    }
+
+    try {
+      const healthy = await read(current.host)
+
+      expect(() => observedUsageSource(healthy[field])).not.toThrow()
+      usageProjection.mockImplementation((input) => {
+        const projected = originalUsageProjection(input)
+
+        if (field === 'results' && Array.isArray(projected.anyOf)) {
+          return { ...projected, anyOf: [...projected.anyOf, {}] }
+        }
+
+        const rewritten =
+          field === 'parameters' ? rewrite(projected) : projected
+
+        if (!isRecord(rewritten)) {
+          throw new Error('Malformed audit fault')
+        }
+
+        return rewritten
+      })
+      const corrupted = await read(corruptedFixture.host)
+      const probe =
+        field === 'parameters'
+          ? {
+              calculations: [{ id: 'probe', value: 1, unit: 'a'.repeat(1001) }]
+            }
+          : {}
+
+      expect(operationInputIssue(probe, healthy[field])).toBeDefined()
+      expect(operationInputIssue(probe, corrupted[field])).toBeUndefined()
+      expect(() => observedUsageSource(corrupted[field])).toThrow(
+        /Delivered schema must preserve source constraints/
+      )
+      expect(current.execute).not.toHaveBeenCalled()
+      expect(corruptedFixture.execute).not.toHaveBeenCalled()
+    } finally {
+      usageProjection.mockReset()
+      usageProjection.mockImplementation(originalUsageProjection)
+      await current.dispose()
+      await corruptedFixture.dispose()
+    }
+  }
+)
 
 it('keeps the audit oracle independent when native schema conversion drops a constraint', () => {
   const converter = vi
@@ -961,6 +1056,114 @@ it('audits unordered requirements without losing required fields or value constr
       observed
     )
   ).toBeDefined()
+})
+
+it('compares distributed inclusive branches without dropping their common constraints', () => {
+  const count = { type: 'integer', minimum: 1 }
+  const text = { type: 'string', minLength: 2 }
+  const common = { description: 'Bounded value', not: { const: null } }
+  const separate = {
+    anyOf: [
+      { ...common, anyOf: [count] },
+      { ...common, anyOf: [text, count] }
+    ]
+  }
+  const grouped = { anyOf: [{ ...common, anyOf: [count, text] }] }
+
+  expect(equivalentDeliveredSchema(separate, grouped)).toBe(true)
+  expect(equivalentDeliveredSchema(grouped, { anyOf: [count, text] })).toBe(
+    false
+  )
+  expect(
+    equivalentDeliveredSchema({ allOf: [count, { allOf: [count] }] }, count)
+  ).toBe(true)
+  expect(equivalentDeliveredSchema({ oneOf: [count, count] }, count)).toBe(
+    false
+  )
+})
+
+it('compares recursive delivered graphs without reference-index identities or hidden constraint loss', () => {
+  const source = {
+    type: 'object',
+    properties: {
+      value: { type: 'string', maxLength: 3 },
+      children: { type: 'array', items: { $ref: '#' } }
+    }
+  }
+  const delivered = {
+    $ref: '#/$defs/node',
+    $defs: {
+      node: {
+        type: 'object',
+        properties: {
+          value: { $ref: '#/$defs/text' },
+          children: { $ref: '#/$defs/children' }
+        }
+      },
+      text: { type: 'string', maxLength: 3 },
+      children: { type: 'array', items: { $ref: '#/$defs/node' } }
+    }
+  }
+
+  expect(equivalentDeliveredSchema(delivered, source)).toBe(true)
+  expect(equivalentDeliveredSchema(source, delivered)).toBe(true)
+  const changed = structuredClone(delivered)
+
+  changed.$defs.text.maxLength = 4
+  expect(equivalentDeliveredSchema(changed, source)).toBe(false)
+  const sibling = {
+    $ref: '#/$defs/value',
+    maxLength: 2,
+    $defs: { value: { type: 'string' } }
+  }
+
+  expect(
+    equivalentDeliveredSchema(sibling, {
+      allOf: [{ type: 'string' }, { maxLength: 2 }]
+    })
+  ).toBe(true)
+  expect(equivalentDeliveredSchema(sibling, { type: 'string' })).toBe(false)
+  expect(
+    equivalentDeliveredSchema(
+      { const: { required: ['a', 'b'] } },
+      { const: { required: ['b', 'a'] } }
+    )
+  ).toBe(false)
+  expect(() =>
+    equivalentDeliveredSchema({ $ref: '#/$defs/missing' }, {})
+  ).toThrow(/Missing schema reference/)
+})
+
+it('does not multiply leaf comparisons through nested equivalent inclusive branches', () => {
+  let reads = 0
+  const leftLeaf = {
+    const: {
+      get value() {
+        reads++
+
+        return 'literal'
+      }
+    }
+  }
+  const rightLeaf = { const: { value: 'literal' } }
+
+  expect(equivalentDeliveredSchema(leftLeaf, rightLeaf)).toBe(true)
+  const leafReads = reads
+  let left: unknown = leftLeaf
+  let right: unknown = rightLeaf
+
+  for (let level = 0; level < 12; level++) {
+    left = {
+      anyOf: [{ type: 'null' }, { type: 'object', properties: { next: left } }]
+    }
+    right = {
+      anyOf: [{ type: 'null' }, { type: 'object', properties: { next: right } }]
+    }
+  }
+
+  reads = 0
+  expect(equivalentDeliveredSchema(left, right)).toBe(true)
+  expect(reads).toBe(leafReads)
 })
 
 it('keeps literal arrays ordered and preserves reference sibling intersections in the audit', () => {
@@ -1332,6 +1535,22 @@ it('executes a delivered final-response contract through its real control owner 
     outcome: 'unsupported',
     message: input.message
   })
+  const unicodeInput = { ...input, message: '\u{2000B}'.repeat(1000) }
+
+  expect(
+    operationInputIssue(unicodeInput, tool.usageGuide.parameters)
+  ).toBeUndefined()
+  expect(await owner.execute(unicodeInput, { signal })).toMatchObject({
+    status: 'no-change',
+    outcome: 'unsupported',
+    message: unicodeInput.message
+  })
+  expect(
+    operationInputIssue(
+      { ...unicodeInput, message: unicodeInput.message + '\u{2000B}' },
+      tool.usageGuide.parameters
+    )
+  ).toBeDefined()
   expect(execute).not.toHaveBeenCalled()
 })
 

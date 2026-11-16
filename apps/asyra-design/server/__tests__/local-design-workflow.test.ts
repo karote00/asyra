@@ -123,6 +123,42 @@ it('does not admit a stopped receipt as a successful compound result', () => {
   ).toBeDefined()
 })
 
+it.each([1000, 1001])(
+  'admits workflow messages by code points before execution - %s',
+  async (length) => {
+    const { workflow, execute } = setup()
+    const request = {
+      draft,
+      message: '\u{2000B}'.repeat(length),
+      inspection: 'defer'
+    }
+    const definition = workflow.definitions[0]
+
+    expect(
+      operationInputIssue(request, definition.inputSchema) === undefined
+    ).toBe(length === 1000)
+    const result = invokeLocalTool(
+      workflow,
+      definition,
+      request,
+      new AbortController().signal
+    )
+
+    if (length === 1000) {
+      await expect(result).resolves.toMatchObject({
+        outcome: { status: 'success' }
+      })
+      expect(execute).toHaveBeenCalledOnce()
+    } else {
+      await expect(result).resolves.toMatchObject({
+        success: false,
+        outcome: { status: 'failed', settlement: 'not-started' }
+      })
+      expect(execute).not.toHaveBeenCalled()
+    }
+  }
+)
+
 it('preserves unknown application settlement across an ordered part boundary without replay', async () => {
   const { workflow, execute } = setup()
 

@@ -2007,7 +2007,7 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                             ? { activity: event.activity }
                             : {}),
                           ...(typeof event.message === 'string' &&
-                          event.message.length <= 1000
+                          Array.from(event.message).length <= 1000
                             ? { message: event.message }
                             : {}),
                           summary:

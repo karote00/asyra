@@ -4,7 +4,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import core from '../../contexts'
 import { selectionApis } from '../../common-apis/selection'
 import { createAiConversationController } from '../conversation'
-import { summarizeAiTurn, canRetryAiTurn } from '../presentation'
+import {
+  summarizeAiTurn,
+  canRetryAiTurn,
+  projectAiQuestion
+} from '../presentation'
 import { operationInputIssue } from '../tool-schema'
 import { observeAiAction } from '../runtime-input'
 import {
@@ -541,6 +545,79 @@ const requireTestValue = <T>(value: T | undefined | null): T => {
 
   return value
 }
+
+it.each(
+  ['a', '\u{2000B}'].flatMap((character) =>
+    [501, 1000, 1001].flatMap((length) =>
+      [AiActionNames.REPORT_OUTCOME, AiActionNames.REQUEST_CLARIFICATION].map(
+        (name) => ({
+          character,
+          length,
+          name
+        })
+      )
+    )
+  )
+)(
+  'preserves code-point limits from control admission to presentation - $name $character $length',
+  async ({ character, length, name }) => {
+    const text = character.repeat(length)
+    const apis = actionApis()
+    const definition = actionByName(name, apis)
+    const action = observeAiAction(definition)
+    const input =
+      name === AiActionNames.REPORT_OUTCOME
+        ? { outcome: 'unsupported', message: text }
+        : { question: text }
+
+    if (length > 1000) {
+      expect(operationInputIssue(input, definition.inputSchema)).toBeDefined()
+      await expect(action.execute(input, executionContext())).rejects.toThrow()
+    } else {
+      expect(operationInputIssue(input, definition.inputSchema)).toBeUndefined()
+      const controller = createAiConversationController({
+        getElementType: () => undefined,
+
+        feature: {
+          cancel: () => false,
+
+          execute: async () => ({
+            status: 'executed',
+            actionResults: [
+              {
+                actionId: 'control',
+                actionName: name,
+                result: await action.execute(input, executionContext())
+              }
+            ]
+          })
+        }
+      })
+
+      try {
+        const settled = await controller.submit(
+          'Respond without changing the drawing'
+        )
+
+        expect(settled.outcome).toBe('no-change')
+        expect(summarizeAiTurn(settled).message).toBe(
+          name === AiActionNames.REPORT_OUTCOME
+            ? text + '\n\nNo canvas changes were made.'
+            : text
+        )
+        if (name === AiActionNames.REQUEST_CLARIFICATION) {
+          expect(projectAiQuestion(settled)?.message).toBe(text)
+        }
+      } finally {
+        controller.dispose()
+      }
+    }
+
+    for (const api of Object.values(apis)) {
+      expect(api).not.toHaveBeenCalled()
+    }
+  }
+)
 
 it.each([
   [AiActionNames.REQUEST_CLARIFICATION, { question: '   ' }],

@@ -50,6 +50,13 @@ independent mathematical/standard semantics and invariant assertions. Large
 fixtures require independently chosen sentinel values and ownership assertions,
 not only snapshots regenerated from the current implementation.
 
+For schema delivery, compare the actual delivered schema with its source using
+an independent constraint oracle. Observing the producer and comparing only its
+input proves lineage, not lossless delivery. Legal reference compaction and
+inclusive union/intersection regrouping preserve constraints; sibling constraints,
+literal values and exclusive-union multiplicity cannot be discarded. Fault
+controls must reach this same audit assertion, with a legal equivalent control.
+
 Review these requirements for each new or changed method and at whole-feature
 acceptance. Missing proof is incomplete, not a waived requirement. An inapplicable
 dimension requires a specification-based reason and, for unsupported execution

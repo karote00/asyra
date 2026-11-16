@@ -351,7 +351,7 @@ export const createLocalDesignWorkflow = (
         (input.message !== undefined &&
           (typeof input.message !== 'string' ||
             !input.message.trim() ||
-            input.message.length > 1000))
+            Array.from(input.message).length > 1000))
       ) {
         throw new LocalToolInputError(
           'Provide draft or repair, and optional parentId, message, inspection only.'
